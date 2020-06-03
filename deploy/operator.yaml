@@ -22,7 +22,7 @@ spec:
       containers:
         - name: dynatrace-activegate-operator
           # Replace this with the built image name
-          image: quay.io/meik99/dynatrace-activegate-operator:v0.0.1
+          image: 612044533526.dkr.ecr.us-east-1.amazonaws.com/activegate:latest
           command:
           - dynatrace-activegate-operator
           imagePullPolicy: Always

@@ -5,7 +5,7 @@ metadata:
 spec:
   # dynatrace api url including `/api` path at the end
   # either set ENVIRONMENTID to the proper tenant id or change the apiUrl as a whole, e.q. for Managed
-  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+  apiUrl: https://asj34817.dev.dynatracelabs.com/api
   # name of secret holding `apiToken` and `paasToken`
   # if unset, name of custom resource is used
   tokens: ""
@@ -20,9 +20,7 @@ spec:
   # ActiveGate installer image (optional)
   # certified image from Red Hat Container Catalog for use on OpenShift: registry.connect.redhat.com/dynatrace/activegate
   # for kubernetes it defaults to docker.io/dynatrace/activegate
-  image: ""
-  dt_tenant: ""
-  dt_server: ""
+  image: "612044533526.dkr.ecr.us-east-1.amazonaws.com/activegate:latest"
   dt_capabilities:
     - kubernetes_monitoring
   # resource settings for ActiveGate pods (optional)

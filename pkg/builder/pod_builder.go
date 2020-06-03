@@ -2,11 +2,15 @@ package builder
 
 import (
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"strings"
 )
 
-func BuildActiveGatePodSpecs(acitveGatePodSpec *v1alpha1.ActiveGateSpec) corev1.PodSpec {
+func BuildActiveGatePodSpecs(
+	acitveGatePodSpec *v1alpha1.ActiveGateSpec,
+	tenantInfo *dtclient.TenantInfo) corev1.PodSpec {
 	serviceaccount := ACTIVEGATE_NAME
 	image := ACTIVEGATE_IMAGE
 
@@ -16,6 +20,13 @@ func BuildActiveGatePodSpecs(acitveGatePodSpec *v1alpha1.ActiveGateSpec) corev1.
 	if len(acitveGatePodSpec.Image) > 0 {
 		image = acitveGatePodSpec.Image
 	}
+	if tenantInfo == nil {
+		tenantInfo = &dtclient.TenantInfo{
+			ID:        "",
+			Token:     "",
+			Endpoints: []string{},
+		}
+	}
 
 	return corev1.PodSpec{
 		Containers: []corev1.Container{{
@@ -23,7 +34,7 @@ func BuildActiveGatePodSpecs(acitveGatePodSpec *v1alpha1.ActiveGateSpec) corev1.
 			Image:           image,
 			Resources:       acitveGatePodSpec.Resources,
 			ImagePullPolicy: corev1.PullAlways,
-			Env:             buildEnvVars(acitveGatePodSpec),
+			Env:             buildEnvVars(acitveGatePodSpec, tenantInfo),
 			Args:            buildArgs(),
 		}},
 		DNSPolicy:          acitveGatePodSpec.DNSPolicy,
@@ -50,30 +61,36 @@ func buildArgs() []string {
 	}
 }
 
-func buildEnvVars(acitveGatePodSpec *v1alpha1.ActiveGateSpec) []corev1.EnvVar {
+func buildEnvVars(acitveGatePodSpec *v1alpha1.ActiveGateSpec, tenantInfo *dtclient.TenantInfo) []corev1.EnvVar {
+	logger := log.Log.WithName("builder.pod_builder")
+	logger.Info("DT_CAPABILITIES are " + strings.Join(acitveGatePodSpec.Capabilities, COMMA))
+
+	endpoint := ""
+	if len(tenantInfo.Endpoints) > 0 {
+		endpoint = tenantInfo.Endpoints[0]
+		if !strings.HasSuffix(endpoint, DT_COMMUNICATION_SUFFIX) {
+			endpoint += DT_COMMUNICATION_SUFFIX
+		}
+	}
+
 	return []corev1.EnvVar{
 		{
 			Name:  DT_TENANT,
-			Value: acitveGatePodSpec.Id,
+			Value: tenantInfo.ID,
 		},
 		{
 			Name:  DT_TOKEN,
-			Value: getTenantToken(),
+			Value: tenantInfo.Token,
 		},
 		{
 			Name:  DT_SERVER,
-			Value: acitveGatePodSpec.ServerUrl,
+			Value: endpoint,
 		},
 		{
 			Name:  DT_CAPABILITIES,
 			Value: strings.Join(acitveGatePodSpec.Capabilities, COMMA),
 		},
 	}
-}
-
-func getTenantToken() string {
-	// TODO retrieve tenant token from api with api token
-	return ""
 }
 
 func buildAffinity() *corev1.Affinity {
@@ -138,6 +155,8 @@ const (
 	DT_TOKEN_ARG        = "--token=$(DT_TOKEN)"
 	DT_SERVER_ARG       = "--server=$(DT_SERVER)"
 	DT_CAPABILITIES_ARG = "--enable=$(DT_CAPABILITIES)"
+
+	DT_COMMUNICATION_SUFFIX = "/communication"
 
 	COMMA = ","
 )

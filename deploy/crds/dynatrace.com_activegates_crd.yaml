@@ -61,12 +61,6 @@ spec:
               items:
                 type: string
               type: array
-            dt_server:
-              description: Server URL of the tenant of form https://<tenant_id>.dev.dynatracelabs.com:443/communication
-              type: string
-            dt_tenant:
-              description: ID of the used tenant
-              type: string
             env:
               description: 'Optional: List of environment variables for the ActiveGate'
               items:
@@ -190,6 +184,15 @@ spec:
                 Name must be defined by creating a PriorityClass object with that
                 name.'
               type: string
+            proxy:
+              description: 'Optional: Set custom proxy settings either directly or
+                from a secret with the field ''proxy'''
+              properties:
+                value:
+                  type: string
+                valueFrom:
+                  type: string
+              type: object
             resources:
               description: 'Optional: define resources requests and limits for single
                 pods'
@@ -221,6 +224,10 @@ spec:
               description: 'Optional: set custom Service Account Name used with ActiveGate
                 pods'
               type: string
+            skipCertCheck:
+              description: Disable certificate validation checks for installer download
+                and API communication
+              type: boolean
             tokens:
               description: Credentials for the ActiveGate to connect back to Dynatrace.
               type: string
@@ -264,11 +271,12 @@ spec:
                     type: string
                 type: object
               type: array
+            trustedCAs:
+              description: 'Optional: Adds custom RootCAs from a configmap'
+              type: string
           required:
           - apiUrl
           - dt_capabilities
-          - dt_server
-          - dt_tenant
           type: object
         status:
           description: ActiveGateStatus defines the observed state of ActiveGate

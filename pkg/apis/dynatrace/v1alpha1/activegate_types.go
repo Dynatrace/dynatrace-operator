@@ -10,7 +10,6 @@ import (
 type ActiveGateSpec struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 	BaseActiveGateSpec `json:""`
-	TenantSpec         `json:""`
 
 	// Enabled capabilities of the ActiveGate. E.g.: "kubernetes_monitoring"
 	// +kubebuilder:validation:Required

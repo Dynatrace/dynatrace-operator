@@ -3,6 +3,7 @@ package activegate
 import (
 	"context"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/builder"
+	parser "github.com/Dynatrace/dynatrace-activegate-operator/pkg/parser"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -96,8 +97,23 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
+	namespace := instance.GetNamespace()
+	secret := &corev1.Secret{}
+	err = r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(instance), Namespace: namespace}, secret)
+	if err != nil {
+		log.Error(err, err.Error())
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			return reconcile.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		return reconcile.Result{}, err
+	}
+	log.Info("Creating new pod for custom resource")
 	// Define a new Pod object
-	pod := newPodForCR(instance)
+	pod := newPodForCR(r.client, instance)
 	//
 	//// Set ActiveGate instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
@@ -126,13 +142,23 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 }
 
 // newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *dynatracev1alpha1.ActiveGate) *corev1.Pod {
+func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate) *corev1.Pod {
+	dtc, err := builder.BuildDynatraceClient(client, cr)
+	if err != nil {
+		log.Error(err, err.Error())
+	}
+
+	tenantInfo, err := dtc.GetTenantInfo()
+	if err != nil {
+		log.Error(err, err.Error())
+	}
+
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name + "-pod",
 			Namespace: cr.Namespace,
 			Labels:    cr.Labels,
 		},
-		Spec: builder.BuildActiveGatePodSpecs(&cr.Spec),
+		Spec: builder.BuildActiveGatePodSpecs(&cr.Spec, tenantInfo),
 	}
 }
