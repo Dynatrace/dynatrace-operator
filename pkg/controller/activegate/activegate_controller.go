@@ -3,6 +3,7 @@ package activegate
 import (
 	"context"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
+	agerrors "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/errors"
 	parser "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -97,22 +98,14 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	namespace := instance.GetNamespace()
-	secret := &corev1.Secret{}
-	err = r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(instance), Namespace: namespace}, secret)
-	if err != nil {
-		log.Error(err, err.Error())
-		if errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
-			return reconcile.Result{}, nil
-		}
-		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
+	// Fetch api token secret
+	secret, err := r.getTokenSecret(instance)
+	if err != nil || secret == nil {
+		return agerrors.HandleSecretError(err, reqLogger)
 	}
-	log.Info("Creating new pod for custom resource")
+
 	// Define a new Pod object
+	log.Info("Creating new pod for custom resource")
 	pod := newPodForCR(r.client, instance, secret)
 	//
 	//// Set ActiveGate instance as the owner and controller
@@ -123,22 +116,27 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	// Check if this Pod already exists
 	found := &corev1.Pod{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-
-		// Pod created successfully - don't requeue
-		return reconcile.Result{}, nil
-	} else if err != nil {
-		return reconcile.Result{}, err
+	if err != nil {
+		return agerrors.HandleCreatePodError(r.client, pod, err, reqLogger)
 	}
 
-	// Pod already exists - don't requeue
+	// Pod already exists - requeue after five minutes
 	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
-	return reconcile.Result{}, nil
+	return builder.ReconcileAfterFiveMinutes(), nil
+}
+
+func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.ActiveGate) (*corev1.Secret, error) {
+	namespace := instance.GetNamespace()
+	secret := &corev1.Secret{}
+	err := r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(instance), Namespace: namespace}, secret)
+	if err != nil {
+		log.Error(err, err.Error())
+		if errors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return secret, nil
 }
 
 // newPodForCR returns a busybox pod with the same name/namespace as the cr
