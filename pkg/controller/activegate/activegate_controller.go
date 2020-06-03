@@ -2,8 +2,8 @@ package activegate
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/builder"
-	parser "github.com/Dynatrace/dynatrace-activegate-operator/pkg/parser"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
+	parser "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -113,7 +113,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 	log.Info("Creating new pod for custom resource")
 	// Define a new Pod object
-	pod := newPodForCR(r.client, instance)
+	pod := newPodForCR(r.client, instance, secret)
 	//
 	//// Set ActiveGate instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
@@ -142,8 +142,8 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 }
 
 // newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate) *corev1.Pod {
-	dtc, err := builder.BuildDynatraceClient(client, cr)
+func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) *corev1.Pod {
+	dtc, err := builder.BuildDynatraceClient(client, cr, secret)
 	if err != nil {
 		log.Error(err, err.Error())
 	}

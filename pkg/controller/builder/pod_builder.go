@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+var logger = log.Log.WithName("builder.pod_builder")
+
 func BuildActiveGatePodSpecs(
 	acitveGatePodSpec *v1alpha1.ActiveGateSpec,
 	tenantInfo *dtclient.TenantInfo) corev1.PodSpec {
@@ -62,9 +64,6 @@ func buildArgs() []string {
 }
 
 func buildEnvVars(acitveGatePodSpec *v1alpha1.ActiveGateSpec, tenantInfo *dtclient.TenantInfo) []corev1.EnvVar {
-	logger := log.Log.WithName("builder.pod_builder")
-	logger.Info("DT_CAPABILITIES are " + strings.Join(acitveGatePodSpec.Capabilities, COMMA))
-
 	endpoint := ""
 	if len(tenantInfo.Endpoints) > 0 {
 		endpoint = tenantInfo.Endpoints[0]
