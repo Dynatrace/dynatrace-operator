@@ -1,0 +1,46 @@
+apiVersion: dynatrace.com/v1alpha1
+kind: ActiveGate
+metadata:
+  name: activegate
+spec:
+  # dynatrace api url including `/api` path at the end
+  # either set ENVIRONMENTID to the proper tenant id or change the apiUrl as a whole, e.q. for Managed
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+  # name of secret holding `apiToken` and `paasToken`
+  # if unset, name of custom resource is used
+  tokens: ""
+  # node selector to control the selection of nodes (optional)
+  nodeSelector: {}
+  # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/ (optional)
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+      operator: Exists
+
+  # ActiveGate installer image (optional)
+  # certified image from Red Hat Container Catalog for use on OpenShift: registry.connect.redhat.com/dynatrace/activegate
+  # for kubernetes it defaults to docker.io/dynatrace/activegate
+  image: ""
+  dt_tenant: ""
+  dt_server: ""
+  dt_capabilities:
+    - kubernetes_monitoring
+  # resource settings for ActiveGate pods (optional)
+  #resources:
+  #  requests:
+  #    cpu: 100m
+  #    memory: 512Mi
+  #  limits:
+  #    cpu: 300m
+  #    memory: 1.5Gi
+  # priority class to assign to ActiveGate pods (optional)
+  # https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+  #priorityClassName: PRIORITYCLASS
+  # DNS Policy for ActiveGate pods (optional.) Empty for default (ClusterFirst), more at
+  # https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+  #dnsPolicy: ""
+  # Labels are customer defined labels for ActiveGate pods to structure workloads as desired
+  #labels:
+  #  custom: label
+  # Name of the service account for the ActiveGate (optional)
+  #serviceAccountName: "dynatrace-activegate-operator"

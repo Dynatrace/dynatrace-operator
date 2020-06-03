@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynatrace-activegate-operator
+  namespace: dynatrace
+  labels:
+    dynatrace: operator
+    operator: activegate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: dynatrace-activegate-operator
+  template:
+    metadata:
+      labels:
+        name: dynatrace-activegate-operator
+        dynatrace: operator
+        operator: activegate
+    spec:
+      serviceAccountName: dynatrace-activegate-operator
+      containers:
+        - name: dynatrace-activegate-operator
+          # Replace this with the built image name
+          image: quay.io/meik99/dynatrace-activegate-operator:v0.0.1
+          command:
+          - dynatrace-activegate-operator
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "dynatrace-activegate-operator"
