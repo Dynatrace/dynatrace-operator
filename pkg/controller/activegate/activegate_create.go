@@ -10,7 +10,7 @@ import (
 )
 
 func (r *ReconcileActiveGate) createNewPod(pod *corev1.Pod, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (reconcile.Result, error) {
-	log.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
+	log.Info("creating new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
 	err := r.client.Create(context.TODO(), pod)
 	if err != nil {
 		return reconcile.Result{}, err

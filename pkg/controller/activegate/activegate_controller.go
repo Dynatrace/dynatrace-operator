@@ -106,7 +106,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	// Define a new Pod object
-	log.Info("Creating new pod for custom resource")
+	log.Info("creating new pod from custom resource")
 	pod := newPodForCR(r.client, instance, secret)
 
 	// Set ActiveGate instance as the owner and controller
@@ -124,7 +124,6 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	// Set Version
-	log.Info("upadting instance status")
 	r.updateInstanceStatus(found, instance, secret)
 	// Sleep to prevent update loop
 	time.Sleep(5 * time.Minute)

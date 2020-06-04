@@ -23,7 +23,7 @@ type ActiveGate struct {
 
 func (dtc *dynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
 	url := fmt.Sprintf("%s/v2/activeGates?%s", dtc.url, buildQueryParams(query))
-	logger.Info("querying from url", "url", url)
+	logger.Info("querying activegates", "url", url)
 	response, err := dtc.makeRequest(url, dynatraceApiToken)
 	if err != nil {
 		logger.Error(err, err.Error())
