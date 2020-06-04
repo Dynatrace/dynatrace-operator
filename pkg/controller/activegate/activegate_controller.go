@@ -169,7 +169,6 @@ func (r *ReconcileActiveGate) updateInstanceStatus(pod *corev1.Pod, instance *dy
 
 	query := builder.BuildActiveGateQuery(instance, pod)
 	activegates, err := dtc.QueryActiveGates(query)
-
 	if len(activegates) > 0 {
 		log.Info(fmt.Sprintf("found %d activegate(s)", len(activegates)))
 		log.Info("setting activegate version", "version", activegates[0].Version)
@@ -195,7 +194,7 @@ func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate, secret 
 		log.Error(err, err.Error())
 	}
 
-	pod := &corev1.Pod{
+	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name + "-pod",
 			Namespace: cr.Namespace,
@@ -203,6 +202,4 @@ func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate, secret 
 		},
 		Spec: builder.BuildActiveGatePodSpecs(&cr.Spec, tenantInfo),
 	}
-
-	return pod
 }
