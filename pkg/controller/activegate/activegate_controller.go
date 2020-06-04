@@ -126,6 +126,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	// Set Version
 	r.updateInstanceStatus(found, instance, secret)
 	// Sleep to prevent update loop
+	// If update logic is changed or image used is always up to date reevaluate if sleeping here is needed
 	time.Sleep(5 * time.Minute)
 
 	// Check if pods have latest activegate version
