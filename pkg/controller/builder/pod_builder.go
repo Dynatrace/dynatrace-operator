@@ -64,14 +64,6 @@ func buildArgs() []string {
 }
 
 func buildEnvVars(acitveGatePodSpec *v1alpha1.ActiveGateSpec, tenantInfo *dtclient.TenantInfo) []corev1.EnvVar {
-	endpoint := ""
-	if len(tenantInfo.Endpoints) > 0 {
-		endpoint = tenantInfo.Endpoints[0]
-		if !strings.HasSuffix(endpoint, DT_COMMUNICATION_SUFFIX) {
-			endpoint += DT_COMMUNICATION_SUFFIX
-		}
-	}
-
 	return []corev1.EnvVar{
 		{
 			Name:  DT_TENANT,
@@ -83,7 +75,7 @@ func buildEnvVars(acitveGatePodSpec *v1alpha1.ActiveGateSpec, tenantInfo *dtclie
 		},
 		{
 			Name:  DT_SERVER,
-			Value: endpoint,
+			Value: tenantInfo.CommunicationEndpoint,
 		},
 		{
 			Name:  DT_CAPABILITIES,
@@ -154,8 +146,6 @@ const (
 	DT_TOKEN_ARG        = "--token=$(DT_TOKEN)"
 	DT_SERVER_ARG       = "--server=$(DT_SERVER)"
 	DT_CAPABILITIES_ARG = "--enable=$(DT_CAPABILITIES)"
-
-	DT_COMMUNICATION_SUFFIX = "/communication"
 
 	COMMA = ","
 )

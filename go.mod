@@ -3,6 +3,7 @@ module github.com/Dynatrace/dynatrace-activegate-operator
 go 1.13
 
 require (
+	github.com/go-logr/logr v0.1.0
 	github.com/operator-framework/operator-sdk v0.17.1-0.20200527074332-363f7b9d2be9
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.5.1

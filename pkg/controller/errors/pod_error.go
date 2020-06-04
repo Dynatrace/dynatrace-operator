@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"time"
 )
 
 func HandleCreatePodError(client client.Client, pod *corev1.Pod, err error, log logr.Logger) (reconcile.Result, error) {
@@ -18,8 +19,8 @@ func HandleCreatePodError(client client.Client, pod *corev1.Pod, err error, log 
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-
-		// Pod created successfully - requeue after five minutes
+		// Sleep until pod is ready
+		time.Sleep(5 * time.Minute)
 		return builder.ReconcileAfterFiveMinutes(), nil
 	} else if err != nil {
 		return reconcile.Result{}, err

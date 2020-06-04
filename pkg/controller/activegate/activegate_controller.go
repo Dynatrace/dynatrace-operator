@@ -101,14 +101,14 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	// Fetch api token secret
 	secret, err := r.getTokenSecret(instance)
 	if err != nil || secret == nil {
-		return agerrors.HandleSecretError(err, reqLogger)
+		return agerrors.HandleSecretError(secret, err, reqLogger)
 	}
 
 	// Define a new Pod object
 	log.Info("Creating new pod for custom resource")
 	pod := newPodForCR(r.client, instance, secret)
-	//
-	//// Set ActiveGate instance as the owner and controller
+
+	// Set ActiveGate instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -120,8 +120,21 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return agerrors.HandleCreatePodError(r.client, pod, err, reqLogger)
 	}
 
-	// Pod already exists - requeue after five minutes
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+	// Check if pods have latest activegate version
+	outdatedPods, err := r.findOutdatedPods(log, instance)
+	if err != nil {
+		// Too many requests, requeue after five minutes
+		return builder.ReconcileAfterFiveMinutes(), err
+	}
+
+	err = r.deletePods(log, outdatedPods)
+	if err != nil {
+		log.Error(err, err.Error())
+		return reconcile.Result{}, err
+	}
+
+	// Nothing to do - requeue after five minutes
+	reqLogger.Info("Nothing to do: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
 	return builder.ReconcileAfterFiveMinutes(), nil
 }
 

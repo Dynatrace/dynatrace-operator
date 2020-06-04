@@ -17,6 +17,8 @@ type ActiveGateSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="ActiveGate Capabilities"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Capabilities []string `json:"dt_capabilities"`
+
+	NetworkZone string `json:"networkZone,omitempty"`
 }
 
 // ActiveGateStatus defines the observed state of ActiveGate
@@ -52,6 +54,12 @@ type ActiveGateStatus struct {
 }
 
 type ActiveGatePhaseType string
+
+type ActiveGateInstance struct {
+	PodName   string `json:"podName,omitempty"`
+	Version   string `json:"version,omitempty"`
+	IPAddress string `json:"ipAddress,omitempty"`
+}
 
 const (
 	Running   ActiveGatePhaseType = "Running"
