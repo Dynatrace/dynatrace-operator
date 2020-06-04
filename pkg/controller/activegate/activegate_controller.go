@@ -2,24 +2,26 @@ package activegate
 
 import (
 	"context"
+	"fmt"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	agerrors "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/errors"
 	parser "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"time"
 )
 
 var log = logf.Log.WithName("controller_activegate")
@@ -116,9 +118,17 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	// Check if this Pod already exists
 	found := &corev1.Pod{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
-	if err != nil {
-		return agerrors.HandleCreatePodError(r.client, pod, err, reqLogger)
+	if err != nil && errors.IsNotFound(err) {
+		return r.createNewPod(pod, instance, secret)
+	} else if err != nil {
+		return reconcile.Result{}, err
 	}
+
+	// Set Version
+	log.Info("upadting instance status")
+	r.updateInstanceStatus(found, instance, secret)
+	// Sleep to prevent update loop
+	time.Sleep(5 * time.Minute)
 
 	// Check if pods have latest activegate version
 	outdatedPods, err := r.findOutdatedPods(log, instance)
@@ -152,6 +162,36 @@ func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.ActiveG
 	return secret, nil
 }
 
+func (r *ReconcileActiveGate) updateInstanceStatus(pod *corev1.Pod, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) {
+	dtc, err := builder.BuildDynatraceClient(r.client, instance, secret)
+	if err != nil {
+		log.Error(err, err.Error())
+	}
+
+	networkZone := DEFAULT_NETWORK_ZONE
+	if instance.Spec.NetworkZone != "" {
+		networkZone = instance.Spec.NetworkZone
+	}
+
+	activegates, err := dtc.QueryActiveGates(dtclient.ActiveGateQuery{
+		Hostname:       pod.Spec.Hostname,
+		NetworkAddress: pod.Status.HostIP,
+		NetworkZone:    networkZone,
+	})
+
+	if len(activegates) > 0 {
+		log.Info(fmt.Sprintf("found %d activegate(s)", len(activegates)))
+		log.Info("setting activegate version", "version", activegates[0].Version)
+		instance.Status.Version = activegates[0].Version
+		instance.Status.UpdatedTimestamp = metav1.Now()
+		err := r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			log.Error(err, "failed to updated instance status")
+		}
+	}
+
+}
+
 // newPodForCR returns a busybox pod with the same name/namespace as the cr
 func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) *corev1.Pod {
 	dtc, err := builder.BuildDynatraceClient(client, cr, secret)
@@ -164,7 +204,7 @@ func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate, secret 
 		log.Error(err, err.Error())
 	}
 
-	return &corev1.Pod{
+	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name + "-pod",
 			Namespace: cr.Namespace,
@@ -172,4 +212,6 @@ func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate, secret 
 		},
 		Spec: builder.BuildActiveGatePodSpecs(&cr.Spec, tenantInfo),
 	}
+
+	return pod
 }

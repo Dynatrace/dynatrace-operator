@@ -23,12 +23,6 @@ func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dyn
 		return nil, err
 	}
 
-	//latestActiveGateVersion, err := dtClient.GetLatestActiveGateVersion(dtclient.OsUnix)
-	//if err != nil {
-	//	logger.Error(err, "failed to retrieve latest activegate version")
-	//	return nil, err
-	//}
-
 	pods, err := r.findPods(instance)
 	if err != nil {
 		logger.Error(err, "failed to list pods")

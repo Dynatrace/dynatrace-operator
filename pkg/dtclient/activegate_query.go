@@ -9,6 +9,7 @@ type ActiveGateQuery struct {
 	Hostname       string
 	NetworkAddress string
 	NetworkZone    string
+	UpdateStatus   string
 }
 
 type ActiveGate struct {
@@ -17,10 +18,10 @@ type ActiveGate struct {
 	OfflineSince     int64
 	Version          string
 	Hostname         string
-	MetworkZone      string
+	NetworkZone      string
 }
 
-func (dtc *dynatraceClient) QueryOutdatedActiveGates(query ActiveGateQuery) ([]ActiveGate, error) {
+func (dtc *dynatraceClient) QueryActiveGates(query ActiveGateQuery) ([]ActiveGate, error) {
 	url := fmt.Sprintf("%s/v2/activeGates?%s", dtc.url, buildQueryParams(query))
 	logger.Info("querying from url", "url", url)
 	response, err := dtc.makeRequest(url, dynatraceApiToken)
@@ -49,14 +50,17 @@ func (dtc *dynatraceClient) QueryOutdatedActiveGates(query ActiveGateQuery) ([]A
 	}
 
 	for _, activegate := range activegates {
-		logger.Info("found activegate", "activegate", activegate)
 		if activegate.OfflineSince <= 0 {
-			logger.Info("outdated activegate", "activegate", activegate)
 			result = append(result, activegate)
 		}
 	}
 
 	return result, nil
+}
+
+func (dtc *dynatraceClient) QueryOutdatedActiveGates(query ActiveGateQuery) ([]ActiveGate, error) {
+	query.UpdateStatus = STATUS_OUTDATED
+	return dtc.QueryActiveGates(query)
 }
 
 func buildQueryParams(query ActiveGateQuery) string {
@@ -70,10 +74,12 @@ func buildQueryParams(query ActiveGateQuery) string {
 	if query.NetworkAddress != "" {
 		params += "networkAddress=" + query.NetworkAddress + "&"
 	}
+	if query.UpdateStatus != "" {
+		params += "updateStatus=" + query.UpdateStatus + "&"
+	}
 
 	params += "osType=" + OsLinux + "&" +
-		"type=ENVIRONMENT&" +
-		"updateStatus=OUTDATED"
+		"type=ENVIRONMENT"
 
 	logger.Info("built parameters to query activegates", "params", params)
 	return params
@@ -94,5 +100,6 @@ func (dtc *dynatraceClient) readResponseForActiveGates(data []byte) ([]ActiveGat
 }
 
 const (
-	OsLinux = "LINUX"
+	OsLinux         = "LINUX"
+	STATUS_OUTDATED = "OUTDATED"
 )

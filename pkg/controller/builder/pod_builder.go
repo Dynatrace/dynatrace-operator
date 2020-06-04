@@ -4,11 +4,8 @@ import (
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"strings"
 )
-
-var logger = log.Log.WithName("builder.pod_builder")
 
 func BuildActiveGatePodSpecs(
 	acitveGatePodSpec *v1alpha1.ActiveGateSpec,

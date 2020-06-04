@@ -59,6 +59,8 @@ type Client interface {
 	GetTenantInfo() (*TenantInfo, error)
 
 	QueryOutdatedActiveGates(query ActiveGateQuery) ([]ActiveGate, error)
+
+	QueryActiveGates(query ActiveGateQuery) ([]ActiveGate, error)
 }
 
 // Known OS values.
