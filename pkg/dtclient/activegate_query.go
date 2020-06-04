@@ -21,7 +21,7 @@ type ActiveGate struct {
 	NetworkZone      string
 }
 
-func (dtc *dynatraceClient) QueryActiveGates(query ActiveGateQuery) ([]ActiveGate, error) {
+func (dtc *dynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
 	url := fmt.Sprintf("%s/v2/activeGates?%s", dtc.url, buildQueryParams(query))
 	logger.Info("querying from url", "url", url)
 	response, err := dtc.makeRequest(url, dynatraceApiToken)
@@ -58,12 +58,12 @@ func (dtc *dynatraceClient) QueryActiveGates(query ActiveGateQuery) ([]ActiveGat
 	return result, nil
 }
 
-func (dtc *dynatraceClient) QueryOutdatedActiveGates(query ActiveGateQuery) ([]ActiveGate, error) {
+func (dtc *dynatraceClient) QueryOutdatedActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
 	query.UpdateStatus = STATUS_OUTDATED
 	return dtc.QueryActiveGates(query)
 }
 
-func buildQueryParams(query ActiveGateQuery) string {
+func buildQueryParams(query *ActiveGateQuery) string {
 	params := ""
 	if query.Hostname != "" {
 		params += "hostname=" + query.Hostname + "&"

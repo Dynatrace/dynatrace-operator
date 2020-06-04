@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	agerrors "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/errors"
 	parser "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -168,16 +167,8 @@ func (r *ReconcileActiveGate) updateInstanceStatus(pod *corev1.Pod, instance *dy
 		log.Error(err, err.Error())
 	}
 
-	networkZone := DEFAULT_NETWORK_ZONE
-	if instance.Spec.NetworkZone != "" {
-		networkZone = instance.Spec.NetworkZone
-	}
-
-	activegates, err := dtc.QueryActiveGates(dtclient.ActiveGateQuery{
-		Hostname:       pod.Spec.Hostname,
-		NetworkAddress: pod.Status.HostIP,
-		NetworkZone:    networkZone,
-	})
+	query := builder.BuildActiveGateQuery(instance, pod)
+	activegates, err := dtc.QueryActiveGates(query)
 
 	if len(activegates) > 0 {
 		log.Info(fmt.Sprintf("found %d activegate(s)", len(activegates)))

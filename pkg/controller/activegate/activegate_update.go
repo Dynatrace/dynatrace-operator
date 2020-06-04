@@ -4,7 +4,6 @@ import (
 	"context"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,22 +29,14 @@ func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dyn
 	}
 
 	var outdatedPods []v1.Pod
-
 	for _, pod := range pods {
-		networkZone := DEFAULT_NETWORK_ZONE
-		if instance.Spec.NetworkZone != "" {
-			networkZone = instance.Spec.NetworkZone
-		}
-
-		activegates, err := dtClient.QueryOutdatedActiveGates(dtclient.ActiveGateQuery{
-			Hostname:       pod.Spec.Hostname,
-			NetworkAddress: pod.Status.HostIP,
-			NetworkZone:    networkZone,
-		})
+		query := builder.BuildActiveGateQuery(instance, &pod)
+		activegates, err := dtClient.QueryOutdatedActiveGates(query)
 		if err != nil {
 			logger.Error(err, "failed to query activegates")
 			return nil, err
 		}
+
 		if len(activegates) > 0 {
 			outdatedPods = append(outdatedPods, pod)
 		}
@@ -66,7 +57,3 @@ func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.ActiveGate) (
 	}
 	return podList.Items, nil
 }
-
-const (
-	DEFAULT_NETWORK_ZONE = "default"
-)

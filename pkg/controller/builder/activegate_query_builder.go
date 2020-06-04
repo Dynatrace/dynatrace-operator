@@ -1,0 +1,24 @@
+package builder
+
+import (
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
+	corev1 "k8s.io/api/core/v1"
+)
+
+func BuildActiveGateQuery(instance *dynatracev1alpha1.ActiveGate, pod *corev1.Pod) *dtclient.ActiveGateQuery {
+	networkZone := DEFAULT_NETWORK_ZONE
+	if instance.Spec.NetworkZone != "" {
+		networkZone = instance.Spec.NetworkZone
+	}
+
+	return &dtclient.ActiveGateQuery{
+		Hostname:       pod.Spec.Hostname,
+		NetworkAddress: pod.Status.HostIP,
+		NetworkZone:    networkZone,
+	}
+}
+
+const (
+	DEFAULT_NETWORK_ZONE = "default"
+)
