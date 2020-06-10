@@ -80,11 +80,11 @@ func (tenantInfo *TenantInfo) findCommunicationEndpoint() string {
 	}
 
 	endpoint := tenantInfo.Endpoints[endpointIndex]
-	if !strings.HasSuffix(endpoint, DT_COMMUNICATION_SUFFIX) {
-		if !strings.HasSuffix(endpoint, SLASH) {
-			endpoint += SLASH
+	if !strings.HasSuffix(endpoint, DtCommunicationSuffix) {
+		if !strings.HasSuffix(endpoint, Slash) {
+			endpoint += Slash
 		}
-		endpoint += DT_COMMUNICATION_SUFFIX
+		endpoint += DtCommunicationSuffix
 	}
 
 	return endpoint
@@ -103,6 +103,6 @@ func (tenantInfo *TenantInfo) findCommunicationEndpointIndex() int {
 }
 
 const (
-	SLASH                   = "/"
-	DT_COMMUNICATION_SUFFIX = "communication"
+	Slash                 = "/"
+	DtCommunicationSuffix = "communication"
 )

@@ -19,6 +19,12 @@ type ActiveGateSpec struct {
 	Capabilities []string `json:"dt_capabilities"`
 
 	NetworkZone string `json:"networkZone,omitempty"`
+
+	// Disable automatic restarts of Activegate pods in case a new version is available
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Disable Activegate update"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	DisableActivegateUpdate bool `json:"disableActivegateUpdate,omitempty"`
 }
 
 // ActiveGateStatus defines the observed state of ActiveGate

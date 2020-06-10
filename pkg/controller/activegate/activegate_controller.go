@@ -106,7 +106,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	// Define a new Pod object
-	log.Info("creating new pod from custom resource")
+	log.Info("creating new pod definition from custom resource")
 	pod := newPodForCR(r.client, instance, secret)
 
 	// Set ActiveGate instance as the owner and controller
@@ -123,25 +123,15 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	// Set Version
-	r.updateInstanceStatus(found, instance, secret)
-	// Sleep to prevent update loop
-	// If update logic is changed or image used is always up to date reevaluate if sleeping here is needed
-	time.Sleep(5 * time.Minute)
-
-	// Check if pods have latest activegate version
-	outdatedPods, err := r.findOutdatedPods(log, instance)
+	reconcileResult, err := r.updatePods(found, instance, secret)
 	if err != nil {
-		// Too many requests, requeue after five minutes
-		return builder.ReconcileAfterFiveMinutes(), err
+		log.Error(err, "could not update pods")
+	}
+	if reconcileResult != nil {
+		return *reconcileResult, err
 	}
 
-	err = r.deletePods(log, outdatedPods)
-	if err != nil {
-		log.Error(err, err.Error())
-		return reconcile.Result{}, err
-	}
-
+	//Set version and last updated timestamp
 	// Nothing to do - requeue after five minutes
 	reqLogger.Info("Nothing to do: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
 	return builder.ReconcileAfterFiveMinutes(), nil
@@ -203,3 +193,9 @@ func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate, secret 
 		Spec: builder.BuildActiveGatePodSpecs(&cr.Spec, tenantInfo),
 	}
 }
+
+const (
+	TimeUntilActive = 10 * time.Second
+	//UpdateInterval  = 5 * time.Minute
+	UpdateInterval = 1 * time.Second
+)

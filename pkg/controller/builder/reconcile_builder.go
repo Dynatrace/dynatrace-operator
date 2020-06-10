@@ -10,5 +10,9 @@ func ReconcileAfter(duration time.Duration) reconcile.Result {
 }
 
 func ReconcileAfterFiveMinutes() reconcile.Result {
-	return ReconcileAfter(5 * time.Minute)
+	return ReconcileAfter(FiveMinutes)
 }
+
+const (
+	FiveMinutes = 5 * time.Minute
+)

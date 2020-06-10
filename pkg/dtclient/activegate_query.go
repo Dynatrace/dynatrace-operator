@@ -59,7 +59,7 @@ func (dtc *dynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGa
 }
 
 func (dtc *dynatraceClient) QueryOutdatedActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
-	query.UpdateStatus = STATUS_OUTDATED
+	query.UpdateStatus = StatusOutdated
 	return dtc.QueryActiveGates(query)
 }
 
@@ -100,6 +100,6 @@ func (dtc *dynatraceClient) readResponseForActiveGates(data []byte) ([]ActiveGat
 }
 
 const (
-	OsLinux         = "LINUX"
-	STATUS_OUTDATED = "OUTDATED"
+	OsLinux        = "LINUX"
+	StatusOutdated = "OUTDATED"
 )

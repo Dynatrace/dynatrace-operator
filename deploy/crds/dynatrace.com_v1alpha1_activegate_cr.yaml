@@ -12,10 +12,10 @@ spec:
   # node selector to control the selection of nodes (optional)
   #  nodeSelector: {}
   # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/ (optional)
-  #  tolerations:
-  #    - effect: NoSchedule
-  #      key: node-role.kubernetes.io/master
-  #      operator: Exists
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+      operator: Exists
 
   # ActiveGate installer image (optional)
   # certified image from Red Hat Container Catalog for use on OpenShift: registry.connect.redhat.com/dynatrace/activegate

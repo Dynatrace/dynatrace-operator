@@ -16,7 +16,7 @@ func (r *ReconcileActiveGate) createNewPod(pod *corev1.Pod, instance *dynatracev
 		return reconcile.Result{}, err
 	}
 	// Sleep until pod is ready
-	time.Sleep(30 * time.Second)
+	time.Sleep(TimeUntilActive)
 
 	return builder.ReconcileAfterFiveMinutes(), nil
 }

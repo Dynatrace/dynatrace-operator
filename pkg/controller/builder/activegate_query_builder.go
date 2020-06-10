@@ -7,7 +7,7 @@ import (
 )
 
 func BuildActiveGateQuery(instance *dynatracev1alpha1.ActiveGate, pod *corev1.Pod) *dtclient.ActiveGateQuery {
-	networkZone := DEFAULT_NETWORK_ZONE
+	networkZone := DefaultNetworkZone
 	if instance.Spec.NetworkZone != "" {
 		networkZone = instance.Spec.NetworkZone
 	}
@@ -20,5 +20,5 @@ func BuildActiveGateQuery(instance *dynatracev1alpha1.ActiveGate, pod *corev1.Po
 }
 
 const (
-	DEFAULT_NETWORK_ZONE = "default"
+	DefaultNetworkZone = "default"
 )
