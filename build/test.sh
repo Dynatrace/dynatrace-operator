@@ -11,7 +11,7 @@ if [ ! -d "/usr/local/kubebuilder/bin" ]; then
 fi
 
 ########## Run tests ##########
-go test -cover -v ./..
+go test -cover -v ./...
 
 ########## Run integration tests ##########
-go test -cover -tags integration -v ./..
+go test -cover -tags integration -v ./...
