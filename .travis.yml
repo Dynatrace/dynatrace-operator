@@ -94,6 +94,7 @@ jobs:
       stage: deploy
       name: Deploy snapshot master AMD to DockerHub
       arch: amd64
+      install: skip
       if: (branch = master) AND (tag IS blank)
       env: IMAGE=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
       workspaces:
@@ -128,6 +129,7 @@ jobs:
 
       ######################### ARM #########################
     - &deploy_arm
+      install: skip
       script: ./build/deploy.sh
       stage: deploy
       name: Deploy snapshot master ARM to DockerHub
