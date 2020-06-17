@@ -166,7 +166,7 @@ func (r *ReconcileActiveGate) updateInstanceStatus(pod *corev1.Pod, instance *dy
 		instance.Status.UpdatedTimestamp = metav1.Now()
 		err := r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
-			log.Error(err, "failed to updated instance status")
+			log.Info("failed to updated instance status", "message", err.Error())
 		}
 	}
 
@@ -196,6 +196,5 @@ func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate, secret 
 
 const (
 	TimeUntilActive = 10 * time.Second
-	//UpdateInterval  = 5 * time.Minute
-	UpdateInterval = 1 * time.Second
+	UpdateInterval  = 5 * time.Minute
 )

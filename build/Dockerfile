@@ -1,12 +1,21 @@
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
-ENV OPERATOR=/usr/local/bin/dynatrace-activegate-operator \
+LABEL name="Dynatrace ActiveGate Operator" \
+      vendor="Dynatrace LLC" \
+      maintainer="Dynatrace LLC" \
+      version="1.x" \
+      release="1" \
+      url="https://www.dynatrace.com" \
+      summary="Dynatrace is an all-in-one, zero-config monitoring platform designed by and for cloud natives. It is powered by artificial intelligence that identifies performance problems and pinpoints their root causes in seconds." \
+      description="ActiveGate works as a proxy between Dynatrace OneAgent and Dynatrace Cluster"
+
+ENV OPERATOR=dynatrace-activegate-operator \
     USER_UID=1001 \
     USER_NAME=dynatrace-activegate-operator
 
-# install operator binary
-COPY build/_output/bin/dynatrace-activegate-operator ${OPERATOR}
-
+RUN  microdnf install unzip && microdnf clean all
+COPY LICENSE /licenses/
+COPY build/_output/bin /usr/local/bin
 COPY build/bin /usr/local/bin
 RUN  /usr/local/bin/user_setup
 
