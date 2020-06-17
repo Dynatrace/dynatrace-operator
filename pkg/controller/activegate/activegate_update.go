@@ -89,13 +89,21 @@ func isImageLatest(logger logr.Logger, instance *dynatracev1alpha1.ActiveGate, s
 		return false, fmt.Errorf("docker config must not be nil")
 	}
 
-	server := strings.Split(status.Image, "/")[0]
+	server := ""
+	if strings.Contains(status.Image, "/") {
+		server = strings.Split(status.Image, "/")[0]
+	}
+
 	digest := strings.Split(status.ImageID, "@")[1]
 	authServerName := fmt.Sprintf("https://%s", server)
 	authServer, hasAuthServer := dockerConfig.Auths[authServerName]
 
 	if !hasAuthServer {
-		return false, fmt.Errorf("could not find credentials for auth server in docker config")
+		log.Info("could not find credentials for auth server in docker config")
+		authServer = struct {
+			Username string
+			Password string
+		}{Username: "", Password: ""}
 	}
 
 	image := instance.Spec.Image

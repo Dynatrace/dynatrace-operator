@@ -39,7 +39,14 @@ func getManifest(request *http.Request) (*Manifest, error) {
 		_ = response.Body.Close()
 	}()
 
-	return parseManifest(response)
+	switch response.StatusCode {
+	case 200:
+		return parseManifest(response)
+	case 201:
+		return parseManifest(response)
+	default:
+		return nil, fmt.Errorf("unexpected response: code: %d, status: %s", response.StatusCode, response.Status)
+	}
 }
 
 func parseManifest(response *http.Response) (*Manifest, error) {
@@ -57,11 +64,10 @@ func parseManifest(response *http.Response) (*Manifest, error) {
 }
 
 func (registry *Registry) buildUrl(digest string) string {
-	return fmt.Sprintf(UrlTemplate, registry.Server, registry.Image, digest)
+	image := registry.Image
+	if registry.Server == "" {
+		registry.Server = DockerApi
+		image = "library/" + image
+	}
+	return fmt.Sprintf(UrlTemplate, registry.Server, image, digest)
 }
-
-const (
-	Get         = "GET"
-	Latest      = "latest"
-	UrlTemplate = "https://%s/v2/%s/manifests/%s"
-)

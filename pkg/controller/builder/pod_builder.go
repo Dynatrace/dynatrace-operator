@@ -13,10 +13,10 @@ func BuildActiveGatePodSpecs(
 	serviceaccount := ActivegateName
 	image := ActivegateImage
 
-	if len(acitveGatePodSpec.ServiceAccountName) > 0 {
+	if acitveGatePodSpec.ServiceAccountName != "" {
 		serviceaccount = acitveGatePodSpec.ServiceAccountName
 	}
-	if len(acitveGatePodSpec.Image) > 0 {
+	if acitveGatePodSpec.Image != "" {
 		image = acitveGatePodSpec.Image
 	}
 	if tenantInfo == nil {
