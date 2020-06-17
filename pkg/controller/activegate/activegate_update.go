@@ -33,6 +33,8 @@ func (r *ReconcileActiveGate) updatePods(pod *corev1.Pod, instance *dynatracev1a
 			return &reconcile.Result{}, err
 		}
 		r.updateInstanceStatus(pod, instance, secret)
+	} else if instance.Spec.DisableActivegateUpdate {
+		log.Info("Skipping updating pods because of configuration", "disableActivegateUpdate", true)
 	}
 	return nil, nil
 }
@@ -119,6 +121,8 @@ func isImageLatest(logger logr.Logger, instance *dynatracev1alpha1.ActiveGate, s
 		logger.Info("could not fetch image manifest for digest", "digest", digest, "error", err)
 		return false, err
 	}
+
+	logger.Info("Retrieved digests", "latest", latestManifest.Config.Digest, digest, currentManifest.Config.Digest)
 	return latestManifest.Config.Digest == currentManifest.Config.Digest, nil
 }
 
