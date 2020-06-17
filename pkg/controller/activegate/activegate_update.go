@@ -2,9 +2,10 @@ package activegate
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/docker"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -37,18 +38,6 @@ func (r *ReconcileActiveGate) updatePods(pod *corev1.Pod, instance *dynatracev1a
 }
 
 func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error) {
-	//secret, err := r.getTokenSecret(instance)
-	//if err != nil {
-	//	logger.Error(err, "failed to retrieve token secret")
-	//	return nil, err
-	//}
-
-	//dtClient, err := builder.BuildDynatraceClient(r.client, instance, secret)
-	//if err != nil {
-	//	logger.Error(err, err.Error())
-	//	return nil, err
-	//}
-
 	pods, err := r.findPods(instance)
 	if err != nil {
 		logger.Error(err, "failed to list pods")
@@ -66,35 +55,18 @@ func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dyn
 				logger.Error(err, err.Error())
 			}
 
-			config, hasConfig := imagePullSecret.Data[".dockerconfigjson"]
-			if !hasConfig {
-				logger.Info("could not find any docker config in image pull secret")
-			}
-
-			type dockerConfig struct {
-				Auths map[string]struct {
-					Username string
-					Password string
-				}
-			}
-
-			var dockerConf dockerConfig
-			err = json.Unmarshal(config, &dockerConf)
+			dockerConf, err := parser.NewDockerConfig(imagePullSecret)
 			if err != nil {
-				logger.Error(err, err.Error())
+				logger.Info("could not parse docker config from image pull secret", "error", err.Error())
 			}
 
-			//
-			//logger.Error(err, err.Error())
-			//logger.Info("image pull secret", "secret", imagePullSecret, "server", server, "digest", digest)
-
-			server := strings.Split(status.Image, "/")[0]
-			isLatest, err := isImageLatest(logger, instance, status, dockerConf.Auths["https://"+server].Username, dockerConf.Auths["https://"+server].Password)
+			isLatest, err := isImageLatest(logger, instance, status, dockerConf)
 			if err != nil {
 				logger.Error(err, err.Error())
 				//Error during image check, do nothing an continue with next status
 				continue
 			}
+
 			logger.Info("checked image version", "latest", isLatest)
 
 			if !isLatest {
@@ -110,15 +82,30 @@ func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dyn
 	return outdatedPods, nil
 }
 
-func isImageLatest(logger logr.Logger, instance *dynatracev1alpha1.ActiveGate, status corev1.ContainerStatus, username string, password string) (bool, error) {
+func isImageLatest(logger logr.Logger, instance *dynatracev1alpha1.ActiveGate, status corev1.ContainerStatus, dockerConfig *parser.DockerConfig) (bool, error) {
+	if dockerConfig == nil {
+		return false, fmt.Errorf("docker config must not be nil")
+	}
+
 	server := strings.Split(status.Image, "/")[0]
 	digest := strings.Split(status.ImageID, "@")[1]
+	authServerName := fmt.Sprintf("https://%s", server)
+	authServer, hasAuthServer := dockerConfig.Auths[authServerName]
+
+	if !hasAuthServer {
+		return false, fmt.Errorf("could not find credentials for auth server in docker config")
+	}
+
+	image := instance.Spec.Image
+	if strings.TrimSpace(image) == "" {
+		image = Image
+	}
 
 	registry := docker.Registry{
 		Server:   server,
-		Image:    instance.Spec.Image,
-		Username: username,
-		Password: password,
+		Image:    image,
+		Username: authServer.Username,
+		Password: authServer.Password,
 	}
 
 	latestManifest, err := registry.GetLatestManifest()
@@ -147,3 +134,7 @@ func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.ActiveGate) (
 	}
 	return podList.Items, nil
 }
+
+const (
+	Image = "activegate"
+)
