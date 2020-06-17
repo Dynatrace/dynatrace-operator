@@ -196,6 +196,5 @@ func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate, secret 
 
 const (
 	TimeUntilActive = 10 * time.Second
-	//UpdateInterval  = 5 * time.Minute
-	UpdateInterval = 1 * time.Second
+	UpdateInterval  = 5 * time.Minute
 )

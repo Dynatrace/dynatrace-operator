@@ -1,0 +1,190 @@
+language: go
+go:
+    1.14.x
+os: linux
+dist: xenial
+
+notifications:
+  email:
+    on_success: never
+
+cache:
+  directories:
+    - /usr/local/kubebuilder/bin
+    - $HOME/.cache/go-build
+    - $HOME/gopath/pkg/mod
+
+
+stages:
+  - preparation
+  - build
+
+env:
+  global:
+    - TAG=$TRAVIS_TAG
+    - VERSION_TAG=/^v.*/
+    - DOCKER_CLI_EXPERIMENTAL=enabled
+
+jobs:
+  include:
+    - stage: preparation
+      name: Tests
+      script: ./build/test.sh
+      cache:
+        directories:
+          - /usr/local/kubebuilder/bin
+
+    - stage: preparation
+      name: Verify OLM manifest
+      language: python
+      python: "3.7"
+      script:
+        - pip3 install operator-courier==2.1.7
+        - operator-courier verify ./deploy/olm/kubernetes
+        - operator-courier verify ./deploy/olm/openshift
+
+    - stage: preparation
+      name: Set configs
+      install: skip
+      language: shell
+      git:
+        clone: false
+      script:
+        - mkdir -p ~/.docker && chmod 0700 ~/.docker
+        - touch ~/.docker/config.json && chmod 0600 ~/.docker/config.json
+        - base64 -d >~/.docker/config.json <<<"$OAO_DOCKER_AUTH"
+      workspaces:
+        create:
+          name: dockerconfig
+          paths:
+            - $HOME/.docker
+
+    ######################### BUILD #########################
+
+    - &build
+      script: ./build/build.sh
+      cache:
+        directories:
+          - $HOME/.cache/go-build
+          - $HOME/gopath/pkg/mod
+      stage: build
+      name: Build for AMD
+      arch: amd64
+      workspaces:
+        create:
+          name: ws_amd
+          paths:
+            - LICENSE
+            - build
+
+    - <<: *build
+      stage: build
+      name: Build for ARM
+      arch: arm64
+      workspaces:
+        create:
+          name: ws_arm
+          paths:
+            - LICENSE
+            - build
+    ######################### AMD #########################
+
+    - &deploy_amd
+      script: ./build/deploy.sh
+      stage: deploy
+      name: Deploy snapshot master AMD to DockerHub
+      arch: amd64
+      if: (branch = master) AND (tag IS blank)
+      env: IMAGE=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
+      workspaces:
+        use:
+          - ws_amd
+          - dockerconfig
+
+    - <<: *deploy_amd
+      name: Deploy snapshot non-master branch AMD to Quay
+      if: (branch != master) AND (tag IS blank)
+      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
+
+    - <<: *deploy_amd
+      name: Deploy release AMD to DockerHub
+      if: tag =~ /^v.*/
+      env: IMAGE=$OAO_IMAGE_DOCKER_HUB
+
+    - <<: *deploy_amd
+      name: Deploy release AMD to RHCC
+      if: tag =~ /^v.*/
+      env: IMAGE=$OAO_IMAGE_RHCC_SCAN
+
+    - <<: *deploy_amd
+      name: Deploy release AMD to GCP dev
+      if: tag =~ /^v.*/
+      env: GCR=true GCP_PROJECT=dynatrace-marketplace-dev GCLOUD_SERVICE_KEY=$GCLOUD_SERVICE_KEY_DEV GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT_DEV IMAGE=$OAO_IMAGE_GCR_DEV
+
+    - <<: *deploy_amd
+      name: Deploy release AMD to GCP prod
+      if: tag =~ /^v.*/
+      env: GCR=true GCP_PROJECT=dynatrace-marketplace-prod GCLOUD_SERVICE_KEY=$GCLOUD_SERVICE_KEY_PROD GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT_PROD IMAGE=$OAO_IMAGE_GCR_PROD
+
+      ######################### ARM #########################
+    - &deploy_arm
+      script: ./build/deploy.sh
+      stage: deploy
+      name: Deploy snapshot master ARM to DockerHub
+      arch: arm64
+      if: (branch = master) AND (tag IS blank)
+      env: IMAGE=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
+      workspaces:
+        use:
+          - ws_arm
+          - dockerconfig
+
+    - <<: *deploy_arm
+      name: Deploy snapshot non-master branch ARM to Quay
+      if: (branch != master) AND (tag IS blank)
+      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
+
+    - <<: *deploy_arm
+      name: Deploy release ARM to DockerHub
+      if: tag =~ /^v.*/
+      env: IMAGE=$OAO_IMAGE_DOCKER_HUB
+
+      ######################### Create Docker manifest #########################
+
+    - &create_manifest
+      stage: manifest
+      install: skip
+      language: generic
+      name: Create manifest for snapshot master for DockerHub
+      if: (branch = master) AND (tag IS blank)
+      env: IMAGE=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
+      git:
+        clone: false
+      script:
+        - docker manifest create $IMAGE:$TAG $IMAGE:$TAG-arm64 $IMAGE:$TAG-amd64
+        - docker manifest push $IMAGE:$TAG
+      workspaces:
+        use: dockerconfig
+
+    - <<: *create_manifest
+      stage: manifest
+      name: Create manifest for release for DockerHub
+      if: tag =~ /^v.*/
+      env: IMAGE=$OAO_IMAGE_DOCKER_HUB
+
+      ######################### Publish release artefacts #########################
+
+    - stage: release
+      name: publish_release
+      if: tag =~ /^v.*/
+      install: skip
+      before_deploy: ./build/release.sh
+      deploy:
+        provider: releases
+        file_glob: true
+        api_key:
+          secure: $GITHUB_RELEASE_API_KEY
+        file: "./artefacts/*"
+        skip_cleanup: 'true'
+        on:
+          tags: true
