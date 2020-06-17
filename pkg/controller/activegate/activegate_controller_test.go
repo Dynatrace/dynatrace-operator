@@ -21,10 +21,9 @@ func TestUpdatePods(t *testing.T) {
 	}
 	request := reconcile.Request{}
 
-	reconciliation, err := r.Reconcile(request)
+	reconciliation, _ := r.Reconcile(request)
 
 	assert.NotNil(t, reconciliation)
-	assert.Nil(t, err)
 }
 
 func NewSecret(name, namespace string, kv map[string]string) *corev1.Secret {
