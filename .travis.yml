@@ -34,14 +34,14 @@ jobs:
         directories:
           - /usr/local/kubebuilder/bin
 
-    - stage: preparation
-      name: Verify OLM manifest
-      language: python
-      python: "3.7"
-      script:
-        - pip3 install operator-courier==2.1.7
-        - operator-courier verify ./deploy/olm/kubernetes
-        - operator-courier verify ./deploy/olm/openshift
+#    - stage: preparation
+#      name: Verify OLM manifest
+#      language: python
+#      python: "3.7"
+#      script:
+#        - pip3 install operator-courier==2.1.7
+#        - operator-courier verify ./deploy/olm/kubernetes
+#        - operator-courier verify ./deploy/olm/openshift
 
     - stage: preparation
       name: Set configs
@@ -171,7 +171,14 @@ jobs:
       name: Create manifest for release for DockerHub
       if: tag =~ /^v.*/
       env: IMAGE=$OAO_IMAGE_DOCKER_HUB
-
+      ######################### Prepare CSV #########################
+#
+#    - stage: release
+#      name: Prepare CSV file
+#      if: tag =~ /^v.*/
+#      install: skip
+#      script: ./build/prepare_csv.sh
+#
       ######################### Publish release artefacts #########################
 
     - stage: release
