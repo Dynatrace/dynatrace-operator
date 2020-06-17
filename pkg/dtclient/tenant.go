@@ -3,18 +3,18 @@ package dtclient
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 type TenantInfo struct {
-	ID        string
-	Token     string
-	Endpoints []string
+	ID                    string
+	Token                 string
+	Endpoints             []string
+	CommunicationEndpoint string
 }
 
 func (dc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
 	url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
-
-	logger.Info("Sending request to " + url)
 	response, err := dc.makeRequest(
 		url,
 		dynatracePaaSToken,
@@ -44,7 +44,11 @@ func (dc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
 		logger.Error(err, err.Error())
 		return nil, err
 	}
+	if len(tenantInfo.Endpoints) <= 0 {
+		logger.Info("tenant has no endpoints")
+	}
 
+	tenantInfo.CommunicationEndpoint = tenantInfo.findCommunicationEndpoint()
 	return tenantInfo, nil
 }
 
@@ -68,3 +72,37 @@ func (dc *dynatraceClient) readResponseForTenantInfo(response []byte) (*TenantIn
 		Endpoints: jr.CommunicationEndpoints,
 	}, nil
 }
+
+func (tenantInfo *TenantInfo) findCommunicationEndpoint() string {
+	endpointIndex := tenantInfo.findCommunicationEndpointIndex()
+	if endpointIndex < 0 {
+		return ""
+	}
+
+	endpoint := tenantInfo.Endpoints[endpointIndex]
+	if !strings.HasSuffix(endpoint, DtCommunicationSuffix) {
+		if !strings.HasSuffix(endpoint, Slash) {
+			endpoint += Slash
+		}
+		endpoint += DtCommunicationSuffix
+	}
+
+	return endpoint
+}
+
+func (tenantInfo *TenantInfo) findCommunicationEndpointIndex() int {
+	if len(tenantInfo.Endpoints) <= 0 {
+		return -1
+	}
+	for i, endpoint := range tenantInfo.Endpoints {
+		if strings.Contains(endpoint, tenantInfo.ID) {
+			return i
+		}
+	}
+	return 0
+}
+
+const (
+	Slash                 = "/"
+	DtCommunicationSuffix = "communication"
+)

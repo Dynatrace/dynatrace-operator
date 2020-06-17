@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
 	corev1 "k8s.io/api/core/v1"
 	"strings"
 )
@@ -21,12 +22,12 @@ func NewTokens(secret *corev1.Secret) (*Tokens, error) {
 		return nil, err
 	}
 
-	apiToken, err = ExtractToken(secret, DynatraceApiToken)
+	apiToken, err = ExtractToken(secret, _const.DynatraceApiToken)
 	if err != nil {
 		return nil, err
 	}
 
-	paasToken, err = ExtractToken(secret, DynatracePaasToken)
+	paasToken, err = ExtractToken(secret, _const.DynatracePaasToken)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +39,7 @@ func NewTokens(secret *corev1.Secret) (*Tokens, error) {
 }
 
 func verifySecret(secret *corev1.Secret) error {
-	for _, token := range []string{DynatracePaasToken, DynatraceApiToken} {
+	for _, token := range []string{_const.DynatracePaasToken, _const.DynatraceApiToken} {
 		_, err := ExtractToken(secret, token)
 		if err != nil {
 			return fmt.Errorf("invalid secret %s, %s", secret.Name, err)
@@ -64,8 +65,3 @@ func GetTokensName(obj *dynatracev1alpha1.ActiveGate) string {
 	}
 	return obj.GetName()
 }
-
-const (
-	DynatracePaasToken = "paasToken"
-	DynatraceApiToken  = "apiToken"
-)

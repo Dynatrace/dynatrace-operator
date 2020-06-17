@@ -71,7 +71,7 @@ func (opts *options) appendProxySettings(rtc client.Client, spec *dynatracev1alp
 				return fmt.Errorf("failed to get proxy secret: %w", err)
 			}
 
-			proxyURL, err := parser.ExtractToken(proxySecret, PROXY)
+			proxyURL, err := parser.ExtractToken(proxySecret, Proxy)
 			if err != nil {
 				return fmt.Errorf("failed to extract proxy secret field: %w", err)
 			}
@@ -98,5 +98,5 @@ func (opts *options) appendTrustedCerts(rtc client.Client, spec *dynatracev1alph
 }
 
 const (
-	PROXY = "proxy"
+	Proxy = "proxy"
 )

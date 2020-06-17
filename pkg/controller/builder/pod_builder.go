@@ -4,17 +4,14 @@ import (
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"strings"
 )
-
-var logger = log.Log.WithName("builder.pod_builder")
 
 func BuildActiveGatePodSpecs(
 	acitveGatePodSpec *v1alpha1.ActiveGateSpec,
 	tenantInfo *dtclient.TenantInfo) corev1.PodSpec {
-	serviceaccount := ACTIVEGATE_NAME
-	image := ACTIVEGATE_IMAGE
+	serviceaccount := ActivegateName
+	image := ActivegateImage
 
 	if len(acitveGatePodSpec.ServiceAccountName) > 0 {
 		serviceaccount = acitveGatePodSpec.ServiceAccountName
@@ -32,7 +29,7 @@ func BuildActiveGatePodSpecs(
 
 	return corev1.PodSpec{
 		Containers: []corev1.Container{{
-			Name:            ACTIVEGATE_NAME,
+			Name:            ActivegateName,
 			Image:           image,
 			Resources:       acitveGatePodSpec.Resources,
 			ImagePullPolicy: corev1.PullAlways,
@@ -46,7 +43,7 @@ func BuildActiveGatePodSpecs(
 		HostPID:            true,
 		HostIPC:            true,
 		ImagePullSecrets: []corev1.LocalObjectReference{
-			{Name: IMAGE_PULL_SECRET},
+			{Name: ImagePullSecret},
 		},
 		Affinity:          buildAffinity(),
 		Tolerations:       acitveGatePodSpec.Tolerations,
@@ -56,38 +53,30 @@ func BuildActiveGatePodSpecs(
 
 func buildArgs() []string {
 	return []string{
-		DT_TENANT_ARG,
-		DT_TOKEN_ARG,
-		DT_SERVER_ARG,
-		DT_CAPABILITIES_ARG,
+		DtTenantArg,
+		DtTokenArg,
+		DtServerArg,
+		DtCapabilitiesArg,
 	}
 }
 
 func buildEnvVars(acitveGatePodSpec *v1alpha1.ActiveGateSpec, tenantInfo *dtclient.TenantInfo) []corev1.EnvVar {
-	endpoint := ""
-	if len(tenantInfo.Endpoints) > 0 {
-		endpoint = tenantInfo.Endpoints[0]
-		if !strings.HasSuffix(endpoint, DT_COMMUNICATION_SUFFIX) {
-			endpoint += DT_COMMUNICATION_SUFFIX
-		}
-	}
-
 	return []corev1.EnvVar{
 		{
-			Name:  DT_TENANT,
+			Name:  DtTenant,
 			Value: tenantInfo.ID,
 		},
 		{
-			Name:  DT_TOKEN,
+			Name:  DtToken,
 			Value: tenantInfo.Token,
 		},
 		{
-			Name:  DT_SERVER,
-			Value: endpoint,
+			Name:  DtServer,
+			Value: tenantInfo.CommunicationEndpoint,
 		},
 		{
-			Name:  DT_CAPABILITIES,
-			Value: strings.Join(acitveGatePodSpec.Capabilities, COMMA),
+			Name:  DtCapabilities,
+			Value: strings.Join(acitveGatePodSpec.Capabilities, Comma),
 		},
 	}
 }
@@ -100,12 +89,12 @@ func buildAffinity() *corev1.Affinity {
 					{
 						MatchExpressions: []corev1.NodeSelectorRequirement{
 							{
-								Key:      KUBERNETES_BETA_ARCH,
+								Key:      KubernetesBetaArch,
 								Operator: corev1.NodeSelectorOpIn,
 								Values:   []string{AMD64, ARM64},
 							},
 							{
-								Key:      KUBERNETES_BETA_OS,
+								Key:      KubernetesBetaOs,
 								Operator: corev1.NodeSelectorOpIn,
 								Values:   []string{LINUX},
 							},
@@ -114,12 +103,12 @@ func buildAffinity() *corev1.Affinity {
 					{
 						MatchExpressions: []corev1.NodeSelectorRequirement{
 							{
-								Key:      KUBERNETES_ARCH,
+								Key:      KubernetesArch,
 								Operator: corev1.NodeSelectorOpIn,
 								Values:   []string{AMD64, ARM64},
 							},
 							{
-								Key:      KUBERNETES_OS,
+								Key:      KubernetesOs,
 								Operator: corev1.NodeSelectorOpIn,
 								Values:   []string{LINUX},
 							},
@@ -132,30 +121,28 @@ func buildAffinity() *corev1.Affinity {
 }
 
 const (
-	ACTIVEGATE_IMAGE  = "612044533526.dkr.ecr.us-east-1.amazonaws.com/activegate:latest"
-	ACTIVEGATE_NAME   = "dynatrace-activegate-operator"
-	IMAGE_PULL_SECRET = "aws-registry"
+	ActivegateImage = "612044533526.dkr.ecr.us-east-1.amazonaws.com/activegate:latest"
+	ActivegateName  = "dynatrace-activegate-operator"
+	ImagePullSecret = "aws-registry"
 
-	KUBERNETES_ARCH      = "kubernetes.io/arch"
-	KUBERNETES_OS        = "kubernetes.io/os"
-	KUBERNETES_BETA_ARCH = "beta.kubernetes.io/arch"
-	KUBERNETES_BETA_OS   = "beta.kubernetes.io/os"
+	KubernetesArch     = "kubernetes.io/arch"
+	KubernetesOs       = "kubernetes.io/os"
+	KubernetesBetaArch = "beta.kubernetes.io/arch"
+	KubernetesBetaOs   = "beta.kubernetes.io/os"
 
 	AMD64 = "amd64"
 	ARM64 = "arm64"
 	LINUX = "linux"
 
-	DT_TENANT       = "DT_TENANT"
-	DT_SERVER       = "DT_SERVER"
-	DT_TOKEN        = "DT_TOKEN"
-	DT_CAPABILITIES = "DT_CAPABILITIES"
+	DtTenant       = "DT_TENANT"
+	DtServer       = "DT_SERVER"
+	DtToken        = "DT_TOKEN"
+	DtCapabilities = "DT_CAPABILITIES"
 
-	DT_TENANT_ARG       = "--tenant=$(DT_TENANT)"
-	DT_TOKEN_ARG        = "--token=$(DT_TOKEN)"
-	DT_SERVER_ARG       = "--server=$(DT_SERVER)"
-	DT_CAPABILITIES_ARG = "--enable=$(DT_CAPABILITIES)"
+	DtTenantArg       = "--tenant=$(DT_TENANT)"
+	DtTokenArg        = "--token=$(DT_TOKEN)"
+	DtServerArg       = "--server=$(DT_SERVER)"
+	DtCapabilitiesArg = "--enable=$(DT_CAPABILITIES)"
 
-	DT_COMMUNICATION_SUFFIX = "/communication"
-
-	COMMA = ","
+	Comma = ","
 )
