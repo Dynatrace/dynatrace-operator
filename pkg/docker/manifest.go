@@ -66,7 +66,7 @@ func parseManifest(response *http.Response) (*Manifest, error) {
 func (registry *Registry) buildUrl(digest string) string {
 	image := registry.Image
 	if registry.Server == "" {
-		registry.Server = DockerApi
+		registry.Server = DockerHubApiServer
 		image = "library/" + image
 	}
 	return fmt.Sprintf(UrlTemplate, registry.Server, image, digest)
