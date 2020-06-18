@@ -31,7 +31,29 @@ func (registry *Registry) getDockerHubToken() ([]byte, error) {
 
 func (registry *Registry) getGcrToken() ([]byte, error) {
 	request, err := http.NewRequest(
-		Get, fmt.Sprintf(GcrApiTokenUrl, registry.Image), nil)
+		Get, fmt.Sprintf(GcrTokenUrl, registry.Image), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	request.SetBasicAuth(registry.Username, registry.Password)
+	return requestToken(request)
+}
+
+func (registry *Registry) getRhccToken() ([]byte, error) {
+	request, err := http.NewRequest(
+		Get, RhccTokenUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	request.SetBasicAuth(registry.Username, registry.Password)
+	return requestToken(request)
+}
+
+func (registry *Registry) getQuayToken() ([]byte, error) {
+	request, err := http.NewRequest(
+		Get, QuayTokenUrl, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -50,6 +72,10 @@ func requestToken(request *http.Request) ([]byte, error) {
 		//Ignore error because there is nothing one could do here
 		_ = response.Body.Close()
 	}()
+
+	if response.StatusCode != 200 {
+		return nil, fmt.Errorf("invalid credentials")
+	}
 
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {

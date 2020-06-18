@@ -89,13 +89,15 @@ func isImageLatest(logger logr.Logger, instance *dynatracev1alpha1.ActiveGate, s
 		return false, fmt.Errorf("docker config must not be nil")
 	}
 
-	server := ""
-	if strings.Contains(status.Image, "/") {
-		server = strings.Split(status.Image, "/")[0]
-	}
+	//image := instance.Spec.Image
+	//if strings.TrimSpace(image) == "" {
+	//	image = Image
+	//}
+
+	registry := docker.RegistryFromImage(status.Image)
 
 	digest := strings.Split(status.ImageID, "@")[1]
-	authServerName := fmt.Sprintf("https://%s", server)
+	authServerName := fmt.Sprintf("https://%s", registry.Server)
 	authServer, hasAuthServer := dockerConfig.Auths[authServerName]
 
 	if !hasAuthServer {
@@ -106,17 +108,8 @@ func isImageLatest(logger logr.Logger, instance *dynatracev1alpha1.ActiveGate, s
 		}{Username: "", Password: ""}
 	}
 
-	image := instance.Spec.Image
-	if strings.TrimSpace(image) == "" {
-		image = Image
-	}
-
-	registry := docker.Registry{
-		Server:   server,
-		Image:    image,
-		Username: authServer.Username,
-		Password: authServer.Password,
-	}
+	registry.Username = authServer.Username
+	registry.Password = authServer.Password
 
 	latestManifest, err := registry.GetLatestManifest()
 	if err != nil {
