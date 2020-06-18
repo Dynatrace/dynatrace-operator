@@ -42,9 +42,9 @@ func BuildActiveGatePodSpecs(
 		HostNetwork:        true,
 		HostPID:            true,
 		HostIPC:            true,
-		ImagePullSecrets: []corev1.LocalObjectReference{
-			{Name: ImagePullSecret},
-		},
+		//ImagePullSecrets: []corev1.LocalObjectReference{
+		//	{Name: ImagePullSecret},
+		//},
 		Affinity:          buildAffinity(),
 		Tolerations:       acitveGatePodSpec.Tolerations,
 		PriorityClassName: acitveGatePodSpec.PriorityClassName,

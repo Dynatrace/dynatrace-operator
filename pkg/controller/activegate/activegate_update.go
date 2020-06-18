@@ -49,10 +49,14 @@ func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dyn
 	var outdatedPods []corev1.Pod
 	for _, pod := range pods {
 		for _, status := range pod.Status.ContainerStatuses {
+			if status.ImageID == "" {
+				// If image is not pulled skip check
+				continue
+			}
 			logger.Info("pods container status", "pod", pod.Name, "container", status.Name, "image id", status.ImageID)
 
 			imagePullSecret := &corev1.Secret{}
-			err := r.client.Get(context.TODO(), client.ObjectKey{Namespace: pod.Namespace, Name: "aws-registry"}, imagePullSecret)
+			err := r.client.Get(context.TODO(), client.ObjectKey{Namespace: pod.Namespace, Name: ImagePullSecret}, imagePullSecret)
 			if err != nil {
 				logger.Error(err, err.Error())
 			}
@@ -89,11 +93,6 @@ func isImageLatest(logger logr.Logger, instance *dynatracev1alpha1.ActiveGate, s
 		return false, fmt.Errorf("docker config must not be nil")
 	}
 
-	//image := instance.Spec.Image
-	//if strings.TrimSpace(image) == "" {
-	//	image = Image
-	//}
-
 	registry := docker.RegistryFromImage(status.Image)
 
 	digest := strings.Split(status.ImageID, "@")[1]
@@ -101,11 +100,16 @@ func isImageLatest(logger logr.Logger, instance *dynatracev1alpha1.ActiveGate, s
 	authServer, hasAuthServer := dockerConfig.Auths[authServerName]
 
 	if !hasAuthServer {
-		log.Info("could not find credentials for auth server in docker config")
-		authServer = struct {
-			Username string
-			Password string
-		}{Username: "", Password: ""}
+		// Extra handling for DockerHub, because DockerHub is extra
+		authServer, hasAuthServer = dockerConfig.Auths[DockerIo]
+		if !hasAuthServer {
+			// There really is no auth-server configured
+			log.Info("could not find credentials for auth server in docker config")
+			authServer = struct {
+				Username string
+				Password string
+			}{Username: "", Password: ""}
+		}
 	}
 
 	registry.Username = authServer.Username
@@ -142,4 +146,6 @@ func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.ActiveGate) (
 
 const (
 	Image = "activegate"
+	ImagePullSecret = "dynatrace-activegate-registry"
+	DockerIo = "https://docker.io"
 )

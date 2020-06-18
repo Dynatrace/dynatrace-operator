@@ -20,7 +20,7 @@ spec:
   # ActiveGate installer image (optional)
   # certified image from Red Hat Container Catalog for use on OpenShift: registry.connect.redhat.com/dynatrace/activegate
   # for kubernetes it defaults to docker.io/dynatrace/activegate
-  #  image: ""
+  image: quay.io/meik99/demo-repo-2:0.0.1
   dt_capabilities:
     - kubernetes_monitoring
   # resource settings for ActiveGate pods (optional)

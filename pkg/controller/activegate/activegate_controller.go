@@ -166,7 +166,7 @@ func (r *ReconcileActiveGate) updateInstanceStatus(pod *corev1.Pod, instance *dy
 		instance.Status.UpdatedTimestamp = metav1.Now()
 		err := r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
-			log.Error(err, "failed to updated instance status")
+			// log.Error(err, "failed to updated instance status")
 		}
 	}
 

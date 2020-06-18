@@ -1,7 +1,6 @@
 package docker
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -10,22 +9,17 @@ import (
 )
 
 func (registry *Registry) getDockerHubToken() ([]byte, error) {
-	credentials, err := registry.buildJsonCredentials()
-	if err != nil {
-		return nil, err
-	}
-
 	image := registry.Image
 	if !strings.Contains(image, "/") {
 		image = "library/" + image
 	}
 
 	request, err := http.NewRequest(
-		Get, fmt.Sprintf(DockerHubTokenUrl, image), bytes.NewReader(credentials))
+		Get, fmt.Sprintf(DockerHubTokenUrl, image), nil)
 	if err != nil {
 		return nil, err
 	}
-
+	request.SetBasicAuth(registry.Username, registry.Password)
 	return requestToken(request)
 }
 
