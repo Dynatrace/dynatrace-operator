@@ -12,12 +12,9 @@ func TestDockerHub(t *testing.T) {
 	username := os.Getenv(DockerUsername)
 	password := os.Getenv(DockerPassword)
 
-	registry := Registry{
-		Server:   "",
-		Image:    "alpine",
-		Username: username,
-		Password: password,
-	}
+	registry := RegistryFromImage("alpine")
+	registry.Username = username
+	registry.Password = password
 
 	manifest, err := registry.GetLatestManifest()
 	assert.NotNil(t, manifest)
