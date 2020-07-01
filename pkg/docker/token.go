@@ -8,46 +8,21 @@ import (
 	"strings"
 )
 
-func (registry *Registry) getDockerHubToken() ([]byte, error) {
+func (registry *Registry) getToken(url string) ([]byte, error) {
 	image := registry.Image
-	if !strings.Contains(image, "/") {
-		image = "library/" + image
+	if url == DockerHubTokenUrl {
+		if !strings.Contains(image, "/") {
+			image = "library/" + image
+		}
+	}
+	url = fmt.Sprintf(url, image)
+	if strings.Contains(url, FormatError) {
+		//Remove format error if url does not need image name
+		url = url[:strings.LastIndex(url, FormatError)]
 	}
 
 	request, err := http.NewRequest(
-		Get, fmt.Sprintf(DockerHubTokenUrl, image), nil)
-	if err != nil {
-		return nil, err
-	}
-	request.SetBasicAuth(registry.Username, registry.Password)
-	return requestToken(request)
-}
-
-func (registry *Registry) getGcrToken() ([]byte, error) {
-	request, err := http.NewRequest(
-		Get, fmt.Sprintf(GcrTokenUrl, registry.Image), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	request.SetBasicAuth(registry.Username, registry.Password)
-	return requestToken(request)
-}
-
-func (registry *Registry) getRhccToken() ([]byte, error) {
-	request, err := http.NewRequest(
-		Get, RhccTokenUrl, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	request.SetBasicAuth(registry.Username, registry.Password)
-	return requestToken(request)
-}
-
-func (registry *Registry) getQuayToken() ([]byte, error) {
-	request, err := http.NewRequest(
-		Get, QuayTokenUrl, nil)
+		Get, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -103,3 +78,7 @@ func (registry *Registry) buildJsonCredentials() ([]byte, error) {
 
 	return data, nil
 }
+
+const (
+	FormatError = "%!(EXTRA"
+)

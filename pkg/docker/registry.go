@@ -18,7 +18,7 @@ func RegistryFromImage(image string) *Registry {
 
 	image = trimTag(image)
 
-	for _, supportedRegistry := range GetSupportedRegistries() {
+	for _, supportedRegistry := range getSupportedRegistries() {
 		if strings.Contains(image, supportedRegistry) {
 			registry.Server = strings.Split(image, "/")[0]
 			registry.Image = strings.TrimPrefix(image, registry.Server+"/")
@@ -50,52 +50,35 @@ func (registry *Registry) prepareRequest(url string) (*http.Request, error) {
 		return nil, err
 	}
 
-	if strings.Contains(registry.Server, DockerHubApiServer) {
-		token, err := registry.getDockerHubToken()
-		if err != nil {
-			return nil, err
+	tokenSet := false
+	for apiUrl, tokenUrl := range tokenMap {
+		if strings.Contains(registry.Server, apiUrl) {
+			token, err := registry.getToken(tokenUrl)
+			if err != nil {
+				return nil, err
+			}
+			request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+			tokenSet = true
 		}
+	}
 
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	} else if strings.Contains(registry.Server, GcrApiServer) {
-		token, err := registry.getGcrToken()
-		if err != nil {
-			return nil, err
-		}
-
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	} else if strings.Contains(registry.Server, RhccApiServer) {
-		token, err := registry.getRhccToken()
-		if err != nil {
-			return nil, err
-		}
-
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	} else if strings.Contains(registry.Server, QuayApiServer) {
-		token, err := registry.getQuayToken()
-		if err != nil {
-			return nil, err
-		}
-
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	} else if strings.Contains(registry.Server, AmazonAws) {
+	if strings.Contains(registry.Server, AmazonAws) {
 		request.SetBasicAuth(registry.Username, registry.Password)
-	} else {
+	} else if !tokenSet {
 		return nil, fmt.Errorf("unsupported registry")
 	}
 
 	return request, nil
 }
 
-//GetSupportedRegistries
+//getSupportedRegistries
 //Returns supported registries. Omits DockerHub, because registry defaults to it
-func GetSupportedRegistries() []string {
+func getSupportedRegistries() []string {
 	return []string{GcrApiServer, RhccApiServer, QuayApiServer, AmazonAws}
 }
 
 const (
-	Get  = "GET"
-	Post = "POST"
+	Get = "GET"
 
 	Latest      = "latest"
 	UrlTemplate = "https://%s/v2/%s/manifests/%s"
@@ -114,3 +97,10 @@ const (
 
 	AmazonAws = "amazonaws.com"
 )
+
+var tokenMap = map[string]string{
+	DockerHubApiServer: DockerHubTokenUrl,
+	GcrApiServer:       GcrTokenUrl,
+	RhccApiServer:      RhccTokenUrl,
+	QuayApiServer:      QuayTokenUrl,
+}

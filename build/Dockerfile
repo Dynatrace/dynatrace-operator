@@ -6,8 +6,8 @@ LABEL name="Dynatrace ActiveGate Operator" \
       version="1.x" \
       release="1" \
       url="https://www.dynatrace.com"
-      # summary="Dynatrace is an all-in-one, zero-config monitoring platform designed by and for cloud natives. It is powered by artificial intelligence that identifies performance problems and pinpoints their root causes in seconds." \
-      # description="Dynatrace OneAgent automatically discovers all technologies, services and applications that run on your host."
+      summary="Dynatrace is an all-in-one, zero-config monitoring platform designed by and for cloud natives. It is powered by artificial intelligence that identifies performance problems and pinpoints their root causes in seconds." \
+      description="ActiveGate works as a proxy between Dynatrace OneAgent and Dynatrace Cluster"
 
 ENV OPERATOR=dynatrace-activegate-operator \
     USER_UID=1001 \

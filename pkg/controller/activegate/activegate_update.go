@@ -50,7 +50,7 @@ func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dyn
 	for _, pod := range pods {
 		for _, status := range pod.Status.ContainerStatuses {
 			if status.ImageID == "" {
-				// If image is not pulled skip check
+				// If image is not yet pulled skip check
 				continue
 			}
 			logger.Info("pods container status", "pod", pod.Name, "container", status.Name, "image id", status.ImageID)
@@ -80,8 +80,6 @@ func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dyn
 				// Pod is outdated, break loop
 				break
 			}
-
-			// If digests are the same, everything is fine
 		}
 	}
 
@@ -145,7 +143,7 @@ func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.ActiveGate) (
 }
 
 const (
-	Image = "activegate"
+	Image           = "activegate"
 	ImagePullSecret = "dynatrace-activegate-registry"
-	DockerIo = "https://docker.io"
+	DockerIo        = "https://docker.io"
 )
