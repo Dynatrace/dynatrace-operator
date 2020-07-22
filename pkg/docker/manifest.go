@@ -31,20 +31,47 @@ func (registry *Registry) GetManifest(digest string) (*ManifestV2, error) {
 	if err != nil {
 		return nil, err
 	}
-	return getManifest(request, digest)
+	return registry.getManifest(request, digest)
 }
 
 func (registry *Registry) GetLatestManifest() (*ManifestV2, error) {
 	return registry.GetManifest(Latest)
 }
 
-func getManifest(request *http.Request, digest string) (*ManifestV2, error) {
-	request.Header.Add("Accept", ContentTypeManifestV2)
+func (registry *Registry) getManifest(request *http.Request, digest string) (*ManifestV2, error) {
+	if registry.Server == DockerHubApiServer ||
+		registry.Server == GcrApiServer ||
+		registry.Server == QuayApiServer {
+		request.Header.Add("Accept", ContentTypeManifestListV2)
+	} else {
+		request.Header.Add("Accept", ContentTypeManifestV2)
+	}
+
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
 		return nil, err
 	}
+
+	if response.StatusCode == 404 {
+		// If no v2 manifest list exists, try OCI v1 for DockerHub or V2 for anything else
+		request, err = registry.prepareRequest(registry.buildUrl(digest))
+		if err != nil {
+			return nil, err
+		}
+
+		if registry.Server == DockerHubApiServer {
+			request.Header.Add("Accept", ContentTypeManifestOCIV1)
+		} else {
+			request.Header.Add("Accept", ContentTypeManifestV2)
+		}
+
+		response, err = client.Do(request)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	defer func() {
 		//Ignore error because there is nothing one could do here
 		_ = response.Body.Close()
@@ -52,9 +79,9 @@ func getManifest(request *http.Request, digest string) (*ManifestV2, error) {
 
 	switch response.StatusCode {
 	case 200:
-		return parseManifest(response, digest)
+		return registry.parseManifest(response, digest)
 	case 201:
-		return parseManifest(response, digest)
+		return registry.parseManifest(response, digest)
 	case 404:
 		return nil, fmt.Errorf("could not find image: code: %d, status: %s", response.StatusCode, response.Status)
 	case 401:
@@ -64,7 +91,14 @@ func getManifest(request *http.Request, digest string) (*ManifestV2, error) {
 	}
 }
 
-func parseManifest(response *http.Response, digest string) (*ManifestV2, error) {
+func (registry *Registry) parseManifest(response *http.Response, digest string) (*ManifestV2, error) {
+	// GCR and DockerHub send the image digests in the header
+	if registry.Server == GcrApiServer || registry.Server == DockerHubApiServer {
+		value := response.Header.Get(DockerContentDigest)
+		return &ManifestV2{Config: Config{Digest: value}}, nil
+	}
+
+	// Quay sends manifest digest in header, which appears to differs for each tag
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
@@ -79,6 +113,21 @@ func parseManifest(response *http.Response, digest string) (*ManifestV2, error) 
 		return handleV1Manifest(body)
 	} else if contentType == ContentTypeManifestV2 {
 		return handleV2Manifest(body)
+	} else if contentType == ContentTypeManifestOCIV1 {
+		type schemaVersion struct {
+			SchemaVersion int32
+		}
+		var schema schemaVersion
+		err := json.Unmarshal(body, &schema)
+		if err != nil {
+			return nil, err
+		}
+
+		if schema.SchemaVersion == 1 {
+			return handleV1Manifest(body)
+		} else if schema.SchemaVersion == 2 {
+			return handleV2Manifest(body)
+		}
 	}
 
 	return nil, fmt.Errorf("encountered unknown content-type while parsing manifest: " + contentType)
@@ -131,15 +180,18 @@ func (registry *Registry) buildUrl(digest string) string {
 	image := registry.Image
 	if registry.Server == DockerHubApiServer && !strings.Contains(image, "/") {
 		//Special handling for DockerHub
-		return fmt.Sprintf(UrlTemplate, registry.Server, "library/" + image, digest)
+		return fmt.Sprintf(UrlTemplate, registry.Server, "library/"+image, digest)
 	}
 	return fmt.Sprintf(UrlTemplate, registry.Server, image, digest)
 }
 
 const (
-	ContentType = "content-type"
-	ContentTypeManifestV1 = "application/vnd.docker.distribution.manifest.v1+json"
+	ContentType                 = "content-type"
+	ContentTypeManifestV1       = "application/vnd.docker.distribution.manifest.v1+json"
+	ContentTypeManifestOCIV1    = "application/vnd.oci.image.manifest.v1+json"
 	ContentTypeManifestV1Pretty = "application/vnd.docker.distribution.manifest.v1+prettyjws"
-	ContentTypeManifestV2 = "application/vnd.docker.distribution.manifest.v2+json"
-	ContentTypeManifestListV2 = "application/vnd.docker.distribution.manifest.list.v2+json"
+	ContentTypeManifestV2       = "application/vnd.docker.distribution.manifest.v2+json"
+	ContentTypeManifestListV2   = "application/vnd.docker.distribution.manifest.list.v2+json"
+
+	DockerContentDigest = "Docker-Content-Digest"
 )
