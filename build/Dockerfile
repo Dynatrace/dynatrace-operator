@@ -5,7 +5,7 @@ LABEL name="Dynatrace ActiveGate Operator" \
       maintainer="Dynatrace LLC" \
       version="1.x" \
       release="1" \
-      url="https://www.dynatrace.com"
+      url="https://www.dynatrace.com" \
       summary="Dynatrace is an all-in-one, zero-config monitoring platform designed by and for cloud natives. It is powered by artificial intelligence that identifies performance problems and pinpoints their root causes in seconds." \
       description="ActiveGate works as a proxy between Dynatrace OneAgent and Dynatrace Cluster"
 

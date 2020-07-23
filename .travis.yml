@@ -105,8 +105,8 @@ jobs:
     - <<: *deploy_amd
       name: Deploy snapshot non-master branch AMD to Quay
       if: (branch != master) AND (tag IS blank)
-#      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
-      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-internal" LABEL="quay.expires-after=10d"
+      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
+#      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-internal" LABEL="quay.expires-after=10d"
 
 #    - <<: *deploy_amd
 #      name: Deploy release AMD to DockerHub
