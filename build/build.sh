@@ -9,4 +9,3 @@ else
 fi
 
 go build -ldflags="-X 'github.com/Dynatrace/dynatrace-activegate-operator/version.Version=${version}'" -o ./build/_output/bin/dynatrace-activegate-operator ./cmd/manager
-ls -lah ./build/_output

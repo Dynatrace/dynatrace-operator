@@ -105,27 +105,28 @@ jobs:
     - <<: *deploy_amd
       name: Deploy snapshot non-master branch AMD to Quay
       if: (branch != master) AND (tag IS blank)
-      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
+#      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
+      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-internal" LABEL="quay.expires-after=10d"
 
-    - <<: *deploy_amd
-      name: Deploy release AMD to DockerHub
-      if: tag =~ /^v.*/
-      env: IMAGE=$OAO_IMAGE_DOCKER_HUB
-
-    - <<: *deploy_amd
-      name: Deploy release AMD to RHCC
-      if: tag =~ /^v.*/
-      env: IMAGE=$OAO_IMAGE_RHCC_SCAN
-
-    - <<: *deploy_amd
-      name: Deploy release AMD to GCP dev
-      if: tag =~ /^v.*/
-      env: GCR=true GCP_PROJECT=dynatrace-marketplace-dev GCLOUD_SERVICE_KEY=$GCLOUD_SERVICE_KEY_DEV GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT_DEV IMAGE=$OAO_IMAGE_GCR_DEV
-
-    - <<: *deploy_amd
-      name: Deploy release AMD to GCP prod
-      if: tag =~ /^v.*/
-      env: GCR=true GCP_PROJECT=dynatrace-marketplace-prod GCLOUD_SERVICE_KEY=$GCLOUD_SERVICE_KEY_PROD GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT_PROD IMAGE=$OAO_IMAGE_GCR_PROD
+#    - <<: *deploy_amd
+#      name: Deploy release AMD to DockerHub
+#      if: tag =~ /^v.*/
+#      env: IMAGE=$OAO_IMAGE_DOCKER_HUB
+#
+#    - <<: *deploy_amd
+#      name: Deploy release AMD to RHCC
+#      if: tag =~ /^v.*/
+#      env: IMAGE=$OAO_IMAGE_RHCC_SCAN
+#
+#    - <<: *deploy_amd
+#      name: Deploy release AMD to GCP dev
+#      if: tag =~ /^v.*/
+#      env: GCR=true GCP_PROJECT=dynatrace-marketplace-dev GCLOUD_SERVICE_KEY=$GCLOUD_SERVICE_KEY_DEV GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT_DEV IMAGE=$OAO_IMAGE_GCR_DEV
+#
+#    - <<: *deploy_amd
+#      name: Deploy release AMD to GCP prod
+#      if: tag =~ /^v.*/
+#      env: GCR=true GCP_PROJECT=dynatrace-marketplace-prod GCLOUD_SERVICE_KEY=$GCLOUD_SERVICE_KEY_PROD GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT_PROD IMAGE=$OAO_IMAGE_GCR_PROD
 
       ######################### ARM #########################
     - &deploy_arm
@@ -146,10 +147,10 @@ jobs:
       if: (branch != master) AND (tag IS blank)
       env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
 
-    - <<: *deploy_arm
-      name: Deploy release ARM to DockerHub
-      if: tag =~ /^v.*/
-      env: IMAGE=$OAO_IMAGE_DOCKER_HUB
+#    - <<: *deploy_arm
+#      name: Deploy release ARM to DockerHub
+#      if: tag =~ /^v.*/
+#      env: IMAGE=$OAO_IMAGE_DOCKER_HUB
 
       ######################### Create Docker manifest #########################
 
