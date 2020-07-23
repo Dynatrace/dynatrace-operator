@@ -98,7 +98,7 @@ func isImageLatest(logger logr.Logger, instance *dynatracev1alpha1.ActiveGate, s
 	authServer, hasAuthServer := dockerConfig.Auths[authServerName]
 
 	if !hasAuthServer {
-		// Extra handling for DockerHub, because DockerHub is extra
+		// DockerHubs auth-server has a different domain, so try with that first
 		authServer, hasAuthServer = dockerConfig.Auths[DockerIo]
 		if !hasAuthServer {
 			// There really is no auth-server configured
@@ -143,7 +143,6 @@ func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.ActiveGate) (
 }
 
 const (
-	Image           = "activegate"
 	ImagePullSecret = "dynatrace-activegate-registry"
 	DockerIo        = "https://docker.io"
 )
