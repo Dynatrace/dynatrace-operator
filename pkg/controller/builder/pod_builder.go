@@ -13,10 +13,10 @@ func BuildActiveGatePodSpecs(
 	serviceaccount := ActivegateName
 	image := ActivegateImage
 
-	if len(acitveGatePodSpec.ServiceAccountName) > 0 {
+	if acitveGatePodSpec.ServiceAccountName != "" {
 		serviceaccount = acitveGatePodSpec.ServiceAccountName
 	}
-	if len(acitveGatePodSpec.Image) > 0 {
+	if acitveGatePodSpec.Image != "" {
 		image = acitveGatePodSpec.Image
 	}
 	if tenantInfo == nil {
@@ -42,12 +42,9 @@ func BuildActiveGatePodSpecs(
 		HostNetwork:        true,
 		HostPID:            true,
 		HostIPC:            true,
-		ImagePullSecrets: []corev1.LocalObjectReference{
-			{Name: ImagePullSecret},
-		},
-		Affinity:          buildAffinity(),
-		Tolerations:       acitveGatePodSpec.Tolerations,
-		PriorityClassName: acitveGatePodSpec.PriorityClassName,
+		Affinity:           buildAffinity(),
+		Tolerations:        acitveGatePodSpec.Tolerations,
+		PriorityClassName:  acitveGatePodSpec.PriorityClassName,
 	}
 }
 
@@ -123,7 +120,6 @@ func buildAffinity() *corev1.Affinity {
 const (
 	ActivegateImage = "612044533526.dkr.ecr.us-east-1.amazonaws.com/activegate:latest"
 	ActivegateName  = "dynatrace-activegate-operator"
-	ImagePullSecret = "aws-registry"
 
 	KubernetesArch     = "kubernetes.io/arch"
 	KubernetesOs       = "kubernetes.io/os"
