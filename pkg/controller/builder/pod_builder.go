@@ -117,6 +117,22 @@ func buildAffinity() *corev1.Affinity {
 	}
 }
 
+func BuildLabels(name string, labels map[string]string) map[string]string {
+	result := BuildLabelsForQuery(name)
+	for key, value := range labels {
+		result[key] = value
+	}
+	return result
+}
+
+// buildLabels returns generic labels based on the name given for a Dynatrace OneAgent
+func BuildLabelsForQuery(name string) map[string]string {
+	return map[string]string{
+		"dynatrace":  "activegate",
+		"activegate": name,
+	}
+}
+
 const (
 	ActivegateImage = "612044533526.dkr.ecr.us-east-1.amazonaws.com/activegate:latest"
 	ActivegateName  = "dynatrace-activegate-operator"

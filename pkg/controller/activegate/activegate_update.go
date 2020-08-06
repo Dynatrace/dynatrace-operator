@@ -2,13 +2,15 @@ package activegate
 
 import (
 	"context"
-	"fmt"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/docker"
 	"github.com/go-logr/logr"
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	corev1 "k8s.io/api/core/v1"
+	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"strings"
@@ -49,7 +51,7 @@ func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dyn
 	var outdatedPods []corev1.Pod
 	for _, pod := range pods {
 		for _, status := range pod.Status.ContainerStatuses {
-			if status.ImageID == "" {
+			if status.Image == "" {
 				// If image is not yet pulled skip check
 				continue
 			}
@@ -61,19 +63,12 @@ func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dyn
 				logger.Error(err, err.Error())
 			}
 
-			dockerConf, err := parser.NewDockerConfig(imagePullSecret)
-			if err != nil {
-				logger.Info("could not parse docker config from image pull secret", "error", err.Error())
-			}
-
-			isLatest, err := isImageLatest(logger, instance, status, dockerConf)
+			isLatest, err := isImageLatest(logger, &status, imagePullSecret)
 			if err != nil {
 				logger.Error(err, err.Error())
 				//Error during image check, do nothing an continue with next status
 				continue
 			}
-
-			logger.Info("checked image version", "latest", isLatest)
 
 			if !isLatest {
 				outdatedPods = append(outdatedPods, pod)
@@ -86,54 +81,74 @@ func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dyn
 	return outdatedPods, nil
 }
 
-func isImageLatest(logger logr.Logger, instance *dynatracev1alpha1.ActiveGate, status corev1.ContainerStatus, dockerConfig *parser.DockerConfig) (bool, error) {
-	if dockerConfig == nil {
-		return false, fmt.Errorf("docker config must not be nil")
-	}
-
-	registry := docker.RegistryFromImage(status.Image)
-
-	digest := strings.Split(status.ImageID, "@")[1]
-	authServerName := fmt.Sprintf("https://%s", registry.Server)
-	authServer, hasAuthServer := dockerConfig.Auths[authServerName]
-
-	if !hasAuthServer {
-		// DockerHubs auth-server has a different domain, so try with that first
-		authServer, hasAuthServer = dockerConfig.Auths[DockerIo]
-		if !hasAuthServer {
-			// There really is no auth-server configured
-			log.Info("could not find credentials for auth server in docker config")
-			authServer = struct {
-				Username string
-				Password string
-			}{Username: "", Password: ""}
-		}
-	}
-
-	registry.Username = authServer.Username
-	registry.Password = authServer.Password
-
-	latestManifest, err := registry.GetLatestManifest()
+func isImageLatest(logger logr.Logger, status *corev1.ContainerStatus, imagePullSecret *corev1.Secret) (bool, error) {
+	regex := regexp.MustCompile("(^docker-pullable:\\/\\/|\\:.*$|\\@sha256.*$)")
+	latestImageName := regex.ReplaceAllString(status.Image, "") + ":latest"
+	//Using ImageID instead of Image because ImageID contains digest of image that is used while Image only contains tag
+	reference, err := name.ParseReference(strings.TrimPrefix(status.ImageID, "docker-pullable://"))
 	if err != nil {
-		logger.Info("could not fetch latest image manifest", "error", err)
 		return false, err
 	}
 
-	currentManifest, err := registry.GetManifest(digest)
+	latestReference, err := name.ParseReference(latestImageName)
 	if err != nil {
-		logger.Info("could not fetch image manifest for digest", "digest", digest, "error", err)
 		return false, err
 	}
 
-	logger.Info("Retrieved digests", "latest", latestManifest.Config.Digest, digest, currentManifest.Config.Digest)
-	return latestManifest.Config.Digest == currentManifest.Config.Digest, nil
+	registryURL := "https://" + reference.Context().RegistryStr()
+	authOption, err := getAuthOption(imagePullSecret, registryURL)
+	if err != nil {
+		logger.Info(err.Error())
+	}
+
+	latestDigest, err := getDigest(latestReference, authOption)
+	if err != nil {
+		return false, err
+	}
+
+	currentDigest, err := getDigest(reference, authOption)
+	if err != nil {
+		return false, err
+	}
+
+	logger.Info("Checked image against :latest",
+		"latest digest", latestDigest,
+		"currentDigest", currentDigest,
+		"is latest", currentDigest == latestDigest)
+	return currentDigest == latestDigest, nil
+}
+
+func getDigest(reference name.Reference, authOption remote.Option) (string, error) {
+	img, err := remote.Image(reference, authOption)
+	if err != nil {
+		return "", err
+	}
+
+	digest, err := img.Digest()
+	if err != nil {
+		return "", err
+	}
+
+	return digest.Hex, nil
+}
+
+func getAuthOption(imagePullSecret *corev1.Secret, registryURL string) (remote.Option, error) {
+	dockerConf, err := parser.NewDockerConfig(imagePullSecret)
+	if err != nil {
+		return remote.WithAuthFromKeychain(authn.DefaultKeychain), err
+	} else {
+		return remote.WithAuth(authn.FromConfig(authn.AuthConfig{
+			Username: dockerConf.Auths[registryURL].Username,
+			Password: dockerConf.Auths[registryURL].Password,
+		})), nil
+	}
 }
 
 func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error) {
 	podList := &corev1.PodList{}
 	listOptions := []client.ListOption{
 		client.InNamespace(instance.GetNamespace()),
-		client.MatchingLabels(instance.Labels),
+		client.MatchingLabels(builder.BuildLabelsForQuery(instance.Name)),
 	}
 	err := r.client.List(context.TODO(), podList, listOptions...)
 	if err != nil {
@@ -144,5 +159,4 @@ func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.ActiveGate) (
 
 const (
 	ImagePullSecret = "dynatrace-activegate-registry"
-	DockerIo        = "https://docker.io"
 )

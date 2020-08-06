@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	agerrors "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/errors"
 	parser "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +34,7 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileActiveGate{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileActiveGate{client: mgr.GetClient(), scheme: mgr.GetScheme(), dtcBuildFunc: builder.BuildDynatraceClient}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -70,13 +71,15 @@ var _ reconcile.Reconciler = &ReconcileActiveGate{}
 type ReconcileActiveGate struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
+	client       client.Client
+	scheme       *runtime.Scheme
+	dtcBuildFunc DynatraceClientFunc
 }
+
+type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (dtclient.Client, error)
 
 // Reconcile reads that state of the cluster for a ActiveGate object and makes changes based on the state read
 // and what is in the ActiveGate.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
 // a Pod as an example
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
@@ -107,7 +110,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Define a new Pod object
 	log.Info("creating new pod definition from custom resource")
-	pod := newPodForCR(r.client, instance, secret)
+	pod := r.newPodForCR(instance, secret)
 
 	// Set ActiveGate instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
@@ -152,7 +155,7 @@ func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.ActiveG
 }
 
 func (r *ReconcileActiveGate) updateInstanceStatus(pod *corev1.Pod, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) {
-	dtc, err := builder.BuildDynatraceClient(r.client, instance, secret)
+	dtc, err := r.dtcBuildFunc(r.client, instance, secret)
 	if err != nil {
 		log.Error(err, err.Error())
 	}
@@ -172,9 +175,9 @@ func (r *ReconcileActiveGate) updateInstanceStatus(pod *corev1.Pod, instance *dy
 
 }
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) *corev1.Pod {
-	dtc, err := builder.BuildDynatraceClient(client, cr, secret)
+// newPodForCR returns a pod with the same name/namespace as the cr
+func (r *ReconcileActiveGate) newPodForCR(instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) *corev1.Pod {
+	dtc, err := r.dtcBuildFunc(r.client, instance, secret)
 	if err != nil {
 		log.Error(err, err.Error())
 	}
@@ -186,11 +189,11 @@ func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate, secret 
 
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
-			Labels:    cr.Labels,
+			Name:      instance.Name + "-pod",
+			Namespace: instance.Namespace,
+			Labels:    builder.BuildLabels(instance.GetName(), instance.Spec.Labels),
 		},
-		Spec: builder.BuildActiveGatePodSpecs(&cr.Spec, tenantInfo),
+		Spec: builder.BuildActiveGatePodSpecs(&instance.Spec, tenantInfo),
 	}
 }
 
