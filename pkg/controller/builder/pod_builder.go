@@ -32,6 +32,7 @@ func BuildActiveGatePodSpecs(
 		acitveGatePodSpec.Resources.Requests = corev1.ResourceList{}
 	}
 	if _, hasCPUResource := acitveGatePodSpec.Resources.Requests[corev1.ResourceCPU]; !hasCPUResource {
+		// Set CPU resource to 1 * 10**(-1) Cores, e.g. 100mC
 		acitveGatePodSpec.Resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
 	}
 
