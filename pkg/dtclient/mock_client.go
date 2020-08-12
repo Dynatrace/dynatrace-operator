@@ -7,6 +7,21 @@ type MockDynatraceClient struct {
 	mock.Mock
 }
 
+func (o *MockDynatraceClient) GetTenantInfo() (*TenantInfo, error) {
+	args := o.Called()
+	return args.Get(0).(*TenantInfo), args.Error(1)
+}
+
+func (o *MockDynatraceClient) QueryOutdatedActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
+	args := o.Called(query)
+	return args.Get(0).([]ActiveGate), args.Error(1)
+}
+
+func (o *MockDynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
+	args := o.Called(query)
+	return args.Get(0).([]ActiveGate), args.Error(1)
+}
+
 func (o *MockDynatraceClient) GetAgentVersionForIP(ip string) (string, error) {
 	args := o.Called(ip)
 	return args.String(0), args.Error(1)

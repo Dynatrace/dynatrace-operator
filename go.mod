@@ -6,6 +6,7 @@ require (
 	github.com/cosiner/argv v0.1.0 // indirect
 	github.com/go-delve/delve v1.4.1 // indirect
 	github.com/go-logr/logr v0.1.0
+	github.com/google/go-containerregistry v0.1.1
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/operator-framework/operator-sdk v0.17.1-0.20200527074332-363f7b9d2be9
