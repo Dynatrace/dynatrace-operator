@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"testing"
@@ -13,14 +14,14 @@ func TestNewTokens(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, tokens)
 
-	assert.Equal(t, API_TOKEN, tokens.ApiToken)
-	assert.Equal(t, PAAS_TOKEN, tokens.PaasToken)
+	assert.Equal(t, ApiToken, tokens.ApiToken)
+	assert.Equal(t, PaasToken, tokens.PaasToken)
 }
 
 func TestNewTokens_NoApiToken(t *testing.T) {
 	secret := createTestSecret()
 
-	delete(secret.Data, DynatraceApiToken)
+	delete(secret.Data, _const.DynatraceApiToken)
 
 	tokens, err := NewTokens(secret)
 
@@ -31,7 +32,7 @@ func TestNewTokens_NoApiToken(t *testing.T) {
 func TestNewTokens_NoPaasToken(t *testing.T) {
 	secret := createTestSecret()
 
-	delete(secret.Data, DynatracePaasToken)
+	delete(secret.Data, _const.DynatracePaasToken)
 
 	tokens, err := NewTokens(secret)
 
@@ -42,15 +43,13 @@ func TestNewTokens_NoPaasToken(t *testing.T) {
 func createTestSecret() *corev1.Secret {
 	return &corev1.Secret{
 		Data: map[string][]byte{
-			DynatraceApiToken:  []byte(API_TOKEN),
-			DynatracePaasToken: []byte(PAAS_TOKEN),
+			_const.DynatraceApiToken:  []byte(ApiToken),
+			_const.DynatracePaasToken: []byte(PaasToken),
 		},
 	}
 }
 
 const (
-	EMPTY = ""
-
-	API_TOKEN  = "ApiToken"
-	PAAS_TOKEN = "PaasToken"
+	ApiToken  = "ApiToken"
+	PaasToken = "PaasToken"
 )

@@ -57,6 +57,10 @@ type Client interface {
 
 	// GetTenantInfo returns TenantInfo that holds UUID, Tenant Token and Endpoints
 	GetTenantInfo() (*TenantInfo, error)
+
+	QueryOutdatedActiveGates(query *ActiveGateQuery) ([]ActiveGate, error)
+
+	QueryActiveGates(query *ActiveGateQuery) ([]ActiveGate, error)
 }
 
 // Known OS values.

@@ -8,9 +8,9 @@ spec:
   apiUrl: https://asj34817.dev.dynatracelabs.com/api
   # name of secret holding `apiToken` and `paasToken`
   # if unset, name of custom resource is used
-  tokens: ""
+  # tokens: ""
   # node selector to control the selection of nodes (optional)
-  nodeSelector: {}
+  #  nodeSelector: {}
   # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/ (optional)
   tolerations:
     - effect: NoSchedule
@@ -20,7 +20,7 @@ spec:
   # ActiveGate installer image (optional)
   # certified image from Red Hat Container Catalog for use on OpenShift: registry.connect.redhat.com/dynatrace/activegate
   # for kubernetes it defaults to docker.io/dynatrace/activegate
-  image: "612044533526.dkr.ecr.us-east-1.amazonaws.com/activegate:latest"
+#  image:
   dt_capabilities:
     - kubernetes_monitoring
   # resource settings for ActiveGate pods (optional)

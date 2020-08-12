@@ -2,23 +2,26 @@ package activegate
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
-	parser "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
+	"fmt"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
+	agerrors "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/errors"
+	parser "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"time"
 )
 
 var log = logf.Log.WithName("controller_activegate")
@@ -31,7 +34,7 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileActiveGate{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileActiveGate{client: mgr.GetClient(), scheme: mgr.GetScheme(), dtcBuildFunc: builder.BuildDynatraceClient}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -48,7 +51,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
 	// Watch for changes to secondary resource Pods and requeue the owner ActiveGate
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
@@ -68,13 +70,15 @@ var _ reconcile.Reconciler = &ReconcileActiveGate{}
 type ReconcileActiveGate struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
+	client       client.Client
+	scheme       *runtime.Scheme
+	dtcBuildFunc DynatraceClientFunc
 }
+
+type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (dtclient.Client, error)
 
 // Reconcile reads that state of the cluster for a ActiveGate object and makes changes based on the state read
 // and what is in the ActiveGate.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
 // a Pod as an example
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
@@ -97,25 +101,17 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	namespace := instance.GetNamespace()
-	secret := &corev1.Secret{}
-	err = r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(instance), Namespace: namespace}, secret)
-	if err != nil {
-		log.Error(err, err.Error())
-		if errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
-			return reconcile.Result{}, nil
-		}
-		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
+	// Fetch api token secret
+	secret, err := r.getTokenSecret(instance)
+	if err != nil || secret == nil {
+		return agerrors.HandleSecretError(secret, err, reqLogger)
 	}
-	log.Info("Creating new pod for custom resource")
+
 	// Define a new Pod object
-	pod := newPodForCR(r.client, instance, secret)
-	//
-	//// Set ActiveGate instance as the owner and controller
+	log.Info("creating new pod definition from custom resource")
+	pod := r.newPodForCR(instance, secret)
+
+	// Set ActiveGate instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -124,26 +120,63 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	found := &corev1.Pod{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-
-		// Pod created successfully - don't requeue
-		return reconcile.Result{}, nil
+		return r.createNewPod(pod, instance, secret)
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
-	return reconcile.Result{}, nil
+	reconcileResult, err := r.updatePods(found, instance, secret)
+	if err != nil {
+		log.Error(err, "could not update pods")
+	}
+	if reconcileResult != nil {
+		return *reconcileResult, err
+	}
+
+	//Set version and last updated timestamp
+	// Nothing to do - requeue after five minutes
+	reqLogger.Info("Nothing to do: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+	return builder.ReconcileAfterFiveMinutes(), nil
 }
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) *corev1.Pod {
-	dtc, err := builder.BuildDynatraceClient(client, cr, secret)
+func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.ActiveGate) (*corev1.Secret, error) {
+	namespace := instance.GetNamespace()
+	secret := &corev1.Secret{}
+	err := r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(instance), Namespace: namespace}, secret)
+	if err != nil {
+		log.Error(err, err.Error())
+		if errors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return secret, nil
+}
+
+func (r *ReconcileActiveGate) updateInstanceStatus(pod *corev1.Pod, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) {
+	dtc, err := r.dtcBuildFunc(r.client, instance, secret)
+	if err != nil {
+		log.Error(err, err.Error())
+	}
+
+	query := builder.BuildActiveGateQuery(instance, pod)
+	activegates, err := dtc.QueryActiveGates(query)
+	if len(activegates) > 0 {
+		log.Info(fmt.Sprintf("found %d activegate(s)", len(activegates)))
+		log.Info("setting activegate version", "version", activegates[0].Version)
+		instance.Status.Version = activegates[0].Version
+		instance.Status.UpdatedTimestamp = metav1.Now()
+		err := r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			log.Info("failed to updated instance status", "message", err.Error())
+		}
+	}
+
+}
+
+// newPodForCR returns a pod with the same name/namespace as the cr
+func (r *ReconcileActiveGate) newPodForCR(instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) *corev1.Pod {
+	dtc, err := r.dtcBuildFunc(r.client, instance, secret)
 	if err != nil {
 		log.Error(err, err.Error())
 	}
@@ -155,10 +188,15 @@ func newPodForCR(client client.Client, cr *dynatracev1alpha1.ActiveGate, secret 
 
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
-			Labels:    cr.Labels,
+			Name:      instance.Name + "-pod",
+			Namespace: instance.Namespace,
+			Labels:    builder.BuildLabels(instance.GetName(), instance.Spec.Labels),
 		},
-		Spec: builder.BuildActiveGatePodSpecs(&cr.Spec, tenantInfo),
+		Spec: builder.BuildActiveGatePodSpecs(&instance.Spec, tenantInfo),
 	}
 }
+
+const (
+	TimeUntilActive = 10 * time.Second
+	UpdateInterval  = 5 * time.Minute
+)
