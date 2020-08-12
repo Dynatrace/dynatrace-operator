@@ -1,5 +1,3 @@
-//+build integration
-
 package activegate
 
 import (
@@ -8,6 +6,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
+	"github.com/go-logr/logr"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -23,17 +22,32 @@ import (
 
 func init() {
 	apis.AddToScheme(scheme.Scheme) // Register OneAgent and Istio object schemas.
-	os.Setenv(k8sutil.WatchNamespaceEnvVar, "dynatrace")
+	os.Setenv(k8sutil.WatchNamespaceEnvVar, _const.DynatraceNamespace)
 }
 
 func TestUpdatePods(t *testing.T) {
+	r, instance, err := setupReconciler(t)
+	assert.NotNil(t, r)
+
+	pods, err := r.findOutdatedPods(log.WithName("TestUpdatePods"), instance,
+		func(logger logr.Logger, status *corev1.ContainerStatus, secret *corev1.Secret) (bool, error) {
+			return status.Image == "latest", nil
+		})
+
+	assert.NotNil(t, pods)
+	assert.NotEmpty(t, pods)
+	assert.Equal(t, 1, len(pods))
+	assert.Nil(t, err)
+}
+
+func setupReconciler(t *testing.T) (*ReconcileActiveGate, *dynatracev1alpha1.ActiveGate, error) {
 	fakeClient := fake.NewFakeClientWithScheme(
 		scheme.Scheme,
-		NewSecret("activegate", "dynatrace", map[string]string{_const.DynatraceApiToken: "42", _const.DynatracePaasToken: "84"}),
+		NewSecret(_const.ActivegateName, _const.DynatraceNamespace, map[string]string{_const.DynatraceApiToken: "42", _const.DynatracePaasToken: "84"}),
 		&dynatracev1alpha1.ActiveGate{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "activegate",
-				Namespace: "dynatrace",
+				Namespace: _const.DynatraceNamespace,
+				Name:      _const.ActivegateName,
 			},
 			Spec: dynatracev1alpha1.ActiveGateSpec{
 				BaseActiveGateSpec: dynatracev1alpha1.BaseActiveGateSpec{
@@ -50,8 +64,8 @@ func TestUpdatePods(t *testing.T) {
 	}
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{
-			Namespace: "dynatrace",
-			Name:      "activegate",
+			Namespace: _const.DynatraceNamespace,
+			Name:      _const.ActivegateName,
 		},
 	}
 
@@ -66,8 +80,7 @@ func TestUpdatePods(t *testing.T) {
 	pod1.Name = "activegate-pod-1"
 	pod1.Status.ContainerStatuses = []corev1.ContainerStatus{
 		corev1.ContainerStatus{
-			Image:   "dynatrace/oneagent:0.8",
-			ImageID: "docker-pullable://dynatrace/oneagent@sha256:125422510b677dfa19bf1041f3f2f3592b0ca683c92071f68940607c418bbdd9",
+			Image: "latest",
 		},
 	}
 
@@ -75,8 +88,7 @@ func TestUpdatePods(t *testing.T) {
 	pod2.Name = "activegate-pod-2"
 	pod2.Status.ContainerStatuses = []corev1.ContainerStatus{
 		corev1.ContainerStatus{
-			Image:   "dynatrace/oneagent:0.7",
-			ImageID: "docker-pullable://dynatrace/oneagent@sha256:e2050c728872b1f4cabd50546a696c3d33ebcfb9ed49528b4e317d5c69a6ef05",
+			Image: "outdated",
 		},
 	}
 
@@ -85,11 +97,7 @@ func TestUpdatePods(t *testing.T) {
 
 	err = fakeClient.Create(context.TODO(), pod2)
 	assert.NoError(t, err)
-
-	reconciliation, err := r.Reconcile(request)
-
-	assert.NotNil(t, reconciliation)
-	assert.Nil(t, err)
+	return r, instance, err
 }
 
 func createFakeDTClient(rtc client.Client, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (dtclient.Client, error) {

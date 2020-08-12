@@ -5,24 +5,23 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/version"
 	"github.com/go-logr/logr"
-	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 	corev1 "k8s.io/api/core/v1"
-	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"strings"
 	"time"
 )
 
-func (r *ReconcileActiveGate) updatePods(pod *corev1.Pod, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (*reconcile.Result, error) {
+func (r *ReconcileActiveGate) updatePods(
+	pod *corev1.Pod,
+	instance *dynatracev1alpha1.ActiveGate,
+	secret *corev1.Secret) (*reconcile.Result, error) {
 	if !instance.Spec.DisableActivegateUpdate &&
 		instance.Status.UpdatedTimestamp.Add(UpdateInterval).Before(time.Now()) {
 		log.Info("checking for outdated pods")
 		// Check if pods have latest activegate version
-		outdatedPods, err := r.findOutdatedPods(log, instance)
+		outdatedPods, err := r.findOutdatedPods(log, instance, isLatest)
 		if err != nil {
 			result := builder.ReconcileAfterFiveMinutes()
 			// Too many requests, requeue after five minutes
@@ -41,7 +40,10 @@ func (r *ReconcileActiveGate) updatePods(pod *corev1.Pod, instance *dynatracev1a
 	return nil, nil
 }
 
-func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error) {
+func (r *ReconcileActiveGate) findOutdatedPods(
+	logger logr.Logger,
+	instance *dynatracev1alpha1.ActiveGate,
+	isLatestFn func(logr.Logger, *corev1.ContainerStatus, *corev1.Secret) (bool, error)) ([]corev1.Pod, error) {
 	pods, err := r.findPods(instance)
 	if err != nil {
 		logger.Error(err, "failed to list pods")
@@ -63,7 +65,7 @@ func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dyn
 				logger.Error(err, err.Error())
 			}
 
-			isLatest, err := isImageLatest(logger, &status, imagePullSecret)
+			isLatest, err := isLatestFn(logger, &status, imagePullSecret)
 			if err != nil {
 				logger.Error(err, err.Error())
 				//Error during image check, do nothing an continue with next status
@@ -71,6 +73,7 @@ func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dyn
 			}
 
 			if !isLatest {
+				logger.Info("pod is outdated", "name", pod.Name)
 				outdatedPods = append(outdatedPods, pod)
 				// Pod is outdated, break loop
 				break
@@ -81,67 +84,14 @@ func (r *ReconcileActiveGate) findOutdatedPods(logger logr.Logger, instance *dyn
 	return outdatedPods, nil
 }
 
-func isImageLatest(logger logr.Logger, status *corev1.ContainerStatus, imagePullSecret *corev1.Secret) (bool, error) {
-	regex := regexp.MustCompile("(^docker-pullable:\\/\\/|\\:.*$|\\@sha256.*$)")
-	latestImageName := regex.ReplaceAllString(status.Image, "") + ":latest"
-	//Using ImageID instead of Image because ImageID contains digest of image that is used while Image only contains tag
-	reference, err := name.ParseReference(strings.TrimPrefix(status.ImageID, "docker-pullable://"))
-	if err != nil {
-		return false, err
-	}
-
-	latestReference, err := name.ParseReference(latestImageName)
-	if err != nil {
-		return false, err
-	}
-
-	registryURL := "https://" + reference.Context().RegistryStr()
-	authOption, err := getAuthOption(imagePullSecret, registryURL)
+func isLatest(logger logr.Logger, status *corev1.ContainerStatus, imagePullSecret *corev1.Secret) (bool, error) {
+	dockerConfig, err := parser.NewDockerConfig(imagePullSecret)
 	if err != nil {
 		logger.Info(err.Error())
 	}
 
-	latestDigest, err := getDigest(latestReference, authOption)
-	if err != nil {
-		return false, err
-	}
-
-	currentDigest, err := getDigest(reference, authOption)
-	if err != nil {
-		return false, err
-	}
-
-	logger.Info("Checked image against :latest",
-		"latest digest", latestDigest,
-		"currentDigest", currentDigest,
-		"is latest", currentDigest == latestDigest)
-	return currentDigest == latestDigest, nil
-}
-
-func getDigest(reference name.Reference, authOption remote.Option) (string, error) {
-	img, err := remote.Image(reference, authOption)
-	if err != nil {
-		return "", err
-	}
-
-	digest, err := img.Digest()
-	if err != nil {
-		return "", err
-	}
-
-	return digest.Hex, nil
-}
-
-func getAuthOption(imagePullSecret *corev1.Secret, registryURL string) (remote.Option, error) {
-	dockerConf, err := parser.NewDockerConfig(imagePullSecret)
-	if err != nil {
-		return remote.WithAuthFromKeychain(authn.DefaultKeychain), err
-	} else {
-		return remote.WithAuth(authn.FromConfig(authn.AuthConfig{
-			Username: dockerConf.Auths[registryURL].Username,
-			Password: dockerConf.Auths[registryURL].Password,
-		})), nil
-	}
+	dockerVersionChecker := version.NewDockerVersionChecker(status.Image, status.ImageID, dockerConfig)
+	return dockerVersionChecker.IsLatest()
 }
 
 func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error) {
