@@ -4,6 +4,7 @@ import (
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"strings"
 )
 
@@ -25,6 +26,14 @@ func BuildActiveGatePodSpecs(
 			Token:     "",
 			Endpoints: []string{},
 		}
+	}
+
+	if acitveGatePodSpec.Resources.Requests == nil {
+		acitveGatePodSpec.Resources.Requests = corev1.ResourceList{}
+	}
+	if _, hasCPUResource := acitveGatePodSpec.Resources.Requests[corev1.ResourceCPU]; !hasCPUResource {
+		// Set CPU resource to 1 * 10**(-1) Cores, e.g. 100mC
+		acitveGatePodSpec.Resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
 	}
 
 	return corev1.PodSpec{
