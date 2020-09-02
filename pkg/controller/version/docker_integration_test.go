@@ -96,7 +96,7 @@ func TestDockerVersionChecker_Quay(t *testing.T) {
 }
 
 // Deactivated for now since registry is misbehaving
-// Uncomment code below until 07.09.2020 and try again
+// Uncomment code below until 10.09.2020 and try again
 //func TestDockerVersionChecker_Dynatrace(t *testing.T) {
 //	oneagentInstallerTagMew := "asj34817.dev.dynatracelabs.com/linux/oneagent:1.203.0"
 //	oneagentInstallerTagOld := "asj34817.dev.dynatracelabs.com/linux/oneagent:1.201.2"
