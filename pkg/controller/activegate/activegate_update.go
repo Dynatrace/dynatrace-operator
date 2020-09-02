@@ -43,7 +43,7 @@ func (r *ReconcileActiveGate) updatePods(
 func (r *ReconcileActiveGate) findOutdatedPods(
 	logger logr.Logger,
 	instance *dynatracev1alpha1.ActiveGate,
-	isLatestFn func(logr.Logger, *corev1.ContainerStatus, *corev1.Secret) (bool, error)) ([]corev1.Pod, error) {
+	isLatestFn func(logger logr.Logger, image string, imageId string, imagePullSecret *corev1.Secret) (bool, error)) ([]corev1.Pod, error) {
 	pods, err := r.findPods(instance)
 	if err != nil {
 		logger.Error(err, "failed to list pods")
@@ -53,8 +53,8 @@ func (r *ReconcileActiveGate) findOutdatedPods(
 	var outdatedPods []corev1.Pod
 	for _, pod := range pods {
 		for _, status := range pod.Status.ContainerStatuses {
-			if status.Image == "" {
-				// If image is not yet pulled skip check
+			if status.ImageID == "" || instance.Spec.Image == "" {
+				// If image is not yet pulled or not given skip check
 				continue
 			}
 			logger.Info("pods container status", "pod", pod.Name, "container", status.Name, "image id", status.ImageID)
@@ -65,7 +65,7 @@ func (r *ReconcileActiveGate) findOutdatedPods(
 				logger.Error(err, err.Error())
 			}
 
-			isLatest, err := isLatestFn(logger, &status, imagePullSecret)
+			isLatest, err := isLatestFn(logger, instance.Spec.Image, status.ImageID, imagePullSecret)
 			if err != nil {
 				logger.Error(err, err.Error())
 				//Error during image check, do nothing an continue with next status
@@ -84,13 +84,13 @@ func (r *ReconcileActiveGate) findOutdatedPods(
 	return outdatedPods, nil
 }
 
-func isLatest(logger logr.Logger, status *corev1.ContainerStatus, imagePullSecret *corev1.Secret) (bool, error) {
+func isLatest(logger logr.Logger, image string, imageId string, imagePullSecret *corev1.Secret) (bool, error) {
 	dockerConfig, err := parser.NewDockerConfig(imagePullSecret)
 	if err != nil {
 		logger.Info(err.Error())
 	}
 
-	dockerVersionChecker := version.NewDockerVersionChecker(status.Image, status.ImageID, dockerConfig)
+	dockerVersionChecker := version.NewDockerVersionChecker(image, imageId, dockerConfig)
 	return dockerVersionChecker.IsLatest()
 }
 
