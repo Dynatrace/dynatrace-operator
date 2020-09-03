@@ -43,7 +43,7 @@ func (r *ReconcileActiveGate) updatePods(
 func (r *ReconcileActiveGate) findOutdatedPods(
 	logger logr.Logger,
 	instance *dynatracev1alpha1.ActiveGate,
-	isLatestFn func(logger logr.Logger, image string, imageId string, imagePullSecret *corev1.Secret) (bool, error)) ([]corev1.Pod, error) {
+	isLatestFn func(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error)) ([]corev1.Pod, error) {
 	pods, err := r.findPods(instance)
 	if err != nil {
 		logger.Error(err, "failed to list pods")
@@ -84,13 +84,13 @@ func (r *ReconcileActiveGate) findOutdatedPods(
 	return outdatedPods, nil
 }
 
-func isLatest(logger logr.Logger, image string, imageId string, imagePullSecret *corev1.Secret) (bool, error) {
+func isLatest(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error) {
 	dockerConfig, err := parser.NewDockerConfig(imagePullSecret)
 	if err != nil {
 		logger.Info(err.Error())
 	}
 
-	dockerVersionChecker := version.NewDockerVersionChecker(image, imageId, dockerConfig)
+	dockerVersionChecker := version.NewDockerVersionChecker(image, imageID, dockerConfig)
 	return dockerVersionChecker.IsLatest()
 }
 

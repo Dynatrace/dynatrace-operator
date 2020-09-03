@@ -27,9 +27,6 @@ func NewDockerVersionChecker(currentImage, currentImageId string, dockerConfig *
 }
 
 func (dockerVersionChecker *DockerVersionChecker) IsLatest() (bool, error) {
-	//regex := regexp.MustCompile("(^docker-pullable:\\/\\/|\\:.*$|\\@sha256.*$)")
-	//latestImageName := regex.ReplaceAllString(dockerVersionChecker.currentImage, "") + ":latest"
-
 	transportImageName := fmt.Sprintf("%s%s",
 		"docker://",
 		strings.TrimPrefix(
@@ -58,29 +55,28 @@ func (dockerVersionChecker *DockerVersionChecker) IsLatest() (bool, error) {
 		return false, err
 	}
 
-	return currentDigest.Algorithm().String() == latestDigest.Algorithm().String() &&
-		currentDigest.Hex() == latestDigest.Hex(), nil
+	return currentDigest == latestDigest, nil
 }
 
-func (dockerVersionChecker *DockerVersionChecker) getDigest(ref types.ImageReference) (*digest.Digest, error) {
+func (dockerVersionChecker *DockerVersionChecker) getDigest(ref types.ImageReference) (digest.Digest, error) {
 	systemContext := dockerVersionChecker.makeSystemContext(ref.DockerReference())
 	imageSource, err := ref.NewImageSource(context.TODO(), systemContext)
-	defer closeImageSource(imageSource)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
+	defer closeImageSource(imageSource)
 
 	imageManifest, _, err := imageSource.GetManifest(context.TODO(), nil)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	imageDigest, err := manifest.Digest(imageManifest)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return &imageDigest, nil
+	return imageDigest, nil
 }
 
 func closeImageSource(source types.ImageSource) {
@@ -91,17 +87,19 @@ func closeImageSource(source types.ImageSource) {
 }
 
 func (dockerVersionChecker *DockerVersionChecker) makeSystemContext(dockerReference reference.Named) *types.SystemContext {
-	if dockerReference == nil {
-		return &types.SystemContext{}
-	}
-	if dockerVersionChecker.dockerConfig == nil {
+	if dockerReference == nil || dockerVersionChecker.dockerConfig == nil {
 		return &types.SystemContext{}
 	}
 
-	registryURL := "https://" + strings.Split(dockerReference.Name(), "/")[0]
-	credentials, hasCredentials := dockerVersionChecker.dockerConfig.Auths[registryURL]
+	registryName := strings.Split(dockerReference.Name(), "/")[0]
+	credentials, hasCredentials := dockerVersionChecker.dockerConfig.Auths[registryName]
+
 	if !hasCredentials {
-		return &types.SystemContext{}
+		registryURL := "https://" + registryName
+		credentials, hasCredentials = dockerVersionChecker.dockerConfig.Auths[registryURL]
+		if !hasCredentials {
+			return &types.SystemContext{}
+		}
 	}
 
 	return &types.SystemContext{

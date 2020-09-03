@@ -33,8 +33,8 @@ func TestUpdatePods(t *testing.T) {
 	// Check if r is not nil so go linter does not complain
 	if r != nil {
 		pods, err := r.findOutdatedPods(log.WithName("TestUpdatePods"), instance,
-			func(logger logr.Logger, image string, imageId string, secret *corev1.Secret) (bool, error) {
-				return imageId == "latest", nil
+			func(logger logr.Logger, image string, imageID string, secret *corev1.Secret) (bool, error) {
+				return imageID == "latest", nil
 			})
 
 		assert.NotNil(t, pods)

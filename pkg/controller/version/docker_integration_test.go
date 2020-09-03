@@ -10,13 +10,13 @@ import (
 )
 
 func TestDockerVersionChecker_DockerHub(t *testing.T) {
-	alpineTagNew := "alpine:3.12.0"
-	alpineDigestNew := "alpine@sha256:185518070891758909c9f839cf4ca393ee977ac378609f700f60a771a2dfe321"
-	alpineTagOld := "alpine:3.11.6"
+	alpineTag := "alpine:3.12.0"
+	alpineDigest := "alpine@sha256:185518070891758909c9f839cf4ca393ee977ac378609f700f60a771a2dfe321"
+	alpineTagOther := "alpine:3.11.6"
 
-	demoRepoTagNew := "michaelrynkiewicz/demo-repo:2.0.0"
-	demoRepoDigestNew := "michaelrynkiewicz/demo-repo@sha256:10e11125048ef2990b21e836ca2483614dfa401d74a40bbb3445dbec8a803b83"
-	demoRepoTagOld := "michaelrynkiewicz/demo-repo:1.0.0"
+	demoRepoTag := "michaelrynkiewicz/demo-repo:2.0.0"
+	demoRepoDigest := "michaelrynkiewicz/demo-repo@sha256:10e11125048ef2990b21e836ca2483614dfa401d74a40bbb3445dbec8a803b83"
+	demoRepoTagOther := "michaelrynkiewicz/demo-repo:1.0.0"
 
 	dockerHubConfig := &parser.DockerConfig{
 		Auths: map[string]struct {
@@ -30,32 +30,85 @@ func TestDockerVersionChecker_DockerHub(t *testing.T) {
 	}
 
 	dockerVersionChecker := NewDockerVersionChecker(
-		alpineTagNew,
-		alpineDigestNew,
+		alpineTag,
+		alpineDigest,
 		dockerHubConfig)
 	isLatest, err := dockerVersionChecker.IsLatest()
 	assert.True(t, isLatest)
 	assert.NoError(t, err)
 
 	dockerVersionChecker = NewDockerVersionChecker(
-		alpineTagOld,
-		alpineDigestNew,
+		alpineTagOther,
+		alpineDigest,
 		dockerHubConfig)
 	isLatest, err = dockerVersionChecker.IsLatest()
 	assert.False(t, isLatest)
 	assert.NoError(t, err)
 
 	dockerVersionChecker = NewDockerVersionChecker(
-		demoRepoTagNew,
-		demoRepoDigestNew,
+		demoRepoTag,
+		demoRepoDigest,
 		dockerHubConfig)
 	isLatest, err = dockerVersionChecker.IsLatest()
 	assert.True(t, isLatest)
 	assert.NoError(t, err)
 
 	dockerVersionChecker = NewDockerVersionChecker(
-		demoRepoTagOld,
-		demoRepoDigestNew,
+		demoRepoTagOther,
+		demoRepoDigest,
+		dockerHubConfig)
+	isLatest, err = dockerVersionChecker.IsLatest()
+	assert.False(t, isLatest)
+	assert.NoError(t, err)
+}
+
+func TestDockerVersionChecker_DockerHub_ConfigNoProtocol(t *testing.T) {
+	alpineTag := "alpine:3.12.0"
+	alpineDigest := "alpine@sha256:185518070891758909c9f839cf4ca393ee977ac378609f700f60a771a2dfe321"
+	alpineTagOther := "alpine:3.11.6"
+
+	demoRepoTag := "michaelrynkiewicz/demo-repo:2.0.0"
+	demoRepoDigest := "michaelrynkiewicz/demo-repo@sha256:10e11125048ef2990b21e836ca2483614dfa401d74a40bbb3445dbec8a803b83"
+	demoRepoTagOther := "michaelrynkiewicz/demo-repo:1.0.0"
+
+	dockerHubConfig := &parser.DockerConfig{
+		Auths: map[string]struct {
+			Username string
+			Password string
+		}{
+			"docker.io": {
+				Username: os.Getenv("DOCKER_USERNAME"),
+				Password: os.Getenv("DOCKER_PASSWORD"),
+			}},
+	}
+
+	dockerVersionChecker := NewDockerVersionChecker(
+		alpineTag,
+		alpineDigest,
+		dockerHubConfig)
+	isLatest, err := dockerVersionChecker.IsLatest()
+	assert.True(t, isLatest)
+	assert.NoError(t, err)
+
+	dockerVersionChecker = NewDockerVersionChecker(
+		alpineTagOther,
+		alpineDigest,
+		dockerHubConfig)
+	isLatest, err = dockerVersionChecker.IsLatest()
+	assert.False(t, isLatest)
+	assert.NoError(t, err)
+
+	dockerVersionChecker = NewDockerVersionChecker(
+		demoRepoTag,
+		demoRepoDigest,
+		dockerHubConfig)
+	isLatest, err = dockerVersionChecker.IsLatest()
+	assert.True(t, isLatest)
+	assert.NoError(t, err)
+
+	dockerVersionChecker = NewDockerVersionChecker(
+		demoRepoTagOther,
+		demoRepoDigest,
 		dockerHubConfig)
 	isLatest, err = dockerVersionChecker.IsLatest()
 	assert.False(t, isLatest)
@@ -63,9 +116,9 @@ func TestDockerVersionChecker_DockerHub(t *testing.T) {
 }
 
 func TestDockerVersionChecker_Quay(t *testing.T) {
-	oneagentOperatorTagNew := "quay.io/dynatrace/dynatrace-oneagent-operator:v0.8.1"
-	oneagentOperatorDigestNew := "quay.io/dynatrace/dynatrace-oneagent-operator@sha256:2713af0a484016e22a1cf0c925534e2c3c86670a829669d73295acec3d7688e3"
-	oneagentOperatorTagOld := "quay.io/dynatrace/dynatrace-oneagent-operator:v0.6.0"
+	oneagentOperatorTag := "quay.io/dynatrace/dynatrace-oneagent-operator:v0.8.1"
+	oneagentOperatorDigest := "quay.io/dynatrace/dynatrace-oneagent-operator@sha256:2713af0a484016e22a1cf0c925534e2c3c86670a829669d73295acec3d7688e3"
+	oneagentOperatorTagOther := "quay.io/dynatrace/dynatrace-oneagent-operator:v0.6.0"
 
 	quayConfig := &parser.DockerConfig{
 		Auths: map[string]struct {
@@ -79,16 +132,16 @@ func TestDockerVersionChecker_Quay(t *testing.T) {
 	}
 
 	dockerVersionChecker := NewDockerVersionChecker(
-		oneagentOperatorTagNew,
-		oneagentOperatorDigestNew,
+		oneagentOperatorTag,
+		oneagentOperatorDigest,
 		quayConfig)
 	isLatest, err := dockerVersionChecker.IsLatest()
 	assert.True(t, isLatest)
 	assert.NoError(t, err)
 
 	dockerVersionChecker = NewDockerVersionChecker(
-		oneagentOperatorTagOld,
-		oneagentOperatorDigestNew,
+		oneagentOperatorTagOther,
+		oneagentOperatorDigest,
 		quayConfig)
 	isLatest, err = dockerVersionChecker.IsLatest()
 	assert.False(t, isLatest)
