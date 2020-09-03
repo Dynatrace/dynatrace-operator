@@ -4,6 +4,8 @@ go:
 os: linux
 dist: xenial
 
+gobuild_args: -tags containers_image_storage_stub
+
 notifications:
   email:
     on_success: never
