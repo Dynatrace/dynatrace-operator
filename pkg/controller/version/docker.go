@@ -45,7 +45,6 @@ func (dockerVersionChecker *DockerVersionChecker) IsLatest() (bool, error) {
 
 	//Using ImageID instead of Image because ImageID contains digest of image that is used while Image only contains tag
 	currentReference, err := alltransports.ParseImageName(transportImageName)
-	//reference, err := name.ParseReference(strings.TrimPrefix(dockerVersionChecker.currentImageId, "docker-pullable://"))
 	if err != nil {
 		return false, err
 	}
