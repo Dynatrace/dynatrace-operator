@@ -8,13 +8,20 @@ import (
 
 func BuildActiveGateQuery(instance *dynatracev1alpha1.ActiveGate, pod *corev1.Pod) *dtclient.ActiveGateQuery {
 	networkZone := DefaultNetworkZone
-	if instance.Spec.NetworkZone != "" {
+	if instance != nil && instance.Spec.NetworkZone != "" {
 		networkZone = instance.Spec.NetworkZone
 	}
 
+	hostname := ""
+	networkAddress := ""
+	if pod != nil {
+		hostname = pod.Spec.Hostname
+		networkAddress = pod.Status.HostIP
+	}
+
 	return &dtclient.ActiveGateQuery{
-		Hostname:       pod.Spec.Hostname,
-		NetworkAddress: pod.Status.HostIP,
+		Hostname:       hostname,
+		NetworkAddress: networkAddress,
 		NetworkZone:    networkZone,
 	}
 }

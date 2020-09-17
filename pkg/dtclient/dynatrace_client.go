@@ -71,7 +71,7 @@ func (dc *dynatraceClient) getServerResponseData(response *http.Response) ([]byt
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return nil, dc.handleErrorResponseFromAPI(responseData, response.StatusCode)
+		return responseData, dc.handleErrorResponseFromAPI(responseData, response.StatusCode)
 	}
 
 	return responseData, nil
@@ -108,7 +108,10 @@ func (dc *dynatraceClient) buildHostCache() error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		// Swallow error
+		_ = resp.Body.Close()
+	}()
 
 	responseData, err := dc.getServerResponseData(resp)
 	if err != nil {

@@ -42,7 +42,7 @@ func (dtc *dynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGa
 		return nil, err
 	}
 
-	result := []ActiveGate{}
+	var result []ActiveGate
 	activegates, err := dtc.readResponseForActiveGates(data)
 	if err != nil {
 		logger.Error(err, err.Error())
@@ -65,17 +65,19 @@ func (dtc *dynatraceClient) QueryOutdatedActiveGates(query *ActiveGateQuery) ([]
 
 func buildQueryParams(query *ActiveGateQuery) string {
 	params := ""
-	if query.Hostname != "" {
-		params += "hostname=" + query.Hostname + "&"
-	}
-	if query.NetworkZone != "" {
-		params += "networkZone=" + query.NetworkZone + "&"
-	}
-	if query.NetworkAddress != "" {
-		params += "networkAddress=" + query.NetworkAddress + "&"
-	}
-	if query.UpdateStatus != "" {
-		params += "updateStatus=" + query.UpdateStatus + "&"
+	if query != nil {
+		if query.Hostname != "" {
+			params += "hostname=" + query.Hostname + "&"
+		}
+		if query.NetworkZone != "" {
+			params += "networkZone=" + query.NetworkZone + "&"
+		}
+		if query.NetworkAddress != "" {
+			params += "networkAddress=" + query.NetworkAddress + "&"
+		}
+		if query.UpdateStatus != "" {
+			params += "updateStatus=" + query.UpdateStatus + "&"
+		}
 	}
 
 	params += "osType=" + OsLinux + "&" +

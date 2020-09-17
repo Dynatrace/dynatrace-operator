@@ -91,8 +91,8 @@ func TestBuildHostCache(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotZero(t, len(dc.hostCache))
 		assert.ObjectsAreEqualValues(dc.hostCache, map[string]hostInfo{
-			"10.11.12.13": hostInfo{version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
-			"192.168.0.1": hostInfo{version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
+			"10.11.12.13": {version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
+			"192.168.0.1": {version: "1.142.0.20180313-173634", entityID: "dynatraceSampleEntityId"},
 		})
 	}
 }
@@ -215,4 +215,16 @@ func TestIgnoreHostsWithNoVersions(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "HOST-42", info.entityID)
 	require.Equal(t, "1.195.0.20200515-045253", info.version)
+}
+
+func createTestDynatraceClient(t *testing.T, handler http.HandlerFunc) (*httptest.Server, Client) {
+	faultyDynatraceServer := httptest.NewServer(handler)
+
+	skipCert := SkipCertificateValidation(true)
+	faultyDynatraceClient, err := NewClient(faultyDynatraceServer.URL, apiToken, paasToken, skipCert)
+
+	require.NoError(t, err)
+	require.NotNil(t, faultyDynatraceClient)
+
+	return faultyDynatraceServer, faultyDynatraceClient
 }

@@ -14,6 +14,9 @@ func BuildActiveGatePodSpecs(
 	serviceaccount := ActivegateName
 	image := ActivegateImage
 
+	if acitveGatePodSpec == nil {
+		acitveGatePodSpec = &v1alpha1.ActiveGateSpec{}
+	}
 	if acitveGatePodSpec.ServiceAccountName != "" {
 		serviceaccount = acitveGatePodSpec.ServiceAccountName
 	}

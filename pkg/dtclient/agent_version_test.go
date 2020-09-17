@@ -2,6 +2,7 @@ package dtclient
 
 import (
 	"encoding/json"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
 
@@ -68,6 +69,65 @@ func TestResponseForLatestVersion(t *testing.T) {
 		assert.Error(t, err, "invalid data")
 	}
 
+}
+
+func TestGetEntityIDForIP(t *testing.T) {
+	dtc := dynatraceClient{}
+	require.NoError(t, dtc.setHostCacheFromResponse([]byte(`[
+	{
+		"entityId": "HOST-42",
+		"displayName": "A",
+		"firstSeenTimestamp": 1589940921731,
+		"lastSeenTimestamp": 1589969061511,
+		"ipAddresses": [
+			"1.1.1.1"
+		],
+		"monitoringMode": "FULL_STACK",
+		"networkZoneId": "default",
+		"agentVersion": {
+			"major": 1,
+			"minor": 195,
+			"revision": 0,
+			"timestamp": "20200515-045253",
+			"sourceRevision": ""
+		}
+	}
+]`)))
+	id, err := dtc.GetEntityIDForIP("1.1.1.1")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, id)
+	assert.Equal(t, "HOST-42", id)
+
+	id, err = dtc.GetEntityIDForIP("2.2.2.2")
+
+	assert.Error(t, err)
+	assert.Empty(t, id)
+
+	require.NoError(t, dtc.setHostCacheFromResponse([]byte(`[
+	{
+		"entityId": "",
+		"displayName": "A",
+		"firstSeenTimestamp": 1589940921731,
+		"lastSeenTimestamp": 1589969061511,
+		"ipAddresses": [
+			"1.1.1.1"
+		],
+		"monitoringMode": "FULL_STACK",
+		"networkZoneId": "default",
+		"agentVersion": {
+			"major": 1,
+			"minor": 195,
+			"revision": 0,
+			"timestamp": "20200515-045253",
+			"sourceRevision": ""
+		}
+	}
+]`)))
+
+	id, err = dtc.GetEntityIDForIP("1.1.1.1")
+
+	assert.Error(t, err)
+	assert.Empty(t, id)
 }
 
 func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client) {

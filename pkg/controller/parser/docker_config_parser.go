@@ -14,6 +14,10 @@ type DockerConfig struct {
 }
 
 func NewDockerConfig(secret *corev1.Secret) (*DockerConfig, error) {
+	if secret == nil {
+		return nil, fmt.Errorf("given secret is nil")
+	}
+
 	config, hasConfig := secret.Data[".dockerconfigjson"]
 	if !hasConfig {
 		return nil, fmt.Errorf("could not find any docker config in image pull secret")
