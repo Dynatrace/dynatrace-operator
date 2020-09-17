@@ -6,7 +6,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	agerrors "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/errors"
-	parser "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -120,7 +120,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	found := &corev1.Pod{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		return r.createNewPod(pod, instance, secret)
+		return r.createNewPod(pod)
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}

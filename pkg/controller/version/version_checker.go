@@ -1,5 +1,5 @@
 package version
 
-type VersionChecker interface {
+type ReleaseValidator interface {
 	IsLatest() (bool, error)
 }

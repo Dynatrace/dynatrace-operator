@@ -65,25 +65,28 @@ type Client interface {
 
 // Known OS values.
 const (
-	OsWindows = "windows"
-	OsUnix    = "unix"
-	OsAix     = "aix"
-	OsSolaris = "solaris"
+	OsUnix = "unix"
+	//Commented for linter, left for further reference
+	//OsWindows = "windows"
+	//OsAix     = "aix"
+	//OsSolaris = "solaris"
 )
 
 // Known installer types.
 const (
-	InstallerTypeDefault    = "default"
-	InstallerTypeUnattended = "default-unattended"
-	InstallerTypePaasZip    = "paas"
-	InstallerTypePaasSh     = "paas-sh"
+	InstallerTypeDefault = "default"
+	//Commented for linter, left for further reference
+	//InstallerTypeUnattended = "default-unattended"
+	//InstallerTypePaasZip    = "paas"
+	//InstallerTypePaasSh     = "paas-sh"
 )
 
 // Known token scopes
-const (
-	TokenScopeInstallerDownload = "InstallerDownload"
-	TokenScopeDataExport        = "DataExport"
-)
+//Commented for linter, left for further reference
+//const (
+//	TokenScopeInstallerDownload = "InstallerDownload"
+//	TokenScopeDataExport        = "DataExport"
+//)
 
 // NewClient creates a REST client for the given API base URL and authentication tokens.
 // Returns an error if a token or the URL is empty.

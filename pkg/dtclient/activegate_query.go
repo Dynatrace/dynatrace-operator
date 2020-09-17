@@ -21,10 +21,10 @@ type ActiveGate struct {
 	NetworkZone      string
 }
 
-func (dtc *dynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
-	url := fmt.Sprintf("%s/v2/activeGates?%s", dtc.url, buildQueryParams(query))
+func (dc *dynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
+	url := fmt.Sprintf("%s/v2/activeGates?%s", dc.url, buildQueryParams(query))
 	logger.Info("querying activegates", "url", url)
-	response, err := dtc.makeRequest(url, dynatraceApiToken)
+	response, err := dc.makeRequest(url, dynatraceApiToken)
 	if err != nil {
 		logger.Error(err, err.Error())
 		return nil, err
@@ -36,14 +36,14 @@ func (dtc *dynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGa
 		}
 	}()
 
-	data, err := dtc.getServerResponseData(response)
+	data, err := dc.getServerResponseData(response)
 	if err != nil {
 		logger.Error(err, err.Error())
 		return nil, err
 	}
 
 	var result []ActiveGate
-	activegates, err := dtc.readResponseForActiveGates(data)
+	activegates, err := dc.readResponseForActiveGates(data)
 	if err != nil {
 		logger.Error(err, err.Error())
 		return nil, err
@@ -58,9 +58,9 @@ func (dtc *dynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGa
 	return result, nil
 }
 
-func (dtc *dynatraceClient) QueryOutdatedActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
+func (dc *dynatraceClient) QueryOutdatedActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
 	query.UpdateStatus = StatusOutdated
-	return dtc.QueryActiveGates(query)
+	return dc.QueryActiveGates(query)
 }
 
 func buildQueryParams(query *ActiveGateQuery) string {
@@ -87,7 +87,7 @@ func buildQueryParams(query *ActiveGateQuery) string {
 	return params
 }
 
-func (dtc *dynatraceClient) readResponseForActiveGates(data []byte) ([]ActiveGate, error) {
+func (dc *dynatraceClient) readResponseForActiveGates(data []byte) ([]ActiveGate, error) {
 	type jsonResponse struct {
 		ActiveGates []ActiveGate
 	}

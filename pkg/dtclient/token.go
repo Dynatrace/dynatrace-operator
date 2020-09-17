@@ -42,7 +42,10 @@ func (dc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		//Swallow error, nothing has to be done at this point
+		_ = resp.Body.Close()
+	}()
 
 	data, err := dc.getServerResponseData(resp)
 	if err != nil {

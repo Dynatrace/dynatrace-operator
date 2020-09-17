@@ -20,12 +20,15 @@ func (dc *dynatraceClient) GetCommunicationHostForClient() (CommunicationHost, e
 }
 
 func (dc *dynatraceClient) GetCommunicationHosts() ([]CommunicationHost, error) {
-	var url string = fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
-	resp, err := dc.makeRequest(url, dynatracePaaSToken)
+	connectionInfoUrl := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
+	resp, err := dc.makeRequest(connectionInfoUrl, dynatracePaaSToken)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		//Swallow error, nothing has to be done at this point
+		_ = resp.Body.Close()
+	}()
 
 	responseData, err := dc.getServerResponseData(resp)
 	if err != nil {

@@ -28,12 +28,15 @@ func (dc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (stri
 		return "", errors.New("os or installerType is empty")
 	}
 
-	var url string = fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest/metainfo", dc.url, os, installerType)
+	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest/metainfo", dc.url, os, installerType)
 	resp, err := dc.makeRequest(url, dynatracePaaSToken)
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		//Swallow error, nothing has to be done at this point
+		_ = resp.Body.Close()
+	}()
 
 	responseData, err := dc.getServerResponseData(resp)
 	if err != nil {

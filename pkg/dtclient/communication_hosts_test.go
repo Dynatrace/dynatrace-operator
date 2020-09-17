@@ -140,9 +140,9 @@ func testCommunicationHostsGetCommunicationHosts(t *testing.T, dynatraceClient C
 
 	assert.NoError(t, err)
 	assert.ObjectsAreEqualValues(res, []CommunicationHost{
-		CommunicationHost{Host: "host1.dynatracelabs.com", Port: 80, Protocol: "http"},
-		CommunicationHost{Host: "host2.dynatracelabs.com", Port: 443, Protocol: "https"},
-		CommunicationHost{Host: "12.0.9.1", Port: 80, Protocol: "http"},
+		{Host: "host1.dynatracelabs.com", Port: 80, Protocol: "http"},
+		{Host: "host2.dynatracelabs.com", Port: 443, Protocol: "https"},
+		{Host: "12.0.9.1", Port: 80, Protocol: "http"},
 	})
 }
 
@@ -162,7 +162,7 @@ func handleCommunicationHosts(request *http.Request, writer http.ResponseWriter)
 	switch request.Method {
 	case "GET":
 		writer.WriteHeader(http.StatusOK)
-		_, _ = writer.Write([]byte(commHostOutput))
+		_, _ = writer.Write(commHostOutput)
 	default:
 		writeError(writer, http.StatusMethodNotAllowed)
 	}

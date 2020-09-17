@@ -8,9 +8,10 @@ import (
 	"net/http"
 )
 
-const (
-	MarkedForTerminationEvent = "MARKED_FOR_TERMINATION"
-)
+//Commented for linter, left for further reference
+//const (
+//	MarkedForTerminationEvent = "MARKED_FOR_TERMINATION"
+//)
 
 // EventData struct which defines what event payload should contain
 type EventData struct {

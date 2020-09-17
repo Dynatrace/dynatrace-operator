@@ -13,7 +13,7 @@ and are candidates to be made into a library:
 import (
 	"context"
 	"fmt"
-	parser "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
