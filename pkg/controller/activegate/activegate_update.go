@@ -2,6 +2,8 @@ package activegate
 
 import (
 	"context"
+	"time"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
@@ -10,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
 )
 
 func (r *ReconcileActiveGate) updatePods(

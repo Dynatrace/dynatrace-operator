@@ -2,6 +2,9 @@ package activegate
 
 import (
 	"context"
+	"os"
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
@@ -13,11 +16,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubectl/pkg/scheme"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"testing"
 )
 
 func init() {

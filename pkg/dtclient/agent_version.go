@@ -28,7 +28,7 @@ func (dc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (stri
 		return "", errors.New("os or installerType is empty")
 	}
 
-	var url string = fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest/metainfo", dc.url, os, installerType)
+	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest/metainfo", dc.url, os, installerType)
 	resp, err := dc.makeRequest(url, dynatracePaaSToken)
 	if err != nil {
 		return "", err
@@ -68,7 +68,7 @@ func (dc *dynatraceClient) readResponseForLatestVersion(response []byte) (string
 	jr := &jsonResponse{}
 	err := json.Unmarshal(response, jr)
 	if err != nil {
-		logger.Error(err, "error unmarshalling json response")
+		dc.logger.Error(err, "error unmarshalling json response")
 		return "", err
 	}
 

@@ -21,6 +21,7 @@ const hostsResponse = `[
   {
 	"entityId": "dynatraceSampleEntityId",
     "displayName": "good",
+    "lastSeenTimestamp": 1521540000000,
     "ipAddresses": [
       "10.11.12.13",
       "192.168.0.1"
@@ -33,6 +34,7 @@ const hostsResponse = `[
     }
   },
   {
+    "entityId": "unsetAgentHost",
     "displayName": "unset version",
     "ipAddresses": [
       "192.168.100.1"
@@ -41,7 +43,9 @@ const hostsResponse = `[
 ]`
 
 func TestResponseForLatestVersion(t *testing.T) {
-	dc := &dynatraceClient{}
+	dc := &dynatraceClient{
+		logger: consoleLogger,
+	}
 	readFromString := func(json string) (string, error) {
 		r := []byte(json)
 		return dc.readResponseForLatestVersion(r)

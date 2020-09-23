@@ -13,9 +13,9 @@ type TenantInfo struct {
 	CommunicationEndpoint string
 }
 
-func (dc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
-	url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
-	response, err := dc.makeRequest(
+func (dtc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
+	url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dtc.url)
+	response, err := dtc.makeRequest(
 		url,
 		dynatracePaaSToken,
 	)
@@ -26,33 +26,33 @@ func (dc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
 	defer func() {
 		err := response.Body.Close()
 		if err != nil {
-			logger.Error(err, err.Error())
+			dtc.logger.Error(err, err.Error())
 		}
 	}()
 
-	data, err := dc.getServerResponseData(response)
+	data, err := dtc.getServerResponseData(response)
 	if err != nil {
-		err = dc.handleErrorResponseFromAPI(data, response.StatusCode)
+		err = dtc.handleErrorResponseFromAPI(data, response.StatusCode)
 		if err != nil {
-			logger.Error(err, err.Error())
+			dtc.logger.Error(err, err.Error())
 		}
 		return nil, err
 	}
 
-	tenantInfo, err := dc.readResponseForTenantInfo(data)
+	tenantInfo, err := dtc.readResponseForTenantInfo(data)
 	if err != nil {
-		logger.Error(err, err.Error())
+		dtc.logger.Error(err, err.Error())
 		return nil, err
 	}
 	if len(tenantInfo.Endpoints) <= 0 {
-		logger.Info("tenant has no endpoints")
+		dtc.logger.Info("tenant has no endpoints")
 	}
 
 	tenantInfo.CommunicationEndpoint = tenantInfo.findCommunicationEndpoint()
 	return tenantInfo, nil
 }
 
-func (dc *dynatraceClient) readResponseForTenantInfo(response []byte) (*TenantInfo, error) {
+func (dtc *dynatraceClient) readResponseForTenantInfo(response []byte) (*TenantInfo, error) {
 	type jsonResponse struct {
 		TenantUUID             string
 		TenantToken            string
@@ -62,7 +62,7 @@ func (dc *dynatraceClient) readResponseForTenantInfo(response []byte) (*TenantIn
 	jr := &jsonResponse{}
 	err := json.Unmarshal(response, jr)
 	if err != nil {
-		logger.Error(err, "error unmarshalling json response")
+		dtc.logger.Error(err, "error unmarshalling json response")
 		return nil, err
 	}
 

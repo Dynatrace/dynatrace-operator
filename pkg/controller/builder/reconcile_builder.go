@@ -1,8 +1,9 @@
 package builder
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func ReconcileAfter(duration time.Duration) reconcile.Result {
