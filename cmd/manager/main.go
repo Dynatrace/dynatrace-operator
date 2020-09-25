@@ -50,6 +50,10 @@ func main() {
 	// Add the zap logger flag set to the CLI. The flag set must
 	// be added before calling pflag.Parse().
 	pflag.CommandLine.AddFlagSet(zap.FlagSet())
+	err := pflag.Set("zap-time-encoding", "iso8601")
+	if err != nil {
+		log.Error(err, "Failed to set zap-time-encoding")
+	}
 
 	// Add flags registered by imported packages (e.g. glog and
 	// controller-runtime)

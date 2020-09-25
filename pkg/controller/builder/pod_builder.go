@@ -144,7 +144,7 @@ const (
 	ActivegateImage = "612044533526.dkr.ecr.us-east-1.amazonaws.com/activegate:latest"
 	ActivegateName  = "dynatrace-activegate-operator"
 
-	MonitoringServiceAccount = "dynatrace-monitoring"
+	MonitoringServiceAccount = "dynatrace-monitoring-operator"
 
 	KubernetesArch     = "kubernetes.io/arch"
 	KubernetesOs       = "kubernetes.io/os"
