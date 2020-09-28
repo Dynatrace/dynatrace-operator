@@ -17,6 +17,29 @@ rules:
       - watch
       - update
       - create
+  - apiGroups:
+      - dynatrace.com
+    resources:
+      - activegates/finalizers
+      - activegates/status
+    verbs:
+      - update
+
+  - apiGroups:
+      - apps
+    resources:
+      - replicasets
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments/finalizers
+    verbs:
+      - update
 
   - apiGroups:
       - ""
@@ -39,7 +62,6 @@ rules:
       - watch
       - delete
       - create
-
   - apiGroups:
       - ""
     resources:
@@ -56,9 +78,8 @@ rules:
       - get
       - create
   - apiGroups:
-      - dynatrace.com
+      - ""
     resources:
-      - activegates/finalizers
-      - activegates/status
+      - services
     verbs:
-      - update
+      - create
