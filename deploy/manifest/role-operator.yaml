@@ -83,3 +83,12 @@ rules:
       - services
     verbs:
       - create
+
+  - apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    resourceNames:
+      - dynatrace-activegate-operator
+    verbs:
+      - use
