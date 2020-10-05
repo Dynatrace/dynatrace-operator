@@ -32,9 +32,9 @@ func (o *MockDynatraceClient) GetLatestAgentVersion(os, installerType string) (s
 	return args.String(0), args.Error(1)
 }
 
-func (o *MockDynatraceClient) GetCommunicationHosts() ([]CommunicationHost, error) {
+func (o *MockDynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
 	args := o.Called()
-	return args.Get(0).([]CommunicationHost), args.Error(1)
+	return args.Get(0).(ConnectionInfo), args.Error(1)
 }
 
 func (o *MockDynatraceClient) GetCommunicationHostForClient() (CommunicationHost, error) {
@@ -55,4 +55,9 @@ func (o *MockDynatraceClient) GetEntityIDForIP(ip string) (string, error) {
 func (o *MockDynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 	args := o.Called(token)
 	return args.Get(0).(TokenScopes), args.Error(1)
+}
+
+func (o *MockDynatraceClient) GetClusterInfo() (*ClusterInfo, error) {
+	args := o.Called()
+	return args.Get(0).(*ClusterInfo), args.Error(1)
 }

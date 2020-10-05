@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
-	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"github.com/go-logr/logr"
 )
 
 type hostInfo struct {
@@ -20,10 +21,16 @@ type dynatraceClient struct {
 	url       string
 	apiToken  string
 	paasToken string
+	logger    logr.Logger
+
+	networkZone string
 
 	httpClient *http.Client
 
 	hostCache map[string]hostInfo
+
+	// Set for testing purposes, leave the default zero value to use the current time.
+	now time.Time
 }
 
 type tokenType int
@@ -33,27 +40,26 @@ const (
 	dynatracePaaSToken
 )
 
-var logger = log.Log.WithName("dynatrace.client")
-
 // makeRequest does an HTTP request by formatting the URL from the given arguments and returns the response.
 // The response body must be closed by the caller when no longer used.
 func (dc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.Response, error) {
-
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error initialising http request: %s", err.Error())
+		return nil, fmt.Errorf("error initializing http request: %s", err.Error())
 	}
 
 	var authHeader string
 
-	if dc.paasToken == "" || dc.apiToken == "" {
-		return nil, errors.New("not able to set token since token is empty")
-	}
-
 	switch tokenType {
 	case dynatraceApiToken:
+		if dc.apiToken == "" {
+			return nil, fmt.Errorf("not able to set token since api token is empty for request: %s", url)
+		}
 		authHeader = fmt.Sprintf("Api-Token %s", dc.apiToken)
 	case dynatracePaaSToken:
+		if dc.paasToken == "" {
+			return nil, fmt.Errorf("not able to set token since paas token is empty for request: %s", url)
+		}
 		authHeader = fmt.Sprintf("Api-Token %s", dc.paasToken)
 	default:
 		return nil, errors.New("unable to determine token to set in headers")
@@ -135,7 +141,9 @@ func (dc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 			Revision  int
 			Timestamp string
 		}
-		EntityID string
+		EntityID          string
+		NetworkZoneID     string
+		LastSeenTimestamp int64
 	}
 
 	dc.hostCache = make(map[string]hostInfo)
@@ -143,22 +151,45 @@ func (dc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 	var hostInfoResponses []hostInfoResponse
 	err := json.Unmarshal(response, &hostInfoResponses)
 	if err != nil {
-		logger.Error(err, "error unmarshalling json response")
+		dc.logger.Error(err, "error unmarshalling json response")
 		return err
 	}
 
-	for _, info := range hostInfoResponses {
-		hostInfo := hostInfo{entityID: info.EntityID}
+	now := dc.now
+	if now.IsZero() {
+		now = time.Now().UTC()
+	}
 
-		v := info.AgentVersion
-		if v == nil {
+	var inactive []string
+
+	for _, info := range hostInfoResponses {
+		// If we haven't seen this host in the last 30 minutes, ignore it.
+		if tm := time.Unix(info.LastSeenTimestamp/1000, 0).UTC(); tm.Before(now.Add(-30 * time.Minute)) {
+			inactive = append(inactive, info.EntityID)
 			continue
 		}
 
-		hostInfo.version = fmt.Sprintf("%d.%d.%d.%s", v.Major, v.Minor, v.Revision, v.Timestamp)
-		for _, ip := range info.IPAddresses {
-			dc.hostCache[ip] = hostInfo
+		nz := info.NetworkZoneID
+
+		if (dc.networkZone != "" && nz == dc.networkZone) || (dc.networkZone == "" && (nz == "default" || nz == "")) {
+			hostInfo := hostInfo{entityID: info.EntityID}
+
+			if v := info.AgentVersion; v != nil {
+				hostInfo.version = fmt.Sprintf("%d.%d.%d.%s", v.Major, v.Minor, v.Revision, v.Timestamp)
+			}
+
+			for _, ip := range info.IPAddresses {
+				if old, ok := dc.hostCache[ip]; ok {
+					dc.logger.Info("Hosts cache: replacing host", "ip", ip, "new", hostInfo.entityID, "old", old.entityID)
+				}
+
+				dc.hostCache[ip] = hostInfo
+			}
 		}
+	}
+
+	if len(inactive) > 0 {
+		dc.logger.Info("Hosts cache: ignoring inactive hosts", "ids", inactive)
 	}
 
 	return nil

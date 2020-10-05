@@ -2,10 +2,11 @@ package activegate
 
 import (
 	"context"
+	"time"
+
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
 )
 
 func (r *ReconcileActiveGate) createNewPod(pod *corev1.Pod) (reconcile.Result, error) {

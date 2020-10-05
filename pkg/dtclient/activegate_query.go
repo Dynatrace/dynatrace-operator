@@ -3,6 +3,8 @@ package dtclient
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/go-logr/logr"
 )
 
 type ActiveGateQuery struct {
@@ -21,31 +23,31 @@ type ActiveGate struct {
 	NetworkZone      string
 }
 
-func (dc *dynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
-	url := fmt.Sprintf("%s/v2/activeGates?%s", dc.url, buildQueryParams(query))
-	logger.Info("querying activegates", "url", url)
-	response, err := dc.makeRequest(url, dynatraceApiToken)
+func (dtc *dynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
+	url := fmt.Sprintf("%s/v2/activeGates?%s", dtc.url, buildQueryParams(query, dtc.logger))
+	dtc.logger.Info("querying activegates", "url", url)
+	response, err := dtc.makeRequest(url, dynatraceApiToken)
 	if err != nil {
-		logger.Error(err, err.Error())
+		dtc.logger.Error(err, err.Error())
 		return nil, err
 	}
 	defer func() {
 		err := response.Body.Close()
 		if err != nil {
-			logger.Error(err, "error closing response body")
+			dtc.logger.Error(err, "error closing response body")
 		}
 	}()
 
-	data, err := dc.getServerResponseData(response)
+	data, err := dtc.getServerResponseData(response)
 	if err != nil {
-		logger.Error(err, err.Error())
+		dtc.logger.Error(err, err.Error())
 		return nil, err
 	}
 
 	var result []ActiveGate
-	activegates, err := dc.readResponseForActiveGates(data)
+	activegates, err := dtc.readResponseForActiveGates(data)
 	if err != nil {
-		logger.Error(err, err.Error())
+		dtc.logger.Error(err, err.Error())
 		return nil, err
 	}
 
@@ -58,12 +60,12 @@ func (dc *dynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGat
 	return result, nil
 }
 
-func (dc *dynatraceClient) QueryOutdatedActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
+func (dtc *dynatraceClient) QueryOutdatedActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
 	query.UpdateStatus = StatusOutdated
-	return dc.QueryActiveGates(query)
+	return dtc.QueryActiveGates(query)
 }
 
-func buildQueryParams(query *ActiveGateQuery) string {
+func buildQueryParams(query *ActiveGateQuery, logger logr.Logger) string {
 	params := ""
 	if query != nil {
 		if query.Hostname != "" {
@@ -87,7 +89,7 @@ func buildQueryParams(query *ActiveGateQuery) string {
 	return params
 }
 
-func (dc *dynatraceClient) readResponseForActiveGates(data []byte) ([]ActiveGate, error) {
+func (dtc *dynatraceClient) readResponseForActiveGates(data []byte) ([]ActiveGate, error) {
 	type jsonResponse struct {
 		ActiveGates []ActiveGate
 	}
@@ -95,7 +97,7 @@ func (dc *dynatraceClient) readResponseForActiveGates(data []byte) ([]ActiveGate
 	jr := &jsonResponse{}
 	err := json.Unmarshal(data, jr)
 	if err != nil {
-		logger.Error(err, "cannot unmarshal activegate response")
+		dtc.logger.Error(err, "cannot unmarshal activegate response")
 		return nil, err
 	}
 	return jr.ActiveGates, nil

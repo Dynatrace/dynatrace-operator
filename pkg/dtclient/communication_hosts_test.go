@@ -32,9 +32,11 @@ const mixedCommunicationEndpointsResponse = `{
 }`
 
 func TestReadCommunicationHosts(t *testing.T) {
-	dc := &dynatraceClient{}
+	dc := &dynatraceClient{
+		logger: consoleLogger,
+	}
 
-	readFromString := func(json string) ([]CommunicationHost, error) {
+	readFromString := func(json string) (ConnectionInfo, error) {
 		r := []byte(json)
 		return dc.readResponseForConnectionInfo(r)
 	}
@@ -48,7 +50,7 @@ func TestReadCommunicationHosts(t *testing.T) {
 				{Protocol: "https", Host: "10.0.0.1", Port: 8000},
 				{Protocol: "http", Host: "insecurehost", Port: 80},
 			}
-			assert.Equal(t, expected, m)
+			assert.Equal(t, expected, m.CommunicationHosts)
 		}
 	}
 	{
@@ -57,7 +59,7 @@ func TestReadCommunicationHosts(t *testing.T) {
 			expected := []CommunicationHost{
 				{Protocol: "https", Host: "example.live.dynatrace.com", Port: 443},
 			}
-			assert.Equal(t, expected, m)
+			assert.Equal(t, expected, m.CommunicationHosts)
 		}
 	}
 	{
@@ -136,10 +138,10 @@ func TestParseEndpoints(t *testing.T) {
 }
 
 func testCommunicationHostsGetCommunicationHosts(t *testing.T, dynatraceClient Client) {
-	res, err := dynatraceClient.GetCommunicationHosts()
+	res, err := dynatraceClient.GetConnectionInfo()
 
 	assert.NoError(t, err)
-	assert.ObjectsAreEqualValues(res, []CommunicationHost{
+	assert.ObjectsAreEqualValues(res.CommunicationHosts, []CommunicationHost{
 		{Host: "host1.dynatracelabs.com", Port: 80, Protocol: "http"},
 		{Host: "host2.dynatracelabs.com", Port: 443, Protocol: "https"},
 		{Host: "12.0.9.1", Port: 80, Protocol: "http"},

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // Client is the interface for the Dynatrace REST API client.
@@ -39,7 +41,7 @@ type Client interface {
 	// communication endpoints that the Dynatrace OneAgent can use to connect to.
 	//
 	// Returns an error if there was also an error response from the server.
-	GetCommunicationHosts() ([]CommunicationHost, error)
+	GetConnectionInfo() (ConnectionInfo, error)
 
 	// GetCommunicationHostForClient returns a CommunicationHost for the client's API URL. Or error, if failed to be parsed.
 	GetCommunicationHostForClient() (CommunicationHost, error)
@@ -51,6 +53,10 @@ type Client interface {
 	//
 	// Returns an error in case the lookup failed.
 	GetEntityIDForIP(ip string) (string, error)
+
+	// GetClusterInfo returns the following information about the cluster:
+	// * Version
+	GetClusterInfo() (*ClusterInfo, error)
 
 	// GetTokenScopes returns the list of scopes assigned to a token if successful.
 	GetTokenScopes(token string) (TokenScopes, error)
@@ -100,8 +106,8 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 	if len(url) == 0 {
 		return nil, errors.New("url is empty")
 	}
-	if len(apiToken) == 0 || len(paasToken) == 0 {
-		return nil, errors.New("token is empty")
+	if len(apiToken) == 0 && len(paasToken) == 0 {
+		return nil, errors.New("tokens are empty")
 	}
 
 	if strings.HasSuffix(url, "/") {
@@ -112,6 +118,7 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 		url:       url,
 		apiToken:  apiToken,
 		paasToken: paasToken,
+		logger:    log.Log.WithName("dynatrace.client"),
 
 		hostCache: make(map[string]hostInfo),
 		httpClient: &http.Client{
@@ -146,7 +153,7 @@ func Proxy(proxyURL string) Option {
 	return func(c *dynatraceClient) {
 		p, err := url.Parse(proxyURL)
 		if err != nil {
-			logger.Info("Could not parse proxy URL!")
+			c.logger.Info("Could not parse proxy URL!")
 			return
 		}
 		t := c.httpClient.Transport.(*http.Transport)
@@ -158,7 +165,7 @@ func Certs(certs []byte) Option {
 	return func(c *dynatraceClient) {
 		rootCAs := x509.NewCertPool()
 		if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
-			logger.Info("Failed to append custom certs!")
+			c.logger.Info("Failed to append custom certs!")
 		}
 
 		t := c.httpClient.Transport.(*http.Transport)

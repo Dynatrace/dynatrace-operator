@@ -8,6 +8,12 @@ import (
 	"strconv"
 )
 
+// ConnectionInfo => struct of TenantUUID and CommunicationHosts
+type ConnectionInfo struct {
+	CommunicationHosts []CommunicationHost
+	TenantUUID         string
+}
+
 // CommunicationHost => struct of connection endpoint
 type CommunicationHost struct {
 	Protocol string
@@ -19,11 +25,11 @@ func (dc *dynatraceClient) GetCommunicationHostForClient() (CommunicationHost, e
 	return dc.parseEndpoint(dc.url)
 }
 
-func (dc *dynatraceClient) GetCommunicationHosts() ([]CommunicationHost, error) {
-	connectionInfoUrl := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
-	resp, err := dc.makeRequest(connectionInfoUrl, dynatracePaaSToken)
+func (dc *dynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
+	url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
+	resp, err := dc.makeRequest(url, dynatracePaaSToken)
 	if err != nil {
-		return nil, err
+		return ConnectionInfo{}, err
 	}
 	defer func() {
 		//Swallow error, nothing has to be done at this point
@@ -32,42 +38,49 @@ func (dc *dynatraceClient) GetCommunicationHosts() ([]CommunicationHost, error) 
 
 	responseData, err := dc.getServerResponseData(resp)
 	if err != nil {
-		return nil, err
+		return ConnectionInfo{}, err
 	}
 
 	return dc.readResponseForConnectionInfo(responseData)
 }
 
-func (dc *dynatraceClient) readResponseForConnectionInfo(response []byte) ([]CommunicationHost, error) {
+func (dc *dynatraceClient) readResponseForConnectionInfo(response []byte) (ConnectionInfo, error) {
 	type jsonResponse struct {
-		CommunicationEndpoints []string
+		TenantUUID             string   `json:"tenantUUID"`
+		CommunicationEndpoints []string `json:"communicationEndpoints"`
 	}
 
 	resp := jsonResponse{}
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
-		logger.Error(err, "error unmarshalling json response")
-		return nil, err
+		dc.logger.Error(err, "error unmarshalling json response")
+		return ConnectionInfo{}, err
 	}
 
-	out := make([]CommunicationHost, 0, len(resp.CommunicationEndpoints))
+	t := resp.TenantUUID
+	ch := make([]CommunicationHost, 0, len(resp.CommunicationEndpoints))
 
 	for _, s := range resp.CommunicationEndpoints {
-		logger := logger.WithValues("url", s)
+		logger := dc.logger.WithValues("url", s)
 
 		e, err := dc.parseEndpoint(s)
 		if err != nil {
 			logger.Info("failed to parse communication endpoint")
 			continue
 		}
-		out = append(out, e)
+		ch = append(ch, e)
 	}
 
-	if len(out) == 0 {
-		return nil, errors.New("no hosts available")
+	if len(ch) == 0 {
+		return ConnectionInfo{}, errors.New("no communication hosts available")
 	}
 
-	return out, nil
+	ci := ConnectionInfo{
+		CommunicationHosts: ch,
+		TenantUUID:         t,
+	}
+
+	return ci, nil
 }
 
 func (dc *dynatraceClient) parseEndpoint(s string) (CommunicationHost, error) {

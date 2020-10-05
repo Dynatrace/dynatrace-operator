@@ -71,7 +71,7 @@ func (dc *dynatraceClient) readResponseForLatestVersion(response []byte) (string
 	jr := &jsonResponse{}
 	err := json.Unmarshal(response, jr)
 	if err != nil {
-		logger.Error(err, "error unmarshalling json response")
+		dc.logger.Error(err, "error unmarshalling json response")
 		return "", err
 	}
 

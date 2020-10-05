@@ -3,13 +3,14 @@ package version
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/go-digest"
-	"strings"
 )
 
 type DockerVersionChecker struct {

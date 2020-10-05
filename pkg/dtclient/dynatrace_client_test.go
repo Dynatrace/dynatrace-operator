@@ -5,11 +5,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
+
+var consoleLogger = zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout))
 
 func TestMakeRequest(t *testing.T) {
 	dynatraceServer := httptest.NewServer(dynatraceServerHandler())
@@ -19,6 +24,7 @@ func TestMakeRequest(t *testing.T) {
 		url:       dynatraceServer.URL,
 		apiToken:  apiToken,
 		paasToken: paasToken,
+		logger:    consoleLogger,
 
 		hostCache:  make(map[string]hostInfo),
 		httpClient: http.DefaultClient,
@@ -47,6 +53,7 @@ func TestGetResponseOrServerError(t *testing.T) {
 		url:       dynatraceServer.URL,
 		apiToken:  apiToken,
 		paasToken: paasToken,
+		logger:    consoleLogger,
 
 		hostCache:  make(map[string]hostInfo),
 		httpClient: http.DefaultClient,
@@ -73,6 +80,8 @@ func TestBuildHostCache(t *testing.T) {
 	dc := &dynatraceClient{
 		url:       dynatraceServer.URL,
 		paasToken: paasToken,
+		now:       time.Unix(1521540000, 0),
+		logger:    consoleLogger,
 
 		hostCache:  make(map[string]hostInfo),
 		httpClient: http.DefaultClient,
@@ -121,16 +130,17 @@ func TestDynatraceClientWithServer(t *testing.T) {
 	defer dynatraceServer.Close()
 
 	skipCert := SkipCertificateValidation(true)
-	dynatraceClient, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+	dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
+	dtc.(*dynatraceClient).now = time.Unix(1521540000, 0)
 
 	require.NoError(t, err)
-	require.NotNil(t, dynatraceClient)
+	require.NotNil(t, dtc)
 
-	testAgentVersionGetLatestAgentVersion(t, dynatraceClient)
-	testAgentVersionGetAgentVersionForIP(t, dynatraceClient)
-	testCommunicationHostsGetCommunicationHosts(t, dynatraceClient)
-	testSendEvent(t, dynatraceClient)
-	testGetTokenScopes(t, dynatraceClient)
+	testAgentVersionGetLatestAgentVersion(t, dtc)
+	testAgentVersionGetAgentVersionForIP(t, dtc)
+	testCommunicationHostsGetCommunicationHosts(t, dtc)
+	testSendEvent(t, dtc)
+	testGetTokenScopes(t, dtc)
 }
 
 func dynatraceServerHandler() http.HandlerFunc {
@@ -177,8 +187,16 @@ func writeError(w http.ResponseWriter, status int) {
 	_, _ = w.Write(result)
 }
 
-func TestIgnoreHostsWithNoVersions(t *testing.T) {
-	c := dynatraceClient{}
+func TestIgnoreNonCurrentlySeenHosts(t *testing.T) {
+	// now:                         20/05/2020 10:10 AM UTC
+	// HOST-42 - lastSeenTimestamp: 20/05/2020 10:04 AM UTC
+	// HOST-84 - lastSeenTimestamp: 19/05/2020 01:49 AM UTC
+
+	c := dynatraceClient{
+		logger: consoleLogger,
+		now:    time.Unix(1589969400, 0).UTC(),
+	}
+
 	require.NoError(t, c.setHostCacheFromResponse([]byte(`[
 	{
 		"entityId": "HOST-42",

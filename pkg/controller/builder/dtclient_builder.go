@@ -13,12 +13,12 @@ and are candidates to be made into a library:
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type options struct {

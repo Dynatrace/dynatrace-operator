@@ -1,26 +1,27 @@
 package builder
 
 import (
+	"strings"
+
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"strings"
 )
 
 func BuildActiveGatePodSpecs(
-	acitveGatePodSpec *v1alpha1.ActiveGateSpec,
+	activeGatePodSpec *v1alpha1.ActiveGateSpec,
 	tenantInfo *dtclient.TenantInfo) corev1.PodSpec {
-	serviceaccount := ActivegateName
+	sa := MonitoringServiceAccount
 	image := ActivegateImage
 
-	if acitveGatePodSpec == nil {
+	if activeGatePodSpec == nil {
 		acitveGatePodSpec = &v1alpha1.ActiveGateSpec{}
 	}
-	if acitveGatePodSpec.ServiceAccountName != "" {
+	if activeGatePodSpec.ServiceAccountName != "" {
 		serviceaccount = acitveGatePodSpec.ServiceAccountName
 	}
-	if acitveGatePodSpec.Image != "" {
+	if activeGatePodSpec.Image != "" {
 		image = acitveGatePodSpec.Image
 	}
 	if tenantInfo == nil {
@@ -31,32 +32,29 @@ func BuildActiveGatePodSpecs(
 		}
 	}
 
-	if acitveGatePodSpec.Resources.Requests == nil {
-		acitveGatePodSpec.Resources.Requests = corev1.ResourceList{}
+	if activeGatePodSpec.Resources.Requests == nil {
+		activeGatePodSpec.Resources.Requests = corev1.ResourceList{}
 	}
-	if _, hasCPUResource := acitveGatePodSpec.Resources.Requests[corev1.ResourceCPU]; !hasCPUResource {
+	if _, hasCPUResource := activeGatePodSpec.Resources.Requests[corev1.ResourceCPU]; !hasCPUResource {
 		// Set CPU resource to 1 * 10**(-1) Cores, e.g. 100mC
-		acitveGatePodSpec.Resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
+		activeGatePodSpec.Resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
 	}
 
 	return corev1.PodSpec{
 		Containers: []corev1.Container{{
 			Name:            ActivegateName,
 			Image:           image,
-			Resources:       acitveGatePodSpec.Resources,
+			Resources:       activeGatePodSpec.Resources,
 			ImagePullPolicy: corev1.PullAlways,
-			Env:             buildEnvVars(acitveGatePodSpec, tenantInfo),
+			Env:             buildEnvVars(activeGatePodSpec, tenantInfo),
 			Args:            buildArgs(),
 		}},
-		DNSPolicy:          acitveGatePodSpec.DNSPolicy,
-		NodeSelector:       acitveGatePodSpec.NodeSelector,
-		ServiceAccountName: serviceaccount,
-		HostNetwork:        true,
-		HostPID:            true,
-		HostIPC:            true,
+		DNSPolicy:          activeGatePodSpec.DNSPolicy,
+		NodeSelector:       activeGatePodSpec.NodeSelector,
+		ServiceAccountName: sa,
 		Affinity:           buildAffinity(),
-		Tolerations:        acitveGatePodSpec.Tolerations,
-		PriorityClassName:  acitveGatePodSpec.PriorityClassName,
+		Tolerations:        activeGatePodSpec.Tolerations,
+		PriorityClassName:  activeGatePodSpec.PriorityClassName,
 	}
 }
 
@@ -69,7 +67,7 @@ func buildArgs() []string {
 	}
 }
 
-func buildEnvVars(acitveGatePodSpec *v1alpha1.ActiveGateSpec, tenantInfo *dtclient.TenantInfo) []corev1.EnvVar {
+func buildEnvVars(activeGatePodSpec *v1alpha1.ActiveGateSpec, tenantInfo *dtclient.TenantInfo) []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
 			Name:  DtTenant,
@@ -85,7 +83,7 @@ func buildEnvVars(acitveGatePodSpec *v1alpha1.ActiveGateSpec, tenantInfo *dtclie
 		},
 		{
 			Name:  DtCapabilities,
-			Value: strings.Join(acitveGatePodSpec.Capabilities, Comma),
+			Value: strings.Join(activeGatePodSpec.Capabilities, Comma),
 		},
 	}
 }
@@ -148,6 +146,8 @@ func BuildLabelsForQuery(name string) map[string]string {
 const (
 	ActivegateImage = "612044533526.dkr.ecr.us-east-1.amazonaws.com/activegate:latest"
 	ActivegateName  = "dynatrace-activegate-operator"
+
+	MonitoringServiceAccount = "dynatrace-activegate"
 
 	KubernetesArch     = "kubernetes.io/arch"
 	KubernetesOs       = "kubernetes.io/os"

@@ -33,7 +33,7 @@ func (dc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/tokens/lookup", dc.url), bytes.NewBuffer(jsonStr))
 	if err != nil {
-		return nil, fmt.Errorf("error initialising http request: %w", err)
+		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", token))
