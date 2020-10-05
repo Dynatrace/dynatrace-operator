@@ -13,10 +13,10 @@ type ClusterInfo struct {
 	Version string `json:"version"`
 }
 
-func (dc *dynatraceClient) GetClusterInfo() (*ClusterInfo, error) {
+func (dtc *dynatraceClient) GetClusterInfo() (*ClusterInfo, error) {
 	result := ClusterInfo{}
-	url := fmt.Sprintf("%s%s", dc.url, clusterVersionEndpoint)
-	resp, err := dc.makeRequest(url, dynatraceApiToken)
+	url := fmt.Sprintf("%s%s", dtc.url, clusterVersionEndpoint)
+	resp, err := dtc.makeRequest(url, dynatraceApiToken)
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func (dc *dynatraceClient) GetClusterInfo() (*ClusterInfo, error) {
 		_ = resp.Body.Close()
 	}()
 
-	responseData, err := dc.getServerResponseData(resp)
+	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {
 		return nil, err
 	}

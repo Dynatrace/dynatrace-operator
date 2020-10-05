@@ -1,11 +1,12 @@
 package version
 
 import (
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestMakeSystemContext(t *testing.T) {
@@ -30,7 +31,7 @@ func TestMakeSystemContext(t *testing.T) {
 	auths := make(map[string]struct {
 		Username string
 		Password string
-	}, 0)
+	})
 	auths["localhost.com"] = auth{
 		Username: "username",
 		Password: "password",

@@ -2,9 +2,10 @@ package parser
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	"testing"
 )
 
 func TestNewDockerConfig(t *testing.T) {
@@ -12,7 +13,7 @@ func TestNewDockerConfig(t *testing.T) {
 		auths := make(map[string]struct {
 			Username string
 			Password string
-		}, 0)
+		})
 		auths["localhost"] = struct {
 			Username string
 			Password string
@@ -22,7 +23,7 @@ func TestNewDockerConfig(t *testing.T) {
 		}
 		templateDockerConf := DockerConfig{Auths: auths}
 		templateDockerConfJson, _ := json.Marshal(templateDockerConf)
-		data := make(map[string][]byte, 0)
+		data := make(map[string][]byte)
 		data[".dockerconfigjson"] = templateDockerConfJson
 		secret := corev1.Secret{
 			Data: data,
@@ -44,7 +45,7 @@ func TestNewDockerConfig(t *testing.T) {
 		assert.Nil(t, dockerConfig)
 	})
 	t.Run("NewDockerConfig handle malformed data", func(t *testing.T) {
-		data := make(map[string][]byte, 0)
+		data := make(map[string][]byte)
 		data[".dockerconfigjson"] = make([]byte, 0)
 		secret := corev1.Secret{
 			Data: data,

@@ -6,12 +6,12 @@ import (
 	"fmt"
 )
 
-func (dc *dynatraceClient) GetAgentVersionForIP(ip string) (string, error) {
+func (dtc *dynatraceClient) GetAgentVersionForIP(ip string) (string, error) {
 	if len(ip) == 0 {
 		return "", errors.New("ip is invalid")
 	}
 
-	hostInfo, err := dc.getHostInfoForIP(ip)
+	hostInfo, err := dtc.getHostInfoForIP(ip)
 	if err != nil {
 		return "", err
 	}
@@ -23,13 +23,13 @@ func (dc *dynatraceClient) GetAgentVersionForIP(ip string) (string, error) {
 }
 
 // GetVersionForLatest gets the latest agent version for the given OS and installer type.
-func (dc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {
+func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {
 	if len(os) == 0 || len(installerType) == 0 {
 		return "", errors.New("os or installerType is empty")
 	}
 
-	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest/metainfo", dc.url, os, installerType)
-	resp, err := dc.makeRequest(url, dynatracePaaSToken)
+	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest/metainfo", dtc.url, os, installerType)
+	resp, err := dtc.makeRequest(url, dynatracePaaSToken)
 	if err != nil {
 		return "", err
 	}
@@ -38,20 +38,20 @@ func (dc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (stri
 		_ = resp.Body.Close()
 	}()
 
-	responseData, err := dc.getServerResponseData(resp)
+	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {
 		return "", err
 	}
 
-	return dc.readResponseForLatestVersion(responseData)
+	return dtc.readResponseForLatestVersion(responseData)
 }
 
-func (dc *dynatraceClient) GetEntityIDForIP(ip string) (string, error) {
+func (dtc *dynatraceClient) GetEntityIDForIP(ip string) (string, error) {
 	if len(ip) == 0 {
 		return "", errors.New("ip is invalid")
 	}
 
-	hostInfo, err := dc.getHostInfoForIP(ip)
+	hostInfo, err := dtc.getHostInfoForIP(ip)
 	if err != nil {
 		return "", err
 	}
@@ -63,7 +63,7 @@ func (dc *dynatraceClient) GetEntityIDForIP(ip string) (string, error) {
 }
 
 // readLatestVersion reads the agent version from the given server response reader.
-func (dc *dynatraceClient) readResponseForLatestVersion(response []byte) (string, error) {
+func (dtc *dynatraceClient) readResponseForLatestVersion(response []byte) (string, error) {
 	type jsonResponse struct {
 		LatestAgentVersion string
 	}
@@ -71,7 +71,7 @@ func (dc *dynatraceClient) readResponseForLatestVersion(response []byte) (string
 	jr := &jsonResponse{}
 	err := json.Unmarshal(response, jr)
 	if err != nil {
-		dc.logger.Error(err, "error unmarshalling json response")
+		dtc.logger.Error(err, "error unmarshalling json response")
 		return "", err
 	}
 

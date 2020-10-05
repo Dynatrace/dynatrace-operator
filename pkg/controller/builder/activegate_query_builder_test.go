@@ -1,10 +1,11 @@
 package builder
 
 import (
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	"testing"
 )
 
 func TestBuildActiveGateQuery(t *testing.T) {

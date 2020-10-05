@@ -72,7 +72,7 @@ func TestIsLatest(t *testing.T) {
 				&corev1.Secret{})
 
 			assert.False(t, result)
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 		} else {
 			assert.Fail(t, "r is nil")
 		}
@@ -92,7 +92,7 @@ func TestFindOutdatedPods(t *testing.T) {
 			assert.NotNil(t, pods)
 			assert.NotEmpty(t, pods)
 			assert.Equal(t, 1, len(pods))
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 		} else {
 			assert.Fail(t, "r is nil")
 		}
@@ -109,7 +109,7 @@ func TestFindOutdatedPods(t *testing.T) {
 			assert.NotNil(t, pods)
 			assert.Empty(t, pods)
 			assert.Equal(t, 0, len(pods))
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 		} else {
 			assert.Fail(t, "r is nil")
 		}
@@ -127,7 +127,7 @@ func TestFindOutdatedPods(t *testing.T) {
 			assert.NotNil(t, pods)
 			assert.Empty(t, pods)
 			assert.Equal(t, 0, len(pods))
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 		} else {
 			assert.Fail(t, "r is nil")
 		}
@@ -145,14 +145,14 @@ func TestUpdatePods(t *testing.T) {
 			result, err := r.updateService.UpdatePods(r, &corev1.Pod{}, instance, &corev1.Secret{})
 
 			assert.Nil(t, result)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
 
 			assert.NotNil(t, pods)
 			assert.Empty(t, pods)
 			assert.Equal(t, 0, len(pods))
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 		} else {
 			assert.Fail(t, "r is nil")
 		}
@@ -167,7 +167,7 @@ func TestUpdatePods(t *testing.T) {
 			result, err := r.updateService.UpdatePods(r, &corev1.Pod{}, nil, &corev1.Secret{})
 
 			assert.Nil(t, result)
-			assert.NotNil(t, err)
+			assert.Error(t, err)
 		} else {
 			assert.Fail(t, "r is nil")
 		}
@@ -183,7 +183,7 @@ func TestUpdatePods(t *testing.T) {
 			result, err := r.updateService.UpdatePods(r, &corev1.Pod{}, instance, &corev1.Secret{})
 
 			assert.Nil(t, result)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
 
@@ -191,7 +191,7 @@ func TestUpdatePods(t *testing.T) {
 			assert.NotNil(t, pods)
 			assert.NotEmpty(t, pods)
 			assert.Equal(t, 1, len(pods))
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 		} else {
 			assert.Fail(t, "r is nil")
 		}

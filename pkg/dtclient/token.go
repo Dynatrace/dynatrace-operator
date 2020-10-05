@@ -20,7 +20,7 @@ func (s TokenScopes) Contains(scope string) bool {
 	return false
 }
 
-func (dc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
+func (dtc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 	var model struct {
 		Token string `json:"token"`
 	}
@@ -31,14 +31,14 @@ func (dc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/tokens/lookup", dc.url), bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/tokens/lookup", dtc.url), bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", token))
 
-	resp, err := dc.httpClient.Do(req)
+	resp, err := dtc.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error making post request to dynatrace api: %w", err)
 	}
@@ -47,15 +47,15 @@ func (dc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 		_ = resp.Body.Close()
 	}()
 
-	data, err := dc.getServerResponseData(resp)
+	data, err := dtc.getServerResponseData(resp)
 	if err != nil {
 		return nil, err
 	}
 
-	return dc.readResponseForTokenScopes(data)
+	return dtc.readResponseForTokenScopes(data)
 }
 
-func (dc *dynatraceClient) readResponseForTokenScopes(response []byte) (TokenScopes, error) {
+func (dtc *dynatraceClient) readResponseForTokenScopes(response []byte) (TokenScopes, error) {
 	var jr struct {
 		Scopes []string `json:"scopes"`
 	}

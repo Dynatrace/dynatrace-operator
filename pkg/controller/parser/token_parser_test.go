@@ -12,7 +12,7 @@ func TestNewTokens(t *testing.T) {
 	secret := createTestSecret()
 	tokens, err := NewTokens(secret)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.NotNil(t, tokens)
 
 	assert.Equal(t, ApiToken, tokens.ApiToken)
@@ -26,7 +26,7 @@ func TestNewTokens_NoApiToken(t *testing.T) {
 
 	tokens, err := NewTokens(secret)
 
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Nil(t, tokens)
 }
 
@@ -37,7 +37,7 @@ func TestNewTokens_NoPaasToken(t *testing.T) {
 
 	tokens, err := NewTokens(secret)
 
-	assert.NotNil(t, err)
+	assert.Error(t, err)
 	assert.Nil(t, tokens)
 }
 

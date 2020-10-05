@@ -3,6 +3,8 @@ package activegate
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
@@ -10,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"testing"
 )
 
 type failUpdatePodsService struct {
@@ -31,7 +32,7 @@ func TestUpdateInstanceStatus(t *testing.T) {
 
 	pods, err := r.findPods(instance)
 	assert.NotEmpty(t, pods)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	for _, pod := range pods {
 		r.updateInstanceStatus(&pod, instance, nil)
@@ -46,14 +47,13 @@ func TestGetTokenSecret(t *testing.T) {
 
 	t.Run("GetTokenSecret", func(t *testing.T) {
 		secret, err := r.getTokenSecret(instance)
-		assert.Nil(t, err)
 		assert.NoError(t, err)
 		assert.NotNil(t, secret)
 		assert.Equal(t, _const.ActivegateName, secret.Name)
 	})
 	t.Run("GetTokenSecret missing secret", func(t *testing.T) {
 		secret, err := r.getTokenSecret(&dynatracev1alpha1.ActiveGate{})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Nil(t, secret)
 	})
 }

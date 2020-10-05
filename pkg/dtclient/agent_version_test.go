@@ -3,12 +3,13 @@ package dtclient
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"net/http"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -82,7 +83,7 @@ func TestGetEntityIDForIP(t *testing.T) {
 	defer dynatraceServer.Close()
 
 	dtc := dynatraceClient{
-		logger:     logf.Log.WithName("dtc"),
+		logger:     log.Log.WithName("dtc"),
 		apiToken:   apiToken,
 		paasToken:  paasToken,
 		httpClient: dynatraceServer.Client(),

@@ -2,10 +2,10 @@ package dtclient
 
 import (
 	"net/http"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestNewClient(t *testing.T) {
@@ -48,7 +48,7 @@ func TestProxy(t *testing.T) {
 		paasToken:  paasToken,
 		httpClient: dynatraceServer.Client(),
 		hostCache:  nil,
-		logger:     logf.Log.WithName("dtc"),
+		logger:     log.Log.WithName("dtc"),
 	}
 	transport := dtc.httpClient.Transport.(*http.Transport)
 	rawURL := "working.url"
@@ -77,7 +77,7 @@ func TestCerts(t *testing.T) {
 		paasToken:  paasToken,
 		httpClient: dynatraceServer.Client(),
 		hostCache:  nil,
-		logger:     logf.Log.WithName("dtc"),
+		logger:     log.Log.WithName("dtc"),
 	}
 	transport := dtc.httpClient.Transport.(*http.Transport)
 

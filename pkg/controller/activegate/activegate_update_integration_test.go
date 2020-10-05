@@ -29,5 +29,5 @@ func TestUpdatePods_RemoteRepository(t *testing.T) {
 		}})
 
 	assert.NotNil(t, reconciliation)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }

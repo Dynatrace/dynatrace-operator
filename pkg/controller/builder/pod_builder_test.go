@@ -1,12 +1,13 @@
 package builder
 
 import (
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"testing"
 )
 
 func TestBuildActiveGatePodSpecs(t *testing.T) {
@@ -101,7 +102,7 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 
 func TestBuildLabels(t *testing.T) {
 	t.Run("BuildLabels", func(t *testing.T) {
-		someLables := make(map[string]string, 0)
+		someLables := make(map[string]string)
 		someLables["label"] = "test"
 		labels := BuildLabels("test-labels", someLables)
 		assert.NotEmpty(t, labels)

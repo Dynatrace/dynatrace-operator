@@ -21,13 +21,13 @@ type CommunicationHost struct {
 	Port     uint32
 }
 
-func (dc *dynatraceClient) GetCommunicationHostForClient() (CommunicationHost, error) {
-	return dc.parseEndpoint(dc.url)
+func (dtc *dynatraceClient) GetCommunicationHostForClient() (CommunicationHost, error) {
+	return dtc.parseEndpoint(dtc.url)
 }
 
-func (dc *dynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
-	url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dc.url)
-	resp, err := dc.makeRequest(url, dynatracePaaSToken)
+func (dtc *dynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
+	connectionInfoUrl := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dtc.url)
+	resp, err := dtc.makeRequest(connectionInfoUrl, dynatracePaaSToken)
 	if err != nil {
 		return ConnectionInfo{}, err
 	}
@@ -36,15 +36,15 @@ func (dc *dynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
 		_ = resp.Body.Close()
 	}()
 
-	responseData, err := dc.getServerResponseData(resp)
+	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {
 		return ConnectionInfo{}, err
 	}
 
-	return dc.readResponseForConnectionInfo(responseData)
+	return dtc.readResponseForConnectionInfo(responseData)
 }
 
-func (dc *dynatraceClient) readResponseForConnectionInfo(response []byte) (ConnectionInfo, error) {
+func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (ConnectionInfo, error) {
 	type jsonResponse struct {
 		TenantUUID             string   `json:"tenantUUID"`
 		CommunicationEndpoints []string `json:"communicationEndpoints"`
@@ -53,7 +53,7 @@ func (dc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conne
 	resp := jsonResponse{}
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
-		dc.logger.Error(err, "error unmarshalling json response")
+		dtc.logger.Error(err, "error unmarshalling json response")
 		return ConnectionInfo{}, err
 	}
 
@@ -61,9 +61,9 @@ func (dc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conne
 	ch := make([]CommunicationHost, 0, len(resp.CommunicationEndpoints))
 
 	for _, s := range resp.CommunicationEndpoints {
-		logger := dc.logger.WithValues("url", s)
+		logger := dtc.logger.WithValues("url", s)
 
-		e, err := dc.parseEndpoint(s)
+		e, err := dtc.parseEndpoint(s)
 		if err != nil {
 			logger.Info("failed to parse communication endpoint")
 			continue
@@ -83,7 +83,7 @@ func (dc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conne
 	return ci, nil
 }
 
-func (dc *dynatraceClient) parseEndpoint(s string) (CommunicationHost, error) {
+func (dtc *dynatraceClient) parseEndpoint(s string) (CommunicationHost, error) {
 	u, err := url.ParseRequestURI(s)
 	if err != nil {
 		return CommunicationHost{}, errors.New("failed to parse URL")

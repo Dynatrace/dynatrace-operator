@@ -1,6 +1,9 @@
 package builder
 
 import (
+	"os"
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
@@ -9,10 +12,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubectl/pkg/scheme"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
 )
 
 func init() {
@@ -27,12 +28,12 @@ func init() {
 }
 
 func TestBuildDynatraceClient(t *testing.T) {
-	secrets := make(map[string][]byte, 0)
+	secrets := make(map[string][]byte)
 	secrets[_const.DynatraceApiToken] = []byte("some-api-token")
 	secrets[_const.DynatracePaasToken] = []byte("some-paas-token")
 	secrets[Proxy] = []byte("proxy-url")
 
-	configMap := make(map[string]string, 0)
+	configMap := make(map[string]string)
 	configMap["certs"] = "a certificate"
 
 	proxyName := "test-proxy"

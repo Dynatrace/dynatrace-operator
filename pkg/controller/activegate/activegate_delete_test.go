@@ -1,8 +1,9 @@
 package activegate
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDeletePods(t *testing.T) {
@@ -12,14 +13,14 @@ func TestDeletePods(t *testing.T) {
 		assert.NoError(t, err)
 
 		pods, err := r.findPods(instance)
-		assert.Nil(t, err)
 		assert.NotEmpty(t, pods)
+		assert.NoError(t, err)
 
 		err = r.deletePods(log.WithName("DeletePods"), pods)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		pods, err = r.findPods(instance)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Empty(t, pods)
 	})
 }
