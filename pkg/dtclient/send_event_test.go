@@ -73,13 +73,13 @@ func TestSendEvent(t *testing.T) {
 
 		err = dynatraceClient.SendEvent(&eventTypeOnly)
 		assert.Error(t, err)
-		assert.Equal(t,
-			"error making post request to dynatrace api: Post \""+
-				dynatraceServer.URL+
-				"/v1/events\": dial tcp "+
-				strings.TrimPrefix(dynatraceServer.URL, "http://")+
-				": connect: connection refused",
-			err.Error())
+		assert.True(t,
+			// Reason differs between local tests and travis test, so only check main error message
+			strings.HasPrefix(err.Error(),
+				"error making post request to dynatrace api: Post \""+
+					dynatraceServer.URL+
+					"/v1/events\""))
+
 	})
 }
 
