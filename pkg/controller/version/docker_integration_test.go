@@ -3,10 +3,11 @@
 package version
 
 import (
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDockerVersionChecker_DockerHub(t *testing.T) {

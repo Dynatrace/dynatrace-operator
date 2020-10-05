@@ -3,10 +3,12 @@ package activegate
 import (
 	"context"
 	"fmt"
+	"time"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	agerrors "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/errors"
-	parser "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -21,7 +23,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
 )
 
 var log = logf.Log.WithName("controller_activegate")
@@ -120,7 +121,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	found := &corev1.Pod{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		return r.createNewPod(pod, instance, secret)
+		return r.createNewPod(pod)
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -161,6 +162,9 @@ func (r *ReconcileActiveGate) updateInstanceStatus(pod *corev1.Pod, instance *dy
 
 	query := builder.BuildActiveGateQuery(instance, pod)
 	activegates, err := dtc.QueryActiveGates(query)
+	if err != nil {
+		log.Error(err, "failed to query activegates")
+	}
 	if len(activegates) > 0 {
 		log.Info(fmt.Sprintf("found %d activegate(s)", len(activegates)))
 		log.Info("setting activegate version", "version", activegates[0].Version)

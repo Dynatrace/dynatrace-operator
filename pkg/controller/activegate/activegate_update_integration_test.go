@@ -3,15 +3,16 @@
 package activegate
 
 import (
+	"os"
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis"
 	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubectl/pkg/scheme"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"testing"
 )
 
 func init() {
@@ -20,7 +21,7 @@ func init() {
 }
 
 func TestUpdatePods_RemoteRepository(t *testing.T) {
-	r, _, err := setupReconciler(t)
+	r, _, _ := setupReconciler(t)
 	reconciliation, err := r.Reconcile(reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Namespace: _const.DynatraceNamespace,

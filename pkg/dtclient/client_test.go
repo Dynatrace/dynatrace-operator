@@ -1,8 +1,9 @@
 package dtclient
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewClient(t *testing.T) {
@@ -26,12 +27,8 @@ func TestNewClient(t *testing.T) {
 	}
 
 	{
-		_, err := NewClient("https://aabb.live.dynatrace.com/api", "", "foo")
-		assert.Error(t, err, "empty API token")
-	}
-	{
-		_, err := NewClient("https://aabb.live.dynatrace.com/api", "foo", "")
-		assert.Error(t, err, "empty PaaS token")
+		_, err := NewClient("https://aabb.live.dynatrace.com/api", "", "")
+		assert.Error(t, err, "tokens are empty")
 	}
 	{
 		_, err := NewClient("", "foo", "bar")
