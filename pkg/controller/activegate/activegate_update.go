@@ -2,6 +2,7 @@ package activegate
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
@@ -14,15 +15,33 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func (r *ReconcileActiveGate) updatePods(
+type updateService interface {
+	FindOutdatedPods(
+		r *ReconcileActiveGate,
+		logger logr.Logger,
+		instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error)
+	IsLatest(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error)
+	UpdatePods(
+		r *ReconcileActiveGate,
+		pod *corev1.Pod,
+		instance *dynatracev1alpha1.ActiveGate,
+		secret *corev1.Secret) (*reconcile.Result, error)
+}
+
+type activeGateUpdateService struct{}
+
+func (updateService *activeGateUpdateService) UpdatePods(
+	r *ReconcileActiveGate,
 	pod *corev1.Pod,
 	instance *dynatracev1alpha1.ActiveGate,
 	secret *corev1.Secret) (*reconcile.Result, error) {
-	if !instance.Spec.DisableActivegateUpdate &&
+	if instance == nil {
+		return nil, fmt.Errorf("instance is nil")
+	} else if !instance.Spec.DisableActivegateUpdate &&
 		instance.Status.UpdatedTimestamp.Add(UpdateInterval).Before(time.Now()) {
 		log.Info("checking for outdated pods")
 		// Check if pods have latest activegate version
-		outdatedPods, err := r.findOutdatedPods(log, instance, isLatest)
+		outdatedPods, err := r.updateService.FindOutdatedPods(r, log, instance)
 		if err != nil {
 			result := builder.ReconcileAfterFiveMinutes()
 			// Too many requests, requeue after five minutes
@@ -41,17 +60,17 @@ func (r *ReconcileActiveGate) updatePods(
 	return nil, nil
 }
 
-func (r *ReconcileActiveGate) findOutdatedPods(
+func (updateService *activeGateUpdateService) FindOutdatedPods(
+	r *ReconcileActiveGate,
 	logger logr.Logger,
-	instance *dynatracev1alpha1.ActiveGate,
-	isLatestFn func(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error)) ([]corev1.Pod, error) {
+	instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error) {
 	pods, err := r.findPods(instance)
 	if err != nil {
 		logger.Error(err, "failed to list pods")
 		return nil, err
 	}
 
-	var outdatedPods []corev1.Pod
+	outdatedPods := make([]corev1.Pod, 0)
 	for _, pod := range pods {
 		for _, status := range pod.Status.ContainerStatuses {
 			if status.ImageID == "" || instance.Spec.Image == "" {
@@ -66,7 +85,7 @@ func (r *ReconcileActiveGate) findOutdatedPods(
 				logger.Error(err, err.Error())
 			}
 
-			isLatest, err := isLatestFn(logger, instance.Spec.Image, status.ImageID, imagePullSecret)
+			isLatest, err := r.updateService.IsLatest(logger, instance.Spec.Image, status.ImageID, imagePullSecret)
 			if err != nil {
 				logger.Error(err, err.Error())
 				//Error during image check, do nothing an continue with next status
@@ -85,7 +104,7 @@ func (r *ReconcileActiveGate) findOutdatedPods(
 	return outdatedPods, nil
 }
 
-func isLatest(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error) {
+func (updateService *activeGateUpdateService) IsLatest(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error) {
 	dockerConfig, err := parser.NewDockerConfig(imagePullSecret)
 	if err != nil {
 		logger.Info(err.Error())
@@ -93,19 +112,6 @@ func isLatest(logger logr.Logger, image string, imageID string, imagePullSecret 
 
 	dockerVersionChecker := version.NewDockerVersionChecker(image, imageID, dockerConfig)
 	return dockerVersionChecker.IsLatest()
-}
-
-func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error) {
-	podList := &corev1.PodList{}
-	listOptions := []client.ListOption{
-		client.InNamespace(instance.GetNamespace()),
-		client.MatchingLabels(builder.BuildLabelsForQuery(instance.Name)),
-	}
-	err := r.client.List(context.TODO(), podList, listOptions...)
-	if err != nil {
-		return nil, err
-	}
-	return podList.Items, nil
 }
 
 const (

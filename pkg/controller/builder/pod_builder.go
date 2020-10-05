@@ -16,13 +16,13 @@ func BuildActiveGatePodSpecs(
 	image := ActivegateImage
 
 	if activeGatePodSpec == nil {
-		acitveGatePodSpec = &v1alpha1.ActiveGateSpec{}
+		activeGatePodSpec = &v1alpha1.ActiveGateSpec{}
 	}
 	if activeGatePodSpec.ServiceAccountName != "" {
-		serviceaccount = acitveGatePodSpec.ServiceAccountName
+		activeGatePodSpec.ServiceAccountName = sa
 	}
 	if activeGatePodSpec.Image != "" {
-		image = acitveGatePodSpec.Image
+		image = activeGatePodSpec.Image
 	}
 	if tenantInfo == nil {
 		tenantInfo = &dtclient.TenantInfo{

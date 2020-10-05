@@ -162,7 +162,7 @@ func handleRequest(request *http.Request, writer http.ResponseWriter) {
 	case latestAgentVersion:
 		handleLatestAgentVersion(request, writer)
 	case "/v1/entity/infrastructure/hosts":
-		handleVersionForIP(request, writer)
+		handleVersionForIP(writer, request)
 	case "/v1/deployment/installer/agent/connectioninfo":
 		handleCommunicationHosts(request, writer)
 	case "/v1/events":

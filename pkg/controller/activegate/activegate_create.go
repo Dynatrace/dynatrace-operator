@@ -9,7 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func (r *ReconcileActiveGate) createNewPod(pod *corev1.Pod) (reconcile.Result, error) {
+func (r *ReconcileActiveGate) createPod(pod *corev1.Pod) (reconcile.Result, error) {
 	log.Info("creating new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
 	err := r.client.Create(context.TODO(), pod)
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 
 func TestBuildActiveGatePodSpecs(t *testing.T) {
 	t.Run("BuildActiveGatePodSpecs", func(t *testing.T) {
-		serviceAccountName := "serviceAccountName"
+		serviceAccountName := MonitoringServiceAccount
 		image := "image"
 		activeGateSpec := &v1alpha1.ActiveGateSpec{
 			BaseActiveGateSpec: v1alpha1.BaseActiveGateSpec{
@@ -43,7 +43,7 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 		assert.Equal(t, 1, len(specs.Containers))
 		assert.NotNil(t, specs)
 		assert.Equal(t, 1, len(specs.Containers))
-		assert.Equal(t, ActivegateName, specs.ServiceAccountName)
+		assert.Equal(t, MonitoringServiceAccount, specs.ServiceAccountName)
 		assert.NotNil(t, specs.Affinity)
 
 		container := specs.Containers[0]
@@ -64,7 +64,7 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 		assert.Equal(t, 1, len(specs.Containers))
 		assert.NotNil(t, specs)
 		assert.Equal(t, 1, len(specs.Containers))
-		assert.Equal(t, ActivegateName, specs.ServiceAccountName)
+		assert.Equal(t, MonitoringServiceAccount, specs.ServiceAccountName)
 		assert.NotNil(t, specs.Affinity)
 
 		container := specs.Containers[0]

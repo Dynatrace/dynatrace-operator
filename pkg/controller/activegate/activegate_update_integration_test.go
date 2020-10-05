@@ -21,7 +21,7 @@ func init() {
 }
 
 func TestUpdatePods_RemoteRepository(t *testing.T) {
-	r, _, _ := setupReconciler(t)
+	r, _, err := setupReconciler(t, &activeGateUpdateService{})
 	reconciliation, err := r.Reconcile(reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Namespace: _const.DynatraceNamespace,

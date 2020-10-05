@@ -35,7 +35,12 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileActiveGate{client: mgr.GetClient(), scheme: mgr.GetScheme(), dtcBuildFunc: builder.BuildDynatraceClient}
+	return &ReconcileActiveGate{
+		client:        mgr.GetClient(),
+		scheme:        mgr.GetScheme(),
+		dtcBuildFunc:  builder.BuildDynatraceClient,
+		updateService: &activeGateUpdateService{},
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -71,9 +76,10 @@ var _ reconcile.Reconciler = &ReconcileActiveGate{}
 type ReconcileActiveGate struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client       client.Client
-	scheme       *runtime.Scheme
-	dtcBuildFunc DynatraceClientFunc
+	client        client.Client
+	scheme        *runtime.Scheme
+	dtcBuildFunc  DynatraceClientFunc
+	updateService updateService
 }
 
 type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (dtclient.Client, error)
@@ -121,12 +127,12 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	found := &corev1.Pod{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		return r.createNewPod(pod)
+		return r.createPod(pod)
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	reconcileResult, err := r.updatePods(found, instance, secret)
+	reconcileResult, err := r.updateService.UpdatePods(r, found, instance, secret)
 	if err != nil {
 		log.Error(err, "could not update pods")
 	}
@@ -198,6 +204,19 @@ func (r *ReconcileActiveGate) newPodForCR(instance *dynatracev1alpha1.ActiveGate
 		},
 		Spec: builder.BuildActiveGatePodSpecs(&instance.Spec, tenantInfo),
 	}
+}
+
+func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error) {
+	podList := &corev1.PodList{}
+	listOptions := []client.ListOption{
+		client.InNamespace(instance.GetNamespace()),
+		client.MatchingLabels(builder.BuildLabelsForQuery(instance.Name)),
+	}
+	err := r.client.List(context.TODO(), podList, listOptions...)
+	if err != nil {
+		return nil, err
+	}
+	return podList.Items, nil
 }
 
 const (

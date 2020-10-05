@@ -2,11 +2,13 @@ package dtclient
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"net/http"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
+	"time"
 )
 
 const (
@@ -76,13 +78,23 @@ func TestResponseForLatestVersion(t *testing.T) {
 }
 
 func TestGetEntityIDForIP(t *testing.T) {
-	dtc := dynatraceClient{}
-	require.NoError(t, dtc.setHostCacheFromResponse([]byte(`[
+	dynatraceServer, _ := createTestDynatraceClient(t, handleVersionForIP)
+	defer dynatraceServer.Close()
+
+	dtc := dynatraceClient{
+		logger:     logf.Log.WithName("dtc"),
+		apiToken:   apiToken,
+		paasToken:  paasToken,
+		httpClient: dynatraceServer.Client(),
+		url:        dynatraceServer.URL,
+	}
+	require.NoError(t, dtc.setHostCacheFromResponse([]byte(
+		fmt.Sprintf(`[
 	{
 		"entityId": "HOST-42",
 		"displayName": "A",
 		"firstSeenTimestamp": 1589940921731,
-		"lastSeenTimestamp": 1589969061511,
+		"lastSeenTimestamp": %v,
 		"ipAddresses": [
 			"1.1.1.1"
 		],
@@ -96,7 +108,7 @@ func TestGetEntityIDForIP(t *testing.T) {
 			"sourceRevision": ""
 		}
 	}
-]`)))
+]`, time.Now().UTC().Unix()*1000))))
 	id, err := dtc.GetEntityIDForIP("1.1.1.1")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
@@ -107,12 +119,13 @@ func TestGetEntityIDForIP(t *testing.T) {
 	assert.Error(t, err)
 	assert.Empty(t, id)
 
-	require.NoError(t, dtc.setHostCacheFromResponse([]byte(`[
+	require.NoError(t, dtc.setHostCacheFromResponse([]byte(
+		fmt.Sprintf(`[
 	{
 		"entityId": "",
 		"displayName": "A",
 		"firstSeenTimestamp": 1589940921731,
-		"lastSeenTimestamp": 1589969061511,
+		"lastSeenTimestamp": %v,
 		"ipAddresses": [
 			"1.1.1.1"
 		],
@@ -126,7 +139,7 @@ func TestGetEntityIDForIP(t *testing.T) {
 			"sourceRevision": ""
 		}
 	}
-]`)))
+]`, time.Now().UTC().Unix()*1000))))
 
 	id, err = dtc.GetEntityIDForIP("1.1.1.1")
 
@@ -177,7 +190,7 @@ func testAgentVersionGetAgentVersionForIP(t *testing.T, dynatraceClient Client) 
 	}
 }
 
-func handleVersionForIP(request *http.Request, writer http.ResponseWriter) {
+func handleVersionForIP(writer http.ResponseWriter, request *http.Request) {
 	switch request.Method {
 	case "GET":
 		writer.WriteHeader(http.StatusOK)
