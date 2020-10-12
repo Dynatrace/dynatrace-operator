@@ -2,10 +2,11 @@ package dtclient
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"net/http"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type dashboardHandler struct {
