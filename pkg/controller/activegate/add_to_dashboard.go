@@ -5,6 +5,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/dao"
 	corev1 "k8s.io/api/core/v1"
+	"strings"
 )
 
 // addToDashboard makes a rest call to the dynatrace api to add the activegate instance to the dashboard
@@ -44,7 +45,11 @@ func (r *ReconcileActiveGate) addToDashboard(apiTokenSecret *corev1.Secret, inst
 		return "", fmt.Errorf("secret has no bearer token")
 	}
 
-	label := fmt.Sprintf("%s-%s-%s", instance.Name, instance.Namespace, instance.ClusterName)
+	// The same endpoint can not be used multiple times, so use as semi-unique name
+	ip := strings.TrimPrefix(instance.Spec.KubernetesAPIEndpoint, "https://")
+	ip = strings.TrimPrefix(ip, "http://")
+	label := fmt.Sprintf("%s-%s-%s", instance.Namespace, instance.Name, ip)
+
 	id, err := dtc.AddToDashboard(label, instance.Spec.KubernetesAPIEndpoint, string(bearerToken))
 	if err != nil {
 		return "", err
