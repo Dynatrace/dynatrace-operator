@@ -25,6 +25,12 @@ type ActiveGateSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Disable Activegate update"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
 	DisableActivegateUpdate bool `json:"disableActivegateUpdate,omitempty"`
+
+	// The public API endpoint of the Kubernetes instance
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes API Endpoint"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	KubernetesAPIEndpoint string `json:"kubernetesApiEndpoint,omitempty"`
 }
 
 // ActiveGateStatus defines the observed state of ActiveGate

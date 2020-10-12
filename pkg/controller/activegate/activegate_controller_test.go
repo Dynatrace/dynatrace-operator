@@ -3,6 +3,10 @@ package activegate
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/dao"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
@@ -188,4 +192,50 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, result, builder.ReconcileAfterFiveMinutes())
 	})
+}
+
+func TestAddToDashboard(t *testing.T) {
+	tokenValue := []byte("super-secret-bearer-token")
+	server := httptest.NewServer(func() http.HandlerFunc {
+		return func(writer http.ResponseWriter, request *http.Request) {
+
+		}
+	}())
+	r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
+	assert.NoError(t, err)
+
+	instance.Spec.KubernetesAPIEndpoint = server.URL
+
+	err = r.client.Create(context.TODO(), &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "dynatrace",
+			Name:      "dynatrace-activegate-secret",
+		},
+		Data: map[string][]byte{
+			"token": tokenValue,
+		},
+	})
+	assert.NoError(t, err)
+
+	err = r.client.Create(context.TODO(), &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "dynatrace",
+			Name:      "dynatrace-activegate",
+		},
+		Secrets: []corev1.ObjectReference{
+			{Name: "dynatrace-activegate-secret"},
+		},
+	})
+	assert.NoError(t, err)
+
+	serviceAccount, err := dao.FindServiceAccount(r.client)
+	assert.NoError(t, err)
+	assert.NotNil(t, serviceAccount)
+	assert.Equal(t, 1, len(serviceAccount.Secrets))
+
+	tokenName := serviceAccount.Secrets[0].Name
+	tokenSecret, err := dao.FindBearerTokenSecret(r.client, tokenName)
+	assert.NoError(t, err)
+	assert.NotNil(t, tokenSecret)
+	assert.Equal(t, 1, len(tokenSecret.Data))
 }

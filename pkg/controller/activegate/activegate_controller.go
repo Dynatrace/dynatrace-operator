@@ -140,6 +140,9 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return *reconcileResult, err
 	}
 
+	if instance.Spec.KubernetesAPIEndpoint != "" {
+		_, err = r.addToDashboard(secret, instance)
+	}
 	//Set version and last updated timestamp
 	// Nothing to do - requeue after five minutes
 	reqLogger.Info("Nothing to do: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)

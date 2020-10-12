@@ -6,4 +6,7 @@ const (
 
 	DynatraceNamespace = "dynatrace"
 	ActivegateName     = "activegate"
+
+	ServiceAccountName    = "dynatrace-activegate"
+	BearerTokenSecretName = "dynatrace-activegate-secret"
 )
