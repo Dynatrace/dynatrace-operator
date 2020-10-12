@@ -3,8 +3,7 @@ package dtclient
 import (
 	"encoding/json"
 	"fmt"
-
-	"github.com/go-logr/logr"
+	"net/url"
 )
 
 type ActiveGateQuery struct {
@@ -24,9 +23,9 @@ type ActiveGate struct {
 }
 
 func (dtc *dynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
-	url := fmt.Sprintf("%s/v2/activeGates?%s", dtc.url, buildQueryParams(query, dtc.logger))
-	dtc.logger.Info("querying activegates", "url", url)
-	response, err := dtc.makeRequest(url, dynatraceApiToken)
+	activeGateURL := fmt.Sprintf("%s/v2/activeGates?%s", dtc.url, query.buildQueryParams())
+	dtc.logger.Info("querying activegates", "activeGateURL", activeGateURL)
+	response, err := dtc.makeRequest(activeGateURL, dynatraceApiToken)
 	if err != nil {
 		dtc.logger.Error(err, err.Error())
 		return nil, err
@@ -65,26 +64,27 @@ func (dtc *dynatraceClient) QueryOutdatedActiveGates(query *ActiveGateQuery) ([]
 	return dtc.QueryActiveGates(query)
 }
 
-func buildQueryParams(query *ActiveGateQuery, logger logr.Logger) string {
-	params := ""
-	if query.Hostname != "" {
-		params += "hostname=" + query.Hostname + "&"
-	}
-	if query.NetworkZone != "" {
-		params += "networkZone=" + query.NetworkZone + "&"
-	}
-	if query.NetworkAddress != "" {
-		params += "networkAddress=" + query.NetworkAddress + "&"
-	}
-	if query.UpdateStatus != "" {
-		params += "updateStatus=" + query.UpdateStatus + "&"
+func (query *ActiveGateQuery) buildQueryParams() string {
+	values := url.Values{}
+	if query != nil {
+		if query.Hostname != "" {
+			values.Set("hostname", query.Hostname)
+		}
+		if query.NetworkZone != "" {
+			values.Set("networkZone", query.NetworkZone)
+		}
+		if query.NetworkAddress != "" {
+			values.Set("networkAddress", query.NetworkAddress)
+		}
+		if query.UpdateStatus != "" {
+			values.Set("updateStatus", query.UpdateStatus)
+		}
 	}
 
-	params += "osType=" + OsLinux + "&" +
-		"type=ENVIRONMENT"
+	values.Set("osType", OsLinux)
+	values.Set("type", "ENVIRONMENT")
 
-	logger.Info("built parameters to query activegates", "params", params)
-	return params
+	return values.Encode()
 }
 
 func (dtc *dynatraceClient) readResponseForActiveGates(data []byte) ([]ActiveGate, error) {

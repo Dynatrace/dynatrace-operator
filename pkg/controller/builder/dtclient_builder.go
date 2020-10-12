@@ -27,6 +27,9 @@ type options struct {
 
 // BuildDynatraceClient creates a new Dynatrace client using the settings configured on the given instance.
 func BuildDynatraceClient(rtc client.Client, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (dtclient.Client, error) {
+	if instance == nil {
+		return nil, fmt.Errorf("could not build dynatrace client: instance is nil")
+	}
 	namespace := instance.GetNamespace()
 	spec := instance.Spec
 	tokens, err := parser.NewTokens(secret)

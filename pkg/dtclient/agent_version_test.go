@@ -2,10 +2,14 @@ package dtclient
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -74,6 +78,76 @@ func TestResponseForLatestVersion(t *testing.T) {
 
 }
 
+func TestGetEntityIDForIP(t *testing.T) {
+	dynatraceServer, _ := createTestDynatraceClient(t, &ipHandler{})
+	defer dynatraceServer.Close()
+
+	dtc := dynatraceClient{
+		logger:     log.Log.WithName("dtc"),
+		apiToken:   apiToken,
+		paasToken:  paasToken,
+		httpClient: dynatraceServer.Client(),
+		url:        dynatraceServer.URL,
+	}
+	require.NoError(t, dtc.setHostCacheFromResponse([]byte(
+		fmt.Sprintf(`[
+	{
+		"entityId": "HOST-42",
+		"displayName": "A",
+		"firstSeenTimestamp": 1589940921731,
+		"lastSeenTimestamp": %v,
+		"ipAddresses": [
+			"1.1.1.1"
+		],
+		"monitoringMode": "FULL_STACK",
+		"networkZoneId": "default",
+		"agentVersion": {
+			"major": 1,
+			"minor": 195,
+			"revision": 0,
+			"timestamp": "20200515-045253",
+			"sourceRevision": ""
+		}
+	}
+]`, time.Now().UTC().Unix()*1000))))
+	id, err := dtc.GetEntityIDForIP("1.1.1.1")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, id)
+	assert.Equal(t, "HOST-42", id)
+
+	id, err = dtc.GetEntityIDForIP("2.2.2.2")
+
+	assert.Error(t, err)
+	assert.Empty(t, id)
+
+	require.NoError(t, dtc.setHostCacheFromResponse([]byte(
+		fmt.Sprintf(`[
+	{
+		"entityId": "",
+		"displayName": "A",
+		"firstSeenTimestamp": 1589940921731,
+		"lastSeenTimestamp": %v,
+		"ipAddresses": [
+			"1.1.1.1"
+		],
+		"monitoringMode": "FULL_STACK",
+		"networkZoneId": "default",
+		"agentVersion": {
+			"major": 1,
+			"minor": 195,
+			"revision": 0,
+			"timestamp": "20200515-045253",
+			"sourceRevision": ""
+		}
+	}
+]`, time.Now().UTC().Unix()*1000))))
+
+	id, err = dtc.GetEntityIDForIP("1.1.1.1")
+
+	assert.Error(t, err)
+	assert.Empty(t, id)
+}
+
 func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client) {
 	{
 		_, err := dynatraceClient.GetLatestAgentVersion("", InstallerTypeDefault)
@@ -117,7 +191,9 @@ func testAgentVersionGetAgentVersionForIP(t *testing.T, dynatraceClient Client) 
 	}
 }
 
-func handleVersionForIP(request *http.Request, writer http.ResponseWriter) {
+type ipHandler struct{}
+
+func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	switch request.Method {
 	case "GET":
 		writer.WriteHeader(http.StatusOK)
