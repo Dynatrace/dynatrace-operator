@@ -2,13 +2,13 @@ package activegate
 
 import (
 	"fmt"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
-	"github.com/go-logr/logr"
 	"regexp"
 	"strings"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/dao"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -76,7 +76,7 @@ func (r *ReconcileActiveGate) handleAddToDashboardResult(id string, addToDashboa
 			if serverError.Code == 400 {
 				log.Info("error returned from Dynatrace API when adding ActiveGate Kubernetes configuration, ignore if configuration already exist", "id", id, "error", serverError.Message)
 			} else {
-				log.Error(fmt.Errorf("error returned from Dynatrace API"), "id", id, "error", serverError.Message)
+				log.Error(fmt.Errorf("error returned from Dynatrace API"), "error returned from Dynatrace API", "id", id, "error", serverError.Message)
 			}
 		} else {
 			log.Error(addToDashboardErr, "error when adding ActiveGate Kubernetes configuration")

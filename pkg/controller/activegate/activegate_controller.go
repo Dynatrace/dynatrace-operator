@@ -144,7 +144,8 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		id, err := r.addToDashboard(secret, instance)
 		r.handleAddToDashboardResult(id, err, log)
 	}
-	//Set version and last updated timestamp
+
+	// Set version and last updated timestamp
 	// Nothing to do - requeue after five minutes
 	reqLogger.Info("Nothing to do: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
 	return builder.ReconcileAfterFiveMinutes(), nil

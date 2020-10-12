@@ -3,6 +3,11 @@ package activegate
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/dao"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
@@ -10,11 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/http"
-	"net/http/httptest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"testing"
 )
 
 func TestAddToDashboard(t *testing.T) {
@@ -159,19 +160,87 @@ func TestAddToDashboard(t *testing.T) {
 
 type addToDashboardLogger struct {
 	logr.Logger
+	loggedMessages      []string
+	loggedErrors        []error
+	loggedKeysAndValues []interface{}
 }
 
-func (log addToDashboardLogger) Error(err error, msg string, keysAndValues ...interface{}) {
-	println("Called")
+func (log *addToDashboardLogger) Error(err error, msg string, keysAndValues ...interface{}) {
+	log.loggedErrors = append(log.loggedErrors, err)
+	log.loggedMessages = append(log.loggedMessages, msg)
+	log.loggedKeysAndValues = append(log.loggedKeysAndValues, keysAndValues...)
 }
-func (log addToDashboardLogger) Info(msg string, keysAndValues ...interface{}) {
-	println("Called")
+func (log *addToDashboardLogger) Info(msg string, keysAndValues ...interface{}) {
+	log.loggedMessages = append(log.loggedMessages, msg)
+	log.loggedKeysAndValues = append(log.loggedKeysAndValues, keysAndValues...)
 }
 
 func TestHandleAddToDashboardResult(t *testing.T) {
-	logger := addToDashboardLogger{}
 	r, _, err := setupReconciler(t, &mockIsLatestUpdateService{})
 	assert.NoError(t, err)
 
-	r.handleAddToDashboardResult("some-id", nil, logger)
+	t.Run("HandleAddToDashboard", func(t *testing.T) {
+		logger := &addToDashboardLogger{}
+
+		r.handleAddToDashboardResult("some-id", nil, logger)
+		assert.Equal(t, 1, len(logger.loggedMessages))
+		assert.Equal(t, 2, len(logger.loggedKeysAndValues))
+		assert.Empty(t, logger.loggedErrors)
+		assert.Equal(t, "id", logger.loggedKeysAndValues[0])
+		assert.Equal(t, "some-id", logger.loggedKeysAndValues[1])
+		assert.Equal(t, "added ActiveGate to Kubernetes dashboard", logger.loggedMessages[0])
+	})
+
+	t.Run("HandleAddToDashboard no id", func(t *testing.T) {
+		logger := &addToDashboardLogger{}
+
+		r.handleAddToDashboardResult("", nil, logger)
+		assert.Equal(t, 1, len(logger.loggedMessages))
+		assert.Equal(t, 2, len(logger.loggedKeysAndValues))
+		assert.Empty(t, logger.loggedErrors)
+		assert.Equal(t, "id", logger.loggedKeysAndValues[0])
+		assert.Equal(t, "<unset>", logger.loggedKeysAndValues[1])
+		assert.Equal(t, "added ActiveGate to Kubernetes dashboard", logger.loggedMessages[0])
+	})
+
+	t.Run("HandleAddToDashboard any error", func(t *testing.T) {
+		logger := &addToDashboardLogger{}
+
+		r.handleAddToDashboardResult("some-id", fmt.Errorf("a random error"), logger)
+		assert.Equal(t, 1, len(logger.loggedErrors))
+		assert.Equal(t, 1, len(logger.loggedMessages))
+		assert.Equal(t, 0, len(logger.loggedKeysAndValues))
+		assert.Equal(t, "error when adding ActiveGate Kubernetes configuration", logger.loggedMessages[0])
+		assert.EqualError(t, logger.loggedErrors[0], "a random error")
+	})
+
+	t.Run("HandleAddToDashboard any api error", func(t *testing.T) {
+		logger := &addToDashboardLogger{}
+
+		r.handleAddToDashboardResult("some-id", dtclient.ServerError{Code: 123, Message: "some error"}, logger)
+		assert.Equal(t, 1, len(logger.loggedErrors))
+		assert.Equal(t, 1, len(logger.loggedMessages))
+		assert.Equal(t, 4, len(logger.loggedKeysAndValues))
+		assert.Equal(t, "id", logger.loggedKeysAndValues[0])
+		assert.Equal(t, "some-id", logger.loggedKeysAndValues[1])
+		assert.Equal(t, "error", logger.loggedKeysAndValues[2])
+		assert.Equal(t, "some error", logger.loggedKeysAndValues[3])
+		assert.Equal(t, "error returned from Dynatrace API", logger.loggedMessages[0])
+		assert.EqualError(t, logger.loggedErrors[0], "error returned from Dynatrace API")
+	})
+
+	t.Run("HandleAddToDashboard bad request api error", func(t *testing.T) {
+		logger := &addToDashboardLogger{}
+
+		r.handleAddToDashboardResult("some-id", dtclient.ServerError{Code: 400, Message: "entry already exists"}, logger)
+
+		assert.Equal(t, 1, len(logger.loggedMessages))
+		assert.Equal(t, 4, len(logger.loggedKeysAndValues))
+		assert.Empty(t, logger.loggedErrors)
+		assert.Equal(t, "id", logger.loggedKeysAndValues[0])
+		assert.Equal(t, "some-id", logger.loggedKeysAndValues[1])
+		assert.Equal(t, "error", logger.loggedKeysAndValues[2])
+		assert.Equal(t, "entry already exists", logger.loggedKeysAndValues[3])
+		assert.Equal(t, "error returned from Dynatrace API when adding ActiveGate Kubernetes configuration, ignore if configuration already exist", logger.loggedMessages[0])
+	})
 }
