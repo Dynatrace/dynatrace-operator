@@ -41,7 +41,7 @@ func TestUpdateInstanceStatus(t *testing.T) {
 	for _, pod := range pods {
 		r.updateInstanceStatus(&pod, instance, nil)
 	}
-	assert.Equal(t, mockActivegateVersion, instance.Status.Version)
+	assert.Equal(t, mockActiveGateVersion, instance.Status.Version)
 }
 
 func TestGetTokenSecret(t *testing.T) {

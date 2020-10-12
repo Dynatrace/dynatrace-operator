@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	mockActivegateVersion = "1.200.0"
+	mockActiveGateVersion = "1.200.0"
 )
 
 func init() {
@@ -106,7 +106,7 @@ func TestFindOutdatedPods(t *testing.T) {
 		if r != nil {
 			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
 
-			assert.NotNil(t, pods)
+			assert.Nil(t, pods)
 			assert.Empty(t, pods)
 			assert.Equal(t, 0, len(pods))
 			assert.NoError(t, err)
@@ -124,7 +124,7 @@ func TestFindOutdatedPods(t *testing.T) {
 			instance.Spec.Image = ""
 			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
 
-			assert.NotNil(t, pods)
+			assert.Nil(t, pods)
 			assert.Empty(t, pods)
 			assert.Equal(t, 0, len(pods))
 			assert.NoError(t, err)
@@ -149,7 +149,7 @@ func TestUpdatePods(t *testing.T) {
 
 			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
 
-			assert.NotNil(t, pods)
+			assert.Nil(t, pods)
 			assert.Empty(t, pods)
 			assert.Equal(t, 0, len(pods))
 			assert.NoError(t, err)
@@ -267,7 +267,7 @@ func createFakeDTClient(client.Client, *dynatracev1alpha1.ActiveGate, *corev1.Se
 	dtMockClient.
 		On("QueryActiveGates", &dtclient.ActiveGateQuery{Hostname: "", NetworkAddress: "", NetworkZone: "default", UpdateStatus: ""}).
 		Return([]dtclient.ActiveGate{
-			{Version: mockActivegateVersion},
+			{Version: mockActiveGateVersion},
 		}, nil)
 	return dtMockClient, nil
 }

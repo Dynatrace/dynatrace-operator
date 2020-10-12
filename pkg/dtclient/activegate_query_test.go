@@ -6,48 +6,44 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestBuildQueryParams(t *testing.T) {
-	logger := log.Log.WithName("")
 	query := ActiveGateQuery{}
 	defaultParams := ""
-	params := buildQueryParams(&query, logger)
-	assert.Equal(t, "osType="+OsLinux+"&type=ENVIRONMENT", params)
-
-	params = buildQueryParams(nil, logger)
+	params := query.buildQueryParams()
 	assert.Equal(t, "osType="+OsLinux+"&type=ENVIRONMENT", params)
 	defaultParams = params
 
 	query.UpdateStatus = "updating"
-	params = buildQueryParams(&query, logger)
-	assert.Equal(t, "updateStatus=updating&"+defaultParams, params)
+	params = query.buildQueryParams()
+	assert.Equal(t, defaultParams+"&updateStatus=updating", params)
 
 	query.UpdateStatus = ""
 	query.NetworkAddress = "1.2.3.4"
-	params = buildQueryParams(&query, logger)
+	params = query.buildQueryParams()
 	assert.Equal(t, "networkAddress=1.2.3.4&"+defaultParams, params)
 
 	query.NetworkAddress = ""
 	query.NetworkZone = "zone"
-	params = buildQueryParams(&query, logger)
+	params = query.buildQueryParams()
 	assert.Equal(t, "networkZone=zone&"+defaultParams, params)
 
 	query.NetworkZone = ""
 	query.Hostname = "host-42"
-	params = buildQueryParams(&query, logger)
+	params = query.buildQueryParams()
 	assert.Equal(t, "hostname=host-42&"+defaultParams, params)
 
 	query.UpdateStatus = "updating"
 	query.NetworkAddress = "1.2.3.4"
 	query.NetworkZone = "zone"
 	query.Hostname = "host-42"
-	params = buildQueryParams(&query, logger)
+	params = query.buildQueryParams()
 	assert.Equal(t, "hostname=host-42&"+
-		"networkZone=zone&"+
 		"networkAddress=1.2.3.4&"+
-		"updateStatus=updating&"+defaultParams, params)
+		"networkZone=zone&"+
+		defaultParams+
+		"&updateStatus=updating", params)
 }
 
 func TestQueryActiveGates(t *testing.T) {

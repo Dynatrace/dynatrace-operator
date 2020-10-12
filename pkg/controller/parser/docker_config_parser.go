@@ -7,11 +7,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+type DockerConfigAuth struct {
+	Username string
+	Password string
+}
+
 type DockerConfig struct {
-	Auths map[string]struct {
-		Username string
-		Password string
-	}
+	Auths map[string]DockerConfigAuth
 }
 
 func NewDockerConfig(secret *corev1.Secret) (*DockerConfig, error) {

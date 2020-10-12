@@ -41,7 +41,8 @@ func TestBuildActiveGateQuery(t *testing.T) {
 				NetworkZone: "some-network-zone",
 			},
 		}
-		activegateQuery := BuildActiveGateQuery(&instance, nil)
+
+		activegateQuery := BuildActiveGateQuery(&instance, &corev1.Pod{})
 		assert.NotNil(t, activegateQuery)
 		assert.Equal(t, "", activegateQuery.Hostname)
 		assert.Equal(t, "", activegateQuery.NetworkAddress)

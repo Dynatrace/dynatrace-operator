@@ -39,7 +39,7 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestProxy(t *testing.T) {
-	dynatraceServer, _ := createTestDynatraceClient(t, clientHandlerStub())
+	dynatraceServer, _ := createTestDynatraceClient(t, http.NotFoundHandler())
 	defer dynatraceServer.Close()
 
 	dtc := dynatraceClient{
@@ -68,7 +68,7 @@ func TestProxy(t *testing.T) {
 }
 
 func TestCerts(t *testing.T) {
-	dynatraceServer, _ := createTestDynatraceClient(t, clientHandlerStub())
+	dynatraceServer, _ := createTestDynatraceClient(t, http.NotFoundHandler())
 	defer dynatraceServer.Close()
 
 	dtc := dynatraceClient{
@@ -85,10 +85,4 @@ func TestCerts(t *testing.T) {
 	assert.NotNil(t, certs)
 	certs(&dtc)
 	assert.Equal(t, [][]uint8{}, transport.TLSClientConfig.RootCAs.Subjects())
-}
-
-func clientHandlerStub() http.HandlerFunc {
-	return func(writer http.ResponseWriter, request *http.Request) {
-
-	}
 }

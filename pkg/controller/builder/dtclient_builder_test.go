@@ -109,11 +109,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 				Data: secrets,
 			}
 			dtc, err := BuildDynatraceClient(rtc, &instance, &secret)
-			assert.Error(t, err)
 			assert.Nil(t, dtc)
-			assert.Equal(t,
-				"failed to get proxy secret: secrets \""+proxyName+"\" not found",
-				err.Error())
+			assert.EqualError(t, err, "failed to get proxy secret: secrets \""+proxyName+"\" not found")
 		})
 		t.Run("proxy secret misconfigured", func(t *testing.T) {
 			rtc := fake.NewFakeClientWithScheme(scheme.Scheme,
@@ -139,11 +136,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 				Data: secrets,
 			}
 			dtc, err := BuildDynatraceClient(rtc, &instance, &secret)
-			assert.Error(t, err)
 			assert.Nil(t, dtc)
-			assert.Equal(t,
-				"failed to extract proxy secret field: missing token proxy",
-				err.Error())
+			assert.EqualError(t, err, "failed to extract proxy secret field: missing token proxy")
 		})
 		t.Run("proxy secret from value", func(t *testing.T) {
 			rtc := fake.NewFakeClientWithScheme(scheme.Scheme,
@@ -189,11 +183,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 				Data: secrets,
 			}
 			dtc, err := BuildDynatraceClient(rtc, &instance, &secret)
-			assert.Error(t, err)
 			assert.Nil(t, dtc)
-			assert.Equal(t,
-				"failed to get certificate configmap: configmaps \""+configMapName+"\" not found",
-				err.Error())
+			assert.EqualError(t, err, "failed to get certificate configmap: configmaps \""+configMapName+"\" not found")
 		})
 		t.Run("certificate config misconfigured", func(t *testing.T) {
 			rtc := fake.NewFakeClientWithScheme(scheme.Scheme,
@@ -217,11 +208,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 				Data: secrets,
 			}
 			dtc, err := BuildDynatraceClient(rtc, &instance, &secret)
-			assert.Error(t, err)
 			assert.Nil(t, dtc)
-			assert.Equal(t,
-				"failed to extract certificate configmap field: missing field certs",
-				err.Error())
+			assert.EqualError(t, err, "failed to extract certificate configmap field: missing field certs")
 		})
 	})
 	t.Run("BuildDynatraceClient all values nil", func(t *testing.T) {

@@ -10,19 +10,16 @@ import (
 )
 
 func BuildActiveGatePodSpecs(
-	activeGatePodSpec *v1alpha1.ActiveGateSpec,
+	activeGateSpec *v1alpha1.ActiveGateSpec,
 	tenantInfo *dtclient.TenantInfo) corev1.PodSpec {
 	sa := MonitoringServiceAccount
 	image := ActivegateImage
 
-	if activeGatePodSpec == nil {
-		activeGatePodSpec = &v1alpha1.ActiveGateSpec{}
+	if activeGateSpec.ServiceAccountName != "" {
+		activeGateSpec.ServiceAccountName = sa
 	}
-	if activeGatePodSpec.ServiceAccountName != "" {
-		activeGatePodSpec.ServiceAccountName = sa
-	}
-	if activeGatePodSpec.Image != "" {
-		image = activeGatePodSpec.Image
+	if activeGateSpec.Image != "" {
+		image = activeGateSpec.Image
 	}
 	if tenantInfo == nil {
 		tenantInfo = &dtclient.TenantInfo{
@@ -32,29 +29,29 @@ func BuildActiveGatePodSpecs(
 		}
 	}
 
-	if activeGatePodSpec.Resources.Requests == nil {
-		activeGatePodSpec.Resources.Requests = corev1.ResourceList{}
+	if activeGateSpec.Resources.Requests == nil {
+		activeGateSpec.Resources.Requests = corev1.ResourceList{}
 	}
-	if _, hasCPUResource := activeGatePodSpec.Resources.Requests[corev1.ResourceCPU]; !hasCPUResource {
+	if _, hasCPUResource := activeGateSpec.Resources.Requests[corev1.ResourceCPU]; !hasCPUResource {
 		// Set CPU resource to 1 * 10**(-1) Cores, e.g. 100mC
-		activeGatePodSpec.Resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
+		activeGateSpec.Resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
 	}
 
 	return corev1.PodSpec{
 		Containers: []corev1.Container{{
 			Name:            ActivegateName,
 			Image:           image,
-			Resources:       activeGatePodSpec.Resources,
+			Resources:       activeGateSpec.Resources,
 			ImagePullPolicy: corev1.PullAlways,
-			Env:             buildEnvVars(activeGatePodSpec, tenantInfo),
+			Env:             buildEnvVars(activeGateSpec, tenantInfo),
 			Args:            buildArgs(),
 		}},
-		DNSPolicy:          activeGatePodSpec.DNSPolicy,
-		NodeSelector:       activeGatePodSpec.NodeSelector,
+		DNSPolicy:          activeGateSpec.DNSPolicy,
+		NodeSelector:       activeGateSpec.NodeSelector,
 		ServiceAccountName: sa,
 		Affinity:           buildAffinity(),
-		Tolerations:        activeGatePodSpec.Tolerations,
-		PriorityClassName:  activeGatePodSpec.PriorityClassName,
+		Tolerations:        activeGateSpec.Tolerations,
+		PriorityClassName:  activeGateSpec.PriorityClassName,
 	}
 }
 

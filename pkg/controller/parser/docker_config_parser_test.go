@@ -10,17 +10,8 @@ import (
 
 func TestNewDockerConfig(t *testing.T) {
 	t.Run("NewDockerConfig", func(t *testing.T) {
-		auths := make(map[string]struct {
-			Username string
-			Password string
-		})
-		auths["localhost"] = struct {
-			Username string
-			Password string
-		}{
-			Username: "username",
-			Password: "password",
-		}
+		auths := make(map[string]DockerConfigAuth)
+		auths["localhost"] = DockerConfigAuth{Username: "username", Password: "password"}
 		templateDockerConf := DockerConfig{Auths: auths}
 		templateDockerConfJson, _ := json.Marshal(templateDockerConf)
 		data := make(map[string][]byte)
