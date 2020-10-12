@@ -30,7 +30,7 @@ type updateService interface {
 
 type activeGateUpdateService struct{}
 
-func (updateService *activeGateUpdateService) UpdatePods(
+func (us *activeGateUpdateService) UpdatePods(
 	r *ReconcileActiveGate,
 	pod *corev1.Pod,
 	instance *dynatracev1alpha1.ActiveGate,
@@ -60,7 +60,7 @@ func (updateService *activeGateUpdateService) UpdatePods(
 	return nil, nil
 }
 
-func (updateService *activeGateUpdateService) FindOutdatedPods(
+func (us *activeGateUpdateService) FindOutdatedPods(
 	r *ReconcileActiveGate,
 	logger logr.Logger,
 	instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error) {
@@ -70,7 +70,7 @@ func (updateService *activeGateUpdateService) FindOutdatedPods(
 		return nil, err
 	}
 
-	outdatedPods := make([]corev1.Pod, 0)
+	var outdatedPods []corev1.Pod
 	for _, pod := range pods {
 		for _, status := range pod.Status.ContainerStatuses {
 			if status.ImageID == "" || instance.Spec.Image == "" {
@@ -104,7 +104,7 @@ func (updateService *activeGateUpdateService) FindOutdatedPods(
 	return outdatedPods, nil
 }
 
-func (updateService *activeGateUpdateService) IsLatest(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error) {
+func (us *activeGateUpdateService) IsLatest(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error) {
 	dockerConfig, err := parser.NewDockerConfig(imagePullSecret)
 	if err != nil {
 		logger.Info(err.Error())

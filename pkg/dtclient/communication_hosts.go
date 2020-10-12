@@ -26,8 +26,8 @@ func (dtc *dynatraceClient) GetCommunicationHostForClient() (CommunicationHost, 
 }
 
 func (dtc *dynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
-	connectionInfoUrl := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dtc.url)
-	resp, err := dtc.makeRequest(connectionInfoUrl, dynatracePaaSToken)
+	connectionInfoURL := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dtc.url)
+	resp, err := dtc.makeRequest(connectionInfoURL, dynatracePaaSToken)
 	if err != nil {
 		return ConnectionInfo{}, err
 	}

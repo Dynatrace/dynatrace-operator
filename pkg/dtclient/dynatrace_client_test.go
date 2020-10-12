@@ -162,7 +162,7 @@ func handleRequest(request *http.Request, writer http.ResponseWriter) {
 	case latestAgentVersion:
 		handleLatestAgentVersion(request, writer)
 	case "/v1/entity/infrastructure/hosts":
-		handleVersionForIP(writer, request)
+		(&ipHandler{}).ServeHTTP(writer, request)
 	case "/v1/deployment/installer/agent/connectioninfo":
 		handleCommunicationHosts(request, writer)
 	case "/v1/events":
@@ -235,7 +235,7 @@ func TestIgnoreNonCurrentlySeenHosts(t *testing.T) {
 	require.Equal(t, "1.195.0.20200515-045253", info.version)
 }
 
-func createTestDynatraceClient(t *testing.T, handler http.HandlerFunc) (*httptest.Server, Client) {
+func createTestDynatraceClient(t *testing.T, handler http.Handler) (*httptest.Server, Client) {
 	faultyDynatraceServer := httptest.NewServer(handler)
 
 	skipCert := SkipCertificateValidation(true)

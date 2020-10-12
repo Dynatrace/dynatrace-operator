@@ -79,7 +79,7 @@ func TestResponseForLatestVersion(t *testing.T) {
 }
 
 func TestGetEntityIDForIP(t *testing.T) {
-	dynatraceServer, _ := createTestDynatraceClient(t, handleVersionForIP)
+	dynatraceServer, _ := createTestDynatraceClient(t, &ipHandler{})
 	defer dynatraceServer.Close()
 
 	dtc := dynatraceClient{
@@ -191,7 +191,9 @@ func testAgentVersionGetAgentVersionForIP(t *testing.T, dynatraceClient Client) 
 	}
 }
 
-func handleVersionForIP(writer http.ResponseWriter, request *http.Request) {
+type ipHandler struct{}
+
+func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	switch request.Method {
 	case "GET":
 		writer.WriteHeader(http.StatusOK)
