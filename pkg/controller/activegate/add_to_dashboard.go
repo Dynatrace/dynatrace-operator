@@ -2,10 +2,14 @@ package activegate
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
+	"github.com/go-logr/logr"
+	"regexp"
+	"strings"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/dao"
 	corev1 "k8s.io/api/core/v1"
-	"strings"
 )
 
 // addToDashboard makes a rest call to the dynatrace api to add the activegate instance to the dashboard
@@ -46,13 +50,38 @@ func (r *ReconcileActiveGate) addToDashboard(apiTokenSecret *corev1.Secret, inst
 	}
 
 	// The same endpoint can not be used multiple times, so use as semi-unique name
+	// Remove protocol prefix, if any
 	ip := strings.TrimPrefix(instance.Spec.KubernetesAPIEndpoint, "https://")
 	ip = strings.TrimPrefix(ip, "http://")
+	ip = strings.ReplaceAll(ip, ":", "_")
 	label := fmt.Sprintf("%s-%s-%s", instance.Namespace, instance.Name, ip)
 
-	id, err := dtc.AddToDashboard(label, instance.Spec.KubernetesAPIEndpoint, string(bearerToken))
-	if err != nil {
-		return "", err
+	// Take only words and numbers
+	regex := regexp.MustCompile(`[a-zA-Z\d]+`)
+	labelParts := regex.FindAllString(label, -1)
+
+	// And join them with safe dashes
+	sanitizedLabel := strings.Join(labelParts, "-")
+
+	return dtc.AddToDashboard(sanitizedLabel, instance.Spec.KubernetesAPIEndpoint, string(bearerToken))
+}
+
+func (r *ReconcileActiveGate) handleAddToDashboardResult(id string, addToDashboardErr error, log logr.Logger) {
+	if id == "" {
+		id = "<unset>"
 	}
-	return id, nil
+
+	if addToDashboardErr != nil {
+		if serverError, isServerError := addToDashboardErr.(dtclient.ServerError); isServerError {
+			if serverError.Code == 400 {
+				log.Info("error returned from Dynatrace API when adding ActiveGate Kubernetes configuration, ignore if configuration already exist", "id", id, "error", serverError.Message)
+			} else {
+				log.Error(fmt.Errorf("error returned from Dynatrace API"), "id", id, "error", serverError.Message)
+			}
+		} else {
+			log.Error(addToDashboardErr, "error when adding ActiveGate Kubernetes configuration")
+		}
+	} else {
+		log.Info("added ActiveGate to Kubernetes dashboard", "id", id)
+	}
 }

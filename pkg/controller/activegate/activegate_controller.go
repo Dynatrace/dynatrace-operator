@@ -141,7 +141,8 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	if instance.Spec.KubernetesAPIEndpoint != "" {
-		_, err = r.addToDashboard(secret, instance)
+		id, err := r.addToDashboard(secret, instance)
+		r.handleAddToDashboardResult(id, err, log)
 	}
 	//Set version and last updated timestamp
 	// Nothing to do - requeue after five minutes

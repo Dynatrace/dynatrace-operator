@@ -8,24 +8,10 @@ import (
 	"testing"
 )
 
-func TestDynatraceClient_AddToDashboard(t *testing.T) {
-	dynatraceServer, _ := createTestDynatraceClient(t, handleAddToDashboard)
-	defer dynatraceServer.Close()
-
-	dtc := dynatraceClient{
-		logger:     log.Log.WithName("dtc"),
-		apiToken:   apiToken,
-		paasToken:  paasToken,
-		httpClient: dynatraceServer.Client(),
-		url:        dynatraceServer.URL,
-	}
-
-	response, err := dtc.AddToDashboard("a label", "an endpoint", "a token")
-	assert.NoError(t, err)
-	assert.Equal(t, "an id", response)
+type dashboardHandler struct {
 }
 
-func handleAddToDashboard(writer http.ResponseWriter, request *http.Request) {
+func (handler *dashboardHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	if request.Method == "POST" && request.URL.Path == "/config/v1/kubernetes/credentials" {
 		resObject := kubernetesCredentialResponse{
 			Id: "an id",
@@ -40,4 +26,21 @@ func handleAddToDashboard(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(400)
 		_, _ = writer.Write([]byte{})
 	}
+}
+
+func TestDynatraceClient_AddToDashboard(t *testing.T) {
+	dynatraceServer, _ := createTestDynatraceClient(t, &dashboardHandler{})
+	defer dynatraceServer.Close()
+
+	dtc := dynatraceClient{
+		logger:     log.Log.WithName("dtc"),
+		apiToken:   apiToken,
+		paasToken:  paasToken,
+		httpClient: dynatraceServer.Client(),
+		url:        dynatraceServer.URL,
+	}
+
+	response, err := dtc.AddToDashboard("a label", "an endpoint", "a token")
+	assert.NoError(t, err)
+	assert.Equal(t, "an id", response)
 }
