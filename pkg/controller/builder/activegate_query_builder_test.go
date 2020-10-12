@@ -28,13 +28,6 @@ func TestBuildActiveGateQuery(t *testing.T) {
 		assert.Equal(t, "1.1.1.1", activegateQuery.NetworkAddress)
 		assert.Equal(t, "some-network-zone", activegateQuery.NetworkZone)
 	})
-	t.Run("BuildActiveGateQuery handle nil values", func(t *testing.T) {
-		activegateQuery := BuildActiveGateQuery(nil, nil)
-		assert.NotNil(t, activegateQuery)
-		assert.Equal(t, "", activegateQuery.Hostname)
-		assert.Equal(t, "", activegateQuery.NetworkAddress)
-		assert.Equal(t, DefaultNetworkZone, activegateQuery.NetworkZone)
-	})
 	t.Run("BuildActiveGateQuery set network zone", func(t *testing.T) {
 		instance := v1alpha1.ActiveGate{
 			Spec: v1alpha1.ActiveGateSpec{
