@@ -8,8 +8,9 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -20,24 +21,9 @@ type failUpdatePodsService struct {
 
 const errorUpdatingPods = "error updating pods"
 
-func (updateServer *failUpdatePodsService) UpdatePods(*ReconcileActiveGate, *corev1.Pod, *dynatracev1alpha1.ActiveGate, *corev1.Secret) (*reconcile.Result, error) {
+func (updateServer *failUpdatePodsService) UpdatePods(*ReconcileActiveGate, *dynatracev1alpha1.ActiveGate) (*reconcile.Result, error) {
 	result := builder.ReconcileAfterFiveMinutes()
 	return &result, fmt.Errorf(errorUpdatingPods)
-}
-
-func TestUpdateInstanceStatus(t *testing.T) {
-	r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
-	assert.NotNil(t, r)
-	assert.NoError(t, err)
-
-	pods, err := r.findPods(instance)
-	assert.NotEmpty(t, pods)
-	assert.NoError(t, err)
-
-	for _, pod := range pods {
-		r.updateInstanceStatus(&pod, instance, nil)
-	}
-	assert.Equal(t, mockActiveGateVersion, instance.Status.Version)
 }
 
 func TestGetTokenSecret(t *testing.T) {
@@ -85,19 +71,20 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, result, builder.ReconcileAfterFiveMinutes())
 
-		secret, err := r.getTokenSecret(instance)
-		assert.NoError(t, err)
+		var ti dtclient.TenantInfo
+		{
+		}
 
-		pod := r.newPodForCR(instance, secret)
-		assert.NotNil(t, pod)
+		sts, err := r.newStatefulSetForCR(instance, &ti)
+		assert.NotNil(t, sts)
 
-		found := &corev1.Pod{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
+		found := &appsv1.StatefulSet{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: sts.Name, Namespace: sts.Namespace}, found)
 		assert.NotNil(t, found)
 		assert.NoError(t, err)
 
-		assert.Equal(t, pod.Name, found.Name)
-		assert.Equal(t, pod.Namespace, found.Namespace)
+		assert.Equal(t, sts.Name, found.Name)
+		assert.Equal(t, sts.Namespace, found.Namespace)
 	})
 	t.Run("Reconcile missing secret", func(t *testing.T) {
 		r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})

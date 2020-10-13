@@ -119,7 +119,12 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		log.Error(err, err.Error())
 	}
 
-	stsDesired, err := r.newStatefulSetForCR(instance, dtc)
+	ti, err := dtc.GetTenantInfo()
+	if err != nil {
+		log.Error(err, err.Error())
+	}
+
+	stsDesired, err := r.newStatefulSetForCR(instance, ti)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -136,6 +141,8 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		reqLogger.Info("Creating new statefulset")
 		if err = r.client.Create(context.TODO(), stsDesired); err != nil {
 			return reconcile.Result{}, err
+		} else {
+			return builder.ReconcileAfterFiveMinutes(), nil
 		}
 	} else if err != nil {
 		return reconcile.Result{}, err
@@ -146,7 +153,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		}
 	}
 
-	reconcileResult, err := r.updateService.UpdatePods(r, found, instance, secret)
+	reconcileResult, err := r.updateService.UpdatePods(r, instance)
 	if err != nil {
 		log.Error(err, "could not update statefulset")
 	}

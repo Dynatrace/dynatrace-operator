@@ -24,18 +24,14 @@ type updateService interface {
 	IsLatest(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error)
 	UpdatePods(
 		r *ReconcileActiveGate,
-		pod *corev1.Pod,
-		instance *dynatracev1alpha1.ActiveGate,
-		secret *corev1.Secret) (*reconcile.Result, error)
+		instance *dynatracev1alpha1.ActiveGate) (*reconcile.Result, error)
 }
 
 type activeGateUpdateService struct{}
 
 func (us *activeGateUpdateService) UpdatePods(
 	r *ReconcileActiveGate,
-	pod *corev1.Pod,
-	instance *dynatracev1alpha1.ActiveGate,
-	secret *corev1.Secret) (*reconcile.Result, error) {
+	instance *dynatracev1alpha1.ActiveGate) (*reconcile.Result, error) {
 	if instance == nil {
 		return nil, fmt.Errorf("instance is nil")
 	} else if !instance.Spec.DisableActivegateUpdate &&

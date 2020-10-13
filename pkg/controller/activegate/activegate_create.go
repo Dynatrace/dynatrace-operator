@@ -13,8 +13,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.ActiveGate, dtc dtclient.Client) (*appsv1.StatefulSet, error) {
-	podSpec := newPodSpecForCR(instance, dtc)
+func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo) (*appsv1.StatefulSet, error) {
+	podSpec := builder.BuildActiveGatePodSpecs(&instance.Spec, tenantInfo)
 	selectorLabels := builder.BuildLabels(instance.GetName(), instance.Spec.Labels)
 	mergedLabels := builder.BuildMergeLabels(instance.Labels, selectorLabels)
 
@@ -42,16 +42,6 @@ func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.Ac
 	sts.Annotations[annotationTemplateHash] = stsHash
 
 	return sts, nil
-}
-
-// newPodForCR returns a pod with the same name/namespace as the cr
-func newPodSpecForCR(instance *dynatracev1alpha1.ActiveGate, dtc dtclient.Client) corev1.PodSpec {
-	tenantInfo, err := dtc.GetTenantInfo()
-	if err != nil {
-		log.Error(err, err.Error())
-	}
-
-	return builder.BuildActiveGatePodSpecs(&instance.Spec, tenantInfo)
 }
 
 func generateStatefulSetHash(ds *appsv1.StatefulSet) (string, error) {
