@@ -31,6 +31,12 @@ type ActiveGateSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes API Endpoint"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	KubernetesAPIEndpoint string `json:"kubernetesApiEndpoint,omitempty"`
+
+	// Amount of replicas for your ActiveGate
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Replicas"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:number"
+	Replicas *int32 `json:"replicas,omitempty"`
 }
 
 // ActiveGateStatus defines the observed state of ActiveGate
@@ -54,12 +60,6 @@ type ActiveGateStatus struct {
 
 	// LastPaaSTokenProbeTimestamp tracks when the last request for the PaaS token validity was sent
 	LastPaaSTokenProbeTimestamp *metav1.Time `json:"lastPaaSTokenProbeTimestamp,omitempty"`
-
-	// Dynatrace version being used.
-	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Version"
-	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
-	Version string `json:"version,omitempty"`
 
 	// Defines the current state (Running, Updating, Error, ...)
 	Phase ActiveGatePhaseType `json:"phase,omitempty"`
