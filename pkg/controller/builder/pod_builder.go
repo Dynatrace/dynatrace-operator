@@ -9,11 +9,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func BuildActiveGatePodSpecs(
-	activeGateSpec *v1alpha1.ActiveGateSpec,
-	tenantInfo *dtclient.TenantInfo) corev1.PodSpec {
+func BuildActiveGatePodSpecs(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo) corev1.PodSpec {
 	sa := MonitoringServiceAccount
 	image := ActivegateImage
+	activeGateSpec := &instance.Spec
 
 	if activeGateSpec.ServiceAccountName != "" {
 		activeGateSpec.ServiceAccountName = sa
@@ -43,7 +42,7 @@ func BuildActiveGatePodSpecs(
 			Image:           image,
 			Resources:       activeGateSpec.Resources,
 			ImagePullPolicy: corev1.PullAlways,
-			Env:             buildEnvVars(activeGateSpec, tenantInfo),
+			Env:             buildEnvVars(instance, tenantInfo),
 			Args:            buildArgs(),
 		}},
 		DNSPolicy:          activeGateSpec.DNSPolicy,
@@ -64,7 +63,9 @@ func buildArgs() []string {
 	}
 }
 
-func buildEnvVars(activeGatePodSpec *v1alpha1.ActiveGateSpec, tenantInfo *dtclient.TenantInfo) []corev1.EnvVar {
+func buildEnvVars(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo) []corev1.EnvVar {
+	activeGatePodSpec := &instance.Spec
+
 	return []corev1.EnvVar{
 		{
 			Name:  DtTenant,
@@ -81,6 +82,14 @@ func buildEnvVars(activeGatePodSpec *v1alpha1.ActiveGateSpec, tenantInfo *dtclie
 		{
 			Name:  DtCapabilities,
 			Value: strings.Join(activeGatePodSpec.Capabilities, Comma),
+		},
+		{
+			Name:  DtIdSeedNamespace,
+			Value: instance.Namespace,
+		},
+		{
+			Name:  DtIdSeedClusterId,
+			Value: instance.ClusterName,
 		},
 	}
 }
@@ -155,10 +164,12 @@ const (
 	ARM64 = "arm64"
 	LINUX = "linux"
 
-	DtTenant       = "DT_TENANT"
-	DtServer       = "DT_SERVER"
-	DtToken        = "DT_TOKEN"
-	DtCapabilities = "DT_CAPABILITIES"
+	DtTenant          = "DT_TENANT"
+	DtServer          = "DT_SERVER"
+	DtToken           = "DT_TOKEN"
+	DtCapabilities    = "DT_CAPABILITIES"
+	DtIdSeedNamespace = "DT_ID_SEED_NAMESPACE"
+	DtIdSeedClusterId = "DT_ID_SEED_K8S_CLUSTER_ID"
 
 	DtTenantArg       = "--tenant=$(DT_TENANT)"
 	DtTokenArg        = "--token=$(DT_TOKEN)"

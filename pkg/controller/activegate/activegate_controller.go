@@ -202,7 +202,7 @@ func (r *ReconcileActiveGate) newPodForCR(instance *dynatracev1alpha1.ActiveGate
 			Namespace: instance.Namespace,
 			Labels:    builder.BuildLabels(instance.GetName(), instance.Spec.Labels),
 		},
-		Spec: builder.BuildActiveGatePodSpecs(&instance.Spec, tenantInfo),
+		Spec: builder.BuildActiveGatePodSpecs(instance, tenantInfo),
 	}
 }
 
