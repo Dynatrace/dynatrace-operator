@@ -1,7 +1,7 @@
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: dynatrace-dynakube
+  name: dynatrace-activegate
   namespace: dynatrace
 rules:
   - apiGroups:
@@ -9,6 +9,6 @@ rules:
     resources:
       - podsecuritypolicies
     resourceNames:
-      - dynatrace-dynakube
+      - dynatrace-activegate
     verbs:
       - use

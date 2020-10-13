@@ -26,12 +26,12 @@ WIth it, single methods can be overwritten or mocked to allow focused unti testi
 */
 type updateService interface {
 	FindOutdatedPods(
-		r *ReconcileDynaKube,
+		r *ReconcileActiveGate,
 		logger logr.Logger,
 		instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error)
 	IsLatest(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error)
 	UpdatePods(
-		r *ReconcileDynaKube,
+		r *ReconcileActiveGate,
 		instance *dynatracev1alpha1.DynaKube) (*reconcile.Result, error)
 }
 
@@ -42,7 +42,7 @@ Used by the Reconciler when the operator is running normally.
 type activeGateUpdateService struct{}
 
 func (us *activeGateUpdateService) UpdatePods(
-	r *ReconcileDynaKube,
+	r *ReconcileActiveGate,
 	instance *dynatracev1alpha1.DynaKube) (*reconcile.Result, error) {
 	if instance == nil {
 		return nil, fmt.Errorf("instance is nil")
@@ -75,7 +75,7 @@ func (us *activeGateUpdateService) UpdatePods(
 }
 
 func (us *activeGateUpdateService) FindOutdatedPods(
-	r *ReconcileDynaKube,
+	r *ReconcileActiveGate,
 	logger logr.Logger,
 	instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
 	pods, err := r.findPods(instance)

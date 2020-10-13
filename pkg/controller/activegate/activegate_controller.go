@@ -34,7 +34,7 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileDynaKube{
+	return &ReconcileActiveGate{
 		client:        mgr.GetClient(),
 		scheme:        mgr.GetScheme(),
 		dtcBuildFunc:  builder.BuildDynatraceClient,
@@ -68,11 +68,11 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-// blank assignment to verify that ReconcileDynaKube implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileDynaKube{}
+// blank assignment to verify that ReconcileActiveGate implements reconcile.Reconciler
+var _ reconcile.Reconciler = &ReconcileActiveGate{}
 
-// ReconcileDynaKube reconciles a DynaKube object
-type ReconcileDynaKube struct {
+// ReconcileActiveGate reconciles a DynaKube object
+type ReconcileActiveGate struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client        client.Client
@@ -89,7 +89,7 @@ type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.Dyn
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileDynaKube) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling DynaKube")
 
@@ -156,7 +156,7 @@ func (r *ReconcileDynaKube) Reconcile(request reconcile.Request) (reconcile.Resu
 	return builder.ReconcileAfterFiveMinutes(), nil
 }
 
-func (r *ReconcileDynaKube) getTokenSecret(instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {
+func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {
 	namespace := instance.GetNamespace()
 	secret := &corev1.Secret{}
 	err := r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(instance), Namespace: namespace}, secret)
@@ -181,7 +181,7 @@ func getTemplateHash(a metav1.Object) string {
 	return ""
 }
 
-func (r *ReconcileDynaKube) findPods(instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
+func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
 	podList := &corev1.PodList{}
 	listOptions := []client.ListOption{
 		client.InNamespace(instance.GetNamespace()),

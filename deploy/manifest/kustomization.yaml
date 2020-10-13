@@ -1,14 +1,14 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - clusterrole-dynakube.yaml
-  - clusterrolebinding-dynakube.yaml
+  - clusterrole-activegate.yaml
+  - clusterrolebinding-activegate.yaml
   - deployment-operator.yaml
   - role-operator.yaml
   - rolebinding-operator.yaml
-  - serviceaccount-dynakube.yaml
+  - serviceaccount-activegate.yaml
   - serviceaccount-operator.yaml
-  - podsecuritypolicy-dynakube.yaml
+  - podsecuritypolicy-activegate.yaml
   - podsecuritypolicy-operator.yaml
 bases:
   - ../crds

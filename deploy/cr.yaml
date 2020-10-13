@@ -1,7 +1,7 @@
 apiVersion: dynatrace.com/v1alpha1
-kind: ActiveGate
+kind: DynaKube
 metadata:
-  name: activegate
+  name: dynakube
 spec:
   # dynatrace api url including `/api` path at the end
   # either set ENVIRONMENTID to the proper tenant id or change the apiUrl as a whole, e.q. for Managed

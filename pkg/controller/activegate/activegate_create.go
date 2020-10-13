@@ -2,6 +2,7 @@ package activegate
 
 import (
 	"encoding/json"
+	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
 	"hash/fnv"
 	"strconv"
 
@@ -14,14 +15,14 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (r *ReconcileDynaKube) newStatefulSetForCR(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (*appsv1.StatefulSet, error) {
+func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (*appsv1.StatefulSet, error) {
 	podSpec := builder.BuildActiveGatePodSpecs(instance, tenantInfo, kubeSystemUID)
-	selectorLabels := builder.BuildLabels(instance.GetName(), instance.Spec.Labels)
+	selectorLabels := builder.BuildLabels(_const.ActivegateName, instance.Spec.Labels)
 	mergedLabels := builder.BuildMergeLabels(instance.Labels, selectorLabels)
 
 	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        instance.Name,
+			Name:        _const.ActivegateName,
 			Namespace:   instance.Namespace,
 			Labels:      mergedLabels,
 			Annotations: map[string]string{},

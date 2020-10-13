@@ -34,7 +34,7 @@ func init() {
 	_ = os.Setenv(k8sutil.WatchNamespaceEnvVar, _const.DynatraceNamespace)
 }
 
-func (updateServer *failUpdatePodsService) UpdatePods(*ReconcileDynaKube, *dynatracev1alpha1.DynaKube) (*reconcile.Result, error) {
+func (updateServer *failUpdatePodsService) UpdatePods(*ReconcileActiveGate, *dynatracev1alpha1.DynaKube) (*reconcile.Result, error) {
 	result := builder.ReconcileAfterFiveMinutes()
 	return &result, fmt.Errorf(errorUpdatingPods)
 }
@@ -186,7 +186,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, result, builder.ReconcileAfterFiveMinutes())
 	})
 	t.Run("Reconcile pod has uid env", func(t *testing.T) {
-		r := &ReconcileDynaKube{
+		r := &ReconcileActiveGate{
 			client:        factory.CreateFakeClient(),
 			dtcBuildFunc:  createFakeDTClient,
 			scheme:        scheme.Scheme,
@@ -234,7 +234,7 @@ func TestReconcile(t *testing.T) {
 		}
 	})
 	t.Run("Reconcile no kube-system namespace", func(t *testing.T) {
-		r := &ReconcileDynaKube{
+		r := &ReconcileActiveGate{
 			client:        factory.CreateFakeClient(),
 			dtcBuildFunc:  createFakeDTClient,
 			scheme:        scheme.Scheme,

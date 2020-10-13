@@ -14,7 +14,7 @@ import (
 
 // addToDashboard makes a rest call to the dynatrace api to add the activegate instance to the dashboard
 // Returns the id of the entry on success or error otherwise
-func (r *ReconcileDynaKube) addToDashboard(apiTokenSecret *corev1.Secret, instance *dynatracev1alpha1.DynaKube) (string, error) {
+func (r *ReconcileActiveGate) addToDashboard(apiTokenSecret *corev1.Secret, instance *dynatracev1alpha1.DynaKube) (string, error) {
 	serviceAccount, err := dao.FindServiceAccount(r.client)
 	if err != nil {
 		return "", err
@@ -66,7 +66,7 @@ func (r *ReconcileDynaKube) addToDashboard(apiTokenSecret *corev1.Secret, instan
 	return dtc.AddToDashboard(sanitizedLabel, instance.Spec.KubernetesAPIEndpoint, string(bearerToken))
 }
 
-func (r *ReconcileDynaKube) handleAddToDashboardResult(id string, addToDashboardErr error, log logr.Logger) {
+func (r *ReconcileActiveGate) handleAddToDashboardResult(id string, addToDashboardErr error, log logr.Logger) {
 	if id == "" {
 		id = "<unset>"
 	}
