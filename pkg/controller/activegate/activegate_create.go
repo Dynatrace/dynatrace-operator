@@ -11,14 +11,15 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
-func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo) (*appsv1.StatefulSet, error) {
-	podSpec := builder.BuildActiveGatePodSpecs(&instance.Spec, tenantInfo)
+func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (*appsv1.StatefulSet, error) {
+	podSpec := builder.BuildActiveGatePodSpecs(instance, tenantInfo, kubeSystemUID)
 	selectorLabels := builder.BuildLabels(instance.GetName(), instance.Spec.Labels)
 	mergedLabels := builder.BuildMergeLabels(instance.Labels, selectorLabels)
 
-	sts := &appsv1.StatefulSet{
+	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        instance.Name,
 			Namespace:   instance.Namespace,
@@ -35,13 +36,13 @@ func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.Ac
 		},
 	}
 
-	stsHash, err := generateStatefulSetHash(sts)
+	statefulSetHash, err := generateStatefulSetHash(statefulSet)
 	if err != nil {
 		return nil, err
 	}
-	sts.Annotations[annotationTemplateHash] = stsHash
+	statefulSet.Annotations[annotationTemplateHash] = statefulSetHash
 
-	return sts, nil
+	return statefulSet, nil
 }
 
 func generateStatefulSetHash(ds *appsv1.StatefulSet) (string, error) {

@@ -12,7 +12,7 @@ func TestCreateStatefulSet(t *testing.T) {
 	assert.NotNil(t, r)
 	assert.NoError(t, err)
 
-	result, err := r.newStatefulSetForCR(instance, &dtclient.TenantInfo{})
+	result, err := r.newStatefulSetForCR(instance, &dtclient.TenantInfo{}, "")
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 }

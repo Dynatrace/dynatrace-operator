@@ -16,6 +16,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+/*
+updateService provides an interface to update outdated pods.
+The interface is used to increase testability of the Reconciler
+Previously, the Reconciler was harder to unit test, because the methods of this interface depend on one another.
+Additionally, the production code used makes api requests.
+To allow mocking and testing of single methods used, this interface has been introduced.
+WIth it, single methods can be overwritten or mocked to allow focused unti testing
+*/
 type updateService interface {
 	FindOutdatedPods(
 		r *ReconcileActiveGate,
@@ -27,6 +35,10 @@ type updateService interface {
 		instance *dynatracev1alpha1.ActiveGate) (*reconcile.Result, error)
 }
 
+/*
+activeGateUpdateService provides the production implementation of an updateService.
+Used by the Reconciler when the operator is running normally.
+*/
 type activeGateUpdateService struct{}
 
 func (us *activeGateUpdateService) UpdatePods(

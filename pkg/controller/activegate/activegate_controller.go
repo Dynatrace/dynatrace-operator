@@ -6,7 +6,6 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/dao"
 	agerrors "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/errors"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
@@ -15,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -118,52 +116,28 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	// Define a new Pod object
 	log.Info("creating new pod definition from custom resource")
 
-	uid, err := dao.FindKubeSystemUID(r.client)
+	desiredStatefulSet, err := r.createDesiredStatefulSet(instance, secret)
 	if err != nil {
-		log.Error(err, "error getting uid from kube-system namespace")
-		return reconcile.Result{}, err
-	}
-
-	dtc, err := r.dtcBuildFunc(r.client, instance, secret)
-	if err != nil {
-		log.Error(err, err.Error())
-	}
-
-	ti, err := dtc.GetTenantInfo()
-	if err != nil {
-		log.Error(err, err.Error())
-	}
-
-	stsDesired, err := r.newStatefulSetForCR(instance, ti)
-	if err != nil {
+		reqLogger.Error(err, "error when creating desired stateful set")
 		return reconcile.Result{}, err
 	}
 
 	// Set ActiveGate instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, stsDesired, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(instance, desiredStatefulSet, r.scheme); err != nil {
+		reqLogger.Error(err, "error setting controller reference")
 		return reconcile.Result{}, err
 	}
 
-	// Check if this StatefulSet already exists
-	stsActual := &appsv1.StatefulSet{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: stsDesired.Name, Namespace: stsDesired.Namespace}, stsActual)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating new statefulset")
-		if err = r.client.Create(context.TODO(), stsDesired); err != nil {
-			return reconcile.Result{}, err
-		} else {
-			return builder.ReconcileAfterFiveMinutes(), nil
+	actualStatefulSet := &appsv1.StatefulSet{}
+	reconcileResult, err := r.manageStatefulSet(desiredStatefulSet, actualStatefulSet, reqLogger)
+	if reconcileResult != nil {
+		if err != nil {
+			return *reconcileResult, err
 		}
-	} else if err != nil {
-		return reconcile.Result{}, err
-	} else if hasStatefulSetChanged(stsDesired, stsActual) {
-		reqLogger.Info("Updating existing statefulset")
-		if err = r.client.Update(context.TODO(), stsDesired); err != nil {
-			return reconcile.Result{}, err
-		}
+		return *reconcileResult, nil
 	}
 
-	reconcileResult, err := r.updateService.UpdatePods(r, instance)
+	reconcileResult, err = r.updateService.UpdatePods(r, instance)
 	if err != nil {
 		log.Error(err, "could not update statefulset")
 	}
@@ -178,7 +152,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Set version and last updated timestamp
 	// Nothing to do - requeue after five minutes
-	reqLogger.Info("Nothing to do: Pod already exists", "Pod.Namespace", stsActual.Namespace, "Pod.Name", stsActual.Name)
+	reqLogger.Info("Nothing to do: Pod already exists", "Pod.Namespace", actualStatefulSet.Namespace, "Pod.Name", actualStatefulSet.Name)
 	return builder.ReconcileAfterFiveMinutes(), nil
 }
 
@@ -205,28 +179,6 @@ func getTemplateHash(a metav1.Object) string {
 		return annotations[annotationTemplateHash]
 	}
 	return ""
-}
-
-// newPodForCR returns a pod with the same name/namespace as the cr
-func (r *ReconcileActiveGate) newPodForCR(instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret, kubeSystemUID types.UID) *corev1.Pod {
-	dtc, err := r.dtcBuildFunc(r.client, instance, secret)
-	if err != nil {
-		log.Error(err, err.Error())
-	}
-
-	tenantInfo, err := dtc.GetTenantInfo()
-	if err != nil {
-		log.Error(err, err.Error())
-	}
-
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      instance.Name + "-pod",
-			Namespace: instance.Namespace,
-			Labels:    builder.BuildLabels(instance.GetName(), instance.Spec.Labels),
-		},
-		Spec: builder.BuildActiveGatePodSpecs(instance, tenantInfo, kubeSystemUID),
-	}
 }
 
 func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error) {

@@ -11,10 +11,11 @@ import (
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/factory"
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -81,13 +82,12 @@ func TestReconcile(t *testing.T) {
 		})
 		assert.NotNil(t, result)
 		assert.NoError(t, err)
-		assert.Equal(t, result, builder.ReconcileAfterFiveMinutes())
+		assert.Equal(t, result, builder.ReconcileImmediately())
 
 		var ti dtclient.TenantInfo
-		{
-		}
 
-		sts, err := r.newStatefulSetForCR(instance, &ti)
+		sts, err := r.newStatefulSetForCR(instance, &ti, "")
+		assert.NoError(t, err)
 		assert.NotNil(t, sts)
 
 		found := &appsv1.StatefulSet{}
@@ -204,12 +204,17 @@ func TestReconcile(t *testing.T) {
 		result, err := r.Reconcile(request)
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		pod := &corev1.Pod{}
+		statefulSet := &appsv1.StatefulSet{}
 
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: "activegate-pod", Namespace: _const.DynatraceNamespace}, pod)
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: "activegate", Namespace: _const.DynatraceNamespace}, statefulSet)
 		assert.NoError(t, err)
-		assert.NotNil(t, pod)
+		assert.NotNil(t, statefulSet)
+		assert.NotNil(t, statefulSet.Spec)
+		assert.NotNil(t, statefulSet.Spec.Template)
+
+		pod := statefulSet.Spec.Template
 		assert.NotNil(t, pod.Spec)
+		assert.NotNil(t, pod.Spec.Containers)
 		assert.LessOrEqual(t, 1, len(pod.Spec.Containers))
 
 		for _, container := range pod.Spec.Containers {
@@ -246,7 +251,7 @@ func TestReconcile(t *testing.T) {
 
 		kubeSystemNamespace := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "kube-system",
+				Name: _const.KubeSystemNamespace,
 			},
 		}
 		err := r.client.Delete(context.TODO(), &kubeSystemNamespace)

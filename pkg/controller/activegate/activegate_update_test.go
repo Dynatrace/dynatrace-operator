@@ -16,6 +16,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -83,25 +84,27 @@ func TestFindOutdatedPods(t *testing.T) {
 		assert.NotNil(t, r)
 		assert.NoError(t, err)
 
-		dummy := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      instance.Name,
-				Namespace: _const.DynatraceNamespace,
-				Labels:    builder.BuildLabelsForQuery(instance.Name),
-			},
-			Status: corev1.PodStatus{
-				ContainerStatuses: []corev1.ContainerStatus{
-					{
-						Image:   "outdated",
-						ImageID: "outdated",
-					},
-				},
-			},
-		}
-		r.client.Create(context.TODO(), &dummy)
-
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
+			pod := &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      instance.Name,
+					Namespace: _const.DynatraceNamespace,
+					Labels:    builder.BuildLabelsForQuery(instance.Name),
+				},
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							Image:   "outdated",
+							ImageID: "outdated",
+						},
+					},
+				},
+			}
+
+			err = r.client.Create(context.TODO(), pod)
+			assert.NoError(t, err)
+
 			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
 
 			assert.NotNil(t, pods)
@@ -211,7 +214,8 @@ func TestUpdatePods(t *testing.T) {
 					},
 				},
 			}
-			r.client.Create(context.TODO(), &dummy)
+			err = r.client.Create(context.TODO(), &dummy)
+			assert.NoError(t, err)
 
 			result, err := r.updateService.UpdatePods(r, instance)
 
