@@ -10,14 +10,13 @@ import (
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/version"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func (r *ReconcileActiveGate) updatePods(
-	pod *corev1.Pod,
-	instance *dynatracev1alpha1.ActiveGate,
-	secret *corev1.Secret) (*reconcile.Result, error) {
+	instance *dynatracev1alpha1.ActiveGate) (*reconcile.Result, error) {
 	if !instance.Spec.DisableActivegateUpdate &&
 		instance.Status.UpdatedTimestamp.Add(UpdateInterval).Before(time.Now()) {
 		log.Info("checking for outdated pods")
@@ -34,7 +33,12 @@ func (r *ReconcileActiveGate) updatePods(
 			log.Error(err, err.Error())
 			return &reconcile.Result{}, err
 		}
-		r.updateInstanceStatus(pod, instance, secret)
+
+		instance.Status.UpdatedTimestamp = metav1.Now()
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			log.Info("failed to updated instance status", "message", err.Error())
+		}
 	} else if instance.Spec.DisableActivegateUpdate {
 		log.Info("Skipping updating pods because of configuration", "disableActivegateUpdate", true)
 	}
