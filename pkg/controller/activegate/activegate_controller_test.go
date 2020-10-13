@@ -84,7 +84,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, result, builder.ReconcileImmediately())
 
-		sts, err := r.newStatefulSetForCR(instance, &dtclient.TenantInfo{})
+		sts, err := r.newStatefulSetForCR(instance, &dtclient.TenantInfo{}, factory.KubeSystemUID)
 		assert.NoError(t, err)
 		assert.NotNil(t, sts)
 
