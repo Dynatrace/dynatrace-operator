@@ -15,7 +15,6 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -255,12 +254,4 @@ func createFakeDTClient(client.Client, *dynatracev1alpha1.ActiveGate, *corev1.Se
 			{Version: mockActiveGateVersion},
 		}, nil)
 	return dtMockClient, nil
-}
-
-func NewSecret(name, namespace string, kv map[string]string) *corev1.Secret {
-	data := make(map[string][]byte)
-	for k, v := range kv {
-		data[k] = []byte(v)
-	}
-	return &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}, Data: data}
 }
