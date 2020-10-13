@@ -99,10 +99,10 @@ func TestFindOutdatedPods(t *testing.T) {
 				},
 			},
 		}
-		r.client.Create(context.TODO(), &dummy)
 
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
+			r.client.Create(context.TODO(), &dummy)
 			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
 
 			assert.NotNil(t, pods)
