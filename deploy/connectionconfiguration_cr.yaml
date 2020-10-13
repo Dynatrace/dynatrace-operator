@@ -1,0 +1,34 @@
+apiVersion: dynatrace.com/v1alpha1
+kind: ConnectionConfiguration
+metadata:
+  name: connectionconfiguration
+spec:
+  # dynatrace api url including `/api` path at the end
+  # either set ENVIRONMENTID to the proper tenant id or change the apiUrl as a whole, e.q. for Managed
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
+  # name of secret holding `apiToken` and `paasToken`
+  # if unset, name of custom resource is used
+  # tokens: ""
+
+  # Optional: configures a proxy for the Agent, AgentDownload and the Operator. Either provide the
+  # proxy URL directly at 'value' or create a Secret with a field 'proxy' which holds your encrypted
+  # proxy URL.
+  #
+  # proxy:
+  #   value: https://my-proxy-url.com
+  #   valueFrom: name-of-my-proxy-secret
+
+  # Optional: name of the ConfigMap containing the custom CA certificates; the ConfigMap must have a
+  # field called certs with the contents of the PEM bundle. These custom certificates will be used by
+  # both the Operator and the OneAgent. By default the embedded certificates on the images are used.
+  #
+  # trustedCAs: name-of-my-ca-configmap
+
+  # Optional: sets a NetworkZone for the OneAgent.
+  #
+  # networkZone: name-of-my-network-zone
+
+  # Optional: Disable certificate validation checks for installer download and API communication
+  #
+  # skipCertCheck: true
