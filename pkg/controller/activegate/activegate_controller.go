@@ -7,6 +7,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/dao"
 	agerrors "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/errors"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
@@ -116,7 +117,13 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Define a new Pod object
 	log.Info("creating new pod definition from custom resource")
-	pod := r.newPodForCR(instance, secret)
+
+	uid, err := dao.FindKubeSystemUID(r.client)
+	if err != nil {
+		log.Error(err, "error getting uid from kube-system namespace")
+		return reconcile.Result{}, err
+	}
+	pod := r.newPodForCR(instance, secret, uid)
 
 	// Set ActiveGate instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
@@ -190,7 +197,7 @@ func (r *ReconcileActiveGate) updateInstanceStatus(pod *corev1.Pod, instance *dy
 }
 
 // newPodForCR returns a pod with the same name/namespace as the cr
-func (r *ReconcileActiveGate) newPodForCR(instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) *corev1.Pod {
+func (r *ReconcileActiveGate) newPodForCR(instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret, kubeSystemUID types.UID) *corev1.Pod {
 	dtc, err := r.dtcBuildFunc(r.client, instance, secret)
 	if err != nil {
 		log.Error(err, err.Error())
@@ -207,7 +214,7 @@ func (r *ReconcileActiveGate) newPodForCR(instance *dynatracev1alpha1.ActiveGate
 			Namespace: instance.Namespace,
 			Labels:    builder.BuildLabels(instance.GetName(), instance.Spec.Labels),
 		},
-		Spec: builder.BuildActiveGatePodSpecs(&instance.Spec, tenantInfo),
+		Spec: builder.BuildActiveGatePodSpecs(instance, tenantInfo, kubeSystemUID),
 	}
 }
 

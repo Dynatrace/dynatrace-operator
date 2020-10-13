@@ -16,7 +16,7 @@ func TestCreatePod(t *testing.T) {
 	assert.NotEmpty(t, pods)
 
 	lenBefore := len(pods)
-	result, err := r.createPod(r.newPodForCR(instance, nil))
+	result, err := r.createPod(r.newPodForCR(instance, nil, ""))
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 
