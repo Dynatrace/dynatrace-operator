@@ -15,6 +15,10 @@ type Tokens struct {
 }
 
 func NewTokens(secret *corev1.Secret) (*Tokens, error) {
+	if secret == nil {
+		return nil, fmt.Errorf("could not parse tokens: secret is nil")
+	}
+
 	var apiToken string
 	var paasToken string
 	var err error
@@ -23,15 +27,9 @@ func NewTokens(secret *corev1.Secret) (*Tokens, error) {
 		return nil, err
 	}
 
-	apiToken, err = ExtractToken(secret, _const.DynatraceApiToken)
-	if err != nil {
-		return nil, err
-	}
-
-	paasToken, err = ExtractToken(secret, _const.DynatracePaasToken)
-	if err != nil {
-		return nil, err
-	}
+	//Errors would have been caught by verifySecret
+	apiToken, _ = ExtractToken(secret, _const.DynatraceApiToken)
+	paasToken, _ = ExtractToken(secret, _const.DynatracePaasToken)
 
 	return &Tokens{
 		ApiToken:  apiToken,

@@ -1,6 +1,6 @@
 
-# Dynatrace ActiveGate Operator
+# Dynatrace Operator
 
-This is the home of Dynatrace ActiveGate Operator which supports the rollout and lifecycle of Dynatrace ActiveGate in Kubernetes and OpenShift clusters.
+This is the home of Dynatrace Operator which supports the rollout and lifecycle of various Dynatrace components in Kubernetes and OpenShift clusters.
 
-The existing Dynatrace ActiveGate has been available since 2016 supporting a number of capabilities including API monitoring for Kubernetes, AWS, Azure, GCP, and vSPhere. Many of these capabilities will be migrated to this container-based ActiveGate over time. As of December 2020 it is limited to Kubernetes monitoring alone.
+This operator could replace an existing Dynatrace ActiveGate, which has been available since 2016. It will eventually support many of ActiveGate's capabilities including API monitoring for Kubernetes, AWS, Azure, GCP, and vSPhere. As of December 2020 the Dynatrace Operator is limited to Kubernetes monitoring alone.

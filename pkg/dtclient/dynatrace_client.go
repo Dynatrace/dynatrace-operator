@@ -42,7 +42,7 @@ const (
 
 // makeRequest does an HTTP request by formatting the URL from the given arguments and returns the response.
 // The response body must be closed by the caller when no longer used.
-func (dc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.Response, error) {
+func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %s", err.Error())
@@ -52,38 +52,38 @@ func (dc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.R
 
 	switch tokenType {
 	case dynatraceApiToken:
-		if dc.apiToken == "" {
+		if dtc.apiToken == "" {
 			return nil, fmt.Errorf("not able to set token since api token is empty for request: %s", url)
 		}
-		authHeader = fmt.Sprintf("Api-Token %s", dc.apiToken)
+		authHeader = fmt.Sprintf("Api-Token %s", dtc.apiToken)
 	case dynatracePaaSToken:
-		if dc.paasToken == "" {
+		if dtc.paasToken == "" {
 			return nil, fmt.Errorf("not able to set token since paas token is empty for request: %s", url)
 		}
-		authHeader = fmt.Sprintf("Api-Token %s", dc.paasToken)
+		authHeader = fmt.Sprintf("Api-Token %s", dtc.paasToken)
 	default:
 		return nil, errors.New("unable to determine token to set in headers")
 	}
 
 	req.Header.Add("Authorization", authHeader)
 
-	return dc.httpClient.Do(req)
+	return dtc.httpClient.Do(req)
 }
 
-func (dc *dynatraceClient) getServerResponseData(response *http.Response) ([]byte, error) {
+func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]byte, error) {
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading response: %w", err)
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return nil, dc.handleErrorResponseFromAPI(responseData, response.StatusCode)
+		return responseData, dtc.handleErrorResponseFromAPI(responseData, response.StatusCode)
 	}
 
 	return responseData, nil
 }
 
-func (dc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCode int) error {
+func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCode int) error {
 	se := serverErrorResponse{}
 	if err := json.Unmarshal(response, &se); err != nil {
 		return fmt.Errorf("response error: %d, can't unmarshal json response: %w", statusCode, err)
@@ -92,15 +92,15 @@ func (dc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCod
 	return se.ErrorMessage
 }
 
-func (dc *dynatraceClient) getHostInfoForIP(ip string) (*hostInfo, error) {
-	if len(dc.hostCache) == 0 {
-		err := dc.buildHostCache()
+func (dtc *dynatraceClient) getHostInfoForIP(ip string) (*hostInfo, error) {
+	if len(dtc.hostCache) == 0 {
+		err := dtc.buildHostCache()
 		if err != nil {
 			return nil, fmt.Errorf("error building hostcache from dynatrace cluster: %w", err)
 		}
 	}
 
-	switch hostInfo, ok := dc.hostCache[ip]; {
+	switch hostInfo, ok := dtc.hostCache[ip]; {
 	case !ok:
 		return nil, errors.New("host not found")
 	default:
@@ -108,20 +108,23 @@ func (dc *dynatraceClient) getHostInfoForIP(ip string) (*hostInfo, error) {
 	}
 }
 
-func (dc *dynatraceClient) buildHostCache() error {
-	url := fmt.Sprintf("%s/v1/entity/infrastructure/hosts?includeDetails=false", dc.url)
-	resp, err := dc.makeRequest(url, dynatraceApiToken)
+func (dtc *dynatraceClient) buildHostCache() error {
+	url := fmt.Sprintf("%s/v1/entity/infrastructure/hosts?includeDetails=false", dtc.url)
+	resp, err := dtc.makeRequest(url, dynatraceApiToken)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		// Swallow error
+		_ = resp.Body.Close()
+	}()
 
-	responseData, err := dc.getServerResponseData(resp)
+	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {
 		return err
 	}
 
-	err = dc.setHostCacheFromResponse(responseData)
+	err = dtc.setHostCacheFromResponse(responseData)
 	if err != nil {
 		return err
 	}
@@ -129,7 +132,7 @@ func (dc *dynatraceClient) buildHostCache() error {
 	return nil
 }
 
-func (dc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
+func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 	type hostInfoResponse struct {
 		IPAddresses  []string
 		AgentVersion *struct {
@@ -143,16 +146,16 @@ func (dc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 		LastSeenTimestamp int64
 	}
 
-	dc.hostCache = make(map[string]hostInfo)
+	dtc.hostCache = make(map[string]hostInfo)
 
 	var hostInfoResponses []hostInfoResponse
 	err := json.Unmarshal(response, &hostInfoResponses)
 	if err != nil {
-		dc.logger.Error(err, "error unmarshalling json response")
+		dtc.logger.Error(err, "error unmarshalling json response")
 		return err
 	}
 
-	now := dc.now
+	now := dtc.now
 	if now.IsZero() {
 		now = time.Now().UTC()
 	}
@@ -168,7 +171,7 @@ func (dc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 
 		nz := info.NetworkZoneID
 
-		if (dc.networkZone != "" && nz == dc.networkZone) || (dc.networkZone == "" && (nz == "default" || nz == "")) {
+		if (dtc.networkZone != "" && nz == dtc.networkZone) || (dtc.networkZone == "" && (nz == "default" || nz == "")) {
 			hostInfo := hostInfo{entityID: info.EntityID}
 
 			if v := info.AgentVersion; v != nil {
@@ -176,17 +179,17 @@ func (dc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 			}
 
 			for _, ip := range info.IPAddresses {
-				if old, ok := dc.hostCache[ip]; ok {
-					dc.logger.Info("Hosts cache: replacing host", "ip", ip, "new", hostInfo.entityID, "old", old.entityID)
+				if old, ok := dtc.hostCache[ip]; ok {
+					dtc.logger.Info("Hosts cache: replacing host", "ip", ip, "new", hostInfo.entityID, "old", old.entityID)
 				}
 
-				dc.hostCache[ip] = hostInfo
+				dtc.hostCache[ip] = hostInfo
 			}
 		}
 	}
 
 	if len(inactive) > 0 {
-		dc.logger.Info("Hosts cache: ignoring inactive hosts", "ids", inactive)
+		dtc.logger.Info("Hosts cache: ignoring inactive hosts", "ids", inactive)
 	}
 
 	return nil

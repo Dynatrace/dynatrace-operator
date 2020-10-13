@@ -3,6 +3,7 @@ package dtclient
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,6 +31,66 @@ func TestEventDataMarshal(t *testing.T) {
 	jsonBuffer, err := json.Marshal(testEventData)
 	assert.NoError(t, err)
 	assert.JSONEq(t, string(jsonBuffer), string(testJSONInput))
+}
+
+func TestSendEvent(t *testing.T) {
+	empty := EventData{}
+	eventTypeOnly := EventData{
+		EventType: "abcd",
+	}
+
+	t.Run("SendEvent no event data", func(t *testing.T) {
+		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, sendEventHandlerStub())
+		defer dynatraceServer.Close()
+
+		err := dynatraceClient.SendEvent(nil)
+		assert.Error(t, err)
+		assert.Equal(t, "no data found in eventData payload", err.Error())
+	})
+	t.Run("SendEvent incomplete event data", func(t *testing.T) {
+		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, sendEventHandlerStub())
+		defer dynatraceServer.Close()
+
+		err := dynatraceClient.SendEvent(&empty)
+		assert.Error(t, err)
+		assert.Equal(t, "no key set for eventType in eventData payload", err.Error())
+
+		err = dynatraceClient.SendEvent(&eventTypeOnly)
+		assert.NoError(t, err)
+	})
+	t.Run("SendEvent request error", func(t *testing.T) {
+		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, sendEventHandlerError())
+
+		err := dynatraceClient.SendEvent(&empty)
+		assert.Error(t, err)
+		assert.Equal(t, "no key set for eventType in eventData payload", err.Error())
+
+		err = dynatraceClient.SendEvent(&eventTypeOnly)
+		assert.Error(t, err)
+		assert.Equal(t, "dynatrace server error 500: error received from server", err.Error())
+
+		dynatraceServer.Close()
+
+		err = dynatraceClient.SendEvent(&eventTypeOnly)
+		assert.Error(t, err)
+		assert.True(t,
+			// Reason differs between local tests and travis test, so only check main error message
+			strings.HasPrefix(err.Error(),
+				"error making post request to dynatrace api: Post \""+
+					dynatraceServer.URL+
+					"/v1/events\""))
+
+	})
+}
+
+func sendEventHandlerStub() http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {}
+}
+
+func sendEventHandlerError() http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writeError(writer, http.StatusInternalServerError)
+	}
 }
 
 func testSendEvent(t *testing.T, dynatraceClient Client) {

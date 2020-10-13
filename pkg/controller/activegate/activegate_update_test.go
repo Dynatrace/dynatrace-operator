@@ -2,6 +2,7 @@ package activegate
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
@@ -21,33 +22,183 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const (
+	mockActiveGateVersion = "1.200.0"
+)
+
 func init() {
 	_ = apis.AddToScheme(scheme.Scheme) // Register OneAgent and Istio object schemas.
 	_ = os.Setenv(k8sutil.WatchNamespaceEnvVar, _const.DynatraceNamespace)
 }
 
-func TestUpdatePods(t *testing.T) {
-	r, instance, err := setupReconciler(t)
-	assert.NotNil(t, r)
-	assert.NoError(t, err)
+type mockIsLatestUpdateService struct{}
 
-	// Check if r is not nil so go linter does not complain
-	if r != nil {
-		pods, err := r.findOutdatedPods(log.WithName("TestUpdatePods"), instance,
-			func(logger logr.Logger, image string, imageID string, secret *corev1.Secret) (bool, error) {
-				return imageID == "latest", nil
-			})
-
-		assert.NotNil(t, pods)
-		assert.NotEmpty(t, pods)
-		assert.Equal(t, 1, len(pods))
-		assert.Nil(t, err)
-	} else {
-		assert.Fail(t, "r is nil")
-	}
+func (updateService *mockIsLatestUpdateService) FindOutdatedPods(r *ReconcileActiveGate,
+	logger logr.Logger,
+	instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error) {
+	return (&activeGateUpdateService{}).FindOutdatedPods(r, logger, instance)
+}
+func (updateService *mockIsLatestUpdateService) IsLatest(_ logr.Logger,
+	_ string,
+	imageID string,
+	_ *corev1.Secret) (bool, error) {
+	return imageID == "latest", nil
+}
+func (updateService *mockIsLatestUpdateService) UpdatePods(r *ReconcileActiveGate,
+	pod *corev1.Pod,
+	instance *dynatracev1alpha1.ActiveGate,
+	secret *corev1.Secret) (*reconcile.Result, error) {
+	return (&activeGateUpdateService{}).UpdatePods(r, pod, instance, secret)
 }
 
-func setupReconciler(t *testing.T) (*ReconcileActiveGate, *dynatracev1alpha1.ActiveGate, error) {
+type failingIsLatestUpdateService struct {
+	mockIsLatestUpdateService
+}
+
+func (updateService *failingIsLatestUpdateService) IsLatest(logr.Logger, string, string, *corev1.Secret) (bool, error) {
+	return false, fmt.Errorf("mocked error")
+}
+
+func TestIsLatest(t *testing.T) {
+	t.Run("IsLatest", func(t *testing.T) {
+		r, _, err := setupReconciler(t, &activeGateUpdateService{})
+		assert.NotNil(t, r)
+		assert.NoError(t, err)
+
+		// Check if r is not nil so go linter does not complain
+		if r != nil {
+			result, err := r.updateService.IsLatest(log.WithName("TestUpdatePods"),
+				"somehost.com/dynatrace:latest", "",
+				&corev1.Secret{})
+
+			assert.False(t, result)
+			assert.Error(t, err)
+		} else {
+			assert.Fail(t, "r is nil")
+		}
+	})
+}
+
+func TestFindOutdatedPods(t *testing.T) {
+	t.Run("FindOutdatedPods", func(t *testing.T) {
+		r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
+		assert.NotNil(t, r)
+		assert.NoError(t, err)
+
+		// Check if r is not nil so go linter does not complain
+		if r != nil {
+			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
+
+			assert.NotNil(t, pods)
+			assert.NotEmpty(t, pods)
+			assert.Equal(t, 1, len(pods))
+			assert.NoError(t, err)
+		} else {
+			assert.Fail(t, "r is nil")
+		}
+	})
+	t.Run("FindOutdatedPods error during IsLatest", func(t *testing.T) {
+		r, instance, err := setupReconciler(t, &failingIsLatestUpdateService{})
+		assert.NotNil(t, r)
+		assert.NoError(t, err)
+
+		// Check if r is not nil so go linter does not complain
+		if r != nil {
+			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
+
+			assert.Nil(t, pods)
+			assert.Empty(t, pods)
+			assert.Equal(t, 0, len(pods))
+			assert.NoError(t, err)
+		} else {
+			assert.Fail(t, "r is nil")
+		}
+	})
+	t.Run("FindOutdatedPods instance has no image", func(t *testing.T) {
+		r, instance, err := setupReconciler(t, &failingIsLatestUpdateService{})
+		assert.NotNil(t, r)
+		assert.NoError(t, err)
+
+		// Check if r is not nil so go linter does not complain
+		if r != nil {
+			instance.Spec.Image = ""
+			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
+
+			assert.Nil(t, pods)
+			assert.Empty(t, pods)
+			assert.Equal(t, 0, len(pods))
+			assert.NoError(t, err)
+		} else {
+			assert.Fail(t, "r is nil")
+		}
+	})
+}
+
+func TestUpdatePods(t *testing.T) {
+	t.Run("UpdatePods", func(t *testing.T) {
+		r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
+		assert.NotNil(t, r)
+		assert.NoError(t, err)
+
+		// Check if r is not nil so go linter does not complain
+		if r != nil {
+			result, err := r.updateService.UpdatePods(r, &corev1.Pod{}, instance, &corev1.Secret{})
+
+			assert.Nil(t, result)
+			assert.NoError(t, err)
+
+			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
+
+			assert.Nil(t, pods)
+			assert.Empty(t, pods)
+			assert.Equal(t, 0, len(pods))
+			assert.NoError(t, err)
+		} else {
+			assert.Fail(t, "r is nil")
+		}
+	})
+	t.Run("UpdatePods instance is nil", func(t *testing.T) {
+		r, _, err := setupReconciler(t, &mockIsLatestUpdateService{})
+		assert.NotNil(t, r)
+		assert.NoError(t, err)
+
+		// Check if r is not nil so go linter does not complain
+		if r != nil {
+			result, err := r.updateService.UpdatePods(r, &corev1.Pod{}, nil, &corev1.Secret{})
+
+			assert.Nil(t, result)
+			assert.Error(t, err)
+		} else {
+			assert.Fail(t, "r is nil")
+		}
+	})
+	t.Run("UpdatePods auto update disabled", func(t *testing.T) {
+		r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
+		assert.NotNil(t, r)
+		assert.NoError(t, err)
+
+		// Check if r is not nil so go linter does not complain
+		if r != nil {
+			instance.Spec.DisableActivegateUpdate = true
+			result, err := r.updateService.UpdatePods(r, &corev1.Pod{}, instance, &corev1.Secret{})
+
+			assert.Nil(t, result)
+			assert.NoError(t, err)
+
+			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
+
+			// Since DisableActivegateUpdate is true, UpdatePods should not have deleted outdated pods
+			assert.NotNil(t, pods)
+			assert.NotEmpty(t, pods)
+			assert.Equal(t, 1, len(pods))
+			assert.NoError(t, err)
+		} else {
+			assert.Fail(t, "r is nil")
+		}
+	})
+}
+
+func setupReconciler(t *testing.T, updateService updateService) (*ReconcileActiveGate, *dynatracev1alpha1.ActiveGate, error) {
 	fakeClient := fake.NewFakeClientWithScheme(
 		scheme.Scheme,
 		NewSecret(_const.ActivegateName, _const.DynatraceNamespace, map[string]string{_const.DynatraceApiToken: "42", _const.DynatracePaasToken: "84"}),
@@ -65,9 +216,10 @@ func setupReconciler(t *testing.T) (*ReconcileActiveGate, *dynatracev1alpha1.Act
 		},
 	)
 	r := &ReconcileActiveGate{
-		client:       fakeClient,
-		dtcBuildFunc: createFakeDTClient,
-		scheme:       scheme.Scheme,
+		client:        fakeClient,
+		dtcBuildFunc:  createFakeDTClient,
+		scheme:        scheme.Scheme,
+		updateService: updateService,
 	}
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{
@@ -112,7 +264,11 @@ func setupReconciler(t *testing.T) (*ReconcileActiveGate, *dynatracev1alpha1.Act
 func createFakeDTClient(client.Client, *dynatracev1alpha1.ActiveGate, *corev1.Secret) (dtclient.Client, error) {
 	dtMockClient := &dtclient.MockDynatraceClient{}
 	dtMockClient.On("GetTenantInfo").Return(&dtclient.TenantInfo{}, nil)
-	dtMockClient.On("QueryActiveGates", &dtclient.ActiveGateQuery{Hostname: "", NetworkAddress: "", NetworkZone: "default", UpdateStatus: ""}).Return([]dtclient.ActiveGate{}, nil)
+	dtMockClient.
+		On("QueryActiveGates", &dtclient.ActiveGateQuery{Hostname: "", NetworkAddress: "", NetworkZone: "default", UpdateStatus: ""}).
+		Return([]dtclient.ActiveGate{
+			{Version: mockActiveGateVersion},
+		}, nil)
 	return dtMockClient, nil
 }
 
