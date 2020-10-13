@@ -76,7 +76,8 @@ func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]by
 		return nil, fmt.Errorf("error reading response: %w", err)
 	}
 
-	if response.StatusCode != http.StatusOK {
+	if response.StatusCode != http.StatusOK &&
+		response.StatusCode != http.StatusCreated {
 		return responseData, dtc.handleErrorResponseFromAPI(responseData, response.StatusCode)
 	}
 
