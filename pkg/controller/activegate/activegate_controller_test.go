@@ -84,9 +84,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, result, builder.ReconcileImmediately())
 
-		var ti dtclient.TenantInfo
-
-		sts, err := r.newStatefulSetForCR(instance, &ti, "")
+		sts, err := r.newStatefulSetForCR(instance, &dtclient.TenantInfo{})
 		assert.NoError(t, err)
 		assert.NotNil(t, sts)
 
