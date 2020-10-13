@@ -2,6 +2,9 @@ package factory
 
 import (
 	"context"
+	"os"
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
@@ -9,9 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func init() {

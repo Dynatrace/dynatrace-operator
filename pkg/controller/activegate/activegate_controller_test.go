@@ -3,21 +3,21 @@ package activegate
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/factory"
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/factory"
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 

@@ -3,11 +3,11 @@ package activegate
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/dao"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/dao"
 	agerrors "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/errors"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"

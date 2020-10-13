@@ -2,6 +2,9 @@ package dao
 
 import (
 	"context"
+	"os"
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis"
 	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/factory"
@@ -11,9 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func init() {
