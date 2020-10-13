@@ -3,6 +3,13 @@ package activegate
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/factory"
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
@@ -19,6 +26,11 @@ type failUpdatePodsService struct {
 }
 
 const errorUpdatingPods = "error updating pods"
+
+func init() {
+	_ = apis.AddToScheme(scheme.Scheme) // Register OneAgent and Istio object schemas.
+	_ = os.Setenv(k8sutil.WatchNamespaceEnvVar, _const.DynatraceNamespace)
+}
 
 func (updateServer *failUpdatePodsService) UpdatePods(*ReconcileActiveGate, *corev1.Pod, *dynatracev1alpha1.ActiveGate, *corev1.Secret) (*reconcile.Result, error) {
 	result := builder.ReconcileAfterFiveMinutes()
@@ -88,7 +100,7 @@ func TestReconcile(t *testing.T) {
 		secret, err := r.getTokenSecret(instance)
 		assert.NoError(t, err)
 
-		pod := r.newPodForCR(instance, secret)
+		pod := r.newPodForCR(instance, secret, "")
 		assert.NotNil(t, pod)
 
 		found := &corev1.Pod{}
@@ -187,5 +199,74 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.NoError(t, err)
 		assert.Equal(t, result, builder.ReconcileAfterFiveMinutes())
+	})
+	t.Run("Reconcile pod has uid env", func(t *testing.T) {
+		r := &ReconcileActiveGate{
+			client:        factory.CreateFakeClient(),
+			dtcBuildFunc:  createFakeDTClient,
+			scheme:        scheme.Scheme,
+			updateService: &mockIsLatestUpdateService{},
+		}
+		request := reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: _const.DynatraceNamespace,
+				Name:      _const.ActivegateName,
+			},
+		}
+
+		result, err := r.Reconcile(request)
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		pod := &corev1.Pod{}
+
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: "activegate-pod", Namespace: _const.DynatraceNamespace}, pod)
+		assert.NoError(t, err)
+		assert.NotNil(t, pod)
+		assert.NotNil(t, pod.Spec)
+		assert.LessOrEqual(t, 1, len(pod.Spec.Containers))
+
+		for _, container := range pod.Spec.Containers {
+			hasNamespace := false
+			hasUID := false
+
+			for _, envArg := range container.Env {
+				if envArg.Name == builder.DtIdSeedNamespace {
+					hasNamespace = true
+					assert.Equal(t, _const.DynatraceNamespace, envArg.Value)
+				} else if envArg.Name == builder.DtIdSeedClusterId {
+					hasUID = true
+					assert.Equal(t, factory.KubeSystemUID, envArg.Value)
+				}
+			}
+
+			assert.True(t, hasNamespace)
+			assert.True(t, hasUID)
+		}
+	})
+	t.Run("Reconcile no kube-system namespace", func(t *testing.T) {
+		r := &ReconcileActiveGate{
+			client:        factory.CreateFakeClient(),
+			dtcBuildFunc:  createFakeDTClient,
+			scheme:        scheme.Scheme,
+			updateService: &mockIsLatestUpdateService{},
+		}
+		request := reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: _const.DynatraceNamespace,
+				Name:      _const.ActivegateName,
+			},
+		}
+
+		kubeSystemNamespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "kube-system",
+			},
+		}
+		err := r.client.Delete(context.TODO(), &kubeSystemNamespace)
+		assert.NoError(t, err)
+
+		result, err := r.Reconcile(request)
+		assert.EqualError(t, err, "namespaces \"kube-system\" not found")
+		assert.NotNil(t, result)
 	})
 }

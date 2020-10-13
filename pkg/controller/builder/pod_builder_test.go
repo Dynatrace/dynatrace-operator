@@ -27,7 +27,7 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 				Image:              image,
 			},
 		}
-		specs := BuildActiveGatePodSpecs(instance, nil)
+		specs := BuildActiveGatePodSpecs(instance, nil, "")
 		activeGateSpec := &instance.Spec
 		assert.NotNil(t, specs)
 		assert.Equal(t, 1, len(specs.Containers))
@@ -57,7 +57,7 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 			ID:                    "tenant-id",
 			Token:                 "tenant-token",
 			CommunicationEndpoint: "tenant-endpoint",
-		})
+		}, "")
 		assert.NotNil(t, specs)
 		assert.Equal(t, 1, len(specs.Containers))
 		assert.NotNil(t, specs)
@@ -115,4 +115,31 @@ func TestBuildLabels(t *testing.T) {
 	})
 }
 
-//func TestBuildEnvVars
+func TestBuildEnvVars(t *testing.T) {
+	instance := dynatracev1alpha1.ActiveGate{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "dynatrace",
+		},
+	}
+	envVars := buildEnvVars(&instance, &dtclient.TenantInfo{}, "cluster")
+	assert.NotEmpty(t, envVars)
+	assert.LessOrEqual(t, 6, len(envVars))
+
+	hasNamespace := false
+	hasClusterName := false
+
+	for _, envVar := range envVars {
+		if envVar.Name == DtIdSeedNamespace {
+			assert.Equal(t, "dynatrace", envVar.Value)
+			hasNamespace = true
+		} else if envVar.Name == DtIdSeedClusterId {
+			assert.Equal(t, "cluster", envVar.Value)
+			hasClusterName = true
+		}
+
+	}
+
+	assert.True(t, hasNamespace)
+	assert.True(t, hasClusterName)
+
+}

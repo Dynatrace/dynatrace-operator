@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"k8s.io/apimachinery/pkg/types"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
@@ -9,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func BuildActiveGatePodSpecs(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo) corev1.PodSpec {
+func BuildActiveGatePodSpecs(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) corev1.PodSpec {
 	sa := MonitoringServiceAccount
 	image := ActivegateImage
 	activeGateSpec := &instance.Spec
@@ -42,7 +43,7 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.ActiveGate, tenantInfo *dtclient
 			Image:           image,
 			Resources:       activeGateSpec.Resources,
 			ImagePullPolicy: corev1.PullAlways,
-			Env:             buildEnvVars(instance, tenantInfo),
+			Env:             buildEnvVars(instance, tenantInfo, kubeSystemUID),
 			Args:            buildArgs(),
 		}},
 		DNSPolicy:          activeGateSpec.DNSPolicy,
@@ -63,7 +64,7 @@ func buildArgs() []string {
 	}
 }
 
-func buildEnvVars(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo) []corev1.EnvVar {
+func buildEnvVars(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) []corev1.EnvVar {
 	activeGatePodSpec := &instance.Spec
 
 	return []corev1.EnvVar{
@@ -89,7 +90,7 @@ func buildEnvVars(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo
 		},
 		{
 			Name:  DtIdSeedClusterId,
-			Value: instance.ClusterName,
+			Value: string(kubeSystemUID),
 		},
 	}
 }
