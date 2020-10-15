@@ -15,7 +15,7 @@ func ReconcileAfterFiveMinutes() reconcile.Result {
 }
 
 func ReconcileImmediately() reconcile.Result {
-	return ReconcileAfter(1 * time.Nanosecond)
+	return reconcile.Result{Requeue: true}
 }
 
 const (
