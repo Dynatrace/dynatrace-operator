@@ -3,7 +3,7 @@ package activegate
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/stretchr/testify/assert"
 )
 

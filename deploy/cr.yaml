@@ -41,4 +41,4 @@ spec:
   #labels:
   #  custom: label
   # Name of the service account for the ActiveGate (optional)
-  #serviceAccountName: "dynatrace-activegate-operator"
+  #serviceAccountName: "dynatrace-operator"

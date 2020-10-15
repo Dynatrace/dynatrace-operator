@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 )
 
 func init() {

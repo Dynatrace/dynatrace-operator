@@ -5,9 +5,9 @@ import (
 	"hash/fnv"
 	"strconv"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
+	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

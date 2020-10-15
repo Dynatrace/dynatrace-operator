@@ -9,10 +9,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/logger"
-	"github.com/Dynatrace/dynatrace-activegate-operator/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/apis"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller"
+	"github.com/Dynatrace/dynatrace-operator/pkg/logger"
+	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
@@ -88,7 +88,7 @@ func main() {
 
 	ctx := context.TODO()
 	// Become the leader before proceeding
-	err = leader.Become(ctx, "dynatrace-activegate-operator-lock")
+	err = leader.Become(ctx, "dynatrace-operator-lock")
 	if err != nil {
 		log.Error(err, "")
 		os.Exit(1)

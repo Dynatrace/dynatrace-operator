@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/activegate"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/activegate"
 )
 
 func init() {
