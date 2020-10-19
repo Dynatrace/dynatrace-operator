@@ -44,7 +44,7 @@ type ActiveGateSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="ActiveGate version"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	ActiveGateVersion string `json:"activegatetVersion,omitempty"`
+	ActiveGateVersion string `json:"activeGateVersion,omitempty"`
 }
 
 // ActiveGateStatus defines the observed state of ActiveGate
