@@ -68,7 +68,7 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 
 		container := specs.Containers[0]
 		assert.Equal(t, ActivegateName, container.Name)
-		//assert.Equal(t, , container.Image)
+		assert.Equal(t, "/linux/activegate", container.Image)
 		assert.NotEmpty(t, container.Env)
 		assert.LessOrEqual(t, 4, len(container.Env))
 		assert.NotEmpty(t, container.Args)
