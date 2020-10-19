@@ -10,6 +10,8 @@ rules:
       - "" # "" indicates the core API group
     resources:
       - namespaces
+    resourceNames:
+      - "kube-system"
     verbs:
       - get
       - list
