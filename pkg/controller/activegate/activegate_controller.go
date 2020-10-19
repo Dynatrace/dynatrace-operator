@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/factory"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
 	agerrors "github.com/Dynatrace/dynatrace-operator/pkg/controller/errors"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -119,9 +121,11 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	err = r.reconcilePullSecret(*instance, reqLogger, dtc)
-	if err != nil {
-		return reconcile.Result{}, err
+	if instance.Spec.Image == "" && instance.Spec.CustomPullSecret == "" {
+		err = r.reconcilePullSecret(instance, reqLogger, dtc)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
 	desiredStatefulSet, err := r.createDesiredStatefulSet(instance, dtc)
@@ -164,16 +168,16 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	return builder.ReconcileAfterFiveMinutes(), nil
 }
 
-func (r *ReconcileActiveGate) reconcilePullSecret(instance dynatracev1alpha1.ActiveGate, log logr.Logger, dtc dtclient.Client) error {
+func (r *ReconcileActiveGate) reconcilePullSecret(instance *dynatracev1alpha1.ActiveGate, log logr.Logger, dtc dtclient.Client) error {
 	var tkns corev1.Secret
-	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(&instance), Namespace: instance.GetNamespace()}, &tkns); err != nil {
+	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(instance), Namespace: instance.GetNamespace()}, &tkns); err != nil {
 		return fmt.Errorf("failed to query tokens: %w", err)
 	}
 	pullSecretData, err := builder.GeneratePullSecretData(instance, dtc, &tkns)
 	if err != nil {
 		return fmt.Errorf("failed to generate pull secret data: %w", err)
 	}
-	err = builder.CreateOrUpdateSecretIfNotExists(r.client, r.client, instance.GetName()+"-pull-secret", instance.GetNamespace(), pullSecretData, corev1.SecretTypeDockerConfigJson, log)
+	err = factory.CreateOrUpdateSecretIfNotExists(r.client, r.client, instance.GetName()+"-pull-secret", instance.GetNamespace(), pullSecretData, corev1.SecretTypeDockerConfigJson, log)
 	if err != nil {
 		return fmt.Errorf("failed to create or update secret: %w", err)
 	}

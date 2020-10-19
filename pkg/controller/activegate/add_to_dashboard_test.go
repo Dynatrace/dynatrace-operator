@@ -66,23 +66,23 @@ func TestAddToDashboard(t *testing.T) {
 	label := "dynatrace-activegate-127-0-0-1-" + port
 
 	t.Run("AddToDashboard", func(t *testing.T) {
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.
+		dtc := &dtclient.MockDynatraceClient{}
+		dtc.
 			On("AddToDashboard", label, server.URL, string(tokenValue)).
 			Return(label, nil)
 
-		id, err := r.addToDashboard(mockClient, instance)
+		id, err := r.addToDashboard(dtc, instance)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, id)
 		assert.Equal(t, label, id)
 	})
 	t.Run("AddToDashboard error from api", func(t *testing.T) {
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.
+		dtc := &dtclient.MockDynatraceClient{}
+		dtc.
 			On("AddToDashboard", label, server.URL, string(tokenValue)).
 			Return(label, dtclient.ServerError{Code: 400, Message: "mock error"}).
 			Once()
-		id, err := r.addToDashboard(mockClient, instance)
+		id, err := r.addToDashboard(dtc, instance)
 		assert.Error(t, err)
 		assert.NotEmpty(t, id)
 		assert.Equal(t, label, id)
