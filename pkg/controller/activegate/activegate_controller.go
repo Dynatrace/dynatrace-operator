@@ -113,10 +113,19 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return agerrors.HandleSecretError(secret, err, reqLogger)
 	}
 
-	// Define a new Pod object
-	log.Info("creating new pod definition from custom resource")
+	dtc, err := r.dtcBuildFunc(r.client, instance, secret)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
-	desiredStatefulSet, err := r.createDesiredStatefulSet(instance, secret)
+	if instance.Spec.Image == "" && instance.Spec.CustomPullSecret == "" {
+		err = r.reconcilePullSecret(instance, reqLogger, dtc)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
+	desiredStatefulSet, err := r.createDesiredStatefulSet(instance, dtc)
 	if err != nil {
 		reqLogger.Error(err, "error when creating desired stateful set")
 		return reconcile.Result{}, err
@@ -146,7 +155,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	if instance.Spec.KubernetesAPIEndpoint != "" {
-		id, err := r.addToDashboard(secret, instance)
+		id, err := r.addToDashboard(dtc, instance)
 		r.handleAddToDashboardResult(id, err, log)
 	}
 

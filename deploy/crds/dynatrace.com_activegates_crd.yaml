@@ -44,6 +44,10 @@ spec:
         spec:
           description: ActiveGateSpec defines the desired state of ActiveGate
           properties:
+            activeGateVersion:
+              description: 'Optional: If specified, indicates the ActiveGate version
+                to use Defaults to latest Example: {major.minor.release} - 1.200.0'
+              type: string
             apiUrl:
               description: Location of the Dynatrace API to connect to, including
                 your specific environment ID
@@ -53,6 +57,9 @@ spec:
               items:
                 type: string
               type: array
+            customPullSecret:
+              description: 'Optional: Pull secret for your private registry'
+              type: string
             disableActivegateUpdate:
               description: Disable automatic restarts of Activegate pods in case a
                 new version is available
@@ -168,6 +175,9 @@ spec:
               description: 'Optional: the Dynatrace installer container image Defaults
                 to docker.io/dynatrace/activegate:latest for Kubernetes and to registry.connect.redhat.com/dynatrace/activegate
                 for OpenShift'
+              type: string
+            kubernetesApiEndpoint:
+              description: The public API endpoint of the Kubernetes instance
               type: string
             labels:
               additionalProperties:

@@ -86,6 +86,7 @@ func TestFindOutdatedPods(t *testing.T) {
 
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
+			instance.Spec.Image = "test-image"
 			pod := &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instance.Name,
@@ -198,6 +199,7 @@ func TestUpdatePods(t *testing.T) {
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
 			instance.Spec.DisableActivegateUpdate = true
+			instance.Spec.Image = "test-image"
 
 			dummy := corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -283,6 +285,8 @@ func setupReconciler(t *testing.T, updateService updateService) (*ReconcileActiv
 func createFakeDTClient(client.Client, *dynatracev1alpha1.ActiveGate, *corev1.Secret) (dtclient.Client, error) {
 	dtMockClient := &dtclient.MockDynatraceClient{}
 	dtMockClient.On("GetTenantInfo").Return(&dtclient.TenantInfo{}, nil)
+	dtMockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{TenantUUID: "abc123456"}, nil)
+	dtMockClient.On("reconcilePullSecret").Return(nil)
 	dtMockClient.
 		On("QueryActiveGates", &dtclient.ActiveGateQuery{Hostname: "", NetworkAddress: "", NetworkZone: "default", UpdateStatus: ""}).
 		Return([]dtclient.ActiveGate{
