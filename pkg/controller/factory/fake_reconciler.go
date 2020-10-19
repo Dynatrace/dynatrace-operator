@@ -1,8 +1,8 @@
 package factory
 
 import (
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
-	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"

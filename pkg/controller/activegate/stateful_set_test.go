@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
-	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
+	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
+	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,7 +17,10 @@ func TestCreateDesiredStatefulSet(t *testing.T) {
 		r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
 		assert.NoError(t, err)
 
-		desiredStatefulSet, err := r.createDesiredStatefulSet(instance, &corev1.Secret{})
+		dtc, err := createFakeDTClient(nil, nil, nil)
+		assert.NoError(t, err)
+
+		desiredStatefulSet, err := r.createDesiredStatefulSet(instance, dtc)
 		assert.NoError(t, err)
 		assert.NotNil(t, desiredStatefulSet)
 	})
@@ -45,11 +47,20 @@ func TestCreateDesiredStatefulSet(t *testing.T) {
 			return mockClient, nil
 		}
 		desiredStatefulSet, err := r.createDesiredStatefulSet(instance, &corev1.Secret{})
+		dtc := &dtclient.MockDynatraceClient{}
+		dtc.
+			On("GetTenantInfo").
+			Return(&dtclient.TenantInfo{}, fmt.Errorf("could not retrieve tenant info"))
+
+		desiredStatefulSet, err := r.createDesiredStatefulSet(instance, dtc)
 		assert.EqualError(t, err, "could not retrieve tenant info")
 		assert.Nil(t, desiredStatefulSet)
 	})
 	t.Run("CreateDesiredStatefulSet no kube-system", func(t *testing.T) {
 		r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
+		assert.NoError(t, err)
+
+		dtc, err := createFakeDTClient(nil, nil, nil)
 		assert.NoError(t, err)
 
 		kubeSystemNamespace := &corev1.Namespace{}
@@ -59,7 +70,7 @@ func TestCreateDesiredStatefulSet(t *testing.T) {
 		err = r.client.Delete(context.TODO(), kubeSystemNamespace)
 		assert.NoError(t, err)
 
-		desiredStatefulSet, err := r.createDesiredStatefulSet(instance, &corev1.Secret{})
+		desiredStatefulSet, err := r.createDesiredStatefulSet(instance, dtc)
 		assert.EqualError(t, err, "namespaces \"kube-system\" not found")
 		assert.Nil(t, desiredStatefulSet)
 	})

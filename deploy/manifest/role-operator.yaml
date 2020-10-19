@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: dynatrace-activegate-operator
+  name: dynatrace-operator
   namespace: dynatrace
   labels:
     dynatrace: operator
@@ -81,6 +81,8 @@ rules:
       - get
       - list
       - watch
+      - create
+      - update
   - apiGroups:
       - monitoring.coreos.com
     resources:
@@ -100,6 +102,6 @@ rules:
     resources:
       - podsecuritypolicies
     resourceNames:
-      - dynatrace-activegate-operator
+      - dynatrace-operator
     verbs:
       - use

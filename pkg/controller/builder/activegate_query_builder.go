@@ -1,8 +1,8 @@
 package builder
 
 import (
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
 )
 

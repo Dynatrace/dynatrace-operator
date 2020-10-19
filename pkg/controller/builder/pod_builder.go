@@ -3,16 +3,16 @@ package builder
 import (
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) corev1.PodSpec {
+func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (corev1.PodSpec, error) {
 	serviceAccount := MonitoringServiceAccount
-	image := ActivegateImage
+	image := ""
 	activeGateSpec := &instance.Spec.KubernetesMonitoringSpec
 
 	if activeGateSpec.ServiceAccountName != "" {
@@ -37,7 +37,7 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 		activeGateSpec.Resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
 	}
 
-	return corev1.PodSpec{
+	p := corev1.PodSpec{
 		Containers: []corev1.Container{{
 			Name:            ActivegateName,
 			Image:           image,
@@ -53,6 +53,13 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 		Tolerations:        activeGateSpec.Tolerations,
 		PriorityClassName:  activeGateSpec.PriorityClassName,
 	}
+
+	err := preparePodSpecImmutableImage(&p, instance)
+	if err != nil {
+		return p, err
+	}
+
+	return p, nil
 }
 
 func buildArgs() []string {
@@ -138,6 +145,27 @@ func buildAffinity() *corev1.Affinity {
 	}
 }
 
+func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *v1alpha1.ActiveGate) error {
+	pullSecretName := instance.GetName() + "-pull-secret"
+	if instance.Spec.CustomPullSecret != "" {
+		pullSecretName = instance.Spec.CustomPullSecret
+	}
+
+	p.ImagePullSecrets = append(p.ImagePullSecrets, corev1.LocalObjectReference{
+		Name: pullSecretName,
+	})
+
+	if instance.Spec.Image == "" {
+		i, err := BuildActiveGateImage(instance.Spec.APIURL, instance.Spec.ActiveGateVersion)
+		if err != nil {
+			return err
+		}
+		p.Containers[0].Image = i
+	}
+
+	return nil
+}
+
 func BuildLabels(name string, labels map[string]string) map[string]string {
 	result := BuildLabelsForQuery(name)
 	for key, value := range labels {
@@ -166,8 +194,7 @@ func BuildLabelsForQuery(name string) map[string]string {
 }
 
 const (
-	ActivegateImage = "612044533526.dkr.ecr.us-east-1.amazonaws.com/activegate:latest"
-	ActivegateName  = "dynatrace-operator"
+	ActivegateName = "dynatrace-operator"
 
 	MonitoringServiceAccount = "dynatrace-activegate"
 

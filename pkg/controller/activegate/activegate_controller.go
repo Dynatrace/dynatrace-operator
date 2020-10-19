@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
-	agerrors "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/errors"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
+	agerrors "github.com/Dynatrace/dynatrace-operator/pkg/controller/errors"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
+	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -117,10 +117,19 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return agerrors.HandleSecretError(secret, err, reqLogger)
 	}
 
-	// Define a new Pod object
-	log.Info("creating new pod definition from custom resource")
+	dtc, err := r.dtcBuildFunc(r.client, instance, secret)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
-	desiredStatefulSet, err := r.createDesiredStatefulSet(instance, secret)
+	if instance.Spec.Image == "" && instance.Spec.CustomPullSecret == "" {
+		err = r.reconcilePullSecret(instance, reqLogger, dtc)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
+	desiredStatefulSet, err := r.createDesiredStatefulSet(instance, dtc)
 	if err != nil {
 		reqLogger.Error(err, "error when creating desired stateful set")
 		return reconcile.Result{}, err
@@ -150,7 +159,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	if instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint != "" {
-		id, err := r.addToDashboard(secret, instance)
+		id, err := r.addToDashboard(dtc, instance)
 		r.handleAddToDashboardResult(id, err, log)
 	}
 

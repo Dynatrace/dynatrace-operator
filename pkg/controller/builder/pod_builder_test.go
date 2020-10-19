@@ -3,9 +3,9 @@ package builder
 import (
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
-	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
+	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -15,7 +15,7 @@ import (
 func TestBuildActiveGatePodSpecs(t *testing.T) {
 	t.Run("BuildActiveGatePodSpecs", func(t *testing.T) {
 		serviceAccountName := MonitoringServiceAccount
-		image := "image"
+		image := "test-url.com/linux/activegates"
 		instance := &dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: _const.DynatraceNamespace,
@@ -25,9 +25,11 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 			KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
 				ServiceAccountName: serviceAccountName,
 				Image:              image,
+				APIURL:             "https://test-url.com/api",
 			},
 		}
-		specs := BuildActiveGatePodSpecs(instance, nil, "")
+		specs, err := BuildActiveGatePodSpecs(instance, nil, "")
+		assert.NoError(t, err)
 		activeGateSpec := &instance.Spec
 		assert.NotNil(t, specs)
 		assert.Equal(t, 1, len(specs.Containers))
@@ -52,12 +54,17 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 				Namespace: _const.DynatraceNamespace,
 			},
 		}
-		instance.Spec = dynatracev1alpha1.DynaKubeSpec{}
-		specs := BuildActiveGatePodSpecs(instance, &dtclient.TenantInfo{
+		instance.Spec = dynatracev1alpha1.DynaKubeSpec{
+			BaseActiveGateSpec: dynatracev1alpha1.BaseActiveGateSpec{
+				APIURL: "https://test-env.com",
+			},
+		}
+		specs, err := BuildActiveGatePodSpecs(instance, &dtclient.TenantInfo{
 			ID:                    "tenant-id",
 			Token:                 "tenant-token",
 			CommunicationEndpoint: "tenant-endpoint",
 		}, "")
+		assert.NoError(t, err)
 		assert.NotNil(t, specs)
 		assert.Equal(t, 1, len(specs.Containers))
 		assert.NotNil(t, specs)
@@ -67,7 +74,7 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 
 		container := specs.Containers[0]
 		assert.Equal(t, ActivegateName, container.Name)
-		assert.Equal(t, ActivegateImage, container.Image)
+		assert.Equal(t, "test-env.com/linux/activegate", container.Image)
 		assert.NotEmpty(t, container.Env)
 		assert.LessOrEqual(t, 4, len(container.Env))
 		assert.NotEmpty(t, container.Args)
