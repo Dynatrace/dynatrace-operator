@@ -12,7 +12,7 @@ import (
 
 func BuildActiveGatePodSpecs(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) corev1.PodSpec {
 	sa := MonitoringServiceAccount
-	image := ActivegateImage
+	image := ""
 	activeGateSpec := &instance.Spec
 
 	if activeGateSpec.ServiceAccountName != "" {
@@ -37,7 +37,7 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.ActiveGate, tenantInfo *dtclient
 		activeGateSpec.Resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
 	}
 
-	return corev1.PodSpec{
+	p := corev1.PodSpec{
 		Containers: []corev1.Container{{
 			Name:            ActivegateName,
 			Image:           image,
@@ -53,6 +53,9 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.ActiveGate, tenantInfo *dtclient
 		Tolerations:        activeGateSpec.Tolerations,
 		PriorityClassName:  activeGateSpec.PriorityClassName,
 	}
+
+	preparePodSpecImmutableImage(&p, instance)
+	return p
 }
 
 func buildArgs() []string {
@@ -134,6 +137,27 @@ func buildAffinity() *corev1.Affinity {
 	}
 }
 
+func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *v1alpha1.ActiveGate) error {
+	pullSecretName := instance.GetName() + "-pull-secret"
+	if instance.Spec.CustomPullSecret != "" {
+		pullSecretName = instance.Spec.CustomPullSecret
+	}
+
+	p.ImagePullSecrets = append(p.ImagePullSecrets, corev1.LocalObjectReference{
+		Name: pullSecretName,
+	})
+
+	if instance.Spec.Image == "" {
+		i, err := BuildActiveGateImage(instance.Spec.APIURL)
+		if err != nil {
+			return err
+		}
+		p.Containers[0].Image = i
+	}
+
+	return nil
+}
+
 func BuildLabels(name string, labels map[string]string) map[string]string {
 	result := BuildLabelsForQuery(name)
 	for key, value := range labels {
@@ -162,8 +186,7 @@ func BuildLabelsForQuery(name string) map[string]string {
 }
 
 const (
-	ActivegateImage = "612044533526.dkr.ecr.us-east-1.amazonaws.com/activegate:latest"
-	ActivegateName  = "dynatrace-operator"
+	ActivegateName = "dynatrace-operator"
 
 	MonitoringServiceAccount = "dynatrace-activegate"
 

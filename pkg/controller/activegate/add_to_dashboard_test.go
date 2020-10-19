@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -68,31 +69,23 @@ func TestAddToDashboard(t *testing.T) {
 	label := "dynatrace-activegate-127-0-0-1-" + port
 
 	t.Run("AddToDashboard", func(t *testing.T) {
-		r.dtcBuildFunc = func(rtc client.Client, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (dtclient.Client, error) {
-			mockClient := &dtclient.MockDynatraceClient{}
-			mockClient.
-				On("AddToDashboard", label, server.URL, string(tokenValue)).
-				Return(label, nil)
+		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient.
+			On("AddToDashboard", label, server.URL, string(tokenValue)).
+			Return(label, nil)
 
-			return mockClient, nil
-		}
-
-		id, err := r.addToDashboard(tokenSecret, instance)
+		id, err := r.addToDashboard(mockClient, instance)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, id)
 		assert.Equal(t, label, id)
 	})
 	t.Run("AddToDashboard error from api", func(t *testing.T) {
-		r.dtcBuildFunc = func(rtc client.Client, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (dtclient.Client, error) {
-			mockClient := &dtclient.MockDynatraceClient{}
-			mockClient.
-				On("AddToDashboard", label, server.URL, string(tokenValue)).
-				Return(label, dtclient.ServerError{Code: 400, Message: "mock error"}).
-				Once()
-
-			return mockClient, nil
-		}
-		id, err := r.addToDashboard(tokenSecret, instance)
+		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient.
+			On("AddToDashboard", label, server.URL, string(tokenValue)).
+			Return(label, dtclient.ServerError{Code: 400, Message: "mock error"}).
+			Once()
+		id, err := r.addToDashboard(mockClient, instance)
 		assert.Error(t, err)
 		assert.NotEmpty(t, id)
 		assert.Equal(t, label, id)
@@ -102,7 +95,10 @@ func TestAddToDashboard(t *testing.T) {
 		err := r.client.Update(context.TODO(), tokenSecret)
 		assert.NoError(t, err)
 
-		id, err := r.addToDashboard(tokenSecret, instance)
+		dtc, err := createFakeDTClient(nil, nil, nil)
+		assert.NoError(t, err)
+
+		id, err := r.addToDashboard(dtc, instance)
 		assert.Empty(t, id)
 		assert.EqualError(t, err, "secret has no bearer token")
 	})
@@ -111,7 +107,11 @@ func TestAddToDashboard(t *testing.T) {
 			return nil, fmt.Errorf("some error")
 		}
 
-		id, err := r.addToDashboard(tokenSecret, instance)
+		dtc, err := createFakeDTClient(nil, nil, nil)
+		assert.NoError(t, err)
+		mockClient := dtc.(*dtclient.MockDynatraceClient)
+		mockClient.On("AddToDashboard", mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("some error"))
+		id, err := r.addToDashboard(mockClient, instance)
 		assert.Empty(t, id)
 		assert.EqualError(t, err, "some error")
 	})
@@ -119,7 +119,10 @@ func TestAddToDashboard(t *testing.T) {
 		err := r.client.Delete(context.TODO(), tokenSecret)
 		assert.NoError(t, err)
 
-		id, err := r.addToDashboard(tokenSecret, instance)
+		dtc, err := createFakeDTClient(nil, nil, nil)
+		assert.NoError(t, err)
+
+		id, err := r.addToDashboard(dtc, instance)
 		assert.Empty(t, id)
 		assert.EqualError(t, err, "secrets \"dynatrace-activegate-secret\" not found")
 	})
@@ -128,7 +131,10 @@ func TestAddToDashboard(t *testing.T) {
 		err := r.client.Update(context.TODO(), serviceAccount)
 		assert.NoError(t, err)
 
-		id, err := r.addToDashboard(tokenSecret, instance)
+		dtc, err := createFakeDTClient(nil, nil, nil)
+		assert.NoError(t, err)
+
+		id, err := r.addToDashboard(dtc, instance)
 		assert.Empty(t, id)
 		assert.EqualError(t, err, "secrets \"wrong name\" not found")
 
@@ -136,7 +142,7 @@ func TestAddToDashboard(t *testing.T) {
 		err = r.client.Update(context.TODO(), serviceAccount)
 		assert.NoError(t, err)
 
-		id, err = r.addToDashboard(tokenSecret, instance)
+		id, err = r.addToDashboard(dtc, instance)
 		assert.Empty(t, id)
 		assert.EqualError(t, err, "bearer token name is empty")
 
@@ -144,7 +150,7 @@ func TestAddToDashboard(t *testing.T) {
 		err = r.client.Update(context.TODO(), serviceAccount)
 		assert.NoError(t, err)
 
-		id, err = r.addToDashboard(tokenSecret, instance)
+		id, err = r.addToDashboard(dtc, instance)
 		assert.Empty(t, id)
 		assert.EqualError(t, err, "could not find token name in service account secrets")
 	})
@@ -152,7 +158,10 @@ func TestAddToDashboard(t *testing.T) {
 		err := r.client.Delete(context.TODO(), serviceAccount)
 		assert.NoError(t, err)
 
-		id, err := r.addToDashboard(tokenSecret, instance)
+		dtc, err := createFakeDTClient(nil, nil, nil)
+		assert.NoError(t, err)
+
+		id, err := r.addToDashboard(dtc, instance)
 		assert.Empty(t, id)
 		assert.EqualError(t, err, "serviceaccounts \"dynatrace-activegate\" not found")
 	})

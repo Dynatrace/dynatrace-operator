@@ -32,7 +32,6 @@ func CreateFakeClient() client.Client {
 			},
 			Spec: dynatracev1alpha1.ActiveGateSpec{
 				BaseActiveGateSpec: dynatracev1alpha1.BaseActiveGateSpec{
-					Image:  "dynatrace/oneagent:latest",
 					APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 				},
 			},

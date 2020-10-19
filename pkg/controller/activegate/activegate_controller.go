@@ -2,6 +2,7 @@ package activegate
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
@@ -113,10 +114,17 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return agerrors.HandleSecretError(secret, err, reqLogger)
 	}
 
-	// Define a new Pod object
-	log.Info("creating new pod definition from custom resource")
+	dtc, err := r.dtcBuildFunc(r.client, instance, secret)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 
-	desiredStatefulSet, err := r.createDesiredStatefulSet(instance, secret)
+	err = r.reconcilePullSecret(*instance, reqLogger, dtc)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	desiredStatefulSet, err := r.createDesiredStatefulSet(instance, dtc)
 	if err != nil {
 		reqLogger.Error(err, "error when creating desired stateful set")
 		return reconcile.Result{}, err
@@ -146,7 +154,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	if instance.Spec.KubernetesAPIEndpoint != "" {
-		id, err := r.addToDashboard(secret, instance)
+		id, err := r.addToDashboard(dtc, instance)
 		r.handleAddToDashboardResult(id, err, log)
 	}
 
@@ -154,6 +162,23 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	// Nothing to do - requeue after five minutes
 	reqLogger.Info("Nothing to do: Pod already exists", "Pod.Namespace", actualStatefulSet.Namespace, "Pod.Name", actualStatefulSet.Name)
 	return builder.ReconcileAfterFiveMinutes(), nil
+}
+
+func (r *ReconcileActiveGate) reconcilePullSecret(instance dynatracev1alpha1.ActiveGate, log logr.Logger, dtc dtclient.Client) error {
+	var tkns corev1.Secret
+	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(&instance), Namespace: instance.GetNamespace()}, &tkns); err != nil {
+		return fmt.Errorf("failed to query tokens: %w", err)
+	}
+	pullSecretData, err := builder.GeneratePullSecretData(instance, dtc)
+	if err != nil {
+		return fmt.Errorf("failed to generate pull secret data: %w", err)
+	}
+	err = builder.CreateOrUpdateSecretIfNotExists(r.client, r.client, instance.GetName()+"-pull-secret", instance.GetNamespace(), pullSecretData, corev1.SecretTypeDockerConfigJson, log)
+	if err != nil {
+		return fmt.Errorf("failed to create or update secret: %w", err)
+	}
+
+	return nil
 }
 
 func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.ActiveGate) (*corev1.Secret, error) {
