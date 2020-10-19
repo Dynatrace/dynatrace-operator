@@ -8,15 +8,12 @@ import (
 	"strings"
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/dao"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestAddToDashboard(t *testing.T) {
@@ -101,19 +98,6 @@ func TestAddToDashboard(t *testing.T) {
 		id, err := r.addToDashboard(dtc, instance)
 		assert.Empty(t, id)
 		assert.EqualError(t, err, "secret has no bearer token")
-	})
-	t.Run("AddToDashboard error building dynatrace client", func(t *testing.T) {
-		r.dtcBuildFunc = func(rtc client.Client, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (dtclient.Client, error) {
-			return nil, fmt.Errorf("some error")
-		}
-
-		dtc, err := createFakeDTClient(nil, nil, nil)
-		assert.NoError(t, err)
-		mockClient := dtc.(*dtclient.MockDynatraceClient)
-		mockClient.On("AddToDashboard", mock.Anything, mock.Anything, mock.Anything).Return("", fmt.Errorf("some error"))
-		id, err := r.addToDashboard(mockClient, instance)
-		assert.Empty(t, id)
-		assert.EqualError(t, err, "some error")
 	})
 	t.Run("AddToDashboard no token secret", func(t *testing.T) {
 		err := r.client.Delete(context.TODO(), tokenSecret)
