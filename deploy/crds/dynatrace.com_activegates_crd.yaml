@@ -44,7 +44,7 @@ spec:
         spec:
           description: ActiveGateSpec defines the desired state of ActiveGate
           properties:
-            activegatetVersion:
+            activeGateVersion:
               description: 'Optional: If specified, indicates the ActiveGate version
                 to use Defaults to latest Example: {major.minor.release} - 1.200.0'
               type: string
