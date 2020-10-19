@@ -29,7 +29,7 @@ func TestFindKubeSystemUID(t *testing.T) {
 		kubeSystemNamespace := v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				UID:  factory.KubeSystemUID,
-				Name: "kube-system",
+				Name: _const.KubeSystemNamespace,
 			},
 		}
 
@@ -45,7 +45,7 @@ func TestFindKubeSystemUID(t *testing.T) {
 		fakeClient := factory.CreateFakeClient()
 		kubeSystemNamespace := &v1.Namespace{}
 
-		err := fakeClient.Get(context.TODO(), client.ObjectKey{Name: "kube-system"}, kubeSystemNamespace)
+		err := fakeClient.Get(context.TODO(), client.ObjectKey{Name: _const.KubeSystemNamespace}, kubeSystemNamespace)
 		assert.NoError(t, err)
 
 		err = fakeClient.Delete(context.TODO(), kubeSystemNamespace)

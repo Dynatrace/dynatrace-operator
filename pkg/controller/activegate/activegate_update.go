@@ -11,10 +11,19 @@ import (
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/version"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+/*
+updateService provides an interface to update outdated pods.
+The interface is used to increase testability of the Reconciler
+Previously, the Reconciler was harder to unit test, because the methods of this interface depend on one another.
+Additionally, the production code used makes api requests.
+To allow mocking and testing of single methods used, this interface has been introduced.
+WIth it, single methods can be overwritten or mocked to allow focused unti testing
+*/
 type updateService interface {
 	FindOutdatedPods(
 		r *ReconcileActiveGate,
@@ -23,18 +32,18 @@ type updateService interface {
 	IsLatest(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error)
 	UpdatePods(
 		r *ReconcileActiveGate,
-		pod *corev1.Pod,
-		instance *dynatracev1alpha1.ActiveGate,
-		secret *corev1.Secret) (*reconcile.Result, error)
+		instance *dynatracev1alpha1.ActiveGate) (*reconcile.Result, error)
 }
 
+/*
+activeGateUpdateService provides the production implementation of an updateService.
+Used by the Reconciler when the operator is running normally.
+*/
 type activeGateUpdateService struct{}
 
 func (us *activeGateUpdateService) UpdatePods(
 	r *ReconcileActiveGate,
-	pod *corev1.Pod,
-	instance *dynatracev1alpha1.ActiveGate,
-	secret *corev1.Secret) (*reconcile.Result, error) {
+	instance *dynatracev1alpha1.ActiveGate) (*reconcile.Result, error) {
 	if instance == nil {
 		return nil, fmt.Errorf("instance is nil")
 	} else if !instance.Spec.DisableActivegateUpdate &&
@@ -53,7 +62,12 @@ func (us *activeGateUpdateService) UpdatePods(
 			log.Error(err, err.Error())
 			return &reconcile.Result{}, err
 		}
-		r.updateInstanceStatus(pod, instance, secret)
+
+		instance.Status.UpdatedTimestamp = metav1.Now()
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			log.Info("failed to updated instance status", "message", err.Error())
+		}
 	} else if instance.Spec.DisableActivegateUpdate {
 		log.Info("Skipping updating pods because of configuration", "disableActivegateUpdate", true)
 	}

@@ -142,6 +142,17 @@ func BuildLabels(name string, labels map[string]string) map[string]string {
 	return result
 }
 
+func BuildMergeLabels(labels ...map[string]string) map[string]string {
+	res := map[string]string{}
+	for _, m := range labels {
+		for k, v := range m {
+			res[k] = v
+		}
+	}
+
+	return res
+}
+
 // buildLabels returns generic labels based on the name given for a Dynatrace OneAgent
 func BuildLabelsForQuery(name string) map[string]string {
 	return map[string]string{
@@ -152,7 +163,7 @@ func BuildLabelsForQuery(name string) map[string]string {
 
 const (
 	ActivegateImage = "612044533526.dkr.ecr.us-east-1.amazonaws.com/activegate:latest"
-	ActivegateName  = "dynatrace-activegate-operator"
+	ActivegateName  = "dynatrace-operator"
 
 	MonitoringServiceAccount = "dynatrace-activegate"
 

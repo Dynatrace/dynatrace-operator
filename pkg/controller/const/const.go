@@ -9,4 +9,6 @@ const (
 
 	ServiceAccountName    = "dynatrace-activegate"
 	BearerTokenSecretName = "dynatrace-activegate-secret"
+
+	KubeSystemNamespace = "kube-system"
 )

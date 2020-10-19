@@ -39,7 +39,7 @@ func CreateFakeClient() client.Client {
 		},
 		&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "kube-system",
+				Name: _const.KubeSystemNamespace,
 				UID:  KubeSystemUID,
 			},
 		},

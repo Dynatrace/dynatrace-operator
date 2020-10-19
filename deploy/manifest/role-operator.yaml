@@ -28,6 +28,17 @@ rules:
   - apiGroups:
       - apps
     resources:
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - apps
+    resources:
       - replicasets
       - deployments
     verbs:

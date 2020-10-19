@@ -14,6 +14,10 @@ func ReconcileAfterFiveMinutes() reconcile.Result {
 	return ReconcileAfter(FiveMinutes)
 }
 
+func ReconcileImmediately() reconcile.Result {
+	return reconcile.Result{Requeue: true}
+}
+
 const (
 	FiveMinutes = 5 * time.Minute
 )

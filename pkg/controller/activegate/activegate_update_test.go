@@ -8,6 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/factory"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
@@ -15,6 +16,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,10 +46,8 @@ func (updateService *mockIsLatestUpdateService) IsLatest(_ logr.Logger,
 	return imageID == "latest", nil
 }
 func (updateService *mockIsLatestUpdateService) UpdatePods(r *ReconcileActiveGate,
-	pod *corev1.Pod,
-	instance *dynatracev1alpha1.ActiveGate,
-	secret *corev1.Secret) (*reconcile.Result, error) {
-	return (&activeGateUpdateService{}).UpdatePods(r, pod, instance, secret)
+	instance *dynatracev1alpha1.ActiveGate) (*reconcile.Result, error) {
+	return (&activeGateUpdateService{}).UpdatePods(r, instance)
 }
 
 type failingIsLatestUpdateService struct {
@@ -86,6 +86,25 @@ func TestFindOutdatedPods(t *testing.T) {
 
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
+			pod := &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      instance.Name,
+					Namespace: _const.DynatraceNamespace,
+					Labels:    builder.BuildLabelsForQuery(instance.Name),
+				},
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							Image:   "outdated",
+							ImageID: "outdated",
+						},
+					},
+				},
+			}
+
+			err = r.client.Create(context.TODO(), pod)
+			assert.NoError(t, err)
+
 			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
 
 			assert.NotNil(t, pods)
@@ -141,7 +160,7 @@ func TestUpdatePods(t *testing.T) {
 
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
-			result, err := r.updateService.UpdatePods(r, &corev1.Pod{}, instance, &corev1.Secret{})
+			result, err := r.updateService.UpdatePods(r, instance)
 
 			assert.Nil(t, result)
 			assert.NoError(t, err)
@@ -163,7 +182,7 @@ func TestUpdatePods(t *testing.T) {
 
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
-			result, err := r.updateService.UpdatePods(r, &corev1.Pod{}, nil, &corev1.Secret{})
+			result, err := r.updateService.UpdatePods(r, nil)
 
 			assert.Nil(t, result)
 			assert.Error(t, err)
@@ -179,7 +198,26 @@ func TestUpdatePods(t *testing.T) {
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
 			instance.Spec.DisableActivegateUpdate = true
-			result, err := r.updateService.UpdatePods(r, &corev1.Pod{}, instance, &corev1.Secret{})
+
+			dummy := corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      instance.Name,
+					Namespace: _const.DynatraceNamespace,
+					Labels:    builder.BuildLabelsForQuery(instance.Name),
+				},
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							Image:   "outdated",
+							ImageID: "outdated",
+						},
+					},
+				},
+			}
+			err = r.client.Create(context.TODO(), &dummy)
+			assert.NoError(t, err)
+
+			result, err := r.updateService.UpdatePods(r, instance)
 
 			assert.Nil(t, result)
 			assert.NoError(t, err)
@@ -216,10 +254,7 @@ func setupReconciler(t *testing.T, updateService updateService) (*ReconcileActiv
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	assert.NoError(t, err)
 
-	secret, err := r.getTokenSecret(instance)
-	assert.NoError(t, err)
-
-	pod1 := r.newPodForCR(instance, secret, "")
+	var pod1 corev1.Pod
 	pod1.Name = "activegate-pod-1"
 	pod1.Status.ContainerStatuses = []corev1.ContainerStatus{
 		{
@@ -228,7 +263,7 @@ func setupReconciler(t *testing.T, updateService updateService) (*ReconcileActiv
 		},
 	}
 
-	pod2 := r.newPodForCR(instance, secret, "")
+	var pod2 corev1.Pod
 	pod2.Name = "activegate-pod-2"
 	pod2.Status.ContainerStatuses = []corev1.ContainerStatus{
 		{
@@ -237,10 +272,10 @@ func setupReconciler(t *testing.T, updateService updateService) (*ReconcileActiv
 		},
 	}
 
-	err = fakeClient.Create(context.TODO(), pod1)
+	err = fakeClient.Create(context.TODO(), &pod1)
 	assert.NoError(t, err)
 
-	err = fakeClient.Create(context.TODO(), pod2)
+	err = fakeClient.Create(context.TODO(), &pod2)
 	assert.NoError(t, err)
 	return r, instance, err
 }

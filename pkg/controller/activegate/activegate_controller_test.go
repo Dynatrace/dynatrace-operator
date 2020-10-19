@@ -11,8 +11,10 @@ import (
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
 	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/factory"
+	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,24 +34,9 @@ func init() {
 	_ = os.Setenv(k8sutil.WatchNamespaceEnvVar, _const.DynatraceNamespace)
 }
 
-func (updateServer *failUpdatePodsService) UpdatePods(*ReconcileActiveGate, *corev1.Pod, *dynatracev1alpha1.ActiveGate, *corev1.Secret) (*reconcile.Result, error) {
+func (updateServer *failUpdatePodsService) UpdatePods(*ReconcileActiveGate, *dynatracev1alpha1.ActiveGate) (*reconcile.Result, error) {
 	result := builder.ReconcileAfterFiveMinutes()
 	return &result, fmt.Errorf(errorUpdatingPods)
-}
-
-func TestUpdateInstanceStatus(t *testing.T) {
-	r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
-	assert.NotNil(t, r)
-	assert.NoError(t, err)
-
-	pods, err := r.findPods(instance)
-	assert.NotEmpty(t, pods)
-	assert.NoError(t, err)
-
-	for _, pod := range pods {
-		r.updateInstanceStatus(&pod, instance, nil)
-	}
-	assert.Equal(t, mockActiveGateVersion, instance.Status.Version)
 }
 
 func TestGetTokenSecret(t *testing.T) {
@@ -95,21 +82,19 @@ func TestReconcile(t *testing.T) {
 		})
 		assert.NotNil(t, result)
 		assert.NoError(t, err)
-		assert.Equal(t, result, builder.ReconcileAfterFiveMinutes())
+		assert.Equal(t, result, builder.ReconcileImmediately())
 
-		secret, err := r.getTokenSecret(instance)
+		sts, err := r.newStatefulSetForCR(instance, &dtclient.TenantInfo{}, factory.KubeSystemUID)
 		assert.NoError(t, err)
+		assert.NotNil(t, sts)
 
-		pod := r.newPodForCR(instance, secret, "")
-		assert.NotNil(t, pod)
-
-		found := &corev1.Pod{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
+		found := &appsv1.StatefulSet{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: sts.Name, Namespace: sts.Namespace}, found)
 		assert.NotNil(t, found)
 		assert.NoError(t, err)
 
-		assert.Equal(t, pod.Name, found.Name)
-		assert.Equal(t, pod.Namespace, found.Namespace)
+		assert.Equal(t, sts.Name, found.Name)
+		assert.Equal(t, sts.Namespace, found.Namespace)
 	})
 	t.Run("Reconcile missing secret", func(t *testing.T) {
 		r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
@@ -217,12 +202,17 @@ func TestReconcile(t *testing.T) {
 		result, err := r.Reconcile(request)
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		pod := &corev1.Pod{}
+		statefulSet := &appsv1.StatefulSet{}
 
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: "activegate-pod", Namespace: _const.DynatraceNamespace}, pod)
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: "activegate", Namespace: _const.DynatraceNamespace}, statefulSet)
 		assert.NoError(t, err)
-		assert.NotNil(t, pod)
+		assert.NotNil(t, statefulSet)
+		assert.NotNil(t, statefulSet.Spec)
+		assert.NotNil(t, statefulSet.Spec.Template)
+
+		pod := statefulSet.Spec.Template
 		assert.NotNil(t, pod.Spec)
+		assert.NotNil(t, pod.Spec.Containers)
 		assert.LessOrEqual(t, 1, len(pod.Spec.Containers))
 
 		for _, container := range pod.Spec.Containers {
@@ -259,7 +249,7 @@ func TestReconcile(t *testing.T) {
 
 		kubeSystemNamespace := corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "kube-system",
+				Name: _const.KubeSystemNamespace,
 			},
 		}
 		err := r.client.Delete(context.TODO(), &kubeSystemNamespace)
