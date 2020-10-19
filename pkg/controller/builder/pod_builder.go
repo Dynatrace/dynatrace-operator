@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func BuildActiveGatePodSpecs(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) corev1.PodSpec {
+func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) corev1.PodSpec {
 	sa := MonitoringServiceAccount
 	image := ActivegateImage
 	activeGateSpec := &instance.Spec
@@ -64,7 +64,7 @@ func buildArgs() []string {
 	}
 }
 
-func buildEnvVars(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) []corev1.EnvVar {
+func buildEnvVars(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) []corev1.EnvVar {
 	activeGatePodSpec := &instance.Spec
 
 	return []corev1.EnvVar{

@@ -24,9 +24,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-var log = logf.Log.WithName("controller_activegate")
+var log = logf.Log.WithName("controller_dynakube")
 
-// Add creates a new ActiveGate Controller and adds it to the Manager. The Manager will set fields on the Controller
+// Add creates a new DynaKube Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -34,7 +34,7 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileActiveGate{
+	return &ReconcileDynaKube{
 		client:        mgr.GetClient(),
 		scheme:        mgr.GetScheme(),
 		dtcBuildFunc:  builder.BuildDynatraceClient,
@@ -50,16 +50,16 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to primary resource ActiveGate
-	err = c.Watch(&source.Kind{Type: &dynatracev1alpha1.ActiveGate{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to primary resource DynaKube
+	err = c.Watch(&source.Kind{Type: &dynatracev1alpha1.DynaKube{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
-	// Watch for changes to secondary resource Pods and requeue the owner ActiveGate
+	// Watch for changes to secondary resource Pods and requeue the owner DynaKube
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &dynatracev1alpha1.ActiveGate{},
+		OwnerType:    &dynatracev1alpha1.DynaKube{},
 	})
 	if err != nil {
 		return err
@@ -68,11 +68,11 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-// blank assignment to verify that ReconcileActiveGate implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileActiveGate{}
+// blank assignment to verify that ReconcileDynaKube implements reconcile.Reconciler
+var _ reconcile.Reconciler = &ReconcileDynaKube{}
 
-// ReconcileActiveGate reconciles a ActiveGate object
-type ReconcileActiveGate struct {
+// ReconcileDynaKube reconciles a DynaKube object
+type ReconcileDynaKube struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client        client.Client
@@ -81,20 +81,20 @@ type ReconcileActiveGate struct {
 	updateService updateService
 }
 
-type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (dtclient.Client, error)
+type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
 
-// Reconcile reads that state of the cluster for a ActiveGate object and makes changes based on the state read
-// and what is in the ActiveGate.Spec
+// Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
+// and what is in the DynaKube.Spec
 // a Pod as an example
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileDynaKube) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling ActiveGate")
+	reqLogger.Info("Reconciling DynaKube")
 
-	// Fetch the ActiveGate instance
-	instance := &dynatracev1alpha1.ActiveGate{}
+	// Fetch the DynaKube instance
+	instance := &dynatracev1alpha1.DynaKube{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -122,7 +122,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	// Set ActiveGate instance as the owner and controller
+	// Set DynaKube instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, desiredStatefulSet, r.scheme); err != nil {
 		reqLogger.Error(err, "error setting controller reference")
 		return reconcile.Result{}, err
@@ -156,7 +156,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	return builder.ReconcileAfterFiveMinutes(), nil
 }
 
-func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.ActiveGate) (*corev1.Secret, error) {
+func (r *ReconcileDynaKube) getTokenSecret(instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {
 	namespace := instance.GetNamespace()
 	secret := &corev1.Secret{}
 	err := r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(instance), Namespace: namespace}, secret)
@@ -181,7 +181,7 @@ func getTemplateHash(a metav1.Object) string {
 	return ""
 }
 
-func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error) {
+func (r *ReconcileDynaKube) findPods(instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
 	podList := &corev1.PodList{}
 	listOptions := []client.ListOption{
 		client.InNamespace(instance.GetNamespace()),

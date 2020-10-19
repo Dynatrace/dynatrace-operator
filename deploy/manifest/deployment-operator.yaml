@@ -1,30 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dynatrace-activegate-operator
+  name: dynatrace-dynakube-operator
   namespace: dynatrace
   labels:
     dynatrace: operator
-    operator: activegate
+    operator: dynakube
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: dynatrace-activegate-operator
+      name: dynatrace-dynakube-operator
   template:
     metadata:
       labels:
-        name: dynatrace-activegate-operator
+        name: dynatrace-dynakube-operator
         dynatrace: operator
-        operator: activegate
+        operator: dynakube
     spec:
-      serviceAccountName: dynatrace-activegate-operator
+      serviceAccountName: dynatrace-dynakube-operator
       containers:
-        - name: dynatrace-activegate-operator
+        - name: dynatrace-dynakube-operator
           # Replace this with the built image name
-          image: 612044533526.dkr.ecr.us-east-1.amazonaws.com/activegate:latest
+          image: 612044533526.dkr.ecr.us-east-1.amazonaws.com/dynakube:latest
           command:
-          - dynatrace-activegate-operator
+          - dynatrace-dynakube-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
@@ -36,4 +36,4 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
-              value: "dynatrace-activegate-operator"
+              value: "dynatrace-dynakube-operator"

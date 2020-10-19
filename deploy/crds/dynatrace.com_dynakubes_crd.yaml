@@ -1,7 +1,7 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: activegates.dynatrace.com
+  name: dynakubes.dynatrace.com
 spec:
   additionalPrinterColumns:
   - JSONPath: .spec.apiUrl
@@ -18,16 +18,16 @@ spec:
     type: date
   group: dynatrace.com
   names:
-    kind: ActiveGate
-    listKind: ActiveGateList
-    plural: activegates
-    singular: activegate
+    kind: DynaKube
+    listKind: DynaKubeList
+    plural: dynakubes
+    singular: dynakube
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: ActiveGate is the Schema for the activegates API
+      description: DynaKube is the Schema for the DynaKube API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -42,14 +42,14 @@ spec:
         metadata:
           type: object
         spec:
-          description: ActiveGateSpec defines the desired state of ActiveGate
+          description: DynaKubeSpec defines the desired state of DynaKube
           properties:
             apiUrl:
               description: Location of the Dynatrace API to connect to, including
                 your specific environment ID
               type: string
             args:
-              description: 'Optional: Arguments for the ActiveGate'
+              description: 'Optional: Arguments for the DynaKube'
               items:
                 type: string
               type: array
@@ -58,15 +58,15 @@ spec:
                 new version is available
               type: boolean
             dnsPolicy:
-              description: 'Optional: Sets DNS Policy for the ActiveGate pods'
+              description: 'Optional: Sets DNS Policy for the DynaKube pods'
               type: string
             dt_capabilities:
-              description: 'Enabled capabilities of the ActiveGate. E.g.: "kubernetes_monitoring"'
+              description: 'Enabled capabilities of the DynaKube. E.g.: "kubernetes_monitoring"'
               items:
                 type: string
               type: array
             env:
-              description: 'Optional: List of environment variables for the ActiveGate'
+              description: 'Optional: List of environment variables for the DynaKube'
               items:
                 description: EnvVar represents an environment variable present in
                   a Container.
@@ -169,10 +169,13 @@ spec:
                 to docker.io/dynatrace/activegate:latest for Kubernetes and to registry.connect.redhat.com/dynatrace/activegate
                 for OpenShift'
               type: string
+            kubernetesApiEndpoint:
+              description: The public API endpoint of the Kubernetes instance
+              type: string
             labels:
               additionalProperties:
                 type: string
-              description: 'Optional: Adds additional labels for the ActiveGate pods'
+              description: 'Optional: Adds additional labels for the DynaKube pods'
               type: object
             networkZone:
               type: string
@@ -196,7 +199,7 @@ spec:
                   type: string
               type: object
             replicas:
-              description: Amount of replicas for your ActiveGate
+              description: Amount of replicas for your DynaKube
               format: int32
               type: integer
             resources:
@@ -219,7 +222,7 @@ spec:
                   type: object
               type: object
             serviceAccountName:
-              description: 'Optional: set custom Service Account Name used with ActiveGate
+              description: 'Optional: set custom Service Account Name used with DynaKube
                 pods'
               type: string
             skipCertCheck:
@@ -227,10 +230,10 @@ spec:
                 and API communication
               type: boolean
             tokens:
-              description: Credentials for the ActiveGate to connect back to Dynatrace.
+              description: Credentials for the DynaKube to connect back to Dynatrace.
               type: string
             tolerations:
-              description: 'Optional: set tolerations for the ActiveGate pods'
+              description: 'Optional: set tolerations for the DynaKube pods'
               items:
                 description: The pod this Toleration is attached to tolerates any
                   taint that matches the triple <key,value,effect> using the matching
@@ -277,7 +280,7 @@ spec:
           - dt_capabilities
           type: object
         status:
-          description: ActiveGateStatus defines the observed state of ActiveGate
+          description: DynaKubeStatus defines the observed state of DynaKube
           properties:
             conditions:
               description: Conditions includes status about the current state of the

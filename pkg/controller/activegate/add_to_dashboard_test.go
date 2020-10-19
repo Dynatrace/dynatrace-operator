@@ -68,7 +68,7 @@ func TestAddToDashboard(t *testing.T) {
 	label := "dynatrace-activegate-127-0-0-1-" + port
 
 	t.Run("AddToDashboard", func(t *testing.T) {
-		r.dtcBuildFunc = func(rtc client.Client, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (dtclient.Client, error) {
+		r.dtcBuildFunc = func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error) {
 			mockClient := &dtclient.MockDynatraceClient{}
 			mockClient.
 				On("AddToDashboard", label, server.URL, string(tokenValue)).
@@ -83,7 +83,7 @@ func TestAddToDashboard(t *testing.T) {
 		assert.Equal(t, label, id)
 	})
 	t.Run("AddToDashboard error from api", func(t *testing.T) {
-		r.dtcBuildFunc = func(rtc client.Client, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (dtclient.Client, error) {
+		r.dtcBuildFunc = func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error) {
 			mockClient := &dtclient.MockDynatraceClient{}
 			mockClient.
 				On("AddToDashboard", label, server.URL, string(tokenValue)).
@@ -107,7 +107,7 @@ func TestAddToDashboard(t *testing.T) {
 		assert.EqualError(t, err, "secret has no bearer token")
 	})
 	t.Run("AddToDashboard error building dynatrace client", func(t *testing.T) {
-		r.dtcBuildFunc = func(rtc client.Client, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (dtclient.Client, error) {
+		r.dtcBuildFunc = func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error) {
 			return nil, fmt.Errorf("some error")
 		}
 
@@ -188,7 +188,7 @@ func TestHandleAddToDashboardResult(t *testing.T) {
 		assert.Empty(t, logger.loggedErrors)
 		assert.Equal(t, "id", logger.loggedKeysAndValues[0])
 		assert.Equal(t, "some-id", logger.loggedKeysAndValues[1])
-		assert.Equal(t, "added ActiveGate to Kubernetes dashboard", logger.loggedMessages[0])
+		assert.Equal(t, "added DynaKube to Kubernetes dashboard", logger.loggedMessages[0])
 	})
 
 	t.Run("HandleAddToDashboard no id", func(t *testing.T) {
@@ -200,7 +200,7 @@ func TestHandleAddToDashboardResult(t *testing.T) {
 		assert.Empty(t, logger.loggedErrors)
 		assert.Equal(t, "id", logger.loggedKeysAndValues[0])
 		assert.Equal(t, "<unset>", logger.loggedKeysAndValues[1])
-		assert.Equal(t, "added ActiveGate to Kubernetes dashboard", logger.loggedMessages[0])
+		assert.Equal(t, "added DynaKube to Kubernetes dashboard", logger.loggedMessages[0])
 	})
 
 	t.Run("HandleAddToDashboard any error", func(t *testing.T) {
@@ -210,7 +210,7 @@ func TestHandleAddToDashboardResult(t *testing.T) {
 		assert.Equal(t, 1, len(logger.loggedErrors))
 		assert.Equal(t, 1, len(logger.loggedMessages))
 		assert.Equal(t, 0, len(logger.loggedKeysAndValues))
-		assert.Equal(t, "error when adding ActiveGate Kubernetes configuration", logger.loggedMessages[0])
+		assert.Equal(t, "error when adding DynaKube Kubernetes configuration", logger.loggedMessages[0])
 		assert.EqualError(t, logger.loggedErrors[0], "a random error")
 	})
 
@@ -241,6 +241,6 @@ func TestHandleAddToDashboardResult(t *testing.T) {
 		assert.Equal(t, "some-id", logger.loggedKeysAndValues[1])
 		assert.Equal(t, "error", logger.loggedKeysAndValues[2])
 		assert.Equal(t, "entry already exists", logger.loggedKeysAndValues[3])
-		assert.Equal(t, "error returned from Dynatrace API when adding ActiveGate Kubernetes configuration, ignore if configuration already exist", logger.loggedMessages[0])
+		assert.Equal(t, "error returned from Dynatrace API when adding DynaKube Kubernetes configuration, ignore if configuration already exist", logger.loggedMessages[0])
 	})
 }

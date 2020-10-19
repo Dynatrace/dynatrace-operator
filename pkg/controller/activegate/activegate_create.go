@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (*appsv1.StatefulSet, error) {
+func (r *ReconcileDynaKube) newStatefulSetForCR(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (*appsv1.StatefulSet, error) {
 	podSpec := builder.BuildActiveGatePodSpecs(instance, tenantInfo, kubeSystemUID)
 	selectorLabels := builder.BuildLabels(instance.GetName(), instance.Spec.Labels)
 	mergedLabels := builder.BuildMergeLabels(instance.Labels, selectorLabels)

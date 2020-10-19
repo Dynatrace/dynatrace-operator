@@ -54,11 +54,11 @@ func TestBuildDynatraceClient(t *testing.T) {
 				Data: configMap,
 			},
 		)
-		instance := dynatracev1alpha1.ActiveGate{
-			Spec: dynatracev1alpha1.ActiveGateSpec{
-				BaseActiveGateSpec: dynatracev1alpha1.BaseActiveGateSpec{
+		instance := dynatracev1alpha1.DynaKube{
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
 					APIURL: "some-url",
-					Proxy: &dynatracev1alpha1.ActiveGateProxy{
+					Proxy: &dynatracev1alpha1.DynaKubeProxy{
 						ValueFrom: proxyName,
 					},
 					SkipCertCheck: true,
@@ -75,9 +75,9 @@ func TestBuildDynatraceClient(t *testing.T) {
 		assert.NotNil(t, dtc)
 	})
 	t.Run("BuildDynatraceClient minimal", func(t *testing.T) {
-		instance := dynatracev1alpha1.ActiveGate{
-			Spec: dynatracev1alpha1.ActiveGateSpec{
-				BaseActiveGateSpec: dynatracev1alpha1.BaseActiveGateSpec{
+		instance := dynatracev1alpha1.DynaKube{
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
 					APIURL: "some-url",
 				},
 			},
@@ -92,11 +92,11 @@ func TestBuildDynatraceClient(t *testing.T) {
 	t.Run("BuildDynatraceClient proxy config", func(t *testing.T) {
 		t.Run("proxy secret not found", func(t *testing.T) {
 			rtc := fake.NewFakeClientWithScheme(scheme.Scheme)
-			instance := dynatracev1alpha1.ActiveGate{
-				Spec: dynatracev1alpha1.ActiveGateSpec{
-					BaseActiveGateSpec: dynatracev1alpha1.BaseActiveGateSpec{
+			instance := dynatracev1alpha1.DynaKube{
+				Spec: dynatracev1alpha1.DynaKubeSpec{
+					BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
 						APIURL: "some-url",
-						Proxy: &dynatracev1alpha1.ActiveGateProxy{
+						Proxy: &dynatracev1alpha1.DynaKubeProxy{
 							ValueFrom: proxyName,
 						},
 						SkipCertCheck: true,
@@ -119,11 +119,11 @@ func TestBuildDynatraceClient(t *testing.T) {
 						Name: proxyName,
 					},
 				})
-			instance := dynatracev1alpha1.ActiveGate{
-				Spec: dynatracev1alpha1.ActiveGateSpec{
-					BaseActiveGateSpec: dynatracev1alpha1.BaseActiveGateSpec{
+			instance := dynatracev1alpha1.DynaKube{
+				Spec: dynatracev1alpha1.DynaKubeSpec{
+					BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
 						APIURL: "some-url",
-						Proxy: &dynatracev1alpha1.ActiveGateProxy{
+						Proxy: &dynatracev1alpha1.DynaKubeProxy{
 							ValueFrom: proxyName,
 						},
 						SkipCertCheck: true,
@@ -146,11 +146,11 @@ func TestBuildDynatraceClient(t *testing.T) {
 						Name: proxyName,
 					},
 				})
-			instance := dynatracev1alpha1.ActiveGate{
-				Spec: dynatracev1alpha1.ActiveGateSpec{
-					BaseActiveGateSpec: dynatracev1alpha1.BaseActiveGateSpec{
+			instance := dynatracev1alpha1.DynaKube{
+				Spec: dynatracev1alpha1.DynaKubeSpec{
+					BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
 						APIURL: "some-url",
-						Proxy: &dynatracev1alpha1.ActiveGateProxy{
+						Proxy: &dynatracev1alpha1.DynaKubeProxy{
 							Value: string(secrets[Proxy]),
 						},
 						SkipCertCheck: true,
@@ -169,9 +169,9 @@ func TestBuildDynatraceClient(t *testing.T) {
 	t.Run("BuildDynatraceClient certificate config errors", func(t *testing.T) {
 		t.Run("certificate config missing", func(t *testing.T) {
 			rtc := fake.NewFakeClientWithScheme(scheme.Scheme)
-			instance := dynatracev1alpha1.ActiveGate{
-				Spec: dynatracev1alpha1.ActiveGateSpec{
-					BaseActiveGateSpec: dynatracev1alpha1.BaseActiveGateSpec{
+			instance := dynatracev1alpha1.DynaKube{
+				Spec: dynatracev1alpha1.DynaKubeSpec{
+					BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
 						APIURL:        "some-url",
 						SkipCertCheck: true,
 						TrustedCAs:    configMapName,
@@ -194,9 +194,9 @@ func TestBuildDynatraceClient(t *testing.T) {
 					},
 					//Data: configMap,
 				})
-			instance := dynatracev1alpha1.ActiveGate{
-				Spec: dynatracev1alpha1.ActiveGateSpec{
-					BaseActiveGateSpec: dynatracev1alpha1.BaseActiveGateSpec{
+			instance := dynatracev1alpha1.DynaKube{
+				Spec: dynatracev1alpha1.DynaKubeSpec{
+					BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
 						APIURL:        "some-url",
 						SkipCertCheck: true,
 						TrustedCAs:    configMapName,
@@ -218,13 +218,13 @@ func TestBuildDynatraceClient(t *testing.T) {
 		assert.Nil(t, dtc)
 	})
 	t.Run("BuildDynatraceClient instance only", func(t *testing.T) {
-		instance := dynatracev1alpha1.ActiveGate{}
+		instance := dynatracev1alpha1.DynaKube{}
 		dtc, err := BuildDynatraceClient(nil, &instance, nil)
 		assert.Error(t, err)
 		assert.Nil(t, dtc)
 	})
 	t.Run("BuildDynatraceClient instance and secret", func(t *testing.T) {
-		instance := dynatracev1alpha1.ActiveGate{}
+		instance := dynatracev1alpha1.DynaKube{}
 		secret := corev1.Secret{
 			Data: secrets,
 		}

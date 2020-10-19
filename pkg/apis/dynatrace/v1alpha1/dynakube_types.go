@@ -5,16 +5,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ActiveGateSpec defines the desired state of ActiveGate
+// DynaKubeSpec defines the desired state of DynaKube
 // +k8s:openapi-gen=true
-type ActiveGateSpec struct {
+type DynaKubeSpec struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	BaseActiveGateSpec `json:""`
+	BaseDynaKubeSpec `json:""`
 
-	// Enabled capabilities of the ActiveGate. E.g.: "kubernetes_monitoring"
+	// Enabled capabilities of the DynaKube. E.g.: "kubernetes_monitoring"
 	// +kubebuilder:validation:Required
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="ActiveGate Capabilities"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="DynaKube Capabilities"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Capabilities []string `json:"dt_capabilities"`
 
@@ -32,16 +32,16 @@ type ActiveGateSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	KubernetesAPIEndpoint string `json:"kubernetesApiEndpoint,omitempty"`
 
-	// Amount of replicas for your ActiveGate
+	// Amount of replicas for your DynaKube
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Replicas"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:number"
 	Replicas *int32 `json:"replicas,omitempty"`
 }
 
-// ActiveGateStatus defines the observed state of ActiveGate
+// DynaKubeStatus defines the observed state of DynaKube
 // +k8s:openapi-gen=true
-type ActiveGateStatus struct {
+type DynaKubeStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
@@ -62,12 +62,12 @@ type ActiveGateStatus struct {
 	LastPaaSTokenProbeTimestamp *metav1.Time `json:"lastPaaSTokenProbeTimestamp,omitempty"`
 
 	// Defines the current state (Running, Updating, Error, ...)
-	Phase ActiveGatePhaseType `json:"phase,omitempty"`
+	Phase DynaKubePhaseType `json:"phase,omitempty"`
 }
 
-type ActiveGatePhaseType string
+type DynaKubePhaseType string
 
-type ActiveGateInstance struct {
+type DynaKubeInstance struct {
 	PodName   string `json:"podName,omitempty"`
 	Version   string `json:"version,omitempty"`
 	IPAddress string `json:"ipAddress,omitempty"`
@@ -75,42 +75,42 @@ type ActiveGateInstance struct {
 
 const (
 //Commented for linter, uncomment if needed
-//Running   ActiveGatePhaseType = "Running"
-//Deploying ActiveGatePhaseType = "Deploying"
-//Error     ActiveGatePhaseType = "Error"
+//Running   DynaKubePhaseType = "Running"
+//Deploying DynaKubePhaseType = "Deploying"
+//Error     DynaKubePhaseType = "Error"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ActiveGate is the Schema for the activegates API
+// DynaKube is the Schema for the DynaKube API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=activegates,scope=Namespaced
+// +kubebuilder:resource:path=dynakubes,scope=Namespaced
 // +kubebuilder:printcolumn:name="ApiUrl",type=string,JSONPath=`.spec.apiUrl`
 // +kubebuilder:printcolumn:name="Tokens",type=string,JSONPath=`.spec.tokens`
 // +kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.version`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-// +operator-sdk:gen-csv:customresourcedefinitions.displayName="Dynatrace ActiveGate"
+// +operator-sdk:gen-csv:customresourcedefinitions.displayName="Dynatrace DynaKube"
 // +operator-sdk:gen-csv:customresourcedefinitions.resources=`Pod,v1,""`
-type ActiveGate struct {
+type DynaKube struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ActiveGateSpec   `json:"spec,omitempty"`
-	Status ActiveGateStatus `json:"status,omitempty"`
+	Spec   DynaKubeSpec   `json:"spec,omitempty"`
+	Status DynaKubeStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ActiveGateList contains a list of ActiveGate
-type ActiveGateList struct {
+// DynaKubeList contains a list of DynaKube
+type DynaKubeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ActiveGate `json:"items"`
+	Items           []DynaKube `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&ActiveGate{}, &ActiveGateList{})
+	SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
 }
 
 //Commented for linter, uncomment if needed

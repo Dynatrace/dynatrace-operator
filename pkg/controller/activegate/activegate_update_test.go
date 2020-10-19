@@ -34,9 +34,9 @@ func init() {
 
 type mockIsLatestUpdateService struct{}
 
-func (updateService *mockIsLatestUpdateService) FindOutdatedPods(r *ReconcileActiveGate,
+func (updateService *mockIsLatestUpdateService) FindOutdatedPods(r *ReconcileDynaKube,
 	logger logr.Logger,
-	instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error) {
+	instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
 	return (&activeGateUpdateService{}).FindOutdatedPods(r, logger, instance)
 }
 func (updateService *mockIsLatestUpdateService) IsLatest(_ logr.Logger,
@@ -45,8 +45,8 @@ func (updateService *mockIsLatestUpdateService) IsLatest(_ logr.Logger,
 	_ *corev1.Secret) (bool, error) {
 	return imageID == "latest", nil
 }
-func (updateService *mockIsLatestUpdateService) UpdatePods(r *ReconcileActiveGate,
-	instance *dynatracev1alpha1.ActiveGate) (*reconcile.Result, error) {
+func (updateService *mockIsLatestUpdateService) UpdatePods(r *ReconcileDynaKube,
+	instance *dynatracev1alpha1.DynaKube) (*reconcile.Result, error) {
 	return (&activeGateUpdateService{}).UpdatePods(r, instance)
 }
 
@@ -235,9 +235,9 @@ func TestUpdatePods(t *testing.T) {
 	})
 }
 
-func setupReconciler(t *testing.T, updateService updateService) (*ReconcileActiveGate, *dynatracev1alpha1.ActiveGate, error) {
+func setupReconciler(t *testing.T, updateService updateService) (*ReconcileDynaKube, *dynatracev1alpha1.DynaKube, error) {
 	fakeClient := factory.CreateFakeClient()
-	r := &ReconcileActiveGate{
+	r := &ReconcileDynaKube{
 		client:        fakeClient,
 		dtcBuildFunc:  createFakeDTClient,
 		scheme:        scheme.Scheme,
@@ -250,7 +250,7 @@ func setupReconciler(t *testing.T, updateService updateService) (*ReconcileActiv
 		},
 	}
 
-	instance := &dynatracev1alpha1.ActiveGate{}
+	instance := &dynatracev1alpha1.DynaKube{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	assert.NoError(t, err)
 
@@ -280,7 +280,7 @@ func setupReconciler(t *testing.T, updateService updateService) (*ReconcileActiv
 	return r, instance, err
 }
 
-func createFakeDTClient(client.Client, *dynatracev1alpha1.ActiveGate, *corev1.Secret) (dtclient.Client, error) {
+func createFakeDTClient(client.Client, *dynatracev1alpha1.DynaKube, *corev1.Secret) (dtclient.Client, error) {
 	dtMockClient := &dtclient.MockDynatraceClient{}
 	dtMockClient.On("GetTenantInfo").Return(&dtclient.TenantInfo{}, nil)
 	dtMockClient.

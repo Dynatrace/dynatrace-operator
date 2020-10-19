@@ -1,16 +1,16 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: dynatrace-activegate-operator
+  name: dynatrace-dynakube-operator
   namespace: dynatrace
   labels:
     dynatrace: operator
-    operator: activegate
+    operator: dynakube
 rules:
   - apiGroups:
       - dynatrace.com
     resources:
-      - activegates
+      - dynakubes
     verbs:
       - get
       - list
@@ -20,8 +20,8 @@ rules:
   - apiGroups:
       - dynatrace.com
     resources:
-      - activegates/finalizers
-      - activegates/status
+      - dynakubes/finalizers
+      - dynakubes/status
     verbs:
       - update
 
@@ -100,6 +100,6 @@ rules:
     resources:
       - podsecuritypolicies
     resourceNames:
-      - dynatrace-activegate-operator
+      - dynatrace-dynakube-operator
     verbs:
       - use

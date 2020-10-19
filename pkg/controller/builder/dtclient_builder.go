@@ -26,7 +26,7 @@ type options struct {
 }
 
 // BuildDynatraceClient creates a new Dynatrace client using the settings configured on the given instance.
-func BuildDynatraceClient(rtc client.Client, instance *dynatracev1alpha1.ActiveGate, secret *corev1.Secret) (dtclient.Client, error) {
+func BuildDynatraceClient(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error) {
 	if instance == nil {
 		return nil, fmt.Errorf("could not build dynatrace client: instance is nil")
 	}
@@ -59,13 +59,13 @@ func newOptions() *options {
 	}
 }
 
-func (opts *options) appendCertCheck(spec *dynatracev1alpha1.ActiveGateSpec) {
+func (opts *options) appendCertCheck(spec *dynatracev1alpha1.DynaKubeSpec) {
 	if spec.SkipCertCheck {
 		opts.Opts = append(opts.Opts, dtclient.SkipCertificateValidation(true))
 	}
 }
 
-func (opts *options) appendProxySettings(rtc client.Client, spec *dynatracev1alpha1.ActiveGateSpec, namespace string) error {
+func (opts *options) appendProxySettings(rtc client.Client, spec *dynatracev1alpha1.DynaKubeSpec, namespace string) error {
 	if p := spec.Proxy; p != nil {
 		if p.ValueFrom != "" {
 			proxySecret := &corev1.Secret{}
@@ -86,7 +86,7 @@ func (opts *options) appendProxySettings(rtc client.Client, spec *dynatracev1alp
 	return nil
 }
 
-func (opts *options) appendTrustedCerts(rtc client.Client, spec *dynatracev1alpha1.ActiveGateSpec, namespace string) error {
+func (opts *options) appendTrustedCerts(rtc client.Client, spec *dynatracev1alpha1.DynaKubeSpec, namespace string) error {
 	if spec.TrustedCAs != "" {
 		certs := &corev1.ConfigMap{}
 		if err := rtc.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: spec.TrustedCAs}, certs); err != nil {

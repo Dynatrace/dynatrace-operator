@@ -34,7 +34,7 @@ func init() {
 	_ = os.Setenv(k8sutil.WatchNamespaceEnvVar, _const.DynatraceNamespace)
 }
 
-func (updateServer *failUpdatePodsService) UpdatePods(*ReconcileActiveGate, *dynatracev1alpha1.ActiveGate) (*reconcile.Result, error) {
+func (updateServer *failUpdatePodsService) UpdatePods(*ReconcileDynaKube, *dynatracev1alpha1.DynaKube) (*reconcile.Result, error) {
 	result := builder.ReconcileAfterFiveMinutes()
 	return &result, fmt.Errorf(errorUpdatingPods)
 }
@@ -51,7 +51,7 @@ func TestGetTokenSecret(t *testing.T) {
 		assert.Equal(t, _const.ActivegateName, secret.Name)
 	})
 	t.Run("GetTokenSecret missing secret", func(t *testing.T) {
-		secret, err := r.getTokenSecret(&dynatracev1alpha1.ActiveGate{})
+		secret, err := r.getTokenSecret(&dynatracev1alpha1.DynaKube{})
 		assert.NoError(t, err)
 		assert.Nil(t, secret)
 	})
@@ -186,7 +186,7 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, result, builder.ReconcileAfterFiveMinutes())
 	})
 	t.Run("Reconcile pod has uid env", func(t *testing.T) {
-		r := &ReconcileActiveGate{
+		r := &ReconcileDynaKube{
 			client:        factory.CreateFakeClient(),
 			dtcBuildFunc:  createFakeDTClient,
 			scheme:        scheme.Scheme,
@@ -234,7 +234,7 @@ func TestReconcile(t *testing.T) {
 		}
 	})
 	t.Run("Reconcile no kube-system namespace", func(t *testing.T) {
-		r := &ReconcileActiveGate{
+		r := &ReconcileDynaKube{
 			client:        factory.CreateFakeClient(),
 			dtcBuildFunc:  createFakeDTClient,
 			scheme:        scheme.Scheme,

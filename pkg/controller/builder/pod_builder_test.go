@@ -16,13 +16,13 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 	t.Run("BuildActiveGatePodSpecs", func(t *testing.T) {
 		serviceAccountName := MonitoringServiceAccount
 		image := "image"
-		instance := &dynatracev1alpha1.ActiveGate{
+		instance := &dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: _const.DynatraceNamespace,
 			},
 		}
-		instance.Spec = dynatracev1alpha1.ActiveGateSpec{
-			BaseActiveGateSpec: dynatracev1alpha1.BaseActiveGateSpec{
+		instance.Spec = dynatracev1alpha1.DynaKubeSpec{
+			BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
 				ServiceAccountName: serviceAccountName,
 				Image:              image,
 			},
@@ -47,12 +47,12 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 		assert.LessOrEqual(t, 4, len(container.Args))
 	})
 	t.Run("BuildActiveGatePodSpecs with tenant info", func(t *testing.T) {
-		instance := &dynatracev1alpha1.ActiveGate{
+		instance := &dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: _const.DynatraceNamespace,
 			},
 		}
-		instance.Spec = dynatracev1alpha1.ActiveGateSpec{}
+		instance.Spec = dynatracev1alpha1.DynaKubeSpec{}
 		specs := BuildActiveGatePodSpecs(instance, &dtclient.TenantInfo{
 			ID:                    "tenant-id",
 			Token:                 "tenant-token",
@@ -116,7 +116,7 @@ func TestBuildLabels(t *testing.T) {
 }
 
 func TestBuildEnvVars(t *testing.T) {
-	instance := dynatracev1alpha1.ActiveGate{
+	instance := dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "dynatrace",
 		},

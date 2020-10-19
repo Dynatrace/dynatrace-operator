@@ -1,15 +1,15 @@
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: dynatrace-activegate-operator
+  name: dynatrace-dynakube-operator
   namespace: dynatrace
   labels:
-    dynatrace: activegate
+    dynatrace: dynakube
     operator: oneagent
 subjects:
 - kind: ServiceAccount
-  name: dynatrace-activegate-operator
+  name: dynatrace-dynakube-operator
 roleRef:
   kind: Role
-  name: dynatrace-activegate-operator
+  name: dynatrace-dynakube-operator
   apiGroup: rbac.authorization.k8s.io

@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func (r *ReconcileActiveGate) createDesiredStatefulSet(instance *v1alpha1.ActiveGate, secret *corev1.Secret) (*appsv1.StatefulSet, error) {
+func (r *ReconcileDynaKube) createDesiredStatefulSet(instance *v1alpha1.DynaKube, secret *corev1.Secret) (*appsv1.StatefulSet, error) {
 	dtc, err := r.dtcBuildFunc(r.client, instance, secret)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (r *ReconcileActiveGate) createDesiredStatefulSet(instance *v1alpha1.Active
 	return desiredStatefulSet, nil
 }
 
-func (r *ReconcileActiveGate) manageStatefulSet(desiredStatefulSet *appsv1.StatefulSet, actualStatefulSet *appsv1.StatefulSet, log logr.Logger) (*reconcile.Result, error) {
+func (r *ReconcileDynaKube) manageStatefulSet(desiredStatefulSet *appsv1.StatefulSet, actualStatefulSet *appsv1.StatefulSet, log logr.Logger) (*reconcile.Result, error) {
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: desiredStatefulSet.Name, Namespace: desiredStatefulSet.Namespace}, actualStatefulSet)
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Creating new statefulset")
