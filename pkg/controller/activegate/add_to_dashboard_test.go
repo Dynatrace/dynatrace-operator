@@ -29,7 +29,7 @@ func TestAddToDashboard(t *testing.T) {
 	r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
 	assert.NoError(t, err)
 
-	instance.Spec.KubernetesAPIEndpoint = server.URL
+	instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint = server.URL
 
 	err = r.client.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

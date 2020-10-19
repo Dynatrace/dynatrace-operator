@@ -22,11 +22,9 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 			},
 		}
 		instance.Spec = dynatracev1alpha1.DynaKubeSpec{
-			BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
-				ServiceAccountName: serviceAccountName,
-			},
 			KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
-				Image: image,
+				ServiceAccountName: serviceAccountName,
+				Image:              image,
 			},
 		}
 		specs := BuildActiveGatePodSpecs(instance, nil, "")
@@ -36,13 +34,13 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 		assert.Equal(t, serviceAccountName, specs.ServiceAccountName)
 		assert.Equal(t,
 			*resource.NewScaledQuantity(1, -1),
-			activeGateSpec.Resources.Requests[corev1.ResourceCPU])
+			activeGateSpec.KubernetesMonitoringSpec.Resources.Requests[corev1.ResourceCPU])
 		assert.NotNil(t, specs.Affinity)
 
 		container := specs.Containers[0]
 		assert.Equal(t, ActivegateName, container.Name)
 		assert.Equal(t, image, container.Image)
-		assert.Equal(t, container.Resources, activeGateSpec.Resources)
+		assert.Equal(t, container.Resources, activeGateSpec.KubernetesMonitoringSpec.Resources)
 		assert.NotEmpty(t, container.Env)
 		assert.LessOrEqual(t, 4, len(container.Env))
 		assert.NotEmpty(t, container.Args)

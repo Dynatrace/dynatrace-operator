@@ -17,7 +17,7 @@ import (
 
 func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (*appsv1.StatefulSet, error) {
 	podSpec := builder.BuildActiveGatePodSpecs(instance, tenantInfo, kubeSystemUID)
-	selectorLabels := builder.BuildLabels(_const.ActivegateName, instance.Spec.Labels)
+	selectorLabels := builder.BuildLabels(_const.ActivegateName, instance.Spec.KubernetesMonitoringSpec.Labels)
 	mergedLabels := builder.BuildMergeLabels(instance.Labels, selectorLabels)
 
 	statefulSet := &appsv1.StatefulSet{
@@ -28,7 +28,7 @@ func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.Dy
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: instance.Spec.Replicas,
+			Replicas: instance.Spec.KubernetesMonitoringSpec.Replicas,
 			Selector: &metav1.LabelSelector{MatchLabels: selectorLabels},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{Labels: mergedLabels},

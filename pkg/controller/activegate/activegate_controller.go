@@ -149,7 +149,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return *reconcileResult, err
 	}
 
-	if instance.Spec.KubernetesAPIEndpoint != "" {
+	if instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint != "" {
 		id, err := r.addToDashboard(secret, instance)
 		r.handleAddToDashboardResult(id, err, log)
 	}

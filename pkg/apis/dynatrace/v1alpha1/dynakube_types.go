@@ -11,11 +11,15 @@ type DynaKubeSpec struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 	BaseDynaKubeSpec `json:""`
 
+	OneAgentAPMSpec OneAgentAPMSpec `json:"oneAgentApm,omitempty"`
+
+	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
+
 	// Enables Kubernetes Monitoring"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	KubernetesMonitoringSpec `json:"kubernetesMonitoring,omitempty"`
+	KubernetesMonitoringSpec KubernetesMonitoringSpec `json:"kubernetesMonitoring,omitempty"`
 }
 
 // DynaKubeStatus defines the observed state of DynaKube

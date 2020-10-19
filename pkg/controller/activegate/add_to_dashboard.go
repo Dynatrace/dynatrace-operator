@@ -51,7 +51,7 @@ func (r *ReconcileActiveGate) addToDashboard(apiTokenSecret *corev1.Secret, inst
 
 	// The same endpoint can not be used multiple times, so use as semi-unique name
 	// Remove protocol prefix, if any
-	ip := strings.TrimPrefix(instance.Spec.KubernetesAPIEndpoint, "https://")
+	ip := strings.TrimPrefix(instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint, "https://")
 	ip = strings.TrimPrefix(ip, "http://")
 	ip = strings.ReplaceAll(ip, ":", "_")
 	label := fmt.Sprintf("%s-%s-%s", instance.Namespace, instance.Name, ip)
@@ -63,7 +63,7 @@ func (r *ReconcileActiveGate) addToDashboard(apiTokenSecret *corev1.Secret, inst
 	// And join them with safe dashes
 	sanitizedLabel := strings.Join(labelParts, "-")
 
-	return dtc.AddToDashboard(sanitizedLabel, instance.Spec.KubernetesAPIEndpoint, string(bearerToken))
+	return dtc.AddToDashboard(sanitizedLabel, instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint, string(bearerToken))
 }
 
 func (r *ReconcileActiveGate) handleAddToDashboardResult(id string, addToDashboardErr error, log logr.Logger) {

@@ -46,7 +46,7 @@ func (us *activeGateUpdateService) UpdatePods(
 	instance *dynatracev1alpha1.DynaKube) (*reconcile.Result, error) {
 	if instance == nil {
 		return nil, fmt.Errorf("instance is nil")
-	} else if !instance.Spec.DisableActivegateUpdate &&
+	} else if !instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate &&
 		instance.Status.UpdatedTimestamp.Add(UpdateInterval).Before(time.Now()) {
 		log.Info("checking for outdated pods")
 		// Check if pods have latest activegate version
@@ -68,7 +68,7 @@ func (us *activeGateUpdateService) UpdatePods(
 		if err != nil {
 			log.Info("failed to updated instance status", "message", err.Error())
 		}
-	} else if instance.Spec.DisableActivegateUpdate {
+	} else if instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate {
 		log.Info("Skipping updating pods because of configuration", "disableActivegateUpdate", true)
 	}
 	return nil, nil

@@ -197,7 +197,7 @@ func TestUpdatePods(t *testing.T) {
 
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
-			instance.Spec.DisableActivegateUpdate = true
+			instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate = true
 
 			dummy := corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
