@@ -48,15 +48,22 @@ spec:
               description: Location of the Dynatrace API to connect to, including
                 your specific environment ID
               type: string
+            customPullSecret:
+              description: 'Optional: Pull secret for your private registry'
+              type: string
             kubernetesMonitoring:
               description: Enables Kubernetes Monitoring"
               properties:
+                activeGateVersion:
+                  description: 'Optional: If specified, indicates the ActiveGate version
+                    to use Defaults to latest Example: {major.minor.release} - 1.200.0'
+                  type: string
                 disableActivegateUpdate:
                   description: Disable automatic restarts of Activegate pods in case
                     a new version is available
                   type: boolean
                 dnsPolicy:
-                  description: 'Optional: Sets DNS Policy for the DynaKube pods'
+                  description: 'Optional: Sets DNS Policy for the ActiveGate pods'
                   type: string
                 enabled:
                   description: Enables Kubernetes Monitoring
@@ -72,13 +79,14 @@ spec:
                 labels:
                   additionalProperties:
                     type: string
-                  description: 'Optional: Adds additional labels for the DynaKube
+                  description: 'Optional: Adds additional labels for the ActiveGate
                     pods'
                   type: object
                 nodeSelector:
                   additionalProperties:
                     type: string
-                  description: Node selector to control the selection of nodes (optional)
+                  description: 'Optional: Node selector to control the selection of
+                    nodes'
                   type: object
                 priorityClassName:
                   description: 'Optional: If specified, indicates the pod''s priority.
@@ -91,7 +99,7 @@ spec:
                   type: integer
                 resources:
                   description: 'Optional: define resources requests and limits for
-                    single pods'
+                    single ActiveGate pods'
                   properties:
                     limits:
                       additionalProperties:
@@ -110,10 +118,10 @@ spec:
                   type: object
                 serviceAccountName:
                   description: 'Optional: set custom Service Account Name used with
-                    DynaKube pods'
+                    ActiveGate pods'
                   type: string
                 tolerations:
-                  description: 'Optional: set tolerations for the DynaKube pods'
+                  description: 'Optional: set tolerations for the ActiveGatePods pods'
                   items:
                     description: The pod this Toleration is attached to tolerates
                       any taint that matches the triple <key,value,effect> using the
