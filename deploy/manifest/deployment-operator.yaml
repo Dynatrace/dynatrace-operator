@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dynatrace-activegate-operator
+  name: dynatrace-operator
   namespace: dynatrace
   labels:
     dynatrace: operator
@@ -10,21 +10,21 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      name: dynatrace-activegate-operator
+      name: dynatrace-operator
   template:
     metadata:
       labels:
-        name: dynatrace-activegate-operator
+        name: dynatrace-operator
         dynatrace: operator
         operator: activegate
     spec:
-      serviceAccountName: dynatrace-activegate-operator
+      serviceAccountName: dynatrace-operator
       containers:
-        - name: dynatrace-activegate-operator
+        - name: dynatrace-operator
           # Replace this with the built image name
           image: 612044533526.dkr.ecr.us-east-1.amazonaws.com/activegate:latest
           command:
-          - dynatrace-activegate-operator
+            - dynatrace-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
@@ -36,4 +36,4 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
-              value: "dynatrace-activegate-operator"
+              value: "dynatrace-operator"

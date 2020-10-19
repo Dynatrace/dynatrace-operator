@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis"
-	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
+	"github.com/Dynatrace/dynatrace-operator/pkg/apis"
+	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/types"

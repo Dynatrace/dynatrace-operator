@@ -3,7 +3,7 @@ package parser
 import (
 	"testing"
 
-	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
+	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 )

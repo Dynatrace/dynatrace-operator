@@ -3,7 +3,7 @@ package version
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/parser"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
 	"github.com/stretchr/testify/assert"

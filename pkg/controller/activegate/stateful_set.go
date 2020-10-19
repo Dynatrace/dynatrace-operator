@@ -3,9 +3,9 @@ package activegate
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/dao"
+	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dao"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

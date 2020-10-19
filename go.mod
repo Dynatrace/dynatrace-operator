@@ -1,4 +1,4 @@
-module github.com/Dynatrace/dynatrace-activegate-operator
+module github.com/Dynatrace/dynatrace-operator
 
 go 1.13
 

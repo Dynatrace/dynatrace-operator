@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/apis"
-	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/factory"
+	"github.com/Dynatrace/dynatrace-operator/pkg/apis"
+	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/factory"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"

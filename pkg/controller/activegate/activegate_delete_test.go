@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/builder"
-	_const "github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/const"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
+	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
