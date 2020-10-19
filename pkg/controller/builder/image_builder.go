@@ -53,7 +53,7 @@ func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretNam
 }
 
 // GeneratePullSecretData generates the secret data for the PullSecret
-func GeneratePullSecretData(instance dynatracev1alpha1.ActiveGate, dtc dtclient.Client) (map[string][]byte, error) {
+func GeneratePullSecretData(instance dynatracev1alpha1.ActiveGate, dtc dtclient.Client, tkns *corev1.Secret) (map[string][]byte, error) {
 	type auths struct {
 		Username string
 		Password string
@@ -74,12 +74,12 @@ func GeneratePullSecretData(instance dynatracev1alpha1.ActiveGate, dtc dtclient.
 		return nil, err
 	}
 
-	a := fmt.Sprintf("%s:%s", ci.TenantUUID, _const.DynatracePaasToken)
+	a := fmt.Sprintf("%s:%s", ci.TenantUUID, string(tkns.Data[_const.DynatracePaasToken]))
 	a = b64.StdEncoding.EncodeToString([]byte(a))
 
 	auth := auths{
 		Username: ci.TenantUUID,
-		Password: _const.DynatracePaasToken,
+		Password: string(tkns.Data[_const.DynatracePaasToken]),
 		Auth:     a,
 	}
 
@@ -96,13 +96,17 @@ func GeneratePullSecretData(instance dynatracev1alpha1.ActiveGate, dtc dtclient.
 	return map[string][]byte{".dockerconfigjson": j}, nil
 }
 
-func BuildActiveGateImage(apiURL string) (string, error) {
+func BuildActiveGateImage(apiURL string, activegateVersion string) (string, error) {
 	registry, err := getImageRegistryFromAPIURL(apiURL)
 	if err != nil {
 		return "", err
 	}
 
 	image := registry + "/linux/activegate"
+
+	if activegateVersion != "" {
+		image += ":" + activegateVersion
+	}
 
 	return image, nil
 }

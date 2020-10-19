@@ -37,6 +37,14 @@ type ActiveGateSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Replicas"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:number"
 	Replicas *int32 `json:"replicas,omitempty"`
+
+	// Optional: If specified, indicates the ActiveGate version to use
+	// Defaults to latest
+	// Example: {major.minor.release} - 1.200.0
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="ActiveGate version"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	ActiveGateVersion string `json:"activegatetVersion,omitempty"`
 }
 
 // ActiveGateStatus defines the observed state of ActiveGate
