@@ -148,7 +148,7 @@ func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *v1alpha1.ActiveGa
 	})
 
 	if instance.Spec.Image == "" {
-		i, err := BuildActiveGateImage(instance.Spec.APIURL)
+		i, err := BuildActiveGateImage(instance.Spec.APIURL, instance.Spec.ActiveGateVersion)
 		if err != nil {
 			return err
 		}

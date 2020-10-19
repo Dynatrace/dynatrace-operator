@@ -169,7 +169,7 @@ func (r *ReconcileActiveGate) reconcilePullSecret(instance dynatracev1alpha1.Act
 	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(&instance), Namespace: instance.GetNamespace()}, &tkns); err != nil {
 		return fmt.Errorf("failed to query tokens: %w", err)
 	}
-	pullSecretData, err := builder.GeneratePullSecretData(instance, dtc)
+	pullSecretData, err := builder.GeneratePullSecretData(instance, dtc, &tkns)
 	if err != nil {
 		return fmt.Errorf("failed to generate pull secret data: %w", err)
 	}

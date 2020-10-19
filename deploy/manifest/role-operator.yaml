@@ -81,6 +81,8 @@ rules:
       - get
       - list
       - watch
+      - create
+      - update
   - apiGroups:
       - monitoring.coreos.com
     resources:
