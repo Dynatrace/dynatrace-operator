@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *ReconcileActiveGate) reconcilePullSecret(instance *dynatracev1alpha1.ActiveGate, log logr.Logger, dtc dtclient.Client) error {
+func (r *ReconcileActiveGate) reconcilePullSecret(instance *dynatracev1alpha1.DynaKube, log logr.Logger, dtc dtclient.Client) error {
 	var tkns corev1.Secret
 	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(instance), Namespace: instance.GetNamespace()}, &tkns); err != nil {
 		return fmt.Errorf("failed to query tokens: %w", err)

@@ -86,7 +86,7 @@ func TestFindOutdatedPods(t *testing.T) {
 
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
-			instance.Spec.Image = "test-image"
+			instance.Spec.KubernetesMonitoringSpec.Image = "test-image"
 			pod := &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instance.Name,
@@ -199,7 +199,7 @@ func TestUpdatePods(t *testing.T) {
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
 			instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate = true
-			instance.Spec.Image = "test-image"
+			instance.Spec.KubernetesMonitoringSpec.Image = "test-image"
 
 			dummy := corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{

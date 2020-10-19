@@ -34,7 +34,6 @@ type KubernetesMonitoringSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="ActiveGate version"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	ActiveGateVersion string `json:"activeGateVersion,omitempty"`
-}
 
 	// Optional: the ActiveGate container image
 	// Defaults to docker.io/dynatrace/activegate:latest for Kubernetes and to registry.connect.redhat.com/dynatrace/activegate for OpenShift

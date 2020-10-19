@@ -122,7 +122,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	if instance.Spec.Image == "" && instance.Spec.CustomPullSecret == "" {
+	if instance.Spec.KubernetesMonitoringSpec.Image == "" && instance.Spec.CustomPullSecret == "" {
 		err = r.reconcilePullSecret(instance, reqLogger, dtc)
 		if err != nil {
 			return reconcile.Result{}, err

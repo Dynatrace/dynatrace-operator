@@ -145,7 +145,7 @@ func buildAffinity() *corev1.Affinity {
 	}
 }
 
-func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *v1alpha1.ActiveGate) error {
+func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *v1alpha1.DynaKube) error {
 	pullSecretName := instance.GetName() + "-pull-secret"
 	if instance.Spec.CustomPullSecret != "" {
 		pullSecretName = instance.Spec.CustomPullSecret
@@ -155,8 +155,8 @@ func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *v1alpha1.ActiveGa
 		Name: pullSecretName,
 	})
 
-	if instance.Spec.Image == "" {
-		i, err := BuildActiveGateImage(instance.Spec.APIURL, instance.Spec.ActiveGateVersion)
+	if instance.Spec.KubernetesMonitoringSpec.Image == "" {
+		i, err := BuildActiveGateImage(instance.Spec.APIURL, instance.Spec.KubernetesMonitoringSpec.ActiveGateVersion)
 		if err != nil {
 			return err
 		}

@@ -24,29 +24,10 @@ func TestCreateDesiredStatefulSet(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, desiredStatefulSet)
 	})
-	t.Run("CreateDesiredStatefulSet error creating dynatrace client", func(t *testing.T) {
-		r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
-		assert.NoError(t, err)
-
-		r.dtcBuildFunc = func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error) {
-			return nil, fmt.Errorf("could not create dynatrace client")
-		}
-		desiredStatefulSet, err := r.createDesiredStatefulSet(instance, &corev1.Secret{})
-		assert.EqualError(t, err, "could not create dynatrace client")
-		assert.Nil(t, desiredStatefulSet)
-	})
 	t.Run("CreateDesiredStatefulSet error getting tenant info", func(t *testing.T) {
 		r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
 		assert.NoError(t, err)
 
-		r.dtcBuildFunc = func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error) {
-			mockClient := &dtclient.MockDynatraceClient{}
-			mockClient.
-				On("GetTenantInfo").
-				Return(&dtclient.TenantInfo{}, fmt.Errorf("could not retrieve tenant info"))
-			return mockClient, nil
-		}
-		desiredStatefulSet, err := r.createDesiredStatefulSet(instance, &corev1.Secret{})
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
 			On("GetTenantInfo").
