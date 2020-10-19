@@ -24,7 +24,9 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 		instance.Spec = dynatracev1alpha1.DynaKubeSpec{
 			BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
 				ServiceAccountName: serviceAccountName,
-				Image:              image,
+			},
+			KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
+				Image: image,
 			},
 		}
 		specs := BuildActiveGatePodSpecs(instance, nil, "")

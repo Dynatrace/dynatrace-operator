@@ -53,18 +53,9 @@ spec:
               items:
                 type: string
               type: array
-            disableActivegateUpdate:
-              description: Disable automatic restarts of Activegate pods in case a
-                new version is available
-              type: boolean
             dnsPolicy:
               description: 'Optional: Sets DNS Policy for the DynaKube pods'
               type: string
-            dt_capabilities:
-              description: 'Enabled capabilities of the DynaKube. E.g.: "kubernetes_monitoring"'
-              items:
-                type: string
-              type: array
             env:
               description: 'Optional: List of environment variables for the DynaKube'
               items:
@@ -169,16 +160,37 @@ spec:
                 to docker.io/dynatrace/activegate:latest for Kubernetes and to registry.connect.redhat.com/dynatrace/activegate
                 for OpenShift'
               type: string
-            kubernetesApiEndpoint:
-              description: The public API endpoint of the Kubernetes instance
-              type: string
+            kubernetesMonitoring:
+              description: Enables Kubernetes Monitoring"
+              properties:
+                disableActivegateUpdate:
+                  description: Disable automatic restarts of Activegate pods in case
+                    a new version is available
+                  type: boolean
+                enabled:
+                  description: Enables Kubernetes Monitoring
+                  type: boolean
+                image:
+                  description: 'Optional: the ActiveGate container image Defaults
+                    to docker.io/dynatrace/activegate:latest for Kubernetes and to
+                    registry.connect.redhat.com/dynatrace/activegate for OpenShift'
+                  type: string
+                kubernetesApiEndpoint:
+                  description: The public API endpoint of the Kubernetes instance
+                  type: string
+                networkZone:
+                  description: 'Optional: Sets Network Zone for ActiveGate pods'
+                  type: string
+                replicas:
+                  description: Amount of replicas for your DynaKube
+                  format: int32
+                  type: integer
+              type: object
             labels:
               additionalProperties:
                 type: string
               description: 'Optional: Adds additional labels for the DynaKube pods'
               type: object
-            networkZone:
-              type: string
             nodeSelector:
               additionalProperties:
                 type: string
@@ -198,10 +210,6 @@ spec:
                 valueFrom:
                   type: string
               type: object
-            replicas:
-              description: Amount of replicas for your DynaKube
-              format: int32
-              type: integer
             resources:
               description: 'Optional: define resources requests and limits for single
                 pods'
@@ -277,7 +285,6 @@ spec:
               type: string
           required:
           - apiUrl
-          - dt_capabilities
           type: object
         status:
           description: DynaKubeStatus defines the observed state of DynaKube

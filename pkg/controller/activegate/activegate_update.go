@@ -87,7 +87,7 @@ func (us *activeGateUpdateService) FindOutdatedPods(
 	var outdatedPods []corev1.Pod
 	for _, pod := range pods {
 		for _, status := range pod.Status.ContainerStatuses {
-			if status.ImageID == "" || instance.Spec.Image == "" {
+			if status.ImageID == "" || status.Image == "" {
 				// If image is not yet pulled or not given skip check
 				continue
 			}
@@ -99,7 +99,7 @@ func (us *activeGateUpdateService) FindOutdatedPods(
 				logger.Error(err, err.Error())
 			}
 
-			isLatest, err := r.updateService.IsLatest(logger, instance.Spec.Image, status.ImageID, imagePullSecret)
+			isLatest, err := r.updateService.IsLatest(logger, instance.Spec.KubernetesMonitoringSpec.Image, status.ImageID, imagePullSecret)
 			if err != nil {
 				logger.Error(err, err.Error())
 				//Error during image check, do nothing an continue with next status

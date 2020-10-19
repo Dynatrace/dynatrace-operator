@@ -35,6 +35,9 @@ func CreateFakeClient() client.Client {
 					Image:  "dynatrace/oneagent:latest",
 					APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 				},
+				KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
+					Enabled: true,
+				},
 			},
 		},
 		&corev1.Namespace{

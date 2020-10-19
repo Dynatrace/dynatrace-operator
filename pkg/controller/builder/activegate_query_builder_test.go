@@ -12,7 +12,9 @@ func TestBuildActiveGateQuery(t *testing.T) {
 	t.Run("BuildActiveGateQuery", func(t *testing.T) {
 		instance := v1alpha1.DynaKube{
 			Spec: v1alpha1.DynaKubeSpec{
-				NetworkZone: "some-network-zone",
+				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
+					NetworkZone: "some-network-zone",
+				},
 			},
 		}
 		pod := corev1.Pod{
@@ -31,7 +33,9 @@ func TestBuildActiveGateQuery(t *testing.T) {
 	t.Run("BuildActiveGateQuery set network zone", func(t *testing.T) {
 		instance := v1alpha1.DynaKube{
 			Spec: v1alpha1.DynaKubeSpec{
-				NetworkZone: "some-network-zone",
+				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
+					NetworkZone: "some-network-zone",
+				},
 			},
 		}
 

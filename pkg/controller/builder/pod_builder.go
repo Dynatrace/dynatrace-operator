@@ -18,8 +18,8 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 	if activeGateSpec.ServiceAccountName != "" {
 		activeGateSpec.ServiceAccountName = sa
 	}
-	if activeGateSpec.Image != "" {
-		image = activeGateSpec.Image
+	if activeGateSpec.KubernetesMonitoringSpec.Image != "" {
+		image = activeGateSpec.KubernetesMonitoringSpec.Image
 	}
 	if tenantInfo == nil {
 		tenantInfo = &dtclient.TenantInfo{
@@ -65,7 +65,11 @@ func buildArgs() []string {
 }
 
 func buildEnvVars(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) []corev1.EnvVar {
-	activeGatePodSpec := &instance.Spec
+	var capabilities []string
+
+	if instance.Spec.KubernetesMonitoringSpec.Enabled {
+		capabilities = append(capabilities, "kubernetes_monitoring")
+	}
 
 	return []corev1.EnvVar{
 		{
@@ -82,7 +86,7 @@ func buildEnvVars(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, 
 		},
 		{
 			Name:  DtCapabilities,
-			Value: strings.Join(activeGatePodSpec.Capabilities, Comma),
+			Value: strings.Join(capabilities, Comma),
 		},
 		{
 			Name:  DtIdSeedNamespace,

@@ -11,32 +11,11 @@ type DynaKubeSpec struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 	BaseDynaKubeSpec `json:""`
 
-	// Enabled capabilities of the DynaKube. E.g.: "kubernetes_monitoring"
-	// +kubebuilder:validation:Required
+	// Enables Kubernetes Monitoring"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="DynaKube Capabilities"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	Capabilities []string `json:"dt_capabilities"`
-
-	NetworkZone string `json:"networkZone,omitempty"`
-
-	// Disable automatic restarts of Activegate pods in case a new version is available
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Disable Activegate update"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
-	DisableActivegateUpdate bool `json:"disableActivegateUpdate,omitempty"`
-
-	// The public API endpoint of the Kubernetes instance
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes API Endpoint"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	KubernetesAPIEndpoint string `json:"kubernetesApiEndpoint,omitempty"`
-
-	// Amount of replicas for your DynaKube
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Replicas"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:number"
-	Replicas *int32 `json:"replicas,omitempty"`
+	KubernetesMonitoringSpec `json:"kubernetesMonitoring,omitempty"`
 }
 
 // DynaKubeStatus defines the observed state of DynaKube

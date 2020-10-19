@@ -139,7 +139,7 @@ func TestFindOutdatedPods(t *testing.T) {
 
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
-			instance.Spec.Image = ""
+			instance.Spec.KubernetesMonitoringSpec.Image = ""
 			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
 
 			assert.Nil(t, pods)

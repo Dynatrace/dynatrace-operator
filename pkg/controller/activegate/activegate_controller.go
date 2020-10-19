@@ -107,6 +107,10 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
+	if !instance.Spec.KubernetesMonitoringSpec.Enabled {
+		return builder.ReconcileAfterFiveMinutes(), nil
+	}
+
 	// Fetch api token secret
 	secret, err := r.getTokenSecret(instance)
 	if err != nil || secret == nil {
