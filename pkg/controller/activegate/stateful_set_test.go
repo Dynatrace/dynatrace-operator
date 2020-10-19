@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/stretchr/testify/assert"
