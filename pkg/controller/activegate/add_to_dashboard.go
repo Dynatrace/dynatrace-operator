@@ -9,12 +9,11 @@ import (
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/controller/dao"
 	"github.com/Dynatrace/dynatrace-activegate-operator/pkg/dtclient"
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
 )
 
 // addToDashboard makes a rest call to the dynatrace api to add the activegate instance to the dashboard
 // Returns the id of the entry on success or error otherwise
-func (r *ReconcileActiveGate) addToDashboard(apiTokenSecret *corev1.Secret, instance *dynatracev1alpha1.ActiveGate) (string, error) {
+func (r *ReconcileActiveGate) addToDashboard(dtc dtclient.Client, instance *dynatracev1alpha1.ActiveGate) (string, error) {
 	serviceAccount, err := dao.FindServiceAccount(r.client)
 	if err != nil {
 		return "", err
@@ -37,11 +36,6 @@ func (r *ReconcileActiveGate) addToDashboard(apiTokenSecret *corev1.Secret, inst
 	}
 	if tokenSecret == nil {
 		return "", fmt.Errorf("could not find bearer token secret")
-	}
-
-	dtc, err := r.dtcBuildFunc(r.client, instance, apiTokenSecret)
-	if err != nil {
-		return "", err
 	}
 
 	bearerToken, hasBearerToken := tokenSecret.Data["token"]
