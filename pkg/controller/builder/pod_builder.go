@@ -10,7 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func BuildActiveGatePodSpecs(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) corev1.PodSpec {
+func BuildActiveGatePodSpecs(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (corev1.PodSpec, error) {
 	sa := MonitoringServiceAccount
 	image := ""
 	activeGateSpec := &instance.Spec
@@ -54,8 +54,12 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.ActiveGate, tenantInfo *dtclient
 		PriorityClassName:  activeGateSpec.PriorityClassName,
 	}
 
-	preparePodSpecImmutableImage(&p, instance)
-	return p
+	err := preparePodSpecImmutableImage(&p, instance)
+	if err != nil {
+		return p, err
+	}
+
+	return p, nil
 }
 
 func buildArgs() []string {

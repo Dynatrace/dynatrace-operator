@@ -28,12 +28,12 @@ func TestCreateDesiredStatefulSet(t *testing.T) {
 		r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
 		assert.NoError(t, err)
 
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.
+		dtc := &dtclient.MockDynatraceClient{}
+		dtc.
 			On("GetTenantInfo").
 			Return(&dtclient.TenantInfo{}, fmt.Errorf("could not retrieve tenant info"))
 
-		desiredStatefulSet, err := r.createDesiredStatefulSet(instance, mockClient)
+		desiredStatefulSet, err := r.createDesiredStatefulSet(instance, dtc)
 		assert.EqualError(t, err, "could not retrieve tenant info")
 		assert.Nil(t, desiredStatefulSet)
 	})
