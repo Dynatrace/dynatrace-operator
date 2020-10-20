@@ -11,12 +11,12 @@ import (
 )
 
 func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (corev1.PodSpec, error) {
-	serviceAccount := MonitoringServiceAccount
+	sa := MonitoringServiceAccount
 	image := ""
 	activeGateSpec := &instance.Spec.KubernetesMonitoringSpec
 
 	if activeGateSpec.ServiceAccountName != "" {
-		serviceAccount = activeGateSpec.ServiceAccountName
+		sa = activeGateSpec.ServiceAccountName
 	}
 	if activeGateSpec.Image != "" {
 		image = activeGateSpec.Image
@@ -48,7 +48,7 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 		}},
 		DNSPolicy:          activeGateSpec.DNSPolicy,
 		NodeSelector:       activeGateSpec.NodeSelector,
-		ServiceAccountName: serviceAccount,
+		ServiceAccountName: sa,
 		Affinity:           buildAffinity(),
 		Tolerations:        activeGateSpec.Tolerations,
 		PriorityClassName:  activeGateSpec.PriorityClassName,

@@ -22,9 +22,7 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 			},
 		}
 		instance.Spec = dynatracev1alpha1.DynaKubeSpec{
-			BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
-				APIURL: "https://test-url.com/api",
-			},
+			APIURL: "https://test-url.com/api",
 			KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
 				ServiceAccountName: serviceAccountName,
 				Image:              image,
@@ -57,9 +55,7 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 			},
 		}
 		instance.Spec = dynatracev1alpha1.DynaKubeSpec{
-			BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
-				APIURL: "https://test-env.com",
-			},
+			APIURL: "https://test-env.com",
 		}
 		specs, err := BuildActiveGatePodSpecs(instance, &dtclient.TenantInfo{
 			ID:                    "tenant-id",

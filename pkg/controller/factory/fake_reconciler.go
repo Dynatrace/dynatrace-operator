@@ -31,15 +31,7 @@ func CreateFakeClient() client.Client {
 				Name:      _const.ActivegateName,
 			},
 			Spec: dynatracev1alpha1.DynaKubeSpec{
-				BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
-					APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
-				},
-				OneAgent: dynatracev1alpha1.OneAgentSpec{
-					Image: "dynatrace/oneagent:latest",
-				},
-				OneAgentAPMSpec: dynatracev1alpha1.OneAgentAPMSpec{
-					Image: "dynatrace/oneagent:latest",
-				},
+				APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 				KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
 					Enabled: true,
 				},

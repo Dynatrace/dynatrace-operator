@@ -56,14 +56,12 @@ func TestBuildDynatraceClient(t *testing.T) {
 		)
 		instance := dynatracev1alpha1.DynaKube{
 			Spec: dynatracev1alpha1.DynaKubeSpec{
-				BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
-					APIURL: "some-url",
-					Proxy: &dynatracev1alpha1.DynaKubeProxy{
-						ValueFrom: proxyName,
-					},
-					SkipCertCheck: true,
-					TrustedCAs:    configMapName,
+				APIURL: "some-url",
+				Proxy: &dynatracev1alpha1.DynaKubeProxy{
+					ValueFrom: proxyName,
 				},
+				SkipCertCheck: true,
+				TrustedCAs:    configMapName,
 			},
 		}
 
@@ -77,9 +75,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 	t.Run("BuildDynatraceClient minimal", func(t *testing.T) {
 		instance := dynatracev1alpha1.DynaKube{
 			Spec: dynatracev1alpha1.DynaKubeSpec{
-				BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
-					APIURL: "some-url",
-				},
+				APIURL: "some-url",
 			},
 		}
 		secret := corev1.Secret{
@@ -94,14 +90,12 @@ func TestBuildDynatraceClient(t *testing.T) {
 			rtc := fake.NewFakeClientWithScheme(scheme.Scheme)
 			instance := dynatracev1alpha1.DynaKube{
 				Spec: dynatracev1alpha1.DynaKubeSpec{
-					BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
-						APIURL: "some-url",
-						Proxy: &dynatracev1alpha1.DynaKubeProxy{
-							ValueFrom: proxyName,
-						},
-						SkipCertCheck: true,
-						TrustedCAs:    configMapName,
+					APIURL: "some-url",
+					Proxy: &dynatracev1alpha1.DynaKubeProxy{
+						ValueFrom: proxyName,
 					},
+					SkipCertCheck: true,
+					TrustedCAs:    configMapName,
 				},
 			}
 
@@ -121,14 +115,12 @@ func TestBuildDynatraceClient(t *testing.T) {
 				})
 			instance := dynatracev1alpha1.DynaKube{
 				Spec: dynatracev1alpha1.DynaKubeSpec{
-					BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
-						APIURL: "some-url",
-						Proxy: &dynatracev1alpha1.DynaKubeProxy{
-							ValueFrom: proxyName,
-						},
-						SkipCertCheck: true,
-						TrustedCAs:    configMapName,
+					APIURL: "some-url",
+					Proxy: &dynatracev1alpha1.DynaKubeProxy{
+						ValueFrom: proxyName,
 					},
+					SkipCertCheck: true,
+					TrustedCAs:    configMapName,
 				},
 			}
 
@@ -148,13 +140,11 @@ func TestBuildDynatraceClient(t *testing.T) {
 				})
 			instance := dynatracev1alpha1.DynaKube{
 				Spec: dynatracev1alpha1.DynaKubeSpec{
-					BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
-						APIURL: "some-url",
-						Proxy: &dynatracev1alpha1.DynaKubeProxy{
-							Value: string(secrets[Proxy]),
-						},
-						SkipCertCheck: true,
+					APIURL: "some-url",
+					Proxy: &dynatracev1alpha1.DynaKubeProxy{
+						Value: string(secrets[Proxy]),
 					},
+					SkipCertCheck: true,
 				},
 			}
 
@@ -171,11 +161,9 @@ func TestBuildDynatraceClient(t *testing.T) {
 			rtc := fake.NewFakeClientWithScheme(scheme.Scheme)
 			instance := dynatracev1alpha1.DynaKube{
 				Spec: dynatracev1alpha1.DynaKubeSpec{
-					BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
-						APIURL:        "some-url",
-						SkipCertCheck: true,
-						TrustedCAs:    configMapName,
-					},
+					APIURL:        "some-url",
+					SkipCertCheck: true,
+					TrustedCAs:    configMapName,
 				},
 			}
 
@@ -196,11 +184,9 @@ func TestBuildDynatraceClient(t *testing.T) {
 				})
 			instance := dynatracev1alpha1.DynaKube{
 				Spec: dynatracev1alpha1.DynaKubeSpec{
-					BaseDynaKubeSpec: dynatracev1alpha1.BaseDynaKubeSpec{
-						APIURL:        "some-url",
-						SkipCertCheck: true,
-						TrustedCAs:    configMapName,
-					},
+					APIURL:        "some-url",
+					SkipCertCheck: true,
+					TrustedCAs:    configMapName,
 				},
 			}
 
