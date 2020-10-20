@@ -13,7 +13,7 @@ import (
 )
 
 // CreateOrUpdateSecretIfNotExists creates a secret in case it does not exist or updates it if there are changes
-func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretName string, targetNS string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
+func CreateOrUpdateSecretWithApiReader(c client.Client, r client.Reader, secretName string, targetNS string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
 	var cfg corev1.Secret
 	err := r.Get(context.TODO(), client.ObjectKey{Name: secretName, Namespace: targetNS}, &cfg)
 	if k8serrors.IsNotFound(err) {
@@ -44,4 +44,8 @@ func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretNam
 	}
 
 	return nil
+}
+
+func CreateOrUpdateSecret(c client.Client, secretName string, targetNamespace string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
+	return CreateOrUpdateSecretWithApiReader(c, c, secretName, targetNamespace, data, secretType, log)
 }

@@ -93,3 +93,27 @@ spec:
   #
   #   labels:
   #     custom: label
+
+  #   Optional: arguments to add to the ActiveGate instances.
+  #   Available options: https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
+  #   Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
+  #
+  #   args:
+  #     - "LOG=<folder>"
+
+  #   Optional: additional environment variables to add to the ActiveGate Pods.
+  #
+  #   env: []
+
+  #   Optional: Set activation group for ActiveGate
+  #
+  #   group: ""
+
+  #   Optional: Add a custom properties file by either providing it as a value or referencing it from a config map
+  #
+  #   customProperties:
+  #     value: |
+  #       [connectivity]
+  #       networkZone=
+  #     valueFrom: myCustomPropertiesConfigMap
+

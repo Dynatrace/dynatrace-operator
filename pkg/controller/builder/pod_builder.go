@@ -1,9 +1,11 @@
 package builder
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -13,14 +15,12 @@ import (
 
 func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (corev1.PodSpec, error) {
 	sa := MonitoringServiceAccount
-	image := ""
 	activeGateSpec := &instance.Spec.KubernetesMonitoringSpec
+	additionalArgs := activeGateSpec.Args
+	image := activeGateSpec.Image
 
 	if activeGateSpec.ServiceAccountName != "" {
 		sa = activeGateSpec.ServiceAccountName
-	}
-	if activeGateSpec.Image != "" {
-		image = activeGateSpec.Image
 	}
 	if tenantInfo == nil {
 		tenantInfo = &dtclient.TenantInfo{
@@ -30,22 +30,29 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 		}
 	}
 
-	if activeGateSpec.Resources.Requests == nil {
-		activeGateSpec.Resources.Requests = corev1.ResourceList{}
-	}
-	if _, hasCPUResource := activeGateSpec.Resources.Requests[corev1.ResourceCPU]; !hasCPUResource {
-		// Set CPU resource to 1 * 10**(-1) Cores, e.g. 100mC
-		activeGateSpec.Resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
+	envVars := buildEnvVars(instance, tenantInfo, kubeSystemUID)
+
+	checkMinimumResources(activeGateSpec)
+
+	if instance.Spec.NetworkZone != "" {
+		additionalArgs = append(additionalArgs,
+			fmt.Sprintf(`--networkzone "%s"`, instance.Spec.NetworkZone))
 	}
 
-	p := corev1.PodSpec{
+	additionalArgs, envVars = appendProxySettings(additionalArgs, envVars, instance.Spec.Proxy)
+	additionalArgs = appendActivationGroup(additionalArgs, activeGateSpec.Group)
+	volumeMounts, volumes := prepareCertificateVolumes(instance.Spec.TrustedCAs)
+	volumeMounts, volumes = prepareCustomPropertiesVolumes(volumeMounts, volumes, activeGateSpec.CustomProperties)
+
+	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{{
 			Name:            ActivegateName,
 			Image:           image,
 			Resources:       activeGateSpec.Resources,
 			ImagePullPolicy: corev1.PullAlways,
-			Env:             buildEnvVars(instance, tenantInfo, kubeSystemUID),
-			Args:            buildArgs(),
+			Env:             envVars,
+			Args:            buildArgs(additionalArgs),
+			VolumeMounts:    volumeMounts,
 			ReadinessProbe:  buildReadinessProbe(),
 			LivenessProbe:   buildLivenessProbe(),
 		}},
@@ -55,14 +62,164 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 		Affinity:           buildAffinity(),
 		Tolerations:        activeGateSpec.Tolerations,
 		PriorityClassName:  activeGateSpec.PriorityClassName,
+		Volumes:            volumes,
 	}
 
-	err := preparePodSpecImmutableImage(&p, instance)
-	if err != nil {
-		return p, err
+	err := preparePodSpecImmutableImage(&podSpec, instance)
+	return podSpec, err
+}
+
+func prepareCustomPropertiesVolumes(volumeMounts []corev1.VolumeMount, volumes []corev1.Volume, customProperties *v1alpha1.DynaKubeValueSource) ([]corev1.VolumeMount, []corev1.Volume) {
+	if customProperties == nil ||
+		(customProperties.Value == "" && customProperties.ValueFrom == "") {
+		return volumeMounts, volumes
 	}
 
-	return p, nil
+	valueFrom := customProperties.ValueFrom
+	if valueFrom == "" {
+		valueFrom = _const.CustomPropertiesConfigMapName
+	}
+
+	volumeMounts = append(volumeMounts, corev1.VolumeMount{
+		Name:      "customProperties",
+		MountPath: "/mnt/dynatrace/gateway/config"})
+
+	volumes = append(volumes, corev1.Volume{
+		Name: "customProperties",
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: valueFrom,
+				},
+				Items: []corev1.KeyToPath{
+					{
+						Key:  _const.CustomPropertiesKey,
+						Path: "custom.properties",
+					},
+				},
+			},
+		},
+	})
+
+	return volumeMounts, volumes
+}
+
+func appendActivationGroup(args []string, group string) []string {
+	if group == "" {
+		return args
+	}
+	return append(args,
+		fmt.Sprintf(`--group "%s"`, group))
+}
+
+func prepareCertificateVolumes(trustedCAsConfig string) ([]corev1.VolumeMount, []corev1.Volume) {
+	var volumeMounts []corev1.VolumeMount
+	var volumes []corev1.Volume
+
+	if trustedCAsConfig != "" {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      "certs",
+			MountPath: "/mnt/dynatrace/certs"})
+
+		volumes = append(volumes, corev1.Volume{
+			Name: "certs",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: trustedCAsConfig,
+					},
+					Items: []corev1.KeyToPath{
+						{
+							Key:  "certs",
+							Path: "certs.pem",
+						},
+					},
+				},
+			},
+		})
+	}
+
+	return volumeMounts, volumes
+}
+
+func appendProxySettings(args []string, envVars []corev1.EnvVar, proxy *v1alpha1.DynaKubeProxy) ([]string, []corev1.EnvVar) {
+	if proxy == nil || (proxy.Value == "" && proxy.ValueFrom == "") {
+		return args, envVars
+	}
+
+	proxyEnvVar := corev1.EnvVar{
+		Name: "ACTIVE_GATE_PROXY",
+	}
+
+	if proxy.ValueFrom != "" {
+		proxyEnvVar.ValueFrom = &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{Name: proxy.ValueFrom},
+				Key:                  "proxy",
+			},
+		}
+	} else {
+		proxyEnvVar.Value = proxy.Value
+	}
+
+	args = append(args, `PROXY="${ACTIVE_GATE_PROXY}"`)
+	envVars = append(envVars, proxyEnvVar)
+	return args, envVars
+}
+
+func checkMinimumResources(activeGateSpec *v1alpha1.KubernetesMonitoringSpec) {
+	cpuMin := resource.MustParse(ResourceCPUMinimum)
+	cpuMax := resource.MustParse(ResourceCPUMaximum)
+	memoryMin := resource.MustParse(ResourceMemoryMinimum)
+	memoryMax := resource.MustParse(ResourceMemoryMaximum)
+
+	if activeGateSpec.Resources.Requests == nil {
+		activeGateSpec.Resources.Requests = corev1.ResourceList{}
+	}
+
+	if activeGateSpec.Resources.Limits == nil {
+		activeGateSpec.Resources.Limits = corev1.ResourceList{}
+	}
+
+	cpuRequest, hasCPURequest := activeGateSpec.Resources.Requests[corev1.ResourceCPU]
+	memoryRequest, hasMemoryRequest := activeGateSpec.Resources.Requests[corev1.ResourceCPU]
+	cpuLimit, hasCPULimit := activeGateSpec.Resources.Limits[corev1.ResourceCPU]
+	memoryLimit, hasMemoryLimit := activeGateSpec.Resources.Limits[corev1.ResourceCPU]
+
+	// Memory limit does not exist or is higher than necessary => set to maximum
+	if !hasMemoryLimit || memoryLimit.Cmp(memoryMax) > 0 {
+		memoryLimit = memoryMax
+	}
+
+	// CPU limit does not exist or is higher than necessary => set to maximum
+	if !hasCPULimit || cpuLimit.Cmp(cpuMax) > 0 {
+		cpuLimit = cpuMax
+	}
+
+	// Memory request does not exist or is lower than required => set to minimum
+	if !hasMemoryRequest || memoryRequest.Cmp(memoryMin) < 0 {
+		memoryRequest = memoryMin
+	}
+
+	// CPU request does not exist or is lower than required => set to minimum
+	if !hasCPURequest || cpuRequest.Cmp(cpuMin) < 0 {
+		cpuRequest = cpuMin
+	}
+
+	// CPU request is higher than limit => set to limit
+	if cpuRequest.Cmp(cpuLimit) > 0 {
+		cpuRequest = cpuLimit
+	}
+
+	// Memory request is higher than limit => set to limit
+	if memoryRequest.Cmp(memoryLimit) > 0 {
+		memoryRequest = memoryLimit
+	}
+
+	activeGateSpec.Resources.Requests[corev1.ResourceCPU] = cpuRequest
+	activeGateSpec.Resources.Requests[corev1.ResourceMemory] = memoryRequest
+	activeGateSpec.Resources.Limits[corev1.ResourceCPU] = cpuLimit
+	activeGateSpec.Resources.Limits[corev1.ResourceMemory] = memoryLimit
 }
 
 func buildLivenessProbe() *corev1.Probe {
@@ -101,7 +258,7 @@ func buildArgs() []string {
 		DtTokenArg,
 		DtServerArg,
 		DtCapabilitiesArg,
-	}
+	}, additionalArgs...)
 }
 
 func buildEnvVars(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) []corev1.EnvVar {
@@ -111,7 +268,7 @@ func buildEnvVars(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, 
 		capabilities = append(capabilities, "kubernetes_monitoring")
 	}
 
-	return []corev1.EnvVar{
+	return append([]corev1.EnvVar{
 		{
 			Name:  DtTenant,
 			Value: tenantInfo.ID,
@@ -136,7 +293,7 @@ func buildEnvVars(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, 
 			Name:  DtIdSeedClusterId,
 			Value: string(kubeSystemUID),
 		},
-	}
+	}, instance.Spec.KubernetesMonitoringSpec.Env...)
 }
 
 func buildAffinity() *corev1.Affinity {
@@ -178,13 +335,13 @@ func buildAffinity() *corev1.Affinity {
 	}
 }
 
-func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *v1alpha1.DynaKube) error {
+func preparePodSpecImmutableImage(podSpec *corev1.PodSpec, instance *v1alpha1.DynaKube) error {
 	pullSecretName := instance.GetName() + "-pull-secret"
 	if instance.Spec.CustomPullSecret != "" {
 		pullSecretName = instance.Spec.CustomPullSecret
 	}
 
-	p.ImagePullSecrets = append(p.ImagePullSecrets, corev1.LocalObjectReference{
+	podSpec.ImagePullSecrets = append(podSpec.ImagePullSecrets, corev1.LocalObjectReference{
 		Name: pullSecretName,
 	})
 
@@ -193,7 +350,7 @@ func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *v1alpha1.DynaKube
 		if err != nil {
 			return err
 		}
-		p.Containers[0].Image = i
+		podSpec.Containers[0].Image = i
 	}
 
 	return nil
@@ -253,4 +410,9 @@ const (
 	DtCapabilitiesArg = "--enable=$(DT_CAPABILITIES)"
 
 	Comma = ","
+
+	ResourceMemoryMinimum = "100Mi"
+	ResourceCPUMinimum    = "100m"
+	ResourceMemoryMaximum = "1Gi"
+	ResourceCPUMaximum    = "1"
 )
