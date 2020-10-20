@@ -39,13 +39,13 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 				*resource.NewScaledQuantity(1, -1)))
 		assert.True(t,
 			activeGateSpec.KubernetesMonitoringSpec.Resources.Requests[corev1.ResourceMemory].Equal(
-				*resource.NewScaledQuantity(1024*1024, 2)))
+				*resource.NewScaledQuantity(512*1024*1024, 0)))
 		assert.True(t,
 			activeGateSpec.KubernetesMonitoringSpec.Resources.Limits[corev1.ResourceCPU].Equal(
-				*resource.NewScaledQuantity(1, 0)))
+				*resource.NewScaledQuantity(3, -1)))
 		assert.True(t,
 			activeGateSpec.KubernetesMonitoringSpec.Resources.Limits[corev1.ResourceMemory].Equal(
-				*resource.NewScaledQuantity(1024*1024*1024, 0)))
+				*resource.NewScaledQuantity(1.5*1024*1024*1024, 0)))
 		assert.NotNil(t, specs.Affinity)
 
 		container := specs.Containers[0]

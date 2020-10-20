@@ -411,8 +411,8 @@ const (
 
 	Comma = ","
 
-	ResourceMemoryMinimum = "100Mi"
+	ResourceMemoryMinimum = "512Mi"
 	ResourceCPUMinimum    = "100m"
-	ResourceMemoryMaximum = "1Gi"
-	ResourceCPUMaximum    = "1"
+	ResourceMemoryMaximum = "1.5Gi"
+	ResourceCPUMaximum    = "300m"
 )
