@@ -13,7 +13,7 @@ import (
 
 // addToDashboard makes a rest call to the dynatrace api to add the activegate instance to the dashboard
 // Returns the id of the entry on success or error otherwise
-func (r *ReconcileActiveGate) addToDashboard(dtc dtclient.Client, instance *dynatracev1alpha1.ActiveGate) (string, error) {
+func (r *ReconcileActiveGate) addToDashboard(dtc dtclient.Client, instance *dynatracev1alpha1.DynaKube) (string, error) {
 	serviceAccount, err := dao.FindServiceAccount(r.client)
 	if err != nil {
 		return "", err
@@ -45,7 +45,7 @@ func (r *ReconcileActiveGate) addToDashboard(dtc dtclient.Client, instance *dyna
 
 	// The same endpoint can not be used multiple times, so use as semi-unique name
 	// Remove protocol prefix, if any
-	ip := strings.TrimPrefix(instance.Spec.KubernetesAPIEndpoint, "https://")
+	ip := strings.TrimPrefix(instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint, "https://")
 	ip = strings.TrimPrefix(ip, "http://")
 	ip = strings.ReplaceAll(ip, ":", "_")
 	label := fmt.Sprintf("%s-%s-%s", instance.Namespace, instance.Name, ip)
@@ -57,7 +57,7 @@ func (r *ReconcileActiveGate) addToDashboard(dtc dtclient.Client, instance *dyna
 	// And join them with safe dashes
 	sanitizedLabel := strings.Join(labelParts, "-")
 
-	return dtc.AddToDashboard(sanitizedLabel, instance.Spec.KubernetesAPIEndpoint, string(bearerToken))
+	return dtc.AddToDashboard(sanitizedLabel, instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint, string(bearerToken))
 }
 
 func (r *ReconcileActiveGate) handleAddToDashboardResult(id string, addToDashboardErr error, log logr.Logger) {
@@ -68,14 +68,14 @@ func (r *ReconcileActiveGate) handleAddToDashboardResult(id string, addToDashboa
 	if addToDashboardErr != nil {
 		if serverError, isServerError := addToDashboardErr.(dtclient.ServerError); isServerError {
 			if serverError.Code == 400 {
-				log.Info("error returned from Dynatrace API when adding ActiveGate Kubernetes configuration, ignore if configuration already exist", "id", id, "error", serverError.Message)
+				log.Info("error returned from Dynatrace API when adding DynaKube Kubernetes configuration, ignore if configuration already exist", "id", id, "error", serverError.Message)
 			} else {
 				log.Error(fmt.Errorf("error returned from Dynatrace API"), "error returned from Dynatrace API", "id", id, "error", serverError.Message)
 			}
 		} else {
-			log.Error(addToDashboardErr, "error when adding ActiveGate Kubernetes configuration")
+			log.Error(addToDashboardErr, "error when adding DynaKube Kubernetes configuration")
 		}
 	} else {
-		log.Info("added ActiveGate to Kubernetes dashboard", "id", id)
+		log.Info("added DynaKube to Kubernetes dashboard", "id", id)
 	}
 }

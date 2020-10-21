@@ -27,7 +27,7 @@ func TestAddToDashboard(t *testing.T) {
 	r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
 	assert.NoError(t, err)
 
-	instance.Spec.KubernetesAPIEndpoint = server.URL
+	instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint = server.URL
 
 	err = r.client.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -181,7 +181,7 @@ func TestHandleAddToDashboardResult(t *testing.T) {
 		assert.Empty(t, logger.loggedErrors)
 		assert.Equal(t, "id", logger.loggedKeysAndValues[0])
 		assert.Equal(t, "some-id", logger.loggedKeysAndValues[1])
-		assert.Equal(t, "added ActiveGate to Kubernetes dashboard", logger.loggedMessages[0])
+		assert.Equal(t, "added DynaKube to Kubernetes dashboard", logger.loggedMessages[0])
 	})
 
 	t.Run("HandleAddToDashboard no id", func(t *testing.T) {
@@ -193,7 +193,7 @@ func TestHandleAddToDashboardResult(t *testing.T) {
 		assert.Empty(t, logger.loggedErrors)
 		assert.Equal(t, "id", logger.loggedKeysAndValues[0])
 		assert.Equal(t, "<unset>", logger.loggedKeysAndValues[1])
-		assert.Equal(t, "added ActiveGate to Kubernetes dashboard", logger.loggedMessages[0])
+		assert.Equal(t, "added DynaKube to Kubernetes dashboard", logger.loggedMessages[0])
 	})
 
 	t.Run("HandleAddToDashboard any error", func(t *testing.T) {
@@ -203,7 +203,7 @@ func TestHandleAddToDashboardResult(t *testing.T) {
 		assert.Equal(t, 1, len(logger.loggedErrors))
 		assert.Equal(t, 1, len(logger.loggedMessages))
 		assert.Equal(t, 0, len(logger.loggedKeysAndValues))
-		assert.Equal(t, "error when adding ActiveGate Kubernetes configuration", logger.loggedMessages[0])
+		assert.Equal(t, "error when adding DynaKube Kubernetes configuration", logger.loggedMessages[0])
 		assert.EqualError(t, logger.loggedErrors[0], "a random error")
 	})
 
@@ -234,6 +234,6 @@ func TestHandleAddToDashboardResult(t *testing.T) {
 		assert.Equal(t, "some-id", logger.loggedKeysAndValues[1])
 		assert.Equal(t, "error", logger.loggedKeysAndValues[2])
 		assert.Equal(t, "entry already exists", logger.loggedKeysAndValues[3])
-		assert.Equal(t, "error returned from Dynatrace API when adding ActiveGate Kubernetes configuration, ignore if configuration already exist", logger.loggedMessages[0])
+		assert.Equal(t, "error returned from Dynatrace API when adding DynaKube Kubernetes configuration, ignore if configuration already exist", logger.loggedMessages[0])
 	})
 }

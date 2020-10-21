@@ -10,13 +10,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func BuildActiveGatePodSpecs(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (corev1.PodSpec, error) {
+func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (corev1.PodSpec, error) {
 	sa := MonitoringServiceAccount
 	image := ""
-	activeGateSpec := &instance.Spec
+	activeGateSpec := &instance.Spec.KubernetesMonitoringSpec
 
 	if activeGateSpec.ServiceAccountName != "" {
-		activeGateSpec.ServiceAccountName = sa
+		sa = activeGateSpec.ServiceAccountName
 	}
 	if activeGateSpec.Image != "" {
 		image = activeGateSpec.Image
@@ -71,8 +71,12 @@ func buildArgs() []string {
 	}
 }
 
-func buildEnvVars(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) []corev1.EnvVar {
-	activeGatePodSpec := &instance.Spec
+func buildEnvVars(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) []corev1.EnvVar {
+	var capabilities []string
+
+	if instance.Spec.KubernetesMonitoringSpec.Enabled {
+		capabilities = append(capabilities, "kubernetes_monitoring")
+	}
 
 	return []corev1.EnvVar{
 		{
@@ -89,7 +93,7 @@ func buildEnvVars(instance *v1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo
 		},
 		{
 			Name:  DtCapabilities,
-			Value: strings.Join(activeGatePodSpec.Capabilities, Comma),
+			Value: strings.Join(capabilities, Comma),
 		},
 		{
 			Name:  DtIdSeedNamespace,
@@ -141,7 +145,7 @@ func buildAffinity() *corev1.Affinity {
 	}
 }
 
-func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *v1alpha1.ActiveGate) error {
+func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *v1alpha1.DynaKube) error {
 	pullSecretName := instance.GetName() + "-pull-secret"
 	if instance.Spec.CustomPullSecret != "" {
 		pullSecretName = instance.Spec.CustomPullSecret
@@ -151,8 +155,8 @@ func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *v1alpha1.ActiveGa
 		Name: pullSecretName,
 	})
 
-	if instance.Spec.Image == "" {
-		i, err := BuildActiveGateImage(instance.Spec.APIURL, instance.Spec.ActiveGateVersion)
+	if instance.Spec.KubernetesMonitoringSpec.Image == "" {
+		i, err := BuildActiveGateImage(instance.Spec.APIURL, instance.Spec.KubernetesMonitoringSpec.ActiveGateVersion)
 		if err != nil {
 			return err
 		}

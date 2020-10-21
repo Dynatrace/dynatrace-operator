@@ -6,7 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func BuildActiveGateQuery(instance *dynatracev1alpha1.ActiveGate, pod *corev1.Pod) *dtclient.ActiveGateQuery {
+func BuildActiveGateQuery(instance *dynatracev1alpha1.DynaKube, pod *corev1.Pod) *dtclient.ActiveGateQuery {
 	networkZone := DefaultNetworkZone
 	if instance.Spec.NetworkZone != "" {
 		networkZone = instance.Spec.NetworkZone

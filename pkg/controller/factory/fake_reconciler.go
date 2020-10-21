@@ -25,14 +25,15 @@ func CreateFakeClient() client.Client {
 				_const.DynatracePaasToken: []byte("84"),
 			},
 		},
-		&dynatracev1alpha1.ActiveGate{
+		&dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: _const.DynatraceNamespace,
 				Name:      _const.ActivegateName,
 			},
-			Spec: dynatracev1alpha1.ActiveGateSpec{
-				BaseActiveGateSpec: dynatracev1alpha1.BaseActiveGateSpec{
-					APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
+				KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
+					Enabled: true,
 				},
 			},
 		},

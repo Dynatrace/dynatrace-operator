@@ -25,7 +25,7 @@ func TestCreateFakeClient(t *testing.T) {
 	assert.NotNil(t, fakeClient)
 
 	secret := &corev1.Secret{}
-	activeGate := &v1alpha1.ActiveGate{}
+	activeGate := &v1alpha1.DynaKube{}
 
 	err := fakeClient.Get(context.TODO(), client.ObjectKey{Name: _const.ActivegateName, Namespace: _const.DynatraceNamespace}, secret)
 	assert.NoError(t, err)

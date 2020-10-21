@@ -7,6 +7,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
+	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -14,23 +15,23 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.ActiveGate, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (*appsv1.StatefulSet, error) {
+func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (*appsv1.StatefulSet, error) {
 	podSpec, err := builder.BuildActiveGatePodSpecs(instance, tenantInfo, kubeSystemUID)
 	if err != nil {
 		return nil, err
 	}
-	selectorLabels := builder.BuildLabels(instance.GetName(), instance.Spec.Labels)
+	selectorLabels := builder.BuildLabels(_const.ActivegateName, instance.Spec.KubernetesMonitoringSpec.Labels)
 	mergedLabels := builder.BuildMergeLabels(instance.Labels, selectorLabels)
 
 	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        instance.Name,
+			Name:        _const.ActivegateName,
 			Namespace:   instance.Namespace,
 			Labels:      mergedLabels,
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: instance.Spec.Replicas,
+			Replicas: instance.Spec.KubernetesMonitoringSpec.Replicas,
 			Selector: &metav1.LabelSelector{MatchLabels: selectorLabels},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{Labels: mergedLabels},

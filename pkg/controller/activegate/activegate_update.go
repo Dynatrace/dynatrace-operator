@@ -28,11 +28,11 @@ type updateService interface {
 	FindOutdatedPods(
 		r *ReconcileActiveGate,
 		logger logr.Logger,
-		instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error)
+		instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error)
 	IsLatest(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error)
 	UpdatePods(
 		r *ReconcileActiveGate,
-		instance *dynatracev1alpha1.ActiveGate) (*reconcile.Result, error)
+		instance *dynatracev1alpha1.DynaKube) (*reconcile.Result, error)
 }
 
 /*
@@ -43,10 +43,10 @@ type activeGateUpdateService struct{}
 
 func (us *activeGateUpdateService) UpdatePods(
 	r *ReconcileActiveGate,
-	instance *dynatracev1alpha1.ActiveGate) (*reconcile.Result, error) {
+	instance *dynatracev1alpha1.DynaKube) (*reconcile.Result, error) {
 	if instance == nil {
 		return nil, fmt.Errorf("instance is nil")
-	} else if !instance.Spec.DisableActivegateUpdate &&
+	} else if !instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate &&
 		instance.Status.UpdatedTimestamp.Add(UpdateInterval).Before(time.Now()) {
 		log.Info("checking for outdated pods")
 		// Check if pods have latest activegate version
@@ -68,7 +68,7 @@ func (us *activeGateUpdateService) UpdatePods(
 		if err != nil {
 			log.Info("failed to updated instance status", "message", err.Error())
 		}
-	} else if instance.Spec.DisableActivegateUpdate {
+	} else if instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate {
 		log.Info("Skipping updating pods because of configuration", "disableActivegateUpdate", true)
 	}
 	return nil, nil
@@ -77,7 +77,7 @@ func (us *activeGateUpdateService) UpdatePods(
 func (us *activeGateUpdateService) FindOutdatedPods(
 	r *ReconcileActiveGate,
 	logger logr.Logger,
-	instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error) {
+	instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
 	pods, err := r.findPods(instance)
 	if err != nil {
 		logger.Error(err, "failed to list pods")
@@ -87,7 +87,7 @@ func (us *activeGateUpdateService) FindOutdatedPods(
 	var outdatedPods []corev1.Pod
 	for _, pod := range pods {
 		for _, status := range pod.Status.ContainerStatuses {
-			if status.ImageID == "" || instance.Spec.Image == "" {
+			if status.ImageID == "" || status.Image == "" {
 				// If image is not yet pulled or not given skip check
 				continue
 			}
@@ -99,7 +99,7 @@ func (us *activeGateUpdateService) FindOutdatedPods(
 				logger.Error(err, err.Error())
 			}
 
-			isLatest, err := r.updateService.IsLatest(logger, instance.Spec.Image, status.ImageID, imagePullSecret)
+			isLatest, err := r.updateService.IsLatest(logger, instance.Spec.KubernetesMonitoringSpec.Image, status.ImageID, imagePullSecret)
 			if err != nil {
 				logger.Error(err, err.Error())
 				//Error during image check, do nothing an continue with next status

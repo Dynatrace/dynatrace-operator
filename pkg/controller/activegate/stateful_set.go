@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func (r *ReconcileActiveGate) createDesiredStatefulSet(instance *v1alpha1.ActiveGate, dtc dtclient.Client) (*appsv1.StatefulSet, error) {
+func (r *ReconcileActiveGate) createDesiredStatefulSet(instance *v1alpha1.DynaKube, dtc dtclient.Client) (*appsv1.StatefulSet, error) {
 	tenantInfo, err := dtc.GetTenantInfo()
 	if err != nil {
 		return nil, err

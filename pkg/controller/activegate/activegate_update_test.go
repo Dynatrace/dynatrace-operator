@@ -36,7 +36,7 @@ type mockIsLatestUpdateService struct{}
 
 func (updateService *mockIsLatestUpdateService) FindOutdatedPods(r *ReconcileActiveGate,
 	logger logr.Logger,
-	instance *dynatracev1alpha1.ActiveGate) ([]corev1.Pod, error) {
+	instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
 	return (&activeGateUpdateService{}).FindOutdatedPods(r, logger, instance)
 }
 func (updateService *mockIsLatestUpdateService) IsLatest(_ logr.Logger,
@@ -46,7 +46,7 @@ func (updateService *mockIsLatestUpdateService) IsLatest(_ logr.Logger,
 	return imageID == "latest", nil
 }
 func (updateService *mockIsLatestUpdateService) UpdatePods(r *ReconcileActiveGate,
-	instance *dynatracev1alpha1.ActiveGate) (*reconcile.Result, error) {
+	instance *dynatracev1alpha1.DynaKube) (*reconcile.Result, error) {
 	return (&activeGateUpdateService{}).UpdatePods(r, instance)
 }
 
@@ -86,7 +86,7 @@ func TestFindOutdatedPods(t *testing.T) {
 
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
-			instance.Spec.Image = "test-image"
+			instance.Spec.KubernetesMonitoringSpec.Image = "test-image"
 			pod := &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instance.Name,
@@ -140,7 +140,7 @@ func TestFindOutdatedPods(t *testing.T) {
 
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
-			instance.Spec.Image = ""
+			instance.Spec.KubernetesMonitoringSpec.Image = ""
 			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
 
 			assert.Nil(t, pods)
@@ -198,8 +198,8 @@ func TestUpdatePods(t *testing.T) {
 
 		// Check if r is not nil so go linter does not complain
 		if r != nil {
-			instance.Spec.DisableActivegateUpdate = true
-			instance.Spec.Image = "test-image"
+			instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate = true
+			instance.Spec.KubernetesMonitoringSpec.Image = "test-image"
 
 			dummy := corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
@@ -237,7 +237,7 @@ func TestUpdatePods(t *testing.T) {
 	})
 }
 
-func setupReconciler(t *testing.T, updateService updateService) (*ReconcileActiveGate, *dynatracev1alpha1.ActiveGate, error) {
+func setupReconciler(t *testing.T, updateService updateService) (*ReconcileActiveGate, *dynatracev1alpha1.DynaKube, error) {
 	fakeClient := factory.CreateFakeClient()
 	r := &ReconcileActiveGate{
 		client:        fakeClient,
@@ -252,7 +252,7 @@ func setupReconciler(t *testing.T, updateService updateService) (*ReconcileActiv
 		},
 	}
 
-	instance := &dynatracev1alpha1.ActiveGate{}
+	instance := &dynatracev1alpha1.DynaKube{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	assert.NoError(t, err)
 
@@ -282,7 +282,7 @@ func setupReconciler(t *testing.T, updateService updateService) (*ReconcileActiv
 	return r, instance, err
 }
 
-func createFakeDTClient(client.Client, *dynatracev1alpha1.ActiveGate, *corev1.Secret) (dtclient.Client, error) {
+func createFakeDTClient(client.Client, *dynatracev1alpha1.DynaKube, *corev1.Secret) (dtclient.Client, error) {
 	dtMockClient := &dtclient.MockDynatraceClient{}
 	dtMockClient.On("GetTenantInfo").Return(&dtclient.TenantInfo{}, nil)
 	dtMockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{TenantUUID: "abc123456"}, nil)

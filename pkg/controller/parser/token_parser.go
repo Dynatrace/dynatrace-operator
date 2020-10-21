@@ -58,7 +58,7 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	return strings.TrimSpace(string(value)), nil
 }
 
-func GetTokensName(obj *dynatracev1alpha1.ActiveGate) string {
+func GetTokensName(obj *dynatracev1alpha1.DynaKube) string {
 	if tkns := obj.Spec.Tokens; tkns != "" {
 		return tkns
 	}

@@ -16,16 +16,16 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 	t.Run("BuildActiveGatePodSpecs", func(t *testing.T) {
 		serviceAccountName := MonitoringServiceAccount
 		image := "test-url.com/linux/activegates"
-		instance := &dynatracev1alpha1.ActiveGate{
+		instance := &dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: _const.DynatraceNamespace,
 			},
 		}
-		instance.Spec = dynatracev1alpha1.ActiveGateSpec{
-			BaseActiveGateSpec: dynatracev1alpha1.BaseActiveGateSpec{
+		instance.Spec = dynatracev1alpha1.DynaKubeSpec{
+			APIURL: "https://test-url.com/api",
+			KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
 				ServiceAccountName: serviceAccountName,
 				Image:              image,
-				APIURL:             "https://test-url.com/api",
 			},
 		}
 		specs, err := BuildActiveGatePodSpecs(instance, nil, "")
@@ -36,28 +36,26 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 		assert.Equal(t, serviceAccountName, specs.ServiceAccountName)
 		assert.Equal(t,
 			*resource.NewScaledQuantity(1, -1),
-			activeGateSpec.Resources.Requests[corev1.ResourceCPU])
+			activeGateSpec.KubernetesMonitoringSpec.Resources.Requests[corev1.ResourceCPU])
 		assert.NotNil(t, specs.Affinity)
 
 		container := specs.Containers[0]
 		assert.Equal(t, ActivegateName, container.Name)
 		assert.Equal(t, image, container.Image)
-		assert.Equal(t, container.Resources, activeGateSpec.Resources)
+		assert.Equal(t, container.Resources, activeGateSpec.KubernetesMonitoringSpec.Resources)
 		assert.NotEmpty(t, container.Env)
 		assert.LessOrEqual(t, 4, len(container.Env))
 		assert.NotEmpty(t, container.Args)
 		assert.LessOrEqual(t, 4, len(container.Args))
 	})
 	t.Run("BuildActiveGatePodSpecs with tenant info", func(t *testing.T) {
-		instance := &dynatracev1alpha1.ActiveGate{
+		instance := &dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: _const.DynatraceNamespace,
 			},
 		}
-		instance.Spec = dynatracev1alpha1.ActiveGateSpec{
-			BaseActiveGateSpec: dynatracev1alpha1.BaseActiveGateSpec{
-				APIURL: "https://test-env.com",
-			},
+		instance.Spec = dynatracev1alpha1.DynaKubeSpec{
+			APIURL: "https://test-env.com",
 		}
 		specs, err := BuildActiveGatePodSpecs(instance, &dtclient.TenantInfo{
 			ID:                    "tenant-id",
@@ -123,7 +121,7 @@ func TestBuildLabels(t *testing.T) {
 }
 
 func TestBuildEnvVars(t *testing.T) {
-	instance := dynatracev1alpha1.ActiveGate{
+	instance := dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "dynatrace",
 		},

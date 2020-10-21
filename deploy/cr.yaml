@@ -1,44 +1,95 @@
 apiVersion: dynatrace.com/v1alpha1
-kind: ActiveGate
+kind: DynaKube
 metadata:
-  name: activegate
+  name: dynakube
 spec:
   # dynatrace api url including `/api` path at the end
   # either set ENVIRONMENTID to the proper tenant id or change the apiUrl as a whole, e.q. for Managed
+  #
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
   # name of secret holding `apiToken` and `paasToken`
   # if unset, name of custom resource is used
+  #
   # tokens: ""
-  # node selector to control the selection of nodes (optional)
-  #  nodeSelector: {}
-  # https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/ (optional)
-  tolerations:
-    - effect: NoSchedule
-      key: node-role.kubernetes.io/master
-      operator: Exists
 
-  # ActiveGate installer image (optional)
-  # certified image from Red Hat Container Catalog for use on OpenShift: registry.connect.redhat.com/dynatrace/activegate
-  # for kubernetes it defaults to docker.io/dynatrace/activegate
-  #  image:
-  dt_capabilities:
-    - kubernetes_monitoring
-  # resource settings for ActiveGate pods (optional)
-  #resources:
-  #  requests:
-  #    cpu: 100m
-  #    memory: 512Mi
-  #  limits:
-  #    cpu: 300m
-  #    memory: 1.5Gi
-  # priority class to assign to ActiveGate pods (optional)
-  # https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
-  #priorityClassName: PRIORITYCLASS
-  # DNS Policy for ActiveGate pods (optional.) Empty for default (ClusterFirst), more at
-  # https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
-  #dnsPolicy: ""
-  # Labels are customer defined labels for ActiveGate pods to structure workloads as desired
-  #labels:
-  #  custom: label
-  # Name of the service account for the ActiveGate (optional)
-  #serviceAccountName: "dynatrace-operator"
+  # Optional: Disable certificate validation checks for installer download and API communication
+  #
+  # skipCertCheck: false
+
+  # Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
+  #
+  # proxy:
+  #  value: https://my-proxy-url.com
+  #  valueFrom: name-of-my-proxy-secret
+
+  # Optional: Adds custom RootCAs from a configmap
+  # trustedCAs: name-of-my-ca-configmap
+
+  # Optional: Sets Network Zone for OneAgent and ActiveGate pods
+  #
+  # networkZone: name-of-my-network-zone
+
+  # Enables and configures an ActiveGate instance that allows monitoring
+  # of Kubernetes environments
+  #
+  kubernetesMonitoring:
+  #   Enable Kubernetes monitoring functionality
+  #
+    enabled: true
+
+  #   Optional: to use a custom ActiveGate Docker image.
+  #
+  #   image: ""
+
+  #   Optional: disables automatic restarts of activegate pods in case a new version is available. False
+  #   by default.
+  #
+  #   disableActivegateUpdate: false
+
+  #   Amount of replicas of activegate pods
+  #
+  #   replicas: 1
+
+  #   Optional: name of the ServiceAccount to assign to the ActiveGate Pods. Defaults to
+  #   "dynatrace-activegate"
+  #
+  #  serviceAccountName: "dynatrace-activegate"
+
+  #   Optional: tolerations to include with the ActiveGate StatefulSet.
+  #   See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  #
+  #   tolerations:
+  #   - effect: NoSchedule
+  #     key: node-role.kubernetes.io/master
+  #     operator: Exists
+
+  #   Optional: node selector to control on which nodes the OneAgent will be deployed.
+  #
+  #   nodeSelector: {}
+
+  #   Optional: DNS Policy for OneAgent pods. Defaults to ClusterFirst.
+  #   See more: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+  #
+  #   dnsPolicy: ""
+
+  #   Optional: priority class to assign to the OneAgent Pods. By default no class is set.
+  #   See more here: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+  #
+  #   priorityClassName: PRIORITYCLASS
+
+  #   Optional: resource settings for OneAgent container. Consumption of the OneAgent heavily depends
+  #   on the workload to monitor; please adjust values accordingly.
+  #
+  #   resources:
+  #     requests:
+  #       cpu: 100m
+  #       memory: 512Mi
+  #     limits:
+  #       cpu: 300m
+  #       memory: 1.5Gi
+
+  #   Optional: labels are customer defined labels for OneAgent Pods to structure workloads as desired.
+  #
+  #   labels:
+  #     custom: label

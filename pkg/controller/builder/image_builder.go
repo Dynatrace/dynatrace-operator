@@ -13,7 +13,7 @@ import (
 )
 
 // GeneratePullSecretData generates the secret data for the PullSecret
-func GeneratePullSecretData(instance *dynatracev1alpha1.ActiveGate, dtc dtclient.Client, tkns *corev1.Secret) (map[string][]byte, error) {
+func GeneratePullSecretData(instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client, tkns *corev1.Secret) (map[string][]byte, error) {
 	type auths struct {
 		Username string
 		Password string
