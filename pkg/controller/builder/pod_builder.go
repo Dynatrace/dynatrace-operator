@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (corev1.PodSpec, error) {
@@ -45,6 +46,8 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 			ImagePullPolicy: corev1.PullAlways,
 			Env:             buildEnvVars(instance, tenantInfo, kubeSystemUID),
 			Args:            buildArgs(),
+			ReadinessProbe:  buildReadinessProbe(),
+			LivenessProbe:   buildLivenessProbe(),
 		}},
 		DNSPolicy:          activeGateSpec.DNSPolicy,
 		NodeSelector:       activeGateSpec.NodeSelector,
@@ -60,6 +63,36 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 	}
 
 	return p, nil
+}
+
+func buildLivenessProbe() *corev1.Probe {
+	return &corev1.Probe{
+		Handler: corev1.Handler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   "/rest/state",
+				Port:   intstr.IntOrString{IntVal: 9999},
+				Scheme: "HTTPS",
+			},
+		},
+		InitialDelaySeconds: 30,
+		PeriodSeconds:       30,
+		FailureThreshold:    2,
+	}
+}
+
+func buildReadinessProbe() *corev1.Probe {
+	return &corev1.Probe{
+		Handler: corev1.Handler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path:   "/rest/health",
+				Port:   intstr.IntOrString{IntVal: 9999},
+				Scheme: "HTTPS",
+			},
+		},
+		InitialDelaySeconds: 30,
+		PeriodSeconds:       15,
+		FailureThreshold:    3,
+	}
 }
 
 func buildArgs() []string {
