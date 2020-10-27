@@ -121,7 +121,7 @@ func testCreateWithActivationGroup(t *testing.T) {
 		instance.Spec.KubernetesMonitoringSpec.Group = "my-group"
 	})
 	container := podSpec.Containers[0]
-	assert.Contains(t, container.Args, `--group "my-group"`)
+	assert.Contains(t, container.Args, `--group="my-group"`)
 }
 
 func testCreateCustomProperties(t *testing.T) {
@@ -156,7 +156,7 @@ func testCreateWithNetworkZone(t *testing.T) {
 		instance.Spec.NetworkZone = "us-east-1"
 	})
 	container := podSpec.Containers[0]
-	assert.Contains(t, container.Args, `--networkzone "us-east-1"`)
+	assert.Contains(t, container.Args, `--networkzone="us-east-1"`)
 }
 
 func updateInstance(t *testing.T, r *ReconcileActiveGate, instance *v1alpha1.DynaKube) {

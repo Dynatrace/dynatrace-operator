@@ -49,7 +49,7 @@ spec:
 
   #   Amount of replicas of activegate pods
   #
-  #   replicas: 1
+  #  replicas: 1
 
   #   Optional: name of the ServiceAccount to assign to the ActiveGate Pods. Defaults to
   #   "dynatrace-kubernetes-monitoring"
@@ -59,16 +59,16 @@ spec:
   #   Optional: tolerations to include with the ActiveGate StatefulSet.
   #   See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
   #
-  #   tolerations:
-  #   - effect: NoSchedule
-  #     key: node-role.kubernetes.io/master
-  #     operator: Exists
+  #  tolerations:
+  #  - effect: NoSchedule
+  #    key: node-role.kubernetes.io/master
+  #    operator: Exists
 
   #   Optional: node selector to control on which nodes the OneAgent will be deployed.
   #
   #   nodeSelector: {}
 
-  #   Optional: DNS Policy for OneAgent pods. Defaults to ClusterFirst.
+  #   Optional: DNS Policy for ActiveGate pods. Defaults to ClusterFirst.
   #   See more: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
   #
   #   dnsPolicy: ""
@@ -81,25 +81,24 @@ spec:
   #   Optional: resource settings for OneAgent container. Consumption of the OneAgent heavily depends
   #   on the workload to monitor; please adjust values accordingly.
   #
-  #   resources:
-  #     requests:
-  #       cpu: 100m
-  #       memory: 512Mi
-  #     limits:
-  #       cpu: 300m
-  #       memory: 1.5Gi
+  #  resources:
+  #    requests:
+  #      cpu: 100m
+  #      memory: 512Mi
+  #    limits:
+  #      cpu: 300m
+  #      memory: 1.5Gi
 
   #   Optional: labels are customer defined labels for OneAgent Pods to structure workloads as desired.
   #
-  #   labels:
-  #     custom: label
+  #  labels:
+  #    custom: label
 
   #   Optional: arguments to add to the ActiveGate instances.
   #   Available options: https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
   #   Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
   #
-  #   args:
-  #     - "LOG=<folder>"
+  #  args: []
 
   #   Optional: additional environment variables to add to the ActiveGate Pods.
   #
@@ -107,12 +106,12 @@ spec:
 
   #   Optional: Set activation group for ActiveGate
   #
-  #   group: ""
+  #  group: "mygroup"
 
   #   Optional: Add a custom properties file by either providing it as a value or referencing it from a config map
   #
-  #   customProperties:
-  #     value: |
+  #  customProperties:
+  #    value: |
   #       [connectivity]
   #       networkZone=
   #     valueFrom: myCustomPropertiesConfigMap

@@ -36,7 +36,7 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 
 	if instance.Spec.NetworkZone != "" {
 		additionalArgs = append(additionalArgs,
-			fmt.Sprintf(`--networkzone "%s"`, instance.Spec.NetworkZone))
+			fmt.Sprintf(`--networkzone="%s"`, instance.Spec.NetworkZone))
 	}
 
 	additionalArgs, envVars = appendProxySettings(additionalArgs, envVars, instance.Spec.Proxy)
@@ -81,11 +81,11 @@ func prepareCustomPropertiesVolumes(volumeMounts []corev1.VolumeMount, volumes [
 	}
 
 	volumeMounts = append(volumeMounts, corev1.VolumeMount{
-		Name:      "customProperties",
+		Name:      "custom-properties",
 		MountPath: "/mnt/dynatrace/gateway/config"})
 
 	volumes = append(volumes, corev1.Volume{
-		Name: "customProperties",
+		Name: "custom-properties",
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
@@ -109,7 +109,7 @@ func appendActivationGroup(args []string, group string) []string {
 		return args
 	}
 	return append(args,
-		fmt.Sprintf(`--group "%s"`, group))
+		fmt.Sprintf(`--group="%s"`, group))
 }
 
 func prepareCertificateVolumes(trustedCAsConfig string) ([]corev1.VolumeMount, []corev1.Volume) {
