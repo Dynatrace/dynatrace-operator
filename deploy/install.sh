@@ -41,6 +41,10 @@ for arg in "$@"; do
     ENABLE_VOLUME_STORAGE="true"
     shift
     ;;
+  --openshift)
+    CLI="oc"
+    shift
+    ;;
   esac
 done
 
@@ -63,7 +67,11 @@ set -u
 
 applyOneAgentOperator() {
   if ! "${CLI}" get ns dynatrace &>/dev/null; then
-    "${CLI}" create namespace dynatrace
+    if [[ "${CLI}" == "kubectl" ]]; then
+      "${CLI}" create namespace dynatrace
+    else
+      "${CLI}" adm new-project --node-selector="" dynatrace
+    fi
   fi
 
   "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/kubernetes.yaml
@@ -125,7 +133,7 @@ addK8sConfiguration() {
     -H "Authorization: Api-Token ${API_TOKEN}" \
     -H "Content-Type: application/json; charset=utf-8")
 
-  if echo "$response" | grep "${CONNECTION_NAME}" &>/dev/null; then
+  if echo "$response" | grep "${K8S_ENDPOINT}" &>/dev/null; then
     echo "Kubernetes monitoring already set up!"
     return
   fi
@@ -141,7 +149,6 @@ addK8sConfiguration() {
     echo "Error: failed to get bearer token!"
     exit 1
   fi
-
 
   json=$(
     cat <<EOF
