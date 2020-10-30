@@ -1,6 +1,12 @@
 #!/bin/bash
 
-set -eu
+set -e
+
+CLI="kubectl"
+ENABLE_K8S_MONITORING="false"
+SET_APP_LOG_CONTENT_ACCESS="false"
+SKIP_CERT_CHECK="false"
+ENABLE_VOLUME_STORAGE="false"
 
 for arg in "$@"; do
   case $arg in
@@ -20,28 +26,19 @@ for arg in "$@"; do
     shift
     ;;
   --enable-k8s-monitoring)
-    ENABLE_K8S_MONITORING="$2"
-    shift
+    ENABLE_K8S_MONITORING="true"
     shift
     ;;
   --set-app-log-content-access)
-    SET_APP_LOG_CONTENT_ACCESS="$2"
-    shift
+    SET_APP_LOG_CONTENT_ACCESS="true"
     shift
     ;;
   --skip-cert-check)
-    SKIP_CERT_CHECK="$2"
-    shift
+    SKIP_CERT_CHECK="true"
     shift
     ;;
   --enable-volume-storage)
-    ENABLE_VOLUME_STORAGE="$2"
-    shift
-    shift
-    ;;
-  --connection-name)
-    CONNECTION_NAME="$2"
-    shift
+    ENABLE_VOLUME_STORAGE="true"
     shift
     ;;
   esac
@@ -62,43 +59,19 @@ if [[ -z "$PAAS_TOKEN" ]]; then
   exit 1
 fi
 
-if [[ "$ENABLE_K8S_MONITORING" ]]; then
-  if [[ -z "$CONNECTION_NAME" ]]; then
-    echo "Error: no name set for connection!"
-    exit 1
-  fi
-fi
-
-if [[ -z "${SET_APP_LOG_CONTENT_ACCESS:-}" ]]; then
-  SET_APP_LOG_CONTENT_ACCESS=false
-fi
-
-if [[ -z "${SKIP_CERT_CHECK:-}" ]]; then
-  SKIP_CERT_CHECK=false
-fi
+set -u
 
 applyOneAgentOperator() {
-  set +e
-  if [[ ! $(kubectl get ns dynatrace &>/dev/null) ]]; then
-    kubectl create namespace dynatrace
+  if ! "${CLI}" get ns dynatrace &>/dev/null; then
+    "${CLI}" create namespace dynatrace
   fi
 
-  if [[ ! $(kubectl get deployment dynatrace-oneagent-operator -n dynatrace &>/dev/null) ]]; then
-    kubectl apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/kubernetes.yaml
-  fi
-
-  if [[ ! $(kubectl get secret oneagent -n dynatrace &>/dev/null) ]]; then
-    kubectl -n dynatrace create secret generic oneagent --from-literal="apiToken=${API_TOKEN}" --from-literal="paasToken=${PAAS_TOKEN}"
-  fi
-  set -e
+  "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/kubernetes.yaml
+  "${CLI}" -n dynatrace create secret generic oneagent --from-literal="apiToken=${API_TOKEN}" --from-literal="paasToken=${PAAS_TOKEN}" --dry-run -o yaml | "${CLI}" apply -f -
 }
 
 applyOneAgentCR() {
-  # Apply OneAgent CR
-  set +e
-  if [[ ! $(kubectl get oneagent oneagent -n dynatrace &>/dev/null) ]]; then
-    if [[ -z "${ENABLE_VOLUME_STORAGE:-}" ]]; then
-      read -r -d '' oneagent <<EOF
+  cat <<EOF | "${CLI}" apply -f -
 apiVersion: dynatrace.com/v1alpha1
 kind: OneAgent
 metadata:
@@ -115,45 +88,16 @@ spec:
   - --set-app-log-content-access=${SET_APP_LOG_CONTENT_ACCESS}
   env:
   - name: ONEAGENT_ENABLE_VOLUME_STORAGE
-    value: "true"
+    value: "${ENABLE_VOLUME_STORAGE}"
 EOF
-    else
-      read -r -d '' oneagent <<EOF
-apiVersion: dynatrace.com/v1alpha1
-kind: OneAgent
-metadata:
-  name: oneagent
-  namespace: dynatrace
-spec:
-  apiUrl: ${API_URL}
-  tolerations:
-  - effect: NoSchedule
-    key: node-role.kubernetes.io/master
-    operator: Exists
-  skipCertCheck: ${SKIP_CERT_CHECK}
-  args:
-  - --set-app-log-content-access=${SET_APP_LOG_CONTENT_ACCESS}
-EOF
-    fi
-
-    echo "$oneagent" | kubectl apply -f -
-  fi
-  set -e
 }
 
 applyDynatraceOperator() {
-  set +e
-  if [[ ! $(kubectl get deployment dynatrace-operator -n dynatrace &>/dev/null) ]]; then
-    kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
-  fi
-  set -e
+  "${CLI}" apply -k https://github.com/Dynatrace/dynatrace-operator/deploy/manifest
 }
 
 applyDynaKubeCR() {
-  # Apply Dynakube CR
-  set +e
-  if [[ ! $(kubectl get dynakube dynakube -n dynatrace &>/dev/null) ]]; then
-    cat <<EOF | kubectl apply -f -
+  cat <<EOF | "${CLI}" apply -f -
 apiVersion: dynatrace.com/v1alpha1
 kind: DynaKube
 metadata:
@@ -165,29 +109,39 @@ spec:
     enabled: true
     replicas: 1
 EOF
-  fi
-  set -e
 }
 
 addK8sConfiguration() {
-  # Set up K8s integration
-  K8S_ENDPOINT="$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+  K8S_ENDPOINT="$("${CLI}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
   if [[ -z "$K8S_ENDPOINT" ]]; then
     echo "Error: failed to get kubernetes endpoint!"
     exit 1
   fi
 
-  K8S_SECRET_NAME="$(kubectl get sa dynatrace-kubernetes-monitoring -o jsonpath='{.secrets[0].name}' -n dynatrace)"
+  CONNECTION_NAME="$(echo "${K8S_ENDPOINT}" | awk -F[/:] '{print $4}')"
+
+  response=$(curl -sS -X GET "${API_URL}/config/v1/kubernetes/credentials" \
+    -H "accept: application/json; charset=utf-8" \
+    -H "Authorization: Api-Token ${API_TOKEN}" \
+    -H "Content-Type: application/json; charset=utf-8")
+
+  if echo "$response" | grep "${CONNECTION_NAME}" &>/dev/null; then
+    echo "Kubernetes monitoring already set up!"
+    return
+  fi
+
+  K8S_SECRET_NAME="$(for token in $("${CLI}" get sa dynatrace-activegate -o jsonpath='{.secrets[*].name}' -n dynatrace); do echo "$token"; done | grep token)"
   if [[ -z "$K8S_SECRET_NAME" ]]; then
     echo "Error: failed to get kubernetes-monitoring secret!"
     exit 1
   fi
 
-  K8S_BEARER="$(kubectl get secret "${K8S_SECRET_NAME}" -o jsonpath='{.data.token}' -n dynatrace | base64 --decode)"
+  K8S_BEARER="$("${CLI}" get secret "${K8S_SECRET_NAME}" -o jsonpath='{.data.token}' -n dynatrace | base64 --decode)"
   if [[ -z "$K8S_BEARER" ]]; then
     echo "Error: failed to get bearer token!"
     exit 1
   fi
+
 
   json=$(
     cat <<EOF
