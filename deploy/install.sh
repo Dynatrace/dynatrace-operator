@@ -133,7 +133,7 @@ addK8sConfiguration() {
     -H "Authorization: Api-Token ${API_TOKEN}" \
     -H "Content-Type: application/json; charset=utf-8")
 
-  if echo "$response" | grep "${K8S_ENDPOINT}" &>/dev/null; then
+  if echo "$response" | grep "${CONNECTION_NAME}" &>/dev/null; then
     echo "Kubernetes monitoring already set up!"
     return
   fi
