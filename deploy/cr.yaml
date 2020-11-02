@@ -106,7 +106,7 @@ spec:
 
   #   Optional: Set activation group for ActiveGate
   #
-  #  group: "mygroup"
+  #  group: ""
 
   #   Optional: Add a custom properties file by either providing it as a value or referencing it from a config map
   #
