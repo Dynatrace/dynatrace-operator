@@ -6,28 +6,27 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
-	"github.com/containers/image/v5/docker/reference"
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/go-digest"
 )
 
-type DockerVersionChecker struct {
+type DockerHashesChecker struct {
 	currentImage   string
 	currentImageId string
 	dockerConfig   *parser.DockerConfig
 }
 
-func NewDockerVersionChecker(currentImage, currentImageId string, dockerConfig *parser.DockerConfig) *DockerVersionChecker {
-	return &DockerVersionChecker{
+func NewDockerHashesChecker(currentImage, currentImageId string, dockerConfig *parser.DockerConfig) *DockerHashesChecker {
+	return &DockerHashesChecker{
 		currentImage:   currentImage,
 		currentImageId: currentImageId,
 		dockerConfig:   dockerConfig,
 	}
 }
 
-func (dockerVersionChecker *DockerVersionChecker) IsLatest() (bool, error) {
+func (dockerVersionChecker *DockerHashesChecker) IsLatest() (bool, error) {
 	transportImageName := fmt.Sprintf("%s%s",
 		"docker://",
 		strings.TrimPrefix(
@@ -58,8 +57,8 @@ func (dockerVersionChecker *DockerVersionChecker) IsLatest() (bool, error) {
 	return currentDigest == latestDigest, nil
 }
 
-func (dockerVersionChecker *DockerVersionChecker) getDigest(ref types.ImageReference) (digest.Digest, error) {
-	systemContext := dockerVersionChecker.makeSystemContext(ref.DockerReference())
+func (dockerVersionChecker *DockerHashesChecker) getDigest(ref types.ImageReference) (digest.Digest, error) {
+	systemContext := makeSystemContext(ref.DockerReference(), dockerVersionChecker.dockerConfig)
 	imageSource, err := ref.NewImageSource(context.TODO(), systemContext)
 	if err != nil {
 		return "", err
@@ -84,28 +83,4 @@ func closeImageSource(source types.ImageSource) {
 		// Swallow error
 		_ = source.Close()
 	}
-}
-
-func (dockerVersionChecker *DockerVersionChecker) makeSystemContext(dockerReference reference.Named) *types.SystemContext {
-	if dockerReference == nil || dockerVersionChecker.dockerConfig == nil {
-		return &types.SystemContext{}
-	}
-
-	registryName := strings.Split(dockerReference.Name(), "/")[0]
-	credentials, hasCredentials := dockerVersionChecker.dockerConfig.Auths[registryName]
-
-	if !hasCredentials {
-		registryURL := "https://" + registryName
-		credentials, hasCredentials = dockerVersionChecker.dockerConfig.Auths[registryURL]
-		if !hasCredentials {
-			return &types.SystemContext{}
-		}
-	}
-
-	return &types.SystemContext{
-		DockerAuthConfig: &types.DockerAuthConfig{
-			Username: credentials.Username,
-			Password: credentials.Password,
-		}}
-
 }

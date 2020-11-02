@@ -124,7 +124,7 @@ func (us *activeGateUpdateService) IsLatest(logger logr.Logger, image string, im
 		logger.Info(err.Error())
 	}
 
-	dockerVersionChecker := version.NewDockerVersionChecker(image, imageID, dockerConfig)
+	dockerVersionChecker := version.NewDockerHashesChecker(image, imageID, dockerConfig)
 	return dockerVersionChecker.IsLatest()
 }
 
