@@ -11,7 +11,7 @@ type ReleaseValidator interface {
 	IsLatest() (bool, error)
 }
 
-func makeSystemContext(dockerReference reference.Named, dockerConfig *parser.DockerConfig) *types.SystemContext {
+func MakeSystemContext(dockerReference reference.Named, dockerConfig *parser.DockerConfig) *types.SystemContext {
 	if dockerReference == nil || dockerConfig == nil {
 		return &types.SystemContext{}
 	}

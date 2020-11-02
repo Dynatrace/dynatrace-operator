@@ -3,16 +3,14 @@ package activegate
 import (
 	"context"
 	"fmt"
-	"time"
-
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dao"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/version"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -29,7 +27,7 @@ type updateService interface {
 		r *ReconcileActiveGate,
 		logger logr.Logger,
 		instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error)
-	IsLatest(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error)
+	IsLatest(validator version.ReleaseValidator) (bool, error)
 	UpdatePods(
 		r *ReconcileActiveGate,
 		instance *dynatracev1alpha1.DynaKube) (*reconcile.Result, error)
@@ -46,8 +44,8 @@ func (us *activeGateUpdateService) UpdatePods(
 	instance *dynatracev1alpha1.DynaKube) (*reconcile.Result, error) {
 	if instance == nil {
 		return nil, fmt.Errorf("instance is nil")
-	} else if !instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate &&
-		instance.Status.UpdatedTimestamp.Add(UpdateInterval).Before(time.Now()) {
+	} else if !instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate { // &&
+		//instance.Status.UpdatedTimestamp.Add(UpdateInterval).Before(time.Now()) {
 		log.Info("checking for outdated pods")
 		// Check if pods have latest activegate version
 		outdatedPods, err := r.updateService.FindOutdatedPods(r, log, instance)
@@ -93,13 +91,19 @@ func (us *activeGateUpdateService) FindOutdatedPods(
 			}
 			logger.Info("pods container status", "pod", pod.Name, "container", status.Name, "image id", status.ImageID)
 
-			imagePullSecret := &corev1.Secret{}
-			err := r.client.Get(context.TODO(), client.ObjectKey{Namespace: pod.Namespace, Name: ImagePullSecret}, imagePullSecret)
+			imagePullSecret, err := dao.GetImagePullSecret(r.client, &pod)
 			if err != nil {
 				logger.Error(err, err.Error())
 			}
 
-			isLatest, err := r.updateService.IsLatest(logger, instance.Spec.KubernetesMonitoringSpec.Image, status.ImageID, imagePullSecret)
+			dockerConfig, err := parser.NewDockerConfig(imagePullSecret)
+			if err != nil {
+				logger.Info(err.Error())
+			}
+
+			dockerHashesChecker := version.NewDockerLabelsChecker(instance.Spec.KubernetesMonitoringSpec.Image, pod.Labels, dockerConfig)
+
+			isLatest, err := r.updateService.IsLatest(dockerHashesChecker)
 			if err != nil {
 				logger.Error(err, err.Error())
 				//Error during image check, do nothing an continue with next status
@@ -118,16 +122,6 @@ func (us *activeGateUpdateService) FindOutdatedPods(
 	return outdatedPods, nil
 }
 
-func (us *activeGateUpdateService) IsLatest(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error) {
-	dockerConfig, err := parser.NewDockerConfig(imagePullSecret)
-	if err != nil {
-		logger.Info(err.Error())
-	}
-
-	dockerVersionChecker := version.NewDockerHashesChecker(image, imageID, dockerConfig)
-	return dockerVersionChecker.IsLatest()
+func (us *activeGateUpdateService) IsLatest(validator version.ReleaseValidator) (bool, error) {
+	return validator.IsLatest()
 }
-
-const (
-	ImagePullSecret = "dynatrace-activegate-registry"
-)

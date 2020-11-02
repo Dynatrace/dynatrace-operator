@@ -21,18 +21,18 @@ func TestMakeSystemContext(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, reference)
 
-	noAuth := makeSystemContext(reference.DockerReference(), versionChecker.dockerConfig)
+	noAuth := MakeSystemContext(reference.DockerReference(), versionChecker.dockerConfig)
 	assert.Equal(t, types.SystemContext{}, *noAuth)
 
 	auths := make(map[string]parser.DockerConfigAuth)
 	auths["localhost.com"] = parser.DockerConfigAuth{Username: "username", Password: "password"}
 	versionChecker.dockerConfig = &parser.DockerConfig{Auths: auths}
-	missingAuth := makeSystemContext(reference.DockerReference(), versionChecker.dockerConfig)
+	missingAuth := MakeSystemContext(reference.DockerReference(), versionChecker.dockerConfig)
 	assert.Equal(t, types.SystemContext{}, *missingAuth)
 
 	auths["localhost"] = parser.DockerConfigAuth{Username: "username", Password: "password"}
 	versionChecker.dockerConfig = &parser.DockerConfig{Auths: auths}
-	withAuth := makeSystemContext(reference.DockerReference(), versionChecker.dockerConfig)
+	withAuth := MakeSystemContext(reference.DockerReference(), versionChecker.dockerConfig)
 	assert.Equal(t, withAuth.DockerAuthConfig.Username, "username")
 	assert.Equal(t, withAuth.DockerAuthConfig.Password, "password")
 }

@@ -150,6 +150,22 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return *reconcileResult, nil
 	}
 
+	pods, err := r.findPods(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	err = r.updateVersionLabel(pods)
+	if err != nil {
+		if _, isStatusError := err.(*errors.StatusError); isStatusError {
+			// Since this happens early during deployment, pods might have been modified
+			// In this case, retry silently
+			return builder.ReconcileImmediately(), nil
+		}
+		// Otherwise, retry loudly
+		return reconcile.Result{}, err
+	}
+
 	reconcileResult, err = r.updateService.UpdatePods(r, instance)
 	if err != nil {
 		log.Error(err, "could not update statefulset")

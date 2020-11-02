@@ -3,6 +3,7 @@ package activegate
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/version"
 	"os"
 	"testing"
 
@@ -32,18 +33,16 @@ func init() {
 	_ = os.Setenv(k8sutil.WatchNamespaceEnvVar, _const.DynatraceNamespace)
 }
 
-type mockIsLatestUpdateService struct{}
+type mockIsLatestUpdateService struct {
+}
 
 func (updateService *mockIsLatestUpdateService) FindOutdatedPods(r *ReconcileActiveGate,
 	logger logr.Logger,
 	instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
 	return (&activeGateUpdateService{}).FindOutdatedPods(r, logger, instance)
 }
-func (updateService *mockIsLatestUpdateService) IsLatest(_ logr.Logger,
-	_ string,
-	imageID string,
-	_ *corev1.Secret) (bool, error) {
-	return imageID == "latest", nil
+func (updateService *mockIsLatestUpdateService) IsLatest(version.ReleaseValidator) (bool, error) {
+	return false, nil
 }
 func (updateService *mockIsLatestUpdateService) UpdatePods(r *ReconcileActiveGate,
 	instance *dynatracev1alpha1.DynaKube) (*reconcile.Result, error) {
@@ -54,28 +53,8 @@ type failingIsLatestUpdateService struct {
 	mockIsLatestUpdateService
 }
 
-func (updateService *failingIsLatestUpdateService) IsLatest(logr.Logger, string, string, *corev1.Secret) (bool, error) {
+func (updateService *failingIsLatestUpdateService) IsLatest(version.ReleaseValidator) (bool, error) {
 	return false, fmt.Errorf("mocked error")
-}
-
-func TestIsLatest(t *testing.T) {
-	t.Run("IsLatest", func(t *testing.T) {
-		r, _, err := setupReconciler(t, &activeGateUpdateService{})
-		assert.NotNil(t, r)
-		assert.NoError(t, err)
-
-		// Check if r is not nil so go linter does not complain
-		if r != nil {
-			result, err := r.updateService.IsLatest(log.WithName("TestUpdatePods"),
-				"somehost.com/dynatrace:latest", "",
-				&corev1.Secret{})
-
-			assert.False(t, result)
-			assert.Error(t, err)
-		} else {
-			assert.Fail(t, "r is nil")
-		}
-	})
 }
 
 func TestFindOutdatedPods(t *testing.T) {

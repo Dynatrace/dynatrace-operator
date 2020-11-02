@@ -14,12 +14,12 @@ type versionInfo struct {
 
 var versionRegex = regexp.MustCompile(`^([\d]+)\.([\d]+)\.([\d]+)`)
 
-// compareVersionInfo returns:
+// CompareVersionInfo returns:
 // 	0: if a == b
 //  n > 0: if a > b
 //  n < 0: if a < b
 //  0 with error: if a == nil || b == nil
-func compareVersionInfo(a versionInfo, b versionInfo) int {
+func CompareVersionInfo(a versionInfo, b versionInfo) int {
 	// Check major version
 	result := a.major - b.major
 	if result != 0 {
@@ -37,7 +37,7 @@ func compareVersionInfo(a versionInfo, b versionInfo) int {
 	return result
 }
 
-func extractVersion(versionString string) (versionInfo, error) {
+func ExtractVersion(versionString string) (versionInfo, error) {
 	version := versionRegex.FindStringSubmatch(versionString)
 
 	if len(version) < 4 {

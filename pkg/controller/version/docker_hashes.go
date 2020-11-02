@@ -58,7 +58,7 @@ func (dockerVersionChecker *DockerHashesChecker) IsLatest() (bool, error) {
 }
 
 func (dockerVersionChecker *DockerHashesChecker) getDigest(ref types.ImageReference) (digest.Digest, error) {
-	systemContext := makeSystemContext(ref.DockerReference(), dockerVersionChecker.dockerConfig)
+	systemContext := MakeSystemContext(ref.DockerReference(), dockerVersionChecker.dockerConfig)
 	imageSource, err := ref.NewImageSource(context.TODO(), systemContext)
 	if err != nil {
 		return "", err

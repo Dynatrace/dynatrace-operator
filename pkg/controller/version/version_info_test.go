@@ -7,36 +7,36 @@ import (
 )
 
 func TestExtractVersion(t *testing.T) {
-	t.Run("extractVersion", func(t *testing.T) {
-		version, err := extractVersion("1.203.0.20200908-220956")
+	t.Run("ExtractVersion", func(t *testing.T) {
+		version, err := ExtractVersion("1.203.0.20200908-220956")
 		assert.NoError(t, err)
 		assert.NotNil(t, version)
 
-		version, err = extractVersion("2.003.0.20200908-220956")
+		version, err = ExtractVersion("2.003.0.20200908-220956")
 		assert.NoError(t, err)
 		assert.NotNil(t, version)
 
-		version, err = extractVersion("1.003.5.20200908-220956")
+		version, err = ExtractVersion("1.003.5.20200908-220956")
 		assert.NoError(t, err)
 		assert.NotNil(t, version)
 	})
-	t.Run("extractVersion fails on malformed version", func(t *testing.T) {
-		version, err := extractVersion("1.203")
+	t.Run("ExtractVersion fails on malformed version", func(t *testing.T) {
+		version, err := ExtractVersion("1.203")
 		assertIsDefaultVersionInfo(t, version, err)
 
-		version, err = extractVersion("2.003.x.20200908-220956")
+		version, err = ExtractVersion("2.003.x.20200908-220956")
 		assertIsDefaultVersionInfo(t, version, err)
 
-		version, err = extractVersion("")
+		version, err = ExtractVersion("")
 		assertIsDefaultVersionInfo(t, version, err)
 
-		version, err = extractVersion("abc")
+		version, err = ExtractVersion("abc")
 		assertIsDefaultVersionInfo(t, version, err)
 
-		version, err = extractVersion("a.bcd.e")
+		version, err = ExtractVersion("a.bcd.e")
 		assertIsDefaultVersionInfo(t, version, err)
 
-		version, err = extractVersion("asdadasdsd.asd1.2.3")
+		version, err = ExtractVersion("asdadasdsd.asd1.2.3")
 		assertIsDefaultVersionInfo(t, version, err)
 	})
 }
@@ -52,7 +52,7 @@ func assertIsDefaultVersionInfo(t *testing.T, version versionInfo, err error) {
 }
 
 func TestCompareClusterVersion(t *testing.T) {
-	t.Run("compareVersionInfo a == b", func(t *testing.T) {
+	t.Run("CompareVersionInfo a == b", func(t *testing.T) {
 		a := versionInfo{
 			major:   1,
 			minor:   200,
@@ -63,10 +63,10 @@ func TestCompareClusterVersion(t *testing.T) {
 			minor:   200,
 			release: 0,
 		}
-		comparison := compareVersionInfo(a, b)
+		comparison := CompareVersionInfo(a, b)
 		assert.Equal(t, 0, comparison)
 	})
-	t.Run("compareVersionInfo a < b", func(t *testing.T) {
+	t.Run("CompareVersionInfo a < b", func(t *testing.T) {
 		a := versionInfo{
 			major:   1,
 			minor:   0,
@@ -77,7 +77,7 @@ func TestCompareClusterVersion(t *testing.T) {
 			minor:   200,
 			release: 0,
 		}
-		comparison := compareVersionInfo(a, b)
+		comparison := CompareVersionInfo(a, b)
 		assert.Less(t, comparison, 0)
 
 		a = versionInfo{
@@ -85,7 +85,7 @@ func TestCompareClusterVersion(t *testing.T) {
 			minor:   0,
 			release: 0,
 		}
-		comparison = compareVersionInfo(a, b)
+		comparison = CompareVersionInfo(a, b)
 		assert.Less(t, comparison, 0)
 
 		a = versionInfo{
@@ -93,7 +93,7 @@ func TestCompareClusterVersion(t *testing.T) {
 			minor:   2000,
 			release: 3000,
 		}
-		comparison = compareVersionInfo(a, b)
+		comparison = CompareVersionInfo(a, b)
 		assert.Less(t, comparison, 0)
 
 		a = versionInfo{
@@ -107,11 +107,11 @@ func TestCompareClusterVersion(t *testing.T) {
 			release: 1,
 		}
 
-		comparison = compareVersionInfo(a, b)
+		comparison = CompareVersionInfo(a, b)
 		assert.Less(t, comparison, 0)
 
 	})
-	t.Run("compareVersionInfo a > b", func(t *testing.T) {
+	t.Run("CompareVersionInfo a > b", func(t *testing.T) {
 		a := versionInfo{
 			major:   1,
 			minor:   200,
@@ -122,7 +122,7 @@ func TestCompareClusterVersion(t *testing.T) {
 			minor:   100,
 			release: 0,
 		}
-		comparison := compareVersionInfo(a, b)
+		comparison := CompareVersionInfo(a, b)
 		assert.Greater(t, comparison, 0)
 
 		a = versionInfo{
@@ -130,7 +130,7 @@ func TestCompareClusterVersion(t *testing.T) {
 			minor:   0,
 			release: 0,
 		}
-		comparison = compareVersionInfo(a, b)
+		comparison = CompareVersionInfo(a, b)
 		assert.Greater(t, comparison, 0)
 
 		a = versionInfo{
@@ -138,7 +138,7 @@ func TestCompareClusterVersion(t *testing.T) {
 			minor:   201,
 			release: 0,
 		}
-		comparison = compareVersionInfo(a, b)
+		comparison = CompareVersionInfo(a, b)
 		assert.Greater(t, comparison, 0)
 
 		a = versionInfo{
@@ -152,7 +152,7 @@ func TestCompareClusterVersion(t *testing.T) {
 			release: 20000,
 		}
 
-		comparison = compareVersionInfo(a, b)
+		comparison = CompareVersionInfo(a, b)
 		assert.Greater(t, comparison, 0)
 	})
 }

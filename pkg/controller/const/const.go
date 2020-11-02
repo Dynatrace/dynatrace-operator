@@ -11,4 +11,6 @@ const (
 	BearerTokenSecretName = "dynatrace-activegate-secret"
 
 	KubeSystemNamespace = "kube-system"
+
+	ImagePullSecret = "dynatrace-activegate-registry"
 )

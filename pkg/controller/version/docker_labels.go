@@ -8,7 +8,7 @@ import (
 	"github.com/containers/image/v5/transports/alltransports"
 )
 
-const versionKey = "version"
+const VersionKey = "version"
 
 type DockerLabelsChecker struct {
 	image        string
@@ -25,9 +25,9 @@ func NewDockerLabelsChecker(image string, labels map[string]string, dockerConfig
 }
 
 func (dockerLabelsChecker *DockerLabelsChecker) IsLatest() (bool, error) {
-	versionLabel, hasVersionLabel := dockerLabelsChecker.labels[versionKey]
+	versionLabel, hasVersionLabel := dockerLabelsChecker.labels[VersionKey]
 	if !hasVersionLabel {
-		return false, fmt.Errorf("key '%s' not found in given labels", versionKey)
+		return false, fmt.Errorf("key '%s' not found in given labels", VersionKey)
 	}
 
 	transportImageName := fmt.Sprintf("docker://%s", dockerLabelsChecker.image)
@@ -37,7 +37,7 @@ func (dockerLabelsChecker *DockerLabelsChecker) IsLatest() (bool, error) {
 		return false, err
 	}
 
-	systemContext := makeSystemContext(imageReference.DockerReference(), dockerLabelsChecker.dockerConfig)
+	systemContext := MakeSystemContext(imageReference.DockerReference(), dockerLabelsChecker.dockerConfig)
 	imageSource, err := imageReference.NewImageSource(context.TODO(), systemContext)
 	if err != nil {
 		return false, err
@@ -60,21 +60,21 @@ func (dockerLabelsChecker *DockerLabelsChecker) IsLatest() (bool, error) {
 		return false, fmt.Errorf("could not inspect image: '%s'", transportImageName)
 	}
 
-	remoteVersionLabel, hasRemoteVersionLabel := inspectedImg.Labels[versionKey]
+	remoteVersionLabel, hasRemoteVersionLabel := inspectedImg.Labels[VersionKey]
 	if !hasRemoteVersionLabel {
-		return false, fmt.Errorf("remote does not have key '%s' in labels", versionKey)
+		return false, fmt.Errorf("remote does not have key '%s' in labels", VersionKey)
 	}
 
-	localVersion, err := extractVersion(versionLabel)
+	localVersion, err := ExtractVersion(versionLabel)
 	if err != nil {
 		return false, err
 	}
 
-	remoteVersion, err := extractVersion(remoteVersionLabel)
+	remoteVersion, err := ExtractVersion(remoteVersionLabel)
 	if err != nil {
 		return false, err
 	}
 
 	// Return true if local version is equal or greater to the remote version
-	return compareVersionInfo(localVersion, remoteVersion) >= 0, nil
+	return CompareVersionInfo(localVersion, remoteVersion) >= 0, nil
 }
