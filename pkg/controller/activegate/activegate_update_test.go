@@ -16,6 +16,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -59,7 +60,8 @@ func (updateService *failingIsLatestUpdateService) IsLatest(version.ReleaseValid
 
 func TestFindOutdatedPods(t *testing.T) {
 	t.Run("FindOutdatedPods", func(t *testing.T) {
-		r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
+		mockedUpdateService := &mockUpdateService{}
+		r, instance, err := setupReconciler(t, mockedUpdateService)
 		assert.NotNil(t, r)
 		assert.NoError(t, err)
 
@@ -70,7 +72,11 @@ func TestFindOutdatedPods(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instance.Name,
 					Namespace: _const.DynatraceNamespace,
-					Labels:    builder.BuildLabelsForQuery(instance.Name),
+					Labels: builder.MergeLabels(
+						builder.BuildLabelsForQuery(instance.Name),
+						map[string]string{
+							"version": "outdated",
+						}),
 				},
 				Status: corev1.PodStatus{
 					ContainerStatuses: []corev1.ContainerStatus{
@@ -85,8 +91,12 @@ func TestFindOutdatedPods(t *testing.T) {
 			err = r.client.Create(context.TODO(), pod)
 			assert.NoError(t, err)
 
-			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
+			updateService := &activeGateUpdateService{}
 
+			mockedUpdateService.On("IsLatest", mock.Anything).
+				Return(false, nil)
+
+			pods, err := updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
 			assert.NotNil(t, pods)
 			assert.NotEmpty(t, pods)
 			assert.Equal(t, 1, len(pods))
@@ -171,7 +181,8 @@ func TestUpdatePods(t *testing.T) {
 		}
 	})
 	t.Run("UpdatePods auto update disabled", func(t *testing.T) {
-		r, instance, err := setupReconciler(t, &mockIsLatestUpdateService{})
+		mockedUpdateService := &mockUpdateService{}
+		r, instance, err := setupReconciler(t, mockedUpdateService)
 		assert.NotNil(t, r)
 		assert.NoError(t, err)
 
@@ -184,7 +195,11 @@ func TestUpdatePods(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instance.Name,
 					Namespace: _const.DynatraceNamespace,
-					Labels:    builder.BuildLabelsForQuery(instance.Name),
+					Labels: builder.MergeLabels(
+						builder.BuildLabelsForQuery(instance.Name),
+						map[string]string{
+							"version": "outdated",
+						}),
 				},
 				Status: corev1.PodStatus{
 					ContainerStatuses: []corev1.ContainerStatus{
@@ -198,13 +213,16 @@ func TestUpdatePods(t *testing.T) {
 			err = r.client.Create(context.TODO(), &dummy)
 			assert.NoError(t, err)
 
-			result, err := r.updateService.UpdatePods(r, instance)
+			updateService := &activeGateUpdateService{}
 
+			result, err := updateService.UpdatePods(r, instance)
 			assert.Nil(t, result)
 			assert.NoError(t, err)
 
-			pods, err := r.updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
+			mockedUpdateService.On("IsLatest", mock.Anything).
+				Return(false, nil)
 
+			pods, err := updateService.FindOutdatedPods(r, log.WithName("TestUpdatePods"), instance)
 			// Since DisableActivegateUpdate is true, UpdatePods should not have deleted outdated pods
 			assert.NotNil(t, pods)
 			assert.NotEmpty(t, pods)
