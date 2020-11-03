@@ -2,14 +2,14 @@ package activegate
 
 import (
 	"context"
-	"fmt"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dao"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/version"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (r *ReconcileActiveGate) updateVersionLabel(pods []corev1.Pod) error {
+func (r *ReconcileActiveGate) setVersionLabel(pods []corev1.Pod) error {
 	for i := range pods {
 		pod := &pods[i]
 		for _, status := range pod.Status.ContainerStatuses {
@@ -27,7 +27,7 @@ func (r *ReconcileActiveGate) updateVersionLabel(pods []corev1.Pod) error {
 			dockerConfig, err := parser.NewDockerConfig(imagePullSecret)
 			// If an error is returned, try getting the image anyway
 
-			labels, err2 := dao.GetImageLabels(status.Image, dockerConfig)
+			versionLabel, err2 := version.GetVersionLabel(status.Image, dockerConfig)
 			if err2 != nil && err != nil {
 				// If an error is returned when getting labels and an error occurred during parsing of the docker config
 				// assume the error from parsing the docker config is the reason
@@ -36,11 +36,7 @@ func (r *ReconcileActiveGate) updateVersionLabel(pods []corev1.Pod) error {
 				return err2
 			}
 
-			if _, hasImageVersionLabel := labels[version.VersionKey]; !hasImageVersionLabel {
-				return fmt.Errorf("image has no version label")
-			}
-
-			pod.Labels[version.VersionKey] = labels[version.VersionKey]
+			pod.Labels[version.VersionKey] = versionLabel
 		}
 		err := r.client.Update(context.TODO(), pod)
 		if err != nil {

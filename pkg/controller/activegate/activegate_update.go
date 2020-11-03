@@ -3,6 +3,8 @@ package activegate
 import (
 	"context"
 	"fmt"
+	"time"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dao"
@@ -44,8 +46,7 @@ func (us *activeGateUpdateService) UpdatePods(
 	instance *dynatracev1alpha1.DynaKube) (*reconcile.Result, error) {
 	if instance == nil {
 		return nil, fmt.Errorf("instance is nil")
-	} else if !instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate { // &&
-		//instance.Status.UpdatedTimestamp.Add(UpdateInterval).Before(time.Now()) {
+	} else if isUpdateCheckNeeded(instance) {
 		log.Info("checking for outdated pods")
 		// Check if pods have latest activegate version
 		outdatedPods, err := r.updateService.FindOutdatedPods(r, log, instance)
@@ -72,6 +73,11 @@ func (us *activeGateUpdateService) UpdatePods(
 	return nil, nil
 }
 
+func isUpdateCheckNeeded(instance *dynatracev1alpha1.DynaKube) bool {
+	return !instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate &&
+		instance.Status.UpdatedTimestamp.Add(UpdateInterval).Before(time.Now())
+}
+
 func (us *activeGateUpdateService) FindOutdatedPods(
 	r *ReconcileActiveGate,
 	logger logr.Logger,
@@ -84,42 +90,65 @@ func (us *activeGateUpdateService) FindOutdatedPods(
 
 	var outdatedPods []corev1.Pod
 	for _, pod := range pods {
-		for _, status := range pod.Status.ContainerStatuses {
-			if status.ImageID == "" || status.Image == "" {
-				// If image is not yet pulled or not given skip check
-				continue
-			}
-			logger.Info("pods container status", "pod", pod.Name, "container", status.Name, "image id", status.ImageID)
-
-			imagePullSecret, err := dao.GetImagePullSecret(r.client, &pod)
-			if err != nil {
-				logger.Error(err, err.Error())
-			}
-
-			dockerConfig, err := parser.NewDockerConfig(imagePullSecret)
-			if err != nil {
-				logger.Info(err.Error())
-			}
-
-			dockerHashesChecker := version.NewDockerLabelsChecker(instance.Spec.KubernetesMonitoringSpec.Image, pod.Labels, dockerConfig)
-
-			isLatest, err := r.updateService.IsLatest(dockerHashesChecker)
-			if err != nil {
-				logger.Error(err, err.Error())
-				//Error during image check, do nothing an continue with next status
-				continue
-			}
-
-			if !isLatest {
-				logger.Info("pod is outdated", "name", pod.Name)
-				outdatedPods = append(outdatedPods, pod)
-				// Pod is outdated, break loop
-				break
-			}
+		if isPodOutdated(logger, r, instance, &pod) {
+			outdatedPods = append(outdatedPods, pod)
 		}
 	}
 
 	return outdatedPods, nil
+}
+
+func isPodOutdated(logger logr.Logger, r *ReconcileActiveGate, instance *dynatracev1alpha1.DynaKube, pod *corev1.Pod) bool {
+	if _, hasVersionLabel := pod.Labels[version.VersionKey]; !hasVersionLabel {
+		logger.Info("pod does not have '%s' label, skipping update check", version.VersionKey, "pod", pod.Name)
+		return false
+	}
+
+	for _, status := range pod.Status.ContainerStatuses {
+		if isContainerStatusInvalid(logger, r, instance, pod, &status) {
+			logger.Info("pod is outdated, updating", "pod", pod.Name)
+			return true
+		}
+	}
+
+	return false
+}
+
+func isContainerStatusInvalid(logger logr.Logger, r *ReconcileActiveGate, instance *dynatracev1alpha1.DynaKube, pod *corev1.Pod, status *corev1.ContainerStatus) bool {
+	if status.ImageID == "" || status.Image == "" {
+		// If image is not yet pulled or not given skip check
+		return false
+	}
+	logger.Info("pods container status", "pod", pod.Name, "container", status.Name, "image id", status.ImageID)
+
+	imagePullSecret, err := dao.GetImagePullSecret(r.client, pod)
+	if err != nil {
+		logger.Error(err, err.Error())
+	}
+
+	dockerConfig, err := parser.NewDockerConfig(imagePullSecret)
+	if err != nil {
+		logger.Info(err.Error())
+	}
+
+	image := instance.Spec.KubernetesMonitoringSpec.Image
+	if image == "" {
+		image, err = builder.BuildActiveGateImage(instance.Spec.APIURL, instance.Spec.KubernetesMonitoringSpec.ActiveGateVersion)
+		if err != nil {
+			logger.Error(err, err.Error())
+			return false
+		}
+	}
+	dockerLabelsChecker := version.NewDockerLabelsChecker(image, pod.Labels, dockerConfig)
+
+	isLatest, err := r.updateService.IsLatest(dockerLabelsChecker)
+	if err != nil {
+		logger.Error(err, err.Error())
+		//Error during image check, log and continue with next status
+		return false
+	}
+
+	return !isLatest
 }
 
 func (us *activeGateUpdateService) IsLatest(validator version.ReleaseValidator) (bool, error) {

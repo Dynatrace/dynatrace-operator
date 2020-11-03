@@ -3,7 +3,6 @@ package activegate
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/version"
 	"os"
 	"testing"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
 	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/factory"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"

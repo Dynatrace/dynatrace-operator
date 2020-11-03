@@ -12,12 +12,14 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+// Deprecated: DockerLabelsChecker implements a preferred version check using image labels
 type DockerHashesChecker struct {
 	currentImage   string
 	currentImageId string
 	dockerConfig   *parser.DockerConfig
 }
 
+// Deprecated: DockerLabelsChecker implements a preferred version check using image labels
 func NewDockerHashesChecker(currentImage, currentImageId string, dockerConfig *parser.DockerConfig) *DockerHashesChecker {
 	return &DockerHashesChecker{
 		currentImage:   currentImage,

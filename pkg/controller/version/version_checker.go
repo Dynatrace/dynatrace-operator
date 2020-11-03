@@ -1,10 +1,11 @@
 package version
 
 import (
+	"strings"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/containers/image/v5/types"
-	"strings"
 )
 
 type ReleaseValidator interface {

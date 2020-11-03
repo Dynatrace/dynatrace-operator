@@ -142,12 +142,9 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	actualStatefulSet := &appsv1.StatefulSet{}
-	reconcileResult, err := r.manageStatefulSet(desiredStatefulSet, actualStatefulSet, reqLogger)
+	reconcileResult, err := r.manageStatefulSet(reqLogger, instance, desiredStatefulSet, actualStatefulSet)
 	if reconcileResult != nil {
-		if err != nil {
-			return *reconcileResult, err
-		}
-		return *reconcileResult, nil
+		return *reconcileResult, err
 	}
 
 	pods, err := r.findPods(instance)
@@ -155,15 +152,15 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	err = r.updateVersionLabel(pods)
+	err = r.setVersionLabel(pods)
 	if err != nil {
 		if _, isStatusError := err.(*errors.StatusError); isStatusError {
 			// Since this happens early during deployment, pods might have been modified
 			// In this case, retry silently
-			return builder.ReconcileImmediately(), nil
+			return builder.ReconcileAfter(5 * time.Second), nil
 		}
 		// Otherwise, retry loudly
-		return reconcile.Result{}, err
+		return builder.ReconcileAfterFiveMinutes(), err
 	}
 
 	reconcileResult, err = r.updateService.UpdatePods(r, instance)
