@@ -78,7 +78,7 @@ jobs:
       arch: amd64
       if: (branch = master) AND (tag IS blank)
       env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot" LABEL="quay.expires-after=10d"
-      #      env: IMAGE=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
+      #      env: IMAGES=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
       cache:
         directories:
           - $GOPATH/pkg/mod
@@ -89,18 +89,18 @@ jobs:
     - <<: *deploy_amd
       name: Deploy snapshot non-master branch AMD to Quay
       if: (branch != master) AND (tag IS blank)
-      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
-      #      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-internal" LABEL="quay.expires-after=10d"
+      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
+      #      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-internal" LABEL="quay.expires-after=10d"
 
       #    - <<: *deploy_amd
       #      name: Deploy release AMD to DockerHub
       #      if: tag =~ /^v.*/
-      #      env: IMAGE=$OAO_IMAGE_DOCKER_HUB
+      #      env: IMAGES=$OAO_IMAGE_DOCKER_HUB
       #
       #    - <<: *deploy_amd
       #      name: Deploy release AMD to RHCC
       #      if: tag =~ /^v.*/
-      #      env: IMAGE=$OAO_IMAGE_RHCC_SCAN
+      #      env: IMAGES=$OAO_IMAGE_RHCC_SCAN
       #
       #    - <<: *deploy_amd
       #      name: Deploy release AMD to GCP dev
@@ -120,8 +120,8 @@ jobs:
       name: Deploy snapshot master ARM to DockerHub
       arch: arm64
       if: (branch = master) AND (tag IS blank)
-      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot" LABEL="quay.expires-after=10d"
-      #      env: IMAGE=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
+      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot" LABEL="quay.expires-after=10d"
+      #      env: IMAGES=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
       cache:
         directories:
           - $GOPATH/pkg/mod
@@ -132,12 +132,12 @@ jobs:
     - <<: *deploy_arm
       name: Deploy snapshot non-master branch ARM to Quay
       if: (branch != master) AND (tag IS blank)
-      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
+      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
 
       #    - <<: *deploy_arm
       #      name: Deploy release ARM to DockerHub
       #      if: tag =~ /^v.*/
-      #      env: IMAGE=$OAO_IMAGE_DOCKER_HUB
+      #      env: IMAGES=$OAO_IMAGE_DOCKER_HUB
 
       ######################### Create Docker manifest #########################
 
@@ -147,8 +147,8 @@ jobs:
       #      language: generic
       #      name: Create manifest for snapshot master for DockerHub
       #      if: (branch = master) AND (tag IS blank)
-      #      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
-      ##      env: IMAGE=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
+      #      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
+      ##      env: IMAGES=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
       #      git:
       #        clone: false
       #      script:
@@ -161,8 +161,8 @@ jobs:
       #      stage: manifest
       #      name: Create manifest for release for DockerHub
       #      if: tag =~ /^v.*/
-      #      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
-      #      env: IMAGE=$OAO_IMAGE_DOCKER_HUB
+      #      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
+      #      env: IMAGES=$OAO_IMAGE_DOCKER_HUB
       ######################### Prepare CSV #########################
       #
       #    - stage: release
