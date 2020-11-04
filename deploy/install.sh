@@ -12,18 +12,15 @@ for arg in "$@"; do
   case $arg in
   --api-url)
     API_URL="$2"
-    shift
-    shift
+    shift 2
     ;;
   --api-token)
     API_TOKEN="$2"
-    shift
-    shift
+    shift 2
     ;;
   --paas-token)
     PAAS_TOKEN="$2"
-    shift
-    shift
+    shift 2
     ;;
   --enable-k8s-monitoring)
     ENABLE_K8S_MONITORING="true"
@@ -69,8 +66,10 @@ applyOneAgentOperator() {
   if ! "${CLI}" get ns dynatrace &>/dev/null; then
     if [[ "${CLI}" == "kubectl" ]]; then
       "${CLI}" create namespace dynatrace
+      "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/kubernetes.yaml
     else
       "${CLI}" adm new-project --node-selector="" dynatrace
+      "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/openshift.yaml
     fi
   fi
 
