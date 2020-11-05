@@ -137,7 +137,7 @@ addK8sConfiguration() {
     return
   fi
 
-  K8S_SECRET_NAME="$(for token in $("${CLI}" get sa dynatrace-activegate -o jsonpath='{.secrets[*].name}' -n dynatrace); do echo "$token"; done | grep token)"
+  K8S_SECRET_NAME="$(for token in $("${CLI}" get sa dynatrace-kubernetes-monitoring -o jsonpath='{.secrets[*].name}' -n dynatrace); do echo "$token"; done | grep token)"
   if [[ -z "$K8S_SECRET_NAME" ]]; then
     echo "Error: failed to get kubernetes-monitoring secret!"
     exit 1

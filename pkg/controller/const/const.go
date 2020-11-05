@@ -7,8 +7,8 @@ const (
 	DynatraceNamespace = "dynatrace"
 	ActivegateName     = "activegate"
 
-	ServiceAccountName    = "dynatrace-activegate"
-	BearerTokenSecretName = "dynatrace-activegate-secret"
+	ServiceAccountName    = "dynatrace-kubernetes-monitoring"
+	BearerTokenSecretName = "dynatrace-kubernetes-monitoring-secret"
 
 	KubeSystemNamespace = "kube-system"
 )

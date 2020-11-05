@@ -32,7 +32,7 @@ func TestAddToDashboard(t *testing.T) {
 	err = r.client.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "dynatrace",
-			Name:      "dynatrace-activegate-secret",
+			Name:      "dynatrace-kubernetes-monitoring-secret",
 		},
 		Data: map[string][]byte{
 			"token": tokenValue,
@@ -43,10 +43,10 @@ func TestAddToDashboard(t *testing.T) {
 	err = r.client.Create(context.TODO(), &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "dynatrace",
-			Name:      "dynatrace-activegate",
+			Name:      "dynatrace-kubernetes-monitoring",
 		},
 		Secrets: []corev1.ObjectReference{
-			{Name: "dynatrace-activegate-secret"},
+			{Name: "dynatrace-kubernetes-monitoring-secret"},
 		},
 	})
 	assert.NoError(t, err)
@@ -108,7 +108,7 @@ func TestAddToDashboard(t *testing.T) {
 
 		id, err := r.addToDashboard(dtc, instance)
 		assert.Empty(t, id)
-		assert.EqualError(t, err, "secrets \"dynatrace-activegate-secret\" not found")
+		assert.EqualError(t, err, "secrets \"dynatrace-kubernetes-monitoring-secret\" not found")
 	})
 	t.Run("AddToDashboard malformed service account secret", func(t *testing.T) {
 		serviceAccount.Secrets[0].Name = "wrong name"
@@ -147,7 +147,7 @@ func TestAddToDashboard(t *testing.T) {
 
 		id, err := r.addToDashboard(dtc, instance)
 		assert.Empty(t, id)
-		assert.EqualError(t, err, "serviceaccounts \"dynatrace-activegate\" not found")
+		assert.EqualError(t, err, "serviceaccounts \"dynatrace-kubernetes-monitoring\" not found")
 	})
 }
 

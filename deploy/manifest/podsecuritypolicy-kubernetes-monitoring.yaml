@@ -1,7 +1,7 @@
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
-  name: dynatrace-activegate
+  name: dynatrace-kubernetes-monitoring
   annotations:
     seccomp.security.alpha.kubernetes.io/allowedProfileNames: "docker/default"
     apparmor.security.beta.kubernetes.io/allowedProfileNames: "runtime/default"

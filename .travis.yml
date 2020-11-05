@@ -1,6 +1,6 @@
 language: go
 go:
-  1.14.x
+  1.15.x
 os: linux
 dist: xenial
 
@@ -53,7 +53,6 @@ jobs:
         - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.31.0
         - golangci-lint run --build-tags integration,containers_image_storage_stub
 
-
     - stage: preparation
       name: Set configs
       install: skip
@@ -70,34 +69,6 @@ jobs:
           paths:
             - $HOME/.docker
 
-    ######################### BUILD #########################
-
-    - &build
-      script: ./build/build.sh
-      cache:
-        directories:
-          - $HOME/.cache/go-build
-          - $HOME/gopath/pkg/mod
-      stage: build
-      name: Build for AMD
-      arch: amd64
-      workspaces:
-        create:
-          name: ws_amd
-          paths:
-            - LICENSE
-            - build
-
-    - <<: *build
-      stage: build
-      name: Build for ARM
-      arch: arm64
-      workspaces:
-        create:
-          name: ws_arm
-          paths:
-            - LICENSE
-            - build
     ######################### AMD #########################
 
     - &deploy_amd
@@ -105,30 +76,31 @@ jobs:
       stage: deploy
       name: Deploy snapshot master AMD to DockerHub
       arch: amd64
-      install: skip
       if: (branch = master) AND (tag IS blank)
-      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
-      #      env: IMAGE=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
+      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot"
+      #      env: IMAGES=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
+      cache:
+        directories:
+          - $GOPATH/pkg/mod
       workspaces:
         use:
-          - ws_amd
           - dockerconfig
 
     - <<: *deploy_amd
       name: Deploy snapshot non-master branch AMD to Quay
       if: (branch != master) AND (tag IS blank)
-      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
-      #      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-internal" LABEL="quay.expires-after=10d"
+      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
+      #      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-internal" LABEL="quay.expires-after=10d"
 
       #    - <<: *deploy_amd
       #      name: Deploy release AMD to DockerHub
       #      if: tag =~ /^v.*/
-      #      env: IMAGE=$OAO_IMAGE_DOCKER_HUB
+      #      env: IMAGES=$OAO_IMAGE_DOCKER_HUB
       #
       #    - <<: *deploy_amd
       #      name: Deploy release AMD to RHCC
       #      if: tag =~ /^v.*/
-      #      env: IMAGE=$OAO_IMAGE_RHCC_SCAN
+      #      env: IMAGES=$OAO_IMAGE_RHCC_SCAN
       #
       #    - <<: *deploy_amd
       #      name: Deploy release AMD to GCP dev
@@ -148,22 +120,24 @@ jobs:
       name: Deploy snapshot master ARM to DockerHub
       arch: arm64
       if: (branch = master) AND (tag IS blank)
-      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
-      #      env: IMAGE=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
+      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot"
+      #      env: IMAGES=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
+      cache:
+        directories:
+          - $GOPATH/pkg/mod
       workspaces:
         use:
-          - ws_arm
           - dockerconfig
 
     - <<: *deploy_arm
       name: Deploy snapshot non-master branch ARM to Quay
       if: (branch != master) AND (tag IS blank)
-      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
+      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
 
       #    - <<: *deploy_arm
       #      name: Deploy release ARM to DockerHub
       #      if: tag =~ /^v.*/
-      #      env: IMAGE=$OAO_IMAGE_DOCKER_HUB
+      #      env: IMAGES=$OAO_IMAGE_DOCKER_HUB
 
       ######################### Create Docker manifest #########################
 
@@ -173,8 +147,8 @@ jobs:
       #      language: generic
       #      name: Create manifest for snapshot master for DockerHub
       #      if: (branch = master) AND (tag IS blank)
-      #      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
-      ##      env: IMAGE=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
+      #      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
+      ##      env: IMAGES=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
       #      git:
       #        clone: false
       #      script:
@@ -187,8 +161,8 @@ jobs:
       #      stage: manifest
       #      name: Create manifest for release for DockerHub
       #      if: tag =~ /^v.*/
-      #      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
-      #      env: IMAGE=$OAO_IMAGE_DOCKER_HUB
+      #      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
+      #      env: IMAGES=$OAO_IMAGE_DOCKER_HUB
       ######################### Prepare CSV #########################
       #
       #    - stage: release
@@ -203,13 +177,14 @@ jobs:
       name: publish_release
       if: tag =~ /^v.*/
       install: skip
+      language: minimal
       before_deploy: ./build/release.sh
       deploy:
         provider: releases
         file_glob: true
         api_key:
           secure: $GITHUB_RELEASE_API_KEY
-        file: "./artefacts/*"
-        skip_cleanup: 'true'
+        file: ./artefacts/*
+        skip_cleanup: true
         on:
           tags: true
