@@ -34,8 +34,8 @@ spec:
   # of Kubernetes environments
   #
   kubernetesMonitoring:
-  #   Enable Kubernetes monitoring functionality
-  #
+    #   Enable Kubernetes monitoring functionality
+    #
     enabled: true
 
   #   Optional: to use a custom ActiveGate Docker image.
@@ -52,9 +52,9 @@ spec:
   #   replicas: 1
 
   #   Optional: name of the ServiceAccount to assign to the ActiveGate Pods. Defaults to
-  #   "dynatrace-activegate"
+  #   "dynatrace-kubernetes-monitoring"
   #
-  #  serviceAccountName: "dynatrace-activegate"
+  #  serviceAccountName: "dynatrace-kubernetes-monitoring"
 
   #   Optional: tolerations to include with the ActiveGate StatefulSet.
   #   See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/

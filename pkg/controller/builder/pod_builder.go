@@ -229,7 +229,7 @@ func BuildLabelsForQuery(name string) map[string]string {
 const (
 	ActivegateName = "dynatrace-operator"
 
-	MonitoringServiceAccount = "dynatrace-activegate"
+	MonitoringServiceAccount = "dynatrace-kubernetes-monitoring"
 
 	KubernetesArch     = "kubernetes.io/arch"
 	KubernetesOs       = "kubernetes.io/os"

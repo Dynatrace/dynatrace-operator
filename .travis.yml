@@ -77,7 +77,7 @@ jobs:
       name: Deploy snapshot master AMD to DockerHub
       arch: amd64
       if: (branch = master) AND (tag IS blank)
-      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot" LABEL="quay.expires-after=10d"
+      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot"
       #      env: IMAGES=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
       cache:
         directories:
@@ -120,7 +120,7 @@ jobs:
       name: Deploy snapshot master ARM to DockerHub
       arch: arm64
       if: (branch = master) AND (tag IS blank)
-      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot" LABEL="quay.expires-after=10d"
+      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot"
       #      env: IMAGES=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
       cache:
         directories:
