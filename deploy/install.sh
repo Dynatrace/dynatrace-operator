@@ -140,7 +140,7 @@ addK8sConfiguration() {
     exit 1
   fi
 
-  json=$(
+  json="$(
     cat <<EOF
 {
   "label": "${CONNECTION_NAME}",
@@ -159,13 +159,13 @@ addK8sConfiguration() {
   "certificateCheckEnabled": true
 }
 EOF
-  )
+  )"
 
-  response=$(curl -sS -X POST "${API_URL}/config/v1/kubernetes/credentials" \
+  response="$(curl -sS -X POST "${API_URL}/config/v1/kubernetes/credentials" \
     -H "accept: application/json; charset=utf-8" \
     -H "Authorization: Api-Token ${API_TOKEN}" \
     -H "Content-Type: application/json; charset=utf-8" \
-    -d "${json}")
+    -d "${json}")"
 
   set +e
   echo "$response" | grep "${CONNECTION_NAME}" >/dev/null 2>&1
