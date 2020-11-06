@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e
 
@@ -45,17 +45,17 @@ for arg in "$@"; do
   esac
 done
 
-if [[ -z "$API_URL" ]]; then
+if [ -z "$API_URL" ]; then
   echo "Error: api-url not set!"
   exit 1
 fi
 
-if [[ -z "$API_TOKEN" ]]; then
+if [ -z "$API_TOKEN" ]; then
   echo "Error: api-token not set!"
   exit 1
 fi
 
-if [[ -z "$PAAS_TOKEN" ]]; then
+if [ -z "$PAAS_TOKEN" ]; then
   echo "Error: paas-token not set!"
   exit 1
 fi
@@ -63,8 +63,8 @@ fi
 set -u
 
 applyOneAgentOperator() {
-  if ! "${CLI}" get ns dynatrace &>/dev/null; then
-    if [[ "${CLI}" == "kubectl" ]]; then
+  if ! "${CLI}" get ns dynatrace >/dev/null 2>&1; then
+    if [ "${CLI}" = "kubectl" ]; then
       "${CLI}" create namespace dynatrace
       "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/kubernetes.yaml
     else
@@ -120,36 +120,26 @@ EOF
 
 addK8sConfiguration() {
   K8S_ENDPOINT="$("${CLI}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
-  if [[ -z "$K8S_ENDPOINT" ]]; then
+  if [ -z "$K8S_ENDPOINT" ]; then
     echo "Error: failed to get kubernetes endpoint!"
     exit 1
   fi
 
   CONNECTION_NAME="$(echo "${K8S_ENDPOINT}" | awk -F[/:] '{print $4}')"
 
-  response=$(curl -sS -X GET "${API_URL}/config/v1/kubernetes/credentials" \
-    -H "accept: application/json; charset=utf-8" \
-    -H "Authorization: Api-Token ${API_TOKEN}" \
-    -H "Content-Type: application/json; charset=utf-8")
-
-  if echo "$response" | grep "${CONNECTION_NAME}" &>/dev/null; then
-    echo "Kubernetes monitoring already set up!"
-    return
-  fi
-
   K8S_SECRET_NAME="$(for token in $("${CLI}" get sa dynatrace-kubernetes-monitoring -o jsonpath='{.secrets[*].name}' -n dynatrace); do echo "$token"; done | grep token)"
-  if [[ -z "$K8S_SECRET_NAME" ]]; then
+  if [ -z "$K8S_SECRET_NAME" ]; then
     echo "Error: failed to get kubernetes-monitoring secret!"
     exit 1
   fi
 
   K8S_BEARER="$("${CLI}" get secret "${K8S_SECRET_NAME}" -o jsonpath='{.data.token}' -n dynatrace | base64 --decode)"
-  if [[ -z "$K8S_BEARER" ]]; then
+  if [ -z "$K8S_BEARER" ]; then
     echo "Error: failed to get bearer token!"
     exit 1
   fi
 
-  json=$(
+  json="$(
     cat <<EOF
 {
   "label": "${CONNECTION_NAME}",
@@ -168,20 +158,26 @@ addK8sConfiguration() {
   "certificateCheckEnabled": true
 }
 EOF
-  )
+  )"
 
-  curl -sS -X POST "${API_URL}/config/v1/kubernetes/credentials" \
+  response="$(curl -sS -X POST "${API_URL}/config/v1/kubernetes/credentials" \
     -H "accept: application/json; charset=utf-8" \
     -H "Authorization: Api-Token ${API_TOKEN}" \
     -H "Content-Type: application/json; charset=utf-8" \
-    -d "${json}"
+    -d "${json}")"
+
+  if echo "$response" | grep "${CONNECTION_NAME}" >/dev/null 2>&1; then
+    echo "Kubernetes monitoring successfully setup."
+  else
+    echo "Error adding Kubernetes cluster to Dynatrace: $response"
+  fi
 }
 
 ####### MAIN #######
 applyOneAgentOperator
 applyOneAgentCR
 
-if [[ $ENABLE_K8S_MONITORING ]]; then
+if [ "${ENABLE_K8S_MONITORING}" = "true" ]; then
   applyDynatraceOperator
   applyDynaKubeCR
   addK8sConfiguration
