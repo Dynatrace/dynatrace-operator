@@ -63,9 +63,8 @@ fi
 set -u
 
 applyOneAgentOperator() {
-  "${CLI}" get ns dynatrace >/dev/null 2>&1
-  if [ $? -ne 0 ]; then
-    if [ "${CLI}" == "kubectl" ]; then
+  if ! "${CLI}" get ns dynatrace >/dev/null 2>&1; then
+    if [ "${CLI}" = "kubectl" ]; then
       "${CLI}" create namespace dynatrace
       "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/kubernetes.yaml
     else
@@ -167,9 +166,7 @@ EOF
     -H "Content-Type: application/json; charset=utf-8" \
     -d "${json}")"
 
-  set +e
-  echo "$response" | grep "${CONNECTION_NAME}" >/dev/null 2>&1
-  if [ $? -eq 0 ]; then
+  if echo "$response" | grep "${CONNECTION_NAME}" >/dev/null 2>&1; then
     echo "Kubernetes monitoring successfully setup."
   else
     echo "Error adding Kubernetes cluster to Dynatrace: $response"
