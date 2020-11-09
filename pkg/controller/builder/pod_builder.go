@@ -252,8 +252,8 @@ func buildReadinessProbe() *corev1.Probe {
 	}
 }
 
-func buildArgs() []string {
-	return []string{
+func buildArgs(additionalArgs []string) []string {
+	return append([]string{
 		DtTenantArg,
 		DtTokenArg,
 		DtServerArg,
