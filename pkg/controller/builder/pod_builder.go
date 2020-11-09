@@ -84,16 +84,15 @@ func prepareCustomPropertiesVolumes(volumeMounts []corev1.VolumeMount, volumes [
 	}
 
 	volumeMounts = append(volumeMounts, corev1.VolumeMount{
+		ReadOnly:  true,
 		Name:      "custom-properties",
 		MountPath: "/mnt/dynatrace/gateway/config"})
 
 	volumes = append(volumes, corev1.Volume{
 		Name: "custom-properties",
 		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: valueFrom,
-				},
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: valueFrom,
 				Items: []corev1.KeyToPath{
 					{
 						Key:  _const.CustomPropertiesKey,

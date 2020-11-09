@@ -104,7 +104,8 @@ type KubernetesMonitoringSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	Group string `json:"group,omitempty"`
 
-	// Optional: Add a custom properties file by providing it as a value or reference it from a config map
+	// Optional: Add a custom properties file by providing it as a value or reference it from a secret
+	// If referenced from a secret, make sure the key is called 'customProperties'
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Custom properties"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"

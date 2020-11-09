@@ -108,7 +108,8 @@ spec:
   #
   #  group: ""
 
-  #   Optional: Add a custom properties file by either providing it as a value or referencing it from a config map
+  #  Optional: Add a custom properties file by providing it as a value or reference it from a secret
+  #  If referenced from a secret, make sure the key is called 'customProperties'
   #
   #  customProperties:
   #    value: |
