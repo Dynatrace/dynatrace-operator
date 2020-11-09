@@ -11,4 +11,6 @@ const (
 	BearerTokenSecretName = "dynatrace-kubernetes-monitoring-secret"
 
 	KubeSystemNamespace = "kube-system"
+
+	ImagePullSecret = "dynatrace-activegate-registry"
 )

@@ -207,7 +207,7 @@ func BuildLabels(name string, labels map[string]string) map[string]string {
 	return result
 }
 
-func BuildMergeLabels(labels ...map[string]string) map[string]string {
+func MergeLabels(labels ...map[string]string) map[string]string {
 	res := map[string]string{}
 	for _, m := range labels {
 		for k, v := range m {

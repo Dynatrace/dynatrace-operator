@@ -2,6 +2,7 @@ package activegate
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
@@ -11,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -97,7 +98,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	instance := &dynatracev1alpha1.DynaKube{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if k8serrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -142,12 +143,27 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	actualStatefulSet := &appsv1.StatefulSet{}
-	reconcileResult, err := r.manageStatefulSet(desiredStatefulSet, actualStatefulSet, reqLogger)
+	reconcileResult, err := r.manageStatefulSet(reqLogger, instance, desiredStatefulSet, actualStatefulSet)
 	if reconcileResult != nil {
-		if err != nil {
-			return *reconcileResult, err
+		return *reconcileResult, err
+	}
+
+	pods, err := r.findPods(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	err = r.setVersionLabel(pods)
+	if err != nil {
+
+		var statusError *k8serrors.StatusError
+		if errors.As(err, &statusError) {
+			// Since this happens early during deployment, pods might have been modified
+			// In this case, retry silently
+			return builder.ReconcileAfter(5 * time.Second), nil
 		}
-		return *reconcileResult, nil
+		// Otherwise, retry loudly
+		return builder.ReconcileAfterFiveMinutes(), err
 	}
 
 	reconcileResult, err = r.updateService.UpdatePods(r, instance)
@@ -175,7 +191,7 @@ func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.DynaKub
 	err := r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(instance), Namespace: namespace}, secret)
 	if err != nil {
 		log.Error(err, err.Error())
-		if errors.IsNotFound(err) {
+		if k8serrors.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err

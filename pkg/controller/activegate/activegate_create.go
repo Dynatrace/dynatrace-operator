@@ -20,8 +20,8 @@ func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.Dy
 	if err != nil {
 		return nil, err
 	}
-	selectorLabels := builder.BuildLabels(_const.ActivegateName, instance.Spec.KubernetesMonitoringSpec.Labels)
-	mergedLabels := builder.BuildMergeLabels(instance.Labels, selectorLabels)
+	selectorLabels := builder.BuildLabels(instance.Name, instance.Spec.KubernetesMonitoringSpec.Labels)
+	mergedLabels := builder.MergeLabels(instance.Labels, selectorLabels)
 
 	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
