@@ -42,6 +42,8 @@ type DynaKubeSpec struct {
 	Proxy *DynaKubeProxy `json:"proxy,omitempty"`
 
 	// Optional: Adds custom RootCAs from a configmap
+	// This property only affects certificates used to communicate with the Dynatrace API.
+	// The property is not applied to the ActiveGate
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="TrustedCAs"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"

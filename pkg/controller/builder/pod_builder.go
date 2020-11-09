@@ -14,6 +14,9 @@ import (
 )
 
 func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (corev1.PodSpec, error) {
+	var volumeMounts []corev1.VolumeMount
+	var volumes []corev1.Volume
+
 	sa := MonitoringServiceAccount
 	activeGateSpec := &instance.Spec.KubernetesMonitoringSpec
 	additionalArgs := activeGateSpec.Args
@@ -41,7 +44,7 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 
 	additionalArgs, envVars = appendProxySettings(additionalArgs, envVars, instance.Spec.Proxy)
 	additionalArgs = appendActivationGroup(additionalArgs, activeGateSpec.Group)
-	volumeMounts, volumes := prepareCertificateVolumes(instance.Spec.TrustedCAs)
+	volumeMounts, volumes = prepareCertificateVolumes(volumeMounts, volumes, instance.Spec.TrustedCAs)
 	volumeMounts, volumes = prepareCustomPropertiesVolumes(volumeMounts, volumes, activeGateSpec.CustomProperties)
 
 	podSpec := corev1.PodSpec{
@@ -112,34 +115,37 @@ func appendActivationGroup(args []string, group string) []string {
 		fmt.Sprintf(`--group="%s"`, group))
 }
 
-func prepareCertificateVolumes(trustedCAsConfig string) ([]corev1.VolumeMount, []corev1.Volume) {
-	var volumeMounts []corev1.VolumeMount
-	var volumes []corev1.Volume
+// prepareCertificateVolumes is currently a no-op, since the feature is not yet ready to be implemented
+// Reevaluate this state by 2021-01-25 at the latest
+// Until reevaluation, this function is being kept for reference
+func prepareCertificateVolumes(volumeMounts []corev1.VolumeMount, volumes []corev1.Volume, _ string) ([]corev1.VolumeMount, []corev1.Volume) {
+	var tmpVolumeMounts []corev1.VolumeMount
+	var tmpVolumes []corev1.Volume
 
-	if trustedCAsConfig != "" {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      "certs",
-			MountPath: "/mnt/dynatrace/certs"})
+	//if trustedCAsConfig != "" {
+	//	tmpVolumeMounts = append(tmpVolumeMounts, corev1.VolumeMount{
+	//		Name:      "certs",
+	//		MountPath: "/mnt/dynatrace/certs"})
+	//
+	//	tmpVolumes = append(tmpVolumes, corev1.Volume{
+	//		Name: "certs",
+	//		VolumeSource: corev1.VolumeSource{
+	//			ConfigMap: &corev1.ConfigMapVolumeSource{
+	//				LocalObjectReference: corev1.LocalObjectReference{
+	//					Name: trustedCAsConfig,
+	//				},
+	//				Items: []corev1.KeyToPath{
+	//					{
+	//						Key:  "certs",
+	//						Path: "certs.pem",
+	//					},
+	//				},
+	//			},
+	//		},
+	//	})
+	//}
 
-		volumes = append(volumes, corev1.Volume{
-			Name: "certs",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: trustedCAsConfig,
-					},
-					Items: []corev1.KeyToPath{
-						{
-							Key:  "certs",
-							Path: "certs.pem",
-						},
-					},
-				},
-			},
-		})
-	}
-
-	return volumeMounts, volumes
+	return append(tmpVolumeMounts, volumeMounts...), append(tmpVolumes, volumes...)
 }
 
 func appendProxySettings(args []string, envVars []corev1.EnvVar, proxy *v1alpha1.DynaKubeProxy) ([]string, []corev1.EnvVar) {

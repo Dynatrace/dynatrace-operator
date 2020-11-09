@@ -29,7 +29,8 @@ func TestCreate(t *testing.T) {
 	t.Run("create with custom properties", testCreateCustomProperties)
 	t.Run("create with network zone", testCreateWithNetworkZone)
 	t.Run("create with activation group", testCreateWithActivationGroup)
-	t.Run("create with trusted certificates", testCreateWithTrustedCertificates)
+	// See comment of testCreateWithTrustedCertificates
+	//t.Run("create with trusted certificates", testCreateWithTrustedCertificates)
 	t.Run("create with proxy settings", testCreateWithProxySettings)
 }
 
@@ -87,33 +88,36 @@ func testCreateWithProxySettings(t *testing.T) {
 	})
 }
 
-func testCreateWithTrustedCertificates(t *testing.T) {
-	podSpec := setupForPodSpec(t, func(instance *v1alpha1.DynaKube) {
-		instance.Spec.KubernetesMonitoringSpec.Enabled = true
-		instance.Spec.TrustedCAs = "ca-config-map"
-	})
-	assert.GreaterOrEqual(t, 1, len(podSpec.Volumes))
-
-	var caVolume *v1.Volume
-	for _, volume := range podSpec.Volumes {
-		if volume.Name == "certs" {
-			caVolume = &volume
-		}
-	}
-
-	assert.NotNil(t, caVolume)
-	// Check for nil so linter does not complain
-	if caVolume != nil {
-		volumeSource := caVolume.VolumeSource
-		assert.NotNil(t, volumeSource)
-		assert.NotNil(t, volumeSource.ConfigMap)
-		assert.NotNil(t, volumeSource.ConfigMap.LocalObjectReference)
-		assert.Equal(t, "ca-config-map", volumeSource.ConfigMap.LocalObjectReference.Name)
-		assert.Equal(t, 1, len(volumeSource.ConfigMap.Items))
-		assert.Equal(t, "certs", volumeSource.ConfigMap.Items[0].Key)
-		assert.Equal(t, "certs.pem", volumeSource.ConfigMap.Items[0].Path)
-	}
-}
+// Test is deactivated due to feature not yet implemented.
+// Must be reevaluated along with 'prepareCertificateVolumes' by 2021-01-25 at the latest
+// Until then it is being kept for reference
+//func testCreateWithTrustedCertificates(t *testing.T) {
+//	podSpec := setupForPodSpec(t, func(instance *v1alpha1.DynaKube) {
+//		instance.Spec.KubernetesMonitoringSpec.Enabled = true
+//		instance.Spec.TrustedCAs = "ca-config-map"
+//	})
+//	assert.GreaterOrEqual(t, 1, len(podSpec.Volumes))
+//
+//	var caVolume *v1.Volume
+//	for _, volume := range podSpec.Volumes {
+//		if volume.Name == "certs" {
+//			caVolume = &volume
+//		}
+//	}
+//
+//	assert.NotNil(t, caVolume)
+//	// Check for nil so linter does not complain
+//	if caVolume != nil {
+//		volumeSource := caVolume.VolumeSource
+//		assert.NotNil(t, volumeSource)
+//		assert.NotNil(t, volumeSource.ConfigMap)
+//		assert.NotNil(t, volumeSource.ConfigMap.LocalObjectReference)
+//		assert.Equal(t, "ca-config-map", volumeSource.ConfigMap.LocalObjectReference.Name)
+//		assert.Equal(t, 1, len(volumeSource.ConfigMap.Items))
+//		assert.Equal(t, "certs", volumeSource.ConfigMap.Items[0].Key)
+//		assert.Equal(t, "certs.pem", volumeSource.ConfigMap.Items[0].Path)
+//	}
+//}
 
 func testCreateWithActivationGroup(t *testing.T) {
 	podSpec := setupForPodSpec(t, func(instance *v1alpha1.DynaKube) {
