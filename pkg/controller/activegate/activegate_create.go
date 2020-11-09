@@ -58,8 +58,7 @@ func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.Dy
 	mergedLabels := builder.MergeLabels(instance.Labels, selectorLabels)
 
 	if instance.Spec.KubernetesMonitoringSpec.Enabled {
-		mergedLabels = builder.BuildMergeLabels(mergedLabels,
-			instance.Spec.KubernetesMonitoringSpec.Labels)
+		mergedLabels = builder.MergeLabels(mergedLabels, instance.Spec.KubernetesMonitoringSpec.Labels)
 	}
 
 	statefulSet := &appsv1.StatefulSet{
