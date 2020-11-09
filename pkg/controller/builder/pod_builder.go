@@ -413,8 +413,8 @@ const (
 
 	// Usage of SI-Prefix Mega instead of IEC-Prefix Mebi to make use of
 	// scaling provided by resource.*. E.g., resource.Milli
-	ResourceMemoryMinimum = "512M"
-	ResourceCPUMinimum    = "100m"
-	ResourceMemoryMaximum = "1.5G"
+	ResourceMemoryMinimum = "250M"
+	ResourceCPUMinimum    = "150m"
+	ResourceMemoryMaximum = "1G"
 	ResourceCPUMaximum    = "300m"
 )

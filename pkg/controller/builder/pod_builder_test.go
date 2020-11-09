@@ -36,16 +36,16 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 		assert.Equal(t, serviceAccountName, specs.ServiceAccountName)
 		assert.True(t,
 			activeGateSpec.KubernetesMonitoringSpec.Resources.Requests[corev1.ResourceCPU].Equal(
-				*resource.NewScaledQuantity(100, resource.Milli)))
+				*resource.NewScaledQuantity(150, resource.Milli)))
 		assert.True(t,
 			activeGateSpec.KubernetesMonitoringSpec.Resources.Requests[corev1.ResourceMemory].Equal(
-				*resource.NewScaledQuantity(512, resource.Mega)))
+				*resource.NewScaledQuantity(250, resource.Mega)))
 		assert.True(t,
 			activeGateSpec.KubernetesMonitoringSpec.Resources.Limits[corev1.ResourceCPU].Equal(
 				*resource.NewScaledQuantity(300, resource.Milli)))
 		assert.True(t,
 			activeGateSpec.KubernetesMonitoringSpec.Resources.Limits[corev1.ResourceMemory].Equal(
-				*resource.NewScaledQuantity(1500, resource.Mega)))
+				*resource.NewScaledQuantity(1, resource.Giga)))
 		assert.NotNil(t, specs.Affinity)
 
 		container := specs.Containers[0]
