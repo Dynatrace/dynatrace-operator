@@ -45,7 +45,7 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 	additionalArgs, envVars = appendProxySettings(additionalArgs, envVars, instance.Spec.Proxy)
 	additionalArgs = appendActivationGroup(additionalArgs, activeGateSpec.Group)
 	volumeMounts, volumes = prepareCertificateVolumes(volumeMounts, volumes, instance.Spec.TrustedCAs)
-	volumeMounts, volumes = prepareCustomPropertiesVolumes(volumeMounts, volumes, activeGateSpec.CustomProperties)
+	volumeMounts, volumes = prepareCustomPropertiesVolumes(volumeMounts, volumes, activeGateSpec.CustomProperties, instance.Name)
 
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{{
@@ -72,7 +72,7 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 	return podSpec, err
 }
 
-func prepareCustomPropertiesVolumes(volumeMounts []corev1.VolumeMount, volumes []corev1.Volume, customProperties *v1alpha1.DynaKubeValueSource) ([]corev1.VolumeMount, []corev1.Volume) {
+func prepareCustomPropertiesVolumes(volumeMounts []corev1.VolumeMount, volumes []corev1.Volume, customProperties *v1alpha1.DynaKubeValueSource, instanceName string) ([]corev1.VolumeMount, []corev1.Volume) {
 	if customProperties == nil ||
 		(customProperties.Value == "" && customProperties.ValueFrom == "") {
 		return volumeMounts, volumes
@@ -80,7 +80,7 @@ func prepareCustomPropertiesVolumes(volumeMounts []corev1.VolumeMount, volumes [
 
 	valueFrom := customProperties.ValueFrom
 	if valueFrom == "" {
-		valueFrom = _const.CustomPropertiesConfigMapName
+		valueFrom = fmt.Sprintf("%s-%s", instanceName, _const.KubernetesMonitoringCustomPropertiesConfigMapNameSuffix)
 	}
 
 	volumeMounts = append(volumeMounts, corev1.VolumeMount{

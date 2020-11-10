@@ -2,6 +2,7 @@ package activegate
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
@@ -144,14 +145,19 @@ property=value
 
 	updateInstance(t, r, instance)
 
-	var configMap v1.ConfigMap
-	err = r.client.Get(context.TODO(), client.ObjectKey{Name: _const.CustomPropertiesConfigMapName, Namespace: _const.DynatraceNamespace}, &configMap)
+	var customPropertiesSecret v1.Secret
+	err = r.client.Get(context.TODO(),
+		client.ObjectKey{
+			Name:      fmt.Sprintf("%s-%s", instance.Name, _const.KubernetesMonitoringCustomPropertiesConfigMapNameSuffix),
+			Namespace: _const.DynatraceNamespace,
+		},
+		&customPropertiesSecret)
 	assert.NoError(t, err)
-	assert.NotNil(t, configMap)
+	assert.NotNil(t, customPropertiesSecret)
 
-	configMapData, hasData := configMap.Data[_const.CustomPropertiesKey]
+	configMapData, hasData := customPropertiesSecret.Data[_const.CustomPropertiesKey]
 	assert.True(t, hasData)
-	assert.Equal(t, configMapValue, configMapData)
+	assert.Equal(t, configMapValue, string(configMapData))
 }
 
 func testCreateWithNetworkZone(t *testing.T) {

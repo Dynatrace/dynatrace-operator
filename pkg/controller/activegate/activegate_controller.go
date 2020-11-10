@@ -130,9 +130,15 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		}
 	}
 
-	err = r.createCustomPropertiesConfigMap(&instance.Spec.KubernetesMonitoringSpec)
+	customPropertiesConfigMap, err := r.manageCustomProperties(instance.Name, &instance.Spec.KubernetesMonitoringSpec)
 	if err != nil {
 		reqLogger.Error(err, "error creating config map for custom properties")
+	}
+	if customPropertiesConfigMap != nil {
+		if err := controllerutil.SetControllerReference(instance, customPropertiesConfigMap, r.scheme); err != nil {
+			reqLogger.Error(err, "error setting controller reference for custom properties secret")
+			return reconcile.Result{}, err
+		}
 	}
 
 	desiredStatefulSet, err := r.createDesiredStatefulSet(instance, dtc)

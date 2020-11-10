@@ -3,6 +3,7 @@ package activegate
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"hash/fnv"
 	"strconv"
 
@@ -18,34 +19,46 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *ReconcileActiveGate) createCustomPropertiesConfigMap(kubernetesMonitoringSpec *dynatracev1alpha1.KubernetesMonitoringSpec) error {
+func (r *ReconcileActiveGate) manageCustomProperties(name string, kubernetesMonitoringSpec *dynatracev1alpha1.KubernetesMonitoringSpec) (*corev1.Secret, error) {
 	if kubernetesMonitoringSpec.Enabled &&
 		kubernetesMonitoringSpec.CustomProperties != nil &&
 		kubernetesMonitoringSpec.CustomProperties.Value != "" &&
 		kubernetesMonitoringSpec.CustomProperties.ValueFrom == "" {
 
-		configMap := &corev1.ConfigMap{}
+		secretName := fmt.Sprintf("%s-%s", name, _const.KubernetesMonitoringCustomPropertiesConfigMapNameSuffix)
+		configSecret := &corev1.Secret{}
 		err := r.client.Get(context.TODO(), client.ObjectKey{
 			Namespace: _const.DynatraceNamespace,
-			Name:      _const.CustomPropertiesConfigMapName,
-		}, configMap)
+			Name:      secretName,
+		}, configSecret)
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
-				configMap = &corev1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      _const.CustomPropertiesConfigMapName,
-						Namespace: _const.DynatraceNamespace,
-					},
-					Data: map[string]string{
-						_const.CustomPropertiesKey: kubernetesMonitoringSpec.CustomProperties.Value,
-					},
-				}
-				err = r.client.Create(context.TODO(), configMap)
+				configSecret = newConfigSecret(secretName, kubernetesMonitoringSpec.CustomProperties.Value)
+				err = r.client.Create(context.TODO(), configSecret)
 			}
-			return err
+			return configSecret, err
 		}
+
+		secretData := string(configSecret.Data[_const.CustomPropertiesKey])
+		if secretData != kubernetesMonitoringSpec.CustomProperties.Value {
+			configSecret.Data[_const.CustomPropertiesKey] = []byte(kubernetesMonitoringSpec.CustomProperties.Value)
+			err = r.client.Update(context.TODO(), configSecret)
+		}
+		return configSecret, err
 	}
-	return nil
+	return nil, nil
+}
+
+func newConfigSecret(secretName string, data string) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: _const.DynatraceNamespace,
+		},
+		Data: map[string][]byte{
+			_const.CustomPropertiesKey: []byte(data),
+		},
+	}
 }
 
 func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (*appsv1.StatefulSet, error) {
