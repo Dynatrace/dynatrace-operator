@@ -1,3 +1,4 @@
+**Note: this project is currently in development. Shouldn't be installed by customers yet.**
 
 # Dynatrace Operator
 
