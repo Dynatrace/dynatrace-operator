@@ -1,9 +1,8 @@
-package version
+package dtversion
 
 import (
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/containers/image/v5/types"
 )
@@ -12,7 +11,7 @@ type ReleaseValidator interface {
 	IsLatest() (bool, error)
 }
 
-func MakeSystemContext(dockerReference reference.Named, dockerConfig *parser.DockerConfig) *types.SystemContext {
+func MakeSystemContext(dockerReference reference.Named, dockerConfig *DockerConfig) *types.SystemContext {
 	if dockerReference == nil || dockerConfig == nil {
 		return &types.SystemContext{}
 	}

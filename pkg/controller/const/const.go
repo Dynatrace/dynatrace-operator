@@ -4,16 +4,13 @@ const (
 	DynatracePaasToken = "paasToken"
 	DynatraceApiToken  = "apiToken"
 
-	DynatraceNamespace = "dynatrace"
-	ActivegateName     = "activegate"
+	ActivegateName = "activegate"
 
 	ServiceAccountName                                      = "dynatrace-kubernetes-monitoring"
 	KubernetesMonitoringCustomPropertiesConfigMapNameSuffix = "kubernetes-monitoring-custom-properties"
 	BearerTokenSecretName                                   = "dynatrace-kubernetes-monitoring-secret"
 
 	KubeSystemNamespace = "kube-system"
-
-	CustomPropertiesKey = "customProperties"
 
 	ImagePullSecret = "dynatrace-activegate-registry"
 )

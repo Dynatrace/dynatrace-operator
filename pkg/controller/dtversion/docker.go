@@ -1,15 +1,14 @@
-package version
+package dtversion
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
 	"github.com/containers/image/v5/image"
 	"github.com/containers/image/v5/transports/alltransports"
 )
 
-func GetVersionLabel(imageName string, dockerConfig *parser.DockerConfig) (string, error) {
+func GetVersionLabel(imageName string, dockerConfig *DockerConfig) (string, error) {
 	transportImageName := fmt.Sprintf("docker://%s", imageName)
 	imageReference, err := alltransports.ParseImageName(transportImageName)
 	if err != nil {

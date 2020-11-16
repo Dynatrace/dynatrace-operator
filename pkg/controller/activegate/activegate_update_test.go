@@ -10,8 +10,8 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
 	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/factory"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/version"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
@@ -42,7 +42,7 @@ func (updateService *mockIsLatestUpdateService) FindOutdatedPods(r *ReconcileAct
 	instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
 	return (&activeGateUpdateService{}).FindOutdatedPods(r, logger, instance)
 }
-func (updateService *mockIsLatestUpdateService) IsLatest(version.ReleaseValidator) (bool, error) {
+func (updateService *mockIsLatestUpdateService) IsLatest(dtversion.ReleaseValidator) (bool, error) {
 	return false, nil
 }
 func (updateService *mockIsLatestUpdateService) UpdatePods(r *ReconcileActiveGate,
@@ -54,7 +54,7 @@ type failingIsLatestUpdateService struct {
 	mockIsLatestUpdateService
 }
 
-func (updateService *failingIsLatestUpdateService) IsLatest(version.ReleaseValidator) (bool, error) {
+func (updateService *failingIsLatestUpdateService) IsLatest(dtversion.ReleaseValidator) (bool, error) {
 	return false, fmt.Errorf("mocked error")
 }
 

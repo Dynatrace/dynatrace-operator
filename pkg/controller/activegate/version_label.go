@@ -4,8 +4,7 @@ import (
 	"context"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dao"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtversion"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -24,10 +23,10 @@ func (r *ReconcileActiveGate) setVersionLabel(pods []corev1.Pod) error {
 				return err
 			}
 
-			dockerConfig, err := parser.NewDockerConfig(imagePullSecret)
+			dockerConfig, err := dtversion.NewDockerConfig(imagePullSecret)
 			// If an error is returned, try getting the image anyway
 
-			versionLabel, err2 := version.GetVersionLabel(status.Image, dockerConfig)
+			versionLabel, err2 := dtversion.GetVersionLabel(status.Image, dockerConfig)
 			if err2 != nil && err != nil {
 				// If an error is returned when getting labels and an error occurred during parsing of the docker config
 				// assume the error from parsing the docker config is the reason
@@ -36,7 +35,7 @@ func (r *ReconcileActiveGate) setVersionLabel(pods []corev1.Pod) error {
 				return err2
 			}
 
-			pod.Labels[version.VersionKey] = versionLabel
+			pod.Labels[dtversion.VersionKey] = versionLabel
 		}
 		err := r.client.Update(context.TODO(), pod)
 		if err != nil {
