@@ -2,6 +2,7 @@ package parser
 
 import (
 	"encoding/json"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtversion"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,28 +11,28 @@ import (
 
 func TestNewDockerConfig(t *testing.T) {
 	t.Run("NewDockerConfig", func(t *testing.T) {
-		auths := make(map[string]DockerConfigAuth)
-		auths["localhost"] = DockerConfigAuth{Username: "username", Password: "password"}
-		templateDockerConf := DockerConfig{Auths: auths}
+		auths := make(map[string]dtversion.DockerConfigAuth)
+		auths["localhost"] = dtversion.DockerConfigAuth{Username: "username", Password: "password"}
+		templateDockerConf := dtversion.DockerConfig{Auths: auths}
 		templateDockerConfJson, _ := json.Marshal(templateDockerConf)
 		data := make(map[string][]byte)
 		data[".dockerconfigjson"] = templateDockerConfJson
 		secret := corev1.Secret{
 			Data: data,
 		}
-		dockerConfig, err := NewDockerConfig(&secret)
+		dockerConfig, err := dtversion.NewDockerConfig(&secret)
 		assert.NoError(t, err)
 		assert.NotNil(t, dockerConfig)
 		assert.Equal(t, templateDockerConf, *dockerConfig)
 	})
 	t.Run("NewDockerConfig handle nil secret", func(t *testing.T) {
-		dockerConfig, err := NewDockerConfig(nil)
+		dockerConfig, err := dtversion.NewDockerConfig(nil)
 		assert.Error(t, err)
 		assert.Nil(t, dockerConfig)
 	})
 	t.Run("NewDockerConfig handle empty data", func(t *testing.T) {
 		secret := corev1.Secret{}
-		dockerConfig, err := NewDockerConfig(&secret)
+		dockerConfig, err := dtversion.NewDockerConfig(&secret)
 		assert.Error(t, err)
 		assert.Nil(t, dockerConfig)
 	})
@@ -41,7 +42,7 @@ func TestNewDockerConfig(t *testing.T) {
 		secret := corev1.Secret{
 			Data: data,
 		}
-		dockerConfig, err := NewDockerConfig(&secret)
+		dockerConfig, err := dtversion.NewDockerConfig(&secret)
 		assert.Error(t, err)
 		assert.Nil(t, dockerConfig)
 	})

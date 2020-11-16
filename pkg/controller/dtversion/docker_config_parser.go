@@ -1,4 +1,4 @@
-package parser
+package dtversion
 
 import (
 	"encoding/json"

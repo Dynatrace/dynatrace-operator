@@ -2,7 +2,7 @@ package activegate
 
 import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtversion"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/mock"
 	corev1 "k8s.io/api/core/v1"
@@ -18,7 +18,7 @@ func (mus *mockUpdateService) FindOutdatedPods(r *ReconcileActiveGate, logger lo
 	return args.Get(0).([]corev1.Pod), args.Error(1)
 }
 
-func (mus *mockUpdateService) IsLatest(validator version.ReleaseValidator) (bool, error) {
+func (mus *mockUpdateService) IsLatest(validator dtversion.ReleaseValidator) (bool, error) {
 	args := mus.Called(validator)
 	return args.Get(0).(bool), args.Error(1)
 }

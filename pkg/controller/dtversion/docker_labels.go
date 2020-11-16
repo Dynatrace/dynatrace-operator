@@ -1,9 +1,7 @@
-package version
+package dtversion
 
 import (
 	"fmt"
-
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
 )
 
 const VersionKey = "version"
@@ -11,10 +9,10 @@ const VersionKey = "version"
 type DockerLabelsChecker struct {
 	image        string
 	labels       map[string]string
-	dockerConfig *parser.DockerConfig
+	dockerConfig *DockerConfig
 }
 
-func NewDockerLabelsChecker(image string, labels map[string]string, dockerConfig *parser.DockerConfig) *DockerLabelsChecker {
+func NewDockerLabelsChecker(image string, labels map[string]string, dockerConfig *DockerConfig) *DockerLabelsChecker {
 	return &DockerLabelsChecker{
 		image:        image,
 		labels:       labels,

@@ -8,8 +8,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dao"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/version"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtversion"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,7 +28,7 @@ type updateService interface {
 		r *ReconcileActiveGate,
 		logger logr.Logger,
 		instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error)
-	IsLatest(validator version.ReleaseValidator) (bool, error)
+	IsLatest(validator dtversion.ReleaseValidator) (bool, error)
 	UpdatePods(
 		r *ReconcileActiveGate,
 		instance *dynatracev1alpha1.DynaKube) (*reconcile.Result, error)
@@ -99,8 +98,8 @@ func (us *activeGateUpdateService) FindOutdatedPods(
 }
 
 func isPodOutdated(logger logr.Logger, r *ReconcileActiveGate, instance *dynatracev1alpha1.DynaKube, pod *corev1.Pod) bool {
-	if _, hasVersionLabel := pod.Labels[version.VersionKey]; !hasVersionLabel {
-		logger.Info("pod does not have '%s' label, skipping update check", version.VersionKey, "pod", pod.Name)
+	if _, hasVersionLabel := pod.Labels[dtversion.VersionKey]; !hasVersionLabel {
+		logger.Info("pod does not have '%s' label, skipping update check", dtversion.VersionKey, "pod", pod.Name)
 		return false
 	}
 
@@ -126,7 +125,7 @@ func isContainerStatusInvalid(logger logr.Logger, r *ReconcileActiveGate, instan
 		logger.Error(err, err.Error())
 	}
 
-	dockerConfig, err := parser.NewDockerConfig(imagePullSecret)
+	dockerConfig, err := dtversion.NewDockerConfig(imagePullSecret)
 	if err != nil {
 		logger.Info(err.Error())
 	}
@@ -139,7 +138,7 @@ func isContainerStatusInvalid(logger logr.Logger, r *ReconcileActiveGate, instan
 			return false
 		}
 	}
-	dockerLabelsChecker := version.NewDockerLabelsChecker(image, pod.Labels, dockerConfig)
+	dockerLabelsChecker := dtversion.NewDockerLabelsChecker(image, pod.Labels, dockerConfig)
 
 	isLatest, err := r.updateService.IsLatest(dockerLabelsChecker)
 	if err != nil {
@@ -151,6 +150,6 @@ func isContainerStatusInvalid(logger logr.Logger, r *ReconcileActiveGate, instan
 	return !isLatest
 }
 
-func (us *activeGateUpdateService) IsLatest(validator version.ReleaseValidator) (bool, error) {
+func (us *activeGateUpdateService) IsLatest(validator dtversion.ReleaseValidator) (bool, error) {
 	return validator.IsLatest()
 }

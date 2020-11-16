@@ -38,7 +38,7 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, kubeSystemUID types.UI
 
 	additionalArgs, envVars = appendProxySettings(additionalArgs, envVars, instance.Spec.Proxy)
 	additionalArgs = appendActivationGroup(additionalArgs, activeGateSpec.Group)
-	volumeMounts, volumes = prepareCertificateVolumes(volumeMounts, volumes, instance.Spec.TrustedCAs)
+	volumeMounts, volumes = prepareCertificateVolumes(volumeMounts, volumes, instance.Spec.TrustedCAs) // NoOP
 	volumeMounts, volumes = prepareCustomPropertiesVolumes(volumeMounts, volumes, activeGateSpec.CustomProperties, instance.Name)
 
 	podSpec := corev1.PodSpec{
@@ -320,15 +320,18 @@ func buildAffinity() *corev1.Affinity {
 }
 
 func preparePodSpecImmutableImage(podSpec *corev1.PodSpec, instance *v1alpha1.DynaKube) error {
+	// pull secret Name
 	pullSecretName := instance.GetName() + "-pull-secret"
 	if instance.Spec.CustomPullSecret != "" {
 		pullSecretName = instance.Spec.CustomPullSecret
 	}
 
+	// pull secret
 	podSpec.ImagePullSecrets = append(podSpec.ImagePullSecrets, corev1.LocalObjectReference{
 		Name: pullSecretName,
 	})
 
+	//image
 	if instance.Spec.KubernetesMonitoringSpec.Image == "" {
 		i, err := BuildActiveGateImage(instance.Spec.APIURL, instance.Spec.KubernetesMonitoringSpec.ActiveGateVersion)
 		if err != nil {
@@ -370,29 +373,5 @@ func BuildLabelsForQuery(name string) map[string]string {
 const (
 	ActivegateName = "dynatrace-operator"
 
-	MonitoringServiceAccount = "dynatrace-kubernetes-monitoring"
-
-	KubernetesArch     = "kubernetes.io/arch"
-	KubernetesOs       = "kubernetes.io/os"
-	KubernetesBetaArch = "beta.kubernetes.io/arch"
-	KubernetesBetaOs   = "beta.kubernetes.io/os"
-
-	AMD64 = "amd64"
-	ARM64 = "arm64"
-	LINUX = "linux"
-
-	DtCapabilities    = "DT_CAPABILITIES"
-	DtIdSeedNamespace = "DT_ID_SEED_NAMESPACE"
-	DtIdSeedClusterId = "DT_ID_SEED_K8S_CLUSTER_ID"
-
-	DtCapabilitiesArg = "--enable=kubernetes_monitoring"
-
 	Comma = ","
-
-	// Usage of SI-Prefix Mega instead of IEC-Prefix Mebi to make use of
-	// scaling provided by resource.*. E.g., resource.Milli
-	ResourceMemoryMinimum = "250M"
-	ResourceCPUMinimum    = "150m"
-	ResourceMemoryMaximum = "1G"
-	ResourceCPUMaximum    = "300m"
 )

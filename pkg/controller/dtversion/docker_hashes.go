@@ -1,11 +1,10 @@
-package version
+package dtversion
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
@@ -16,11 +15,11 @@ import (
 type DockerHashesChecker struct {
 	currentImage   string
 	currentImageId string
-	dockerConfig   *parser.DockerConfig
+	dockerConfig   *DockerConfig
 }
 
 // Deprecated: DockerLabelsChecker implements a preferred version check using image labels
-func NewDockerHashesChecker(currentImage, currentImageId string, dockerConfig *parser.DockerConfig) *DockerHashesChecker {
+func NewDockerHashesChecker(currentImage, currentImageId string, dockerConfig *DockerConfig) *DockerHashesChecker {
 	return &DockerHashesChecker{
 		currentImage:   currentImage,
 		currentImageId: currentImageId,
