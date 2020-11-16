@@ -5,10 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
-<<<<<<< HEAD
 	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
-=======
->>>>>>> 651e901a66ad3c408e8e0b1b0428e9118507fcd1
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
@@ -16,12 +13,8 @@ import (
 )
 
 func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, kubeSystemUID types.UID) (corev1.PodSpec, error) {
-<<<<<<< HEAD
 	var volumeMounts []corev1.VolumeMount
 	var volumes []corev1.Volume
-
-=======
->>>>>>> 651e901a66ad3c408e8e0b1b0428e9118507fcd1
 	sa := MonitoringServiceAccount
 	activeGateSpec := &instance.Spec.KubernetesMonitoringSpec
 	additionalArgs := activeGateSpec.Args
