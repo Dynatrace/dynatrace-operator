@@ -5,7 +5,6 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -28,7 +27,7 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 				Image:              image,
 			},
 		}
-		specs, err := BuildActiveGatePodSpecs(instance, nil, "")
+		specs, err := BuildActiveGatePodSpecs(instance, "")
 		assert.NoError(t, err)
 		activeGateSpec := &instance.Spec
 		assert.NotNil(t, specs)
@@ -53,9 +52,9 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 		assert.Equal(t, image, container.Image)
 		assert.Equal(t, container.Resources, activeGateSpec.KubernetesMonitoringSpec.Resources)
 		assert.NotEmpty(t, container.Env)
-		assert.LessOrEqual(t, 4, len(container.Env))
+		assert.LessOrEqual(t, 3, len(container.Env))
 		assert.NotEmpty(t, container.Args)
-		assert.LessOrEqual(t, 4, len(container.Args))
+		assert.LessOrEqual(t, 1, len(container.Args))
 	})
 	t.Run("BuildActiveGatePodSpecs with tenant info", func(t *testing.T) {
 		instance := &dynatracev1alpha1.DynaKube{
@@ -66,11 +65,7 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 		instance.Spec = dynatracev1alpha1.DynaKubeSpec{
 			APIURL: "https://test-env.com",
 		}
-		specs, err := BuildActiveGatePodSpecs(instance, &dtclient.TenantInfo{
-			ID:                    "tenant-id",
-			Token:                 "tenant-token",
-			CommunicationEndpoint: "tenant-endpoint",
-		}, "")
+		specs, err := BuildActiveGatePodSpecs(instance, "")
 		assert.NoError(t, err)
 		assert.NotNil(t, specs)
 		assert.Equal(t, 1, len(specs.Containers))
@@ -83,31 +78,9 @@ func TestBuildActiveGatePodSpecs(t *testing.T) {
 		assert.Equal(t, ActivegateName, container.Name)
 		assert.Equal(t, "test-env.com/linux/activegate", container.Image)
 		assert.NotEmpty(t, container.Env)
-		assert.LessOrEqual(t, 4, len(container.Env))
+		assert.LessOrEqual(t, 3, len(container.Env))
 		assert.NotEmpty(t, container.Args)
-		assert.LessOrEqual(t, 4, len(container.Args))
-
-		envs := container.Env
-		dtTenantExists := false
-		dtTenantTokenExists := false
-		dtTenantCommunicationEndpointsExists := false
-		for _, env := range envs {
-			if env.Name == DtTenant {
-				dtTenantExists = true
-				assert.Equal(t, "tenant-id", env.Value)
-			}
-			if env.Name == DtToken {
-				dtTenantTokenExists = true
-				assert.Equal(t, "tenant-token", env.Value)
-			}
-			if env.Name == DtServer {
-				dtTenantCommunicationEndpointsExists = true
-				assert.Equal(t, "tenant-endpoint", env.Value)
-			}
-		}
-		assert.True(t, dtTenantExists)
-		assert.True(t, dtTenantTokenExists)
-		assert.True(t, dtTenantCommunicationEndpointsExists)
+		assert.LessOrEqual(t, 1, len(container.Args))
 	})
 }
 
@@ -135,9 +108,9 @@ func TestBuildEnvVars(t *testing.T) {
 			Namespace: "dynatrace",
 		},
 	}
-	envVars := buildEnvVars(&instance, &dtclient.TenantInfo{}, "cluster")
+	envVars := buildEnvVars(&instance, "cluster")
 	assert.NotEmpty(t, envVars)
-	assert.LessOrEqual(t, 6, len(envVars))
+	assert.LessOrEqual(t, 3, len(envVars))
 
 	hasNamespace := false
 	hasClusterName := false

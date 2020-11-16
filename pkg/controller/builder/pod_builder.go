@@ -5,15 +5,13 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
-	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (corev1.PodSpec, error) {
+func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, kubeSystemUID types.UID) (corev1.PodSpec, error) {
 	var volumeMounts []corev1.VolumeMount
 	var volumes []corev1.Volume
 
@@ -25,15 +23,11 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 	if activeGateSpec.ServiceAccountName != "" {
 		sa = activeGateSpec.ServiceAccountName
 	}
-	if tenantInfo == nil {
-		tenantInfo = &dtclient.TenantInfo{
-			ID:        "",
-			Token:     "",
-			Endpoints: []string{},
-		}
+	if activeGateSpec.Image != "" {
+		image = activeGateSpec.Image
 	}
 
-	envVars := buildEnvVars(instance, tenantInfo, kubeSystemUID)
+	envVars := buildEnvVars(instance, kubeSystemUID)
 
 	checkMinimumResources(activeGateSpec)
 
@@ -259,14 +253,11 @@ func buildReadinessProbe() *corev1.Probe {
 
 func buildArgs(additionalArgs []string) []string {
 	return append([]string{
-		DtTenantArg,
-		DtTokenArg,
-		DtServerArg,
 		DtCapabilitiesArg,
 	}, additionalArgs...)
 }
 
-func buildEnvVars(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) []corev1.EnvVar {
+func buildEnvVars(instance *v1alpha1.DynaKube, kubeSystemUID types.UID) []corev1.EnvVar {
 	var capabilities []string
 
 	if instance.Spec.KubernetesMonitoringSpec.Enabled {
@@ -274,18 +265,6 @@ func buildEnvVars(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, 
 	}
 
 	return append([]corev1.EnvVar{
-		{
-			Name:  DtTenant,
-			Value: tenantInfo.ID,
-		},
-		{
-			Name:  DtToken,
-			Value: tenantInfo.Token,
-		},
-		{
-			Name:  DtServer,
-			Value: tenantInfo.CommunicationEndpoint,
-		},
 		{
 			Name:  DtCapabilities,
 			Value: strings.Join(capabilities, Comma),
@@ -402,17 +381,11 @@ const (
 	ARM64 = "arm64"
 	LINUX = "linux"
 
-	DtTenant          = "DT_TENANT"
-	DtServer          = "DT_SERVER"
-	DtToken           = "DT_TOKEN"
 	DtCapabilities    = "DT_CAPABILITIES"
 	DtIdSeedNamespace = "DT_ID_SEED_NAMESPACE"
 	DtIdSeedClusterId = "DT_ID_SEED_K8S_CLUSTER_ID"
 
-	DtTenantArg       = "--tenant=$(DT_TENANT)"
-	DtTokenArg        = "--token=$(DT_TOKEN)"
-	DtServerArg       = "--server=$(DT_SERVER)"
-	DtCapabilitiesArg = "--enable=$(DT_CAPABILITIES)"
+	DtCapabilitiesArg = "--enable=kubernetes_monitoring"
 
 	Comma = ","
 

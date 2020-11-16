@@ -9,11 +9,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-// CreateOrUpdateSecretIfNotExists creates a secret in case it does not exist or updates it if there are changes
-func CreateOrUpdateSecretWithAPIReader(c client.Client, r client.Reader, secretName string, targetNS string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
+// CreateOrUpdateSecretWithAPIReader creates a secret in case it does not exist or updates it if there are changes
+func CreateOrUpdateSecretWithAPIReader(c client.Client, r client.Reader, scheme *runtime.Scheme, owner metav1.Object, targetNS string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
+	secretName := owner.GetName() + "-pull-secret"
 	var cfg corev1.Secret
 	err := r.Get(context.TODO(), client.ObjectKey{Name: secretName, Namespace: targetNS}, &cfg)
 	if k8serrors.IsNotFound(err) {
@@ -31,6 +34,12 @@ func CreateOrUpdateSecretWithAPIReader(c client.Client, r client.Reader, secretN
 		return nil
 	}
 
+	// Set DynaKube instance as the owner and controller
+	if err := controllerutil.SetControllerReference(owner, &cfg, scheme); err != nil {
+		log.Error(err, "error setting controller reference")
+		return err
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to query for secret %s: %w", secretName, err)
 	}
@@ -46,6 +55,6 @@ func CreateOrUpdateSecretWithAPIReader(c client.Client, r client.Reader, secretN
 	return nil
 }
 
-func CreateOrUpdateSecret(c client.Client, secretName string, targetNamespace string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
-	return CreateOrUpdateSecretWithAPIReader(c, c, secretName, targetNamespace, data, secretType, log)
+func CreateOrUpdateSecret(c client.Client, r client.Reader, scheme *runtime.Scheme, owner metav1.Object, targetNS string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
+	return CreateOrUpdateSecretWithAPIReader(c, r, scheme, owner, targetNS, data, secretType, log)
 }

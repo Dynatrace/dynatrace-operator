@@ -10,7 +10,6 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
 	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -61,9 +60,9 @@ func newConfigSecret(secretName string, data string) *corev1.Secret {
 	}
 }
 
-func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (*appsv1.StatefulSet, error) {
+func (r *ReconcileActiveGate) newStatefulSetForCR(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UID) (*appsv1.StatefulSet, error) {
 
-	podSpec, err := builder.BuildActiveGatePodSpecs(instance, tenantInfo, kubeSystemUID)
+	podSpec, err := builder.BuildActiveGatePodSpecs(instance, kubeSystemUID)
 	if err != nil {
 		return nil, err
 	}
