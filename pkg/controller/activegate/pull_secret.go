@@ -23,7 +23,7 @@ func (r *ReconcileActiveGate) reconcilePullSecret(instance *dynatracev1alpha1.Dy
 	if err != nil {
 		return fmt.Errorf("failed to generate pull secret data: %w", err)
 	}
-	err = factory.CreateOrUpdateSecretIfNotExists(r.client, r.client, instance.GetName()+"-pull-secret", instance.GetNamespace(), pullSecretData, corev1.SecretTypeDockerConfigJson, log)
+	err = factory.CreateOrUpdateSecret(r.client, instance.GetName()+"-pull-secret", instance.GetNamespace(), pullSecretData, corev1.SecretTypeDockerConfigJson, log)
 	if err != nil {
 		return fmt.Errorf("failed to create or update secret: %w", err)
 	}

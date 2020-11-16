@@ -177,3 +177,9 @@ func Certs(certs []byte) Option {
 		t.TLSClientConfig.RootCAs = rootCAs
 	}
 }
+
+func NetworkZone(networkZone string) Option {
+	return func(c *dynatraceClient) {
+		c.networkZone = networkZone
+	}
+}

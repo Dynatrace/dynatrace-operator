@@ -43,6 +43,6 @@ func (dockerLabelsChecker *DockerLabelsChecker) IsLatest() (bool, error) {
 		return false, err
 	}
 
-	// Return true if local version is equal or greater to the remote version
-	return CompareVersionInfo(localVersion, remoteVersion) >= 0, nil
+	// Return true if local version is not equal to the remote version
+	return CompareVersionInfo(localVersion, remoteVersion) != 0, nil
 }

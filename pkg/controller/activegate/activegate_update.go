@@ -22,7 +22,7 @@ The interface is used to increase testability of the Reconciler
 Previously, the Reconciler was harder to unit test, because the methods of this interface depend on one another.
 Additionally, the production code used makes api requests.
 To allow mocking and testing of single methods used, this interface has been introduced.
-WIth it, single methods can be overwritten or mocked to allow focused unti testing
+With it, single methods can be overwritten or mocked to allow focused unit testing
 */
 type updateService interface {
 	FindOutdatedPods(
