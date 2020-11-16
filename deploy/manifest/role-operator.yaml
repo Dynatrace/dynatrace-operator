@@ -10,7 +10,7 @@ rules:
   - apiGroups:
       - dynatrace.com
     resources:
-      - activegates
+      - dynakubes
     verbs:
       - get
       - list
@@ -20,8 +20,8 @@ rules:
   - apiGroups:
       - dynatrace.com
     resources:
-      - activegates/finalizers
-      - activegates/status
+      - dynakubes/finalizers
+      - dynakubes/status
     verbs:
       - update
 
@@ -96,6 +96,7 @@ rules:
       - services
     verbs:
       - create
+      - get
 
   - apiGroups:
       - policy

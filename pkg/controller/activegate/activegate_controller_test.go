@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
 	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/factory"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
@@ -84,7 +83,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, result, builder.ReconcileImmediately())
 
-		sts, err := r.newStatefulSetForCR(instance, &dtclient.TenantInfo{}, factory.KubeSystemUID)
+		sts, err := r.newStatefulSetForCR(instance, factory.KubeSystemUID)
 		assert.NoError(t, err)
 		assert.NotNil(t, sts)
 
@@ -186,8 +185,10 @@ func TestReconcile(t *testing.T) {
 		assert.Equal(t, result, builder.ReconcileAfterFiveMinutes())
 	})
 	t.Run("Reconcile pod has uid env", func(t *testing.T) {
+		fakeClient := factory.CreateFakeClient()
 		r := &ReconcileActiveGate{
-			client:        factory.CreateFakeClient(),
+			client:        fakeClient,
+			apiReader:     fakeClient,
 			dtcBuildFunc:  createFakeDTClient,
 			scheme:        scheme.Scheme,
 			updateService: &mockIsLatestUpdateService{},
@@ -234,8 +235,10 @@ func TestReconcile(t *testing.T) {
 		}
 	})
 	t.Run("Reconcile no kube-system namespace", func(t *testing.T) {
+		fakeClient := factory.CreateFakeClient()
 		r := &ReconcileActiveGate{
-			client:        factory.CreateFakeClient(),
+			client:        fakeClient,
+			apiReader:     fakeClient,
 			dtcBuildFunc:  createFakeDTClient,
 			scheme:        scheme.Scheme,
 			updateService: &mockIsLatestUpdateService{},

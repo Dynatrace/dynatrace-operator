@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dao"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -16,18 +15,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func (r *ReconcileActiveGate) createDesiredStatefulSet(instance *v1alpha1.DynaKube, dtc dtclient.Client) (*appsv1.StatefulSet, error) {
-	tenantInfo, err := dtc.GetTenantInfo()
+func (r *ReconcileActiveGate) createDesiredStatefulSet(instance *v1alpha1.DynaKube) (*appsv1.StatefulSet, error) {
+	uid, err := dao.FindKubeSystemUID(r.apiReader)
 	if err != nil {
 		return nil, err
 	}
 
-	uid, err := dao.FindKubeSystemUID(r.client)
-	if err != nil {
-		return nil, err
-	}
-
-	desiredStatefulSet, err := r.newStatefulSetForCR(instance, tenantInfo, uid)
+	desiredStatefulSet, err := r.newStatefulSetForCR(instance, uid)
 	if err != nil {
 		return nil, err
 	}

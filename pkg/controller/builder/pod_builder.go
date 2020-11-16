@@ -4,14 +4,13 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) (corev1.PodSpec, error) {
+func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, kubeSystemUID types.UID) (corev1.PodSpec, error) {
 	sa := MonitoringServiceAccount
 	image := ""
 	activeGateSpec := &instance.Spec.KubernetesMonitoringSpec
@@ -21,13 +20,6 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 	}
 	if activeGateSpec.Image != "" {
 		image = activeGateSpec.Image
-	}
-	if tenantInfo == nil {
-		tenantInfo = &dtclient.TenantInfo{
-			ID:        "",
-			Token:     "",
-			Endpoints: []string{},
-		}
 	}
 
 	if activeGateSpec.Resources.Requests == nil {
@@ -44,7 +36,7 @@ func BuildActiveGatePodSpecs(instance *v1alpha1.DynaKube, tenantInfo *dtclient.T
 			Image:           image,
 			Resources:       activeGateSpec.Resources,
 			ImagePullPolicy: corev1.PullAlways,
-			Env:             buildEnvVars(instance, tenantInfo, kubeSystemUID),
+			Env:             buildEnvVars(instance, kubeSystemUID),
 			Args:            buildArgs(),
 			ReadinessProbe:  buildReadinessProbe(),
 			LivenessProbe:   buildLivenessProbe(),
@@ -97,14 +89,11 @@ func buildReadinessProbe() *corev1.Probe {
 
 func buildArgs() []string {
 	return []string{
-		DtTenantArg,
-		DtTokenArg,
-		DtServerArg,
 		DtCapabilitiesArg,
 	}
 }
 
-func buildEnvVars(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) []corev1.EnvVar {
+func buildEnvVars(instance *v1alpha1.DynaKube, kubeSystemUID types.UID) []corev1.EnvVar {
 	var capabilities []string
 
 	if instance.Spec.KubernetesMonitoringSpec.Enabled {
@@ -112,18 +101,6 @@ func buildEnvVars(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, 
 	}
 
 	return []corev1.EnvVar{
-		{
-			Name:  DtTenant,
-			Value: tenantInfo.ID,
-		},
-		{
-			Name:  DtToken,
-			Value: tenantInfo.Token,
-		},
-		{
-			Name:  DtServer,
-			Value: tenantInfo.CommunicationEndpoint,
-		},
 		{
 			Name:  DtCapabilities,
 			Value: strings.Join(capabilities, Comma),
@@ -240,17 +217,11 @@ const (
 	ARM64 = "arm64"
 	LINUX = "linux"
 
-	DtTenant          = "DT_TENANT"
-	DtServer          = "DT_SERVER"
-	DtToken           = "DT_TOKEN"
 	DtCapabilities    = "DT_CAPABILITIES"
 	DtIdSeedNamespace = "DT_ID_SEED_NAMESPACE"
 	DtIdSeedClusterId = "DT_ID_SEED_K8S_CLUSTER_ID"
 
-	DtTenantArg       = "--tenant=$(DT_TENANT)"
-	DtTokenArg        = "--token=$(DT_TOKEN)"
-	DtServerArg       = "--server=$(DT_SERVER)"
-	DtCapabilitiesArg = "--enable=$(DT_CAPABILITIES)"
+	DtCapabilitiesArg = "--enable=kubernetes_monitoring"
 
 	Comma = ","
 )

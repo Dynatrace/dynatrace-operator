@@ -37,6 +37,7 @@ func Add(mgr manager.Manager) error {
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileActiveGate{
 		client:        mgr.GetClient(),
+		apiReader:     mgr.GetAPIReader(),
 		scheme:        mgr.GetScheme(),
 		dtcBuildFunc:  builder.BuildDynatraceClient,
 		updateService: &activeGateUpdateService{},
@@ -77,6 +78,7 @@ type ReconcileActiveGate struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client        client.Client
+	apiReader     client.Reader
 	scheme        *runtime.Scheme
 	dtcBuildFunc  DynatraceClientFunc
 	updateService updateService
@@ -109,6 +111,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	if !instance.Spec.KubernetesMonitoringSpec.Enabled {
+		reqLogger.Info("Kubernetes monitoring disabled")
 		return builder.ReconcileAfterFiveMinutes(), nil
 	}
 
@@ -130,7 +133,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		}
 	}
 
-	desiredStatefulSet, err := r.createDesiredStatefulSet(instance, dtc)
+	desiredStatefulSet, err := r.createDesiredStatefulSet(instance)
 	if err != nil {
 		reqLogger.Error(err, "error when creating desired stateful set")
 		return reconcile.Result{}, err
@@ -160,7 +163,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		if errors.As(err, &statusError) {
 			// Since this happens early during deployment, pods might have been modified
 			// In this case, retry silently
-			return builder.ReconcileAfter(5 * time.Second), nil
+			return builder.ReconcileAfterFiveMinutes(), nil
 		}
 		// Otherwise, retry loudly
 		return builder.ReconcileAfterFiveMinutes(), err

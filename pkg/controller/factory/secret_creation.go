@@ -9,11 +9,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // CreateOrUpdateSecretIfNotExists creates a secret in case it does not exist or updates it if there are changes
-func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretName string, targetNS string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
+func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, scheme *runtime.Scheme, owner metav1.Object, targetNS string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
+	secretName := owner.GetName() + "-pull-secret"
 	var cfg corev1.Secret
 	err := r.Get(context.TODO(), client.ObjectKey{Name: secretName, Namespace: targetNS}, &cfg)
 	if k8serrors.IsNotFound(err) {
@@ -29,6 +32,12 @@ func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretNam
 			return fmt.Errorf("failed to create secret %s: %w", secretName, err)
 		}
 		return nil
+	}
+
+	// Set DynaKube instance as the owner and controller
+	if err := controllerutil.SetControllerReference(owner, &cfg, scheme); err != nil {
+		log.Error(err, "error setting controller reference")
+		return err
 	}
 
 	if err != nil {
