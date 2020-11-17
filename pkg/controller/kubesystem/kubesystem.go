@@ -10,7 +10,7 @@ import (
 
 const Namespace = "kube-system"
 
-func GetUID(clt client.Client) (types.UID, error) {
+func GetUID(clt client.Reader) (types.UID, error) {
 	kubeSystemNamespace := &corev1.Namespace{}
 	err := clt.Get(context.TODO(), client.ObjectKey{Name: Namespace}, kubeSystemNamespace)
 	if err != nil {

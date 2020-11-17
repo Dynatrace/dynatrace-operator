@@ -126,7 +126,7 @@ func (r *Reconciler) buildDesiredStatefulSet(instance *v1alpha1.DynaKube) (*v1.S
 		return nil, err
 	}
 
-	kubeUID, err := kubesystem.GetUID(r)
+	kubeUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
 		return nil, err
 	}
