@@ -64,5 +64,5 @@ func GetTokensName(obj *dynatracev1alpha1.DynaKube) string {
 	if tkns := obj.Spec.Tokens; tkns != "" {
 		return tkns
 	}
-	return obj.GetName()
+	return obj.Name
 }

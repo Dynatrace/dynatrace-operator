@@ -56,7 +56,7 @@ func (podImageInfo *podImageInformation) GetVersionLabel() (string, error) {
 
 	versionLabel, hasVersionLabel := inspectedImg.Labels[VersionKey]
 	if !hasVersionLabel {
-		return "", fmt.Errorf("remote does not have key '%s' in matchLabels", VersionKey)
+		return "", fmt.Errorf("remote does not have label '%s'", VersionKey)
 	}
 
 	return versionLabel, nil

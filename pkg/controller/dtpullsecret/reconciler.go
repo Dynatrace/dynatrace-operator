@@ -77,13 +77,13 @@ func (r *Reconciler) reconcilePullSecret() error {
 }
 
 func (r *Reconciler) createPullSecretIfNotExists(pullSecretData map[string][]byte) (*v1.Secret, error) {
-	var config *v1.Secret
-	err := r.apiReader.Get(context.TODO(), client.ObjectKey{Name: extendWithPullSecretSuffix(r.instance.Name), Namespace: r.instance.Namespace}, config)
+	var config v1.Secret
+	err := r.apiReader.Get(context.TODO(), client.ObjectKey{Name: extendWithPullSecretSuffix(r.instance.Name), Namespace: r.instance.Namespace}, &config)
 	if k8serrors.IsNotFound(err) {
 		r.log.Info("Creating ActiveGate config secret")
 		return r.createPullSecret(pullSecretData)
 	}
-	return config, err
+	return &config, err
 }
 
 func (r *Reconciler) updatePullSecretIfOutdated(pullSecret *v1.Secret, desiredPullSecretData map[string][]byte) error {

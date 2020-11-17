@@ -2,6 +2,7 @@ package dtpods
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
@@ -73,7 +74,7 @@ func (r *Reconciler) updatePods() error {
 
 func (r *Reconciler) isPodOutdated(pod corev1.Pod) (bool, error) {
 	if _, hasVersionLabel := pod.Labels[dtversion.VersionKey]; !hasVersionLabel {
-		r.log.Info("pod does not have '%s' label, skipping update check", dtversion.VersionKey, "pod", pod.Name)
+		r.log.Info(fmt.Sprintf("pod does not have '%s' label, skipping update check", dtversion.VersionKey), "pod", pod.Name)
 		return false, nil
 	}
 
