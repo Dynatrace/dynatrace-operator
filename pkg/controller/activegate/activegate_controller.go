@@ -118,13 +118,17 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	//	return builder.ReconcileAfterFiveMinutes(), nil
 	//}
 	if instance.Spec.KubernetesMonitoringSpec.Enabled {
-		return kubemon.NewReconciler(
+		result, err := kubemon.NewReconciler(
 			r.client, r.apiReader, r.scheme, dtc, reqLogger, secret, instance,
 		).Reconcile(request)
+		if err != nil {
+			reqLogger.Error(err, "could not reconcile kubernetes monitoring")
+			return result, err
+		}
 	}
 
 	reqLogger.Info("Nothing to do: Instance is ready", "Namespace", instance.Namespace, "Name", instance.Name)
-	return reconcile.Result{Requeue: true, RequeueAfter: 5 * time.Minute}, nil
+	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 
 func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {
