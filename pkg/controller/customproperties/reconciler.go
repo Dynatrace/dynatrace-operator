@@ -68,10 +68,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) createCustomPropertiesIfNotExists() error {
-	var customPropertiesSecret *corev1.Secret
+	var customPropertiesSecret corev1.Secret
 	err := r.Get(context.TODO(),
-		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: v1alpha1.DynatraceNamespace},
-		customPropertiesSecret)
+		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: v1alpha1.DynatraceNamespace}, &customPropertiesSecret)
 	if err != nil && k8serrors.IsNotFound(err) {
 		return r.createCustomProperties()
 	}
@@ -79,28 +78,27 @@ func (r *Reconciler) createCustomPropertiesIfNotExists() error {
 }
 
 func (r *Reconciler) updateCustomPropertiesIfOutdated() error {
-	var customPropertiesSecret *corev1.Secret
+	var customPropertiesSecret corev1.Secret
 	err := r.Get(context.TODO(),
 		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: v1alpha1.DynatraceNamespace},
-		customPropertiesSecret)
+		&customPropertiesSecret)
 	if err != nil {
 		return err
 	}
-	if r.isOutdated(customPropertiesSecret) {
-		return r.updateCustomProperties(customPropertiesSecret)
+	if r.isOutdated(&customPropertiesSecret) {
+		return r.updateCustomProperties(&customPropertiesSecret)
 	}
 	return nil
 }
 
 func (r *Reconciler) setControllerReference() error {
-	var customPropertiesSecret *corev1.Secret
+	var customPropertiesSecret corev1.Secret
 	err := r.Get(context.TODO(),
-		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: v1alpha1.DynatraceNamespace},
-		customPropertiesSecret)
+		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: v1alpha1.DynatraceNamespace}, &customPropertiesSecret)
 	if err != nil {
 		return err
 	}
-	return controllerutil.SetControllerReference(r.instance, customPropertiesSecret, r.scheme)
+	return controllerutil.SetControllerReference(r.instance, &customPropertiesSecret, r.scheme)
 }
 
 func (r *Reconciler) isOutdated(customProperties *corev1.Secret) bool {

@@ -161,12 +161,12 @@ func (r *Reconciler) updateInstanceStatus(instance *v1alpha1.DynaKube) error {
 }
 
 func (r *Reconciler) getCurrentStatefulSet(desired *v1alpha1.DynaKube) (*v1.StatefulSet, error) {
-	var currentStatefulSet *v1.StatefulSet
-	err := r.Get(context.TODO(), client.ObjectKey{Name: desired.Name, Namespace: desired.Namespace}, currentStatefulSet)
+	var currentStatefulSet v1.StatefulSet
+	err := r.Get(context.TODO(), client.ObjectKey{Name: desired.Name, Namespace: desired.Namespace}, &currentStatefulSet)
 	if err != nil {
 		return nil, err
 	}
-	return currentStatefulSet, nil
+	return &currentStatefulSet, nil
 }
 
 func (r *Reconciler) createStatefulSet(desired *v1.StatefulSet) error {

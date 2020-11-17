@@ -123,84 +123,14 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		).Reconcile(request)
 	}
 
-	//if instance.Spec.KubernetesMonitoringSpec.Image == "" && instance.Spec.CustomPullSecret == "" {
-	//	err = r.reconcilePullSecret(instance, reqLogger, dtc)
-	//	if err != nil {
-	//		return reconcile.Result{}, err
-	//	}
-	//}
-
-	//customPropertiesConfigMap, err := r.manageCustomProperties(instance.Name, &instance.Spec.KubernetesMonitoringSpec)
-	//if err != nil {
-	//	reqLogger.Error(err, "error creating config map for custom properties")
-	//	return reconcile.Result{}, err
-	//}
-	//if customPropertiesConfigMap != nil {
-	//	if err := controllerutil.SetControllerReference(instance, customPropertiesConfigMap, r.scheme); err != nil {
-	//		reqLogger.Error(err, "error setting controller reference for custom properties secret")
-	//		return reconcile.Result{}, err
-	//	}
-	//}
-
-	//desiredStatefulSet, err := r.createDesiredStatefulSet(instance, dtc)
-	//if err != nil {
-	//	reqLogger.Error(err, "error when creating desired stateful set")
-	//	return reconcile.Result{}, err
-	//}
-	//
-	//// Set DynaKube instance as the owner and controller
-	//if err := controllerutil.SetControllerReference(instance, desiredStatefulSet, r.scheme); err != nil {
-	//	reqLogger.Error(err, "error setting controller reference")
-	//	return reconcile.Result{}, err
-	//}
-	//
-	//actualStatefulSet := &appsv1.StatefulSet{}
-	//reconcileResult, err := r.manageStatefulSet(reqLogger, instance, desiredStatefulSet, actualStatefulSet)
-	//if reconcileResult != nil {
-	//	return *reconcileResult, err
-	//}
-
-	//pods, err := r.findPods(instance)
-	//if err != nil {
-	//	return reconcile.Result{}, err
-	//}
-	//
-	//err = r.setVersionLabel(pods)
-	//if err != nil {
-	//
-	//	var statusError *k8serrors.StatusError
-	//	if errors.As(err, &statusError) {
-	//		// Since this happens early during deployment, pods might have been modified
-	//		// In this case, retry silently
-	//		return builder.ReconcileAfter(5 * time.Second), nil
-	//	}
-	//	// Otherwise, retry loudly
-	//	return builder.ReconcileAfterFiveMinutes(), err
-	//}
-
-	//reconcileResult, err = r.updateService.UpdatePods(r, instance)
-	//if err != nil {
-	//	log.Error(err, "could not update pods")
-	//}
-	//if reconcileResult != nil {
-	//	return *reconcileResult, err
-	//}
-
-	//if instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint != "" {
-	//	id, err := r.addToDashboard(dtc, instance)
-	//	r.handleAddToDashboardResult(id, err, log)
-	//}
-
-	// Set version and last updated timestamp
-	// Nothing to do - requeue after five minutes
 	reqLogger.Info("Nothing to do: Instance is ready", "Namespace", instance.Namespace, "Name", instance.Name)
 	return reconcile.Result{Requeue: true, RequeueAfter: 5 * time.Minute}, nil
 }
 
 func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {
-	var secret *corev1.Secret
-	err := r.client.Get(context.TODO(), client.ObjectKey{Name: GetTokensName(instance), Namespace: instance.Namespace}, secret)
-	return secret, err
+	var secret corev1.Secret
+	err := r.client.Get(context.TODO(), client.ObjectKey{Name: GetTokensName(instance), Namespace: instance.Namespace}, &secret)
+	return &secret, err
 }
 
 //func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
