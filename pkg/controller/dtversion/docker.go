@@ -8,14 +8,30 @@ import (
 	"github.com/containers/image/v5/transports/alltransports"
 )
 
-func GetVersionLabel(imageName string, dockerConfig *DockerConfig) (string, error) {
-	transportImageName := fmt.Sprintf("docker://%s", imageName)
+type ImageInformation interface {
+	GetVersionLabel() (string, error)
+}
+
+type podImageInformation struct {
+	imageName    string
+	dockerConfig *DockerConfig
+}
+
+func NewPodImageInformation(imageName string, dockerConfig *DockerConfig) ImageInformation {
+	return &podImageInformation{
+		imageName:    imageName,
+		dockerConfig: dockerConfig,
+	}
+}
+
+func (podImageInfo *podImageInformation) GetVersionLabel() (string, error) {
+	transportImageName := fmt.Sprintf("docker://%s", podImageInfo.imageName)
 	imageReference, err := alltransports.ParseImageName(transportImageName)
 	if err != nil {
 		return "", err
 	}
 
-	systemContext := MakeSystemContext(imageReference.DockerReference(), dockerConfig)
+	systemContext := MakeSystemContext(imageReference.DockerReference(), podImageInfo.dockerConfig)
 	imageSource, err := imageReference.NewImageSource(context.TODO(), systemContext)
 	if err != nil {
 		return "", err
@@ -40,7 +56,7 @@ func GetVersionLabel(imageName string, dockerConfig *DockerConfig) (string, erro
 
 	versionLabel, hasVersionLabel := inspectedImg.Labels[VersionKey]
 	if !hasVersionLabel {
-		return "", fmt.Errorf("remote does not have key '%s' in labels", VersionKey)
+		return "", fmt.Errorf("remote does not have key '%s' in matchLabels", VersionKey)
 	}
 
 	return versionLabel, nil

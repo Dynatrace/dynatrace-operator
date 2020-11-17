@@ -6,6 +6,15 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+const (
+	// Usage of SI-Prefix Mega instead of IEC-Prefix Mebi to make use of
+	// scaling provided by resource.*. E.g., resource.Milli
+	ResourceMemoryMinimum = "250M"
+	ResourceCPUMinimum    = "150m"
+	ResourceMemoryMaximum = "1G"
+	ResourceCPUMaximum    = "300m"
+)
+
 func buildResources(instance *v1alpha1.DynaKube) corev1.ResourceRequirements {
 	limits := buildResourceLimits(instance)
 	requests := buildResourceRequests(instance, limits)

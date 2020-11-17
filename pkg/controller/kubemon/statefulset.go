@@ -41,13 +41,6 @@ const (
 	ProxyKey = "ProxyKey"
 
 	CapabilityEnv = "kubernetes_monitoring"
-
-	// Usage of SI-Prefix Mega instead of IEC-Prefix Mebi to make use of
-	// scaling provided by resource.*. E.g., resource.Milli
-	ResourceMemoryMinimum = "250M"
-	ResourceCPUMinimum    = "150m"
-	ResourceMemoryMaximum = "1G"
-	ResourceCPUMaximum    = "300m"
 )
 
 func newStatefulSet(instance v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) *v1.StatefulSet {

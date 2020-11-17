@@ -1,12 +1,16 @@
-package parser
+package activegate
 
 import (
 	"fmt"
 	"strings"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
-	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
 	corev1 "k8s.io/api/core/v1"
+)
+
+const (
+	DynatracePaasToken = "paasToken"
+	DynatraceApiToken  = "apiToken"
 )
 
 type Tokens struct {
@@ -28,8 +32,8 @@ func NewTokens(secret *corev1.Secret) (*Tokens, error) {
 	}
 
 	//Errors would have been caught by verifySecret
-	apiToken, _ = ExtractToken(secret, _const.DynatraceApiToken)
-	paasToken, _ = ExtractToken(secret, _const.DynatracePaasToken)
+	apiToken, _ = ExtractToken(secret, DynatraceApiToken)
+	paasToken, _ = ExtractToken(secret, DynatracePaasToken)
 
 	return &Tokens{
 		ApiToken:  apiToken,
@@ -38,7 +42,7 @@ func NewTokens(secret *corev1.Secret) (*Tokens, error) {
 }
 
 func verifySecret(secret *corev1.Secret) error {
-	for _, token := range []string{_const.DynatracePaasToken, _const.DynatraceApiToken} {
+	for _, token := range []string{DynatracePaasToken, DynatraceApiToken} {
 		_, err := ExtractToken(secret, token)
 		if err != nil {
 			return fmt.Errorf("invalid secret %s, %s", secret.Name, err)

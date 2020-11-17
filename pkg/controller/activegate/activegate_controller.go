@@ -2,28 +2,21 @@ package activegate
 
 import (
 	"context"
-	"errors"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtversion"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/kubemon"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
-	"github.com/go-logr/logr"
-	"time"
-
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
-	appsv1 "k8s.io/api/apps/v1"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"time"
 )
 
 var log = logf.Log.WithName("controller_dynakube")
@@ -37,10 +30,9 @@ func Add(mgr manager.Manager) error {
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileActiveGate{
-		client:        mgr.GetClient(),
-		scheme:        mgr.GetScheme(),
-		dtcBuildFunc:  builder.BuildDynatraceClient,
-		updateService: &activeGateUpdateService{},
+		client:       mgr.GetClient(),
+		scheme:       mgr.GetScheme(),
+		dtcBuildFunc: BuildDynatraceClient,
 	}
 }
 
@@ -77,10 +69,9 @@ var _ reconcile.Reconciler = &ReconcileActiveGate{}
 type ReconcileActiveGate struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client        client.Client
-	scheme        *runtime.Scheme
-	dtcBuildFunc  DynatraceClientFunc
-	updateService updateService
+	client       client.Client
+	scheme       *runtime.Scheme
+	dtcBuildFunc DynatraceClientFunc
 }
 
 type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
@@ -124,12 +115,9 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	//	return builder.ReconcileAfterFiveMinutes(), nil
 	//}
 	if instance.Spec.KubernetesMonitoringSpec.Enabled {
-		return kubemon.NewReconciler().Reconcile(request)
-	}
-
-	result, err := dtversion.NewReconciler().Reconcile(request)
-	if err != nil {
-		return result, err
+		return kubemon.NewReconciler(
+			r.client, r.scheme, dtc, reqLogger, secret, instance,
+		).Reconcile(request)
 	}
 
 	//if instance.Spec.KubernetesMonitoringSpec.Image == "" && instance.Spec.CustomPullSecret == "" {
@@ -187,28 +175,28 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	//	return builder.ReconcileAfterFiveMinutes(), err
 	//}
 
-	reconcileResult, err = r.updateService.UpdatePods(r, instance)
-	if err != nil {
-		log.Error(err, "could not update statefulset")
-	}
-	if reconcileResult != nil {
-		return *reconcileResult, err
-	}
+	//reconcileResult, err = r.updateService.UpdatePods(r, instance)
+	//if err != nil {
+	//	log.Error(err, "could not update pods")
+	//}
+	//if reconcileResult != nil {
+	//	return *reconcileResult, err
+	//}
 
-	if instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint != "" {
-		id, err := r.addToDashboard(dtc, instance)
-		r.handleAddToDashboardResult(id, err, log)
-	}
+	//if instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint != "" {
+	//	id, err := r.addToDashboard(dtc, instance)
+	//	r.handleAddToDashboardResult(id, err, log)
+	//}
 
 	// Set version and last updated timestamp
 	// Nothing to do - requeue after five minutes
-	reqLogger.Info("Nothing to do: Pod already exists", "Pod.Namespace", actualStatefulSet.Namespace, "Pod.Name", actualStatefulSet.Name)
-	return builder.ReconcileAfterFiveMinutes(), nil
+	reqLogger.Info("Nothing to do: Instance is ready", "Namespace", instance.Namespace, "Name", instance.Name)
+	return reconcile.Result{Requeue: true, RequeueAfter: 5 * time.Minute}, nil
 }
 
 func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {
 	var secret *corev1.Secret
-	err := r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(instance), Namespace: instance.Namespace}, secret)
+	err := r.client.Get(context.TODO(), client.ObjectKey{Name: GetTokensName(instance), Namespace: instance.Namespace}, secret)
 	return secret, err
 }
 
@@ -232,7 +220,6 @@ func LogError(log logr.Logger, err error, msg string) (reconcile.Result, error) 
 
 const (
 	annotationTemplateHash = "internal.activegate.dynatrace.com/template-hash"
-	UpdateInterval         = 5 * time.Minute
 	DynatraceNamespace     = "dynatrace"
 	Name                   = "activegate"
 	OperatorName           = "dynatrace-operator"
