@@ -7,7 +7,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -21,7 +20,7 @@ func TestCreateStatefulSet(t *testing.T) {
 	assert.NotNil(t, r)
 	assert.NoError(t, err)
 
-	result, err := r.newStatefulSetForCR(instance, &dtclient.TenantInfo{}, "")
+	result, err := r.newStatefulSetForCR(instance, "")
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 }

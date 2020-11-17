@@ -9,43 +9,54 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-// CreateOrUpdateSecretIfNotExists creates a secret in case it does not exist or updates it if there are changes
-func CreateOrUpdateSecretWithAPIReader(c client.Client, r client.Reader, secretName string, targetNS string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
+type SecretManager struct {
+	Client client.Client
+	Scheme *runtime.Scheme
+	Logger logr.Logger
+	Secret *corev1.Secret
+	Owner  metav1.Object
+}
+
+// CreateOrUpdateSecret creates a secret in case it does not exist or updates it if there are changes
+func CreateOrUpdateSecret(secretManager *SecretManager) error {
 	var cfg corev1.Secret
-	err := r.Get(context.TODO(), client.ObjectKey{Name: secretName, Namespace: targetNS}, &cfg)
+	err := secretManager.Client.Get(context.TODO(), client.ObjectKey{Name: secretManager.Secret.Name, Namespace: secretManager.Secret.Namespace}, &cfg)
 	if k8serrors.IsNotFound(err) {
-		log.Info("Creating OneAgent config secret")
-		if err := c.Create(context.TODO(), &corev1.Secret{
+		secretManager.Logger.Info("Creating OneAgent config secret")
+		// Set DynaKube instance as the owner and controller
+		if err := controllerutil.SetControllerReference(secretManager.Owner, &cfg, secretManager.Scheme); err != nil {
+			secretManager.Logger.Error(err, "error setting controller reference")
+			return err
+		}
+
+		if err := secretManager.Client.Create(context.TODO(), &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretName,
-				Namespace: targetNS,
+				Name:      secretManager.Secret.Name,
+				Namespace: secretManager.Secret.Namespace,
 			},
-			Type: secretType,
-			Data: data,
+			Type: secretManager.Secret.Type,
+			Data: secretManager.Secret.Data,
 		}); err != nil {
-			return fmt.Errorf("failed to create secret %s: %w", secretName, err)
+			return fmt.Errorf("failed to create secret %s: %w", secretManager.Secret.Name, err)
 		}
 		return nil
 	}
-
 	if err != nil {
-		return fmt.Errorf("failed to query for secret %s: %w", secretName, err)
+		return fmt.Errorf("failed to query for secret %s: %w", secretManager.Secret.Name, err)
 	}
 
-	if !reflect.DeepEqual(data, cfg.Data) {
-		log.Info(fmt.Sprintf("Updating secret %s", secretName))
-		cfg.Data = data
-		if err := c.Update(context.TODO(), &cfg); err != nil {
-			return fmt.Errorf("failed to update secret %s: %w", secretName, err)
+	if !reflect.DeepEqual(secretManager.Secret.Data, cfg.Data) {
+		secretManager.Logger.Info("Updating secret", "secret", secretManager.Secret.Name)
+		cfg.Data = secretManager.Secret.Data
+		if err := secretManager.Client.Update(context.TODO(), &cfg); err != nil {
+			return fmt.Errorf("failed to update secret %s: %w", secretManager.Secret.Name, err)
 		}
 	}
 
 	return nil
-}
-
-func CreateOrUpdateSecret(c client.Client, secretName string, targetNamespace string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
-	return CreateOrUpdateSecretWithAPIReader(c, c, secretName, targetNamespace, data, secretType, log)
 }

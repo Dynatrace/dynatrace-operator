@@ -238,6 +238,7 @@ func setupReconciler(t *testing.T, updateService updateService) (*ReconcileActiv
 	fakeClient := factory.CreateFakeClient()
 	r := &ReconcileActiveGate{
 		client:        fakeClient,
+		apiReader:     fakeClient,
 		dtcBuildFunc:  createFakeDTClient,
 		scheme:        scheme.Scheme,
 		updateService: updateService,
