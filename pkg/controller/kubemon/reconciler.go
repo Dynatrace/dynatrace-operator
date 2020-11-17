@@ -29,21 +29,23 @@ const (
 
 type Reconciler struct {
 	client.Client
-	scheme   *runtime.Scheme
-	dtc      dtclient.Client
-	log      logr.Logger
-	token    *corev1.Secret
-	instance *v1alpha1.DynaKube
+	scheme    *runtime.Scheme
+	dtc       dtclient.Client
+	log       logr.Logger
+	token     *corev1.Secret
+	instance  *v1alpha1.DynaKube
+	apiReader client.Reader
 }
 
-func NewReconciler(clt client.Client, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger, token *corev1.Secret, instance *v1alpha1.DynaKube) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger, token *corev1.Secret, instance *v1alpha1.DynaKube) *Reconciler {
 	return &Reconciler{
-		Client:   clt,
-		scheme:   scheme,
-		dtc:      dtc,
-		log:      log,
-		token:    token,
-		instance: instance,
+		Client:    clt,
+		apiReader: apiReader,
+		scheme:    scheme,
+		dtc:       dtc,
+		log:       log,
+		token:     token,
+		instance:  instance,
 	}
 }
 
@@ -56,7 +58,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	_, err = dtpullsecret.
-		NewReconciler(r, r.instance, r.dtc, r.log, r.token, r.instance.Spec.KubernetesMonitoringSpec.Image).
+		NewReconciler(r, r.apiReader, r.scheme, r.instance, r.dtc, r.log, r.token, r.instance.Spec.KubernetesMonitoringSpec.Image).
 		Reconcile(request)
 	if err != nil {
 		return activegate.LogError(r.log, err, "could not reconcile Dynatrace pull secret")

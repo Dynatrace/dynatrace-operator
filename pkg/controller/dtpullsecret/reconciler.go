@@ -10,8 +10,10 @@ import (
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -21,21 +23,25 @@ const (
 
 type Reconciler struct {
 	client.Client
-	instance *v1alpha1.DynaKube
-	dtc      dtclient.Client
-	log      logr.Logger
-	token    *v1.Secret
-	image    string
+	apiReader client.Reader
+	instance  *v1alpha1.DynaKube
+	dtc       dtclient.Client
+	log       logr.Logger
+	token     *v1.Secret
+	image     string
+	scheme    *runtime.Scheme
 }
 
-func NewReconciler(clt client.Client, instance *v1alpha1.DynaKube, dtc dtclient.Client, log logr.Logger, token *v1.Secret, image string) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *v1alpha1.DynaKube, dtc dtclient.Client, log logr.Logger, token *v1.Secret, image string) *Reconciler {
 	return &Reconciler{
-		Client:   clt,
-		instance: instance,
-		dtc:      dtc,
-		log:      log,
-		token:    token,
-		image:    image,
+		Client:    clt,
+		apiReader: apiReader,
+		scheme:    scheme,
+		instance:  instance,
+		dtc:       dtc,
+		log:       log,
+		token:     token,
+		image:     image,
 	}
 }
 
@@ -60,12 +66,18 @@ func (r *Reconciler) reconcilePullSecret() error {
 	if err != nil {
 		return fmt.Errorf("failed to create or update secret: %w", err)
 	}
+
+	if err := controllerutil.SetControllerReference(r.instance, pullSecret, r.scheme); err != nil {
+		r.log.Error(err, "error setting controller reference")
+		return err
+	}
+
 	return r.updatePullSecretIfOutdated(pullSecret, pullSecretData)
 }
 
 func (r *Reconciler) createPullSecretIfNotExists(pullSecretData map[string][]byte) (*v1.Secret, error) {
 	var config *v1.Secret
-	err := r.Get(context.TODO(), client.ObjectKey{Name: extendWithPullSecretSuffix(r.instance.Name), Namespace: r.instance.Namespace}, config)
+	err := r.apiReader.Get(context.TODO(), client.ObjectKey{Name: extendWithPullSecretSuffix(r.instance.Name), Namespace: r.instance.Namespace}, config)
 	if k8serrors.IsNotFound(err) {
 		r.log.Info("Creating ActiveGate config secret")
 		return r.createPullSecret(pullSecretData)
