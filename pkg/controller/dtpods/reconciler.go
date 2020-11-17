@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	v1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtversion"
 	"github.com/go-logr/logr"
@@ -50,7 +50,7 @@ func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 }
 
 func (r *Reconciler) updatePods() error {
-	pods, err := NewPodFinder(r, r.instance, r.matchLabels).FindPods()
+	pods, err := dtversion.NewPodFinder(r, r.instance, r.matchLabels).FindPods()
 	if err != nil {
 		return err
 	}
@@ -129,6 +129,5 @@ func (r *Reconciler) updateInstanceStatus() error {
 }
 
 func isInstanceOutdated(instance *v1alpha1.DynaKube) bool {
-	//return !instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate &&
 	return instance.Status.UpdatedTimestamp.Add(UpdateInterval).Before(time.Now())
 }

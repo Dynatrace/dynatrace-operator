@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	v1 "k8s.io/api/apps/v1"
@@ -53,7 +52,7 @@ func newStatefulSet(instance v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo,
 
 func buildObjectMeta(instance *v1alpha1.DynaKube) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
-		Name:        activegate.Name,
+		Name:        v1alpha1.Name,
 		Namespace:   instance.Namespace,
 		Labels:      buildLabels(instance),
 		Annotations: map[string]string{},
@@ -111,7 +110,7 @@ func buildImagePullSecrets(instance *v1alpha1.DynaKube) []corev1.LocalObjectRefe
 
 func buildContainer(instance *v1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) corev1.Container {
 	return corev1.Container{
-		Name:            activegate.OperatorName,
+		Name:            v1alpha1.OperatorName,
 		Image:           buildImage(instance),
 		Resources:       buildResources(instance),
 		ImagePullPolicy: corev1.PullAlways,

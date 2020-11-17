@@ -7,7 +7,6 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -106,7 +105,8 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	// Fetch api token secret
 	secret, err := r.getTokenSecret(instance)
 	if err != nil {
-		return LogError(reqLogger, err, "could not find token secret")
+		reqLogger.Error(err, "could not find token secret")
+		return reconcile.Result{}, err
 	}
 
 	dtc, err := r.dtcBuildFunc(r.client, instance, secret)
@@ -203,11 +203,6 @@ func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.DynaKub
 	return secret, err
 }
 
-func LogError(log logr.Logger, err error, msg string) (reconcile.Result, error) {
-	log.Error(err, msg)
-	return reconcile.Result{}, err
-}
-
 //func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
 //	podList := &corev1.PodList{}
 //	listOptions := []client.ListOption{
@@ -223,7 +218,4 @@ func LogError(log logr.Logger, err error, msg string) (reconcile.Result, error) 
 
 const (
 	annotationTemplateHash = "internal.activegate.dynatrace.com/template-hash"
-	DynatraceNamespace     = "dynatrace"
-	Name                   = "activegate"
-	OperatorName           = "dynatrace-operator"
 )

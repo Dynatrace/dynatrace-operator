@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
@@ -50,7 +49,8 @@ func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 	if r.isReconcileable(r.instance) {
 		err := r.reconcilePullSecret()
 		if err != nil {
-			return activegate.LogError(r.log, err, "could not reconcile pull secret")
+			r.log.Error(err, "could not reconcile pull secret")
+			return reconcile.Result{}, err
 		}
 	}
 

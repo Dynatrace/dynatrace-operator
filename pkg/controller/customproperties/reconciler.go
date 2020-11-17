@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dynakube"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -31,11 +29,13 @@ type Reconciler struct {
 	log                       logr.Logger
 	customPropertiesSource    v1alpha1.DynaKubeValueSource
 	customPropertiesOwnerName string
+	instance                  *v1alpha1.DynaKube
 }
 
-func NewReconciler(clt client.Client, log logr.Logger, customPropertiesOwnerName string, customPropertiesSource v1alpha1.DynaKubeValueSource, scheme *runtime.Scheme) *Reconciler {
+func NewReconciler(clt client.Client, instance *v1alpha1.DynaKube, log logr.Logger, customPropertiesOwnerName string, customPropertiesSource v1alpha1.DynaKubeValueSource, scheme *runtime.Scheme) *Reconciler {
 	return &Reconciler{
 		Client:                    clt,
+		instance:                  instance,
 		scheme:                    scheme,
 		log:                       log,
 		customPropertiesSource:    customPropertiesSource,
@@ -44,46 +44,44 @@ func NewReconciler(clt client.Client, log logr.Logger, customPropertiesOwnerName
 }
 
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	instance, err := dynakube.GetInstance(r, request)
-	if err != nil {
-		return activegate.LogError(r.log, err, "could not get DynaKube instance")
-	}
-
 	if r.hasCustomPropertiesValueOnly() {
-		err := r.createCustomPropertiesIfNotExists(instance)
+		err := r.createCustomPropertiesIfNotExists()
 		if err != nil {
-			return activegate.LogError(r.log, err, fmt.Sprintf("could not create custom properties for '%s'", r.customPropertiesOwnerName))
+			r.log.Error(err, fmt.Sprintf("could not create custom properties for '%s'", r.customPropertiesOwnerName))
+			return reconcile.Result{}, err
 		}
 
-		err = r.updateCustomPropertiesIfOutdated(instance)
+		err = r.updateCustomPropertiesIfOutdated()
 		if err != nil {
-			return activegate.LogError(r.log, err, fmt.Sprintf("could not update custom properties for '%s'", r.customPropertiesOwnerName))
+			r.log.Error(err, fmt.Sprintf("could not update custom properties for '%s'", r.customPropertiesOwnerName))
+			return reconcile.Result{}, err
 		}
 
-		err = r.setControllerReference(instance)
+		err = r.setControllerReference()
 		if err != nil {
-			return activegate.LogError(r.log, err, fmt.Sprintf("could not set controller reference for custom properties of '%s'", r.customPropertiesOwnerName))
+			r.log.Error(err, fmt.Sprintf("could not set controller reference for custom properties of '%s'", r.customPropertiesOwnerName))
+			return reconcile.Result{}, err
 		}
 	}
 
 	return reconcile.Result{}, nil
 }
 
-func (r *Reconciler) createCustomPropertiesIfNotExists(instance *v1alpha1.DynaKube) error {
+func (r *Reconciler) createCustomPropertiesIfNotExists() error {
 	var customPropertiesSecret *corev1.Secret
 	err := r.Get(context.TODO(),
-		client.ObjectKey{Name: r.buildCustomPropertiesName(instance.Name), Namespace: activegate.DynatraceNamespace},
+		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: v1alpha1.DynatraceNamespace},
 		customPropertiesSecret)
 	if err != nil && k8serrors.IsNotFound(err) {
-		return r.createCustomProperties(instance)
+		return r.createCustomProperties()
 	}
 	return err
 }
 
-func (r *Reconciler) updateCustomPropertiesIfOutdated(instance *v1alpha1.DynaKube) error {
+func (r *Reconciler) updateCustomPropertiesIfOutdated() error {
 	var customPropertiesSecret *corev1.Secret
 	err := r.Get(context.TODO(),
-		client.ObjectKey{Name: r.buildCustomPropertiesName(instance.Name), Namespace: activegate.DynatraceNamespace},
+		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: v1alpha1.DynatraceNamespace},
 		customPropertiesSecret)
 	if err != nil {
 		return err
@@ -94,15 +92,15 @@ func (r *Reconciler) updateCustomPropertiesIfOutdated(instance *v1alpha1.DynaKub
 	return nil
 }
 
-func (r *Reconciler) setControllerReference(instance *v1alpha1.DynaKube) error {
+func (r *Reconciler) setControllerReference() error {
 	var customPropertiesSecret *corev1.Secret
 	err := r.Get(context.TODO(),
-		client.ObjectKey{Name: r.buildCustomPropertiesName(instance.Name), Namespace: activegate.DynatraceNamespace},
+		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: v1alpha1.DynatraceNamespace},
 		customPropertiesSecret)
 	if err != nil {
 		return err
 	}
-	return controllerutil.SetControllerReference(instance, customPropertiesSecret, r.scheme)
+	return controllerutil.SetControllerReference(r.instance, customPropertiesSecret, r.scheme)
 }
 
 func (r *Reconciler) isOutdated(customProperties *corev1.Secret) bool {
@@ -114,9 +112,9 @@ func (r *Reconciler) updateCustomProperties(customProperties *corev1.Secret) err
 	return r.Update(context.TODO(), customProperties)
 }
 
-func (r *Reconciler) createCustomProperties(instance *v1alpha1.DynaKube) error {
+func (r *Reconciler) createCustomProperties() error {
 	customPropertiesSecret := buildCustomPropertiesSecret(
-		r.buildCustomPropertiesName(instance.Name),
+		r.buildCustomPropertiesName(r.instance.Name),
 		r.customPropertiesSource.Value,
 	)
 	return r.Create(context.TODO(), customPropertiesSecret)
@@ -126,7 +124,7 @@ func buildCustomPropertiesSecret(secretName string, data string) *corev1.Secret 
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
-			Namespace: activegate.DynatraceNamespace,
+			Namespace: v1alpha1.DynatraceNamespace,
 		},
 		Data: map[string][]byte{
 			DataKey: []byte(data),

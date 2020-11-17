@@ -6,8 +6,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
+)
+
+const (
+	DynatracePaasToken = "paasToken"
+	DynatraceApiToken  = "apiToken"
 )
 
 type dockerAuthentication struct {
@@ -44,7 +48,7 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 	}
 
 	dockerConfig := newDockerConfigWithAuth(connectionInfo.TenantUUID,
-		string(r.token.Data[activegate.DynatracePaasToken]),
+		string(r.token.Data[DynatracePaasToken]),
 		registry,
 		r.buildAuthString(connectionInfo))
 
@@ -52,7 +56,7 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 }
 
 func (r *Reconciler) buildAuthString(connectionInfo dtclient.ConnectionInfo) string {
-	auth := fmt.Sprintf("%s:%s", connectionInfo.TenantUUID, string(r.token.Data[activegate.DynatracePaasToken]))
+	auth := fmt.Sprintf("%s:%s", connectionInfo.TenantUUID, string(r.token.Data[DynatracePaasToken]))
 	return b64.StdEncoding.EncodeToString([]byte(auth))
 }
 

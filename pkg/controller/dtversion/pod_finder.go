@@ -1,4 +1,4 @@
-package dtpods
+package dtversion
 
 import (
 	"context"
