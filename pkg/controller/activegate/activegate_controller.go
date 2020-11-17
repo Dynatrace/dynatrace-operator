@@ -31,6 +31,7 @@ func Add(mgr manager.Manager) error {
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileActiveGate{
 		client:       mgr.GetClient(),
+		apiReader:    mgr.GetAPIReader(),
 		scheme:       mgr.GetScheme(),
 		dtcBuildFunc: BuildDynatraceClient,
 	}
@@ -70,6 +71,7 @@ type ReconcileActiveGate struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client       client.Client
+	apiReader    client.Reader
 	scheme       *runtime.Scheme
 	dtcBuildFunc DynatraceClientFunc
 }
@@ -116,7 +118,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	//}
 	if instance.Spec.KubernetesMonitoringSpec.Enabled {
 		return kubemon.NewReconciler(
-			r.client, r.scheme, dtc, reqLogger, secret, instance,
+			r.client, r.apiReader, r.scheme, dtc, reqLogger, secret, instance,
 		).Reconcile(request)
 	}
 
