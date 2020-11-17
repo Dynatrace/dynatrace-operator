@@ -51,6 +51,7 @@ func appendPath(registry string) string {
 
 func buildImageRegistryFromAPIURL(apiURL string) string {
 	r := strings.TrimPrefix(apiURL, "https://")
+	r = strings.TrimPrefix(r, "http://")
 	r = strings.TrimSuffix(r, "/api")
 	return r
 }
