@@ -366,7 +366,6 @@ func buildReadinessProbe() *corev1.Probe {
 	}
 }
 
-// TODO: Find better place for these utility functions that is also not called "utils"
 func BuildLabelsFromInstance(instance *v1alpha1.DynaKube) map[string]string {
 	return map[string]string{
 		"dynatrace":  "activegate",

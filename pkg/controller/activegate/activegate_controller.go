@@ -114,9 +114,6 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	//if !instance.Spec.KubernetesMonitoringSpec.Enabled {
-	//	return builder.ReconcileAfterFiveMinutes(), nil
-	//}
 	if instance.Spec.KubernetesMonitoringSpec.Enabled {
 		result, err := kubemon.NewReconciler(
 			r.client, r.apiReader, r.scheme, dtc, reqLogger, secret, instance,
@@ -136,20 +133,3 @@ func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.DynaKub
 	err := r.client.Get(context.TODO(), client.ObjectKey{Name: GetTokensName(instance), Namespace: instance.Namespace}, &secret)
 	return &secret, err
 }
-
-//func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
-//	podList := &corev1.PodList{}
-//	listOptions := []client.ListOption{
-//		client.InNamespace(instance.GetNamespace()),
-//		client.MatchingLabels(builder.BuildLabelsForQuery(instance.Name)),
-//	}
-//	err := r.client.List(context.TODO(), podList, listOptions...)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return podList.Items, nil
-//}
-
-const (
-	annotationTemplateHash = "internal.activegate.dynatrace.com/template-hash"
-)
