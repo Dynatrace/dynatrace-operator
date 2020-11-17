@@ -2,10 +2,11 @@ package kubemon
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpullsecret"
 	corev1 "k8s.io/api/core/v1"
-	"strings"
 )
 
 func buildImage(instance *v1alpha1.DynaKube) string {

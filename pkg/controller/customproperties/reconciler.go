@@ -3,6 +3,7 @@ package customproperties
 import (
 	"context"
 	"fmt"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dynakube"

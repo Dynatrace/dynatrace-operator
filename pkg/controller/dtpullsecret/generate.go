@@ -4,9 +4,10 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
-	"strings"
 )
 
 type dockerAuthentication struct {
