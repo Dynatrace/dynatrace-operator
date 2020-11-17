@@ -35,7 +35,7 @@ func buildResourceRequests(instance *v1alpha1.DynaKube, limits corev1.ResourceLi
 	memoryMin := resource.MustParse(ResourceMemoryMinimum)
 	memoryRequest, hasMemoryRequest := instance.Spec.KubernetesMonitoringSpec.Resources.Requests[corev1.ResourceMemory]
 	if !hasMemoryRequest {
-		memoryMin = memoryRequest
+		memoryRequest = memoryMin
 	}
 
 	return corev1.ResourceList{
