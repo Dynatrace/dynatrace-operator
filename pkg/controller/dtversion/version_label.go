@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/activegate"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpods"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpullsecret"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -33,9 +31,10 @@ func NewReconciler(clt client.Client, log logr.Logger, instance *v1alpha1.DynaKu
 }
 
 func (r *VersionLabelReconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
-	pods, err := dtpods.NewPodFinder(r, r.instance, r.matchLabels).FindPods()
+	pods, err := NewPodFinder(r, r.instance, r.matchLabels).FindPods()
 	if err != nil {
-		return activegate.LogError(r.log, err, "could not list pods")
+		r.log.Error(err, "could not list pods")
+		return reconcile.Result{}, err
 	}
 
 	err = r.setVersionLabelForPods(pods)
