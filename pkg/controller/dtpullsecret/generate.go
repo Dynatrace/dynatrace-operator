@@ -4,8 +4,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
-	_const "github.com/Dynatrace/dynatrace-operator/pkg/controller/const"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"strings"
 )
@@ -32,19 +31,19 @@ func newDockerConfigWithAuth(username string, password string, registry string, 
 	}
 }
 
-func (r *Reconciler) GenerateData(instance *v1alpha1.DynaKube) (map[string][]byte, error) {
+func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 	connectionInfo, err := r.dtc.GetConnectionInfo()
 	if err != nil {
 		return nil, err
 	}
 
-	registry, err := getImageRegistryFromAPIURL(instance.Spec.APIURL)
+	registry, err := getImageRegistryFromAPIURL(r.instance.Spec.APIURL)
 	if err != nil {
 		return nil, err
 	}
 
 	dockerConfig := newDockerConfigWithAuth(connectionInfo.TenantUUID,
-		string(r.token.Data[_const.DynatracePaasToken]),
+		string(r.token.Data[activegate.DynatracePaasToken]),
 		registry,
 		r.buildAuthString(connectionInfo))
 
@@ -52,7 +51,7 @@ func (r *Reconciler) GenerateData(instance *v1alpha1.DynaKube) (map[string][]byt
 }
 
 func (r *Reconciler) buildAuthString(connectionInfo dtclient.ConnectionInfo) string {
-	auth := fmt.Sprintf("%s:%s", connectionInfo.TenantUUID, string(r.token.Data[_const.DynatracePaasToken]))
+	auth := fmt.Sprintf("%s:%s", connectionInfo.TenantUUID, string(r.token.Data[activegate.DynatracePaasToken]))
 	return b64.StdEncoding.EncodeToString([]byte(auth))
 }
 

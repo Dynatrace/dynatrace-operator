@@ -1,4 +1,4 @@
-package builder
+package activegate
 
 /**
 The following functions have been copied from dynatrace-oneagent-operator
@@ -15,7 +15,6 @@ import (
 	"fmt"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,7 +31,7 @@ func BuildDynatraceClient(rtc client.Client, instance *dynatracev1alpha1.DynaKub
 	}
 	namespace := instance.GetNamespace()
 	spec := instance.Spec
-	tokens, err := parser.NewTokens(secret)
+	tokens, err := NewTokens(secret)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +78,7 @@ func (opts *options) appendProxySettings(rtc client.Client, spec *dynatracev1alp
 				return fmt.Errorf("failed to get proxy secret: %w", err)
 			}
 
-			proxyURL, err := parser.ExtractToken(proxySecret, Proxy)
+			proxyURL, err := ExtractToken(proxySecret, Proxy)
 			if err != nil {
 				return fmt.Errorf("failed to extract proxy secret field: %w", err)
 			}

@@ -5,8 +5,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpods"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/go-logr/logr"
@@ -28,39 +29,63 @@ const (
 
 type Reconciler struct {
 	client.Client
-	scheme *runtime.Scheme
-	dtc    dtclient.Client
-	log    logr.Logger
-	token  *corev1.Secret
+	scheme   *runtime.Scheme
+	dtc      dtclient.Client
+	log      logr.Logger
+	token    *corev1.Secret
+	instance *v1alpha1.DynaKube
 }
 
-func NewReconciler() *Reconciler {
-	return &Reconciler{}
+func NewReconciler(clt client.Client, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger, token *corev1.Secret, instance *v1alpha1.DynaKube) *Reconciler {
+	return &Reconciler{
+		Client:   clt,
+		scheme:   scheme,
+		dtc:      dtc,
+		log:      log,
+		token:    token,
+		instance: instance,
+	}
 }
 
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	instance, err := dynakube.GetInstance(r, request)
+	result, err := dtversion.
+		NewReconciler(r, r.log, r.instance, BuildLabelsFromInstance(r.instance)).
+		Reconcile(request)
 	if err != nil {
-		return activegate.LogError(r.log, err, "could not find DynaKube instance")
+		return result, err
 	}
 
 	_, err = dtpullsecret.
-		NewReconciler(r, r.dtc, r.log, r.token, instance.Spec.KubernetesMonitoringSpec.Image).
+		NewReconciler(r, r.instance, r.dtc, r.log, r.token, r.instance.Spec.KubernetesMonitoringSpec.Image).
 		Reconcile(request)
 	if err != nil {
 		return activegate.LogError(r.log, err, "could not reconcile Dynatrace pull secret")
 	}
 
 	_, err = customproperties.
-		NewReconciler(r, r.log, Name, *instance.Spec.KubernetesMonitoringSpec.CustomProperties, r.scheme).
+		NewReconciler(r, r.log, Name, *r.instance.Spec.KubernetesMonitoringSpec.CustomProperties, r.scheme).
 		Reconcile(request)
 	if err != nil {
 		return activegate.LogError(r.log, err, "could not reconcile custom properties")
 	}
 
-	err = r.manageStatefulSet(instance)
+	err = r.manageStatefulSet(r.instance)
 	if err != nil {
 		return activegate.LogError(r.log, err, "could not reconcile stateful set")
+	}
+
+	if !r.instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate {
+		_, err = dtpods.
+			NewReconciler(r, r.log, r.instance, BuildLabelsFromInstance(r.instance), buildImage(r.instance)).
+			Reconcile(request)
+		if err != nil {
+			return activegate.LogError(r.log, err, "could not update pods")
+		}
+	}
+
+	if r.instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint != "" {
+		id, err := r.addToDashboard()
+		r.handleAddToDashboardResult(id, err, r.log)
 	}
 
 	return reconcile.Result{}, nil

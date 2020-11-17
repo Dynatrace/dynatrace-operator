@@ -23,10 +23,10 @@ func NewDockerLabelsChecker(image string, labels map[string]string, dockerConfig
 func (dockerLabelsChecker *DockerLabelsChecker) IsLatest() (bool, error) {
 	versionLabel, hasVersionLabel := dockerLabelsChecker.labels[VersionKey]
 	if !hasVersionLabel {
-		return false, fmt.Errorf("key '%s' not found in given labels", VersionKey)
+		return false, fmt.Errorf("key '%s' not found in given matchLabels", VersionKey)
 	}
 
-	remoteVersionLabel, err := GetVersionLabel(dockerLabelsChecker.image, dockerLabelsChecker.dockerConfig)
+	remoteVersionLabel, err := NewPodImageInformation(dockerLabelsChecker.image, dockerLabelsChecker.dockerConfig).GetVersionLabel()
 	if err != nil {
 		return false, err
 	}
