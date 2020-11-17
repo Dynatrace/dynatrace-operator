@@ -30,7 +30,7 @@ func (r *ReconcileActiveGate) reconcilePullSecret(instance *dynatracev1alpha1.Dy
 		Client: r.client,
 		Scheme: r.scheme,
 		Logger: log,
-		Secret: corev1.Secret{
+		Secret: &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      instance.GetName() + "-pull-secret",
 				Namespace: instance.Namespace,

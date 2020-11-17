@@ -18,7 +18,7 @@ type SecretManager struct {
 	Client client.Client
 	Scheme *runtime.Scheme
 	Logger logr.Logger
-	Secret corev1.Secret
+	Secret *corev1.Secret
 	Owner  metav1.Object
 }
 
@@ -28,6 +28,12 @@ func CreateOrUpdateSecret(secretManager *SecretManager) error {
 	err := secretManager.Client.Get(context.TODO(), client.ObjectKey{Name: secretManager.Secret.Name, Namespace: secretManager.Secret.Namespace}, &cfg)
 	if k8serrors.IsNotFound(err) {
 		secretManager.Logger.Info("Creating OneAgent config secret")
+		// Set DynaKube instance as the owner and controller
+		if err := controllerutil.SetControllerReference(secretManager.Owner, &cfg, secretManager.Scheme); err != nil {
+			secretManager.Logger.Error(err, "error setting controller reference")
+			return err
+		}
+
 		if err := secretManager.Client.Create(context.TODO(), &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretManager.Secret.Name,
@@ -40,19 +46,12 @@ func CreateOrUpdateSecret(secretManager *SecretManager) error {
 		}
 		return nil
 	}
-
-	// Set DynaKube instance as the owner and controller
-	if err := controllerutil.SetControllerReference(secretManager.Owner, &cfg, secretManager.Scheme); err != nil {
-		secretManager.Logger.Error(err, "error setting controller reference")
-		return err
-	}
-
 	if err != nil {
 		return fmt.Errorf("failed to query for secret %s: %w", secretManager.Secret.Name, err)
 	}
 
 	if !reflect.DeepEqual(secretManager.Secret.Data, cfg.Data) {
-		secretManager.Logger.Info(fmt.Sprintf("Updating secret %s", secretManager.Secret.Name))
+		secretManager.Logger.Info("Updating secret", "secret", secretManager.Secret.Name)
 		cfg.Data = secretManager.Secret.Data
 		if err := secretManager.Client.Update(context.TODO(), &cfg); err != nil {
 			return fmt.Errorf("failed to update secret %s: %w", secretManager.Secret.Name, err)
