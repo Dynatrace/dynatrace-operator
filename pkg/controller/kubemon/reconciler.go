@@ -107,7 +107,7 @@ func (r *Reconciler) manageStatefulSet(instance *v1alpha1.DynaKube) error {
 		return err
 	}
 
-	currentStatefulSet, err := r.createStatefulSetIfNotExists(instance, desiredStatefulSet)
+	currentStatefulSet, err := r.createStatefulSetIfNotExists(desiredStatefulSet)
 	if err != nil {
 		return err
 	}
@@ -134,8 +134,8 @@ func (r *Reconciler) buildDesiredStatefulSet(instance *v1alpha1.DynaKube) (*v1.S
 	return newStatefulSet(*instance, tenantInfo, kubeUID), nil
 }
 
-func (r *Reconciler) createStatefulSetIfNotExists(instance *v1alpha1.DynaKube, desired *v1.StatefulSet) (*v1.StatefulSet, error) {
-	currentStatefulSet, err := r.getCurrentStatefulSet(instance)
+func (r *Reconciler) createStatefulSetIfNotExists(desired *v1.StatefulSet) (*v1.StatefulSet, error) {
+	currentStatefulSet, err := r.getCurrentStatefulSet(desired)
 	if err != nil && k8serrors.IsNotFound(err) {
 		r.log.Info("creating new stateful set for kubernetes monitoring")
 		return desired, r.createStatefulSet(desired)
@@ -160,7 +160,7 @@ func (r *Reconciler) updateInstanceStatus(instance *v1alpha1.DynaKube) error {
 	return err
 }
 
-func (r *Reconciler) getCurrentStatefulSet(desired *v1alpha1.DynaKube) (*v1.StatefulSet, error) {
+func (r *Reconciler) getCurrentStatefulSet(desired *v1.StatefulSet) (*v1.StatefulSet, error) {
 	var currentStatefulSet v1.StatefulSet
 	err := r.Get(context.TODO(), client.ObjectKey{Name: desired.Name, Namespace: desired.Namespace}, &currentStatefulSet)
 	if err != nil {
