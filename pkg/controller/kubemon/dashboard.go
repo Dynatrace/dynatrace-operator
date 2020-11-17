@@ -3,13 +3,14 @@ package kubemon
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/activegate"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"regexp"
-	"strings"
 )
 
 const (
