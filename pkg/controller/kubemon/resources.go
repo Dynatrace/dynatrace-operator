@@ -33,7 +33,7 @@ func buildResourceRequests(instance *v1alpha1.DynaKube, limits corev1.ResourceLi
 	}
 
 	memoryMin := resource.MustParse(ResourceMemoryMinimum)
-	memoryRequest, hasMemoryRequest := instance.Spec.KubernetesMonitoringSpec.Resources.Requests[corev1.ResourceCPU]
+	memoryRequest, hasMemoryRequest := instance.Spec.KubernetesMonitoringSpec.Resources.Requests[corev1.ResourceMemory]
 	if !hasMemoryRequest {
 		memoryMin = memoryRequest
 	}
@@ -64,19 +64,19 @@ func buildResourceLimits(instance *v1alpha1.DynaKube) corev1.ResourceList {
 }
 
 func getMinResource(a resource.Quantity, b resource.Quantity) resource.Quantity {
-	if isSmallerThan(a, b) {
+	if isASmallerThanB(a, b) {
 		return a
 	}
 	return b
 }
 
 func getMaxResource(a resource.Quantity, b resource.Quantity) resource.Quantity {
-	if isSmallerThan(a, b) {
+	if isASmallerThanB(a, b) {
 		return b
 	}
 	return a
 }
 
-func isSmallerThan(a resource.Quantity, reference resource.Quantity) bool {
-	return a.Cmp(reference) > 0
+func isASmallerThanB(a resource.Quantity, b resource.Quantity) bool {
+	return a.Cmp(b) < 0
 }

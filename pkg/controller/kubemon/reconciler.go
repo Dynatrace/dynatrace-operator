@@ -57,20 +57,22 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return result, err
 	}
 
-	_, err = dtpullsecret.
+	result, err = dtpullsecret.
 		NewReconciler(r, r.apiReader, r.scheme, r.instance, r.dtc, r.log, r.token, r.instance.Spec.KubernetesMonitoringSpec.Image).
 		Reconcile(request)
 	if err != nil {
 		r.log.Error(err, "could not reconcile Dynatrace pull secret")
-		return reconcile.Result{}, err
+		return result, err
 	}
 
-	_, err = customproperties.
-		NewReconciler(r, r.instance, r.log, Name, *r.instance.Spec.KubernetesMonitoringSpec.CustomProperties, r.scheme).
-		Reconcile(request)
-	if err != nil {
-		r.log.Error(err, "could not reconcile custom properties")
-		return reconcile.Result{}, err
+	if r.instance.Spec.KubernetesMonitoringSpec.CustomProperties != nil {
+		result, err = customproperties.
+			NewReconciler(r, r.instance, r.log, Name, *r.instance.Spec.KubernetesMonitoringSpec.CustomProperties, r.scheme).
+			Reconcile(request)
+		if err != nil {
+			r.log.Error(err, "could not reconcile custom properties")
+			return result, err
+		}
 	}
 
 	err = r.manageStatefulSet(r.instance)
@@ -80,12 +82,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	if !r.instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate {
-		_, err = dtpods.
+		result, err = dtpods.
 			NewReconciler(r, r.log, r.instance, BuildLabelsFromInstance(r.instance), buildImage(r.instance)).
 			Reconcile(request)
 		if err != nil {
 			r.log.Error(err, "could not update pods")
-			return reconcile.Result{}, err
+			return result, err
 		}
 	}
 
