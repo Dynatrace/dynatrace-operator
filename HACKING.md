@@ -7,7 +7,7 @@
 
 ### Installation
 
-There are automatic builds from the master branch. The latest development build can be installed on Kubernetes with,
+There are automatic builds from the master branch. The latest development build can be installed as follows:
 
 #### Kubernetes
 ```sh
@@ -16,6 +16,7 @@ $ kubectl apply -k github.com/Dynatrace/dynatrace-operator/deploy/manifest
 ```
 
 #### OpenShift
+
 ```sh
 $ oc adm new-project --node-selector="" dynatrace
 $ oc apply -k github.com/Dynatrace/dynatrace-operator/deploy/manifest
@@ -23,13 +24,14 @@ $ oc apply -k github.com/Dynatrace/dynatrace-operator/deploy/manifest
 
 #### Tests
 
-The unit tests can be executed with
+The unit tests can be executed as follows:
 
 ```
 $ go test ./...
 ```
 
 #### Build and push your image
+
 Replace `REGISTRY` with your Registry\`s URN:
 ```
 $ cd $GOPATH/src/github.com/Dynatrace/dynatrace-operator
@@ -38,5 +40,6 @@ $ docker push REGISTRY/dynatrace-operator
 ```
 
 #### Deploy operator
+
 Change the `image` field in `./deploy/manifest/deployment-operator.yaml` to the URN of your image.
 Apart from that follow the instructions in the usage section above.
