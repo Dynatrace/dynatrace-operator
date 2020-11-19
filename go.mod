@@ -7,7 +7,6 @@ require (
 	github.com/Azure/go-autorest/autorest v0.10.2 // indirect
 	github.com/Azure/go-autorest/autorest/adal v0.8.3 // indirect
 	github.com/containers/image/v5 v5.5.2
-	github.com/docker/docker v1.4.2-0.20200203170920-46ec8731fbce
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/golang/protobuf v1.4.2 // indirect
@@ -32,7 +31,6 @@ require (
 	k8s.io/api v0.18.2
 	k8s.io/apimachinery v0.18.2
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/kubectl v0.18.2
 	sigs.k8s.io/controller-runtime v0.6.0
 )
 

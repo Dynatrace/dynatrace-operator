@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpullsecret"
 	corev1 "k8s.io/api/core/v1"
 )
 
