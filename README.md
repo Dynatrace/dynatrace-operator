@@ -2,9 +2,9 @@
 
 # Dynatrace Operator
 
-This is the home of Dynatrace Operator which supports the rollout and lifecycle of various Dynatrace components in Kubernetes and OpenShift clusters.
+The Dynatrace Operator supports rollout and lifecycle of various Dynatrace components in Kubernetes and OpenShift.
 
-This operator could replace an existing Dynatrace ActiveGate, which has been available since 2016. It will eventually support many of ActiveGate's capabilities including API monitoring for Kubernetes, AWS, Azure, GCP, and vSPhere. As of December 2020 the Dynatrace Operator is limited to Kubernetes monitoring alone.
+As of launch, the Dynatrace Operator can be used to deploy a containerized ActiveGate for Kubernetes API monitoring. New capabilities will be added to the Dynatrace Operator over time including metric routing, and API monitoring for AWS, Azure, GCP, and vSPhere.
 
 ## Supported platforms
 
@@ -15,10 +15,11 @@ Depending of the version of the Dynatrace Operator, it supports the following pl
 | master                     | 1.15+      | 3.11.188+, 4.3+ |
 
 ## Quick Start
-The Dynatrace Operator acts on its separate namespace `dynatrace`.
-It holds the operator deployment and all dependent objects like permissions, custom resources and corresponding StatefulSets.
+
+The Dynatrace Operator acts on its separate namespace `dynatrace`. It holds the operator deployment and all dependent objects like permissions, custom resources and corresponding StatefulSets.
 
 #### Kubernetes
+
 <details><summary>Installation</summary>
 
 To create the namespace and apply the operator run the following commands
@@ -36,7 +37,8 @@ $ kubectl -n dynatrace create secret generic dynakube --from-literal="apiToken=D
 ```
 
 #### Create `DynaKube` custom resource for ActiveGate rollout
-The rollout of Dynatrace ActiveGate is governed by a custom resource of type `DynaKube`.
+
+The rollout of Dynatrace ActiveGate is governed by a custom resource of type `DynaKube`. This custom resource will contain parameters for various Dynatrace capabilities (API monitoring, routing, etc.)
 
 Note: `.spec.tokens` denotes the name of the secret holding access tokens. If not specified Dynatrace Operator searches for a secret called like the DynaKube custom resource `.metadata.name`.
 ```yaml
@@ -73,6 +75,7 @@ $ kubectl apply -f cr.yaml
 <details><summary>Uninstall</summary>
 
 ## Uninstall dynatrace-operator
+
 Remove DynaKube custom resources and clean-up all remaining Dynatrace Operator specific objects:
 
 ```sh
@@ -101,6 +104,7 @@ $ oc -n dynatrace create secret generic dynakube --from-literal="apiToken=DYNATR
 ```
 
 #### Create `DynaKube` custom resource for ActiveGate rollout
+
 The rollout of Dynatrace ActiveGate is governed by a custom resource of type `DynaKube`.
 
 Note: `.spec.tokens` denotes the name of the secret holding access tokens. If not specified Dynatrace Operator searches for a secret called like the DynaKube custom resource `.metadata.name`.
@@ -138,6 +142,7 @@ $ oc apply -f cr.yaml
 <details><summary>Uninstall</summary>
 
 ## Uninstall dynatrace-operator
+
 Remove DynaKube custom resources and clean-up all remaining Dynatrace Operator specific objects:
 
 ```sh
