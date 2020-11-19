@@ -29,14 +29,6 @@ The unit tests can be executed with
 $ go test ./...
 ```
 
-And integration tests,
-
-```
-$ go test -tags integration ./...
-```
-
-These integration tests also require Kubebuilder, unpack the binaries from [the release package](https://github.com/kubernetes-sigs/kubebuilder/releases/download/v1.0.8/kubebuilder_1.0.8_linux_amd64.tar.gz) in `/usr/local/kubebuilder/bin` where they will be looked at by default.
-
 #### Build and push your image
 Replace `REGISTRY` with your Registry\`s URN:
 ```
@@ -46,5 +38,5 @@ $ docker push REGISTRY/dynatrace-operator
 ```
 
 #### Deploy operator
-Change the `image` field in `./deploy/operator.yaml` to the URN of your image.
+Change the `image` field in `./deploy/manifest/deployment-operator.yaml` to the URN of your image.
 Apart from that follow the instructions in the usage section above.
