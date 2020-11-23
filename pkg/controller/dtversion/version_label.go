@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpullsecret"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -17,11 +17,11 @@ import (
 type VersionLabelReconciler struct {
 	client.Client
 	log         logr.Logger
-	instance    *v1alpha1.DynaKube
+	instance    *dynatracev1alpha1.DynaKube
 	matchLabels map[string]string //kubemon.BuildLabelsFromInstance(instance)
 }
 
-func NewReconciler(clt client.Client, log logr.Logger, instance *v1alpha1.DynaKube, matchLabels map[string]string) *VersionLabelReconciler {
+func NewReconciler(clt client.Client, log logr.Logger, instance *dynatracev1alpha1.DynaKube, matchLabels map[string]string) *VersionLabelReconciler {
 	return &VersionLabelReconciler{
 		Client:      clt,
 		log:         log,
@@ -30,7 +30,7 @@ func NewReconciler(clt client.Client, log logr.Logger, instance *v1alpha1.DynaKu
 	}
 }
 
-func (r *VersionLabelReconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
+func (r *VersionLabelReconciler) Reconcile() (reconcile.Result, error) {
 	pods, err := NewPodFinder(r, r.instance, r.matchLabels).FindPods()
 	if err != nil {
 		r.log.Error(err, "could not list pods")
@@ -108,16 +108,8 @@ func retryOnStatusError(err error) (reconcile.Result, error) {
 	if errors.As(err, &statusError) {
 		// Since this happens early during deployment, pods might have been modified
 		// In this case, retry silently
-		return retrySilently()
+		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 	// Otherwise, fail loudly
-	return failLoudly(err)
-}
-
-func failLoudly(err error) (reconcile.Result, error) {
-	return reconcile.Result{Requeue: true, RequeueAfter: 5 * time.Minute}, err
-}
-
-func retrySilently() (reconcile.Result, error) {
-	return reconcile.Result{Requeue: true, RequeueAfter: 5 * time.Second}, nil
+	return reconcile.Result{RequeueAfter: 5 * time.Minute}, err
 }

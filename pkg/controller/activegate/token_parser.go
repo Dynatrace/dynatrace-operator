@@ -2,7 +2,7 @@ package activegate
 
 import (
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"strings"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
@@ -28,8 +28,8 @@ func NewTokens(secret *corev1.Secret) (*Tokens, error) {
 	}
 
 	//Errors would have been caught by verifySecret
-	apiToken, _ = ExtractToken(secret, dtpullsecret.DynatraceApiToken)
-	paasToken, _ = ExtractToken(secret, dtpullsecret.DynatracePaasToken)
+	apiToken, _ = ExtractToken(secret, dtclient.DynatraceApiToken)
+	paasToken, _ = ExtractToken(secret, dtclient.DynatracePaasToken)
 
 	return &Tokens{
 		ApiToken:  apiToken,
@@ -39,8 +39,8 @@ func NewTokens(secret *corev1.Secret) (*Tokens, error) {
 
 func verifySecret(secret *corev1.Secret) error {
 	for _, token := range []string{
-		dtpullsecret.DynatracePaasToken,
-		dtpullsecret.DynatraceApiToken} {
+		dtclient.DynatracePaasToken,
+		dtclient.DynatraceApiToken} {
 		_, err := ExtractToken(secret, token)
 		if err != nil {
 			return fmt.Errorf("invalid secret %s, %s", secret.Name, err)

@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpullsecret"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func buildImage(instance *v1alpha1.DynaKube) string {
+func buildImage(instance *dynatracev1alpha1.DynaKube) string {
 	if instance.Spec.KubernetesMonitoringSpec.Image == "" {
 		return buildActiveGateImage(instance)
 	}
@@ -17,13 +17,13 @@ func buildImage(instance *v1alpha1.DynaKube) string {
 	return instance.Spec.KubernetesMonitoringSpec.Image
 }
 
-func buildPullSecret(instance *v1alpha1.DynaKube) corev1.LocalObjectReference {
+func buildPullSecret(instance *dynatracev1alpha1.DynaKube) corev1.LocalObjectReference {
 	return corev1.LocalObjectReference{
 		Name: buildPullSecretName(instance),
 	}
 }
 
-func buildPullSecretName(instance *v1alpha1.DynaKube) string {
+func buildPullSecretName(instance *dynatracev1alpha1.DynaKube) string {
 	name := instance.Name + dtpullsecret.PullSecretSuffix
 	if instance.Spec.CustomPullSecret != "" {
 		name = instance.Spec.CustomPullSecret
@@ -31,13 +31,13 @@ func buildPullSecretName(instance *v1alpha1.DynaKube) string {
 	return name
 }
 
-func buildActiveGateImage(instance *v1alpha1.DynaKube) string {
+func buildActiveGateImage(instance *dynatracev1alpha1.DynaKube) string {
 	registry := buildImageRegistryFromAPIURL(instance.Spec.APIURL)
 	fullImageName := appendPath(registry)
 	return appendActiveGateVersion(instance, fullImageName)
 }
 
-func appendActiveGateVersion(instance *v1alpha1.DynaKube, fullImageName string) string {
+func appendActiveGateVersion(instance *dynatracev1alpha1.DynaKube, fullImageName string) string {
 	version := instance.Spec.KubernetesMonitoringSpec.ActiveGateVersion
 	if version != "" {
 		return fmt.Sprintf("%s:%s", fullImageName, version)
