@@ -11,6 +11,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+const (
+	DynatracePaasToken = "paasToken"
+	DynatraceApiToken  = "apiToken"
+)
+
 // Client is the interface for the Dynatrace REST API client.
 type Client interface {
 	// GetLatestAgentVersion gets the latest agent version for the given OS and installer type.

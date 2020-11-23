@@ -2,22 +2,16 @@ package activegate
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/builder"
-	agerrors "github.com/Dynatrace/dynatrace-operator/pkg/controller/errors"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/parser"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -36,11 +30,10 @@ func Add(mgr manager.Manager) error {
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileActiveGate{
-		client:        mgr.GetClient(),
-		apiReader:     mgr.GetAPIReader(),
-		scheme:        mgr.GetScheme(),
-		dtcBuildFunc:  builder.BuildDynatraceClient,
-		updateService: &activeGateUpdateService{},
+		client:       mgr.GetClient(),
+		apiReader:    mgr.GetAPIReader(),
+		scheme:       mgr.GetScheme(),
+		dtcBuildFunc: BuildDynatraceClient,
 	}
 }
 
@@ -77,11 +70,10 @@ var _ reconcile.Reconciler = &ReconcileActiveGate{}
 type ReconcileActiveGate struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client        client.Client
-	apiReader     client.Reader
-	scheme        *runtime.Scheme
-	dtcBuildFunc  DynatraceClientFunc
-	updateService updateService
+	client       client.Client
+	apiReader    client.Reader
+	scheme       *runtime.Scheme
+	dtcBuildFunc DynatraceClientFunc
 }
 
 type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
@@ -110,15 +102,11 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	if !instance.Spec.KubernetesMonitoringSpec.Enabled {
-		reqLogger.Info("Kubernetes monitoring disabled")
-		return builder.ReconcileAfterFiveMinutes(), nil
-	}
-
 	// Fetch api token secret
 	secret, err := r.getTokenSecret(instance)
-	if err != nil || secret == nil {
-		return agerrors.HandleSecretError(secret, err, reqLogger)
+	if err != nil {
+		reqLogger.Error(err, "could not find token secret")
+		return reconcile.Result{}, err
 	}
 
 	dtc, err := r.dtcBuildFunc(r.client, instance, secret)
@@ -126,119 +114,22 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	if instance.Spec.KubernetesMonitoringSpec.Image == "" && instance.Spec.CustomPullSecret == "" {
-		err = r.reconcilePullSecret(instance, reqLogger, dtc)
+	if instance.Spec.KubernetesMonitoringSpec.Enabled {
+		result, err := kubemon.NewReconciler(
+			r.client, r.apiReader, r.scheme, dtc, reqLogger, secret, instance,
+		).Reconcile(request)
 		if err != nil {
-			return reconcile.Result{}, err
+			reqLogger.Error(err, "could not reconcile kubernetes monitoring")
+			return result, err
 		}
 	}
 
-	customPropertiesConfigMap, err := r.manageCustomProperties(instance.Name, &instance.Spec.KubernetesMonitoringSpec)
-	if err != nil {
-		reqLogger.Error(err, "error creating config map for custom properties")
-		return reconcile.Result{}, err
-	}
-	if customPropertiesConfigMap != nil {
-		if err := controllerutil.SetControllerReference(instance, customPropertiesConfigMap, r.scheme); err != nil {
-			reqLogger.Error(err, "error setting controller reference for custom properties secret")
-			return reconcile.Result{}, err
-		}
-	}
-
-	desiredStatefulSet, err := r.createDesiredStatefulSet(instance)
-	if err != nil {
-		reqLogger.Error(err, "error when creating desired stateful set")
-		return reconcile.Result{}, err
-	}
-
-	// Set DynaKube instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, desiredStatefulSet, r.scheme); err != nil {
-		reqLogger.Error(err, "error setting controller reference")
-		return reconcile.Result{}, err
-	}
-
-	actualStatefulSet := &appsv1.StatefulSet{}
-	reconcileResult, err := r.manageStatefulSet(reqLogger, instance, desiredStatefulSet, actualStatefulSet)
-	if reconcileResult != nil {
-		return *reconcileResult, err
-	}
-
-	pods, err := r.findPods(instance)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	err = r.setVersionLabel(pods)
-	if err != nil {
-
-		var statusError *k8serrors.StatusError
-		if errors.As(err, &statusError) {
-			// Since this happens early during deployment, pods might have been modified
-			// In this case, retry silently
-			return builder.ReconcileAfterFiveMinutes(), nil
-		}
-		// Otherwise, retry loudly
-		return builder.ReconcileAfterFiveMinutes(), err
-	}
-
-	reconcileResult, err = r.updateService.UpdatePods(r, instance)
-	if err != nil {
-		log.Error(err, "could not update statefulset")
-	}
-	if reconcileResult != nil {
-		return *reconcileResult, err
-	}
-
-	if instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint != "" {
-		id, err := r.addToDashboard(dtc, instance)
-		r.handleAddToDashboardResult(id, err, log)
-	}
-
-	// Set version and last updated timestamp
-	// Nothing to do - requeue after five minutes
-	reqLogger.Info("Nothing to do: Pod already exists", "Pod.Namespace", actualStatefulSet.Namespace, "Pod.Name", actualStatefulSet.Name)
-	return builder.ReconcileAfterFiveMinutes(), nil
+	reqLogger.Info("Nothing to do: Instance is ready", "Namespace", instance.Namespace, "Name", instance.Name)
+	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 
 func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {
-	namespace := instance.GetNamespace()
-	secret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), client.ObjectKey{Name: parser.GetTokensName(instance), Namespace: namespace}, secret)
-	if err != nil {
-		log.Error(err, err.Error())
-		if k8serrors.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return secret, nil
+	var secret corev1.Secret
+	err := r.client.Get(context.TODO(), client.ObjectKey{Name: GetTokensName(instance), Namespace: instance.Namespace}, &secret)
+	return &secret, err
 }
-
-func hasStatefulSetChanged(a, b *appsv1.StatefulSet) bool {
-	return getTemplateHash(a) != getTemplateHash(b)
-}
-
-func getTemplateHash(a metav1.Object) string {
-	if annotations := a.GetAnnotations(); annotations != nil {
-		return annotations[annotationTemplateHash]
-	}
-	return ""
-}
-
-func (r *ReconcileActiveGate) findPods(instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
-	podList := &corev1.PodList{}
-	listOptions := []client.ListOption{
-		client.InNamespace(instance.GetNamespace()),
-		client.MatchingLabels(builder.BuildLabelsForQuery(instance.Name)),
-	}
-	err := r.client.List(context.TODO(), podList, listOptions...)
-	if err != nil {
-		return nil, err
-	}
-	return podList.Items, nil
-}
-
-const (
-	annotationTemplateHash = "internal.activegate.dynatrace.com/template-hash"
-	UpdateInterval         = 5 * time.Minute
-)
