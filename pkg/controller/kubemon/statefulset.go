@@ -27,9 +27,6 @@ const (
 	DTIdSeedNamespace = "DT_ID_SEED_NAMESPACE"
 	DTIdSeedClusterId = "DT_ID_SEED_K8S_CLUSTER_ID"
 
-	DTTenantArg       = "--tenant=$(DT_TENANT)"
-	DTTokenArg        = "--token=$(DT_TOKEN)"
-	DTServerArg       = "--server=$(DT_SERVER)"
 	DTCapabilitiesArg = "--enable=$(DT_CAPABILITIES)"
 
 	ProxyArg = `PROXY="${ACTIVE_GATE_PROXY}"`
@@ -232,9 +229,6 @@ func buildEnvs(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UID) []
 
 func buildArgs(instance *dynatracev1alpha1.DynaKube) []string {
 	args := []string{
-		DTTenantArg,
-		DTTokenArg,
-		DTServerArg,
 		DTCapabilitiesArg,
 	}
 
