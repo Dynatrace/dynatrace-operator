@@ -6,9 +6,8 @@ import (
 )
 
 const (
-	DynatraceNamespace = "dynatrace"
-	Name               = "activegate"
-	OperatorName       = "dynatrace-operator"
+	Name         = "activegate"
+	OperatorName = "dynatrace-operator"
 )
 
 // DynaKubeSpec defines the desired state of DynaKube

@@ -3,7 +3,6 @@ package kubemon
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"regexp"
 	"strings"
 
@@ -67,10 +66,15 @@ func (r *Reconciler) handleAddToDashboardServerError(id string, serverError dtcl
 }
 
 func (r *Reconciler) findServiceAccount() (*corev1.ServiceAccount, error) {
+	serviceAccountName := r.instance.Spec.KubernetesMonitoringSpec.ServiceAccountName
+	if serviceAccountName == "" {
+		serviceAccountName = ServiceAccountName
+	}
+
 	serviceAccount := &corev1.ServiceAccount{}
 	err := r.Get(context.TODO(), types.NamespacedName{
-		Namespace: v1alpha1.DynatraceNamespace,
-		Name:      ServiceAccountName,
+		Namespace: r.instance.Namespace,
+		Name:      serviceAccountName,
 	}, serviceAccount)
 
 	return serviceAccount, err
@@ -119,7 +123,7 @@ func (r *Reconciler) buildAddToDashboardIp() string {
 func (r *Reconciler) findSecret(tokenName string) (*corev1.Secret, error) {
 	secret := &corev1.Secret{}
 	err := r.Get(context.TODO(), types.NamespacedName{
-		Namespace: v1alpha1.DynatraceNamespace,
+		Namespace: r.instance.Namespace,
 		Name:      tokenName,
 	}, secret)
 	return secret, err

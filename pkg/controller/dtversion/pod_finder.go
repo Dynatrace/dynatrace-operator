@@ -3,18 +3,18 @@ package dtversion
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type PodFinder struct {
 	client.Client
-	instance *v1alpha1.DynaKube
+	instance *dynatracev1alpha1.DynaKube
 	labels   map[string]string
 }
 
-func NewPodFinder(clt client.Client, instance *v1alpha1.DynaKube, matchLabels map[string]string) *PodFinder {
+func NewPodFinder(clt client.Client, instance *dynatracev1alpha1.DynaKube, matchLabels map[string]string) *PodFinder {
 	return &PodFinder{
 		Client:   clt,
 		instance: instance,

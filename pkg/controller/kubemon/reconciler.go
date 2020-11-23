@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpods"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpullsecret"
@@ -33,11 +33,11 @@ type Reconciler struct {
 	dtc       dtclient.Client
 	log       logr.Logger
 	token     *corev1.Secret
-	instance  *v1alpha1.DynaKube
+	instance  *dynatracev1alpha1.DynaKube
 	apiReader client.Reader
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger, token *corev1.Secret, instance *v1alpha1.DynaKube) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger, token *corev1.Secret, instance *dynatracev1alpha1.DynaKube) *Reconciler {
 	return &Reconciler{
 		Client:    clt,
 		apiReader: apiReader,
@@ -49,29 +49,29 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 	}
 }
 
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 	result, err := dtversion.
 		NewReconciler(r, r.log, r.instance, BuildLabelsFromInstance(r.instance)).
-		Reconcile(request)
+		Reconcile()
 	if err != nil {
 		return result, err
 	}
 
-	result, err = dtpullsecret.
+	err = dtpullsecret.
 		NewReconciler(r, r.apiReader, r.scheme, r.instance, r.dtc, r.log, r.token, r.instance.Spec.KubernetesMonitoringSpec.Image).
-		Reconcile(request)
+		Reconcile()
 	if err != nil {
 		r.log.Error(err, "could not reconcile Dynatrace pull secret")
-		return result, err
+		return reconcile.Result{}, err
 	}
 
 	if r.instance.Spec.KubernetesMonitoringSpec.CustomProperties != nil {
-		result, err = customproperties.
+		err = customproperties.
 			NewReconciler(r, r.instance, r.log, Name, *r.instance.Spec.KubernetesMonitoringSpec.CustomProperties, r.scheme).
-			Reconcile(request)
+			Reconcile()
 		if err != nil {
 			r.log.Error(err, "could not reconcile custom properties")
-			return result, err
+			return reconcile.Result{}, err
 		}
 	}
 
@@ -84,7 +84,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if !r.instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate {
 		result, err = dtpods.
 			NewReconciler(r, r.log, r.instance, BuildLabelsFromInstance(r.instance), buildImage(r.instance)).
-			Reconcile(request)
+			Reconcile()
 		if err != nil {
 			r.log.Error(err, "could not update pods")
 			return result, err
@@ -99,7 +99,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return reconcile.Result{}, nil
 }
 
-func (r *Reconciler) manageStatefulSet(instance *v1alpha1.DynaKube) error {
+func (r *Reconciler) manageStatefulSet(instance *dynatracev1alpha1.DynaKube) error {
 	desiredStatefulSet, err := r.buildDesiredStatefulSet(instance)
 	if err != nil {
 		return err
@@ -122,18 +122,13 @@ func (r *Reconciler) manageStatefulSet(instance *v1alpha1.DynaKube) error {
 	return r.updateInstanceStatus(instance)
 }
 
-func (r *Reconciler) buildDesiredStatefulSet(instance *v1alpha1.DynaKube) (*v1.StatefulSet, error) {
-	tenantInfo, err := r.dtc.GetTenantInfo()
-	if err != nil {
-		return nil, err
-	}
-
+func (r *Reconciler) buildDesiredStatefulSet(instance *dynatracev1alpha1.DynaKube) (*v1.StatefulSet, error) {
 	kubeUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
 		return nil, err
 	}
 
-	return newStatefulSet(*instance, tenantInfo, kubeUID), nil
+	return newStatefulSet(*instance, kubeUID), nil
 }
 
 func (r *Reconciler) createStatefulSetIfNotExists(desired *v1.StatefulSet) (*v1.StatefulSet, error) {
@@ -156,7 +151,7 @@ func (r *Reconciler) updateStatefulSetIfOutdated(current *v1.StatefulSet, desire
 	return nil
 }
 
-func (r *Reconciler) updateInstanceStatus(instance *v1alpha1.DynaKube) error {
+func (r *Reconciler) updateInstanceStatus(instance *dynatracev1alpha1.DynaKube) error {
 	instance.Status.UpdatedTimestamp = metav1.NewTime(time.Now().Add(-5 * time.Minute))
 	err := r.Status().Update(context.TODO(), instance)
 	return err

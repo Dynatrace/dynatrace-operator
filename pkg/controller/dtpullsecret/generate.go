@@ -9,11 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 )
 
-const (
-	DynatracePaasToken = "paasToken"
-	DynatraceApiToken  = "apiToken"
-)
-
 type dockerAuthentication struct {
 	Username string
 	Password string
@@ -48,7 +43,7 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 	}
 
 	dockerConfig := newDockerConfigWithAuth(connectionInfo.TenantUUID,
-		string(r.token.Data[DynatracePaasToken]),
+		string(r.token.Data[dtclient.DynatracePaasToken]),
 		registry,
 		r.buildAuthString(connectionInfo))
 
@@ -56,7 +51,7 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 }
 
 func (r *Reconciler) buildAuthString(connectionInfo dtclient.ConnectionInfo) string {
-	auth := fmt.Sprintf("%s:%s", connectionInfo.TenantUUID, string(r.token.Data[DynatracePaasToken]))
+	auth := fmt.Sprintf("%s:%s", connectionInfo.TenantUUID, string(r.token.Data[dtclient.DynatracePaasToken]))
 	return b64.StdEncoding.EncodeToString([]byte(auth))
 }
 

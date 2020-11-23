@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtversion"
 	"github.com/go-logr/logr"
@@ -22,12 +22,12 @@ const (
 type Reconciler struct {
 	client.Client
 	log         logr.Logger
-	instance    *v1alpha1.DynaKube
+	instance    *dynatracev1alpha1.DynaKube
 	matchLabels map[string]string
 	image       string
 }
 
-func NewReconciler(clt client.Client, log logr.Logger, instance *v1alpha1.DynaKube,
+func NewReconciler(clt client.Client, log logr.Logger, instance *dynatracev1alpha1.DynaKube,
 	matchLabels map[string]string, image string) *Reconciler {
 	return &Reconciler{
 		Client:      clt,
@@ -38,7 +38,7 @@ func NewReconciler(clt client.Client, log logr.Logger, instance *v1alpha1.DynaKu
 	}
 }
 
-func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
+func (r *Reconciler) Reconcile() (reconcile.Result, error) {
 	if isInstanceOutdated(r.instance) {
 		err := r.updatePods()
 		if err != nil {
@@ -129,6 +129,6 @@ func (r *Reconciler) updateInstanceStatus() error {
 	return err
 }
 
-func isInstanceOutdated(instance *v1alpha1.DynaKube) bool {
+func isInstanceOutdated(instance *dynatracev1alpha1.DynaKube) bool {
 	return instance.Status.UpdatedTimestamp.Add(UpdateInterval).Before(time.Now())
 }
