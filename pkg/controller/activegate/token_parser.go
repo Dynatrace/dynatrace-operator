@@ -2,11 +2,10 @@ package activegate
 
 import (
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"strings"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	corev1 "k8s.io/api/core/v1"
 )
 
