@@ -5,7 +5,6 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,9 +23,6 @@ const (
 	ARM64 = "arm64"
 	LINUX = "linux"
 
-	DTTenant          = "DT_TENANT"
-	DTServer          = "DT_SERVER"
-	DTToken           = "DT_TOKEN"
 	DTCapabilities    = "DT_CAPABILITIES"
 	DTIdSeedNamespace = "DT_ID_SEED_NAMESPACE"
 	DTIdSeedClusterId = "DT_ID_SEED_K8S_CLUSTER_ID"
@@ -43,7 +39,7 @@ const (
 	CapabilityEnv = "kubernetes_monitoring"
 )
 
-func newStatefulSet(instance dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) *v1.StatefulSet {
+func newStatefulSet(instance dynatracev1alpha1.DynaKube, kubeSystemUID types.UID) *v1.StatefulSet {
 	return &v1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        dynatracev1alpha1.Name,
@@ -56,20 +52,20 @@ func newStatefulSet(instance dynatracev1alpha1.DynaKube, tenantInfo *dtclient.Te
 			Selector: buildLabelSelector(&instance),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{Labels: buildLabels(&instance)},
-				Spec:       buildTemplateSpec(&instance, tenantInfo, kubeSystemUID),
+				Spec:       buildTemplateSpec(&instance, kubeSystemUID),
 			},
 		},
 	}
 }
 
-func buildTemplateSpec(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) corev1.PodSpec {
+func buildTemplateSpec(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UID) corev1.PodSpec {
 	serviceAccountName := instance.Spec.KubernetesMonitoringSpec.ServiceAccountName
 	if serviceAccountName == "" {
 		serviceAccountName = MonitoringServiceAccount
 	}
 
 	return corev1.PodSpec{
-		Containers:         []corev1.Container{buildContainer(instance, tenantInfo, kubeSystemUID)},
+		Containers:         []corev1.Container{buildContainer(instance, kubeSystemUID)},
 		DNSPolicy:          instance.Spec.KubernetesMonitoringSpec.DNSPolicy,
 		NodeSelector:       instance.Spec.KubernetesMonitoringSpec.NodeSelector,
 		ServiceAccountName: serviceAccountName,
@@ -92,7 +88,7 @@ func buildTemplateSpec(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclien
 	}
 }
 
-func buildContainer(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) corev1.Container {
+func buildContainer(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UID) corev1.Container {
 	var volumeMounts []corev1.VolumeMount
 	customProperties := instance.Spec.KubernetesMonitoringSpec.CustomProperties
 	if !isCustomPropertiesNilOrEmpty(customProperties) {
@@ -108,7 +104,7 @@ func buildContainer(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.T
 		Image:           buildImage(instance),
 		Resources:       buildResources(instance),
 		ImagePullPolicy: corev1.PullAlways,
-		Env:             buildEnvs(instance, tenantInfo, kubeSystemUID),
+		Env:             buildEnvs(instance, kubeSystemUID),
 		Args:            buildArgs(instance),
 		VolumeMounts:    volumeMounts,
 		ReadinessProbe: &corev1.Probe{
@@ -198,11 +194,8 @@ func isCustomPropertiesNilOrEmpty(customProperties *dynatracev1alpha1.DynaKubeVa
 			customProperties.ValueFrom == "")
 }
 
-func buildEnvs(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) []corev1.EnvVar {
+func buildEnvs(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UID) []corev1.EnvVar {
 	envVars := []corev1.EnvVar{
-		{Name: DTTenant, Value: tenantInfo.ID},
-		{Name: DTToken, Value: tenantInfo.Token},
-		{Name: DTServer, Value: tenantInfo.CommunicationEndpoint},
 		{Name: DTCapabilities, Value: CapabilityEnv},
 		{Name: DTIdSeedNamespace, Value: instance.Namespace},
 		{Name: DTIdSeedClusterId, Value: string(kubeSystemUID)},

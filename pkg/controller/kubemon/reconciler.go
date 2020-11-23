@@ -123,17 +123,12 @@ func (r *Reconciler) manageStatefulSet(instance *dynatracev1alpha1.DynaKube) err
 }
 
 func (r *Reconciler) buildDesiredStatefulSet(instance *dynatracev1alpha1.DynaKube) (*v1.StatefulSet, error) {
-	tenantInfo, err := r.dtc.GetTenantInfo()
-	if err != nil {
-		return nil, err
-	}
-
 	kubeUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
 		return nil, err
 	}
 
-	return newStatefulSet(*instance, tenantInfo, kubeUID), nil
+	return newStatefulSet(*instance, kubeUID), nil
 }
 
 func (r *Reconciler) createStatefulSetIfNotExists(desired *v1.StatefulSet) (*v1.StatefulSet, error) {
