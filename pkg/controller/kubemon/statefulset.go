@@ -213,7 +213,7 @@ func buildSecretVolumeSource(name string, key string, path string) *corev1.Secre
 func buildSecretName(instance *dynatracev1alpha1.DynaKube) string {
 	valueFrom := instance.Spec.KubernetesMonitoringSpec.CustomProperties.ValueFrom
 	if valueFrom == "" {
-		valueFrom = fmt.Sprintf("%s-kubernetes-monitoring%s", instance.Name, customproperties.Suffix)
+		valueFrom = fmt.Sprintf("%s-kubernetes-monitoring-%s", instance.Name, customproperties.Suffix)
 	}
 	return valueFrom
 }

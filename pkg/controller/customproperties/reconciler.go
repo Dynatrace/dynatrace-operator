@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	Suffix     = "-custom-properties"
+	Suffix     = "custom-properties"
 	DataKey    = "customProperties"
 	DataPath   = "custom.properties"
 	VolumeName = "custom-properties"
