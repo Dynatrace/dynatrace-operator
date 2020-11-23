@@ -33,20 +33,12 @@ func buildPullSecretName(instance *dynatracev1alpha1.DynaKube) string {
 
 func buildActiveGateImage(instance *dynatracev1alpha1.DynaKube) string {
 	registry := buildImageRegistryFromAPIURL(instance.Spec.APIURL)
-	fullImageName := appendPath(registry)
-	return appendActiveGateVersion(instance, fullImageName)
-}
-
-func appendActiveGateVersion(instance *dynatracev1alpha1.DynaKube, fullImageName string) string {
+	fullImageName := fmt.Sprintf("%s/linux/activegate", registry)
 	version := instance.Spec.KubernetesMonitoringSpec.ActiveGateVersion
 	if version != "" {
 		return fmt.Sprintf("%s:%s", fullImageName, version)
 	}
 	return fullImageName
-}
-
-func appendPath(registry string) string {
-	return fmt.Sprintf("%s/linux/activegate", registry)
 }
 
 func buildImageRegistryFromAPIURL(apiURL string) string {

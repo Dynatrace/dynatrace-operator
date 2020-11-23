@@ -25,16 +25,16 @@ const (
 	LINUX = "linux"
 
 	DTTenant          = "DT_TENANT"
-	DtServer          = "DT_SERVER"
-	DtToken           = "DT_TOKEN"
-	DtCapabilities    = "DT_CAPABILITIES"
-	DtIdSeedNamespace = "DT_ID_SEED_NAMESPACE"
-	DtIdSeedClusterId = "DT_ID_SEED_K8S_CLUSTER_ID"
+	DTServer          = "DT_SERVER"
+	DTToken           = "DT_TOKEN"
+	DTCapabilities    = "DT_CAPABILITIES"
+	DTIdSeedNamespace = "DT_ID_SEED_NAMESPACE"
+	DTIdSeedClusterId = "DT_ID_SEED_K8S_CLUSTER_ID"
 
-	DtTenantArg       = "--tenant=$(DT_TENANT)"
-	DtTokenArg        = "--token=$(DT_TOKEN)"
-	DtServerArg       = "--server=$(DT_SERVER)"
-	DtCapabilitiesArg = "--enable=$(DT_CAPABILITIES)"
+	DTTenantArg       = "--tenant=$(DT_TENANT)"
+	DTTokenArg        = "--token=$(DT_TOKEN)"
+	DTServerArg       = "--server=$(DT_SERVER)"
+	DTCapabilitiesArg = "--enable=$(DT_CAPABILITIES)"
 
 	ProxyArg = `PROXY="${ACTIVE_GATE_PROXY}"`
 	ProxyEnv = "ACTIVE_GATE_PROXY"
@@ -45,28 +45,98 @@ const (
 
 func newStatefulSet(instance dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) *v1.StatefulSet {
 	return &v1.StatefulSet{
-		ObjectMeta: buildObjectMeta(&instance),
-		Spec:       buildSpec(&instance, tenantInfo, kubeSystemUID),
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        dynatracev1alpha1.Name,
+			Namespace:   instance.Namespace,
+			Labels:      buildLabels(&instance),
+			Annotations: map[string]string{},
+		},
+		Spec: v1.StatefulSetSpec{
+			Replicas: instance.Spec.KubernetesMonitoringSpec.Replicas,
+			Selector: buildLabelSelector(&instance),
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{Labels: buildLabels(&instance)},
+				Spec:       buildTemplateSpec(&instance, tenantInfo, kubeSystemUID),
+			},
+		},
 	}
 }
 
-func buildObjectMeta(instance *dynatracev1alpha1.DynaKube) metav1.ObjectMeta {
-	return metav1.ObjectMeta{
-		Name:        dynatracev1alpha1.Name,
-		Namespace:   instance.Namespace,
-		Labels:      buildLabels(instance),
-		Annotations: map[string]string{},
+func buildTemplateSpec(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) corev1.PodSpec {
+	serviceAccountName := instance.Spec.KubernetesMonitoringSpec.ServiceAccountName
+	if serviceAccountName == "" {
+		serviceAccountName = MonitoringServiceAccount
+	}
+
+	return corev1.PodSpec{
+		Containers:         []corev1.Container{buildContainer(instance, tenantInfo, kubeSystemUID)},
+		DNSPolicy:          instance.Spec.KubernetesMonitoringSpec.DNSPolicy,
+		NodeSelector:       instance.Spec.KubernetesMonitoringSpec.NodeSelector,
+		ServiceAccountName: serviceAccountName,
+		Affinity: &corev1.Affinity{
+			NodeAffinity: &corev1.NodeAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{
+						{MatchExpressions: buildKubernetesExpression(KubernetesBetaArch, KubernetesBetaOS)},
+						{MatchExpressions: buildKubernetesExpression(KubernetesArch, KubernetesOS)},
+					},
+				},
+			},
+		},
+		Tolerations:       instance.Spec.KubernetesMonitoringSpec.Tolerations,
+		PriorityClassName: instance.Spec.KubernetesMonitoringSpec.PriorityClassName,
+		Volumes:           buildVolumes(instance),
+		ImagePullSecrets: []corev1.LocalObjectReference{
+			buildPullSecret(instance),
+		},
 	}
 }
 
-func buildSpec(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) v1.StatefulSetSpec {
-	return v1.StatefulSetSpec{
-		Replicas: instance.Spec.KubernetesMonitoringSpec.Replicas,
-		Selector: buildLabelSelector(instance),
-		Template: buildTemplate(instance, tenantInfo, kubeSystemUID),
+func buildContainer(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) corev1.Container {
+	var volumeMounts []corev1.VolumeMount
+	customProperties := instance.Spec.KubernetesMonitoringSpec.CustomProperties
+	if !isCustomPropertiesNilOrEmpty(customProperties) {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      customproperties.VolumeName,
+			MountPath: customproperties.MountPath,
+		})
+	}
+
+	return corev1.Container{
+		Name:            dynatracev1alpha1.OperatorName,
+		Image:           buildImage(instance),
+		Resources:       buildResources(instance),
+		ImagePullPolicy: corev1.PullAlways,
+		Env:             buildEnvs(instance, tenantInfo, kubeSystemUID),
+		Args:            buildArgs(instance),
+		VolumeMounts:    volumeMounts,
+		ReadinessProbe: &corev1.Probe{
+			Handler: corev1.Handler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:   "/rest/health",
+					Port:   intstr.IntOrString{IntVal: 9999},
+					Scheme: "HTTPS",
+				},
+			},
+			InitialDelaySeconds: 30,
+			PeriodSeconds:       15,
+			FailureThreshold:    3,
+		},
+		LivenessProbe: &corev1.Probe{
+			Handler: corev1.Handler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:   "/rest/state",
+					Port:   intstr.IntOrString{IntVal: 9999},
+					Scheme: "HTTPS",
+				},
+			},
+			InitialDelaySeconds: 30,
+			PeriodSeconds:       30,
+			FailureThreshold:    2,
+		},
 	}
 }
-
 func buildLabels(instance *dynatracev1alpha1.DynaKube) map[string]string {
 	return MergeLabels(instance.Labels,
 		BuildLabelsFromInstance(instance),
@@ -79,83 +149,6 @@ func buildLabelSelector(instance *dynatracev1alpha1.DynaKube) *metav1.LabelSelec
 			BuildLabelsFromInstance(instance),
 			instance.Spec.KubernetesMonitoringSpec.Labels),
 	}
-}
-
-func buildTemplate(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) corev1.PodTemplateSpec {
-	return corev1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{Labels: buildLabels(instance)},
-		Spec:       buildTemplateSpec(instance, tenantInfo, kubeSystemUID),
-	}
-}
-
-func buildTemplateSpec(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) corev1.PodSpec {
-	return corev1.PodSpec{
-		Containers:         []corev1.Container{buildContainer(instance, tenantInfo, kubeSystemUID)},
-		DNSPolicy:          instance.Spec.KubernetesMonitoringSpec.DNSPolicy,
-		NodeSelector:       instance.Spec.KubernetesMonitoringSpec.NodeSelector,
-		ServiceAccountName: buildServiceAccountName(instance),
-		Affinity:           buildAffinity(),
-		Tolerations:        instance.Spec.KubernetesMonitoringSpec.Tolerations,
-		PriorityClassName:  instance.Spec.KubernetesMonitoringSpec.PriorityClassName,
-		Volumes:            buildVolumes(instance),
-		ImagePullSecrets:   buildImagePullSecrets(instance),
-	}
-}
-
-func buildImagePullSecrets(instance *dynatracev1alpha1.DynaKube) []corev1.LocalObjectReference {
-	return []corev1.LocalObjectReference{
-		buildPullSecret(instance),
-	}
-}
-
-func buildContainer(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) corev1.Container {
-	return corev1.Container{
-		Name:            dynatracev1alpha1.OperatorName,
-		Image:           buildImage(instance),
-		Resources:       buildResources(instance),
-		ImagePullPolicy: corev1.PullAlways,
-		Env:             buildEnvs(instance, tenantInfo, kubeSystemUID),
-		Args:            buildArgs(instance),
-		VolumeMounts:    buildVolumeMounts(instance),
-		ReadinessProbe:  buildReadinessProbe(),
-		LivenessProbe:   buildLivenessProbe(),
-	}
-}
-
-func buildServiceAccountName(instance *dynatracev1alpha1.DynaKube) string {
-	if instance.Spec.KubernetesMonitoringSpec.ServiceAccountName != "" {
-		return instance.Spec.KubernetesMonitoringSpec.ServiceAccountName
-	}
-	return MonitoringServiceAccount
-}
-
-func buildAffinity() *corev1.Affinity {
-	return &corev1.Affinity{
-		NodeAffinity: buildNodeAffinity(),
-	}
-}
-
-func buildNodeAffinity() *corev1.NodeAffinity {
-	return &corev1.NodeAffinity{
-		RequiredDuringSchedulingIgnoredDuringExecution: buildNodeSelectorForAffinity(),
-	}
-}
-
-func buildNodeSelectorForAffinity() *corev1.NodeSelector {
-	return &corev1.NodeSelector{
-		NodeSelectorTerms: []corev1.NodeSelectorTerm{
-			{MatchExpressions: buildKubernetesBetaArchExpression()},
-			{MatchExpressions: buildKubernetesArchExpression()},
-		},
-	}
-}
-
-func buildKubernetesBetaArchExpression() []corev1.NodeSelectorRequirement {
-	return buildKubernetesExpression(KubernetesBetaArch, KubernetesBetaOS)
-}
-
-func buildKubernetesArchExpression() []corev1.NodeSelectorRequirement {
-	return buildKubernetesExpression(KubernetesArch, KubernetesOS)
 }
 
 func buildKubernetesExpression(archKey string, osKey string) []corev1.NodeSelectorRequirement {
@@ -174,25 +167,29 @@ func buildKubernetesExpression(archKey string, osKey string) []corev1.NodeSelect
 }
 
 func buildVolumes(instance *dynatracev1alpha1.DynaKube) []corev1.Volume {
-	return append([]corev1.Volume{}, buildCustomPropertiesVolume(instance)...)
-}
+	var volumes []corev1.Volume
 
-func buildCustomPropertiesVolume(instance *dynatracev1alpha1.DynaKube) []corev1.Volume {
 	customProperties := instance.Spec.KubernetesMonitoringSpec.CustomProperties
-	if isCustomPropertiesNilOrEmpty(customProperties) {
-		return nil
+	if !isCustomPropertiesNilOrEmpty(customProperties) {
+		valueFrom := instance.Spec.KubernetesMonitoringSpec.CustomProperties.ValueFrom
+		if valueFrom == "" {
+			valueFrom = fmt.Sprintf("%s-kubernetes-monitoring-%s", instance.Name, customproperties.Suffix)
+		}
+
+		volumes = append(volumes, corev1.Volume{
+			Name: customproperties.VolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: valueFrom,
+					Items: []corev1.KeyToPath{
+						{Key: customproperties.DataKey, Path: customproperties.DataPath},
+					},
+				},
+			},
+		})
 	}
-	return []corev1.Volume{{
-		Name: customproperties.VolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: buildSecretVolumeSource(
-				buildSecretName(instance),
-				customproperties.DataKey,
-				customproperties.DataPath,
-			),
-		},
-	},
-	}
+
+	return volumes
 }
 
 func isCustomPropertiesNilOrEmpty(customProperties *dynatracev1alpha1.DynaKubeValueSource) bool {
@@ -201,169 +198,75 @@ func isCustomPropertiesNilOrEmpty(customProperties *dynatracev1alpha1.DynaKubeVa
 			customProperties.ValueFrom == "")
 }
 
-func buildSecretVolumeSource(name string, key string, path string) *corev1.SecretVolumeSource {
-	return &corev1.SecretVolumeSource{
-		SecretName: name,
-		Items: []corev1.KeyToPath{
-			{Key: key, Path: path},
-		},
-	}
-}
-
-func buildSecretName(instance *dynatracev1alpha1.DynaKube) string {
-	valueFrom := instance.Spec.KubernetesMonitoringSpec.CustomProperties.ValueFrom
-	if valueFrom == "" {
-		valueFrom = fmt.Sprintf("%s-kubernetes-monitoring-%s", instance.Name, customproperties.Suffix)
-	}
-	return valueFrom
-}
-
 func buildEnvs(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) []corev1.EnvVar {
-	return appendProxySettingsEnvVar(instance,
-		append(instance.Spec.KubernetesMonitoringSpec.Env,
-			buildDefaultEnvVars(instance, tenantInfo, kubeSystemUID)...),
-	)
-}
-
-func appendProxySettingsEnvVar(instance *dynatracev1alpha1.DynaKube, envVars []corev1.EnvVar) []corev1.EnvVar {
-	proxy := instance.Spec.Proxy
-	if isProxyNilOrEmpty(proxy) {
-		return envVars
-	}
-	return append(envVars, buildProxyEnvVar(proxy))
-}
-
-func buildProxyEnvVar(proxy *dynatracev1alpha1.DynaKubeProxy) corev1.EnvVar {
-	if proxy.ValueFrom != "" {
-		return buildProxyEnvVarFromValueSource(proxy)
-	} else {
-		return buildProxyEnvVarFromValue(proxy)
-	}
-}
-
-func buildProxyEnvVarFromValueSource(proxy *dynatracev1alpha1.DynaKubeProxy) corev1.EnvVar {
-	return corev1.EnvVar{
-		Name: ProxyEnv,
-		ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: proxy.ValueFrom},
-				Key:                  ProxyKey,
-			},
-		},
-	}
-}
-
-func buildProxyEnvVarFromValue(proxy *dynatracev1alpha1.DynaKubeProxy) corev1.EnvVar {
-	return corev1.EnvVar{
-		Name:  ProxyEnv,
-		Value: proxy.Value,
-	}
-}
-
-func buildDefaultEnvVars(instance *dynatracev1alpha1.DynaKube, tenantInfo *dtclient.TenantInfo, kubeSystemUID types.UID) []corev1.EnvVar {
-	return []corev1.EnvVar{
+	envVars := []corev1.EnvVar{
 		{Name: DTTenant, Value: tenantInfo.ID},
-		{Name: DtToken, Value: tenantInfo.Token},
-		{Name: DtServer, Value: tenantInfo.CommunicationEndpoint},
-		{Name: DtCapabilities, Value: CapabilityEnv},
-		{Name: DtIdSeedNamespace, Value: instance.Namespace},
-		{Name: DtIdSeedClusterId, Value: string(kubeSystemUID)},
+		{Name: DTToken, Value: tenantInfo.Token},
+		{Name: DTServer, Value: tenantInfo.CommunicationEndpoint},
+		{Name: DTCapabilities, Value: CapabilityEnv},
+		{Name: DTIdSeedNamespace, Value: instance.Namespace},
+		{Name: DTIdSeedClusterId, Value: string(kubeSystemUID)},
 	}
+
+	envVars = append(envVars, instance.Spec.KubernetesMonitoringSpec.Env...)
+
+	proxy := instance.Spec.Proxy
+	if !isProxyNilOrEmpty(proxy) {
+		var proxyEnvVar corev1.EnvVar
+
+		if proxy.ValueFrom != "" {
+			proxyEnvVar = corev1.EnvVar{
+				Name: ProxyEnv,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{Name: proxy.ValueFrom},
+						Key:                  ProxyKey,
+					},
+				},
+			}
+		} else {
+			proxyEnvVar = corev1.EnvVar{
+				Name:  ProxyEnv,
+				Value: proxy.Value,
+			}
+		}
+
+		envVars = append(envVars, proxyEnvVar)
+	}
+
+	return envVars
 }
 
 func buildArgs(instance *dynatracev1alpha1.DynaKube) []string {
-	return appendActivationGroupArg(instance,
-		appendProxySettingsArg(instance,
-			appendNetworkZoneArg(instance,
-				append(instance.Spec.KubernetesMonitoringSpec.Args,
-					buildDefaultArgs()...),
-			)))
-}
-
-func buildDefaultArgs() []string {
-	return []string{
-		DtTenantArg,
-		DtTokenArg,
-		DtServerArg,
-		DtCapabilitiesArg,
+	args := []string{
+		DTTenantArg,
+		DTTokenArg,
+		DTServerArg,
+		DTCapabilitiesArg,
 	}
-}
 
-func appendActivationGroupArg(instance *dynatracev1alpha1.DynaKube, args []string) []string {
-	group := instance.Spec.KubernetesMonitoringSpec.Group
-	if group == "" {
-		return args
+	args = append(args, instance.Spec.KubernetesMonitoringSpec.Args...)
+
+	if instance.Spec.NetworkZone != "" {
+		args = append(args, fmt.Sprintf(`--networkzone="%s"`, instance.Spec.NetworkZone))
 	}
-	return append(args, buildActivationGroupArg(group))
-}
 
-func buildActivationGroupArg(group string) string {
-	return fmt.Sprintf(`--group="%s"`, group)
-}
-
-func appendProxySettingsArg(instance *dynatracev1alpha1.DynaKube, args []string) []string {
 	proxy := instance.Spec.Proxy
-	if isProxyNilOrEmpty(proxy) {
-		return args
+	if !isProxyNilOrEmpty(proxy) {
+		args = append(args, ProxyArg)
 	}
-	return append(args, ProxyArg)
+
+	group := instance.Spec.KubernetesMonitoringSpec.Group
+	if group != "" {
+		args = append(args, fmt.Sprintf(`--group="%s"`, group))
+	}
+
+	return args
+
 }
 
 func isProxyNilOrEmpty(proxy *dynatracev1alpha1.DynaKubeProxy) bool {
 	return proxy == nil || (proxy.Value == "" && proxy.ValueFrom == "")
-}
-
-func appendNetworkZoneArg(instance *dynatracev1alpha1.DynaKube, args []string) []string {
-	if instance.Spec.NetworkZone != "" {
-		return append(args, buildNetworkZoneArg(instance))
-	}
-	return args
-}
-
-func buildNetworkZoneArg(instance *dynatracev1alpha1.DynaKube) string {
-	return fmt.Sprintf(`--networkzone="%s"`, instance.Spec.NetworkZone)
-}
-
-func buildVolumeMounts(instance *dynatracev1alpha1.DynaKube) []corev1.VolumeMount {
-	customProperties := instance.Spec.KubernetesMonitoringSpec.CustomProperties
-	if isCustomPropertiesNilOrEmpty(customProperties) {
-		return nil
-	}
-	return []corev1.VolumeMount{{
-		ReadOnly:  true,
-		Name:      customproperties.VolumeName,
-		MountPath: customproperties.MountPath,
-	}}
-}
-
-func buildLivenessProbe() *corev1.Probe {
-	return &corev1.Probe{
-		Handler: corev1.Handler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/rest/state",
-				Port:   intstr.IntOrString{IntVal: 9999},
-				Scheme: "HTTPS",
-			},
-		},
-		InitialDelaySeconds: 30,
-		PeriodSeconds:       30,
-		FailureThreshold:    2,
-	}
-}
-
-func buildReadinessProbe() *corev1.Probe {
-	return &corev1.Probe{
-		Handler: corev1.Handler{
-			HTTPGet: &corev1.HTTPGetAction{
-				Path:   "/rest/health",
-				Port:   intstr.IntOrString{IntVal: 9999},
-				Scheme: "HTTPS",
-			},
-		},
-		InitialDelaySeconds: 30,
-		PeriodSeconds:       15,
-		FailureThreshold:    3,
-	}
 }
 
 func BuildLabelsFromInstance(instance *dynatracev1alpha1.DynaKube) map[string]string {

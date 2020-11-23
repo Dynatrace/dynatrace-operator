@@ -39,7 +39,7 @@ func (r *VersionLabelReconciler) Reconcile() (reconcile.Result, error) {
 
 	err = r.setVersionLabelForPods(pods)
 	if err != nil {
-		return retryOnStatusError(err)
+		return r.retryOnStatusError(err)
 	}
 
 	return reconcile.Result{}, nil
@@ -103,11 +103,11 @@ func (r *VersionLabelReconciler) getVersionLabelForPod(pod *corev1.Pod) (string,
 	return result, nil
 }
 
-func retryOnStatusError(err error) (reconcile.Result, error) {
+func (r *VersionLabelReconciler) retryOnStatusError(err error) (reconcile.Result, error) {
 	var statusError *k8serrors.StatusError
 	if errors.As(err, &statusError) {
 		// Since this happens early during deployment, pods might have been modified
-		// In this case, retry silently
+		r.log.Info("retrying setting label due to status error. this error is normal and can be ignored at early stages of deployment", "error", err.Error())
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 	// Otherwise, fail loudly

@@ -45,7 +45,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 }
 
 func (r *Reconciler) Reconcile() error {
-	if !r.hasCustomPullSecret() && !r.hasImage() {
+	if r.instance.Spec.CustomPullSecret == "" && r.image == "" {
 		err := r.reconcilePullSecret()
 		if err != nil {
 			r.log.Error(err, "could not reconcile pull secret")
@@ -127,12 +127,4 @@ func buildPullSecret(instance *dynatracev1alpha1.DynaKube, pullSecretData map[st
 
 func extendWithPullSecretSuffix(name string) string {
 	return name + PullSecretSuffix
-}
-
-func (r *Reconciler) hasCustomPullSecret() bool {
-	return r.instance.Spec.CustomPullSecret != ""
-}
-
-func (r *Reconciler) hasImage() bool {
-	return r.image != ""
 }
