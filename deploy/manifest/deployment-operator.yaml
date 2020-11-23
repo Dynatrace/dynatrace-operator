@@ -22,7 +22,7 @@ spec:
       containers:
         - name: dynatrace-operator
           # Replace this with the built image name
-          image: quay.io/dynatrace/dynatrace-operator:snapshot
+          image: docker.io/dynatrace/dynatrace-operator:snapshot
           command:
             - dynatrace-operator
           imagePullPolicy: Always

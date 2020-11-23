@@ -29,19 +29,12 @@ func CreateOrUpdateSecret(secretManager *SecretManager) error {
 	if k8serrors.IsNotFound(err) {
 		secretManager.Logger.Info("Creating OneAgent config secret")
 		// Set DynaKube instance as the owner and controller
-		if err := controllerutil.SetControllerReference(secretManager.Owner, &cfg, secretManager.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(secretManager.Owner, secretManager.Secret, secretManager.Scheme); err != nil {
 			secretManager.Logger.Error(err, "error setting controller reference")
 			return err
 		}
 
-		if err := secretManager.Client.Create(context.TODO(), &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      secretManager.Secret.Name,
-				Namespace: secretManager.Secret.Namespace,
-			},
-			Type: secretManager.Secret.Type,
-			Data: secretManager.Secret.Data,
-		}); err != nil {
+		if err := secretManager.Client.Create(context.TODO(), secretManager.Secret); err != nil {
 			return fmt.Errorf("failed to create secret %s: %w", secretManager.Secret.Name, err)
 		}
 		return nil
