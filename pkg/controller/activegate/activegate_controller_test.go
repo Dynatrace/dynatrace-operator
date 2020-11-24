@@ -2,12 +2,12 @@ package activegate
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/pkg/controller/kubemon"
 	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis"
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/pkg/controller/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
