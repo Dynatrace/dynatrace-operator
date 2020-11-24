@@ -7,16 +7,18 @@ import (
 const VersionKey = "version"
 
 type DockerLabelsChecker struct {
-	image        string
-	labels       map[string]string
-	dockerConfig *DockerConfig
+	image                       string
+	labels                      map[string]string
+	dockerConfig                *DockerConfig
+	imageInformationConstructor func(string, *DockerConfig) ImageInformation
 }
 
-func NewDockerLabelsChecker(image string, labels map[string]string, dockerConfig *DockerConfig) *DockerLabelsChecker {
+func NewDockerLabelsChecker(image string, labels map[string]string, dockerConfig *DockerConfig) ReleaseValidator {
 	return &DockerLabelsChecker{
-		image:        image,
-		labels:       labels,
-		dockerConfig: dockerConfig,
+		image:                       image,
+		labels:                      labels,
+		dockerConfig:                dockerConfig,
+		imageInformationConstructor: NewPodImageInformation,
 	}
 }
 
@@ -26,7 +28,7 @@ func (dockerLabelsChecker *DockerLabelsChecker) IsLatest() (bool, error) {
 		return false, fmt.Errorf("key '%s' not found in given matchLabels", VersionKey)
 	}
 
-	remoteVersionLabel, err := NewPodImageInformation(dockerLabelsChecker.image, dockerLabelsChecker.dockerConfig).GetVersionLabel()
+	remoteVersionLabel, err := dockerLabelsChecker.imageInformationConstructor(dockerLabelsChecker.image, dockerLabelsChecker.dockerConfig).GetVersionLabel()
 	if err != nil {
 		return false, err
 	}
@@ -41,6 +43,6 @@ func (dockerLabelsChecker *DockerLabelsChecker) IsLatest() (bool, error) {
 		return false, err
 	}
 
-	// Return true if local version is not equal to the remote version
-	return CompareVersionInfo(localVersion, remoteVersion) != 0, nil
+	// Return true if local version is equal to the remote version
+	return CompareVersionInfo(localVersion, remoteVersion) == 0, nil
 }

@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-type versionInfo struct {
+type VersionInfo struct {
 	major   int
 	minor   int
 	release int
@@ -19,7 +19,7 @@ var versionRegex = regexp.MustCompile(`^([\d]+)\.([\d]+)\.([\d]+)`)
 //  n > 0: if a > b
 //  n < 0: if a < b
 //  0 with error: if a == nil || b == nil
-func CompareVersionInfo(a versionInfo, b versionInfo) int {
+func CompareVersionInfo(a VersionInfo, b VersionInfo) int {
 	// Check major version
 	result := a.major - b.major
 	if result != 0 {
@@ -37,27 +37,27 @@ func CompareVersionInfo(a versionInfo, b versionInfo) int {
 	return result
 }
 
-func ExtractVersion(versionString string) (versionInfo, error) {
+func ExtractVersion(versionString string) (VersionInfo, error) {
 	version := versionRegex.FindStringSubmatch(versionString)
 
 	if len(version) < 4 {
-		return versionInfo{}, fmt.Errorf("version malformed: %s", versionString)
+		return VersionInfo{}, fmt.Errorf("version malformed: %s", versionString)
 	}
 
 	major, err := strconv.Atoi(version[1])
 	if err != nil {
-		return versionInfo{}, err
+		return VersionInfo{}, err
 	}
 
 	minor, err := strconv.Atoi(version[2])
 	if err != nil {
-		return versionInfo{}, err
+		return VersionInfo{}, err
 	}
 
 	release, err := strconv.Atoi(version[3])
 	if err != nil {
-		return versionInfo{}, err
+		return VersionInfo{}, err
 	}
 
-	return versionInfo{major, minor, release}, nil
+	return VersionInfo{major, minor, release}, nil
 }

@@ -66,10 +66,15 @@ func (r *Reconciler) handleAddToDashboardServerError(id string, serverError dtcl
 }
 
 func (r *Reconciler) findServiceAccount() (*corev1.ServiceAccount, error) {
+	serviceAccountName := r.instance.Spec.KubernetesMonitoringSpec.ServiceAccountName
+	if serviceAccountName == "" {
+		serviceAccountName = ServiceAccountName
+	}
+
 	serviceAccount := &corev1.ServiceAccount{}
 	err := r.Get(context.TODO(), types.NamespacedName{
 		Namespace: r.instance.Namespace,
-		Name:      ServiceAccountName,
+		Name:      serviceAccountName,
 	}, serviceAccount)
 
 	return serviceAccount, err
