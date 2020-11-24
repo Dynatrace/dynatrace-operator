@@ -67,7 +67,7 @@ func (r *Reconciler) buildAuthString(connectionInfo dtclient.ConnectionInfo) str
 
 func getImageRegistryFromAPIURL(apiURL string) (string, error) {
 	r := strings.TrimPrefix(apiURL, "https://")
-	r = strings.TrimPrefix(apiURL, "http://")
+	r = strings.TrimPrefix(r, "http://")
 	r = strings.TrimSuffix(r, "/api")
 	return r, nil
 }
