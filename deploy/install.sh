@@ -109,6 +109,7 @@ apiVersion: dynatrace.com/v1alpha1
 kind: DynaKube
 metadata:
   name: dynakube
+  namespace: dynatrace
 spec:
   apiUrl: ${API_URL}
   tokens: oneagent
