@@ -34,12 +34,14 @@ const (
 	ProxyKey = "ProxyKey"
 
 	CapabilityEnv = "kubernetes_monitoring"
+
+	StatefulSetSuffix = "-kubemon"
 )
 
 func newStatefulSet(instance dynatracev1alpha1.DynaKube, kubeSystemUID types.UID) *v1.StatefulSet {
 	return &v1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        instance.Name + "-kubemon",
+			Name:        instance.Name + StatefulSetSuffix,
 			Namespace:   instance.Namespace,
 			Labels:      buildLabels(&instance),
 			Annotations: map[string]string{},
