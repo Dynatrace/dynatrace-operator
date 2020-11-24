@@ -6,7 +6,6 @@ import (
 )
 
 const (
-	Name         = "activegate"
 	OperatorName = "dynatrace-operator"
 )
 

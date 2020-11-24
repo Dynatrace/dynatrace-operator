@@ -39,7 +39,7 @@ const (
 func newStatefulSet(instance dynatracev1alpha1.DynaKube, kubeSystemUID types.UID) *v1.StatefulSet {
 	return &v1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        dynatracev1alpha1.Name,
+			Name:        instance.Name + "-kubemon",
 			Namespace:   instance.Namespace,
 			Labels:      buildLabels(&instance),
 			Annotations: map[string]string{},
