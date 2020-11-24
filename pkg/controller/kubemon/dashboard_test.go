@@ -2,6 +2,8 @@ package kubemon
 
 import (
 	"context"
+	"testing"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/dtclient"
 	"github.com/stretchr/testify/assert"
@@ -11,7 +13,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
 )
 
 func TestAddToDashboard(t *testing.T) {

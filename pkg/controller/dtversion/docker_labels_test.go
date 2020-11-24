@@ -1,12 +1,13 @@
 package dtversion
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDockerLabelsChecker_IsLatest(t *testing.T) {
-	dockerLabels := NewDockerLabelsChecker(testImage, map[string]string{VersionKey: testVersion}, nil)
+	dockerLabels := NewDockerLabelsChecker(testImage, map[string]string{VersionKey: testVersion}, nil).(*DockerLabelsChecker)
 	assert.NotNil(t, dockerLabels)
 
 	t.Run(`IsLatest returns true if versions are equal`, func(t *testing.T) {

@@ -2,6 +2,10 @@ package dtversion
 
 import (
 	"fmt"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/Dynatrace/dynatrace-operator/pkg/apis"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/pkg/apis/dynatrace/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/pkg/controller/dtpullsecret"
@@ -11,11 +15,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubectl/pkg/scheme"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"testing"
-	"time"
 )
 
 const (

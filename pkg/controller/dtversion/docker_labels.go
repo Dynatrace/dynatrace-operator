@@ -13,7 +13,7 @@ type DockerLabelsChecker struct {
 	imageInformationConstructor func(string, *DockerConfig) ImageInformation
 }
 
-func NewDockerLabelsChecker(image string, labels map[string]string, dockerConfig *DockerConfig) *DockerLabelsChecker {
+func NewDockerLabelsChecker(image string, labels map[string]string, dockerConfig *DockerConfig) ReleaseValidator {
 	return &DockerLabelsChecker{
 		image:                       image,
 		labels:                      labels,
