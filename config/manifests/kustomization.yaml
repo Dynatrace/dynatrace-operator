@@ -14,4 +14,3 @@ resources:
   - podsecuritypolicy-operator.yaml
 bases:
   - ../crd
-#  - ../prometheus
