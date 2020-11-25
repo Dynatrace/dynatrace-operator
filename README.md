@@ -8,7 +8,7 @@ As of launch, the Dynatrace Operator can be used to deploy a containerized Activ
 
 ## Supported platforms
 
-Depending of the version of the Dynatrace Operator, it supports the following platforms:
+Depending on the version of the Dynatrace Operator, it supports the following platforms:
 
 | Dynatrace Operator version | Kubernetes | OpenShift Container Platform               |
 | -------------------------- | ---------- | ------------------------------------------ |
