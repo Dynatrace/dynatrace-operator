@@ -1,27 +1,24 @@
-# Build the manager binary
-FROM golang:1.13 as builder
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
-WORKDIR /workspace
-# Copy the Go Modules manifests
-COPY go.mod go.mod
-COPY go.sum go.sum
-# cache deps before building and copying source so that we don't need to re-download as much
-# and so that source changes don't invalidate our downloaded layer
-RUN go mod download
+LABEL name="Dynatrace ActiveGate Operator" \
+      vendor="Dynatrace LLC" \
+      maintainer="Dynatrace LLC" \
+      version="1.x" \
+      release="1" \
+      url="https://www.dynatrace.com" \
+      summary="Dynatrace is an all-in-one, zero-config monitoring platform designed by and for cloud natives. It is powered by artificial intelligence that identifies performance problems and pinpoints their root causes in seconds." \
+      description="ActiveGate works as a proxy between Dynatrace OneAgent and Dynatrace Cluster"
 
-# Copy the go source
-COPY main.go main.go
-COPY api/ api/
-COPY controllers/ controllers/
+ENV OPERATOR=dynatrace-operator \
+    USER_UID=1001 \
+    USER_NAME=dynatrace-operator
 
-# Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go build -a -o manager main.go
+RUN  microdnf install unzip && microdnf clean all
+COPY LICENSE /licenses/
+COPY build/_output/bin /usr/local/bin
+COPY build/bin /usr/local/bin
+RUN  /usr/local/bin/user_setup
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
-WORKDIR /
-COPY --from=builder /workspace/manager .
-USER nonroot:nonroot
+ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
-ENTRYPOINT ["/manager"]
+USER ${USER_UID}
