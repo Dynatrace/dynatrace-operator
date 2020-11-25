@@ -18,9 +18,9 @@ fi
 base_image="dynatrace-operator"
 
 if [[ -z "${LABEL:-}" ]]; then
-  docker build . -f ./build/Dockerfile -t "$base_image"
+  docker build . -f ./Dockerfile -t "$base_image"
 else
-  docker build . -f ./build/Dockerfile -t "$base_image" --label "$LABEL"
+  docker build . -f ./Dockerfile -t "$base_image" --label "$LABEL"
 fi
 
 failed=false
