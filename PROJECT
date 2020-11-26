@@ -1,0 +1,11 @@
+domain: com
+layout: go.kubebuilder.io/v2
+projectName: dynatrace-operator
+repo: github.com/Dynatrace/dynatrace-operator
+resources:
+- group: dynatrace
+  kind: DynaKube
+  version: v1alpha1
+version: 3-alpha
+plugins:
+  go.sdk.operatorframework.io/v2-alpha: {}

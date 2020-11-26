@@ -51,7 +51,7 @@ jobs:
       go: "1.15.x"
       script:
         - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.31.0
-        - golangci-lint run --build-tags integration,containers_image_storage_stub
+        - golangci-lint run --build-tags integration,containers_image_storage_stub --timeout 300s
 
     - stage: preparation
       name: Set configs
@@ -74,10 +74,10 @@ jobs:
     - &deploy_amd
       script: ./build/deploy.sh
       stage: deploy
-      name: Deploy snapshot master AMD to DockerHub
+      name: Deploy snapshot master AMD to Quay
       arch: amd64
       if: (branch = master) AND (tag IS blank)
-      env: IMAGES=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
+      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot"
       cache:
         directories:
           - $GOPATH/pkg/mod
@@ -94,6 +94,11 @@ jobs:
       name: Deploy release AMD to DockerHub
       if: tag =~ /^v.*/
       env: IMAGES=$OAO_IMAGE_DOCKER_HUB
+
+    - <<: *deploy_amd
+      name: Deploy release AMD to Quay
+      if: tag =~ /^v.*/
+      env: IMAGES=$OAO_IMAGE_QUAY
 
       #    - <<: *deploy_amd
       #      name: Deploy release AMD to RHCC
@@ -115,10 +120,10 @@ jobs:
       install: skip
       script: ./build/deploy.sh
       stage: deploy
-      name: Deploy snapshot master ARM to DockerHub
+      name: Deploy snapshot master ARM to Quay
       arch: arm64
       if: (branch = master) AND (tag IS blank)
-      env: IMAGES=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
+      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot"
       cache:
         directories:
           - $GOPATH/pkg/mod
@@ -132,6 +137,11 @@ jobs:
       env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
 
     - <<: *deploy_arm
+      name: Deploy release ARM to Quay
+      if: tag =~ /^v.*/
+      env: IMAGES=$OAO_IMAGE_QUAY
+
+    - <<: *deploy_arm
       name: Deploy release ARM to DockerHub
       if: tag =~ /^v.*/
       env: IMAGES=$OAO_IMAGE_DOCKER_HUB
@@ -142,9 +152,9 @@ jobs:
       stage: manifest
       install: skip
       language: generic
-      name: Create manifest for snapshot master for DockerHub
+      name: Create manifest for snapshot master for Quay
       if: (branch = master) AND (tag IS blank)
-      env: IMAGE=$OAO_IMAGE_DOCKER_HUB TAG="snapshot"
+      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot"
       git:
         clone: false
       script:
@@ -153,11 +163,6 @@ jobs:
         - docker manifest push $IMAGE:$TAG
       workspaces:
         use: dockerconfig
-
-    - <<: *create_manifest
-      name: Create manifest for master snapshot for Quay
-      if: (branch = master) AND (tag IS blank)
-      env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot"
 
     - <<: *create_manifest
       name: Create manifest for non-master snapshot for Quay
