@@ -16,17 +16,21 @@ import (
 
 type VersionLabelReconciler struct {
 	client.Client
-	log         logr.Logger
-	instance    *dynatracev1alpha1.DynaKube
-	matchLabels map[string]string //kubemon.BuildLabelsFromInstance(instance)
+	log                         logr.Logger
+	instance                    *dynatracev1alpha1.DynaKube
+	matchLabels                 map[string]string //kubemon.BuildLabelsFromInstance(instance),
+	dockerConfigConstructor     func(*corev1.Secret) (*DockerConfig, error)
+	imageInformationConstructor func(string, *DockerConfig) ImageInformation
 }
 
 func NewReconciler(clt client.Client, log logr.Logger, instance *dynatracev1alpha1.DynaKube, matchLabels map[string]string) *VersionLabelReconciler {
 	return &VersionLabelReconciler{
-		Client:      clt,
-		log:         log,
-		instance:    instance,
-		matchLabels: matchLabels,
+		Client:                      clt,
+		log:                         log,
+		instance:                    instance,
+		matchLabels:                 matchLabels,
+		dockerConfigConstructor:     NewDockerConfig,
+		imageInformationConstructor: NewPodImageInformation,
 	}
 }
 
@@ -37,7 +41,7 @@ func (r *VersionLabelReconciler) Reconcile() (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	err = r.setVersionLabelForPods(pods)
+	err = r.setVersionLabelForPods(pods, r.getVersionLabelForPod)
 	if err != nil {
 		return r.retryOnStatusError(err)
 	}
@@ -45,9 +49,14 @@ func (r *VersionLabelReconciler) Reconcile() (reconcile.Result, error) {
 	return reconcile.Result{}, nil
 }
 
-func (r *VersionLabelReconciler) setVersionLabelForPods(pods []corev1.Pod) error {
+func (r *VersionLabelReconciler) setVersionLabelForPods(pods []corev1.Pod, getVersionLabelFn func(pod *corev1.Pod) (string, error)) error {
 	for i := range pods {
-		err := r.setVersionLabel(&pods[i])
+		versionLabel, err := getVersionLabelFn(&pods[i])
+		if err != nil {
+			return err
+		}
+
+		err = r.setVersionLabel(&pods[i], versionLabel)
 		if err != nil {
 			return err
 		}
@@ -55,14 +64,9 @@ func (r *VersionLabelReconciler) setVersionLabelForPods(pods []corev1.Pod) error
 	return nil
 }
 
-func (r *VersionLabelReconciler) setVersionLabel(pod *corev1.Pod) error {
-	versionLabel, err := r.getVersionLabelForPod(pod)
-	if err != nil {
-		return err
-	}
-
+func (r *VersionLabelReconciler) setVersionLabel(pod *corev1.Pod, versionLabel string) error {
 	pod.Labels[VersionKey] = versionLabel
-	err = r.Update(context.TODO(), pod)
+	err := r.Update(context.TODO(), pod)
 	if err != nil {
 		return err
 	}
@@ -83,10 +87,10 @@ func (r *VersionLabelReconciler) getVersionLabelForPod(pod *corev1.Pod) (string,
 			return "", err
 		}
 
-		dockerConfig, err := NewDockerConfig(imagePullSecret)
+		dockerConfig, err := r.dockerConfigConstructor(imagePullSecret)
 		// If an error is returned, try getting the image anyway
 
-		versionLabel, err2 := NewPodImageInformation(status.Image, dockerConfig).GetVersionLabel()
+		versionLabel, err2 := r.imageInformationConstructor(status.Image, dockerConfig).GetVersionLabel()
 		if err2 != nil && err != nil {
 			// If an error is returned when getting matchLabels and an error occurred during parsing of the docker config
 			// assume the error from parsing the docker config is the reason

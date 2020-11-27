@@ -42,8 +42,13 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 		return nil, err
 	}
 
+	paasToken := ""
+	if r.token != nil {
+		paasToken = string(r.token.Data[dtclient.DynatracePaasToken])
+	}
+
 	dockerConfig := newDockerConfigWithAuth(connectionInfo.TenantUUID,
-		string(r.token.Data[dtclient.DynatracePaasToken]),
+		paasToken,
 		registry,
 		r.buildAuthString(connectionInfo))
 
@@ -51,12 +56,18 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 }
 
 func (r *Reconciler) buildAuthString(connectionInfo dtclient.ConnectionInfo) string {
-	auth := fmt.Sprintf("%s:%s", connectionInfo.TenantUUID, string(r.token.Data[dtclient.DynatracePaasToken]))
+	paasToken := ""
+	if r.token != nil {
+		paasToken = string(r.token.Data[dtclient.DynatracePaasToken])
+	}
+
+	auth := fmt.Sprintf("%s:%s", connectionInfo.TenantUUID, paasToken)
 	return b64.StdEncoding.EncodeToString([]byte(auth))
 }
 
 func getImageRegistryFromAPIURL(apiURL string) (string, error) {
 	r := strings.TrimPrefix(apiURL, "https://")
+	r = strings.TrimPrefix(r, "http://")
 	r = strings.TrimSuffix(r, "/api")
 	return r, nil
 }
