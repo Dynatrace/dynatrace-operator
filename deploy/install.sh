@@ -100,7 +100,7 @@ EOF
 }
 
 applyDynatraceOperator() {
-  "${CLI}" apply -k https://github.com/Dynatrace/dynatrace-operator/deploy/manifest
+  "${CLI}" apply -k https://github.com/Dynatrace/dynatrace-operator/config/manifest
 }
 
 applyDynaKubeCR() {
