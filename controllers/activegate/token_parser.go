@@ -39,8 +39,8 @@ func NewTokens(secret *corev1.Secret) (*Tokens, error) {
 
 func verifySecret(secret *corev1.Secret) error {
 	for _, token := range []string{
-		dtclient.DynatracePaasToken,
-		dtclient.DynatraceApiToken} {
+		dtclient.DynatraceApiToken,
+		dtclient.DynatracePaasToken} {
 		_, err := ExtractToken(secret, token)
 		if err != nil {
 			return fmt.Errorf("invalid secret %s, %s", secret.Name, err)
@@ -51,8 +51,8 @@ func verifySecret(secret *corev1.Secret) error {
 }
 
 func ExtractToken(secret *corev1.Secret, key string) (string, error) {
-	value, ok := secret.Data[key]
-	if !ok {
+	value, hasKey := secret.Data[key]
+	if !hasKey {
 		err := fmt.Errorf("missing token %s", key)
 		return "", err
 	}

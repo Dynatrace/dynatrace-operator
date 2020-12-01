@@ -21,20 +21,22 @@ const (
 
 type Reconciler struct {
 	client.Client
-	log         logr.Logger
-	instance    *dynatracev1alpha1.DynaKube
-	matchLabels map[string]string
-	image       string
+	log                         logr.Logger
+	instance                    *dynatracev1alpha1.DynaKube
+	matchLabels                 map[string]string
+	image                       string
+	releaseValidatorConstructor func(string, map[string]string, *dtversion.DockerConfig) dtversion.ReleaseValidator
 }
 
 func NewReconciler(clt client.Client, log logr.Logger, instance *dynatracev1alpha1.DynaKube,
 	matchLabels map[string]string, image string) *Reconciler {
 	return &Reconciler{
-		Client:      clt,
-		log:         log,
-		instance:    instance,
-		matchLabels: matchLabels,
-		image:       image,
+		Client:                      clt,
+		log:                         log,
+		instance:                    instance,
+		matchLabels:                 matchLabels,
+		image:                       image,
+		releaseValidatorConstructor: dtversion.NewDockerLabelsChecker,
 	}
 }
 
@@ -109,7 +111,7 @@ func (r *Reconciler) isOutdatedContainerStatus(pod corev1.Pod, status corev1.Con
 		r.log.Error(err, err.Error())
 	}
 
-	isLatest, err := dtversion.NewDockerLabelsChecker(r.image, pod.Labels, dockerConfig).IsLatest()
+	isLatest, err := r.releaseValidatorConstructor(r.image, pod.Labels, dockerConfig).IsLatest()
 	if err != nil {
 		return false, err
 	}

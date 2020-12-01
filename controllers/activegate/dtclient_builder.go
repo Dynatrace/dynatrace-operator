@@ -96,14 +96,15 @@ func (opts *options) appendTrustedCerts(rtc client.Client, spec *dynatracev1alph
 		if err := rtc.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: spec.TrustedCAs}, certs); err != nil {
 			return fmt.Errorf("failed to get certificate configmap: %w", err)
 		}
-		if certs.Data["certs"] == "" {
+		if certs.Data[Certificates] == "" {
 			return fmt.Errorf("failed to extract certificate configmap field: missing field certs")
 		}
-		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data["certs"])))
+		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[Certificates])))
 	}
 	return nil
 }
 
 const (
-	Proxy = "proxy"
+	Proxy        = "proxy"
+	Certificates = "certs"
 )
