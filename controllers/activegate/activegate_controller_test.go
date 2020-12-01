@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	testUID = "test-uid"
+	testUID       = "test-uid"
+	testPaasToken = "test-paas-token"
 )
 
 func init() {
@@ -80,7 +81,8 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
 					Namespace: testNamespace,
-				}},
+				},
+				Data: map[string][]byte{dtclient.DynatracePaasToken: []byte(testPaasToken)}},
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: kubesystem.Namespace,

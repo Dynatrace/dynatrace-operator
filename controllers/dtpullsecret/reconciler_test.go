@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	testEndpoint = "http://test-endpoint.com/api"
+	testEndpoint  = "http://test-endpoint.com/api"
+	testPaasToken = "test-paas-token"
 )
 
 func init() {
@@ -35,8 +36,15 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 				Name:      testName,
 			}}
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: testNamespace,
+				Name:      testName,
+			},
+			Data: map[string][]byte{dtclient.DynatracePaasToken: []byte(testPaasToken)},
+		}
 		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme)
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, mockDTC, logf.Log, nil, "")
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, mockDTC, logf.Log, secret, "")
 
 		mockDTC.
 			On("GetConnectionInfo").
@@ -170,8 +178,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(context.TODO(),
 			client.ObjectKey{Name: testName + "-pull-secret", Namespace: testNamespace},
 			&pullSecret)
-
-		assert.NoError(t, err)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, pullSecret)

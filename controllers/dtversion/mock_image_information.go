@@ -8,5 +8,5 @@ type MockImageInformation struct {
 
 func (o *MockImageInformation) GetVersionLabel() (string, error) {
 	args := o.Called()
-	return args.Get(0).(string), args.Error(1)
+	return args.String(0), args.Error(1)
 }

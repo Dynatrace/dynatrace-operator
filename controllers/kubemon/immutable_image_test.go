@@ -60,7 +60,6 @@ func TestBuildPullSecret(t *testing.T) {
 		}
 		pullSecret = buildPullSecret(instance)
 
-		assert.NotNil(t, pullSecret)
 		assert.Equal(t, corev1.LocalObjectReference{
 			Name: testName + dtpullsecret.PullSecretSuffix,
 		}, pullSecret)

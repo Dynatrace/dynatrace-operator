@@ -42,13 +42,17 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 		return nil, err
 	}
 
-	paasToken := ""
-	if r.token != nil {
-		paasToken = string(r.token.Data[dtclient.DynatracePaasToken])
+	if r.token == nil {
+		return nil, fmt.Errorf("token secret is nil, cannot generate docker config")
+	}
+
+	paasToken, hasToken := r.token.Data[dtclient.DynatracePaasToken]
+	if !hasToken {
+		return nil, fmt.Errorf("token secret does not contain a paas token, cannot generate docker config")
 	}
 
 	dockerConfig := newDockerConfigWithAuth(connectionInfo.TenantUUID,
-		paasToken,
+		string(paasToken),
 		registry,
 		r.buildAuthString(connectionInfo))
 

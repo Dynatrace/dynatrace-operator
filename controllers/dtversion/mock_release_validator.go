@@ -8,5 +8,5 @@ type MockReleaseValidator struct {
 
 func (o *MockReleaseValidator) IsLatest() (bool, error) {
 	args := o.Called()
-	return args.Get(0).(bool), args.Error(1)
+	return args.Bool(0), args.Error(1)
 }

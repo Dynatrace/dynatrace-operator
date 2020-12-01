@@ -22,6 +22,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const (
+	testPaasToken = "test-paas-token"
+)
+
 func init() {
 	utilruntime.Must(scheme.AddToScheme(scheme.Scheme))
 
@@ -38,14 +42,15 @@ func TestReconciler_Reconcile(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: testName,
 			}}
+		secret := buildTestPaasTokenSecret()
 		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme,
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
 				UID:  testUID,
 				Name: kubesystem.Namespace,
 			}},
-			instance)
+			instance, secret)
 		reconciler := NewReconciler(
-			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, &corev1.Secret{}, instance,
+			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, secret, instance,
 		)
 		connectionInfo := dtclient.ConnectionInfo{TenantUUID: testUID}
 		tenantInfo := &dtclient.TenantInfo{ID: testUID}
@@ -92,14 +97,15 @@ func TestReconciler_Reconcile(t *testing.T) {
 						Value: testValue,
 					},
 				}}}
+		secret := buildTestPaasTokenSecret()
 		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme,
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
 				UID:  testUID,
 				Name: kubesystem.Namespace,
 			}},
-			instance)
+			instance, secret)
 		reconciler := NewReconciler(
-			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, &corev1.Secret{}, instance,
+			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, secret, instance,
 		)
 		connectionInfo := dtclient.ConnectionInfo{TenantUUID: testUID}
 		tenantInfo := &dtclient.TenantInfo{ID: testUID}
@@ -139,6 +145,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
 					KubernetesAPIEndpoint: testEndpoint,
 				}}}
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Data: map[string][]byte{
+				"token":                     []byte(testValue),
+				dtclient.DynatracePaasToken: []byte(testPaasToken),
+			},
+		}
 		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme,
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
 				UID:  testUID,
@@ -151,18 +167,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 				Secrets: []corev1.ObjectReference{{Name: testName}},
 			},
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testName,
-					Namespace: testNamespace,
-				},
-				Data: map[string][]byte{
-					"token": []byte(testValue),
-				},
-			},
-			instance)
+			secret, instance)
 		reconciler := NewReconciler(
-			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, &corev1.Secret{}, instance,
+			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, secret, instance,
 		)
 		connectionInfo := dtclient.ConnectionInfo{TenantUUID: testUID}
 		tenantInfo := &dtclient.TenantInfo{ID: testUID}
@@ -188,6 +195,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		assert.Empty(t, log.errors)
 	})
+}
+
+func buildTestPaasTokenSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		},
+		Data: map[string][]byte{dtclient.DynatracePaasToken: []byte(testPaasToken)},
+	}
 }
 
 type TestLogger struct {
