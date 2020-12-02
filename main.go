@@ -24,14 +24,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/prometheus/common/log"
-	"github.com/spf13/pflag"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 var (
@@ -48,30 +45,22 @@ func init() {
 }
 
 func main() {
-	var metricsAddr string
-	var enableLeaderElection bool
-	flag.StringVar(&metricsAddr, "metrics-addr", ":8383", "The address the metric endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
-	err := pflag.Set("zap-time-encoding", "iso8601")
-	if err != nil {
-		log.Error(err, "Failed to set zap-time-encoding")
-	}
-
-	logf.SetLogger(logger.NewDTLogger())
+	ctrl.SetLogger(logger.NewDTLogger())
 
 	printVersion()
 
+	namespace := os.Getenv("POD_NAMESPACE")
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		MetricsBindAddress: metricsAddr,
-		Port:               8383,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "dynatrace-operator-lock",
+		Namespace:               namespace,
+		Scheme:                  scheme,
+		MetricsBindAddress:      ":8383",
+		Port:                    8484,
+		LeaderElection:          true,
+		LeaderElectionID:        "dynatrace-operator-lock",
+		LeaderElectionNamespace: namespace,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

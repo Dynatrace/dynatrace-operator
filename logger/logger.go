@@ -4,7 +4,9 @@ import (
 	"os"
 
 	"github.com/go-logr/logr"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 type DTLogger struct {
@@ -13,9 +15,12 @@ type DTLogger struct {
 }
 
 func NewDTLogger() logr.Logger {
+	config := zap.NewProductionEncoderConfig()
+	config.EncodeTime = zapcore.ISO8601TimeEncoder
+
 	return DTLogger{
-		infoLogger:  zap.New(zap.WriteTo(os.Stdout)),
-		errorLogger: zap.New(zap.WriteTo(os.Stderr)),
+		infoLogger:  ctrlzap.New(ctrlzap.WriteTo(os.Stdout), ctrlzap.Encoder(zapcore.NewJSONEncoder(config))),
+		errorLogger: ctrlzap.New(ctrlzap.WriteTo(os.Stderr), ctrlzap.Encoder(zapcore.NewJSONEncoder(config))),
 	}
 }
 

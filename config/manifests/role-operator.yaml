@@ -84,19 +84,19 @@ rules:
       - create
       - update
   - apiGroups:
-      - monitoring.coreos.com
-    resources:
-      - servicemonitors
-    verbs:
-      - get
-      - create
-  - apiGroups:
       - ""
     resources:
       - services
     verbs:
       - create
       - get
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - list
+      - create
 
   - apiGroups:
       - policy
@@ -106,3 +106,11 @@ rules:
       - dynatrace-operator
     verbs:
       - use
+
+  - apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - servicemonitors
+    verbs:
+      - get
+      - create

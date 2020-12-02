@@ -25,5 +25,11 @@ require (
 	k8s.io/apiextensions-apiserver v0.18.8 // indirect
 	k8s.io/apimachinery v0.18.8
 	k8s.io/client-go v0.18.8
+	github.com/prometheus/common v0.6.0
+	github.com/stretchr/testify v1.6.1
+	go.uber.org/zap v1.10.0
+	k8s.io/api v0.18.6
+	k8s.io/apimachinery v0.18.6
+	k8s.io/client-go v0.18.6
 	sigs.k8s.io/controller-runtime v0.6.4
 )
