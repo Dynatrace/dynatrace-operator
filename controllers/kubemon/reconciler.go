@@ -2,12 +2,11 @@ package kubemon
 
 import (
 	"context"
+	"fmt"
 	"os"
-	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/controllers/dtpods"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
@@ -25,7 +24,9 @@ import (
 
 const (
 	Name                   = "kubernetes-monitoring"
-	annotationTemplateHash = "internal.activegate.dynatrace.com/template-hash"
+	annotationTemplateHash = "internal.operator.dynatrace.com/template-hash"
+	annotationImageHash    = "internal.operator.dynatrace.com/image-hash"
+	annotationImageVersion = "internal.operator.dynatrace.com/image-version"
 	envVarDisableUpdates   = "OPERATOR_DEBUG_DISABLE_UPDATES"
 )
 
@@ -37,9 +38,12 @@ type Reconciler struct {
 	token     *corev1.Secret
 	instance  *dynatracev1alpha1.DynaKube
 	apiReader client.Reader
+
+	imageVersionProvider dtversion.ImageVersionProvider
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger, token *corev1.Secret, instance *dynatracev1alpha1.DynaKube) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger, token *corev1.Secret,
+	instance *dynatracev1alpha1.DynaKube, imgVerProvider dtversion.ImageVersionProvider) *Reconciler {
 	return &Reconciler{
 		Client:    clt,
 		apiReader: apiReader,
@@ -48,18 +52,13 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		log:       log,
 		token:     token,
 		instance:  instance,
+
+		imageVersionProvider: imgVerProvider,
 	}
 }
 
 func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
-	result, err := dtversion.
-		NewReconciler(r, r.log, r.instance, BuildLabelsFromInstance(r.instance)).
-		Reconcile()
-	if err != nil {
-		return result, err
-	}
-
-	err = dtpullsecret.
+	err := dtpullsecret.
 		NewReconciler(r, r.apiReader, r.scheme, r.instance, r.dtc, r.log, r.token, r.instance.Spec.ActiveGate.Image).
 		Reconcile()
 	if err != nil {
@@ -77,20 +76,9 @@ func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 		}
 	}
 
-	err = r.manageStatefulSet(r.instance)
-	if err != nil {
+	if err = r.manageStatefulSet(r.instance); err != nil {
 		r.log.Error(err, "could not reconcile stateful set")
 		return reconcile.Result{}, err
-	}
-
-	if os.Getenv(envVarDisableUpdates) != "true" {
-		result, err = dtpods.
-			NewReconciler(r, r.log, r.instance, BuildLabelsFromInstance(r.instance), buildImage(r.instance)).
-			Reconcile()
-		if err != nil {
-			r.log.Error(err, "could not update pods")
-			return result, err
-		}
 	}
 
 	if r.instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint != "" {
@@ -102,6 +90,13 @@ func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 }
 
 func (r *Reconciler) manageStatefulSet(instance *dynatracev1alpha1.DynaKube) error {
+	if os.Getenv(envVarDisableUpdates) != "true" {
+		img := buildActiveGateImage(instance)
+		if err := r.updateImageVersion(instance, img); err != nil {
+			r.log.Error(err, "Failed to fetch image version", "image", img)
+		}
+	}
+
 	desiredStatefulSet, err := r.buildDesiredStatefulSet(instance)
 	if err != nil {
 		return err
@@ -116,12 +111,45 @@ func (r *Reconciler) manageStatefulSet(instance *dynatracev1alpha1.DynaKube) err
 		return err
 	}
 
-	err = r.updateStatefulSetIfOutdated(currentStatefulSet, desiredStatefulSet)
-	if err != nil {
+	if err = r.updateStatefulSetIfOutdated(currentStatefulSet, desiredStatefulSet); err != nil {
 		return err
 	}
 
 	return r.updateInstanceStatus(instance)
+}
+
+func (r *Reconciler) updateImageVersion(instance *dynatracev1alpha1.DynaKube, img string) error {
+	pullSecret, err := dtpullsecret.GetImagePullSecret(r, r.instance)
+	if err != nil {
+		return fmt.Errorf("failed to get image pull secret: %w", err)
+	}
+
+	dockerCfg, err := dtversion.NewDockerConfig(pullSecret)
+	if err != nil {
+		return fmt.Errorf("failed to get Dockerconfig for pull secret: %w", err)
+	}
+
+	verProvider := dtversion.GetImageVersion
+	if r.imageVersionProvider != nil {
+		verProvider = r.imageVersionProvider
+	}
+
+	ver, err := verProvider(img, dockerCfg)
+	if err != nil {
+		return fmt.Errorf("failed to get image version: %w", err)
+	}
+
+	if instance.Status.ActiveGateImageHash != ver.Hash {
+		r.log.Info("Update found",
+			"oldVersion", instance.Status.ActiveGateImageVersion,
+			"newVersion", ver.Version,
+			"oldHash", instance.Status.ActiveGateImageHash,
+			"newHash", ver.Hash)
+	}
+
+	instance.Status.ActiveGateImageVersion = ver.Version
+	instance.Status.ActiveGateImageHash = ver.Hash
+	return nil
 }
 
 func (r *Reconciler) buildDesiredStatefulSet(instance *dynatracev1alpha1.DynaKube) (*v1.StatefulSet, error) {
@@ -130,7 +158,7 @@ func (r *Reconciler) buildDesiredStatefulSet(instance *dynatracev1alpha1.DynaKub
 		return nil, err
 	}
 
-	return newStatefulSet(*instance, kubeUID), nil
+	return newStatefulSet(instance, kubeUID)
 }
 
 func (r *Reconciler) createStatefulSetIfNotExists(desired *v1.StatefulSet) (*v1.StatefulSet, error) {
@@ -154,9 +182,8 @@ func (r *Reconciler) updateStatefulSetIfOutdated(current *v1.StatefulSet, desire
 }
 
 func (r *Reconciler) updateInstanceStatus(instance *dynatracev1alpha1.DynaKube) error {
-	instance.Status.UpdatedTimestamp = metav1.NewTime(time.Now().Add(-5 * time.Minute))
-	err := r.Status().Update(context.TODO(), instance)
-	return err
+	instance.Status.UpdatedTimestamp = metav1.Now()
+	return r.Status().Update(context.TODO(), instance)
 }
 
 func (r *Reconciler) getCurrentStatefulSet(desired *v1.StatefulSet) (*v1.StatefulSet, error) {

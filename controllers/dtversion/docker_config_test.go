@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	testName  = "test-name"
 	testKey   = "testKey"
 	testValue = "testValue"
 )

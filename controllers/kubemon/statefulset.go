@@ -1,11 +1,14 @@
 package kubemon
 
 import (
+	"encoding/json"
 	"fmt"
+	"hash/fnv"
+	"strconv"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -38,23 +41,37 @@ const (
 	StatefulSetSuffix = "-kubemon"
 )
 
-func newStatefulSet(instance dynatracev1alpha1.DynaKube, kubeSystemUID types.UID) *v1.StatefulSet {
-	return &v1.StatefulSet{
+func newStatefulSet(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UID) (*appsv1.StatefulSet, error) {
+	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        instance.Name + StatefulSetSuffix,
 			Namespace:   instance.Namespace,
-			Labels:      buildLabels(&instance),
+			Labels:      buildLabels(instance),
 			Annotations: map[string]string{},
 		},
-		Spec: v1.StatefulSetSpec{
+		Spec: appsv1.StatefulSetSpec{
 			Replicas: instance.Spec.KubernetesMonitoringSpec.Replicas,
-			Selector: buildLabelSelector(&instance),
+			Selector: buildLabelSelector(instance),
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{Labels: buildLabels(&instance)},
-				Spec:       buildTemplateSpec(&instance, kubeSystemUID),
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: buildLabels(instance),
+					Annotations: map[string]string{
+						annotationImageHash:    instance.Status.ActiveGateImageHash,
+						annotationImageVersion: instance.Status.ActiveGateImageVersion,
+					},
+				},
+				Spec: buildTemplateSpec(instance, kubeSystemUID),
 			},
 		},
 	}
+
+	hash, err := generateStatefulSetHash(sts)
+	if err != nil {
+		return nil, err
+	}
+	sts.ObjectMeta.Annotations[annotationTemplateHash] = hash
+
+	return sts, nil
 }
 
 func buildTemplateSpec(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UID) corev1.PodSpec {
@@ -274,4 +291,19 @@ func MergeLabels(labels ...map[string]string) map[string]string {
 	}
 
 	return res
+}
+
+func generateStatefulSetHash(sts *appsv1.StatefulSet) (string, error) {
+	data, err := json.Marshal(sts)
+	if err != nil {
+		return "", err
+	}
+
+	hasher := fnv.New32()
+	_, err = hasher.Write(data)
+	if err != nil {
+		return "", err
+	}
+
+	return strconv.FormatUint(uint64(hasher.Sum32()), 10), nil
 }

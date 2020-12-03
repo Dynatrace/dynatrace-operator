@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/stretchr/testify/assert"
@@ -33,6 +34,13 @@ func init() {
 	// +kubebuilder:scaffold:scheme
 }
 
+var mockImageVersionProvider dtversion.ImageVersionProvider = func(image string, _ *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
+	return dtversion.ImageVersion{
+		Version: "1.0.0.0",
+		Hash:    "",
+	}, nil
+}
+
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Reconcile reconciles minimal setup`, func(t *testing.T) {
 		log := logf.Log.WithName("TestReconciler")
@@ -50,7 +58,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}},
 			instance, secret)
 		reconciler := NewReconciler(
-			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, secret, instance,
+			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, secret, instance, mockImageVersionProvider,
 		)
 		connectionInfo := dtclient.ConnectionInfo{TenantUUID: testUID}
 		tenantInfo := &dtclient.TenantInfo{ID: testUID}
@@ -72,8 +80,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		var statefulSet v1.StatefulSet
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: instance.Name + StatefulSetSuffix, Namespace: instance.Namespace}, &statefulSet)
+		assert.NoError(t, err)
 
-		expected := *newStatefulSet(*instance, testUID)
+		expected, err := newStatefulSet(instance, testUID)
+		assert.NoError(t, err)
+
 		expected.Spec.Template.Spec.Volumes = nil
 
 		assert.NoError(t, err)
@@ -105,7 +116,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}},
 			instance, secret)
 		reconciler := NewReconciler(
-			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, secret, instance,
+			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, secret, instance, mockImageVersionProvider,
 		)
 		connectionInfo := dtclient.ConnectionInfo{TenantUUID: testUID}
 		tenantInfo := &dtclient.TenantInfo{ID: testUID}
@@ -169,7 +180,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			secret, instance)
 		reconciler := NewReconciler(
-			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, secret, instance,
+			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, secret, instance, mockImageVersionProvider,
 		)
 		connectionInfo := dtclient.ConnectionInfo{TenantUUID: testUID}
 		tenantInfo := &dtclient.TenantInfo{ID: testUID}

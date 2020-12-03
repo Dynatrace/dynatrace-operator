@@ -5,6 +5,7 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	appsv1 "k8s.io/api/apps/v1"
@@ -90,7 +91,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 
 	if instance.Spec.KubernetesMonitoringSpec.Enabled {
 		result, err := kubemon.NewReconciler(
-			r.client, r.apiReader, r.scheme, dtc, reqLogger, secret, instance,
+			r.client, r.apiReader, r.scheme, dtc, reqLogger, secret, instance, dtversion.GetImageVersion,
 		).Reconcile(request)
 		if err != nil {
 			reqLogger.Error(err, "could not reconcile kubernetes monitoring")
