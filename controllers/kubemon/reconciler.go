@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -90,9 +90,12 @@ func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 }
 
 func (r *Reconciler) manageStatefulSet(instance *dynatracev1alpha1.DynaKube) error {
+	var err error
+
+	verUpd := false
 	if os.Getenv(envVarDisableUpdates) != "true" {
 		img := buildActiveGateImage(instance)
-		if err := r.updateImageVersion(instance, img); err != nil {
+		if verUpd, err = r.updateImageVersion(instance, img); err != nil {
 			r.log.Error(err, "Failed to fetch image version", "image", img)
 		}
 	}
@@ -106,27 +109,32 @@ func (r *Reconciler) manageStatefulSet(instance *dynatracev1alpha1.DynaKube) err
 		return err
 	}
 
-	currentStatefulSet, err := r.createStatefulSetIfNotExists(desiredStatefulSet)
+	currentStatefulSet, stsCreated, err := r.createStatefulSetIfNotExists(desiredStatefulSet)
 	if err != nil {
 		return err
 	}
 
-	if err = r.updateStatefulSetIfOutdated(currentStatefulSet, desiredStatefulSet); err != nil {
+	stsChanged, err := r.updateStatefulSetIfOutdated(currentStatefulSet, desiredStatefulSet)
+	if err != nil {
 		return err
+	}
+
+	if !verUpd && !stsCreated && !stsChanged {
+		return nil
 	}
 
 	return r.updateInstanceStatus(instance)
 }
 
-func (r *Reconciler) updateImageVersion(instance *dynatracev1alpha1.DynaKube, img string) error {
+func (r *Reconciler) updateImageVersion(instance *dynatracev1alpha1.DynaKube, img string) (bool, error) {
 	pullSecret, err := dtpullsecret.GetImagePullSecret(r, r.instance)
 	if err != nil {
-		return fmt.Errorf("failed to get image pull secret: %w", err)
+		return false, fmt.Errorf("failed to get image pull secret: %w", err)
 	}
 
 	dockerCfg, err := dtversion.NewDockerConfig(pullSecret)
 	if err != nil {
-		return fmt.Errorf("failed to get Dockerconfig for pull secret: %w", err)
+		return false, fmt.Errorf("failed to get Dockerconfig for pull secret: %w", err)
 	}
 
 	verProvider := dtversion.GetImageVersion
@@ -136,23 +144,25 @@ func (r *Reconciler) updateImageVersion(instance *dynatracev1alpha1.DynaKube, im
 
 	ver, err := verProvider(img, dockerCfg)
 	if err != nil {
-		return fmt.Errorf("failed to get image version: %w", err)
+		return false, fmt.Errorf("failed to get image version: %w", err)
 	}
 
+	upd := false
 	if instance.Status.ActiveGateImageHash != ver.Hash {
 		r.log.Info("Update found",
 			"oldVersion", instance.Status.ActiveGateImageVersion,
 			"newVersion", ver.Version,
 			"oldHash", instance.Status.ActiveGateImageHash,
 			"newHash", ver.Hash)
+		upd = true
 	}
 
 	instance.Status.ActiveGateImageVersion = ver.Version
 	instance.Status.ActiveGateImageHash = ver.Hash
-	return nil
+	return upd, nil
 }
 
-func (r *Reconciler) buildDesiredStatefulSet(instance *dynatracev1alpha1.DynaKube) (*v1.StatefulSet, error) {
+func (r *Reconciler) buildDesiredStatefulSet(instance *dynatracev1alpha1.DynaKube) (*appsv1.StatefulSet, error) {
 	kubeUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
 		return nil, err
@@ -161,24 +171,25 @@ func (r *Reconciler) buildDesiredStatefulSet(instance *dynatracev1alpha1.DynaKub
 	return newStatefulSet(instance, kubeUID)
 }
 
-func (r *Reconciler) createStatefulSetIfNotExists(desired *v1.StatefulSet) (*v1.StatefulSet, error) {
+func (r *Reconciler) createStatefulSetIfNotExists(desired *appsv1.StatefulSet) (*appsv1.StatefulSet, bool, error) {
 	currentStatefulSet, err := r.getCurrentStatefulSet(desired)
 	if err != nil && k8serrors.IsNotFound(err) {
 		r.log.Info("creating new stateful set for kubernetes monitoring")
-		return desired, r.createStatefulSet(desired)
+		return desired, true, r.createStatefulSet(desired)
 	}
-	return currentStatefulSet, err
+	return currentStatefulSet, false, err
 }
 
-func (r *Reconciler) updateStatefulSetIfOutdated(current *v1.StatefulSet, desired *v1.StatefulSet) error {
-	if hasStatefulSetChanged(current, desired) {
-		r.log.Info("updating existing stateful set")
-		err := r.Update(context.TODO(), desired)
-		if err != nil {
-			return err
-		}
+func (r *Reconciler) updateStatefulSetIfOutdated(current *appsv1.StatefulSet, desired *appsv1.StatefulSet) (bool, error) {
+	if !hasStatefulSetChanged(current, desired) {
+		return false, nil
 	}
-	return nil
+
+	r.log.Info("updating existing stateful set")
+	if err := r.Update(context.TODO(), desired); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (r *Reconciler) updateInstanceStatus(instance *dynatracev1alpha1.DynaKube) error {
@@ -186,8 +197,8 @@ func (r *Reconciler) updateInstanceStatus(instance *dynatracev1alpha1.DynaKube) 
 	return r.Status().Update(context.TODO(), instance)
 }
 
-func (r *Reconciler) getCurrentStatefulSet(desired *v1.StatefulSet) (*v1.StatefulSet, error) {
-	var currentStatefulSet v1.StatefulSet
+func (r *Reconciler) getCurrentStatefulSet(desired *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+	var currentStatefulSet appsv1.StatefulSet
 	err := r.Get(context.TODO(), client.ObjectKey{Name: desired.Name, Namespace: desired.Namespace}, &currentStatefulSet)
 	if err != nil {
 		return nil, err
@@ -195,11 +206,11 @@ func (r *Reconciler) getCurrentStatefulSet(desired *v1.StatefulSet) (*v1.Statefu
 	return &currentStatefulSet, nil
 }
 
-func (r *Reconciler) createStatefulSet(desired *v1.StatefulSet) error {
+func (r *Reconciler) createStatefulSet(desired *appsv1.StatefulSet) error {
 	return r.Create(context.TODO(), desired)
 }
 
-func hasStatefulSetChanged(a *v1.StatefulSet, b *v1.StatefulSet) bool {
+func hasStatefulSetChanged(a *appsv1.StatefulSet, b *appsv1.StatefulSet) bool {
 	return getTemplateHash(a) != getTemplateHash(b)
 }
 
