@@ -10,11 +10,10 @@ import (
 )
 
 func buildImage(instance *dynatracev1alpha1.DynaKube) string {
-	if instance.Spec.KubernetesMonitoringSpec.Image == "" {
-		return buildActiveGateImage(instance)
+	if instance.Spec.ActiveGate.Image != "" {
+		return instance.Spec.ActiveGate.Image
 	}
-
-	return instance.Spec.KubernetesMonitoringSpec.Image
+	return buildActiveGateImage(instance)
 }
 
 func buildPullSecret(instance *dynatracev1alpha1.DynaKube) corev1.LocalObjectReference {
@@ -33,12 +32,7 @@ func buildPullSecretName(instance *dynatracev1alpha1.DynaKube) string {
 
 func buildActiveGateImage(instance *dynatracev1alpha1.DynaKube) string {
 	registry := buildImageRegistryFromAPIURL(instance.Spec.APIURL)
-	fullImageName := fmt.Sprintf("%s/linux/activegate", registry)
-	version := instance.Spec.KubernetesMonitoringSpec.ActiveGateVersion
-	if version != "" {
-		return fmt.Sprintf("%s:%s", fullImageName, version)
-	}
-	return fullImageName
+	return fmt.Sprintf("%s/linux/activegate", registry)
 }
 
 func buildImageRegistryFromAPIURL(apiURL string) string {

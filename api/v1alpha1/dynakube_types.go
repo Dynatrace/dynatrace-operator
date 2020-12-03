@@ -58,11 +58,23 @@ type DynaKubeSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	NetworkZone string `json:"networkZone,omitempty"`
 
+	// General configuration about ActiveGate instances
+	ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
+
 	// Enables Kubernetes Monitoring
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	KubernetesMonitoringSpec KubernetesMonitoringSpec `json:"kubernetesMonitoring,omitempty"`
+}
+
+type ActiveGateSpec struct {
+	// Optional: the ActiveGate container image. Defaults to the latest ActiveGate image provided by the Docker Registry
+	// implementation from the Dynatrace environment set as API URL.
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Image"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
+	Image string `json:"image,omitempty"`
 }
 
 type DynaKubeProxy struct {

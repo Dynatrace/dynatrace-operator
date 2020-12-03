@@ -2,6 +2,7 @@ package kubemon
 
 import (
 	"context"
+	"os"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -25,6 +26,7 @@ import (
 const (
 	Name                   = "kubernetes-monitoring"
 	annotationTemplateHash = "internal.activegate.dynatrace.com/template-hash"
+	envVarDisableUpdates   = "OPERATOR_DEBUG_DISABLE_UPDATES"
 )
 
 type Reconciler struct {
@@ -58,7 +60,7 @@ func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 	}
 
 	err = dtpullsecret.
-		NewReconciler(r, r.apiReader, r.scheme, r.instance, r.dtc, r.log, r.token, r.instance.Spec.KubernetesMonitoringSpec.Image).
+		NewReconciler(r, r.apiReader, r.scheme, r.instance, r.dtc, r.log, r.token, r.instance.Spec.ActiveGate.Image).
 		Reconcile()
 	if err != nil {
 		r.log.Error(err, "could not reconcile Dynatrace pull secret")
@@ -81,7 +83,7 @@ func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	if !r.instance.Spec.KubernetesMonitoringSpec.DisableActivegateUpdate {
+	if os.Getenv(envVarDisableUpdates) != "true" {
 		result, err = dtpods.
 			NewReconciler(r, r.log, r.instance, BuildLabelsFromInstance(r.instance), buildImage(r.instance)).
 			Reconcile()

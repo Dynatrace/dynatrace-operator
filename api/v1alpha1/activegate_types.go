@@ -9,12 +9,6 @@ type KubernetesMonitoringSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	Enabled bool `json:"enabled,omitempty"`
 
-	// Disable automatic restarts of Activegate pods in case a new version is available
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Disable Activegate update"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
-	DisableActivegateUpdate bool `json:"disableActivegateUpdate,omitempty"`
-
 	// The public API endpoint of the Kubernetes instance
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes API Endpoint"
@@ -26,21 +20,6 @@ type KubernetesMonitoringSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Replicas"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:number"
 	Replicas *int32 `json:"replicas,omitempty"`
-
-	// Optional: If specified, indicates the ActiveGate version to use
-	// Defaults to latest
-	// Example: {major.minor.release} - 1.200.0
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="ActiveGate version"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	ActiveGateVersion string `json:"activeGateVersion,omitempty"`
-
-	// Optional: the ActiveGate container image
-	// Defaults to docker.io/dynatrace/activegate:latest for Kubernetes and to registry.connect.redhat.com/dynatrace/activegate for OpenShift
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Image"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
-	Image string `json:"image,omitempty"`
 
 	// Optional: set custom Service Account Name used with ActiveGate pods
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
