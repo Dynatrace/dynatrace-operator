@@ -94,7 +94,7 @@ func (r *Reconciler) manageStatefulSet(instance *dynatracev1alpha1.DynaKube) err
 
 	verUpd := false
 	if os.Getenv(envVarDisableUpdates) != "true" {
-		img := buildActiveGateImage(instance)
+		img := buildImage(instance)
 		if verUpd, err = r.updateImageVersion(instance, img); err != nil {
 			r.log.Error(err, "Failed to fetch image version", "image", img)
 		}

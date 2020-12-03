@@ -10,10 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	testVersion = "1.0.0"
-)
-
 func TestBuildImage(t *testing.T) {
 	t.Run(`BuildImage with default instance`, func(t *testing.T) {
 		instance := &dynatracev1alpha1.DynaKube{}
