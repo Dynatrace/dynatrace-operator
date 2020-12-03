@@ -74,7 +74,7 @@ applyOneAgentOperator() {
   fi
 
   "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/kubernetes.yaml
-  "${CLI}" -n dynatrace create secret generic oneagent --from-literal="apiToken=${API_TOKEN}" --from-literal="paasToken=${PAAS_TOKEN}" --dry-run -o yaml | "${CLI}" apply -f -
+  "${CLI}" -n dynatrace create secret generic oneagent --from-literal="apiToken=${API_TOKEN}" --from-literal="paasToken=${PAAS_TOKEN}" --dry-run=client -o yaml | "${CLI}" apply -f -
 }
 
 applyOneAgentCR() {
@@ -152,11 +152,11 @@ addK8sConfiguration() {
       "active": true
     }
   ],
-  "workloadIntegrationEnabled": false,
-  "eventsIntegrationEnabled": true,
+  "workloadIntegrationEnabled": true,
+  "eventsIntegrationEnabled": false,
   "authToken": "${K8S_BEARER}",
   "active": true,
-  "certificateCheckEnabled": true
+  "certificateCheckEnabled": "${SKIP_CERT_CHECK}"
 }
 EOF
   )"
@@ -175,11 +175,16 @@ EOF
 }
 
 ####### MAIN #######
+printf "\nApplying Dynatrace OneAgent Operator...\n"
 applyOneAgentOperator
+printf "\nApplying OneAgent CustomResource...\n"
 applyOneAgentCR
 
 if [ "${ENABLE_K8S_MONITORING}" = "true" ]; then
+  printf "\nApplying Dynatrace Operator...\n"
   applyDynatraceOperator
+  printf "\nApplying DynaKube CustomResource...\n"
   applyDynaKubeCR
+  printf "\nAdding cluster to Dynatrace...\n"
   addK8sConfiguration
 fi
