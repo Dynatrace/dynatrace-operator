@@ -41,11 +41,6 @@ spec:
     # Enable Kubernetes monitoring functionality
     enabled: true
 
-    # Optional: disables automatic restarts of activegate pods in case a new version is available. False
-    # by default.
-    #
-    # disableActivegateUpdate: false
-
     # Amount of replicas of activegate pods
     #
     # replicas: 1
