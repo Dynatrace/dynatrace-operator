@@ -68,8 +68,8 @@ func GetImageVersion(imageName string, dockerConfig *DockerConfig) (ImageVersion
 	}
 
 	return ImageVersion{
-		Version: digest.Encoded(),
-		Hash:    inspectedImage.Labels[VersionLabel], // empty if unset
+		Hash:    digest.Encoded(),
+		Version: inspectedImage.Labels[VersionLabel], // empty if unset
 	}, nil
 }
 
