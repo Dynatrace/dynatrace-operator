@@ -2,10 +2,10 @@ apiVersion: dynatrace.com/v1alpha1
 kind: DynaKube
 metadata:
   name: dynakube
+  namespace: dynatrace
 spec:
   # dynatrace api url including `/api` path at the end
   # either set ENVIRONMENTID to the proper tenant id or change the apiUrl as a whole, e.q. for Managed
-  #
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
   # name of secret holding `apiToken` and `paasToken`
@@ -20,8 +20,8 @@ spec:
   # Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
   #
   # proxy:
-  #  value: https://my-proxy-url.com
-  #  valueFrom: name-of-my-proxy-secret
+  #   value: https://my-proxy-url.com
+  #   valueFrom: name-of-my-proxy-secret
 
   # Optional: Adds custom RootCAs from a configmap
   # trustedCAs: name-of-my-ca-configmap
@@ -30,90 +30,88 @@ spec:
   #
   # networkZone: name-of-my-network-zone
 
+  # Configuration for ActiveGate instances.
+  activeGate:
+    # Optional: to use a custom ActiveGate Docker image.
+    image: ""
+
   # Enables and configures an ActiveGate instance that allows monitoring
   # of Kubernetes environments
-  #
   kubernetesMonitoring:
-    #   Enable Kubernetes monitoring functionality
-    #
+    # Enable Kubernetes monitoring functionality
     enabled: true
 
-  #   Optional: to use a custom ActiveGate Docker image.
-  #
-  #   image: ""
+    # Optional: disables automatic restarts of activegate pods in case a new version is available. False
+    # by default.
+    #
+    # disableActivegateUpdate: false
 
-  #   Optional: disables automatic restarts of activegate pods in case a new version is available. False
-  #   by default.
-  #
-  #   disableActivegateUpdate: false
+    # Amount of replicas of activegate pods
+    #
+    # replicas: 1
 
-  #   Amount of replicas of activegate pods
-  #
-  #  replicas: 1
+    # Optional: name of the ServiceAccount to assign to the ActiveGate Pods. Defaults to
+    # "dynatrace-kubernetes-monitoring"
+    #
+    # serviceAccountName: "dynatrace-kubernetes-monitoring"
 
-  #   Optional: name of the ServiceAccount to assign to the ActiveGate Pods. Defaults to
-  #   "dynatrace-kubernetes-monitoring"
-  #
-  #  serviceAccountName: "dynatrace-kubernetes-monitoring"
+    # Optional: tolerations to include with the ActiveGate StatefulSet.
+    # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+    #
+    # tolerations:
+    # - effect: NoSchedule
+    #   key: node-role.kubernetes.io/master
+    #   operator: Exists
 
-  #   Optional: tolerations to include with the ActiveGate StatefulSet.
-  #   See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-  #
-  #  tolerations:
-  #  - effect: NoSchedule
-  #    key: node-role.kubernetes.io/master
-  #    operator: Exists
+    # Optional: node selector to control on which nodes the OneAgent will be deployed.
+    #
+    # nodeSelector: {}
 
-  #   Optional: node selector to control on which nodes the OneAgent will be deployed.
-  #
-  #   nodeSelector: {}
+    # Optional: DNS Policy for ActiveGate pods. Defaults to ClusterFirst.
+    # See more: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+    #
+    # dnsPolicy: ""
 
-  #   Optional: DNS Policy for ActiveGate pods. Defaults to ClusterFirst.
-  #   See more: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
-  #
-  #   dnsPolicy: ""
+    # Optional: priority class to assign to the OneAgent Pods. By default no class is set.
+    # See more here: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+    #
+    # priorityClassName: PRIORITYCLASS
 
-  #   Optional: priority class to assign to the OneAgent Pods. By default no class is set.
-  #   See more here: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
-  #
-  #   priorityClassName: PRIORITYCLASS
+    # Optional: resource settings for OneAgent container. Consumption of the OneAgent heavily depends
+    # on the workload to monitor; please adjust values accordingly.
+    #
+    # resources:
+    #   requests:
+    #     cpu: 100m
+    #     memory: 512Mi
+    #   limits:
+    #     cpu: 300m
+    #     memory: 1.5Gi
 
-  #   Optional: resource settings for OneAgent container. Consumption of the OneAgent heavily depends
-  #   on the workload to monitor; please adjust values accordingly.
-  #
-  #  resources:
-  #    requests:
-  #      cpu: 100m
-  #      memory: 512Mi
-  #    limits:
-  #      cpu: 300m
-  #      memory: 1.5Gi
+    # Optional: labels are customer defined labels for OneAgent Pods to structure workloads as desired.
+    #
+    # labels:
+    #   custom: label
 
-  #   Optional: labels are customer defined labels for OneAgent Pods to structure workloads as desired.
-  #
-  #  labels:
-  #    custom: label
+    # Optional: arguments to add to the ActiveGate instances.
+    # Available options: https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
+    # Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
+    #
+    # args: []
 
-  #   Optional: arguments to add to the ActiveGate instances.
-  #   Available options: https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
-  #   Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
-  #
-  #  args: []
+    # Optional: additional environment variables to add to the ActiveGate Pods.
+    #
+    # env: []
 
-  #   Optional: additional environment variables to add to the ActiveGate Pods.
-  #
-  #   env: []
+    # Optional: Set activation group for ActiveGate
+    #
+    # group: ""
 
-  #   Optional: Set activation group for ActiveGate
-  #
-  #  group: ""
-
-  #  Optional: Add a custom properties file by providing it as a value or reference it from a secret
-  #  If referenced from a secret, make sure the key is called 'customProperties'
-  #
-  #  customProperties:
-  #    value: |
-  #       [connectivity]
-  #       networkZone=
-  #    valueFrom: myCustomPropertiesConfigMap
-
+    # Optional: Add a custom properties file by providing it as a value or reference it from a secret
+    # If referenced from a secret, make sure the key is called 'customProperties'
+    #
+    # customProperties:
+    #   value: |
+    #     [connectivity]
+    #     networkZone=
+    #   valueFrom: myCustomPropertiesConfigMap
