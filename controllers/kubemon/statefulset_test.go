@@ -50,8 +50,9 @@ func TestNewStatefulSet(t *testing.T) {
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: instance.Spec.KubernetesMonitoringSpec.Replicas,
-			Selector: buildLabelSelector(&instance),
+			Replicas:            instance.Spec.KubernetesMonitoringSpec.Replicas,
+			PodManagementPolicy: appsv1.ParallelPodManagement,
+			Selector:            buildLabelSelector(&instance),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: buildLabels(&instance),
