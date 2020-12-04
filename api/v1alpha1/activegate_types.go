@@ -33,19 +33,6 @@ type KubernetesMonitoringSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:resourceRequirements"
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
-	// Optional: If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that
-	// name.
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Priority Class name"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:io.kubernetes:PriorityClass"
-	PriorityClassName string `json:"priorityClassName,omitempty"`
-
-	// Optional: Sets DNS Policy for the ActiveGate pods
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="DNS Policy"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
-	DNSPolicy corev1.DNSPolicy `json:"dnsPolicy,omitempty"`
-
 	// Optional: Node selector to control the selection of nodes
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Node Selector"
