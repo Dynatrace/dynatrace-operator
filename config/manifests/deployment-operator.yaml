@@ -21,10 +21,7 @@ spec:
       serviceAccountName: dynatrace-operator
       containers:
         - name: dynatrace-operator
-          # Replace this with the built image name
-          image: docker.io/dynatrace/dynatrace-operator:snapshot
-          command:
-            - dynatrace-operator
+          image: quay.io/dynatrace/dynatrace-operator:snapshot
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -35,5 +32,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: OPERATOR_NAME
-              value: "dynatrace-operator"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 256Mi
