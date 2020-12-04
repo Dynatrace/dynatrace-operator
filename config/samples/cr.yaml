@@ -83,7 +83,7 @@ spec:
     #     cpu: 300m
     #     memory: 1.5Gi
 
-    # Optional: labels are customer defined labels for OneAgent Pods to structure workloads as desired.
+    # Optional: labels are customer defined labels for ActiveGate Pods to structure workloads as desired.
     #
     # labels:
     #   custom: label
