@@ -72,7 +72,7 @@ spec:
     #
     # priorityClassName: PRIORITYCLASS
 
-    # Optional: resource settings for OneAgent container. Consumption of the OneAgent heavily depends
+    # Optional: resource settings for ActiveGate container. Consumption of the ActiveGate heavily depends
     # on the workload to monitor; please adjust values accordingly.
     #
     # resources:
