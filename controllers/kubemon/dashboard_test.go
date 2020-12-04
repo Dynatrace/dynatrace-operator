@@ -51,7 +51,7 @@ func TestAddToDashboard(t *testing.T) {
 			On("AddToDashboard", mock.AnythingOfType("string"), testEndpoint, testValue).
 			Return(testId, nil)
 
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, mockClient, logger, nil, instance)
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, mockClient, logger, nil, instance, nil)
 		result, err := r.addToDashboard()
 
 		assert.NoError(t, err)
@@ -93,7 +93,7 @@ func TestAddToDashboard(t *testing.T) {
 			On("AddToDashboard", mock.AnythingOfType("string"), testEndpoint, testValue).
 			Return(testId, nil)
 
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, mockClient, logger, nil, instance)
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, mockClient, logger, nil, instance, nil)
 		result, err := r.addToDashboard()
 
 		assert.Error(t, err)
@@ -134,7 +134,7 @@ func TestFindBearerToken_FindsArbitraryTokenName(t *testing.T) {
 				testKey: []byte(testValue),
 			},
 		})
-	r := NewReconciler(fakeClient, nil, nil, nil, nil, nil, instance)
+	r := NewReconciler(fakeClient, nil, nil, nil, nil, nil, instance, nil)
 	token, err := r.findBearerTokenSecret(serviceAccount)
 
 	assert.NoError(t, err)

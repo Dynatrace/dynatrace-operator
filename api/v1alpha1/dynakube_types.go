@@ -58,11 +58,23 @@ type DynaKubeSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	NetworkZone string `json:"networkZone,omitempty"`
 
+	// General configuration about ActiveGate instances
+	ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
+
 	// Enables Kubernetes Monitoring
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	KubernetesMonitoringSpec KubernetesMonitoringSpec `json:"kubernetesMonitoring,omitempty"`
+}
+
+type ActiveGateSpec struct {
+	// Optional: the ActiveGate container image. Defaults to the latest ActiveGate image provided by the Docker Registry
+	// implementation from the Dynatrace environment set as API URL.
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Image"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
+	Image string `json:"image,omitempty"`
 }
 
 type DynaKubeProxy struct {
@@ -73,10 +85,6 @@ type DynaKubeProxy struct {
 // DynaKubeStatus defines the observed state of DynaKube
 // +k8s:openapi-gen=true
 type DynaKubeStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Last Updated"
@@ -89,24 +97,12 @@ type DynaKubeStatus struct {
 	// LastPaaSTokenProbeTimestamp tracks when the last request for the PaaS token validity was sent
 	LastPaaSTokenProbeTimestamp *metav1.Time `json:"lastPaaSTokenProbeTimestamp,omitempty"`
 
-	// Defines the current state (Running, Updating, Error, ...)
-	Phase DynaKubePhaseType `json:"phase,omitempty"`
+	// ActiveGateHash contains the last image hash seen.
+	ActiveGateImageHash string `json:"activeGateImageHash,omitempty"`
+
+	// ActiveGateImageVersion contains the version from the last image seen.
+	ActiveGateImageVersion string `json:"activeGateImageVersion,omitempty"`
 }
-
-type DynaKubePhaseType string
-
-type DynaKubeInstance struct {
-	PodName   string `json:"podName,omitempty"`
-	Version   string `json:"version,omitempty"`
-	IPAddress string `json:"ipAddress,omitempty"`
-}
-
-const (
-//Commented for linter, uncomment if needed
-//Running   DynaKubePhaseType = "Running"
-//Deploying DynaKubePhaseType = "Deploying"
-//Error     DynaKubePhaseType = "Error"
-)
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -140,33 +136,3 @@ type DynaKubeList struct {
 func init() {
 	SchemeBuilder.Register(&DynaKube{}, &DynaKubeList{})
 }
-
-//Commented for linter, uncomment if needed
-//const (
-//	// APITokenConditionType identifies the API Token validity condition
-//	APITokenConditionType status.ConditionType = "APIToken"
-//
-//	// PaaSTokenConditionType identifies the PaaS Token validity condition
-//	PaaSTokenConditionType status.ConditionType = "PaaSToken"
-//)
-//
-//// Possible reasons for ApiToken and PaaSToken conditions
-//const (
-//	// ReasonTokenReady is set when a token has passed verifications
-//	ReasonTokenReady status.ConditionReason = "TokenReady"
-//
-//	// ReasonTokenSecretNotFound is set when the referenced secret can't be found
-//	ReasonTokenSecretNotFound status.ConditionReason = "TokenSecretNotFound"
-//
-//	// ReasonTokenMissing is set when the field is missing on the secret
-//	ReasonTokenMissing status.ConditionReason = "TokenMissing"
-//
-//	// ReasonTokenUnauthorized is set when a token is unauthorized to query the Dynatrace API
-//	ReasonTokenUnauthorized status.ConditionReason = "TokenUnauthorized"
-//
-//	// ReasonTokenScopeMissing is set when the token is missing the required scope for the Dynatrace API
-//	ReasonTokenScopeMissing status.ConditionReason = "TokenScopeMissing"
-//
-//	// ReasonTokenError is set when an unknown error has been found when verifying the token
-//	ReasonTokenError status.ConditionReason = "TokenError"
-//)

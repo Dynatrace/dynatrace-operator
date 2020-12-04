@@ -4,43 +4,63 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	testUID       = "test-uid"
-	testId        = "test-id"
-	testKey       = "key"
-	testValue     = "value"
-	testValueFrom = "valueFrom"
-	testName      = "test-name"
-	testNamespace = "test-namespace"
-	testEndpoint  = "http://test-endpoint"
+	testUID          = "test-uid"
+	testId           = "test-id"
+	testKey          = "key"
+	testValue        = "value"
+	testValueFrom    = "valueFrom"
+	testName         = "test-name"
+	testNamespace    = "test-namespace"
+	testEndpoint     = "http://test-endpoint"
+	testImageHash    = "TESTHASH"
+	testImageVersion = "0.0.0.0"
 )
 
 func TestNewStatefulSet(t *testing.T) {
-	instance := v1alpha1.DynaKube{}
+	instance := dynatracev1alpha1.DynaKube{
+		Status: dynatracev1alpha1.DynaKubeStatus{
+			ActiveGateImageHash:    testImageHash,
+			ActiveGateImageVersion: testImageVersion,
+		},
+	}
 
-	sts := newStatefulSet(instance, testUID)
+	sts, err := newStatefulSet(&instance, testUID)
+	assert.NoError(t, err)
 	assert.NotNil(t, sts)
-	assert.Equal(t, &v1.StatefulSet{
+
+	if assert.NotNil(t, sts.ObjectMeta.Annotations) {
+		assert.NotEmpty(t, sts.Annotations[annotationTemplateHash])
+		delete(sts.Annotations, annotationTemplateHash)
+	}
+
+	assert.Equal(t, &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        instance.Name + StatefulSetSuffix,
 			Namespace:   instance.Namespace,
 			Labels:      buildLabels(&instance),
 			Annotations: map[string]string{},
 		},
-		Spec: v1.StatefulSetSpec{
+		Spec: appsv1.StatefulSetSpec{
 			Replicas: instance.Spec.KubernetesMonitoringSpec.Replicas,
 			Selector: buildLabelSelector(&instance),
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{Labels: buildLabels(&instance)},
-				Spec:       buildTemplateSpec(&instance, testUID),
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: buildLabels(&instance),
+					Annotations: map[string]string{
+						annotationImageHash:    testImageHash,
+						annotationImageVersion: testImageVersion,
+					},
+				},
+				Spec: buildTemplateSpec(&instance, testUID),
 			},
 		},
 	}, sts)
@@ -48,7 +68,7 @@ func TestNewStatefulSet(t *testing.T) {
 
 func TestBuildLabels(t *testing.T) {
 	const testName = "test-instance"
-	instance := &v1alpha1.DynaKube{
+	instance := &dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testName,
 			Labels: map[string]string{
@@ -68,7 +88,7 @@ func TestBuildLabels(t *testing.T) {
 
 func TestBuildLabelSelector(t *testing.T) {
 	const testName = "test-instance"
-	instance := &v1alpha1.DynaKube{
+	instance := &dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: testName,
 			Labels: map[string]string{
@@ -87,15 +107,15 @@ func TestBuildLabelSelector(t *testing.T) {
 
 func TestBuildVolumes(t *testing.T) {
 	t.Run(`BuildVolumes with default instance`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{}
+		instance := &dynatracev1alpha1.DynaKube{}
 		volumes := buildVolumes(instance)
 		assert.Empty(t, volumes)
 	})
 	t.Run(`BuildVolumes with Value and ValueFrom given`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
-					CustomProperties: &v1alpha1.DynaKubeValueSource{
+		instance := &dynatracev1alpha1.DynaKube{
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
+					CustomProperties: &dynatracev1alpha1.DynaKubeValueSource{
 						Value:     testValue,
 						ValueFrom: testValueFrom,
 					}}}}
@@ -113,10 +133,10 @@ func TestBuildVolumes(t *testing.T) {
 			}})
 	})
 	t.Run(`BuildVolumes with Value given`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
-					CustomProperties: &v1alpha1.DynaKubeValueSource{
+		instance := &dynatracev1alpha1.DynaKube{
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
+					CustomProperties: &dynatracev1alpha1.DynaKubeValueSource{
 						Value: testValue,
 					}}}}
 		volumes := buildVolumes(instance)
@@ -136,9 +156,9 @@ func TestBuildVolumes(t *testing.T) {
 
 func TestBuildEnvs_WithProxy(t *testing.T) {
 	t.Run(`BuildEnvs with Proxy from Value`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				Proxy: &v1alpha1.DynaKubeProxy{
+		instance := &dynatracev1alpha1.DynaKube{
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				Proxy: &dynatracev1alpha1.DynaKubeProxy{
 					Value: testValue,
 				}}}
 
@@ -160,9 +180,9 @@ func TestBuildEnvs_WithProxy(t *testing.T) {
 		}
 	})
 	t.Run(`BuildEnvs with Proxy from ValueFrom`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				Proxy: &v1alpha1.DynaKubeProxy{
+		instance := &dynatracev1alpha1.DynaKube{
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				Proxy: &dynatracev1alpha1.DynaKubeProxy{
 					ValueFrom: testKey,
 				}}}
 
@@ -192,8 +212,8 @@ func TestBuildEnvs_WithProxy(t *testing.T) {
 
 func TestBuildArgs(t *testing.T) {
 	t.Run(`BuildArgs with network zone`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
+		instance := &dynatracev1alpha1.DynaKube{
+			Spec: dynatracev1alpha1.DynaKubeSpec{
 				NetworkZone: testValue,
 			}}
 		args := buildArgs(instance)
@@ -202,9 +222,9 @@ func TestBuildArgs(t *testing.T) {
 		assert.Contains(t, args, fmt.Sprintf(`--networkzone="%s"`, testValue))
 	})
 	t.Run(`BuildArgs with proxy`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				Proxy: &v1alpha1.DynaKubeProxy{
+		instance := &dynatracev1alpha1.DynaKube{
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				Proxy: &dynatracev1alpha1.DynaKubeProxy{
 					Value: testValue,
 				},
 			}}
@@ -214,9 +234,9 @@ func TestBuildArgs(t *testing.T) {
 		assert.Contains(t, args, ProxyArg)
 	})
 	t.Run(`BuildArgs with activation group`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
+		instance := &dynatracev1alpha1.DynaKube{
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
 					Group: testValue,
 				}}}
 		args := buildArgs(instance)

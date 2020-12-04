@@ -47,6 +47,15 @@ spec:
         spec:
           description: DynaKubeSpec defines the desired state of DynaKube
           properties:
+            activeGate:
+              description: General configuration about ActiveGate instances
+              properties:
+                image:
+                  description: 'Optional: the ActiveGate container image. Defaults
+                    to the latest ActiveGate image provided by the Docker Registry
+                    implementation from the Dynatrace environment set as API URL.'
+                  type: string
+              type: object
             apiUrl:
               description: Location of the Dynatrace API to connect to, including
                 your specific environment ID
@@ -57,10 +66,6 @@ spec:
             kubernetesMonitoring:
               description: Enables Kubernetes Monitoring
               properties:
-                activeGateVersion:
-                  description: 'Optional: If specified, indicates the ActiveGate version
-                    to use Defaults to latest Example: {major.minor.release} - 1.200.0'
-                  type: string
                 args:
                   description: 'Optional: Adds additional arguments for the ActiveGate
                     instances'
@@ -77,10 +82,6 @@ spec:
                     valueFrom:
                       type: string
                   type: object
-                disableActivegateUpdate:
-                  description: Disable automatic restarts of Activegate pods in case
-                    a new version is available
-                  type: boolean
                 dnsPolicy:
                   description: 'Optional: Sets DNS Policy for the ActiveGate pods'
                   type: string
@@ -191,11 +192,6 @@ spec:
                   type: array
                 group:
                   description: 'Optional: Set activation group for ActiveGate'
-                  type: string
-                image:
-                  description: 'Optional: the ActiveGate container image Defaults
-                    to docker.io/dynatrace/activegate:latest for Kubernetes and to
-                    registry.connect.redhat.com/dynatrace/activegate for OpenShift'
                   type: string
                 kubernetesApiEndpoint:
                   description: The public API endpoint of the Kubernetes instance
@@ -314,6 +310,13 @@ spec:
         status:
           description: DynaKubeStatus defines the observed state of DynaKube
           properties:
+            activeGateImageHash:
+              description: ActiveGateHash contains the last image hash seen.
+              type: string
+            activeGateImageVersion:
+              description: ActiveGateImageVersion contains the version from the last
+                image seen.
+              type: string
             lastAPITokenProbeTimestamp:
               description: LastAPITokenProbeTimestamp tracks when the last request
                 for the API token validity was sent
@@ -323,9 +326,6 @@ spec:
               description: LastPaaSTokenProbeTimestamp tracks when the last request
                 for the PaaS token validity was sent
               format: date-time
-              type: string
-            phase:
-              description: Defines the current state (Running, Updating, Error, ...)
               type: string
             updatedTimestamp:
               description: UpdatedTimestamp indicates when the instance was last updated
