@@ -7,16 +7,17 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type DockerConfigAuth struct {
-	Username string
-	Password string
-}
-
 type DockerConfig struct {
-	Auths map[string]DockerConfigAuth
+	Auths         map[string]DockerAuth
+	SkipCertCheck bool
 }
 
-func NewDockerConfig(secret *corev1.Secret) (*DockerConfig, error) {
+type DockerAuth struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+func ParseDockerConfigJSON(secret *corev1.Secret) (map[string]DockerAuth, error) {
 	if secret == nil {
 		return nil, fmt.Errorf("given secret is nil")
 	}
@@ -26,11 +27,13 @@ func NewDockerConfig(secret *corev1.Secret) (*DockerConfig, error) {
 		return nil, fmt.Errorf("could not find any docker config in image pull secret")
 	}
 
-	var dockerConf DockerConfig
-	err := json.Unmarshal(config, &dockerConf)
-	if err != nil {
+	var dockerConf struct {
+		Auths map[string]DockerAuth `json:"auths"`
+	}
+
+	if err := json.Unmarshal(config, &dockerConf); err != nil {
 		return nil, err
 	}
 
-	return &dockerConf, nil
+	return dockerConf.Auths, nil
 }

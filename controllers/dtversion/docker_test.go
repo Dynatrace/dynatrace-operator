@@ -21,7 +21,7 @@ func TestMakeSystemContext(t *testing.T) {
 	})
 	t.Run(`MakeSystemContext sets credentials from docker config`, func(t *testing.T) {
 		systemContext := MakeSystemContext(&mockDockerReference{}, &DockerConfig{
-			Auths: map[string]DockerConfigAuth{
+			Auths: map[string]DockerAuth{
 				testName: {
 					Username: testName,
 					Password: testString,

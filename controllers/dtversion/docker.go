@@ -79,23 +79,22 @@ func MakeSystemContext(dockerReference reference.Named, dockerConfig *DockerConf
 		return &types.SystemContext{}
 	}
 
-	registryName := strings.Split(dockerReference.Name(), "/")[0]
-	credentials, hasCredentials := dockerConfig.Auths[registryName]
+	var ctx types.SystemContext
 
-	if !hasCredentials {
-		registryURL := "https://" + registryName
-		credentials, hasCredentials = dockerConfig.Auths[registryURL]
-		if !hasCredentials {
-			return &types.SystemContext{}
+	if dockerConfig.SkipCertCheck {
+		ctx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
+	}
+
+	registry := strings.Split(dockerReference.Name(), "/")[0]
+
+	for _, r := range []string{registry, "https://" + registry} {
+		if creds, ok := dockerConfig.Auths[r]; ok {
+			ctx.DockerAuthConfig = &types.DockerAuthConfig{Username: creds.Username, Password: creds.Password}
+			break
 		}
 	}
 
-	return &types.SystemContext{
-		DockerAuthConfig: &types.DockerAuthConfig{
-			Username: credentials.Username,
-			Password: credentials.Password,
-		},
-	}
+	return &ctx
 }
 
 func closeImageSource(source types.ImageSource) {
