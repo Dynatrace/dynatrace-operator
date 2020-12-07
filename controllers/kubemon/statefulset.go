@@ -83,7 +83,6 @@ func buildTemplateSpec(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types
 
 	return corev1.PodSpec{
 		Containers:         []corev1.Container{buildContainer(instance, kubeSystemUID)},
-		DNSPolicy:          instance.Spec.KubernetesMonitoringSpec.DNSPolicy,
 		NodeSelector:       instance.Spec.KubernetesMonitoringSpec.NodeSelector,
 		ServiceAccountName: serviceAccountName,
 		Affinity: &corev1.Affinity{
@@ -96,9 +95,8 @@ func buildTemplateSpec(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types
 				},
 			},
 		},
-		Tolerations:       instance.Spec.KubernetesMonitoringSpec.Tolerations,
-		PriorityClassName: instance.Spec.KubernetesMonitoringSpec.PriorityClassName,
-		Volumes:           buildVolumes(instance),
+		Tolerations: instance.Spec.KubernetesMonitoringSpec.Tolerations,
+		Volumes:     buildVolumes(instance),
 		ImagePullSecrets: []corev1.LocalObjectReference{
 			buildPullSecret(instance),
 		},

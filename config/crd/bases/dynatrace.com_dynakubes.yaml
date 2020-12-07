@@ -82,9 +82,6 @@ spec:
                     valueFrom:
                       type: string
                   type: object
-                dnsPolicy:
-                  description: 'Optional: Sets DNS Policy for the ActiveGate pods'
-                  type: string
                 enabled:
                   description: Enables Kubernetes Monitoring
                   type: boolean
@@ -208,11 +205,6 @@ spec:
                   description: 'Optional: Node selector to control the selection of
                     nodes'
                   type: object
-                priorityClassName:
-                  description: 'Optional: If specified, indicates the pod''s priority.
-                    Name must be defined by creating a PriorityClass object with that
-                    name.'
-                  type: string
                 replicas:
                   description: Amount of replicas for your DynaKube
                   format: int32
