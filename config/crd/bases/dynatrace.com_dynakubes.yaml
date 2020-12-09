@@ -10,11 +10,8 @@ spec:
   - JSONPath: .spec.apiUrl
     name: ApiUrl
     type: string
-  - JSONPath: .spec.tokens
+  - JSONPath: .status.tokens
     name: Tokens
-    type: string
-  - JSONPath: .status.version
-    name: Version
     type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
@@ -318,6 +315,9 @@ spec:
               description: LastPaaSTokenProbeTimestamp tracks when the last request
                 for the PaaS token validity was sent
               format: date-time
+              type: string
+            tokens:
+              description: Credentials used to connect back to Dynatrace.
               type: string
             updatedTimestamp:
               description: UpdatedTimestamp indicates when the instance was last updated
