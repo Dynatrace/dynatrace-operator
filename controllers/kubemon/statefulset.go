@@ -52,9 +52,7 @@ func newStatefulSet(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 		Spec: appsv1.StatefulSetSpec{
 			Replicas:            instance.Spec.KubernetesMonitoringSpec.Replicas,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: BuildLabelsFromInstance(instance),
-			},
+			Selector: &metav1.LabelSelector{ MatchLabels: BuildLabelsFromInstance(instance) },
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: buildLabels(instance),
