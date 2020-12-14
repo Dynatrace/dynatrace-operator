@@ -194,6 +194,7 @@ func (r *Reconciler) updateStatefulSetIfOutdated(current *appsv1.StatefulSet, de
 
 func (r *Reconciler) updateInstanceStatus(instance *dynatracev1alpha1.DynaKube) error {
 	instance.Status.UpdatedTimestamp = metav1.Now()
+	instance.Status.Tokens = r.token.Name
 	return r.Status().Update(context.TODO(), instance)
 }
 
