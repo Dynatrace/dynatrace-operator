@@ -52,7 +52,7 @@ func newStatefulSet(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 		Spec: appsv1.StatefulSetSpec{
 			Replicas:            instance.Spec.KubernetesMonitoringSpec.Replicas,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector:            buildLabelSelector(instance),
+			Selector:            &metav1.LabelSelector{MatchLabels: BuildLabelsFromInstance(instance)},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: buildLabels(instance),
@@ -152,14 +152,6 @@ func buildLabels(instance *dynatracev1alpha1.DynaKube) map[string]string {
 	return MergeLabels(instance.Labels,
 		BuildLabelsFromInstance(instance),
 		instance.Spec.KubernetesMonitoringSpec.Labels)
-}
-
-func buildLabelSelector(instance *dynatracev1alpha1.DynaKube) *metav1.LabelSelector {
-	return &metav1.LabelSelector{
-		MatchLabels: MergeLabels(
-			BuildLabelsFromInstance(instance),
-			instance.Spec.KubernetesMonitoringSpec.Labels),
-	}
 }
 
 func buildKubernetesExpression(archKey string, osKey string) []corev1.NodeSelectorRequirement {
