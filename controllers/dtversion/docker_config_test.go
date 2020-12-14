@@ -16,17 +16,17 @@ const (
 
 func TestNewDockerConfig(t *testing.T) {
 	t.Run(`NewDockerConfig handles nil secret`, func(t *testing.T) {
-		auths, err := ParseDockerConfigJSON(nil)
+		auths, err := ParseDockerAuthsFromSecret(nil)
 		assert.Nil(t, auths)
 		assert.Error(t, err)
 	})
 	t.Run(`NewDockerConfig handles missing secret data`, func(t *testing.T) {
-		auths, err := ParseDockerConfigJSON(&corev1.Secret{})
+		auths, err := ParseDockerAuthsFromSecret(&corev1.Secret{})
 		assert.Nil(t, auths)
 		assert.Error(t, err)
 	})
 	t.Run(`NewDockerConfig handles invalid json`, func(t *testing.T) {
-		auths, err := ParseDockerConfigJSON(&corev1.Secret{
+		auths, err := ParseDockerAuthsFromSecret(&corev1.Secret{
 			Data: map[string][]byte{
 				".dockerconfigjson": []byte(`invalid json`),
 			},
@@ -36,7 +36,7 @@ func TestNewDockerConfig(t *testing.T) {
 		assert.Error(t, err)
 	})
 	t.Run(`NewDockerConfig returns docker config from valid secret`, func(t *testing.T) {
-		auths, err := ParseDockerConfigJSON(&corev1.Secret{
+		auths, err := ParseDockerAuthsFromSecret(&corev1.Secret{
 			Data: map[string][]byte{
 				".dockerconfigjson": []byte(
 					fmt.Sprintf(`{ "auths": { "%s": { "username": "%s", "password": "%s" } } }`, testKey, testName, testValue)),

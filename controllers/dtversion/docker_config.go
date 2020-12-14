@@ -17,7 +17,7 @@ type DockerAuth struct {
 	Password string `json:"password"`
 }
 
-func ParseDockerConfigJSON(secret *corev1.Secret) (map[string]DockerAuth, error) {
+func ParseDockerAuthsFromSecret(secret *corev1.Secret) (map[string]DockerAuth, error) {
 	if secret == nil {
 		return nil, fmt.Errorf("given secret is nil")
 	}

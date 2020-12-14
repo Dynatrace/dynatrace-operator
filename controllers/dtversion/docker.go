@@ -90,7 +90,6 @@ func MakeSystemContext(dockerReference reference.Named, dockerConfig *DockerConf
 	for _, r := range []string{registry, "https://" + registry} {
 		if creds, ok := dockerConfig.Auths[r]; ok {
 			ctx.DockerAuthConfig = &types.DockerAuthConfig{Username: creds.Username, Password: creds.Password}
-			break
 		}
 	}
 

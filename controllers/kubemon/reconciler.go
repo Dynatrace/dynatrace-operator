@@ -132,7 +132,7 @@ func (r *Reconciler) updateImageVersion(instance *dynatracev1alpha1.DynaKube, im
 		return false, fmt.Errorf("failed to get image pull secret: %w", err)
 	}
 
-	auths, err := dtversion.ParseDockerConfigJSON(pullSecret)
+	auths, err := dtversion.ParseDockerAuthsFromSecret(pullSecret)
 	if err != nil {
 		return false, fmt.Errorf("failed to get Dockerconfig for pull secret: %w", err)
 	}
