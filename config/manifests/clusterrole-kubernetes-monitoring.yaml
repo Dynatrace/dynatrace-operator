@@ -8,6 +8,7 @@ rules:
       - batch
       - apps
       - apps.openshift.io
+      - config.openshift.io
     resources:
       - nodes
       - pods
@@ -23,6 +24,7 @@ rules:
       - events
       - resourcequotas
       - pods/proxy
+      - clusterversions
     verbs:
       - list
       - watch
