@@ -19,7 +19,7 @@ const (
 	DataKey    = "customProperties"
 	DataPath   = "custom.properties"
 	VolumeName = "custom-properties"
-	MountPath  = "/mnt/dynatrace/gateway/config"
+	MountPath  = "/mnt/dynatrace/gateway/config_template"
 )
 
 type Reconciler struct {
