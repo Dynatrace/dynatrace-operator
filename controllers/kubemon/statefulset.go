@@ -112,7 +112,7 @@ func buildContainer(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 			ReadOnly:  true,
 			Name:      customproperties.VolumeName,
 			MountPath: customproperties.MountPath,
-			SubPath:   customproperties.DataKey,
+			SubPath:   customproperties.DataPath,
 		})
 	}
 
