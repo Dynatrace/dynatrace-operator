@@ -82,7 +82,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: instance.Name + StatefulSetSuffix, Namespace: instance.Namespace}, &statefulSet)
 		assert.NoError(t, err)
 
-		expected, err := newStatefulSet(instance, testUID)
+		expected, err := newStatefulSet(instance, testUID, "")
 		assert.NoError(t, err)
 
 		expected.Spec.Template.Spec.Volumes = nil

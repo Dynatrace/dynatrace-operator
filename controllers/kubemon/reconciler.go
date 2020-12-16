@@ -3,7 +3,9 @@ package kubemon
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"os"
+	"strconv"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
@@ -23,11 +25,14 @@ import (
 )
 
 const (
-	Name                   = "kubernetes-monitoring"
-	annotationTemplateHash = "internal.operator.dynatrace.com/template-hash"
-	annotationImageHash    = "internal.operator.dynatrace.com/image-hash"
-	annotationImageVersion = "internal.operator.dynatrace.com/image-version"
-	envVarDisableUpdates   = "OPERATOR_DEBUG_DISABLE_UPDATES"
+	Name = "kubernetes-monitoring"
+
+	annotationTemplateHash    = "internal.operator.dynatrace.com/template-hash"
+	annotationImageHash       = "internal.operator.dynatrace.com/image-hash"
+	annotationImageVersion    = "internal.operator.dynatrace.com/image-version"
+	annotationCustomPropsHash = "internal.operator.dynatrace.com/custom-properties-hash"
+
+	envVarDisableUpdates = "OPERATOR_DEBUG_DISABLE_UPDATES"
 )
 
 type Reconciler struct {
@@ -168,7 +173,45 @@ func (r *Reconciler) buildDesiredStatefulSet(instance *dynatracev1alpha1.DynaKub
 		return nil, err
 	}
 
-	return newStatefulSet(instance, kubeUID)
+	cpHash, err := r.getCustomPropsHash()
+	if err != nil {
+		return nil, err
+	}
+
+	return newStatefulSet(instance, kubeUID, cpHash)
+}
+
+func (r *Reconciler) getCustomPropsHash() (string, error) {
+	cp := r.instance.Spec.KubernetesMonitoringSpec.CustomProperties
+	if cp == nil || (cp.Value == "" && cp.ValueFrom == "") {
+		return "", nil
+	}
+
+	hasher := fnv.New32()
+	data := ""
+
+	if cp.ValueFrom != "" {
+		ns := r.instance.Namespace
+
+		var secret corev1.Secret
+		if err := r.Get(context.TODO(), client.ObjectKey{Name: cp.ValueFrom, Namespace: ns}, &secret); err != nil {
+			return "", err
+		}
+
+		dataBytes, ok := secret.Data[customproperties.DataKey]
+		if !ok {
+			return "", fmt.Errorf("No custom properties found on secret '%s' on namespace '%s'", cp.ValueFrom, ns)
+		}
+
+		data = string(dataBytes)
+	} else {
+		data = cp.Value
+	}
+
+	if _, err := hasher.Write([]byte(data)); err != nil {
+		return "", err
+	}
+	return strconv.FormatUint(uint64(hasher.Sum32()), 10), nil
 }
 
 func (r *Reconciler) createStatefulSetIfNotExists(desired *appsv1.StatefulSet) (*appsv1.StatefulSet, bool, error) {

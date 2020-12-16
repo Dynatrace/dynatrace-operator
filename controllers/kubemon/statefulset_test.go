@@ -33,7 +33,7 @@ func TestNewStatefulSet(t *testing.T) {
 		},
 	}
 
-	sts, err := newStatefulSet(&instance, testUID)
+	sts, err := newStatefulSet(&instance, testUID, "")
 	assert.NoError(t, err)
 	assert.NotNil(t, sts)
 
@@ -57,8 +57,9 @@ func TestNewStatefulSet(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: buildLabels(&instance),
 					Annotations: map[string]string{
-						annotationImageHash:    testImageHash,
-						annotationImageVersion: testImageVersion,
+						annotationImageHash:       testImageHash,
+						annotationImageVersion:    testImageVersion,
+						annotationCustomPropsHash: "",
 					},
 				},
 				Spec: buildTemplateSpec(&instance, testUID),
