@@ -41,7 +41,7 @@ const (
 	StatefulSetSuffix = "-kubemon"
 )
 
-func newStatefulSet(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UID) (*appsv1.StatefulSet, error) {
+func newStatefulSet(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UID, customPropsHash string) (*appsv1.StatefulSet, error) {
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        instance.Name + StatefulSetSuffix,
@@ -57,8 +57,9 @@ func newStatefulSet(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: buildLabels(instance),
 					Annotations: map[string]string{
-						annotationImageHash:    instance.Status.ActiveGateImageHash,
-						annotationImageVersion: instance.Status.ActiveGateImageVersion,
+						annotationImageHash:       instance.Status.ActiveGateImageHash,
+						annotationImageVersion:    instance.Status.ActiveGateImageVersion,
+						annotationCustomPropsHash: customPropsHash,
 					},
 				},
 				Spec: buildTemplateSpec(instance, kubeSystemUID),
@@ -111,6 +112,7 @@ func buildContainer(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 			ReadOnly:  true,
 			Name:      customproperties.VolumeName,
 			MountPath: customproperties.MountPath,
+			SubPath:   customproperties.DataPath,
 		})
 	}
 
