@@ -1,10 +1,11 @@
 package logger
 
 import (
+	"os"
+
 	"github.com/go-logr/logr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 

@@ -3,8 +3,9 @@ package dtclient
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 type TenantInfo struct {

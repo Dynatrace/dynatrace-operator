@@ -3,7 +3,6 @@ package kubemon
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"hash/fnv"
 	"os"
 	"strconv"
@@ -15,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

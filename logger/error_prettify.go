@@ -3,9 +3,10 @@ package logger
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 const stacktraceKey = "stacktrace"

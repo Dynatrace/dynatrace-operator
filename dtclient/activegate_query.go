@@ -3,8 +3,9 @@ package dtclient
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"net/url"
+
+	"github.com/pkg/errors"
 )
 
 type ActiveGateQuery struct {
