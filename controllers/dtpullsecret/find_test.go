@@ -3,6 +3,7 @@ package dtpullsecret
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -32,7 +33,7 @@ func TestGetImagePullSecret(t *testing.T) {
 
 	assert.Nil(t, secret)
 	assert.Error(t, err)
-	assert.IsType(t, &k8serrors.StatusError{}, err)
+	assert.IsType(t, &k8serrors.StatusError{}, errors.Cause(err))
 
 	pullSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

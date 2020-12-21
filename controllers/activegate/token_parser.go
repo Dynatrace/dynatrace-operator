@@ -44,7 +44,7 @@ func verifySecret(secret *corev1.Secret) error {
 		dtclient.DynatracePaasToken} {
 		_, err := ExtractToken(secret, token)
 		if err != nil {
-			return errors.WithStack(err)ors.WithStack(fmt.Errorf("invalid secret %s, %s", secret.Name, err))
+			return errors.Errorf("invalid secret %s, %s", secret.Name, err)
 		}
 	}
 

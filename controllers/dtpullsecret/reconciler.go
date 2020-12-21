@@ -3,6 +3,7 @@ package dtpullsecret
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"reflect"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"

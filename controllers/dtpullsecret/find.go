@@ -2,6 +2,7 @@ package dtpullsecret
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"

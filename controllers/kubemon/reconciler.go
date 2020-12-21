@@ -72,8 +72,6 @@ func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	artificialError := faultyFunction()
-
 	if r.instance.Spec.KubernetesMonitoringSpec.CustomProperties != nil {
 		err = customproperties.
 			NewReconciler(r, r.instance, r.log, Name, *r.instance.Spec.KubernetesMonitoringSpec.CustomProperties, r.scheme).
@@ -83,8 +81,6 @@ func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 			return reconcile.Result{}, err
 		}
 	}
-
-	r.log.Error(artificialError, "this is the log output for the artificial error")
 
 	if err = r.manageStatefulSet(r.instance); err != nil {
 		r.log.Error(err, "could not reconcile stateful set")
@@ -97,10 +93,6 @@ func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 	}
 
 	return reconcile.Result{}, nil
-}
-
-func faultyFunction() error {
-	return errors.WithStack(err)ors.WithStack(fmt.Errorf("this is an artifical error"))
 }
 
 func (r *Reconciler) manageStatefulSet(instance *dynatracev1alpha1.DynaKube) error {
@@ -225,7 +217,7 @@ func (r *Reconciler) getCustomPropsHash() (string, error) {
 
 func (r *Reconciler) createStatefulSetIfNotExists(desired *appsv1.StatefulSet) (*appsv1.StatefulSet, bool, error) {
 	currentStatefulSet, err := r.getCurrentStatefulSet(desired)
-	if err != nil && k8serrors.IsNotFound(err) {
+	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
 		r.log.Info("creating new stateful set for kubernetes monitoring")
 		return desired, true, r.createStatefulSet(desired)
 	}
