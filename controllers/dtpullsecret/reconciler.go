@@ -49,7 +49,7 @@ func (r *Reconciler) Reconcile() error {
 		err := r.reconcilePullSecret()
 		if err != nil {
 			r.log.Error(err, "could not reconcile pull secret")
-			return err
+			return errors.WithStack(err)
 		}
 	}
 
@@ -91,7 +91,7 @@ func (r *Reconciler) createPullSecret(pullSecretData map[string][]byte) (*corev1
 	pullSecret := buildPullSecret(r.instance, pullSecretData)
 
 	if err := controllerutil.SetControllerReference(r.instance, pullSecret, r.scheme); err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	err := r.Create(context.TODO(), pullSecret)

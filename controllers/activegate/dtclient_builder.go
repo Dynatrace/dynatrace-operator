@@ -33,7 +33,7 @@ func BuildDynatraceClient(rtc client.Client, instance *dynatracev1alpha1.DynaKub
 	spec := instance.Spec
 	tokens, err := NewTokens(secret)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	opts := newOptions()
@@ -42,12 +42,12 @@ func BuildDynatraceClient(rtc client.Client, instance *dynatracev1alpha1.DynaKub
 
 	err = opts.appendProxySettings(rtc, &spec, namespace)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	err = opts.appendTrustedCerts(rtc, &spec, namespace)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return dtclient.NewClient(spec.APIURL, tokens.ApiToken, tokens.PaasToken, opts.Opts...)

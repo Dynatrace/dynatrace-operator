@@ -29,7 +29,7 @@ func NewDockerConfig(secret *corev1.Secret) (*DockerConfig, error) {
 	var dockerConf DockerConfig
 	err := json.Unmarshal(config, &dockerConf)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return &dockerConf, nil

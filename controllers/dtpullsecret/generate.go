@@ -34,12 +34,12 @@ func newDockerConfigWithAuth(username string, password string, registry string, 
 func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 	connectionInfo, err := r.dtc.GetConnectionInfo()
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	registry, err := getImageRegistryFromAPIURL(r.instance.Spec.APIURL)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	if r.token == nil {
@@ -79,7 +79,7 @@ func getImageRegistryFromAPIURL(apiURL string) (string, error) {
 func pullSecretDataFromDockerConfig(dockerConf *dockerConfig) (map[string][]byte, error) {
 	dockerConfJson, err := json.Marshal(dockerConf)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return map[string][]byte{".dockerconfigjson": dockerConfJson}, nil
 }

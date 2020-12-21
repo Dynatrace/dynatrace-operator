@@ -69,7 +69,7 @@ func newStatefulSet(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 
 	hash, err := generateStatefulSetHash(sts)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	sts.ObjectMeta.Annotations[annotationTemplateHash] = hash
 

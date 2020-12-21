@@ -21,7 +21,7 @@ func (dtc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
 	)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	defer func() {
 		err := response.Body.Close()
@@ -36,13 +36,13 @@ func (dtc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
 		if err != nil {
 			dtc.logger.Error(err, err.Error())
 		}
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	tenantInfo, err := dtc.readResponseForTenantInfo(data)
 	if err != nil {
 		dtc.logger.Error(err, err.Error())
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	if len(tenantInfo.Endpoints) <= 0 {
 		dtc.logger.Info("tenant has no endpoints")
@@ -63,7 +63,7 @@ func (dtc *dynatraceClient) readResponseForTenantInfo(response []byte) (*TenantI
 	err := json.Unmarshal(response, jr)
 	if err != nil {
 		dtc.logger.Error(err, "error unmarshalling json response")
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return &TenantInfo{
