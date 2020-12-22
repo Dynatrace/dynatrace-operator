@@ -16,6 +16,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -33,7 +34,7 @@ func BuildDynatraceClient(rtc client.Client, instance *dynatracev1alpha1.DynaKub
 	spec := instance.Spec
 	tokens, err := NewTokens(secret)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	opts := newOptions()
@@ -42,12 +43,12 @@ func BuildDynatraceClient(rtc client.Client, instance *dynatracev1alpha1.DynaKub
 
 	err = opts.appendProxySettings(rtc, &spec, namespace)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	err = opts.appendTrustedCerts(rtc, &spec, namespace)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return dtclient.NewClient(spec.APIURL, tokens.ApiToken, tokens.PaasToken, opts.Opts...)

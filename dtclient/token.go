@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 // TokenScopes is a list of scopes assigned to a token
@@ -28,7 +30,7 @@ func (dtc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 
 	jsonStr, err := json.Marshal(model)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/tokens/lookup", dtc.url), bytes.NewBuffer(jsonStr))
@@ -49,7 +51,7 @@ func (dtc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 
 	data, err := dtc.getServerResponseData(resp)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return dtc.readResponseForTokenScopes(data)

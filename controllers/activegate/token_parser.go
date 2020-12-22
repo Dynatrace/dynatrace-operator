@@ -6,6 +6,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -24,7 +25,7 @@ func NewTokens(secret *corev1.Secret) (*Tokens, error) {
 	var err error
 
 	if err = verifySecret(secret); err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	//Errors would have been caught by verifySecret
@@ -43,7 +44,7 @@ func verifySecret(secret *corev1.Secret) error {
 		dtclient.DynatracePaasToken} {
 		_, err := ExtractToken(secret, token)
 		if err != nil {
-			return fmt.Errorf("invalid secret %s, %s", secret.Name, err)
+			return errors.Errorf("invalid secret %s, %s", secret.Name, err)
 		}
 	}
 

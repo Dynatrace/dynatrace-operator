@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -29,7 +30,7 @@ func NewDockerConfig(secret *corev1.Secret) (*DockerConfig, error) {
 	var dockerConf DockerConfig
 	err := json.Unmarshal(config, &dockerConf)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return &dockerConf, nil

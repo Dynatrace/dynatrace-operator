@@ -8,6 +8,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,7 +70,7 @@ func newStatefulSet(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 
 	hash, err := generateStatefulSetHash(sts)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	sts.ObjectMeta.Annotations[annotationTemplateHash] = hash
 

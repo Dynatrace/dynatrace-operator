@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -107,21 +108,21 @@ func (r *Reconciler) manageStatefulSet(instance *dynatracev1alpha1.DynaKube) err
 
 	desiredStatefulSet, err := r.buildDesiredStatefulSet(instance)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if err := controllerutil.SetControllerReference(instance, desiredStatefulSet, r.scheme); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	currentStatefulSet, stsCreated, err := r.createStatefulSetIfNotExists(desiredStatefulSet)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	stsChanged, err := r.updateStatefulSetIfOutdated(currentStatefulSet, desiredStatefulSet)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if !verUpd && !stsCreated && !stsChanged {
@@ -170,12 +171,12 @@ func (r *Reconciler) updateImageVersion(instance *dynatracev1alpha1.DynaKube, im
 func (r *Reconciler) buildDesiredStatefulSet(instance *dynatracev1alpha1.DynaKube) (*appsv1.StatefulSet, error) {
 	kubeUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	cpHash, err := r.getCustomPropsHash()
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return newStatefulSet(instance, kubeUID, cpHash)
@@ -216,7 +217,7 @@ func (r *Reconciler) getCustomPropsHash() (string, error) {
 
 func (r *Reconciler) createStatefulSetIfNotExists(desired *appsv1.StatefulSet) (*appsv1.StatefulSet, bool, error) {
 	currentStatefulSet, err := r.getCurrentStatefulSet(desired)
-	if err != nil && k8serrors.IsNotFound(err) {
+	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
 		r.log.Info("creating new stateful set for kubernetes monitoring")
 		return desired, true, r.createStatefulSet(desired)
 	}
@@ -230,7 +231,7 @@ func (r *Reconciler) updateStatefulSetIfOutdated(current *appsv1.StatefulSet, de
 
 	r.log.Info("updating existing stateful set")
 	if err := r.Update(context.TODO(), desired); err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
 	return true, nil
 }
@@ -245,7 +246,7 @@ func (r *Reconciler) getCurrentStatefulSet(desired *appsv1.StatefulSet) (*appsv1
 	var currentStatefulSet appsv1.StatefulSet
 	err := r.Get(context.TODO(), client.ObjectKey{Name: desired.Name, Namespace: desired.Namespace}, &currentStatefulSet)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return &currentStatefulSet, nil
 }

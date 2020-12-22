@@ -3,9 +3,10 @@ package dtclient
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 // EventData struct which defines what event payload should contain
@@ -33,7 +34,7 @@ func (dtc *dynatraceClient) SendEvent(eventData *EventData) error {
 
 	jsonStr, err := json.Marshal(eventData)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	url := fmt.Sprintf("%s/v1/events", dtc.url)
@@ -50,5 +51,5 @@ func (dtc *dynatraceClient) SendEvent(eventData *EventData) error {
 	}
 
 	_, err = dtc.getServerResponseData(response)
-	return err
+	return errors.WithStack(err)
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -32,7 +33,7 @@ func TestGetImagePullSecret(t *testing.T) {
 
 	assert.Nil(t, secret)
 	assert.Error(t, err)
-	assert.IsType(t, &k8serrors.StatusError{}, err)
+	assert.IsType(t, &k8serrors.StatusError{}, errors.Cause(err))
 
 	pullSecret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

@@ -3,6 +3,8 @@ package dtclient
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -18,7 +20,7 @@ func (dtc *dynatraceClient) GetClusterInfo() (*ClusterInfo, error) {
 	url := fmt.Sprintf("%s%s", dtc.url, clusterVersionEndpoint)
 	resp, err := dtc.makeRequest(url, dynatraceApiToken)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	defer func() {
 		// Unable to do anything, swallow error
@@ -27,11 +29,11 @@ func (dtc *dynatraceClient) GetClusterInfo() (*ClusterInfo, error) {
 
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	if err = json.Unmarshal(responseData, &result); err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return &result, nil
