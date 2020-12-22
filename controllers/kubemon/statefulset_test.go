@@ -33,7 +33,7 @@ func TestNewStatefulSet(t *testing.T) {
 		},
 	}
 
-	sts, err := newStatefulSet(&instance, testUID)
+	sts, err := newStatefulSet(&instance, testUID, "")
 	assert.NoError(t, err)
 	assert.NotNil(t, sts)
 
@@ -52,13 +52,14 @@ func TestNewStatefulSet(t *testing.T) {
 		Spec: appsv1.StatefulSetSpec{
 			Replicas:            instance.Spec.KubernetesMonitoringSpec.Replicas,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector:            buildLabelSelector(&instance),
+			Selector:            &metav1.LabelSelector{MatchLabels: BuildLabelsFromInstance(&instance)},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: buildLabels(&instance),
 					Annotations: map[string]string{
-						annotationImageHash:    testImageHash,
-						annotationImageVersion: testImageVersion,
+						annotationImageHash:       testImageHash,
+						annotationImageVersion:    testImageVersion,
+						annotationCustomPropsHash: "",
 					},
 				},
 				Spec: buildTemplateSpec(&instance, testUID),
@@ -85,25 +86,6 @@ func TestBuildLabels(t *testing.T) {
 		"activegate": testName,
 		testKey:      testValue,
 	}, labels)
-}
-
-func TestBuildLabelSelector(t *testing.T) {
-	const testName = "test-instance"
-	instance := &dynatracev1alpha1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: testName,
-			Labels: map[string]string{
-				testKey: testValue,
-			},
-		},
-	}
-	expectedLabelSelector := metav1.LabelSelector{
-		MatchLabels: BuildLabelsFromInstance(instance),
-	}
-	labelSelector := buildLabelSelector(instance)
-
-	assert.NotNil(t, labelSelector)
-	assert.Equal(t, expectedLabelSelector, *labelSelector)
 }
 
 func TestBuildVolumes(t *testing.T) {

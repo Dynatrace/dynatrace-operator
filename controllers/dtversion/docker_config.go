@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -27,12 +28,12 @@ func ParseDockerAuthsFromSecret(secret *corev1.Secret) (map[string]DockerAuth, e
 		return nil, fmt.Errorf("could not find any docker config in image pull secret")
 	}
 
-	var dockerConf struct {
+  var dockerConf struct {
 		Auths map[string]DockerAuth `json:"auths"`
 	}
-
-	if err := json.Unmarshal(config, &dockerConf); err != nil {
-		return nil, err
+	err := json.Unmarshal(config, &dockerConf)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
 
 	return dockerConf.Auths, nil

@@ -102,6 +102,12 @@ type DynaKubeStatus struct {
 
 	// ActiveGateImageVersion contains the version from the last image seen.
 	ActiveGateImageVersion string `json:"activeGateImageVersion,omitempty"`
+
+	// Credentials used to connect back to Dynatrace.
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="API and PaaS Tokens"
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
+	Tokens string `json:"tokens,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -111,8 +117,7 @@ type DynaKubeStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=dynakubes,scope=Namespaced
 // +kubebuilder:printcolumn:name="ApiUrl",type=string,JSONPath=`.spec.apiUrl`
-// +kubebuilder:printcolumn:name="Tokens",type=string,JSONPath=`.spec.tokens`
-// +kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.version`
+// +kubebuilder:printcolumn:name="Tokens",type=string,JSONPath=`.status.tokens`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +operator-sdk:gen-csv:customresourcedefinitions.displayName="Dynatrace DynaKube"
 // +operator-sdk:gen-csv:customresourcedefinitions.resources=`Pod,v1,""`

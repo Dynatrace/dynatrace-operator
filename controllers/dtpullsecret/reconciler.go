@@ -8,6 +8,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,7 +50,7 @@ func (r *Reconciler) Reconcile() error {
 		err := r.reconcilePullSecret()
 		if err != nil {
 			r.log.Error(err, "could not reconcile pull secret")
-			return err
+			return errors.WithStack(err)
 		}
 	}
 
@@ -91,7 +92,7 @@ func (r *Reconciler) createPullSecret(pullSecretData map[string][]byte) (*corev1
 	pullSecret := buildPullSecret(r.instance, pullSecretData)
 
 	if err := controllerutil.SetControllerReference(r.instance, pullSecret, r.scheme); err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	err := r.Create(context.TODO(), pullSecret)

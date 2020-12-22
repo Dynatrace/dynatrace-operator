@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+
+	"github.com/pkg/errors"
 )
 
 type ActiveGateQuery struct {
@@ -28,7 +30,7 @@ func (dtc *dynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGa
 	response, err := dtc.makeRequest(activeGateURL, dynatraceApiToken)
 	if err != nil {
 		dtc.logger.Error(err, err.Error())
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	defer func() {
 		err := response.Body.Close()
@@ -40,14 +42,14 @@ func (dtc *dynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGa
 	data, err := dtc.getServerResponseData(response)
 	if err != nil {
 		dtc.logger.Error(err, err.Error())
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	var result []ActiveGate
 	activegates, err := dtc.readResponseForActiveGates(data)
 	if err != nil {
 		dtc.logger.Error(err, err.Error())
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	for _, activegate := range activegates {
@@ -96,7 +98,7 @@ func (dtc *dynatraceClient) readResponseForActiveGates(data []byte) ([]ActiveGat
 	err := json.Unmarshal(data, jr)
 	if err != nil {
 		dtc.logger.Error(err, "cannot unmarshal activegate response")
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return jr.ActiveGates, nil
 }

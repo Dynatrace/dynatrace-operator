@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,7 +30,7 @@ func testGetTokenScopes(t *testing.T, dynatraceClient Client) {
 		scopes, err := dynatraceClient.GetTokenScopes("bad-token")
 		assert.Nil(t, scopes)
 		assert.Error(t, err)
-		assert.Exactly(t, ServerError{Code: 401, Message: "error received from server"}, err)
+		assert.Exactly(t, ServerError{Code: 401, Message: "error received from server"}, errors.Cause(err))
 	}
 }
 

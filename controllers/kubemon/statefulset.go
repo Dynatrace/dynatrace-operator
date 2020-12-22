@@ -8,6 +8,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,7 +42,7 @@ const (
 	StatefulSetSuffix = "-kubemon"
 )
 
-func newStatefulSet(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UID) (*appsv1.StatefulSet, error) {
+func newStatefulSet(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UID, customPropsHash string) (*appsv1.StatefulSet, error) {
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        instance.Name + StatefulSetSuffix,
@@ -52,13 +53,14 @@ func newStatefulSet(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 		Spec: appsv1.StatefulSetSpec{
 			Replicas:            instance.Spec.KubernetesMonitoringSpec.Replicas,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector:            buildLabelSelector(instance),
+			Selector:            &metav1.LabelSelector{MatchLabels: BuildLabelsFromInstance(instance)},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: buildLabels(instance),
 					Annotations: map[string]string{
-						annotationImageHash:    instance.Status.ActiveGateImageHash,
-						annotationImageVersion: instance.Status.ActiveGateImageVersion,
+						annotationImageHash:       instance.Status.ActiveGateImageHash,
+						annotationImageVersion:    instance.Status.ActiveGateImageVersion,
+						annotationCustomPropsHash: customPropsHash,
 					},
 				},
 				Spec: buildTemplateSpec(instance, kubeSystemUID),
@@ -68,7 +70,7 @@ func newStatefulSet(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 
 	hash, err := generateStatefulSetHash(sts)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	sts.ObjectMeta.Annotations[annotationTemplateHash] = hash
 
@@ -83,7 +85,6 @@ func buildTemplateSpec(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types
 
 	return corev1.PodSpec{
 		Containers:         []corev1.Container{buildContainer(instance, kubeSystemUID)},
-		DNSPolicy:          instance.Spec.KubernetesMonitoringSpec.DNSPolicy,
 		NodeSelector:       instance.Spec.KubernetesMonitoringSpec.NodeSelector,
 		ServiceAccountName: serviceAccountName,
 		Affinity: &corev1.Affinity{
@@ -96,9 +97,8 @@ func buildTemplateSpec(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types
 				},
 			},
 		},
-		Tolerations:       instance.Spec.KubernetesMonitoringSpec.Tolerations,
-		PriorityClassName: instance.Spec.KubernetesMonitoringSpec.PriorityClassName,
-		Volumes:           buildVolumes(instance),
+		Tolerations: instance.Spec.KubernetesMonitoringSpec.Tolerations,
+		Volumes:     buildVolumes(instance),
 		ImagePullSecrets: []corev1.LocalObjectReference{
 			buildPullSecret(instance),
 		},
@@ -113,6 +113,7 @@ func buildContainer(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 			ReadOnly:  true,
 			Name:      customproperties.VolumeName,
 			MountPath: customproperties.MountPath,
+			SubPath:   customproperties.DataPath,
 		})
 	}
 
@@ -132,7 +133,7 @@ func buildContainer(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 					Scheme: "HTTPS",
 				},
 			},
-			InitialDelaySeconds: 30,
+			InitialDelaySeconds: 90,
 			PeriodSeconds:       15,
 			FailureThreshold:    3,
 		},
@@ -144,7 +145,7 @@ func buildContainer(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 					Scheme: "HTTPS",
 				},
 			},
-			InitialDelaySeconds: 30,
+			InitialDelaySeconds: 90,
 			PeriodSeconds:       30,
 			FailureThreshold:    2,
 		},
@@ -154,14 +155,6 @@ func buildLabels(instance *dynatracev1alpha1.DynaKube) map[string]string {
 	return MergeLabels(instance.Labels,
 		BuildLabelsFromInstance(instance),
 		instance.Spec.KubernetesMonitoringSpec.Labels)
-}
-
-func buildLabelSelector(instance *dynatracev1alpha1.DynaKube) *metav1.LabelSelector {
-	return &metav1.LabelSelector{
-		MatchLabels: MergeLabels(
-			BuildLabelsFromInstance(instance),
-			instance.Spec.KubernetesMonitoringSpec.Labels),
-	}
 }
 
 func buildKubernetesExpression(archKey string, osKey string) []corev1.NodeSelectorRequirement {

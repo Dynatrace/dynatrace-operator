@@ -2,13 +2,13 @@ package dtclient
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 )
 
 type hostInfo struct {
@@ -113,7 +113,7 @@ func (dtc *dynatraceClient) buildHostCache() error {
 	url := fmt.Sprintf("%s/v1/entity/infrastructure/hosts?includeDetails=false", dtc.url)
 	resp, err := dtc.makeRequest(url, dynatraceApiToken)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	defer func() {
 		// Swallow error
@@ -122,12 +122,12 @@ func (dtc *dynatraceClient) buildHostCache() error {
 
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	err = dtc.setHostCacheFromResponse(responseData)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	return nil
@@ -153,7 +153,7 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 	err := json.Unmarshal(response, &hostInfoResponses)
 	if err != nil {
 		dtc.logger.Error(err, "error unmarshalling json response")
-		return err
+		return errors.WithStack(err)
 	}
 
 	now := dtc.now

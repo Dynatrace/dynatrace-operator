@@ -20,7 +20,7 @@ func NewDTLogger() logr.Logger {
 
 	return DTLogger{
 		infoLogger:  ctrlzap.New(ctrlzap.WriteTo(os.Stdout), ctrlzap.Encoder(zapcore.NewJSONEncoder(config))),
-		errorLogger: ctrlzap.New(ctrlzap.WriteTo(os.Stderr), ctrlzap.Encoder(zapcore.NewJSONEncoder(config))),
+		errorLogger: ctrlzap.New(ctrlzap.WriteTo(&errorPrettify{}), ctrlzap.Encoder(zapcore.NewJSONEncoder(config))),
 	}
 }
 

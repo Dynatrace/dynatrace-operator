@@ -6,6 +6,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +20,7 @@ const (
 	DataKey    = "customProperties"
 	DataPath   = "custom.properties"
 	VolumeName = "custom-properties"
-	MountPath  = "/mnt/dynatrace/gateway/config"
+	MountPath  = "/var/lib/dynatrace/gateway/config_template/custom.properties"
 )
 
 type Reconciler struct {
@@ -47,14 +48,14 @@ func (r *Reconciler) Reconcile() error {
 		mustNotUpdate, err := r.createCustomPropertiesIfNotExists()
 		if err != nil {
 			r.log.Error(err, fmt.Sprintf("could not create custom properties for '%s'", r.customPropertiesOwnerName))
-			return err
+			return errors.WithStack(err)
 		}
 
 		if !mustNotUpdate {
 			err = r.updateCustomPropertiesIfOutdated()
 			if err != nil {
 				r.log.Error(err, fmt.Sprintf("could not update custom properties for '%s'", r.customPropertiesOwnerName))
-				return err
+				return errors.WithStack(err)
 			}
 		}
 	}
@@ -69,7 +70,7 @@ func (r *Reconciler) createCustomPropertiesIfNotExists() (bool, error) {
 	if err != nil && k8serrors.IsNotFound(err) {
 		return true, r.createCustomProperties()
 	}
-	return false, err
+	return false, errors.WithStack(err)
 }
 
 func (r *Reconciler) updateCustomPropertiesIfOutdated() error {
@@ -78,7 +79,7 @@ func (r *Reconciler) updateCustomPropertiesIfOutdated() error {
 		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: r.instance.Namespace},
 		&customPropertiesSecret)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	if r.isOutdated(&customPropertiesSecret) {
 		return r.updateCustomProperties(&customPropertiesSecret)
@@ -103,7 +104,7 @@ func (r *Reconciler) createCustomProperties() error {
 
 	err := controllerutil.SetControllerReference(r.instance, customPropertiesSecret, r.scheme)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	return r.Create(context.TODO(), customPropertiesSecret)

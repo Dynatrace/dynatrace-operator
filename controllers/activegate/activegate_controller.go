@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -49,6 +50,7 @@ type ReconcileActiveGate struct {
 	apiReader    client.Reader
 	scheme       *runtime.Scheme
 	dtcBuildFunc DynatraceClientFunc
+	logger       logr.Logger
 }
 
 type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
@@ -60,7 +62,10 @@ type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.Dyn
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	if r.logger == nil {
+		r.logger = log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	}
+	reqLogger := r.logger
 	reqLogger.Info("Reconciling DynaKube")
 
 	// Fetch the DynaKube instance

@@ -3,7 +3,9 @@ package kubemon
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"os"
+	"strconv"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
@@ -12,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -23,11 +26,14 @@ import (
 )
 
 const (
-	Name                   = "kubernetes-monitoring"
-	annotationTemplateHash = "internal.operator.dynatrace.com/template-hash"
-	annotationImageHash    = "internal.operator.dynatrace.com/image-hash"
-	annotationImageVersion = "internal.operator.dynatrace.com/image-version"
-	envVarDisableUpdates   = "OPERATOR_DEBUG_DISABLE_UPDATES"
+	Name = "kubernetes-monitoring"
+
+	annotationTemplateHash    = "internal.operator.dynatrace.com/template-hash"
+	annotationImageHash       = "internal.operator.dynatrace.com/image-hash"
+	annotationImageVersion    = "internal.operator.dynatrace.com/image-version"
+	annotationCustomPropsHash = "internal.operator.dynatrace.com/custom-properties-hash"
+
+	envVarDisableUpdates = "OPERATOR_DEBUG_DISABLE_UPDATES"
 )
 
 type Reconciler struct {
@@ -102,21 +108,21 @@ func (r *Reconciler) manageStatefulSet(instance *dynatracev1alpha1.DynaKube) err
 
 	desiredStatefulSet, err := r.buildDesiredStatefulSet(instance)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if err := controllerutil.SetControllerReference(instance, desiredStatefulSet, r.scheme); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	currentStatefulSet, stsCreated, err := r.createStatefulSetIfNotExists(desiredStatefulSet)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	stsChanged, err := r.updateStatefulSetIfOutdated(currentStatefulSet, desiredStatefulSet)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if !verUpd && !stsCreated && !stsChanged {
@@ -168,15 +174,53 @@ func (r *Reconciler) updateImageVersion(instance *dynatracev1alpha1.DynaKube, im
 func (r *Reconciler) buildDesiredStatefulSet(instance *dynatracev1alpha1.DynaKube) (*appsv1.StatefulSet, error) {
 	kubeUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
-	return newStatefulSet(instance, kubeUID)
+	cpHash, err := r.getCustomPropsHash()
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return newStatefulSet(instance, kubeUID, cpHash)
+}
+
+func (r *Reconciler) getCustomPropsHash() (string, error) {
+	cp := r.instance.Spec.KubernetesMonitoringSpec.CustomProperties
+	if cp == nil || (cp.Value == "" && cp.ValueFrom == "") {
+		return "", nil
+	}
+
+	hasher := fnv.New32()
+	data := ""
+
+	if cp.ValueFrom != "" {
+		ns := r.instance.Namespace
+
+		var secret corev1.Secret
+		if err := r.Get(context.TODO(), client.ObjectKey{Name: cp.ValueFrom, Namespace: ns}, &secret); err != nil {
+			return "", err
+		}
+
+		dataBytes, ok := secret.Data[customproperties.DataKey]
+		if !ok {
+			return "", fmt.Errorf("No custom properties found on secret '%s' on namespace '%s'", cp.ValueFrom, ns)
+		}
+
+		data = string(dataBytes)
+	} else {
+		data = cp.Value
+	}
+
+	if _, err := hasher.Write([]byte(data)); err != nil {
+		return "", err
+	}
+	return strconv.FormatUint(uint64(hasher.Sum32()), 10), nil
 }
 
 func (r *Reconciler) createStatefulSetIfNotExists(desired *appsv1.StatefulSet) (*appsv1.StatefulSet, bool, error) {
 	currentStatefulSet, err := r.getCurrentStatefulSet(desired)
-	if err != nil && k8serrors.IsNotFound(err) {
+	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
 		r.log.Info("creating new stateful set for kubernetes monitoring")
 		return desired, true, r.createStatefulSet(desired)
 	}
@@ -190,13 +234,14 @@ func (r *Reconciler) updateStatefulSetIfOutdated(current *appsv1.StatefulSet, de
 
 	r.log.Info("updating existing stateful set")
 	if err := r.Update(context.TODO(), desired); err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
 	return true, nil
 }
 
 func (r *Reconciler) updateInstanceStatus(instance *dynatracev1alpha1.DynaKube) error {
 	instance.Status.UpdatedTimestamp = metav1.Now()
+	instance.Status.Tokens = r.token.Name
 	return r.Status().Update(context.TODO(), instance)
 }
 
@@ -204,7 +249,7 @@ func (r *Reconciler) getCurrentStatefulSet(desired *appsv1.StatefulSet) (*appsv1
 	var currentStatefulSet appsv1.StatefulSet
 	err := r.Get(context.TODO(), client.ObjectKey{Name: desired.Name, Namespace: desired.Namespace}, &currentStatefulSet)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	return &currentStatefulSet, nil
 }
