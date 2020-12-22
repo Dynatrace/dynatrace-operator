@@ -28,7 +28,7 @@ func ParseDockerAuthsFromSecret(secret *corev1.Secret) (map[string]DockerAuth, e
 		return nil, fmt.Errorf("could not find any docker config in image pull secret")
 	}
 
-  var dockerConf struct {
+	var dockerConf struct {
 		Auths map[string]DockerAuth `json:"auths"`
 	}
 	err := json.Unmarshal(config, &dockerConf)
