@@ -4,20 +4,20 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"strings"
+	"net/url"
 
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/pkg/errors"
 )
 
 type dockerAuthentication struct {
-	Username string
-	Password string
-	Auth     string
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Auth     string `json:"auth"`
 }
 
 type dockerConfig struct {
-	Auths map[string]dockerAuthentication
+	Auths map[string]dockerAuthentication `json:"auths"`
 }
 
 func newDockerConfigWithAuth(username string, password string, registry string, auth string) *dockerConfig {
@@ -71,10 +71,11 @@ func (r *Reconciler) buildAuthString(connectionInfo dtclient.ConnectionInfo) str
 }
 
 func getImageRegistryFromAPIURL(apiURL string) (string, error) {
-	r := strings.TrimPrefix(apiURL, "https://")
-	r = strings.TrimPrefix(r, "http://")
-	r = strings.TrimSuffix(r, "/api")
-	return r, nil
+	u, err := url.Parse(apiURL)
+	if err != nil {
+		return "", err
+	}
+	return u.Host, nil
 }
 
 func pullSecretDataFromDockerConfig(dockerConf *dockerConfig) (map[string][]byte, error) {

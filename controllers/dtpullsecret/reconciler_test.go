@@ -90,7 +90,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run(`Reconcile creates correct docker config`, func(t *testing.T) {
-		expectedJson := []byte(`{"Auths":{"test-endpoint.com":{"Username":"test-name","Password":"test-value","Auth":"dGVzdC1uYW1lOnRlc3QtdmFsdWU="}}}`)
+		expectedJSON := `{"auths":{"test-endpoint.com":{"username":"test-name","password":"test-value","auth":"dGVzdC1uYW1lOnRlc3QtdmFsdWU="}}}`
 		mockDTC := &dtclient.MockDynatraceClient{}
 		instance := &dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -128,10 +128,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, pullSecret.Data)
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
-		assert.Equal(t, expectedJson, pullSecret.Data[".dockerconfigjson"])
+		assert.Equal(t, expectedJSON, string(pullSecret.Data[".dockerconfigjson"]))
 	})
 	t.Run(`Reconcile update secret if data changed`, func(t *testing.T) {
-		expectedJson := []byte(`{"Auths":{"test-endpoint.com":{"Username":"test-name","Password":"test-value","Auth":"dGVzdC1uYW1lOnRlc3QtdmFsdWU="}}}`)
+		expectedJSON := `{"auths":{"test-endpoint.com":{"username":"test-name","password":"test-value","auth":"dGVzdC1uYW1lOnRlc3QtdmFsdWU="}}}`
 		mockDTC := &dtclient.MockDynatraceClient{}
 		instance := &dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -184,6 +184,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, pullSecret.Data)
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
-		assert.Equal(t, expectedJson, pullSecret.Data[".dockerconfigjson"])
+		assert.Equal(t, expectedJSON, string(pullSecret.Data[".dockerconfigjson"]))
 	})
 }
