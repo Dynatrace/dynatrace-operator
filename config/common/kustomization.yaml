@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- clusterrole-operator.yaml
+- clusterrole-webhook.yaml
+- clusterrolebinding-operator.yaml
+- clusterrolebinding-webhook.yaml
+- deployment-operator.yaml
+- deployment-webhook.yaml
+- mutatingwebhookconfiguration.yaml
+- role-operator.yaml
+- role-webhook.yaml
+- rolebinding-operator.yaml
+- rolebinding-webhook.yaml
+- service.yaml
+- serviceaccount-oneagent.yaml
+- serviceaccount-oneagent-unprivileged.yaml
+- serviceaccount-operator.yaml
+- serviceaccount-webhook.yaml
+bases:
+  - ../crd

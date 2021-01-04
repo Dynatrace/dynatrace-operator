@@ -40,9 +40,11 @@ type DynaKubeSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Network Zone",order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	NetworkZone string `json:"networkZone,omitempty"`
 
-	// Optional: Pull secret for your private registry
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom PullSecret",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
-	CustomPullSecret string `json:"customPullSecret,omitempty"`
+	BaseOneAgentSpec BaseOneAgentSpec `json:"baseOneAgentSpec,omitempty"`
+
+	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
+
+	OneAgentCodeModule OneAgentCodeModuleSpec `json:"oneAgentCodeModule,omitempty"`
 
 	// General configuration about ActiveGate instances
 	ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
@@ -142,6 +144,12 @@ type DynaKubeStatus struct {
 
 	// Credentials used to connect back to Dynatrace.
 	Tokens string `json:"tokens,omitempty"`
+
+	BaseOneAgentStatus BaseOneAgentStatus `json:"baseOneAgentStatus,omitempty"`
+
+	OneAgentStatus OneAgentStatus `json:"oneagentStatus,omitempty"`
+
+	OneAgentCodeModuleStatus OneAgentCodeModuleStatus `json:"oneagentCodeModuleStatus,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

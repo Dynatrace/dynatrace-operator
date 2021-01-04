@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-oneagent-webhook
+  labels:
+    dynatrace.com/operator: oneagent
+    internal.oneagent.dynatrace.com/component: webhook
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-oneagent-webhook
+    namespace: dynatrace
+roleRef:
+  kind: ClusterRole
+  name: dynatrace-oneagent-webhook
+  apiGroup: rbac.authorization.k8s.io

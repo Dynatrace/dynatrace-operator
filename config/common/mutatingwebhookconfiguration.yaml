@@ -1,0 +1,25 @@
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: dynatrace-oneagent-webhook
+  labels:
+    dynatrace.com/operator: oneagent
+    internal.oneagent.dynatrace.com/component: webhook
+webhooks:
+- name: webhook.oneagent.dynatrace.com
+  rules:
+  - apiGroups: [""]
+    apiVersions: ["v1"]
+    operations: ["CREATE"]
+    resources: ["pods"]
+    scope: Namespaced
+  namespaceSelector:
+    matchExpressions:
+    - key: oneagent.dynatrace.com/instance
+      operator: Exists
+  clientConfig:
+    service:
+      name: dynatrace-oneagent-webhook
+      namespace: dynatrace
+      path: /inject
+  admissionReviewVersions: ["v1beta1"]

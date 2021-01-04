@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynatrace-oneagent-operator
+  namespace: dynatrace
+  labels:
+    dynatrace: operator
+    operator: oneagent
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      name: dynatrace-oneagent-operator
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        name: dynatrace-oneagent-operator
+        dynatrace: operator
+        operator: oneagent
+    spec:
+      containers:
+        - name: dynatrace-oneagent-operator
+          args:
+            - operator
+          image: docker.io/dynatrace/dynatrace-oneagent-operator:snapshot
+          imagePullPolicy: Always
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - containerPort: 8080
+              name: metrics
+            - containerPort: 10080
+              name: server-port
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: server-port
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: server-port
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: beta.kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+                      - arm64
+                  - key: beta.kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+                      - arm64
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+      serviceAccountName: dynatrace-oneagent-operator
