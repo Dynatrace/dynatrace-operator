@@ -15,6 +15,9 @@ if [[ "${GCR:-}" == "true" ]]; then
   gcloud --quiet config set project "$GCP_PROJECT"
 fi
 
+go get github.com/google/go-licenses
+go-licenses save ./... --save_path third_party_licenses
+
 base_image="dynatrace-operator"
 
 if [[ -z "${LABEL:-}" ]]; then

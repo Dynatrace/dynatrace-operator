@@ -15,6 +15,7 @@ ENV OPERATOR=dynatrace-operator \
 
 RUN  microdnf install unzip && microdnf clean all
 COPY LICENSE /licenses/
+COPY third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 COPY build/_output/bin /usr/local/bin
 COPY build/bin /usr/local/bin
 RUN  /usr/local/bin/user_setup
