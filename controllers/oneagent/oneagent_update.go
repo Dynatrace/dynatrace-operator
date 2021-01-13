@@ -16,15 +16,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *ReconcileOneAgent) reconcileVersion(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client) (bool, error) {
+func (r *ReconcileOneAgent) reconcileVersion(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client) (bool, error) {
 	if instance.Status.OneAgentStatus.UseImmutableImage {
-		return r.reconcileVersionImmutableImage(instance, dtc)
+		return r.reconcileVersionImmutableImage(ctx, instance, dtc)
 	} else {
-		return r.reconcileVersionInstaller(logger, instance, dtc)
+		return r.reconcileVersionInstaller(ctx, logger, instance, dtc)
 	}
 }
 
-func (r *ReconcileOneAgent) reconcileVersionInstaller(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client) (bool, error) {
+func (r *ReconcileOneAgent) reconcileVersionInstaller(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client) (bool, error) {
 	updateCR := false
 
 	desired, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
@@ -38,7 +38,7 @@ func (r *ReconcileOneAgent) reconcileVersionInstaller(logger logr.Logger, instan
 		}
 	}
 
-	podList, err := r.findPods(instance)
+	podList, err := r.findPods(ctx, instance)
 	if err != nil {
 		logger.Error(err, "failed to list pods", "podList", podList)
 		return updateCR, err
@@ -56,7 +56,7 @@ func (r *ReconcileOneAgent) reconcileVersionInstaller(logger logr.Logger, instan
 
 	if len(podsToDelete) > 0 {
 		if instance.Status.OneAgentStatus.SetPhase(dynatracev1alpha1.Deploying) {
-			err := r.updateCR(instance)
+			err := r.updateCR(ctx, instance)
 			if err != nil {
 				logger.Error(err, fmt.Sprintf("failed to set phase to %s", dynatracev1alpha1.Deploying))
 			}
@@ -73,7 +73,7 @@ func (r *ReconcileOneAgent) reconcileVersionInstaller(logger logr.Logger, instan
 	return updateCR, nil
 }
 
-func (r *ReconcileOneAgent) reconcileVersionImmutableImage(instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client) (bool, error) {
+func (r *ReconcileOneAgent) reconcileVersionImmutableImage(ctx context.Context, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client) (bool, error) {
 	updateCR := false
 	var waitSecs uint16 = 300
 	if instance.Spec.OneAgent.WaitReadySeconds != nil {
@@ -83,7 +83,7 @@ func (r *ReconcileOneAgent) reconcileVersionImmutableImage(instance *dynatracev1
 	if !instance.Spec.OneAgent.DisableAgentUpdate {
 		r.logger.Info("checking for outdated pods")
 		// Check if pods have latest agent version
-		outdatedPods, err := r.findOutdatedPodsImmutableImage(r.logger, instance, isLatest)
+		outdatedPods, err := r.findOutdatedPodsImmutableImage(ctx, r.logger, instance, isLatest)
 		if err != nil {
 			return updateCR, err
 		}
@@ -96,7 +96,7 @@ func (r *ReconcileOneAgent) reconcileVersionImmutableImage(instance *dynatracev1
 			}
 			instance.Status.UpdatedTimestamp = metav1.Now()
 
-			err = r.setVersionByIP(instance, dtc)
+			err = r.setVersionByIP(ctx, instance, dtc)
 			if err != nil {
 				r.logger.Error(err, err.Error())
 				return updateCR, err
@@ -130,8 +130,8 @@ func findOutdatedPodsInstaller(pods []corev1.Pod, dtc dtclient.Client, instance 
 	return doomedPods, nil
 }
 
-func (r *ReconcileOneAgent) findOutdatedPodsImmutableImage(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, isLatestFn func(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error)) ([]corev1.Pod, error) {
-	pods, err := r.findPods(instance)
+func (r *ReconcileOneAgent) findOutdatedPodsImmutableImage(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, isLatestFn func(logger logr.Logger, image string, imageID string, imagePullSecret *corev1.Secret) (bool, error)) ([]corev1.Pod, error) {
+	pods, err := r.findPods(ctx, instance)
 	if err != nil {
 		logger.Error(err, "failed to list pods")
 		return nil, err
@@ -152,7 +152,7 @@ func (r *ReconcileOneAgent) findOutdatedPodsImmutableImage(logger logr.Logger, i
 				pullSecretName = instance.Spec.OneAgent.CustomPullSecret
 			}
 
-			err := r.client.Get(context.TODO(), client.ObjectKey{Namespace: pod.Namespace, Name: pullSecretName}, imagePullSecret)
+			err := r.client.Get(ctx, client.ObjectKey{Namespace: pod.Namespace, Name: pullSecretName}, imagePullSecret)
 			if err != nil {
 				return nil, err
 			}
@@ -184,21 +184,21 @@ func isLatest(logger logr.Logger, image string, imageID string, imagePullSecret 
 	return dockerVersionChecker.IsLatest()
 }
 
-func (r *ReconcileOneAgent) findPods(instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
+func (r *ReconcileOneAgent) findPods(ctx context.Context, instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, error) {
 	podList := &corev1.PodList{}
 	listOptions := []client.ListOption{
 		client.InNamespace(instance.GetNamespace()),
 		client.MatchingLabels(buildLabels(instance.GetName())),
 	}
-	err := r.client.List(context.TODO(), podList, listOptions...)
+	err := r.client.List(ctx, podList, listOptions...)
 	if err != nil {
 		return nil, err
 	}
 	return podList.Items, nil
 }
 
-func (r *ReconcileOneAgent) setVersionByIP(instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client) error {
-	pods, err := r.findPods(instance)
+func (r *ReconcileOneAgent) setVersionByIP(ctx context.Context, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client) error {
+	pods, err := r.findPods(ctx, instance)
 	if err != nil {
 		return err
 	}

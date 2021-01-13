@@ -167,8 +167,7 @@ func createDTMockClient(ip, host string) *dtclient.MockDynatraceClient {
 }
 
 func createDefaultFakeClientWithScheme() client.Client {
-	return fake.NewFakeClientWithScheme(
-		scheme.Scheme,
+	return fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
 		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
 		&dynatracev1alpha1.DynaKube{
@@ -186,5 +185,5 @@ func createDefaultFakeClientWithScheme() client.Client {
 					Instances: map[string]dynatracev1alpha1.OneAgentInstance{"node2": {IPAddress: "5.6.7.8"}},
 				},
 			},
-		})
+		}).Build()
 }

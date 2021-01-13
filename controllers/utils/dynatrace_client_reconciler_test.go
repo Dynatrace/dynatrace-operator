@@ -3,6 +3,8 @@ package utils
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/meta"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 	"time"
 
@@ -18,6 +20,7 @@ import (
 )
 
 func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
+	log := logf.Log.WithName("TestDynatraceClientReconcilerValidation")
 	namespace := "dynatrace"
 	dynaKube := "dynaKube"
 	base := dynatracev1alpha1.DynaKube{
@@ -30,7 +33,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 
 	t.Run("No secret", func(t *testing.T) {
 		deepCopy := base.DeepCopy()
-		c := fake.NewFakeClientWithScheme(scheme.Scheme)
+		c := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 		dtcMock := &dtclient.MockDynatraceClient{}
 
 		rec := &DynatraceClientReconciler{
@@ -41,7 +44,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), deepCopy)
+		dtc, ucr, err := rec.Reconcile(context.TODO(), deepCopy, log)
 		assert.Nil(t, dtc)
 		assert.True(t, ucr)
 		assert.Error(t, err)
@@ -56,7 +59,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 
 	t.Run("PaaS token is empty, API token is missing", func(t *testing.T) {
 		oa := base.DeepCopy()
-		c := fake.NewFakeClientWithScheme(scheme.Scheme, NewSecret(dynaKube, namespace, map[string]string{DynatracePaasToken: ""}))
+		c := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(NewSecret(dynaKube, namespace, map[string]string{DynatracePaasToken: ""})).Build()
 		dtcMock := &dtclient.MockDynatraceClient{}
 
 		rec := &DynatraceClientReconciler{
@@ -67,7 +70,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), oa)
+		dtc, ucr, err := rec.Reconcile(context.TODO(), oa, log)
 		assert.Nil(t, dtc)
 		assert.True(t, ucr)
 		assert.Error(t, err)
@@ -82,7 +85,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 
 	t.Run("Unauthorized PaaS token, unexpected error for API token request", func(t *testing.T) {
 		oa := base.DeepCopy()
-		c := fake.NewFakeClientWithScheme(scheme.Scheme, NewSecret(dynaKube, namespace, map[string]string{DynatracePaasToken: "42", DynatraceApiToken: "84"}))
+		c := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(NewSecret(dynaKube, namespace, map[string]string{DynatracePaasToken: "42", DynatraceApiToken: "84"})).Build()
 
 		dtcMock := &dtclient.MockDynatraceClient{}
 		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes(nil), dtclient.ServerError{Code: 401, Message: "Token Authentication failed"})
@@ -96,7 +99,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), oa)
+		dtc, ucr, err := rec.Reconcile(context.TODO(), oa, log)
 		assert.Equal(t, dtcMock, dtc)
 		assert.True(t, ucr)
 		assert.NoError(t, err)
@@ -111,7 +114,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 
 	t.Run("PaaS token has wrong scope, API token has leading and trailing space characters", func(t *testing.T) {
 		oa := base.DeepCopy()
-		c := fake.NewFakeClientWithScheme(scheme.Scheme, NewSecret(dynaKube, namespace, map[string]string{DynatracePaasToken: "42", DynatraceApiToken: " \t84\n  "}))
+		c := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(NewSecret(dynaKube, namespace, map[string]string{DynatracePaasToken: "42", DynatraceApiToken: " \t84\n  "})).Build()
 
 		dtcMock := &dtclient.MockDynatraceClient{}
 		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
@@ -124,7 +127,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), oa)
+		dtc, ucr, err := rec.Reconcile(context.TODO(), oa, log)
 		assert.Equal(t, dtcMock, dtc)
 		assert.True(t, ucr)
 		assert.NoError(t, err)
@@ -139,7 +142,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 
 	t.Run("PaaS and API token are ready", func(t *testing.T) {
 		oa := base.DeepCopy()
-		c := fake.NewFakeClientWithScheme(scheme.Scheme, NewSecret(dynaKube, namespace, map[string]string{DynatracePaasToken: "42", DynatraceApiToken: "84"}))
+		c := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(NewSecret(dynaKube, namespace, map[string]string{DynatracePaasToken: "42", DynatraceApiToken: "84"})).Build()
 
 		dtcMock := &dtclient.MockDynatraceClient{}
 		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
@@ -154,7 +157,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), oa)
+		dtc, ucr, err := rec.Reconcile(context.TODO(), oa, log)
 		assert.Equal(t, dtcMock, dtc)
 		assert.True(t, ucr)
 		assert.NoError(t, err)
@@ -167,6 +170,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 }
 
 func TestReconcileDynatraceClient_MigrateConditions(t *testing.T) {
+	log := logf.Log.WithName("TestDynatraceClientReconcilerMigrateConditions")
 	now := metav1.Now()
 	lastProbe := metav1.NewTime(now.Add(-1 * time.Minute))
 
@@ -179,28 +183,28 @@ func TestReconcileDynatraceClient_MigrateConditions(t *testing.T) {
 			Tokens: dynaKubeName,
 		},
 		Status: dynatracev1alpha1.DynaKubeStatus{
+			LastAPITokenProbeTimestamp:  &lastProbe,
+			LastPaaSTokenProbeTimestamp: &lastProbe,
 			BaseOneAgentStatus: dynatracev1alpha1.BaseOneAgentStatus{
-				Conditions: []dynatracev1alpha1.Condition{
+				Conditions: []metav1.Condition{
 					{
 						Type:    dynatracev1alpha1.APITokenConditionType,
-						Status:  corev1.ConditionTrue,
+						Status:  metav1.ConditionTrue,
 						Reason:  dynatracev1alpha1.ReasonTokenReady,
 						Message: "Ready",
 					},
 					{
 						Type:    dynatracev1alpha1.PaaSTokenConditionType,
-						Status:  corev1.ConditionTrue,
+						Status:  metav1.ConditionTrue,
 						Reason:  dynatracev1alpha1.ReasonTokenReady,
 						Message: "Ready",
 					},
 				},
-				LastAPITokenProbeTimestamp:  &lastProbe,
-				LastPaaSTokenProbeTimestamp: &lastProbe,
 			},
 		},
 	}
 
-	c := fake.NewFakeClientWithScheme(scheme.Scheme, NewSecret(dynaKubeName, namespace, map[string]string{DynatracePaasToken: "42", DynatraceApiToken: "84"}))
+	c := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(NewSecret(dynaKubeName, namespace, map[string]string{DynatracePaasToken: "42", DynatraceApiToken: "84"})).Build()
 	dtcMock := &dtclient.MockDynatraceClient{}
 
 	rec := &DynatraceClientReconciler{
@@ -211,12 +215,12 @@ func TestReconcileDynatraceClient_MigrateConditions(t *testing.T) {
 		Now:                 now,
 	}
 
-	dtc, ucr, err := rec.Reconcile(context.TODO(), &oa)
+	dtc, ucr, err := rec.Reconcile(context.TODO(), &oa, log)
 	assert.Equal(t, dtcMock, dtc)
 	assert.True(t, ucr)
 	assert.NoError(t, err)
 
-	for _, c := range oa.Status.Conditions {
+	for _, c := range oa.Status.BaseOneAgentStatus.Conditions {
 		assert.False(t, c.LastTransitionTime.IsZero())
 	}
 
@@ -228,29 +232,30 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 
 	namespace := "dynatrace"
 	oaName := "oneagent"
-	base := dynatracev1alpha1.OneAgent{
+	base := dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: oaName, Namespace: namespace},
-		Spec: dynatracev1alpha1.OneAgentSpec{
-			BaseOneAgentSpec: dynatracev1alpha1.BaseOneAgentSpec{
-				APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
-				Tokens: oaName,
+		Spec: dynatracev1alpha1.DynaKubeSpec{
+			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
+			Tokens: oaName,
+			OneAgent: dynatracev1alpha1.OneAgentSpec{
+				Enabled: true,
 			},
 		},
 	}
-	base.Status.Conditions.SetCondition(dynatracev1alpha1.Condition{
+	meta.SetStatusCondition(&base.Status.BaseOneAgentStatus.Conditions, metav1.Condition{
 		Type:    dynatracev1alpha1.APITokenConditionType,
-		Status:  corev1.ConditionTrue,
+		Status:  metav1.ConditionTrue,
 		Reason:  dynatracev1alpha1.ReasonTokenReady,
 		Message: "Ready",
 	})
-	base.Status.Conditions.SetCondition(dynatracev1alpha1.Condition{
+	meta.SetStatusCondition(&base.Status.BaseOneAgentStatus.Conditions, metav1.Condition{
 		Type:    dynatracev1alpha1.PaaSTokenConditionType,
-		Status:  corev1.ConditionTrue,
+		Status:  metav1.ConditionTrue,
 		Reason:  dynatracev1alpha1.ReasonTokenReady,
 		Message: "Ready",
 	})
 
-	c := fake.NewFakeClientWithScheme(scheme.Scheme, NewSecret(oaName, namespace, map[string]string{DynatracePaasToken: "42", DynatraceApiToken: "84"}))
+	c := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(NewSecret(oaName, namespace, map[string]string{DynatracePaasToken: "42", DynatraceApiToken: "84"})).Build()
 
 	t.Run("No request if last probe was recent", func(t *testing.T) {
 		lastAPIProbe := metav1.NewTime(now.Add(-3 * time.Minute))
@@ -270,7 +275,7 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 			Now:                 now,
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), oa)
+		dtc, ucr, err := rec.Reconcile(context.TODO(), oa, logf.Log)
 		assert.Equal(t, dtcMock, dtc)
 		assert.False(t, ucr)
 		assert.NoError(t, err)
@@ -304,7 +309,7 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 			Now:                 now,
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), oa)
+		dtc, ucr, err := rec.Reconcile(context.TODO(), oa, logf.Log)
 		assert.Equal(t, dtcMock, dtc)
 		assert.True(t, ucr)
 		assert.NoError(t, err)
@@ -318,14 +323,14 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 	})
 }
 
-func AssertCondition(t *testing.T, oa *dynatracev1alpha1.DynaKube, ct dynatracev1alpha1.ConditionType, status bool, reason dynatracev1alpha1.ConditionReason, message string) {
+func AssertCondition(t *testing.T, oa *dynatracev1alpha1.DynaKube, ct string, status bool, reason string, message string) {
 	t.Helper()
-	s := corev1.ConditionFalse
+	s := metav1.ConditionFalse
 	if status {
-		s = corev1.ConditionTrue
+		s = metav1.ConditionTrue
 	}
 
-	cond := oa.Status.OneAgentStatus.Conditions.GetCondition(ct)
+	cond := meta.FindStatusCondition(oa.Status.BaseOneAgentStatus.Conditions, ct)
 	require.NotNil(t, cond)
 	assert.Equal(t, s, cond.Status)
 	assert.Equal(t, reason, cond.Reason)

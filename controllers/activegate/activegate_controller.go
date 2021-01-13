@@ -61,7 +61,7 @@ type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.Dyn
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileActiveGate) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	if r.logger == nil {
 		r.logger = log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	}
@@ -70,7 +70,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 
 	// Fetch the DynaKube instance
 	instance := &dynatracev1alpha1.DynaKube{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -83,7 +83,7 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	// Fetch api token secret
-	secret, err := r.getTokenSecret(instance)
+	secret, err := r.getTokenSecret(ctx, instance)
 	if err != nil {
 		reqLogger.Error(err, "could not find token secret")
 		return reconcile.Result{}, err
@@ -108,8 +108,8 @@ func (r *ReconcileActiveGate) Reconcile(request reconcile.Request) (reconcile.Re
 	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 
-func (r *ReconcileActiveGate) getTokenSecret(instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {
+func (r *ReconcileActiveGate) getTokenSecret(ctx context.Context, instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {
 	var secret corev1.Secret
-	err := r.client.Get(context.TODO(), client.ObjectKey{Name: GetTokensName(instance), Namespace: instance.Namespace}, &secret)
+	err := r.client.Get(ctx, client.ObjectKey{Name: GetTokensName(instance), Namespace: instance.Namespace}, &secret)
 	return &secret, err
 }

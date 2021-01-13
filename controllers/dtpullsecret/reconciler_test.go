@@ -43,7 +43,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Data: map[string][]byte{dtclient.DynatracePaasToken: []byte(testPaasToken)},
 		}
-		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme)
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, mockDTC, logf.Log, secret, "")
 
 		mockDTC.
@@ -100,7 +100,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			}}
-		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme)
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, mockDTC, logf.Log,
 			&corev1.Secret{
 				Data: map[string][]byte{
@@ -141,7 +141,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			}}
-		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme)
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, mockDTC, logf.Log,
 			&corev1.Secret{
 				Data: map[string][]byte{

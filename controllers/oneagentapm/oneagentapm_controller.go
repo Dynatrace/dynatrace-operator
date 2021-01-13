@@ -76,7 +76,7 @@ type ReconcileOneAgentAPM struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileOneAgentAPM) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileOneAgentAPM) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	logger := r.logger.WithValues("namespace", request.Namespace, "name", request.Name)
 	logger.Info("Reconciling OneAgentCodeModule")
 
@@ -84,7 +84,7 @@ func (r *ReconcileOneAgentAPM) Reconcile(request reconcile.Request) (reconcile.R
 
 	// Using the apiReader, which does not use caching to prevent a possible race condition where an old version of
 	// the OneAgentAPM object is returned from the cache, but it has already been modified on the cluster side
-	if err := r.apiReader.Get(context.TODO(), request.NamespacedName, instance); k8serrors.IsNotFound(err) {
+	if err := r.apiReader.Get(ctx, request.NamespacedName, instance); k8serrors.IsNotFound(err) {
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
@@ -99,7 +99,7 @@ func (r *ReconcileOneAgentAPM) Reconcile(request reconcile.Request) (reconcile.R
 		dtcRec.UpdateAPIToken = true
 	}
 
-	dtc, upd, err := dtcRec.Reconcile(context.TODO(), instance, r.logger)
+	dtc, upd, err := dtcRec.Reconcile(ctx, instance, r.logger)
 
 	if !upd {
 		upd = utils.SetUseImmutableImageStatus(r.logger, instance, dtc)
@@ -109,7 +109,7 @@ func (r *ReconcileOneAgentAPM) Reconcile(request reconcile.Request) (reconcile.R
 		instance.Status.UpdatedTimestamp = metav1.Now()
 		instance.Status.Tokens = utils.GetTokensName(*instance)
 		reconcileError := err
-		if err := r.client.Status().Update(context.TODO(), instance); err != nil {
+		if err := r.client.Status().Update(ctx, instance); err != nil {
 			if reconcileError != nil {
 				// If update fails, but previous reconciliation did so too, make sure both errors are logged
 				logger.Error(reconcileError, reconcileError.Error())

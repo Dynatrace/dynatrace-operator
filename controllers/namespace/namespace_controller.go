@@ -59,10 +59,8 @@ type ReconcileNamespaces struct {
 	addNodeProps            bool
 }
 
-func (r *ReconcileNamespaces) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	targetNS := request.Name
-
-	ctx := context.TODO()
 
 	log := r.logger.WithValues("name", targetNS)
 	log.Info("reconciling Namespace")

@@ -30,7 +30,7 @@ func TestReconcileWebhook(t *testing.T) {
 	now, err := time.Parse(time.RFC3339, "2018-01-10T00:00:00Z")
 	require.NoError(t, err)
 
-	c := fake.NewFakeClientWithScheme(scheme.Scheme)
+	c := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 	r := ReconcileWebhook{client: c, logger: logger, namespace: ns, scheme: scheme.Scheme, certsDir: tmpDir}
 
 	reconcileAndGetCreds := func(days time.Duration) map[string]string {

@@ -114,3 +114,12 @@ rules:
     verbs:
       - get
       - create
+
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - update
+      - create

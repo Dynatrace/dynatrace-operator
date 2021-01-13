@@ -25,7 +25,7 @@ func init() {
 }
 
 func TestReconcileNamespace(t *testing.T) {
-	c := fake.NewFakeClientWithScheme(scheme.Scheme,
+	c := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 		&dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
 			Spec: dynatracev1alpha1.DynaKubeSpec{
@@ -76,7 +76,7 @@ func TestReconcileNamespace(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
 			Data:       map[string][]byte{"paasToken": []byte("42"), "apiToken": []byte("84")},
 		},
-	)
+	).Build()
 
 	r := ReconcileNamespaces{
 		client:    c,
@@ -89,7 +89,7 @@ func TestReconcileNamespace(t *testing.T) {
 		addNodeProps: false,
 	}
 
-	_, err := r.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: "test-namespace"}})
+	_, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: "test-namespace"}})
 	assert.NoError(t, err)
 
 	var nsSecret corev1.Secret

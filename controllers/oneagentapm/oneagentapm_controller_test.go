@@ -2,6 +2,7 @@ package oneagentapm
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"os"
 	"testing"
 
@@ -32,7 +33,7 @@ const (
 )
 
 func TestReconcileOneAgentAPM(t *testing.T) {
-	fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme,
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 		&dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 			Spec: dynatracev1alpha1.DynaKubeSpec{
@@ -46,7 +47,7 @@ func TestReconcileOneAgentAPM(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 			Data:       map[string][]byte{utils.DynatracePaasToken: []byte("42")},
 		},
-	)
+	).Build()
 
 	dtClient := &dtclient.MockDynatraceClient{}
 	dtClient.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
@@ -64,21 +65,21 @@ func TestReconcileOneAgentAPM(t *testing.T) {
 		},
 	}
 
-	_, err := reconciler.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: name, Namespace: namespace}})
+	_, err := reconciler.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: name, Namespace: namespace}})
 	assert.NoError(t, err)
 
 	var result dynatracev1alpha1.DynaKube
 	assert.NoError(t, fakeClient.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, &result))
 	assert.Equal(t, namespace, result.GetNamespace())
 	assert.Equal(t, name, result.GetName())
-	assert.True(t, result.Status.BaseOneAgentStatus.Conditions.IsTrueFor(dynatracev1alpha1.PaaSTokenConditionType))
-	assert.True(t, result.Status.BaseOneAgentStatus.Conditions.IsUnknownFor(dynatracev1alpha1.APITokenConditionType))
-	assert.Equal(t, utils.GetTokensName(&result), result.Status.Tokens)
+	assert.True(t, meta.IsStatusConditionTrue(result.Status.BaseOneAgentStatus.Conditions, dynatracev1alpha1.PaaSTokenConditionType))
+	assert.True(t, meta.FindStatusCondition(result.Status.BaseOneAgentStatus.Conditions, dynatracev1alpha1.APITokenConditionType) == nil)
+	assert.Equal(t, utils.GetTokensName(result), result.Status.Tokens)
 	mock.AssertExpectationsForObjects(t, dtClient)
 }
 
 func TestReconcileOneAgentAPM_MissingToken(t *testing.T) {
-	fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme,
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 		&dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 			Spec: dynatracev1alpha1.DynaKubeSpec{
@@ -87,7 +88,7 @@ func TestReconcileOneAgentAPM_MissingToken(t *testing.T) {
 					Enabled: true,
 				},
 			},
-		})
+		}).Build()
 
 	dtClient := &dtclient.MockDynatraceClient{}
 
@@ -103,7 +104,7 @@ func TestReconcileOneAgentAPM_MissingToken(t *testing.T) {
 		},
 	}
 
-	_, err := reconciler.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: name, Namespace: namespace}})
+	_, err := reconciler.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: name, Namespace: namespace}})
 	assert.NotNil(t, err)
 	assert.Equal(t, "Secret 'dynatrace:oneagent' not found", err.Error())
 
@@ -111,8 +112,8 @@ func TestReconcileOneAgentAPM_MissingToken(t *testing.T) {
 	assert.NoError(t, fakeClient.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: namespace}, &result))
 	assert.Equal(t, namespace, result.GetNamespace())
 	assert.Equal(t, name, result.GetName())
-	assert.True(t, result.Status.BaseOneAgentStatus.Conditions.IsFalseFor(dynatracev1alpha1.PaaSTokenConditionType))
-	assert.True(t, result.Status.BaseOneAgentStatus.Conditions.IsUnknownFor(dynatracev1alpha1.APITokenConditionType))
-	assert.Equal(t, utils.GetTokensName(&result), result.Status.Tokens)
+	assert.True(t, meta.IsStatusConditionFalse(result.Status.BaseOneAgentStatus.Conditions, dynatracev1alpha1.PaaSTokenConditionType))
+	assert.True(t, meta.FindStatusCondition(result.Status.BaseOneAgentStatus.Conditions, dynatracev1alpha1.APITokenConditionType) == nil)
+	assert.Equal(t, utils.GetTokensName(result), result.Status.Tokens)
 	mock.AssertExpectationsForObjects(t, dtClient)
 }

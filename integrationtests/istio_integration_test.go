@@ -29,24 +29,24 @@ func TestReconcileOneAgent_ReconcileIstio(t *testing.T) {
 	req := newReconciliationRequest("oneagent")
 
 	// For the first reconciliation, we only create Istio objects for the API URL.
-	_, err = e.Reconciler.Reconcile(req)
+	_, err = e.Reconciler.Reconcile(context.TODO(), req)
 	assert.NoError(t, err, "failed to reconcile")
 	assertIstioObjects(t, e.Client, 1, 1)
 
 	// Once the API URL is open, we create Istio objects for each communication endpoint.
-	_, err = e.Reconciler.Reconcile(req)
+	_, err = e.Reconciler.Reconcile(context.TODO(), req)
 	assert.NoError(t, err, "failed to reconcile")
 	assertIstioObjects(t, e.Client, 3, 3)
 
 	// Add a new communication endpoint.
 	e.CommunicationHosts = append(e.CommunicationHosts, "https://endpoint3.test.com/communication")
-	_, err = e.Reconciler.Reconcile(req)
+	_, err = e.Reconciler.Reconcile(context.TODO(), req)
 	assert.NoError(t, err, "failed to reconcile")
 	assertIstioObjects(t, e.Client, 4, 4)
 
 	// Remove two communication endpoints.
 	e.CommunicationHosts = e.CommunicationHosts[2:]
-	_, err = e.Reconciler.Reconcile(req)
+	_, err = e.Reconciler.Reconcile(context.TODO(), req)
 	assert.NoError(t, err, "failed to reconcile")
 	assertIstioObjects(t, e.Client, 2, 2)
 }
@@ -81,32 +81,32 @@ func TestReconcileOneAgent_ReconcileIstioWithMultipleOneAgentObjects(t *testing.
 	// environments.
 
 	// For the first reconciliation, we only create Istio objects for the API URL.
-	_, err = e.Reconciler.Reconcile(req1)
+	_, err = e.Reconciler.Reconcile(context.TODO(), req1)
 	assert.NoError(t, err, "failed to reconcile")
-	_, err = e.Reconciler.Reconcile(req2)
+	_, err = e.Reconciler.Reconcile(context.TODO(), req2)
 	assert.NoError(t, err, "failed to reconcile")
 	assertIstioObjects(t, e.Client, 2, 2)
 
 	// Once the API URL is open, we create Istio objects for each communication endpoint.
-	_, err = e.Reconciler.Reconcile(req1)
+	_, err = e.Reconciler.Reconcile(context.TODO(), req1)
 	assert.NoError(t, err, "failed to reconcile")
-	_, err = e.Reconciler.Reconcile(req2)
+	_, err = e.Reconciler.Reconcile(context.TODO(), req2)
 	assert.NoError(t, err, "failed to reconcile")
 	assertIstioObjects(t, e.Client, 6, 6)
 
 	// Add a new communication endpoint.
 	e.CommunicationHosts = append(e.CommunicationHosts, "https://testendpoint.com/communication")
-	_, err = e.Reconciler.Reconcile(req1)
+	_, err = e.Reconciler.Reconcile(context.TODO(), req1)
 	assert.NoError(t, err, "failed to reconcile")
-	_, err = e.Reconciler.Reconcile(req2)
+	_, err = e.Reconciler.Reconcile(context.TODO(), req2)
 	assert.NoError(t, err, "failed to reconcile")
 	assertIstioObjects(t, e.Client, 8, 8)
 
 	// Remove two communication endpoints.
 	e.CommunicationHosts = e.CommunicationHosts[2:]
-	_, err = e.Reconciler.Reconcile(req1)
+	_, err = e.Reconciler.Reconcile(context.TODO(), req1)
 	assert.NoError(t, err, "failed to reconcile")
-	_, err = e.Reconciler.Reconcile(req2)
+	_, err = e.Reconciler.Reconcile(context.TODO(), req2)
 	assert.NoError(t, err, "failed to reconcile")
 	assertIstioObjects(t, e.Client, 4, 4)
 }

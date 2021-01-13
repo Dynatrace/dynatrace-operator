@@ -52,10 +52,10 @@ func Add(mgr manager.Manager, ns string) error {
 }
 
 // Start starts the Nodes Reconciler, and will block until a stop signal is sent.
-func (r *ReconcileNodes) Start(stop <-chan struct{}) error {
+func (r *ReconcileNodes) Start(stop context.Context) error {
 	r.cache.WaitForCacheSync(stop)
 
-	chDels, err := r.watchDeletions(stop)
+	chDels, err := r.watchDeletions(stop.Done())
 	if err != nil {
 		// I've seen watchDeletions() fail because the Cache Informers weren't ready. WaitForCacheSync()
 		// should block until they are, however, but I believe I saw this not being true once.
@@ -71,11 +71,11 @@ func (r *ReconcileNodes) Start(stop <-chan struct{}) error {
 		chUpdates = make(chan string)
 	}
 
-	chAll := watchTicks(stop, 5*time.Minute)
+	chAll := watchTicks(stop.Done(), 5*time.Minute)
 
 	for {
 		select {
-		case <-stop:
+		case <-stop.Done():
 			r.logger.Info("stopping nodes controller")
 			return nil
 		case node := <-chDels:

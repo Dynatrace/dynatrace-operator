@@ -23,7 +23,7 @@ const (
 )
 
 func TestGetImagePullSecret(t *testing.T) {
-	fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme)
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 	instance := &dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,

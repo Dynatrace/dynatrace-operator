@@ -28,7 +28,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironment(t *testing.T) {
 		},
 	})
 
-	_, err = e.Reconciler.Reconcile(newReconciliationRequest(oaName))
+	_, err = e.Reconciler.Reconcile(context.TODO(), newReconciliationRequest(oaName))
 	assert.NoError(t, err, "error reconciling")
 
 	// Check if deamonset has been created and has correct namespace and name.

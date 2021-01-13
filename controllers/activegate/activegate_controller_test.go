@@ -30,7 +30,7 @@ func init() {
 
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
-		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme)
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 		r := &ReconcileActiveGate{
 			client: fakeClient,
 		}
@@ -46,12 +46,12 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 			}}
-		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme, instance,
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance,
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
 					Namespace: testNamespace,
-				}})
+				}}).Build()
 		r := &ReconcileActiveGate{
 			client: fakeClient,
 			dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
@@ -76,7 +76,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
 					Enabled: true,
 				}}}
-		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme, instance,
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance,
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -87,7 +87,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: kubesystem.Namespace,
 					UID:  testUID,
-				}})
+				}}).Build()
 		r := &ReconcileActiveGate{
 			client:    fakeClient,
 			apiReader: fakeClient,

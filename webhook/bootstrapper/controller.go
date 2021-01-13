@@ -71,23 +71,13 @@ func add(mgr manager.Manager, r *ReconcileWebhook) error {
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
 
-		var svc corev1.Service
-		err := r.client.Get(context.TODO(), client.ObjectKey{Name: webhookName, Namespace: r.namespace}, &svc)
-		if err != nil {
-			r.logger.Error(err, "Could not get webhook service")
-		}
-
 		ch <- event.GenericEvent{
-			Object: &svc,
+			Object: &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: webhookName, Namespace: r.namespace}},
 		}
 
 		for range ticker.C {
-			err = r.client.Get(context.TODO(), client.ObjectKey{Name: webhookName, Namespace: r.namespace}, &svc)
-			if err != nil {
-				r.logger.Error(err, "Could not get webhook service")
-			}
 			ch <- event.GenericEvent{
-				Object: &svc,
+				Object: &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: webhookName, Namespace: r.namespace}},
 			}
 		}
 	}()
@@ -118,19 +108,19 @@ type ReconcileWebhook struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileWebhook) Reconcile(context context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileWebhook) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	r.logger.Info("reconciling webhook", "namespace", request.Namespace, "name", request.Name)
 
-	rootCerts, err := r.reconcileCerts(context, r.logger)
+	rootCerts, err := r.reconcileCerts(ctx, r.logger)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile certificates: %w", err)
 	}
 
-	if err := r.reconcileService(context, r.logger); err != nil {
+	if err := r.reconcileService(ctx, r.logger); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile service: %w", err)
 	}
 
-	if err := r.reconcileWebhookConfig(context, r.logger, rootCerts); err != nil {
+	if err := r.reconcileWebhookConfig(ctx, r.logger, rootCerts); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile webhook configuration: %w", err)
 	}
 

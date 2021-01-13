@@ -3,6 +3,7 @@ package oneagent
 import (
 	"context"
 	"errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"os"
 	"testing"
 	"time"
@@ -53,13 +54,13 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		},
 	}
 
-	fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme,
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 		&dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
 			Spec:       dkSpec,
 		},
 		NewSecret(dkName, namespace, map[string]string{utils.DynatracePaasToken: "42", utils.DynatraceApiToken: "84"}),
-		sampleKubeSystemNS)
+		sampleKubeSystemNS).Build()
 
 	dtClient := &dtclient.MockDynatraceClient{}
 	dtClient.On("GetLatestAgentVersion", "unix", "default").Return("42", nil)
@@ -80,7 +81,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		},
 	}
 
-	_, err := reconciler.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName, Namespace: namespace}})
+	_, err := reconciler.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName, Namespace: namespace}})
 	assert.NoError(t, err)
 
 	dsActual := &appsv1.DaemonSet{}
@@ -106,15 +107,15 @@ func TestReconcile_PhaseSetCorrectly(t *testing.T) {
 			},
 		},
 	}
-	base.Status.BaseOneAgentStatus.Conditions.SetCondition(dynatracev1alpha1.Condition{
+	meta.SetStatusCondition(&base.Status.BaseOneAgentStatus.Conditions, metav1.Condition{
 		Type:    dynatracev1alpha1.APITokenConditionType,
-		Status:  corev1.ConditionTrue,
+		Status:  metav1.ConditionTrue,
 		Reason:  dynatracev1alpha1.ReasonTokenReady,
 		Message: "Ready",
 	})
-	base.Status.Conditions.SetCondition(dynatracev1alpha1.Condition{
+	meta.SetStatusCondition(&base.Status.BaseOneAgentStatus.Conditions, metav1.Condition{
 		Type:    dynatracev1alpha1.PaaSTokenConditionType,
-		Status:  corev1.ConditionTrue,
+		Status:  metav1.ConditionTrue,
 		Reason:  dynatracev1alpha1.ReasonTokenReady,
 		Message: "Ready",
 	})
@@ -135,9 +136,9 @@ func TestReconcile_PhaseSetCorrectly(t *testing.T) {
 	})
 
 	// arrange
-	c := fake.NewFakeClientWithScheme(scheme.Scheme,
+	c := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 		NewSecret(dkName, namespace, map[string]string{utils.DynatracePaasToken: "42", utils.DynatraceApiToken: "84"}),
-		sampleKubeSystemNS)
+		sampleKubeSystemNS).Build()
 	dtcMock := &dtclient.MockDynatraceClient{}
 	version := "1.187"
 	dtcMock.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(version, nil)
@@ -161,7 +162,7 @@ func TestReconcile_PhaseSetCorrectly(t *testing.T) {
 		oa.Status.OneAgentStatus.Version = ""
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(consoleLogger, oa, dtcMock)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), consoleLogger, oa, dtcMock)
 
 		// assert
 		assert.True(t, updateCR)
@@ -177,7 +178,7 @@ func TestReconcile_PhaseSetCorrectly(t *testing.T) {
 		dk.Status.Tokens = utils.GetTokensName(*dk)
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(consoleLogger, dk, dtcMock)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), consoleLogger, dk, dtcMock)
 
 		// assert
 		assert.False(t, updateCR)
@@ -191,7 +192,7 @@ func TestReconcile_PhaseSetCorrectly(t *testing.T) {
 		oa.Status.OneAgentStatus.Version = version
 
 		// act
-		_, err := reconciler.reconcileVersion(consoleLogger, oa, dtcMock)
+		_, err := reconciler.reconcileVersion(context.TODO(), consoleLogger, oa, dtcMock)
 
 		// assert
 		assert.Equal(t, nil, err)
@@ -212,9 +213,9 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 				},
 			},
 	}
-	c := fake.NewFakeClientWithScheme(scheme.Scheme,
+	c := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 		NewSecret(dkName, namespace, map[string]string{utils.DynatracePaasToken: "42", utils.DynatraceApiToken: "84"}),
-		sampleKubeSystemNS)
+		sampleKubeSystemNS).Build()
 	dtcMock := &dtclient.MockDynatraceClient{}
 	version := "1.187"
 	dtcMock.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(version, nil)
@@ -239,7 +240,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk.Status.Tokens = ""
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(consoleLogger, dk, dtcMock)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), consoleLogger, dk, dtcMock)
 
 		// assert
 		assert.True(t, updateCR)
@@ -253,7 +254,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk.Status.Tokens = "not the actual name"
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(consoleLogger, dk, dtcMock)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), consoleLogger, dk, dtcMock)
 
 		// assert
 		assert.True(t, updateCR)
@@ -262,9 +263,9 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 	})
 
 	t.Run("reconcileRollout Tokens status set, not equal to defined name", func(t *testing.T) {
-		c = fake.NewFakeClientWithScheme(scheme.Scheme,
+		c = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			NewSecret(dkName, namespace, map[string]string{utils.DynatracePaasToken: "42", utils.DynatraceApiToken: "84"}),
-			sampleKubeSystemNS)
+			sampleKubeSystemNS).Build()
 
 		reconciler := &ReconcileOneAgent{
 			client:    c,
@@ -286,7 +287,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk.Spec.Tokens = customTokenName
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(consoleLogger, dk, dtcMock)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), consoleLogger, dk, dtcMock)
 
 		// assert
 		assert.True(t, updateCR)
@@ -311,9 +312,9 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	}
 
 	// arrange
-	c := fake.NewFakeClientWithScheme(scheme.Scheme,
+	c := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 		NewSecret(dkName, namespace, map[string]string{utils.DynatracePaasToken: "42", utils.DynatraceApiToken: "84"}),
-		sampleKubeSystemNS)
+		sampleKubeSystemNS).Build()
 	dtcMock := &dtclient.MockDynatraceClient{}
 	version := "1.187"
 	oldVersion := "1.186"
@@ -357,7 +358,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 
 		assert.NoError(t, err)
 
-		reconciler.reconcileImpl(&rec)
+		reconciler.reconcileImpl(context.TODO(), &rec)
 
 		assert.NotNil(t, dk.Status.OneAgentStatus.Instances)
 		assert.NotEmpty(t, dk.Status.OneAgentStatus.Instances)
@@ -384,7 +385,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 
 		assert.NoError(t, err)
 
-		reconciler.reconcileImpl(&rec)
+		reconciler.reconcileImpl(context.TODO(), &rec)
 
 		assert.NotNil(t, dk.Status.OneAgentStatus.Instances)
 		assert.NotEmpty(t, dk.Status.OneAgentStatus.Instances)

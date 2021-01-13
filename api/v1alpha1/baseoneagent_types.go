@@ -35,7 +35,7 @@ type BaseOneAgentStatus struct {
 	EnvironmentID string `json:"environmentID,omitempty"`
 
 	// Conditions includes status about the current state of the instance
-	Conditions Conditions `json:"conditions,omitempty"`
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 const (

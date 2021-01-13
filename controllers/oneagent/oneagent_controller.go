@@ -116,7 +116,7 @@ type ReconcileOneAgent struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileOneAgent) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileOneAgent) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	logger := r.logger.WithValues("namespace", request.Namespace, "name", request.Name)
 	logger.Info("Reconciling OneAgent")
 
@@ -134,11 +134,11 @@ func (r *ReconcileOneAgent) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	rec := reconciliation{log: logger, instance: instance, requeueAfter: 30 * time.Minute}
-	r.reconcileImpl(&rec)
+	r.reconcileImpl(ctx, &rec)
 
 	if rec.err != nil {
 		if rec.update || instance.Status.OneAgentStatus.SetPhaseOnError(rec.err) {
-			if errClient := r.updateCR(instance); errClient != nil {
+			if errClient := r.updateCR(ctx, instance); errClient != nil {
 				return reconcile.Result{}, fmt.Errorf("failed to update CR after failure, original, %s, then: %w", rec.err, errClient)
 			}
 		}
@@ -153,7 +153,7 @@ func (r *ReconcileOneAgent) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	if rec.update {
-		if err := r.updateCR(instance); err != nil {
+		if err := r.updateCR(ctx, instance); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
@@ -194,12 +194,12 @@ func (rec *reconciliation) Update(upd bool, d time.Duration, cause string) bool 
 	return true
 }
 
-func (r *ReconcileOneAgent) reconcileImpl(rec *reconciliation) {
+func (r *ReconcileOneAgent) reconcileImpl(ctx context.Context, rec *reconciliation) {
 	if err := validate(rec.instance); rec.Error(err) {
 		return
 	}
 
-	dtc, upd, err := r.dtcReconciler.Reconcile(context.Background(), rec.instance)
+	dtc, upd, err := r.dtcReconciler.Reconcile(ctx, rec.instance, r.logger)
 	rec.Update(upd, 5*time.Minute, "Token conditions updated")
 	if rec.Error(err) {
 		return
@@ -222,18 +222,18 @@ func (r *ReconcileOneAgent) reconcileImpl(rec *reconciliation) {
 	}
 
 	if rec.instance.Status.OneAgentStatus.UseImmutableImage && rec.instance.Spec.OneAgent.Image == "" {
-		err = r.reconcilePullSecret(rec.instance, rec.log)
+		err = r.reconcilePullSecret(ctx, *rec.instance, rec.log)
 		if rec.Error(err) {
 			return
 		}
 	}
 
-	upd, err = r.reconcileRollout(rec.log, rec.instance, dtc)
+	upd, err = r.reconcileRollout(ctx, rec.log, rec.instance, dtc)
 	if rec.Error(err) || rec.Update(upd, 5*time.Minute, "Rollout reconciled") {
 		return
 	}
 
-	upd, err = r.reconcileInstanceStatuses(rec.log, rec.instance, dtc)
+	upd, err = r.reconcileInstanceStatuses(ctx, rec.log, rec.instance, dtc)
 	if rec.Error(err) || rec.Update(upd, 5*time.Minute, "Instance statuses reconciled") {
 		return
 	}
@@ -243,7 +243,7 @@ func (r *ReconcileOneAgent) reconcileImpl(rec *reconciliation) {
 		return
 	}
 
-	upd, err = r.reconcileVersion(rec.log, rec.instance, dtc)
+	upd, err = r.reconcileVersion(ctx, rec.log, rec.instance, dtc)
 	if rec.Error(err) || rec.Update(upd, 5*time.Minute, "Versions reconciled") {
 		return
 	}
@@ -254,11 +254,11 @@ func (r *ReconcileOneAgent) reconcileImpl(rec *reconciliation) {
 	}
 }
 
-func (r *ReconcileOneAgent) reconcileRollout(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client) (bool, error) {
+func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client) (bool, error) {
 	updateCR := false
 
 	var kubeSystemNS corev1.Namespace
-	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: "kube-system"}, &kubeSystemNS); err != nil {
+	if err := r.client.Get(ctx, client.ObjectKey{Name: "kube-system"}, &kubeSystemNS); err != nil {
 		return false, fmt.Errorf("failed to query for cluster ID: %w", err)
 	}
 
@@ -275,17 +275,17 @@ func (r *ReconcileOneAgent) reconcileRollout(logger logr.Logger, instance *dynat
 
 	// Check if this DaemonSet already exists
 	dsActual := &appsv1.DaemonSet{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: dsDesired.Name, Namespace: dsDesired.Namespace}, dsActual)
+	err = r.client.Get(ctx, types.NamespacedName{Name: dsDesired.Name, Namespace: dsDesired.Namespace}, dsActual)
 	if err != nil && k8serrors.IsNotFound(err) {
 		logger.Info("Creating new daemonset")
-		if err = r.client.Create(context.TODO(), dsDesired); err != nil {
+		if err = r.client.Create(ctx, dsDesired); err != nil {
 			return false, err
 		}
 	} else if err != nil {
 		return false, err
 	} else if hasDaemonSetChanged(dsDesired, dsActual) {
 		logger.Info("Updating existing daemonset")
-		if err = r.client.Update(context.TODO(), dsDesired); err != nil {
+		if err = r.client.Update(ctx, dsDesired); err != nil {
 			return false, err
 		}
 	}
@@ -315,17 +315,17 @@ func (r *ReconcileOneAgent) reconcileRollout(logger logr.Logger, instance *dynat
 		updateCR = true
 	}
 
-	if instance.Status.Tokens != utils.GetTokensName(instance) {
-		instance.Status.Tokens = utils.GetTokensName(instance)
+	if instance.Status.Tokens != utils.GetTokensName(*instance) {
+		instance.Status.Tokens = utils.GetTokensName(*instance)
 		updateCR = true
 	}
 
 	return updateCR, nil
 }
 
-func (r *ReconcileOneAgent) reconcilePullSecret(instance dynatracev1alpha1.DynaKube, log logr.Logger) error {
+func (r *ReconcileOneAgent) reconcilePullSecret(ctx context.Context, instance dynatracev1alpha1.DynaKube, log logr.Logger) error {
 	var tkns corev1.Secret
-	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: utils.GetTokensName(instance), Namespace: instance.GetNamespace()}, &tkns); err != nil {
+	if err := r.client.Get(ctx, client.ObjectKey{Name: utils.GetTokensName(instance), Namespace: instance.GetNamespace()}, &tkns); err != nil {
 		return fmt.Errorf("failed to query tokens: %w", err)
 	}
 	pullSecretData, err := utils.GeneratePullSecretData(r.client, instance, &tkns)
@@ -340,19 +340,19 @@ func (r *ReconcileOneAgent) reconcilePullSecret(instance dynatracev1alpha1.DynaK
 	return nil
 }
 
-func (r *ReconcileOneAgent) getPods(instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, []client.ListOption, error) {
+func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, []client.ListOption, error) {
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
 		client.InNamespace((*instance).GetNamespace()),
 		client.MatchingLabels(buildLabels((*instance).GetName())),
 	}
-	err := r.client.List(context.TODO(), podList, listOps...)
+	err := r.client.List(ctx, podList, listOps...)
 	return podList.Items, listOps, err
 }
 
-func (r *ReconcileOneAgent) updateCR(instance *dynatracev1alpha1.DynaKube) error {
+func (r *ReconcileOneAgent) updateCR(ctx context.Context, instance *dynatracev1alpha1.DynaKube) error {
 	instance.Status.UpdatedTimestamp = metav1.Now()
-	return r.client.Status().Update(context.TODO(), instance)
+	return r.client.Status().Update(ctx, instance)
 }
 
 func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, clusterID string) (*appsv1.DaemonSet, error) {
@@ -777,8 +777,8 @@ func getTemplateHash(a metav1.Object) string {
 	return ""
 }
 
-func (r *ReconcileOneAgent) reconcileInstanceStatuses(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client) (bool, error) {
-	pods, listOpts, err := r.getPods(instance)
+func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client) (bool, error) {
+	pods, listOpts, err := r.getPods(ctx, instance)
 	if err != nil {
 		handlePodListError(logger, err, listOpts)
 	}

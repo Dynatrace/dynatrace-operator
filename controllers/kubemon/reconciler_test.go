@@ -51,12 +51,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name: testName,
 			}}
 		secret := buildTestPaasTokenSecret()
-		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme,
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
 				UID:  testUID,
 				Name: kubesystem.Namespace,
 			}},
-			instance, secret)
+			instance, secret).Build()
 		reconciler := NewReconciler(
 			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, secret, instance, mockImageVersionProvider,
 		)
@@ -109,12 +109,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 					},
 				}}}
 		secret := buildTestPaasTokenSecret()
-		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme,
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
 				UID:  testUID,
 				Name: kubesystem.Namespace,
 			}},
-			instance, secret)
+			instance, secret).Build()
 		reconciler := NewReconciler(
 			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, secret, instance, mockImageVersionProvider,
 		)
@@ -162,7 +162,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				dtclient.DynatracePaasToken: []byte(testPaasToken),
 			},
 		}
-		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme,
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
 				UID:  testUID,
 				Name: kubesystem.Namespace,
@@ -174,7 +174,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				},
 				Secrets: []corev1.ObjectReference{{Name: testName}},
 			},
-			secret, instance)
+			secret, instance).Build()
 		reconciler := NewReconciler(
 			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, secret, instance, mockImageVersionProvider,
 		)

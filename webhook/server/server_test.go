@@ -33,13 +33,13 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	require.NoError(t, err)
 
 	inj := &podInjector{
-		client: fake.NewFakeClientWithScheme(scheme.Scheme,
+		client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
 					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
 				},
-			}),
+			}).Build(),
 		decoder:   decoder,
 		image:     "operator-image",
 		namespace: "dynatrace",
@@ -66,7 +66,7 @@ func TestPodInjection(t *testing.T) {
 	require.NoError(t, err)
 
 	inj := &podInjector{
-		client: fake.NewFakeClientWithScheme(scheme.Scheme,
+		client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			&dynatracev1alpha1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
 					Spec: dynatracev1alpha1.DynaKubeSpec{
@@ -100,7 +100,7 @@ func TestPodInjection(t *testing.T) {
 					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
 				},
 			},
-		),
+		).Build(),
 		decoder:   decoder,
 		image:     "test-api-url.com/linux/codemodule",
 		namespace: "dynatrace",
@@ -236,7 +236,7 @@ func TestPodInjectionWithImage(t *testing.T) {
 	require.NoError(t, err)
 
 	inj := &podInjector{
-		client: fake.NewFakeClientWithScheme(scheme.Scheme,
+		client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			&dynatracev1alpha1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
 				Spec: dynatracev1alpha1.DynaKubeSpec{
@@ -260,7 +260,7 @@ func TestPodInjectionWithImage(t *testing.T) {
 					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
 				},
 			},
-		),
+		).Build(),
 		decoder:   decoder,
 		image:     "test-image",
 		namespace: "dynatrace",
@@ -381,7 +381,7 @@ func TestPodInjectionWithImageAnnotation(t *testing.T) {
 	require.NoError(t, err)
 
 	inj := &podInjector{
-		client: fake.NewFakeClientWithScheme(scheme.Scheme,
+		client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			&dynatracev1alpha1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: "dynatrace"},
 				Spec: dynatracev1alpha1.DynaKubeSpec{
@@ -404,7 +404,7 @@ func TestPodInjectionWithImageAnnotation(t *testing.T) {
 					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
 				},
 			},
-		),
+		).Build(),
 		decoder:   decoder,
 		image:     "test-image",
 		namespace: "dynatrace",
@@ -531,7 +531,7 @@ func TestPodInjectionWithImageAnnotationOverwrite(t *testing.T) {
 	require.NoError(t, err)
 
 	inj := &podInjector{
-		client: fake.NewFakeClientWithScheme(scheme.Scheme,
+		client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			&dynatracev1alpha1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
 				Spec: dynatracev1alpha1.DynaKubeSpec{
@@ -554,7 +554,7 @@ func TestPodInjectionWithImageAnnotationOverwrite(t *testing.T) {
 					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
 				},
 			},
-		),
+		).Build(),
 		decoder:   decoder,
 		image:     "test-image",
 		namespace: "dynatrace",

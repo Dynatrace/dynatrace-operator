@@ -14,15 +14,16 @@ import (
 func TestGetUID(t *testing.T) {
 	const testUID = types.UID("test-uid")
 
-	fakeClient := fake.NewFakeClientWithScheme(
-		scheme.Scheme,
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(
 		&v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: Namespace,
 				UID:  testUID,
 			},
 		},
-	)
+	).Build()
 	uid, err := GetUID(fakeClient)
 
 	assert.NoError(t, err)

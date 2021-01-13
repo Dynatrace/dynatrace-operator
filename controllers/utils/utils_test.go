@@ -66,7 +66,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 	}
 
 	{
-		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme,
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{Name: "custom-token", Namespace: namespace},
 				Type:       corev1.SecretTypeOpaque,
@@ -75,20 +75,20 @@ func TestBuildDynatraceClient(t *testing.T) {
 					"apiToken":  []byte("43"),
 				},
 			},
-		)
+		).Build()
 
 		_, err := BuildDynatraceClient(fakeClient, dynaKube, true, true)
 		assert.NoError(t, err)
 	}
 
 	{
-		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme)
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 		_, err := BuildDynatraceClient(fakeClient, dynaKube, true, true)
 		assert.Error(t, err)
 	}
 
 	{
-		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme,
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{Name: "custom-token", Namespace: namespace},
 				Type:       corev1.SecretTypeOpaque,
@@ -96,7 +96,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 					"paasToken": []byte("42"),
 				},
 			},
-		)
+		).Build()
 		_, err := BuildDynatraceClient(fakeClient, dynaKube, true, true)
 		assert.Error(t, err)
 	}
@@ -109,8 +109,7 @@ func TestGetDeployment(t *testing.T) {
 	os.Setenv("POD_NAME", "mypod")
 	trueVar := true
 
-	fakeClient := fake.NewFakeClientWithScheme(
-		scheme.Scheme,
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 		&corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "mypod",
@@ -134,7 +133,7 @@ func TestGetDeployment(t *testing.T) {
 				Name:      "mydeployment",
 				Namespace: ns,
 			},
-		})
+		}).Build()
 
 	deploy, err := GetDeployment(fakeClient, "dynatrace")
 	require.NoError(t, err)
