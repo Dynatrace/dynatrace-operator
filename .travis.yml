@@ -91,29 +91,19 @@ jobs:
       env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
 
     - <<: *deploy_amd
-      name: Deploy release AMD to DockerHub
+      name: Deploy release AMD to DockerHub, Quay, RHCC
       if: tag =~ /^v.*/
-      env: IMAGES=$OAO_IMAGE_DOCKER_HUB
+      env: IMAGES="$OAO_IMAGE_DOCKER_HUB $OAO_IMAGE_QUAY $OAO_IMAGE_RHCC_SCAN"
 
-    - <<: *deploy_amd
-      name: Deploy release AMD to Quay
-      if: tag =~ /^v.*/
-      env: IMAGES=$OAO_IMAGE_QUAY
-
-      #    - <<: *deploy_amd
-      #      name: Deploy release AMD to RHCC
-      #      if: tag =~ /^v.*/
-      #      env: IMAGES=$OAO_IMAGE_RHCC_SCAN
-      #
     - <<: *deploy_amd
       name: Deploy release AMD to GCP dev
       if: tag =~ /^v.*/
-      env: GCR=true GCP_PROJECT=dynatrace-marketplace-dev GCLOUD_SERVICE_KEY=$GCLOUD_SERVICE_KEY_DEV GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT_DEV IMAGE=$OAO_IMAGE_GCR_DEV
+      env: GCR=true GCP_PROJECT=dynatrace-marketplace-dev GCLOUD_SERVICE_KEY=$GCLOUD_SERVICE_KEY_DEV GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT_DEV IMAGES=$OAO_IMAGE_GCR_DEV
 
     - <<: *deploy_amd
       name: Deploy release AMD to GCP prod
       if: tag =~ /^v.*/
-      env: GCR=true GCP_PROJECT=dynatrace-marketplace-prod GCLOUD_SERVICE_KEY=$GCLOUD_SERVICE_KEY_PROD GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT_PROD IMAGE=$OAO_IMAGE_GCR_PROD
+      env: GCR=true GCP_PROJECT=dynatrace-marketplace-prod GCLOUD_SERVICE_KEY=$GCLOUD_SERVICE_KEY_PROD GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT_PROD IMAGES=$OAO_IMAGE_GCR_PROD
 
       ######################### ARM #########################
     - &deploy_arm
@@ -137,14 +127,9 @@ jobs:
       env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
 
     - <<: *deploy_arm
-      name: Deploy release ARM to Quay
+      name: Deploy release ARM to DockerHub, Quay
       if: tag =~ /^v.*/
-      env: IMAGES=$OAO_IMAGE_QUAY
-
-    - <<: *deploy_arm
-      name: Deploy release ARM to DockerHub
-      if: tag =~ /^v.*/
-      env: IMAGES=$OAO_IMAGE_DOCKER_HUB
+      env: IMAGES="$OAO_IMAGE_DOCKER_HUB $OAO_IMAGE_QUAY"
 
       ######################### Create Docker manifest #########################
 
