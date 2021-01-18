@@ -100,7 +100,11 @@ EOF
 }
 
 applyDynatraceOperator() {
-  "${CLI}" apply -k https://github.com/Dynatrace/dynatrace-operator/config/manifests
+    if [ "${CLI}" = "kubectl" ]; then
+      "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
+    else
+      "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift.yaml
+    fi
 }
 
 applyDynaKubeCR() {

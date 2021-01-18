@@ -32,7 +32,7 @@ type DynaKubeSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
 
-	// Disable certificate validation checks for installer download and API communication
+	// Disable certificate validation checks for API communication
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Skip Certificate Check"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
@@ -52,7 +52,7 @@ type DynaKubeSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	TrustedCAs string `json:"trustedCAs,omitempty"`
 
-	// Optional: Sets Network Zone for OneAgent and ActiveGate pods
+	// Optional: Sets Network Zone for ActiveGate pods
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Network Zone"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
@@ -97,7 +97,7 @@ type DynaKubeStatus struct {
 	// LastPaaSTokenProbeTimestamp tracks when the last request for the PaaS token validity was sent
 	LastPaaSTokenProbeTimestamp *metav1.Time `json:"lastPaaSTokenProbeTimestamp,omitempty"`
 
-	// ActiveGateHash contains the last image hash seen.
+	// ActiveGateImageHash contains the last image hash seen.
 	ActiveGateImageHash string `json:"activeGateImageHash,omitempty"`
 
 	// ActiveGateImageVersion contains the version from the last image seen.

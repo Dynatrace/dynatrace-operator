@@ -1,10 +1,10 @@
-**Note: this project is currently in development. Shouldn't be installed by customers yet.**
+**Note: Requires Dynatrace Cluster version 1.209**
 
 # Dynatrace Operator
 
 The Dynatrace Operator supports rollout and lifecycle of various Dynatrace components in Kubernetes and OpenShift.
 
-As of launch, the Dynatrace Operator can be used to deploy a containerized ActiveGate for Kubernetes API monitoring. New capabilities will be added to the Dynatrace Operator over time including metric routing, and API monitoring for AWS, Azure, GCP, and vSPhere.
+As of launch, the Dynatrace Operator can be used to deploy a containerized ActiveGate for Kubernetes API monitoring. New capabilities will be added to the Dynatrace Operator over time including metric routing, and API monitoring for AWS, Azure, GCP, and vSphere.
 
 ## Supported platforms
 
@@ -12,7 +12,8 @@ Depending on the version of the Dynatrace Operator, it supports the following pl
 
 | Dynatrace Operator version | Kubernetes | OpenShift Container Platform               |
 | -------------------------- | ---------- | ------------------------------------------ |
-| master                     | 1.15+      | 3.11.188+, 4.3+ |
+| master                     | 1.18+      | 3.11.188+, 4.4+                            |
+| v0.1.0                     | 1.18+      | 3.11.188+, 4.4+                            |
 
 ## Quick Start
 
