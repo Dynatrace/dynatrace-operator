@@ -1,4 +1,4 @@
-**Note: this project is currently in development. Shouldn't be installed by customers yet.**
+**Note: Requires Dynatrace Cluster version 1.209**
 
 # Dynatrace Operator
 
@@ -12,7 +12,8 @@ Depending on the version of the Dynatrace Operator, it supports the following pl
 
 | Dynatrace Operator version | Kubernetes | OpenShift Container Platform               |
 | -------------------------- | ---------- | ------------------------------------------ |
-| master                     | 1.15+      | 3.11.188+, 4.3+ |
+| master                     | 1.18+      | 3.11.188+, 4.4+                            |
+| v0.1.0                     | 1.18+      | 3.11.188+, 4.4+                            |
 
 ## Quick Start
 

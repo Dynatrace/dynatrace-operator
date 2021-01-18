@@ -269,8 +269,7 @@ spec:
                   type: array
               type: object
             networkZone:
-              description: 'Optional: Sets Network Zone for OneAgent and ActiveGate
-                pods'
+              description: 'Optional: Sets Network Zone for ActiveGate pods'
               type: string
             proxy:
               description: 'Optional: Set custom proxy settings either directly or
@@ -282,8 +281,7 @@ spec:
                   type: string
               type: object
             skipCertCheck:
-              description: Disable certificate validation checks for installer download
-                and API communication
+              description: Disable certificate validation checks for API communication
               type: boolean
             tokens:
               description: Credentials for the DynaKube to connect back to Dynatrace.
@@ -300,7 +298,7 @@ spec:
           description: DynaKubeStatus defines the observed state of DynaKube
           properties:
             activeGateImageHash:
-              description: ActiveGateHash contains the last image hash seen.
+              description: ActiveGateImageHash contains the last image hash seen.
               type: string
             activeGateImageVersion:
               description: ActiveGateImageVersion contains the version from the last
