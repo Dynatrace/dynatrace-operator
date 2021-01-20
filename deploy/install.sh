@@ -62,19 +62,26 @@ fi
 
 set -u
 
-applyOneAgentOperator() {
+checkIfNSExists() {
   if ! "${CLI}" get ns dynatrace >/dev/null 2>&1; then
     if [ "${CLI}" = "kubectl" ]; then
       "${CLI}" create namespace dynatrace
-      "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/kubernetes.yaml
     else
       "${CLI}" adm new-project --node-selector="" dynatrace
-      "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/openshift.yaml
     fi
+  else
+    echo "Namespace already exists"
+  fi
+}
+
+applyOneAgentOperator() {
+  if [ "${CLI}" = "kubectl" ]; then
+    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/kubernetes.yaml
+  else
+    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/openshift.yaml
   fi
 
-  "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/kubernetes.yaml
-  "${CLI}" -n dynatrace create secret generic oneagent --from-literal="apiToken=${API_TOKEN}" --from-literal="paasToken=${PAAS_TOKEN}" --dry-run=client -o yaml | "${CLI}" apply -f -
+  "${CLI}" -n dynatrace create secret generic oneagent --from-literal="apiToken=${API_TOKEN}" --from-literal="paasToken=${PAAS_TOKEN}" --dry-run -o yaml | "${CLI}" apply -f -
 }
 
 applyOneAgentCR() {
@@ -179,6 +186,8 @@ EOF
 }
 
 ####### MAIN #######
+printf "\nCreating Dynatrace namespace...\n"
+checkIfNSExists
 printf "\nApplying Dynatrace OneAgent Operator...\n"
 applyOneAgentOperator
 printf "\nApplying OneAgent CustomResource...\n"
