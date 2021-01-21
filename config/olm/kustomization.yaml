@@ -5,5 +5,5 @@ resources:
 - ../samples
 images:
 - name: quay.io/dynatrace/dynatrace-operator:snapshot
-  newName: docker.io/dynatrace/dynatrace-operator
-  newTag: v0.1.0
+  newName: dynatrace-operator
+  newTag: latest

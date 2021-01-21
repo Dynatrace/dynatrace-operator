@@ -24,20 +24,149 @@ metadata:
       ]
     capabilities: Deep Insights
     categories: Monitoring,Logging & Tracing,OpenShift Optional
+    containerImage: registry.connect.redhat.com/dynatrace/dynatrace-operator
     operators.operatorframework.io/builder: operator-sdk-v1.3.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/Dynatrace/dynatrace-operator
     support: Dynatrace
-  name: dynatrace-operator.v0.1.1
+  name: dynatrace-operator.v0.1.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
     - description: DynaKube is the Schema for the DynaKube API
-      displayName: Dyna Kube
+      displayName: Dynatrace DynaKube
       kind: DynaKube
       name: dynakubes.dynatrace.com
+      resources:
+      - kind: StatefulSet
+        name: apps
+        version: v1
+      specDescriptors:
+      - description: Location of the Dynatrace API to connect to, including your specific environment ID
+        displayName: API URL
+        path: apiUrl
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Credentials for the DynaKube to connect back to Dynatrace.
+        displayName: API and PaaS Tokens
+        path: tokens
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Disable certificate validation checks for API communication
+        displayName: Skip Certificate Check
+        path: skipCertCheck
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - displayName: Proxy value
+        path: proxy.value
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - displayName: Proxy from secret
+        path: proxy.valueFrom
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: 'Optional: Adds custom RootCAs from a configmap This property only affects certificates used to communicate with the Dynatrace API. The property is not applied to the ActiveGate'
+        displayName: Trusted CAs
+        path: trustedCAs
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:ConfigMap
+      - description: 'Optional: Sets Network Zone for ActiveGate pods'
+        displayName: Network Zone
+        path: networkZone
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: Pull secret for your private registry'
+        displayName: Custom PullSecret
+        path: customPullSecret
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: 'Optional: the ActiveGate container image. Defaults to the latest ActiveGate image provided by the Docker Registry implementation from the Dynatrace environment set as API URL.'
+        displayName: Image
+        path: activeGate.image
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Enables Kubernetes Monitoring
+        displayName: Kubernetes Monitoring
+        path: kubernetesMonitoring.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
+      - description: Amount of replicas for your DynaKube
+        displayName: Replicas
+        path: kubernetesMonitoring.replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: 'Optional: Set activation group for ActiveGate'
+        displayName: Activation group
+        path: kubernetesMonitoring.group
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - displayName: Custom properties value
+        path: kubernetesMonitoring.customProperties.value
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - displayName: Custom properties secret
+        path: kubernetesMonitoring.customProperties.valueFrom
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: 'Optional: define resources requests and limits for single ActiveGate pods'
+        displayName: Resource Requirements
+        path: kubernetesMonitoring.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: 'Optional: Node selector to control the selection of nodes'
+        displayName: Node Selector
+        path: kubernetesMonitoring.nodeSelector
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:Node
+      - description: 'Optional: set tolerations for the ActiveGatePods pods'
+        displayName: Tolerations
+        path: kubernetesMonitoring.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: Adds additional labels for the ActiveGate pods'
+        displayName: Labels
+        path: kubernetesMonitoring.labels
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: Adds additional arguments for the ActiveGate instances'
+        displayName: Arguments
+        path: kubernetesMonitoring.args
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: List of environment variables to set for the ActiveGate'
+        displayName: Environment variables
+        path: kubernetesMonitoring.env
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: set custom Service Account Name used with ActiveGate pods'
+        displayName: Service Account name
+        path: kubernetesMonitoring.serviceAccountName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:ServiceAccount
+      statusDescriptors:
+      - description: UpdatedTimestamp indicates when the instance was last updated
+        displayName: Last Updated
+        path: updatedTimestamp
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
       version: v1alpha1
   description: |
     The Dynatrace Operator supports rollout and lifecycle of various Dynatrace components in Kubernetes and OpenShift.
@@ -118,7 +247,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.name
-                image: docker.io/dynatrace/dynatrace-operator:v0.1.0
+                image: dynatrace-operator:latest
                 imagePullPolicy: Always
                 name: dynatrace-operator
                 resources:
@@ -263,4 +392,4 @@ spec:
   provider:
     name: Dynatrace LLC
     url: www.dynatrace.com
-  version: 0.1.1
+  version: 0.1.0

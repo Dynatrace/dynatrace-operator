@@ -12,4 +12,5 @@ resources:
 - serviceaccount-operator.yaml
 - podsecuritypolicy-kubernetes-monitoring.yaml
 - podsecuritypolicy-operator.yaml
+bases:
 - ../crd

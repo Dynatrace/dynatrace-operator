@@ -150,9 +150,6 @@ spec:
                 group:
                   description: 'Optional: Set activation group for ActiveGate'
                   type: string
-                kubernetesApiEndpoint:
-                  description: The public API endpoint of the Kubernetes instance
-                  type: string
                 labels:
                   additionalProperties:
                     type: string
