@@ -153,9 +153,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: v1alpha1.DynaKubeSpec{
-				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
-					KubernetesAPIEndpoint: testEndpoint,
-				}}}
+				}}
 		secret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
