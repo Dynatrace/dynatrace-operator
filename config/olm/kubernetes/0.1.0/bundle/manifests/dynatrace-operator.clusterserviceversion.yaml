@@ -247,7 +247,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.name
-                image: dynatrace-operator:latest
+                image: quay.io/dynatrace/dynatrace-operator:v0.1.0
                 imagePullPolicy: Always
                 name: dynatrace-operator
                 resources:
