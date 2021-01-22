@@ -151,9 +151,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
-			},
-			Spec: v1alpha1.DynaKubeSpec{
-				}}
+			}}
 		secret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
