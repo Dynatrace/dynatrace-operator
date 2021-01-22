@@ -87,11 +87,6 @@ func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	if r.instance.Spec.KubernetesMonitoringSpec.KubernetesAPIEndpoint != "" {
-		id, err := r.addToDashboard()
-		r.handleAddToDashboardResult(id, err, r.log)
-	}
-
 	return reconcile.Result{}, nil
 }
 
