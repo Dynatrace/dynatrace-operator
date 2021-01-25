@@ -24,7 +24,7 @@ metadata:
       ]
     capabilities: Deep Insights
     categories: Monitoring,Logging & Tracing,OpenShift Optional
-    containerImage: registry.connect.redhat.com/dynatrace/dynatrace-operator
+    containerImage: quay.io/dynatrace/dynatrace-operator
     operators.operatorframework.io/builder: operator-sdk-v1.3.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/Dynatrace/dynatrace-operator
