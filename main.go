@@ -15,15 +15,18 @@ limitations under the License.
 package main
 
 import (
-	"flag"
+	"errors"
 	"fmt"
+	"github.com/spf13/pflag"
+	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
+	"k8s.io/client-go/rest"
 	"os"
 	"runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
 	"github.com/Dynatrace/dynatrace-operator/logger"
-	"github.com/prometheus/common/log"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -35,47 +38,80 @@ var (
 	Version  = "snapshot"
 	scheme   = pkgruntime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
+	log    = logger.NewDTLogger()
+)
+
+var subcmdCallbacks = map[string]func(ns string, cfg *rest.Config) (manager.Manager, error){
+	"operator":             startOperator,
+	"webhook-bootstrapper": startWebhookBoostrapper,
+	"webhook-server":       startWebhookServer,
+}
+
+var errBadSubcmd = errors.New("subcommand must be operator, webhook-bootstrapper, or webhook-server")
+
+var (
+	certsDir string
+	certFile string
+	keyFile  string
 )
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(dynatracev1alpha1.AddToScheme(scheme))
+	utilruntime.Must(istiov1alpha3.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
 func main() {
-	flag.Parse()
+	webhookServerFlags := pflag.NewFlagSet("webhook-server", pflag.ExitOnError)
+	webhookServerFlags.StringVar(&certsDir, "certs-dir", "/mnt/webhook-certs", "Directory to look certificates for.")
+	webhookServerFlags.StringVar(&certFile, "cert", "tls.crt", "File name for the public certificate.")
+	webhookServerFlags.StringVar(&keyFile, "cert-key", "tls.key", "File name for the private key.")
+
+	pflag.CommandLine.AddFlagSet(webhookServerFlags)
+	pflag.Parse()
 
 	ctrl.SetLogger(logger.NewDTLogger())
 
 	printVersion()
 
+	subcmd := "operator"
+	if args := pflag.Args(); len(args) > 0 {
+		subcmd = args[0]
+	}
+
+	subcmdFn := subcmdCallbacks[subcmd]
+	if subcmdFn == nil {
+		log.Error(errBadSubcmd, "Unknown subcommand", "command", subcmd)
+		os.Exit(1)
+	}
+
 	namespace := os.Getenv("POD_NAMESPACE")
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Namespace:               namespace,
-		Scheme:                  scheme,
-		MetricsBindAddress:      ":8383",
-		Port:                    8484,
-		LeaderElection:          true,
-		LeaderElectionID:        "dynatrace-operator-lock",
-		LeaderElectionNamespace: namespace,
-	})
+	cfg, err := config.GetConfig()
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		log.Error(err, "")
 		os.Exit(1)
 	}
 
-	if err := activegate.NewReconciler(mgr).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DynaKube")
+	mgr, err := subcmdFn(namespace, cfg)
+	if err != nil {
+		log.Error(err, "")
 		os.Exit(1)
 	}
-	// +kubebuilder:scaffold:builder
 
-	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+	signalHandler := ctrl.SetupSignalHandler()
+
+	startWebhookAndBootstrapperIfDebugFlagSet(startupInfo{
+		cfg:           cfg,
+		namespace:     namespace,
+		signalHandler: signalHandler,
+	})
+
+	log.Info("starting manager")
+	if err := mgr.Start(signalHandler); err != nil {
+		log.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 }

@@ -3,6 +3,8 @@ package kubemon
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"hash/fnv"
 	"strconv"
 
@@ -58,8 +60,8 @@ func newStatefulSet(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: buildLabels(instance),
 					Annotations: map[string]string{
-						annotationImageHash:       instance.Status.ActiveGateImageHash,
-						annotationImageVersion:    instance.Status.ActiveGateImageVersion,
+						annotationImageHash:       instance.Status.ActiveGate.ImageHash,
+						annotationImageVersion:    instance.Status.ActiveGate.ImageVersion,
 						annotationCustomPropsHash: customPropsHash,
 					},
 				},
@@ -100,7 +102,9 @@ func buildTemplateSpec(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types
 		Tolerations: instance.Spec.KubernetesMonitoringSpec.Tolerations,
 		Volumes:     buildVolumes(instance),
 		ImagePullSecrets: []corev1.LocalObjectReference{
-			buildPullSecret(instance),
+			{
+				Name: instance.Name + dtpullsecret.PullSecretSuffix,
+			},
 		},
 	}
 }
@@ -119,7 +123,7 @@ func buildContainer(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 
 	return corev1.Container{
 		Name:            dynatracev1alpha1.OperatorName,
-		Image:           buildImage(instance),
+		Image:           utils.BuildActiveGateImage(instance),
 		Resources:       buildResources(instance),
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             buildEnvs(instance, kubeSystemUID),

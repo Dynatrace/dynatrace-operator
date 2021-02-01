@@ -132,28 +132,19 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 	pod.Annotations[dtwebhook.AnnotationInjected] = "true"
 
-	flavor := getFlavor(oa.Spec.OneAgentCodeModule.Flavor, pod.Annotations)
 	technologies := url.QueryEscape(utils.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
 	installPath := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 	installerURL := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, "")
-	imageAnnotation := utils.GetField(pod.Annotations, dtwebhook.AnnotationImage, "")
 	failurePolicy := utils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")
 	image := m.image
 
-	if installerURL == "" && oa.Status.OneAgentCodeModuleStatus.UseImmutableImage {
-		if oa.Spec.OneAgentCodeModule.Image == "" && imageAnnotation == "" {
-			image, err = utils.BuildOneAgentAPMImage(oa.Spec.APIURL, flavor, technologies, oa.Spec.OneAgentCodeModule.AgentVersion)
-			if err != nil {
-				return admission.Errored(http.StatusInternalServerError, err)
-			}
-		} else if imageAnnotation != "" {
-			image = imageAnnotation
-		} else if oa.Spec.OneAgentCodeModule.Image != "" {
-			image = oa.Spec.OneAgentCodeModule.Image
-		}
-	}
-
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
+		corev1.Volume{
+			Name: "init",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
 		corev1.Volume{
 			Name: "oneagent",
 			VolumeSource: corev1.VolumeSource{
@@ -174,10 +165,6 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		sc = pod.Spec.Containers[0].SecurityContext.DeepCopy()
 	}
 
-	if oa.Spec.OneAgentCodeModule.Image == "" && imageAnnotation == "" && oa.Status.OneAgentCodeModuleStatus.UseImmutableImage {
-		pod.Spec.ImagePullSecrets = append(pod.Spec.ImagePullSecrets, corev1.LocalObjectReference{Name: dtwebhook.PullSecretName})
-	}
-
 	fieldEnvVar := func(key string) *corev1.EnvVarSource {
 		return &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: key}}
 	}
@@ -192,18 +179,13 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		basePodName = basePodName[:p]
 	}
 
-	useImmutableImage := ""
-	if oa.Status.OneAgentCodeModuleStatus.UseImmutableImage {
-		useImmutableImage = "true"
-	}
-
 	ic := corev1.Container{
 		Name:    "install-oneagent",
 		Image:   image,
+		ImagePullPolicy: corev1.PullAlways,
 		Command: []string{"/usr/bin/env"},
 		Args:    []string{"bash", "/mnt/config/init.sh"},
 		Env: []corev1.EnvVar{
-			{Name: "FLAVOR", Value: flavor},
 			{Name: "TECHNOLOGIES", Value: technologies},
 			{Name: "INSTALLPATH", Value: installPath},
 			{Name: "INSTALLER_URL", Value: installerURL},
@@ -214,14 +196,14 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 			{Name: "K8S_BASEPODNAME", Value: basePodName},
 			{Name: "K8S_NAMESPACE", ValueFrom: fieldEnvVar("metadata.namespace")},
 			{Name: "K8S_NODE_NAME", ValueFrom: fieldEnvVar("spec.nodeName")},
-			{Name: "USE_IMMUTABLE_IMAGE", Value: useImmutableImage},
 		},
 		SecurityContext: sc,
 		VolumeMounts: []corev1.VolumeMount{
+			{Name: "init", MountPath: "/mnt/init"},
 			{Name: "oneagent", MountPath: "/mnt/oneagent"},
 			{Name: "oneagent-config", MountPath: "/mnt/config"},
 		},
-		Resources: oa.Spec.OneAgentCodeModule.Resources,
+		Resources: oa.Spec.CodeModules.Resources,
 	}
 
 	for i := range pod.Spec.Containers {

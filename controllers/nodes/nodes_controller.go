@@ -2,6 +2,7 @@ package nodes
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"os"
 	"time"
 
@@ -33,7 +34,7 @@ type ReconcileNodes struct {
 	cache        cache.Cache
 	scheme       *runtime.Scheme
 	logger       logr.Logger
-	dtClientFunc utils.DynatraceClientFunc
+	dtClientFunc dynakube.DynatraceClientFunc
 	local        bool
 }
 
@@ -46,7 +47,7 @@ func Add(mgr manager.Manager, ns string) error {
 		cache:        mgr.GetCache(),
 		scheme:       mgr.GetScheme(),
 		logger:       log.Log.WithName("nodes.controller"),
-		dtClientFunc: utils.BuildDynatraceClient,
+		dtClientFunc: dynakube.BuildDynatraceClient,
 		local:        os.Getenv("RUN_LOCAL") == "true",
 	})
 }
@@ -169,8 +170,8 @@ func (r *ReconcileNodes) reconcileAll() error {
 
 	// Add or update all nodes seen on OneAgent instances to the c.
 	for _, oa := range oas {
-		if oa.Status.OneAgentStatus.Instances != nil {
-			for node, info := range oa.Status.OneAgentStatus.Instances {
+		if oa.Status.OneAgent.Instances != nil {
+			for node, info := range oa.Status.OneAgent.Instances {
 				if _, ok := nodes[node]; !ok {
 					continue
 				}
@@ -314,7 +315,14 @@ func (r *ReconcileNodes) updateNode(c *Cache, nodeName string) error {
 }
 
 func (r *ReconcileNodes) sendMarkedForTermination(dynaKube *dynatracev1alpha1.DynaKube, nodeIP string, lastSeen time.Time) error {
-	dtc, err := r.dtClientFunc(r.client, *dynaKube, true, true)
+	secret := &corev1.Secret{}
+	token := utils.GetTokensName(dynaKube)
+	err := r.client.Get(context.TODO(), client.ObjectKey{Name: token, Namespace: dynaKube.Namespace}, secret)
+	if err != nil {
+		r.logger.Error(err, "Failed to query for tokens")
+	}
+
+	dtc, err := r.dtClientFunc(r.client, dynaKube, secret)
 	if err != nil {
 		return err
 	}
@@ -347,7 +355,7 @@ func (r *ReconcileNodes) reconcileUnschedulableNode(node *corev1.Node, c *Cache)
 	}
 
 	// determineOneAgentForNode  only returns a oneagent object if a node instance is present
-	instance := oneAgent.Status.OneAgentStatus.Instances[node.Name]
+	instance := oneAgent.Status.OneAgent.Instances[node.Name]
 	if _, err = c.Get(node.Name); err != nil {
 		if err == ErrNotFound {
 			// If node not found in c add it

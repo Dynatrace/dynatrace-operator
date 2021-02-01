@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"github.com/prometheus/common/log"
 	"os"
 	"path"
 	"time"
@@ -36,6 +35,7 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 		Port:                    8443,
 		LeaderElection:          true,
 		LeaderElectionID:        "dynatrace-oneagent-webhook-server-lock",
+		LeaderElectionResourceLock: "configmaps",
 		LeaderElectionNamespace: ns,
 	})
 	if err != nil {

@@ -71,17 +71,17 @@ func (r *ReconcileOneAgent) determineOneAgentPhase(instance *dynatracev1alpha1.D
 	}
 
 	if err != nil {
-		phaseChanged = instance.Status.OneAgentStatus.Phase != dynatracev1alpha1.Error
-		instance.Status.OneAgentStatus.Phase = dynatracev1alpha1.Error
+		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Error
+		instance.Status.Phase = dynatracev1alpha1.Error
 		return phaseChanged, err
 	}
 
 	if dsActual.Status.NumberReady == dsActual.Status.CurrentNumberScheduled {
-		phaseChanged = instance.Status.OneAgentStatus.Phase != dynatracev1alpha1.Running
-		instance.Status.OneAgentStatus.Phase = dynatracev1alpha1.Running
+		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Running
+		instance.Status.Phase = dynatracev1alpha1.Running
 	} else {
-		phaseChanged = instance.Status.OneAgentStatus.Phase != dynatracev1alpha1.Deploying
-		instance.Status.OneAgentStatus.Phase = dynatracev1alpha1.Deploying
+		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Deploying
+		instance.Status.Phase = dynatracev1alpha1.Deploying
 	}
 
 	return phaseChanged, nil

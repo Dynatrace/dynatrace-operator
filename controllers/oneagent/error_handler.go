@@ -22,7 +22,7 @@ func handleAgentVersionForIPError(err error, instance *dynatracev1alpha1.DynaKub
 			return err
 		}
 		// use last know version if available
-		if i, ok := instance.Status.OneAgentStatus.Instances[pod.Spec.NodeName]; ok && instanceStatus != nil {
+		if i, ok := instance.Status.OneAgent.Instances[pod.Spec.NodeName]; ok && instanceStatus != nil {
 			instanceStatus.Version = i.Version
 		}
 	}

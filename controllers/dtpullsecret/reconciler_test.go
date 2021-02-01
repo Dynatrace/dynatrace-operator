@@ -44,7 +44,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Data: map[string][]byte{dtclient.DynatracePaasToken: []byte(testPaasToken)},
 		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, mockDTC, logf.Log, secret, "")
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, mockDTC, logf.Log, secret)
 
 		mockDTC.
 			On("GetConnectionInfo").
@@ -65,7 +65,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
 	})
-	t.Run(`Reconcile does not reconcile with custom pull secret or custom image`, func(t *testing.T) {
+	t.Run(`Reconcile does not reconcile with custom pull secret`, func(t *testing.T) {
 		instance := &dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -74,18 +74,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				CustomPullSecret: testValue,
 			}}
-		r := NewReconciler(nil, nil, nil, instance, nil, nil, nil, "")
+		r := NewReconciler(nil, nil, nil, instance, nil, nil, nil)
 		err := r.Reconcile()
-
-		assert.NoError(t, err)
-
-		instance = &dynatracev1alpha1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			}}
-		r = NewReconciler(nil, nil, nil, instance, nil, nil, nil, testValue)
-		err = r.Reconcile()
 
 		assert.NoError(t, err)
 	})
@@ -106,7 +96,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Data: map[string][]byte{
 					dtclient.DynatracePaasToken: []byte(testValue),
 				},
-			}, "")
+			})
 
 		mockDTC.
 			On("GetConnectionInfo").
@@ -147,7 +137,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Data: map[string][]byte{
 					dtclient.DynatracePaasToken: []byte(testValue),
 				},
-			}, "")
+			})
 
 		mockDTC.
 			On("GetConnectionInfo").

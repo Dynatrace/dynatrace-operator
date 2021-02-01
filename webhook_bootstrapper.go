@@ -18,7 +18,6 @@ package main
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/webhook/bootstrapper"
-	"github.com/prometheus/common/log"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -33,6 +32,7 @@ func startWebhookBoostrapper(ns string, cfg *rest.Config) (manager.Manager, erro
 		MetricsBindAddress:      ":8484",
 		LeaderElection:          true,
 		LeaderElectionID:        "dynatrace-oneagent-webhook-bootstrapper-lock",
+		LeaderElectionResourceLock: "configmaps",
 		LeaderElectionNamespace: ns,
 		HealthProbeBindAddress:  "0.0.0.0:9080",
 	})

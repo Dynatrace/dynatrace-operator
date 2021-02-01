@@ -1,4 +1,4 @@
-package activegate
+package dynakube
 
 import (
 	"context"
@@ -22,6 +22,7 @@ import (
 const (
 	testUID       = "test-uid"
 	testPaasToken = "test-paas-token"
+	testAPIToken = "test-api-token"
 )
 
 func init() {
@@ -31,16 +32,19 @@ func init() {
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
-		r := &ReconcileActiveGate{
+		r := &ReconcileDynaKube{
 			client: fakeClient,
 		}
-		result, err := r.Reconcile(reconcile.Request{})
+		result, err := r.Reconcile(context.TODO(), reconcile.Request{})
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 	})
 	t.Run(`Reconcile works with minimal setup and interface`, func(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient.On("GetTokenScopes", "something").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
+		mockClient.On("GetTokenScopes", "something").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{TenantUUID: "abc123456"}, nil)
 		instance := &v1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -51,14 +55,21 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
 					Namespace: testNamespace,
-				}}).Build()
-		r := &ReconcileActiveGate{
+				},
+				Data: map[string][]byte{
+					"apiToken": []byte("something"),
+					"paasToken": []byte("something"),
+				},
+			}).Build()
+		r := &ReconcileDynaKube{
 			client: fakeClient,
+			apiReader: fakeClient,
+			scheme: scheme.Scheme,
 			dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
 		}
-		result, err := r.Reconcile(reconcile.Request{
+		result, err := r.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
 
@@ -82,13 +93,16 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					Name:      testName,
 					Namespace: testNamespace,
 				},
-				Data: map[string][]byte{dtclient.DynatracePaasToken: []byte(testPaasToken)}},
+				Data: map[string][]byte{
+					dtclient.DynatracePaasToken: []byte(testPaasToken),
+					dtclient.DynatraceApiToken: []byte(testAPIToken),
+				}},
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: kubesystem.Namespace,
 					UID:  testUID,
 				}}).Build()
-		r := &ReconcileActiveGate{
+		r := &ReconcileDynaKube{
 			client:    fakeClient,
 			apiReader: fakeClient,
 			scheme:    scheme.Scheme,
@@ -102,8 +116,10 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			Return(dtclient.ConnectionInfo{
 				TenantUUID: testName,
 			}, nil)
+		mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
+		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 
-		result, err := r.Reconcile(reconcile.Request{
+		result, err := r.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
 

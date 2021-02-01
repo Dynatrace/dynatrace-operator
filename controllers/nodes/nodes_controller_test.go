@@ -2,12 +2,12 @@ package nodes
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"os"
 	"testing"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -152,7 +152,7 @@ func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDy
 		client:       fakeClient,
 		scheme:       scheme.Scheme,
 		logger:       zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
-		dtClientFunc: utils.StaticDynatraceClient(dtClient),
+		dtClientFunc: dynakube.StaticDynatraceClient(dtClient),
 		local:        true,
 	}
 }
@@ -173,7 +173,7 @@ func createDefaultFakeClientWithScheme() client.Client {
 		&dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
 			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgentStatus: dynatracev1alpha1.OneAgentStatus{
+				OneAgent: dynatracev1alpha1.OneAgentStatus{
 					Instances: map[string]dynatracev1alpha1.OneAgentInstance{"node1": {IPAddress: "1.2.3.4"}},
 				},
 			},
@@ -181,7 +181,7 @@ func createDefaultFakeClientWithScheme() client.Client {
 		&dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "oneagent2", Namespace: testNamespace},
 			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgentStatus: dynatracev1alpha1.OneAgentStatus{
+				OneAgent: dynatracev1alpha1.OneAgentStatus{
 					Instances: map[string]dynatracev1alpha1.OneAgentInstance{"node2": {IPAddress: "5.6.7.8"}},
 				},
 			},

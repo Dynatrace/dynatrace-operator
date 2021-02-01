@@ -7,6 +7,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
@@ -22,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -36,98 +37,85 @@ const (
 	envVarDisableUpdates = "OPERATOR_DEBUG_DISABLE_UPDATES"
 )
 
-type Reconciler struct {
+type ReconcileKubeMon struct {
 	client.Client
 	scheme    *runtime.Scheme
 	dtc       dtclient.Client
 	log       logr.Logger
-	token     *corev1.Secret
 	instance  *dynatracev1alpha1.DynaKube
 	apiReader client.Reader
 
 	imageVersionProvider dtversion.ImageVersionProvider
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger, token *corev1.Secret,
-	instance *dynatracev1alpha1.DynaKube, imgVerProvider dtversion.ImageVersionProvider) *Reconciler {
-	return &Reconciler{
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
+	instance *dynatracev1alpha1.DynaKube, imgVerProvider dtversion.ImageVersionProvider) *ReconcileKubeMon {
+	return &ReconcileKubeMon{
 		Client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
 		dtc:       dtc,
 		log:       log,
-		token:     token,
 		instance:  instance,
 
 		imageVersionProvider: imgVerProvider,
 	}
 }
 
-func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
-	err := dtpullsecret.
-		NewReconciler(r, r.apiReader, r.scheme, r.instance, r.dtc, r.log, r.token, r.instance.Spec.ActiveGate.Image).
-		Reconcile()
-	if err != nil {
-		r.log.Error(err, "could not reconcile Dynatrace pull secret")
-		return reconcile.Result{}, err
-	}
-
+func (r *ReconcileKubeMon) Reconcile() (update bool, err error) {
 	if r.instance.Spec.KubernetesMonitoringSpec.CustomProperties != nil {
 		err = customproperties.
 			NewReconciler(r, r.instance, r.log, Name, *r.instance.Spec.KubernetesMonitoringSpec.CustomProperties, r.scheme).
 			Reconcile()
 		if err != nil {
 			r.log.Error(err, "could not reconcile custom properties")
-			return reconcile.Result{}, err
+			return false, err
 		}
 	}
 
-	if err = r.manageStatefulSet(r.instance); err != nil {
+	if update, err = r.manageStatefulSet(r.instance); err != nil {
 		r.log.Error(err, "could not reconcile stateful set")
-		return reconcile.Result{}, err
+		return false, err
 	}
 
-	return reconcile.Result{}, nil
+	return update, nil
 }
 
-func (r *Reconciler) manageStatefulSet(instance *dynatracev1alpha1.DynaKube) error {
-	var err error
-
-	verUpd := false
+func (r *ReconcileKubeMon) manageStatefulSet(instance *dynatracev1alpha1.DynaKube) (update bool, err error) {
 	if os.Getenv(envVarDisableUpdates) != "true" {
-		img := buildImage(instance)
-		if verUpd, err = r.updateImageVersion(instance, img); err != nil {
+		img := utils.BuildActiveGateImage(instance)
+		if update, err = r.updateImageVersion(instance, img); err != nil {
 			r.log.Error(err, "Failed to fetch image version", "image", img)
 		}
 	}
 
 	desiredStatefulSet, err := r.buildDesiredStatefulSet(instance)
 	if err != nil {
-		return errors.WithStack(err)
+		return false, errors.WithStack(err)
 	}
 
 	if err := controllerutil.SetControllerReference(instance, desiredStatefulSet, r.scheme); err != nil {
-		return errors.WithStack(err)
+		return false, errors.WithStack(err)
 	}
 
 	currentStatefulSet, stsCreated, err := r.createStatefulSetIfNotExists(desiredStatefulSet)
 	if err != nil {
-		return errors.WithStack(err)
+		return false, errors.WithStack(err)
 	}
 
 	stsChanged, err := r.updateStatefulSetIfOutdated(currentStatefulSet, desiredStatefulSet)
 	if err != nil {
-		return errors.WithStack(err)
+		return false, errors.WithStack(err)
 	}
 
-	if !verUpd && !stsCreated && !stsChanged {
-		return nil
+	if !update && !stsCreated && !stsChanged {
+		return false, nil
 	}
 
-	return r.updateInstanceStatus(instance)
+	return true, nil
 }
 
-func (r *Reconciler) updateImageVersion(instance *dynatracev1alpha1.DynaKube, img string) (bool, error) {
+func (r *ReconcileKubeMon) updateImageVersion(instance *dynatracev1alpha1.DynaKube, img string) (bool, error) {
 	pullSecret, err := dtpullsecret.GetImagePullSecret(r, r.instance)
 	if err != nil {
 		return false, fmt.Errorf("failed to get image pull secret: %w", err)
@@ -152,21 +140,21 @@ func (r *Reconciler) updateImageVersion(instance *dynatracev1alpha1.DynaKube, im
 	}
 
 	upd := false
-	if instance.Status.ActiveGateImageHash != ver.Hash {
+	if instance.Status.ActiveGate.ImageHash != ver.Hash {
 		r.log.Info("Update found",
-			"oldVersion", instance.Status.ActiveGateImageVersion,
+			"oldVersion", instance.Status.ActiveGate.ImageVersion,
 			"newVersion", ver.Version,
-			"oldHash", instance.Status.ActiveGateImageHash,
+			"oldHash", instance.Status.ActiveGate.ImageHash,
 			"newHash", ver.Hash)
 		upd = true
 	}
 
-	instance.Status.ActiveGateImageVersion = ver.Version
-	instance.Status.ActiveGateImageHash = ver.Hash
+	instance.Status.ActiveGate.ImageVersion = ver.Version
+	instance.Status.ActiveGate.ImageHash = ver.Hash
 	return upd, nil
 }
 
-func (r *Reconciler) buildDesiredStatefulSet(instance *dynatracev1alpha1.DynaKube) (*appsv1.StatefulSet, error) {
+func (r *ReconcileKubeMon) buildDesiredStatefulSet(instance *dynatracev1alpha1.DynaKube) (*appsv1.StatefulSet, error) {
 	kubeUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -180,7 +168,7 @@ func (r *Reconciler) buildDesiredStatefulSet(instance *dynatracev1alpha1.DynaKub
 	return newStatefulSet(instance, kubeUID, cpHash)
 }
 
-func (r *Reconciler) getCustomPropsHash() (string, error) {
+func (r *ReconcileKubeMon) getCustomPropsHash() (string, error) {
 	cp := r.instance.Spec.KubernetesMonitoringSpec.CustomProperties
 	if cp == nil || (cp.Value == "" && cp.ValueFrom == "") {
 		return "", nil
@@ -213,7 +201,7 @@ func (r *Reconciler) getCustomPropsHash() (string, error) {
 	return strconv.FormatUint(uint64(hasher.Sum32()), 10), nil
 }
 
-func (r *Reconciler) createStatefulSetIfNotExists(desired *appsv1.StatefulSet) (*appsv1.StatefulSet, bool, error) {
+func (r *ReconcileKubeMon) createStatefulSetIfNotExists(desired *appsv1.StatefulSet) (*appsv1.StatefulSet, bool, error) {
 	currentStatefulSet, err := r.getCurrentStatefulSet(desired)
 	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
 		r.log.Info("creating new stateful set for kubernetes monitoring")
@@ -222,7 +210,7 @@ func (r *Reconciler) createStatefulSetIfNotExists(desired *appsv1.StatefulSet) (
 	return currentStatefulSet, false, err
 }
 
-func (r *Reconciler) updateStatefulSetIfOutdated(current *appsv1.StatefulSet, desired *appsv1.StatefulSet) (bool, error) {
+func (r *ReconcileKubeMon) updateStatefulSetIfOutdated(current *appsv1.StatefulSet, desired *appsv1.StatefulSet) (bool, error) {
 	if !hasStatefulSetChanged(current, desired) {
 		return false, nil
 	}
@@ -234,13 +222,7 @@ func (r *Reconciler) updateStatefulSetIfOutdated(current *appsv1.StatefulSet, de
 	return true, nil
 }
 
-func (r *Reconciler) updateInstanceStatus(instance *dynatracev1alpha1.DynaKube) error {
-	instance.Status.UpdatedTimestamp = metav1.Now()
-	instance.Status.Tokens = r.token.Name
-	return r.Status().Update(context.TODO(), instance)
-}
-
-func (r *Reconciler) getCurrentStatefulSet(desired *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
+func (r *ReconcileKubeMon) getCurrentStatefulSet(desired *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
 	var currentStatefulSet appsv1.StatefulSet
 	err := r.Get(context.TODO(), client.ObjectKey{Name: desired.Name, Namespace: desired.Namespace}, &currentStatefulSet)
 	if err != nil {
@@ -249,7 +231,7 @@ func (r *Reconciler) getCurrentStatefulSet(desired *appsv1.StatefulSet) (*appsv1
 	return &currentStatefulSet, nil
 }
 
-func (r *Reconciler) createStatefulSet(desired *appsv1.StatefulSet) error {
+func (r *ReconcileKubeMon) createStatefulSet(desired *appsv1.StatefulSet) error {
 	return r.Create(context.TODO(), desired)
 }
 

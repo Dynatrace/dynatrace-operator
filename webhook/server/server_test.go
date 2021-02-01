@@ -69,12 +69,13 @@ func TestPodInjection(t *testing.T) {
 		client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			&dynatracev1alpha1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-					Spec: dynatracev1alpha1.DynaKubeSpec{
+					Spec: dynatracev1alpha1.DynaKubeSpec {
 					APIURL: "https://test-api-url.com/api",
-					BaseOneAgentSpec: dynatracev1alpha1.BaseOneAgentSpec{
+					InfraMonitoring: dynatracev1alpha1.FullStackSpec {
+						Enabled: true,
 						UseImmutableImage: true,
 					},
-					OneAgentCodeModule: dynatracev1alpha1.OneAgentCodeModuleSpec{
+					CodeModules: dynatracev1alpha1.CodeModulesSpec{
 						Enabled: true,
 						Resources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
@@ -89,7 +90,7 @@ func TestPodInjection(t *testing.T) {
 					},
 			},
 			Status: dynatracev1alpha1.DynaKubeStatus{
-					BaseOneAgentStatus: dynatracev1alpha1.BaseOneAgentStatus{
+					OneAgent: dynatracev1alpha1.OneAgentStatus{
 						UseImmutableImage: true,
 					},
 			},
@@ -157,10 +158,10 @@ func TestPodInjection(t *testing.T) {
 			InitContainers: []corev1.Container{{
 				Name:    installOneAgentContainerName,
 				Image:   "test-api-url.com/linux/codemodule",
+				ImagePullPolicy: corev1.PullAlways,
 				Command: []string{"/usr/bin/env"},
 				Args:    []string{"bash", "/mnt/config/init.sh"},
 				Env: []corev1.EnvVar{
-					{Name: "FLAVOR", Value: "default"},
 					{Name: "TECHNOLOGIES", Value: "all"},
 					{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
 					{Name: "INSTALLER_URL", Value: ""},
@@ -171,11 +172,11 @@ func TestPodInjection(t *testing.T) {
 					{Name: "K8S_BASEPODNAME", Value: "test-pod"},
 					{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
 					{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-					{Name: "USE_IMMUTABLE_IMAGE", Value: "true"},
 					{Name: "CONTAINER_1_NAME", Value: "test-container"},
 					{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
 				},
 				VolumeMounts: []corev1.VolumeMount{
+					{Name: "init", MountPath: "/mnt/init"},
 					{Name: "oneagent", MountPath: "/mnt/oneagent"},
 					{Name: "oneagent-config", MountPath: "/mnt/config"},
 				},
@@ -208,457 +209,11 @@ func TestPodInjection(t *testing.T) {
 			}},
 			Volumes: []corev1.Volume{
 				{
-					Name: "oneagent",
+					Name: "init",
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
 				},
-				{
-					Name: "oneagent-config",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: dtwebhook.SecretConfigName,
-						},
-					},
-				},
-			},
-			ImagePullSecrets: []corev1.LocalObjectReference{
-				{
-					Name: "dynatrace-oneagent-pull-secret",
-				},
-			},
-		},
-	}, updPod)
-}
-
-func TestPodInjectionWithImage(t *testing.T) {
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	require.NoError(t, err)
-
-	inj := &podInjector{
-		client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
-			&dynatracev1alpha1.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-				Spec: dynatracev1alpha1.DynaKubeSpec{
-					BaseOneAgentSpec: dynatracev1alpha1.BaseOneAgentSpec{
-						UseImmutableImage: true,
-					},
-					OneAgentCodeModule: dynatracev1alpha1.OneAgentCodeModuleSpec{
-						Enabled: true,
-						Image: "customregistry/linux/codemodule",
-					},
-				},
-				Status: dynatracev1alpha1.DynaKubeStatus{
-					BaseOneAgentStatus: dynatracev1alpha1.BaseOneAgentStatus{
-						UseImmutableImage: true,
-					},
-				},
-			},
-			&corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
-				},
-			},
-		).Build(),
-		decoder:   decoder,
-		image:     "test-image",
-		namespace: "dynatrace",
-	}
-
-	basePod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-pod", Namespace: "test-namespace"},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{{
-				Name:  "test-container",
-				Image: "alpine",
-			}},
-		},
-	}
-	basePodBytes, err := json.Marshal(&basePod)
-	require.NoError(t, err)
-
-	req := admission.Request{
-		AdmissionRequest: admissionv1.AdmissionRequest{
-			Object: runtime.RawExtension{
-				Raw: basePodBytes,
-			},
-			Namespace: "test-namespace",
-		},
-	}
-	resp := inj.Handle(context.TODO(), req)
-	require.NoError(t, resp.Complete(req))
-
-	if !resp.Allowed {
-		require.FailNow(t, "failed to inject", resp.Result)
-	}
-
-	patchType := admissionv1.PatchTypeJSONPatch
-	assert.Equal(t, resp.PatchType, &patchType)
-
-	patch, err := jsonpatch.DecodePatch(resp.Patch)
-	require.NoError(t, err)
-
-	updPodBytes, err := patch.Apply(basePodBytes)
-	require.NoError(t, err)
-
-	var updPod corev1.Pod
-	require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
-
-	assert.Equal(t, corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-pod",
-			Namespace: "test-namespace",
-			Annotations: map[string]string{
-				"oneagent.dynatrace.com/injected": "true",
-			},
-		},
-		Spec: corev1.PodSpec{
-			InitContainers: []corev1.Container{{
-				Name:    installOneAgentContainerName,
-				Image:   "customregistry/linux/codemodule",
-				Command: []string{"/usr/bin/env"},
-				Args:    []string{"bash", "/mnt/config/init.sh"},
-				Env: []corev1.EnvVar{
-					{Name: "FLAVOR", Value: "default"},
-					{Name: "TECHNOLOGIES", Value: "all"},
-					{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
-					{Name: "INSTALLER_URL", Value: ""},
-					{Name: "FAILURE_POLICY", Value: "silent"},
-					{Name: "CONTAINERS_COUNT", Value: "1"},
-					{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
-					{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
-					{Name: "K8S_BASEPODNAME", Value: "test"},
-					{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
-					{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-					{Name: "USE_IMMUTABLE_IMAGE", Value: "true"},
-					{Name: "CONTAINER_1_NAME", Value: "test-container"},
-					{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{Name: "oneagent", MountPath: "/mnt/oneagent"},
-					{Name: "oneagent-config", MountPath: "/mnt/config"},
-				},
-			}},
-			Containers: []corev1.Container{{
-				Name:  "test-container",
-				Image: "alpine",
-				Env: []corev1.EnvVar{
-					{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{Name: "oneagent", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
-					{Name: "oneagent", MountPath: "/opt/dynatrace/oneagent-paas"},
-					{
-						Name:      "oneagent",
-						MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-						SubPath:   "container_test-container.conf",
-					},
-				},
-			}},
-			Volumes: []corev1.Volume{
-				{
-					Name: "oneagent",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
-				},
-				{
-					Name: "oneagent-config",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: dtwebhook.SecretConfigName,
-						},
-					},
-				},
-			},
-		},
-	}, updPod)
-}
-
-func TestPodInjectionWithImageAnnotation(t *testing.T) {
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	require.NoError(t, err)
-
-	inj := &podInjector{
-		client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
-			&dynatracev1alpha1.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: "dynatrace"},
-				Spec: dynatracev1alpha1.DynaKubeSpec{
-					BaseOneAgentSpec: dynatracev1alpha1.BaseOneAgentSpec{
-						UseImmutableImage: true,
-					},
-					OneAgentCodeModule: dynatracev1alpha1.OneAgentCodeModuleSpec{
-						Enabled: true,
-					},
-				},
-				Status: dynatracev1alpha1.DynaKubeStatus{
-					BaseOneAgentStatus: dynatracev1alpha1.BaseOneAgentStatus{
-						UseImmutableImage: true,
-					},
-				},
-			},
-			&corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
-				},
-			},
-		).Build(),
-		decoder:   decoder,
-		image:     "test-image",
-		namespace: "dynatrace",
-	}
-
-	basePod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-pod",
-			Namespace: "test-namespace",
-			Annotations: map[string]string{
-				"oneagent.dynatrace.com/image": "customregistry/linux/codemodule",
-			}},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{{
-				Name:  "test-container",
-				Image: "alpine",
-			}},
-		},
-	}
-	basePodBytes, err := json.Marshal(&basePod)
-	require.NoError(t, err)
-
-	req := admission.Request{
-		AdmissionRequest: admissionv1.AdmissionRequest{
-			Object: runtime.RawExtension{
-				Raw: basePodBytes,
-			},
-			Namespace: "test-namespace",
-		},
-	}
-	resp := inj.Handle(context.TODO(), req)
-	require.NoError(t, resp.Complete(req))
-
-	if !resp.Allowed {
-		require.FailNow(t, "failed to inject", resp.Result)
-	}
-
-	patchType := admissionv1.PatchTypeJSONPatch
-	assert.Equal(t, resp.PatchType, &patchType)
-
-	patch, err := jsonpatch.DecodePatch(resp.Patch)
-	require.NoError(t, err)
-
-	updPodBytes, err := patch.Apply(basePodBytes)
-	require.NoError(t, err)
-
-	var updPod corev1.Pod
-	require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
-
-	assert.Equal(t, corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-pod",
-			Namespace: "test-namespace",
-			Annotations: map[string]string{
-				"oneagent.dynatrace.com/injected": "true",
-				"oneagent.dynatrace.com/image":    "customregistry/linux/codemodule",
-			},
-		},
-		Spec: corev1.PodSpec{
-			InitContainers: []corev1.Container{{
-				Name:    installOneAgentContainerName,
-				Image:   "customregistry/linux/codemodule",
-				Command: []string{"/usr/bin/env"},
-				Args:    []string{"bash", "/mnt/config/init.sh"},
-				Env: []corev1.EnvVar{
-					{Name: "FLAVOR", Value: "default"},
-					{Name: "TECHNOLOGIES", Value: "all"},
-					{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
-					{Name: "INSTALLER_URL", Value: ""},
-					{Name: "FAILURE_POLICY", Value: "silent"},
-					{Name: "CONTAINERS_COUNT", Value: "1"},
-					{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
-					{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
-					{Name: "K8S_BASEPODNAME", Value: "test"},
-					{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
-					{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-					{Name: "USE_IMMUTABLE_IMAGE", Value: "true"},
-					{Name: "CONTAINER_1_NAME", Value: "test-container"},
-					{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{Name: "oneagent", MountPath: "/mnt/oneagent"},
-					{Name: "oneagent-config", MountPath: "/mnt/config"},
-				},
-			}},
-			Containers: []corev1.Container{{
-				Name:  "test-container",
-				Image: "alpine",
-				Env: []corev1.EnvVar{
-					{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{Name: "oneagent", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
-					{Name: "oneagent", MountPath: "/opt/dynatrace/oneagent-paas"},
-					{
-						Name:      "oneagent",
-						MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-						SubPath:   "container_test-container.conf",
-					},
-				},
-			}},
-			Volumes: []corev1.Volume{
-				{
-					Name: "oneagent",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
-				},
-				{
-					Name: "oneagent-config",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: dtwebhook.SecretConfigName,
-						},
-					},
-				},
-			},
-		},
-	}, updPod)
-}
-
-func TestPodInjectionWithImageAnnotationOverwrite(t *testing.T) {
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	require.NoError(t, err)
-
-	inj := &podInjector{
-		client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
-			&dynatracev1alpha1.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-				Spec: dynatracev1alpha1.DynaKubeSpec{
-					BaseOneAgentSpec: dynatracev1alpha1.BaseOneAgentSpec{
-						UseImmutableImage: true,
-					},
-					OneAgentCodeModule: dynatracev1alpha1.OneAgentCodeModuleSpec{
-						Enabled: true,
-					},
-				},
-				Status: dynatracev1alpha1.DynaKubeStatus{
-					BaseOneAgentStatus: dynatracev1alpha1.BaseOneAgentStatus{
-						UseImmutableImage: true,
-					},
-				},
-			},
-			&corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
-				},
-			},
-		).Build(),
-		decoder:   decoder,
-		image:     "test-image",
-		namespace: "dynatrace",
-	}
-
-	basePod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-pod",
-			Namespace: "test-namespace",
-			Annotations: map[string]string{
-				"oneagent.dynatrace.com/image":         "tenant123/linux/codemodule",
-				"oneagent.dynatrace.com/installer-url": "installerurl",
-			}},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{{
-				Name:  "test-container",
-				Image: "alpine",
-			}},
-		},
-	}
-	basePodBytes, err := json.Marshal(&basePod)
-	require.NoError(t, err)
-
-	req := admission.Request{
-		AdmissionRequest: admissionv1.AdmissionRequest{
-			Object: runtime.RawExtension{
-				Raw: basePodBytes,
-			},
-			Namespace: "test-namespace",
-		},
-	}
-	resp := inj.Handle(context.TODO(), req)
-	require.NoError(t, resp.Complete(req))
-
-	if !resp.Allowed {
-		require.FailNow(t, "failed to inject", resp.Result)
-	}
-
-	patchType := admissionv1.PatchTypeJSONPatch
-	assert.Equal(t, resp.PatchType, &patchType)
-
-	patch, err := jsonpatch.DecodePatch(resp.Patch)
-	require.NoError(t, err)
-
-	updPodBytes, err := patch.Apply(basePodBytes)
-	require.NoError(t, err)
-
-	var updPod corev1.Pod
-	require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
-
-	assert.Equal(t, corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-pod",
-			Namespace: "test-namespace",
-			Annotations: map[string]string{
-				"oneagent.dynatrace.com/injected":      "true",
-				"oneagent.dynatrace.com/image":         "tenant123/linux/codemodule",
-				"oneagent.dynatrace.com/installer-url": "installerurl",
-			},
-		},
-		Spec: corev1.PodSpec{
-			InitContainers: []corev1.Container{{
-				Name:    installOneAgentContainerName,
-				Image:   "test-image",
-				Command: []string{"/usr/bin/env"},
-				Args:    []string{"bash", "/mnt/config/init.sh"},
-				Env: []corev1.EnvVar{
-					{Name: "FLAVOR", Value: "default"},
-					{Name: "TECHNOLOGIES", Value: "all"},
-					{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
-					{Name: "INSTALLER_URL", Value: "installerurl"},
-					{Name: "FAILURE_POLICY", Value: "silent"},
-					{Name: "CONTAINERS_COUNT", Value: "1"},
-					{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
-					{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
-					{Name: "K8S_BASEPODNAME", Value: "test"},
-					{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
-					{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-					{Name: "USE_IMMUTABLE_IMAGE", Value: "true"},
-					{Name: "CONTAINER_1_NAME", Value: "test-container"},
-					{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{Name: "oneagent", MountPath: "/mnt/oneagent"},
-					{Name: "oneagent-config", MountPath: "/mnt/config"},
-				},
-			}},
-			Containers: []corev1.Container{{
-				Name:  "test-container",
-				Image: "alpine",
-				Env: []corev1.EnvVar{
-					{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{Name: "oneagent", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
-					{Name: "oneagent", MountPath: "/opt/dynatrace/oneagent-paas"},
-					{
-						Name:      "oneagent",
-						MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-						SubPath:   "container_test-container.conf",
-					},
-				},
-			}},
-			Volumes: []corev1.Volume{
 				{
 					Name: "oneagent",
 					VolumeSource: corev1.VolumeSource{

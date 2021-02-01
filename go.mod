@@ -8,10 +8,11 @@ require (
 	github.com/go-logr/logr v0.3.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/common v0.15.0
+	github.com/prometheus/common v0.15.0 // indirect
+	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
 	go.uber.org/zap v1.16.0
-	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	gotest.tools v2.2.0+incompatible
 	istio.io/api v0.0.0-20201217173512-1f62aaeb5ee3
 	istio.io/client-go v1.8.1

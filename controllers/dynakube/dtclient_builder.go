@@ -1,4 +1,4 @@
-package activegate
+package dynakube
 
 /**
 The following functions have been copied from dynatrace-oneagent-operator
@@ -13,6 +13,7 @@ and are candidates to be made into a library:
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -32,7 +33,7 @@ func BuildDynatraceClient(rtc client.Client, instance *dynatracev1alpha1.DynaKub
 	}
 	namespace := instance.GetNamespace()
 	spec := instance.Spec
-	tokens, err := NewTokens(secret)
+	tokens, err := utils.NewTokens(secret)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -60,6 +61,13 @@ func newOptions() *options {
 	}
 }
 
+// StaticDynatraceClient creates a DynatraceClientFunc always returning c.
+func StaticDynatraceClient(c dtclient.Client) DynatraceClientFunc {
+	return func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error) {
+		return c, nil
+	}
+}
+
 func (opts *options) appendNetworkZone(spec *dynatracev1alpha1.DynaKubeSpec) {
 	if spec.NetworkZone != "" {
 		opts.Opts = append(opts.Opts, dtclient.NetworkZone(spec.NetworkZone))
@@ -79,7 +87,7 @@ func (opts *options) appendProxySettings(rtc client.Client, spec *dynatracev1alp
 				return fmt.Errorf("failed to get proxy secret: %w", err)
 			}
 
-			proxyURL, err := ExtractToken(proxySecret, Proxy)
+			proxyURL, err := utils.ExtractToken(proxySecret, Proxy)
 			if err != nil {
 				return fmt.Errorf("failed to extract proxy secret field: %w", err)
 			}

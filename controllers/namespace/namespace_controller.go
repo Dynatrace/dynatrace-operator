@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"os"
 	"text/template"
 	"time"
 
@@ -29,8 +28,6 @@ func Add(mgr manager.Manager, ns string) error {
 		apiReader:               mgr.GetAPIReader(),
 		namespace:               ns,
 		logger:                  log.Log.WithName("namespaces.controller"),
-		pullSecretGeneratorFunc: utils.GeneratePullSecretData,
-		addNodeProps:            os.Getenv("ONEAGENT_OPERATOR_DEBUG_NODE_PROPERTIES") == "true",
 	})
 }
 
@@ -55,13 +52,10 @@ type ReconcileNamespaces struct {
 	apiReader               client.Reader
 	logger                  logr.Logger
 	namespace               string
-	pullSecretGeneratorFunc func(c client.Client, oa dynatracev1alpha1.DynaKube, tkns *corev1.Secret) (map[string][]byte, error)
-	addNodeProps            bool
 }
 
 func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	targetNS := request.Name
-
 	log := r.logger.WithValues("name", targetNS)
 	log.Info("reconciling Namespace")
 
@@ -81,7 +75,6 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, nil
 	}
 
-	// TODO(lrgar): to replace with list of OneAgentIM objects.
 	var ims dynatracev1alpha1.DynaKubeList
 	if err := r.client.List(ctx, &ims, client.InNamespace(r.namespace)); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to query OneAgentIMs: %w", err)
@@ -94,15 +87,17 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 
 	imNodes := map[string]string{}
 	for i := range ims.Items {
-		if s := &ims.Items[i].Status; s.BaseOneAgentStatus.EnvironmentID != "" {
-			for key := range s.OneAgentStatus.Instances {
-				imNodes[key] = s.BaseOneAgentStatus.EnvironmentID
+		if s := &ims.Items[i].Status; s.EnvironmentID != "" && ims.Items[i].Spec.InfraMonitoring.Enabled {
+			for key := range s.OneAgent.Instances {
+				if key != "" {
+					imNodes[key] = s.EnvironmentID
+				}
 			}
 		}
 	}
 
 	var tkns corev1.Secret
-	if err := r.client.Get(ctx, client.ObjectKey{Name: utils.GetTokensName(apm), Namespace: r.namespace}, &tkns); err != nil {
+	if err := r.client.Get(ctx, client.ObjectKey{Name: utils.GetTokensName(&apm), Namespace: r.namespace}, &tkns); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to query tokens: %w", err)
 	}
 
@@ -110,7 +105,6 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to generate init script: %w", err)
 	}
-	script.AddNodeProps = r.addNodeProps
 
 	data, err := script.generate()
 	if err != nil {
@@ -124,17 +118,6 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	if apm.Spec.OneAgentCodeModule.Image == "" {
-		pullSecretData, err := r.pullSecretGeneratorFunc(r.client, apm, &tkns)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		err = utils.CreateOrUpdateSecretIfNotExists(r.client, r.apiReader, webhook.PullSecretName, targetNS, pullSecretData, corev1.SecretTypeDockerConfigJson, log)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-	}
-
 	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 
@@ -144,7 +127,6 @@ type script struct {
 	Proxy        string
 	TrustedCAs   []byte
 	ClusterID    string
-	AddNodeProps bool
 	IMNodes      map[string]string
 }
 
@@ -194,17 +176,16 @@ if [[ -f "/var/lib/dynatrace/oneagent/agent/config/ruxithost.id" ]]; then
 	echo "WARNING: full-stack OneAgent has been injected to this container. App-only and full-stack injection can conflict with each other."
 fi
 
-api_url="{{.OneAgent.Spec.APIURL}}"
+api_url="{{.DynaKube.Spec.APIURL}}"
 config_dir="/mnt/config"
 target_dir="/mnt/oneagent"
 paas_token="{{.PaaSToken}}"
 proxy="{{.Proxy}}"
-skip_cert_checks="{{if .OneAgent.Spec.SkipCertCheck}}true{{else}}false{{end}}"
+skip_cert_checks="{{if .DynaKube.Spec.SkipCertCheck}}true{{else}}false{{end}}"
 custom_ca="{{if .TrustedCAs}}true{{else}}false{{end}}"
 fail_code=0
 cluster_id="{{.ClusterID}}"
 
-{{- if .AddNodeProps}}
 declare -A im_nodes
 im_nodes=(
 	{{- range $node, $tenant := .IMNodes}}
@@ -215,9 +196,8 @@ im_nodes=(
 set +u
 host_tenant="${im_nodes[${K8S_NODE_NAME}]}"
 set -u
-{{- end}}
 
-archive=$(mktemp)
+archive="/mnt/init/tmp.$RANDOM"
 
 if [[ "${FAILURE_POLICY}" == "fail" ]]; then
 	fail_code=1
@@ -284,33 +264,25 @@ do
 	container_conf_file="${target_dir}/container_${container_name}.conf"
 
 	echo "Writing ${container_conf_file} file..."
-	cat <<EOF >${container_conf_file}
-[container]
+	echo "[container]
 containerName ${container_name}
 imageName ${container_image}
 k8s_fullpodname ${K8S_PODNAME}
 k8s_poduid ${K8S_PODUID}
 k8s_containername ${container_name}
 k8s_basepodname ${K8S_BASEPODNAME}
-k8s_namespace ${K8S_NAMESPACE}
-EOF
+k8s_namespace ${K8S_NAMESPACE}">>${container_conf_file}
 
-{{- if .AddNodeProps}}
 	if [[ ! -z "${host_tenant}" ]]; then		
-		if [[ "{{.OneAgent.Status.EnvironmentID}}" == "${host_tenant}" ]]; then
-			cat <<EOF >>${container_conf_file}
-k8s_node_name ${K8S_NODE_NAME}
-k8s_cluster_id ${cluster_id}
-EOF
+		if [[ "{{.DynaKube.Status.EnvironmentID}}" == "${host_tenant}" ]]; then
+			echo "k8s_node_name ${K8S_NODE_NAME}
+k8s_cluster_id ${cluster_id}">>${container_conf_file}
 		fi
 
-		cat <<EOF >>${container_conf_file}
-
+	echo "
 [host]
-tenant ${host_tenant}
-EOF
+tenant ${host_tenant}">>${container_conf_file}
 	fi
-{{- end}}
 done
 `))
 

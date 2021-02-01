@@ -42,16 +42,20 @@ func TestReconcile_InstallerDowngrade(t *testing.T) {
 	namespace := "dynatrace"
 	oaName := "oneagent"
 	dynakube := dynatracev1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: oaName,
+			Namespace: namespace,
+		},
 		Spec: dynatracev1alpha1.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: oaName,
-			OneAgent: dynatracev1alpha1.OneAgentSpec{
+			ClassicFullStack: dynatracev1alpha1.FullStackSpec{
 				Enabled: true,
 				WaitReadySeconds: &wait,
 			},
 		},
 		Status: dynatracev1alpha1.DynaKubeStatus{
-			OneAgentStatus: dynatracev1alpha1.OneAgentStatus{
+			OneAgent: dynatracev1alpha1.OneAgentStatus{
 				Version: "1.206.0.20200101-000000",
 			},
 		},
@@ -92,16 +96,14 @@ func TestReconcile_InstallerDowngrade(t *testing.T) {
 		apiReader: c,
 		scheme:    scheme.Scheme,
 		logger:    consoleLogger,
-		dtcReconciler: &utils.DynatraceClientReconciler{
-			Client:              c,
-			DynatraceClientFunc: utils.StaticDynatraceClient(dtcMock),
-			UpdatePaaSToken:     true,
-			UpdateAPIToken:      true,
-		},
+		fullStack: &dynakube.Spec.ClassicFullStack,
+		dtc: dtcMock,
+		webhookInjection: false,
+		instance: &dynakube,
 	}
 
 	// Fails because the Pod didn't get recreated. Ignore since that isn't what we're checking on this test.
-	r.reconcileVersionInstaller(context.TODO(), consoleLogger, &dynakube, dtcMock)
+	r.reconcileVersionInstaller(context.TODO(), consoleLogger, &dynakube, r.fullStack, dtcMock)
 
 	// These Pods should not be restarted, so we should be able to query that the Pod is still there and get no errors.
 	assert.NoError(t, c.Get(context.TODO(), types.NamespacedName{Name: "future-pod", Namespace: "dynatrace"}, &corev1.Pod{}))

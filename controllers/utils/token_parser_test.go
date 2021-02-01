@@ -1,4 +1,4 @@
-package activegate
+package utils
 
 import (
 	"testing"
@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	testName             = "test-name"
 	testValue            = "test-value"
 	testKey              = "test-key"
 	testValueAlternative = "test-alternative-value"

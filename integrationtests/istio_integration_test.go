@@ -6,7 +6,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-oneagent-operator/api/v1alpha1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,15 +18,16 @@ func TestReconcileOneAgent_ReconcileIstio(t *testing.T) {
 
 	defer e.Stop()
 
-	e.AddOneAgent("oneagent", &dynatracev1alpha1.OneAgentSpec{
-		BaseOneAgentSpec: dynatracev1alpha1.BaseOneAgentSpec{
-			APIURL:      DefaultTestAPIURL,
-			Tokens:      "token-test",
-			EnableIstio: true,
+	e.AddOneAgent("dynakube", &dynatracev1alpha1.DynaKubeSpec{
+		APIURL:      DefaultTestAPIURL,
+		Tokens:      "token-test",
+		EnableIstio: true,
+		ClassicFullStack: dynatracev1alpha1.FullStackSpec{
+			Enabled: true,
 		},
 	})
 
-	req := newReconciliationRequest("oneagent")
+	req := newReconciliationRequest("dynakube")
 
 	// For the first reconciliation, we only create Istio objects for the API URL.
 	_, err = e.Reconciler.Reconcile(context.TODO(), req)
@@ -57,19 +58,21 @@ func TestReconcileOneAgent_ReconcileIstioWithMultipleOneAgentObjects(t *testing.
 
 	defer e.Stop()
 
-	e.AddOneAgent("oneagent1", &dynatracev1alpha1.OneAgentSpec{
-		BaseOneAgentSpec: dynatracev1alpha1.BaseOneAgentSpec{
-			APIURL:      DefaultTestAPIURL,
-			Tokens:      "token-test",
-			EnableIstio: true,
+	e.AddOneAgent("oneagent1", &dynatracev1alpha1.DynaKubeSpec{
+		APIURL:      DefaultTestAPIURL,
+		Tokens:      "token-test",
+		EnableIstio: true,
+		ClassicFullStack: dynatracev1alpha1.FullStackSpec{
+			Enabled: true,
 		},
 	})
 
-	e.AddOneAgent("oneagent2", &dynatracev1alpha1.OneAgentSpec{
-		BaseOneAgentSpec: dynatracev1alpha1.BaseOneAgentSpec{
-			APIURL:      DefaultTestAPIURL,
-			Tokens:      "token-test",
-			EnableIstio: true,
+	e.AddOneAgent("oneagent2", &dynatracev1alpha1.DynaKubeSpec{
+		APIURL:      DefaultTestAPIURL,
+		Tokens:      "token-test",
+		EnableIstio: true,
+		ClassicFullStack: dynatracev1alpha1.FullStackSpec{
+			Enabled: true,
 		},
 	})
 

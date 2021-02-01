@@ -17,11 +17,9 @@ limitations under the License.
 package main
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/namespace"
 	"github.com/Dynatrace/dynatrace-operator/controllers/nodes"
-	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/controllers/oneagentapm"
-	"github.com/prometheus/common/log"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -37,7 +35,8 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 		MetricsBindAddress:      ":8080",
 		Port:                    8383,
 		LeaderElection:          true,
-		LeaderElectionID:        "dynatrace-oneagent-operator-lock",
+		LeaderElectionID:        "dynatrace-operator-lock",
+		LeaderElectionResourceLock: "configmaps",
 		LeaderElectionNamespace: ns,
 		HealthProbeBindAddress:  "0.0.0.0:10080",
 	})
@@ -56,8 +55,7 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 	}
 
 	for _, f := range []func(manager.Manager, string) error{
-		oneagent.Add,
-		oneagentapm.Add,
+		dynakube.Add,
 		namespace.Add,
 		nodes.Add,
 	} {

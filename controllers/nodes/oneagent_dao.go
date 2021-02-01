@@ -33,7 +33,7 @@ func (r *ReconcileNodes) filterOneAgentFromList(oneAgentList *dynatracev1alpha1.
 	nodeName string) *dynatracev1alpha1.DynaKube {
 
 	for _, oneAgent := range oneAgentList.Items {
-		items := oneAgent.Status.OneAgentStatus.Instances
+		items := oneAgent.Status.OneAgent.Instances
 		if _, ok := items[nodeName]; ok {
 			return &oneAgent
 		}

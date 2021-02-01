@@ -40,14 +40,22 @@ type DynaKubeSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Network Zone",order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	NetworkZone string `json:"networkZone,omitempty"`
 
-	BaseOneAgentSpec BaseOneAgentSpec `json:"baseOneAgentSpec,omitempty"`
-
-	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
-
-	OneAgentCodeModule OneAgentCodeModuleSpec `json:"oneAgentCodeModule,omitempty"`
+	// If enabled, Istio on the cluster will be configured automatically to allow access to the Dynatrace environment
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Enable Istio automatic management"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	EnableIstio bool `json:"enableIstio,omitempty"`
 
 	// General configuration about ActiveGate instances
 	ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
+
+	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
+
+	CodeModules CodeModulesSpec `json:"codeModules,omitempty"`
+
+	InfraMonitoring FullStackSpec `json:"infraMonitoring,omitempty"`
+
+	ClassicFullStack FullStackSpec `json:"classicFullStack,omitempty"`
 
 	// Enables Kubernetes Monitoring
 	KubernetesMonitoringSpec KubernetesMonitoringSpec `json:"kubernetesMonitoring,omitempty"`
@@ -60,58 +68,204 @@ type ActiveGateSpec struct {
 	Image string `json:"image,omitempty"`
 }
 
-type KubernetesMonitoringSpec struct {
+type OneAgentSpec struct {
+	// Optional: If specified, indicates the OneAgent version to use
+	// Defaults to latest
+	// Example: {major.minor.release} - 1.200.0
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="OneAgent version"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	Version string `json:"version,omitempty"`
+
+	// Optional: the Dynatrace installer container image
+	// Defaults to docker.io/dynatrace/oneagent:latest for Kubernetes and to registry.connect.redhat.com/dynatrace/oneagent for OpenShift
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Image"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
+	Image string `json:"image,omitempty"`
+
+	// Disable automatic restarts of OneAgent pods in case a new version is available
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Automatically update Agent"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	AutoUpdate *bool `json:"autoUpdate,omitempty"`
+}
+
+type CodeModulesSpec struct {
 	// Enables Kubernetes Monitoring
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Kubernetes Monitoring",order=10,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	Enabled bool `json:"enabled,omitempty"`
 
+	// Optional: define resources requests and limits for the initContainer
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Resource Requirements"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:resourceRequirements"
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+type FullStackSpec struct {
+	// Enables Kubernetes Monitoring
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
+	Enabled bool `json:"enabled,omitempty"`
+
+	// Node selector to control the selection of nodes (optional)
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Node Selector"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:selector:Node"
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// Optional: set tolerations for the OneAgent pods
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Tolerations"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:io.kubernetes:Tolerations"
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
+	// Optional: Defines the time to wait until OneAgent pod is ready after update - default 300 sec
+	// +kubebuilder:validation:Minimum=0
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Wait seconds until ready"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:number"
+	WaitReadySeconds *uint16 `json:"waitReadySeconds,omitempty"`
+
+	// Optional: define resources requests and limits for single pods
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Resource Requirements"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:resourceRequirements"
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Optional: Arguments to the OneAgent installer
+	// +listType=set
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="OneAgent installer arguments"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
+	Args []string `json:"args,omitempty"`
+
+	// Optional: List of environment variables to set for the installer
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="OneAgent environment variable installer arguments"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Optional: If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that
+	// name. If not specified the setting will be removed from the DaemonSet.
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Priority Class name"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:io.kubernetes:PriorityClass"
+	PriorityClassName string `json:"priorityClassName,omitempty"`
+
+	// Optional: Sets DNS Policy for the OneAgent pods
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="DNS Policy"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
+	DNSPolicy corev1.DNSPolicy `json:"dnsPolicy,omitempty"`
+
+	// Optional: set custom Service Account Name used with OneAgent pods
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Service Account name"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:io.kubernetes:ServiceAccount"
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	// Optional: Adds additional labels for the OneAgent pods
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Labels"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Optional: Runs the OneAgent Pods as unprivileged (Early Adopter)
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Use unprivileged mode"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	UseUnprivilegedMode *bool `json:"useUnprivilegedMode,omitempty"`
+
+	// Defines if you want to use the immutable image or the installer
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Use immutable image"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
+}
+
+type KubernetesMonitoringSpec struct {
+	// Enables Kubernetes Monitoring
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
+	Enabled bool `json:"enabled,omitempty"`
+
+	// The public API endpoint of the Kubernetes instance
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes API Endpoint"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	KubernetesAPIEndpoint string `json:"kubernetesApiEndpoint,omitempty"`
+
 	// Amount of replicas for your DynaKube
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=11,xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Replicas"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:number"
 	Replicas *int32 `json:"replicas,omitempty"`
 
+	// Optional: set custom Service Account Name used with ActiveGate pods
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Service Account name"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:io.kubernetes:ServiceAccount"
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	// Optional: define resources requests and limits for single ActiveGate pods
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Resource Requirements"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:resourceRequirements"
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Optional: Node selector to control the selection of nodes
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Node Selector"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:selector:Node"
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+
+	// Optional: set tolerations for the ActiveGatePods pods
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Tolerations"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:io.kubernetes:Tolerations"
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+
+	// Optional: Adds additional labels for the ActiveGate pods
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Labels"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
+	Labels map[string]string `json:"labels,omitempty"`
+
+	// Optional: Adds additional arguments for the ActiveGate instances
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Arguments"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
+	Args []string `json:"args,omitempty"`
+
+	// Optional: List of environment variables to set for the ActiveGate
+	// +listType=set
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Environment variables"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
 	// Optional: Set activation group for ActiveGate
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Activation group",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Activation group"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	Group string `json:"group,omitempty"`
 
 	// Optional: Add a custom properties file by providing it as a value or reference it from a secret
 	// If referenced from a secret, make sure the key is called 'customProperties'
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Custom properties"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	CustomProperties *DynaKubeValueSource `json:"customProperties,omitempty"`
-
-	// Optional: define resources requests and limits for single ActiveGate pods
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-
-	// Optional: Node selector to control the selection of nodes
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Node Selector",order=16,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:Node"
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-
-	// Optional: set tolerations for the ActiveGatePods pods
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tolerations",order=17,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
-	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
-
-	// Optional: Adds additional labels for the ActiveGate pods
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Labels",order=18,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	Labels map[string]string `json:"labels,omitempty"`
-
-	// Optional: Adds additional arguments for the ActiveGate instances
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Arguments",order=19,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
-	Args []string `json:"args,omitempty"`
-
-	// Optional: List of environment variables to set for the ActiveGate
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Environment variables",order=20,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
-	// +listType=set
-	Env []corev1.EnvVar `json:"env,omitempty"`
-
-	// Optional: set custom Service Account Name used with ActiveGate pods
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Service Account name",order=21,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ServiceAccount"}
-	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 type DynaKubeValueSource struct {
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom properties value",order=13,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	Value string `json:"value,omitempty"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom properties secret",order=14,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
+	Value     string `json:"value,omitempty"`
 	ValueFrom string `json:"valueFrom,omitempty"`
 }
 
@@ -126,6 +280,9 @@ type DynaKubeProxy struct {
 // DynaKubeStatus defines the observed state of DynaKube
 // +k8s:openapi-gen=true
 type DynaKubeStatus struct {
+	// Defines the current state (Running, Updating, Error, ...)
+	Phase DynaKubePhaseType `json:"phase,omitempty"`
+
 	// UpdatedTimestamp indicates when the instance was last updated
 	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Last Updated",order=1,xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
@@ -136,21 +293,110 @@ type DynaKubeStatus struct {
 	// LastPaaSTokenProbeTimestamp tracks when the last request for the PaaS token validity was sent
 	LastPaaSTokenProbeTimestamp *metav1.Time `json:"lastPaaSTokenProbeTimestamp,omitempty"`
 
-	// ActiveGateImageHash contains the last image hash seen.
-	ActiveGateImageHash string `json:"activeGateImageHash,omitempty"`
-
-	// ActiveGateImageVersion contains the version from the last image seen.
-	ActiveGateImageVersion string `json:"activeGateImageVersion,omitempty"`
-
 	// Credentials used to connect back to Dynatrace.
 	Tokens string `json:"tokens,omitempty"`
 
-	BaseOneAgentStatus BaseOneAgentStatus `json:"baseOneAgentStatus,omitempty"`
+	// LastClusterVersionProbeTimestamp indicates when the cluster's version was last checked
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.displayName="Last cluster version probed"
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
+	LastClusterVersionProbeTimestamp *metav1.Time `json:"lastClusterVersionProbeTimestamp,omitempty"`
 
-	OneAgentStatus OneAgentStatus `json:"oneagentStatus,omitempty"`
+	// EnvironmentID contains the environment ID corresponding to the API URL
+	EnvironmentID string `json:"environmentID,omitempty"`
 
-	OneAgentCodeModuleStatus OneAgentCodeModuleStatus `json:"oneagentCodeModuleStatus,omitempty"`
+	// Conditions includes status about the current state of the instance
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	ActiveGate ActiveGateStatus `json:"activeGate,omitempty"`
+
+	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
 }
+
+type ActiveGateStatus struct {
+	// ImageHash contains the last image hash seen.
+	ImageHash string `json:"imageHash,omitempty"`
+
+	// ImageVersion contains the version from the last image seen.
+	ImageVersion string `json:"imageVersion,omitempty"`
+}
+
+type OneAgentStatus struct {
+	// UseImmutableImage is set when an immutable image is currently in use
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.displayName="Using immutable image"
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
+
+	// Dynatrace version being used.
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Version"
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
+	Version string `json:"version,omitempty"`
+
+	Instances map[string]OneAgentInstance `json:"instances,omitempty"`
+
+	// LastUpdateProbeTimestamp defines the last timestamp when the querying for updates have been done
+	LastUpdateProbeTimestamp *metav1.Time `json:"lastUpdateProbeTimestamp,omitempty"`
+}
+
+type OneAgentInstance struct {
+	PodName   string `json:"podName,omitempty"`
+	Version   string `json:"version,omitempty"`
+	IPAddress string `json:"ipAddress,omitempty"`
+}
+
+type DynaKubePhaseType string
+
+const (
+	Running   DynaKubePhaseType = "Running"
+	Deploying DynaKubePhaseType = "Deploying"
+	Error     DynaKubePhaseType = "Error"
+)
+
+// SetPhase sets the status phase on the DynaKube object
+func (dk *DynaKubeStatus) SetPhase(phase DynaKubePhaseType) bool {
+	upd := phase != dk.Phase
+	dk.Phase = phase
+	return upd
+}
+
+// SetPhaseOnError fills the phase with the Error value in case of any error
+func (dk *DynaKubeStatus) SetPhaseOnError(err error) bool {
+	if err != nil {
+		return dk.SetPhase(Error)
+	}
+	return false
+}
+
+const (
+	// APITokenConditionType identifies the API Token validity condition
+	APITokenConditionType string = "APIToken"
+
+	// PaaSTokenConditionType identifies the PaaS Token validity condition
+	PaaSTokenConditionType string = "PaaSToken"
+)
+
+// Possible reasons for ApiToken and PaaSToken conditions
+const (
+	// ReasonTokenReady is set when a token has passed verifications
+	ReasonTokenReady string = "TokenReady"
+
+	// ReasonTokenSecretNotFound is set when the referenced secret can't be found
+	ReasonTokenSecretNotFound string = "TokenSecretNotFound"
+
+	// ReasonTokenMissing is set when the field is missing on the secret
+	ReasonTokenMissing string = "TokenMissing"
+
+	// ReasonTokenUnauthorized is set when a token is unauthorized to query the Dynatrace API
+	ReasonTokenUnauthorized string = "TokenUnauthorized"
+
+	// ReasonTokenScopeMissing is set when the token is missing the required scope for the Dynatrace API
+	ReasonTokenScopeMissing string = "TokenScopeMissing"
+
+	// ReasonTokenError is set when an unknown error has been found when verifying the token
+	ReasonTokenError string = "TokenError"
+)
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 

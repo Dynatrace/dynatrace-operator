@@ -5,11 +5,10 @@ package integrationtests
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"os"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"
@@ -32,16 +31,16 @@ const (
 var testEnvironmentCRDs = []client.Object{
 	&apiextensionsv1beta1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "oneagents.dynatrace.com",
+			Name: "dynakubes.dynatrace.com",
 		},
 		Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
 			Group:   "dynatrace.com",
 			Version: "v1alpha1",
 			Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
-				Kind:     "OneAgent",
-				ListKind: "OneAgentList",
-				Plural:   "oneagents",
-				Singular: "oneagent",
+				Kind:     "DynaKube",
+				ListKind: "DynaKubeList",
+				Plural:   "dynakubes",
+				Singular: "dynakube",
 			},
 			Scope: apiextensionsv1beta1.NamespaceScoped,
 			Subresources: &apiextensionsv1beta1.CustomResourceSubresources{
@@ -99,7 +98,7 @@ func init() {
 type ControllerTestEnvironment struct {
 	CommunicationHosts []string
 	Client             client.Client
-	Reconciler         *oneagent.ReconcileOneAgent
+	Reconciler         *dynakube.ReconcileDynaKube
 
 	server *envtest.Environment
 }
@@ -152,8 +151,7 @@ func newTestEnvironment() (*ControllerTestEnvironment, error) {
 		Client:             kubernetesClient,
 		CommunicationHosts: communicationHosts,
 	}
-	environment.Reconciler = oneagent.NewOneAgentReconciler(kubernetesClient, kubernetesClient, scheme.Scheme, cfg,
-		zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)), mockDynatraceClientFunc(&environment.CommunicationHosts))
+	environment.Reconciler = dynakube.NewDynaKubeReconciler(kubernetesClient, kubernetesClient, scheme.Scheme, mockDynatraceClientFunc(&environment.CommunicationHosts), zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)), cfg)
 
 	return environment, nil
 }
@@ -162,15 +160,13 @@ func (e *ControllerTestEnvironment) Stop() error {
 	return e.server.Stop()
 }
 
-func (e *ControllerTestEnvironment) AddOneAgent(n string, s *dynatracev1alpha1.OneAgentSpec) error {
+func (e *ControllerTestEnvironment) AddOneAgent(n string, s *dynatracev1alpha1.DynaKubeSpec) error {
 	return e.Client.Create(context.TODO(), &dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      n,
 			Namespace: DefaultTestNamespace,
 		},
-		Spec: dynatracev1alpha1.DynaKubeSpec{
-			OneAgent: *s,
-		},
+		Spec: *s,
 	})
 }
 
@@ -183,8 +179,8 @@ func newReconciliationRequest(oaName string) reconcile.Request {
 	}
 }
 
-func mockDynatraceClientFunc(communicationHosts *[]string) utils.DynatraceClientFunc {
-	return func(client client.Client, oa dynatracev1alpha1.DynaKube, _, _ bool) (dtclient.Client, error) {
+func mockDynatraceClientFunc(communicationHosts *[]string) dynakube.DynatraceClientFunc {
+	return func(client client.Client, oa *dynatracev1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
 		commHosts := make([]dtclient.CommunicationHost, len(*communicationHosts))
 		for i, c := range *communicationHosts {
 			commHosts[i] = dtclient.CommunicationHost{Protocol: "https", Host: c, Port: 443}

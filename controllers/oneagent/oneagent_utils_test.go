@@ -51,7 +51,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 
 	ds1 := &appsv1.DaemonSet{ObjectMeta: oaKey}
 
-	ds2, err := newDaemonSetForCR(consoleLogger, &dynatracev1alpha1.DynaKube{ObjectMeta: oaKey}, "cluster1")
+	ds2, err := newDaemonSetForCR(consoleLogger, &dynatracev1alpha1.DynaKube{ObjectMeta: oaKey}, &dynatracev1alpha1.FullStackSpec{}, false, "cluster1")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, ds2.Annotations[annotationTemplateHash])
 
@@ -67,10 +67,10 @@ func TestHasSpecChanged(t *testing.T) {
 
 			mod(&old, &new)
 
-			ds1, err := newDaemonSetForCR(consoleLogger, &old, "cluster1")
+			ds1, err := newDaemonSetForCR(consoleLogger, &old, &old.Spec.ClassicFullStack, false, "cluster1")
 			assert.NoError(t, err)
 
-			ds2, err := newDaemonSetForCR(consoleLogger, &new, "cluster1")
+			ds2, err := newDaemonSetForCR(consoleLogger, &new, &new.Spec.ClassicFullStack, false, "cluster1")
 			assert.NoError(t, err)
 
 			assert.NotEmpty(t, ds1.Annotations[annotationTemplateHash])
@@ -101,51 +101,51 @@ func TestHasSpecChanged(t *testing.T) {
 	})
 
 	runTest("argument removed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
-		old.Spec.OneAgent.Args = []string{"INFRA_ONLY=1", "--set-host-property=OperatorVersion=snapshot"}
-		new.Spec.OneAgent.Args = []string{"INFRA_ONLY=1"}
+		old.Spec.ClassicFullStack.Args = []string{"INFRA_ONLY=1", "--set-host-property=OperatorVersion=snapshot"}
+		new.Spec.ClassicFullStack.Args = []string{"INFRA_ONLY=1"}
 	})
 
 	runTest("argument changed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
-		old.Spec.OneAgent.Args = []string{"INFRA_ONLY=1"}
-		new.Spec.OneAgent.Args = []string{"INFRA_ONLY=0"}
+		old.Spec.ClassicFullStack.Args = []string{"INFRA_ONLY=1"}
+		new.Spec.ClassicFullStack.Args = []string{"INFRA_ONLY=0"}
 	})
 
 	runTest("all arguments removed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
-		old.Spec.OneAgent.Args = []string{"INFRA_ONLY=1"}
+		old.Spec.ClassicFullStack.Args = []string{"INFRA_ONLY=1"}
 	})
 
 	runTest("resources added", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
-		new.Spec.OneAgent.Resources = newResourceRequirements()
+		new.Spec.ClassicFullStack.Resources = newResourceRequirements()
 	})
 
 	runTest("resources removed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
-		old.Spec.OneAgent.Resources = newResourceRequirements()
+		old.Spec.ClassicFullStack.Resources = newResourceRequirements()
 	})
 
 	runTest("resources removed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
-		old.Spec.OneAgent.Resources = newResourceRequirements()
+		old.Spec.ClassicFullStack.Resources = newResourceRequirements()
 	})
 
 	runTest("priority class added", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
-		new.Spec.OneAgent.PriorityClassName = "class"
+		new.Spec.ClassicFullStack.PriorityClassName = "class"
 	})
 
 	runTest("priority class removed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
-		old.Spec.OneAgent.PriorityClassName = "class"
+		old.Spec.ClassicFullStack.PriorityClassName = "class"
 	})
 
 	runTest("priority class set but no change", false, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
-		old.Spec.OneAgent.PriorityClassName = "class"
-		new.Spec.OneAgent.PriorityClassName = "class"
+		old.Spec.ClassicFullStack.PriorityClassName = "class"
+		new.Spec.ClassicFullStack.PriorityClassName = "class"
 	})
 
 	runTest("priority class changed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
-		old.Spec.OneAgent.PriorityClassName = "some class"
-		new.Spec.OneAgent.PriorityClassName = "other class"
+		old.Spec.ClassicFullStack.PriorityClassName = "some class"
+		new.Spec.ClassicFullStack.PriorityClassName = "other class"
 	})
 
 	runTest("dns policy added", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
-		new.Spec.OneAgent.DNSPolicy = corev1.DNSClusterFirstWithHostNet
+		new.Spec.ClassicFullStack.DNSPolicy = corev1.DNSClusterFirstWithHostNet
 	})
 }
 
@@ -173,8 +173,8 @@ func TestGetPodsToRestart(t *testing.T) {
 		},
 	}
 	oa := newOneAgent()
-	oa.Status.OneAgentStatus.Version = "1.2.3"
-	oa.Status.OneAgentStatus.Instances = map[string]dynatracev1alpha1.OneAgentInstance{"node-3": {Version: "outdated"}}
+	oa.Status.OneAgent.Version = "1.2.3"
+	oa.Status.OneAgent.Instances = map[string]dynatracev1alpha1.OneAgentInstance{"node-3": {Version: "outdated"}}
 	doomed, err := findOutdatedPodsInstaller(pods, dtc, oa, consoleLogger)
 	assert.Lenf(t, doomed, 1, "list of pods to restart")
 	assert.Equalf(t, doomed[0], pods[1], "list of pods to restart")

@@ -1,4 +1,4 @@
-package kubemon
+package utils
 
 import (
 	"testing"
@@ -10,32 +10,37 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	testName         = "test-name"
+	testEndpoint     = "http://test-endpoint"
+)
+
 func TestBuildImage(t *testing.T) {
-	t.Run(`BuildImage with default instance`, func(t *testing.T) {
+	t.Run(`BuildActiveGateImage with default instance`, func(t *testing.T) {
 		instance := &dynatracev1alpha1.DynaKube{}
-		assert.Equal(t, "/linux/activegate", buildImage(instance))
+		assert.Equal(t, "/linux/activegate", BuildActiveGateImage(instance))
 	})
-	t.Run(`BuildImage with api url`, func(t *testing.T) {
+	t.Run(`BuildActiveGateImage with api url`, func(t *testing.T) {
 		instance := &dynatracev1alpha1.DynaKube{
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				APIURL: testEndpoint + "/api",
 			}}
-		assert.Equal(t, "test-endpoint/linux/activegate", buildImage(instance))
+		assert.Equal(t, "test-endpoint/linux/activegate", BuildActiveGateImage(instance))
 	})
-	t.Run(`BuildImage with custom image`, func(t *testing.T) {
+	t.Run(`BuildActiveGateImage with custom image`, func(t *testing.T) {
 		instance := &dynatracev1alpha1.DynaKube{
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				ActiveGate: dynatracev1alpha1.ActiveGateSpec{
 					Image: testName,
 				}}}
-		assert.Equal(t, testName, buildImage(instance))
+		assert.Equal(t, testName, BuildActiveGateImage(instance))
 	})
 }
 
 func TestBuildPullSecret(t *testing.T) {
 	t.Run(`BuildPullSecret with default instance`, func(t *testing.T) {
 		instance := &dynatracev1alpha1.DynaKube{}
-		pullSecret := buildPullSecret(instance)
+		pullSecret := BuildPullSecret(instance)
 
 		assert.NotNil(t, pullSecret)
 		assert.Equal(t, corev1.LocalObjectReference{
@@ -45,7 +50,7 @@ func TestBuildPullSecret(t *testing.T) {
 		instance = &dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: testName},
 		}
-		pullSecret = buildPullSecret(instance)
+		pullSecret = BuildPullSecret(instance)
 
 		assert.Equal(t, corev1.LocalObjectReference{
 			Name: testName + dtpullsecret.PullSecretSuffix,
@@ -56,7 +61,7 @@ func TestBuildPullSecret(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				CustomPullSecret: testName,
 			}}
-		pullSecret := buildPullSecret(instance)
+		pullSecret := BuildPullSecret(instance)
 
 		assert.NotNil(t, pullSecret)
 		assert.Equal(t, corev1.LocalObjectReference{

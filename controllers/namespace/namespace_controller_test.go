@@ -2,21 +2,21 @@ package namespace
 
 import (
 	"context"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func init() {
@@ -30,35 +30,21 @@ func TestReconcileNamespace(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				APIURL: "https://test-url/api",
-				OneAgentCodeModule: dynatracev1alpha1.OneAgentCodeModuleSpec{
+				CodeModules: dynatracev1alpha1.CodeModulesSpec{
 					Enabled: true,
-					Image: "test-url/linux/codemodules",
 				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				BaseOneAgentStatus: dynatracev1alpha1.BaseOneAgentStatus{
-					EnvironmentID: "abc12345",
-				},
-			},
-		},
-		&dynatracev1alpha1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				APIURL: "https://test-url/api",
-				OneAgent: dynatracev1alpha1.OneAgentSpec{
+				InfraMonitoring: dynatracev1alpha1.FullStackSpec{
 					Enabled: true,
 				},
 			},
 			Status: dynatracev1alpha1.DynaKubeStatus{
-				BaseOneAgentStatus: dynatracev1alpha1.BaseOneAgentStatus{
-					EnvironmentID: "abc12345",
-				},
-				OneAgentStatus: dynatracev1alpha1.OneAgentStatus{
+				EnvironmentID: "abc12345",
+				OneAgent: dynatracev1alpha1.OneAgentStatus{
 					Instances: map[string]dynatracev1alpha1.OneAgentInstance{
 						"node1": {},
 					},
 				},
-			},
+				},
 		},
 		&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -83,10 +69,6 @@ func TestReconcileNamespace(t *testing.T) {
 		apiReader: c,
 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
 		namespace: "dynatrace",
-		pullSecretGeneratorFunc: func(c client.Client, dynaKube dynatracev1alpha1.DynaKube, tkns *corev1.Secret) (map[string][]byte, error) {
-			return map[string][]byte{".dockerconfigjson": []byte("{}")}, nil
-		},
-		addNodeProps: false,
 	}
 
 	_, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: "test-namespace"}})
@@ -118,7 +100,16 @@ custom_ca="false"
 fail_code=0
 cluster_id="42"
 
-archive=$(mktemp)
+declare -A im_nodes
+im_nodes=(
+	["node1"]="abc12345"
+)
+
+set +u
+host_tenant="${im_nodes[${K8S_NODE_NAME}]}"
+set -u
+
+archive="/mnt/init/tmp.$RANDOM"
 
 if [[ "${FAILURE_POLICY}" == "fail" ]]; then
 	fail_code=1
@@ -185,60 +176,26 @@ do
 	container_conf_file="${target_dir}/container_${container_name}.conf"
 
 	echo "Writing ${container_conf_file} file..."
-	cat <<EOF >${container_conf_file}
-[container]
+	echo "[container]
 containerName ${container_name}
 imageName ${container_image}
 k8s_fullpodname ${K8S_PODNAME}
 k8s_poduid ${K8S_PODUID}
 k8s_containername ${container_name}
 k8s_basepodname ${K8S_BASEPODNAME}
-k8s_namespace ${K8S_NAMESPACE}
-EOF
+k8s_namespace ${K8S_NAMESPACE}">>${container_conf_file}
+
+	if [[ ! -z "${host_tenant}" ]]; then		
+		if [[ "abc12345" == "${host_tenant}" ]]; then
+			echo "k8s_node_name ${K8S_NODE_NAME}
+k8s_cluster_id ${cluster_id}">>${container_conf_file}
+		fi
+
+	echo "
+[host]
+tenant ${host_tenant}">>${container_conf_file}
+	fi
 done
 `, string(nsSecret.Data["init.sh"]))
 }
 
-func TestGenerateScript(t *testing.T) {
-	t.Run("TestGenerateScript without additional node properties", func(t *testing.T) {
-		testScript := script{
-			DynaKube: &dynatracev1alpha1.DynaKube{
-				Spec: dynatracev1alpha1.DynaKubeSpec{
-					APIURL: "some-api",
-					OneAgentCodeModule: dynatracev1alpha1.OneAgentCodeModuleSpec{
-						Enabled: true,
-					},
-				},
-			},
-		}
-
-		result, err := testScript.generate()
-
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		require.Contains(t, result, "init.sh")
-		assert.NotContains(t, string(result["init.sh"]), "k8s_node_name")
-		assert.NotContains(t, string(result["init.sh"]), "k8s_cluster_id")
-	})
-	t.Run("TestGenerateScript with additional node properties", func(t *testing.T) {
-		testScript := script{
-			DynaKube: &dynatracev1alpha1.DynaKube{
-				Spec: dynatracev1alpha1.DynaKubeSpec{
-					APIURL: "some-api",
-					OneAgentCodeModule: dynatracev1alpha1.OneAgentCodeModuleSpec{
-						Enabled: true,
-					},
-				},
-			},
-			AddNodeProps: true,
-		}
-
-		result, err := testScript.generate()
-
-		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		require.Contains(t, result, "init.sh")
-		assert.Contains(t, string(result["init.sh"]), "k8s_node_name")
-		assert.Contains(t, string(result["init.sh"]), "k8s_cluster_id")
-	})
-}

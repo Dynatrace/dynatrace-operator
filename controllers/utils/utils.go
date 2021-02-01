@@ -2,22 +2,18 @@ package utils
 
 import (
 	"context"
-	b64 "encoding/base64"
-	"encoding/json"
 	"fmt"
-	"os"
-	"reflect"
-	"strings"
-
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"os"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 )
 
 const (
@@ -25,98 +21,37 @@ const (
 	DynatraceApiToken  = "apiToken"
 )
 
-// DynatraceClientFunc defines handler func for dynatrace client
-type DynatraceClientFunc func(rtc client.Client, instance dynatracev1alpha1.DynaKube, hasAPIToken, hasPaaSToken bool) (dtclient.Client, error)
+type Reconciliation struct {
+	Log      logr.Logger
+	Instance *dynatracev1alpha1.DynaKube
 
-// BuildDynatraceClient creates a new Dynatrace client using the settings configured on the given instance.
-func BuildDynatraceClient(rtc client.Client, instance dynatracev1alpha1.DynaKube, hasAPIToken, hasPaaSToken bool) (dtclient.Client, error) {
-	ns := instance.GetNamespace()
-	spec := instance.Spec
-
-	secret := &corev1.Secret{}
-	err := rtc.Get(context.TODO(), client.ObjectKey{Name: GetTokensName(instance), Namespace: ns}, secret)
-	if err != nil && !k8serrors.IsNotFound(err) {
-		return nil, errors.WithStack(err)
-	}
-
-	// initialize dynatrace client
-	var opts []dtclient.Option
-	if spec.SkipCertCheck {
-		opts = append(opts, dtclient.SkipCertificateValidation(true))
-	}
-
-	if p := spec.Proxy; p != nil {
-		if p.ValueFrom != "" {
-			proxySecret := &corev1.Secret{}
-			err := rtc.Get(context.TODO(), client.ObjectKey{Name: p.ValueFrom, Namespace: ns}, proxySecret)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to get proxy secret")
-			}
-
-			proxyURL, err := extractToken(proxySecret, "proxy")
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to extract proxy secret field")
-			}
-			opts = append(opts, dtclient.Proxy(proxyURL))
-		} else if p.Value != "" {
-			opts = append(opts, dtclient.Proxy(p.Value))
-		}
-	}
-
-	if spec.TrustedCAs != "" {
-		certs := &corev1.ConfigMap{}
-		if err := rtc.Get(context.TODO(), client.ObjectKey{Namespace: ns, Name: spec.TrustedCAs}, certs); err != nil {
-			return nil, errors.Wrap(err, "failed to get certificate configmap")
-		}
-		if certs.Data["certs"] == "" {
-			return nil, errors.Errorf("failed to extract certificate configmap field: missing field certs")
-		}
-		opts = append(opts, dtclient.Certs([]byte(certs.Data["certs"])))
-	}
-
-	if spec.NetworkZone != "" {
-		opts = append(opts, dtclient.NetworkZone(spec.NetworkZone))
-	}
-
-	var apiToken string
-	if hasAPIToken {
-		if apiToken, err = extractToken(secret, DynatraceApiToken); err != nil {
-			return nil, errors.WithStack(err)
-		}
-	}
-
-	var paasToken string
-	if hasPaaSToken {
-		if paasToken, err = extractToken(secret, DynatracePaasToken); err != nil {
-			return nil, errors.WithStack(err)
-		}
-	}
-
-	return dtclient.NewClient(spec.APIURL, apiToken, paasToken, opts...)
+	// If update is true, then changes on instance will be sent to the Kubernetes API.
+	//
+	// Additionally, if err is not nil, then the Reconciliation will fail with its value. Unless it's a Too Many
+	// Requests HTTP error from the Dynatrace API, on which case, a reconciliation is requeued after one minute delay.
+	//
+	// If err is nil, then a reconciliation is requeued after requeueAfter.
+	Err          error
+	Updated       bool
+	RequeueAfter time.Duration
 }
 
-func extractToken(secret *corev1.Secret, key string) (string, error) {
-	value, ok := secret.Data[key]
-	if !ok {
-		err := fmt.Errorf("missing token %s", key)
-		return "", errors.WithStack(err)
+func (rec *Reconciliation) Error(err error) bool {
+	if err == nil {
+		return false
 	}
-
-	return strings.TrimSpace(string(value)), nil
+	rec.Err = err
+	return true
 }
 
-// StaticDynatraceClient creates a DynatraceClientFunc always returning c.
-func StaticDynatraceClient(c dtclient.Client) DynatraceClientFunc {
-	return func(_ client.Client, dynaKube dynatracev1alpha1.DynaKube, _, _ bool) (dtclient.Client, error) {
-		return c, nil
+func (rec *Reconciliation) Update(upd bool, d time.Duration, cause string) bool {
+	if !upd {
+		return false
 	}
-}
-
-func GetTokensName(obj dynatracev1alpha1.DynaKube) string {
-	if tkns := obj.Spec.Tokens; tkns != "" {
-		return tkns
-	}
-	return obj.GetName()
+	rec.Log.Info("Updating DynaKube CR", "cause", cause)
+	rec.Updated = true
+	rec.RequeueAfter = d
+	return true
 }
 
 // GetDeployment returns the Deployment object who is the owner of this pod.
@@ -190,107 +125,6 @@ func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretNam
 	}
 
 	return nil
-}
-
-// GeneratePullSecretData generates the secret data for the PullSecret
-func GeneratePullSecretData(c client.Client, dynaKube dynatracev1alpha1.DynaKube, tkns *corev1.Secret) (map[string][]byte, error) {
-	type auths struct {
-		Username string
-		Password string
-		Auth     string
-	}
-
-	type dockercfg struct {
-		Auths map[string]auths
-	}
-
-	dtc, err := BuildDynatraceClient(c, dynaKube, false, true)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	ci, err := dtc.GetConnectionInfo()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	r, err := GetImageRegistryFromAPIURL(dynaKube.Spec.APIURL)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	a := fmt.Sprintf("%s:%s", ci.TenantUUID, string(tkns.Data[DynatracePaasToken]))
-	a = b64.StdEncoding.EncodeToString([]byte(a))
-
-	auth := auths{
-		Username: ci.TenantUUID,
-		Password: string(tkns.Data[DynatracePaasToken]),
-		Auth:     a,
-	}
-
-	d := dockercfg{
-		Auths: map[string]auths{
-			r: auth,
-		},
-	}
-	j, err := json.Marshal(d)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return map[string][]byte{".dockerconfigjson": j}, nil
-}
-
-// BuildOneAgentAPMImage builds the docker image for the agentapm based on the api url
-// If annotations are set (flavor or technologies) they get appended
-func BuildOneAgentAPMImage(apiURL string, flavor string, technologies string, agentVersion string) (string, error) {
-	var tags []string
-
-	registry, err := GetImageRegistryFromAPIURL(apiURL)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	image := registry + "/linux/codemodule"
-
-	if flavor != "default" {
-		image += "-musl"
-	}
-
-	if technologies != "all" {
-		tags = append(tags, strings.Split(technologies, ",")...)
-	}
-
-	if agentVersion != "" {
-		tags = append(tags, agentVersion)
-	}
-
-	if len(tags) > 0 {
-		image = fmt.Sprintf("%s:%s", image, strings.Join(tags, "-"))
-	}
-
-	return image, nil
-}
-
-func BuildOneAgentImage(apiURL string, agentVersion string) (string, error) {
-	registry, err := GetImageRegistryFromAPIURL(apiURL)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	image := registry + "/linux/oneagent"
-
-	if agentVersion != "" {
-		image += ":" + agentVersion
-	}
-
-	return image, nil
-}
-
-func GetImageRegistryFromAPIURL(apiURL string) (string, error) {
-	r := strings.TrimPrefix(apiURL, "https://")
-	r = strings.TrimSuffix(r, "/api")
-	return r, nil
 }
 
 func GetField(values map[string]string, key, defaultValue string) string {

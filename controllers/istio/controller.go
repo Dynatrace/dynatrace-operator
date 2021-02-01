@@ -66,7 +66,7 @@ func (c *Controller) initialiseIstioClient(config *rest.Config) (istioclientset.
 
 // ReconcileIstio - runs the istio's reconcile workflow,
 // creating/deleting VS & SE for external communications
-func (c *Controller) ReconcileIstio(instance dynatracev1alpha1.DynaKube,
+func (c *Controller) ReconcileIstio(instance *dynatracev1alpha1.DynaKube,
 	dtc dtclient.Client) (updated bool, err error) {
 
 	enabled, err := CheckIstioEnabled(c.config)
@@ -105,7 +105,7 @@ func (c *Controller) ReconcileIstio(instance dynatracev1alpha1.DynaKube,
 	return false, nil
 }
 
-func (c *Controller) reconcileIstioConfigurations(instance dynatracev1alpha1.DynaKube,
+func (c *Controller) reconcileIstioConfigurations(instance *dynatracev1alpha1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
 	add, err := c.reconcileIstioCreateConfigurations(instance, comHosts, role)
@@ -120,7 +120,7 @@ func (c *Controller) reconcileIstioConfigurations(instance dynatracev1alpha1.Dyn
 	return add || rem, nil
 }
 
-func (c *Controller) reconcileIstioRemoveConfigurations(instance dynatracev1alpha1.DynaKube,
+func (c *Controller) reconcileIstioRemoveConfigurations(instance *dynatracev1alpha1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
 	labels := labels.SelectorFromSet(buildIstioLabels(instance.GetName(), role)).String()
@@ -199,7 +199,7 @@ func (c *Controller) removeIstioConfigurationForVirtualService(listOps *metav1.L
 	return del, nil
 }
 
-func (c *Controller) reconcileIstioCreateConfigurations(instance dynatracev1alpha1.DynaKube,
+func (c *Controller) reconcileIstioCreateConfigurations(instance *dynatracev1alpha1.DynaKube,
 	communicationHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
 	crdProbe := c.verifyIstioCrdAvailability(instance)
@@ -227,7 +227,7 @@ func (c *Controller) reconcileIstioCreateConfigurations(instance dynatracev1alph
 	return configurationUpdated, nil
 }
 
-func (c *Controller) verifyIstioCrdAvailability(instance dynatracev1alpha1.DynaKube) probeResult {
+func (c *Controller) verifyIstioCrdAvailability(instance *dynatracev1alpha1.DynaKube) probeResult {
 	var probe probeResult
 
 	probe, _ = c.kubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), "")
@@ -243,7 +243,7 @@ func (c *Controller) verifyIstioCrdAvailability(instance dynatracev1alpha1.DynaK
 	return probeTypeFound
 }
 
-func (c *Controller) handleIstioConfigurationForVirtualService(instance dynatracev1alpha1.DynaKube,
+func (c *Controller) handleIstioConfigurationForVirtualService(instance *dynatracev1alpha1.DynaKube,
 	name string, communicationHost dtclient.CommunicationHost, role string) (bool, error) {
 
 	probe, err := c.kubernetesObjectProbe(VirtualServiceGVK, instance.GetNamespace(), name)
@@ -271,7 +271,7 @@ func (c *Controller) handleIstioConfigurationForVirtualService(instance dynatrac
 	return true, nil
 }
 
-func (c *Controller) handleIstioConfigurationForServiceEntry(instance dynatracev1alpha1.DynaKube,
+func (c *Controller) handleIstioConfigurationForServiceEntry(instance *dynatracev1alpha1.DynaKube,
 	name string, communicationHost dtclient.CommunicationHost, role string) (bool, error) {
 
 	probe, err := c.kubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), name)
@@ -293,11 +293,11 @@ func (c *Controller) handleIstioConfigurationForServiceEntry(instance dynatracev
 	return true, nil
 }
 
-func (c *Controller) createIstioConfigurationForServiceEntry(dynaKube dynatracev1alpha1.DynaKube,
+func (c *Controller) createIstioConfigurationForServiceEntry(dynaKube *dynatracev1alpha1.DynaKube,
 	serviceEntry *istiov1alpha3.ServiceEntry, role string) error {
 
 	serviceEntry.Labels = buildIstioLabels(dynaKube.GetName(), role)
-	if err := controllerutil.SetControllerReference(&dynaKube, serviceEntry, c.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(dynaKube, serviceEntry, c.scheme); err != nil {
 		return err
 	}
 	sve, err := c.istioClient.NetworkingV1alpha3().ServiceEntries(dynaKube.GetNamespace()).Create(context.TODO(), serviceEntry, metav1.CreateOptions{})
@@ -311,11 +311,11 @@ func (c *Controller) createIstioConfigurationForServiceEntry(dynaKube dynatracev
 	return nil
 }
 
-func (c *Controller) createIstioConfigurationForVirtualService(dynaKube dynatracev1alpha1.DynaKube,
+func (c *Controller) createIstioConfigurationForVirtualService(dynaKube *dynatracev1alpha1.DynaKube,
 	virtualService *istiov1alpha3.VirtualService, role string) error {
 
 	virtualService.Labels = buildIstioLabels(dynaKube.GetName(), role)
-	if err := controllerutil.SetControllerReference(&dynaKube, virtualService, c.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(dynaKube, virtualService, c.scheme); err != nil {
 		return err
 	}
 	vs, err := c.istioClient.NetworkingV1alpha3().VirtualServices(dynaKube.GetNamespace()).Create(context.TODO(), virtualService, metav1.CreateOptions{})
