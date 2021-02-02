@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 )
 
 func (dtc *dynatraceClient) GetAgentVersionForIP(ip string) (string, error) {
@@ -81,4 +82,19 @@ func (dtc *dynatraceClient) readResponseForLatestVersion(response []byte) (strin
 	}
 
 	return v, nil
+}
+
+// GetVersionForLatest gets the latest agent version for the given OS and installer type.
+func (dtc *dynatraceClient) GetLatestAgent(os, installerType string) (io.ReadCloser, error) {
+	if len(os) == 0 || len(installerType) == 0 {
+		return nil, errors.New("os or installerType is empty")
+	}
+
+	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest?bitness=64&include=dotnet", dtc.url, os, installerType)
+	resp, err := dtc.makeRequest(url, dynatracePaaSToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Body, err
 }

@@ -29,12 +29,12 @@ env:
 
 jobs:
   include:
-    - stage: preparation
-      name: Tests
-      script: ./build/test.sh
-      cache:
-        directories:
-          - /usr/local/kubebuilder/bin
+    # - stage: preparation
+    #   name: Tests
+    #   script: ./build/test.sh
+    #   cache:
+    #     directories:
+    #       - /usr/local/kubebuilder/bin
 
     #    - stage: preparation
     #      name: Verify OLM manifest
@@ -45,13 +45,13 @@ jobs:
     #        - operator-courier verify ./deploy/olm/kubernetes
     #        - operator-courier verify ./deploy/olm/openshift
 
-    - stage: preparation
-      name: Linting
-      language: go
-      go: "1.15.x"
-      script:
-        - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.31.0
-        - golangci-lint run --build-tags integration,containers_image_storage_stub --timeout 300s
+    # - stage: preparation
+    #   name: Linting
+    #   language: go
+    #   go: "1.15.x"
+    #   script:
+    #     - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.31.0
+    #     - golangci-lint run --build-tags integration,containers_image_storage_stub --timeout 300s
 
     - stage: preparation
       name: Set configs
@@ -106,30 +106,30 @@ jobs:
       env: GCR=true GCP_PROJECT=dynatrace-marketplace-prod GCLOUD_SERVICE_KEY=$GCLOUD_SERVICE_KEY_PROD GCP_SERVICE_ACCOUNT=$GCP_SERVICE_ACCOUNT_PROD IMAGES=$OAO_IMAGE_GCR_PROD
 
       ######################### ARM #########################
-    - &deploy_arm
-      install: skip
-      script: ./build/deploy.sh
-      stage: deploy
-      name: Deploy snapshot master ARM to Quay
-      arch: arm64
-      if: (branch = master) AND (tag IS blank)
-      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot"
-      cache:
-        directories:
-          - $GOPATH/pkg/mod
-      workspaces:
-        use:
-          - dockerconfig
+    # - &deploy_arm
+    #   install: skip
+    #   script: ./build/deploy.sh
+    #   stage: deploy
+    #   name: Deploy snapshot master ARM to Quay
+    #   arch: arm64
+    #   if: (branch = master) AND (tag IS blank)
+    #   env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot"
+    #   cache:
+    #     directories:
+    #       - $GOPATH/pkg/mod
+    #   workspaces:
+    #     use:
+    #       - dockerconfig
 
-    - <<: *deploy_arm
-      name: Deploy snapshot non-master branch ARM to Quay
-      if: (branch != master) AND (tag IS blank)
-      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
+    # - <<: *deploy_arm
+    #   name: Deploy snapshot non-master branch ARM to Quay
+    #   if: (branch != master) AND (tag IS blank)
+    #   env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
 
-    - <<: *deploy_arm
-      name: Deploy release ARM to DockerHub, Quay
-      if: tag =~ /^v.*/
-      env: IMAGES="$OAO_IMAGE_DOCKER_HUB $OAO_IMAGE_QUAY"
+    # - <<: *deploy_arm
+    #   name: Deploy release ARM to DockerHub, Quay
+    #   if: tag =~ /^v.*/
+    #   env: IMAGES="$OAO_IMAGE_DOCKER_HUB $OAO_IMAGE_QUAY"
 
       ######################### Create Docker manifest #########################
 
@@ -144,7 +144,7 @@ jobs:
         clone: false
       script:
         - sudo chmod o+x /etc/docker
-        - docker manifest create $IMAGE:$TAG $IMAGE:$TAG-arm64 $IMAGE:$TAG-amd64
+        - docker manifest create $IMAGE:$TAG $IMAGE:$TAG-amd64
         - docker manifest push $IMAGE:$TAG
       workspaces:
         use: dockerconfig

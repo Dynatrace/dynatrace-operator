@@ -3,6 +3,7 @@ package dtclient
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -27,6 +28,9 @@ type Client interface {
 	//  - error response from the server (e.g. authentication failure)
 	//  - the agent version is not set or empty
 	GetLatestAgentVersion(os, installerType string) (string, error)
+
+	// GetLatestAgent returns a reader with the contents of the download. Must be closed by caller.
+	GetLatestAgent(os, installerType string) (io.ReadCloser, error)
 
 	// GetAgentVersionForIP returns the agent version running on the host with the given IP address.
 	// Returns the version string formatted as "Major.Minor.Revision.Timestamp" on success.
@@ -90,7 +94,7 @@ const (
 	InstallerTypeDefault = "default"
 	//Commented for linter, left for further reference
 	//InstallerTypeUnattended = "default-unattended"
-	//InstallerTypePaasZip    = "paas"
+	InstallerTypePaaS = "paas"
 	//InstallerTypePaasSh     = "paas-sh"
 )
 
