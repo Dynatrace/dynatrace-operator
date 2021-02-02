@@ -3,6 +3,9 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	"testing"
+	"time"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/stretchr/testify/assert"
@@ -13,8 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"testing"
-	"time"
 )
 
 func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {

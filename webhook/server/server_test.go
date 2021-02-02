@@ -69,10 +69,10 @@ func TestPodInjection(t *testing.T) {
 		client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			&dynatracev1alpha1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-					Spec: dynatracev1alpha1.DynaKubeSpec {
+				Spec: dynatracev1alpha1.DynaKubeSpec{
 					APIURL: "https://test-api-url.com/api",
-					InfraMonitoring: dynatracev1alpha1.FullStackSpec {
-						Enabled: true,
+					InfraMonitoring: dynatracev1alpha1.FullStackSpec{
+						Enabled:           true,
 						UseImmutableImage: true,
 					},
 					CodeModules: dynatracev1alpha1.CodeModulesSpec{
@@ -86,14 +86,14 @@ func TestPodInjection(t *testing.T) {
 								corev1.ResourceCPU:    resource.MustParse("100m"),
 								corev1.ResourceMemory: resource.MustParse("100M"),
 							},
+						},
 					},
-					},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
+				},
+				Status: dynatracev1alpha1.DynaKubeStatus{
 					OneAgent: dynatracev1alpha1.OneAgentStatus{
 						UseImmutableImage: true,
 					},
-			},
+				},
 			},
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -156,11 +156,11 @@ func TestPodInjection(t *testing.T) {
 		},
 		Spec: corev1.PodSpec{
 			InitContainers: []corev1.Container{{
-				Name:    installOneAgentContainerName,
-				Image:   "test-api-url.com/linux/codemodule",
+				Name:            installOneAgentContainerName,
+				Image:           "test-api-url.com/linux/codemodule",
 				ImagePullPolicy: corev1.PullAlways,
-				Command: []string{"/usr/bin/env"},
-				Args:    []string{"bash", "/mnt/config/init.sh"},
+				Command:         []string{"/usr/bin/env"},
+				Args:            []string{"bash", "/mnt/config/init.sh"},
 				Env: []corev1.EnvVar{
 					{Name: "TECHNOLOGIES", Value: "all"},
 					{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},

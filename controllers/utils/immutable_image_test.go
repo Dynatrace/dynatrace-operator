@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	testName         = "test-name"
-	testEndpoint     = "http://test-endpoint"
+	testName     = "test-name"
+	testEndpoint = "http://test-endpoint"
 )
 
 func TestBuildImage(t *testing.T) {

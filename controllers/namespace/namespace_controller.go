@@ -24,10 +24,10 @@ import (
 
 func Add(mgr manager.Manager, ns string) error {
 	return add(mgr, &ReconcileNamespaces{
-		client:                  mgr.GetClient(),
-		apiReader:               mgr.GetAPIReader(),
-		namespace:               ns,
-		logger:                  log.Log.WithName("namespaces.controller"),
+		client:    mgr.GetClient(),
+		apiReader: mgr.GetAPIReader(),
+		namespace: ns,
+		logger:    log.Log.WithName("namespaces.controller"),
 	})
 }
 
@@ -48,10 +48,10 @@ func add(mgr manager.Manager, r *ReconcileNamespaces) error {
 }
 
 type ReconcileNamespaces struct {
-	client                  client.Client
-	apiReader               client.Reader
-	logger                  logr.Logger
-	namespace               string
+	client    client.Client
+	apiReader client.Reader
+	logger    logr.Logger
+	namespace string
 }
 
 func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -122,12 +122,12 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 }
 
 type script struct {
-	DynaKube     *dynatracev1alpha1.DynaKube
-	PaaSToken    string
-	Proxy        string
-	TrustedCAs   []byte
-	ClusterID    string
-	IMNodes      map[string]string
+	DynaKube   *dynatracev1alpha1.DynaKube
+	PaaSToken  string
+	Proxy      string
+	TrustedCAs []byte
+	ClusterID  string
+	IMNodes    map[string]string
 }
 
 func newScript(ctx context.Context, c client.Client, dynaKube dynatracev1alpha1.DynaKube, tkns corev1.Secret, imNodes map[string]string, ns string) (*script, error) {

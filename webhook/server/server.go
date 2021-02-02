@@ -180,11 +180,11 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 
 	ic := corev1.Container{
-		Name:    "install-oneagent",
-		Image:   image,
+		Name:            "install-oneagent",
+		Image:           image,
 		ImagePullPolicy: corev1.PullAlways,
-		Command: []string{"/usr/bin/env"},
-		Args:    []string{"bash", "/mnt/config/init.sh"},
+		Command:         []string{"/usr/bin/env"},
+		Args:            []string{"bash", "/mnt/config/init.sh"},
 		Env: []corev1.EnvVar{
 			{Name: "TECHNOLOGIES", Value: technologies},
 			{Name: "INSTALLPATH", Value: installPath},

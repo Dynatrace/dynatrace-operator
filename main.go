@@ -17,28 +17,27 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/spf13/pflag"
-	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
-	"k8s.io/client-go/rest"
 	"os"
 	"runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
+	"github.com/spf13/pflag"
+	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var (
-	Version  = "snapshot"
-	scheme   = pkgruntime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
-	log    = logger.NewDTLogger()
+	Version = "snapshot"
+	scheme  = pkgruntime.NewScheme()
+	log     = logger.NewDTLogger()
 )
 
 var subcmdCallbacks = map[string]func(ns string, cfg *rest.Config) (manager.Manager, error){

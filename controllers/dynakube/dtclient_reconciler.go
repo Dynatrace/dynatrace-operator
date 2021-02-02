@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -11,10 +15,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
-	"time"
 )
 
 type DynatraceClientReconciler struct {
@@ -212,11 +213,10 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 
 func setCondition(conditions *[]metav1.Condition, condition metav1.Condition) bool {
 	c := meta.FindStatusCondition(*conditions, condition.Type)
-	if c != nil && c.Reason == condition.Reason && c.Message == condition.Message && c.Status == condition.Status{
+	if c != nil && c.Reason == condition.Reason && c.Message == condition.Message && c.Status == condition.Status {
 		return false
 	}
 
 	meta.SetStatusCondition(conditions, condition)
 	return true
 }
-

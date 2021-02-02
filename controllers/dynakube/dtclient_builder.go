@@ -13,9 +13,9 @@ and are candidates to be made into a library:
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"

@@ -17,13 +17,13 @@ func TestGetUID(t *testing.T) {
 	fakeClient := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithObjects(
-		&v1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: Namespace,
-				UID:  testUID,
+			&v1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: Namespace,
+					UID:  testUID,
+				},
 			},
-		},
-	).Build()
+		).Build()
 	uid, err := GetUID(fakeClient)
 
 	assert.NoError(t, err)

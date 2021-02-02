@@ -22,7 +22,7 @@ import (
 const (
 	testUID       = "test-uid"
 	testPaasToken = "test-paas-token"
-	testAPIToken = "test-api-token"
+	testAPIToken  = "test-api-token"
 )
 
 func init() {
@@ -57,14 +57,14 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					"apiToken": []byte("something"),
+					"apiToken":  []byte("something"),
 					"paasToken": []byte("something"),
 				},
 			}).Build()
 		r := &ReconcileDynaKube{
-			client: fakeClient,
+			client:    fakeClient,
 			apiReader: fakeClient,
-			scheme: scheme.Scheme,
+			scheme:    scheme.Scheme,
 			dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
@@ -95,7 +95,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				},
 				Data: map[string][]byte{
 					dtclient.DynatracePaasToken: []byte(testPaasToken),
-					dtclient.DynatraceApiToken: []byte(testAPIToken),
+					dtclient.DynatraceApiToken:  []byte(testAPIToken),
 				}},
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{

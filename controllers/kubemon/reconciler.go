@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -187,7 +188,7 @@ func (r *ReconcileKubeMon) getCustomPropsHash() (string, error) {
 
 		dataBytes, ok := secret.Data[customproperties.DataKey]
 		if !ok {
-			return "", fmt.Errorf("No custom properties found on secret '%s' on namespace '%s'", cp.ValueFrom, ns)
+			return "", fmt.Errorf("no custom properties found on secret '%s' on namespace '%s'", cp.ValueFrom, ns)
 		}
 
 		data = string(dataBytes)

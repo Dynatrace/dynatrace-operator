@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *ReconcileOneAgent) reconcileVersion(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, webhookInjection bool, dtc dtclient.Client) (bool, error) {
+func (r *ReconcileOneAgent) reconcileVersion(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, dtc dtclient.Client) (bool, error) {
 	if instance.Status.OneAgent.UseImmutableImage {
 		return r.reconcileVersionImmutableImage(ctx, instance, fs, dtc)
 	} else {
@@ -80,7 +80,7 @@ func (r *ReconcileOneAgent) reconcileVersionImmutableImage(ctx context.Context, 
 		waitSecs = *fs.WaitReadySeconds
 	}
 
-	if instance.Spec.OneAgent.AutoUpdate == nil || *instance.Spec.OneAgent.AutoUpdate == true {
+	if instance.Spec.OneAgent.AutoUpdate == nil || *instance.Spec.OneAgent.AutoUpdate {
 		r.logger.Info("checking for outdated pods")
 
 		// Check if pods have latest agent version

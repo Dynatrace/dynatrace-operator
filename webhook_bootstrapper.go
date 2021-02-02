@@ -27,14 +27,14 @@ import (
 
 func startWebhookBoostrapper(ns string, cfg *rest.Config) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Namespace:               ns,
-		Scheme:                  scheme,
-		MetricsBindAddress:      ":8484",
-		LeaderElection:          true,
-		LeaderElectionID:        "dynatrace-oneagent-webhook-bootstrapper-lock",
+		Namespace:                  ns,
+		Scheme:                     scheme,
+		MetricsBindAddress:         ":8484",
+		LeaderElection:             true,
+		LeaderElectionID:           "dynatrace-oneagent-webhook-bootstrapper-lock",
 		LeaderElectionResourceLock: "configmaps",
-		LeaderElectionNamespace: ns,
-		HealthProbeBindAddress:  "0.0.0.0:9080",
+		LeaderElectionNamespace:    ns,
+		HealthProbeBindAddress:     "0.0.0.0:9080",
 	})
 	if err != nil {
 		return nil, err

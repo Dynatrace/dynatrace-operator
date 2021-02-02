@@ -36,13 +36,13 @@ const updateEnvVar = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
 func NewOneAgentReconciler(client client.Client, apiReader client.Reader, scheme *runtime.Scheme, logger logr.Logger,
 	dtc dtclient.Client, instance *dynatracev1alpha1.DynaKube, fullStack *dynatracev1alpha1.FullStackSpec, webhookInjection bool) *ReconcileOneAgent {
 	return &ReconcileOneAgent{
-		client:    client,
-		apiReader: apiReader,
-		scheme:    scheme,
-		logger:    logger,
-		dtc: dtc,
-		instance: instance,
-		fullStack: fullStack,
+		client:           client,
+		apiReader:        apiReader,
+		scheme:           scheme,
+		logger:           logger,
+		dtc:              dtc,
+		instance:         instance,
+		fullStack:        fullStack,
 		webhookInjection: webhookInjection,
 	}
 }
@@ -51,14 +51,14 @@ func NewOneAgentReconciler(client client.Client, apiReader client.Reader, scheme
 type ReconcileOneAgent struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client    client.Client
-	apiReader client.Reader
-	scheme    *runtime.Scheme
-	logger    logr.Logger
-	instance *dynatracev1alpha1.DynaKube
-	fullStack *dynatracev1alpha1.FullStackSpec
+	client           client.Client
+	apiReader        client.Reader
+	scheme           *runtime.Scheme
+	logger           logr.Logger
+	instance         *dynatracev1alpha1.DynaKube
+	fullStack        *dynatracev1alpha1.FullStackSpec
 	webhookInjection bool
-	dtc dtclient.Client
+	dtc              dtclient.Client
 }
 
 // Reconcile reads that state of the cluster for a OneAgent object and makes changes based on the state read
@@ -106,12 +106,12 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 			return
 		}
 
-		if r.instance.Spec.OneAgent.AutoUpdate != nil && *r.instance.Spec.OneAgent.AutoUpdate == false {
+		if r.instance.Spec.OneAgent.AutoUpdate != nil && !*r.instance.Spec.OneAgent.AutoUpdate {
 			r.logger.Info("Automatic oneagent update is disabled")
 			return
 		}
 
-		upd, err = r.reconcileVersion(ctx, r.logger, r.instance, r.fullStack, r.webhookInjection, r.dtc)
+		upd, err = r.reconcileVersion(ctx, r.logger, r.instance, r.fullStack, r.dtc)
 		if rec.Error(err) || rec.Update(upd, 5*time.Minute, "Versions reconciled") {
 			return
 		}
@@ -119,10 +119,10 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 
 	// Finally we have to determine the correct non error phase
 	if upd, err = r.determineOneAgentPhase(r.instance); !rec.Error(err) {
-		return true, nil
+		return upd, nil
 	}
 
-	return false,nil
+	return false, nil
 }
 
 func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, webhookInjection bool, dtc dtclient.Client) (bool, error) {

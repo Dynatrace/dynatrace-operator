@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	testName         = "test-name"
-	testNamespace = "test-namespace"
-	testEndpoint  = "https://test-endpoint.com"
+	testName             = "test-name"
+	testNamespace        = "test-namespace"
+	testEndpoint         = "https://test-endpoint.com"
 	testValue            = "test-value"
 	testKey              = "test-key"
 	testValueAlternative = "test-alternative-value"

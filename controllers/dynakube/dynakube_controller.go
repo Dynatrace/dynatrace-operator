@@ -4,24 +4,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/istio"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
-	"net/http"
-	"time"
-
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -44,7 +44,7 @@ func NewReconciler(mgr manager.Manager) *ReconcileDynaKube {
 		apiReader:    mgr.GetAPIReader(),
 		scheme:       mgr.GetScheme(),
 		dtcBuildFunc: BuildDynatraceClient,
-		config: mgr.GetConfig(),
+		config:       mgr.GetConfig(),
 	}
 }
 
@@ -57,12 +57,12 @@ func (r *ReconcileDynaKube) SetupWithManager(mgr ctrl.Manager) error {
 
 func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, logger logr.Logger, config *rest.Config) *ReconcileDynaKube {
 	return &ReconcileDynaKube{
-		client: c,
-		apiReader: apiReader,
-		scheme: scheme,
+		client:       c,
+		apiReader:    apiReader,
+		scheme:       scheme,
 		dtcBuildFunc: dtcBuildFunc,
-		logger: logger,
-		config: config,
+		logger:       logger,
+		config:       config,
 	}
 }
 
@@ -78,7 +78,7 @@ type ReconcileDynaKube struct {
 	scheme       *runtime.Scheme
 	dtcBuildFunc DynatraceClientFunc
 	logger       logr.Logger
-	config *rest.Config
+	config       *rest.Config
 }
 
 type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
@@ -140,10 +140,10 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 
 func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconciliation) {
 	dtcReconciler := DynatraceClientReconciler{
-		Client: r.client,
+		Client:              r.client,
 		DynatraceClientFunc: r.dtcBuildFunc,
-		UpdateAPIToken: true,
-		UpdatePaaSToken: true,
+		UpdateAPIToken:      true,
+		UpdatePaaSToken:     true,
 	}
 	dtc, upd, err := dtcReconciler.Reconcile(ctx, rec.Instance)
 	rec.Update(upd, defaultUpdateInterval, "Token conditions updated")
@@ -163,7 +163,7 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 			// If there are errors log them, but move on.
 			rec.Log.Info("Istio: failed to reconcile objects", "error", err)
 		} else if upd {
-			rec.Update(true, 30 * time.Second, "Istio: objects updated")
+			rec.Update(true, 30*time.Second, "Istio: objects updated")
 		}
 	}
 

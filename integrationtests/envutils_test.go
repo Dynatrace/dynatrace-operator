@@ -5,10 +5,10 @@ package integrationtests
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"os"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	corev1 "k8s.io/api/core/v1"

@@ -36,7 +36,7 @@ func (dtl DTLogger) Error(err error, msg string, keysAndValues ...interface{}) {
 	dtl.errorLogger.Error(err, msg, keysAndValues...)
 }
 
-func (dtl DTLogger) V(level int) logr.InfoLogger {
+func (dtl DTLogger) V(level int) logr.Logger {
 	return dtl.errorLogger.V(level)
 }
 
