@@ -2,6 +2,7 @@ package kubemon
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -46,16 +47,16 @@ func TestNewStatefulSet(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        instance.Name + StatefulSetSuffix,
 			Namespace:   instance.Namespace,
-			Labels:      buildLabels(&instance),
+			Labels:      capability.BuildLabels(&instance),
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Replicas:            instance.Spec.KubernetesMonitoringSpec.Replicas,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector:            &metav1.LabelSelector{MatchLabels: BuildLabelsFromInstance(&instance)},
+			Selector:            &metav1.LabelSelector{MatchLabels: capability.BuildLabelsFromInstance(&instance)},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: buildLabels(&instance),
+					Labels: capability.BuildLabels(&instance),
 					Annotations: map[string]string{
 						annotationImageHash:       testImageHash,
 						annotationImageVersion:    testImageVersion,
@@ -78,7 +79,7 @@ func TestBuildLabels(t *testing.T) {
 			},
 		},
 	}
-	labels := buildLabels(instance)
+	labels := capability.BuildLabels(instance)
 
 	assert.NotEmpty(t, labels)
 	assert.Equal(t, map[string]string{

@@ -3,6 +3,7 @@ package kubemon
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	"hash/fnv"
 	"strconv"
 
@@ -49,16 +50,16 @@ func newStatefulSet(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        instance.Name + StatefulSetSuffix,
 			Namespace:   instance.Namespace,
-			Labels:      buildLabels(instance),
+			Labels:      capability.BuildLabels(instance, &instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Replicas:            instance.Spec.KubernetesMonitoringSpec.Replicas,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector:            &metav1.LabelSelector{MatchLabels: BuildLabelsFromInstance(instance)},
+			Selector:            &metav1.LabelSelector{MatchLabels: capability.BuildLabelsFromInstance(instance)},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: buildLabels(instance),
+					Labels: capability.BuildLabels(instance, &instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
 					Annotations: map[string]string{
 						annotationImageHash:       instance.Status.ActiveGate.ImageHash,
 						annotationImageVersion:    instance.Status.ActiveGate.ImageVersion,
@@ -155,12 +156,6 @@ func buildContainer(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 		},
 	}
 }
-func buildLabels(instance *dynatracev1alpha1.DynaKube) map[string]string {
-	return MergeLabels(instance.Labels,
-		BuildLabelsFromInstance(instance),
-		instance.Spec.KubernetesMonitoringSpec.Labels)
-}
-
 func buildKubernetesExpression(archKey string, osKey string) []corev1.NodeSelectorRequirement {
 	return []corev1.NodeSelectorRequirement{
 		{
@@ -271,24 +266,6 @@ func buildArgs(instance *dynatracev1alpha1.DynaKube) []string {
 
 func isProxyNilOrEmpty(proxy *dynatracev1alpha1.DynaKubeProxy) bool {
 	return proxy == nil || (proxy.Value == "" && proxy.ValueFrom == "")
-}
-
-func BuildLabelsFromInstance(instance *dynatracev1alpha1.DynaKube) map[string]string {
-	return map[string]string{
-		"dynatrace":  "activegate",
-		"activegate": instance.Name,
-	}
-}
-
-func MergeLabels(labels ...map[string]string) map[string]string {
-	res := map[string]string{}
-	for _, m := range labels {
-		for k, v := range m {
-			res[k] = v
-		}
-	}
-
-	return res
 }
 
 func generateStatefulSetHash(sts *appsv1.StatefulSet) (string, error) {
