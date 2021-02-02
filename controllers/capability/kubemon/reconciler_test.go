@@ -27,9 +27,7 @@ const (
 
 func init() {
 	utilruntime.Must(scheme.AddToScheme(scheme.Scheme))
-
 	utilruntime.Must(v1alpha1.AddToScheme(scheme.Scheme))
-	// +kubebuilder:scaffold:scheme
 }
 
 var mockImageVersionProvider dtversion.ImageVersionProvider = func(image string, _ *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
@@ -100,8 +98,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Spec: v1alpha1.DynaKubeSpec{
 				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
-					CustomProperties: &v1alpha1.DynaKubeValueSource{
-						Value: testValue,
+					CapabilityProperties: v1alpha1.CapabilityProperties{
+						CustomProperties: &v1alpha1.DynaKubeValueSource{
+							Value: testValue,
+						},
 					},
 				}}}
 		secret := buildTestPaasTokenSecret()

@@ -98,10 +98,11 @@ func TestBuildVolumes(t *testing.T) {
 		instance := &dynatracev1alpha1.DynaKube{
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
-					CustomProperties: &dynatracev1alpha1.DynaKubeValueSource{
-						Value:     testValue,
-						ValueFrom: testValueFrom,
-					}}}}
+					CapabilityProperties: dynatracev1alpha1.CapabilityProperties{
+						CustomProperties: &dynatracev1alpha1.DynaKubeValueSource{
+							Value:     testValue,
+							ValueFrom: testValueFrom,
+						}}}}}
 		volumes := buildVolumes(instance)
 		assert.NotEmpty(t, volumes)
 		assert.Contains(t, volumes, corev1.Volume{
@@ -119,9 +120,10 @@ func TestBuildVolumes(t *testing.T) {
 		instance := &dynatracev1alpha1.DynaKube{
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
-					CustomProperties: &dynatracev1alpha1.DynaKubeValueSource{
-						Value: testValue,
-					}}}}
+					CapabilityProperties: dynatracev1alpha1.CapabilityProperties{
+						CustomProperties: &dynatracev1alpha1.DynaKubeValueSource{
+							Value: testValue,
+						}}}}}
 		volumes := buildVolumes(instance)
 		assert.NotEmpty(t, volumes)
 		assert.Contains(t, volumes, corev1.Volume{
@@ -220,8 +222,9 @@ func TestBuildArgs(t *testing.T) {
 		instance := &dynatracev1alpha1.DynaKube{
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
-					Group: testValue,
-				}}}
+					CapabilityProperties: dynatracev1alpha1.CapabilityProperties{
+						Group: testValue,
+					}}}}
 		args := buildArgs(instance)
 
 		assert.NotEmpty(t, args)

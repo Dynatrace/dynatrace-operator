@@ -28,15 +28,16 @@ func TestBuildResources(t *testing.T) {
 		instance := &v1alpha1.DynaKube{
 			Spec: v1alpha1.DynaKubeSpec{
 				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
-					Resources: corev1.ResourceRequirements{
-						Limits: corev1.ResourceList{
-							corev1.ResourceCPU:    *resource.NewScaledQuantity(500, resource.Milli),
-							corev1.ResourceMemory: *resource.NewScaledQuantity(512, resource.Mega),
-						},
-						Requests: corev1.ResourceList{
-							corev1.ResourceCPU:    *resource.NewScaledQuantity(180, resource.Milli),
-							corev1.ResourceMemory: *resource.NewScaledQuantity(1024, resource.Mega)},
-					}}}}
+					CapabilityProperties: v1alpha1.CapabilityProperties{
+						Resources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    *resource.NewScaledQuantity(500, resource.Milli),
+								corev1.ResourceMemory: *resource.NewScaledQuantity(512, resource.Mega),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    *resource.NewScaledQuantity(180, resource.Milli),
+								corev1.ResourceMemory: *resource.NewScaledQuantity(1024, resource.Mega)},
+						}}}}}
 		resources := buildResources(instance)
 
 		assert.NotNil(t, resources)

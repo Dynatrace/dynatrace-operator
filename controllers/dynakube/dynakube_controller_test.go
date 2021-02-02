@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/kubemon"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/stretchr/testify/assert"
@@ -85,7 +85,9 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			},
 			Spec: v1alpha1.DynaKubeSpec{
 				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
-					Enabled: true,
+					CapabilityProperties: v1alpha1.CapabilityProperties{
+						Enabled: true,
+					},
 				}}}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance,
 			&corev1.Secret{
