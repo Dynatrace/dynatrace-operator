@@ -16,28 +16,47 @@ type DynaKubeSpec struct {
 
 	// Location of the Dynatrace API to connect to, including your specific environment ID
 	// +kubebuilder:validation:Required
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="API URL",order=1,xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="API URL"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	APIURL string `json:"apiUrl"`
 
 	// Credentials for the DynaKube to connect back to Dynatrace.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="API and PaaS Tokens",order=2,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="API and PaaS Tokens"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	Tokens string `json:"tokens,omitempty"`
 
-	// Disable certificate validation checks for API communication
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Skip Certificate Check",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	// Optional: Pull secret for your private registry
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Custom PullSecret"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	CustomPullSecret string `json:"customPullSecret,omitempty"`
+
+	// Disable certificate validation checks for installer download and API communication
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Skip Certificate Check"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
 	SkipCertCheck bool `json:"skipCertCheck,omitempty"`
 
 	// Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Proxy"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	Proxy *DynaKubeProxy `json:"proxy,omitempty"`
 
 	// Optional: Adds custom RootCAs from a configmap
 	// This property only affects certificates used to communicate with the Dynatrace API.
 	// The property is not applied to the ActiveGate
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Trusted CAs",order=6,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ConfigMap"}
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="TrustedCAs"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	TrustedCAs string `json:"trustedCAs,omitempty"`
 
-	// Optional: Sets Network Zone for ActiveGate pods
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Network Zone",order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	// Optional: Sets Network Zone for OneAgent and ActiveGate pods
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Network Zone"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	NetworkZone string `json:"networkZone,omitempty"`
 
 	// If enabled, Istio on the cluster will be configured automatically to allow access to the Dynatrace environment
@@ -58,13 +77,18 @@ type DynaKubeSpec struct {
 	ClassicFullStack FullStackSpec `json:"classicFullStack,omitempty"`
 
 	// Enables Kubernetes Monitoring
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	KubernetesMonitoringSpec KubernetesMonitoringSpec `json:"kubernetesMonitoring,omitempty"`
 }
 
 type ActiveGateSpec struct {
 	// Optional: the ActiveGate container image. Defaults to the latest ActiveGate image provided by the Docker Registry
 	// implementation from the Dynatrace environment set as API URL.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Image"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	Image string `json:"image,omitempty"`
 }
 
@@ -270,10 +294,7 @@ type DynaKubeValueSource struct {
 }
 
 type DynaKubeProxy struct {
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy value",order=4,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	Value string `json:"value,omitempty"`
-
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy from secret",order=5,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
+	Value     string `json:"value,omitempty"`
 	ValueFrom string `json:"valueFrom,omitempty"`
 }
 
@@ -284,7 +305,9 @@ type DynaKubeStatus struct {
 	Phase DynaKubePhaseType `json:"phase,omitempty"`
 
 	// UpdatedTimestamp indicates when the instance was last updated
-	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Last Updated",order=1,xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Last Updated"
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
 	UpdatedTimestamp metav1.Time `json:"updatedTimestamp,omitempty"`
 
 	// LastAPITokenProbeTimestamp tracks when the last request for the API token validity was sent
@@ -294,6 +317,9 @@ type DynaKubeStatus struct {
 	LastPaaSTokenProbeTimestamp *metav1.Time `json:"lastPaaSTokenProbeTimestamp,omitempty"`
 
 	// Credentials used to connect back to Dynatrace.
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="API and PaaS Tokens"
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
 	Tokens string `json:"tokens,omitempty"`
 
 	// LastClusterVersionProbeTimestamp indicates when the cluster's version was last checked
@@ -407,8 +433,8 @@ const (
 // +kubebuilder:printcolumn:name="ApiUrl",type=string,JSONPath=`.spec.apiUrl`
 // +kubebuilder:printcolumn:name="Tokens",type=string,JSONPath=`.status.tokens`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
-// +operator-sdk:csv:customresourcedefinitions:displayName="Dynatrace DynaKube"
-// +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,apps}}
+// +operator-sdk:gen-csv:customresourcedefinitions.displayName="Dynatrace DynaKube"
+// +operator-sdk:gen-csv:customresourcedefinitions.resources=`Pod,v1,""`
 type DynaKube struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
