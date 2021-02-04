@@ -74,16 +74,6 @@ checkIfNSExists() {
   fi
 }
 
-applyOneAgentOperator() {
-  if [ "${CLI}" = "kubectl" ]; then
-    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/kubernetes.yaml
-  else
-    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/openshift.yaml
-  fi
-
-  "${CLI}" -n dynatrace create secret generic oneagent --from-literal="apiToken=${API_TOKEN}" --from-literal="paasToken=${PAAS_TOKEN}" --dry-run -o yaml | "${CLI}" apply -f -
-}
-
 applyOneAgentCR() {
   cat <<EOF | "${CLI}" apply -f -
 apiVersion: dynatrace.com/v1alpha1
@@ -188,8 +178,6 @@ EOF
 ####### MAIN #######
 printf "\nCreating Dynatrace namespace...\n"
 checkIfNSExists
-printf "\nApplying Dynatrace OneAgent Operator...\n"
-applyOneAgentOperator
 printf "\nApplying OneAgent CustomResource...\n"
 applyOneAgentCR
 

@@ -1,14 +1,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- podsecuritypolicy-oneagent.yaml
-- podsecuritypolicy-oneagent-unprivileged.yaml
-- podsecuritypolicy-operator.yaml
-- podsecuritypolicy-webhook.yaml
-- role-oneagent.yaml
-- role-oneagent-unprivileged.yaml
-- rolebinding-oneagent.yaml
-- rolebinding-oneagent-unprivileged.yaml
+- operator/podsecuritypolicy-operator.yaml
+- kubernetes-monitoring/podsecuritypolicy-kubernetes-monitoring.yaml
+- oneagent/podsecuritypolicy-oneagent.yaml
+- oneagent/podsecuritypolicy-oneagent-unprivileged.yaml
+- oneagent/role-oneagent.yaml
+- oneagent/role-oneagent-unprivileged.yaml
+- oneagent/rolebinding-oneagent.yaml
+- oneagent/rolebinding-oneagent-unprivileged.yaml
+- webhook/podsecuritypolicy-webhook.yaml
 bases:
   - ../common
 patchesJson6902:
@@ -16,13 +17,13 @@ patchesJson6902:
       group: rbac.authorization.k8s.io
       version: v1
       kind: Role
-      name: dynatrace-oneagent-operator
+      name: dynatrace-operator
       namespace: dynatrace
-    path: role-operator-patch.yaml
+    path: operator/role-operator-patch.yaml
   - target:
       group: rbac.authorization.k8s.io
       version: v1
       kind: Role
-      name: dynatrace-oneagent-webhook
+      name: dynatrace-webhook
       namespace: dynatrace
-    path: role-webhook-patch.yaml
+    path: webhook/role-webhook-patch.yaml
