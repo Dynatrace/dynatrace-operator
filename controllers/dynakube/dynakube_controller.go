@@ -52,6 +52,7 @@ func (r *ReconcileDynaKube) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&dynatracev1alpha1.DynaKube{}).
 		Owns(&appsv1.StatefulSet{}).
+		Owns(&appsv1.DaemonSet{}).
 		Complete(r)
 }
 
