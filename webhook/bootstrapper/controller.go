@@ -31,7 +31,7 @@ import (
 
 // time between consecutive queries for a new pod to get ready
 const (
-	webhookName = "dynatrace-oneagent-webhook"
+	webhookName = "dynatrace-webhook"
 	certsDir    = "/mnt/webhook-certs"
 )
 
