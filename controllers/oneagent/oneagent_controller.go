@@ -253,11 +253,11 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, webhookInjection bool, unprivileged bool, logger logr.Logger, clusterID string) corev1.PodSpec {
 	p := corev1.PodSpec{}
 
-	sa := "dynatrace-oneagent"
+	sa := "dynatrace-dynakube-oneagent"
 	if fs.ServiceAccountName != "" {
 		sa = fs.ServiceAccountName
 	} else if unprivileged {
-		sa = "dynatrace-oneagent-unprivileged"
+		sa = "dynatrace-dynakube-oneagent-unprivileged"
 	}
 
 	resources := fs.Resources
