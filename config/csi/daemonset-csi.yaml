@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: driver
-          image: quay.io/dynatrace/dynatrace-operator:snapshot-feature-csi-driver-amd64
+          image: quay.io/dynatrace/dynatrace-operator:snapshot
           command:
             - csi-driver
           args:
@@ -41,6 +41,8 @@ spec:
           securityContext:
             privileged: true
             runAsUser: 0
+            seLinuxOptions:
+              label: "s0"
           volumeMounts:
             - name: data-dir
               mountPath: /mnt/data

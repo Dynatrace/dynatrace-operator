@@ -88,7 +88,7 @@ func (svr *CSIDriverServer) Start(stop <-chan struct{}) error {
 	}
 
 	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC(log)))
-	defer func() {
+	go func() {
 		<-stop
 		svr.log.Info("Stopping server")
 		server.GracefulStop()
@@ -219,7 +219,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Namespace '%s' doesn't have DynaKube assigned", nsName))
 	}
 
-	envID, err := ioutil.ReadFile(filepath.Join(svr.dataDir, dkName))
+	envID, err := ioutil.ReadFile(filepath.Join(svr.dataDir, fmt.Sprintf("tenant-%s", dkName)))
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("Failed to extract tenant for DynaKube %s: %s", dkName, err.Error()))
 	}
@@ -229,7 +229,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		filepath.Join(envDir, "log", podUID),
 		filepath.Join(envDir, "datastorage", podUID),
 	} {
-		if err = os.MkdirAll(dir, 0750); err != nil {
+		if err = os.MkdirAll(dir, 0770); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}

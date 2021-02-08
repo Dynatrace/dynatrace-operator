@@ -87,7 +87,7 @@ func (r *OneAgentProvisioner) Reconcile(request reconcile.Request) (reconcile.Re
 
 	envDir := filepath.Join(r.dataDir, ci.TenantUUID)
 	verFile := filepath.Join(envDir, "version")
-	tenantFile := filepath.Join(r.dataDir, dk.Name)
+	tenantFile := filepath.Join(r.dataDir, fmt.Sprintf("tenant-%s", dk.Name))
 
 	for _, dir := range []string{
 		envDir,
@@ -160,7 +160,7 @@ func installAgent(rlog logr.Logger, dtc dtclient.Client, flavor, arch, targetDir
 		}
 	}()
 
-	rlog.Info("Downloading OneAgent package", "flavor", flavor, arch)
+	rlog.Info("Downloading OneAgent package", "flavor", flavor, "architecture", arch)
 
 	r, err := dtc.GetLatestAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, flavor, arch)
 	if err != nil {
@@ -204,6 +204,8 @@ func installAgent(rlog logr.Logger, dtc dtclient.Client, flavor, arch, targetDir
 }
 
 func unzip(rlog logr.Logger, r *zip.Reader, outDir string) error {
+	const agentConfPath = "agent/conf/"
+
 	os.MkdirAll(outDir, 0755)
 
 	// Closure to address file descriptors issue with all the deferred .Close() methods
@@ -226,15 +228,22 @@ func unzip(rlog logr.Logger, r *zip.Reader, outDir string) error {
 			return fmt.Errorf("illegal file path: %s", path)
 		}
 
-		if zipf.FileInfo().IsDir() {
-			return os.MkdirAll(path, zipf.Mode())
+		mode := zipf.Mode()
+
+		// Mark all files inside ./agent/conf as group-writable
+		if zipf.Name != agentConfPath && strings.HasPrefix(zipf.Name, agentConfPath) {
+			mode |= 020
 		}
 
-		if err = os.MkdirAll(filepath.Dir(path), zipf.Mode()); err != nil {
+		if zipf.FileInfo().IsDir() {
+			return os.MkdirAll(path, mode)
+		}
+
+		if err = os.MkdirAll(filepath.Dir(path), mode); err != nil {
 			return err
 		}
 
-		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, zipf.Mode())
+		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
 		if err != nil {
 			return err
 		}
