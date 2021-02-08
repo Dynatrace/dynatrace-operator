@@ -1,8 +1,8 @@
-package routing
+package capability
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability/routing"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
@@ -23,35 +23,37 @@ const (
 )
 
 func TestNewStatefulSetBuilder(t *testing.T) {
-	stsBuilder := newStatefulSetProperties(&v1alpha1.DynaKube{}, &v1alpha1.CapabilityProperties{}, testUID, testValue)
+	stsBuilder := NewStatefulSetProperties(&v1alpha1.DynaKube{}, &v1alpha1.CapabilityProperties{},
+		testUID, testValue, "", "", "")
 	assert.NotNil(t, stsBuilder)
 	assert.NotNil(t, stsBuilder.DynaKube)
 	assert.NotNil(t, stsBuilder.CapabilityProperties)
-	assert.NotNil(t, stsBuilder.CustomPropertiesHash)
-	assert.NotEmpty(t, stsBuilder.CustomPropertiesHash)
-	assert.NotEmpty(t, stsBuilder.KubeSystemUID)
+	assert.NotNil(t, stsBuilder.customPropertiesHash)
+	assert.NotEmpty(t, stsBuilder.customPropertiesHash)
+	assert.NotEmpty(t, stsBuilder.kubeSystemUID)
 }
 
 func TestStatefulSetBuilder_Build(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
-	sts, err := createStatefulSet(newStatefulSetProperties(instance, capabilityProperties, "", ""))
+	sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties,
+		"", "", "msgrouter", "", ""))
 
 	assert.NoError(t, err)
 	assert.NotNil(t, sts)
-	assert.Equal(t, instance.Name+StatefulSetSuffix, sts.Name)
+	assert.Equal(t, instance.Name+routing.StatefulSetSuffix, sts.Name)
 	assert.Equal(t, instance.Namespace, sts.Namespace)
 	assert.Equal(t, map[string]string{
-		capability.KeyDynatrace:  capability.ValueActiveGate,
-		capability.KeyActiveGate: instance.Name,
+		KeyDynatrace:  ValueActiveGate,
+		KeyActiveGate: instance.Name,
 	}, sts.Labels)
 	assert.Equal(t, instance.Spec.RoutingSpec.Replicas, sts.Spec.Replicas)
 	assert.Equal(t, appsv1.ParallelPodManagement, sts.Spec.PodManagementPolicy)
 	assert.Equal(t, metav1.LabelSelector{
-		MatchLabels: capability.BuildLabelsFromInstance(instance),
+		MatchLabels: BuildLabelsFromInstance(instance),
 	}, *sts.Spec.Selector)
 	assert.NotEqual(t, corev1.PodTemplateSpec{}, sts.Spec.Template)
-	assert.Equal(t, capability.BuildLabels(instance, capabilityProperties), sts.Spec.Template.Labels)
+	assert.Equal(t, BuildLabels(instance, capabilityProperties), sts.Spec.Template.Labels)
 	assert.NotEqual(t, corev1.PodSpec{}, sts.Spec.Template.Spec)
 	assert.Contains(t, sts.Annotations, annotationTemplateHash)
 
@@ -62,7 +64,8 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	assert.Equal(t, storedHash, hash)
 
 	t.Run(`template has annotations`, func(t *testing.T) {
-		sts, _ := createStatefulSet(newStatefulSetProperties(instance, capabilityProperties, "", testValue))
+		sts, _ := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties,
+			"", testValue, "", "", ""))
 		assert.Equal(t, map[string]string{
 			annotationImageHash:       instance.Status.ActiveGate.ImageHash,
 			annotationImageVersion:    instance.Status.ActiveGate.ImageVersion,
@@ -74,7 +77,8 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 func TestStatefulSet_TemplateSpec(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
-	templateSpec := buildTemplateSpec(newStatefulSetProperties(instance, capabilityProperties, "", ""))
+	templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties,
+		"", "", "", "", ""))
 
 	assert.NotEqual(t, corev1.PodSpec{}, templateSpec)
 	assert.NotEmpty(t, templateSpec.Containers)
@@ -121,7 +125,8 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 func TestStatefulSet_Container(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
-	container := buildContainer(newStatefulSetProperties(instance, capabilityProperties, "", ""))
+	container := buildContainer(NewStatefulSetProperties(instance, capabilityProperties,
+		"", "", "", "", ""))
 
 	assert.Equal(t, v1alpha1.OperatorName, container.Name)
 	assert.Equal(t, utils.BuildActiveGateImage(instance), container.Image)
@@ -139,7 +144,8 @@ func TestStatefulSet_Volumes(t *testing.T) {
 	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
 
 	t.Run(`without custom properties`, func(t *testing.T) {
-		volumes := buildVolumes(newStatefulSetProperties(instance, capabilityProperties, "", ""))
+		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", ""))
 
 		assert.Empty(t, volumes)
 	})
@@ -147,8 +153,9 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		capabilityProperties.CustomProperties = &v1alpha1.DynaKubeValueSource{
 			Value: testValue,
 		}
-		volumes := buildVolumes(newStatefulSetProperties(instance, capabilityProperties, "", ""))
-		expectedSecretName := instance.Name + StatefulSetSuffix + "-" + customproperties.Suffix
+		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "msgrouter", "", ""))
+		expectedSecretName := instance.Name + routing.StatefulSetSuffix + "-" + customproperties.Suffix
 
 		require.NotEmpty(t, volumes)
 
@@ -165,7 +172,8 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		capabilityProperties.CustomProperties = &v1alpha1.DynaKubeValueSource{
 			ValueFrom: testKey,
 		}
-		volumes := buildVolumes(newStatefulSetProperties(instance, capabilityProperties, "", ""))
+		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", ""))
 		expectedSecretName := testKey
 
 		require.NotEmpty(t, volumes)
@@ -186,9 +194,10 @@ func TestStatefulSet_Env(t *testing.T) {
 	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
 
 	t.Run(`without proxy`, func(t *testing.T) {
-		envVars := buildEnvs(newStatefulSetProperties(instance, capabilityProperties, testUID, ""))
+		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
+			testUID, "", "msgrouter", "MSGrouter", ""))
 		assert.Equal(t, []corev1.EnvVar{
-			{Name: DTCapabilities, Value: CapabilityEnv},
+			{Name: DTCapabilities, Value: routing.CapabilityEnv},
 			{Name: DTIdSeedNamespace, Value: instance.Namespace},
 			{Name: DTIdSeedClusterId, Value: testUID},
 			{Name: testKey, Value: testValue},
@@ -196,7 +205,8 @@ func TestStatefulSet_Env(t *testing.T) {
 	})
 	t.Run(`with proxy from value`, func(t *testing.T) {
 		instance.Spec.Proxy = &v1alpha1.DynaKubeProxy{Value: testValue}
-		envVars := buildEnvs(newStatefulSetProperties(instance, capabilityProperties, "", ""))
+		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", ""))
 
 		assert.Contains(t, envVars, corev1.EnvVar{
 			Name:  ProxyEnv,
@@ -205,7 +215,8 @@ func TestStatefulSet_Env(t *testing.T) {
 	})
 	t.Run(`with proxy from value source`, func(t *testing.T) {
 		instance.Spec.Proxy = &v1alpha1.DynaKubeProxy{ValueFrom: testName}
-		envVars := buildEnvs(newStatefulSetProperties(instance, capabilityProperties, "", ""))
+		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", ""))
 
 		assert.NotEmpty(t, envVars)
 
@@ -223,22 +234,26 @@ func TestStatefulSet_Args(t *testing.T) {
 	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
 
 	t.Run(`with only default values`, func(t *testing.T) {
-		args := buildArgs(newStatefulSetProperties(instance, capabilityProperties, "", ""))
+		args := buildArgs(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", ""))
 		assert.Equal(t, []string{DTCapabilitiesArg, testKey}, args)
 	})
 	t.Run(`with networkzone`, func(t *testing.T) {
 		instance.Spec.NetworkZone = testName
-		args := buildArgs(newStatefulSetProperties(instance, capabilityProperties, "", ""))
+		args := buildArgs(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", ""))
 		assert.Contains(t, args, `--networkzone="`+testName+`"`)
 	})
 	t.Run(`with proxy`, func(t *testing.T) {
 		instance.Spec.Proxy = &v1alpha1.DynaKubeProxy{Value: testValue}
-		args := buildArgs(newStatefulSetProperties(instance, capabilityProperties, "", ""))
+		args := buildArgs(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", ""))
 		assert.Contains(t, args, ProxyArg)
 	})
 	t.Run(`with group`, func(t *testing.T) {
 		capabilityProperties.Group = testName
-		args := buildArgs(newStatefulSetProperties(instance, capabilityProperties, "", ""))
+		args := buildArgs(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", ""))
 		assert.Contains(t, args, `--group="`+testName+`"`)
 	})
 }
@@ -248,12 +263,14 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
 
 	t.Run(`without custom properties`, func(t *testing.T) {
-		volumeMounts := buildVolumeMounts(newStatefulSetProperties(instance, capabilityProperties, "", ""))
+		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", ""))
 		assert.Empty(t, volumeMounts)
 	})
 	t.Run(`with custom properties`, func(t *testing.T) {
 		capabilityProperties.CustomProperties = &v1alpha1.DynaKubeValueSource{Value: testValue}
-		volumeMounts := buildVolumeMounts(newStatefulSetProperties(instance, capabilityProperties, "", ""))
+		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", ""))
 
 		assert.NotEmpty(t, volumeMounts)
 		assert.Contains(t, volumeMounts, corev1.VolumeMount{

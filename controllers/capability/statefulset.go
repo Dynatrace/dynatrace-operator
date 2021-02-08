@@ -1,10 +1,9 @@
-package routing
+package capability
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
@@ -19,7 +18,7 @@ import (
 )
 
 const (
-	monitoringServiceAccount = "dynatrace-kubernetes-monitoring"
+	serviceAccountPrefix = "dynatrace-"
 
 	kubernetesArch     = "kubernetes.io/arch"
 	kubernetesOS       = "kubernetes.io/os"
@@ -46,46 +45,52 @@ const (
 	ProxyKey = "ProxyKey"
 )
 
-// To extract:
-// StatefulSet Suffix
-// CapabilityEnv
-// module
-
 type statefulSetProperties struct {
 	*v1alpha1.DynaKube
 	*v1alpha1.CapabilityProperties
-	CustomPropertiesHash string
-	KubeSystemUID        types.UID
+	customPropertiesHash string
+	kubeSystemUID        types.UID
+	module               string
+	capabilityEnv        string
+	serviceAccountOwner  string
 }
 
-func newStatefulSetProperties(instance *v1alpha1.DynaKube, capabilityProperties *v1alpha1.CapabilityProperties, kubeSystemUID types.UID, customPropertiesHash string) *statefulSetProperties {
+func NewStatefulSetProperties(instance *v1alpha1.DynaKube, capabilityProperties *v1alpha1.CapabilityProperties,
+	kubeSystemUID types.UID, customPropertiesHash string, module string, capabilityEnv string, serviceAccountOwner string) *statefulSetProperties {
+	if serviceAccountOwner == "" {
+		serviceAccountOwner = module
+	}
+
 	return &statefulSetProperties{
 		DynaKube:             instance,
 		CapabilityProperties: capabilityProperties,
-		CustomPropertiesHash: customPropertiesHash,
-		KubeSystemUID:        kubeSystemUID,
+		customPropertiesHash: customPropertiesHash,
+		kubeSystemUID:        kubeSystemUID,
+		module:               module,
+		capabilityEnv:        capabilityEnv,
+		serviceAccountOwner:  serviceAccountOwner,
 	}
 }
 
-func createStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
+func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        stsProperties.Name + StatefulSetSuffix,
+			Name:        stsProperties.Name + "-" + stsProperties.module,
 			Namespace:   stsProperties.Namespace,
-			Labels:      capability.BuildLabels(stsProperties.DynaKube, stsProperties.CapabilityProperties),
+			Labels:      BuildLabels(stsProperties.DynaKube, stsProperties.CapabilityProperties),
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Replicas:            stsProperties.Replicas,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector:            &metav1.LabelSelector{MatchLabels: capability.BuildLabelsFromInstance(stsProperties.DynaKube)},
+			Selector:            &metav1.LabelSelector{MatchLabels: BuildLabelsFromInstance(stsProperties.DynaKube)},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: capability.BuildLabels(stsProperties.DynaKube, stsProperties.CapabilityProperties),
+					Labels: BuildLabels(stsProperties.DynaKube, stsProperties.CapabilityProperties),
 					Annotations: map[string]string{
 						annotationImageHash:       stsProperties.Status.ActiveGate.ImageHash,
 						annotationImageVersion:    stsProperties.Status.ActiveGate.ImageVersion,
-						annotationCustomPropsHash: stsProperties.CustomPropertiesHash,
+						annotationCustomPropsHash: stsProperties.customPropertiesHash,
 					},
 				},
 				Spec: buildTemplateSpec(stsProperties),
@@ -105,7 +110,7 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 	return corev1.PodSpec{
 		Containers:         []corev1.Container{buildContainer(stsProperties)},
 		NodeSelector:       stsProperties.NodeSelector,
-		ServiceAccountName: determineServiceAccountName(stsProperties.ServiceAccountName),
+		ServiceAccountName: determineServiceAccountName(stsProperties),
 		Affinity: &corev1.Affinity{
 			NodeAffinity: &corev1.NodeAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
@@ -125,7 +130,7 @@ func buildContainer(stsProperties *statefulSetProperties) corev1.Container {
 	return corev1.Container{
 		Name:            v1alpha1.OperatorName,
 		Image:           utils.BuildActiveGateImage(stsProperties.DynaKube),
-		Resources:       capability.BuildResources(stsProperties.DynaKube),
+		Resources:       BuildResources(stsProperties.DynaKube),
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             buildEnvs(stsProperties),
 		Args:            buildArgs(stsProperties),
@@ -161,7 +166,7 @@ func buildVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
 	var volumes []corev1.Volume
 
 	if !isCustomPropertiesNilOrEmpty(stsProperties.CustomProperties) {
-		valueFrom := determineCustomPropertiesSource(stsProperties.Name, stsProperties.CustomProperties)
+		valueFrom := determineCustomPropertiesSource(stsProperties)
 		volumes = append(volumes, corev1.Volume{
 			Name: customproperties.VolumeName,
 			VolumeSource: corev1.VolumeSource{
@@ -176,11 +181,11 @@ func buildVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
 	return volumes
 }
 
-func determineCustomPropertiesSource(name string, valueSource *v1alpha1.DynaKubeValueSource) string {
-	if valueSource.ValueFrom == "" {
-		return fmt.Sprintf("%s-%s-%s", name, module, customproperties.Suffix)
+func determineCustomPropertiesSource(stsProperties *statefulSetProperties) string {
+	if stsProperties.CustomProperties.ValueFrom == "" {
+		return fmt.Sprintf("%s-%s-%s", stsProperties.Name, stsProperties.serviceAccountOwner, customproperties.Suffix)
 	}
-	return valueSource.ValueFrom
+	return stsProperties.CustomProperties.ValueFrom
 }
 
 func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMount {
@@ -200,9 +205,9 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 
 func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
 	envs := []corev1.EnvVar{
-		{Name: DTCapabilities, Value: CapabilityEnv},
+		{Name: DTCapabilities, Value: stsProperties.capabilityEnv},
 		{Name: DTIdSeedNamespace, Value: stsProperties.Namespace},
-		{Name: DTIdSeedClusterId, Value: string(stsProperties.KubeSystemUID)},
+		{Name: DTIdSeedClusterId, Value: string(stsProperties.kubeSystemUID)},
 	}
 	envs = append(envs, stsProperties.Env...)
 
@@ -252,11 +257,11 @@ func buildArgs(stsProperties *statefulSetProperties) []string {
 	return args
 }
 
-func determineServiceAccountName(serviceAccountName string) string {
-	if serviceAccountName == "" {
-		return monitoringServiceAccount
+func determineServiceAccountName(stsProperties *statefulSetProperties) string {
+	if stsProperties.ServiceAccountName == "" {
+		return serviceAccountPrefix + stsProperties.serviceAccountOwner
 	}
-	return serviceAccountName
+	return stsProperties.ServiceAccountName
 }
 
 func buildKubernetesExpression(archKey string, osKey string) []corev1.NodeSelectorRequirement {

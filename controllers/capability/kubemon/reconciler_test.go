@@ -3,6 +3,7 @@ package kubemon
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -23,6 +24,10 @@ import (
 
 const (
 	testPaasToken = "test-paas-token"
+	testName      = "test-name"
+	testUID       = "test-uid"
+	testNamespace = "test-namespace"
+	testValue     = "test-value"
 )
 
 func init() {
@@ -77,7 +82,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: instance.Name + StatefulSetSuffix, Namespace: instance.Namespace}, &statefulSet)
 		assert.NoError(t, err)
 
-		expected, err := newStatefulSet(instance, testUID, "")
+		expected, err := capability.CreateStatefulSet(
+			capability.NewStatefulSetProperties(
+				instance, &instance.Spec.KubernetesMonitoringSpec.CapabilityProperties,
+				testUID, "", module, CapabilityEnv, Name,
+			))
 		assert.NoError(t, err)
 
 		expected.Spec.Template.Spec.Volumes = nil

@@ -3,6 +3,7 @@ package kubemon
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	"hash/fnv"
 	"os"
 	"strconv"
@@ -34,6 +35,11 @@ const (
 	annotationCustomPropsHash = "internal.operator.dynatrace.com/custom-properties-hash"
 
 	envVarDisableUpdates = "OPERATOR_DEBUG_DISABLE_UPDATES"
+
+	CapabilityEnv = "kubernetes_monitoring"
+
+	StatefulSetSuffix = "-kubemon"
+	module            = "kubemon"
 )
 
 type ReconcileKubeMon struct {
@@ -164,7 +170,10 @@ func (r *ReconcileKubeMon) buildDesiredStatefulSet(instance *dynatracev1alpha1.D
 		return nil, errors.WithStack(err)
 	}
 
-	return newStatefulSet(instance, kubeUID, cpHash)
+	return capability.CreateStatefulSet(
+		capability.NewStatefulSetProperties(
+			instance, &instance.Spec.KubernetesMonitoringSpec.CapabilityProperties,
+			kubeUID, cpHash, module, CapabilityEnv, Name))
 }
 
 func (r *ReconcileKubeMon) getCustomPropsHash() (string, error) {
