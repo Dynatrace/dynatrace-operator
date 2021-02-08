@@ -303,3 +303,14 @@ func generateStatefulSetHash(sts *appsv1.StatefulSet) (string, error) {
 
 	return strconv.FormatUint(uint64(hasher.Sum32()), 10), nil
 }
+
+func HasStatefulSetChanged(a *appsv1.StatefulSet, b *appsv1.StatefulSet) bool {
+	return GetTemplateHash(a) != GetTemplateHash(b)
+}
+
+func GetTemplateHash(a metav1.Object) string {
+	if annotations := a.GetAnnotations(); annotations != nil {
+		return annotations[annotationTemplateHash]
+	}
+	return ""
+}

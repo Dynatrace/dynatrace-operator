@@ -20,7 +20,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -56,13 +55,12 @@ type ReconcileKubeMon struct {
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
 	instance *dynatracev1alpha1.DynaKube, imgVerProvider dtversion.ImageVersionProvider) *ReconcileKubeMon {
 	return &ReconcileKubeMon{
-		Client:    clt,
-		apiReader: apiReader,
-		scheme:    scheme,
-		dtc:       dtc,
-		log:       log,
-		instance:  instance,
-
+		Client:               clt,
+		apiReader:            apiReader,
+		scheme:               scheme,
+		dtc:                  dtc,
+		log:                  log,
+		instance:             instance,
 		imageVersionProvider: imgVerProvider,
 	}
 }
@@ -219,7 +217,7 @@ func (r *ReconcileKubeMon) createStatefulSetIfNotExists(desired *appsv1.Stateful
 }
 
 func (r *ReconcileKubeMon) updateStatefulSetIfOutdated(current *appsv1.StatefulSet, desired *appsv1.StatefulSet) (bool, error) {
-	if !hasStatefulSetChanged(current, desired) {
+	if !capability.HasStatefulSetChanged(current, desired) {
 		return false, nil
 	}
 
@@ -241,15 +239,4 @@ func (r *ReconcileKubeMon) getCurrentStatefulSet(desired *appsv1.StatefulSet) (*
 
 func (r *ReconcileKubeMon) createStatefulSet(desired *appsv1.StatefulSet) error {
 	return r.Create(context.TODO(), desired)
-}
-
-func hasStatefulSetChanged(a *appsv1.StatefulSet, b *appsv1.StatefulSet) bool {
-	return getTemplateHash(a) != getTemplateHash(b)
-}
-
-func getTemplateHash(a metav1.Object) string {
-	if annotations := a.GetAnnotations(); annotations != nil {
-		return annotations[annotationTemplateHash]
-	}
-	return ""
 }

@@ -2,7 +2,6 @@ package capability
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability/routing"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
@@ -15,11 +14,12 @@ import (
 )
 
 const (
-	testName      = "test-name"
-	testNamespace = "test-namespace"
-	testKey       = "test-key"
-	testValue     = "test-value"
-	testUID       = "test-uid"
+	testName                 = "test-name"
+	testNamespace            = "test-namespace"
+	testKey                  = "test-key"
+	testValue                = "test-value"
+	testUID                  = "test-uid"
+	routingStatefulSetSuffix = "-msgrouter"
 )
 
 func TestNewStatefulSetBuilder(t *testing.T) {
@@ -41,7 +41,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, sts)
-	assert.Equal(t, instance.Name+routing.StatefulSetSuffix, sts.Name)
+	assert.Equal(t, instance.Name+routingStatefulSetSuffix, sts.Name)
 	assert.Equal(t, instance.Namespace, sts.Namespace)
 	assert.Equal(t, map[string]string{
 		KeyDynatrace:  ValueActiveGate,
@@ -155,7 +155,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		}
 		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "msgrouter", "", ""))
-		expectedSecretName := instance.Name + routing.StatefulSetSuffix + "-" + customproperties.Suffix
+		expectedSecretName := instance.Name + "-msgrouter-" + customproperties.Suffix
 
 		require.NotEmpty(t, volumes)
 
@@ -197,7 +197,7 @@ func TestStatefulSet_Env(t *testing.T) {
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
 			testUID, "", "msgrouter", "MSGrouter", ""))
 		assert.Equal(t, []corev1.EnvVar{
-			{Name: DTCapabilities, Value: routing.CapabilityEnv},
+			{Name: DTCapabilities, Value: "MSGrouter"},
 			{Name: DTIdSeedNamespace, Value: instance.Namespace},
 			{Name: DTIdSeedClusterId, Value: testUID},
 			{Name: testKey, Value: testValue},
