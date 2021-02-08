@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability/routing"
 	"net/http"
 	"os"
 	"time"
@@ -186,6 +187,15 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion, r.enableUpdates,
 		).Reconcile()
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "kubemon reconciled") {
+			return
+		}
+	}
+
+	if rec.Instance.Spec.RoutingSpec.Enabled {
+		upd, err := routing.NewReconciler(
+			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion, r.enableUpdates,
+		).Reconcile()
+		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "routing reconciled") {
 			return
 		}
 	}
