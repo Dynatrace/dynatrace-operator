@@ -2,22 +2,25 @@ package routing
 
 import (
 	"context"
+	"hash/fnv"
+	"strconv"
+
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"hash/fnv"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"strconv"
 )
 
 const (
@@ -34,10 +37,11 @@ type ReconcileRouting struct {
 	log                  logr.Logger
 	instance             *v1alpha1.DynaKube
 	imageVersionProvider dtversion.ImageVersionProvider
+	enableUpdates        bool
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
-	instance *v1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *ReconcileRouting {
+	instance *v1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, enableUpdates bool) *ReconcileRouting {
 	return &ReconcileRouting{
 		Client:               clt,
 		apiReader:            apiReader,
@@ -46,6 +50,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		log:                  log,
 		instance:             instance,
 		imageVersionProvider: imageVersionProvider,
+		enableUpdates:        enableUpdates,
 	}
 }
 
@@ -69,6 +74,11 @@ func (r *ReconcileRouting) Reconcile() (update bool, err error) {
 }
 
 func (r *ReconcileRouting) manageStatefulSet() (bool, error) {
+	versionUpdated, err := r.updateImageVersion()
+	if versionUpdated || err != nil {
+		return versionUpdated, errors.WithStack(err)
+	}
+
 	desiredSts, err := r.buildDesiredStatefulSet()
 	if err != nil {
 		return false, errors.WithStack(err)
@@ -91,13 +101,58 @@ func (r *ReconcileRouting) manageStatefulSet() (bool, error) {
 	return false, nil
 }
 
+func (r *ReconcileRouting) updateImageVersion() (bool, error) {
+	if r.enableUpdates == false {
+		return false, nil
+	}
+
+	img := utils.BuildActiveGateImage(r.instance)
+	instance := r.instance
+	pullSecret, err := dtpullsecret.GetImagePullSecret(r, instance)
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to get image pull secret")
+	}
+
+	auths, err := dtversion.ParseDockerAuthsFromSecret(pullSecret)
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to get Dockerconfig for pull secret")
+	}
+
+	verProvider := dtversion.GetImageVersion
+	if r.imageVersionProvider != nil {
+		verProvider = r.imageVersionProvider
+	}
+
+	ver, err := verProvider(img, &dtversion.DockerConfig{
+		Auths:         auths,
+		SkipCertCheck: instance.Spec.SkipCertCheck,
+	})
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to get image version")
+	}
+
+	upd := false
+	if instance.Status.ActiveGate.ImageHash != ver.Hash {
+		r.log.Info("Update found",
+			"oldVersion", instance.Status.ActiveGate.ImageVersion,
+			"newVersion", ver.Version,
+			"oldHash", instance.Status.ActiveGate.ImageHash,
+			"newHash", ver.Hash)
+		upd = true
+	}
+
+	instance.Status.ActiveGate.ImageVersion = ver.Version
+	instance.Status.ActiveGate.ImageHash = ver.Hash
+	return upd, nil
+}
+
 func (r *ReconcileRouting) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 	kubeUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	cpHash, err := r.getCustomPropsHash()
+	cpHash, err := r.calculateCustomPropertyHash()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -106,10 +161,6 @@ func (r *ReconcileRouting) buildDesiredStatefulSet() (*appsv1.StatefulSet, error
 		capability.NewStatefulSetProperties(
 			r.instance, &r.instance.Spec.RoutingSpec.CapabilityProperties, kubeUID, cpHash, module, CapabilityEnv, ""))
 	return desiredSts, errors.WithStack(err)
-}
-
-func (r *ReconcileRouting) getCustomPropsHash() (string, error) {
-	return "", nil
 }
 
 func (r *ReconcileRouting) getStatefulSet(desiredSts *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {

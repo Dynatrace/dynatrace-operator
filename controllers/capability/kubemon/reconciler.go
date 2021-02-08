@@ -3,12 +3,12 @@ package kubemon
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	"hash/fnv"
 	"os"
 	"strconv"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
