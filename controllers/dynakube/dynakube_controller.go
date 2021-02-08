@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -30,10 +31,11 @@ import (
 )
 
 const defaultUpdateInterval = 5 * time.Minute
+const envVarDisableUpdates = "OPERATOR_DEBUG_DISABLE_UPDATES"
 
 var log = logf.Log.WithName("controller_dynakube")
 
-func Add(mgr manager.Manager, ns string) error {
+func Add(mgr manager.Manager, _ string) error {
 	return NewReconciler(mgr).SetupWithManager(mgr)
 }
 
@@ -57,13 +59,15 @@ func (r *ReconcileDynaKube) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, logger logr.Logger, config *rest.Config) *ReconcileDynaKube {
+	enableUpdates := os.Getenv(envVarDisableUpdates) != "True"
 	return &ReconcileDynaKube{
-		client:       c,
-		apiReader:    apiReader,
-		scheme:       scheme,
-		dtcBuildFunc: dtcBuildFunc,
-		logger:       logger,
-		config:       config,
+		client:        c,
+		apiReader:     apiReader,
+		scheme:        scheme,
+		dtcBuildFunc:  dtcBuildFunc,
+		logger:        logger,
+		config:        config,
+		enableUpdates: enableUpdates,
 	}
 }
 
@@ -74,12 +78,13 @@ var _ reconcile.Reconciler = &ReconcileDynaKube{}
 type ReconcileDynaKube struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client       client.Client
-	apiReader    client.Reader
-	scheme       *runtime.Scheme
-	dtcBuildFunc DynatraceClientFunc
-	logger       logr.Logger
-	config       *rest.Config
+	client        client.Client
+	apiReader     client.Reader
+	scheme        *runtime.Scheme
+	dtcBuildFunc  DynatraceClientFunc
+	logger        logr.Logger
+	config        *rest.Config
+	enableUpdates bool
 }
 
 type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
@@ -92,7 +97,7 @@ type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.Dyn
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	if r.logger == nil {
-		r.logger = log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+		r.logger = log.WithValues("Request.Namespace", request.Namespace, "Request.serviceAccountOwner", request.Name)
 	}
 	reqLogger := r.logger
 	reqLogger.Info("Reconciling DynaKube")
@@ -178,7 +183,7 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 
 	if rec.Instance.Spec.KubernetesMonitoringSpec.Enabled {
 		upd, err := kubemon.NewReconciler(
-			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
+			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion, r.enableUpdates,
 		).Reconcile()
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "kubemon reconciled") {
 			return

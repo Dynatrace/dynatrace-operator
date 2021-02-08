@@ -111,6 +111,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
+			enableUpdates: false,
 		}
 
 		mockClient.

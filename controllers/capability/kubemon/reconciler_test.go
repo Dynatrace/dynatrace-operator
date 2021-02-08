@@ -58,7 +58,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}},
 			instance, secret).Build()
 		reconciler := NewReconciler(
-			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider,
+			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider, false,
 		)
 		connectionInfo := dtclient.ConnectionInfo{TenantUUID: testUID}
 		tenantInfo := &dtclient.TenantInfo{ID: testUID}
@@ -85,7 +85,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		expected, err := capability.CreateStatefulSet(
 			capability.NewStatefulSetProperties(
 				instance, &instance.Spec.KubernetesMonitoringSpec.CapabilityProperties,
-				testUID, "", module, CapabilityEnv, Name,
+				testUID, "", module, capabilityName, serviceAccountOwner,
 			))
 		assert.NoError(t, err)
 
@@ -121,7 +121,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}},
 			instance, secret).Build()
 		reconciler := NewReconciler(
-			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider,
+			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider, false,
 		)
 		connectionInfo := dtclient.ConnectionInfo{TenantUUID: testUID}
 		tenantInfo := &dtclient.TenantInfo{ID: testUID}
@@ -142,7 +142,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var customPropertiesSecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: fmt.Sprintf("%s-%s-%s", instance.Name, Name, customproperties.Suffix), Namespace: testNamespace}, &customPropertiesSecret)
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: fmt.Sprintf("%s-%s-%s", instance.Name, serviceAccountOwner, customproperties.Suffix), Namespace: testNamespace}, &customPropertiesSecret)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, customPropertiesSecret)
