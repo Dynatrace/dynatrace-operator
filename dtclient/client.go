@@ -30,7 +30,7 @@ type Client interface {
 	GetLatestAgentVersion(os, installerType string) (string, error)
 
 	// GetLatestAgent returns a reader with the contents of the download. Must be closed by caller.
-	GetLatestAgent(os, installerType string) (io.ReadCloser, error)
+	GetLatestAgent(os, installerType, flavor, arch string) (io.ReadCloser, error)
 
 	// GetAgentVersionForIP returns the agent version running on the host with the given IP address.
 	// Returns the version string formatted as "Major.Minor.Revision.Timestamp" on success.
@@ -96,6 +96,18 @@ const (
 	//InstallerTypeUnattended = "default-unattended"
 	InstallerTypePaaS = "paas"
 	//InstallerTypePaasSh     = "paas-sh"
+)
+
+// Known flavors.
+const (
+	FlavorDefault = "default"
+	FlavorMUSL    = "musl"
+)
+
+// Known architectures.
+const (
+	ArchX86 = "x86"
+	ArchARM = "arm"
 )
 
 // Known token scopes

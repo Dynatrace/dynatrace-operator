@@ -36,8 +36,8 @@ func (o *MockDynatraceClient) GetLatestAgentVersion(os, installerType string) (s
 	return args.String(0), args.Error(1)
 }
 
-func (o *MockDynatraceClient) GetLatestAgent(os, installerType string) (io.ReadCloser, error) {
-	args := o.Called(os, installerType)
+func (o *MockDynatraceClient) GetLatestAgent(os, installerType, flavor, arch string) (io.ReadCloser, error) {
+	args := o.Called(os, installerType, flavor, arch)
 	return args.Get(0).(io.ReadCloser), args.Error(1)
 }
 

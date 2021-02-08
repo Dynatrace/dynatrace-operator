@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -18,7 +19,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -50,7 +51,7 @@ type OneAgentProvisioner struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client       client.Client
-	scheme       *runtime.Scheme
+	scheme       *k8sruntime.Scheme
 	dtcBuildFunc activegate.DynatraceClientFunc
 	dataDir      string
 }
@@ -86,7 +87,6 @@ func (r *OneAgentProvisioner) Reconcile(request reconcile.Request) (reconcile.Re
 
 	envDir := filepath.Join(r.dataDir, ci.TenantUUID)
 	verFile := filepath.Join(envDir, "version")
-	targetFile := filepath.Join(envDir, "target")
 	tenantFile := filepath.Join(r.dataDir, dk.Name)
 
 	for _, dir := range []string{
@@ -122,27 +122,33 @@ func (r *OneAgentProvisioner) Reconcile(request reconcile.Request) (reconcile.Re
 		oldVer = string(b)
 	}
 
+	arch := dtclient.ArchX86
+	if runtime.GOARCH == "arm64" {
+		arch = dtclient.ArchARM
+	}
+
 	if ver != oldVer {
-		targetDir := filepath.Join(envDir, ver)
+		for _, flavor := range []string{dtclient.FlavorDefault, dtclient.FlavorMUSL} {
+			targetDir := filepath.Join(envDir, ver+"."+flavor)
 
-		if _, err := os.Stat(targetDir); os.IsNotExist(err) {
-			if err := installAgent(rlog, dtc, targetDir); err != nil {
-				if errDel := os.RemoveAll(targetDir); errDel != nil {
-					rlog.Error(errDel, "failed to delete target directory", "path", targetDir)
+			if _, err := os.Stat(targetDir); os.IsNotExist(err) {
+				if err := installAgent(rlog, dtc, flavor, arch, targetDir); err != nil {
+					if errDel := os.RemoveAll(targetDir); errDel != nil {
+						rlog.Error(errDel, "failed to delete target directory", "path", targetDir)
+					}
+
+					return reconcile.Result{}, fmt.Errorf("failed to install agent: %w", err)
 				}
-
-				return reconcile.Result{}, fmt.Errorf("failed to install agent: %w", err)
 			}
 		}
 
-		ioutil.WriteFile(targetFile, []byte(ver), 0644)
 		ioutil.WriteFile(verFile, []byte(ver), 0644)
 	}
 
 	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 
-func installAgent(rlog logr.Logger, dtc dtclient.Client, targetDir string) error {
+func installAgent(rlog logr.Logger, dtc dtclient.Client, flavor, arch, targetDir string) error {
 	tmpFile, err := ioutil.TempFile("", "download")
 	if err != nil {
 		return fmt.Errorf("failed to create temporary file for download: %w", err)
@@ -154,9 +160,9 @@ func installAgent(rlog logr.Logger, dtc dtclient.Client, targetDir string) error
 		}
 	}()
 
-	rlog.Info("Downloading OneAgent package")
+	rlog.Info("Downloading OneAgent package", "flavor", flavor, arch)
 
-	r, err := dtc.GetLatestAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS)
+	r, err := dtc.GetLatestAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, flavor, arch)
 	if err != nil {
 		return fmt.Errorf("failed to fetch latest OneAgent version: %w", err)
 	}

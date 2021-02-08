@@ -100,7 +100,7 @@ func (svr *CSIDriverServer) Start(stop <-chan struct{}) error {
 
 	svr.log.Info("Listening for connections on address", "address", listener.Addr())
 
-	go server.Serve(listener)
+	server.Serve(listener)
 
 	return nil
 }
@@ -157,6 +157,14 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 	podUID := volCtx[podUIDContextKey]
 	if podUID == "" {
 		return nil, status.Error(codes.InvalidArgument, "No Pod UID included with request")
+	}
+
+	flavor := volCtx["flavor"]
+	if flavor == "" {
+		flavor = "default"
+	}
+	if flavor != "default" && flavor != "musl" {
+		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid flavor in request: %s", flavor))
 	}
 
 	notMnt, err := mount.IsNotMountPoint(mount.New(""), targetPath)
@@ -226,11 +234,12 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		}
 	}
 
-	ver, err := ioutil.ReadFile(filepath.Join(envDir, "target"))
+	ver, err := ioutil.ReadFile(filepath.Join(envDir, "version"))
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to query agent directory for DynaKube %s: %s", dkName, err.Error()))
 	}
-	agentDir := filepath.Join(envDir, string(ver))
+
+	agentDir := filepath.Join(envDir, string(ver)+"."+flavor)
 
 	if err := BindMount(
 		targetPath,
