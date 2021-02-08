@@ -42,7 +42,7 @@ spec:
             privileged: true
             runAsUser: 0
             seLinuxOptions:
-              label: "s0"
+              level: "s0"
           volumeMounts:
             - name: data-dir
               mountPath: /mnt/data

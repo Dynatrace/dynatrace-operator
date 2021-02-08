@@ -27,6 +27,7 @@ import (
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/controllers/csi/provisioner"
 	"github.com/Dynatrace/dynatrace-operator/logger"
+	"golang.org/x/sys/unix"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -60,6 +61,9 @@ func main() {
 	printVersion()
 
 	ns := os.Getenv("POD_NAMESPACE")
+
+	defaultUmask := unix.Umask(0002)
+	defer unix.Umask(defaultUmask)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Namespace: ns,

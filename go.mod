@@ -16,6 +16,7 @@ require (
 	go.uber.org/zap v1.13.0
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
 	golang.org/x/net v0.0.0-20200625001655-4c5254603344 // indirect
+	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009
 	golang.org/x/tools v0.0.0-20200403190813-44a64ad78b9b // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	google.golang.org/genproto v0.0.0-20200701001935-0939c5918c31 // indirect
