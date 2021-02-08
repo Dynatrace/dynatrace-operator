@@ -10,7 +10,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const StatefulSetSuffix = "-routing"
+const (
+	module            = "msgrouter"
+	StatefulSetSuffix = "-" + module
+	CapabilityEnv     = "MSGrouter"
+)
 
 type ReconcileRouting struct {
 	client               client.Client

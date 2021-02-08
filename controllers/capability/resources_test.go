@@ -1,4 +1,4 @@
-package kubemon
+package capability
 
 import (
 	"testing"
@@ -12,7 +12,7 @@ import (
 func TestBuildResources(t *testing.T) {
 	t.Run(`BuildResources with default values`, func(t *testing.T) {
 		instance := &v1alpha1.DynaKube{}
-		resources := buildResources(instance)
+		resources := BuildResources(instance)
 
 		cpuLimit := resources.Limits[corev1.ResourceCPU]
 		memoryLimit := resources.Limits[corev1.ResourceMemory]
@@ -38,7 +38,7 @@ func TestBuildResources(t *testing.T) {
 								corev1.ResourceCPU:    *resource.NewScaledQuantity(180, resource.Milli),
 								corev1.ResourceMemory: *resource.NewScaledQuantity(1024, resource.Mega)},
 						}}}}}
-		resources := buildResources(instance)
+		resources := BuildResources(instance)
 
 		assert.NotNil(t, resources)
 

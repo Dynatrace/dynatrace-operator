@@ -47,7 +47,7 @@ func TestNewStatefulSet(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        instance.Name + StatefulSetSuffix,
 			Namespace:   instance.Namespace,
-			Labels:      capability.BuildLabels(&instance),
+			Labels:      capability.BuildLabels(&instance, &instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
@@ -56,7 +56,7 @@ func TestNewStatefulSet(t *testing.T) {
 			Selector:            &metav1.LabelSelector{MatchLabels: capability.BuildLabelsFromInstance(&instance)},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: capability.BuildLabels(&instance),
+					Labels: capability.BuildLabels(&instance, &instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
 					Annotations: map[string]string{
 						annotationImageHash:       testImageHash,
 						annotationImageVersion:    testImageVersion,
@@ -79,7 +79,7 @@ func TestBuildLabels(t *testing.T) {
 			},
 		},
 	}
-	labels := capability.BuildLabels(instance)
+	labels := capability.BuildLabels(instance, &instance.Spec.KubernetesMonitoringSpec.CapabilityProperties)
 
 	assert.NotEmpty(t, labels)
 	assert.Equal(t, map[string]string{

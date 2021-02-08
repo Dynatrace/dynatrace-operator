@@ -125,7 +125,7 @@ func buildContainer(instance *dynatracev1alpha1.DynaKube, kubeSystemUID types.UI
 	return corev1.Container{
 		Name:            dynatracev1alpha1.OperatorName,
 		Image:           utils.BuildActiveGateImage(instance),
-		Resources:       buildResources(instance),
+		Resources:       capability.BuildResources(instance),
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             buildEnvs(instance, kubeSystemUID),
 		Args:            buildArgs(instance),
