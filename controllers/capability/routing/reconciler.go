@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	module            = "msgrouter"
+	module            = "msgrouting"
 	StatefulSetSuffix = "-" + module
 	capabilityName    = "MSGrouter"
 	DTDNSEntryPoint   = "DT_DNS_ENTRY_POINT"
