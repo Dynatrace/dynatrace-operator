@@ -136,7 +136,7 @@ type CodeModulesSpec struct {
 }
 
 type FullStackSpec struct {
-	// Enables Kubernetes Monitoring
+	// Enables full-stack monitoring
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"

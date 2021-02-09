@@ -44,6 +44,8 @@ const (
 	ProxyArg = `PROXY="${ACTIVE_GATE_PROXY}"`
 	ProxyEnv = "ACTIVE_GATE_PROXY"
 	ProxyKey = "ProxyKey"
+
+	moduleKey = "module"
 )
 
 type statefulSetProperties struct {
@@ -76,9 +78,11 @@ func NewStatefulSetProperties(instance *v1alpha1.DynaKube, capabilityProperties 
 func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        stsProperties.Name + "-" + stsProperties.module,
-			Namespace:   stsProperties.Namespace,
-			Labels:      BuildLabels(stsProperties.DynaKube, stsProperties.CapabilityProperties),
+			Name:      stsProperties.Name + "-" + stsProperties.module,
+			Namespace: stsProperties.Namespace,
+			Labels: MergeLabels(
+				BuildLabels(stsProperties.DynaKube, stsProperties.CapabilityProperties),
+				map[string]string{moduleKey: stsProperties.module}),
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{

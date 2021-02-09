@@ -9,7 +9,7 @@ const (
 )
 
 func BuildLabels(instance *v1alpha1.DynaKube, capabilityProperties *v1alpha1.CapabilityProperties) map[string]string {
-	return mergeLabels(instance.Labels,
+	return MergeLabels(instance.Labels,
 		BuildLabelsFromInstance(instance),
 		capabilityProperties.Labels)
 }
@@ -21,7 +21,7 @@ func BuildLabelsFromInstance(instance *v1alpha1.DynaKube) map[string]string {
 	}
 }
 
-func mergeLabels(labels ...map[string]string) map[string]string {
+func MergeLabels(labels ...map[string]string) map[string]string {
 	res := map[string]string{}
 	for _, m := range labels {
 		for k, v := range m {

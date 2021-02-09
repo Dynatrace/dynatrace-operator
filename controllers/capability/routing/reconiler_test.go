@@ -129,4 +129,24 @@ func TestReconcile(t *testing.T) {
 		}
 		assert.True(t, found)
 	})
+	t.Run(`create service`, func(t *testing.T) {
+		r := createDefaultReconciler(t)
+		update, err := r.Reconcile()
+		assert.True(t, update)
+		assert.NoError(t, err)
+
+		statefulSet := &v1.StatefulSet{}
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + StatefulSetSuffix, Namespace: r.Instance.Namespace}, statefulSet)
+		assert.NotNil(t, statefulSet)
+		assert.NoError(t, err)
+
+		update, err = r.Reconcile()
+		assert.True(t, update)
+		assert.NoError(t, err)
+
+		service := &corev1.Service{}
+		err = r.Get(context.TODO(), client.ObjectKey{Name: buildServiceName(r.Instance.Name, module), Namespace: r.Instance.Namespace}, service)
+		assert.NoError(t, err)
+		assert.NotNil(t, service)
+	})
 }
