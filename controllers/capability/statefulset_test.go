@@ -21,6 +21,7 @@ const (
 	testValue                = "test-value"
 	testUID                  = "test-uid"
 	routingStatefulSetSuffix = "-msgrouter"
+	testModule               = "msgrouter"
 )
 
 func TestNewStatefulSetBuilder(t *testing.T) {
@@ -38,7 +39,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
 	sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties,
-		"", "", "msgrouter", "", ""))
+		"", "", testModule, "", ""))
 
 	assert.NoError(t, err)
 	assert.NotNil(t, sts)
@@ -47,6 +48,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	assert.Equal(t, map[string]string{
 		KeyDynatrace:  ValueActiveGate,
 		KeyActiveGate: instance.Name,
+		keyModule:     testModule,
 	}, sts.Labels)
 	assert.Equal(t, instance.Spec.RoutingSpec.Replicas, sts.Spec.Replicas)
 	assert.Equal(t, appsv1.ParallelPodManagement, sts.Spec.PodManagementPolicy)
@@ -155,7 +157,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 			Value: testValue,
 		}
 		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "msgrouter", "", ""))
+			"", "", testModule, "", ""))
 		expectedSecretName := instance.Name + "-msgrouter-" + customproperties.Suffix
 
 		require.NotEmpty(t, volumes)
@@ -196,7 +198,7 @@ func TestStatefulSet_Env(t *testing.T) {
 
 	t.Run(`without proxy`, func(t *testing.T) {
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			testUID, "", "msgrouter", "MSGrouter", ""))
+			testUID, "", testModule, "MSGrouter", ""))
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: DTCapabilities, Value: "MSGrouter"},
 			{Name: DTIdSeedNamespace, Value: instance.Namespace},

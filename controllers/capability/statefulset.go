@@ -45,7 +45,7 @@ const (
 	ProxyEnv = "ACTIVE_GATE_PROXY"
 	ProxyKey = "ProxyKey"
 
-	moduleKey = "module"
+	keyModule = "module"
 )
 
 type statefulSetProperties struct {
@@ -82,7 +82,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 			Namespace: stsProperties.Namespace,
 			Labels: MergeLabels(
 				BuildLabels(stsProperties.DynaKube, stsProperties.CapabilityProperties),
-				map[string]string{moduleKey: stsProperties.module}),
+				map[string]string{keyModule: stsProperties.module}),
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
