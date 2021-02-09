@@ -20,7 +20,7 @@ const (
 	module            = "msgrouter"
 	StatefulSetSuffix = "-" + module
 	capabilityName    = "MSGrouter"
-	DTDNSEntryPoint   = "DTDNSEntryPoint"
+	DTDNSEntryPoint   = "DT_DNS_ENTRY_POINT"
 )
 
 type Reconciler struct {
