@@ -129,7 +129,7 @@ func (r *OneAgentProvisioner) Reconcile(request reconcile.Request) (reconcile.Re
 
 	if ver != oldVer {
 		for _, flavor := range []string{dtclient.FlavorDefault, dtclient.FlavorMUSL} {
-			targetDir := filepath.Join(envDir, ver+"."+flavor)
+			targetDir := filepath.Join(envDir, "bin", ver+"-"+flavor)
 
 			if _, err := os.Stat(targetDir); os.IsNotExist(err) {
 				if err := installAgent(rlog, dtc, flavor, arch, targetDir); err != nil {

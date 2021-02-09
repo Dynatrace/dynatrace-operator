@@ -170,9 +170,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 	notMnt, err := mount.IsNotMountPoint(mount.New(""), targetPath)
 	if os.IsNotExist(err) {
 		notMnt = true
-	}
-
-	if err != nil {
+	} else if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -239,7 +237,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to query agent directory for DynaKube %s: %s", dkName, err.Error()))
 	}
 
-	agentDir := filepath.Join(envDir, string(ver)+"."+flavor)
+	agentDir := filepath.Join(envDir, "bin", string(ver)+"-"+flavor)
 
 	if err := BindMount(
 		targetPath,
