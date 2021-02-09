@@ -219,11 +219,11 @@ type FullStackSpec struct {
 }
 
 type RoutingSpec struct {
-	CapabilityProperties
+	CapabilityProperties `json:"properties,omitempty"`
 }
 
 type KubernetesMonitoringSpec struct {
-	CapabilityProperties
+	CapabilityProperties `json:"properties,omitempty"`
 }
 
 type DynaKubeValueSource struct {
