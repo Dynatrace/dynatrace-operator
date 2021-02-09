@@ -227,6 +227,8 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 			customproperties.DataKey: []byte(testValue),
 		},
 	})
+	require.NoError(t, err)
+
 	hash, err = r.calculateCustomPropertyHash()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)

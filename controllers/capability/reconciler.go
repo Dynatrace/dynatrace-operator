@@ -108,7 +108,7 @@ func (r *Reconciler) manageStatefulSet() (bool, error) {
 }
 
 func (r *Reconciler) updateImageVersion() (bool, error) {
-	if r.enableUpdates == false {
+	if !r.enableUpdates {
 		return false, nil
 	}
 
