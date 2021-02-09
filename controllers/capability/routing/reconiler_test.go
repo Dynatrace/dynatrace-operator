@@ -94,6 +94,10 @@ func TestReconcile(t *testing.T) {
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
+			Name:  DTDNSEntryPoint,
+			Value: buildDNSEntryPoint(r.Instance),
+		})
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)

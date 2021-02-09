@@ -24,17 +24,18 @@ import (
 
 type Reconciler struct {
 	client.Client
-	Instance             *v1alpha1.DynaKube
-	apiReader            client.Reader
-	scheme               *runtime.Scheme
-	dtc                  dtclient.Client
-	log                  logr.Logger
-	imageVersionProvider dtversion.ImageVersionProvider
-	enableUpdates        bool
-	module               string
-	capabilityName       string
-	serviceAccountOwner  string
-	capability           *v1alpha1.CapabilityProperties
+	Instance                 *v1alpha1.DynaKube
+	apiReader                client.Reader
+	scheme                   *runtime.Scheme
+	dtc                      dtclient.Client
+	log                      logr.Logger
+	imageVersionProvider     dtversion.ImageVersionProvider
+	enableUpdates            bool
+	module                   string
+	capabilityName           string
+	serviceAccountOwner      string
+	capability               *v1alpha1.CapabilityProperties
+	onAfterStatefulSetCreate []StatefulSetEvent
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
@@ -45,19 +46,24 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 	}
 
 	return &Reconciler{
-		Client:               clt,
-		apiReader:            apiReader,
-		scheme:               scheme,
-		dtc:                  dtc,
-		log:                  log,
-		Instance:             instance,
-		imageVersionProvider: imageVersionProvider,
-		enableUpdates:        enableUpdates,
-		module:               module,
-		capabilityName:       capabilityName,
-		serviceAccountOwner:  serviceAccountOwner,
-		capability:           capability,
+		Client:                   clt,
+		apiReader:                apiReader,
+		scheme:                   scheme,
+		dtc:                      dtc,
+		log:                      log,
+		Instance:                 instance,
+		imageVersionProvider:     imageVersionProvider,
+		enableUpdates:            enableUpdates,
+		module:                   module,
+		capabilityName:           capabilityName,
+		serviceAccountOwner:      serviceAccountOwner,
+		capability:               capability,
+		onAfterStatefulSetCreate: []StatefulSetEvent{},
 	}
+}
+
+func (r *Reconciler) AddOnAfterStatefulSetCreate(event StatefulSetEvent) {
+	r.onAfterStatefulSetCreate = append(r.onAfterStatefulSetCreate, event)
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
@@ -163,9 +169,11 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	desiredSts, err := CreateStatefulSet(
-		NewStatefulSetProperties(
-			r.Instance, r.capability, kubeUID, cpHash, r.module, r.capabilityName, r.serviceAccountOwner))
+	stsProperties := NewStatefulSetProperties(
+		r.Instance, r.capability, kubeUID, cpHash, r.module, r.capabilityName, r.serviceAccountOwner)
+	stsProperties.onAfterCreate = r.onAfterStatefulSetCreate
+
+	desiredSts, err := CreateStatefulSet(stsProperties)
 	return desiredSts, errors.WithStack(err)
 }
 

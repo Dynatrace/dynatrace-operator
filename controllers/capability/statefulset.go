@@ -48,6 +48,8 @@ const (
 	keyModule = "module"
 )
 
+type StatefulSetEvent func(sts *appsv1.StatefulSet)
+
 type statefulSetProperties struct {
 	*v1alpha1.DynaKube
 	*v1alpha1.CapabilityProperties
@@ -56,6 +58,7 @@ type statefulSetProperties struct {
 	module               string
 	capabilityName       string
 	serviceAccountOwner  string
+	onAfterCreate        []StatefulSetEvent
 }
 
 func NewStatefulSetProperties(instance *v1alpha1.DynaKube, capabilityProperties *v1alpha1.CapabilityProperties,
@@ -72,6 +75,7 @@ func NewStatefulSetProperties(instance *v1alpha1.DynaKube, capabilityProperties 
 		module:               module,
 		capabilityName:       capabilityName,
 		serviceAccountOwner:  serviceAccountOwner,
+		onAfterCreate:        []StatefulSetEvent{},
 	}
 }
 
@@ -101,6 +105,10 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 				Spec: buildTemplateSpec(stsProperties),
 			},
 		}}
+
+	for _, onAfterCreate := range stsProperties.onAfterCreate {
+		onAfterCreate(sts)
+	}
 
 	hash, err := generateStatefulSetHash(sts)
 	if err != nil {
