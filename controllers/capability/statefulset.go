@@ -52,12 +52,12 @@ type statefulSetProperties struct {
 	customPropertiesHash string
 	kubeSystemUID        types.UID
 	module               string
-	capabilityEnv        string
+	capabilityName       string
 	serviceAccountOwner  string
 }
 
 func NewStatefulSetProperties(instance *v1alpha1.DynaKube, capabilityProperties *v1alpha1.CapabilityProperties,
-	kubeSystemUID types.UID, customPropertiesHash string, module string, capabilityEnv string, serviceAccountOwner string) *statefulSetProperties {
+	kubeSystemUID types.UID, customPropertiesHash string, module string, capabilityName string, serviceAccountOwner string) *statefulSetProperties {
 	if serviceAccountOwner == "" {
 		serviceAccountOwner = module
 	}
@@ -68,7 +68,7 @@ func NewStatefulSetProperties(instance *v1alpha1.DynaKube, capabilityProperties 
 		customPropertiesHash: customPropertiesHash,
 		kubeSystemUID:        kubeSystemUID,
 		module:               module,
-		capabilityEnv:        capabilityEnv,
+		capabilityName:       capabilityName,
 		serviceAccountOwner:  serviceAccountOwner,
 	}
 }
@@ -206,7 +206,7 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 
 func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
 	envs := []corev1.EnvVar{
-		{Name: DTCapabilities, Value: stsProperties.capabilityEnv},
+		{Name: DTCapabilities, Value: stsProperties.capabilityName},
 		{Name: DTIdSeedNamespace, Value: stsProperties.Namespace},
 		{Name: DTIdSeedClusterId, Value: string(stsProperties.kubeSystemUID)},
 	}
