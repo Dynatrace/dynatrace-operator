@@ -35,7 +35,7 @@ const (
 	DefaultInstallPath = "/opt/dynatrace/oneagent-paas"
 
 	// SecretConfigName is the name of the secret where the Operator replicates the config data.
-	SecretConfigName = "dynatrace-config"
+	SecretConfigName = "dynatrace-dynakube-config"
 
 	// SecretCertsName is the name of the secret where the webhook certificates are stored.
 	SecretCertsName = "dynatrace-webhook-certs"

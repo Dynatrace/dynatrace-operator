@@ -286,6 +286,9 @@ spec:
                       type: object
                   type: object
               type: object
+            customPullSecret:
+              description: 'Optional: Pull secret for your private registry'
+              type: string
             enableIstio:
               description: If enabled, Istio on the cluster will be configured automatically
                 to allow access to the Dynatrace environment
@@ -705,7 +708,8 @@ spec:
                   type: array
               type: object
             networkZone:
-              description: 'Optional: Sets Network Zone for ActiveGate pods'
+              description: 'Optional: Sets Network Zone for OneAgent and ActiveGate
+                pods'
               type: string
             oneAgent:
               properties:
@@ -733,7 +737,8 @@ spec:
                   type: string
               type: object
             skipCertCheck:
-              description: Disable certificate validation checks for API communication
+              description: Disable certificate validation checks for installer download
+                and API communication
               type: boolean
             tokens:
               description: Credentials for the DynaKube to connect back to Dynatrace.
@@ -828,9 +833,6 @@ spec:
                 - type
                 type: object
               type: array
-            customPullSecret:
-              description: 'Optional: Pull secret for your private registry'
-              type: string
             environmentID:
               description: EnvironmentID contains the environment ID corresponding
                 to the API URL

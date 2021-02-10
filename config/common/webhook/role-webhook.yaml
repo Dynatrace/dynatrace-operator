@@ -30,7 +30,7 @@ rules:
   - apiGroups:
       - dynatrace.com
     resources:
-      - oneagentapms
+      - dynakubes
     verbs:
       - get
       - list

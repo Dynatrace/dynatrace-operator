@@ -40,7 +40,7 @@ manager: generate fmt vet
 run: export RUN_LOCAL=true
 run: export POD_NAMESPACE=dynatrace
 run: generate fmt vet manifests
-	go run ./main.go
+	go run ./
 
 # Install CRDs into a cluster
 install: manifests kustomize

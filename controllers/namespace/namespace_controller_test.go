@@ -76,7 +76,7 @@ func TestReconcileNamespace(t *testing.T) {
 
 	var nsSecret corev1.Secret
 	require.NoError(t, c.Get(context.TODO(), client.ObjectKey{
-		Name:      "dynatrace-config",
+		Name:      "dynatrace-dynakube-config",
 		Namespace: "test-namespace",
 	}, &nsSecret))
 
