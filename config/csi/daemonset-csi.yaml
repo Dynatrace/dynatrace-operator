@@ -44,8 +44,6 @@ spec:
             seLinuxOptions:
               level: "s0"
           volumeMounts:
-            - name: data-dir
-              mountPath: /mnt/data
             - name: plugin-dir
               mountPath: /csi
             - name: plugins-dir
@@ -101,5 +99,3 @@ spec:
           hostPath:
             path: /var/lib/kubelet/pods
             type: DirectoryOrCreate
-        - name: data-dir
-          emptyDir: {}
