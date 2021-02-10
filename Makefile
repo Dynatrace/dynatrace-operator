@@ -73,7 +73,7 @@ deploy-ocp: manifests kustomize
 	rm -f config/deploy/kustomization.yaml
 	mkdir -p config/deploy
 	cd config/deploy && $(KUSTOMIZE) create
-	cd config/deploy && $(KUSTOMIZE) edit add base ../manifests
+	cd config/deploy && $(KUSTOMIZE) edit add base ../openshift
 	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
 	$(KUSTOMIZE) build config/deploy | oc apply -f -
 
