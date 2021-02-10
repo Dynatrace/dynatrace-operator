@@ -15,8 +15,9 @@ import (
 
 func TestBuildLabels(t *testing.T) {
 	l := buildLabels("my-name")
-	assert.Equal(t, l["dynatrace"], "oneagent")
-	assert.Equal(t, l["oneagent"], "my-name")
+	assert.Equal(t, l["dynatrace.com/component"], "operator")
+	assert.Equal(t, l["operator.dynatrace.com/instance"], "my-name")
+	assert.Equal(t, l["operator.dynatrace.com/feature"], "oneagent")
 }
 
 func TestGetPodReadyState(t *testing.T) {

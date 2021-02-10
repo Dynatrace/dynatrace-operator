@@ -14,6 +14,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -136,4 +138,25 @@ func GetField(values map[string]string, key, defaultValue string) string {
 		return x
 	}
 	return defaultValue
+}
+
+// CheckIfOneAgentAPMExists checks if a OneAgentAPM object exists
+func CheckIfOneAgentAPMExists(cfg *rest.Config) (bool, error) {
+	client, err := discovery.NewDiscoveryClientForConfig(cfg)
+	if err != nil {
+		return false, err
+	}
+	_, resourceList, err := client.ServerGroupsAndResources()
+	if err != nil {
+		return false, err
+	}
+
+	for _, resource := range resourceList {
+		for _, apiResource := range resource.APIResources {
+			if apiResource.Kind == "OneAgentAPM" {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }

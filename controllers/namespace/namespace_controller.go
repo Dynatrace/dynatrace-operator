@@ -23,11 +23,21 @@ import (
 )
 
 func Add(mgr manager.Manager, ns string) error {
+	logger := log.Log.WithName("namespaces.controller")
+	apmExists, err := utils.CheckIfOneAgentAPMExists(mgr.GetConfig())
+	if err != nil {
+		return err
+	}
+	if apmExists {
+		logger.Info("OneAgentAPM object detected - Namespace reconciler disabled until the OneAgent Operator has been uninstalled")
+		return nil
+	}
+
 	return add(mgr, &ReconcileNamespaces{
 		client:    mgr.GetClient(),
 		apiReader: mgr.GetAPIReader(),
 		namespace: ns,
-		logger:    log.Log.WithName("namespaces.controller"),
+		logger:    logger,
 	})
 }
 

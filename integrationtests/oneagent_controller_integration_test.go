@@ -14,7 +14,7 @@ import (
 )
 
 func TestReconcileOneAgent_ReconcileOnEmptyEnvironment(t *testing.T) {
-	oaName := "oneagent"
+	oaName := "dynakube"
 
 	e, err := newTestEnvironment()
 	assert.NoError(t, err, "failed to start test environment")
@@ -35,10 +35,10 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironment(t *testing.T) {
 	// Check if deamonset has been created and has correct namespace and name.
 	dsActual := &appsv1.DaemonSet{}
 
-	err = e.Client.Get(context.TODO(), types.NamespacedName{Name: oaName, Namespace: DefaultTestNamespace}, dsActual)
+	err = e.Client.Get(context.TODO(), types.NamespacedName{Name: oaName + "-oneagent", Namespace: DefaultTestNamespace}, dsActual)
 	assert.NoError(t, err, "failed to get deamonset")
 
 	assert.Equal(t, DefaultTestNamespace, dsActual.Namespace, "wrong namespace")
-	assert.Equal(t, oaName, dsActual.GetObjectMeta().GetName(), "wrong name")
+	assert.Equal(t, oaName+"-oneagent", dsActual.GetObjectMeta().GetName(), "wrong name")
 	assert.Equal(t, corev1.DNSClusterFirst, dsActual.Spec.Template.Spec.DNSPolicy, "DNS policy should ClusterFirst by default")
 }

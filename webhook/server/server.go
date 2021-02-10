@@ -59,6 +59,14 @@ func registerDebugInjectEndpoint(mgr manager.Manager, ns string) {
 }
 
 func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) error {
+	apmExists, err := utils.CheckIfOneAgentAPMExists(mgr.GetConfig())
+	if err != nil {
+		return err
+	}
+	if apmExists {
+		logger.Info("OneAgentAPM object detected - DynaKube webhook won't inject until the OneAgent Operator has been uninstalled")
+	}
+
 	var pod corev1.Pod
 	if err := mgr.GetAPIReader().Get(context.TODO(), client.ObjectKey{
 		Name:      podName,
@@ -70,6 +78,7 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podInjector{
 		namespace: ns,
 		image:     pod.Spec.Containers[0].Image,
+		apmExists: apmExists,
 	}})
 	return nil
 }
@@ -86,10 +95,15 @@ type podInjector struct {
 	decoder   *admission.Decoder
 	image     string
 	namespace string
+	apmExists bool
 }
 
 // podAnnotator adds an annotation to every incoming pods
 func (m *podInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
+	if m.apmExists {
+		return admission.Patched("")
+	}
+
 	pod := &corev1.Pod{}
 
 	err := m.decoder.Decode(req, pod)
@@ -112,13 +126,13 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	oaName := utils.GetField(ns.Labels, dtwebhook.LabelInstance, "")
 	if oaName == "" {
-		return admission.Errored(http.StatusBadRequest, fmt.Errorf("no OneAgentAPM instance set for namespace: %s", req.Namespace))
+		return admission.Errored(http.StatusBadRequest, fmt.Errorf("no DynaKube instance set for namespace: %s", req.Namespace))
 	}
 
 	var oa dynatracev1alpha1.DynaKube
 	if err := m.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: m.namespace}, &oa); k8serrors.IsNotFound(err) {
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf(
-			"namespace '%s' is assigned to OneAgentAPM instance '%s' but doesn't exist", req.Namespace, oaName))
+			"namespace '%s' is assigned to DynaKube instance '%s' but doesn't exist", req.Namespace, oaName))
 	} else if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}

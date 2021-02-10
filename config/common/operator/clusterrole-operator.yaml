@@ -27,7 +27,6 @@ rules:
       - secrets
     resourceNames:
       - dynatrace-dynakube-config
-      - dynatrace-dynakube-pull-secret
     verbs:
       - get
       - update

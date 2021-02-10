@@ -61,7 +61,7 @@ func TestReconcile_InstallerDowngrade(t *testing.T) {
 		},
 	}
 
-	labels := map[string]string{"dynatrace": "oneagent", "oneagent": oaName}
+	labels := map[string]string{"dynatrace.com/component": "operator", "operator.dynatrace.com/instance": oaName, "operator.dynatrace.com/feature": "oneagent"}
 
 	c := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 		&dynakube,

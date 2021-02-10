@@ -132,7 +132,6 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, logger logr.Lo
 	if err := r.client.Get(ctx, client.ObjectKey{Name: "kube-system"}, &kubeSystemNS); err != nil {
 		return false, fmt.Errorf("failed to query for cluster ID: %w", err)
 	}
-
 	// Define a new DaemonSet object
 	dsDesired, err := newDaemonSetForCR(logger, instance, fs, webhookInjection, string(kubeSystemNS.UID))
 	if err != nil {
@@ -221,7 +220,7 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 
 	ds := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        instance.GetName(),
+			Name:        instance.GetName() + "-oneagent",
 			Namespace:   instance.GetNamespace(),
 			Labels:      mergedLabels,
 			Annotations: map[string]string{},

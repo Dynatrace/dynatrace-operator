@@ -42,6 +42,12 @@ run: export POD_NAMESPACE=dynatrace
 run: generate fmt vet manifests
 	go run ./
 
+## Run with delve against the configured Kubernetes cluster in ~/.kube/config
+#run-delve: export RUN_LOCAL=true
+#run-delve: export POD_NAMESPACE=dynatrace
+#run-delve: manager manifests
+#     dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./main
+
 # Install CRDs into a cluster
 install: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -

@@ -37,7 +37,7 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+					Labels: map[string]string{"oneagent.dynatrace.com/instance": "dynakube"},
 				},
 			}).Build(),
 		decoder:   decoder,
@@ -58,7 +58,7 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	resp := inj.Handle(context.TODO(), req)
 	require.NoError(t, resp.Complete(req))
 	require.False(t, resp.Allowed)
-	require.Equal(t, resp.Result.Message, "namespace 'test-namespace' is assigned to OneAgentAPM instance 'oneagent' but doesn't exist")
+	require.Equal(t, resp.Result.Message, "namespace 'test-namespace' is assigned to DynaKube instance 'dynakube' but doesn't exist")
 }
 
 func TestPodInjection(t *testing.T) {

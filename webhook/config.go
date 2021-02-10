@@ -1,7 +1,7 @@
 package webhook
 
 const (
-	// LabelInstance can be set in a Namespace and indicates the corresponding OneAgentAPM object assigned to it.
+	// LabelInstance can be set in a Namespace and indicates the corresponding DynaKube object assigned to it.
 	LabelInstance = "oneagent.dynatrace.com/instance"
 
 	// AnnotationInject can be set at pod or namespace label to enable/disable injection, where at pod level has higher
