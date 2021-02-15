@@ -172,6 +172,7 @@ func TestPodInjection(t *testing.T) {
 					{Name: "K8S_BASEPODNAME", Value: "test-pod"},
 					{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
 					{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
+					{Name: "USE_IMMUTABLE_IMAGE", Value: "true"},
 					{Name: "CONTAINER_1_NAME", Value: "test-container"},
 					{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
 				},
