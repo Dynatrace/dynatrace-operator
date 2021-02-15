@@ -210,7 +210,6 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 			{Name: "K8S_BASEPODNAME", Value: basePodName},
 			{Name: "K8S_NAMESPACE", ValueFrom: fieldEnvVar("metadata.namespace")},
 			{Name: "K8S_NODE_NAME", ValueFrom: fieldEnvVar("spec.nodeName")},
-			{Name: "USE_IMMUTABLE_IMAGE", Value: "false"},
 		},
 		SecurityContext: sc,
 		VolumeMounts: []corev1.VolumeMount{

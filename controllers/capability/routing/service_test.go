@@ -28,7 +28,7 @@ func TestCreateService(t *testing.T) {
 	serviceSpec := service.Spec
 	assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
 	assert.Equal(t, map[string]string{
-		moduleKey: testModule,
+		keyModule: testModule,
 	}, serviceSpec.Selector)
 
 	ports := serviceSpec.Ports

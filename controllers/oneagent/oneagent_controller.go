@@ -349,7 +349,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 		PriorityClassName:  fs.PriorityClassName,
 		ServiceAccountName: sa,
 		Tolerations:        fs.Tolerations,
-		DNSPolicy:          fs.DNSPolicy,
+		DNSPolicy:          getDNSPolicy(fs.DNSPolicy),
 		Affinity: &corev1.Affinity{
 			NodeAffinity: &corev1.NodeAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
@@ -402,6 +402,13 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 	}
 
 	return p
+}
+
+func getDNSPolicy(policy corev1.DNSPolicy) corev1.DNSPolicy {
+	if string(policy) == "" {
+		return corev1.DNSClusterFirstWithHostNet
+	}
+	return policy
 }
 
 func preparePodSpecInstaller(p *corev1.PodSpec, instance *dynatracev1alpha1.DynaKube) error {

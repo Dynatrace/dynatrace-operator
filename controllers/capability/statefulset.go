@@ -95,7 +95,9 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 			Selector:            &metav1.LabelSelector{MatchLabels: BuildLabelsFromInstance(stsProperties.DynaKube)},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: BuildLabels(stsProperties.DynaKube, stsProperties.CapabilityProperties),
+					Labels: MergeLabels(
+						BuildLabels(stsProperties.DynaKube, stsProperties.CapabilityProperties),
+						map[string]string{keyModule: stsProperties.module}),
 					Annotations: map[string]string{
 						annotationImageHash:       stsProperties.Status.ActiveGate.ImageHash,
 						annotationImageVersion:    stsProperties.Status.ActiveGate.ImageVersion,

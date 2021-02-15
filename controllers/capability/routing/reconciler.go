@@ -34,9 +34,17 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider, enableUpdates,
 		&instance.Spec.RoutingSpec.CapabilityProperties, module, capabilityName, "")
 	baseReconciler.AddOnAfterStatefulSetCreate(addDNSEntryPoint(instance))
+	baseReconciler.AddOnAfterStatefulSetCreate(addCommunicationsPort(instance))
 	return &Reconciler{
 		Reconciler: baseReconciler,
 		log:        log,
+	}
+}
+
+func addCommunicationsPort(_ *v1alpha1.DynaKube) capability.StatefulSetEvent {
+	return func(sts *appsv1.StatefulSet) {
+		sts.Spec.Template.Spec.Containers[0].Ports = append(sts.Spec.Template.Spec.Containers[0].Ports,
+			corev1.ContainerPort{ContainerPort: 9999})
 	}
 }
 
@@ -48,6 +56,10 @@ func addDNSEntryPoint(instance *v1alpha1.DynaKube) capability.StatefulSetEvent {
 				Value: buildDNSEntryPoint(instance),
 			})
 	}
+}
+
+func buildDNSEntryPoint(instance *v1alpha1.DynaKube) string {
+	return "https://" + buildServiceName(instance.Name, module) + "." + instance.Namespace + ":9999/communication"
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
@@ -68,47 +80,4 @@ func (r *Reconciler) createServiceIfNotExists() (bool, error) {
 		return true, errors.WithStack(err)
 	}
 	return false, errors.WithStack(err)
-}
-
-// Alternative to event based approach
-// Removed before merging routing capability
-//
-//func (r *Reconciler) setDNSEntryPoint() (bool, error) {
-//	sts := &appsv1.StatefulSet{}
-//	err := r.Get(context.TODO(), client.ObjectKey{Name: r.buildStatefulSetName(), Namespace: r.Instance.Namespace}, sts)
-//	if err != nil {
-//		return false, errors.WithStack(err)
-//	}
-//	if len(sts.Spec.Template.Spec.Containers) <= 0 {
-//		return false, errors.New("stateful set for " + module + " is invalid, it has no container")
-//	}
-//
-//	envs := sts.Spec.Template.Spec.Containers[0].Env
-//	desiredEnv := corev1.EnvVar{
-//						Name:  DTDNSEntryPoint,
-//						Value: buildDNSEntryPoint(r.Instance),
-//					}
-//	for i, env := range envs {
-//		if env.Name == desiredEnv.Name {
-//			if env.Value == desiredEnv.Value {
-//				return false, nil
-//			}
-//			envs = append(envs[:i], envs[i+1:]...)
-//			break
-//		}
-//	}
-//
-//	sts.Spec.Template.Spec.Containers[0].Env = append(envs, desiredEnv)
-//	err = r.Update(context.TODO(), sts)
-//	if err != nil {
-//		return false, errors.WithStack(err)
-//	}
-//	return true, nil
-//}
-//func (r *Reconciler) buildStatefulSetName() string {
-//	return r.Instance.Name + "-" + module
-//}
-
-func buildDNSEntryPoint(instance *v1alpha1.DynaKube) string {
-	return "https://" + buildServiceName(instance.Name, module) + "." + instance.Namespace + ":9999/communication"
 }

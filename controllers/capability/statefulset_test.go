@@ -56,7 +56,10 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 		MatchLabels: BuildLabelsFromInstance(instance),
 	}, *sts.Spec.Selector)
 	assert.NotEqual(t, corev1.PodTemplateSpec{}, sts.Spec.Template)
-	assert.Equal(t, BuildLabels(instance, capabilityProperties), sts.Spec.Template.Labels)
+	assert.Equal(t, MergeLabels(
+		BuildLabels(instance, capabilityProperties),
+		map[string]string{keyModule: testModule}), sts.Spec.Template.Labels)
+	assert.Equal(t, sts.Labels, sts.Spec.Template.Labels)
 	assert.NotEqual(t, corev1.PodSpec{}, sts.Spec.Template.Spec)
 	assert.Contains(t, sts.Annotations, annotationTemplateHash)
 

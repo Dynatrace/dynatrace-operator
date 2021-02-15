@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	moduleKey = "module"
+	keyModule = "module"
 )
 
 func createService(instance *v1alpha1.DynaKube, module string) corev1.Service {
@@ -18,10 +18,8 @@ func createService(instance *v1alpha1.DynaKube, module string) corev1.Service {
 			Namespace: instance.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
-			Type: corev1.ServiceTypeClusterIP,
-			Selector: map[string]string{
-				moduleKey: module,
-			},
+			Type:     corev1.ServiceTypeClusterIP,
+			Selector: map[string]string{keyModule: module},
 			Ports: []corev1.ServicePort{
 				{
 					Protocol:   corev1.ProtocolTCP,
