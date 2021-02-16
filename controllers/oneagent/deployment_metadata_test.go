@@ -38,14 +38,14 @@ func TestDeploymentMetadata_asArgs(t *testing.T) {
 	labels := deploymentMetadata.asArgs()
 
 	assert.Equal(t, []string{
-		`--set-deployment-metadata="orchestration_tech=Operator"`,
-		`--set-deployment-metadata="script_version=` + testOperatorScriptVersion + `"`,
-		`--set-deployment-metadata="container_image_version=` + testContainerImageVersion + `"`,
-		`--set-deployment-metadata="orchestrator_id=` + testOrchestratorId + `"`,
+		`--set-deployment-metadata=orchestration_tech=Operator`,
+		`--set-deployment-metadata=script_version=` + testOperatorScriptVersion,
+		`--set-deployment-metadata=container_image_version=` + testContainerImageVersion,
+		`--set-deployment-metadata=orchestrator_id=` + testOrchestratorId,
 	}, labels)
 }
 
 func TestFormatMetadataArgument(t *testing.T) {
 	formattedArgument := formatMetadataArgument(testKey, testValue)
-	assert.Equal(t, `--set-deployment-metadata="`+testKey+`=`+testValue+`"`, formattedArgument)
+	assert.Equal(t, `--set-deployment-metadata=`+testKey+`=`+testValue, formattedArgument)
 }

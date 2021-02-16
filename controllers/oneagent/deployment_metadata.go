@@ -38,5 +38,5 @@ func (metadata *deploymentMetadata) asArgs() []string {
 }
 
 func formatMetadataArgument(key string, value string) string {
-	return fmt.Sprintf(`%s"%s=%s"`, argumentPrefix, key, value)
+	return fmt.Sprintf(`%s%s=%s`, argumentPrefix, key, value)
 }
