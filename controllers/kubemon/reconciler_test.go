@@ -46,7 +46,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 		instance := &v1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: testName,
-			}}
+			},
+			Spec: v1alpha1.DynaKubeSpec{
+				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
+					Enabled: true,
+				},
+			},
+		}
 		secret := buildTestPaasTokenSecret()
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{

@@ -14,10 +14,10 @@ import (
 )
 
 func TestBuildLabels(t *testing.T) {
-	l := buildLabels("my-name")
+	l := buildLabels("my-name", "classic")
 	assert.Equal(t, l["dynatrace.com/component"], "operator")
 	assert.Equal(t, l["operator.dynatrace.com/instance"], "my-name")
-	assert.Equal(t, l["operator.dynatrace.com/feature"], "oneagent")
+	assert.Equal(t, l["operator.dynatrace.com/feature"], "classic")
 }
 
 func TestGetPodReadyState(t *testing.T) {
@@ -52,7 +52,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 
 	ds1 := &appsv1.DaemonSet{ObjectMeta: oaKey}
 
-	ds2, err := newDaemonSetForCR(consoleLogger, &dynatracev1alpha1.DynaKube{ObjectMeta: oaKey}, &dynatracev1alpha1.FullStackSpec{}, false, "cluster1")
+	ds2, err := newDaemonSetForCR(consoleLogger, &dynatracev1alpha1.DynaKube{ObjectMeta: oaKey}, &dynatracev1alpha1.FullStackSpec{}, "classic", "cluster1")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, ds2.Annotations[annotationTemplateHash])
 
@@ -68,10 +68,10 @@ func TestHasSpecChanged(t *testing.T) {
 
 			mod(&old, &new)
 
-			ds1, err := newDaemonSetForCR(consoleLogger, &old, &old.Spec.ClassicFullStack, false, "cluster1")
+			ds1, err := newDaemonSetForCR(consoleLogger, &old, &old.Spec.ClassicFullStack, "classic", "cluster1")
 			assert.NoError(t, err)
 
-			ds2, err := newDaemonSetForCR(consoleLogger, &new, &new.Spec.ClassicFullStack, false, "cluster1")
+			ds2, err := newDaemonSetForCR(consoleLogger, &new, &new.Spec.ClassicFullStack, "classic", "cluster1")
 			assert.NoError(t, err)
 
 			assert.NotEmpty(t, ds1.Annotations[annotationTemplateHash])

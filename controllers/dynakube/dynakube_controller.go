@@ -183,26 +183,47 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "kubemon reconciled") {
 			return
 		}
+	} else {
+		sts := appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: rec.Instance.Name + "-kubemon", Namespace: rec.Instance.Namespace}}
+		if err := r.ensureDeleted(&sts); rec.Error(err) {
+			return
+		}
 	}
 
 	if rec.Instance.Spec.InfraMonitoring.Enabled {
 		upd, err := oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, rec.Log, dtc, rec.Instance, &rec.Instance.Spec.InfraMonitoring, true,
+			r.client, r.apiReader, r.scheme, rec.Log, dtc, rec.Instance, &rec.Instance.Spec.InfraMonitoring, oneagent.InframonFeature,
 		).Reconcile(ctx, rec)
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
+			return
+		}
+	} else {
+		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: rec.Instance.Name + "-inframon", Namespace: rec.Instance.Namespace}}
+		if err := r.ensureDeleted(&ds); rec.Error(err) {
 			return
 		}
 	}
 
 	if rec.Instance.Spec.ClassicFullStack.Enabled {
 		upd, err := oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, rec.Log, dtc, rec.Instance, &rec.Instance.Spec.ClassicFullStack, false,
+			r.client, r.apiReader, r.scheme, rec.Log, dtc, rec.Instance, &rec.Instance.Spec.ClassicFullStack, oneagent.ClassicFeature,
 		).Reconcile(ctx, rec)
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "classic fullstack reconciled") {
 			return
 		}
-
+	} else {
+		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: rec.Instance.Name + "-classic", Namespace: rec.Instance.Namespace}}
+		if err := r.ensureDeleted(&ds); rec.Error(err) {
+			return
+		}
 	}
+}
+
+func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
+	if err := r.client.Delete(context.TODO(), obj); err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {

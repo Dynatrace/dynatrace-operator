@@ -49,7 +49,13 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
-			}}
+			},
+			Spec: v1alpha1.DynaKubeSpec{
+				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
+					Enabled: true,
+				},
+			},
+		}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance,
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -60,7 +66,12 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					"apiToken":  []byte("something"),
 					"paasToken": []byte("something"),
 				},
-			}).Build()
+			},
+			&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: kubesystem.Namespace,
+					UID:  testUID,
+				}}).Build()
 		r := &ReconcileDynaKube{
 			client:    fakeClient,
 			apiReader: fakeClient,
