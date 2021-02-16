@@ -13,7 +13,6 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -268,21 +267,6 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 		resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
 	}
 
-	args := fs.Args
-	if instance.Spec.Proxy != nil && (instance.Spec.Proxy.ValueFrom != "" || instance.Spec.Proxy.Value != "") {
-		args = append(args, "--set-proxy=$(https_proxy)")
-	}
-
-	if instance.Spec.NetworkZone != "" {
-		args = append(args, fmt.Sprintf("--set-network-zone=%s", instance.Spec.NetworkZone))
-	}
-
-	if webhookInjection {
-		args = append(args, "--set-host-id-source=k8s-node-name")
-	}
-
-	args = append(args, "--set-host-property=OperatorVersion="+version.Version)
-
 	// K8s 1.18+ is expected to drop the "beta.kubernetes.io" labels in favor of "kubernetes.io" which was added on K8s 1.14.
 	// To support both older and newer K8s versions we use node affinity.
 
@@ -321,7 +305,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 
 	p = corev1.PodSpec{
 		Containers: []corev1.Container{{
-			Args:            args,
+			Args:            prepareArgs(instance, fs, webhookInjection, clusterID),
 			Env:             prepareEnvVars(instance, fs, webhookInjection, clusterID),
 			Image:           "",
 			ImagePullPolicy: corev1.PullAlways,
