@@ -162,6 +162,7 @@ func TestPodInjection(t *testing.T) {
 				Command:         []string{"/usr/bin/env"},
 				Args:            []string{"bash", "/mnt/config/init.sh"},
 				Env: []corev1.EnvVar{
+					{Name: "FLAVOR", Value: "default"},
 					{Name: "TECHNOLOGIES", Value: "all"},
 					{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
 					{Name: "INSTALLER_URL", Value: ""},
