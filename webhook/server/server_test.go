@@ -167,6 +167,7 @@ func TestPodInjection(t *testing.T) {
 					{Name: "INSTALLER_URL", Value: ""},
 					{Name: "FAILURE_POLICY", Value: "silent"},
 					{Name: "CONTAINERS_COUNT", Value: "1"},
+					{Name: "MODE", Value: "installer"},
 					{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
 					{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
 					{Name: "K8S_BASEPODNAME", Value: "test-pod"},
