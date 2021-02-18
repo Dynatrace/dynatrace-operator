@@ -42,7 +42,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 			}}
-		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme, instance)
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance).Build()
 		r := NewReconciler(fakeClient, instance, nil, testOwner, valueSource, scheme.Scheme)
 		err := r.Reconcile()
 
@@ -64,7 +64,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 			}}
-		fakeClient := fake.NewFakeClientWithScheme(scheme.Scheme, instance)
+		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance).Build()
 		r := NewReconciler(fakeClient, instance, nil, testOwner, valueSource, scheme.Scheme)
 		err := r.Reconcile()
 

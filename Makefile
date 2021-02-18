@@ -47,7 +47,13 @@ manager: generate fmt vet
 run: export RUN_LOCAL=true
 run: export POD_NAMESPACE=dynatrace
 run: generate fmt vet manifests
-	go run ./main.go
+	go run ./
+
+## Run with delve against the configured Kubernetes cluster in ~/.kube/config
+#run-delve: export RUN_LOCAL=true
+#run-delve: export POD_NAMESPACE=dynatrace
+#run-delve: manager manifests
+#     dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./main
 
 # Install CRDs into a cluster
 install: manifests kustomize
@@ -63,7 +69,7 @@ deploy: manifests kustomize
 	rm -f config/deploy/kustomization.yaml
 	mkdir -p config/deploy
 	cd config/deploy && $(KUSTOMIZE) create
-	cd config/deploy && $(KUSTOMIZE) edit add base ../manifests
+	cd config/deploy && $(KUSTOMIZE) edit add base ../kubernetes
 	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
 	$(KUSTOMIZE) build config/deploy | kubectl apply -f -
 
@@ -73,7 +79,7 @@ deploy-ocp: manifests kustomize
 	rm -f config/deploy/kustomization.yaml
 	mkdir -p config/deploy
 	cd config/deploy && $(KUSTOMIZE) create
-	cd config/deploy && $(KUSTOMIZE) edit add base ../manifests
+	cd config/deploy && $(KUSTOMIZE) edit add base ../openshift
 	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
 	$(KUSTOMIZE) build config/deploy | oc apply -f -
 

@@ -28,11 +28,10 @@ type Reconciler struct {
 	dtc       dtclient.Client
 	log       logr.Logger
 	token     *corev1.Secret
-	image     string
 	scheme    *runtime.Scheme
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client, log logr.Logger, token *corev1.Secret, image string) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client, log logr.Logger, token *corev1.Secret) *Reconciler {
 	return &Reconciler{
 		Client:    clt,
 		apiReader: apiReader,
@@ -41,12 +40,11 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		dtc:       dtc,
 		log:       log,
 		token:     token,
-		image:     image,
 	}
 }
 
 func (r *Reconciler) Reconcile() error {
-	if r.instance.Spec.CustomPullSecret == "" && r.image == "" {
+	if r.instance.Spec.CustomPullSecret == "" {
 		err := r.reconcilePullSecret()
 		if err != nil {
 			r.log.Error(err, "could not reconcile pull secret")
@@ -89,7 +87,7 @@ func (r *Reconciler) updatePullSecretIfOutdated(pullSecret *corev1.Secret, desir
 }
 
 func (r *Reconciler) createPullSecret(pullSecretData map[string][]byte) (*corev1.Secret, error) {
-	pullSecret := buildPullSecret(r.instance, pullSecretData)
+	pullSecret := BuildPullSecret(r.instance, pullSecretData)
 
 	if err := controllerutil.SetControllerReference(r.instance, pullSecret, r.scheme); err != nil {
 		return nil, errors.WithStack(err)
@@ -115,7 +113,7 @@ func isPullSecretEqual(currentSecret *corev1.Secret, desired map[string][]byte) 
 	return reflect.DeepEqual(desired, currentSecret.Data)
 }
 
-func buildPullSecret(instance *dynatracev1alpha1.DynaKube, pullSecretData map[string][]byte) *corev1.Secret {
+func BuildPullSecret(instance *dynatracev1alpha1.DynaKube, pullSecretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      extendWithPullSecretSuffix(instance.Name),

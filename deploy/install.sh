@@ -74,44 +74,14 @@ checkIfNSExists() {
   fi
 }
 
-applyOneAgentOperator() {
+applyDynatraceOperator() {
   if [ "${CLI}" = "kubectl" ]; then
-    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/kubernetes.yaml
+    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
   else
-    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/latest/download/openshift.yaml
+    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift.yaml
   fi
 
-  "${CLI}" -n dynatrace create secret generic oneagent --from-literal="apiToken=${API_TOKEN}" --from-literal="paasToken=${PAAS_TOKEN}" --dry-run -o yaml | "${CLI}" apply -f -
-}
-
-applyOneAgentCR() {
-  cat <<EOF | "${CLI}" apply -f -
-apiVersion: dynatrace.com/v1alpha1
-kind: OneAgent
-metadata:
-  name: oneagent
-  namespace: dynatrace
-spec:
-  apiUrl: ${API_URL}
-  tolerations:
-  - effect: NoSchedule
-    key: node-role.kubernetes.io/master
-    operator: Exists
-  skipCertCheck: ${SKIP_CERT_CHECK}
-  args:
-  - --set-app-log-content-access=${SET_APP_LOG_CONTENT_ACCESS}
-  env:
-  - name: ONEAGENT_ENABLE_VOLUME_STORAGE
-    value: "${ENABLE_VOLUME_STORAGE}"
-EOF
-}
-
-applyDynatraceOperator() {
-    if [ "${CLI}" = "kubectl" ]; then
-      "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
-    else
-      "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift.yaml
-    fi
+  "${CLI}" -n dynatrace create secret generic dynakube --from-literal="apiToken=${API_TOKEN}" --from-literal="paasToken=${PAAS_TOKEN}" --dry-run -o yaml | "${CLI}" apply -f -
 }
 
 applyDynaKubeCR() {
@@ -123,10 +93,20 @@ metadata:
   namespace: dynatrace
 spec:
   apiUrl: ${API_URL}
-  tokens: oneagent
+  skipCertCheck: ${SKIP_CERT_CHECK}
   kubernetesMonitoring:
+    enabled: ${ENABLE_K8S_MONITORING}
+  classicFullStack:
     enabled: true
-    replicas: 1
+    tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+      operator: Exists
+    args:
+    - --set-app-log-content-access=${SET_APP_LOG_CONTENT_ACCESS}
+    env:
+    - name: ONEAGENT_ENABLE_VOLUME_STORAGE
+      value: "${ENABLE_VOLUME_STORAGE}"
 EOF
 }
 
@@ -188,16 +168,12 @@ EOF
 ####### MAIN #######
 printf "\nCreating Dynatrace namespace...\n"
 checkIfNSExists
-printf "\nApplying Dynatrace OneAgent Operator...\n"
-applyOneAgentOperator
-printf "\nApplying OneAgent CustomResource...\n"
-applyOneAgentCR
+printf "\nApplying Dynatrace Operator...\n"
+applyDynatraceOperator
+printf "\nApplying DynaKube CustomResource...\n"
+applyDynaKubeCR
 
 if [ "${ENABLE_K8S_MONITORING}" = "true" ]; then
-  printf "\nApplying Dynatrace Operator...\n"
-  applyDynatraceOperator
-  printf "\nApplying DynaKube CustomResource...\n"
-  applyDynaKubeCR
   printf "\nAdding cluster to Dynatrace...\n"
   addK8sConfiguration
 fi
