@@ -228,7 +228,7 @@ if [[ "${FAILURE_POLICY}" == "fail" ]]; then
 	fail_code=1
 fi
 
-if [[ "${INSTALLER_URL}" != "" ]] || [[ "${USE_IMMUTABLE_IMAGE}" != "true" ]]; then
+if [[ "${MODE}" == "installer" ]]; then
 	curl_params=(
 		"--silent"
 		"--output" "${archive}"
@@ -267,12 +267,6 @@ if [[ "${INSTALLER_URL}" != "" ]] || [[ "${USE_IMMUTABLE_IMAGE}" != "true" ]]; t
 		mv "${archive}" "${target_dir}/package.zip"
 		exit "${fail_code}"
 	fi
-else
-	echo "Copy OneAgent package..."
-	if ! cp -r "/opt/dynatrace/oneagent/." "${target_dir}"; then
-		echo "Failed to copy the OneAgent package."
-		exit "${fail_code}"
-	fi
 fi
 
 echo "Configuring OneAgent..."
@@ -298,7 +292,7 @@ k8s_containername ${container_name}
 k8s_basepodname ${K8S_BASEPODNAME}
 k8s_namespace ${K8S_NAMESPACE}">>${container_conf_file}
 
-	if [[ ! -z "${host_tenant}" ]]; then		
+	if [[ ! -z "${host_tenant}" ]]; then
 		if [[ "{{.DynaKube.Status.EnvironmentID}}" == "${host_tenant}" ]]; then
 			echo "k8s_node_name ${K8S_NODE_NAME}
 k8s_cluster_id ${cluster_id}">>${container_conf_file}

@@ -22,6 +22,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
+	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/spf13/pflag"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
@@ -35,12 +36,11 @@ import (
 )
 
 var (
+<<<<<<< HEAD
 	Version = "snapshot"
 	scheme  = pkgruntime.NewScheme()
-	log     = logger.NewDTLogger()
 )
 
-var subcmdCallbacks = map[string]func(ns string, cfg *rest.Config) (manager.Manager, error){
 	"operator":             startOperator,
 	"webhook-bootstrapper": startWebhookBoostrapper,
 	"webhook-server":       startWebhookServer,
@@ -116,7 +116,7 @@ func main() {
 }
 
 func printVersion() {
-	log.Info(fmt.Sprintf("Operator Version: %s", Version))
+	log.Info(fmt.Sprintf("Operator Version: %s", version.Version))
 	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
 	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
 }

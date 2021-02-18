@@ -27,16 +27,8 @@ type DynaKubeSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	Tokens string `json:"tokens,omitempty"`
 
-	// Optional: Pull secret for your private registry
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Custom PullSecret"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	CustomPullSecret string `json:"customPullSecret,omitempty"`
-
 	// Disable certificate validation checks for installer download and API communication
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Skip Certificate Check"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Skip Certificate Check",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	SkipCertCheck bool `json:"skipCertCheck,omitempty"`
 
 	// Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
@@ -54,10 +46,14 @@ type DynaKubeSpec struct {
 	TrustedCAs string `json:"trustedCAs,omitempty"`
 
 	// Optional: Sets Network Zone for OneAgent and ActiveGate pods
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Network Zone"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Network Zone",order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	NetworkZone string `json:"networkZone,omitempty"`
+
+	// If enabled, Istio on the cluster will be configured automatically to allow access to the Dynatrace environment
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Enable Istio automatic management"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	EnableIstio bool `json:"enableIstio,omitempty"`
 
 	// If enabled, Istio on the cluster will be configured automatically to allow access to the Dynatrace environment
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
@@ -116,9 +112,9 @@ type OneAgentSpec struct {
 }
 
 type CodeModulesSpec struct {
-	// Enables Kubernetes Monitoring
+	// Enables code modules monitoring
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="CodeModules Monitoring"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	Enabled bool `json:"enabled,omitempty"`
 
@@ -130,9 +126,9 @@ type CodeModulesSpec struct {
 }
 
 type FullStackSpec struct {
-	// Enables Kubernetes Monitoring
+	// Enables FullStack Monitoring
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="FullStack Monitoring"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	Enabled bool `json:"enabled,omitempty"`
 

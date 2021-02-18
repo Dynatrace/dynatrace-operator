@@ -88,17 +88,10 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "wrong policy")
 	mock.AssertExpectationsForObjects(t, dtClient)
 }
-
 func TestReconcile_PhaseSetCorrectly(t *testing.T) {
 	namespace := "dynatrace"
 	dkName := "dynakube"
 
-	base := dynatracev1alpha1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
-		Spec: dynatracev1alpha1.DynaKubeSpec{
-			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
-			Tokens: dkName,
-			ClassicFullStack: dynatracev1alpha1.FullStackSpec{
 				Enabled: true,
 			},
 		},

@@ -72,8 +72,6 @@ type Client interface {
 	QueryOutdatedActiveGates(query *ActiveGateQuery) ([]ActiveGate, error)
 
 	QueryActiveGates(query *ActiveGateQuery) ([]ActiveGate, error)
-
-	AddToDashboard(label string, kubernetesApiEndpoint string, bearerToken string) (string, error)
 }
 
 // Known OS values.

@@ -90,28 +90,24 @@ func (r *ReconcileKubeMon) manageStatefulSet(instance *dynatracev1alpha1.DynaKub
 
 	desiredStatefulSet, err := r.buildDesiredStatefulSet(instance)
 	if err != nil {
-		return false, errors.WithStack(err)
+		return update, errors.WithStack(err)
 	}
 
 	if err := controllerutil.SetControllerReference(instance, desiredStatefulSet, r.scheme); err != nil {
-		return false, errors.WithStack(err)
+		return update, errors.WithStack(err)
 	}
 
-	currentStatefulSet, stsCreated, err := r.createStatefulSetIfNotExists(desiredStatefulSet)
+	currentStatefulSet, _, err := r.createStatefulSetIfNotExists(desiredStatefulSet)
 	if err != nil {
-		return false, errors.WithStack(err)
+		return update, errors.WithStack(err)
 	}
 
-	stsChanged, err := r.updateStatefulSetIfOutdated(currentStatefulSet, desiredStatefulSet)
+	_, err = r.updateStatefulSetIfOutdated(currentStatefulSet, desiredStatefulSet)
 	if err != nil {
-		return false, errors.WithStack(err)
+		return update, errors.WithStack(err)
 	}
 
-	if !update && !stsCreated && !stsChanged {
-		return false, nil
-	}
-
-	return true, nil
+	return update, nil
 }
 
 func (r *ReconcileKubeMon) updateImageVersion(instance *dynatracev1alpha1.DynaKube, img string) (bool, error) {

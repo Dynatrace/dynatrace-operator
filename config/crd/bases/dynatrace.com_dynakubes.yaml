@@ -68,7 +68,7 @@ spec:
                   description: 'Optional: Sets DNS Policy for the OneAgent pods'
                   type: string
                 enabled:
-                  description: Enables Kubernetes Monitoring
+                  description: Enables FullStack Monitoring
                   type: boolean
                 env:
                   description: 'Optional: List of environment variables to set for
@@ -266,7 +266,7 @@ spec:
             codeModules:
               properties:
                 enabled:
-                  description: Enables Kubernetes Monitoring
+                  description: Enables code modules monitoring
                   type: boolean
                 resources:
                   description: 'Optional: define resources requests and limits for
@@ -304,7 +304,7 @@ spec:
                   description: 'Optional: Sets DNS Policy for the OneAgent pods'
                   type: string
                 enabled:
-                  description: Enables Kubernetes Monitoring
+                  description: Enables FullStack Monitoring
                   type: boolean
                 env:
                   description: 'Optional: List of environment variables to set for

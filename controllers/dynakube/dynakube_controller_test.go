@@ -42,20 +42,14 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	})
 	t.Run(`Reconcile works with minimal setup and interface`, func(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetTokenScopes", "something").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
-		mockClient.On("GetTokenScopes", "something").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+		mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
+		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{TenantUUID: "abc123456"}, nil)
 		instance := &v1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
-			},
-			Spec: v1alpha1.DynaKubeSpec{
-				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
-					Enabled: true,
-				},
-			},
-		}
+			}}
 		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance,
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
@@ -63,15 +57,10 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{
-					"apiToken":  []byte("something"),
-					"paasToken": []byte("something"),
+					"apiToken":  []byte(testAPIToken),
+					"paasToken": []byte(testPaasToken),
 				},
-			},
-			&corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: kubesystem.Namespace,
-					UID:  testUID,
-				}}).Build()
+			}).Build()
 		r := &ReconcileDynaKube{
 			client:    fakeClient,
 			apiReader: fakeClient,
