@@ -168,15 +168,10 @@ EOF
 ####### MAIN #######
 printf "\nCreating Dynatrace namespace...\n"
 checkIfNSExists
-<<<<<<< HEAD
-printf "\nApplying OneAgent CustomResource...\n"
-applyOneAgentCR
-=======
 printf "\nApplying Dynatrace Operator...\n"
 applyDynatraceOperator
 printf "\nApplying DynaKube CustomResource...\n"
 applyDynaKubeCR
->>>>>>> master
 
 if [ "${ENABLE_K8S_MONITORING}" = "true" ]; then
   printf "\nAdding cluster to Dynatrace...\n"

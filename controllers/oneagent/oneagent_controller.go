@@ -291,7 +291,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 		args = append(args, fmt.Sprintf("--set-network-zone=%s", instance.Spec.NetworkZone))
 	}
 
-	if feature == "inframon" {
+	if feature == InframonFeature {
 		args = append(args, "--set-host-id-source=k8s-node-name")
 	}
 
@@ -530,7 +530,7 @@ func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.
 		},
 	}
 
-	if feature == "inframon" {
+	if feature == InframonFeature {
 		reserved = append(reserved,
 			reservedEnvVar{
 				Name: "ONEAGENT_DISABLE_CONTAINER_INJECTION",

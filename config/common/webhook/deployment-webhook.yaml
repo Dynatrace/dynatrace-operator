@@ -135,8 +135,4 @@ spec:
       serviceAccountName: dynatrace-webhook
       volumes:
         - name: certs-volume
-<<<<<<< HEAD
-          emptyDir: {}
-=======
           emptyDir: { }
->>>>>>> master
