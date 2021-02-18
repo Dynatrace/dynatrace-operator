@@ -58,6 +58,7 @@ spec:
                 your specific environment ID
               type: string
             classicFullStack:
+              description: Enables ClassicFullStack Monitoring
               properties:
                 args:
                   description: 'Optional: Arguments to the OneAgent installer'
@@ -264,6 +265,7 @@ spec:
                   type: integer
               type: object
             codeModules:
+              description: Enables CodeModules Monitoring
               properties:
                 enabled:
                   description: Enables code modules monitoring
@@ -294,6 +296,7 @@ spec:
                 to allow access to the Dynatrace environment
               type: boolean
             infraMonitoring:
+              description: Enables Infra Monitoring
               properties:
                 args:
                   description: 'Optional: Arguments to the OneAgent installer'
@@ -709,6 +712,7 @@ spec:
                 pods'
               type: string
             oneAgent:
+              description: General configuration about OneAgent instances
               properties:
                 autoUpdate:
                   description: Disable automatic restarts of OneAgent pods in case
