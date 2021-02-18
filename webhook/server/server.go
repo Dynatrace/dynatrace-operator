@@ -146,6 +146,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 	pod.Annotations[dtwebhook.AnnotationInjected] = "true"
 
+	flavor := utils.GetField(pod.Annotations, dtwebhook.AnnotationFlavor, "default")
 	technologies := url.QueryEscape(utils.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
 	installPath := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 	installerURL := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, "")
@@ -200,11 +201,13 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		Command:         []string{"/usr/bin/env"},
 		Args:            []string{"bash", "/mnt/config/init.sh"},
 		Env: []corev1.EnvVar{
+			{Name: "FLAVOR", Value: flavor},
 			{Name: "TECHNOLOGIES", Value: technologies},
 			{Name: "INSTALLPATH", Value: installPath},
 			{Name: "INSTALLER_URL", Value: installerURL},
 			{Name: "FAILURE_POLICY", Value: failurePolicy},
 			{Name: "CONTAINERS_COUNT", Value: strconv.Itoa(len(pod.Spec.Containers))},
+			{Name: "MODE", Value: "installer"},
 			{Name: "K8S_PODNAME", ValueFrom: fieldEnvVar("metadata.name")},
 			{Name: "K8S_PODUID", ValueFrom: fieldEnvVar("metadata.uid")},
 			{Name: "K8S_BASEPODNAME", Value: basePodName},

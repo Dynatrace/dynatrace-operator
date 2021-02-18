@@ -28,7 +28,7 @@ import (
 
 // time between consecutive queries for a new pod to get ready
 const splayTimeSeconds = uint16(10)
-const annotationTemplateHash = "internal.oneagent.dynatrace.com/template-hash"
+const annotationTemplateHash = "internal.dynatrace.com/template-hash"
 const defaultUpdateInterval = 15 * time.Minute
 const updateEnvVar = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
 
@@ -349,7 +349,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 		PriorityClassName:  fs.PriorityClassName,
 		ServiceAccountName: sa,
 		Tolerations:        fs.Tolerations,
-		DNSPolicy:          getDNSPolicy(fs.DNSPolicy),
+		DNSPolicy:          fs.DNSPolicy,
 		Affinity: &corev1.Affinity{
 			NodeAffinity: &corev1.NodeAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
@@ -402,13 +402,6 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 	}
 
 	return p
-}
-
-func getDNSPolicy(policy corev1.DNSPolicy) corev1.DNSPolicy {
-	if string(policy) == "" {
-		return corev1.DNSClusterFirstWithHostNet
-	}
-	return policy
 }
 
 func preparePodSpecInstaller(p *corev1.PodSpec, instance *dynatracev1alpha1.DynaKube) error {

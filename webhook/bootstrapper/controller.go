@@ -135,14 +135,14 @@ func (r *ReconcileWebhook) reconcileService(ctx context.Context, log logr.Logger
 			Name:      webhookName,
 			Namespace: r.namespace,
 			Labels: map[string]string{
-				"dynatrace.com/operator":                    "oneagent",
-				"internal.oneagent.dynatrace.com/component": "webhook",
+				"dynatrace.com/operator":           "oneagent",
+				"internal.dynatrace.com/component": "webhook",
 			},
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{
-				"internal.oneagent.dynatrace.com/component": "webhook",
-				"internal.oneagent.dynatrace.com/app":       "webhook",
+				"internal.dynatrace.com/component": "webhook",
+				"internal.dynatrace.com/app":       "webhook",
 			},
 			Ports: []corev1.ServicePort{{
 				Protocol:   corev1.ProtocolTCP,
@@ -233,12 +233,12 @@ func (r *ReconcileWebhook) reconcileWebhookConfig(ctx context.Context, log logr.
 		ObjectMeta: metav1.ObjectMeta{
 			Name: webhookName,
 			Labels: map[string]string{
-				"dynatrace.com/operator":                    "oneagent",
-				"internal.oneagent.dynatrace.com/component": "webhook",
+				"dynatrace.com/operator":           "oneagent",
+				"internal.dynatrace.com/component": "webhook",
 			},
 		},
 		Webhooks: []admissionregistrationv1beta1.MutatingWebhook{{
-			Name:                    "webhook.oneagent.dynatrace.com",
+			Name:                    "webhook.dynatrace.com",
 			AdmissionReviewVersions: []string{"v1beta1"},
 			Rules: []admissionregistrationv1beta1.RuleWithOperations{{
 				Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create},

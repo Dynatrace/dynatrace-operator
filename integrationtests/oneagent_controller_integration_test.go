@@ -40,5 +40,5 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironment(t *testing.T) {
 
 	assert.Equal(t, DefaultTestNamespace, dsActual.Namespace, "wrong namespace")
 	assert.Equal(t, oaName+"-oneagent", dsActual.GetObjectMeta().GetName(), "wrong name")
-	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "DNS policy should ClusterFirst by default")
+	assert.Equal(t, corev1.DNSClusterFirst, dsActual.Spec.Template.Spec.DNSPolicy, "DNS policy should ClusterFirst by default")
 }

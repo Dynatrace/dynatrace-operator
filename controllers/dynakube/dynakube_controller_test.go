@@ -1,4 +1,4 @@
-package dynakube
+package activegate
 
 import (
 	"context"

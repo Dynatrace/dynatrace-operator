@@ -12,7 +12,14 @@ endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image URL to use all building/pushing image targets
-IMG ?= dynatrace-operator:latest
+ifeq ($(origin IMG),undefined)
+ifeq ($(shell git branch --show-current),master)
+IMG=quay.io/dynatrace/dynatrace-operator:snapshot
+else
+IMG=quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s\#[^a-zA-Z0-9_-]\#-\#g")
+endif
+endif
+
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
@@ -58,8 +65,23 @@ uninstall: manifests kustomize
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
-	cd config/manifests && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	kubectl get namespace dynatrace || kubectl create namespace dynatrace
+	rm -f config/deploy/kustomization.yaml
+	mkdir -p config/deploy
+	cd config/deploy && $(KUSTOMIZE) create
+	cd config/deploy && $(KUSTOMIZE) edit add base ../kubernetes
+	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
+	$(KUSTOMIZE) build config/deploy | kubectl apply -f -
+
+# Deploy controller in the configured OpenShift cluster in ~/.kube/config
+deploy-ocp: manifests kustomize
+	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
+	rm -f config/deploy/kustomization.yaml
+	mkdir -p config/deploy
+	cd config/deploy && $(KUSTOMIZE) create
+	cd config/deploy && $(KUSTOMIZE) edit add base ../openshift
+	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
+	$(KUSTOMIZE) build config/deploy | oc apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen

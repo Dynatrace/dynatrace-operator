@@ -5,7 +5,7 @@ metadata:
   namespace: dynatrace
   labels:
     dynatrace.com/operator: dynakube
-    internal.oneagent.dynatrace.com/component: webhook
+    internal.dynatrace.com/component: webhook
 subjects:
   - kind: ServiceAccount
     name: dynatrace-webhook

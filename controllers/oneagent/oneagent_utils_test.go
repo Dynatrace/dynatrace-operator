@@ -146,7 +146,7 @@ func TestHasSpecChanged(t *testing.T) {
 	})
 
 	runTest("dns policy added", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
-		new.Spec.ClassicFullStack.DNSPolicy = corev1.DNSClusterFirst
+		new.Spec.ClassicFullStack.DNSPolicy = corev1.DNSClusterFirstWithHostNet
 	})
 }
 
