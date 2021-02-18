@@ -67,7 +67,7 @@ spec:
     #
     enabled: true
 ```
-This is the most basic configuration for the DynaKube object. In case you want to have adjustments please have a look at [./deploy/cr.yaml](https://raw.githubusercontent.com/Dynatrace/dynatrace-operator/master/deploy/cr.yaml) 
+This is the most basic configuration for the DynaKube object. In case you want to have adjustments please have a look at [our DynaKube Custom Resource example](https://raw.githubusercontent.com/Dynatrace/dynatrace-operator/master/config/samples/cr.yaml). 
 Save this to cr.yaml and apply it to your cluster.
 ```sh
 $ kubectl apply -f cr.yaml
@@ -134,7 +134,7 @@ spec:
     #
     enabled: true
 ```
-This is the most basic configuration for the DynaKube object. In case you want to have adjustments please have a look at [./deploy/cr.yaml](https://raw.githubusercontent.com/Dynatrace/dynatrace-operator/master/deploy/cr.yaml) 
+This is the most basic configuration for the DynaKube object. In case you want to have adjustments please have a look at [our DynaKube Custom Resource example](https://raw.githubusercontent.com/Dynatrace/dynatrace-operator/master/config/samples/cr.yaml). 
 Save this to cr.yaml and apply it to your cluster.
 ```sh
 $ oc apply -f cr.yaml
