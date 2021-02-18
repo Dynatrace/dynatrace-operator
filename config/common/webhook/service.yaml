@@ -5,12 +5,12 @@ metadata:
   namespace: dynatrace
   labels:
     dynatrace.com/operator: dynakube
-    internal.oneagent.dynatrace.com/component: webhook
+    internal.dynatrace.com/component: webhook
 spec:
   selector:
-    internal.oneagent.dynatrace.com/app: webhook
-    internal.oneagent.dynatrace.com/component: webhook
+    internal.dynatrace.com/app: webhook
+    internal.dynatrace.com/component: webhook
   ports:
-  - port: 443
-    protocol: TCP
-    targetPort: server-port
+    - port: 443
+      protocol: TCP
+      targetPort: server-port

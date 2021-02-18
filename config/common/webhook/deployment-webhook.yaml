@@ -10,16 +10,16 @@ spec:
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-      internal.oneagent.dynatrace.com/component: webhook
-      internal.oneagent.dynatrace.com/app: webhook
+      internal.dynatrace.com/component: webhook
+      internal.dynatrace.com/app: webhook
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
         dynatrace.com/operator: oneagent
-        internal.oneagent.dynatrace.com/component: webhook
-        internal.oneagent.dynatrace.com/app: webhook
+        internal.dynatrace.com/component: webhook
+        internal.dynatrace.com/app: webhook
     spec:
       affinity:
         nodeAffinity:
@@ -135,4 +135,4 @@ spec:
       serviceAccountName: dynatrace-webhook
       volumes:
         - name: certs-volume
-          emptyDir: {}
+          emptyDir: { }

@@ -17,6 +17,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/version"
 	"os"
 	"runtime"
 
@@ -35,9 +36,8 @@ import (
 )
 
 var (
-	Version = "snapshot"
-	scheme  = pkgruntime.NewScheme()
-	log     = logger.NewDTLogger()
+	scheme = pkgruntime.NewScheme()
+	log    = logger.NewDTLogger()
 )
 
 var subcmdCallbacks = map[string]func(ns string, cfg *rest.Config) (manager.Manager, error){
@@ -116,7 +116,7 @@ func main() {
 }
 
 func printVersion() {
-	log.Info(fmt.Sprintf("Operator Version: %s", Version))
+	log.Info(fmt.Sprintf("Operator Version: %s", version.Version))
 	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
 	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
 }

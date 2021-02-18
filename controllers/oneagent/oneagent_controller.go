@@ -28,7 +28,7 @@ import (
 
 // time between consecutive queries for a new pod to get ready
 const splayTimeSeconds = uint16(10)
-const annotationTemplateHash = "internal.oneagent.dynatrace.com/template-hash"
+const annotationTemplateHash = "internal.dynatrace.com/template-hash"
 const defaultUpdateInterval = 15 * time.Minute
 const updateEnvVar = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
 

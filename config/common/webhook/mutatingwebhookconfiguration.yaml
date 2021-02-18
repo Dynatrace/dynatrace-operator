@@ -4,22 +4,22 @@ metadata:
   name: dynatrace-webhook
   labels:
     dynatrace.com/operator: dynakube
-    internal.oneagent.dynatrace.com/component: webhook
+    internal.dynatrace.com/component: webhook
 webhooks:
-- name: webhook.oneagent.dynatrace.com
-  rules:
-  - apiGroups: [""]
-    apiVersions: ["v1"]
-    operations: ["CREATE"]
-    resources: ["pods"]
-    scope: Namespaced
-  namespaceSelector:
-    matchExpressions:
-    - key: oneagent.dynatrace.com/instance
-      operator: Exists
-  clientConfig:
-    service:
-      name: dynatrace-webhook
-      namespace: dynatrace
-      path: /inject
-  admissionReviewVersions: ["v1beta1"]
+  - name: webhook.dynatrace.com
+    rules:
+      - apiGroups: [ "" ]
+        apiVersions: [ "v1" ]
+        operations: [ "CREATE" ]
+        resources: [ "pods" ]
+        scope: Namespaced
+    namespaceSelector:
+      matchExpressions:
+        - key: oneagent.dynatrace.com/instance
+          operator: Exists
+    clientConfig:
+      service:
+        name: dynatrace-webhook
+        namespace: dynatrace
+        path: /inject
+    admissionReviewVersions: [ "v1beta1" ]
