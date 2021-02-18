@@ -36,11 +36,11 @@ import (
 )
 
 var (
-<<<<<<< HEAD
-	Version = "snapshot"
-	scheme  = pkgruntime.NewScheme()
+	scheme = pkgruntime.NewScheme()
+	log    = logger.NewDTLogger()
 )
 
+var subcmdCallbacks = map[string]func(ns string, cfg *rest.Config) (manager.Manager, error){
 	"operator":             startOperator,
 	"webhook-bootstrapper": startWebhookBoostrapper,
 	"webhook-server":       startWebhookServer,
