@@ -47,6 +47,10 @@ spec:
             activeGate:
               description: General configuration about ActiveGate instances
               properties:
+                autoUpdate:
+                  description: Disable automatic restarts of OneAgent pods in case
+                    a new version is available
+                  type: boolean
                 image:
                   description: 'Optional: the ActiveGate container image. Defaults
                     to the latest ActiveGate image provided by the Docker Registry
