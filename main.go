@@ -17,12 +17,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/version"
 	"os"
 	"runtime"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
+	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/spf13/pflag"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	pkgruntime "k8s.io/apimachinery/pkg/runtime"
