@@ -101,8 +101,8 @@ type OneAgentSpec struct {
 }
 
 type CodeModulesSpec struct {
-	// Enables code modules monitoring
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CodeModules Monitoring",order=14,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
+	// Configuration for CodeModule monitoring
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Configuration for CodeModules Monitoring",order=14,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	Enabled bool `json:"enabled,omitempty"`
 
 	// Optional: define resources requests and limits for the initContainer

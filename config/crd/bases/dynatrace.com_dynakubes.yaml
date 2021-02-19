@@ -272,7 +272,7 @@ spec:
               description: Enables CodeModules Monitoring
               properties:
                 enabled:
-                  description: Enables code modules monitoring
+                  description: Configuration for CodeModule monitoring
                   type: boolean
                 resources:
                   description: 'Optional: define resources requests and limits for
