@@ -54,16 +54,16 @@ type DynaKubeSpec struct {
 	// General configuration about OneAgent instances
 	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
 
-	// Enables CodeModules Monitoring
+	// Configuration for CodeModules Monitoring
 	CodeModules CodeModulesSpec `json:"codeModules,omitempty"`
 
-	// Enables Infra Monitoring
+	// Configuration for Infra Monitoring
 	InfraMonitoring FullStackSpec `json:"infraMonitoring,omitempty"`
 
-	// Enables ClassicFullStack Monitoring
+	// Configuration for ClassicFullStack Monitoring
 	ClassicFullStack FullStackSpec `json:"classicFullStack,omitempty"`
 
-	// Enables Kubernetes Monitoring
+	// Configuration for Kubernetes Monitoring
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
@@ -101,8 +101,8 @@ type OneAgentSpec struct {
 }
 
 type CodeModulesSpec struct {
-	// Configuration for CodeModule monitoring
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Configuration for CodeModules Monitoring",order=14,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
+	// Enables code modules monitoring
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CodeModules Monitoring",order=14,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	Enabled bool `json:"enabled,omitempty"`
 
 	// Optional: define resources requests and limits for the initContainer

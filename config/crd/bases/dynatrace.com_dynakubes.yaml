@@ -62,7 +62,7 @@ spec:
                 your specific environment ID
               type: string
             classicFullStack:
-              description: Enables ClassicFullStack Monitoring
+              description: Configuration for ClassicFullStack Monitoring
               properties:
                 args:
                   description: 'Optional: Arguments to the OneAgent installer'
@@ -269,10 +269,10 @@ spec:
                   type: integer
               type: object
             codeModules:
-              description: Enables CodeModules Monitoring
+              description: Configuration for CodeModules Monitoring
               properties:
                 enabled:
-                  description: Configuration for CodeModule monitoring
+                  description: Enables code modules monitoring
                   type: boolean
                 resources:
                   description: 'Optional: define resources requests and limits for
@@ -300,7 +300,7 @@ spec:
                 to allow access to the Dynatrace environment
               type: boolean
             infraMonitoring:
-              description: Enables Infra Monitoring
+              description: Configuration for Infra Monitoring
               properties:
                 args:
                   description: 'Optional: Arguments to the OneAgent installer'
@@ -507,7 +507,7 @@ spec:
                   type: integer
               type: object
             kubernetesMonitoring:
-              description: Enables Kubernetes Monitoring
+              description: Configuration for Kubernetes Monitoring
               properties:
                 args:
                   description: 'Optional: Adds additional arguments for the ActiveGate
