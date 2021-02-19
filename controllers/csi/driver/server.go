@@ -68,7 +68,7 @@ func (svr *CSIDriverServer) SetupWithManager(mgr ctrl.Manager) error {
 	return mgr.Add(svr)
 }
 
-func (svr *CSIDriverServer) Start(stop <-chan struct{}) error {
+func (svr *CSIDriverServer) Start(ctx context.Context) error {
 	proto, addr, err := parseEndpoint(svr.endpoint)
 	if err != nil {
 		return fmt.Errorf("failed to parse endpoint '%s': %w", svr.endpoint, err)
@@ -89,7 +89,7 @@ func (svr *CSIDriverServer) Start(stop <-chan struct{}) error {
 
 	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC(log)))
 	go func() {
-		<-stop
+		<-ctx.Done()
 		svr.log.Info("Stopping server")
 		server.GracefulStop()
 		svr.log.Info("Stopped server")

@@ -13,7 +13,8 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
+	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/go-logr/logr"
@@ -33,7 +34,7 @@ func NewReconciler(mgr manager.Manager, dataDir string) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
 		client:       mgr.GetClient(),
 		scheme:       mgr.GetScheme(),
-		dtcBuildFunc: activegate.BuildDynatraceClient,
+		dtcBuildFunc: dynakube.BuildDynatraceClient,
 		dataDir:      dataDir,
 	}
 }
@@ -52,13 +53,11 @@ type OneAgentProvisioner struct {
 	// that reads objects from the cache and writes to the apiserver
 	client       client.Client
 	scheme       *k8sruntime.Scheme
-	dtcBuildFunc activegate.DynatraceClientFunc
+	dtcBuildFunc dynakube.DynatraceClientFunc
 	dataDir      string
 }
 
-func (r *OneAgentProvisioner) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx := context.TODO()
-
+func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	rlog := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	rlog.Info("Reconciling DynaKube")
 
@@ -71,7 +70,7 @@ func (r *OneAgentProvisioner) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	var tkns corev1.Secret
-	if err := r.client.Get(ctx, client.ObjectKey{Name: activegate.GetTokensName(&dk), Namespace: dk.Namespace}, &tkns); err != nil {
+	if err := r.client.Get(ctx, client.ObjectKey{Name: utils.GetTokensName(&dk), Namespace: dk.Namespace}, &tkns); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to query tokens: %w", err)
 	}
 
