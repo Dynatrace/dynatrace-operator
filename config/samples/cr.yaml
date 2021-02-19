@@ -26,7 +26,7 @@ spec:
   # Optional: Adds custom RootCAs from a configmap
   # trustedCAs: name-of-my-ca-configmap
 
-  # Optional: Sets Network Zone for ActiveGate pods
+  # Optional: Sets Network Zone for OneAgent and ActiveGate pods
   #
   # networkZone: name-of-my-network-zone
 
