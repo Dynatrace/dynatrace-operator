@@ -33,7 +33,7 @@ spec:
         path: tokens
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Disable certificate validation checks for API communication
+      - description: Disable certificate validation checks for installer download and API communication
         displayName: Skip Certificate Check
         path: skipCertCheck
         x-descriptors:
@@ -55,7 +55,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:ConfigMap
-      - description: 'Optional: Sets Network Zone for ActiveGate pods'
+      - description: 'Optional: Sets Network Zone for OneAgent and ActiveGate pods'
         displayName: Network Zone
         path: networkZone
         x-descriptors:
@@ -67,12 +67,195 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: If enabled, Istio on the cluster will be configured automatically to allow access to the Dynatrace environment
+        displayName: Enable Istio automatic management
+        path: enableIstio
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: 'Optional: the ActiveGate container image. Defaults to the latest ActiveGate image provided by the Docker Registry implementation from the Dynatrace environment set as API URL.'
         displayName: Image
         path: activeGate.image
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: If specified, indicates the OneAgent version to use Defaults to latest Example: {major.minor.release} - 1.200.0'
+        displayName: OneAgent version
+        path: oneAgent.version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: the Dynatrace installer container image Defaults to docker.io/dynatrace/oneagent:latest for Kubernetes and to registry.connect.redhat.com/dynatrace/oneagent for OpenShift'
+        displayName: Image
+        path: oneAgent.image
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Disable automatic restarts of OneAgent pods in case a new version is available
+        displayName: Automatically update Agent
+        path: oneAgent.autoUpdate
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Enables code modules monitoring
+        displayName: CodeModules Monitoring
+        path: codeModules.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
+      - description: 'Optional: define resources requests and limits for the initContainer'
+        displayName: Resource Requirements
+        path: codeModules.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: Enables FullStack Monitoring
+        displayName: FullStack Monitoring
+        path: classicFullStack.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
+      - description: Enables FullStack Monitoring
+        displayName: FullStack Monitoring
+        path: infraMonitoring.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
+      - description: Node selector to control the selection of nodes (optional)
+        displayName: Node Selector
+        path: classicFullStack.nodeSelector
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:Node
+      - description: Node selector to control the selection of nodes (optional)
+        displayName: Node Selector
+        path: infraMonitoring.nodeSelector
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:Node
+      - description: 'Optional: set tolerations for the OneAgent pods'
+        displayName: Tolerations
+        path: classicFullStack.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: set tolerations for the OneAgent pods'
+        displayName: Tolerations
+        path: infraMonitoring.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: Defines the time to wait until OneAgent pod is ready after update - default 300 sec'
+        displayName: Wait seconds until ready
+        path: classicFullStack.waitReadySeconds
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: 'Optional: Defines the time to wait until OneAgent pod is ready after update - default 300 sec'
+        displayName: Wait seconds until ready
+        path: infraMonitoring.waitReadySeconds
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: 'Optional: define resources requests and limits for single pods'
+        displayName: Resource Requirements
+        path: classicFullStack.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: 'Optional: define resources requests and limits for single pods'
+        displayName: Resource Requirements
+        path: infraMonitoring.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: 'Optional: Arguments to the OneAgent installer'
+        displayName: OneAgent installer arguments
+        path: classicFullStack.args
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: Arguments to the OneAgent installer'
+        displayName: OneAgent installer arguments
+        path: infraMonitoring.args
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: List of environment variables to set for the installer'
+        displayName: OneAgent environment variable installer arguments
+        path: classicFullStack.env
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: List of environment variables to set for the installer'
+        displayName: OneAgent environment variable installer arguments
+        path: infraMonitoring.env
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: If specified, indicates the pod''s priority. Name must be defined by creating a PriorityClass object with that name. If not specified the setting will be removed from the DaemonSet.'
+        displayName: Priority Class name
+        path: classicFullStack.priorityClassName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:PriorityClass
+      - description: 'Optional: If specified, indicates the pod''s priority. Name must be defined by creating a PriorityClass object with that name. If not specified the setting will be removed from the DaemonSet.'
+        displayName: Priority Class name
+        path: infraMonitoring.priorityClassName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:PriorityClass
+      - description: 'Optional: Sets DNS Policy for the OneAgent pods'
+        displayName: DNS Policy
+        path: classicFullStack.dnsPolicy
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: Sets DNS Policy for the OneAgent pods'
+        displayName: DNS Policy
+        path: infraMonitoring.dnsPolicy
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: set custom Service Account Name used with OneAgent pods'
+        displayName: Service Account name
+        path: classicFullStack.serviceAccountName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:ServiceAccount
+      - description: 'Optional: set custom Service Account Name used with OneAgent pods'
+        displayName: Service Account name
+        path: infraMonitoring.serviceAccountName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:ServiceAccount
+      - description: 'Optional: Adds additional labels for the OneAgent pods'
+        displayName: Labels
+        path: classicFullStack.labels
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: Adds additional labels for the OneAgent pods'
+        displayName: Labels
+        path: infraMonitoring.labels
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: Runs the OneAgent Pods as unprivileged (Early Adopter)'
+        displayName: Use unprivileged mode
+        path: classicFullStack.useUnprivilegedMode
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
+      - description: 'Optional: Runs the OneAgent Pods as unprivileged (Early Adopter)'
+        displayName: Use unprivileged mode
+        path: infraMonitoring.useUnprivilegedMode
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
+      - description: Defines if you want to use the immutable image or the installer
+        displayName: Use immutable image
+        path: classicFullStack.useImmutableImage
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
+      - description: Defines if you want to use the immutable image or the installer
+        displayName: Use immutable image
+        path: infraMonitoring.useImmutableImage
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
       - description: Enables Kubernetes Monitoring
         displayName: Kubernetes Monitoring
         path: kubernetesMonitoring.enabled
@@ -141,6 +324,11 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:ServiceAccount
       statusDescriptors:
+      - description: Dynatrace version being used.
+        displayName: Version
+        path: oneAgent.version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
       - description: UpdatedTimestamp indicates when the instance was last updated
         displayName: Last Updated
         path: updatedTimestamp

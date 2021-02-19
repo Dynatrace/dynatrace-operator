@@ -76,8 +76,6 @@ type Client interface {
 	QueryOutdatedActiveGates(query *ActiveGateQuery) ([]ActiveGate, error)
 
 	QueryActiveGates(query *ActiveGateQuery) ([]ActiveGate, error)
-
-	AddToDashboard(label string, kubernetesApiEndpoint string, bearerToken string) (string, error)
 }
 
 // Known OS values.
@@ -111,11 +109,10 @@ const (
 )
 
 // Known token scopes
-//Commented for linter, left for further reference
-//const (
-//	TokenScopeInstallerDownload = "InstallerDownload"
-//	TokenScopeDataExport        = "DataExport"
-//)
+const (
+	TokenScopeInstallerDownload = "InstallerDownload"
+	TokenScopeDataExport        = "DataExport"
+)
 
 // NewClient creates a REST client for the given API base URL and authentication tokens.
 // Returns an error if a token or the URL is empty.

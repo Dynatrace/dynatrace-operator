@@ -70,8 +70,3 @@ func (o *MockDynatraceClient) GetClusterInfo() (*ClusterInfo, error) {
 	args := o.Called()
 	return args.Get(0).(*ClusterInfo), args.Error(1)
 }
-
-func (o *MockDynatraceClient) AddToDashboard(label string, kubernetesApiEndpoint string, bearerToken string) (string, error) {
-	args := o.Called(label, kubernetesApiEndpoint, bearerToken)
-	return args.Get(0).(string), args.Error(1)
-}

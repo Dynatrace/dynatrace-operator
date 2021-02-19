@@ -14,13 +14,11 @@ import (
 
 const (
 	testUID          = "test-uid"
-	testId           = "test-id"
 	testKey          = "key"
 	testValue        = "value"
 	testValueFrom    = "valueFrom"
 	testName         = "test-name"
 	testNamespace    = "test-namespace"
-	testEndpoint     = "http://test-endpoint"
 	testImageHash    = "TESTHASH"
 	testImageVersion = "0.0.0.0"
 )
@@ -28,8 +26,10 @@ const (
 func TestNewStatefulSet(t *testing.T) {
 	instance := dynatracev1alpha1.DynaKube{
 		Status: dynatracev1alpha1.DynaKubeStatus{
-			ActiveGateImageHash:    testImageHash,
-			ActiveGateImageVersion: testImageVersion,
+			ActiveGate: dynatracev1alpha1.ActiveGateStatus{
+				ImageHash:    testImageHash,
+				ImageVersion: testImageVersion,
+			},
 		},
 	}
 
