@@ -15,7 +15,7 @@ docker push "$OUT_IMAGE"
 mkdir /tmp/opm_bundle
 cd /tmp/opm_bundle
 
-curl -LO https://github.com/operator-framework/operator-registry/releases/download/v1.14.3/linux-amd64-opm
+curl -LO https://github.com/operator-framework/operator-registry/releases/download/v1.16.1/linux-amd64-opm
 mv linux-amd64-opm opm
 chmod +x opm
 

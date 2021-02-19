@@ -213,7 +213,7 @@ if [[ "${FAILURE_POLICY}" == "fail" ]]; then
 	fail_code=1
 fi
 
-if [[ "${INSTALLER_URL}" != "" ]] || [[ "${USE_IMMUTABLE_IMAGE}" != "true" ]]; then
+if [[ "${MODE}" == "installer" ]]; then
 	curl_params=(
 		"--silent"
 		"--output" "${archive}"
@@ -250,12 +250,6 @@ if [[ "${INSTALLER_URL}" != "" ]] || [[ "${USE_IMMUTABLE_IMAGE}" != "true" ]]; t
 	if ! unzip -o -d "${target_dir}" "${archive}"; then
 		echo "Failed to unpack the OneAgent package."
 		mv "${archive}" "${target_dir}/package.zip"
-		exit "${fail_code}"
-	fi
-else
-	echo "Copy OneAgent package..."
-	if ! cp -r "/opt/dynatrace/oneagent/." "${target_dir}"; then
-		echo "Failed to copy the OneAgent package."
 		exit "${fail_code}"
 	fi
 fi
