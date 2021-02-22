@@ -34,7 +34,7 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 		MetricsBindAddress:         ":8383",
 		Port:                       8443,
 		LeaderElection:             true,
-		LeaderElectionID:           "dynatrace-oneagent-webhook-server-lock",
+		LeaderElectionID:           "dynatrace-webhook-server-lock",
 		LeaderElectionResourceLock: "configmaps",
 		LeaderElectionNamespace:    ns,
 	})
