@@ -47,6 +47,10 @@ spec:
             activeGate:
               description: General configuration about ActiveGate instances
               properties:
+                autoUpdate:
+                  description: Disable automatic restarts of OneAgent pods in case
+                    a new version is available
+                  type: boolean
                 image:
                   description: 'Optional: the ActiveGate container image. Defaults
                     to the latest ActiveGate image provided by the Docker Registry
@@ -58,6 +62,7 @@ spec:
                 your specific environment ID
               type: string
             classicFullStack:
+              description: Configuration for ClassicFullStack Monitoring
               properties:
                 args:
                   description: 'Optional: Arguments to the OneAgent installer'
@@ -264,6 +269,7 @@ spec:
                   type: integer
               type: object
             codeModules:
+              description: Configuration for CodeModules Monitoring
               properties:
                 enabled:
                   description: Enables code modules monitoring
@@ -294,6 +300,7 @@ spec:
                 to allow access to the Dynatrace environment
               type: boolean
             infraMonitoring:
+              description: Configuration for Infra Monitoring
               properties:
                 args:
                   description: 'Optional: Arguments to the OneAgent installer'
@@ -500,7 +507,7 @@ spec:
                   type: integer
               type: object
             kubernetesMonitoring:
-              description: Enables Kubernetes Monitoring
+              description: Configuration for Kubernetes Monitoring
               properties:
                 args:
                   description: 'Optional: Adds additional arguments for the ActiveGate
@@ -709,6 +716,7 @@ spec:
                 pods'
               type: string
             oneAgent:
+              description: General configuration about OneAgent instances
               properties:
                 autoUpdate:
                   description: Disable automatic restarts of OneAgent pods in case
