@@ -2,7 +2,6 @@ package dynakube
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -18,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -191,13 +191,8 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 		}
 	}
 
-	if rec.Instance.Spec.RoutingSpec.Enabled {
-		upd, err := routing.NewReconciler(
-			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion, r.enableUpdates,
-		).Reconcile()
-		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "routing reconciled") {
-			return
-		}
+	if !r.reconcileRouting(rec, dtc) {
+		return
 	}
 
 	if rec.Instance.Spec.InfraMonitoring.Enabled {
@@ -218,6 +213,35 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 		}
 
 	}
+}
+
+func (r *ReconcileDynaKube) reconcileRouting(rec *utils.Reconciliation, dtc dtclient.Client) bool {
+	if rec.Instance.Spec.RoutingSpec.Enabled {
+		upd, err := routing.NewReconciler(
+			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion, r.enableUpdates,
+		).Reconcile()
+		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "routing reconciled") {
+			return false
+		}
+	} else {
+		sts := appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      rec.Instance.Name + routing.StatefulSetSuffix,
+				Namespace: rec.Instance.Namespace,
+			},
+		}
+		if err := r.ensureDeleted(&sts); rec.Error(err) {
+			return false
+		}
+	}
+	return true
+}
+
+func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
+	if err := r.client.Delete(context.TODO(), obj); err != nil && !k8serrors.IsNotFound(err) {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {

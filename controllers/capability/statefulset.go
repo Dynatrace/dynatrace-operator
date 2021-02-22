@@ -53,12 +53,12 @@ type StatefulSetEvent func(sts *appsv1.StatefulSet)
 type statefulSetProperties struct {
 	*v1alpha1.DynaKube
 	*v1alpha1.CapabilityProperties
-	customPropertiesHash string
-	kubeSystemUID        types.UID
-	module               string
-	capabilityName       string
-	serviceAccountOwner  string
-	onAfterCreate        []StatefulSetEvent
+	customPropertiesHash  string
+	kubeSystemUID         types.UID
+	module                string
+	capabilityName        string
+	serviceAccountOwner   string
+	onAfterCreateListener []StatefulSetEvent
 }
 
 func NewStatefulSetProperties(instance *v1alpha1.DynaKube, capabilityProperties *v1alpha1.CapabilityProperties,
@@ -68,14 +68,14 @@ func NewStatefulSetProperties(instance *v1alpha1.DynaKube, capabilityProperties 
 	}
 
 	return &statefulSetProperties{
-		DynaKube:             instance,
-		CapabilityProperties: capabilityProperties,
-		customPropertiesHash: customPropertiesHash,
-		kubeSystemUID:        kubeSystemUID,
-		module:               module,
-		capabilityName:       capabilityName,
-		serviceAccountOwner:  serviceAccountOwner,
-		onAfterCreate:        []StatefulSetEvent{},
+		DynaKube:              instance,
+		CapabilityProperties:  capabilityProperties,
+		customPropertiesHash:  customPropertiesHash,
+		kubeSystemUID:         kubeSystemUID,
+		module:                module,
+		capabilityName:        capabilityName,
+		serviceAccountOwner:   serviceAccountOwner,
+		onAfterCreateListener: []StatefulSetEvent{},
 	}
 }
 
@@ -108,8 +108,8 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 			},
 		}}
 
-	for _, onAfterCreate := range stsProperties.onAfterCreate {
-		onAfterCreate(sts)
+	for _, onAfterCreateListener := range stsProperties.onAfterCreateListener {
+		onAfterCreateListener(sts)
 	}
 
 	hash, err := generateStatefulSetHash(sts)

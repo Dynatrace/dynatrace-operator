@@ -181,8 +181,15 @@ type RoutingSpec struct {
 }
 
 type KubernetesMonitoringSpec struct {
-	// Enables Kubernetes Monitoring
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Kubernetes Monitoring",order=29,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
+	CapabilityProperties `json:",inline"`
+}
+
+// CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
+// Such as KubernetesMonitoring or Routing
+// It encapsulates common properties
+type CapabilityProperties struct {
+	// Enables Capability
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Capability",order=29,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	Enabled bool `json:"enabled,omitempty"`
 
 	// Amount of replicas for your DynaKube

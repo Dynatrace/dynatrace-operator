@@ -33,8 +33,8 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 	baseReconciler := capability.NewReconciler(
 		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider, enableUpdates,
 		&instance.Spec.RoutingSpec.CapabilityProperties, module, capabilityName, "")
-	baseReconciler.AddOnAfterStatefulSetCreate(addDNSEntryPoint(instance))
-	baseReconciler.AddOnAfterStatefulSetCreate(addCommunicationsPort(instance))
+	baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance))
+	baseReconciler.AddOnAfterStatefulSetCreateListener(addCommunicationsPort(instance))
 	return &Reconciler{
 		Reconciler: baseReconciler,
 		log:        log,

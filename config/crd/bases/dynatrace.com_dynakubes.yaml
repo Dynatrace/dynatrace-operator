@@ -507,7 +507,7 @@ spec:
                   type: integer
               type: object
             kubernetesMonitoring:
-              description: Configuration for Kubernetes Monitoring
+              description: Enables Kubernetes Monitoring
               properties:
                 args:
                   description: 'Optional: Adds additional arguments for the ActiveGate
@@ -526,7 +526,7 @@ spec:
                       type: string
                   type: object
                 enabled:
-                  description: Enables capability
+                  description: Enables Capability
                   type: boolean
                 env:
                   description: 'Optional: List of environment variables to set for
@@ -761,7 +761,7 @@ spec:
                       type: string
                   type: object
                 enabled:
-                  description: Enables capability
+                  description: Enables Capability
                   type: boolean
                 env:
                   description: 'Optional: List of environment variables to set for
