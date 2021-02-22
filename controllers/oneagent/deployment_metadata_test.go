@@ -28,7 +28,7 @@ func TestNewDeploymentMetadata(t *testing.T) {
 	deploymentMetadata := newTestDeploymentMetadata(t)
 
 	assert.Equal(t, testOperatorScriptVersion, deploymentMetadata.operatorScriptVersion)
-	assert.Equal(t, testOrchestratorId, deploymentMetadata.orchestratorId)
+	assert.Equal(t, testOrchestratorId, deploymentMetadata.orchestratorID)
 	assert.Equal(t, testContainerImageVersion, deploymentMetadata.containerImageVersion)
 	assert.Equal(t, orchestrationTech, deploymentMetadata.orchestrationTech)
 }

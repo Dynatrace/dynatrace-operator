@@ -8,13 +8,13 @@ const (
 
 	keyOperatorScriptVersion = "script_version"
 	keyContainerImageVersion = "container_image_version"
-	keyOrchestratorId        = "orchestrator_id"
+	keyOrchestratorID        = "orchestrator_id"
 	keyOrchestrationTech     = "orchestration_tech"
 )
 
 type deploymentMetadata struct {
 	operatorScriptVersion string
-	orchestratorId        string
+	orchestratorID        string
 	containerImageVersion string
 	orchestrationTech     string
 }
@@ -22,7 +22,7 @@ type deploymentMetadata struct {
 func newDeploymentMetadata(operatorScriptVersion string, orchestratorId string, containerImageVersion string) *deploymentMetadata {
 	return &deploymentMetadata{
 		operatorScriptVersion: operatorScriptVersion,
-		orchestratorId:        orchestratorId,
+		orchestratorID:        orchestratorId,
 		containerImageVersion: containerImageVersion,
 		orchestrationTech:     orchestrationTech,
 	}
@@ -33,7 +33,7 @@ func (metadata *deploymentMetadata) asArgs() []string {
 		formatMetadataArgument(keyOrchestrationTech, metadata.orchestrationTech),
 		formatMetadataArgument(keyOperatorScriptVersion, metadata.operatorScriptVersion),
 		formatMetadataArgument(keyContainerImageVersion, metadata.containerImageVersion),
-		formatMetadataArgument(keyOrchestratorId, metadata.orchestratorId),
+		formatMetadataArgument(keyOrchestratorID, metadata.orchestratorID),
 	}
 }
 
