@@ -7,10 +7,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -86,11 +84,6 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 }
 
 func (r *Reconciler) manageStatefulSet() (bool, error) {
-	versionUpdated, err := r.updateImageVersion()
-	if versionUpdated || err != nil {
-		return versionUpdated, errors.WithStack(err)
-	}
-
 	desiredSts, err := r.buildDesiredStatefulSet()
 	if err != nil {
 		return false, errors.WithStack(err)
@@ -111,51 +104,6 @@ func (r *Reconciler) manageStatefulSet() (bool, error) {
 	}
 
 	return false, nil
-}
-
-func (r *Reconciler) updateImageVersion() (bool, error) {
-	if !r.enableUpdates {
-		return false, nil
-	}
-
-	img := utils.BuildActiveGateImage(r.Instance)
-	instance := r.Instance
-	pullSecret, err := dtpullsecret.GetImagePullSecret(r, instance)
-	if err != nil {
-		return false, errors.WithMessage(err, "failed to get image pull secret")
-	}
-
-	auths, err := dtversion.ParseDockerAuthsFromSecret(pullSecret)
-	if err != nil {
-		return false, errors.WithMessage(err, "failed to get Dockerconfig for pull secret")
-	}
-
-	verProvider := dtversion.GetImageVersion
-	if r.imageVersionProvider != nil {
-		verProvider = r.imageVersionProvider
-	}
-
-	ver, err := verProvider(img, &dtversion.DockerConfig{
-		Auths:         auths,
-		SkipCertCheck: instance.Spec.SkipCertCheck,
-	})
-	if err != nil {
-		return false, errors.WithMessage(err, "failed to get image version")
-	}
-
-	upd := false
-	if instance.Status.ActiveGate.ImageHash != ver.Hash {
-		r.log.Info("Update found",
-			"oldVersion", instance.Status.ActiveGate.ImageVersion,
-			"newVersion", ver.Version,
-			"oldHash", instance.Status.ActiveGate.ImageHash,
-			"newHash", ver.Hash)
-		upd = true
-	}
-
-	instance.Status.ActiveGate.ImageVersion = ver.Version
-	instance.Status.ActiveGate.ImageHash = ver.Hash
-	return upd, nil
 }
 
 func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {

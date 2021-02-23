@@ -2,12 +2,10 @@ package capability
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -24,10 +22,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-)
-
-const (
-	testVersion = "1.0.0"
 )
 
 func init() {
@@ -232,67 +226,4 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	hash, err = r.calculateCustomPropertyHash()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
-}
-
-func TestReconcile_UpdateImageVersion(t *testing.T) {
-	r := createDefaultReconciler(t)
-	updated, err := r.updateImageVersion()
-	assert.NoError(t, err)
-	assert.False(t, updated)
-
-	r.enableUpdates = true
-	updated, err = r.updateImageVersion()
-	assert.Error(t, err)
-	assert.False(t, updated)
-
-	data, err := buildTestDockerAuth(t)
-	require.NoError(t, err)
-
-	err = createTestPullSecret(t, r, data)
-	require.NoError(t, err)
-
-	r.imageVersionProvider = func(img string, dockerConfig *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
-		return dtversion.ImageVersion{
-			Version: testVersion,
-			Hash:    testValue,
-		}, nil
-	}
-	updated, err = r.updateImageVersion()
-	assert.NoError(t, err)
-	assert.True(t, updated)
-
-	r.Instance.Status.ActiveGate.ImageVersion = testVersion
-	r.Instance.Status.ActiveGate.ImageHash = testValue
-
-	updated, err = r.updateImageVersion()
-	assert.NoError(t, err)
-	assert.False(t, updated)
-}
-
-// Adding *testing.T parameter to prevent usage in production code
-func createTestPullSecret(_ *testing.T, r *Reconciler, data []byte) error {
-	return r.Create(context.TODO(), &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: r.Instance.Namespace,
-			Name:      r.Instance.Name + dtpullsecret.PullSecretSuffix,
-		},
-		Data: map[string][]byte{
-			".dockerconfigjson": data,
-		},
-	})
-}
-
-// Adding *testing.T parameter to prevent usage in production code
-func buildTestDockerAuth(_ *testing.T) ([]byte, error) {
-	dockerConf := struct {
-		Auths map[string]dtversion.DockerAuth `json:"auths"`
-	}{
-		Auths: map[string]dtversion.DockerAuth{
-			testKey: {
-				Username: testName,
-				Password: testValue,
-			},
-		},
-	}
-	return json.Marshal(dockerConf)
 }

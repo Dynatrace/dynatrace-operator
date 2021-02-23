@@ -2,13 +2,18 @@ package dynakube
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/capability/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/controllers/capability/routing"
+	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -26,6 +31,7 @@ const (
 	testUID       = "test-uid"
 	testPaasToken = "test-paas-token"
 	testAPIToken  = "test-api-token"
+	testVersion   = "1.0.0"
 )
 
 func init() {
@@ -215,4 +221,82 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	}, routingSts)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
+}
+
+func TestReconcile_UpdateImageVersion(t *testing.T) {
+	instance := &v1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testName,
+			Namespace: testNamespace,
+		}}
+	fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+	r := &ReconcileDynaKube{
+		client:        fakeClient,
+		enableUpdates: false,
+		logger:        logger.NewDTLogger(),
+	}
+	rec := &utils.Reconciliation{
+		Instance: instance,
+	}
+
+	updated, err := r.updateImageVersion(rec, nil)
+	assert.NoError(t, err)
+	assert.False(t, updated)
+
+	r.enableUpdates = true
+	updated, err = r.updateImageVersion(rec, nil)
+	assert.Error(t, err)
+	assert.False(t, updated)
+
+	data, err := buildTestDockerAuth(t)
+	require.NoError(t, err)
+
+	err = createTestPullSecret(t, r.client, rec, data)
+	require.NoError(t, err)
+
+	imgVersionProvider := func(img string, dockerConfig *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
+		return dtversion.ImageVersion{
+			Version: testVersion,
+			Hash:    testValue,
+		}, nil
+	}
+
+	updated, err = r.updateImageVersion(rec, imgVersionProvider)
+	assert.NoError(t, err)
+	assert.True(t, updated)
+
+	rec.Instance.Status.ActiveGate.ImageVersion = testVersion
+	rec.Instance.Status.ActiveGate.ImageHash = testValue
+
+	updated, err = r.updateImageVersion(rec, imgVersionProvider)
+	assert.NoError(t, err)
+	assert.False(t, updated)
+}
+
+// Adding *testing.T parameter to prevent usage in production code
+func createTestPullSecret(_ *testing.T, clt client.Client, rec *utils.Reconciliation, data []byte) error {
+	return clt.Create(context.TODO(), &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: rec.Instance.Namespace,
+			Name:      rec.Instance.Name + dtpullsecret.PullSecretSuffix,
+		},
+		Data: map[string][]byte{
+			".dockerconfigjson": data,
+		},
+	})
+}
+
+// Adding *testing.T parameter to prevent usage in production code
+func buildTestDockerAuth(_ *testing.T) ([]byte, error) {
+	dockerConf := struct {
+		Auths map[string]dtversion.DockerAuth `json:"auths"`
+	}{
+		Auths: map[string]dtversion.DockerAuth{
+			testKey: {
+				Username: testName,
+				Password: testValue,
+			},
+		},
+	}
+	return json.Marshal(dockerConf)
 }
