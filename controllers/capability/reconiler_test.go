@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
@@ -32,7 +32,7 @@ const (
 
 func init() {
 	utilruntime.Must(scheme.AddToScheme(scheme.Scheme))
-	utilruntime.Must(v1alpha1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(dynatracev1alpha1.AddToScheme(scheme.Scheme))
 }
 
 func TestNewReconiler(t *testing.T) {
@@ -51,7 +51,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		}).
 		Build()
 	dtc := &dtclient.MockDynatraceClient{}
-	instance := &v1alpha1.DynaKube{
+	instance := &dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 		}}
@@ -75,7 +75,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 func TestReconcile(t *testing.T) {
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		r.Instance.Spec.RoutingSpec.CustomProperties = &v1alpha1.DynaKubeValueSource{
+		r.Instance.Spec.RoutingSpec.CustomProperties = &dynatracev1alpha1.DynaKubeValueSource{
 			Value: testValue,
 		}
 		_, err := r.Reconcile()
@@ -83,7 +83,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		var customProperties corev1.Secret
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.module + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.feature + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
 		assert.NoError(t, err)
 		assert.NotNil(t, customProperties)
 		assert.Contains(t, customProperties.Data, customproperties.DataKey)
@@ -97,7 +97,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		statefulSet := &v1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.module, Namespace: r.Instance.Namespace}, statefulSet)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.feature, Namespace: r.Instance.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
@@ -110,19 +110,19 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		statefulSet := &v1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.module, Namespace: r.Instance.Namespace}, statefulSet)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.feature, Namespace: r.Instance.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
 
-		r.Instance.Spec.Proxy = &v1alpha1.DynaKubeProxy{Value: testValue}
+		r.Instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
 		update, err = r.Reconcile()
 
 		assert.True(t, update)
 		assert.NoError(t, err)
 
 		newStatefulSet := &v1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.module, Namespace: r.Instance.Namespace}, newStatefulSet)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.feature, Namespace: r.Instance.Namespace}, newStatefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
@@ -193,7 +193,7 @@ func TestReconcile_UpdateStatefulSetIfOutdated(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, updated)
 
-	r.Instance.Spec.Proxy = &v1alpha1.DynaKubeProxy{Value: testValue}
+	r.Instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
 	desiredSts, err = r.buildDesiredStatefulSet()
 	require.NoError(t, err)
 
@@ -208,12 +208,12 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, hash)
 
-	r.Instance.Spec.RoutingSpec.CustomProperties = &v1alpha1.DynaKubeValueSource{Value: testValue}
+	r.Instance.Spec.RoutingSpec.CustomProperties = &dynatracev1alpha1.DynaKubeValueSource{Value: testValue}
 	hash, err = r.calculateCustomPropertyHash()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.Instance.Spec.RoutingSpec.CustomProperties = &v1alpha1.DynaKubeValueSource{ValueFrom: testName}
+	r.Instance.Spec.RoutingSpec.CustomProperties = &dynatracev1alpha1.DynaKubeValueSource{ValueFrom: testName}
 	hash, err = r.calculateCustomPropertyHash()
 	assert.Error(t, err)
 	assert.Empty(t, hash)

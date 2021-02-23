@@ -3,7 +3,7 @@ package capability
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
@@ -21,11 +21,11 @@ const (
 	testValue                = "test-value"
 	testUID                  = "test-uid"
 	routingStatefulSetSuffix = "-msgrouter"
-	testModule               = "msgrouter"
+	testFeature              = "msgrouter"
 )
 
 func TestNewStatefulSetBuilder(t *testing.T) {
-	stsBuilder := NewStatefulSetProperties(&v1alpha1.DynaKube{}, &v1alpha1.CapabilityProperties{},
+	stsBuilder := NewStatefulSetProperties(&dynatracev1alpha1.DynaKube{}, &dynatracev1alpha1.CapabilityProperties{},
 		testUID, testValue, "", "", "")
 	assert.NotNil(t, stsBuilder)
 	assert.NotNil(t, stsBuilder.DynaKube)
@@ -39,7 +39,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
 	sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties,
-		"", "", testModule, "", ""))
+		"", "", testFeature, "", ""))
 
 	assert.NoError(t, err)
 	assert.NotNil(t, sts)
@@ -48,7 +48,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	assert.Equal(t, map[string]string{
 		KeyDynatrace:  ValueActiveGate,
 		KeyActiveGate: instance.Name,
-		keyModule:     testModule,
+		keyFeature:    testFeature,
 	}, sts.Labels)
 	assert.Equal(t, instance.Spec.RoutingSpec.Replicas, sts.Spec.Replicas)
 	assert.Equal(t, appsv1.ParallelPodManagement, sts.Spec.PodManagementPolicy)
@@ -58,7 +58,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	assert.NotEqual(t, corev1.PodTemplateSpec{}, sts.Spec.Template)
 	assert.Equal(t, MergeLabels(
 		BuildLabels(instance, capabilityProperties),
-		map[string]string{keyModule: testModule}), sts.Spec.Template.Labels)
+		map[string]string{keyFeature: testFeature}), sts.Spec.Template.Labels)
 	assert.Equal(t, sts.Labels, sts.Spec.Template.Labels)
 	assert.NotEqual(t, corev1.PodSpec{}, sts.Spec.Template.Spec)
 	assert.Contains(t, sts.Annotations, annotationTemplateHash)
@@ -134,7 +134,7 @@ func TestStatefulSet_Container(t *testing.T) {
 	container := buildContainer(NewStatefulSetProperties(instance, capabilityProperties,
 		"", "", "", "", ""))
 
-	assert.Equal(t, v1alpha1.OperatorName, container.Name)
+	assert.Equal(t, dynatracev1alpha1.OperatorName, container.Name)
 	assert.Equal(t, utils.BuildActiveGateImage(instance), container.Image)
 	assert.NotEmpty(t, container.Resources)
 	assert.Equal(t, corev1.PullAlways, container.ImagePullPolicy)
@@ -156,11 +156,11 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		assert.Empty(t, volumes)
 	})
 	t.Run(`custom properties from value string`, func(t *testing.T) {
-		capabilityProperties.CustomProperties = &v1alpha1.DynaKubeValueSource{
+		capabilityProperties.CustomProperties = &dynatracev1alpha1.DynaKubeValueSource{
 			Value: testValue,
 		}
 		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", testModule, "", ""))
+			"", "", testFeature, "", ""))
 		expectedSecretName := instance.Name + "-msgrouter-" + customproperties.Suffix
 
 		require.NotEmpty(t, volumes)
@@ -175,7 +175,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		}, customPropertiesVolume.Secret.Items)
 	})
 	t.Run(`custom properties from valueFrom`, func(t *testing.T) {
-		capabilityProperties.CustomProperties = &v1alpha1.DynaKubeValueSource{
+		capabilityProperties.CustomProperties = &dynatracev1alpha1.DynaKubeValueSource{
 			ValueFrom: testKey,
 		}
 		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
@@ -201,7 +201,7 @@ func TestStatefulSet_Env(t *testing.T) {
 
 	t.Run(`without proxy`, func(t *testing.T) {
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			testUID, "", testModule, "MSGrouter", ""))
+			testUID, "", testFeature, "MSGrouter", ""))
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: DTCapabilities, Value: "MSGrouter"},
 			{Name: DTIdSeedNamespace, Value: instance.Namespace},
@@ -210,7 +210,7 @@ func TestStatefulSet_Env(t *testing.T) {
 		}, envVars)
 	})
 	t.Run(`with proxy from value`, func(t *testing.T) {
-		instance.Spec.Proxy = &v1alpha1.DynaKubeProxy{Value: testValue}
+		instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", ""))
 
@@ -220,7 +220,7 @@ func TestStatefulSet_Env(t *testing.T) {
 		})
 	})
 	t.Run(`with proxy from value source`, func(t *testing.T) {
-		instance.Spec.Proxy = &v1alpha1.DynaKubeProxy{ValueFrom: testName}
+		instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{ValueFrom: testName}
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", ""))
 
@@ -251,7 +251,7 @@ func TestStatefulSet_Args(t *testing.T) {
 		assert.Contains(t, args, `--networkzone="`+testName+`"`)
 	})
 	t.Run(`with proxy`, func(t *testing.T) {
-		instance.Spec.Proxy = &v1alpha1.DynaKubeProxy{Value: testValue}
+		instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
 		args := buildArgs(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", ""))
 		assert.Contains(t, args, ProxyArg)
@@ -274,7 +274,7 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 		assert.Empty(t, volumeMounts)
 	})
 	t.Run(`with custom properties`, func(t *testing.T) {
-		capabilityProperties.CustomProperties = &v1alpha1.DynaKubeValueSource{Value: testValue}
+		capabilityProperties.CustomProperties = &dynatracev1alpha1.DynaKubeValueSource{Value: testValue}
 		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", ""))
 
@@ -288,17 +288,17 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 	})
 }
 
-func buildTestInstance() *v1alpha1.DynaKube {
+func buildTestInstance() *dynatracev1alpha1.DynaKube {
 	replicas := int32(3)
 
-	return &v1alpha1.DynaKube{
+	return &dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
-		Spec: v1alpha1.DynaKubeSpec{
-			RoutingSpec: v1alpha1.RoutingSpec{
-				CapabilityProperties: v1alpha1.CapabilityProperties{
+		Spec: dynatracev1alpha1.DynaKubeSpec{
+			RoutingSpec: dynatracev1alpha1.RoutingSpec{
+				CapabilityProperties: dynatracev1alpha1.CapabilityProperties{
 					Replicas:    &replicas,
 					Tolerations: []corev1.Toleration{{Value: testValue}},
 					NodeSelector: map[string]string{

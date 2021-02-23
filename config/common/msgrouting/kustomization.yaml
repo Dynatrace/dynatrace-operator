@@ -1,8 +1,0 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  - clusterrole-msgrouting.yaml
-  - clusterrolebinding-msgrouting.yaml
-  - role-msgrouting.yaml
-  - rolebinding-msgrouting.yaml
-  - serviceaccount-msgrouting.yaml

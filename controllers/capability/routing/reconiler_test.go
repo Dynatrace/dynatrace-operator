@@ -13,7 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -89,7 +89,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, update)
 		assert.NoError(t, err)
 
-		statefulSet := &v1.StatefulSet{}
+		statefulSet := &appsv1.StatefulSet{}
 		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + StatefulSetSuffix, Namespace: r.Instance.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
@@ -106,7 +106,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, update)
 		assert.NoError(t, err)
 
-		statefulSet := &v1.StatefulSet{}
+		statefulSet := &appsv1.StatefulSet{}
 		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + StatefulSetSuffix, Namespace: r.Instance.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
@@ -118,7 +118,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, update)
 		assert.NoError(t, err)
 
-		newStatefulSet := &v1.StatefulSet{}
+		newStatefulSet := &appsv1.StatefulSet{}
 		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + StatefulSetSuffix, Namespace: r.Instance.Namespace}, newStatefulSet)
 
 		assert.NotNil(t, statefulSet)
@@ -139,7 +139,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, update)
 		assert.NoError(t, err)
 
-		statefulSet := &v1.StatefulSet{}
+		statefulSet := &appsv1.StatefulSet{}
 		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + StatefulSetSuffix, Namespace: r.Instance.Namespace}, statefulSet)
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)

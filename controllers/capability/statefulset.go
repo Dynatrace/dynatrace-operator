@@ -6,7 +6,7 @@ import (
 	"hash/fnv"
 	"strconv"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
@@ -45,26 +45,26 @@ const (
 	ProxyEnv = "ACTIVE_GATE_PROXY"
 	ProxyKey = "ProxyKey"
 
-	keyModule = "module"
+	keyFeature = "feature"
 )
 
 type StatefulSetEvent func(sts *appsv1.StatefulSet)
 
 type statefulSetProperties struct {
-	*v1alpha1.DynaKube
-	*v1alpha1.CapabilityProperties
+	*dynatracev1alpha1.DynaKube
+	*dynatracev1alpha1.CapabilityProperties
 	customPropertiesHash  string
 	kubeSystemUID         types.UID
-	module                string
+	feature               string
 	capabilityName        string
 	serviceAccountOwner   string
 	onAfterCreateListener []StatefulSetEvent
 }
 
-func NewStatefulSetProperties(instance *v1alpha1.DynaKube, capabilityProperties *v1alpha1.CapabilityProperties,
-	kubeSystemUID types.UID, customPropertiesHash string, module string, capabilityName string, serviceAccountOwner string) *statefulSetProperties {
+func NewStatefulSetProperties(instance *dynatracev1alpha1.DynaKube, capabilityProperties *dynatracev1alpha1.CapabilityProperties,
+	kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string) *statefulSetProperties {
 	if serviceAccountOwner == "" {
-		serviceAccountOwner = module
+		serviceAccountOwner = feature
 	}
 
 	return &statefulSetProperties{
@@ -72,7 +72,7 @@ func NewStatefulSetProperties(instance *v1alpha1.DynaKube, capabilityProperties 
 		CapabilityProperties:  capabilityProperties,
 		customPropertiesHash:  customPropertiesHash,
 		kubeSystemUID:         kubeSystemUID,
-		module:                module,
+		feature:               feature,
 		capabilityName:        capabilityName,
 		serviceAccountOwner:   serviceAccountOwner,
 		onAfterCreateListener: []StatefulSetEvent{},
@@ -82,11 +82,11 @@ func NewStatefulSetProperties(instance *v1alpha1.DynaKube, capabilityProperties 
 func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      stsProperties.Name + "-" + stsProperties.module,
+			Name:      stsProperties.Name + "-" + stsProperties.feature,
 			Namespace: stsProperties.Namespace,
 			Labels: MergeLabels(
 				BuildLabels(stsProperties.DynaKube, stsProperties.CapabilityProperties),
-				map[string]string{keyModule: stsProperties.module}),
+				map[string]string{keyFeature: stsProperties.feature}),
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
@@ -97,7 +97,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: MergeLabels(
 						BuildLabels(stsProperties.DynaKube, stsProperties.CapabilityProperties),
-						map[string]string{keyModule: stsProperties.module}),
+						map[string]string{keyFeature: stsProperties.feature}),
 					Annotations: map[string]string{
 						annotationImageHash:       stsProperties.Status.ActiveGate.ImageHash,
 						annotationImageVersion:    stsProperties.Status.ActiveGate.ImageVersion,
@@ -143,7 +143,7 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 
 func buildContainer(stsProperties *statefulSetProperties) corev1.Container {
 	return corev1.Container{
-		Name:            v1alpha1.OperatorName,
+		Name:            dynatracev1alpha1.OperatorName,
 		Image:           utils.BuildActiveGateImage(stsProperties.DynaKube),
 		Resources:       BuildResources(stsProperties.DynaKube),
 		ImagePullPolicy: corev1.PullAlways,
@@ -233,7 +233,7 @@ func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
 	return envs
 }
 
-func buildProxyEnv(proxy *v1alpha1.DynaKubeProxy) corev1.EnvVar {
+func buildProxyEnv(proxy *dynatracev1alpha1.DynaKubeProxy) corev1.EnvVar {
 	if proxy.ValueFrom != "" {
 		return corev1.EnvVar{
 			Name: ProxyEnv,
@@ -294,13 +294,13 @@ func buildKubernetesExpression(archKey string, osKey string) []corev1.NodeSelect
 	}
 }
 
-func isCustomPropertiesNilOrEmpty(customProperties *v1alpha1.DynaKubeValueSource) bool {
+func isCustomPropertiesNilOrEmpty(customProperties *dynatracev1alpha1.DynaKubeValueSource) bool {
 	return customProperties == nil ||
 		(customProperties.Value == "" &&
 			customProperties.ValueFrom == "")
 }
 
-func isProxyNilOrEmpty(proxy *v1alpha1.DynaKubeProxy) bool {
+func isProxyNilOrEmpty(proxy *dynatracev1alpha1.DynaKubeProxy) bool {
 	return proxy == nil || (proxy.Value == "" && proxy.ValueFrom == "")
 }
 

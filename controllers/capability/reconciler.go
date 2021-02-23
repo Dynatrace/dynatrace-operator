@@ -31,7 +31,7 @@ type Reconciler struct {
 	log                              logr.Logger
 	imageVersionProvider             dtversion.ImageVersionProvider
 	enableUpdates                    bool
-	module                           string
+	feature                          string
 	capabilityName                   string
 	serviceAccountOwner              string
 	capability                       *v1alpha1.CapabilityProperties
@@ -40,9 +40,9 @@ type Reconciler struct {
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
 	instance *v1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, enableUpdates bool,
-	capability *v1alpha1.CapabilityProperties, module string, capabilityName string, serviceAccountOwner string) *Reconciler {
+	capability *v1alpha1.CapabilityProperties, feature string, capabilityName string, serviceAccountOwner string) *Reconciler {
 	if serviceAccountOwner == "" {
-		serviceAccountOwner = module
+		serviceAccountOwner = feature
 	}
 
 	return &Reconciler{
@@ -54,7 +54,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		Instance:                         instance,
 		imageVersionProvider:             imageVersionProvider,
 		enableUpdates:                    enableUpdates,
-		module:                           module,
+		feature:                          feature,
 		capabilityName:                   capabilityName,
 		serviceAccountOwner:              serviceAccountOwner,
 		capability:                       capability,
@@ -170,7 +170,7 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 	}
 
 	stsProperties := NewStatefulSetProperties(
-		r.Instance, r.capability, kubeUID, cpHash, r.module, r.capabilityName, r.serviceAccountOwner)
+		r.Instance, r.capability, kubeUID, cpHash, r.feature, r.capabilityName, r.serviceAccountOwner)
 	stsProperties.onAfterCreateListener = r.onAfterStatefulSetCreateListener
 
 	desiredSts, err := CreateStatefulSet(stsProperties)
@@ -189,7 +189,7 @@ func (r *Reconciler) getStatefulSet(desiredSts *appsv1.StatefulSet) (*appsv1.Sta
 func (r *Reconciler) createStatefulSetIfNotExists(desiredSts *appsv1.StatefulSet) (bool, error) {
 	_, err := r.getStatefulSet(desiredSts)
 	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
-		r.log.Info("creating new stateful set for " + r.module)
+		r.log.Info("creating new stateful set for " + r.feature)
 		return true, r.Create(context.TODO(), desiredSts)
 	}
 	return false, err

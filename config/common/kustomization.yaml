@@ -24,4 +24,3 @@ resources:
 - webhook/serviceaccount-webhook.yaml
 bases:
   - ../crd
-  - msgrouting

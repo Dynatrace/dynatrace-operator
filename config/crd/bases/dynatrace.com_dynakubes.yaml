@@ -507,7 +507,7 @@ spec:
                   type: integer
               type: object
             kubernetesMonitoring:
-              description: Enables Kubernetes Monitoring
+              description: ' Configuration for Kubernetes Monitoring'
               properties:
                 args:
                   description: 'Optional: Adds additional arguments for the ActiveGate
@@ -742,7 +742,7 @@ spec:
                   type: string
               type: object
             routing:
-              description: Enables Routing
+              description: ' Configuration for Routing'
               properties:
                 args:
                   description: 'Optional: Adds additional arguments for the ActiveGate
