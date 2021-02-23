@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -96,7 +96,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, update)
 		assert.NoError(t, err)
 
-		statefulSet := &v1.StatefulSet{}
+		statefulSet := &appsv1.StatefulSet{}
 		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.feature, Namespace: r.Instance.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
@@ -109,7 +109,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, update)
 		assert.NoError(t, err)
 
-		statefulSet := &v1.StatefulSet{}
+		statefulSet := &appsv1.StatefulSet{}
 		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.feature, Namespace: r.Instance.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
@@ -121,7 +121,7 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, update)
 		assert.NoError(t, err)
 
-		newStatefulSet := &v1.StatefulSet{}
+		newStatefulSet := &appsv1.StatefulSet{}
 		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + r.feature, Namespace: r.Instance.Namespace}, newStatefulSet)
 
 		assert.NotNil(t, statefulSet)
