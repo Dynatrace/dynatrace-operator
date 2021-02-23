@@ -2,20 +2,21 @@ package dynakube
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability/kubemon"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability/routing"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/istio"
-	"github.com/Dynatrace/dynatrace-operator/controllers/kubemon"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -33,7 +34,7 @@ const defaultUpdateInterval = 5 * time.Minute
 
 var log = logf.Log.WithName("controller_dynakube")
 
-func Add(mgr manager.Manager, ns string) error {
+func Add(mgr manager.Manager, _ string) error {
 	return NewReconciler(mgr).SetupWithManager(mgr)
 }
 
@@ -56,14 +57,15 @@ func (r *ReconcileDynaKube) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, logger logr.Logger, config *rest.Config) *ReconcileDynaKube {
+func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, logger logr.Logger, config *rest.Config, enableUpdates bool) *ReconcileDynaKube {
 	return &ReconcileDynaKube{
-		client:       c,
-		apiReader:    apiReader,
-		scheme:       scheme,
-		dtcBuildFunc: dtcBuildFunc,
-		logger:       logger,
-		config:       config,
+		client:        c,
+		apiReader:     apiReader,
+		scheme:        scheme,
+		dtcBuildFunc:  dtcBuildFunc,
+		logger:        logger,
+		config:        config,
+		enableUpdates: enableUpdates,
 	}
 }
 
@@ -74,12 +76,13 @@ var _ reconcile.Reconciler = &ReconcileDynaKube{}
 type ReconcileDynaKube struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client       client.Client
-	apiReader    client.Reader
-	scheme       *runtime.Scheme
-	dtcBuildFunc DynatraceClientFunc
-	logger       logr.Logger
-	config       *rest.Config
+	client        client.Client
+	apiReader     client.Reader
+	scheme        *runtime.Scheme
+	dtcBuildFunc  DynatraceClientFunc
+	logger        logr.Logger
+	config        *rest.Config
+	enableUpdates bool
 }
 
 type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
@@ -92,7 +95,7 @@ type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.Dyn
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	if r.logger == nil {
-		r.logger = log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+		r.logger = log.WithValues("Request.Namespace", request.Namespace, "Request.serviceAccountOwner", request.Name)
 	}
 	reqLogger := r.logger
 	reqLogger.Info("Reconciling DynaKube")
@@ -176,13 +179,24 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 		return
 	}
 
+	if rec.Instance.Spec.KubernetesMonitoringSpec.Enabled || rec.Instance.Spec.RoutingSpec.Enabled {
+		upd, err = r.updateImageVersion(rec, dtversion.GetImageVersion)
+		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "image version reconciled") {
+			return
+		}
+	}
+
 	if rec.Instance.Spec.KubernetesMonitoringSpec.Enabled {
 		upd, err := kubemon.NewReconciler(
-			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
+			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion, r.enableUpdates,
 		).Reconcile()
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "kubemon reconciled") {
 			return
 		}
+	}
+
+	if !r.reconcileRouting(rec, dtc) {
+		return
 	}
 
 	if rec.Instance.Spec.InfraMonitoring.Enabled {
@@ -203,6 +217,80 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 		}
 
 	}
+}
+
+func (r *ReconcileDynaKube) updateImageVersion(rec *utils.Reconciliation, imgVersionProvider dtversion.ImageVersionProvider) (bool, error) {
+	if !r.enableUpdates {
+		return false, nil
+	}
+
+	img := utils.BuildActiveGateImage(rec.Instance)
+	instance := rec.Instance
+	pullSecret, err := dtpullsecret.GetImagePullSecret(r.client, instance)
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to get image pull secret")
+	}
+
+	auths, err := dtversion.ParseDockerAuthsFromSecret(pullSecret)
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to get Dockerconfig for pull secret")
+	}
+
+	verProvider := dtversion.GetImageVersion
+	if imgVersionProvider != nil {
+		verProvider = imgVersionProvider
+	}
+
+	ver, err := verProvider(img, &dtversion.DockerConfig{
+		Auths:         auths,
+		SkipCertCheck: instance.Spec.SkipCertCheck,
+	})
+	if err != nil {
+		return false, errors.WithMessage(err, "failed to get image version")
+	}
+
+	upd := false
+	if instance.Status.ActiveGate.ImageHash != ver.Hash {
+		r.logger.Info("Update found",
+			"oldVersion", instance.Status.ActiveGate.ImageVersion,
+			"newVersion", ver.Version,
+			"oldHash", instance.Status.ActiveGate.ImageHash,
+			"newHash", ver.Hash)
+		upd = true
+	}
+
+	instance.Status.ActiveGate.ImageVersion = ver.Version
+	instance.Status.ActiveGate.ImageHash = ver.Hash
+	return upd, nil
+}
+
+func (r *ReconcileDynaKube) reconcileRouting(rec *utils.Reconciliation, dtc dtclient.Client) bool {
+	if rec.Instance.Spec.RoutingSpec.Enabled {
+		upd, err := routing.NewReconciler(
+			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion, r.enableUpdates,
+		).Reconcile()
+		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "routing reconciled") {
+			return false
+		}
+	} else {
+		sts := appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      rec.Instance.Name + routing.StatefulSetSuffix,
+				Namespace: rec.Instance.Namespace,
+			},
+		}
+		if err := r.ensureDeleted(&sts); rec.Error(err) {
+			return false
+		}
+	}
+	return true
+}
+
+func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
+	if err := r.client.Delete(context.TODO(), obj); err != nil && !k8serrors.IsNotFound(err) {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {

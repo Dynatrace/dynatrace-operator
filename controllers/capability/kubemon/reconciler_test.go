@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
@@ -23,13 +24,15 @@ import (
 
 const (
 	testPaasToken = "test-paas-token"
+	testName      = "test-name"
+	testUID       = "test-uid"
+	testNamespace = "test-namespace"
+	testValue     = "test-value"
 )
 
 func init() {
 	utilruntime.Must(scheme.AddToScheme(scheme.Scheme))
-
 	utilruntime.Must(v1alpha1.AddToScheme(scheme.Scheme))
-	// +kubebuilder:scaffold:scheme
 }
 
 var mockImageVersionProvider dtversion.ImageVersionProvider = func(image string, _ *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
@@ -55,7 +58,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}},
 			instance, secret).Build()
 		reconciler := NewReconciler(
-			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider,
+			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider, false,
 		)
 		connectionInfo := dtclient.ConnectionInfo{TenantUUID: testUID}
 		tenantInfo := &dtclient.TenantInfo{ID: testUID}
@@ -79,7 +82,11 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: instance.Name + StatefulSetSuffix, Namespace: instance.Namespace}, &statefulSet)
 		assert.NoError(t, err)
 
-		expected, err := newStatefulSet(instance, testUID, "")
+		expected, err := capability.CreateStatefulSet(
+			capability.NewStatefulSetProperties(
+				instance, &instance.Spec.KubernetesMonitoringSpec.CapabilityProperties,
+				testUID, "", module, capabilityName, serviceAccountOwner,
+			))
 		assert.NoError(t, err)
 
 		expected.Spec.Template.Spec.Volumes = nil
@@ -100,8 +107,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Spec: v1alpha1.DynaKubeSpec{
 				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
-					CustomProperties: &v1alpha1.DynaKubeValueSource{
-						Value: testValue,
+					CapabilityProperties: v1alpha1.CapabilityProperties{
+						CustomProperties: &v1alpha1.DynaKubeValueSource{
+							Value: testValue,
+						},
 					},
 				}}}
 		secret := buildTestPaasTokenSecret()
@@ -112,7 +121,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}},
 			instance, secret).Build()
 		reconciler := NewReconciler(
-			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider,
+			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider, false,
 		)
 		connectionInfo := dtclient.ConnectionInfo{TenantUUID: testUID}
 		tenantInfo := &dtclient.TenantInfo{ID: testUID}
@@ -133,7 +142,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var customPropertiesSecret corev1.Secret
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: fmt.Sprintf("%s-%s-%s", instance.Name, Name, customproperties.Suffix), Namespace: testNamespace}, &customPropertiesSecret)
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: fmt.Sprintf("%s-%s-%s", instance.Name, serviceAccountOwner, customproperties.Suffix), Namespace: testNamespace}, &customPropertiesSecret)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, customPropertiesSecret)
