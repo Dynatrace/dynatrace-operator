@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -24,7 +25,14 @@ func (pretty *errorPrettify) writeToWriter(payload []byte, writer io.Writer) (in
 	if err != nil {
 		return fmt.Fprint(writer, message)
 	}
-	return fmt.Fprint(writer, string(payload))
+	return fmt.Fprint(writer, prettify(payload))
+}
+
+func prettify(payload []byte) string {
+	message := string(payload)
+	message = strings.ReplaceAll(message, "\\n", "\n")
+	message = strings.ReplaceAll(message, "\\t", "\t")
+	return message
 }
 
 func replaceDuplicatedStacktrace(payload []byte) ([]byte, error) {
