@@ -23,6 +23,10 @@ type DynaKubeSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="API and PaaS Tokens",order=2,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	Tokens string `json:"tokens,omitempty"`
 
+	// Optional: Pull secret for your private registry
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom PullSecret",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
+	CustomPullSecret string `json:"customPullSecret,omitempty"`
+
 	// Disable certificate validation checks for installer download and API communication
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Skip Certificate Check",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	SkipCertCheck bool `json:"skipCertCheck,omitempty"`
@@ -39,10 +43,6 @@ type DynaKubeSpec struct {
 	// Optional: Sets Network Zone for OneAgent and ActiveGate pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Network Zone",order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	NetworkZone string `json:"networkZone,omitempty"`
-
-	// Optional: Pull secret for your private registry
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom PullSecret",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
-	CustomPullSecret string `json:"customPullSecret,omitempty"`
 
 	// If enabled, Istio on the cluster will be configured automatically to allow access to the Dynatrace environment
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Istio automatic management",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
@@ -63,7 +63,13 @@ type DynaKubeSpec struct {
 	// Configuration for ClassicFullStack Monitoring
 	ClassicFullStack FullStackSpec `json:"classicFullStack,omitempty"`
 
-	// Configuration for Kubernetes Monitoring
+	//  Configuration for Routing
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Routing"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	RoutingSpec RoutingSpec `json:"routing,omitempty"`
+
+	//  Configuration for Kubernetes Monitoring
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
@@ -168,9 +174,20 @@ type FullStackSpec struct {
 	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
 }
 
+type RoutingSpec struct {
+	CapabilityProperties `json:",inline"`
+}
+
 type KubernetesMonitoringSpec struct {
-	// Enables Kubernetes Monitoring
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Kubernetes Monitoring",order=29,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
+	CapabilityProperties `json:",inline"`
+}
+
+// CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
+// Such as KubernetesMonitoring or Routing
+// It encapsulates common properties
+type CapabilityProperties struct {
+	// Enables Capability
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Capability",order=29,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	Enabled bool `json:"enabled,omitempty"`
 
 	// Amount of replicas for your DynaKube

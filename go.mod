@@ -12,7 +12,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
 	go.uber.org/zap v1.16.0
-	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	gotest.tools v2.2.0+incompatible
 	istio.io/api v0.0.0-20201217173512-1f62aaeb5ee3
 	istio.io/client-go v1.8.1

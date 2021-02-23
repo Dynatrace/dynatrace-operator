@@ -1,4 +1,4 @@
-package kubemon
+package capability
 
 import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -15,9 +15,9 @@ const (
 	ResourceCPUMaximum    = "300m"
 )
 
-func buildResources(instance *dynatracev1alpha1.DynaKube) corev1.ResourceRequirements {
+func BuildResources(instance *dynatracev1alpha1.DynaKube) corev1.ResourceRequirements {
 	limits := buildResourceLimits(instance)
-	requests := buildResourceRequests(instance, limits)
+	requests := BuildResourceRequests(instance, limits)
 
 	return corev1.ResourceRequirements{
 		Limits:   limits,
@@ -25,7 +25,7 @@ func buildResources(instance *dynatracev1alpha1.DynaKube) corev1.ResourceRequire
 	}
 }
 
-func buildResourceRequests(instance *dynatracev1alpha1.DynaKube, limits corev1.ResourceList) corev1.ResourceList {
+func BuildResourceRequests(instance *dynatracev1alpha1.DynaKube, limits corev1.ResourceList) corev1.ResourceList {
 	cpuMin := resource.MustParse(ResourceCPUMinimum)
 	cpuRequest, hasCPURequest := instance.Spec.KubernetesMonitoringSpec.Resources.Requests[corev1.ResourceCPU]
 	if !hasCPURequest {
