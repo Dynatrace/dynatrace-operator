@@ -11,24 +11,24 @@ import (
 )
 
 const (
-	testModule = "test-module"
-	testName   = "test-name"
+	testFeature = "test-module"
+	testName    = "test-name"
 )
 
 func TestCreateService(t *testing.T) {
 	instance := &v1alpha1.DynaKube{
 		ObjectMeta: v1.ObjectMeta{Namespace: testNamespace, Name: testName},
 	}
-	service := createService(instance, testModule)
+	service := createService(instance, testFeature)
 
 	assert.NotNil(t, service)
-	assert.Equal(t, instance.Name+"-"+testModule+"-service", service.Name)
+	assert.Equal(t, instance.Name+"-"+testFeature+"-service", service.Name)
 	assert.Equal(t, instance.Namespace, service.Namespace)
 
 	serviceSpec := service.Spec
 	assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
 	assert.Equal(t, map[string]string{
-		keyModule: testModule,
+		keyFeature: testFeature,
 	}, serviceSpec.Selector)
 
 	ports := serviceSpec.Ports

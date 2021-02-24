@@ -8,18 +8,18 @@ import (
 )
 
 const (
-	keyModule = "module"
+	keyFeature = "feature"
 )
 
-func createService(instance *v1alpha1.DynaKube, module string) corev1.Service {
+func createService(instance *v1alpha1.DynaKube, feature string) corev1.Service {
 	return corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      buildServiceName(instance.Name, module),
+			Name:      buildServiceName(instance.Name, feature),
 			Namespace: instance.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
-			Selector: map[string]string{keyModule: module},
+			Selector: map[string]string{keyFeature: feature},
 			Ports: []corev1.ServicePort{
 				{
 					Protocol:   corev1.ProtocolTCP,
