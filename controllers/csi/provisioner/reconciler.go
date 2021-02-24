@@ -13,6 +13,7 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -20,7 +21,6 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -29,13 +29,19 @@ import (
 
 var log = logger.NewDTLogger().WithName("provisioner")
 
+// OneAgentProvisioner reconciles a DynaKube object
+type OneAgentProvisioner struct {
+	client       client.Client
+	opts         dtcsi.CSIOptions
+	dtcBuildFunc dynakube.DynatraceClientFunc
+}
+
 // NewReconciler returns a new OneAgentProvisioner
-func NewReconciler(mgr manager.Manager, dataDir string) *OneAgentProvisioner {
+func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
 		client:       mgr.GetClient(),
-		scheme:       mgr.GetScheme(),
+		opts:         opts,
 		dtcBuildFunc: dynakube.BuildDynatraceClient,
-		dataDir:      dataDir,
 	}
 }
 
@@ -46,16 +52,6 @@ func (r *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 var _ reconcile.Reconciler = &OneAgentProvisioner{}
-
-// OneAgentProvisioner reconciles a DynaKube object
-type OneAgentProvisioner struct {
-	// This client, initialized using mgr.Client() above, is a split client
-	// that reads objects from the cache and writes to the apiserver
-	client       client.Client
-	scheme       *k8sruntime.Scheme
-	dtcBuildFunc dynakube.DynatraceClientFunc
-	dataDir      string
-}
 
 func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	rlog := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
@@ -84,9 +80,9 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, fmt.Errorf("failed to fetch connection info: %w", err)
 	}
 
-	envDir := filepath.Join(r.dataDir, ci.TenantUUID)
+	envDir := filepath.Join(r.opts.DataDir, ci.TenantUUID)
 	verFile := filepath.Join(envDir, "version")
-	tenantFile := filepath.Join(r.dataDir, fmt.Sprintf("tenant-%s", dk.Name))
+	tenantFile := filepath.Join(r.opts.DataDir, fmt.Sprintf("tenant-%s", dk.Name))
 
 	for _, dir := range []string{
 		envDir,

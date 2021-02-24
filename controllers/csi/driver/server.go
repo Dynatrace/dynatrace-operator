@@ -11,6 +11,7 @@ import (
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/logger"
+	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/go-logr/logr"
 	"google.golang.org/grpc"
@@ -32,8 +33,8 @@ var log = logger.NewDTLogger().WithName("server")
 
 type CSIDriverServer struct {
 	client client.Client
-
-	log logr.Logger
+	log    logr.Logger
+	opts   dtcsi.CSIOptions
 
 	nodeID   string
 	endpoint string
@@ -46,21 +47,11 @@ var _ manager.Runnable = &CSIDriverServer{}
 var _ csi.IdentityServer = &CSIDriverServer{}
 var _ csi.NodeServer = &CSIDriverServer{}
 
-func NewServer(mgr ctrl.Manager, nodeID, endpoint, dataDir string, supportNamespaces []string) *CSIDriverServer {
-	snMap := make(map[string]bool, len(supportNamespaces))
-	for _, ns := range supportNamespaces {
-		snMap[ns] = true
-	}
-
+func NewServer(mgr ctrl.Manager, opts dtcsi.CSIOptions) *CSIDriverServer {
 	return &CSIDriverServer{
 		client: mgr.GetClient(),
-
-		nodeID:   nodeID,
-		endpoint: endpoint,
-		dataDir:  dataDir,
-		log:      log,
-
-		supportNamespaces: snMap,
+		log:    log,
+		opts:   opts,
 	}
 }
 
@@ -108,7 +99,7 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 // csi.IdentityServer implementation
 
 func (svr *CSIDriverServer) GetPluginInfo(ctx context.Context, req *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
-	return &csi.GetPluginInfoResponse{Name: dtcsi.DriverName, VendorVersion: dtcsi.DriverVersion}, nil
+	return &csi.GetPluginInfoResponse{Name: dtcsi.DriverName, VendorVersion: version.Version}, nil
 }
 
 func (svr *CSIDriverServer) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
