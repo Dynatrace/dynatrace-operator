@@ -7,7 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/version"
 )
 
-func prepareArgs(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, webhookInjection bool, clusterID string) []string {
+func prepareArgs(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, feature string, clusterID string) []string {
 	args := fs.Args
 	if instance.Spec.Proxy != nil && (instance.Spec.Proxy.ValueFrom != "" || instance.Spec.Proxy.Value != "") {
 		args = append(args, "--set-proxy=$(https_proxy)")
@@ -17,7 +17,7 @@ func prepareArgs(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.Ful
 		args = append(args, fmt.Sprintf("--set-network-zone=%s", instance.Spec.NetworkZone))
 	}
 
-	if webhookInjection {
+	if feature == InframonFeature {
 		args = append(args, "--set-host-id-source=k8s-node-name")
 	}
 

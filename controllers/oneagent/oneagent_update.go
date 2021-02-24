@@ -64,7 +64,7 @@ func (r *ReconcileOneAgent) reconcileVersionInstaller(ctx context.Context, logge
 	}
 
 	// restart daemonset
-	err = r.deletePods(logger, podsToDelete, buildLabels(instance.GetName()), waitSecs)
+	err = r.deletePods(logger, podsToDelete, buildLabels(instance.GetName(), r.feature), waitSecs)
 	if err != nil {
 		logger.Error(err, "failed to update version")
 		return updateCR, err
@@ -90,7 +90,7 @@ func (r *ReconcileOneAgent) reconcileVersionImmutableImage(ctx context.Context, 
 		}
 		if len(outdatedPods) > 0 {
 			updateCR = true
-			err = r.deletePods(r.logger, outdatedPods, buildLabels(instance.GetName()), waitSecs)
+			err = r.deletePods(r.logger, outdatedPods, buildLabels(instance.GetName(), r.feature), waitSecs)
 			if err != nil {
 				r.logger.Error(err, err.Error())
 				return updateCR, err
@@ -214,7 +214,7 @@ func (r *ReconcileOneAgent) findPods(ctx context.Context, instance *dynatracev1a
 	podList := &corev1.PodList{}
 	listOptions := []client.ListOption{
 		client.InNamespace(instance.GetNamespace()),
-		client.MatchingLabels(buildLabels(instance.GetName())),
+		client.MatchingLabels(buildLabels(instance.GetName(), r.feature)),
 	}
 	err := r.client.List(ctx, podList, listOptions...)
 	if err != nil {
