@@ -210,7 +210,7 @@ func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1al
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
 		client.InNamespace((*instance).GetNamespace()),
-		client.MatchingLabels(buildLabels((*instance).GetName(), feature)),
+		client.MatchingLabels(buildLabels(instance.Name, feature)),
 	}
 	err := r.client.List(ctx, podList, listOps...)
 	return podList.Items, listOps, err

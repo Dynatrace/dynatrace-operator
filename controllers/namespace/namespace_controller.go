@@ -13,7 +13,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -88,7 +88,7 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 
 	var apm dynatracev1alpha1.DynaKube
 	if err := r.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: r.namespace}, &apm); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to query OneAgentAPM: %w", err)
+		return reconcile.Result{}, fmt.Errorf("failed to query DynaKubes: %w", err)
 	}
 
 	tokenName := utils.GetTokensName(&apm)
@@ -99,7 +99,7 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 
 	var ims dynatracev1alpha1.DynaKubeList
 	if err := r.client.List(ctx, &ims, client.InNamespace(r.namespace)); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to query OneAgentIMs: %w", err)
+		return reconcile.Result{}, fmt.Errorf("failed to query DynaKubes: %w", err)
 	}
 
 	imNodes := map[string]string{}
@@ -148,7 +148,7 @@ type script struct {
 }
 
 func (r *ReconcileNamespaces) ensureSecretDeleted(name string, ns string) error {
-	secret := corev1.Secret{ObjectMeta: v1.ObjectMeta{Name: name, Namespace: ns}}
+	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}
 	if err := r.client.Delete(context.TODO(), &secret); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
