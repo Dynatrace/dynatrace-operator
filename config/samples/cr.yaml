@@ -30,10 +30,53 @@ spec:
   #
   # networkZone: name-of-my-network-zone
 
+  customPullSecret:
+
+  enableIstio:
+
   # Configuration for ActiveGate instances.
   activeGate:
     # Optional: to use a custom ActiveGate Docker image.
     image: ""
+
+  oneAgent:
+    version:
+    image:
+    autoUpdate:
+
+  codeModules:
+    enabled: true
+    resources:
+
+  infraMonitoring:
+    enabled:
+    nodeSelector:
+    tolerations:
+    waitReadySeconds:
+    resources:
+    args:
+    env:
+    priorityClassName:
+    dnsPolicy:
+    serviceAccountName:
+    labels:
+    useUnprivilegedMode: true
+    useImmutableImage: true
+
+  classicFullStack:
+    enabled:
+    nodeSelector:
+    tolerations:
+    waitReadySeconds:
+    resources:
+    args:
+    env:
+    priorityClassName:
+    dnsPolicy:
+    serviceAccountName:
+    labels:
+    useUnprivilegedMode: true
+    useImmutableImage: false
 
   # Enables and configures an ActiveGate instance that allows monitoring
   # of Kubernetes environments
