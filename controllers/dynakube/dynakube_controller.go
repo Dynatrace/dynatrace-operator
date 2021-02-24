@@ -307,13 +307,6 @@ func (r *ReconcileDynaKube) reconcileRouting(rec *utils.Reconciliation, dtc dtcl
 	return true
 }
 
-func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
-	if err := r.client.Delete(context.TODO(), obj); err != nil && !k8serrors.IsNotFound(err) {
-		return errors.WithStack(err)
-	}
-	return nil
-}
-
 func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {
 	var secret corev1.Secret
 	err := r.client.Get(ctx, client.ObjectKey{Name: utils.GetTokensName(instance), Namespace: instance.Namespace}, &secret)

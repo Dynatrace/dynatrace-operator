@@ -52,7 +52,9 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Spec: v1alpha1.DynaKubeSpec{
 				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
-					Enabled: true,
+					CapabilityProperties: v1alpha1.CapabilityProperties{
+						Enabled: true,
+					},
 				},
 			},
 		}
