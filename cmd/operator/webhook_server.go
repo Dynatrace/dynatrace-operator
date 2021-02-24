@@ -17,40 +17,52 @@ limitations under the License.
 package main
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/webhook/bootstrapper"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"os"
+	"path"
+	"time"
+
+	"github.com/Dynatrace/dynatrace-operator/webhook/server"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func startWebhookBoostrapper(ns string, cfg *rest.Config) (manager.Manager, error) {
+func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Namespace:                  ns,
 		Scheme:                     scheme,
-		MetricsBindAddress:         ":8484",
+		MetricsBindAddress:         ":8383",
+		Port:                       8443,
 		LeaderElection:             true,
-		LeaderElectionID:           "dynatrace-oneagent-webhook-bootstrapper-lock",
+		LeaderElectionID:           "dynatrace-webhook-server-lock",
 		LeaderElectionResourceLock: "configmaps",
 		LeaderElectionNamespace:    ns,
-		HealthProbeBindAddress:     "0.0.0.0:9080",
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info("Registering Components.")
+	ws := mgr.GetWebhookServer()
+	ws.CertDir = certsDir
+	ws.KeyName = keyFile
+	ws.CertName = certFile
+	log.Info("SSL certificates configured", "dir", certsDir, "key", keyFile, "cert", certFile)
 
-	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		log.Error(err, "could not start health endpoint for operator")
+	// Wait until the certificates are available, otherwise the Manager will fail to start.
+	certFilePath := path.Join(certsDir, certFile)
+	for threshold := time.Now().Add(5 * time.Minute); time.Now().Before(threshold); {
+		if _, err := os.Stat(certFilePath); os.IsNotExist(err) {
+			log.Info("Waiting for certificates to be available.")
+			time.Sleep(10 * time.Second)
+			continue
+		} else if err != nil {
+			return nil, err
+		}
+
+		break
 	}
 
-	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		log.Error(err, "could not start ready endpoint for operator")
-	}
-
-	if err := bootstrapper.AddToManager(mgr, ns); err != nil {
+	if err := server.AddToManager(mgr, ns); err != nil {
 		return nil, err
 	}
 
