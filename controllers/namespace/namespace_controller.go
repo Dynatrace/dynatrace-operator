@@ -99,7 +99,7 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 
 	var ims dynatracev1alpha1.DynaKubeList
 	if err := r.client.List(ctx, &ims, client.InNamespace(r.namespace)); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to query DynaKubes: %w", err)
+		return reconcile.Result{}, fmt.Errorf("failed to query DynaKubeList: %w", err)
 	}
 
 	imNodes := map[string]string{}
