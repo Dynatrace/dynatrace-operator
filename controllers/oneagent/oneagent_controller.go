@@ -11,6 +11,7 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
@@ -27,22 +28,24 @@ import (
 
 // time between consecutive queries for a new pod to get ready
 const splayTimeSeconds = uint16(10)
-const annotationTemplateHash = "internal.dynatrace.com/template-hash"
+const annotationTemplateHash = "internal.oneagent.dynatrace.com/template-hash"
 const defaultUpdateInterval = 15 * time.Minute
 const updateEnvVar = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
+const ClassicFeature = "classic"
+const InframonFeature = "inframon"
 
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
 func NewOneAgentReconciler(client client.Client, apiReader client.Reader, scheme *runtime.Scheme, logger logr.Logger,
-	dtc dtclient.Client, instance *dynatracev1alpha1.DynaKube, fullStack *dynatracev1alpha1.FullStackSpec, webhookInjection bool) *ReconcileOneAgent {
+	dtc dtclient.Client, instance *dynatracev1alpha1.DynaKube, fullStack *dynatracev1alpha1.FullStackSpec, feature string) *ReconcileOneAgent {
 	return &ReconcileOneAgent{
-		client:           client,
-		apiReader:        apiReader,
-		scheme:           scheme,
-		logger:           logger,
-		dtc:              dtc,
-		instance:         instance,
-		fullStack:        fullStack,
-		webhookInjection: webhookInjection,
+		client:    client,
+		apiReader: apiReader,
+		scheme:    scheme,
+		logger:    logger,
+		dtc:       dtc,
+		instance:  instance,
+		fullStack: fullStack,
+		feature:   feature,
 	}
 }
 
@@ -50,14 +53,14 @@ func NewOneAgentReconciler(client client.Client, apiReader client.Reader, scheme
 type ReconcileOneAgent struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client           client.Client
-	apiReader        client.Reader
-	scheme           *runtime.Scheme
-	logger           logr.Logger
-	instance         *dynatracev1alpha1.DynaKube
-	fullStack        *dynatracev1alpha1.FullStackSpec
-	webhookInjection bool
-	dtc              dtclient.Client
+	client    client.Client
+	apiReader client.Reader
+	scheme    *runtime.Scheme
+	logger    logr.Logger
+	instance  *dynatracev1alpha1.DynaKube
+	fullStack *dynatracev1alpha1.FullStackSpec
+	feature   string
+	dtc       dtclient.Client
 }
 
 // Reconcile reads that state of the cluster for a OneAgent object and makes changes based on the state read
@@ -77,7 +80,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 		return true, nil
 	}
 
-	upd, err = r.reconcileRollout(ctx, r.logger, r.instance, r.fullStack, r.webhookInjection, r.dtc)
+	upd, err = r.reconcileRollout(ctx, rec, r.dtc)
 	if err != nil {
 		return false, err
 	} else if upd {
@@ -124,21 +127,18 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 	return false, nil
 }
 
-func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, webhookInjection bool, dtc dtclient.Client) (bool, error) {
+func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Reconciliation, dtc dtclient.Client) (bool, error) {
 	updateCR := false
 
-	var kubeSystemNS corev1.Namespace
-	if err := r.client.Get(ctx, client.ObjectKey{Name: "kube-system"}, &kubeSystemNS); err != nil {
-		return false, fmt.Errorf("failed to query for cluster ID: %w", err)
-	}
 	// Define a new DaemonSet object
-	dsDesired, err := newDaemonSetForCR(logger, instance, fs, webhookInjection, string(kubeSystemNS.UID))
+	dsDesired, err := r.getDesiredDaemonSet(rec)
 	if err != nil {
-		return false, err
+		rec.Log.Info("Failed to get desired daemonset")
+		return updateCR, err
 	}
 
 	// Set OneAgent instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, dsDesired, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(rec.Instance, dsDesired, r.scheme); err != nil {
 		return false, err
 	}
 
@@ -146,29 +146,29 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, logger logr.Lo
 	dsActual := &appsv1.DaemonSet{}
 	err = r.client.Get(ctx, types.NamespacedName{Name: dsDesired.Name, Namespace: dsDesired.Namespace}, dsActual)
 	if err != nil && k8serrors.IsNotFound(err) {
-		logger.Info("Creating new daemonset")
+		rec.Log.Info("Creating new daemonset")
 		if err = r.client.Create(ctx, dsDesired); err != nil {
 			return false, err
 		}
 	} else if err != nil {
 		return false, err
 	} else if hasDaemonSetChanged(dsDesired, dsActual) {
-		logger.Info("Updating existing daemonset")
+		rec.Log.Info("Updating existing daemonset")
 		if err = r.client.Update(ctx, dsDesired); err != nil {
 			return false, err
 		}
 	}
 
-	if instance.Status.OneAgent.Version == "" {
-		if instance.Status.OneAgent.UseImmutableImage && instance.Spec.OneAgent.Image == "" {
-			if instance.Spec.OneAgent.Version == "" {
+	if rec.Instance.Status.OneAgent.Version == "" {
+		if rec.Instance.Status.OneAgent.UseImmutableImage && rec.Instance.Spec.OneAgent.Image == "" {
+			if rec.Instance.Spec.OneAgent.Version == "" {
 				latest, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
 				if err != nil {
 					return false, fmt.Errorf("failed to get desired version: %w", err)
 				}
-				instance.Status.OneAgent.Version = latest
+				rec.Instance.Status.OneAgent.Version = latest
 			} else {
-				instance.Status.OneAgent.Version = instance.Spec.OneAgent.Version
+				rec.Instance.Status.OneAgent.Version = rec.Instance.Spec.OneAgent.Version
 			}
 		} else {
 			desired, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
@@ -176,27 +176,40 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, logger logr.Lo
 				return false, fmt.Errorf("failed to get desired version: %w", err)
 			}
 
-			logger.Info("Updating version on OneAgent instance")
-			instance.Status.OneAgent.Version = desired
+			rec.Log.Info("Updating version on OneAgent instance")
+			rec.Instance.Status.OneAgent.Version = desired
 		}
 
-		instance.Status.SetPhase(dynatracev1alpha1.Deploying)
+		rec.Instance.Status.SetPhase(dynatracev1alpha1.Deploying)
 		updateCR = true
 	}
 
-	if instance.Status.Tokens != utils.GetTokensName(instance) {
-		instance.Status.Tokens = utils.GetTokensName(instance)
+	if rec.Instance.Status.Tokens != utils.GetTokensName(rec.Instance) {
+		rec.Instance.Status.Tokens = utils.GetTokensName(rec.Instance)
 		updateCR = true
 	}
 
 	return updateCR, nil
 }
 
-func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1alpha1.DynaKube) ([]corev1.Pod, []client.ListOption, error) {
+func (r *ReconcileOneAgent) getDesiredDaemonSet(rec *utils.Reconciliation) (*appsv1.DaemonSet, error) {
+	kubeSysUID, err := kubesystem.GetUID(r.apiReader)
+	if err != nil {
+		return nil, err
+	}
+
+	dsDesired, err := newDaemonSetForCR(rec.Log, rec.Instance, r.fullStack, string(kubeSysUID), r.feature)
+	if err != nil {
+		return nil, err
+	}
+	return dsDesired, nil
+}
+
+func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1alpha1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
 		client.InNamespace((*instance).GetNamespace()),
-		client.MatchingLabels(buildLabels((*instance).GetName())),
+		client.MatchingLabels(buildLabels(instance.Name, feature)),
 	}
 	err := r.client.List(ctx, podList, listOps...)
 	return podList.Items, listOps, err
@@ -207,19 +220,20 @@ func (r *ReconcileOneAgent) updateCR(ctx context.Context, instance *dynatracev1a
 	return r.client.Status().Update(ctx, instance)
 }
 
-func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, webhookInjection bool, clusterID string) (*appsv1.DaemonSet, error) {
+func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, clusterID string, feature string) (*appsv1.DaemonSet, error) {
 	unprivileged := false
 	if ptr := fs.UseUnprivilegedMode; ptr != nil {
 		unprivileged = *ptr
 	}
 
-	podSpec := newPodSpecForCR(instance, fs, webhookInjection, unprivileged, logger, clusterID)
-	selectorLabels := buildLabels(instance.GetName())
+	name := instance.GetName() + "-" + feature
+	podSpec := newPodSpecForCR(instance, fs, feature, unprivileged, logger, clusterID)
+	selectorLabels := buildLabels(instance.GetName(), feature)
 	mergedLabels := mergeLabels(fs.Labels, selectorLabels)
 
 	ds := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        instance.GetName() + "-oneagent",
+			Name:        name,
 			Namespace:   instance.GetNamespace(),
 			Labels:      mergedLabels,
 			Annotations: map[string]string{},
@@ -248,7 +262,7 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 	return ds, nil
 }
 
-func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, webhookInjection bool, unprivileged bool, logger logr.Logger, clusterID string) corev1.PodSpec {
+func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, feature string, unprivileged bool, logger logr.Logger, clusterID string) corev1.PodSpec {
 	p := corev1.PodSpec{}
 
 	sa := "dynatrace-dynakube-oneagent"
@@ -305,8 +319,8 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 
 	p = corev1.PodSpec{
 		Containers: []corev1.Container{{
-			Args:            prepareArgs(instance, fs, webhookInjection, clusterID),
-			Env:             prepareEnvVars(instance, fs, webhookInjection, clusterID),
+			Args:            prepareArgs(instance, fs, feature, clusterID),
+			Env:             prepareEnvVars(instance, fs, feature, clusterID),
 			Image:           "",
 			ImagePullPolicy: corev1.PullAlways,
 			Name:            "dynatrace-oneagent",
@@ -478,7 +492,7 @@ func prepareVolumeMounts(instance *dynatracev1alpha1.DynaKube) []corev1.VolumeMo
 	return volumeMounts
 }
 
-func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, webhookInjection bool, clusterID string) []corev1.EnvVar {
+func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, feature string, clusterID string) []corev1.EnvVar {
 	type reservedEnvVar struct {
 		Name    string
 		Default func(ev *corev1.EnvVar)
@@ -500,7 +514,7 @@ func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.
 		},
 	}
 
-	if webhookInjection {
+	if feature == InframonFeature {
 		reserved = append(reserved,
 			reservedEnvVar{
 				Name: "ONEAGENT_DISABLE_CONTAINER_INJECTION",
@@ -615,7 +629,7 @@ func getTemplateHash(a metav1.Object) string {
 }
 
 func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client) (bool, error) {
-	pods, listOpts, err := r.getPods(ctx, instance)
+	pods, listOpts, err := r.getPods(ctx, instance, r.feature)
 	if err != nil {
 		handlePodListError(logger, err, listOpts)
 	}

@@ -66,25 +66,25 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	dtClient.On("GetLatestAgentVersion", "unix", "default").Return("42", nil)
 
 	reconciler := &ReconcileOneAgent{
-		client:           fakeClient,
-		apiReader:        fakeClient,
-		scheme:           scheme.Scheme,
-		logger:           consoleLogger,
-		instance:         dynakube,
-		webhookInjection: false,
-		dtc:              dtClient,
-		fullStack:        &dynakube.Spec.ClassicFullStack,
+		client:    fakeClient,
+		apiReader: fakeClient,
+		scheme:    scheme.Scheme,
+		logger:    consoleLogger,
+		instance:  dynakube,
+		feature:   ClassicFeature,
+		dtc:       dtClient,
+		fullStack: &dynakube.Spec.ClassicFullStack,
 	}
 
-	rec := utils.Reconciliation{}
+	rec := utils.Reconciliation{Log: consoleLogger, Instance: dynakube}
 	_, err := reconciler.Reconcile(context.TODO(), &rec)
 	assert.NoError(t, err)
 
 	dsActual := &appsv1.DaemonSet{}
-	err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: dkName + "-oneagent", Namespace: namespace}, dsActual)
+	err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: dkName + "-" + reconciler.feature, Namespace: namespace}, dsActual)
 	assert.NoError(t, err, "failed to get DaemonSet")
 	assert.Equal(t, namespace, dsActual.Namespace, "wrong namespace")
-	assert.Equal(t, dkName+"-oneagent", dsActual.GetObjectMeta().GetName(), "wrong name")
+	assert.Equal(t, dkName+"-"+reconciler.feature, dsActual.GetObjectMeta().GetName(), "wrong name")
 	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "wrong policy")
 	mock.AssertExpectationsForObjects(t, dtClient)
 }
@@ -140,23 +140,24 @@ func TestReconcile_PhaseSetCorrectly(t *testing.T) {
 	dtcMock.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(version, nil)
 
 	reconciler := &ReconcileOneAgent{
-		client:           c,
-		apiReader:        c,
-		scheme:           scheme.Scheme,
-		logger:           consoleLogger,
-		instance:         &base,
-		webhookInjection: false,
-		dtc:              dtcMock,
-		fullStack:        &base.Spec.ClassicFullStack,
+		client:    c,
+		apiReader: c,
+		scheme:    scheme.Scheme,
+		logger:    consoleLogger,
+		instance:  &base,
+		feature:   ClassicFeature,
+		dtc:       dtcMock,
+		fullStack: &base.Spec.ClassicFullStack,
 	}
 
 	t.Run("reconcileRollout Phase is set to deploying, if agent version is not set on OneAgent object", func(t *testing.T) {
 		// arrange
 		dk := base.DeepCopy()
 		dk.Status.OneAgent.Version = ""
+		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), consoleLogger, dk, &dynatracev1alpha1.FullStackSpec{}, false, dtcMock)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec, dtcMock)
 
 		// assert
 		assert.True(t, updateCR)
@@ -170,9 +171,10 @@ func TestReconcile_PhaseSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Status.OneAgent.Version = version
 		dk.Status.Tokens = utils.GetTokensName(dk)
+		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), consoleLogger, dk, &dynatracev1alpha1.FullStackSpec{}, false, dtcMock)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec, dtcMock)
 
 		// assert
 		assert.False(t, updateCR)
@@ -215,14 +217,14 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 	dtcMock.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(version, nil)
 
 	reconciler := &ReconcileOneAgent{
-		client:           c,
-		apiReader:        c,
-		scheme:           scheme.Scheme,
-		logger:           consoleLogger,
-		dtc:              dtcMock,
-		fullStack:        &base.Spec.ClassicFullStack,
-		webhookInjection: false,
-		instance:         &base,
+		client:    c,
+		apiReader: c,
+		scheme:    scheme.Scheme,
+		logger:    consoleLogger,
+		dtc:       dtcMock,
+		fullStack: &base.Spec.ClassicFullStack,
+		feature:   ClassicFeature,
+		instance:  &base,
 	}
 
 	t.Run("reconcileRollout Tokens status set, if empty", func(t *testing.T) {
@@ -230,9 +232,10 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Spec.Tokens = ""
 		dk.Status.Tokens = ""
+		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), consoleLogger, dk, &dynatracev1alpha1.FullStackSpec{}, false, dtcMock)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec, dtcMock)
 
 		// assert
 		assert.True(t, updateCR)
@@ -244,9 +247,10 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Spec.Tokens = ""
 		dk.Status.Tokens = "not the actual name"
+		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), consoleLogger, dk, &dynatracev1alpha1.FullStackSpec{}, false, dtcMock)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec, dtcMock)
 
 		// assert
 		assert.True(t, updateCR)
@@ -260,14 +264,14 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 			sampleKubeSystemNS).Build()
 
 		reconciler := &ReconcileOneAgent{
-			client:           c,
-			apiReader:        c,
-			scheme:           scheme.Scheme,
-			logger:           consoleLogger,
-			instance:         &base,
-			webhookInjection: false,
-			fullStack:        &base.Spec.ClassicFullStack,
-			dtc:              dtcMock,
+			client:    c,
+			apiReader: c,
+			scheme:    scheme.Scheme,
+			logger:    consoleLogger,
+			instance:  &base,
+			feature:   ClassicFeature,
+			fullStack: &base.Spec.ClassicFullStack,
+			dtc:       dtcMock,
 		}
 
 		// arrange
@@ -275,9 +279,10 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Status.Tokens = utils.GetTokensName(dk)
 		dk.Spec.Tokens = customTokenName
+		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), consoleLogger, dk, &dynatracev1alpha1.FullStackSpec{}, false, dtcMock)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec, dtcMock)
 
 		// assert
 		assert.True(t, updateCR)
@@ -315,14 +320,14 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{utils.DynatraceApiToken}, nil)
 
 	reconciler := &ReconcileOneAgent{
-		client:           c,
-		apiReader:        c,
-		scheme:           scheme.Scheme,
-		logger:           consoleLogger,
-		dtc:              dtcMock,
-		instance:         &base,
-		fullStack:        &base.Spec.ClassicFullStack,
-		webhookInjection: false,
+		client:    c,
+		apiReader: c,
+		scheme:    scheme.Scheme,
+		logger:    consoleLogger,
+		dtc:       dtcMock,
+		instance:  &base,
+		fullStack: &base.Spec.ClassicFullStack,
+		feature:   ClassicFeature,
 	}
 
 	t.Run("reconcileImpl Instances set, if autoUpdate is true", func(t *testing.T) {
@@ -335,8 +340,8 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		}
 		pod.Name = "oneagent-update-enabled"
 		pod.Namespace = namespace
-		pod.Labels = buildLabels(dkName)
-		pod.Spec = newPodSpecForCR(dk, &dynatracev1alpha1.FullStackSpec{}, false, false, consoleLogger, "cluster1")
+		pod.Labels = buildLabels(dkName, reconciler.feature)
+		pod.Spec = newPodSpecForCR(dk, &dynatracev1alpha1.FullStackSpec{}, reconciler.feature, false, consoleLogger, "cluster1")
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = utils.GetTokensName(dk)
 
@@ -364,8 +369,8 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		}
 		pod.Name = "oneagent-update-disabled"
 		pod.Namespace = namespace
-		pod.Labels = buildLabels(dkName)
-		pod.Spec = newPodSpecForCR(dk, &dynatracev1alpha1.FullStackSpec{}, false, false, consoleLogger, "cluster1")
+		pod.Labels = buildLabels(dkName, reconciler.feature)
+		pod.Spec = newPodSpecForCR(dk, &dynatracev1alpha1.FullStackSpec{}, reconciler.feature, false, consoleLogger, "cluster1")
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = utils.GetTokensName(dk)
 

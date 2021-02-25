@@ -179,7 +179,7 @@ k8s_containername ${container_name}
 k8s_basepodname ${K8S_BASEPODNAME}
 k8s_namespace ${K8S_NAMESPACE}">>${container_conf_file}
 
-	if [[ ! -z "${host_tenant}" ]]; then		
+	if [[ ! -z "${host_tenant}" ]]; then
 		if [[ "abc12345" == "${host_tenant}" ]]; then
 			echo "k8s_node_name ${K8S_NODE_NAME}
 k8s_cluster_id ${cluster_id}">>${container_conf_file}

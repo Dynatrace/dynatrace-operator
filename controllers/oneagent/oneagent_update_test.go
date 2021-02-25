@@ -61,7 +61,7 @@ func TestReconcile_InstallerDowngrade(t *testing.T) {
 		},
 	}
 
-	labels := map[string]string{"dynatrace.com/component": "operator", "operator.dynatrace.com/instance": oaName, "operator.dynatrace.com/feature": "oneagent"}
+	labels := map[string]string{"dynatrace.com/component": "operator", "operator.dynatrace.com/instance": oaName, "operator.dynatrace.com/feature": ClassicFeature}
 
 	c := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
 		&dynakube,
@@ -92,14 +92,14 @@ func TestReconcile_InstallerDowngrade(t *testing.T) {
 	dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{utils.DynatraceApiToken}, nil)
 
 	r := &ReconcileOneAgent{
-		client:           c,
-		apiReader:        c,
-		scheme:           scheme.Scheme,
-		logger:           consoleLogger,
-		fullStack:        &dynakube.Spec.ClassicFullStack,
-		dtc:              dtcMock,
-		webhookInjection: false,
-		instance:         &dynakube,
+		client:    c,
+		apiReader: c,
+		scheme:    scheme.Scheme,
+		logger:    consoleLogger,
+		fullStack: &dynakube.Spec.ClassicFullStack,
+		dtc:       dtcMock,
+		feature:   ClassicFeature,
+		instance:  &dynakube,
 	}
 
 	// Fails because the Pod didn't get recreated. Ignore since that isn't what we're checking on this test.
