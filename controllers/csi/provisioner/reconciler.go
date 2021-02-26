@@ -81,6 +81,11 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
+	if !dk.Spec.CodeModules.Enabled {
+		rlog.Info("Code modules disabled")
+		return reconcile.Result{RequeueAfter: 30 * time.Minute}, nil
+	}
+
 	var tkns corev1.Secret
 	if err := r.client.Get(ctx, client.ObjectKey{Name: utils.GetTokensName(&dk), Namespace: dk.Namespace}, &tkns); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to query tokens: %w", err)
