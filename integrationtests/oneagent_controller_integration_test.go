@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -40,6 +39,6 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironment(t *testing.T) {
 	assert.NoError(t, err, "failed to get daemonset")
 
 	assert.Equal(t, DefaultTestNamespace, dsActual.Namespace, "wrong namespace")
-	assert.Equal(t, oaName+"-"+oneagent.ClassicFeature, dsActual.GetObjectMeta().GetName(), "wrong name")
-	assert.Equal(t, corev1.DNSClusterFirst, dsActual.Spec.Template.Spec.DNSPolicy, "DNS policy should ClusterFirst by default")
+	assert.Equal(t, oaName+"-oneagent", dsActual.GetObjectMeta().GetName(), "wrong name")
+	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "DNS policy should ClusterFirst by default")
 }

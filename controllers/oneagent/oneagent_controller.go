@@ -281,6 +281,11 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 		resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
 	}
 
+	dnsPolicy := fs.DNSPolicy
+	if dnsPolicy == "" {
+		dnsPolicy = corev1.DNSClusterFirstWithHostNet
+	}
+
 	// K8s 1.18+ is expected to drop the "beta.kubernetes.io" labels in favor of "kubernetes.io" which was added on K8s 1.14.
 	// To support both older and newer K8s versions we use node affinity.
 
@@ -347,7 +352,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 		PriorityClassName:  fs.PriorityClassName,
 		ServiceAccountName: sa,
 		Tolerations:        fs.Tolerations,
-		DNSPolicy:          fs.DNSPolicy,
+		DNSPolicy:          dnsPolicy,
 		Affinity: &corev1.Affinity{
 			NodeAffinity: &corev1.NodeAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
