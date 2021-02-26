@@ -4,6 +4,7 @@ package integrationtests
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -39,6 +40,6 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironment(t *testing.T) {
 	assert.NoError(t, err, "failed to get daemonset")
 
 	assert.Equal(t, DefaultTestNamespace, dsActual.Namespace, "wrong namespace")
-	assert.Equal(t, oaName+"-oneagent", dsActual.GetObjectMeta().GetName(), "wrong name")
+	assert.Equal(t, oaName+"-"+oneagent.ClassicFeature, dsActual.GetObjectMeta().GetName(), "wrong name")
 	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "DNS policy should ClusterFirst by default")
 }

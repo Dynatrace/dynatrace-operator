@@ -118,7 +118,7 @@ spec:
 
     # Optional: when enabled the OneAgent Pods will run as unprivileged. Enabled by default.
     #
-    useUnprivilegedMode: true
+    # useUnprivilegedMode: true
 
     # Optional: if enabled, the Operator will use the immutable image from the Dynatrace environment or from your custom
     # registry, otherwise an installer image is used. Disabled by default.
