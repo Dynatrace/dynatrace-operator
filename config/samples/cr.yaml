@@ -104,7 +104,7 @@ spec:
     # Optional: DNS Policy for OneAgent pods. Defaults to ClusterFirstWithHostNet.
     # See more: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
     #
-    dnsPolicy: "ClusterFirstWithHostNet"
+    # dnsPolicy: "ClusterFirstWithHostNet"
 
     # Optional: name of the ServiceAccount to assign to the OneAgent Pods. Defaults to
     # "dynatrace-oneagent"
