@@ -51,8 +51,6 @@ type CSIDriverServer struct {
 	client client.Client
 	log    logr.Logger
 	opts   dtcsi.CSIOptions
-
-	supportNamespaces map[string]bool
 }
 
 var _ manager.Runnable = &CSIDriverServer{}

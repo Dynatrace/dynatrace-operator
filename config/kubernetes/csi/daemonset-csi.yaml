@@ -26,7 +26,6 @@ spec:
           args:
             - --endpoint=unix://csi/csi.sock
             - --node-id=$(KUBE_NODE_NAME)
-            - --allowed-support-namespaces=$(POD_NAMESPACE)
           env:
             - name: POD_NAMESPACE
               valueFrom:

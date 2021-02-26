@@ -34,10 +34,8 @@ import (
 )
 
 var (
-	nodeID            = flag.String("node-id", "", "node id")
-	endpoint          = flag.String("endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
-	supportNamespaces = flag.String("allowed-support-namespaces", "",
-		"Comma-separated list of namespaces that are allowed to access support-format volumes")
+	nodeID   = flag.String("node-id", "", "node id")
+	endpoint = flag.String("endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
 
 	log = logger.NewDTLogger().WithName("server")
 )
@@ -61,10 +59,9 @@ func main() {
 	}
 
 	csiOpts := dtcsi.CSIOptions{
-		NodeID:            *nodeID,
-		Endpoint:          *endpoint,
-		SupportNamespaces: dtcsi.ParseSupportNamespaces(*supportNamespaces),
-		DataDir:           "/tmp/data",
+		NodeID:   *nodeID,
+		Endpoint: *endpoint,
+		DataDir:  "/tmp/data",
 	}
 
 	if err := csidriver.NewServer(mgr, csiOpts).SetupWithManager(mgr); err != nil {
