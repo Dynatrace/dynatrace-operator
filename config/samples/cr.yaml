@@ -128,7 +128,7 @@ spec:
   # Enables and configures an ActiveGate instance that allows monitoring
   # of Kubernetes environments
   kubernetesMonitoring:
-    # Enable Kubernetes monitoring capability
+    # Enable Kubernetes monitoring functionality
     enabled: true
 
     # Amount of replicas of activegate pods
