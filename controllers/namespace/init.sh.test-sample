@@ -7,8 +7,9 @@ if [[ -f "/var/lib/dynatrace/oneagent/agent/config/ruxithost.id" ]]; then
 fi
 
 api_url="https://test-url/api"
+bin_dir="/mnt/bin"
 config_dir="/mnt/config"
-target_dir="/mnt/oneagent"
+share_dir="/mnt/share"
 paas_token="42"
 proxy=""
 skip_cert_checks="false"
@@ -25,13 +26,13 @@ set +u
 host_tenant="${im_nodes[${K8S_NODE_NAME}]}"
 set -u
 
-archive="/mnt/init/tmp.$RANDOM"
-
 if [[ "${FAILURE_POLICY}" == "fail" ]]; then
 	fail_code=1
 fi
 
 if [[ "${MODE}" == "installer" ]]; then
+	archive="${bin_dir}/tmp.$RANDOM"
+
 	curl_params=(
 		"--silent"
 		"--output" "${archive}"
@@ -65,15 +66,15 @@ if [[ "${MODE}" == "installer" ]]; then
 	fi
 
 	echo "Unpacking OneAgent package..."
-	if ! unzip -o -d "${target_dir}" "${archive}"; then
+	if ! unzip -o -d "${bin_dir}" "${archive}"; then
 		echo "Failed to unpack the OneAgent package."
-		mv "${archive}" "${target_dir}/package.zip"
+		mv "${archive}" "${bin_dir}/package.zip"
 		exit "${fail_code}"
 	fi
 fi
 
 echo "Configuring OneAgent..."
-echo -n "${INSTALLPATH}/agent/lib64/liboneagentproc.so" >> "${target_dir}/ld.so.preload"
+echo -n "${INSTALLPATH}/agent/lib64/liboneagentproc.so" >> "${share_dir}/ld.so.preload"
 
 for i in $(seq 1 $CONTAINERS_COUNT)
 do
@@ -83,7 +84,7 @@ do
 	container_name="${!container_name_var}"
 	container_image="${!container_image_var}"
 
-	container_conf_file="${target_dir}/container_${container_name}.conf"
+	container_conf_file="${share_dir}/container_${container_name}.conf"
 
 	echo "Writing ${container_conf_file} file..."
 	echo "[container]

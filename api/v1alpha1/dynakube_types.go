@@ -114,6 +114,9 @@ type CodeModulesSpec struct {
 	// Optional: define resources requests and limits for the initContainer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Optional: use OneAgent binaries from volume
+	Volume corev1.VolumeSource `json:"volume,omitempty"`
 }
 
 type FullStackSpec struct {
