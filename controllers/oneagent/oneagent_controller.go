@@ -208,7 +208,7 @@ func (r *ReconcileOneAgent) updateCR(ctx context.Context, instance *dynatracev1a
 }
 
 func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, webhookInjection bool, clusterID string) (*appsv1.DaemonSet, error) {
-	unprivileged := false
+	unprivileged := true
 	if ptr := fs.UseUnprivilegedMode; ptr != nil {
 		unprivileged = *ptr
 	}
