@@ -194,26 +194,6 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
 	)
 
-	if volCtx["format"] == "support" {
-		if _, ok := svr.supportNamespaces[nsName]; !ok {
-			return nil, status.Error(codes.InvalidArgument,
-				"Support volume requested but the namespace of target Pod hasn't been allowed")
-		}
-
-		envID := volCtx["environment-id"]
-		if envID == "" {
-			return nil, status.Error(codes.FailedPrecondition, "No environment ID included with request")
-		}
-
-		if err := BindMount(targetPath,
-			Mount{Source: filepath.Join(svr.dataDir, envID), Target: targetPath},
-		); err != nil {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount support volume: %s", err.Error()))
-		}
-
-		return &csi.NodePublishVolumeResponse{}, nil
-	}
-
 	var ns corev1.Namespace
 	if err := svr.client.Get(ctx, client.ObjectKey{Name: nsName}, &ns); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Failed to query namespace %s: %s", nsName, err.Error()))
