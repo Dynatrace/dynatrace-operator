@@ -3,7 +3,6 @@ kind: Kustomization
 resources:
 - oneagent/securitycontextconstraints.yaml
 - oneagent/securitycontextconstraints-unprivileged.yaml
-- csi/securitycontextconstraints-csidriver.yaml
 bases:
   - ../common
 patchesJson6902:
