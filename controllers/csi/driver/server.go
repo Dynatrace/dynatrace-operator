@@ -52,10 +52,6 @@ type CSIDriverServer struct {
 	log    logr.Logger
 	opts   dtcsi.CSIOptions
 
-	nodeID   string
-	endpoint string
-	dataDir  string
-
 	supportNamespaces map[string]bool
 }
 
@@ -76,9 +72,9 @@ func (svr *CSIDriverServer) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (svr *CSIDriverServer) Start(ctx context.Context) error {
-	proto, addr, err := parseEndpoint(svr.endpoint)
+	proto, addr, err := parseEndpoint(svr.opts.Endpoint)
 	if err != nil {
-		return fmt.Errorf("failed to parse endpoint '%s': %w", svr.endpoint, err)
+		return fmt.Errorf("failed to parse endpoint '%s': %w", svr.opts.Endpoint, err)
 	}
 
 	if proto == "unix" {
@@ -204,11 +200,11 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Namespace '%s' doesn't have DynaKube assigned", nsName))
 	}
 
-	envID, err := ioutil.ReadFile(filepath.Join(svr.dataDir, fmt.Sprintf("tenant-%s", dkName)))
+	envID, err := ioutil.ReadFile(filepath.Join(svr.opts.DataDir, fmt.Sprintf("tenant-%s", dkName)))
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("Failed to extract tenant for DynaKube %s: %s", dkName, err.Error()))
 	}
-	envDir := filepath.Join(svr.dataDir, string(envID))
+	envDir := filepath.Join(svr.opts.DataDir, string(envID))
 
 	for _, dir := range []string{
 		filepath.Join(envDir, "log", podUID),
@@ -289,7 +285,7 @@ func (svr *CSIDriverServer) NodeUnstageVolume(ctx context.Context, req *csi.Node
 }
 
 func (svr *CSIDriverServer) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
-	return &csi.NodeGetInfoResponse{NodeId: svr.nodeID}, nil
+	return &csi.NodeGetInfoResponse{NodeId: svr.opts.NodeID}, nil
 }
 
 func (svr *CSIDriverServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
