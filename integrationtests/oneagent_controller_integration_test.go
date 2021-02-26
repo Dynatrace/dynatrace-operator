@@ -4,10 +4,10 @@ package integrationtests
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
