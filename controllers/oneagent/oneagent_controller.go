@@ -221,7 +221,7 @@ func (r *ReconcileOneAgent) updateCR(ctx context.Context, instance *dynatracev1a
 }
 
 func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, clusterID string, feature string) (*appsv1.DaemonSet, error) {
-	unprivileged := false
+	unprivileged := true
 	if ptr := fs.UseUnprivilegedMode; ptr != nil {
 		unprivileged = *ptr
 	}
@@ -279,6 +279,11 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 	if _, hasCPUResource := resources.Requests[corev1.ResourceCPU]; !hasCPUResource {
 		// Set CPU resource to 1 * 10**(-1) Cores, e.g. 100mC
 		resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
+	}
+
+	dnsPolicy := fs.DNSPolicy
+	if dnsPolicy == "" {
+		dnsPolicy = corev1.DNSClusterFirstWithHostNet
 	}
 
 	// K8s 1.18+ is expected to drop the "beta.kubernetes.io" labels in favor of "kubernetes.io" which was added on K8s 1.14.
@@ -347,7 +352,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 		PriorityClassName:  fs.PriorityClassName,
 		ServiceAccountName: sa,
 		Tolerations:        fs.Tolerations,
-		DNSPolicy:          fs.DNSPolicy,
+		DNSPolicy:          dnsPolicy,
 		Affinity: &corev1.Affinity{
 			NodeAffinity: &corev1.NodeAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
