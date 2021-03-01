@@ -158,15 +158,20 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	failurePolicy := utils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")
 	image := m.image
 
+	dkVol := oa.Spec.CodeModules.Volume
+	if dkVol == (corev1.VolumeSource{}) {
+		dkVol.EmptyDir = &corev1.EmptyDirVolumeSource{}
+	}
+
+	mode := "provisioned"
+	if dkVol.EmptyDir != nil {
+		mode = "installer"
+	}
+
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
+		corev1.Volume{Name: "oneagent-bin", VolumeSource: dkVol},
 		corev1.Volume{
-			Name: "init",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-		corev1.Volume{
-			Name: "oneagent",
+			Name: "oneagent-share",
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
@@ -212,7 +217,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 			{Name: "INSTALLER_URL", Value: installerURL},
 			{Name: "FAILURE_POLICY", Value: failurePolicy},
 			{Name: "CONTAINERS_COUNT", Value: strconv.Itoa(len(pod.Spec.Containers))},
-			{Name: "MODE", Value: "installer"},
+			{Name: "MODE", Value: mode},
 			{Name: "K8S_PODNAME", ValueFrom: fieldEnvVar("metadata.name")},
 			{Name: "K8S_PODUID", ValueFrom: fieldEnvVar("metadata.uid")},
 			{Name: "K8S_BASEPODNAME", Value: basePodName},
@@ -221,8 +226,8 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		},
 		SecurityContext: sc,
 		VolumeMounts: []corev1.VolumeMount{
-			{Name: "init", MountPath: "/mnt/init"},
-			{Name: "oneagent", MountPath: "/mnt/oneagent"},
+			{Name: "oneagent-bin", MountPath: "/mnt/bin"},
+			{Name: "oneagent-share", MountPath: "/mnt/share"},
 			{Name: "oneagent-config", MountPath: "/mnt/config"},
 		},
 		Resources: oa.Spec.CodeModules.Resources,
@@ -237,13 +242,13 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 		c.VolumeMounts = append(c.VolumeMounts,
 			corev1.VolumeMount{
-				Name:      "oneagent",
+				Name:      "oneagent-share",
 				MountPath: "/etc/ld.so.preload",
 				SubPath:   "ld.so.preload",
 			},
-			corev1.VolumeMount{Name: "oneagent", MountPath: installPath},
+			corev1.VolumeMount{Name: "oneagent-bin", MountPath: installPath},
 			corev1.VolumeMount{
-				Name:      "oneagent",
+				Name:      "oneagent-share",
 				MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
 				SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
 			})

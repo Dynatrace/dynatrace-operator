@@ -178,8 +178,8 @@ func TestPodInjection(t *testing.T) {
 					{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
 				},
 				VolumeMounts: []corev1.VolumeMount{
-					{Name: "init", MountPath: "/mnt/init"},
-					{Name: "oneagent", MountPath: "/mnt/oneagent"},
+					{Name: "oneagent-bin", MountPath: "/mnt/bin"},
+					{Name: "oneagent-share", MountPath: "/mnt/share"},
 					{Name: "oneagent-config", MountPath: "/mnt/config"},
 				},
 				Resources: corev1.ResourceRequirements{
@@ -200,10 +200,10 @@ func TestPodInjection(t *testing.T) {
 					{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
 				},
 				VolumeMounts: []corev1.VolumeMount{
-					{Name: "oneagent", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
-					{Name: "oneagent", MountPath: "/opt/dynatrace/oneagent-paas"},
+					{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
+					{Name: "oneagent-bin", MountPath: "/opt/dynatrace/oneagent-paas"},
 					{
-						Name:      "oneagent",
+						Name:      "oneagent-share",
 						MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
 						SubPath:   "container_test-container.conf",
 					},
@@ -211,13 +211,13 @@ func TestPodInjection(t *testing.T) {
 			}},
 			Volumes: []corev1.Volume{
 				{
-					Name: "init",
+					Name: "oneagent-bin",
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
 				},
 				{
-					Name: "oneagent",
+					Name: "oneagent-share",
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
