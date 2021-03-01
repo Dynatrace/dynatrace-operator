@@ -30,15 +30,105 @@ spec:
   #
   # networkZone: name-of-my-network-zone
 
+  # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the dynatrace environment
+  #
+  # customPullSecret:
+
+  # Optional: when enabled, and if Istio is installed on the Kubernetes environment, then the
+  # Operator will create the corresponding VirtualService and ServiceEntry objects to allow access
+  # to the Dynatrace cluster from the agent or the activeGate. Disabled by default.
+  #
+  # enableIstio: false
+
   # Configuration for ActiveGate instances.
   activeGate:
     # Optional: to use a custom ActiveGate Docker image.
     image: ""
 
+  oneAgent:
+    # Optional: The version of the OneAgent to be used when useImmutableImage is enabled. The latest is used by default.
+    #
+    # version:
+
+    # Optional: to use a custom OneAgent Docker image. Defaults to docker.io/dynatrace/oneagent in
+    # Kubernetes and registry.connect.redhat.com/dynatrace/oneagent in OpenShift.
+    #
+    image: ""
+
+    # Optional: disables automatic restarts of oneagent pods in case a new version is available. True
+    # by default.
+    #
+    # autoUpdate: true
+
+  classicFullStack:
+    # Enable classic oneagent monitoring
+    enabled: true
+
+    # Optional: node selector to control on which nodes the OneAgent will be deployed.
+    #
+    # nodeSelector: {}
+
+    # Optional: tolerations to include with the OneAgent DaemonSet.
+    # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+    tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+
+    # Optional: resource settings for OneAgent container. Consumption of the OneAgent heavily depends
+    # on the workload to monitor; please adjust values accordingly.
+    #
+    # resources:
+    #   requests:
+    #     cpu: 100m
+    #     memory: 512Mi
+    #   limits:
+    #     cpu: 300m
+    #     memory: 1.5Gi
+
+    # Optional: arguments to add to the OneAgent installer.
+    # Available options: https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
+    # Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
+    args:
+      - "--set-app-log-content-access=true"
+
+    # Optional: additional environment variables to add to the OneAgent Pods.
+    #
+    # env: []
+
+    # Optional: priority class to assign to the OneAgent Pods. By default no class is set.
+    # See more here: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+    #
+    # priorityClassName: priority-class
+
+    # Optional: DNS Policy for OneAgent pods. Defaults to ClusterFirstWithHostNet.
+    # See more: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+    #
+    # dnsPolicy: "ClusterFirstWithHostNet"
+
+    # Optional: name of the ServiceAccount to assign to the OneAgent Pods. Defaults to
+    # "dynatrace-oneagent"
+    #
+    # serviceAccountName: service-account-name
+
+    # Optional: labels are customer defined labels for OneAgent Pods to structure workloads as desired.
+    #
+    # labels:
+    #   custom: label
+
+    # Optional: when enabled the OneAgent Pods will run as unprivileged. Enabled by default.
+    #
+    # useUnprivilegedMode: true
+
+    # Optional: if enabled, the Operator will use the immutable image from the Dynatrace environment or from your custom
+    # registry, otherwise an installer image is used. Disabled by default.
+    #
+    # useImmutableImage: false
+
   # Enables and configures an ActiveGate instance that allows monitoring
   # of Kubernetes environments
   kubernetesMonitoring:
-    # Enable Kubernetes monitoring capability
+    # Enable Kubernetes monitoring functionality
     enabled: true
 
     # Amount of replicas of activegate pods
