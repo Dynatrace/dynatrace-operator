@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -162,9 +163,9 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 
 	flavor := volCtx["flavor"]
 	if flavor == "" {
-		flavor = "default"
+		flavor = dtclient.FlavorDefault
 	}
-	if flavor != "default" && flavor != "musl" {
+	if flavor != dtclient.FlavorDefault && flavor != dtclient.FlavorMUSL {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid flavor in request: %s", flavor))
 	}
 
@@ -305,7 +306,7 @@ func parseEndpoint(ep string) (string, string, error) {
 			return s[0], s[1], nil
 		}
 	}
-	return "", "", fmt.Errorf("Invalid endpoint: %v", ep)
+	return "", "", fmt.Errorf("invalid endpoint: %v", ep)
 }
 
 func logGRPC(log logr.Logger) grpc.UnaryServerInterceptor {
