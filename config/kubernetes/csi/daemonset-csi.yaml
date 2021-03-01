@@ -1,0 +1,100 @@
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: dynatrace-oneagent-csi-driver
+  namespace: dynatrace
+  labels:
+    dynatrace.com/operator: dynatrace
+spec:
+  selector:
+    matchLabels:
+      internal.oneagent.dynatrace.com/component: csi-driver
+      internal.oneagent.dynatrace.com/app: csi-driver
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-logs-container: driver
+      labels:
+        internal.oneagent.dynatrace.com/component: csi-driver
+        internal.oneagent.dynatrace.com/app: csi-driver
+    spec:
+      containers:
+        - name: driver
+          image: quay.io/dynatrace/dynatrace-operator:snapshot
+          command:
+            - csi-driver
+          args:
+            - --endpoint=unix://csi/csi.sock
+            - --node-id=$(KUBE_NODE_NAME)
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+            runAsUser: 0
+            seLinuxOptions:
+              level: "s0"
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+            - name: plugins-dir
+              mountPath: /var/lib/kubelet/plugins
+              mountPropagation: Bidirectional
+            - name: mountpoint-dir
+              mountPath: /var/lib/kubelet/pods
+              mountPropagation: Bidirectional
+        - name: registrar
+          image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.1.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - --csi-address=/csi/csi.sock
+            - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
+            - --health-port=9809
+          ports:
+            - containerPort: 9809
+              name: healthz
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+            - name: registration-dir
+              mountPath: /registration
+        - name: liveness-probe
+          image: k8s.gcr.io/sig-storage/livenessprobe:v2.2.0
+          args:
+            - --csi-address=/csi/csi.sock
+            - --health-port=9898
+          volumeMounts:
+            - mountPath: /csi
+              name: plugin-dir
+      serviceAccountName: dynatrace-oneagent-csi-driver
+      volumes:
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry/
+            type: Directory
+        - name: plugin-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
+            type: DirectoryOrCreate
+        - name: plugins-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins
+            type: Directory
+        - name: mountpoint-dir
+          hostPath:
+            path: /var/lib/kubelet/pods
+            type: DirectoryOrCreate

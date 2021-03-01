@@ -1,6 +1,10 @@
 package dtclient
 
-import "github.com/stretchr/testify/mock"
+import (
+	"io"
+
+	"github.com/stretchr/testify/mock"
+)
 
 // MockDynatraceClient implements a Dynatrace REST API Client mock
 type MockDynatraceClient struct {
@@ -30,6 +34,11 @@ func (o *MockDynatraceClient) GetAgentVersionForIP(ip string) (string, error) {
 func (o *MockDynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {
 	args := o.Called(os, installerType)
 	return args.String(0), args.Error(1)
+}
+
+func (o *MockDynatraceClient) GetLatestAgent(os, installerType, flavor, arch string) (io.ReadCloser, error) {
+	args := o.Called(os, installerType, flavor, arch)
+	return args.Get(0).(io.ReadCloser), args.Error(1)
 }
 
 func (o *MockDynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
