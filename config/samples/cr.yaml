@@ -27,7 +27,7 @@ spec:
   # trustedCAs: name-of-my-ca-configmap
 
   # Optional: Sets Network Zone for OneAgent and ActiveGate pods
-  # Make sure networkZones are enabled on your cluster before (see https://www.dynatrace.com/support/help/shortlink/network-zones-basics#activate-network-zones-)
+  # Make sure networkZones are enabled on your cluster before (see https://www.dynatrace.com/support/help/setup-and-configuration/network-zones/network-zones-basic-info/)
   #
   # networkZone: name-of-my-network-zone
 
