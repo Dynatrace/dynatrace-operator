@@ -1,7 +1,6 @@
 package routing
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -44,7 +43,7 @@ func TestBuildServiceNameForDNSEntryPoint(t *testing.T) {
 	actual := buildServiceHostName(testName, testFeature)
 	assert.NotEmpty(t, actual)
 
-	expected := fmt.Sprintf("$(TEST_NAME_TEST_FEATURE_SERVICE_SERVICE_HOST)")
+	expected := "$(TEST_NAME_TEST_FEATURE_SERVICE_SERVICE_HOST)"
 	assert.Equal(t, expected, actual)
 
 	testStringName := "this---test_string"
