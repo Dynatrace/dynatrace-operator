@@ -59,16 +59,17 @@ func addDNSEntryPoint(instance *dynatracev1alpha1.DynaKube) capability.StatefulS
 }
 
 func buildDNSEntryPoint(instance *dynatracev1alpha1.DynaKube) string {
-	return "https://" + buildServiceName(instance.Name, module) + "." + instance.Namespace + ":9999/communication"
+	return "https://" + buildServiceHostName(instance.Name, module) + ":9999/communication"
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
-	update, err = r.Reconciler.Reconcile()
+	update, err = r.createServiceIfNotExists()
 	if update || err != nil {
 		return update, errors.WithStack(err)
 	}
 
-	return r.createServiceIfNotExists()
+	update, err = r.Reconciler.Reconcile()
+	return update, errors.WithStack(err)
 }
 
 func (r *Reconciler) createServiceIfNotExists() (bool, error) {

@@ -1,10 +1,12 @@
 package routing
 
 import (
+	"fmt"
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"strings"
 )
 
 const (
@@ -33,4 +35,17 @@ func createService(instance *v1alpha1.DynaKube, feature string) corev1.Service {
 
 func buildServiceName(instanceName string, module string) string {
 	return instanceName + "-" + module + "-service"
+}
+
+// buildServiceHostName converts the name returned by buildServiceName
+// into the variable name which Kubernetes uses to reference the associated service.
+// For more information see: https://kubernetes.io/docs/concepts/services-networking/service/
+func buildServiceHostName(instanceName string, module string) string {
+	serviceName :=
+		strings.ReplaceAll(
+			strings.ToUpper(
+				buildServiceName(instanceName, module)),
+			"-", "_")
+
+	return fmt.Sprintf("$(%s_SERVICE_HOST)", serviceName)
 }
