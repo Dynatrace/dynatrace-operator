@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	testFeature = "test-module"
+	testFeature = "test-feature"
 	testName    = "test-name"
 )
 
@@ -37,4 +37,18 @@ func TestCreateService(t *testing.T) {
 		Port:       9999,
 		TargetPort: intstr.FromInt(9999),
 	})
+}
+
+func TestBuildServiceNameForDNSEntryPoint(t *testing.T) {
+	actual := buildServiceHostName(testName, testFeature)
+	assert.NotEmpty(t, actual)
+
+	expected := "$(TEST_NAME_TEST_FEATURE_SERVICE_SERVICE_HOST)"
+	assert.Equal(t, expected, actual)
+
+	testStringName := "this---test_string"
+	testStringFeature := "SHOULD--_--PaRsEcORrEcTlY"
+	expected = "$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_SERVICE_HOST)"
+	actual = buildServiceHostName(testStringName, testStringFeature)
+	assert.Equal(t, expected, actual)
 }

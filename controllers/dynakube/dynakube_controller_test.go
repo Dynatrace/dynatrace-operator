@@ -197,6 +197,10 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	_, err := r.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
+	// Reconcile twice since routing service is created before the stateful set
+	_, err = r.Reconcile(context.TODO(), request)
+	assert.NoError(t, err)
+
 	routingSts := &appsv1.StatefulSet{}
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
