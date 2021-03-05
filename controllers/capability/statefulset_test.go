@@ -139,7 +139,7 @@ func TestStatefulSet_Container(t *testing.T) {
 	assert.NotEmpty(t, container.Resources)
 	assert.Equal(t, corev1.PullAlways, container.ImagePullPolicy)
 	assert.NotEmpty(t, container.Env)
-	assert.NotEmpty(t, container.Args)
+	assert.Empty(t, container.Args)
 	assert.Empty(t, container.VolumeMounts)
 	assert.NotNil(t, container.ReadinessProbe)
 	assert.NotNil(t, container.LivenessProbe)
@@ -215,7 +215,7 @@ func TestStatefulSet_Env(t *testing.T) {
 			"", "", "", "", ""))
 
 		assert.Contains(t, envVars, corev1.EnvVar{
-			Name:  ProxyEnv,
+			Name:  DTInternalProxy,
 			Value: testValue,
 		})
 	})
@@ -227,40 +227,39 @@ func TestStatefulSet_Env(t *testing.T) {
 		assert.NotEmpty(t, envVars)
 
 		for _, envVar := range envVars {
-			if envVar.Name == ProxyEnv {
+			if envVar.Name == DTInternalProxy {
 				assert.Equal(t, ProxyKey, envVar.ValueFrom.SecretKeyRef.Key)
 				assert.Equal(t, corev1.LocalObjectReference{Name: testName}, envVar.ValueFrom.SecretKeyRef.LocalObjectReference)
 			}
 		}
 	})
-}
-
-func TestStatefulSet_Args(t *testing.T) {
-	instance := buildTestInstance()
-	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
-
-	t.Run(`with only default values`, func(t *testing.T) {
-		args := buildArgs(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", ""))
-		assert.Equal(t, []string{DTCapabilitiesArg, testKey}, args)
-	})
 	t.Run(`with networkzone`, func(t *testing.T) {
+		instance := buildTestInstance()
 		instance.Spec.NetworkZone = testName
-		args := buildArgs(NewStatefulSetProperties(instance, capabilityProperties,
+		capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
+		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", ""))
-		assert.Contains(t, args, `--networkzone="`+testName+`"`)
-	})
-	t.Run(`with proxy`, func(t *testing.T) {
-		instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
-		args := buildArgs(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", ""))
-		assert.Contains(t, args, ProxyArg)
+
+		assert.NotEmpty(t, envVars)
+
+		assert.Contains(t, envVars, corev1.EnvVar{
+			Name:  DTNetworkZone,
+			Value: testName,
+		})
 	})
 	t.Run(`with group`, func(t *testing.T) {
-		capabilityProperties.Group = testName
-		args := buildArgs(NewStatefulSetProperties(instance, capabilityProperties,
+		instance := buildTestInstance()
+		instance.Spec.RoutingSpec.Group = testValue
+		capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
+		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", ""))
-		assert.Contains(t, args, `--group="`+testName+`"`)
+
+		assert.NotEmpty(t, envVars)
+
+		assert.Contains(t, envVars, corev1.EnvVar{
+			Name:  DTGroup,
+			Value: testValue,
+		})
 	})
 }
 
