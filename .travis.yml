@@ -159,10 +159,9 @@ jobs:
 
     - stage: release
       name: Prepare CSV file
-      env: VERSION=$TAG
       if: tag =~ /^v.*/
       install: skip
-      script: make bundle
+      script: ./build/prepare_csv.sh
 
       ######################### Publish release artefacts #########################
 
