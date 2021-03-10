@@ -35,15 +35,6 @@ jobs:
         directories:
           - /usr/local/kubebuilder/bin
 
-    #    - stage: preparation
-    #      name: Verify OLM manifest
-    #      language: python
-    #      python: "3.7"
-    #      script:
-    #        - pip3 install operator-courier==2.1.7
-    #        - operator-courier verify ./deploy/olm/kubernetes
-    #        - operator-courier verify ./deploy/olm/openshift
-
     - stage: preparation
       name: Linting
       language: go
@@ -165,13 +156,14 @@ jobs:
       env: IMAGE=$OAO_IMAGE_QUAY
 
       ######################### Prepare CSV #########################
-      #
-      #    - stage: release
-      #      name: Prepare CSV file
-      #      if: tag =~ /^v.*/
-      #      install: skip
-      #      script: ./build/prepare_csv.sh
-      #
+
+    - stage: release
+      name: Prepare CSV file
+      env: VERSION=$TAG
+      if: tag =~ /^v.*/
+      install: skip
+      script: make bundle
+
       ######################### Publish release artefacts #########################
 
     - stage: release
