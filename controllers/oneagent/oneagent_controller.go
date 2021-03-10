@@ -11,6 +11,7 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -75,12 +76,9 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 		return false, err
 	}
 
-	upd := utils.SetUseImmutableImageStatus(r.logger, r.instance, r.fullStack, r.dtc)
-	if upd {
-		return true, nil
-	}
+	rec.Update(utils.SetUseImmutableImageStatus(r.instance, r.fullStack), 5*time.Minute, "UseImmutableImage changed")
 
-	upd, err = r.reconcileRollout(ctx, rec, r.dtc)
+	upd, err := r.reconcileRollout(ctx, rec, r.dtc)
 	if err != nil {
 		return false, err
 	} else if upd {
@@ -88,7 +86,6 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 		return true, nil
 	}
 
-	now := metav1.Now()
 	updInterval := defaultUpdateInterval
 	if val := os.Getenv(updateEnvVar); val != "" {
 		x, err := strconv.Atoi(val)
@@ -99,8 +96,8 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 		}
 	}
 
-	if r.instance.Status.OneAgent.LastUpdateProbeTimestamp == nil || r.instance.Status.OneAgent.LastUpdateProbeTimestamp.Add(updInterval).Before(now.Time) {
-		r.instance.Status.OneAgent.LastUpdateProbeTimestamp = &now
+	if rec.IsOutdated(r.instance.Status.OneAgent.LastUpdateProbeTimestamp, updInterval) {
+		r.instance.Status.OneAgent.LastUpdateProbeTimestamp = rec.Now.DeepCopy()
 		rec.Update(true, 5*time.Minute, "updated last update time stamp")
 
 		upd, err = r.reconcileInstanceStatuses(ctx, r.logger, r.instance, r.dtc)
@@ -108,7 +105,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 			return
 		}
 
-		if r.instance.Spec.OneAgent.AutoUpdate != nil && !*r.instance.Spec.OneAgent.AutoUpdate {
+		if !r.instance.ShouldAutoUpdateOneAgent() {
 			r.logger.Info("Automatic oneagent update is disabled")
 			return
 		}
@@ -241,16 +238,19 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{MatchLabels: selectorLabels},
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{Labels: mergedLabels},
-				Spec:       podSpec,
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: mergedLabels,
+					Annotations: map[string]string{
+						capability.AnnotationImageVersion: instance.Status.OneAgent.ImageVersion,
+					},
+				},
+				Spec: podSpec,
 			},
 		},
 	}
 
 	if unprivileged {
-		ds.Spec.Template.ObjectMeta.Annotations = map[string]string{
-			"container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent": "unconfined",
-		}
+		ds.Spec.Template.ObjectMeta.Annotations["container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"] = "unconfined"
 	}
 
 	dsHash, err := generateDaemonSetHash(ds)
@@ -436,12 +436,7 @@ func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *dynatracev1alpha1
 		return nil
 	}
 
-	i, err := utils.BuildOneAgentImage(instance, instance.Spec.OneAgent.Version)
-	if err != nil {
-		return err
-	}
-	p.Containers[0].Image = i
-
+	p.Containers[0].Image = instance.ImmutableOneAgentImage()
 	return nil
 }
 

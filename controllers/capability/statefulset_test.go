@@ -6,7 +6,6 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -61,9 +60,9 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 		map[string]string{keyFeature: testFeature}), sts.Spec.Template.Labels)
 	assert.Equal(t, sts.Labels, sts.Spec.Template.Labels)
 	assert.NotEqual(t, corev1.PodSpec{}, sts.Spec.Template.Spec)
-	assert.Contains(t, sts.Annotations, annotationTemplateHash)
+	assert.Contains(t, sts.Annotations, AnnotationTemplateHash)
 
-	storedHash := sts.Annotations[annotationTemplateHash]
+	storedHash := sts.Annotations[AnnotationTemplateHash]
 	sts.Annotations = map[string]string{}
 	hash, err := generateStatefulSetHash(sts)
 	assert.NoError(t, err)
@@ -73,9 +72,8 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 		sts, _ := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties,
 			"", testValue, "", "", ""))
 		assert.Equal(t, map[string]string{
-			annotationImageHash:       instance.Status.ActiveGate.ImageHash,
-			annotationImageVersion:    instance.Status.ActiveGate.ImageVersion,
-			annotationCustomPropsHash: testValue,
+			AnnotationImageVersion:    instance.Status.ActiveGate.ImageVersion,
+			AnnotationCustomPropsHash: testValue,
 		}, sts.Spec.Template.Annotations)
 	})
 }
@@ -135,7 +133,7 @@ func TestStatefulSet_Container(t *testing.T) {
 		"", "", "", "", ""))
 
 	assert.Equal(t, dynatracev1alpha1.OperatorName, container.Name)
-	assert.Equal(t, utils.BuildActiveGateImage(instance), container.Image)
+	assert.Equal(t, instance.ActiveGateImage(), container.Image)
 	assert.NotEmpty(t, container.Resources)
 	assert.Equal(t, corev1.PullAlways, container.ImagePullPolicy)
 	assert.NotEmpty(t, container.Env)

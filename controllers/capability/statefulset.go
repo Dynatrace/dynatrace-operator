@@ -9,7 +9,6 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -30,10 +29,9 @@ const (
 	arm64 = "arm64"
 	linux = "linux"
 
-	annotationTemplateHash    = "internal.operator.dynatrace.com/template-hash"
-	annotationImageHash       = "internal.operator.dynatrace.com/image-hash"
-	annotationImageVersion    = "internal.operator.dynatrace.com/image-version"
-	annotationCustomPropsHash = "internal.operator.dynatrace.com/custom-properties-hash"
+	AnnotationTemplateHash    = "internal.operator.dynatrace.com/template-hash"
+	AnnotationImageVersion    = "internal.operator.dynatrace.com/image-version"
+	AnnotationCustomPropsHash = "internal.operator.dynatrace.com/custom-properties-hash"
 
 	DTCapabilities    = "DT_CAPABILITIES"
 	DTIdSeedNamespace = "DT_ID_SEED_NAMESPACE"
@@ -98,9 +96,8 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 						BuildLabels(stsProperties.DynaKube, stsProperties.CapabilityProperties),
 						map[string]string{keyFeature: stsProperties.feature}),
 					Annotations: map[string]string{
-						annotationImageHash:       stsProperties.Status.ActiveGate.ImageHash,
-						annotationImageVersion:    stsProperties.Status.ActiveGate.ImageVersion,
-						annotationCustomPropsHash: stsProperties.customPropertiesHash,
+						AnnotationImageVersion:    stsProperties.Status.ActiveGate.ImageVersion,
+						AnnotationCustomPropsHash: stsProperties.customPropertiesHash,
 					},
 				},
 				Spec: buildTemplateSpec(stsProperties),
@@ -116,7 +113,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 		return nil, errors.WithStack(err)
 	}
 
-	sts.ObjectMeta.Annotations[annotationTemplateHash] = hash
+	sts.ObjectMeta.Annotations[AnnotationTemplateHash] = hash
 	return sts, nil
 }
 
@@ -143,7 +140,7 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 func buildContainer(stsProperties *statefulSetProperties) corev1.Container {
 	return corev1.Container{
 		Name:            dynatracev1alpha1.OperatorName,
-		Image:           utils.BuildActiveGateImage(stsProperties.DynaKube),
+		Image:           stsProperties.DynaKube.ActiveGateImage(),
 		Resources:       BuildResources(stsProperties.DynaKube),
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             buildEnvs(stsProperties),
@@ -309,7 +306,7 @@ func HasStatefulSetChanged(a *appsv1.StatefulSet, b *appsv1.StatefulSet) bool {
 
 func GetTemplateHash(a metav1.Object) string {
 	if annotations := a.GetAnnotations(); annotations != nil {
-		return annotations[annotationTemplateHash]
+		return annotations[AnnotationTemplateHash]
 	}
 	return ""
 }

@@ -151,7 +151,7 @@ func newTestEnvironment() (*ControllerTestEnvironment, error) {
 		Client:             kubernetesClient,
 		CommunicationHosts: communicationHosts,
 	}
-	environment.Reconciler = dynakube.NewDynaKubeReconciler(kubernetesClient, kubernetesClient, scheme.Scheme, mockDynatraceClientFunc(&environment.CommunicationHosts), zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)), cfg, false)
+	environment.Reconciler = dynakube.NewDynaKubeReconciler(kubernetesClient, kubernetesClient, scheme.Scheme, mockDynatraceClientFunc(&environment.CommunicationHosts), zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)), cfg)
 
 	return environment, nil
 }

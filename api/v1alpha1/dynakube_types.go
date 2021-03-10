@@ -289,15 +289,24 @@ type DynaKubeStatus struct {
 	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
 }
 
-type ActiveGateStatus struct {
+type ImageStatus struct {
 	// ImageHash contains the last image hash seen.
 	ImageHash string `json:"imageHash,omitempty"`
 
 	// ImageVersion contains the version from the last image seen.
 	ImageVersion string `json:"imageVersion,omitempty"`
+
+	// LastImageProbeTimestamp defines the last timestamp when the querying for image updates have been done.
+	LastImageProbeTimestamp *metav1.Time `json:"lastImageProbeTimestamp,omitempty"`
+}
+
+type ActiveGateStatus struct {
+	ImageStatus
 }
 
 type OneAgentStatus struct {
+	ImageStatus
+
 	// UseImmutableImage is set when an immutable image is currently in use
 	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
 
