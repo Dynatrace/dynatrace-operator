@@ -5,7 +5,7 @@ metadata:
     kubernetes.io/description: "dynatrace-oneagent-privileged allows access to all privileged and host features and the ability to run as any user, any group, any fsGroup, and with any SELinux context. This is a copy of privileged scc."
   name: dynatrace-dynakube-oneagent-privileged
 allowHostDirVolumePlugin: true
-allowHostIPC: true
+allowHostIPC: false
 allowHostNetwork: true
 allowHostPID: true
 allowHostPorts: true

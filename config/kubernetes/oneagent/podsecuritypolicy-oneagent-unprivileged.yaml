@@ -29,7 +29,7 @@ spec:
   volumes:
     - "*"
   hostNetwork: true
-  hostIPC: true
+  hostIPC: false
   hostPID: true
   hostPorts:
     - min: 0
