@@ -5,6 +5,8 @@ package dynakubetests
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/e2e"
 	"github.com/stretchr/testify/assert"
@@ -12,7 +14,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 func TestImmutableImage(t *testing.T) {

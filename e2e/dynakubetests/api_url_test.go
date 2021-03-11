@@ -5,16 +5,16 @@ package dynakubetests
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"os"
+	"testing"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/url"
-	"os"
-	"testing"
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
 

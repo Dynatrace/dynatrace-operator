@@ -3,10 +3,11 @@
 package dynakubetests
 
 import (
-	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestSkipCertCheck(t *testing.T) {

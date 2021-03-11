@@ -4,12 +4,13 @@ package e2e
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
-	"time"
 )
 
 type PhaseWait interface {

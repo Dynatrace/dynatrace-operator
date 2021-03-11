@@ -5,10 +5,11 @@ package e2e
 import (
 	"context"
 	"fmt"
+	"os"
+
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
