@@ -2,6 +2,8 @@
 VERSION ?= 0.0.1
 # Default bundle image tag
 BUNDLE_IMG ?= controller-bundle:$(VERSION)
+# Default platform for bundle
+PLATFORM="kubernetes"
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -147,10 +149,10 @@ bundle: manifests kustomize
 	cd config/olm && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(IMG)
 	$(KUSTOMIZE) build config/olm | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
-	rm -rf ./config/olm/kubernetes/$(VERSION)
-	mkdir -p ./config/olm/kubernetes/$(VERSION)
-	mv ./bundle ./config/olm/kubernetes/$(VERSION)
-	mv ./bundle.Dockerfile ./config/olm/kubernetes/$(VERSION)
+	rm -rf ./config/olm/$(PLATFORM)/$(VERSION)
+	mkdir -p ./config/olm/$(PLATFORM)/$(VERSION)
+	mv ./bundle ./config/olm/$(PLATFORM)/$(VERSION)
+	mv ./bundle.Dockerfile ./config/olm/$(PLATFORM)/$(VERSION)
 
 # Build the bundle image.
 .PHONY: bundle-build
