@@ -14,7 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Fails since Operator does not create OneAgents when certs are invalid
+// Fails since Operator does not create OneAgent pods when certs are invalid
 func TestTrustedCAs(t *testing.T) {
 	apiURL, clt := prepareDefaultEnvironment(t)
 	oneAgent := createMinimumViableOneAgent(apiURL)
