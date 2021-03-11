@@ -11,15 +11,13 @@ There are automatic builds from the master branch. The latest development build 
 
 #### Kubernetes
 ```sh
-$ kubectl create namespace dynatrace
-$ kubectl apply -k github.com/Dynatrace/dynatrace-operator/deploy/manifest
+$ make deploy
 ```
 
 #### OpenShift
 
 ```sh
-$ oc adm new-project --node-selector="" dynatrace
-$ oc apply -k github.com/Dynatrace/dynatrace-operator/deploy/manifest
+$ make deploy-ocp
 ```
 
 #### Tests
@@ -29,17 +27,3 @@ The unit tests can be executed as follows:
 ```
 $ go test ./...
 ```
-
-#### Build and push your image
-
-Replace `REGISTRY` with your Registry\`s URN:
-```
-$ cd $GOPATH/src/github.com/Dynatrace/dynatrace-operator
-$ operator-sdk build REGISTRY/dynatrace-operator
-$ docker push REGISTRY/dynatrace-operator
-```
-
-#### Deploy operator
-
-Change the `image` field in `./deploy/manifest/deployment-operator.yaml` to the URN of your image.
-Apart from that follow the instructions in the usage section above.
