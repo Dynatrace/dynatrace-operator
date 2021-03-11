@@ -16,9 +16,7 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"os"
-	"runtime"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
@@ -73,7 +71,7 @@ func main() {
 
 	ctrl.SetLogger(logger.NewDTLogger())
 
-	printVersion()
+	version.LogVersion()
 
 	subcmd := "operator"
 	if args := pflag.Args(); len(args) > 0 {
@@ -113,10 +111,4 @@ func main() {
 		log.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-}
-
-func printVersion() {
-	log.Info(fmt.Sprintf("Operator Version: %s", version.Version))
-	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
-	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
 }

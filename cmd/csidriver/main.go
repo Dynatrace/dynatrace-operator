@@ -18,9 +18,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
-	"runtime"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
@@ -44,7 +42,7 @@ func main() {
 	flag.Parse()
 	ctrl.SetLogger(log)
 
-	printVersion()
+	version.LogVersion()
 
 	defaultUmask := unix.Umask(0002)
 	defer unix.Umask(defaultUmask)
@@ -79,10 +77,4 @@ func main() {
 		log.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-}
-
-func printVersion() {
-	log.Info(fmt.Sprintf("Operator Version: %s", version.Version))
-	log.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
-	log.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
 }
