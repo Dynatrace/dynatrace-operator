@@ -49,10 +49,7 @@ func (r *ReconcileOneAgent) reconcileVersionInstaller(ctx context.Context, logge
 		return updateCR, err
 	}
 
-	var waitSecs uint16 = 300
-	if fs.WaitReadySeconds != nil {
-		waitSecs = *fs.WaitReadySeconds
-	}
+	waitSecs := getWaitReadySeconds(fs)
 
 	if len(podsToDelete) > 0 {
 		if instance.Status.SetPhase(dynatracev1alpha1.Deploying) {
@@ -75,10 +72,7 @@ func (r *ReconcileOneAgent) reconcileVersionInstaller(ctx context.Context, logge
 
 func (r *ReconcileOneAgent) reconcileVersionImmutableImage(ctx context.Context, instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, dtc dtclient.Client) (bool, error) {
 	updateCR := false
-	var waitSecs uint16 = 300
-	if fs.WaitReadySeconds != nil {
-		waitSecs = *fs.WaitReadySeconds
-	}
+	waitSecs := getWaitReadySeconds(fs)
 
 	if instance.Spec.OneAgent.AutoUpdate == nil || *instance.Spec.OneAgent.AutoUpdate {
 		r.logger.Info("checking for outdated pods")
@@ -107,6 +101,13 @@ func (r *ReconcileOneAgent) reconcileVersionImmutableImage(ctx context.Context, 
 		r.logger.Info("Skipping updating pods because of configuration", "disableOneAgentUpdate", true)
 	}
 	return updateCR, nil
+}
+
+func getWaitReadySeconds(fs *dynatracev1alpha1.FullStackSpec) uint16 {
+	if fs.WaitReadySeconds != nil {
+		return *fs.WaitReadySeconds
+	}
+	return 300
 }
 
 // findOutdatedPodsInstaller determines if a pod needs to be restarted in order to get the desired agent version
