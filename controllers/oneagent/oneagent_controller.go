@@ -212,11 +212,6 @@ func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1al
 	return podList.Items, listOps, err
 }
 
-func (r *ReconcileOneAgent) updateCR(ctx context.Context, instance *dynatracev1alpha1.DynaKube) error {
-	instance.Status.UpdatedTimestamp = metav1.Now()
-	return r.client.Status().Update(ctx, instance)
-}
-
 func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, clusterID string, feature string) (*appsv1.DaemonSet, error) {
 	unprivileged := true
 	if ptr := fs.UseUnprivilegedMode; ptr != nil {

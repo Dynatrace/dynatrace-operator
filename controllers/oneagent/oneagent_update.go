@@ -52,15 +52,6 @@ func (r *ReconcileOneAgent) reconcileVersionInstaller(ctx context.Context, logge
 		waitSecs = *fs.WaitReadySeconds
 	}
 
-	if len(podsToDelete) > 0 {
-		if instance.Status.SetPhase(dynatracev1alpha1.Deploying) {
-			err := r.updateCR(ctx, instance)
-			if err != nil {
-				logger.Error(err, fmt.Sprintf("failed to set phase to %s", dynatracev1alpha1.Deploying))
-			}
-		}
-	}
-
 	// restart daemonset
 	err = r.deletePods(logger, podsToDelete, buildLabels(instance.GetName(), r.feature), waitSecs)
 	if err != nil {
