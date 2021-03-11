@@ -141,7 +141,7 @@ func TestReconcile(t *testing.T) {
 
 		found := false
 		for _, env := range newStatefulSet.Spec.Template.Spec.Containers[0].Env {
-			if env.Name == capability.ProxyEnv {
+			if env.Name == capability.DTInternalProxy {
 				found = true
 				assert.Equal(t, testValue, env.Value)
 			}

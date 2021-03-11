@@ -38,11 +38,10 @@ const (
 	DTCapabilities    = "DT_CAPABILITIES"
 	DTIdSeedNamespace = "DT_ID_SEED_NAMESPACE"
 	DTIdSeedClusterId = "DT_ID_SEED_K8S_CLUSTER_ID"
+	DTNetworkZone     = "DT_NETWORK_ZONE"
+	DTGroup           = "DT_GROUP"
+	DTInternalProxy   = "DT_INTERNAL_PROXY"
 
-	DTCapabilitiesArg = "--enable=$(DT_CAPABILITIES)"
-
-	ProxyArg = `PROXY="${ACTIVE_GATE_PROXY}"`
-	ProxyEnv = "ACTIVE_GATE_PROXY"
 	ProxyKey = "ProxyKey"
 
 	keyFeature = "feature"
@@ -148,7 +147,6 @@ func buildContainer(stsProperties *statefulSetProperties) corev1.Container {
 		Resources:       BuildResources(stsProperties.DynaKube),
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             buildEnvs(stsProperties),
-		Args:            buildArgs(stsProperties),
 		VolumeMounts:    buildVolumeMounts(stsProperties),
 		ReadinessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
@@ -229,6 +227,12 @@ func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
 	if !isProxyNilOrEmpty(stsProperties.Spec.Proxy) {
 		envs = append(envs, buildProxyEnv(stsProperties.Spec.Proxy))
 	}
+	if stsProperties.Group != "" {
+		envs = append(envs, corev1.EnvVar{Name: DTGroup, Value: stsProperties.Group})
+	}
+	if stsProperties.Spec.NetworkZone != "" {
+		envs = append(envs, corev1.EnvVar{Name: DTNetworkZone, Value: stsProperties.Spec.NetworkZone})
+	}
 
 	return envs
 }
@@ -236,7 +240,7 @@ func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
 func buildProxyEnv(proxy *dynatracev1alpha1.DynaKubeProxy) corev1.EnvVar {
 	if proxy.ValueFrom != "" {
 		return corev1.EnvVar{
-			Name: ProxyEnv,
+			Name: DTInternalProxy,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: proxy.ValueFrom},
@@ -246,30 +250,10 @@ func buildProxyEnv(proxy *dynatracev1alpha1.DynaKubeProxy) corev1.EnvVar {
 		}
 	} else {
 		return corev1.EnvVar{
-			Name:  ProxyEnv,
+			Name:  DTInternalProxy,
 			Value: proxy.Value,
 		}
 	}
-}
-
-func buildArgs(stsProperties *statefulSetProperties) []string {
-	group := stsProperties.Group
-	args := []string{
-		DTCapabilitiesArg,
-	}
-	args = append(args, stsProperties.Args...)
-
-	if stsProperties.Spec.NetworkZone != "" {
-		args = append(args, fmt.Sprintf(`--networkzone="%s"`, stsProperties.Spec.NetworkZone))
-	}
-	if !isProxyNilOrEmpty(stsProperties.Spec.Proxy) {
-		args = append(args, ProxyArg)
-	}
-	if group != "" {
-		args = append(args, fmt.Sprintf(`--group="%s"`, group))
-	}
-
-	return args
 }
 
 func determineServiceAccountName(stsProperties *statefulSetProperties) string {

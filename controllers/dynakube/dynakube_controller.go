@@ -310,10 +310,17 @@ func (r *ReconcileDynaKube) reconcileRouting(rec *utils.Reconciliation, dtc dtcl
 func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {
 	var secret corev1.Secret
 	err := r.client.Get(ctx, client.ObjectKey{Name: utils.GetTokensName(instance), Namespace: instance.Namespace}, &secret)
-	return &secret, err
+	return &secret, errors.WithStack(err)
 }
 
 func (r *ReconcileDynaKube) updateCR(ctx context.Context, instance *dynatracev1alpha1.DynaKube) error {
 	instance.Status.UpdatedTimestamp = metav1.Now()
-	return r.client.Status().Update(ctx, instance)
+	err := r.client.Status().Update(ctx, instance)
+	if err != nil && k8serrors.IsConflict(err) {
+		// OneAgent reconciler already updates instance which leads to conflict here
+		// Only print info in that event
+		r.logger.Info("could not update instance due to conflict")
+		return nil
+	}
+	return errors.WithStack(err)
 }
