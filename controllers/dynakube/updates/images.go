@@ -53,14 +53,14 @@ func ReconcileImageVersions(
 	dockerCfg := dtversion.DockerConfig{Auths: auths, SkipCertCheck: dk.Spec.SkipCertCheck}
 
 	if needsActiveGateUpdate {
-		if err := updateImageVersion(rec, dk.ActiveGateImage(), &dk.Status.ActiveGate.ImageStatus, &dockerCfg, verProvider); err != nil {
-			rec.Log.Error(err, "Failed to query for ActiveGate image version")
+		if err := updateImageVersion(rec, dk.ActiveGateImage(), &dk.Status.ActiveGate.ImageStatus, &dockerCfg, verProvider, true); err != nil {
+			rec.Log.Error(err, "Failed to update ActiveGate image version")
 		}
 	}
 
 	if needsOneAgentUpdate {
-		if err := updateImageVersion(rec, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.ImageStatus, &dockerCfg, verProvider); err != nil {
-			rec.Log.Error(err, "Failed to query for OneAgent image version")
+		if err := updateImageVersion(rec, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.ImageStatus, &dockerCfg, verProvider, false); err != nil {
+			rec.Log.Error(err, "Failed to update OneAgent image version")
 		}
 	}
 
@@ -73,6 +73,7 @@ func updateImageVersion(
 	target *dynatracev1alpha1.ImageStatus,
 	dockerCfg *dtversion.DockerConfig,
 	verProvider VersionProviderCallback,
+	allowDowngrades bool,
 ) error {
 	target.LastImageProbeTimestamp = rec.Now.DeepCopy()
 
@@ -83,6 +84,22 @@ func updateImageVersion(
 
 	if target.ImageVersion == ver.Version {
 		return nil
+	}
+
+	if !allowDowngrades && target.ImageVersion != "" {
+		oldVer, err := dtversion.ExtractVersion(target.ImageVersion)
+		if err != nil {
+			return errors.WithMessage(err, "failed to parse old image version")
+		}
+
+		newVer, err := dtversion.ExtractVersion(ver.Version)
+		if err != nil {
+			return errors.WithMessage(err, "failed to parse new image version")
+		}
+
+		if dtversion.CompareVersionInfo(oldVer, newVer) < 0 {
+			return errors.New("trying to downgrade")
+		}
 	}
 
 	rec.Log.Info("Update found",
