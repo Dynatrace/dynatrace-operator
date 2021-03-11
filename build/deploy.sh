@@ -2,14 +2,14 @@
 
 set -eu
 
-if [[ -z "$TRAVIS_TAG" ]]; then
-  version="snapshot-$(echo "$TRAVIS_BRANCH" | sed 's#[^a-zA-Z0-9_-]#-#g')"
-else
-  version="${TRAVIS_TAG}"
-fi
+build_date="$(date -u --rfc-3339=seconds)"
+go_build_args=(
+  "-ldflags=-X 'github.com/Dynatrace/dynatrace-operator/version.Version=${TAG}' -X 'github.com/Dynatrace/dynatrace-operator/version.Commit=${COMMIT}' -X 'github.com/Dynatrace/dynatrace-operator/version.BuildDate=${build_date}'"
+  "-tags" "containers_image_storage_stub"
+)
 
-go build -ldflags="-X 'github.com/Dynatrace/dynatrace-operator/version.Version=${version}'" -tags containers_image_storage_stub -o ./build/_output/bin/dynatrace-operator ./cmd/operator/
-go build -ldflags="-X 'github.com/Dynatrace/dynatrace-operator/version.Version=${version}'" -tags containers_image_storage_stub -o ./build/_output/bin/csi-driver ./cmd/csidriver
+go build "${go_build_args[@]}" -o ./build/_output/bin/dynatrace-operator ./cmd/operator/
+go build "${go_build_args[@]}" -o ./build/_output/bin/csi-driver ./cmd/csidriver
 
 if [[ "${GCR:-}" == "true" ]]; then
   echo "$GCLOUD_SERVICE_KEY" | base64 -d | docker login -u _json_key --password-stdin https://gcr.io
