@@ -301,11 +301,11 @@ type ImageStatus struct {
 }
 
 type ActiveGateStatus struct {
-	ImageStatus
+	ImageStatus `json:",inline"`
 }
 
 type OneAgentStatus struct {
-	ImageStatus
+	ImageStatus `json:",inline"`
 
 	// UseImmutableImage is set when an immutable image is currently in use
 	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
