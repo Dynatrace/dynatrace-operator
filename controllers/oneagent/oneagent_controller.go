@@ -347,7 +347,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 		}},
 		HostNetwork:        true,
 		HostPID:            true,
-		HostIPC:            true,
+		HostIPC:            false,
 		NodeSelector:       fs.NodeSelector,
 		PriorityClassName:  fs.PriorityClassName,
 		ServiceAccountName: sa,
