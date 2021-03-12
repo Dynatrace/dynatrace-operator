@@ -52,29 +52,46 @@ func deployKustomize() error {
 }
 
 func deployKustomizeKubernetes() error {
-	workingDir, err := os.Getwd()
+	pathToKustomize, err := getPathToKustomize()
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	workingDir = workingDir[:(strings.LastIndex(workingDir, "dynatrace-operator") + len("dynatrace-operator"))]
-
-	pathToKustomize := fmt.Sprintf("%s/config/kubernetes/", workingDir)
-	log.Info(fmt.Sprintf("assuming 'kustomization.yaml' to be in '%s'", pathToKustomize))
-	if _, err := os.Stat(fmt.Sprintf("%skustomization.yaml", pathToKustomize)); err != nil {
-		log.Error(err, "'kustomization.yaml' not found in path", "path", pathToKustomize)
+	err = executeApply(pathToKustomize)
+	if err != nil {
 		return errors.WithStack(err)
 	}
 
+	return nil
+}
+
+func executeApply(pathToKustomize string) error {
 	cmd := exec.Command("kubectl", "apply", "-k", pathToKustomize)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err = cmd.Run()
+	err := cmd.Run()
 	if err != nil {
 		outputData, err := cmd.Output()
 		log.Error(err, "deployment failed", "output", string(outputData))
 	}
 	return errors.WithStack(err)
+}
+
+func getPathToKustomize() (string, error) {
+	workingDir, err := os.Getwd()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	workingDir = workingDir[:(strings.LastIndex(workingDir, "dynatrace-operator") + len("dynatrace-operator"))]
+	pathToKustomize := fmt.Sprintf("%s/config/kubernetes/", workingDir)
+	log.Info(fmt.Sprintf("assuming 'kustomization.yaml' to be in '%s'", pathToKustomize))
+	if _, err := os.Stat(fmt.Sprintf("%skustomization.yaml", pathToKustomize)); err != nil {
+		log.Error(err, "'kustomization.yaml' not found in path", "path", pathToKustomize)
+		return "", errors.WithStack(err)
+	}
+
+	return pathToKustomize, nil
 }
 
 func deleteNamespace(clt client.Client, namespace string) error {
