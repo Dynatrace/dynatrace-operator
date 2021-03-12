@@ -6,11 +6,17 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+)
+
+const (
+	testNamespace = "test-namespace"
 )
 
 func TestBuildLabels(t *testing.T) {
@@ -63,15 +69,15 @@ func TestHasSpecChanged(t *testing.T) {
 	runTest := func(msg string, exp bool, mod func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube)) {
 		t.Run(msg, func(t *testing.T) {
 			key := metav1.ObjectMeta{Name: "my-oneagent", Namespace: "my-namespace"}
-			old := dynatracev1alpha1.DynaKube{ObjectMeta: key}
-			new := dynatracev1alpha1.DynaKube{ObjectMeta: key}
+			oldInstance := dynatracev1alpha1.DynaKube{ObjectMeta: key}
+			newInstance := dynatracev1alpha1.DynaKube{ObjectMeta: key}
 
-			mod(&old, &new)
+			mod(&oldInstance, &newInstance)
 
-			ds1, err := newDaemonSetForCR(consoleLogger, &old, &old.Spec.ClassicFullStack, "classic", "cluster1")
+			ds1, err := newDaemonSetForCR(consoleLogger, &oldInstance, &oldInstance.Spec.ClassicFullStack, "classic", "cluster1")
 			assert.NoError(t, err)
 
-			ds2, err := newDaemonSetForCR(consoleLogger, &new, &new.Spec.ClassicFullStack, "classic", "cluster1")
+			ds2, err := newDaemonSetForCR(consoleLogger, &newInstance, &newInstance.Spec.ClassicFullStack, "classic", "cluster1")
 			assert.NoError(t, err)
 
 			assert.NotEmpty(t, ds1.Annotations[annotationTemplateHash])
@@ -180,6 +186,71 @@ func TestGetPodsToRestart(t *testing.T) {
 	assert.Lenf(t, doomed, 1, "list of pods to restart")
 	assert.Equalf(t, doomed[0], pods[1], "list of pods to restart")
 	assert.Equal(t, nil, err)
+}
+
+func TestWaitPodReadyState(t *testing.T) {
+	t.Run(`waitPodReadyState waits for pod to be ready`, func(t *testing.T) {
+		labels := map[string]string{
+			testKey: testValue,
+		}
+		pod1 := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+				Labels:    labels,
+			},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+			}}
+		pod2 := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName + "-2",
+				Namespace: testNamespace,
+				Labels:    labels,
+			},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+			}}
+
+		waitSecs := uint16(1)
+		//clt := fake.NewFakeClientWithScheme(scheme.Scheme, &pod1, &pod2)
+		clt := fake.NewClientBuilder().
+			WithScheme(scheme.Scheme).
+			WithObjects(&pod1, &pod2).
+			Build()
+
+		r := &ReconcileOneAgent{
+			client: clt,
+		}
+		err := r.waitPodReadyState(pod1, labels, waitSecs)
+		assert.NoError(t, err)
+	})
+	t.Run(`waitPodReadyState returns error if pod does not become ready`, func(t *testing.T) {
+		labels := map[string]string{
+			testKey: testValue,
+		}
+		pod1 := corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+				Labels:    labels,
+			},
+			Status: corev1.PodStatus{
+				Phase: corev1.PodRunning,
+			}}
+		waitSecs := uint16(1)
+
+		clt := fake.NewClientBuilder().
+			WithScheme(scheme.Scheme).
+			WithObjects(&pod1).
+			Build()
+
+		r := &ReconcileOneAgent{
+			client: clt,
+		}
+		err := r.waitPodReadyState(pod1, labels, waitSecs)
+		assert.Error(t, err)
+	})
 }
 
 func newOneAgent() *dynatracev1alpha1.DynaKube {
