@@ -20,10 +20,8 @@ import (
 
 const (
 	TokenSecretName = "test-token-secret"
-	keyUseOpenshift = "DYNATRACE_USE_OPENSHIFT"
 	keyAPIToken     = "DYNATRACE_API_TOKEN"
 	keyPAASToken    = "DYNATRACE_PAAS_TOKEN"
-	envValueTrue    = "true"
 	deleteDelay     = 10 * time.Second
 )
 
@@ -49,14 +47,8 @@ func PrepareEnvironment(client client.Client, namespace string) error {
 }
 
 func deployKustomize() error {
-	useOpenshift := os.Getenv(keyUseOpenshift)
-	if useOpenshift == envValueTrue {
-		log.Info("deploying to Openshift")
-		return errors.WithStack(deployKustomizeOpenshift())
-	} else {
-		log.Info("deploying to Kubernetes")
-		return errors.WithStack(deployKustomizeKubernetes())
-	}
+	log.Info("deploying to Kubernetes")
+	return errors.WithStack(deployKustomizeKubernetes())
 }
 
 func deployKustomizeKubernetes() error {
@@ -69,6 +61,10 @@ func deployKustomizeKubernetes() error {
 
 	pathToKustomize := fmt.Sprintf("%s/config/kubernetes/", workingDir)
 	log.Info(fmt.Sprintf("assuming 'kustomization.yaml' to be in '%s'", pathToKustomize))
+	if _, err := os.Stat(fmt.Sprintf("%skustomization.yaml", pathToKustomize)); err != nil {
+		log.Error(err, "'kustomization.yaml' not found in path", "path", pathToKustomize)
+		return errors.WithStack(err)
+	}
 
 	cmd := exec.Command("kubectl", "apply", "-k", pathToKustomize)
 	cmd.Stdout = os.Stdout
@@ -79,10 +75,6 @@ func deployKustomizeKubernetes() error {
 		log.Error(err, "deployment failed", "output", string(outputData))
 	}
 	return errors.WithStack(err)
-}
-
-func deployKustomizeOpenshift() error {
-	return errors.New("not implemented")
 }
 
 func deleteNamespace(clt client.Client, namespace string) error {

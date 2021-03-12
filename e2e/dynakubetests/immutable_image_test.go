@@ -46,8 +46,7 @@ func TestImmutableImage(t *testing.T) {
 		err = clt.Get(context.TODO(), client.ObjectKey{Name: buildPullSecretName(), Namespace: namespace}, &pullSecret)
 		assert.NoError(t, err)
 	})
-	// Should fail for now since pull secret is always created
-	t.Run(`no pull secret exists if image is set`, func(t *testing.T) {
+	t.Run(`no pull secret exists if customPullSecret is set`, func(t *testing.T) {
 		apiURL, clt := prepareDefaultEnvironment(t)
 
 		instance := dynatracev1alpha1.DynaKube{
@@ -56,8 +55,9 @@ func TestImmutableImage(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynatracev1alpha1.DynaKubeSpec{
-				APIURL: apiURL,
-				Tokens: e2e.TokenSecretName,
+				APIURL:           apiURL,
+				Tokens:           e2e.TokenSecretName,
+				CustomPullSecret: testName,
 				OneAgent: dynatracev1alpha1.OneAgentSpec{
 					Image: testImage,
 				},

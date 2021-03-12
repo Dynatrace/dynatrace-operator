@@ -28,6 +28,9 @@ func TestTrustedCAs(t *testing.T) {
 	}
 	oneAgent.Spec.TrustedCAs = testName
 
+	// prevent creation of pull secret, which would fail due to the test cert being invalid
+	oneAgent.Spec.CustomPullSecret = testName
+
 	err := clt.Create(context.TODO(), &trustedCAs)
 	require.NoError(t, err)
 
