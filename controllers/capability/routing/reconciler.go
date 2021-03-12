@@ -22,6 +22,7 @@ const (
 	module            = "msgrouting"
 	StatefulSetSuffix = "-" + module
 	capabilityName    = "MSGrouter"
+	containerPort     = 9999
 	DTDNSEntryPoint   = "DT_DNS_ENTRY_POINT"
 )
 
@@ -62,7 +63,7 @@ func setCommunicationsPort(_ *dynatracev1alpha1.DynaKube) capability.StatefulSet
 		sts.Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{
 			{
 				Name:          serviceTargetPort,
-				ContainerPort: servicePort,
+				ContainerPort: containerPort,
 			},
 		}
 	}
