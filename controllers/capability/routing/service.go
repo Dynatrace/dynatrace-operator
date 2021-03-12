@@ -12,6 +12,9 @@ import (
 
 const (
 	keyFeature = "feature"
+
+	servicePort       = 443
+	serviceTargetPort = "ag-https"
 )
 
 func createService(instance *v1alpha1.DynaKube, feature string) corev1.Service {
@@ -26,8 +29,8 @@ func createService(instance *v1alpha1.DynaKube, feature string) corev1.Service {
 			Ports: []corev1.ServicePort{
 				{
 					Protocol:   corev1.ProtocolTCP,
-					Port:       9999,
-					TargetPort: intstr.FromInt(9999),
+					Port:       servicePort,
+					TargetPort: intstr.FromString(serviceTargetPort),
 				},
 			},
 		},
@@ -48,5 +51,5 @@ func buildServiceHostName(instanceName string, module string) string {
 				buildServiceName(instanceName, module)),
 			"-", "_")
 
-	return fmt.Sprintf("$(%s_SERVICE_HOST)", serviceName)
+	return fmt.Sprintf("$(%s_SERVICE_HOST):$(%s_SERVICE_PORT)", serviceName, serviceName)
 }

@@ -34,8 +34,8 @@ func TestCreateService(t *testing.T) {
 	ports := serviceSpec.Ports
 	assert.Contains(t, ports, corev1.ServicePort{
 		Protocol:   corev1.ProtocolTCP,
-		Port:       9999,
-		TargetPort: intstr.FromInt(9999),
+		Port:       servicePort,
+		TargetPort: intstr.FromString(serviceTargetPort),
 	})
 }
 
@@ -43,12 +43,12 @@ func TestBuildServiceNameForDNSEntryPoint(t *testing.T) {
 	actual := buildServiceHostName(testName, testFeature)
 	assert.NotEmpty(t, actual)
 
-	expected := "$(TEST_NAME_TEST_FEATURE_SERVICE_SERVICE_HOST)"
+	expected := "$(TEST_NAME_TEST_FEATURE_SERVICE_SERVICE_HOST):$(TEST_NAME_TEST_FEATURE_SERVICE_SERVICE_PORT)"
 	assert.Equal(t, expected, actual)
 
 	testStringName := "this---test_string"
 	testStringFeature := "SHOULD--_--PaRsEcORrEcTlY"
-	expected = "$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_SERVICE_HOST)"
+	expected = "$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_SERVICE_HOST):$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_SERVICE_PORT)"
 	actual = buildServiceHostName(testStringName, testStringFeature)
 	assert.Equal(t, expected, actual)
 }

@@ -2,6 +2,8 @@ package routing
 
 import (
 	"context"
+	"fmt"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
@@ -34,17 +36,35 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider, enableUpdates,
 		&instance.Spec.RoutingSpec.CapabilityProperties, module, capabilityName, "")
 	baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance))
-	baseReconciler.AddOnAfterStatefulSetCreateListener(addCommunicationsPort(instance))
+	baseReconciler.AddOnAfterStatefulSetCreateListener(setCommunicationsPort(instance))
+	baseReconciler.AddOnAfterStatefulSetCreateListener(setLivenessProbePort(instance))
+	baseReconciler.AddOnAfterStatefulSetCreateListener(setReadinessProbePort(instance))
 	return &Reconciler{
 		Reconciler: baseReconciler,
 		log:        log,
 	}
 }
 
-func addCommunicationsPort(_ *dynatracev1alpha1.DynaKube) capability.StatefulSetEvent {
+func setReadinessProbePort(_ *dynatracev1alpha1.DynaKube) capability.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
-		sts.Spec.Template.Spec.Containers[0].Ports = append(sts.Spec.Template.Spec.Containers[0].Ports,
-			corev1.ContainerPort{ContainerPort: 9999})
+		sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port = intstr.FromString(serviceTargetPort)
+	}
+}
+
+func setLivenessProbePort(_ *dynatracev1alpha1.DynaKube) capability.StatefulSetEvent {
+	return func(sts *appsv1.StatefulSet) {
+		sts.Spec.Template.Spec.Containers[0].LivenessProbe.HTTPGet.Port = intstr.FromString(serviceTargetPort)
+	}
+}
+
+func setCommunicationsPort(_ *dynatracev1alpha1.DynaKube) capability.StatefulSetEvent {
+	return func(sts *appsv1.StatefulSet) {
+		sts.Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{
+			{
+				Name:          serviceTargetPort,
+				ContainerPort: servicePort,
+			},
+		}
 	}
 }
 
@@ -59,7 +79,7 @@ func addDNSEntryPoint(instance *dynatracev1alpha1.DynaKube) capability.StatefulS
 }
 
 func buildDNSEntryPoint(instance *dynatracev1alpha1.DynaKube) string {
-	return "https://" + buildServiceHostName(instance.Name, module) + ":9999/communication"
+	return fmt.Sprintf("https://%s/communication", buildServiceHostName(instance.Name, module))
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
