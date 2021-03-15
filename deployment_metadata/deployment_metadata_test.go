@@ -1,4 +1,4 @@
-package oneagent
+package deployment_metadata
 
 import (
 	"testing"
@@ -15,8 +15,8 @@ const (
 	testValue = "test-value"
 )
 
-func newTestDeploymentMetadata(_ *testing.T) *deploymentMetadata {
-	deploymentMetadata := newDeploymentMetadata(
+func newTestDeploymentMetadata(_ *testing.T) *DeploymentMetadata {
+	deploymentMetadata := NewDeploymentMetadata(
 		testOperatorScriptVersion,
 		testOrchestratorId,
 		testContainerImageVersion)
@@ -27,15 +27,15 @@ func newTestDeploymentMetadata(_ *testing.T) *deploymentMetadata {
 func TestNewDeploymentMetadata(t *testing.T) {
 	deploymentMetadata := newTestDeploymentMetadata(t)
 
-	assert.Equal(t, testOperatorScriptVersion, deploymentMetadata.operatorScriptVersion)
-	assert.Equal(t, testOrchestratorId, deploymentMetadata.orchestratorID)
-	assert.Equal(t, testContainerImageVersion, deploymentMetadata.containerImageVersion)
-	assert.Equal(t, orchestrationTech, deploymentMetadata.orchestrationTech)
+	assert.Equal(t, testOperatorScriptVersion, deploymentMetadata.OperatorScriptVersion)
+	assert.Equal(t, testOrchestratorId, deploymentMetadata.OrchestratorID)
+	assert.Equal(t, testContainerImageVersion, deploymentMetadata.ContainerImageVersion)
+	assert.Equal(t, orchestrationTech, deploymentMetadata.OrchestrationTech)
 }
 
 func TestDeploymentMetadata_asArgs(t *testing.T) {
 	deploymentMetadata := newTestDeploymentMetadata(t)
-	labels := deploymentMetadata.asArgs()
+	labels := deploymentMetadata.AsArgs()
 
 	assert.Equal(t, []string{
 		`--set-deployment-metadata=orchestration_tech=Operator`,
@@ -43,6 +43,22 @@ func TestDeploymentMetadata_asArgs(t *testing.T) {
 		`--set-deployment-metadata=container_image_version=` + testContainerImageVersion,
 		`--set-deployment-metadata=orchestrator_id=` + testOrchestratorId,
 	}, labels)
+}
+
+func TestDeploymentMetadata_asString(t *testing.T) {
+	deploymentMetadata := newTestDeploymentMetadata(t)
+	labels := deploymentMetadata.AsString()
+
+	assert.Equal(t,
+		`orchestration_tech=Operator`+
+			`;script_version=`+testOperatorScriptVersion+
+			`;container_image_version=`+testContainerImageVersion+
+			`;orchestrator_id=`+testOrchestratorId, labels)
+}
+
+func TestFormatKeyValue(t *testing.T) {
+	formattedArgument := formatKeyValue(testKey, testValue)
+	assert.Equal(t, testKey+`=`+testValue, formattedArgument)
 }
 
 func TestFormatMetadataArgument(t *testing.T) {

@@ -2,6 +2,7 @@ package oneagent
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/deployment_metadata"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/version"
@@ -23,11 +24,11 @@ func prepareArgs(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.Ful
 
 	args = append(args, "--set-host-property=OperatorVersion="+version.Version)
 
-	metadata := newDeploymentMetadata(
+	metadata := deployment_metadata.NewDeploymentMetadata(
 		version.Version,
 		clusterID,
 		instance.Status.OneAgent.Version,
 	)
-	args = append(args, metadata.asArgs()...)
+	args = append(args, metadata.AsArgs()...)
 	return args
 }

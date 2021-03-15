@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/deployment_metadata"
+	"github.com/Dynatrace/dynatrace-operator/version"
 	"net/http"
 	"net/url"
 	"os"
@@ -75,10 +77,16 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 		return err
 	}
 
+	var clusterNS corev1.Namespace
+	if err := mgr.GetAPIReader().Get(context.TODO(), client.ObjectKey{Name: "kube-system"}, &clusterNS); err != nil {
+		return err
+	}
+
 	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podInjector{
 		namespace: ns,
 		image:     pod.Spec.Containers[0].Image,
 		apmExists: apmExists,
+		clusterID: clusterNS.String(),
 	}})
 	return nil
 }
@@ -96,6 +104,7 @@ type podInjector struct {
 	image     string
 	namespace string
 	apmExists bool
+	clusterID string
 }
 
 // podAnnotator adds an annotation to every incoming pods
@@ -204,6 +213,12 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		basePodName = basePodName[:p]
 	}
 
+	deploymentMetadata := deployment_metadata.NewDeploymentMetadata(
+		version.Version,
+		m.clusterID,
+		oa.Status.OneAgent.Version,
+	)
+
 	ic := corev1.Container{
 		Name:            "install-oneagent",
 		Image:           image,
@@ -254,7 +269,8 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 			})
 
 		c.Env = append(c.Env,
-			corev1.EnvVar{Name: "LD_PRELOAD", Value: installPath + "/agent/lib64/liboneagentproc.so"})
+			corev1.EnvVar{Name: "LD_PRELOAD", Value: installPath + "/agent/lib64/liboneagentproc.so"},
+			corev1.EnvVar{Name: "DT_DEPLOYMENT_METADATA", Value: deploymentMetadata.AsString()})
 
 		if oa.Spec.Proxy != nil && (oa.Spec.Proxy.Value != "" || oa.Spec.Proxy.ValueFrom != "") {
 			c.Env = append(c.Env,
