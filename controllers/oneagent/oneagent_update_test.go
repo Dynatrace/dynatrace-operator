@@ -112,3 +112,20 @@ func TestReconcile_InstallerDowngrade(t *testing.T) {
 	// Outdated Pod should be deleted.
 	assert.Error(t, c.Get(context.TODO(), types.NamespacedName{Name: "past-pod", Namespace: "dynatrace"}, &corev1.Pod{}))
 }
+
+func TestGetWaitReadySeconds(t *testing.T) {
+	t.Run(`returns 300 if waitReadySeconds is unset`, func(t *testing.T) {
+		instance := &dynatracev1alpha1.FullStackSpec{}
+		waitReadySeconds := getWaitReadySeconds(instance)
+		assert.Equal(t, uint16(300), waitReadySeconds)
+	})
+	t.Run(`returns value of waitReadySeconds`, func(t *testing.T) {
+		waitSeconds := uint16(100)
+		instance := &dynatracev1alpha1.FullStackSpec{
+			WaitReadySeconds: &waitSeconds,
+		}
+		waitReadySeconds := getWaitReadySeconds(instance)
+		assert.Equal(t, uint16(100), waitReadySeconds)
+
+	})
+}

@@ -47,10 +47,7 @@ func (r *ReconcileOneAgent) reconcileVersionInstaller(ctx context.Context, logge
 		return updateCR, err
 	}
 
-	var waitSecs uint16 = 300
-	if fs.WaitReadySeconds != nil {
-		waitSecs = *fs.WaitReadySeconds
-	}
+	waitSecs := getWaitReadySeconds(fs)
 
 	// restart daemonset
 	err = r.deletePods(logger, podsToDelete, buildLabels(instance.GetName(), r.feature), waitSecs)

@@ -27,13 +27,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-// time between consecutive queries for a new pod to get ready
-const splayTimeSeconds = uint16(10)
-const annotationTemplateHash = "internal.oneagent.dynatrace.com/template-hash"
-const defaultUpdateInterval = 15 * time.Minute
-const updateEnvVar = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
-const ClassicFeature = "classic"
-const InframonFeature = "inframon"
+const (
+	// time between consecutive queries for a new pod to get ready
+	splayTimeSeconds                      = uint16(10)
+	annotationTemplateHash                = "internal.oneagent.dynatrace.com/template-hash"
+	defaultUpdateInterval                 = 15 * time.Minute
+	updateEnvVar                          = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
+	ClassicFeature                        = "classic"
+	InframonFeature                       = "inframon"
+	defaultOneAgentImage                  = "docker.io/dynatrace/oneagent:latest"
+	defaultServiceAccountName             = "dynatrace-dynakube-oneagent"
+	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
+)
 
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
 func NewOneAgentReconciler(client client.Client, apiReader client.Reader, scheme *runtime.Scheme, logger logr.Logger,
@@ -342,7 +347,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 		}},
 		HostNetwork:        true,
 		HostPID:            true,
-		HostIPC:            true,
+		HostIPC:            false,
 		NodeSelector:       fs.NodeSelector,
 		PriorityClassName:  fs.PriorityClassName,
 		ServiceAccountName: sa,
