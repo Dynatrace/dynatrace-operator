@@ -2,9 +2,9 @@ package oneagent
 
 import (
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/deployment_metadata"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/deployment_metadata"
 	"github.com/Dynatrace/dynatrace-operator/version"
 )
 

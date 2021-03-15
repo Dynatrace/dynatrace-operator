@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/deployment_metadata"
-	"github.com/Dynatrace/dynatrace-operator/version"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,6 +12,8 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/Dynatrace/dynatrace-operator/deployment_metadata"
+	"github.com/Dynatrace/dynatrace-operator/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

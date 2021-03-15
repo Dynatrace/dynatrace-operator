@@ -1,10 +1,10 @@
 package oneagent
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/deployment_metadata"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/deployment_metadata"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/stretchr/testify/assert"
