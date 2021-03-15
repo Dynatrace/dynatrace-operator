@@ -59,6 +59,13 @@ func (r *ReconcileOneAgent) reconcileVersionInstaller(ctx context.Context, logge
 	return updateCR, nil
 }
 
+func getWaitReadySeconds(fs *dynatracev1alpha1.FullStackSpec) uint16 {
+	if fs.WaitReadySeconds != nil {
+		return *fs.WaitReadySeconds
+	}
+	return 300
+}
+
 // findOutdatedPodsInstaller determines if a pod needs to be restarted in order to get the desired agent version
 // Returns an array of pods and an array of OneAgentInstance objects for status update
 func findOutdatedPodsInstaller(pods []corev1.Pod, dtc dtclient.Client, instance *dynatracev1alpha1.DynaKube, logger logr.Logger) ([]corev1.Pod, error) {
