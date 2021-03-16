@@ -98,7 +98,7 @@ func updateImageVersion(
 		}
 
 		if dtversion.CompareVersionInfo(oldVer, newVer) < 0 {
-			return errors.New("trying to downgrade")
+			return errors.Errorf("trying to downgrade from '%s' to '%s'", oldVer, newVer)
 		}
 	}
 
