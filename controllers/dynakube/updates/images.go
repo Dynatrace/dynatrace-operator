@@ -97,7 +97,7 @@ func updateImageVersion(
 			return errors.WithMessage(err, "failed to parse new image version")
 		}
 
-		if dtversion.CompareVersionInfo(oldVer, newVer) < 0 {
+		if dtversion.CompareVersionInfo(oldVer, newVer) > 0 {
 			return errors.Errorf("trying to downgrade from '%s' to '%s'", oldVer, newVer)
 		}
 	}
