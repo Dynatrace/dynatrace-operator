@@ -3,8 +3,6 @@
 set -e
 
 CLI="kubectl"
-ENABLE_K8S_MONITORING="true"
-SET_APP_LOG_CONTENT_ACCESS="false"
 SKIP_CERT_CHECK="false"
 ENABLE_VOLUME_STORAGE="false"
 
@@ -21,14 +19,6 @@ for arg in "$@"; do
   --paas-token)
     PAAS_TOKEN="$2"
     shift 2
-    ;;
-  --enable-k8s-monitoring)
-    ENABLE_K8S_MONITORING="true"
-    shift
-    ;;
-  --set-app-log-content-access)
-    SET_APP_LOG_CONTENT_ACCESS="true"
-    shift
     ;;
   --skip-cert-check)
     SKIP_CERT_CHECK="true"
@@ -95,15 +85,13 @@ spec:
   apiUrl: ${API_URL}
   skipCertCheck: ${SKIP_CERT_CHECK}
   kubernetesMonitoring:
-    enabled: ${ENABLE_K8S_MONITORING}
+    enabled: true
   classicFullStack:
     enabled: true
     tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/master
       operator: Exists
-    args:
-    - --set-app-log-content-access=${SET_APP_LOG_CONTENT_ACCESS}
     env:
     - name: ONEAGENT_ENABLE_VOLUME_STORAGE
       value: "${ENABLE_VOLUME_STORAGE}"
@@ -172,8 +160,5 @@ printf "\nApplying Dynatrace Operator...\n"
 applyDynatraceOperator
 printf "\nApplying DynaKube CustomResource...\n"
 applyDynaKubeCR
-
-if [ "${ENABLE_K8S_MONITORING}" = "true" ]; then
-  printf "\nAdding cluster to Dynatrace...\n"
-  addK8sConfiguration
-fi
+printf "\nAdding cluster to Dynatrace...\n"
+addK8sConfiguration
