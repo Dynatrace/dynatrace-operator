@@ -178,7 +178,21 @@ EOF
   fi
 }
 
+checkForExistingCluster() {
+  response="$(curl -sS -X GET "${API_URL}/config/v1/kubernetes/credentials" \
+    -H "accept: application/json; charset=utf-8" \
+    -H "Authorization: Api-Token ${API_TOKEN}" \
+    -H "Content-Type: application/json; charset=utf-8")"
+
+  if echo "$response" | grep -Fqe "\"name\":\"${CLUSTER_NAME}\""; then
+    echo "Error: Cluster already exists!"
+    exit 1
+  fi
+}
+
 ####### MAIN #######
+printf "\nCheck if cluster already exists...\n"
+checkForExistingCluster
 printf "\nCreating Dynatrace namespace...\n"
 checkIfNSExists
 printf "\nApplying Dynatrace Operator...\n"
