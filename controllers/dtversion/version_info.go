@@ -61,3 +61,7 @@ func ExtractVersion(versionString string) (VersionInfo, error) {
 
 	return VersionInfo{major, minor, release}, nil
 }
+
+func (v VersionInfo) String() string {
+	return fmt.Sprintf("%d.%d.%d", v.major, v.minor, v.release)
+}

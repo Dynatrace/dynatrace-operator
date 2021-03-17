@@ -2377,6 +2377,11 @@ spec:
                   description: ImageVersion contains the version from the last image
                     seen.
                   type: string
+                lastImageProbeTimestamp:
+                  description: LastImageProbeTimestamp defines the last timestamp
+                    when the querying for image updates have been done.
+                  format: date-time
+                  type: string
               type: object
             conditions:
               description: Conditions includes status about the current state of the
@@ -2468,6 +2473,13 @@ spec:
               type: string
             oneAgent:
               properties:
+                imageHash:
+                  description: ImageHash contains the last image hash seen.
+                  type: string
+                imageVersion:
+                  description: ImageVersion contains the version from the last image
+                    seen.
+                  type: string
                 instances:
                   additionalProperties:
                     properties:
@@ -2479,6 +2491,11 @@ spec:
                         type: string
                     type: object
                   type: object
+                lastImageProbeTimestamp:
+                  description: LastImageProbeTimestamp defines the last timestamp
+                    when the querying for image updates have been done.
+                  format: date-time
+                  type: string
                 lastUpdateProbeTimestamp:
                   description: LastUpdateProbeTimestamp defines the last timestamp
                     when the querying for updates have been done

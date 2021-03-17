@@ -10,32 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	testName     = "test-name"
-	testEndpoint = "http://test-endpoint"
-)
-
-func TestBuildImage(t *testing.T) {
-	t.Run(`BuildActiveGateImage with default instance`, func(t *testing.T) {
-		instance := &dynatracev1alpha1.DynaKube{}
-		assert.Equal(t, "/linux/activegate", BuildActiveGateImage(instance))
-	})
-	t.Run(`BuildActiveGateImage with api url`, func(t *testing.T) {
-		instance := &dynatracev1alpha1.DynaKube{
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				APIURL: testEndpoint + "/api",
-			}}
-		assert.Equal(t, "test-endpoint/linux/activegate", BuildActiveGateImage(instance))
-	})
-	t.Run(`BuildActiveGateImage with custom image`, func(t *testing.T) {
-		instance := &dynatracev1alpha1.DynaKube{
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				ActiveGate: dynatracev1alpha1.ActiveGateSpec{
-					Image: testName,
-				}}}
-		assert.Equal(t, testName, BuildActiveGateImage(instance))
-	})
-}
+const testName = "test-name"
 
 func TestBuildPullSecret(t *testing.T) {
 	t.Run(`BuildPullSecret with default instance`, func(t *testing.T) {

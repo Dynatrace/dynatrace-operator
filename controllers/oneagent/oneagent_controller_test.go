@@ -465,7 +465,7 @@ func TestUseImmutableImage(t *testing.T) {
 		}
 		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
 		assert.NotNil(t, podSpecs)
-		assert.Equal(t, podSpecs.Containers[0].Image, fmt.Sprintf("%s/linux/oneagent", strings.TrimPrefix(testURL, "https://")))
+		assert.Equal(t, podSpecs.Containers[0].Image, fmt.Sprintf("%s/linux/oneagent:latest", strings.TrimPrefix(testURL, "https://")))
 
 		instance.Spec.OneAgent.Version = testValue
 		podSpecs = newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
