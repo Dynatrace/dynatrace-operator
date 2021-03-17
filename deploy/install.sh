@@ -5,6 +5,8 @@ set -e
 CLI="kubectl"
 SKIP_CERT_CHECK="false"
 ENABLE_VOLUME_STORAGE="false"
+CLUSTER_NAME_REGEX="^[-_a-zA-Z0-9][-_\.a-zA-Z0-9]*$"
+CLUSTER_NAME_LENGTH=256
 
 for arg in "$@"; do
   case $arg in
@@ -28,6 +30,10 @@ for arg in "$@"; do
     ENABLE_VOLUME_STORAGE="true"
     shift
     ;;
+  --cluster-name)
+    CLUSTER_NAME="$2"
+    shift 2
+    ;;
   --openshift)
     CLI="oc"
     shift
@@ -50,6 +56,21 @@ if [ -z "$PAAS_TOKEN" ]; then
   exit 1
 fi
 
+if [ -z "$CLUSTER_NAME" ]; then
+  echo "Error: cluster name not set!"
+  exit 1
+fi
+
+if ! echo "$CLUSTER_NAME" | grep -q "$CLUSTER_NAME_REGEX"; then
+  echo "Error: cluster name does not match regex!"
+  exit 1
+fi
+
+if [ "${#CLUSTER_NAME}" -ge $CLUSTER_NAME_LENGTH ]; then
+  echo "Error: cluster name too long!"
+  exit 1
+fi
+
 set -u
 
 checkIfNSExists() {
@@ -66,7 +87,7 @@ checkIfNSExists() {
 
 applyDynatraceOperator() {
   if [ "${CLI}" = "kubectl" ]; then
-    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
+    "${CLI}" apply -k github.com/Dynatrace/dynatrace-operator/config/kubernetes
   else
     "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift.yaml
   fi
@@ -84,7 +105,11 @@ metadata:
 spec:
   apiUrl: ${API_URL}
   skipCertCheck: ${SKIP_CERT_CHECK}
+  networkZone: ${CLUSTER_NAME}
   kubernetesMonitoring:
+    enabled: true
+    group: ${CLUSTER_NAME}
+  routing:
     enabled: true
   classicFullStack:
     enabled: true
@@ -95,6 +120,8 @@ spec:
     env:
     - name: ONEAGENT_ENABLE_VOLUME_STORAGE
       value: "${ENABLE_VOLUME_STORAGE}"
+    args:
+    - --set-host-group="${CLUSTER_NAME}"
 EOF
 }
 
@@ -104,8 +131,6 @@ addK8sConfiguration() {
     echo "Error: failed to get kubernetes endpoint!"
     exit 1
   fi
-
-  CONNECTION_NAME="$(echo "${K8S_ENDPOINT}" | awk -F[/:] '{print $4}')"
 
   K8S_SECRET_NAME="$(for token in $("${CLI}" get sa dynatrace-kubernetes-monitoring -o jsonpath='{.secrets[*].name}' -n dynatrace); do echo "$token"; done | grep token)"
   if [ -z "$K8S_SECRET_NAME" ]; then
@@ -122,7 +147,7 @@ addK8sConfiguration() {
   json="$(
     cat <<EOF
 {
-  "label": "${CONNECTION_NAME}",
+  "label": "${CLUSTER_NAME}",
   "endpointUrl": "${K8S_ENDPOINT}",
   "eventsFieldSelectors": [
     {
@@ -146,19 +171,19 @@ EOF
     -H "Content-Type: application/json; charset=utf-8" \
     -d "${json}")"
 
-  if echo "$response" | grep "${CONNECTION_NAME}" >/dev/null 2>&1; then
+  if echo "$response" | grep "${CLUSTER_NAME}" >/dev/null 2>&1; then
     echo "Kubernetes monitoring successfully setup."
   else
     echo "Error adding Kubernetes cluster to Dynatrace: $response"
   fi
 }
-
-####### MAIN #######
-printf "\nCreating Dynatrace namespace...\n"
-checkIfNSExists
-printf "\nApplying Dynatrace Operator...\n"
-applyDynatraceOperator
-printf "\nApplying DynaKube CustomResource...\n"
-applyDynaKubeCR
-printf "\nAdding cluster to Dynatrace...\n"
-addK8sConfiguration
+#
+######## MAIN #######
+#printf "\nCreating Dynatrace namespace...\n"
+#checkIfNSExists
+#printf "\nApplying Dynatrace Operator...\n"
+#applyDynatraceOperator
+#printf "\nApplying DynaKube CustomResource...\n"
+#applyDynaKubeCR
+#printf "\nAdding cluster to Dynatrace...\n"
+#addK8sConfiguration
