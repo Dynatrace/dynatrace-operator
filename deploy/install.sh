@@ -87,7 +87,7 @@ checkIfNSExists() {
 
 applyDynatraceOperator() {
   if [ "${CLI}" = "kubectl" ]; then
-    "${CLI}" apply -k github.com/Dynatrace/dynatrace-operator/config/kubernetes
+    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
   else
     "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift.yaml
   fi
@@ -177,13 +177,13 @@ EOF
     echo "Error adding Kubernetes cluster to Dynatrace: $response"
   fi
 }
-#
-######## MAIN #######
-#printf "\nCreating Dynatrace namespace...\n"
-#checkIfNSExists
-#printf "\nApplying Dynatrace Operator...\n"
-#applyDynatraceOperator
-#printf "\nApplying DynaKube CustomResource...\n"
-#applyDynaKubeCR
-#printf "\nAdding cluster to Dynatrace...\n"
-#addK8sConfiguration
+
+####### MAIN #######
+printf "\nCreating Dynatrace namespace...\n"
+checkIfNSExists
+printf "\nApplying Dynatrace Operator...\n"
+applyDynatraceOperator
+printf "\nApplying DynaKube CustomResource...\n"
+applyDynaKubeCR
+printf "\nAdding cluster to Dynatrace...\n"
+addK8sConfiguration

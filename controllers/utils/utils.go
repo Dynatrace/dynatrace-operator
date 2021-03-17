@@ -27,6 +27,7 @@ const (
 type Reconciliation struct {
 	Log      logr.Logger
 	Instance *dynatracev1alpha1.DynaKube
+	Now      metav1.Time
 
 	// If update is true, then changes on instance will be sent to the Kubernetes API.
 	//
@@ -37,6 +38,15 @@ type Reconciliation struct {
 	Err          error
 	Updated      bool
 	RequeueAfter time.Duration
+}
+
+func NewReconciliation(log logr.Logger, dk *dynatracev1alpha1.DynaKube) *Reconciliation {
+	return &Reconciliation{
+		Log:          log,
+		Instance:     dk,
+		RequeueAfter: 30 * time.Minute,
+		Now:          metav1.Now(),
+	}
 }
 
 func (rec *Reconciliation) Error(err error) bool {
@@ -55,6 +65,10 @@ func (rec *Reconciliation) Update(upd bool, d time.Duration, cause string) bool 
 	rec.Updated = true
 	rec.RequeueAfter = d
 	return true
+}
+
+func (rec *Reconciliation) IsOutdated(last *metav1.Time, threshold time.Duration) bool {
+	return last == nil || last.Add(threshold).Before(rec.Now.Time)
 }
 
 // GetDeployment returns the Deployment object who is the owner of this pod.
