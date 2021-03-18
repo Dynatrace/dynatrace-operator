@@ -56,6 +56,17 @@ func TestDeploymentMetadata_asString(t *testing.T) {
 			`;orchestrator_id=`+testOrchestratorId, labels)
 }
 
+func TestDeploymentMetadata_asString_empty_agent(t *testing.T) {
+	deploymentMetadata := newTestDeploymentMetadata(t)
+	deploymentMetadata.ContainerImageVersion = ""
+	labels := deploymentMetadata.AsString()
+
+	assert.Equal(t,
+		`orchestration_tech=Operator`+
+			`;script_version=`+testOperatorScriptVersion+
+			`;orchestrator_id=`+testOrchestratorId, labels)
+}
+
 func TestFormatKeyValue(t *testing.T) {
 	formattedArgument := formatKeyValue(testKey, testValue)
 	assert.Equal(t, testKey+`=`+testValue, formattedArgument)

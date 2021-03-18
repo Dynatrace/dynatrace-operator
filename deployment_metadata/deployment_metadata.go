@@ -41,12 +41,18 @@ func (metadata *DeploymentMetadata) AsArgs() []string {
 }
 
 func (metadata *DeploymentMetadata) AsString() string {
-	return strings.Join([]string{
+	res := []string{
 		formatKeyValue(keyOrchestrationTech, metadata.OrchestrationTech),
 		formatKeyValue(keyOperatorScriptVersion, metadata.OperatorScriptVersion),
 		formatKeyValue(keyContainerImageVersion, metadata.ContainerImageVersion),
 		formatKeyValue(keyOrchestratorID, metadata.OrchestratorID),
-	}, ";")
+	}
+
+	if metadata.ContainerImageVersion == "" {
+		res = append(res[:2], res[3:]...)
+	}
+
+	return strings.Join(res, ";")
 }
 
 func formatKeyValue(key string, value string) string {
