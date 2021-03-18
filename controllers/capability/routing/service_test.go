@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,7 +29,9 @@ func TestCreateService(t *testing.T) {
 	serviceSpec := service.Spec
 	assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
 	assert.Equal(t, map[string]string{
-		keyFeature: testFeature,
+		capability.KeyActiveGate: testName,
+		capability.KeyDynatrace:  capability.ValueActiveGate,
+		keyFeature:               testFeature,
 	}, serviceSpec.Selector)
 
 	ports := serviceSpec.Ports

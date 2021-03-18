@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -24,8 +25,10 @@ func createService(instance *v1alpha1.DynaKube, feature string) corev1.Service {
 			Namespace: instance.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
-			Type:     corev1.ServiceTypeClusterIP,
-			Selector: map[string]string{keyFeature: feature},
+			Type: corev1.ServiceTypeClusterIP,
+			Selector: capability.MergeLabels(
+				capability.BuildLabelsFromInstance(instance),
+				map[string]string{keyFeature: feature}),
 			Ports: []corev1.ServicePort{
 				{
 					Protocol:   corev1.ProtocolTCP,
