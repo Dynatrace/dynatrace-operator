@@ -11,12 +11,14 @@ import (
 	"strings"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/deployment_metadata"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -77,8 +79,8 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 		return err
 	}
 
-	var clusterNS corev1.Namespace
-	if err := mgr.GetAPIReader().Get(context.TODO(), client.ObjectKey{Name: "kube-system"}, &clusterNS); err != nil {
+	var UID types.UID
+	if UID, err = kubesystem.GetUID(mgr.GetAPIReader()); err != nil {
 		return err
 	}
 
@@ -86,7 +88,7 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 		namespace: ns,
 		image:     pod.Spec.Containers[0].Image,
 		apmExists: apmExists,
-		clusterID: string(clusterNS.UID),
+		clusterID: string(UID),
 	}})
 	return nil
 }
