@@ -1,6 +1,7 @@
 package routing
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -28,7 +29,9 @@ func TestCreateService(t *testing.T) {
 	serviceSpec := service.Spec
 	assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
 	assert.Equal(t, map[string]string{
-		keyFeature: testFeature,
+		capability.KeyActiveGate: testName,
+		capability.KeyDynatrace:  capability.ValueActiveGate,
+		keyFeature:               testFeature,
 	}, serviceSpec.Selector)
 
 	ports := serviceSpec.Ports
