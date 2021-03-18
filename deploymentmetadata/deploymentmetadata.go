@@ -1,4 +1,4 @@
-package deployment_metadata
+package deploymentmetadata
 
 import (
 	"fmt"
@@ -22,10 +22,10 @@ type DeploymentMetadata struct {
 	OrchestrationTech     string
 }
 
-func NewDeploymentMetadata(operatorScriptVersion string, orchestratorId string, containerImageVersion string) *DeploymentMetadata {
+func NewDeploymentMetadata(operatorScriptVersion string, orchestratorID string, containerImageVersion string) *DeploymentMetadata {
 	return &DeploymentMetadata{
 		OperatorScriptVersion: operatorScriptVersion,
-		OrchestratorID:        orchestratorId,
+		OrchestratorID:        orchestratorID,
 		ContainerImageVersion: containerImageVersion,
 		OrchestrationTech:     orchestrationTech,
 	}

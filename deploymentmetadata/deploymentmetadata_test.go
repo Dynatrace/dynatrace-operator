@@ -1,4 +1,4 @@
-package deployment_metadata
+package deploymentmetadata
 
 import (
 	"testing"

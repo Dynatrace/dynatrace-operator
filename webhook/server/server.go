@@ -13,7 +13,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
-	"github.com/Dynatrace/dynatrace-operator/deployment_metadata"
+	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	corev1 "k8s.io/api/core/v1"
@@ -80,7 +80,7 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 	}
 
 	var UID types.UID
-	if UID, err = kubesystem.GetUID(mgr.GetAPIReader()); err != nil {
+	if UID, err = kubesystem.GetUID(mgr.GetClient()); err != nil {
 		return err
 	}
 
@@ -215,7 +215,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		basePodName = basePodName[:p]
 	}
 
-	deploymentMetadata := deployment_metadata.NewDeploymentMetadata(
+	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(
 		version.Version,
 		m.clusterID,
 		oa.Status.OneAgent.Version,

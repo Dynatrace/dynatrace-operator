@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/deployment_metadata"
+	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +32,7 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 				Version: testContainerImageVersion,
 			},
 		}}
-	metadata := deployment_metadata.NewDeploymentMetadata(
+	metadata := deploymentmetadata.NewDeploymentMetadata(
 		version.Version,
 		testUID,
 		instance.Status.OneAgent.Version,
