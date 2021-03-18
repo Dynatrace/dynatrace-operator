@@ -86,7 +86,7 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 		namespace: ns,
 		image:     pod.Spec.Containers[0].Image,
 		apmExists: apmExists,
-		clusterID: clusterNS.String(),
+		clusterID: string(clusterNS.UID),
 	}})
 	return nil
 }
