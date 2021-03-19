@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/version"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -215,11 +214,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		basePodName = basePodName[:p]
 	}
 
-	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(
-		version.Version,
-		m.clusterID,
-		oa.Status.OneAgent.Version,
-	)
+	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
 
 	ic := corev1.Container{
 		Name:            "install-oneagent",

@@ -24,11 +24,7 @@ func prepareArgs(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.Ful
 
 	args = append(args, "--set-host-property=OperatorVersion="+version.Version)
 
-	metadata := deploymentmetadata.NewDeploymentMetadata(
-		version.Version,
-		clusterID,
-		instance.Status.OneAgent.Version,
-	)
+	metadata := deploymentmetadata.NewDeploymentMetadata(clusterID)
 	args = append(args, metadata.AsArgs()...)
 	return args
 }

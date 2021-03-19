@@ -32,11 +32,7 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 				Version: testContainerImageVersion,
 			},
 		}}
-	metadata := deploymentmetadata.NewDeploymentMetadata(
-		version.Version,
-		testUID,
-		instance.Status.OneAgent.Version,
-	)
+	metadata := deploymentmetadata.NewDeploymentMetadata(testUID)
 	fullStackSpecs := &instance.Spec.ClassicFullStack
 	podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
 	require.NotNil(t, podSpecs)
