@@ -102,10 +102,7 @@ type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.Dyn
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	if r.logger == nil {
-		r.logger = log.WithValues("Request.Namespace", request.Namespace, "Request.serviceAccountOwner", request.Name)
-	}
-	reqLogger := r.logger
+	reqLogger := log.WithValues("namespace", request.Namespace, "name", request.Name)
 	reqLogger.Info("Reconciling DynaKube")
 
 	// Fetch the DynaKube instance
@@ -127,7 +124,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 
 	if rec.Err != nil {
 		if rec.Updated || instance.Status.SetPhaseOnError(rec.Err) {
-			if errClient := r.updateCR(ctx, instance); errClient != nil {
+			if errClient := r.updateCR(ctx, reqLogger, instance); errClient != nil {
 				return reconcile.Result{}, fmt.Errorf("failed to update CR after failure, original, %s, then: %w", rec.Err, errClient)
 			}
 		}
@@ -142,7 +139,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	}
 
 	if rec.Updated {
-		if err := r.updateCR(ctx, instance); err != nil {
+		if err := r.updateCR(ctx, reqLogger, instance); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
@@ -273,13 +270,13 @@ func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatr
 	return &secret, errors.WithStack(err)
 }
 
-func (r *ReconcileDynaKube) updateCR(ctx context.Context, instance *dynatracev1alpha1.DynaKube) error {
+func (r *ReconcileDynaKube) updateCR(ctx context.Context, log logr.Logger, instance *dynatracev1alpha1.DynaKube) error {
 	instance.Status.UpdatedTimestamp = metav1.Now()
 	err := r.client.Status().Update(ctx, instance)
 	if err != nil && k8serrors.IsConflict(err) {
 		// OneAgent reconciler already updates instance which leads to conflict here
 		// Only print info in that event
-		r.logger.Info("could not update instance due to conflict")
+		log.Info("could not update instance due to conflict")
 		return nil
 	}
 	return errors.WithStack(err)
