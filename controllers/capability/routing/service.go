@@ -37,7 +37,7 @@ func createService(instance *v1alpha1.DynaKube, feature string) corev1.Service {
 }
 
 func buildServiceName(instanceName string, module string) string {
-	return instanceName + "-" + module + "-service"
+	return instanceName + "-" + module
 }
 
 // buildServiceHostName converts the name returned by buildServiceName
