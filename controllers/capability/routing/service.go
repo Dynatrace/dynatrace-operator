@@ -12,8 +12,6 @@ import (
 )
 
 const (
-	keyFeature = "feature"
-
 	servicePort       = 443
 	serviceTargetPort = "ag-https"
 )
@@ -25,10 +23,8 @@ func createService(instance *v1alpha1.DynaKube, feature string) corev1.Service {
 			Namespace: instance.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
-			Type: corev1.ServiceTypeClusterIP,
-			Selector: capability.MergeLabels(
-				capability.BuildLabelsFromInstance(instance),
-				map[string]string{keyFeature: feature}),
+			Type:     corev1.ServiceTypeClusterIP,
+			Selector: capability.BuildLabelsFromInstance(instance, feature),
 			Ports: []corev1.ServicePort{
 				{
 					Protocol:   corev1.ProtocolTCP,

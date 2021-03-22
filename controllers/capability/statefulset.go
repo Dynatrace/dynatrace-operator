@@ -41,8 +41,6 @@ const (
 	DTInternalProxy   = "DT_INTERNAL_PROXY"
 
 	ProxyKey = "ProxyKey"
-
-	keyFeature = "feature"
 )
 
 type StatefulSetEvent func(sts *appsv1.StatefulSet)
@@ -79,22 +77,18 @@ func NewStatefulSetProperties(instance *dynatracev1alpha1.DynaKube, capabilityPr
 func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      stsProperties.Name + "-" + stsProperties.feature,
-			Namespace: stsProperties.Namespace,
-			Labels: MergeLabels(
-				BuildLabels(stsProperties.DynaKube, stsProperties.CapabilityProperties),
-				map[string]string{keyFeature: stsProperties.feature}),
+			Name:        stsProperties.Name + "-" + stsProperties.feature,
+			Namespace:   stsProperties.Namespace,
+			Labels:      BuildLabels(stsProperties.DynaKube, stsProperties.feature, stsProperties.CapabilityProperties),
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Replicas:            stsProperties.Replicas,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector:            &metav1.LabelSelector{MatchLabels: BuildLabelsFromInstance(stsProperties.DynaKube)},
+			Selector:            &metav1.LabelSelector{MatchLabels: BuildLabelsFromInstance(stsProperties.DynaKube, stsProperties.feature)},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: MergeLabels(
-						BuildLabels(stsProperties.DynaKube, stsProperties.CapabilityProperties),
-						map[string]string{keyFeature: stsProperties.feature}),
+					Labels: BuildLabels(stsProperties.DynaKube, stsProperties.feature, stsProperties.CapabilityProperties),
 					Annotations: map[string]string{
 						AnnotationImageVersion:    stsProperties.Status.ActiveGate.ImageVersion,
 						AnnotationCustomPropsHash: stsProperties.customPropertiesHash,

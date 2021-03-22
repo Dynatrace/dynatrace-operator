@@ -20,6 +20,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+const (
+	OldKeyActiveGate = "activegate"
+)
+
 type Reconciler struct {
 	client.Client
 	Instance                         *v1alpha1.DynaKube
@@ -98,6 +102,11 @@ func (r *Reconciler) manageStatefulSet() (bool, error) {
 		return created, errors.WithStack(err)
 	}
 
+	deleted, err := r.deleteStatefulSetIfOldLabelsAreUsed(desiredSts)
+	if deleted || err != nil {
+		return deleted, errors.WithStack(err)
+	}
+
 	updated, err := r.updateStatefulSetIfOutdated(desiredSts)
 	if updated || err != nil {
 		return updated, errors.WithStack(err)
@@ -157,6 +166,23 @@ func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet)
 		return false, err
 	}
 	return true, err
+}
+
+func (r *Reconciler) deleteStatefulSetIfOldLabelsAreUsed(desiredSts *appsv1.StatefulSet) (bool, error) {
+	currentSts, err := r.getStatefulSet(desiredSts)
+	if err != nil {
+		return false, err
+	}
+
+	if _, ok := currentSts.Labels[OldKeyActiveGate]; !ok {
+		return false, nil
+	}
+
+	r.log.Info("Deleting existing stateful set")
+	if err = r.Delete(context.TODO(), desiredSts); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (r *Reconciler) calculateCustomPropertyHash() (string, error) {
