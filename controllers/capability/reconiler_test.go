@@ -218,14 +218,8 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 	r.Instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
 	desiredSts, err = r.buildDesiredStatefulSet()
 	require.NoError(t, err)
-	correctLabels := make(map[string]string)
-	for key, value := range desiredSts.Labels {
-		correctLabels[key] = value
-	}
-	delete(desiredSts.Labels, KeyActiveGate)
-	delete(desiredSts.Labels, KeyDynatrace)
-	delete(desiredSts.Labels, KeyFeature)
-	desiredSts.Labels["activegate"] = "dynakube"
+	correctLabels := desiredSts.Labels
+	desiredSts.Labels = map[string]string{"activegate": "dynakube"}
 	err = r.Update(context.TODO(), desiredSts)
 	assert.NoError(t, err)
 

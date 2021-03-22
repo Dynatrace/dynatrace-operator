@@ -3,6 +3,7 @@ package capability
 import (
 	"context"
 	"hash/fnv"
+	"reflect"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -170,14 +171,12 @@ func (r *Reconciler) deleteStatefulSetIfOldLabelsAreUsed(desiredSts *appsv1.Stat
 		return false, err
 	}
 
-	for k := range desiredSts.Labels {
-		if _, ok := currentSts.Labels[k]; !ok {
-			r.log.Info("Deleting existing stateful set")
-			if err = r.Delete(context.TODO(), desiredSts); err != nil {
-				return false, err
-			}
-			return true, nil
+	if !reflect.DeepEqual(currentSts.Labels, desiredSts.Labels) {
+		r.log.Info("Deleting existing stateful set")
+		if err = r.Delete(context.TODO(), desiredSts); err != nil {
+			return false, err
 		}
+		return true, nil
 	}
 
 	return false, nil
