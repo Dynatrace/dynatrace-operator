@@ -11,10 +11,13 @@ import (
 	"strings"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -75,10 +78,16 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 		return err
 	}
 
+	var UID types.UID
+	if UID, err = kubesystem.GetUID(mgr.GetClient()); err != nil {
+		return err
+	}
+
 	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podInjector{
 		namespace: ns,
 		image:     pod.Spec.Containers[0].Image,
 		apmExists: apmExists,
+		clusterID: string(UID),
 	}})
 	return nil
 }
@@ -96,6 +105,7 @@ type podInjector struct {
 	image     string
 	namespace string
 	apmExists bool
+	clusterID string
 }
 
 // podAnnotator adds an annotation to every incoming pods
@@ -204,6 +214,8 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		basePodName = basePodName[:p]
 	}
 
+	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
+
 	ic := corev1.Container{
 		Name:            "install-oneagent",
 		Image:           image,
@@ -254,7 +266,8 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 			})
 
 		c.Env = append(c.Env,
-			corev1.EnvVar{Name: "LD_PRELOAD", Value: installPath + "/agent/lib64/liboneagentproc.so"})
+			corev1.EnvVar{Name: "LD_PRELOAD", Value: installPath + "/agent/lib64/liboneagentproc.so"},
+			corev1.EnvVar{Name: "DT_DEPLOYMENT_METADATA", Value: deploymentMetadata.AsString()})
 
 		if oa.Spec.Proxy != nil && (oa.Spec.Proxy.Value != "" || oa.Spec.Proxy.ValueFrom != "") {
 			c.Env = append(c.Env,

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/stretchr/testify/assert"
@@ -12,6 +13,11 @@ import (
 
 const (
 	testUID = "test-uid"
+
+	testContainerImageVersion = "1.203.0.20200908-220956"
+
+	testKey   = "test-key"
+	testValue = "test-value"
 )
 
 func TestNewPodSpecForCR_Arguments(t *testing.T) {
@@ -26,11 +32,7 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 				Version: testContainerImageVersion,
 			},
 		}}
-	metadata := newDeploymentMetadata(
-		version.Version,
-		testUID,
-		instance.Status.OneAgent.Version,
-	)
+	metadata := deploymentmetadata.NewDeploymentMetadata(testUID)
 	fullStackSpecs := &instance.Spec.ClassicFullStack
 	podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
 	require.NotNil(t, podSpecs)
@@ -41,7 +43,7 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 	}
 	assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-property=OperatorVersion="+version.Version)
 
-	metadataArgs := metadata.asArgs()
+	metadataArgs := metadata.AsArgs()
 	for _, metadataArg := range metadataArgs {
 		assert.Contains(t, podSpecs.Containers[0].Args, metadataArg)
 	}
