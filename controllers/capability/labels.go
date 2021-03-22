@@ -3,21 +3,23 @@ package capability
 import "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 
 const (
-	KeyDynatrace    = "dynatrace"
+	KeyDynatrace    = "dynatrace.com/component"
+	KeyActiveGate   = "operator.dynatrace.com/instance"
+	KeyFeature      = "operator.dynatrace.com/feature"
 	ValueActiveGate = "activegate"
-	KeyActiveGate   = "activegate"
 )
 
-func BuildLabels(instance *v1alpha1.DynaKube, capabilityProperties *v1alpha1.CapabilityProperties) map[string]string {
+func BuildLabels(instance *v1alpha1.DynaKube, feature string, capabilityProperties *v1alpha1.CapabilityProperties) map[string]string {
 	return MergeLabels(instance.Labels,
-		BuildLabelsFromInstance(instance),
+		BuildLabelsFromInstance(instance, feature),
 		capabilityProperties.Labels)
 }
 
-func BuildLabelsFromInstance(instance *v1alpha1.DynaKube) map[string]string {
+func BuildLabelsFromInstance(instance *v1alpha1.DynaKube, feature string) map[string]string {
 	return map[string]string{
 		KeyDynatrace:  ValueActiveGate,
 		KeyActiveGate: instance.Name,
+		KeyFeature:    feature,
 	}
 }
 

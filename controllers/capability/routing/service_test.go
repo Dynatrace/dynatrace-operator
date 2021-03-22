@@ -31,7 +31,7 @@ func TestCreateService(t *testing.T) {
 	assert.Equal(t, map[string]string{
 		capability.KeyActiveGate: testName,
 		capability.KeyDynatrace:  capability.ValueActiveGate,
-		keyFeature:               testFeature,
+		capability.KeyFeature:    testFeature,
 	}, serviceSpec.Selector)
 
 	ports := serviceSpec.Ports

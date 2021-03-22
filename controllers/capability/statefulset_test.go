@@ -47,17 +47,15 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	assert.Equal(t, map[string]string{
 		KeyDynatrace:  ValueActiveGate,
 		KeyActiveGate: instance.Name,
-		keyFeature:    testFeature,
+		KeyFeature:    testFeature,
 	}, sts.Labels)
 	assert.Equal(t, instance.Spec.RoutingSpec.Replicas, sts.Spec.Replicas)
 	assert.Equal(t, appsv1.ParallelPodManagement, sts.Spec.PodManagementPolicy)
 	assert.Equal(t, metav1.LabelSelector{
-		MatchLabels: BuildLabelsFromInstance(instance),
+		MatchLabels: BuildLabelsFromInstance(instance, testFeature),
 	}, *sts.Spec.Selector)
 	assert.NotEqual(t, corev1.PodTemplateSpec{}, sts.Spec.Template)
-	assert.Equal(t, MergeLabels(
-		BuildLabels(instance, capabilityProperties),
-		map[string]string{keyFeature: testFeature}), sts.Spec.Template.Labels)
+	assert.Equal(t, BuildLabels(instance, testFeature, capabilityProperties), sts.Spec.Template.Labels)
 	assert.Equal(t, sts.Labels, sts.Spec.Template.Labels)
 	assert.NotEqual(t, corev1.PodSpec{}, sts.Spec.Template.Spec)
 	assert.Contains(t, sts.Annotations, AnnotationTemplateHash)
