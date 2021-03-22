@@ -170,9 +170,8 @@ func (r *Reconciler) deleteStatefulSetIfOldLabelsAreUsed(desiredSts *appsv1.Stat
 		return false, err
 	}
 
-	checkLabels := [3]string{KeyFeature, KeyDynatrace, KeyActiveGate}
-	for i := range checkLabels {
-		if _, ok := currentSts.Labels[checkLabels[i]]; !ok {
+	for k := range desiredSts.Labels {
+		if _, ok := currentSts.Labels[k]; !ok {
 			r.log.Info("Deleting existing stateful set")
 			if err = r.Delete(context.TODO(), desiredSts); err != nil {
 				return false, err
