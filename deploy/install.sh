@@ -57,18 +57,15 @@ if [ -z "$PAAS_TOKEN" ]; then
 fi
 
 if [ -z "$CLUSTER_NAME" ]; then
-  echo "Error: cluster name not set!"
-  exit 1
-fi
+  if ! echo "$CLUSTER_NAME" | grep -Eq "$CLUSTER_NAME_REGEX"; then
+    echo "Error: cluster name does not match regex!"
+    exit 1
+  fi
 
-if ! echo "$CLUSTER_NAME" | grep -q "$CLUSTER_NAME_REGEX"; then
-  echo "Error: cluster name does not match regex!"
-  exit 1
-fi
-
-if [ "${#CLUSTER_NAME}" -ge $CLUSTER_NAME_LENGTH ]; then
-  echo "Error: cluster name too long!"
-  exit 1
+  if [ "${#CLUSTER_NAME}" -ge $CLUSTER_NAME_LENGTH ]; then
+    echo "Error: cluster name too long!"
+    exit 1
+  fi
 fi
 
 set -u
@@ -184,8 +181,8 @@ checkForExistingCluster() {
     -H "Authorization: Api-Token ${API_TOKEN}" \
     -H "Content-Type: application/json; charset=utf-8")"
 
-  if echo "$response" | grep -Fqe "\"name\":\"${CLUSTER_NAME}\""; then
-    echo "Error: Cluster already exists!"
+  if echo "$response" | grep -FEq "\"name\":\"${CLUSTER_NAME}\""; then
+    echo "Error: Cluster name already exists!"
     exit 1
   fi
 }
