@@ -57,18 +57,15 @@ if [ -z "$PAAS_TOKEN" ]; then
 fi
 
 if [ -z "$CLUSTER_NAME" ]; then
-  echo "Error: cluster name not set!"
-  exit 1
-fi
+  if ! echo "$CLUSTER_NAME" | grep -Eq "$CLUSTER_NAME_REGEX"; then
+    echo "Error: cluster name does not match regex!"
+    exit 1
+  fi
 
-if ! echo "$CLUSTER_NAME" | grep -q "$CLUSTER_NAME_REGEX"; then
-  echo "Error: cluster name does not match regex!"
-  exit 1
-fi
-
-if [ "${#CLUSTER_NAME}" -ge $CLUSTER_NAME_LENGTH ]; then
-  echo "Error: cluster name too long!"
-  exit 1
+  if [ "${#CLUSTER_NAME}" -ge $CLUSTER_NAME_LENGTH ]; then
+    echo "Error: cluster name too long!"
+    exit 1
+  fi
 fi
 
 set -u
@@ -176,19 +173,39 @@ EOF
 
 checkForExistingCluster() {
   response=$(apiRequest "GET" "/config/v1/kubernetes/credentials" "")
-  if echo "$response" | grep -Fqe "\"name\":\"${CLUSTER_NAME}\""; then
+  if echo "$response" | grep -FEq "\"name\":\"${CLUSTER_NAME}\""; then
     echo "Error: Cluster already exists!"
     exit 1
   fi
 }
 
 checkTokenScopes() {
-  jsonAPI="\"token\": \"${API_TOKEN}\""
-  jsonPaaS="\"token\": \"${PAAS_TOKEN}\""
+  jsonAPI="{\"token\": \"${API_TOKEN}\"}"
+  jsonPaaS="{\"token\": \"${PAAS_TOKEN}\"}"
+
   responseAPI=$(apiRequest "POST" "/v1/tokens/lookup" "${jsonAPI}")
-  echo $responseAPI
+
+  if echo "$responseAPI" | grep -q "Authentication failed"; then
+    echo "Error: API token authentication failed!"
+    exit 1
+  fi
+
+  if ! echo "$responseAPI" | grep -q "WriteConfig"; then
+    echo "Error: API token does not have config write permission!"
+    exit 1
+  fi
+
+  if ! echo "$responseAPI" | grep -q "ReadConfig"; then
+    echo "Error: API token does not have config read permission!"
+    exit 1
+  fi
+
   responsePaaS=$(apiRequest "POST" "/v1/tokens/lookup" "${jsonPaaS}")
-  echo $responsePaaS
+
+  if echo "$responsePaaS" | grep -q "Token does not exist"; then
+    echo "Error: PaaS token does not exist!"
+    exit 1
+  fi
 }
 
 apiRequest() {
@@ -206,10 +223,10 @@ apiRequest() {
 }
 
 ####### MAIN #######
-#printf "\nCheck if cluster already exists...\n"
-#checkTokenScopes
-#printf "\nCheck if cluster already exists...\n"
-##checkForExistingCluster
+printf "\nCheck if cluster already exists...\n"
+checkTokenScopes
+printf "\nCheck if cluster already exists...\n"
+checkForExistingCluster
 printf "\nCreating Dynatrace namespace...\n"
 checkIfNSExists
 printf "\nApplying Dynatrace Operator...\n"
