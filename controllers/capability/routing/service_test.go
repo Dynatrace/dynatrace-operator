@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,13 +23,15 @@ func TestCreateService(t *testing.T) {
 	service := createService(instance, testFeature)
 
 	assert.NotNil(t, service)
-	assert.Equal(t, instance.Name+"-"+testFeature+"-service", service.Name)
+	assert.Equal(t, instance.Name+"-"+testFeature, service.Name)
 	assert.Equal(t, instance.Namespace, service.Namespace)
 
 	serviceSpec := service.Spec
 	assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
 	assert.Equal(t, map[string]string{
-		keyFeature: testFeature,
+		capability.KeyActiveGate: testName,
+		capability.KeyDynatrace:  capability.ValueActiveGate,
+		capability.KeyFeature:    testFeature,
 	}, serviceSpec.Selector)
 
 	ports := serviceSpec.Ports
@@ -43,12 +46,12 @@ func TestBuildServiceNameForDNSEntryPoint(t *testing.T) {
 	actual := buildServiceHostName(testName, testFeature)
 	assert.NotEmpty(t, actual)
 
-	expected := "$(TEST_NAME_TEST_FEATURE_SERVICE_SERVICE_HOST):$(TEST_NAME_TEST_FEATURE_SERVICE_SERVICE_PORT)"
+	expected := "$(TEST_NAME_TEST_FEATURE_SERVICE_HOST):$(TEST_NAME_TEST_FEATURE_SERVICE_PORT)"
 	assert.Equal(t, expected, actual)
 
 	testStringName := "this---test_string"
 	testStringFeature := "SHOULD--_--PaRsEcORrEcTlY"
-	expected = "$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_SERVICE_HOST):$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_SERVICE_PORT)"
+	expected = "$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_HOST):$(THIS___TEST_STRING_SHOULD_____PARSECORRECTLY_SERVICE_PORT)"
 	actual = buildServiceHostName(testStringName, testStringFeature)
 	assert.Equal(t, expected, actual)
 }

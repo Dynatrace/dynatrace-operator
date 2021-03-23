@@ -108,6 +108,9 @@ spec:
     group: ${CLUSTER_NAME}
   routing:
     enabled: true
+    group: ${CLUSTER_NAME}
+  routing:
+    enabled: true
   classicFullStack:
     enabled: true
     tolerations:
@@ -223,7 +226,7 @@ apiRequest() {
 }
 
 ####### MAIN #######
-printf "\nCheck if cluster already exists...\n"
+printf "\nCheck for token scopes...\n"
 checkTokenScopes
 printf "\nCheck if cluster already exists...\n"
 checkForExistingCluster

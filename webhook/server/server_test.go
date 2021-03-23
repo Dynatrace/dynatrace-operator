@@ -198,6 +198,7 @@ func TestPodInjection(t *testing.T) {
 				Image: "alpine",
 				Env: []corev1.EnvVar{
 					{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
+					{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator;script_version=snapshot;orchestrator_id="},
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
@@ -360,6 +361,7 @@ func TestUseImmutableImage(t *testing.T) {
 					Image: "alpine",
 					Env: []corev1.EnvVar{
 						{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
+						{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator;script_version=snapshot;orchestrator_id="},
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
@@ -520,6 +522,7 @@ func TestUseImmutableImage(t *testing.T) {
 					Image: "alpine",
 					Env: []corev1.EnvVar{
 						{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
+						{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator;script_version=snapshot;orchestrator_id="},
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
@@ -681,6 +684,7 @@ func TestUseImmutableImage(t *testing.T) {
 					Image: "alpine",
 					Env: []corev1.EnvVar{
 						{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
+						{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator;script_version=snapshot;orchestrator_id="},
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
@@ -843,6 +847,7 @@ func TestAgentVersion(t *testing.T) {
 				Image: "alpine",
 				Env: []corev1.EnvVar{
 					{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
+					{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator;script_version=snapshot;orchestrator_id="},
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},

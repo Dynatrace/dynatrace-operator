@@ -5,14 +5,13 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
-	keyFeature = "feature"
-
 	servicePort       = 443
 	serviceTargetPort = "ag-https"
 )
@@ -25,7 +24,7 @@ func createService(instance *v1alpha1.DynaKube, feature string) corev1.Service {
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
-			Selector: map[string]string{keyFeature: feature},
+			Selector: capability.BuildLabelsFromInstance(instance, feature),
 			Ports: []corev1.ServicePort{
 				{
 					Protocol:   corev1.ProtocolTCP,
@@ -38,7 +37,7 @@ func createService(instance *v1alpha1.DynaKube, feature string) corev1.Service {
 }
 
 func buildServiceName(instanceName string, module string) string {
-	return instanceName + "-" + module + "-service"
+	return instanceName + "-" + module
 }
 
 // buildServiceHostName converts the name returned by buildServiceName
