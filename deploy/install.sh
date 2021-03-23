@@ -177,7 +177,7 @@ EOF
 checkForExistingCluster() {
   response=$(apiRequest "GET" "/config/v1/kubernetes/credentials" "")
   if echo "$response" | grep -FEq "\"name\":\"${CLUSTER_NAME}\""; then
-    echo "Error: Cluster already exists!"
+    echo "Error: Cluster name already exists!"
     exit 1
   fi
 }
