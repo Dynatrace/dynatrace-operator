@@ -165,11 +165,7 @@ addK8sConfiguration() {
 EOF
   )"
 
-  response="$(curl -sS -X POST "${API_URL}/config/v1/kubernetes/credentials" \
-    -H "accept: application/json; charset=utf-8" \
-    -H "Authorization: Api-Token ${API_TOKEN}" \
-    -H "Content-Type: application/json; charset=utf-8" \
-    -d "${json}")"
+  response=$(apiRequest "POST" "/config/v1/kubernetes/credentials" "${json}")
 
   if echo "$response" | grep "${CLUSTER_NAME}" >/dev/null 2>&1; then
     echo "Kubernetes monitoring successfully setup."
@@ -179,20 +175,41 @@ EOF
 }
 
 checkForExistingCluster() {
-  response="$(curl -sS -X GET "${API_URL}/config/v1/kubernetes/credentials" \
-    -H "accept: application/json; charset=utf-8" \
-    -H "Authorization: Api-Token ${API_TOKEN}" \
-    -H "Content-Type: application/json; charset=utf-8")"
-
+  response=$(apiRequest "GET" "/config/v1/kubernetes/credentials" "")
   if echo "$response" | grep -Fqe "\"name\":\"${CLUSTER_NAME}\""; then
     echo "Error: Cluster already exists!"
     exit 1
   fi
 }
 
+checkTokenScopes() {
+  jsonAPI="\"token\": \"${API_TOKEN}\""
+  jsonPaaS="\"token\": \"${PAAS_TOKEN}\""
+  responseAPI=$(apiRequest "POST" "/v1/tokens/lookup" "${jsonAPI}")
+  echo $responseAPI
+  responsePaaS=$(apiRequest "POST" "/v1/tokens/lookup" "${jsonPaaS}")
+  echo $responsePaaS
+}
+
+apiRequest() {
+  method=$1
+  url=$2
+  json=$3
+
+  response="$(curl -sS -X ${method} "${API_URL}""${url}" \
+    -H "accept: application/json; charset=utf-8" \
+    -H "Authorization: Api-Token ${API_TOKEN}" \
+    -H "Content-Type: application/json; charset=utf-8" \
+    -d "${json}")"
+
+  echo "$response"
+}
+
 ####### MAIN #######
-printf "\nCheck if cluster already exists...\n"
-checkForExistingCluster
+#printf "\nCheck if cluster already exists...\n"
+#checkTokenScopes
+#printf "\nCheck if cluster already exists...\n"
+##checkForExistingCluster
 printf "\nCreating Dynatrace namespace...\n"
 checkIfNSExists
 printf "\nApplying Dynatrace Operator...\n"
