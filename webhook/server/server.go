@@ -62,6 +62,10 @@ func registerDebugInjectEndpoint(mgr manager.Manager, ns string) {
 }
 
 func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) error {
+	// Don't use mgr.GetClient() on this function, or other cache-dependent functions from the manager. The cache may
+	// not be ready at this point, and queries for Kubernetes objects may fail. mgr.GetAPIReader() doesn't depend on the
+	// cache and is safe to use.
+
 	apmExists, err := utils.CheckIfOneAgentAPMExists(mgr.GetConfig())
 	if err != nil {
 		return err
@@ -79,7 +83,7 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 	}
 
 	var UID types.UID
-	if UID, err = kubesystem.GetUID(mgr.GetClient()); err != nil {
+	if UID, err = kubesystem.GetUID(mgr.GetAPIReader()); err != nil {
 		return err
 	}
 
