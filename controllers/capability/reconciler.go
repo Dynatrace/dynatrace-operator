@@ -3,6 +3,7 @@ package capability
 import (
 	"context"
 	"hash/fnv"
+	"reflect"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -18,10 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-)
-
-const (
-	OldKeyActiveGate = "activegate"
 )
 
 type Reconciler struct {
@@ -174,15 +171,15 @@ func (r *Reconciler) deleteStatefulSetIfOldLabelsAreUsed(desiredSts *appsv1.Stat
 		return false, err
 	}
 
-	if _, ok := currentSts.Labels[OldKeyActiveGate]; !ok {
-		return false, nil
+	if !reflect.DeepEqual(currentSts.Labels, desiredSts.Labels) {
+		r.log.Info("Deleting existing stateful set")
+		if err = r.Delete(context.TODO(), desiredSts); err != nil {
+			return false, err
+		}
+		return true, nil
 	}
 
-	r.log.Info("Deleting existing stateful set")
-	if err = r.Delete(context.TODO(), desiredSts); err != nil {
-		return false, err
-	}
-	return true, nil
+	return false, nil
 }
 
 func (r *Reconciler) calculateCustomPropertyHash() (string, error) {
