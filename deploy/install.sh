@@ -108,6 +108,9 @@ spec:
     group: ${CLUSTER_NAME}
   routing:
     enabled: true
+    group: ${CLUSTER_NAME}
+  routing:
+    enabled: true
   classicFullStack:
     enabled: true
     tolerations:
@@ -162,11 +165,7 @@ addK8sConfiguration() {
 EOF
   )"
 
-  response="$(curl -sS -X POST "${API_URL}/config/v1/kubernetes/credentials" \
-    -H "accept: application/json; charset=utf-8" \
-    -H "Authorization: Api-Token ${API_TOKEN}" \
-    -H "Content-Type: application/json; charset=utf-8" \
-    -d "${json}")"
+  response=$(apiRequest "POST" "/config/v1/kubernetes/credentials" "${json}")
 
   if echo "$response" | grep "${CLUSTER_NAME}" >/dev/null 2>&1; then
     echo "Kubernetes monitoring successfully setup."
@@ -176,18 +175,59 @@ EOF
 }
 
 checkForExistingCluster() {
-  response="$(curl -sS -X GET "${API_URL}/config/v1/kubernetes/credentials" \
-    -H "accept: application/json; charset=utf-8" \
-    -H "Authorization: Api-Token ${API_TOKEN}" \
-    -H "Content-Type: application/json; charset=utf-8")"
-
+  response=$(apiRequest "GET" "/config/v1/kubernetes/credentials" "")
   if echo "$response" | grep -FEq "\"name\":\"${CLUSTER_NAME}\""; then
     echo "Error: Cluster name already exists!"
     exit 1
   fi
 }
 
+checkTokenScopes() {
+  jsonAPI="{\"token\": \"${API_TOKEN}\"}"
+  jsonPaaS="{\"token\": \"${PAAS_TOKEN}\"}"
+
+  responseAPI=$(apiRequest "POST" "/v1/tokens/lookup" "${jsonAPI}")
+
+  if echo "$responseAPI" | grep -q "Authentication failed"; then
+    echo "Error: API token authentication failed!"
+    exit 1
+  fi
+
+  if ! echo "$responseAPI" | grep -q "WriteConfig"; then
+    echo "Error: API token does not have config write permission!"
+    exit 1
+  fi
+
+  if ! echo "$responseAPI" | grep -q "ReadConfig"; then
+    echo "Error: API token does not have config read permission!"
+    exit 1
+  fi
+
+  responsePaaS=$(apiRequest "POST" "/v1/tokens/lookup" "${jsonPaaS}")
+
+  if echo "$responsePaaS" | grep -q "Token does not exist"; then
+    echo "Error: PaaS token does not exist!"
+    exit 1
+  fi
+}
+
+apiRequest() {
+  method=$1
+  url=$2
+  json=$3
+
+  response="$(curl -sS -X ${method} "${API_URL}${url}" \
+    -H "accept: application/json; charset=utf-8" \
+    -H "Authorization: Api-Token ${API_TOKEN}" \
+    -H "Content-Type: application/json; charset=utf-8" \
+    -d "${json}")"
+
+  echo "$response"
+}
+
 ####### MAIN #######
+printf "\nCheck for token scopes...\n"
+checkTokenScopes
 printf "\nCheck if cluster already exists...\n"
 checkForExistingCluster
 printf "\nCreating Dynatrace namespace...\n"
