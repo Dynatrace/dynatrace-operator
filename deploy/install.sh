@@ -109,8 +109,6 @@ spec:
   routing:
     enabled: true
     group: ${CLUSTER_NAME}
-  routing:
-    enabled: true
   classicFullStack:
     enabled: true
     tolerations:
