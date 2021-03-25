@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -19,7 +19,7 @@ func TestGetDeployment(t *testing.T) {
 	os.Setenv("POD_NAME", "mypod")
 	trueVar := true
 
-	fakeClient := dtfake.NewClient(
+	fakeClient := fake.NewClient(
 		&corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "mypod",

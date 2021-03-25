@@ -27,7 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/logger"
-	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -57,7 +57,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		},
 	}
 
-	fakeClient := dtfake.NewClient()
+	fakeClient := fake.NewClient()
 
 	now := metav1.Now()
 	rec := &utils.Reconciliation{Instance: &dk, Log: logger.NewDTLogger(), Now: now}

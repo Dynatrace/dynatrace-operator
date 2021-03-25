@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -29,7 +29,7 @@ func init() {
 }
 
 func TestReconcileNamespace(t *testing.T) {
-	c := dtfake.NewClient(
+	c := fake.NewClient(
 		&dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
 			Spec: dynatracev1alpha1.DynaKubeSpec{

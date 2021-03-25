@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -22,7 +22,7 @@ const (
 )
 
 func TestGetImagePullSecret(t *testing.T) {
-	fakeClient := dtfake.NewClient()
+	fakeClient := fake.NewClient()
 	instance := &dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,

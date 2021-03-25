@@ -9,7 +9,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -167,7 +167,7 @@ func createDTMockClient(ip, host string) *dtclient.MockDynatraceClient {
 }
 
 func createDefaultFakeClient() client.Client {
-	return dtfake.NewClient(
+	return fake.NewClient(
 		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
 		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
 		&dynatracev1alpha1.DynaKube{

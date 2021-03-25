@@ -7,7 +7,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,7 +63,7 @@ func TestReconcile_InstallerDowngrade(t *testing.T) {
 
 	labels := map[string]string{"dynatrace.com/component": "operator", "operator.dynatrace.com/instance": oaName, "operator.dynatrace.com/feature": ClassicFeature}
 
-	c := dtfake.NewClient(
+	c := fake.NewClient(
 		&dynakube,
 		NewSecret(oaName, namespace, map[string]string{utils.DynatracePaasToken: "42", utils.DynatraceApiToken: "84"}),
 		&corev1.Pod{ // To be untouched.

@@ -5,7 +5,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,7 +35,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			}}
-		fakeClient := dtfake.NewClient(instance, &secret)
+		fakeClient := fake.NewClient(instance, &secret)
 		dtc, err := BuildDynatraceClient(fakeClient, instance, &secret)
 
 		assert.NoError(t, err)
@@ -59,7 +59,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			}}
-		fakeClient := dtfake.NewClient(instance, &secret)
+		fakeClient := fake.NewClient(instance, &secret)
 		dtc, err := BuildDynatraceClient(fakeClient, instance, &secret)
 		assert.Nil(t, dtc)
 		assert.Error(t, err)
@@ -84,7 +84,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 				Proxy: &dynatracev1alpha1.DynaKubeProxy{
 					ValueFrom: testKey,
 				}}}
-		fakeClient := dtfake.NewClient(instance, &secret)
+		fakeClient := fake.NewClient(instance, &secret)
 		dtc, err := BuildDynatraceClient(fakeClient, instance, &secret)
 
 		assert.Error(t, err)
@@ -106,7 +106,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 				TrustedCAs: testKey,
 			}}
 
-		fakeClient := dtfake.NewClient(instance, &secret)
+		fakeClient := fake.NewClient(instance, &secret)
 		dtc, err := BuildDynatraceClient(fakeClient, instance, &secret)
 
 		assert.Error(t, err)
@@ -170,7 +170,7 @@ func TestOptions(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, options.Opts)
 
-		fakeClient := dtfake.NewClient(
+		fakeClient := fake.NewClient(
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -190,7 +190,7 @@ func TestOptions(t *testing.T) {
 		assert.NotEmpty(t, options.Opts)
 	})
 	t.Run(`AppendProxySettings handles missing or malformed secret`, func(t *testing.T) {
-		fakeClient := dtfake.NewClient()
+		fakeClient := fake.NewClient()
 		options := newOptions()
 		err := options.appendProxySettings(fakeClient, &dynatracev1alpha1.DynaKubeSpec{
 			Proxy: &dynatracev1alpha1.DynaKubeProxy{
@@ -200,7 +200,7 @@ func TestOptions(t *testing.T) {
 		assert.Error(t, err)
 		assert.Empty(t, options.Opts)
 
-		fakeClient = dtfake.NewClient(
+		fakeClient = fake.NewClient(
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -228,7 +228,7 @@ func TestOptions(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Empty(t, options.Opts)
 
-		fakeClient := dtfake.NewClient(
+		fakeClient := fake.NewClient(
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -250,7 +250,7 @@ func TestOptions(t *testing.T) {
 		assert.NotNil(t, options)
 		assert.Empty(t, options.Opts)
 
-		fakeClient := dtfake.NewClient()
+		fakeClient := fake.NewClient()
 		err := options.appendTrustedCerts(fakeClient, &dynatracev1alpha1.DynaKubeSpec{
 			TrustedCAs: testName,
 		}, testNamespace)
@@ -258,7 +258,7 @@ func TestOptions(t *testing.T) {
 		assert.Error(t, err)
 		assert.Empty(t, options.Opts)
 
-		fakeClient = dtfake.NewClient(
+		fakeClient = fake.NewClient(
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,

@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -59,7 +59,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		secret := buildTestPaasTokenSecret()
-		fakeClient := dtfake.NewClient(
+		fakeClient := fake.NewClient(
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
 				UID:  testUID,
 				Name: kubesystem.Namespace,
@@ -122,7 +122,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 					},
 				}}}
 		secret := buildTestPaasTokenSecret()
-		fakeClient := dtfake.NewClient(
+		fakeClient := fake.NewClient(
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
 				UID:  testUID,
 				Name: kubesystem.Namespace,

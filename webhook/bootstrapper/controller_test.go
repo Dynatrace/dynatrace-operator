@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,7 +30,7 @@ func TestReconcileWebhook(t *testing.T) {
 	now, err := time.Parse(time.RFC3339, "2018-01-10T00:00:00Z")
 	require.NoError(t, err)
 
-	c := dtfake.NewClient()
+	c := fake.NewClient()
 	r := ReconcileWebhook{client: c, logger: logger, namespace: ns, scheme: scheme.Scheme, certsDir: tmpDir}
 
 	reconcileAndGetCreds := func(days time.Duration) map[string]string {

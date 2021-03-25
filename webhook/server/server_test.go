@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +33,7 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	require.NoError(t, err)
 
 	inj := &podInjector{
-		client: dtfake.NewClient(
+		client: fake.NewClient(
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
@@ -66,7 +66,7 @@ func TestPodInjection(t *testing.T) {
 	require.NoError(t, err)
 
 	inj := &podInjector{
-		client: dtfake.NewClient(
+		client: fake.NewClient(
 			&dynatracev1alpha1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
 				Spec: dynatracev1alpha1.DynaKubeSpec{
@@ -260,7 +260,7 @@ func TestUseImmutableImage(t *testing.T) {
 		}
 
 		inj := &podInjector{
-			client: dtfake.NewClient(
+			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
@@ -421,7 +421,7 @@ func TestUseImmutableImage(t *testing.T) {
 		}
 
 		inj := &podInjector{
-			client: dtfake.NewClient(
+			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
@@ -586,7 +586,7 @@ func TestUseImmutableImage(t *testing.T) {
 		}
 
 		inj := &podInjector{
-			client: dtfake.NewClient(
+			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
@@ -749,7 +749,7 @@ func TestAgentVersion(t *testing.T) {
 	}
 
 	inj := &podInjector{
-		client: dtfake.NewClient(
+		client: fake.NewClient(
 			instance,
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
