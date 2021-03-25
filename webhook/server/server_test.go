@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -33,13 +33,13 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	require.NoError(t, err)
 
 	inj := &podInjector{
-		client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+		client: dtfake.NewClient(
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
 					Labels: map[string]string{"oneagent.dynatrace.com/instance": "dynakube"},
 				},
-			}).Build(),
+			}),
 		decoder:   decoder,
 		image:     "operator-image",
 		namespace: "dynatrace",
@@ -66,7 +66,7 @@ func TestPodInjection(t *testing.T) {
 	require.NoError(t, err)
 
 	inj := &podInjector{
-		client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+		client: dtfake.NewClient(
 			&dynatracev1alpha1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
 				Spec: dynatracev1alpha1.DynaKubeSpec{
@@ -101,7 +101,7 @@ func TestPodInjection(t *testing.T) {
 					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
 				},
 			},
-		).Build(),
+		),
 		decoder:   decoder,
 		image:     "test-api-url.com/linux/codemodule",
 		namespace: "dynatrace",
@@ -260,7 +260,7 @@ func TestUseImmutableImage(t *testing.T) {
 		}
 
 		inj := &podInjector{
-			client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+			client: dtfake.NewClient(
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
@@ -268,7 +268,7 @@ func TestUseImmutableImage(t *testing.T) {
 						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
 					},
 				},
-			).Build(),
+			),
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
@@ -421,7 +421,7 @@ func TestUseImmutableImage(t *testing.T) {
 		}
 
 		inj := &podInjector{
-			client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+			client: dtfake.NewClient(
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
@@ -429,7 +429,7 @@ func TestUseImmutableImage(t *testing.T) {
 						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
 					},
 				},
-			).Build(),
+			),
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
@@ -586,7 +586,7 @@ func TestUseImmutableImage(t *testing.T) {
 		}
 
 		inj := &podInjector{
-			client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+			client: dtfake.NewClient(
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
@@ -594,7 +594,7 @@ func TestUseImmutableImage(t *testing.T) {
 						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
 					},
 				},
-			).Build(),
+			),
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
@@ -749,7 +749,7 @@ func TestAgentVersion(t *testing.T) {
 	}
 
 	inj := &podInjector{
-		client: fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+		client: dtfake.NewClient(
 			instance,
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -757,7 +757,7 @@ func TestAgentVersion(t *testing.T) {
 					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
 				},
 			},
-		).Build(),
+		),
 		decoder:   decoder,
 		image:     "test-image",
 		namespace: "dynatrace",

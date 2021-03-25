@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -42,7 +42,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 			}}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance).Build()
+		fakeClient := dtfake.NewClient(instance)
 		r := NewReconciler(fakeClient, instance, nil, testOwner, valueSource, scheme.Scheme)
 		err := r.Reconcile()
 
@@ -64,7 +64,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 			}}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance).Build()
+		fakeClient := dtfake.NewClient(instance)
 		r := NewReconciler(fakeClient, instance, nil, testOwner, valueSource, scheme.Scheme)
 		err := r.Reconcile()
 

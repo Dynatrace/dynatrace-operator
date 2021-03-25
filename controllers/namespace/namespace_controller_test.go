@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -15,7 +16,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -29,7 +29,7 @@ func init() {
 }
 
 func TestReconcileNamespace(t *testing.T) {
-	c := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+	c := dtfake.NewClient(
 		&dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
 			Spec: dynatracev1alpha1.DynaKubeSpec{
@@ -66,7 +66,7 @@ func TestReconcileNamespace(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
 			Data:       map[string][]byte{"paasToken": []byte("42"), "apiToken": []byte("84")},
 		},
-	).Build()
+	)
 
 	r := ReconcileNamespaces{
 		client:    c,

@@ -9,6 +9,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -17,7 +18,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
@@ -31,7 +31,7 @@ func init() {
 }
 
 func TestNodesReconciler_CreateCache(t *testing.T) {
-	fakeClient := createDefaultFakeClientWithScheme()
+	fakeClient := createDefaultFakeClient()
 
 	dtClient := &dtclient.MockDynatraceClient{}
 	defer mock.AssertExpectationsForObjects(t, dtClient)
@@ -56,7 +56,7 @@ func TestNodesReconciler_CreateCache(t *testing.T) {
 }
 
 func TestNodesReconciler_DeleteNode(t *testing.T) {
-	fakeClient := createDefaultFakeClientWithScheme()
+	fakeClient := createDefaultFakeClient()
 
 	dtClient := createDTMockClient("1.2.3.4", "HOST-42")
 	defer mock.AssertExpectationsForObjects(t, dtClient)
@@ -80,7 +80,7 @@ func TestNodesReconciler_DeleteNode(t *testing.T) {
 }
 
 func TestNodesReconciler_NodeNotFound(t *testing.T) {
-	fakeClient := createDefaultFakeClientWithScheme()
+	fakeClient := createDefaultFakeClient()
 
 	dtClient := createDTMockClient("5.6.7.8", "HOST-84")
 	defer mock.AssertExpectationsForObjects(t, dtClient)
@@ -107,7 +107,7 @@ func TestNodesReconciler_NodeNotFound(t *testing.T) {
 }
 
 func TestNodeReconciler_NodeHasTaint(t *testing.T) {
-	fakeClient := createDefaultFakeClientWithScheme()
+	fakeClient := createDefaultFakeClient()
 	dtClient := createDTMockClient("1.2.3.4", "HOST-42")
 	ctrl := createDefaultReconciler(fakeClient, dtClient)
 
@@ -166,8 +166,8 @@ func createDTMockClient(ip, host string) *dtclient.MockDynatraceClient {
 	return dtClient
 }
 
-func createDefaultFakeClientWithScheme() client.Client {
-	return fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+func createDefaultFakeClient() client.Client {
+	return dtfake.NewClient(
 		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
 		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
 		&dynatracev1alpha1.DynaKube{
@@ -185,5 +185,5 @@ func createDefaultFakeClientWithScheme() client.Client {
 					Instances: map[string]dynatracev1alpha1.OneAgentInstance{"node2": {IPAddress: "5.6.7.8"}},
 				},
 			},
-		}).Build()
+		})
 }

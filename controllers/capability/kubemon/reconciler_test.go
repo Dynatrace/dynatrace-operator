@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	dtfake "github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -18,7 +19,6 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -59,12 +59,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		secret := buildTestPaasTokenSecret()
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+		fakeClient := dtfake.NewClient(
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
 				UID:  testUID,
 				Name: kubesystem.Namespace,
 			}},
-			instance, secret).Build()
+			instance, secret)
 		reconciler := NewReconciler(
 			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider, false,
 		)
@@ -122,12 +122,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 					},
 				}}}
 		secret := buildTestPaasTokenSecret()
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+		fakeClient := dtfake.NewClient(
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
 				UID:  testUID,
 				Name: kubesystem.Namespace,
 			}},
-			instance, secret).Build()
+			instance, secret)
 		reconciler := NewReconciler(
 			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider, false,
 		)
