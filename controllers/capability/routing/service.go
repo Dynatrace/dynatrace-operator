@@ -21,6 +21,7 @@ func createService(instance *v1alpha1.DynaKube, feature string) *corev1.Service 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      BuildServiceName(instance.Name, feature),
 			Namespace: instance.Namespace,
+			Labels:    capability.BuildLabelsFromInstance(instance, feature),
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
