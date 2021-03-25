@@ -203,6 +203,14 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, routingSts)
 
+	routingSvc := &corev1.Service{}
+	err = r.client.Get(context.TODO(), client.ObjectKey{
+		Namespace: testNamespace,
+		Name:      routing.BuildServiceName(testName, routing.Module),
+	}, routingSvc)
+	assert.NoError(t, err)
+	assert.NotNil(t, routingSvc)
+
 	err = r.client.Get(context.TODO(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
 	require.NoError(t, err)
 
@@ -217,6 +225,13 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 		Namespace: testNamespace,
 		Name:      testName + routing.StatefulSetSuffix,
 	}, routingSts)
+	assert.Error(t, err)
+	assert.True(t, k8serrors.IsNotFound(err))
+
+	err = r.client.Get(context.TODO(), client.ObjectKey{
+		Namespace: testNamespace,
+		Name:      routing.BuildServiceName(testName, routing.Module),
+	}, routingSvc)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
 }

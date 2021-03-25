@@ -260,6 +260,16 @@ func (r *ReconcileDynaKube) reconcileRouting(rec *utils.Reconciliation, dtc dtcl
 		if err := r.ensureDeleted(&sts); rec.Error(err) {
 			return false
 		}
+
+		svc := corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      routing.BuildServiceName(rec.Instance.Name, routing.Module),
+				Namespace: rec.Instance.Namespace,
+			},
+		}
+		if err := r.ensureDeleted(&svc); rec.Error(err) {
+			return false
+		}
 	}
 	return true
 }

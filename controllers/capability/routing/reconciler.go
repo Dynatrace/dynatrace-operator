@@ -16,11 +16,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
-	module            = "msgrouting"
-	StatefulSetSuffix = "-" + module
+	Module            = "msgrouting"
+	StatefulSetSuffix = "-" + Module
 	capabilityName    = "MSGrouter"
 	containerPort     = 9999
 	DTDNSEntryPoint   = "DT_DNS_ENTRY_POINT"
@@ -35,7 +36,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, enableUpdates bool) *Reconciler {
 	baseReconciler := capability.NewReconciler(
 		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider, enableUpdates,
-		&instance.Spec.RoutingSpec.CapabilityProperties, module, capabilityName, "")
+		&instance.Spec.RoutingSpec.CapabilityProperties, Module, capabilityName, "")
 	baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance))
 	baseReconciler.AddOnAfterStatefulSetCreateListener(setCommunicationsPort(instance))
 	baseReconciler.AddOnAfterStatefulSetCreateListener(setLivenessProbePort(instance))
@@ -80,7 +81,7 @@ func addDNSEntryPoint(instance *dynatracev1alpha1.DynaKube) capability.StatefulS
 }
 
 func buildDNSEntryPoint(instance *dynatracev1alpha1.DynaKube) string {
-	return fmt.Sprintf("https://%s/communication", buildServiceHostName(instance.Name, module))
+	return fmt.Sprintf("https://%s/communication", buildServiceHostName(instance.Name, Module))
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
@@ -94,11 +95,17 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 }
 
 func (r *Reconciler) createServiceIfNotExists() (bool, error) {
-	service := createService(r.Instance, module)
-	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, &service)
+	service := createService(r.Instance, Module)
+
+	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
 	if err != nil && k8serrors.IsNotFound(err) {
 		r.log.Info("creating service for msgrouter")
-		err = r.Create(context.TODO(), &service)
+
+		if err := controllerutil.SetControllerReference(r.Instance, service, r.Scheme()); err != nil {
+			return false, errors.WithStack(err)
+		}
+
+		err = r.Create(context.TODO(), service)
 		return true, errors.WithStack(err)
 	}
 	return false, errors.WithStack(err)
