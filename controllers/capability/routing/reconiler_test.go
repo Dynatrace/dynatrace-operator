@@ -79,7 +79,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		var customProperties corev1.Secret
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + module + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + Module + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
 		assert.NoError(t, err)
 		assert.NotNil(t, customProperties)
 		assert.Contains(t, customProperties.Data, customproperties.DataKey)
@@ -155,7 +155,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: buildServiceName(r.Instance.Name, module), Namespace: r.Instance.Namespace}, service)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(r.Instance.Name, Module), Namespace: r.Instance.Namespace}, service)
 		assert.NoError(t, err)
 		assert.NotNil(t, service)
 
