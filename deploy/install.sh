@@ -156,6 +156,7 @@ addK8sConfiguration() {
   ],
   "workloadIntegrationEnabled": true,
   "eventsIntegrationEnabled": false,
+  "activeGateGroup": "${CLUSTER_NAME}",
   "authToken": "${K8S_BEARER}",
   "active": true,
   "certificateCheckEnabled": "${SKIP_CERT_CHECK}"
