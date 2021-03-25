@@ -20,6 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/namespace"
 	"github.com/Dynatrace/dynatrace-operator/controllers/nodes"
+	"github.com/Dynatrace/dynatrace-operator/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,7 +32,7 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 	log.Info(ns)
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Namespace:                  ns,
-		Scheme:                     scheme,
+		Scheme:                     scheme.Scheme,
 		MetricsBindAddress:         ":8080",
 		Port:                       8383,
 		LeaderElection:             true,

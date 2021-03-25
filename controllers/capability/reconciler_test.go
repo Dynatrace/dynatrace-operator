@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
+	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,17 +18,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/deprecated/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
-
-func init() {
-	utilruntime.Must(scheme.AddToScheme(scheme.Scheme))
-	utilruntime.Must(dynatracev1alpha1.AddToScheme(scheme.Scheme))
-}
 
 func TestNewReconiler(t *testing.T) {
 	createDefaultReconciler(t)

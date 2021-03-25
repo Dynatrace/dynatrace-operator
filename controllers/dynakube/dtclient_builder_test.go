@@ -5,11 +5,10 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
@@ -36,7 +35,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			}}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance, &secret).Build()
+		fakeClient := fake.NewClient(instance, &secret)
 		dtc, err := BuildDynatraceClient(fakeClient, instance, &secret)
 
 		assert.NoError(t, err)
@@ -60,7 +59,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			}}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance, &secret).Build()
+		fakeClient := fake.NewClient(instance, &secret)
 		dtc, err := BuildDynatraceClient(fakeClient, instance, &secret)
 		assert.Nil(t, dtc)
 		assert.Error(t, err)
@@ -85,7 +84,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 				Proxy: &dynatracev1alpha1.DynaKubeProxy{
 					ValueFrom: testKey,
 				}}}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance, &secret).Build()
+		fakeClient := fake.NewClient(instance, &secret)
 		dtc, err := BuildDynatraceClient(fakeClient, instance, &secret)
 
 		assert.Error(t, err)
@@ -107,7 +106,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 				TrustedCAs: testKey,
 			}}
 
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance, &secret).Build()
+		fakeClient := fake.NewClient(instance, &secret)
 		dtc, err := BuildDynatraceClient(fakeClient, instance, &secret)
 
 		assert.Error(t, err)
@@ -171,7 +170,7 @@ func TestOptions(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, options.Opts)
 
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+		fakeClient := fake.NewClient(
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -180,7 +179,7 @@ func TestOptions(t *testing.T) {
 				Data: map[string][]byte{
 					Proxy: []byte(testValue),
 				},
-			}).Build()
+			})
 		options = newOptions()
 		err = options.appendProxySettings(fakeClient, &dynatracev1alpha1.DynaKubeSpec{
 			Proxy: &dynatracev1alpha1.DynaKubeProxy{
@@ -191,7 +190,7 @@ func TestOptions(t *testing.T) {
 		assert.NotEmpty(t, options.Opts)
 	})
 	t.Run(`AppendProxySettings handles missing or malformed secret`, func(t *testing.T) {
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		fakeClient := fake.NewClient()
 		options := newOptions()
 		err := options.appendProxySettings(fakeClient, &dynatracev1alpha1.DynaKubeSpec{
 			Proxy: &dynatracev1alpha1.DynaKubeProxy{
@@ -201,14 +200,14 @@ func TestOptions(t *testing.T) {
 		assert.Error(t, err)
 		assert.Empty(t, options.Opts)
 
-		fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+		fakeClient = fake.NewClient(
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
 					Namespace: testNamespace,
 				},
 				Data: map[string][]byte{},
-			}).Build()
+			})
 		options = newOptions()
 		err = options.appendProxySettings(fakeClient, &dynatracev1alpha1.DynaKubeSpec{
 			Proxy: &dynatracev1alpha1.DynaKubeProxy{
@@ -229,7 +228,7 @@ func TestOptions(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Empty(t, options.Opts)
 
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+		fakeClient := fake.NewClient(
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -237,7 +236,7 @@ func TestOptions(t *testing.T) {
 				},
 				Data: map[string]string{
 					Certificates: testValue,
-				}}).Build()
+				}})
 		err = options.appendTrustedCerts(fakeClient, &dynatracev1alpha1.DynaKubeSpec{
 			TrustedCAs: testName,
 		}, testNamespace)
@@ -251,7 +250,7 @@ func TestOptions(t *testing.T) {
 		assert.NotNil(t, options)
 		assert.Empty(t, options.Opts)
 
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		fakeClient := fake.NewClient()
 		err := options.appendTrustedCerts(fakeClient, &dynatracev1alpha1.DynaKubeSpec{
 			TrustedCAs: testName,
 		}, testNamespace)
@@ -259,13 +258,13 @@ func TestOptions(t *testing.T) {
 		assert.Error(t, err)
 		assert.Empty(t, options.Opts)
 
-		fakeClient = fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+		fakeClient = fake.NewClient(
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
 					Namespace: testNamespace,
 				},
-				Data: map[string]string{}}).Build()
+				Data: map[string]string{}})
 		err = options.appendTrustedCerts(fakeClient, &dynatracev1alpha1.DynaKubeSpec{
 			TrustedCAs: testName,
 		}, testNamespace)

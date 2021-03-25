@@ -9,6 +9,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/capability/routing"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/scheme"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -16,9 +18,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -28,15 +28,10 @@ const (
 	testAPIToken  = "test-api-token"
 )
 
-func init() {
-	_ = v1alpha1.AddToScheme(scheme.Scheme) // Register OneAgent and Istio object schemas.
-}
-
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 		r := &ReconcileDynaKube{
-			client: fakeClient,
+			client: fake.NewClient(),
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{})
 
@@ -53,7 +48,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 			}}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance,
+		fakeClient := fake.NewClient(instance,
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -63,7 +58,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					"apiToken":  []byte(testAPIToken),
 					"paasToken": []byte(testPaasToken),
 				},
-			}).Build()
+			})
 		r := &ReconcileDynaKube{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -92,7 +87,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 						Enabled: true,
 					},
 				}}}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance,
+		fakeClient := fake.NewClient(instance,
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -106,7 +101,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: kubesystem.Namespace,
 					UID:  testUID,
-				}}).Build()
+				}})
 		r := &ReconcileDynaKube{
 			client:    fakeClient,
 			apiReader: fakeClient,
@@ -153,7 +148,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 					Enabled: true,
 				},
 			}}}
-	fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(instance,
+	fakeClient := fake.NewClient(instance,
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -167,7 +162,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: kubesystem.Namespace,
 				UID:  testUID,
-			}}).Build()
+			}})
 	r := &ReconcileDynaKube{
 		client:    fakeClient,
 		apiReader: fakeClient,

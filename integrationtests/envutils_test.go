@@ -10,13 +10,11 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
+	"github.com/Dynatrace/dynatrace-operator/scheme"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -89,9 +87,6 @@ var testEnvironmentCRDs = []client.Object{
 }
 
 func init() {
-	utilruntime.Must(scheme.AddToScheme(scheme.Scheme))
-	utilruntime.Must(dynatracev1alpha1.AddToScheme(scheme.Scheme))
-	utilruntime.Must(istiov1alpha3.AddToScheme(scheme.Scheme))
 	os.Setenv("POD_NAMESPACE", DefaultTestNamespace)
 }
 

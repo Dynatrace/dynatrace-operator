@@ -6,13 +6,12 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/scheme"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -20,13 +19,6 @@ const (
 	testEndpoint  = "http://test-endpoint.com/api"
 	testPaasToken = "test-paas-token"
 )
-
-func init() {
-	utilruntime.Must(scheme.AddToScheme(scheme.Scheme))
-
-	utilruntime.Must(dynatracev1alpha1.AddToScheme(scheme.Scheme))
-	// +kubebuilder:scaffold:scheme
-}
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
@@ -43,7 +35,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Data: map[string][]byte{dtclient.DynatracePaasToken: []byte(testPaasToken)},
 		}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, mockDTC, logf.Log, secret)
 
 		mockDTC.
@@ -90,7 +82,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			}}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, mockDTC, logf.Log,
 			&corev1.Secret{
 				Data: map[string][]byte{
@@ -131,7 +123,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			}}
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, mockDTC, logf.Log,
 			&corev1.Secret{
 				Data: map[string][]byte{

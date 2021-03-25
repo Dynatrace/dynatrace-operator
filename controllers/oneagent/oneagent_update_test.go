@@ -7,12 +7,12 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestNewerVersion(t *testing.T) {
@@ -63,7 +63,7 @@ func TestReconcile_InstallerDowngrade(t *testing.T) {
 
 	labels := map[string]string{"dynatrace.com/component": "operator", "operator.dynatrace.com/instance": oaName, "operator.dynatrace.com/feature": ClassicFeature}
 
-	c := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+	c := fake.NewClient(
 		&dynakube,
 		NewSecret(oaName, namespace, map[string]string{utils.DynatracePaasToken: "42", utils.DynatraceApiToken: "84"}),
 		&corev1.Pod{ // To be untouched.
@@ -81,7 +81,7 @@ func TestReconcile_InstallerDowngrade(t *testing.T) {
 			Spec:       corev1.PodSpec{},
 			Status:     corev1.PodStatus{HostIP: "1.2.3.5"},
 		},
-		sampleKubeSystemNS).Build()
+		sampleKubeSystemNS)
 
 	dtcMock := &dtclient.MockDynatraceClient{}
 	dtcMock.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return("1.202.0.20190101-000000", nil)

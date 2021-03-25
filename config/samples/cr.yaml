@@ -170,8 +170,7 @@ spec:
     #   custom: label
 
     # Optional: arguments to add to the ActiveGate instances.
-    # Available options: https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
-    # Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
+    # Available options: https://www.dynatrace.com/support/help/shortlink/activegate-custom-installation#linux
     #
     # args: []
 
@@ -236,8 +235,7 @@ spec:
     #   custom: label
 
     # Optional: arguments to add to the ActiveGate instances.
-    # Available options: https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
-    # Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
+    # Available options: https://www.dynatrace.com/support/help/shortlink/activegate-custom-installation#linux
     #
     # args: []
 

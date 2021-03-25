@@ -11,14 +11,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/scheme"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -29,11 +28,6 @@ const (
 	testNamespace = "test-namespace"
 	testValue     = "test-value"
 )
-
-func init() {
-	utilruntime.Must(scheme.AddToScheme(scheme.Scheme))
-	utilruntime.Must(v1alpha1.AddToScheme(scheme.Scheme))
-}
 
 var mockImageVersionProvider dtversion.ImageVersionProvider = func(image string, _ *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
 	return dtversion.ImageVersion{
@@ -59,12 +53,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		secret := buildTestPaasTokenSecret()
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+		fakeClient := fake.NewClient(
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
 				UID:  testUID,
 				Name: kubesystem.Namespace,
 			}},
-			instance, secret).Build()
+			instance, secret)
 		reconciler := NewReconciler(
 			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider, false,
 		)
@@ -122,12 +116,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 					},
 				}}}
 		secret := buildTestPaasTokenSecret()
-		fakeClient := fake.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(
+		fakeClient := fake.NewClient(
 			&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
 				UID:  testUID,
 				Name: kubesystem.Namespace,
 			}},
-			instance, secret).Build()
+			instance, secret)
 		reconciler := NewReconciler(
 			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider, false,
 		)

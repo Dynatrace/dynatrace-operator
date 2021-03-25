@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,7 +15,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -30,7 +30,7 @@ func TestReconcileWebhook(t *testing.T) {
 	now, err := time.Parse(time.RFC3339, "2018-01-10T00:00:00Z")
 	require.NoError(t, err)
 
-	c := fake.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+	c := fake.NewClient()
 	r := ReconcileWebhook{client: c, logger: logger, namespace: ns, scheme: scheme.Scheme, certsDir: tmpDir}
 
 	reconcileAndGetCreds := func(days time.Duration) map[string]string {

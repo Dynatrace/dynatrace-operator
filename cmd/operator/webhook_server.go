@@ -21,6 +21,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/webhook/server"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -30,7 +31,7 @@ import (
 func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Namespace:                  ns,
-		Scheme:                     scheme,
+		Scheme:                     scheme.Scheme,
 		MetricsBindAddress:         ":8383",
 		Port:                       8443,
 		LeaderElection:             true,

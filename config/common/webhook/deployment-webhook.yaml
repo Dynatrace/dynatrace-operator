@@ -16,6 +16,8 @@ spec:
     type: Recreate
   template:
     metadata:
+      annotations:
+        kubectl.kubernetes.io/default-logs-container: webhook
       labels:
         dynatrace.com/operator: oneagent
         internal.dynatrace.com/component: webhook
