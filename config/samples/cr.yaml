@@ -149,7 +149,7 @@ spec:
     #   key: node-role.kubernetes.io/master
     #   operator: Exists
 
-    # Optional: node selector to control on which nodes the OneAgent will be deployed.
+    # Optional: node selector to control on which nodes the routing ActiveGate will be deployed.
     #
     # nodeSelector: {}
 
