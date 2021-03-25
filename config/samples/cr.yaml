@@ -126,6 +126,72 @@ spec:
     #
     # useImmutableImage: false
 
+  # Enables and configures an ActiveGate instance that allows routing
+  # of OneAgent traffic
+  routing:
+    # Enable Kubernetes routing functionality
+    enabled: true
+
+    # Amount of replicas of activegate routing pods
+    #
+    # replicas: 1
+
+    # Optional: name of the ServiceAccount to assign to the ActiveGate Pods. Defaults to
+    # "dynatrace-msgrouting"
+    #
+    # serviceAccountName: "dynatrace-msgrouting"
+
+    # Optional: tolerations to include with the ActiveGate StatefulSet.
+    # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+    #
+    # tolerations:
+    # - effect: NoSchedule
+    #   key: node-role.kubernetes.io/master
+    #   operator: Exists
+
+    # Optional: node selector to control on which nodes the routing ActiveGate will be deployed.
+    #
+    # nodeSelector: {}
+
+    # Optional: resource settings for ActiveGate container. Consumption of the ActiveGate heavily depends
+    # on the workload to monitor; please adjust values accordingly.
+    #
+    # resources:
+    #   requests:
+    #     cpu: 100m
+    #     memory: 512Mi
+    #   limits:
+    #     cpu: 300m
+    #     memory: 1.5Gi
+
+    # Optional: labels are customer defined labels for ActiveGate Pods to structure workloads as desired.
+    #
+    # labels:
+    #   custom: label
+
+    # Optional: arguments to add to the ActiveGate instances.
+    # Available options: https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
+    # Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
+    #
+    # args: []
+
+    # Optional: additional environment variables to add to the ActiveGate Pods.
+    #
+    # env: []
+
+    # Optional: Set activation group for ActiveGate
+    #
+    # group: ""
+
+    # Optional: Add a custom properties file by providing it as a value or reference it from a secret
+    # If referenced from a secret, make sure the key is called 'customProperties'
+    #
+    # customProperties:
+    #   value: |
+    #     [connectivity]
+    #     networkZone=
+    #   valueFrom: myCustomPropertiesConfigMap
+
   # Enables and configures an ActiveGate instance that allows monitoring
   # of Kubernetes environments
   kubernetesMonitoring:
