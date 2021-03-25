@@ -383,12 +383,12 @@ const (
 // DynaKube is the Schema for the DynaKube API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=dynakubes,scope=Namespaced
+// +kubebuilder:resource:path=dynakubes,scope=Namespaced,categories=dynatrace
 // +kubebuilder:printcolumn:name="ApiUrl",type=string,JSONPath=`.spec.apiUrl`
 // +kubebuilder:printcolumn:name="Tokens",type=string,JSONPath=`.status.tokens`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 // +operator-sdk:csv:customresourcedefinitions:displayName="Dynatrace DynaKube"
-// +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,apps}}
+// +operator-sdk:csv:customresourcedefinitions:resources={{StatefulSet,v1,},{DaemonSet,v1,},{Pod,v1,}}
 type DynaKube struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

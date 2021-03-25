@@ -18,6 +18,8 @@ spec:
     type: date
   group: dynatrace.com
   names:
+    categories:
+    - dynatrace
     kind: DynaKube
     listKind: DynaKubeList
     plural: dynakubes
