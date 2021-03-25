@@ -19,8 +19,8 @@ const (
 	testKey                  = "test-key"
 	testValue                = "test-value"
 	testUID                  = "test-uid"
-	routingStatefulSetSuffix = "-msgrouter"
-	testFeature              = "msgrouter"
+	routingStatefulSetSuffix = "-router"
+	testFeature              = "router"
 )
 
 func TestNewStatefulSetBuilder(t *testing.T) {
@@ -157,7 +157,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		}
 		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", testFeature, "", ""))
-		expectedSecretName := instance.Name + "-msgrouter-" + customproperties.Suffix
+		expectedSecretName := instance.Name + "-router-" + customproperties.Suffix
 
 		require.NotEmpty(t, volumes)
 

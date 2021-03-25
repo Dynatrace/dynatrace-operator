@@ -48,7 +48,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 	}
 
 	r := NewReconciler(clt, clt, scheme.Scheme, dtc, log, instance, imgVerProvider, false,
-		&instance.Spec.RoutingSpec.CapabilityProperties, "msgrouter", "MSGrouter", "")
+		&instance.Spec.RoutingSpec.CapabilityProperties, "router", "MSGrouter", "")
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.scheme)
