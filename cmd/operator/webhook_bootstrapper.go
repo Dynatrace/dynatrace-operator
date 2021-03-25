@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/webhook/bootstrapper"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
@@ -28,7 +29,7 @@ import (
 func startWebhookBoostrapper(ns string, cfg *rest.Config) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Namespace:                  ns,
-		Scheme:                     scheme,
+		Scheme:                     scheme.Scheme,
 		MetricsBindAddress:         ":8484",
 		LeaderElection:             true,
 		LeaderElectionID:           "dynatrace-webhook-bootstrapper-lock",

@@ -5,12 +5,11 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -21,13 +20,6 @@ const (
 	testKey       = "test-key"
 	testOwner     = "test"
 )
-
-func init() {
-	utilruntime.Must(scheme.AddToScheme(scheme.Scheme))
-
-	utilruntime.Must(dynatracev1alpha1.AddToScheme(scheme.Scheme))
-	// +kubebuilder:scaffold:scheme
-}
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Reconile works with minimal setup`, func(t *testing.T) {

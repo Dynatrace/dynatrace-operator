@@ -18,14 +18,9 @@ import (
 	"errors"
 	"os"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/spf13/pflag"
-	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
-	pkgruntime "k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -34,8 +29,7 @@ import (
 )
 
 var (
-	scheme = pkgruntime.NewScheme()
-	log    = logger.NewDTLogger()
+	log = logger.NewDTLogger()
 )
 
 var subcmdCallbacks = map[string]func(ns string, cfg *rest.Config) (manager.Manager, error){
@@ -51,14 +45,6 @@ var (
 	certFile string
 	keyFile  string
 )
-
-func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-	utilruntime.Must(dynatracev1alpha1.AddToScheme(scheme))
-	utilruntime.Must(istiov1alpha3.AddToScheme(scheme))
-	// +kubebuilder:scaffold:scheme
-}
 
 func main() {
 	webhookServerFlags := pflag.NewFlagSet("webhook-server", pflag.ExitOnError)
