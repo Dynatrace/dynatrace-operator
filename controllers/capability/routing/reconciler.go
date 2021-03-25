@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -95,10 +96,15 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 
 func (r *Reconciler) createServiceIfNotExists() (bool, error) {
 	service := createService(r.Instance, module)
-	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, &service)
+
+	if err := controllerutil.SetControllerReference(r.Instance, service, r.Scheme()); err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
 	if err != nil && k8serrors.IsNotFound(err) {
 		r.log.Info("creating service for msgrouter")
-		err = r.Create(context.TODO(), &service)
+		err = r.Create(context.TODO(), service)
 		return true, errors.WithStack(err)
 	}
 	return false, errors.WithStack(err)

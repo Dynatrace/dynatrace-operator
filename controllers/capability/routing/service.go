@@ -16,8 +16,8 @@ const (
 	serviceTargetPort = "ag-https"
 )
 
-func createService(instance *v1alpha1.DynaKube, feature string) corev1.Service {
-	return corev1.Service{
+func createService(instance *v1alpha1.DynaKube, feature string) *corev1.Service {
+	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      buildServiceName(instance.Name, feature),
 			Namespace: instance.Namespace,
