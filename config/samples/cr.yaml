@@ -137,7 +137,7 @@ spec:
     # replicas: 1
 
     # Optional: name of the ServiceAccount to assign to the ActiveGate Pods. Defaults to
-    # "dynatrace-kubernetes-monitoring"
+    # "dynatrace-msgrouting"
     #
     # serviceAccountName: "dynatrace-msgrouting"
 
