@@ -16,16 +16,6 @@ func (o *MockDynatraceClient) GetTenantInfo() (*TenantInfo, error) {
 	return args.Get(0).(*TenantInfo), args.Error(1)
 }
 
-func (o *MockDynatraceClient) QueryOutdatedActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
-	args := o.Called(query)
-	return args.Get(0).([]ActiveGate), args.Error(1)
-}
-
-func (o *MockDynatraceClient) QueryActiveGates(query *ActiveGateQuery) ([]ActiveGate, error) {
-	args := o.Called(query)
-	return args.Get(0).([]ActiveGate), args.Error(1)
-}
-
 func (o *MockDynatraceClient) GetAgentVersionForIP(ip string) (string, error) {
 	args := o.Called(ip)
 	return args.String(0), args.Error(1)
@@ -64,9 +54,4 @@ func (o *MockDynatraceClient) GetEntityIDForIP(ip string) (string, error) {
 func (o *MockDynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 	args := o.Called(token)
 	return args.Get(0).(TokenScopes), args.Error(1)
-}
-
-func (o *MockDynatraceClient) GetClusterInfo() (*ClusterInfo, error) {
-	args := o.Called()
-	return args.Get(0).(*ClusterInfo), args.Error(1)
 }
