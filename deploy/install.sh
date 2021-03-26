@@ -93,7 +93,32 @@ applyDynatraceOperator() {
 }
 
 applyDynaKubeCR() {
-  cat <<EOF | "${CLI}" apply -f -
+  if [ -z "$CLUSTER_NAME" ]; then
+    cat <<EOF | "${CLI}" apply -f -
+apiVersion: dynatrace.com/v1alpha1
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+spec:
+  apiUrl: ${API_URL}
+  skipCertCheck: ${SKIP_CERT_CHECK}
+  kubernetesMonitoring:
+    enabled: true
+  routing:
+    enabled: true
+  classicFullStack:
+    enabled: true
+    tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+      operator: Exists
+    env:
+    - name: ONEAGENT_ENABLE_VOLUME_STORAGE
+      value: "${ENABLE_VOLUME_STORAGE}"
+EOF
+  else
+    cat <<EOF | "${CLI}" apply -f -
 apiVersion: dynatrace.com/v1alpha1
 kind: DynaKube
 metadata:
@@ -121,6 +146,7 @@ spec:
     args:
     - --set-host-group="${CLUSTER_NAME}"
 EOF
+  fi
 }
 
 addK8sConfiguration() {
