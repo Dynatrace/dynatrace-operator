@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	Module            = "msgrouting"
+	Module            = "routing"
 	StatefulSetSuffix = "-" + Module
 	capabilityName    = "MSGrouter"
 	containerPort     = 9999
@@ -99,7 +99,7 @@ func (r *Reconciler) createServiceIfNotExists() (bool, error) {
 
 	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
 	if err != nil && k8serrors.IsNotFound(err) {
-		r.log.Info("creating service for msgrouter")
+		r.log.Info("creating service for router")
 
 		if err := controllerutil.SetControllerReference(r.Instance, service, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)
