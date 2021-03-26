@@ -63,19 +63,11 @@ type Client interface {
 	// Returns an error in case the lookup failed.
 	GetEntityIDForIP(ip string) (string, error)
 
-	// GetClusterInfo returns the following information about the cluster:
-	// * Version
-	GetClusterInfo() (*ClusterInfo, error)
-
 	// GetTokenScopes returns the list of scopes assigned to a token if successful.
 	GetTokenScopes(token string) (TokenScopes, error)
 
 	// GetTenantInfo returns TenantInfo that holds UUID, Tenant Token and Endpoints
 	GetTenantInfo() (*TenantInfo, error)
-
-	QueryOutdatedActiveGates(query *ActiveGateQuery) ([]ActiveGate, error)
-
-	QueryActiveGates(query *ActiveGateQuery) ([]ActiveGate, error)
 }
 
 // Known OS values.
