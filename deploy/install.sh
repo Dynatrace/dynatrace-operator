@@ -168,8 +168,33 @@ addK8sConfiguration() {
     exit 1
   fi
 
-  json="$(
-    cat <<EOF
+  if [ -z "$CLUSTER_NAME" ]; then
+    CONNECTION_NAME="$(echo "${K8S_ENDPOINT}" | awk -F[/:] '{print $4}')"
+
+    json="$(
+      cat <<EOF
+{
+  "label": "${CONNECTION_NAME}",
+  "endpointUrl": "${K8S_ENDPOINT}",
+  "eventsFieldSelectors": [
+    {
+      "label": "Node events",
+      "fieldSelector": "involvedObject.kind=Node",
+      "active": true
+    }
+  ],
+  "workloadIntegrationEnabled": true,
+  "eventsIntegrationEnabled": false,
+  "activeGateGroup": "${CLUSTER_NAME}",
+  "authToken": "${K8S_BEARER}",
+  "active": true,
+  "certificateCheckEnabled": "${SKIP_CERT_CHECK}"
+}
+EOF
+    )"
+  else
+    json="$(
+      cat <<EOF
 {
   "label": "${CLUSTER_NAME}",
   "endpointUrl": "${K8S_ENDPOINT}",
@@ -188,7 +213,8 @@ addK8sConfiguration() {
   "certificateCheckEnabled": "${SKIP_CERT_CHECK}"
 }
 EOF
-  )"
+    )"
+  fi
 
   response=$(apiRequest "POST" "/config/v1/kubernetes/credentials" "${json}")
 
