@@ -90,8 +90,7 @@ spec:
     # Optional: arguments to add to the OneAgent installer.
     # Available options: https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
     # Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
-    args:
-      - "--set-app-log-content-access=true"
+    # args: []
 
     # Optional: additional environment variables to add to the OneAgent Pods.
     #
