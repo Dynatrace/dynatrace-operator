@@ -19,7 +19,7 @@ func prepareArgs(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.Ful
 	}
 
 	if feature == InframonFeature {
-		args = append(args, "--set-host-id-source=k8s-node-name")
+		args = append(args, "--set-host-id-source=auto")
 	}
 
 	args = append(args, "--set-host-property=OperatorVersion="+version.Version)
