@@ -10,8 +10,8 @@ CLUSTER_NAME=""
 CLUSTER_NAME_REGEX="^[-_a-zA-Z0-9][-_\.a-zA-Z0-9]*$"
 CLUSTER_NAME_LENGTH=256
 
-for arg in "$@"; do
-  case $arg in
+while [ $# -gt 0 ]; do
+  case "$1" in
   --api-url)
     API_URL="$2"
     shift 2
@@ -40,6 +40,10 @@ for arg in "$@"; do
     CLI="oc"
     shift
     ;;
+  *)
+    echo "Warning: skipping unsupported option: $1"
+    shift
+    ;;
   esac
 done
 
@@ -66,12 +70,12 @@ fi
 
 if [ -n "$CLUSTER_NAME" ]; then
   if ! echo "$CLUSTER_NAME" | grep -Eq "$CLUSTER_NAME_REGEX"; then
-    echo "Error: cluster name does not match regex!"
+    echo "Error: cluster name \"$CLUSTER_NAME\" does not match regex: \"$CLUSTER_NAME_REGEX\""
     exit 1
   fi
 
   if [ "${#CLUSTER_NAME}" -ge $CLUSTER_NAME_LENGTH ]; then
-    echo "Error: cluster name too long!"
+    echo "Error: cluster name too long: ${#CLUSTER_NAME} >= $CLUSTER_NAME_LENGTH"
     exit 1
   fi
   CONNECTION_NAME="$CLUSTER_NAME"
@@ -88,8 +92,6 @@ checkIfNSExists() {
     else
       "${CLI}" adm new-project --node-selector="" dynatrace
     fi
-  else
-    echo "Namespace already exists"
   fi
 }
 
@@ -162,7 +164,7 @@ EOF
 
 addK8sConfiguration() {
 
-  K8S_SECRET_NAME="$(for token in $("${CLI}" get sa dynatrace-kubernetes-monitoring -o jsonpath='{.secrets[*].name}' -n dynatrace); do echo "$token"; done | grep token)"
+  K8S_SECRET_NAME="$(for token in $("${CLI}" get sa dynatrace-kubernetes-monitoring -o jsonpath='{.secrets[*].name}' -n dynatrace); do echo "$token"; done | grep -F token)"
   if [ -z "$K8S_SECRET_NAME" ]; then
     echo "Error: failed to get kubernetes-monitoring secret!"
     exit 1
@@ -221,7 +223,7 @@ EOF
 
   response=$(apiRequest "POST" "/config/v1/kubernetes/credentials" "${json}")
 
-  if echo "$response" | grep "${CONNECTION_NAME}" >/dev/null 2>&1; then
+  if echo "$response" | grep -Fq "${CONNECTION_NAME}"; then
     echo "Kubernetes monitoring successfully setup."
   else
     echo "Error adding Kubernetes cluster to Dynatrace: $response"
@@ -231,8 +233,8 @@ EOF
 checkForExistingCluster() {
   response=$(apiRequest "GET" "/config/v1/kubernetes/credentials" "")
 
-  if echo "$response" | grep -FEq "\"name\":\"${CONNECTION_NAME}\""; then
-    echo "Error: Cluster name already exists!"
+  if echo "$response" | grep -Fq "\"name\":\"${CONNECTION_NAME}\""; then
+    echo "Error: Cluster already exists: ${CONNECTION_NAME}"
     exit 1
   fi
 }
@@ -243,24 +245,24 @@ checkTokenScopes() {
 
   responseAPI=$(apiRequest "POST" "/v1/tokens/lookup" "${jsonAPI}")
 
-  if echo "$responseAPI" | grep -q "Authentication failed"; then
+  if echo "$responseAPI" | grep -Fq "Authentication failed"; then
     echo "Error: API token authentication failed!"
     exit 1
   fi
 
-  if ! echo "$responseAPI" | grep -q "WriteConfig"; then
+  if ! echo "$responseAPI" | grep -Fq "WriteConfig"; then
     echo "Error: API token does not have config write permission!"
     exit 1
   fi
 
-  if ! echo "$responseAPI" | grep -q "ReadConfig"; then
+  if ! echo "$responseAPI" | grep -Fq "ReadConfig"; then
     echo "Error: API token does not have config read permission!"
     exit 1
   fi
 
   responsePaaS=$(apiRequest "POST" "/v1/tokens/lookup" "${jsonPaaS}")
 
-  if echo "$responsePaaS" | grep -q "Token does not exist"; then
+  if echo "$responsePaaS" | grep -Fq "Token does not exist"; then
     echo "Error: PaaS token does not exist!"
     exit 1
   fi
