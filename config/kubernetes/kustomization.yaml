@@ -1,15 +1,16 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- operator/podsecuritypolicy-operator.yaml
-- kubernetes-monitoring/podsecuritypolicy-kubernetes-monitoring.yaml
-- oneagent/podsecuritypolicy-oneagent.yaml
-- oneagent/podsecuritypolicy-oneagent-unprivileged.yaml
-- oneagent/role-oneagent.yaml
-- oneagent/role-oneagent-unprivileged.yaml
-- oneagent/rolebinding-oneagent.yaml
-- oneagent/rolebinding-oneagent-unprivileged.yaml
-- webhook/podsecuritypolicy-webhook.yaml
+  - operator/podsecuritypolicy-operator.yaml
+  - kubernetes-monitoring/podsecuritypolicy-kubernetes-monitoring.yaml
+  - routing/podsecuritypolicy-routing.yaml
+  - oneagent/podsecuritypolicy-oneagent.yaml
+  - oneagent/podsecuritypolicy-oneagent-unprivileged.yaml
+  - oneagent/role-oneagent.yaml
+  - oneagent/role-oneagent-unprivileged.yaml
+  - oneagent/rolebinding-oneagent.yaml
+  - oneagent/rolebinding-oneagent-unprivileged.yaml
+  - webhook/podsecuritypolicy-webhook.yaml
 bases:
   - csi
   - ../common
@@ -28,3 +29,4 @@ patchesJson6902:
       name: dynatrace-webhook
       namespace: dynatrace
     path: webhook/role-webhook-patch.yaml
+

@@ -13,6 +13,8 @@ resources:
   - kubernetes-monitoring/rolebinding-kubernetes-monitoring.yaml
   - kubernetes-monitoring/serviceaccount-kubernetes-monitoring.yaml
   - routing/serviceaccount-routing.yaml
+  - routing/role-routing.yaml
+  - routing/rolebinding-routing.yaml
   - oneagent/serviceaccount-oneagent.yaml
   - oneagent/serviceaccount-oneagent-unprivileged.yaml
   - webhook/clusterrole-webhook.yaml
