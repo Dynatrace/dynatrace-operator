@@ -9,6 +9,6 @@ rules:
     resources:
       - podsecuritypolicies
     resourceNames:
-      - dynatrace-kubernetes-monitoring
+      - dynatrace-routing
     verbs:
       - use
