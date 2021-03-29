@@ -175,8 +175,6 @@ addK8sConfiguration() {
   fi
 
   if [ -z "$CLUSTER_NAME" ]; then
-    CONNECTION_NAME="$(echo "${K8S_ENDPOINT}" | awk -F[/:] '{print $4}')"
-
     json="$(
       cat <<EOF
 {
