@@ -527,7 +527,7 @@ func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.
 	if !instance.Status.OneAgent.UseImmutableImage {
 		reserved = append(reserved,
 			reservedEnvVar{
-				Name: "ONEAGENT_INSTALLER_TOKEN",
+				Name: "ONEAGENT_INSTALLER_DOWNLOAD_TOKEN",
 				Default: func(ev *corev1.EnvVar) {
 					ev.ValueFrom = &corev1.EnvVarSource{
 						SecretKeyRef: &corev1.SecretKeySelector{
@@ -540,7 +540,7 @@ func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.
 			reservedEnvVar{
 				Name: "ONEAGENT_INSTALLER_SCRIPT_URL",
 				Default: func(ev *corev1.EnvVar) {
-					ev.Value = fmt.Sprintf("%s/v1/deployment/installer/agent/unix/default/latest?Api-Token=$(ONEAGENT_INSTALLER_TOKEN)&arch=x86&flavor=default", instance.Spec.APIURL)
+					ev.Value = fmt.Sprintf("%s/v1/deployment/installer/agent/unix/default/latest?arch=x86&flavor=default", instance.Spec.APIURL)
 				},
 			},
 			reservedEnvVar{
