@@ -68,7 +68,7 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 	})
 	t.Run(`has webhook injection arg`, func(t *testing.T) {
 		podSpecs = newPodSpecForCR(instance, fullStackSpecs, InframonFeature, true, log, testUID)
-		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=k8s-node-name")
+		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=auto")
 
 		podSpecs = newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-host-id-source=k8s-node-name")
