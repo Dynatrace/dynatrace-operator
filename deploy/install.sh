@@ -74,7 +74,7 @@ if [ -n "$CLUSTER_NAME" ]; then
     echo "Error: cluster name too long!"
     exit 1
   fi
-  CONNECTION_NAME=$CLUSTER_NAME
+  CONNECTION_NAME="$CLUSTER_NAME"
 else
   CONNECTION_NAME="$(echo "${K8S_ENDPOINT}" | awk -F[/:] '{print $4}')"
 fi
