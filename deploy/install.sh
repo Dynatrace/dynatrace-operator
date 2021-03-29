@@ -5,6 +5,7 @@ set -e
 CLI="kubectl"
 SKIP_CERT_CHECK="false"
 ENABLE_VOLUME_STORAGE="false"
+CONNECTION_NAME=""
 CLUSTER_NAME=""
 CLUSTER_NAME_REGEX="^[-_a-zA-Z0-9][-_\.a-zA-Z0-9]*$"
 CLUSTER_NAME_LENGTH=256
@@ -57,6 +58,12 @@ if [ -z "$PAAS_TOKEN" ]; then
   exit 1
 fi
 
+K8S_ENDPOINT="$("${CLI}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+if [ -z "$K8S_ENDPOINT" ]; then
+  echo "Error: failed to get kubernetes endpoint!"
+  exit 1
+fi
+
 if [ -n "$CLUSTER_NAME" ]; then
   if ! echo "$CLUSTER_NAME" | grep -Eq "$CLUSTER_NAME_REGEX"; then
     echo "Error: cluster name does not match regex!"
@@ -67,6 +74,9 @@ if [ -n "$CLUSTER_NAME" ]; then
     echo "Error: cluster name too long!"
     exit 1
   fi
+  CONNECTION_NAME=$CLUSTER_NAME
+else
+  CONNECTION_NAME="$(echo "${K8S_ENDPOINT}" | awk -F[/:] '{print $4}')"
 fi
 
 set -u
@@ -94,7 +104,7 @@ applyDynatraceOperator() {
 }
 
 applyDynaKubeCR() {
-  if [ -n "$CLUSTER_NAME" ]; then
+  if [ -z "$CLUSTER_NAME" ]; then
     cat <<EOF | "${CLI}" apply -f -
 apiVersion: dynatrace.com/v1alpha1
 kind: DynaKube
@@ -151,11 +161,6 @@ EOF
 }
 
 addK8sConfiguration() {
-  K8S_ENDPOINT="$("${CLI}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
-  if [ -z "$K8S_ENDPOINT" ]; then
-    echo "Error: failed to get kubernetes endpoint!"
-    exit 1
-  fi
 
   K8S_SECRET_NAME="$(for token in $("${CLI}" get sa dynatrace-kubernetes-monitoring -o jsonpath='{.secrets[*].name}' -n dynatrace); do echo "$token"; done | grep token)"
   if [ -z "$K8S_SECRET_NAME" ]; then
@@ -169,7 +174,7 @@ addK8sConfiguration() {
     exit 1
   fi
 
-  if [ -n "$CLUSTER_NAME" ]; then
+  if [ -z "$CLUSTER_NAME" ]; then
     CONNECTION_NAME="$(echo "${K8S_ENDPOINT}" | awk -F[/:] '{print $4}')"
 
     json="$(
@@ -186,7 +191,6 @@ addK8sConfiguration() {
   ],
   "workloadIntegrationEnabled": true,
   "eventsIntegrationEnabled": false,
-  "activeGateGroup": "${CLUSTER_NAME}",
   "authToken": "${K8S_BEARER}",
   "active": true,
   "certificateCheckEnabled": "${SKIP_CERT_CHECK}"
@@ -219,23 +223,19 @@ EOF
 
   response=$(apiRequest "POST" "/config/v1/kubernetes/credentials" "${json}")
 
-  if [ -n "$CLUSTER_NAME" ]; then
-    if echo "$response" | grep "${CLUSTER_NAME}" >/dev/null 2>&1; then
-      echo "Kubernetes monitoring successfully setup."
-    else
-      echo "Error adding Kubernetes cluster to Dynatrace: $response"
-    fi
+  if echo "$response" | grep "${CONNECTION_NAME}" >/dev/null 2>&1; then
+    echo "Kubernetes monitoring successfully setup."
+  else
+    echo "Error adding Kubernetes cluster to Dynatrace: $response"
   fi
 }
 
 checkForExistingCluster() {
   response=$(apiRequest "GET" "/config/v1/kubernetes/credentials" "")
 
-  if [ -n "$CLUSTER_NAME" ]; then
-    if echo "$response" | grep -FEq "\"name\":\"${CLUSTER_NAME}\""; then
-      echo "Error: Cluster name already exists!"
-      exit 1
-    fi
+  if echo "$response" | grep -FEq "\"name\":\"${CONNECTION_NAME}\""; then
+    echo "Error: Cluster name already exists!"
+    exit 1
   fi
 }
 
