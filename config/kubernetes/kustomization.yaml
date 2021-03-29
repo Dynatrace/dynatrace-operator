@@ -29,3 +29,4 @@ patchesJson6902:
       name: dynatrace-webhook
       namespace: dynatrace
     path: webhook/role-webhook-patch.yaml
+
