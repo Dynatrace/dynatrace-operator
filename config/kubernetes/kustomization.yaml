@@ -10,9 +10,9 @@ resources:
   - oneagent/role-oneagent-unprivileged.yaml
   - oneagent/rolebinding-oneagent.yaml
   - oneagent/rolebinding-oneagent-unprivileged.yaml
-  - webhook/podsecuritypolicy-webhook.yaml
+#  - webhook/podsecuritypolicy-webhook.yaml
 bases:
-  - csi
+  #  - csi
   - ../common
 patchesJson6902:
   - target:
@@ -22,11 +22,11 @@ patchesJson6902:
       name: dynatrace-operator
       namespace: dynatrace
     path: operator/role-operator-patch.yaml
-  - target:
-      group: rbac.authorization.k8s.io
-      version: v1
-      kind: Role
-      name: dynatrace-webhook
-      namespace: dynatrace
-    path: webhook/role-webhook-patch.yaml
+#  - target:
+#      group: rbac.authorization.k8s.io
+#      version: v1
+#      kind: Role
+#      name: dynatrace-webhook
+#      namespace: dynatrace
+#    path: webhook/role-webhook-patch.yaml
 

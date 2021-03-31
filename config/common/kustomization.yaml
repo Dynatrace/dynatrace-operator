@@ -17,13 +17,13 @@ resources:
   - routing/rolebinding-routing.yaml
   - oneagent/serviceaccount-oneagent.yaml
   - oneagent/serviceaccount-oneagent-unprivileged.yaml
-  - webhook/clusterrole-webhook.yaml
-  - webhook/clusterrolebinding-webhook.yaml
-  - webhook/deployment-webhook.yaml
-  - webhook/mutatingwebhookconfiguration.yaml
-  - webhook/role-webhook.yaml
-  - webhook/rolebinding-webhook.yaml
-  - webhook/service.yaml
-  - webhook/serviceaccount-webhook.yaml
+#  - webhook/clusterrole-webhook.yaml
+#  - webhook/clusterrolebinding-webhook.yaml
+#  - webhook/deployment-webhook.yaml
+#  - webhook/mutatingwebhookconfiguration.yaml
+#  - webhook/role-webhook.yaml
+#  - webhook/rolebinding-webhook.yaml
+#  - webhook/service.yaml
+#  - webhook/serviceaccount-webhook.yaml
 bases:
   - ../crd

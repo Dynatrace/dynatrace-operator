@@ -1,8 +1,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- oneagent/securitycontextconstraints.yaml
-- oneagent/securitycontextconstraints-unprivileged.yaml
+  - oneagent/securitycontextconstraints.yaml
+  - oneagent/securitycontextconstraints-unprivileged.yaml
 bases:
   - ../common
 patchesJson6902:
@@ -27,10 +27,10 @@ patchesJson6902:
       name: dynatrace-operator
       namespace: dynatrace
     path: operator/serviceaccount-patch.yaml
-  - target:
-      group: ""
-      version: v1
-      kind: ServiceAccount
-      name: dynatrace-webhook
-      namespace: dynatrace
-    path: operator/serviceaccount-patch.yaml
+#  - target:
+#      group: ""
+#      version: v1
+#      kind: ServiceAccount
+#      name: dynatrace-webhook
+#      namespace: dynatrace
+#    path: operator/serviceaccount-patch.yaml
