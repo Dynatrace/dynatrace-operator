@@ -118,8 +118,6 @@ spec:
   skipCertCheck: ${SKIP_CERT_CHECK}
   kubernetesMonitoring:
     enabled: true
-  routing:
-    enabled: true
   classicFullStack:
     enabled: true
     tolerations:
