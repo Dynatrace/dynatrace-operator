@@ -8,6 +8,10 @@ As of launch, the Dynatrace Operator can be used to deploy a containerized Activ
 capabilities will be added to the Dynatrace Operator over time including metric routing, and API monitoring for AWS,
 Azure, GCP, and vSphere.
 
+With v0.2.0 we added the classicFullStack functionality which allows rolling out the OneAgent to your Kubernetes
+cluster. Furthermore, the Dynatrace Operator is now capable of rolling out a containerized ActiveGate for routing the
+OneAgent traffic.
+
 ## Supported platforms
 
 Depending on the version of the Dynatrace Operator, it supports the following platforms:
