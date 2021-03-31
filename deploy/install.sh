@@ -174,6 +174,12 @@ addK8sConfiguration() {
     exit 1
   fi
 
+  if "$SKIP_CERT_CHECK" = "true"; then
+    CERT_CHECK_API="false"
+  else
+    CERT_CHECK_API="true"
+  fi
+
   if [ -z "$CLUSTER_NAME" ]; then
     json="$(
       cat <<EOF
@@ -191,7 +197,7 @@ addK8sConfiguration() {
   "eventsIntegrationEnabled": false,
   "authToken": "${K8S_BEARER}",
   "active": true,
-  "certificateCheckEnabled": "${SKIP_CERT_CHECK}"
+  "certificateCheckEnabled": "${CERT_CHECK_API}"
 }
 EOF
     )"
@@ -213,7 +219,7 @@ EOF
   "activeGateGroup": "${CLUSTER_NAME}",
   "authToken": "${K8S_BEARER}",
   "active": true,
-  "certificateCheckEnabled": "${SKIP_CERT_CHECK}"
+  "certificateCheckEnabled": "${CERT_CHECK_API}"
 }
 EOF
     )"
