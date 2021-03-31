@@ -6,4 +6,4 @@ resources:
 images:
   - name: quay.io/dynatrace/dynatrace-operator:snapshot
     newName: quay.io/dynatrace/dynatrace-operator
-    newTag: v0.1.0
+    newTag: v0.2.0
