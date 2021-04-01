@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  creationTimestamp: null
+  name: dynatrace-routing
+rules:
+- apiGroups:
+  - policy
+  resourceNames:
+  - dynatrace-routing
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
