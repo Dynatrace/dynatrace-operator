@@ -71,6 +71,6 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=k8s-node-name")
 
 		podSpecs = newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
-		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-host-id-source=k8s-node-name")
+		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=auto")
 	})
 }
