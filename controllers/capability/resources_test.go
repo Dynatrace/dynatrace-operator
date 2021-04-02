@@ -1,11 +1,12 @@
 package capability
 
 import (
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"testing"
 )
 
 var (
