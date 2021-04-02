@@ -155,7 +155,7 @@ spec:
     # Optional: resource settings for ActiveGate container. Consumption of the ActiveGate heavily depends
     # on the workload to monitor; please adjust values accordingly.
     #
-    # Suggested starting below as below:
+    # Suggested starting point for resources below:
     #
     # resources:
     #   requests:
@@ -222,7 +222,7 @@ spec:
     # Optional: resource settings for ActiveGate container. Consumption of the ActiveGate heavily depends
     # on the workload to monitor; please adjust values accordingly.
     #
-    # Suggested starting below as below:
+    # Suggested starting point for resources below:
     #
     # resources:
     #   requests:
