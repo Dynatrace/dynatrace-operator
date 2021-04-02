@@ -1,6 +1,7 @@
 package capability
 
 import (
+	"k8s.io/apimachinery/pkg/api/resource"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -281,6 +282,34 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 			SubPath:   customproperties.DataPath,
 		})
 	})
+}
+
+func TestStatefulSet_Resources(t *testing.T) {
+	instance := buildTestInstance()
+	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
+
+	quantityCpuLimit := resource.NewScaledQuantity(700, resource.Milli)
+	quantityMemoryLimit := resource.NewScaledQuantity(7, resource.Giga)
+	quantityCpuRequest := resource.NewScaledQuantity(500, resource.Milli)
+	quantityMemoryRequest := resource.NewScaledQuantity(5, resource.Giga)
+
+	instance.Spec.RoutingSpec.Resources = corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    *quantityCpuLimit,
+			corev1.ResourceMemory: *quantityMemoryLimit,
+		},
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    *quantityCpuRequest,
+			corev1.ResourceMemory: *quantityMemoryRequest,
+		},
+	}
+
+	container := buildContainer(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", ""))
+
+	assert.True(t, quantityCpuLimit.Equal(container.Resources.Limits[corev1.ResourceCPU]))
+	assert.True(t, quantityMemoryLimit.Equal(container.Resources.Limits[corev1.ResourceMemory]))
+	assert.True(t, quantityCpuRequest.Equal(container.Resources.Requests[corev1.ResourceCPU]))
+	assert.True(t, quantityMemoryRequest.Equal(container.Resources.Requests[corev1.ResourceMemory]))
 }
 
 func buildTestInstance() *dynatracev1alpha1.DynaKube {

@@ -1,55 +1,104 @@
 package capability
 
 import (
-	"testing"
-
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"testing"
 )
 
-func TestBuildResources(t *testing.T) {
-	t.Run(`BuildResources with default values`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{}
-		resources := BuildResources(instance)
+var (
+	defaultCpuLimit      = resource.NewScaledQuantity(300, resource.Milli)
+	defaultMemoryLimit   = resource.NewScaledQuantity(1, resource.Giga)
+	defaultCpuRequest    = resource.NewScaledQuantity(150, resource.Milli)
+	defaultMemoryRequest = resource.NewScaledQuantity(250, resource.Mega)
+)
 
-		cpuLimit := resources.Limits[corev1.ResourceCPU]
-		memoryLimit := resources.Limits[corev1.ResourceMemory]
-		cpuRequest := resources.Requests[corev1.ResourceCPU]
-		memoryRequest := resources.Requests[corev1.ResourceMemory]
+func TestBuildResources_Defaults(t *testing.T) {
+	resources := BuildResources(&v1alpha1.CapabilityProperties{})
 
-		assert.True(t, resource.NewScaledQuantity(300, resource.Milli).Equal(cpuLimit))
-		assert.True(t, resource.NewScaledQuantity(1, resource.Giga).Equal(memoryLimit))
-		assert.True(t, resource.NewScaledQuantity(150, resource.Milli).Equal(cpuRequest))
-		assert.True(t, resource.NewScaledQuantity(250, resource.Mega).Equal(memoryRequest))
+	assert.NotNil(t, resources)
+	assert.True(t, defaultCpuLimit.Equal(resources.Limits[corev1.ResourceCPU]))
+	assert.True(t, defaultMemoryLimit.Equal(resources.Limits[corev1.ResourceMemory]))
+	assert.True(t, defaultCpuRequest.Equal(resources.Requests[corev1.ResourceCPU]))
+	assert.True(t, defaultMemoryRequest.Equal(resources.Requests[corev1.ResourceMemory]))
+}
+
+func TestBuildResources_HigherThenDefaultValues(t *testing.T) {
+	quantityCpuLimit := resource.NewScaledQuantity(5000, resource.Milli)
+	quantityMemoryLimit := resource.NewScaledQuantity(6000, resource.Mega)
+	quantityCpuRequest := resource.NewScaledQuantity(4000, resource.Milli)
+	quantityMemoryRequest := resource.NewScaledQuantity(3000, resource.Mega)
+
+	resources := BuildResources(&v1alpha1.CapabilityProperties{
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    *quantityCpuLimit,
+				corev1.ResourceMemory: *quantityMemoryLimit,
+			},
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    *quantityCpuRequest,
+				corev1.ResourceMemory: *quantityMemoryRequest,
+			},
+		},
 	})
-	t.Run(`BuildResources with custom resource requests and limits`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
-					CapabilityProperties: v1alpha1.CapabilityProperties{
-						Resources: corev1.ResourceRequirements{
-							Limits: corev1.ResourceList{
-								corev1.ResourceCPU:    *resource.NewScaledQuantity(500, resource.Milli),
-								corev1.ResourceMemory: *resource.NewScaledQuantity(512, resource.Mega),
-							},
-							Requests: corev1.ResourceList{
-								corev1.ResourceCPU:    *resource.NewScaledQuantity(180, resource.Milli),
-								corev1.ResourceMemory: *resource.NewScaledQuantity(1024, resource.Mega)},
-						}}}}}
-		resources := BuildResources(instance)
 
-		assert.NotNil(t, resources)
+	assert.NotNil(t, resources)
+	assert.True(t, quantityCpuLimit.Equal(resources.Limits[corev1.ResourceCPU]))
+	assert.True(t, quantityMemoryLimit.Equal(resources.Limits[corev1.ResourceMemory]))
+	assert.True(t, quantityCpuRequest.Equal(resources.Requests[corev1.ResourceCPU]))
+	assert.True(t, quantityMemoryRequest.Equal(resources.Requests[corev1.ResourceMemory]))
+}
 
-		cpuLimit := resources.Limits[corev1.ResourceCPU]
-		memoryLimit := resources.Limits[corev1.ResourceMemory]
-		cpuRequest := resources.Requests[corev1.ResourceCPU]
-		memoryRequest := resources.Requests[corev1.ResourceMemory]
+func TestBuildResources_LowerThenDefaultValues(t *testing.T) {
+	quantityCpuLimit := resource.NewScaledQuantity(50, resource.Milli)
+	quantityMemoryLimit := resource.NewScaledQuantity(60, resource.Mega)
+	quantityCpuRequest := resource.NewScaledQuantity(40, resource.Milli)
+	quantityMemoryRequest := resource.NewScaledQuantity(30, resource.Mega)
 
-		assert.True(t, resource.NewScaledQuantity(300, resource.Milli).Equal(cpuLimit))
-		assert.True(t, resource.NewScaledQuantity(512, resource.Mega).Equal(memoryLimit))
-		assert.True(t, resource.NewScaledQuantity(180, resource.Milli).Equal(cpuRequest))
-		assert.True(t, resource.NewScaledQuantity(512, resource.Mega).Equal(memoryRequest))
+	resources := BuildResources(&v1alpha1.CapabilityProperties{
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    *quantityCpuLimit,
+				corev1.ResourceMemory: *quantityMemoryLimit,
+			},
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    *quantityCpuRequest,
+				corev1.ResourceMemory: *quantityMemoryRequest,
+			},
+		},
 	})
+
+	assert.NotNil(t, resources)
+	assert.True(t, quantityCpuLimit.Equal(resources.Limits[corev1.ResourceCPU]))
+	assert.True(t, quantityMemoryLimit.Equal(resources.Limits[corev1.ResourceMemory]))
+	assert.True(t, quantityCpuRequest.Equal(resources.Requests[corev1.ResourceCPU]))
+	assert.True(t, quantityMemoryRequest.Equal(resources.Requests[corev1.ResourceMemory]))
+}
+
+func TestBuildResources_HigherRequestsThenLimits(t *testing.T) {
+	quantityCpuLimit := resource.NewScaledQuantity(50, resource.Milli)
+	quantityMemoryLimit := resource.NewScaledQuantity(60, resource.Mega)
+	quantityCpuRequest := resource.NewScaledQuantity(400, resource.Milli)
+	quantityMemoryRequest := resource.NewScaledQuantity(300, resource.Mega)
+
+	resources := BuildResources(&v1alpha1.CapabilityProperties{
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    *quantityCpuLimit,
+				corev1.ResourceMemory: *quantityMemoryLimit,
+			},
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    *quantityCpuRequest,
+				corev1.ResourceMemory: *quantityMemoryRequest,
+			},
+		},
+	})
+
+	assert.NotNil(t, resources)
+	assert.True(t, quantityCpuLimit.Equal(resources.Limits[corev1.ResourceCPU]))
+	assert.True(t, quantityMemoryLimit.Equal(resources.Limits[corev1.ResourceMemory]))
+	assert.True(t, quantityCpuLimit.Equal(resources.Requests[corev1.ResourceCPU]))
+	assert.True(t, quantityMemoryLimit.Equal(resources.Requests[corev1.ResourceMemory]))
 }
