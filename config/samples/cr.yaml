@@ -155,13 +155,15 @@ spec:
     # Optional: resource settings for ActiveGate container. Consumption of the ActiveGate heavily depends
     # on the workload to monitor; please adjust values accordingly.
     #
+    # Suggested starting below as below:
+    #
     # resources:
     #   requests:
-    #     cpu: 100m
-    #     memory: 512Mi
+    #     cpu: 150m
+    #     memory: 250M
     #   limits:
     #     cpu: 300m
-    #     memory: 1.5Gi
+    #     memory: 1G
 
     # Optional: labels are customer defined labels for ActiveGate Pods to structure workloads as desired.
     #
@@ -220,13 +222,15 @@ spec:
     # Optional: resource settings for ActiveGate container. Consumption of the ActiveGate heavily depends
     # on the workload to monitor; please adjust values accordingly.
     #
+    # Suggested starting below as below:
+    #
     # resources:
     #   requests:
-    #     cpu: 100m
-    #     memory: 512Mi
+    #     cpu: 150m
+    #     memory: 250M
     #   limits:
     #     cpu: 300m
-    #     memory: 1.5Gi
+    #     memory: 1G
 
     # Optional: labels are customer defined labels for ActiveGate Pods to structure workloads as desired.
     #

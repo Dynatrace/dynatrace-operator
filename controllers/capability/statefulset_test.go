@@ -133,7 +133,7 @@ func TestStatefulSet_Container(t *testing.T) {
 
 	assert.Equal(t, dynatracev1alpha1.OperatorName, container.Name)
 	assert.Equal(t, instance.ActiveGateImage(), container.Image)
-	assert.NotEmpty(t, container.Resources)
+	assert.Empty(t, container.Resources)
 	assert.Equal(t, corev1.PullAlways, container.ImagePullPolicy)
 	assert.NotEmpty(t, container.Env)
 	assert.Empty(t, container.Args)
