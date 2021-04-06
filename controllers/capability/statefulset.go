@@ -135,7 +135,7 @@ func buildContainer(stsProperties *statefulSetProperties) corev1.Container {
 	return corev1.Container{
 		Name:            dynatracev1alpha1.OperatorName,
 		Image:           stsProperties.DynaKube.ActiveGateImage(),
-		Resources:       BuildResources(stsProperties.DynaKube),
+		Resources:       stsProperties.CapabilityProperties.Resources,
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             buildEnvs(stsProperties),
 		VolumeMounts:    buildVolumeMounts(stsProperties),

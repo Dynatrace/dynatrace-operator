@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -132,7 +133,7 @@ func TestStatefulSet_Container(t *testing.T) {
 
 	assert.Equal(t, dynatracev1alpha1.OperatorName, container.Name)
 	assert.Equal(t, instance.ActiveGateImage(), container.Image)
-	assert.NotEmpty(t, container.Resources)
+	assert.Empty(t, container.Resources)
 	assert.Equal(t, corev1.PullAlways, container.ImagePullPolicy)
 	assert.NotEmpty(t, container.Env)
 	assert.Empty(t, container.Args)
@@ -281,6 +282,34 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 			SubPath:   customproperties.DataPath,
 		})
 	})
+}
+
+func TestStatefulSet_Resources(t *testing.T) {
+	instance := buildTestInstance()
+	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
+
+	quantityCpuLimit := resource.NewScaledQuantity(700, resource.Milli)
+	quantityMemoryLimit := resource.NewScaledQuantity(7, resource.Giga)
+	quantityCpuRequest := resource.NewScaledQuantity(500, resource.Milli)
+	quantityMemoryRequest := resource.NewScaledQuantity(5, resource.Giga)
+
+	instance.Spec.RoutingSpec.Resources = corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    *quantityCpuLimit,
+			corev1.ResourceMemory: *quantityMemoryLimit,
+		},
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    *quantityCpuRequest,
+			corev1.ResourceMemory: *quantityMemoryRequest,
+		},
+	}
+
+	container := buildContainer(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", ""))
+
+	assert.True(t, quantityCpuLimit.Equal(container.Resources.Limits[corev1.ResourceCPU]))
+	assert.True(t, quantityMemoryLimit.Equal(container.Resources.Limits[corev1.ResourceMemory]))
+	assert.True(t, quantityCpuRequest.Equal(container.Resources.Requests[corev1.ResourceCPU]))
+	assert.True(t, quantityMemoryRequest.Equal(container.Resources.Requests[corev1.ResourceMemory]))
 }
 
 func buildTestInstance() *dynatracev1alpha1.DynaKube {
