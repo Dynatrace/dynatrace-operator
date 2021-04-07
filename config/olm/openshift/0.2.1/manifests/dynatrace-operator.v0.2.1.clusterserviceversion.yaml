@@ -40,12 +40,12 @@ metadata:
       ]
     capabilities: Deep Insights
     categories: Monitoring,Logging & Tracing
-    containerImage: docker.io/dynatrace/dynatrace-operator
+    containerImage: registry.connect.redhat.com/dynatrace/dynatrace-operator
     operators.operatorframework.io/builder: operator-sdk-v1.5.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/Dynatrace/dynatrace-operator
     support: Dynatrace
-  name: dynatrace-operator.v0.2.0
+  name: dynatrace-operator.v0.2.1
   namespace: placeholder
 spec:
   apiservicedefinitions: { }
@@ -387,7 +387,7 @@ spec:
 
     For assistance please refer to [Create user-generated access tokens](https://www.dynatrace.com/support/help/shortlink/token#create-user-generated-access-tokens).
 
-    ``` $ kubectl -n <project> create secret generic dynakube --from-literal="apiToken=API_TOKEN" --from-literal="paasToken=PAAS_TOKEN" ```
+    ``` $ oc -n <project> create secret generic oneagent --from-literal="apiToken=API_TOKEN" --from-literal="paasToken=PAAS_TOKEN" ```
 
     You may update this Secret at any time to rotate the tokens.
 
@@ -417,6 +417,28 @@ spec:
   install:
     spec:
       clusterPermissions:
+        - serviceAccountName: dynatrace-oneagent
+            rules:
+                - apiGroups:
+                  - security.openshift.io
+            resourceNames:
+              - privileged
+              - host
+            resources:
+              - securitycontextconstraints
+            verbs:
+              - use
+        - serviceAccountName: dynatrace-oneagent-unprivileged
+          rules:
+            - apiGroups:
+                - security.openshift.io
+              resourceNames:
+                - host
+                - privileged
+              resources:
+                - securitycontextconstraints
+              verbs:
+                - use
         - rules:
             - apiGroups:
                 - ""
@@ -497,7 +519,9 @@ spec:
                         valueFrom:
                           fieldRef:
                             fieldPath: metadata.name
-                    image: docker.io/dynatrace/dynatrace-operator:v0.2.0
+                      - name: RELATED_IMAGE_DYNATRACE_ONEAGENT
+                        value: registry.connect.redhat.com/dynatrace/oneagent
+                    image: registry.connect.redhat.com/dynatrace/dynatrace-operator:v0.2.1
                     imagePullPolicy: Always
                     livenessProbe:
                       httpGet:
@@ -657,14 +681,6 @@ spec:
                 - get
                 - update
                 - create
-            - apiGroups:
-                - policy
-              resourceNames:
-                - dynatrace-operator
-              resources:
-                - podsecuritypolicies
-              verbs:
-                - use
           serviceAccountName: dynatrace-operator
     strategy: deployment
   installModes:
@@ -685,8 +701,8 @@ spec:
   links:
     - name: Dynatrace Operator
       url: https://github.com/Dynatrace/dynatrace-operator
-    - name: Kubernetes Monitoring Info
-      url: https://www.dynatrace.com/technologies/Kubernetes-monitoring
+    - name: OpenShift Monitoring Info
+      url: https://www.dynatrace.com/technologies/openshift-monitoring
   maintainers:
     - email: support@dynatrace.com
       name: Dynatrace LLC
@@ -694,4 +710,4 @@ spec:
   provider:
     name: Dynatrace LLC
     url: www.dynatrace.com
-  version: 0.2.0
+  version: 0.2.1
