@@ -19,7 +19,7 @@ Depending on the version of the Dynatrace Operator, it supports the following pl
 | Dynatrace Operator version | Kubernetes | OpenShift Container Platform               |
 | -------------------------- | ---------- | ------------------------------------------ |
 | master                     | 1.18+      | 3.11.188+, 4.5+                            |
-| v0.2.0                     | 1.18+      | 3.11.188+, 4.5+                            |
+| v0.2.1                     | 1.18+      | 3.11.188+, 4.5+                            |
 | v0.1.0                     | 1.18+      | 3.11.188+, 4.4+                            |
 
 ## Quick Start

@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Deep Insights
-    categories: Monitoring,Logging & Tracing,OpenShift Optional
+    categories: Monitoring,Logging & Tracing
     containerImage: registry.connect.redhat.com/dynatrace/dynatrace-operator
     repository: https://github.com/Dynatrace/dynatrace-operator
     support: Dynatrace
@@ -340,6 +340,9 @@ spec:
 
     As of launch, the Dynatrace Operator can be used to deploy a containerized ActiveGate for Kubernetes API monitoring. New capabilities will be added to the Dynatrace Operator over time including metric routing, and API monitoring for AWS, Azure, GCP, and vSphere.
 
+    With v0.2.0 we added the classicFullStack functionality which allows rolling out the OneAgent to your Kubernetes cluster.
+    Furthermore, the Dynatrace Operator is now capable of rolling out a containerized ActiveGate for routing the OneAgent traffic.
+
     ### Installation
     Once you've installed the Dynatrace Operator, you can create a DynaKube custom resource.
 
@@ -347,7 +350,7 @@ spec:
 
     For assistance please refer to [Create user-generated access tokens](https://www.dynatrace.com/support/help/shortlink/token#create-user-generated-access-tokens).
 
-    ``` $ oc -n <project> create secret generic oneagent --from-literal="apiToken=API_TOKEN" --from-literal="paasToken=PAAS_TOKEN" ```
+    ``` $ kubectl -n <project> create secret generic dynakube --from-literal="apiToken=API_TOKEN" --from-literal="paasToken=PAAS_TOKEN" ```
 
     You may update this Secret at any time to rotate the tokens.
 
