@@ -417,6 +417,40 @@ spec:
   install:
     spec:
       clusterPermissions:
+        - rules:
+            - apiGroups:
+                - ""
+                - batch
+                - apps
+                - apps.openshift.io
+                - config.openshift.io
+              resources:
+                - nodes
+                - pods
+                - namespaces
+                - deployments
+                - replicasets
+                - deploymentconfigs
+                - replicationcontrollers
+                - jobs
+                - cronjobs
+                - statefulsets
+                - daemonsets
+                - events
+                - resourcequotas
+                - pods/proxy
+                - nodes/proxy
+                - services
+                - clusterversions
+              verbs:
+                - list
+                - watch
+                - get
+            - nonResourceURLs:
+                - /metrics
+              verbs:
+                - get
+          serviceAccountName: dynatrace-kubernetes-monitoring
         - serviceAccountName: dynatrace-oneagent
             rules:
                 - apiGroups:
@@ -552,6 +586,26 @@ spec:
                         memory: 64Mi
                 serviceAccountName: dynatrace-operator
       permissions:
+        - rules:
+            - apiGroups:
+                - policy
+              resourceNames:
+                - dynatrace-routing
+              resources:
+                - podsecuritypolicies
+              verbs:
+                - use
+          ServiceAccountName: dynatrace-routing
+        - rules:
+            - apiGroups:
+                - policy
+              resourceNames:
+                - dynatrace-kubernetes-monitoring
+              resources:
+                - podsecuritypolicies
+              verbs:
+                - use
+          ServiceAccountName: dynatrace-kubernetes-monitoring
         - rules:
             - apiGroups:
                 - dynatrace.com
