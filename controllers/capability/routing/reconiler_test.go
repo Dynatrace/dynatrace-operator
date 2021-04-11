@@ -164,23 +164,6 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
-func TestSetLivenessProbePort(t *testing.T) {
-	r := createDefaultReconciler(t)
-	stsProps := capability.NewStatefulSetProperties(r.Instance, &r.Instance.Spec.RoutingSpec.CapabilityProperties, "", "", "", "", "")
-	sts, err := capability.CreateStatefulSet(stsProps)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, sts)
-
-	setLivenessProbePort(r.Instance)(sts)
-
-	assert.NotEmpty(t, sts.Spec.Template.Spec.Containers)
-	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].LivenessProbe)
-	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].LivenessProbe.HTTPGet)
-	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].LivenessProbe.HTTPGet.Port)
-	assert.Equal(t, serviceTargetPort, sts.Spec.Template.Spec.Containers[0].LivenessProbe.HTTPGet.Port.String())
-}
-
 func TestSetReadinessProbePort(t *testing.T) {
 	r := createDefaultReconciler(t)
 	stsProps := capability.NewStatefulSetProperties(r.Instance, &r.Instance.Spec.RoutingSpec.CapabilityProperties, "", "", "", "", "")

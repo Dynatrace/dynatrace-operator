@@ -39,7 +39,6 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		&instance.Spec.RoutingSpec.CapabilityProperties, Module, capabilityName, "")
 	baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance))
 	baseReconciler.AddOnAfterStatefulSetCreateListener(setCommunicationsPort(instance))
-	baseReconciler.AddOnAfterStatefulSetCreateListener(setLivenessProbePort(instance))
 	baseReconciler.AddOnAfterStatefulSetCreateListener(setReadinessProbePort(instance))
 	return &Reconciler{
 		Reconciler: baseReconciler,
@@ -50,12 +49,6 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 func setReadinessProbePort(_ *dynatracev1alpha1.DynaKube) capability.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port = intstr.FromString(serviceTargetPort)
-	}
-}
-
-func setLivenessProbePort(_ *dynatracev1alpha1.DynaKube) capability.StatefulSetEvent {
-	return func(sts *appsv1.StatefulSet) {
-		sts.Spec.Template.Spec.Containers[0].LivenessProbe.HTTPGet.Port = intstr.FromString(serviceTargetPort)
 	}
 }
 
