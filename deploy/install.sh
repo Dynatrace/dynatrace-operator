@@ -24,7 +24,7 @@ while [ $# -gt 0 ]; do
     PAAS_TOKEN="$2"
     shift 2
     ;;
-  --skip-cert-check)
+  --skip-ssl-verification)
     SKIP_CERT_CHECK="true"
     shift
     ;;
