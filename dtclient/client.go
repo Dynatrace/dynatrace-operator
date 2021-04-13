@@ -32,20 +32,6 @@ type Client interface {
 	// GetLatestAgent returns a reader with the contents of the download. Must be closed by caller.
 	GetLatestAgent(os, installerType, flavor, arch string) (io.ReadCloser, error)
 
-	// GetAgentVersionForIP returns the agent version running on the host with the given IP address.
-	// Returns the version string formatted as "Major.Minor.Revision.Timestamp" on success.
-	//
-	// Returns an error for the following conditions:
-	//  - the IP is empty
-	//  - IO error or unexpected response
-	//  - error response from the server (e.g. authentication failure)
-	//  - a host with the given IP cannot be found
-	//  - the agent version for the host is not set
-	//
-	// The list of all hosts with their IP addresses is cached the first time this method is called. Use a new
-	// client instance to fetch a new list from the server.
-	GetAgentVersionForIP(ip string) (string, error)
-
 	// GetCommunicationHosts returns, on success, the list of communication hosts used for available
 	// communication endpoints that the Dynatrace OneAgent can use to connect to.
 	//
@@ -191,5 +177,11 @@ func Certs(certs []byte) Option {
 func NetworkZone(networkZone string) Option {
 	return func(c *dynatraceClient) {
 		c.networkZone = networkZone
+	}
+}
+
+func DisableHostsRequests(disabledHostsRequests bool) Option {
+	return func(c *dynatraceClient) {
+		c.disableHostsRequests = disabledHostsRequests
 	}
 }

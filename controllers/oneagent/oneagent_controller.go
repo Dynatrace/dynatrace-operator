@@ -23,6 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -148,8 +149,8 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Rec
 		}
 	}
 
-	if rec.Instance.Status.Tokens != utils.GetTokensName(rec.Instance) {
-		rec.Instance.Status.Tokens = utils.GetTokensName(rec.Instance)
+	if rec.Instance.Status.Tokens != rec.Instance.Tokens() {
+		rec.Instance.Status.Tokens = rec.Instance.Tokens()
 		updateCR = true
 	}
 
@@ -190,6 +191,8 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 	selectorLabels := buildLabels(instance.GetName(), feature)
 	mergedLabels := mergeLabels(fs.Labels, selectorLabels)
 
+	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
+
 	ds := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        name,
@@ -207,6 +210,11 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 					},
 				},
 				Spec: podSpec,
+			},
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+					MaxUnavailable: &maxUnavailable,
+				},
 			},
 		},
 	}
@@ -493,7 +501,7 @@ func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.
 				Default: func(ev *corev1.EnvVar) {
 					ev.ValueFrom = &corev1.EnvVarSource{
 						SecretKeyRef: &corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{Name: utils.GetTokensName(instance)},
+							LocalObjectReference: corev1.LocalObjectReference{Name: instance.Tokens()},
 							Key:                  utils.DynatracePaasToken,
 						},
 					}
@@ -596,7 +604,7 @@ func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logge
 		handlePodListError(logger, err, listOpts)
 	}
 
-	instanceStatuses, err := getInstanceStatuses(pods, dtc, instance)
+	instanceStatuses, err := getInstanceStatuses(pods)
 	if err != nil {
 		if instanceStatuses == nil || len(instanceStatuses) <= 0 {
 			return false, err
@@ -611,23 +619,15 @@ func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logge
 	return false, err
 }
 
-func getInstanceStatuses(pods []corev1.Pod, dtc dtclient.Client, instance *dynatracev1alpha1.DynaKube) (map[string]dynatracev1alpha1.OneAgentInstance, error) {
+func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1alpha1.OneAgentInstance, error) {
 	instanceStatuses := make(map[string]dynatracev1alpha1.OneAgentInstance)
 
 	for _, pod := range pods {
-		instanceStatus := dynatracev1alpha1.OneAgentInstance{
+		instanceStatuses[pod.Spec.NodeName] = dynatracev1alpha1.OneAgentInstance{
 			PodName:   pod.Name,
 			IPAddress: pod.Status.HostIP,
 		}
-		ver, err := dtc.GetAgentVersionForIP(pod.Status.HostIP)
-		if err != nil {
-			if err = handleAgentVersionForIPError(err, instance, pod, &instanceStatus); err != nil {
-				return instanceStatuses, err
-			}
-		} else {
-			instanceStatus.Version = ver
-		}
-		instanceStatuses[pod.Spec.NodeName] = instanceStatus
 	}
+
 	return instanceStatuses, nil
 }

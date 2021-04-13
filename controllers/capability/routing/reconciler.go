@@ -33,9 +33,9 @@ type Reconciler struct {
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
-	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, enableUpdates bool) *Reconciler {
+	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
 	baseReconciler := capability.NewReconciler(
-		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider, enableUpdates,
+		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider,
 		&instance.Spec.RoutingSpec.CapabilityProperties, Module, capabilityName, "")
 	baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance))
 	baseReconciler.AddOnAfterStatefulSetCreateListener(setCommunicationsPort(instance))

@@ -25,7 +25,6 @@ func ReconcileVersions(
 	rec *utils.Reconciliation,
 	cl client.Client,
 	dtc dtclient.Client,
-	updateActiveGate bool,
 	verProvider VersionProviderCallback,
 ) (bool, error) {
 	upd := false
@@ -42,8 +41,8 @@ func ReconcileVersions(
 		}
 	}
 
-	needsActiveGateUpdate := updateActiveGate &&
-		dk.NeedsActiveGate() &&
+	needsActiveGateUpdate := dk.NeedsActiveGate() &&
+		!dk.FeatureDisableActiveGateUpdates() &&
 		rec.IsOutdated(dk.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
 
 	needsImmutableOneAgentUpdate := dk.NeedsImmutableOneAgent() && needsOneAgentUpdate

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -59,11 +58,4 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	}
 
 	return strings.TrimSpace(string(value)), nil
-}
-
-func GetTokensName(obj *dynatracev1alpha1.DynaKube) string {
-	if tkns := obj.Spec.Tokens; tkns != "" {
-		return tkns
-	}
-	return obj.Name
 }

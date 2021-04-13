@@ -179,7 +179,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 
 		// assert
 		assert.True(t, updateCR)
-		assert.Equal(t, utils.GetTokensName(dk), dk.Status.Tokens)
+		assert.Equal(t, dk.Tokens(), dk.Status.Tokens)
 		assert.Equal(t, nil, err)
 	})
 	t.Run("reconcileRollout Tokens status set, if status has wrong name", func(t *testing.T) {
@@ -194,7 +194,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 
 		// assert
 		assert.True(t, updateCR)
-		assert.Equal(t, utils.GetTokensName(dk), dk.Status.Tokens)
+		assert.Equal(t, dk.Tokens(), dk.Status.Tokens)
 		assert.Equal(t, nil, err)
 	})
 
@@ -217,7 +217,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		// arrange
 		customTokenName := "custom-token-name"
 		dk := base.DeepCopy()
-		dk.Status.Tokens = utils.GetTokensName(dk)
+		dk.Status.Tokens = dk.Tokens()
 		dk.Spec.Tokens = customTokenName
 		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
 
@@ -226,7 +226,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 
 		// assert
 		assert.True(t, updateCR)
-		assert.Equal(t, utils.GetTokensName(dk), dk.Status.Tokens)
+		assert.Equal(t, dk.Tokens(), dk.Status.Tokens)
 		assert.Equal(t, customTokenName, dk.Status.Tokens)
 		assert.Equal(t, nil, err)
 	})
@@ -255,7 +255,6 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	oldVersion := "1.186"
 	hostIP := "1.2.3.4"
 	dtcMock.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(version, nil)
-	dtcMock.On("GetAgentVersionForIP", hostIP).Return(version, nil)
 	dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{utils.DynatracePaasToken}, nil)
 	dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{utils.DynatraceApiToken}, nil)
 
@@ -283,7 +282,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Labels = buildLabels(dkName, reconciler.feature)
 		pod.Spec = newPodSpecForCR(dk, &dynatracev1alpha1.FullStackSpec{}, reconciler.feature, false, consoleLogger, "cluster1")
 		pod.Status.HostIP = hostIP
-		dk.Status.Tokens = utils.GetTokensName(dk)
+		dk.Status.Tokens = dk.Tokens()
 
 		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
 		err := reconciler.client.Create(context.TODO(), pod)
@@ -312,7 +311,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Labels = buildLabels(dkName, reconciler.feature)
 		pod.Spec = newPodSpecForCR(dk, &dynatracev1alpha1.FullStackSpec{}, reconciler.feature, false, consoleLogger, "cluster1")
 		pod.Status.HostIP = hostIP
-		dk.Status.Tokens = utils.GetTokensName(dk)
+		dk.Status.Tokens = dk.Tokens()
 
 		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
 		err := reconciler.client.Create(context.TODO(), pod)

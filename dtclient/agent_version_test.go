@@ -15,10 +15,6 @@ import (
 const (
 	apiToken  = "some-API-token"
 	paasToken = "some-PaaS-token"
-
-	goodIP    = "192.168.0.1"
-	unsetIP   = "192.168.100.1"
-	unknownIP = "127.0.0.1"
 )
 
 const hostsResponse = `[
@@ -164,30 +160,6 @@ func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "17", latestAgentVersion, "latest agent version equals expected version")
-	}
-}
-
-func testAgentVersionGetAgentVersionForIP(t *testing.T, dynatraceClient Client) {
-	{
-		_, err := dynatraceClient.GetAgentVersionForIP("")
-
-		assert.Error(t, err, "lookup empty ip")
-	}
-	{
-		_, err := dynatraceClient.GetAgentVersionForIP(unknownIP)
-
-		assert.Error(t, err, "lookup unknown ip")
-	}
-	{
-		_, err := dynatraceClient.GetAgentVersionForIP(unsetIP)
-
-		assert.Error(t, err, "lookup unset ip")
-	}
-	{
-		version, err := dynatraceClient.GetAgentVersionForIP(goodIP)
-
-		assert.NoError(t, err, "lookup good ip")
-		assert.Equal(t, "1.142.0.20180313-173634", version, "version matches for lookup good ip")
 	}
 }
 

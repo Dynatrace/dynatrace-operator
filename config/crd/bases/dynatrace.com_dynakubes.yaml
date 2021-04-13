@@ -2484,8 +2484,6 @@ spec:
                         type: string
                       podName:
                         type: string
-                      version:
-                        type: string
                     type: object
                   type: object
                 lastHostsRequestTimestamp:
