@@ -452,16 +452,16 @@ spec:
                 - get
           serviceAccountName: dynatrace-kubernetes-monitoring
         - serviceAccountName: dynatrace-oneagent
-            rules:
-                - apiGroups:
-                  - security.openshift.io
-            resourceNames:
-              - privileged
-              - host
-            resources:
-              - securitycontextconstraints
-            verbs:
-              - use
+          rules:
+            - apiGroups:
+                - security.openshift.io
+              resourceNames:
+                - privileged
+                - host
+              resources:
+                - securitycontextconstraints
+              verbs:
+                - use
         - serviceAccountName: dynatrace-oneagent-unprivileged
           rules:
             - apiGroups:
