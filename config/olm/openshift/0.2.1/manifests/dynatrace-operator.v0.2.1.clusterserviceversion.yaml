@@ -763,5 +763,4 @@ spec:
   maturity: alpha
   provider:
     name: Dynatrace LLC
-    url: www.dynatrace.com
   version: 0.2.1
