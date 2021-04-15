@@ -184,8 +184,8 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 		return
 	}
 
-	upd, err = updates.ReconcileImageVersions(ctx, rec, r.client, r.enableUpdates, dtversion.GetImageVersion)
-	rec.Update(upd, defaultUpdateInterval, "Found image updates")
+	upd, err = updates.ReconcileVersions(ctx, rec, r.client, dtc, r.enableUpdates, dtversion.GetImageVersion)
+	rec.Update(upd, defaultUpdateInterval, "Found updates")
 	rec.Error(err)
 
 	if rec.Instance.Spec.KubernetesMonitoringSpec.Enabled {

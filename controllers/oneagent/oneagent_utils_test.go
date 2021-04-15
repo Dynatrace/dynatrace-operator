@@ -1,11 +1,10 @@
 package oneagent
 
 import (
-	"errors"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
@@ -60,7 +59,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 
 	ds2, err := newDaemonSetForCR(consoleLogger, &dynatracev1alpha1.DynaKube{ObjectMeta: oaKey}, &dynatracev1alpha1.FullStackSpec{}, "classic", "cluster1")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, ds2.Annotations[annotationTemplateHash])
+	assert.NotEmpty(t, ds2.Annotations[capability.AnnotationTemplateHash])
 
 	assert.True(t, hasDaemonSetChanged(ds1, ds2))
 }
@@ -80,8 +79,8 @@ func TestHasSpecChanged(t *testing.T) {
 			ds2, err := newDaemonSetForCR(consoleLogger, &newInstance, &newInstance.Spec.ClassicFullStack, "classic", "cluster1")
 			assert.NoError(t, err)
 
-			assert.NotEmpty(t, ds1.Annotations[annotationTemplateHash])
-			assert.NotEmpty(t, ds2.Annotations[annotationTemplateHash])
+			assert.NotEmpty(t, ds1.Annotations[capability.AnnotationTemplateHash])
+			assert.NotEmpty(t, ds2.Annotations[capability.AnnotationTemplateHash])
 
 			assert.Equal(t, exp, hasDaemonSetChanged(ds1, ds2))
 		})
@@ -154,38 +153,6 @@ func TestHasSpecChanged(t *testing.T) {
 	runTest("dns policy added", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
 		new.Spec.ClassicFullStack.DNSPolicy = corev1.DNSClusterFirst
 	})
-}
-
-func TestGetPodsToRestart(t *testing.T) {
-	dtc := new(dtclient.MockDynatraceClient)
-	dtc.On("GetAgentVersionForIP", "127.0.0.1").Return("1.2.3", nil)
-	dtc.On("GetAgentVersionForIP", "127.0.0.2").Return("0.1.2", nil)
-	dtc.On("GetAgentVersionForIP", "127.0.0.3").Return("", errors.New("n/a"))
-
-	pods := []corev1.Pod{
-		{
-			ObjectMeta: metav1.ObjectMeta{Name: "pod-1"},
-			Spec:       corev1.PodSpec{NodeName: "node-1"},
-			Status:     corev1.PodStatus{HostIP: "127.0.0.1"},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{Name: "pod-2"},
-			Spec:       corev1.PodSpec{NodeName: "node-2"},
-			Status:     corev1.PodStatus{HostIP: "127.0.0.2"},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{Name: "pod-3"},
-			Spec:       corev1.PodSpec{NodeName: "node-3"},
-			Status:     corev1.PodStatus{HostIP: "127.0.0.3"},
-		},
-	}
-	oa := newOneAgent()
-	oa.Status.OneAgent.Version = "1.2.3"
-	oa.Status.OneAgent.Instances = map[string]dynatracev1alpha1.OneAgentInstance{"node-3": {Version: "outdated"}}
-	doomed, err := findOutdatedPodsInstaller(pods, dtc, oa, consoleLogger)
-	assert.Lenf(t, doomed, 1, "list of pods to restart")
-	assert.Equalf(t, doomed[0], pods[1], "list of pods to restart")
-	assert.Equal(t, nil, err)
 }
 
 func TestWaitPodReadyState(t *testing.T) {

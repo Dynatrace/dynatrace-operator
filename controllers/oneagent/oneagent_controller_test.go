@@ -68,7 +68,6 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		sampleKubeSystemNS)
 
 	dtClient := &dtclient.MockDynatraceClient{}
-	dtClient.On("GetLatestAgentVersion", "unix", "default").Return("42", nil)
 
 	reconciler := &ReconcileOneAgent{
 		client:    fakeClient,
@@ -135,70 +134,6 @@ func TestReconcile_PhaseSetCorrectly(t *testing.T) {
 			assert.Equal(t, dynatracev1alpha1.Error, dk.Status.Phase)
 		}
 	})
-
-	// arrange
-	c := fake.NewClient(
-		NewSecret(dkName, namespace, map[string]string{utils.DynatracePaasToken: "42", utils.DynatraceApiToken: "84"}),
-		sampleKubeSystemNS)
-	dtcMock := &dtclient.MockDynatraceClient{}
-	version := "1.187"
-	dtcMock.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(version, nil)
-
-	reconciler := &ReconcileOneAgent{
-		client:    c,
-		apiReader: c,
-		scheme:    scheme.Scheme,
-		logger:    consoleLogger,
-		instance:  &base,
-		feature:   ClassicFeature,
-		dtc:       dtcMock,
-		fullStack: &base.Spec.ClassicFullStack,
-	}
-
-	t.Run("reconcileRollout Phase is set to deploying, if agent version is not set on OneAgent object", func(t *testing.T) {
-		// arrange
-		dk := base.DeepCopy()
-		dk.Status.OneAgent.Version = ""
-		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
-
-		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec, dtcMock)
-
-		// assert
-		assert.True(t, updateCR)
-		assert.Equal(t, err, nil)
-		assert.Equal(t, dynatracev1alpha1.Deploying, dk.Status.Phase)
-		assert.Equal(t, version, dk.Status.OneAgent.Version)
-	})
-
-	t.Run("reconcileRollout Phase not changing, if agent version is already set on OneAgent object", func(t *testing.T) {
-		// arrange
-		dk := base.DeepCopy()
-		dk.Status.OneAgent.Version = version
-		dk.Status.Tokens = utils.GetTokensName(dk)
-		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
-
-		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec, dtcMock)
-
-		// assert
-		assert.False(t, updateCR)
-		assert.Equal(t, nil, err)
-		assert.Equal(t, dynatracev1alpha1.DynaKubePhaseType(""), dk.Status.Phase)
-	})
-
-	t.Run("reconcileVersion Phase not changing", func(t *testing.T) {
-		// arrange
-		oa := base.DeepCopy()
-		oa.Status.OneAgent.Version = version
-
-		// act
-		_, err := reconciler.reconcileVersion(context.TODO(), consoleLogger, oa, &dynatracev1alpha1.FullStackSpec{}, dtcMock)
-
-		// assert
-		assert.Equal(t, nil, err)
-		assert.Equal(t, dynatracev1alpha1.DynaKubePhaseType(""), oa.Status.Phase)
-	})
 }
 
 func TestReconcile_TokensSetCorrectly(t *testing.T) {
@@ -240,7 +175,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec, dtcMock)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
 
 		// assert
 		assert.True(t, updateCR)
@@ -255,7 +190,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec, dtcMock)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
 
 		// assert
 		assert.True(t, updateCR)
@@ -287,7 +222,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec, dtcMock)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
 
 		// assert
 		assert.True(t, updateCR)

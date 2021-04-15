@@ -30,7 +30,7 @@ const (
 	linux = "linux"
 
 	AnnotationTemplateHash    = "internal.operator.dynatrace.com/template-hash"
-	AnnotationImageVersion    = "internal.operator.dynatrace.com/image-version"
+	AnnotationVersion         = "internal.operator.dynatrace.com/version"
 	AnnotationCustomPropsHash = "internal.operator.dynatrace.com/custom-properties-hash"
 
 	DTCapabilities    = "DT_CAPABILITIES"
@@ -90,7 +90,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: BuildLabels(stsProperties.DynaKube, stsProperties.feature, stsProperties.CapabilityProperties),
 					Annotations: map[string]string{
-						AnnotationImageVersion:    stsProperties.Status.ActiveGate.ImageVersion,
+						AnnotationVersion:         stsProperties.Status.ActiveGate.Version,
 						AnnotationCustomPropsHash: stsProperties.customPropertiesHash,
 					},
 				},

@@ -71,7 +71,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 		sts, _ := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties,
 			"", testValue, "", "", ""))
 		assert.Equal(t, map[string]string{
-			AnnotationImageVersion:    instance.Status.ActiveGate.ImageVersion,
+			AnnotationVersion:         instance.Status.ActiveGate.Version,
 			AnnotationCustomPropsHash: testValue,
 		}, sts.Spec.Template.Annotations)
 	})
