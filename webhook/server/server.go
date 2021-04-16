@@ -132,19 +132,10 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	logger.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
-	//var ns corev1.Namespace
-	//if err := m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
-	//	return admission.Errored(http.StatusInternalServerError, err)
-	//}
-	//
-	//inject := utils.GetField(ns.Annotations, dtwebhook.AnnotationInject, "true")
-	//inject = utils.GetField(pod.Annotations, dtwebhook.AnnotationInject, inject)
-	//if inject == "false" {
-	//	return admission.Patched("")
-	//}
 	codeModules, err := FindCodeModules(ctx, m.client)
 	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
+		return admission.Patched("")
+		//return admission.Errored(http.StatusInternalServerError, err)
 	}
 	if len(codeModules) <= 0 {
 		return admission.Errored(http.StatusBadRequest, errors.New("no DynaKube instance exists with CodeModules enabled"))
@@ -158,24 +149,6 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		// If no DynaKube matches the pods labels, do not inject
 		return admission.Patched("")
 	}
-	//
-	//oaName := utils.GetField(/*ns.Labels*/ map[string]string{}, dtwebhook.LabelInstance, "")
-	//if oaName == "" {
-	//	return admission.Errored(http.StatusBadRequest, fmt.Errorf("no DynaKube instance set for namespace: %s", req.Namespace))
-	//}
-	//
-	//var oa dynatracev1alpha1.DynaKube
-	//if err := m.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: m.namespace}, &oa); k8serrors.IsNotFound(err) {
-	//	return admission.Errored(http.StatusBadRequest, fmt.Errorf(
-	//		"namespace '%s' is assigned to DynaKube instance '%s' but doesn't exist", req.Namespace, oaName))
-	//} else if err != nil {
-	//	return admission.Errored(http.StatusInternalServerError, err)
-	//}
-	//
-	//if !oa.Spec.CodeModules.Enabled {
-	//	logger.Info("injection disabled")
-	//	return admission.Patched("")
-	//}
 
 	if pod.Annotations == nil {
 		pod.Annotations = map[string]string{}
@@ -338,13 +311,13 @@ func (m *podInjector) InjectDecoder(d *admission.Decoder) error {
 func FindCodeModules(ctx context.Context, clt client.Client) ([]dynatracev1alpha1.DynaKube, error) {
 	codeModulesSelector, err := fields.ParseSelector("spec.CodeModules.enabled=true")
 	if err != nil {
-		return nil, err
+		return nil, errors.Cause(err)
 	}
 
 	dynaKubeList := &dynatracev1alpha1.DynaKubeList{}
 	err = clt.List(ctx, dynaKubeList, &client.ListOptions{FieldSelector: codeModulesSelector})
 	if err != nil {
-		return nil, err
+		return nil, errors.Cause(err)
 	}
 
 	return dynaKubeList.Items, nil
