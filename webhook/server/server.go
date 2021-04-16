@@ -134,9 +134,11 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	codeModules, err := FindCodeModules(ctx, m.client)
 	if err != nil {
+		logger.Error(err, "error when trying to find DynaKubes with CodeModules enabled")
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 	if len(codeModules) <= 0 {
+		logger.Info("could not find any DynaKubes with CodeModules enabled")
 		// If CodeModules is not enabled, cannot inject
 		return admission.Patched("")
 		//return admission.Errored(http.StatusBadRequest, errors.New("no DynaKube instance exists with CodeModules enabled"))
@@ -310,7 +312,7 @@ func (m *podInjector) InjectDecoder(d *admission.Decoder) error {
 }
 
 func FindCodeModules(ctx context.Context, clt client.Client) ([]dynatracev1alpha1.DynaKube, error) {
-	codeModulesSelector, err := fields.ParseSelector("spec.CodeModules.enabled=true")
+	codeModulesSelector, err := fields.ParseSelector("spec.codeModules.enabled=true")
 	if err != nil {
 		return nil, errors.Cause(err)
 	}
