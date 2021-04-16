@@ -16,8 +16,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -128,34 +132,50 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	logger.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
-	var ns corev1.Namespace
-	if err := m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
+	//var ns corev1.Namespace
+	//if err := m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
+	//	return admission.Errored(http.StatusInternalServerError, err)
+	//}
+	//
+	//inject := utils.GetField(ns.Annotations, dtwebhook.AnnotationInject, "true")
+	//inject = utils.GetField(pod.Annotations, dtwebhook.AnnotationInject, inject)
+	//if inject == "false" {
+	//	return admission.Patched("")
+	//}
+	codeModules, err := FindCodeModules(ctx, m.client)
+	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
+	if len(codeModules) <= 0 {
+		return admission.Errored(http.StatusBadRequest, errors.New("no DynaKube instance exists with CodeModules enabled"))
+	}
 
-	inject := utils.GetField(ns.Annotations, dtwebhook.AnnotationInject, "true")
-	inject = utils.GetField(pod.Annotations, dtwebhook.AnnotationInject, inject)
-	if inject == "false" {
+	oa, err := MatchCodeModules(codeModules, pod)
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+	if oa == nil {
+		// If no DynaKube matches the pods labels, do not inject
 		return admission.Patched("")
 	}
-
-	oaName := utils.GetField(ns.Labels, dtwebhook.LabelInstance, "")
-	if oaName == "" {
-		return admission.Errored(http.StatusBadRequest, fmt.Errorf("no DynaKube instance set for namespace: %s", req.Namespace))
-	}
-
-	var oa dynatracev1alpha1.DynaKube
-	if err := m.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: m.namespace}, &oa); k8serrors.IsNotFound(err) {
-		return admission.Errored(http.StatusBadRequest, fmt.Errorf(
-			"namespace '%s' is assigned to DynaKube instance '%s' but doesn't exist", req.Namespace, oaName))
-	} else if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
-	}
-
-	if !oa.Spec.CodeModules.Enabled {
-		logger.Info("injection disabled")
-		return admission.Patched("")
-	}
+	//
+	//oaName := utils.GetField(/*ns.Labels*/ map[string]string{}, dtwebhook.LabelInstance, "")
+	//if oaName == "" {
+	//	return admission.Errored(http.StatusBadRequest, fmt.Errorf("no DynaKube instance set for namespace: %s", req.Namespace))
+	//}
+	//
+	//var oa dynatracev1alpha1.DynaKube
+	//if err := m.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: m.namespace}, &oa); k8serrors.IsNotFound(err) {
+	//	return admission.Errored(http.StatusBadRequest, fmt.Errorf(
+	//		"namespace '%s' is assigned to DynaKube instance '%s' but doesn't exist", req.Namespace, oaName))
+	//} else if err != nil {
+	//	return admission.Errored(http.StatusInternalServerError, err)
+	//}
+	//
+	//if !oa.Spec.CodeModules.Enabled {
+	//	logger.Info("injection disabled")
+	//	return admission.Patched("")
+	//}
 
 	if pod.Annotations == nil {
 		pod.Annotations = map[string]string{}
@@ -313,4 +333,70 @@ func (m *podInjector) InjectClient(c client.Client) error {
 func (m *podInjector) InjectDecoder(d *admission.Decoder) error {
 	m.decoder = d
 	return nil
+}
+
+func FindCodeModules(ctx context.Context, clt client.Client) ([]dynatracev1alpha1.DynaKube, error) {
+	codeModulesSelector, err := fields.ParseSelector("spec.CodeModules.enabled=true")
+	if err != nil {
+		return nil, err
+	}
+
+	dynaKubeList := &dynatracev1alpha1.DynaKubeList{}
+	err = clt.List(ctx, dynaKubeList, &client.ListOptions{FieldSelector: codeModulesSelector})
+	if err != nil {
+		return nil, err
+	}
+
+	return dynaKubeList.Items, nil
+}
+
+func MatchCodeModules(codeModules []dynatracev1alpha1.DynaKube, pod *corev1.Pod) (*dynatracev1alpha1.DynaKube, error) {
+	var matchingModules []dynatracev1alpha1.DynaKube
+
+	for _, codeModule := range codeModules {
+		if areLabelsMatching(codeModule.Spec.CodeModules.Selector.MatchLabels, pod.Labels) {
+			expressionsMatching, err := areExpressionsMatching(codeModule.Spec.CodeModules.Selector.MatchExpressions, pod.Labels)
+			if err != nil {
+				return nil, err
+			}
+			if expressionsMatching {
+				matchingModules = append(matchingModules, codeModule)
+			}
+		}
+	}
+
+	if len(matchingModules) > 1 {
+		return nil, errors.New("pod matches two DynaKubes which is unsupported. " +
+			"refine the labels on your pod metadata or DynaKube/CodeModules specification")
+	}
+	if len(matchingModules) == 0 {
+		return nil, nil
+	}
+	return &matchingModules[0], nil
+}
+
+func areExpressionsMatching(expressions []metav1.LabelSelectorRequirement, podLabels map[string]string) (bool, error) {
+	selector := labels.NewSelector()
+	for _, expression := range expressions {
+		requirement, err := labels.NewRequirement(expression.Key, selection.Operator(strings.ToLower(string(expression.Operator))), expression.Values)
+		if err != nil {
+			return false, err
+		}
+		selector = selector.Add(*requirement)
+	}
+	return selector.Matches(labels.Set(podLabels)), nil
+}
+
+func areLabelsMatching(matchLabels map[string]string, labels map[string]string) bool {
+	if len(labels) == 0 {
+		return false
+	}
+
+	for matchLabel, matchValue := range matchLabels {
+		value, ok := labels[matchLabel]
+		if !ok || matchValue != value {
+			return false
+		}
+	}
+	return true
 }

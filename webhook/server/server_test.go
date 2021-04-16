@@ -53,7 +53,7 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	resp := inj.Handle(context.TODO(), req)
 	require.NoError(t, resp.Complete(req))
 	require.False(t, resp.Allowed)
-	require.Equal(t, resp.Result.Message, "namespace 'test-namespace' is assigned to DynaKube instance 'dynakube' but doesn't exist")
+	require.Equal(t, resp.Result.Message, "no DynaKube instance exists with CodeModules enabled")
 }
 
 func TestPodInjection(t *testing.T) {
@@ -82,6 +82,11 @@ func TestPodInjection(t *testing.T) {
 								corev1.ResourceMemory: resource.MustParse("100M"),
 							},
 						},
+						Selector: metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"inject": "true",
+							},
+						},
 					},
 				},
 				Status: dynatracev1alpha1.DynaKubeStatus{
@@ -92,8 +97,7 @@ func TestPodInjection(t *testing.T) {
 			},
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+					Name: "test-namespace",
 				},
 			},
 		),
@@ -103,7 +107,11 @@ func TestPodInjection(t *testing.T) {
 	}
 
 	basePod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-pod-123456", Namespace: "test-namespace"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-pod-123456",
+			Namespace: "test-namespace",
+			Labels:    map[string]string{"inject": "true"},
+		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{{
 				Name:  "test-container",
@@ -148,6 +156,7 @@ func TestPodInjection(t *testing.T) {
 			Annotations: map[string]string{
 				"oneagent.dynatrace.com/injected": "true",
 			},
+			Labels: map[string]string{"inject": "true"},
 		},
 		Spec: corev1.PodSpec{
 			InitContainers: []corev1.Container{{
@@ -245,6 +254,11 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 				CodeModules: dynatracev1alpha1.CodeModulesSpec{
 					Enabled: true,
+					Selector: metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"inject": "true",
+						},
+					},
 				},
 			},
 			Status: dynatracev1alpha1.DynaKubeStatus{
@@ -259,8 +273,7 @@ func TestUseImmutableImage(t *testing.T) {
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Name: "test-namespace",
 					},
 				},
 			),
@@ -273,6 +286,7 @@ func TestUseImmutableImage(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-pod-12345",
 				Namespace: "test-namespace",
+				Labels:    map[string]string{"inject": "true"},
 				Annotations: map[string]string{
 					"oneagent.dynatrace.com/image": "customregistry/linux/codemodule",
 				}},
@@ -317,6 +331,7 @@ func TestUseImmutableImage(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-pod-12345",
 				Namespace: "test-namespace",
+				Labels:    map[string]string{"inject": "true"},
 				Annotations: map[string]string{
 					"oneagent.dynatrace.com/injected": "true",
 					"oneagent.dynatrace.com/image":    "customregistry/linux/codemodule",
@@ -406,6 +421,11 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 				CodeModules: dynatracev1alpha1.CodeModulesSpec{
 					Enabled: true,
+					Selector: metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"inject": "true",
+						},
+					},
 				},
 			},
 			Status: dynatracev1alpha1.DynaKubeStatus{
@@ -434,6 +454,7 @@ func TestUseImmutableImage(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-pod-12345",
 				Namespace: "test-namespace",
+				Labels:    map[string]string{"inject": "true"},
 				Annotations: map[string]string{
 					"oneagent.dynatrace.com/image": "customregistry/linux/codemodule",
 				}},
@@ -478,6 +499,7 @@ func TestUseImmutableImage(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-pod-12345",
 				Namespace: "test-namespace",
+				Labels:    map[string]string{"inject": "true"},
 				Annotations: map[string]string{
 					"oneagent.dynatrace.com/injected": "true",
 					"oneagent.dynatrace.com/image":    "customregistry/linux/codemodule",
@@ -568,6 +590,11 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 				CodeModules: dynatracev1alpha1.CodeModulesSpec{
 					Enabled: true,
+					Selector: metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"inject": "true",
+						},
+					},
 				},
 				OneAgent: dynatracev1alpha1.OneAgentSpec{
 					Image: "test-image",
@@ -599,6 +626,7 @@ func TestUseImmutableImage(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        "test-pod-12345",
 				Namespace:   "test-namespace",
+				Labels:      map[string]string{"inject": "true"},
 				Annotations: map[string]string{}},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{{
@@ -641,6 +669,7 @@ func TestUseImmutableImage(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-pod-12345",
 				Namespace: "test-namespace",
+				Labels:    map[string]string{"inject": "true"},
 				Annotations: map[string]string{
 					"oneagent.dynatrace.com/injected": "true",
 				},
@@ -731,6 +760,11 @@ func TestAgentVersion(t *testing.T) {
 			},
 			CodeModules: dynatracev1alpha1.CodeModulesSpec{
 				Enabled: true,
+				Selector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"inject": "true",
+					},
+				},
 			},
 			OneAgent: dynatracev1alpha1.OneAgentSpec{
 				Version: "test-version",
@@ -762,6 +796,7 @@ func TestAgentVersion(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "test-pod-12345",
 			Namespace:   "test-namespace",
+			Labels:      map[string]string{"inject": "true"},
 			Annotations: map[string]string{}},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{{
@@ -804,6 +839,7 @@ func TestAgentVersion(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-pod-12345",
 			Namespace: "test-namespace",
+			Labels:    map[string]string{"inject": "true"},
 			Annotations: map[string]string{
 				"oneagent.dynatrace.com/injected": "true",
 			},
