@@ -106,60 +106,93 @@ applyDynatraceOperator() {
 }
 
 applyDynaKubeCR() {
-  if [ -z "$CLUSTER_NAME" ]; then
-    cat <<EOF | "${CLI}" apply -f -
-apiVersion: dynatrace.com/v1alpha1
-kind: DynaKube
-metadata:
-  name: dynakube
-  namespace: dynatrace
-spec:
-  apiUrl: ${API_URL}
-  skipCertCheck: ${SKIP_CERT_CHECK}
-  kubernetesMonitoring:
-    enabled: true
-  routing:
-    enabled: true
-  classicFullStack:
-    enabled: true
-    tolerations:
-    - effect: NoSchedule
-      key: node-role.kubernetes.io/master
-      operator: Exists
-    env:
-    - name: ONEAGENT_ENABLE_VOLUME_STORAGE
-      value: "${ENABLE_VOLUME_STORAGE}"
+  dynakube=$(
+    cat <<EOF
+  apiVersion: dynatrace.com/v1alpha1
+  kind: DynaKube
+  metadata:
+    name: dynakube
+    namespace: dynatrace
+  spec:
+    apiUrl: ${API_URL}
+    skipCertCheck: ${SKIP_CERT_CHECK}
 EOF
-  else
-    cat <<EOF | "${CLI}" apply -f -
-apiVersion: dynatrace.com/v1alpha1
-kind: DynaKube
-metadata:
-  name: dynakube
-  namespace: dynatrace
-spec:
-  apiUrl: ${API_URL}
-  skipCertCheck: ${SKIP_CERT_CHECK}
-  networkZone: ${CLUSTER_NAME}
-  kubernetesMonitoring:
-    enabled: true
-    group: ${CLUSTER_NAME}
-  routing:
-    enabled: true
-    group: ${CLUSTER_NAME}
-  classicFullStack:
-    enabled: true
-    tolerations:
-    - effect: NoSchedule
-      key: node-role.kubernetes.io/master
-      operator: Exists
-    env:
-    - name: ONEAGENT_ENABLE_VOLUME_STORAGE
-      value: "${ENABLE_VOLUME_STORAGE}"
-    args:
-    - --set-host-group="${CLUSTER_NAME}"
+  )
+
+  classicFS=$(
+    cat <<EOF
+
+    classicFullStack:
+      enabled: true
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
 EOF
+  )
+
+  routing=$(
+    cat <<EOF
+
+    routing:
+      enabled: true
+EOF
+  )
+
+  kubemon=$(
+    cat <<EOF
+
+    kubernetesMonitoring:
+      enabled: true
+EOF
+  )
+
+  networkZone=$(
+    cat <<EOF
+
+    networkZone: ${CLUSTER_NAME}
+EOF
+  )
+
+  hostGroup=$(
+    cat <<EOF
+
+      args:
+        - --set-host-group="${CLUSTER_NAME}"
+EOF
+  )
+
+  agGroup=$(
+    cat <<EOF
+
+      group: ${CLUSTER_NAME}
+EOF
+  )
+
+  volumeStorage=$(
+    cat <<EOF
+
+      env:
+        - name: ONEAGENT_ENABLE_VOLUME_STORAGE
+          value: "${ENABLE_VOLUME_STORAGE}"
+EOF
+  )
+
+  if "$ENABLE_VOLUME_STORAGE" = "true"; then
+    classicFS="${classicFS}${volumeStorage}"
   fi
+
+  if [ -n "$CLUSTER_NAME" ]; then
+    classicFS="${classicFS}${hostGroup}"
+    routing="${routing}${agGroup}"
+    kubemon="${kubemon}${agGroup}"
+    dynakube="${dynakube}${networkZone}"
+  fi
+
+  dynakube="${dynakube}${classicFS}${routing}${kubemon}"
+
+  echo "$dynakube"
+  echo "$dynakube" | "${CLI}" apply -f -
 }
 
 addK8sConfiguration() {
@@ -279,7 +312,7 @@ apiRequest() {
   url=$2
   json=$3
 
-  response="$(curl -sS -X ${method} "${API_URL}${url}" \
+  response="$(curl -sS -X "${method}" "${API_URL}${url}" \
     -H "accept: application/json; charset=utf-8" \
     -H "Authorization: Api-Token ${API_TOKEN}" \
     -H "Content-Type: application/json; charset=utf-8" \
