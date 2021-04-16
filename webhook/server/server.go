@@ -19,7 +19,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
@@ -314,18 +313,20 @@ func (m *podInjector) InjectDecoder(d *admission.Decoder) error {
 }
 
 func FindCodeModules(ctx context.Context, clt client.Client) ([]dynatracev1alpha1.DynaKube, error) {
-	codeModulesSelector, err := fields.ParseSelector("spec.codeModules.enabled=true")
-	if err != nil {
-		return nil, errors.Cause(err)
-	}
-
 	dynaKubeList := &dynatracev1alpha1.DynaKubeList{}
-	err = clt.List(ctx, dynaKubeList, &client.ListOptions{FieldSelector: codeModulesSelector})
+	err := clt.List(ctx, dynaKubeList)
 	if err != nil {
 		return nil, errors.Cause(err)
 	}
 
-	return dynaKubeList.Items, nil
+	var codeModules []dynatracev1alpha1.DynaKube
+	for _, pod := range dynaKubeList.Items {
+		if pod.Spec.CodeModules.Enabled {
+			codeModules = append(codeModules, pod)
+		}
+	}
+
+	return codeModules, nil
 }
 
 func MatchCodeModules(codeModules []dynatracev1alpha1.DynaKube, pod *corev1.Pod) (*dynatracev1alpha1.DynaKube, error) {
