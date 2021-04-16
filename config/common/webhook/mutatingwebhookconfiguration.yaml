@@ -13,10 +13,6 @@ webhooks:
         operations: [ "CREATE" ]
         resources: [ "pods" ]
         scope: Namespaced
-    namespaceSelector:
-      matchExpressions:
-        - key: oneagent.dynatrace.com/instance
-          operator: Exists
     clientConfig:
       service:
         name: dynatrace-webhook
