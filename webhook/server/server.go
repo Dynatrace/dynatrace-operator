@@ -129,7 +129,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	logger.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
+	logger.Info("checking pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
 	codeModules, err := FindCodeModules(ctx, m.client)
 	if err != nil {
@@ -147,12 +147,14 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	oa, err := MatchCodeModules(codeModules, pod)
 	if err != nil {
-		return admission.Errored(http.StatusBadRequest, err)
+		return admission.Errored(http.StatusInternalServerError, err)
 	}
 	if oa == nil {
 		// If no DynaKube matches the pods labels, do not inject
 		return admission.Patched("")
 	}
+
+	logger.Info("injecting into pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
 	if pod.Annotations == nil {
 		pod.Annotations = map[string]string{}
