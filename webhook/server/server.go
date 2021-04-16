@@ -135,7 +135,9 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	codeModules, err := FindCodeModules(ctx, m.client)
 	if err != nil {
 		logger.Error(err, "error when trying to find DynaKubes with CodeModules enabled")
-		return admission.Errored(http.StatusInternalServerError, err)
+
+		// If CodeModules is not enabled, or cannot be found, cannot inject
+		return admission.Patched("")
 	}
 	if len(codeModules) <= 0 {
 		logger.Info("could not find any DynaKubes with CodeModules enabled")
