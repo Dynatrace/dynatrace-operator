@@ -134,11 +134,12 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	codeModules, err := FindCodeModules(ctx, m.client)
 	if err != nil {
-		return admission.Patched("")
-		//return admission.Errored(http.StatusInternalServerError, err)
+		return admission.Errored(http.StatusInternalServerError, err)
 	}
 	if len(codeModules) <= 0 {
-		return admission.Errored(http.StatusBadRequest, errors.New("no DynaKube instance exists with CodeModules enabled"))
+		// If CodeModules is not enabled, cannot inject
+		return admission.Patched("")
+		//return admission.Errored(http.StatusBadRequest, errors.New("no DynaKube instance exists with CodeModules enabled"))
 	}
 
 	oa, err := MatchCodeModules(codeModules, pod)

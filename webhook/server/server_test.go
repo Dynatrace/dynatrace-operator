@@ -52,8 +52,8 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	}
 	resp := inj.Handle(context.TODO(), req)
 	require.NoError(t, resp.Complete(req))
-	require.False(t, resp.Allowed)
-	require.Equal(t, resp.Result.Message, "no DynaKube instance exists with CodeModules enabled")
+	// Allowed, since WebHook is more general now
+	require.True(t, resp.Allowed)
 }
 
 func TestPodInjection(t *testing.T) {
@@ -914,4 +914,63 @@ func TestAgentVersion(t *testing.T) {
 			},
 		},
 	}, updPod)
+}
+
+func TestNoCodeModulesEnabled(t *testing.T) {
+	decoder, err := admission.NewDecoder(scheme.Scheme)
+	require.NoError(t, err)
+
+	inj := &podInjector{
+		client: fake.NewClient(
+			&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "dynatrace",
+				},
+			},
+			&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-namespace",
+				},
+			},
+			&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "another-namespace",
+				},
+			},
+		),
+		decoder:   decoder,
+		image:     "test-api-url.com/linux/codemodule",
+		namespace: "dynatrace",
+	}
+	pod := &dynatracev1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: "dynakube-1", Namespace: "dynatrace"},
+		Spec: dynatracev1alpha1.DynaKubeSpec{
+			APIURL: "https://test-api-url.com/api",
+			KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
+				CapabilityProperties: dynatracev1alpha1.CapabilityProperties{
+					Enabled: true,
+				},
+			},
+		},
+		Status: dynatracev1alpha1.DynaKubeStatus{
+			OneAgent: dynatracev1alpha1.OneAgentStatus{
+				UseImmutableImage: true,
+			},
+		},
+	}
+
+	basePodBytes, err := json.Marshal(&pod)
+	require.NoError(t, err)
+
+	req := admission.Request{
+		AdmissionRequest: admissionv1.AdmissionRequest{
+			Object: runtime.RawExtension{
+				Raw: basePodBytes,
+			},
+		},
+	}
+
+	resp := inj.Handle(context.TODO(), req)
+	require.NoError(t, resp.Complete(req))
+	assert.True(t, resp.Allowed)
 }
