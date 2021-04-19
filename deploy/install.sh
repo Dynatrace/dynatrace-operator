@@ -24,7 +24,7 @@ while [ $# -gt 0 ]; do
     PAAS_TOKEN="$2"
     shift 2
     ;;
-  --skip-cert-check)
+  --skip-ssl-verification)
     SKIP_CERT_CHECK="true"
     shift
     ;;
@@ -117,6 +117,8 @@ spec:
   apiUrl: ${API_URL}
   skipCertCheck: ${SKIP_CERT_CHECK}
   kubernetesMonitoring:
+    enabled: true
+  routing:
     enabled: true
   classicFullStack:
     enabled: true
@@ -277,11 +279,19 @@ apiRequest() {
   url=$2
   json=$3
 
-  response="$(curl -sS -X ${method} "${API_URL}${url}" \
-    -H "accept: application/json; charset=utf-8" \
-    -H "Authorization: Api-Token ${API_TOKEN}" \
-    -H "Content-Type: application/json; charset=utf-8" \
-    -d "${json}")"
+  if "$SKIP_CERT_CHECK" = "true"; then
+    response="$(curl -k -sS -X ${method} "${API_URL}${url}" \
+      -H "accept: application/json; charset=utf-8" \
+      -H "Authorization: Api-Token ${API_TOKEN}" \
+      -H "Content-Type: application/json; charset=utf-8" \
+      -d "${json}")"
+  else
+    response="$(curl -sS -X ${method} "${API_URL}${url}" \
+      -H "accept: application/json; charset=utf-8" \
+      -H "Authorization: Api-Token ${API_TOKEN}" \
+      -H "Content-Type: application/json; charset=utf-8" \
+      -d "${json}")"
+  fi
 
   echo "$response"
 }
