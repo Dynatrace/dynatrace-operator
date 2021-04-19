@@ -106,7 +106,7 @@ applyDynatraceOperator() {
 }
 
 applyDynaKubeCR() {
-  dynakube=$(
+  dynakube="$(
     cat <<EOF
   apiVersion: dynatrace.com/v1alpha1
   kind: DynaKube
@@ -117,9 +117,9 @@ applyDynaKubeCR() {
     apiUrl: ${API_URL}
     skipCertCheck: ${SKIP_CERT_CHECK}
 EOF
-  )
+  )"
 
-  classicFS=$(
+  classicFS="$(
     cat <<EOF
 
     classicFullStack:
@@ -129,54 +129,54 @@ EOF
           key: node-role.kubernetes.io/master
           operator: Exists
 EOF
-  )
+  )"
 
-  routing=$(
+  routing="$(
     cat <<EOF
 
     routing:
       enabled: true
 EOF
-  )
+  )"
 
-  kubemon=$(
+  kubemon="$(
     cat <<EOF
 
     kubernetesMonitoring:
       enabled: true
 EOF
-  )
+  )"
 
-  networkZone=$(
+  networkZone="$(
     cat <<EOF
 
     networkZone: ${CLUSTER_NAME}
 EOF
-  )
+  )"
 
-  hostGroup=$(
+  hostGroup="$(
     cat <<EOF
 
       args:
         - --set-host-group="${CLUSTER_NAME}"
 EOF
-  )
+  )"
 
-  agGroup=$(
+  agGroup="$(
     cat <<EOF
 
       group: ${CLUSTER_NAME}
 EOF
-  )
+  )"
 
-  volumeStorage=$(
+  volumeStorage="$(
     cat <<EOF
 
       env:
         - name: ONEAGENT_ENABLE_VOLUME_STORAGE
           value: "${ENABLE_VOLUME_STORAGE}"
 EOF
-  )
+  )"
 
   if "$ENABLE_VOLUME_STORAGE" = "true"; then
     classicFS="${classicFS}${volumeStorage}"
@@ -191,7 +191,10 @@ EOF
 
   dynakube="${dynakube}${classicFS}${routing}${kubemon}"
 
+  echo "CR.yaml:"
+  echo "----------"
   echo "$dynakube"
+  echo "----------"
   echo "$dynakube" | "${CLI}" apply -f -
 }
 
@@ -312,11 +315,19 @@ apiRequest() {
   url=$2
   json=$3
 
-  response="$(curl -sS -X "${method}" "${API_URL}${url}" \
-    -H "accept: application/json; charset=utf-8" \
-    -H "Authorization: Api-Token ${API_TOKEN}" \
-    -H "Content-Type: application/json; charset=utf-8" \
-    -d "${json}")"
+  if "$SKIP_CERT_CHECK" = "true"; then
+    response="$(curl -k -sS -X ${method} "${API_URL}${url}" \
+      -H "accept: application/json; charset=utf-8" \
+      -H "Authorization: Api-Token ${API_TOKEN}" \
+      -H "Content-Type: application/json; charset=utf-8" \
+      -d "${json}")"
+  else
+    response="$(curl -sS -X ${method} "${API_URL}${url}" \
+      -H "accept: application/json; charset=utf-8" \
+      -H "Authorization: Api-Token ${API_TOKEN}" \
+      -H "Content-Type: application/json; charset=utf-8" \
+      -d "${json}")"
+  fi
 
   echo "$response"
 }
