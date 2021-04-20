@@ -45,114 +45,52 @@ func assertIsDefaultVersionInfo(t *testing.T, version VersionInfo, err error) {
 	assert.Error(t, err)
 	assert.NotNil(t, version)
 	assert.Equal(t, VersionInfo{
-		major:   0,
-		minor:   0,
-		release: 0,
+		major:     0,
+		minor:     0,
+		release:   0,
+		timestamp: "",
 	}, version)
 }
 
 func TestCompareClusterVersion(t *testing.T) {
+	makeVer := func(major, minor, release int, timestamp string) VersionInfo {
+		return VersionInfo{
+			major:     major,
+			minor:     minor,
+			release:   release,
+			timestamp: timestamp,
+		}
+	}
+
 	t.Run("CompareVersionInfo a == b", func(t *testing.T) {
-		a := VersionInfo{
-			major:   1,
-			minor:   200,
-			release: 0,
-		}
-		b := VersionInfo{
-			major:   1,
-			minor:   200,
-			release: 0,
-		}
-		comparison := CompareVersionInfo(a, b)
-		assert.Equal(t, 0, comparison)
+		assert.Equal(t, 0, CompareVersionInfo(makeVer(1, 200, 0, ""), makeVer(1, 200, 0, "")))
 	})
+
 	t.Run("CompareVersionInfo a < b", func(t *testing.T) {
-		a := VersionInfo{
-			major:   1,
-			minor:   0,
-			release: 0,
-		}
-		b := VersionInfo{
-			major:   1,
-			minor:   200,
-			release: 0,
-		}
-		comparison := CompareVersionInfo(a, b)
-		assert.Less(t, comparison, 0)
-
-		a = VersionInfo{
-			major:   0,
-			minor:   0,
-			release: 0,
-		}
-		comparison = CompareVersionInfo(a, b)
-		assert.Less(t, comparison, 0)
-
-		a = VersionInfo{
-			major:   0,
-			minor:   2000,
-			release: 3000,
-		}
-		comparison = CompareVersionInfo(a, b)
-		assert.Less(t, comparison, 0)
-
-		a = VersionInfo{
-			major:   1,
-			minor:   200,
-			release: 0,
-		}
-		b = VersionInfo{
-			major:   1,
-			minor:   200,
-			release: 1,
-		}
-
-		comparison = CompareVersionInfo(a, b)
-		assert.Less(t, comparison, 0)
-
+		assert.Less(t, CompareVersionInfo(makeVer(1, 0, 0, ""), makeVer(1, 200, 0, "")), 0)
+		assert.Less(t, CompareVersionInfo(makeVer(0, 0, 0, ""), makeVer(0, 2000, 3000, "")), 0)
+		assert.Less(t, CompareVersionInfo(makeVer(1, 200, 0, ""), makeVer(1, 200, 1, "")), 0)
+		assert.Less(t, CompareVersionInfo(makeVer(1, 200, 0, "0"), makeVer(1, 200, 1, "1")), 0)
 	})
+
 	t.Run("CompareVersionInfo a > b", func(t *testing.T) {
-		a := VersionInfo{
-			major:   1,
-			minor:   200,
-			release: 0,
-		}
-		b := VersionInfo{
-			major:   1,
-			minor:   100,
-			release: 0,
-		}
-		comparison := CompareVersionInfo(a, b)
-		assert.Greater(t, comparison, 0)
-
-		a = VersionInfo{
-			major:   2,
-			minor:   0,
-			release: 0,
-		}
-		comparison = CompareVersionInfo(a, b)
-		assert.Greater(t, comparison, 0)
-
-		a = VersionInfo{
-			major:   1,
-			minor:   201,
-			release: 0,
-		}
-		comparison = CompareVersionInfo(a, b)
-		assert.Greater(t, comparison, 0)
-
-		a = VersionInfo{
-			major:   1,
-			minor:   0,
-			release: 0,
-		}
-		b = VersionInfo{
-			major:   0,
-			minor:   0,
-			release: 20000,
-		}
-
-		comparison = CompareVersionInfo(a, b)
-		assert.Greater(t, comparison, 0)
+		assert.Greater(t, CompareVersionInfo(makeVer(1, 200, 0, ""), makeVer(1, 100, 0, "")), 0)
+		assert.Greater(t, CompareVersionInfo(makeVer(2, 0, 0, ""), makeVer(1, 100, 0, "")), 0)
+		assert.Greater(t, CompareVersionInfo(makeVer(1, 201, 0, ""), makeVer(1, 100, 0, "")), 0)
+		assert.Greater(t, CompareVersionInfo(makeVer(1, 0, 0, ""), makeVer(0, 0, 20000, "")), 0)
+		assert.Greater(t, CompareVersionInfo(makeVer(1, 0, 0, "1"), makeVer(1, 0, 0, "0")), 0)
 	})
+}
+
+func TestNeedsUpgradeRaw(t *testing.T) {
+	res, err := NeedsUpgradeRaw("1.203.0.20200908-220956", "1.203.0.20210908-220956") // Upgrade
+	assert.True(t, res)
+	assert.NoError(t, err)
+
+	_, err = NeedsUpgradeRaw("1.203.1.20210908-220956", "1.203.0.20200908-220956") // Downgrade
+	assert.Error(t, err)
+
+	res, err = NeedsUpgradeRaw("1.203.0.20200908-220956", "1.203.0.20200908-220956") // Same versions
+	assert.False(t, res)
+	assert.NoError(t, err)
 }

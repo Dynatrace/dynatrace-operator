@@ -66,7 +66,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		return dtversion.ImageVersion{}, errors.New("Not implemented")
 	}
 
-	upd, err := ReconcileImageVersions(ctx, rec, fakeClient, true, errVerProvider)
+	upd, err := ReconcileVersions(ctx, rec, fakeClient, nil, true, errVerProvider)
 	assert.Error(t, err)
 	assert.False(t, upd)
 
@@ -80,23 +80,23 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		return dtversion.ImageVersion{Version: testVersion, Hash: testHash}, nil
 	}
 
-	upd, err = ReconcileImageVersions(ctx, rec, fakeClient, true, sampleVerProvider)
+	upd, err = ReconcileVersions(ctx, rec, fakeClient, nil, true, sampleVerProvider)
 	assert.NoError(t, err)
 	assert.True(t, upd)
 
-	assert.Equal(t, testVersion, rec.Instance.Status.ActiveGate.ImageVersion)
+	assert.Equal(t, testVersion, rec.Instance.Status.ActiveGate.Version)
 	assert.Equal(t, testHash, rec.Instance.Status.ActiveGate.ImageHash)
-	if ts := rec.Instance.Status.ActiveGate.LastImageProbeTimestamp; assert.NotNil(t, ts) {
+	if ts := rec.Instance.Status.ActiveGate.LastUpdateProbeTimestamp; assert.NotNil(t, ts) {
 		assert.Equal(t, now, *ts)
 	}
 
-	assert.Equal(t, testVersion, rec.Instance.Status.OneAgent.ImageVersion)
+	assert.Equal(t, testVersion, rec.Instance.Status.OneAgent.Version)
 	assert.Equal(t, testHash, rec.Instance.Status.OneAgent.ImageHash)
-	if ts := rec.Instance.Status.OneAgent.LastImageProbeTimestamp; assert.NotNil(t, ts) {
+	if ts := rec.Instance.Status.OneAgent.LastUpdateProbeTimestamp; assert.NotNil(t, ts) {
 		assert.Equal(t, now, *ts)
 	}
 
-	upd, err = ReconcileImageVersions(ctx, rec, fakeClient, true, sampleVerProvider)
+	upd, err = ReconcileVersions(ctx, rec, fakeClient, nil, true, sampleVerProvider)
 	assert.NoError(t, err)
 	assert.False(t, upd)
 }

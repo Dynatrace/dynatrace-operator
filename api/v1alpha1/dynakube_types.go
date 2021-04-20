@@ -289,35 +289,31 @@ type DynaKubeStatus struct {
 	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
 }
 
-type ImageStatus struct {
+type VersionStatus struct {
 	// ImageHash contains the last image hash seen.
 	ImageHash string `json:"imageHash,omitempty"`
 
-	// ImageVersion contains the version from the last image seen.
-	ImageVersion string `json:"imageVersion,omitempty"`
+	// Version contains the version to be deployed.
+	Version string `json:"version,omitempty"`
 
-	// LastImageProbeTimestamp defines the last timestamp when the querying for image updates have been done.
-	LastImageProbeTimestamp *metav1.Time `json:"lastImageProbeTimestamp,omitempty"`
+	// LastUpdateProbeTimestamp defines the last timestamp when the querying for updates have been done
+	LastUpdateProbeTimestamp *metav1.Time `json:"lastUpdateProbeTimestamp,omitempty"`
 }
 
 type ActiveGateStatus struct {
-	ImageStatus `json:",inline"`
+	VersionStatus `json:",inline"`
 }
 
 type OneAgentStatus struct {
-	ImageStatus `json:",inline"`
+	VersionStatus `json:",inline"`
 
 	// UseImmutableImage is set when an immutable image is currently in use
 	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
 
-	// Dynatrace version being used.
-	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Version",order=1,xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	Version string `json:"version,omitempty"`
-
 	Instances map[string]OneAgentInstance `json:"instances,omitempty"`
 
-	// LastUpdateProbeTimestamp defines the last timestamp when the querying for updates have been done
-	LastUpdateProbeTimestamp *metav1.Time `json:"lastUpdateProbeTimestamp,omitempty"`
+	// LastHostsRequestTimestamp indicates the last timestamp the Operator queried for hosts
+	LastHostsRequestTimestamp *metav1.Time `json:"lastHostsRequestTimestamp,omitempty"`
 }
 
 type OneAgentInstance struct {

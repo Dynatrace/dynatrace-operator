@@ -29,7 +29,9 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 			}},
 		Status: dynatracev1alpha1.DynaKubeStatus{
 			OneAgent: dynatracev1alpha1.OneAgentStatus{
-				Version: testContainerImageVersion,
+				VersionStatus: dynatracev1alpha1.VersionStatus{
+					Version: testContainerImageVersion,
+				},
 			},
 		}}
 	metadata := deploymentmetadata.NewDeploymentMetadata(testUID)

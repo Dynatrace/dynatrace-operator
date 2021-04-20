@@ -31,6 +31,11 @@ func (dk *DynaKube) NeedsActiveGate() bool {
 	return dk.Spec.KubernetesMonitoringSpec.Enabled || dk.Spec.RoutingSpec.Enabled
 }
 
+// NeedsOneAgent returns true when a feature requires OneAgent instances.
+func (dk *DynaKube) NeedsOneAgent() bool {
+	return dk.Spec.ClassicFullStack.Enabled || dk.Spec.InfraMonitoring.Enabled
+}
+
 // NeedsImmutableOneAgent returns true when a feature requires OneAgent instances running the immutable image.
 func (dk *DynaKube) NeedsImmutableOneAgent() bool {
 	cfs := &dk.Spec.ClassicFullStack

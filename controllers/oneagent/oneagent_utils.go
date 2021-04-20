@@ -8,7 +8,6 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -132,32 +131,4 @@ func (r *ReconcileOneAgent) waitPodReadyState(pod corev1.Pod, labels map[string]
 	}
 
 	return status
-}
-
-// deletePods deletes a list of pods
-//
-// Returns an error in the following conditions:
-//  - failure on object deletion
-//  - timeout on waiting for ready state
-func (r *ReconcileOneAgent) deletePods(logger logr.Logger, pods []corev1.Pod, labels map[string]string, waitSecs uint16) error {
-	for _, pod := range pods {
-		logger.Info("deleting pod", "pod", pod.Name, "node", pod.Spec.NodeName)
-
-		// delete pod
-		err := r.client.Delete(context.TODO(), &pod)
-		if err != nil {
-			return err
-		}
-
-		logger.Info("waiting until pod is ready on node", "node", pod.Spec.NodeName)
-
-		// wait for pod on node to get "Running" again
-		if err := r.waitPodReadyState(pod, labels, waitSecs); err != nil {
-			return err
-		}
-
-		logger.Info("pod recreated successfully on node", "node", pod.Spec.NodeName)
-	}
-
-	return nil
 }
