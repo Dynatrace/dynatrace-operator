@@ -2,6 +2,9 @@
 
 ### Future
 
+#### Bug fixes
+* Detection of OneAgent upgrades doesn't depend on individual OneAgent versions in hosts, but rather a new DaemonSet rollout is applied, which should bring more stable upgrades ([#122](https://github.com/Dynatrace/dynatrace-operator/pull/122))
+
 ### [v0.2.1](https://github.com/Dynatrace/dynatrace-operator/releases/tag/v0.2.1)
 
 #### Bug fixes
