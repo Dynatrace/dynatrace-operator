@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -49,12 +48,11 @@ func Add(mgr manager.Manager, _ string) error {
 // NewReconciler returns a new ReconcileActiveGate
 func NewReconciler(mgr manager.Manager) *ReconcileDynaKube {
 	return &ReconcileDynaKube{
-		client:        mgr.GetClient(),
-		apiReader:     mgr.GetAPIReader(),
-		scheme:        mgr.GetScheme(),
-		dtcBuildFunc:  BuildDynatraceClient,
-		config:        mgr.GetConfig(),
-		enableUpdates: os.Getenv(EnvVarDisableActiveGateUpdates) != "false",
+		client:       mgr.GetClient(),
+		apiReader:    mgr.GetAPIReader(),
+		scheme:       mgr.GetScheme(),
+		dtcBuildFunc: BuildDynatraceClient,
+		config:       mgr.GetConfig(),
 	}
 }
 
@@ -84,13 +82,12 @@ var _ reconcile.Reconciler = &ReconcileDynaKube{}
 type ReconcileDynaKube struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client        client.Client
-	apiReader     client.Reader
-	scheme        *runtime.Scheme
-	dtcBuildFunc  DynatraceClientFunc
-	logger        logr.Logger
-	config        *rest.Config
-	enableUpdates bool
+	client       client.Client
+	apiReader    client.Reader
+	scheme       *runtime.Scheme
+	dtcBuildFunc DynatraceClientFunc
+	logger       logr.Logger
+	config       *rest.Config
 }
 
 type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
@@ -184,13 +181,13 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 		return
 	}
 
-	upd, err = updates.ReconcileVersions(ctx, rec, r.client, dtc, r.enableUpdates, dtversion.GetImageVersion)
+	upd, err = updates.ReconcileVersions(ctx, rec, r.client, dtc, dtversion.GetImageVersion)
 	rec.Update(upd, defaultUpdateInterval, "Found updates")
 	rec.Error(err)
 
 	if rec.Instance.Spec.KubernetesMonitoringSpec.Enabled {
 		upd, err := kubemon.NewReconciler(
-			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion, r.enableUpdates,
+			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
 		).Reconcile()
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "kubemon reconciled") {
 			return
@@ -245,7 +242,7 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 func (r *ReconcileDynaKube) reconcileRouting(rec *utils.Reconciliation, dtc dtclient.Client) bool {
 	if rec.Instance.Spec.RoutingSpec.Enabled {
 		upd, err := routing.NewReconciler(
-			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion, r.enableUpdates,
+			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
 		).Reconcile()
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "routing reconciled") {
 			return false
