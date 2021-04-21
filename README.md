@@ -46,8 +46,6 @@ to [Create user-generated access tokens.](https://www.dynatrace.com/support/help
 Make sure the *Dynatrace API* token has the following permission:
 
 * Access problem and event feed, metrics and topology
-* Read configuration
-* Write configuration
 
 ```sh
 $ kubectl -n dynatrace create secret generic dynakube --from-literal="apiToken=DYNATRACE_API_TOKEN" --from-literal="paasToken=PLATFORM_AS_A_SERVICE_TOKEN"
@@ -115,23 +113,23 @@ $ kubectl apply -f cr.yaml
 
 To get native Kubernetes metrics, you need to connect the Kubernetes API to Dynatrace.
 
-1.Get the Kubernetes API URL
+1. Get the Kubernetes API URL
 
 ```sh
 $ kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'
 ```
 
-2.Get the bearer token
+2. Get the bearer token
 
 ```sh
 $ kubectl get secret $(kubectl get sa dynatrace-kubernetes-monitoring -o jsonpath='{.secrets[0].name}' -n dynatrace) -o jsonpath='{.data.token}' -n dynatrace | base64 --decode
 ```
 
-3.In Dynatrace, go to Settings > Cloud and virtualization > Kubernetes
+3. In Dynatrace, go to Settings > Cloud and virtualization > Kubernetes
 
-4.Select Connect new cluster
+4. Select Connect new cluster
 
-5.Provide a Name, the Kubernetes API URL, and the Bearer token for the Kubernetes cluster and click 'Connect'
+5. Provide a Name, the Kubernetes API URL, and the Bearer token for the Kubernetes cluster and click 'Connect'
 
 For detailed instructions see
 our [official help page.](https://www.dynatrace.com/support/help/technology-support/cloud-platforms/kubernetes/monitor-kubernetes-environments/)
@@ -169,8 +167,6 @@ to [Create user-generated access tokens.](https://www.dynatrace.com/support/help
 Make sure the *Dynatrace API* token has the following permission:
 
 * Access problem and event feed, metrics and topology
-* Read configuration
-* Write configuration
 
 ```sh
 $ oc -n dynatrace create secret generic dynakube --from-literal="apiToken=DYNATRACE_API_TOKEN" --from-literal="paasToken=PLATFORM_AS_A_SERVICE_TOKEN"
@@ -237,23 +233,23 @@ $ oc apply -f cr.yaml
 
 To get native Kubernetes metrics, you need to connect the Kubernetes API to Dynatrace.
 
-1.Get the Kubernetes API URL
+1. Get the Kubernetes API URL
 
 ```sh
 $ oc config view --minify -o jsonpath='{.clusters[0].cluster.server}'
 ```
 
-2.Get the bearer token
+2. Get the bearer token
 
 ```sh
 $ oc get secret $(oc get sa dynatrace-kubernetes-monitoring -o jsonpath='{.secrets[1].name}' -n dynatrace) -o jsonpath='{.data.token}' -n dynatrace | base64 --decode
 ```
 
-3.In Dynatrace, go to Settings > Cloud and virtualization > Kubernetes
+3. In Dynatrace, go to Settings > Cloud and virtualization > Kubernetes
 
-4.Select Connect new cluster
+4. Select Connect new cluster
 
-5.Provide a Name, the Kubernetes API URL, and the Bearer token for the Kubernetes cluster and click 'Connect'
+5. Provide a Name, the Kubernetes API URL, and the Bearer token for the Kubernetes cluster and click 'Connect'
 
 For detailed instructions see
 our [official help page.](https://www.dynatrace.com/support/help/technology-support/cloud-platforms/openshift/monitor-openshift-environments/)
