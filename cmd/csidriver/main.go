@@ -62,6 +62,16 @@ func main() {
 		DataDir:  "/tmp/data",
 	}
 
+	if err := os.MkdirAll("/tmp/data", 0770); err != nil {
+		log.Error(err, "unable to create data directory for CSI Driver")
+		os.Exit(1)
+	}
+
+	if err := os.MkdirAll("/tmp/gc", 0770); err != nil {
+		log.Error(err, "unable to create garbage collector directory for CSI Driver")
+		os.Exit(1)
+	}
+
 	if err := csidriver.NewServer(mgr, csiOpts).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Driver server")
 		os.Exit(1)

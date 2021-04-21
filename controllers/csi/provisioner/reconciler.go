@@ -70,7 +70,7 @@ func (r *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 var _ reconcile.Reconciler = &OneAgentProvisioner{}
 
 func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	rlog := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	rlog := log.WithValues("namespace", request.Namespace, "name", request.Name)
 	rlog.Info("Reconciling DynaKube")
 
 	var dk dynatracev1alpha1.DynaKube
@@ -109,6 +109,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		envDir,
 		filepath.Join(envDir, "log"),
 		filepath.Join(envDir, "datastorage"),
+		filepath.Join(envDir, "gc"),
 	} {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to create directory %s: %w", dir, err)
@@ -158,10 +159,49 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 			}
 		}
 
-		ioutil.WriteFile(verFile, []byte(ver), 0644)
+		if err := ioutil.WriteFile(verFile, []byte(ver), 0644); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to write version file: %w", err)
+		}
+	}
+
+	if err := runGarbageCollection(ci.TenantUUID, ver); err != nil {
+		return reconcile.Result{}, fmt.Errorf("garbage collection failed with the following error: %w", err)
 	}
 
 	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+}
+
+func runGarbageCollection(envID string, latestVersion string) error {
+	gcPath := filepath.Join("/tmp/data", envID, "gc")
+	gcDirs, err := os.ReadDir(gcPath)
+	if err != nil {
+		return err
+	}
+
+	for _, dir := range gcDirs {
+		if dir.Name() == latestVersion {
+			continue
+		}
+		subDirs, err := os.ReadDir(filepath.Join(gcPath, dir.Name()))
+		if err != nil {
+			return err
+		}
+		if len(subDirs) == 0 {
+			err := os.RemoveAll(filepath.Join("/tmp/data", envID, "bin", dir.Name()+"-default"))
+			if err != nil {
+				return err
+			}
+			err = os.RemoveAll(filepath.Join("/tmp/data", envID, "bin", dir.Name()+"-musl"))
+			if err != nil {
+				return err
+			}
+			err = os.RemoveAll(filepath.Join(gcPath, dir.Name()))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func installAgent(rlog logr.Logger, dtc dtclient.Client, flavor, arch, targetDir string) error {
