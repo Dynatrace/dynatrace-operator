@@ -99,7 +99,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 		}
 	}
 
-	if rec.IsOutdated(r.instance.Status.OneAgent.LastHostsRequestTimestamp, updInterval) {
+	if !r.instance.FeatureDisableHostsRequests() && rec.IsOutdated(r.instance.Status.OneAgent.LastHostsRequestTimestamp, updInterval) {
 		r.instance.Status.OneAgent.LastHostsRequestTimestamp = rec.Now.DeepCopy()
 		rec.Update(true, 5*time.Minute, "updated last host request time stamp")
 
