@@ -81,13 +81,17 @@ spec:
     #
     enabled: true
 
+  # To be released
+  #
   # Enables and configures infrastructure monitoring
   # Collects data such as CPU or memory usage of host nodes.
   #
   infraMonitoring:
     # Enable infrastructure monitoring
     enabled: true    
-
+    
+  # To be released
+  #
   # Enables and configures monitoring pods by injecting oneagent init containers into them.
   # Pods to be monitored must be created in previously labeled namespaces.
   #
@@ -172,6 +176,8 @@ spec:
     #
     enabled: true
 
+  # To be released
+  #
   # Enables and configures infrastructure monitoring.
   # Collects data such as CPU or memory usage of host nodes.
   #
@@ -179,6 +185,8 @@ spec:
     # Enable infrastructure monitoring
     enabled: true
 
+  # To be released
+  #
   # Enables and configures monitoring pods by injecting oneagent init containers into them.
   # Pods to be monitored must be created in previously labeled namespaces.
   #
