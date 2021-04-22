@@ -1,8 +1,6 @@
 package dtlabels
 
 import (
-	"strings"
-
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -23,7 +21,10 @@ func IsMatching(matchLabels map[string]string, matchExpressions []metav1.LabelSe
 func AreExpressionsMatching(expressions []metav1.LabelSelectorRequirement, objectLabels map[string]string) (bool, error) {
 	selector := labels.NewSelector()
 	for _, expression := range expressions {
-		requirement, err := labels.NewRequirement(expression.Key, requirementOperatorToSelectionOperator(expression.Operator), expression.Values)
+		requirement, err := labels.NewRequirement(
+			expression.Key,
+			requirementOperatorToSelectionOperator(expression.Operator),
+			expression.Values)
 		if err != nil {
 			return false, errors.WithStack(err)
 		}
@@ -33,9 +34,24 @@ func AreExpressionsMatching(expressions []metav1.LabelSelectorRequirement, objec
 }
 
 func requirementOperatorToSelectionOperator(labelSelectionOperator metav1.LabelSelectorOperator) selection.Operator {
-	// Label Selector Operators are Capitalized (e.g. 'In'), while Operators from the selection package are lowercase (i.e. 'in')
-	// Both are strings in the background and need some conversion to work together
-	return selection.Operator(strings.ToLower(string(labelSelectionOperator)))
+	// LabelSelectorOperator for LabelSelectorRequirements differ from the operators used by the selection
+	// package which is used to match labels against the requirements. Therefore they need some mapping.
+	// The switch below maps the existing four LabelSelectorOperators to their selection.Operator counterpart
+	switch labelSelectionOperator {
+	case metav1.LabelSelectorOpIn:
+		return selection.In
+	case metav1.LabelSelectorOpNotIn:
+		return selection.NotIn
+	case metav1.LabelSelectorOpExists:
+		return selection.Exists
+	case metav1.LabelSelectorOpDoesNotExist:
+		return selection.DoesNotExist
+	}
+
+	// Returning an invalid operator here results in an error when a new requirement is instantiated.
+	// This error is then propagated correctly.
+	// Therefore no error is returned here so this function can be inlined.
+	return ""
 }
 
 func AreLabelsMatching(matchLabels map[string]string, labels map[string]string) bool {
