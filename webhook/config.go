@@ -4,10 +4,6 @@ const (
 	// LabelInstance can be set in a Namespace and indicates the corresponding DynaKube object assigned to it.
 	LabelInstance = "oneagent.dynatrace.com/instance"
 
-	// AnnotationInject can be set at pod or namespace label to enable/disable injection, where at pod level has higher
-	// priority.
-	AnnotationInject = "oneagent.dynatrace.com/inject"
-
 	// AnnotationInjected is set to "true" by the webhook to Pods to indicate that it has been modified.
 	AnnotationInjected = "oneagent.dynatrace.com/injected"
 

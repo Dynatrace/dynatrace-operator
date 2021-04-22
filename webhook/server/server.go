@@ -293,7 +293,6 @@ func (m *podInjector) FindDynakubeForPod(ctx context.Context, pod *corev1.Pod) (
 		logger.Info("could not find any Dynakubes with CodeModules enabled")
 		// If CodeModules is not enabled, cannot inject
 		return nil, admission.Patched("")
-		//return admission.Errored(http.StatusBadRequest, errors.New("no DynaKube instance exists with CodeModules enabled"))
 	}
 
 	namespace := &corev1.Namespace{}
