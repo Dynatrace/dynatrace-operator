@@ -295,7 +295,7 @@ spec:
                   type: object
                 selector:
                   description: 'Optional: set selector for DynaKube to know in which
-                    pods to inject into'
+                    namespaces to inject into'
                   properties:
                     matchExpressions:
                       description: matchExpressions is a list of label selector requirements.
