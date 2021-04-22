@@ -102,8 +102,6 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 
 	tokenName := utils.GetTokensName(dk)
 	if !dk.Spec.CodeModules.Enabled {
-		// If secret does not exist, this method throws a not found error
-		// Suppress the error in that case
 		_ = r.ensureSecretDeleted(tokenName, targetNS)
 		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 	}
