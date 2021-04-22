@@ -168,14 +168,14 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		}
 	}
 
-	if err := runGarbageCollection(ci.TenantUUID, ver); err != nil {
+	if err := runGarbageCollection(rlog, ci.TenantUUID, ver); err != nil {
 		return reconcile.Result{}, fmt.Errorf("garbage collection failed with the following error: %w", err)
 	}
 
 	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 
-func runGarbageCollection(envID string, latestVersion string) error {
+func runGarbageCollection(logger logr.Logger, envID string, latestVersion string) error {
 	gcPath := filepath.Join("/tmp/data", envID, "gc")
 	gcDirs, err := os.ReadDir(gcPath)
 	if err != nil {
@@ -191,6 +191,7 @@ func runGarbageCollection(envID string, latestVersion string) error {
 			return err
 		}
 		if len(subDirs) == 0 {
+			logger.Info("Garbage collector deleting unused version", "version", dir.Name())
 			err := os.RemoveAll(filepath.Join("/tmp/data", envID, "bin", dir.Name()+"-default"))
 			if err != nil {
 				return err
