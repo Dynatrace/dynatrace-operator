@@ -274,13 +274,13 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.No
 
 	linkFile := filepath.Join("/tmp/gc", volumeID)
 	gcFile, err := ioutil.ReadFile(linkFile)
-	if err != nil {
+	if err != nil && os.IsNotExist(err) {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to read link file for garbage collector - error: %s", err))
 	}
-	if err := os.Remove(string(gcFile)); err != nil {
+	if err = os.Remove(string(gcFile)); err != nil && os.IsNotExist(err) {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove file for garbage collector - error: %s", err))
 	}
-	if err := os.Remove(linkFile); err != nil {
+	if err = os.Remove(linkFile); err != nil && os.IsNotExist(err) {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove link file for garbage collector - error: %s", err))
 	}
 
