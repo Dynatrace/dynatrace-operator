@@ -33,10 +33,6 @@ import (
 
 const (
 	defaultUpdateInterval = 5 * time.Minute
-
-	// EnvVarDisableActiveGateUpdates is an internal environment variable to disable ActiveGate updates, since there is
-	// no documented way to do so otherwise.
-	EnvVarDisableActiveGateUpdates = "OPERATOR_ACTIVEGATE_DISABLE_UPDATES"
 )
 
 var log = logf.Log.WithName("controller_dynakube")
