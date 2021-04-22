@@ -109,7 +109,6 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		envDir,
 		filepath.Join(envDir, "log"),
 		filepath.Join(envDir, "datastorage"),
-		filepath.Join(envDir, "gc"),
 	} {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to create directory %s: %w", dir, err)
@@ -145,6 +144,11 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	if ver != oldVer {
+		gcDir := filepath.Join(envDir, "gc", ver)
+		if err := os.MkdirAll(gcDir, 0755); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to create directory %s: %w", gcDir, err)
+		}
+
 		for _, flavor := range []string{dtclient.FlavorDefault, dtclient.FlavorMUSL} {
 			targetDir := filepath.Join(envDir, "bin", ver+"-"+flavor)
 
