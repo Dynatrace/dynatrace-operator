@@ -314,15 +314,13 @@ func (r *ReconcileNodes) updateNode(c *Cache, nodeName string) error {
 	return r.reconcileUnschedulableNode(node, c)
 }
 
-func (r *ReconcileNodes) sendMarkedForTermination(dynaKube *dynatracev1alpha1.DynaKube, nodeIP string, lastSeen time.Time) error {
-	secret := &corev1.Secret{}
-	token := utils.GetTokensName(dynaKube)
-	err := r.client.Get(context.TODO(), client.ObjectKey{Name: token, Namespace: dynaKube.Namespace}, secret)
-	if err != nil {
+func (r *ReconcileNodes) sendMarkedForTermination(dk *dynatracev1alpha1.DynaKube, nodeIP string, lastSeen time.Time) error {
+	var secret corev1.Secret
+	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &secret); err != nil {
 		r.logger.Error(err, "Failed to query for tokens")
 	}
 
-	dtc, err := r.dtClientFunc(r.client, dynaKube, secret)
+	dtc, err := r.dtClientFunc(r.client, dk, &secret)
 	if err != nil {
 		return err
 	}
@@ -376,7 +374,7 @@ func (r *ReconcileNodes) reconcileUnschedulableNode(node *corev1.Node, c *Cache)
 	return r.markForTermination(c, oneAgent, instance.IPAddress, node.Name)
 }
 
-func (r *ReconcileNodes) markForTermination(c *Cache, dynaKube *dynatracev1alpha1.DynaKube,
+func (r *ReconcileNodes) markForTermination(c *Cache, dk *dynatracev1alpha1.DynaKube,
 	ipAddress string, nodeName string) error {
 	cachedNode, err := c.Get(nodeName)
 	if err != nil {
@@ -387,13 +385,20 @@ func (r *ReconcileNodes) markForTermination(c *Cache, dynaKube *dynatracev1alpha
 		return nil
 	}
 
-	r.logger.Info("sending mark for termination event to dynatrace server", "ip", ipAddress, "node", nodeName)
-
 	if err = updateLastMarkedForTerminationTimestamp(c, &cachedNode, nodeName); err != nil {
 		return err
 	}
 
-	return r.sendMarkedForTermination(dynaKube, ipAddress, cachedNode.LastSeen)
+	if dk.FeatureDisableHostsRequests() {
+		r.logger.Info("not sending mark for termination event, requests to the hosts API are disabled", "dynakube", dk.Name,
+			"ip", ipAddress, "node", nodeName)
+		return nil
+	}
+
+	r.logger.Info("sending mark for termination event to dynatrace server", "dynakube", dk.Name, "ip", ipAddress,
+		"node", nodeName)
+
+	return r.sendMarkedForTermination(dk, ipAddress, cachedNode.LastSeen)
 }
 
 func isUnschedulable(node *corev1.Node) bool {

@@ -3,11 +3,9 @@ package utils
 import (
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -93,25 +91,5 @@ func TestExtractToken(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.Empty(t, value)
-	})
-}
-
-func TestGetTokensName(t *testing.T) {
-	t.Run(`GetTokensName returns custom token name`, func(t *testing.T) {
-		tokens := GetTokensName(&dynatracev1alpha1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: testName,
-			},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				Tokens: testValue,
-			}})
-		assert.Equal(t, tokens, testValue)
-	})
-	t.Run(`GetTokensName uses instance name as default value`, func(t *testing.T) {
-		tokens := GetTokensName(&dynatracev1alpha1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: testName,
-			}})
-		assert.Equal(t, tokens, testName)
 	})
 }

@@ -149,8 +149,8 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Rec
 		}
 	}
 
-	if rec.Instance.Status.Tokens != utils.GetTokensName(rec.Instance) {
-		rec.Instance.Status.Tokens = utils.GetTokensName(rec.Instance)
+	if rec.Instance.Status.Tokens != rec.Instance.Tokens() {
+		rec.Instance.Status.Tokens = rec.Instance.Tokens()
 		updateCR = true
 	}
 
@@ -501,7 +501,7 @@ func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.
 				Default: func(ev *corev1.EnvVar) {
 					ev.ValueFrom = &corev1.EnvVarSource{
 						SecretKeyRef: &corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{Name: utils.GetTokensName(instance)},
+							LocalObjectReference: corev1.LocalObjectReference{Name: instance.Tokens()},
 							Key:                  utils.DynatracePaasToken,
 						},
 					}
