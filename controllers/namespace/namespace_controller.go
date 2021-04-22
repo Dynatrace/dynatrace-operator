@@ -90,18 +90,18 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, fmt.Errorf("failed to query CodeModule enabled Dynaekubes: %w", errors.WithStack(err))
 	}
 
-	apm, err := codemodules.MatchForNamespace(codeModuleDynakubes, &ns)
+	dk, err := codemodules.MatchForNamespace(codeModuleDynakubes, &ns)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("could not match CodeModule with namespace: %w", errors.WithStack(err))
 	}
 
-	if apm == nil {
+	if dk == nil {
 		// No CodeModule enabled Dynakube for given namespace found
 		return reconcile.Result{}, nil
 	}
 
-	tokenName := utils.GetTokensName(apm)
-	if !apm.Spec.CodeModules.Enabled {
+	tokenName := utils.GetTokensName(dk)
+	if !dk.Spec.CodeModules.Enabled {
 		// If secret does not exist, this method throws a not found error
 		// Suppress the error in that case
 		_ = r.ensureSecretDeleted(tokenName, targetNS)
@@ -129,7 +129,7 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, fmt.Errorf("failed to query tokens: %w", err)
 	}
 
-	script, err := newScript(ctx, r.client, *apm, tkns, imNodes, r.namespace)
+	script, err := newScript(ctx, r.client, dk, tkns, imNodes, r.namespace)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to generate init script: %w", err)
 	}
@@ -166,7 +166,7 @@ func (r *ReconcileNamespaces) ensureSecretDeleted(name string, ns string) error 
 	return nil
 }
 
-func newScript(ctx context.Context, c client.Client, dynaKube dynatracev1alpha1.DynaKube, tkns corev1.Secret, imNodes map[string]string, ns string) (*script, error) {
+func newScript(ctx context.Context, c client.Client, dynaKube *dynatracev1alpha1.DynaKube, tkns corev1.Secret, imNodes map[string]string, ns string) (*script, error) {
 	var kubeSystemNS corev1.Namespace
 	if err := c.Get(ctx, client.ObjectKey{Name: "kube-system"}, &kubeSystemNS); err != nil {
 		return nil, fmt.Errorf("failed to query for cluster ID: %w", err)
@@ -195,7 +195,7 @@ func newScript(ctx context.Context, c client.Client, dynaKube dynatracev1alpha1.
 	}
 
 	return &script{
-		DynaKube:   &dynaKube,
+		DynaKube:   dynaKube,
 		PaaSToken:  string(tkns.Data[utils.DynatracePaasToken]),
 		Proxy:      proxy,
 		TrustedCAs: trustedCAs,

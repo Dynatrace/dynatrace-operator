@@ -2,23 +2,21 @@ package codemodules
 
 import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/dtlabels"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 func MatchForNamespace(codeModuleDynakubes []dynatracev1alpha1.DynaKube, namespace *corev1.Namespace) (*dynatracev1alpha1.DynaKube, error) {
 	var matchingModules []dynatracev1alpha1.DynaKube
 
 	for _, codeModule := range codeModuleDynakubes {
-		matching, err := dtlabels.IsMatching(
-			codeModule.Spec.CodeModules.Selector.MatchLabels,
-			codeModule.Spec.CodeModules.Selector.MatchExpressions,
-			namespace.Labels)
+		selector, err := metav1.LabelSelectorAsSelector(&codeModule.Spec.CodeModules.Selector)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		if matching {
+		if selector.Matches(labels.Set(namespace.Labels)) {
 			matchingModules = append(matchingModules, codeModule)
 		}
 	}
