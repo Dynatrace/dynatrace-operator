@@ -242,10 +242,10 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 
 	gcFile := filepath.Join(envDir, "gc", string(ver), podUID)
 	if err = ioutil.WriteFile(gcFile, nil, 0770); err != nil {
-		return nil, status.Error(codes.Internal, "Failed to create file for garbage collector")
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create file for garbage collector - error: %s", err))
 	}
 	if err = ioutil.WriteFile(filepath.Join("/tmp/gc", volID), []byte(gcFile), 0770); err != nil {
-		return nil, status.Error(codes.Internal, "Failed to create link file for garbage collector")
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create link file for garbage collector - error: %s", err))
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
@@ -275,13 +275,13 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.No
 	linkFile := filepath.Join("/tmp/gc", volumeID)
 	gcFile, err := ioutil.ReadFile(linkFile)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "Failed to read link file for garbage collector")
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to read link file for garbage collector - error: %s", err))
 	}
 	if err := os.Remove(string(gcFile)); err != nil {
-		return nil, status.Error(codes.Internal, "Failed to remove file for garbage collector")
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove file for garbage collector - error: %s", err))
 	}
 	if err := os.Remove(linkFile); err != nil {
-		return nil, status.Error(codes.Internal, "Failed to remove link file for garbage collector")
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove link file for garbage collector - error: %s", err))
 	}
 
 	// Delete the mount point.
