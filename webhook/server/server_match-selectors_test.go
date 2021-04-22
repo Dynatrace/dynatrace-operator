@@ -8,6 +8,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionv1 "k8s.io/api/admission/v1"
@@ -35,7 +36,8 @@ func TestMatchLabels(t *testing.T) {
 						Enabled: true,
 						Selector: metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								"inject": "true",
+								"inject":      "true",
+								"also-inject": "true",
 							},
 						},
 					},
@@ -49,16 +51,26 @@ func TestMatchLabels(t *testing.T) {
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "dynatrace",
+					Labels: map[string]string{
+						"also-inject": "true",
+					},
 				},
 			},
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-namespace",
+					Labels: map[string]string{
+						"inject": "true",
+					},
 				},
 			},
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "another-namespace",
+					Labels: map[string]string{
+						"inject":      "true",
+						"also-inject": "true",
+					},
 				},
 			},
 		),
@@ -72,9 +84,6 @@ func TestMatchLabels(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-pod-123456",
 				Namespace: "test-namespace",
-				Labels: map[string]string{
-					"inject": "true",
-				},
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{{
@@ -84,7 +93,10 @@ func TestMatchLabels(t *testing.T) {
 			},
 		},
 		{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-pod-123456", Namespace: "another-namespace"},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-pod-123456",
+				Namespace: "another-namespace",
+			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{{
 					Name:  "test-container",
@@ -93,7 +105,10 @@ func TestMatchLabels(t *testing.T) {
 			},
 		},
 		{
-			ObjectMeta: metav1.ObjectMeta{Name: "test-pod-123456", Namespace: "dynatrace"},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-pod-123456",
+				Namespace: "dynatrace",
+			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{{
 					Name:  "test-container",
@@ -116,9 +131,19 @@ func TestMatchLabels(t *testing.T) {
 			},
 		}
 
-		resp := inj.Handle(context.TODO(), req)
-		require.NoError(t, resp.Complete(req))
-		assert.True(t, resp.Allowed)
+		// Only "another-namespace" should be injected, as it is the only one with a full match
+		if pod.Namespace == "another-namespace" {
+			updatedPod := podFromResponse(t, basePodBytes, inj, req)
+			assert.Contains(t, updatedPod.Annotations, "oneagent.dynatrace.com/injected")
+			assert.Equal(t, "true", updatedPod.Annotations["oneagent.dynatrace.com/injected"])
+		} else {
+			resp := inj.Handle(context.TODO(), req)
+			require.NoError(t, resp.Complete(req))
+			assert.True(t, resp.Allowed)
+
+			patchType := admissionv1.PatchTypeJSONPatch
+			assert.NotEqual(t, &patchType, resp.PatchType)
+		}
 	}
 }
 
@@ -177,16 +202,30 @@ func TestMatchExpressions(t *testing.T) {
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "dynatrace",
+					// Should be injected by dynatrace-2
+					Labels: map[string]string{
+						"inject": "true",
+					},
 				},
 			},
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-namespace",
+					// Should be injected by dynatrace-1
+					Labels: map[string]string{
+						"some": "label",
+						"app":  "ui",
+					},
 				},
 			},
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "another-namespace",
+					// Should be injected by dynatrace-1
+					Labels: map[string]string{
+						"some": "label",
+						"app":  "server",
+					},
 				},
 			},
 		),
@@ -200,11 +239,6 @@ func TestMatchExpressions(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-pod-123456",
 				Namespace: "test-namespace",
-				// Should be injected by dynatrace-1
-				Labels: map[string]string{
-					"some": "label",
-					"app":  "ui",
-				},
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{{
@@ -217,11 +251,6 @@ func TestMatchExpressions(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-pod-123456",
 				Namespace: "another-namespace",
-				// Should be injected by dynatrace-1
-				Labels: map[string]string{
-					"some": "label",
-					"app":  "server",
-				},
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{{
@@ -234,10 +263,6 @@ func TestMatchExpressions(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-pod-123456",
 				Namespace: "dynatrace",
-				// Should be injected by dynatrace-2
-				Labels: map[string]string{
-					"inject": "true",
-				},
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{{
@@ -257,13 +282,12 @@ func TestMatchExpressions(t *testing.T) {
 				Object: runtime.RawExtension{
 					Raw: basePodBytes,
 				},
-				//Namespace: "test-namespace",
 			},
 		}
 
-		resp := inj.Handle(context.TODO(), req)
-		require.NoError(t, resp.Complete(req))
-		assert.True(t, resp.Allowed)
+		updatedPod := podFromResponse(t, basePodBytes, inj, req)
+		assert.Contains(t, updatedPod.Annotations, "oneagent.dynatrace.com/injected")
+		assert.Equal(t, "true", updatedPod.Annotations["oneagent.dynatrace.com/injected"])
 	}
 }
 
@@ -327,6 +351,11 @@ func TestErrorOnMultipleMatchingCodeModules(t *testing.T) {
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-namespace",
+					Labels: map[string]string{
+						"some":   "label",
+						"app":    "ui",
+						"inject": "true",
+					},
 				},
 			},
 			&corev1.Namespace{
@@ -345,12 +374,6 @@ func TestErrorOnMultipleMatchingCodeModules(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-pod-123456",
 				Namespace: "test-namespace",
-				// Should throw error cause both DynaKubes match
-				Labels: map[string]string{
-					"some":   "label",
-					"app":    "ui",
-					"inject": "true",
-				},
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{{
@@ -379,49 +402,21 @@ func TestErrorOnMultipleMatchingCodeModules(t *testing.T) {
 	}
 }
 
-func TestFindCodeModules(t *testing.T) {
-	decoder, err := admission.NewDecoder(scheme.Scheme)
+func podFromResponse(t *testing.T, basePodBytes []byte, injector *podInjector, req admission.Request) corev1.Pod {
+	resp := injector.Handle(context.TODO(), req)
+	require.NoError(t, resp.Complete(req))
+	assert.True(t, resp.Allowed)
+
+	patchType := admissionv1.PatchTypeJSONPatch
+	assert.Equal(t, resp.PatchType, &patchType)
+
+	patch, err := jsonpatch.DecodePatch(resp.Patch)
 	require.NoError(t, err)
 
-	instances := []dynatracev1alpha1.DynaKube{
-		{
-			ObjectMeta: metav1.ObjectMeta{Name: "codeModules-1", Namespace: "dynatrace"},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-					Enabled: true,
-				},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{Name: "codeModules-2", Namespace: "dynatrace"},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-					Enabled: true,
-				},
-			},
-		},
-		{
-			ObjectMeta: metav1.ObjectMeta{Name: "other", Namespace: "dynatrace"},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-					Enabled: false,
-				},
-			},
-		},
-	}
+	updPodBytes, err := patch.Apply(basePodBytes)
+	require.NoError(t, err)
 
-	inj := &podInjector{
-		client: fake.NewClient(
-			&instances[0],
-			&instances[1],
-		),
-		decoder:   decoder,
-		image:     "test-image",
-		namespace: "dynatrace",
-	}
-
-	codeModules, err := FindCodeModules(context.TODO(), inj.client)
-	assert.NoError(t, err)
-	assert.NotNil(t, codeModules)
-	assert.Equal(t, 2, len(codeModules))
+	var updPod corev1.Pod
+	require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
+	return updPod
 }

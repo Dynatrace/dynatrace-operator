@@ -11,16 +11,13 @@ import (
 	"strings"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/codemodules"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -131,27 +128,9 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	logger.Info("checking pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
-	codeModules, err := FindCodeModules(ctx, m.client)
-	if err != nil {
-		logger.Error(err, "error when trying to find DynaKubes with CodeModules enabled")
-
-		// If CodeModules is not enabled, or cannot be found, cannot inject
-		return admission.Patched("")
-	}
-	if len(codeModules) <= 0 {
-		logger.Info("could not find any DynaKubes with CodeModules enabled")
-		// If CodeModules is not enabled, cannot inject
-		return admission.Patched("")
-		//return admission.Errored(http.StatusBadRequest, errors.New("no DynaKube instance exists with CodeModules enabled"))
-	}
-
-	oa, err := MatchCodeModules(codeModules, pod)
-	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
-	}
+	oa, response := m.FindDynakubeForPod(ctx, pod)
 	if oa == nil {
-		// If no DynaKube matches the pods labels, do not inject
-		return admission.Patched("")
+		return response
 	}
 
 	logger.Info("injecting into pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
@@ -302,6 +281,39 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 }
 
+func (m *podInjector) FindDynakubeForPod(ctx context.Context, pod *corev1.Pod) (*dynatracev1alpha1.DynaKube, admission.Response) {
+	codeModuleDynakubes, err := codemodules.FindCodeModules(ctx, m.client)
+	if err != nil {
+		logger.Error(err, "error when trying to find Dynakubes with CodeModules enabled")
+
+		// If CodeModules is not enabled, or cannot be found, cannot inject
+		return nil, admission.Patched("")
+	}
+	if len(codeModuleDynakubes) <= 0 {
+		logger.Info("could not find any Dynakubes with CodeModules enabled")
+		// If CodeModules is not enabled, cannot inject
+		return nil, admission.Patched("")
+		//return admission.Errored(http.StatusBadRequest, errors.New("no DynaKube instance exists with CodeModules enabled"))
+	}
+
+	namespace := &corev1.Namespace{}
+	err = m.client.Get(ctx, client.ObjectKey{Name: pod.Namespace}, namespace)
+	if err != nil {
+		logger.Error(err, "error when trying to find namespace of pod", "pod", pod.Name, "namespace", pod.Namespace)
+		return nil, admission.Errored(http.StatusInternalServerError, err)
+	}
+
+	oa, err := codemodules.MatchForNamespace(codeModuleDynakubes, namespace)
+	if err != nil {
+		return nil, admission.Errored(http.StatusInternalServerError, err)
+	}
+	if oa == nil {
+		// If no DynaKube matches the namespaces labels, do not inject
+		return nil, admission.Patched("")
+	}
+	return oa, admission.Response{}
+}
+
 // InjectClient injects the client
 func (m *podInjector) InjectClient(c client.Client) error {
 	m.client = c
@@ -312,72 +324,4 @@ func (m *podInjector) InjectClient(c client.Client) error {
 func (m *podInjector) InjectDecoder(d *admission.Decoder) error {
 	m.decoder = d
 	return nil
-}
-
-func FindCodeModules(ctx context.Context, clt client.Client) ([]dynatracev1alpha1.DynaKube, error) {
-	dynaKubeList := &dynatracev1alpha1.DynaKubeList{}
-	err := clt.List(ctx, dynaKubeList)
-	if err != nil {
-		return nil, errors.Cause(err)
-	}
-
-	var codeModules []dynatracev1alpha1.DynaKube
-	for _, pod := range dynaKubeList.Items {
-		if pod.Spec.CodeModules.Enabled {
-			codeModules = append(codeModules, pod)
-		}
-	}
-
-	return codeModules, nil
-}
-
-func MatchCodeModules(codeModules []dynatracev1alpha1.DynaKube, pod *corev1.Pod) (*dynatracev1alpha1.DynaKube, error) {
-	var matchingModules []dynatracev1alpha1.DynaKube
-
-	for _, codeModule := range codeModules {
-		if areLabelsMatching(codeModule.Spec.CodeModules.Selector.MatchLabels, pod.Labels) {
-			expressionsMatching, err := areExpressionsMatching(codeModule.Spec.CodeModules.Selector.MatchExpressions, pod.Labels)
-			if err != nil {
-				return nil, err
-			}
-			if expressionsMatching {
-				matchingModules = append(matchingModules, codeModule)
-			}
-		}
-	}
-
-	if len(matchingModules) > 1 {
-		return nil, errors.New("pod matches two DynaKubes which is unsupported. " +
-			"refine the labels on your pod metadata or DynaKube/CodeModules specification")
-	}
-	if len(matchingModules) == 0 {
-		return nil, nil
-	}
-	return &matchingModules[0], nil
-}
-
-func areExpressionsMatching(expressions []metav1.LabelSelectorRequirement, podLabels map[string]string) (bool, error) {
-	selector := labels.NewSelector()
-	for _, expression := range expressions {
-		requirement, err := labels.NewRequirement(expression.Key, selection.Operator(strings.ToLower(string(expression.Operator))), expression.Values)
-		if err != nil {
-			return false, err
-		}
-		selector = selector.Add(*requirement)
-	}
-	return selector.Matches(labels.Set(podLabels)), nil
-}
-
-func areLabelsMatching(matchLabels map[string]string, labels map[string]string) bool {
-	if len(labels) == 0 {
-		return false
-	}
-
-	for matchLabel, matchValue := range matchLabels {
-		value, ok := labels[matchLabel]
-		if !ok || matchValue != value {
-			return false
-		}
-	}
-	return true
 }
