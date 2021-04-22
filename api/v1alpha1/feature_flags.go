@@ -39,7 +39,7 @@ func (dk *DynaKube) FeatureDisableHostsRequests() bool {
 
 // FeatureOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.
 func (dk *DynaKube) FeatureOneAgentMaxUnavailable() int {
-	raw := dk.Annotations[AnnotationFeatureDisableHostsRequests]
+	raw := dk.Annotations[AnnotationFeatureOneAgentMaxUnavailable]
 	if raw == "" {
 		return 1
 	}
