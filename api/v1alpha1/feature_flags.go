@@ -21,25 +21,25 @@ import (
 )
 
 const (
-	AnnotationFeaturePrefix                   = "alpha.operator.dynatrace.com/feature-"
-	AnnotationFeatureDisableActiveGateUpdates = AnnotationFeaturePrefix + "disable-activegate-updates"
-	AnnotationFeatureDisableHostsRequests     = AnnotationFeaturePrefix + "disable-hosts-requests"
-	AnnotationFeatureOneAgentMaxUnavailable   = AnnotationFeaturePrefix + "oneagent-max-unavailable"
+	annotationFeaturePrefix                   = "alpha.operator.dynatrace.com/feature-"
+	annotationFeatureDisableActiveGateUpdates = annotationFeaturePrefix + "disable-activegate-updates"
+	annotationFeatureDisableHostsRequests     = annotationFeaturePrefix + "disable-hosts-requests"
+	annotationFeatureOneAgentMaxUnavailable   = annotationFeaturePrefix + "oneagent-max-unavailable"
 )
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
 func (dk *DynaKube) FeatureDisableActiveGateUpdates() bool {
-	return dk.Annotations[AnnotationFeatureDisableActiveGateUpdates] == "true"
+	return dk.Annotations[annotationFeatureDisableActiveGateUpdates] == "true"
 }
 
 // FeatureDisableHostsRequests is a feature flag to disable queries to the Hosts API.
 func (dk *DynaKube) FeatureDisableHostsRequests() bool {
-	return dk.Annotations[AnnotationFeatureDisableHostsRequests] == "true"
+	return dk.Annotations[annotationFeatureDisableHostsRequests] == "true"
 }
 
 // FeatureOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.
 func (dk *DynaKube) FeatureOneAgentMaxUnavailable() int {
-	raw := dk.Annotations[AnnotationFeatureOneAgentMaxUnavailable]
+	raw := dk.Annotations[annotationFeatureOneAgentMaxUnavailable]
 	if raw == "" {
 		return 1
 	}
