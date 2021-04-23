@@ -105,93 +105,94 @@ applyDynatraceOperator() {
   "${CLI}" -n dynatrace create secret generic dynakube --from-literal="apiToken=${API_TOKEN}" --from-literal="paasToken=${PAAS_TOKEN}" --dry-run -o yaml | "${CLI}" apply -f -
 }
 
-applyDynaKubeCR() {
-  dynakube=$(
-    cat <<EOF
-  apiVersion: dynatrace.com/v1alpha1
-  kind: DynaKube
-  metadata:
-    name: dynakube
-    namespace: dynatrace
-  spec:
-    apiUrl: ${API_URL}
-    skipCertCheck: ${SKIP_CERT_CHECK}
+buildGlobalSection() {
+  cat <<EOF
+  apiUrl: ${API_URL}
+  skipCertCheck: ${SKIP_CERT_CHECK}
 EOF
-  )
-
-  classicFS=$(
-    cat <<EOF
-
-    classicFullStack:
-      enabled: true
-      tolerations:
-        - effect: NoSchedule
-          key: node-role.kubernetes.io/master
-          operator: Exists
-EOF
-  )
-
-  routing=$(
-    cat <<EOF
-
-    routing:
-      enabled: true
-EOF
-  )
-
-  kubemon=$(
-    cat <<EOF
-
-    kubernetesMonitoring:
-      enabled: true
-EOF
-  )
-
-  networkZone=$(
-    cat <<EOF
-
-    networkZone: ${CLUSTER_NAME}
-EOF
-  )
-
-  hostGroup=$(
-    cat <<EOF
-
-      args:
-        - --set-host-group="${CLUSTER_NAME}"
-EOF
-  )
-
-  agGroup=$(
-    cat <<EOF
-
-      group: ${CLUSTER_NAME}
-EOF
-  )
-
-  volumeStorage=$(
-    cat <<EOF
-
-      env:
-        - name: ONEAGENT_ENABLE_VOLUME_STORAGE
-          value: "${ENABLE_VOLUME_STORAGE}"
-EOF
-  )
-
-  if "$ENABLE_VOLUME_STORAGE" = "true"; then
-    classicFS="${classicFS}${volumeStorage}"
-  fi
-
   if [ -n "$CLUSTER_NAME" ]; then
-    classicFS="${classicFS}${hostGroup}"
-    routing="${routing}${agGroup}"
-    kubemon="${kubemon}${agGroup}"
-    dynakube="${dynakube}${networkZone}"
+    cat <<EOF
+  networkZone: ${CLUSTER_NAME}
+EOF
   fi
+}
 
-  dynakube="${dynakube}${classicFS}${routing}${kubemon}"
+buildClassicFullStackSection() {
+  cat <<EOF
+  classicFullStack:
+    enabled: true
+    tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/master
+      operator: Exists
+$(buildClassicFullStackArgsField)
+$(buildClassicFullStackEnvField)
+EOF
+}
 
+buildClassicFullStackArgsField() {
+  if [ -n "$CLUSTER_NAME" ]; then
+    cat <<EOF
+    args:
+    - --set-host-group="${CLUSTER_NAME}"
+EOF
+  fi
+}
+
+buildClassicFullStackEnvField() {
+  if "$ENABLE_VOLUME_STORAGE" = "true"; then
+    cat <<EOF
+    env:
+    - name: ONEAGENT_ENABLE_VOLUME_STORAGE
+      value: "${ENABLE_VOLUME_STORAGE}"
+EOF
+  fi
+}
+
+buildRoutingSection() {
+  cat <<EOF
+  routing:
+    enabled: true
+EOF
+  if [ -n "$CLUSTER_NAME" ]; then
+    cat <<EOF
+    group: ${CLUSTER_NAME}
+EOF
+  fi
+}
+
+buildKubeMonSection() {
+  cat <<EOF
+  kubernetesMonitoring:
+    enabled: true
+EOF
+  if [ -n "$CLUSTER_NAME" ]; then
+    cat <<EOF
+    group: ${CLUSTER_NAME}
+EOF
+  fi
+}
+
+applyDynaKubeCR() {
+  dynakube="$(
+    cat <<EOF
+apiVersion: dynatrace.com/v1alpha1
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+spec:
+$(buildGlobalSection)
+$(buildClassicFullStackSection)
+$(buildRoutingSection)
+$(buildKubeMonSection)
+EOF
+  )"
+
+  echo "CR.yaml:"
+  echo "----------"
   echo "$dynakube"
+  echo "----------"
   echo "$dynakube" | "${CLI}" apply -f -
 }
 
@@ -312,7 +313,13 @@ apiRequest() {
   url=$2
   json=$3
 
-  response="$(curl -sS -X "${method}" "${API_URL}${url}" \
+  if "$SKIP_CERT_CHECK" = "true"; then
+    curl_command="curl -k"
+  else
+    curl_command="curl"
+  fi
+
+  response="$(${curl_command} -sS -X ${method} "${API_URL}${url}" \
     -H "accept: application/json; charset=utf-8" \
     -H "Authorization: Api-Token ${API_TOKEN}" \
     -H "Content-Type: application/json; charset=utf-8" \
