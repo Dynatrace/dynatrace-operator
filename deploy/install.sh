@@ -279,19 +279,11 @@ apiRequest() {
   url=$2
   json=$3
 
-  if "$SKIP_CERT_CHECK" = "true"; then
-    response="$(curl -k -sS -X ${method} "${API_URL}${url}" \
-      -H "accept: application/json; charset=utf-8" \
-      -H "Authorization: Api-Token ${API_TOKEN}" \
-      -H "Content-Type: application/json; charset=utf-8" \
-      -d "${json}")"
-  else
-    response="$(curl -sS -X ${method} "${API_URL}${url}" \
-      -H "accept: application/json; charset=utf-8" \
-      -H "Authorization: Api-Token ${API_TOKEN}" \
-      -H "Content-Type: application/json; charset=utf-8" \
-      -d "${json}")"
-  fi
+  response="$(curl -sS -X "${method}" "${API_URL}${url}" \
+    -H "accept: application/json; charset=utf-8" \
+    -H "Authorization: Api-Token ${API_TOKEN}" \
+    -H "Content-Type: application/json; charset=utf-8" \
+    -d "${json}")"
 
   echo "$response"
 }
