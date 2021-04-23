@@ -99,6 +99,25 @@ spec:
   #
   routing:
     enabled: true
+
+  # To be released
+  #
+  # Enables and configures infrastructure monitoring
+  # Collects data such as CPU or memory usage of host nodes.
+  #
+  infraMonitoring:
+    # Enable infrastructure monitoring
+    enabled: true    
+    
+  # To be released
+  #
+  # Enables and configures monitoring pods by injecting oneagent init containers into them.
+  # Pods to be monitored must be created in previously labeled namespaces.
+  #
+  codeModules:
+    # Enable pod monitoring
+    enabled: true
+
 ```
 
 This is the most basic configuration for the DynaKube object. In case you want to have adjustments please have a look
@@ -219,6 +238,25 @@ spec:
   #
   routing:
     enabled: true
+
+  # To be released
+  #
+  # Enables and configures infrastructure monitoring.
+  # Collects data such as CPU or memory usage of host nodes.
+  #
+  infraMonitoring:
+    # Enable infrastructure monitoring
+    enabled: true
+
+  # To be released
+  #
+  # Enables and configures monitoring pods by injecting oneagent init containers into them.
+  # Pods to be monitored must be created in previously labeled namespaces.
+  #
+  codeModules:
+    # Enable pod monitoring
+    enabled: true
+
 ```
 
 This is the most basic configuration for the DynaKube object. In case you want to have adjustments please have a look
