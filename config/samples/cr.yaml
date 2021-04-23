@@ -61,6 +61,8 @@ spec:
     #
     # autoUpdate: true
 
+  # To be released
+  #
   # Configure pod monitoring
   codeModules:
     # Enable pod monitoring
@@ -85,6 +87,8 @@ spec:
     #   emptyDir: { }
 
 
+  # To be released
+  #
   # Configure infrastructure monitoring
   infraMonitoring:
     # Enable infrastructure monitoring
