@@ -139,6 +139,9 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		pod.Annotations = map[string]string{}
 	}
 
+	if pod.Annotations[dtwebhook.AnnotationInject] == "false" {
+		return admission.Patched("")
+	}
 	if pod.Annotations[dtwebhook.AnnotationInjected] == "true" {
 		return admission.Patched("")
 	}

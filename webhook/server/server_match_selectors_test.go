@@ -133,7 +133,7 @@ func TestMatchLabels(t *testing.T) {
 
 		// Only "another-namespace" should be injected, as it is the only one with a full match
 		if pod.Namespace == "another-namespace" {
-			updatedPod := podFromResponse(t, basePodBytes, inj, req)
+			updatedPod := podFromResponse(t, handleRequest(t, inj, req), basePodBytes)
 			assert.Contains(t, updatedPod.Annotations, "oneagent.dynatrace.com/injected")
 			assert.Equal(t, "true", updatedPod.Annotations["oneagent.dynatrace.com/injected"])
 		} else {
@@ -285,7 +285,7 @@ func TestMatchExpressions(t *testing.T) {
 			},
 		}
 
-		updatedPod := podFromResponse(t, basePodBytes, inj, req)
+		updatedPod := podFromResponse(t, handleRequest(t, inj, req), basePodBytes)
 		assert.Contains(t, updatedPod.Annotations, "oneagent.dynatrace.com/injected")
 		assert.Equal(t, "true", updatedPod.Annotations["oneagent.dynatrace.com/injected"])
 	}
@@ -402,11 +402,7 @@ func TestErrorOnMultipleMatchingCodeModules(t *testing.T) {
 	}
 }
 
-func podFromResponse(t *testing.T, basePodBytes []byte, injector *podInjector, req admission.Request) corev1.Pod {
-	resp := injector.Handle(context.TODO(), req)
-	require.NoError(t, resp.Complete(req))
-	assert.True(t, resp.Allowed)
-
+func podFromResponse(t *testing.T, resp admission.Response, basePodBytes []byte) corev1.Pod {
 	patchType := admissionv1.PatchTypeJSONPatch
 	assert.Equal(t, resp.PatchType, &patchType)
 
@@ -419,4 +415,11 @@ func podFromResponse(t *testing.T, basePodBytes []byte, injector *podInjector, r
 	var updPod corev1.Pod
 	require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 	return updPod
+}
+
+func handleRequest(t *testing.T, injector *podInjector, req admission.Request) admission.Response {
+	resp := injector.Handle(context.TODO(), req)
+	require.NoError(t, resp.Complete(req))
+	assert.True(t, resp.Allowed)
+	return resp
 }
