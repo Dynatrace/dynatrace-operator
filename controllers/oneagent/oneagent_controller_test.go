@@ -255,7 +255,6 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	oldVersion := "1.186"
 	hostIP := "1.2.3.4"
 	dtcMock.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(version, nil)
-	dtcMock.On("GetAgentVersionForIP", hostIP).Return(version, nil)
 	dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{utils.DynatracePaasToken}, nil)
 	dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{utils.DynatraceApiToken}, nil)
 

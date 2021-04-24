@@ -167,30 +167,6 @@ func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client)
 	}
 }
 
-func testAgentVersionGetAgentVersionForIP(t *testing.T, dynatraceClient Client) {
-	{
-		_, err := dynatraceClient.GetAgentVersionForIP("")
-
-		assert.Error(t, err, "lookup empty ip")
-	}
-	{
-		_, err := dynatraceClient.GetAgentVersionForIP(unknownIP)
-
-		assert.Error(t, err, "lookup unknown ip")
-	}
-	{
-		_, err := dynatraceClient.GetAgentVersionForIP(unsetIP)
-
-		assert.Error(t, err, "lookup unset ip")
-	}
-	{
-		version, err := dynatraceClient.GetAgentVersionForIP(goodIP)
-
-		assert.NoError(t, err, "lookup good ip")
-		assert.Equal(t, "1.142.0.20180313-173634", version, "version matches for lookup good ip")
-	}
-}
-
 type ipHandler struct{}
 
 func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {

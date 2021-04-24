@@ -318,7 +318,6 @@ type OneAgentStatus struct {
 
 type OneAgentInstance struct {
 	PodName   string `json:"podName,omitempty"`
-	Version   string `json:"version,omitempty"`
 	IPAddress string `json:"ipAddress,omitempty"`
 }
 

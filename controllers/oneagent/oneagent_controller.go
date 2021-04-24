@@ -99,7 +99,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 		}
 	}
 
-	if !r.instance.FeatureDisableHostsRequests() && rec.IsOutdated(r.instance.Status.OneAgent.LastHostsRequestTimestamp, updInterval) {
+	if rec.IsOutdated(r.instance.Status.OneAgent.LastHostsRequestTimestamp, updInterval) {
 		r.instance.Status.OneAgent.LastHostsRequestTimestamp = rec.Now.DeepCopy()
 		rec.Update(true, 5*time.Minute, "updated last host request time stamp")
 
@@ -604,7 +604,7 @@ func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logge
 		handlePodListError(logger, err, listOpts)
 	}
 
-	instanceStatuses, err := getInstanceStatuses(pods, dtc, instance)
+	instanceStatuses, err := getInstanceStatuses(pods)
 	if err != nil {
 		if instanceStatuses == nil || len(instanceStatuses) <= 0 {
 			return false, err
@@ -619,23 +619,15 @@ func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logge
 	return false, err
 }
 
-func getInstanceStatuses(pods []corev1.Pod, dtc dtclient.Client, instance *dynatracev1alpha1.DynaKube) (map[string]dynatracev1alpha1.OneAgentInstance, error) {
+func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1alpha1.OneAgentInstance, error) {
 	instanceStatuses := make(map[string]dynatracev1alpha1.OneAgentInstance)
 
 	for _, pod := range pods {
-		instanceStatus := dynatracev1alpha1.OneAgentInstance{
+		instanceStatuses[pod.Spec.NodeName] = dynatracev1alpha1.OneAgentInstance{
 			PodName:   pod.Name,
 			IPAddress: pod.Status.HostIP,
 		}
-		ver, err := dtc.GetAgentVersionForIP(pod.Status.HostIP)
-		if err != nil {
-			if err = handleAgentVersionForIPError(err, instance, pod, &instanceStatus); err != nil {
-				return instanceStatuses, err
-			}
-		} else {
-			instanceStatus.Version = ver
-		}
-		instanceStatuses[pod.Spec.NodeName] = instanceStatus
 	}
+
 	return instanceStatuses, nil
 }
