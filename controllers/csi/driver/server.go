@@ -29,6 +29,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
+	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/go-logr/logr"
 	"google.golang.org/grpc"
@@ -194,7 +195,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Failed to query namespace %s: %s", nsName, err.Error()))
 	}
 
-	dkName := ns.Labels["oneagent.dynatrace.com/instance"] // TODO(lrgar): replace with constant
+	dkName := ns.Labels[webhook.LabelInstance]
 	if dkName == "" {
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Namespace '%s' doesn't have DynaKube assigned", nsName))
 	}
@@ -206,8 +207,8 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 	envDir := filepath.Join(svr.opts.DataDir, string(envID))
 
 	for _, dir := range []string{
-		filepath.Join(envDir, "log", podUID),
-		filepath.Join(envDir, "datastorage", podUID),
+		filepath.Join(envDir, dtcsi.LogDir, podUID),
+		filepath.Join(envDir, dtcsi.DatastorageDir, podUID),
 	} {
 		if err = os.MkdirAll(dir, 0770); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
@@ -225,26 +226,23 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		targetPath,
 		Mount{Source: agentDir, Target: targetPath, ReadOnly: true},
 		Mount{
-			Source: filepath.Join(agentDir, "agent", "conf"),
-			Target: filepath.Join(targetPath, "agent", "conf"),
+			Source: filepath.Join(agentDir, dtcsi.AgentConfDir),
+			Target: filepath.Join(targetPath, dtcsi.AgentConfDir),
 		},
 		Mount{
-			Source: filepath.Join(envDir, "log", podUID),
-			Target: filepath.Join(targetPath, "log"),
+			Source: filepath.Join(envDir, dtcsi.LogDir, podUID),
+			Target: filepath.Join(targetPath, dtcsi.LogDir),
 		},
 		Mount{
-			Source: filepath.Join(envDir, "datastorage", podUID),
-			Target: filepath.Join(targetPath, "datastorage"),
+			Source: filepath.Join(envDir, dtcsi.DatastorageDir, podUID),
+			Target: filepath.Join(targetPath, dtcsi.DatastorageDir),
 		},
 	); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount OneAgent volume: %s", err.Error()))
 	}
 
 	gcFile := filepath.Join(envDir, "gc", string(ver), podUID)
-	if err = ioutil.WriteFile(gcFile, nil, 0770); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create file for garbage collector - error: %s", err))
-	}
-	if err = ioutil.WriteFile(filepath.Join("/tmp/gc", volID), []byte(gcFile), 0770); err != nil {
+	if err = ioutil.WriteFile(filepath.Join(dtcsi.GarbageCollectionPath, volID), []byte(gcFile), 0770); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create link file for garbage collector - error: %s", err))
 	}
 
@@ -264,22 +262,19 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.No
 	}
 
 	if err := BindUnmount(
-		Mount{Target: filepath.Join(targetPath, "agent", "conf")},
-		Mount{Target: filepath.Join(targetPath, "log")},
-		Mount{Target: filepath.Join(targetPath, "datastorage")},
+		Mount{Target: filepath.Join(targetPath, dtcsi.AgentConfDir)},
+		Mount{Target: filepath.Join(targetPath, dtcsi.LogDir)},
+		Mount{Target: filepath.Join(targetPath, dtcsi.DatastorageDir)},
 		Mount{Target: targetPath},
 	); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount volume: %s", err.Error()))
 	}
 
-	linkFile := filepath.Join("/tmp/gc", volumeID)
-	gcFile, err := ioutil.ReadFile(linkFile)
+	linkFile := filepath.Join(dtcsi.GarbageCollectionPath, volumeID)
+	_, err := ioutil.ReadFile(linkFile)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to read link file for garbage collector - error: %s", err))
 	} else if !os.IsNotExist(err) {
-		if err = os.Remove(string(gcFile)); err != nil && !os.IsNotExist(err) {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove file for garbage collector - error: %s", err))
-		}
 		if err = os.Remove(linkFile); err != nil && !os.IsNotExist(err) {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove link file for garbage collector - error: %s", err))
 		}

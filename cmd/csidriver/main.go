@@ -29,6 +29,7 @@ import (
 	"golang.org/x/sys/unix"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 var (
@@ -47,8 +48,10 @@ func main() {
 	defaultUmask := unix.Umask(0002)
 	defer unix.Umask(defaultUmask)
 
+	namespace := os.Getenv("POD_NAMESPACE")
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Namespace: os.Getenv("POD_NAMESPACE"),
+		Namespace: namespace,
 		Scheme:    scheme.Scheme,
 	})
 	if err != nil {
@@ -62,12 +65,12 @@ func main() {
 		DataDir:  "/tmp/data",
 	}
 
-	if err := os.MkdirAll("/tmp/data", 0770); err != nil {
+	if err := os.MkdirAll(dtcsi.DataPath, 0770); err != nil {
 		log.Error(err, "unable to create data directory for CSI Driver")
 		os.Exit(1)
 	}
 
-	if err := os.MkdirAll("/tmp/gc", 0770); err != nil {
+	if err := os.MkdirAll(dtcsi.GarbageCollectionPath, 0770); err != nil {
 		log.Error(err, "unable to create garbage collector directory for CSI Driver")
 		os.Exit(1)
 	}
@@ -85,6 +88,24 @@ func main() {
 	log.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		log.Error(err, "problem running manager")
+		os.Exit(1)
+	}
+
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	gcMgr, err := startCSIGarbageCollector(namespace, cfg)
+	if err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	log.Info("starting csi gc manager")
+	if err := gcMgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		log.Error(err, "problem running csi gc manager")
 		os.Exit(1)
 	}
 }

@@ -107,8 +107,8 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 
 	for _, dir := range []string{
 		envDir,
-		filepath.Join(envDir, "log"),
-		filepath.Join(envDir, "datastorage"),
+		filepath.Join(envDir, dtcsi.LogDir),
+		filepath.Join(envDir, dtcsi.DatastorageDir),
 	} {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to create directory %s: %w", dir, err)
@@ -168,45 +168,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		}
 	}
 
-	if err := runGarbageCollection(rlog, ci.TenantUUID, ver); err != nil {
-		return reconcile.Result{}, fmt.Errorf("garbage collection failed with the following error: %w", err)
-	}
-
 	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
-}
-
-func runGarbageCollection(logger logr.Logger, envID string, latestVersion string) error {
-	gcPath := filepath.Join("/tmp/data", envID, "gc")
-	gcDirs, err := os.ReadDir(gcPath)
-	if err != nil {
-		return err
-	}
-
-	for _, dir := range gcDirs {
-		if dir.Name() == latestVersion {
-			continue
-		}
-		subDirs, err := os.ReadDir(filepath.Join(gcPath, dir.Name()))
-		if err != nil {
-			return err
-		}
-		if len(subDirs) == 0 {
-			logger.Info("Garbage collector deleting unused version", "version", dir.Name())
-			err := os.RemoveAll(filepath.Join("/tmp/data", envID, "bin", dir.Name()+"-default"))
-			if err != nil {
-				return err
-			}
-			err = os.RemoveAll(filepath.Join("/tmp/data", envID, "bin", dir.Name()+"-musl"))
-			if err != nil {
-				return err
-			}
-			err = os.RemoveAll(filepath.Join(gcPath, dir.Name()))
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }
 
 func installAgent(rlog logr.Logger, dtc dtclient.Client, flavor, arch, targetDir string) error {
@@ -253,8 +215,8 @@ func installAgent(rlog logr.Logger, dtc dtclient.Client, flavor, arch, targetDir
 	rlog.Info("Unzipped OneAgent package")
 
 	for _, dir := range []string{
-		filepath.Join(targetDir, "log"),
-		filepath.Join(targetDir, "datastorage"),
+		filepath.Join(targetDir, dtcsi.LogDir),
+		filepath.Join(targetDir, dtcsi.DatastorageDir),
 	} {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
@@ -265,8 +227,6 @@ func installAgent(rlog logr.Logger, dtc dtclient.Client, flavor, arch, targetDir
 }
 
 func unzip(rlog logr.Logger, r *zip.Reader, outDir string) error {
-	const agentConfPath = "agent/conf/"
-
 	os.MkdirAll(outDir, 0755)
 
 	// Closure to address file descriptors issue with all the deferred .Close() methods
@@ -292,7 +252,7 @@ func unzip(rlog logr.Logger, r *zip.Reader, outDir string) error {
 		mode := zipf.Mode()
 
 		// Mark all files inside ./agent/conf as group-writable
-		if zipf.Name != agentConfPath && strings.HasPrefix(zipf.Name, agentConfPath) {
+		if zipf.Name != dtcsi.AgentConfDir && strings.HasPrefix(zipf.Name, dtcsi.AgentConfDir) {
 			mode |= 020
 		}
 

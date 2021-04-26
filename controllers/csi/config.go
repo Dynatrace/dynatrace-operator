@@ -16,7 +16,14 @@ limitations under the License.
 
 package dtcsi
 
-const DriverName = "csi.oneagent.dynatrace.com"
+const (
+	AgentConfDir          = "agent/conf"
+	DataPath              = "/tmp/data"
+	DatastorageDir        = "datastorage"
+	DriverName            = "csi.oneagent.dynatrace.com"
+	GarbageCollectionPath = "/tmp/gc"
+	LogDir                = "log"
+)
 
 type CSIOptions struct {
 	NodeID   string
