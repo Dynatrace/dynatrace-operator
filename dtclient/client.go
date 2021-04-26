@@ -179,3 +179,9 @@ func NetworkZone(networkZone string) Option {
 		c.networkZone = networkZone
 	}
 }
+
+func DisableHostsRequests(disabledHostsRequests bool) Option {
+	return func(c *dynatraceClient) {
+		c.disableHostsRequests = disabledHostsRequests
+	}
+}

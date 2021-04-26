@@ -389,12 +389,6 @@ func (r *ReconcileNodes) markForTermination(c *Cache, dk *dynatracev1alpha1.Dyna
 		return err
 	}
 
-	if dk.FeatureDisableHostsRequests() {
-		r.logger.Info("not sending mark for termination event, requests to the hosts API are disabled", "dynakube", dk.Name,
-			"ip", ipAddress, "node", nodeName)
-		return nil
-	}
-
 	r.logger.Info("sending mark for termination event to dynatrace server", "dynakube", dk.Name, "ip", ipAddress,
 		"node", nodeName)
 
