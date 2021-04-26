@@ -15,10 +15,6 @@ import (
 const (
 	apiToken  = "some-API-token"
 	paasToken = "some-PaaS-token"
-
-	goodIP    = "192.168.0.1"
-	unsetIP   = "192.168.100.1"
-	unknownIP = "127.0.0.1"
 )
 
 const hostsResponse = `[
