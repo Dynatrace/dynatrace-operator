@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"os"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/controllers/csi/provisioner"
+	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"golang.org/x/sys/unix"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
