@@ -18,7 +18,7 @@ package main
 
 import (
 	csigc "github.com/Dynatrace/dynatrace-operator/controllers/csi/gc"
-	"k8s.io/client-go/kubernetes/scheme"
+	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
@@ -27,14 +27,8 @@ import (
 
 func startCSIGarbageCollector(ns string, cfg *rest.Config) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Namespace:                  ns,
-		Scheme:                     scheme.Scheme,
-		MetricsBindAddress:         ":8585",
-		LeaderElection:             true,
-		LeaderElectionID:           "dynatrace-csi-gc-lock",
-		LeaderElectionResourceLock: "configmaps",
-		LeaderElectionNamespace:    ns,
-		HealthProbeBindAddress:     "0.0.0.0:12080",
+		Namespace: ns,
+		Scheme:    scheme.Scheme,
 	})
 	if err != nil {
 		return nil, err

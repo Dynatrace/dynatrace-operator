@@ -1,13 +1,13 @@
 package main
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"os"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/controllers/csi/provisioner"
 	"golang.org/x/sys/unix"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -15,14 +15,8 @@ import (
 
 func startCSIDriver(ns string, _ *rest.Config) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Namespace:                  ns,
-		Scheme:                     scheme.Scheme,
-		MetricsBindAddress:         ":8686",
-		LeaderElection:             true,
-		LeaderElectionID:           "dynatrace-csi-gc-lock",
-		LeaderElectionResourceLock: "configmaps",
-		LeaderElectionNamespace:    ns,
-		HealthProbeBindAddress:     "0.0.0.0:11080",
+		Namespace: ns,
+		Scheme:    scheme.Scheme,
 	})
 	if err != nil {
 		log.Error(err, "unable to start manager")
