@@ -34,7 +34,7 @@ func startCSIGarbageCollector(ns string, cfg *rest.Config) (manager.Manager, err
 		LeaderElectionID:           "dynatrace-csi-gc-lock",
 		LeaderElectionResourceLock: "configmaps",
 		LeaderElectionNamespace:    ns,
-		HealthProbeBindAddress:     "0.0.0.0:9080",
+		HealthProbeBindAddress:     "0.0.0.0:12080",
 	})
 	if err != nil {
 		return nil, err

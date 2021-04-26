@@ -15,8 +15,14 @@ import (
 
 func startCSIDriver(ns string, _ *rest.Config) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Namespace: ns,
-		Scheme:    scheme.Scheme,
+		Namespace:                  ns,
+		Scheme:                     scheme.Scheme,
+		MetricsBindAddress:         ":8686",
+		LeaderElection:             true,
+		LeaderElectionID:           "dynatrace-csi-gc-lock",
+		LeaderElectionResourceLock: "configmaps",
+		LeaderElectionNamespace:    ns,
+		HealthProbeBindAddress:     "0.0.0.0:11080",
 	})
 	if err != nil {
 		log.Error(err, "unable to start manager")
