@@ -51,6 +51,31 @@ spec:
             - name: mountpoint-dir
               mountPath: /var/lib/kubelet/pods
               mountPropagation: Bidirectional
+        - name: garbage-collector
+          image: quay.io/dynatrace/dynatrace-operator:snapshot
+          command:
+            - csi-driver
+          args:
+            - csi-garbage-collector
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+            runAsUser: 0
+            seLinuxOptions:
+              level: "s0"
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
         - name: registrar
           image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.1.0
           imagePullPolicy: IfNotPresent
