@@ -27,8 +27,9 @@ import (
 
 func startCSIGarbageCollector(ns string, cfg *rest.Config) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Namespace: ns,
-		Scheme:    scheme.Scheme,
+		Namespace:          ns,
+		Scheme:             scheme.Scheme,
+		MetricsBindAddress: ":8787",
 	})
 	if err != nil {
 		return nil, err
