@@ -65,7 +65,7 @@ func add(mgr manager.Manager, r *CSIGarbageCollector) error {
 		// some time before inserting an element so that the Channel has time to initialize.
 		time.Sleep(10 * time.Second)
 
-		ticker := time.NewTicker(15 * time.Minute)
+		ticker := time.NewTicker(1 * time.Hour)
 		defer ticker.Stop()
 
 		ch <- event.GenericEvent{
