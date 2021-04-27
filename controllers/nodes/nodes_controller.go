@@ -327,7 +327,10 @@ func (r *ReconcileNodes) sendMarkedForTermination(dk *dynatracev1alpha1.DynaKube
 
 	entityID, err := dtc.GetEntityIDForIP(nodeIP)
 	if err != nil {
-		return err
+		r.logger.Info("failed to send mark for termination event",
+			"reason", "failed to determine entity id", "dynakube", dk.Name, "nodeIP", nodeIP, "cause", err)
+
+		return nil
 	}
 
 	ts := uint64(lastSeen.Add(-10*time.Minute).UnixNano()) / uint64(time.Millisecond)
