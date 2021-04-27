@@ -17,18 +17,19 @@ limitations under the License.
 package main
 
 import (
-	"errors"
 	"flag"
 	"os"
 
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
+	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
+	csigc "github.com/Dynatrace/dynatrace-operator/controllers/csi/gc"
+	csiprovisioner "github.com/Dynatrace/dynatrace-operator/controllers/csi/provisioner"
 	"github.com/Dynatrace/dynatrace-operator/logger"
+	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/version"
-	"github.com/spf13/pflag"
+	"golang.org/x/sys/unix"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var (
@@ -38,41 +39,54 @@ var (
 	log = logger.NewDTLogger().WithName("server")
 )
 
-var subcmdCallbacks = map[string]func(ns string, cfg *rest.Config) (manager.Manager, error){
-	"csi-driver":            startCSIDriver,
-	"csi-garbage-collector": startCSIGarbageCollector,
-}
-
-var errBadSubcmd = errors.New("subcommand must be csi-driver or csi-garbage-collector")
-
 func main() {
 	flag.Parse()
 	ctrl.SetLogger(log)
 
 	version.LogVersion()
 
-	subcmd := "csi-driver"
-	if args := pflag.Args(); len(args) > 0 {
-		subcmd = args[0]
-	}
-
-	subcmdFn := subcmdCallbacks[subcmd]
-	if subcmdFn == nil {
-		log.Error(errBadSubcmd, "Unknown subcommand", "command", subcmd)
-		os.Exit(1)
-	}
-
 	namespace := os.Getenv("POD_NAMESPACE")
 
-	cfg, err := config.GetConfig()
+	defaultUmask := unix.Umask(0002)
+	defer unix.Umask(defaultUmask)
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+		Namespace: namespace,
+		Scheme:    scheme.Scheme,
+	})
 	if err != nil {
-		log.Error(err, "")
+		log.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
-	mgr, err := subcmdFn(namespace, cfg)
-	if err != nil {
-		log.Error(err, "")
+	csiOpts := dtcsi.CSIOptions{
+		NodeID:   *nodeID,
+		Endpoint: *endpoint,
+		DataDir:  dtcsi.DataPath,
+	}
+
+	if err := os.MkdirAll(dtcsi.DataPath, 0770); err != nil {
+		log.Error(err, "unable to create data directory for CSI Driver")
+		os.Exit(1)
+	}
+
+	if err := os.MkdirAll(dtcsi.GarbageCollectionPath, 0770); err != nil {
+		log.Error(err, "unable to create garbage collector directory for CSI Driver")
+		os.Exit(1)
+	}
+
+	if err := csidriver.NewServer(mgr, csiOpts).SetupWithManager(mgr); err != nil {
+		log.Error(err, "unable to create CSI Driver server")
+		os.Exit(1)
+	}
+
+	if err := csiprovisioner.NewReconciler(mgr, csiOpts).SetupWithManager(mgr); err != nil {
+		log.Error(err, "unable to create CSI Provisioner")
+		os.Exit(1)
+	}
+
+	if err := csigc.AddToManager(mgr, namespace); err != nil {
+		log.Error(err, "unable to create CSI Garbage Collector")
 		os.Exit(1)
 	}
 
