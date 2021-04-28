@@ -16,17 +16,20 @@ limitations under the License.
 
 package dtcsi
 
+import "time"
+
 const (
 	AgentConfDir          = "agent/conf"
-	DataPath              = "/tmp/data"
+	DataPath              = "data"
 	DatastorageDir        = "datastorage"
 	DriverName            = "csi.oneagent.dynatrace.com"
-	GarbageCollectionPath = "/tmp/gc"
+	GarbageCollectionPath = "gc"
 	LogDir                = "log"
 )
 
 type CSIOptions struct {
-	NodeID   string
-	Endpoint string
-	DataDir  string
+	NodeID     string
+	Endpoint   string
+	RootDir    string
+	GCInterval time.Duration
 }

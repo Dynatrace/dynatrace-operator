@@ -28,7 +28,9 @@ import (
 	"golang.org/x/sys/unix"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"os"
+	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"time"
 )
 
 var (
@@ -59,17 +61,18 @@ func main() {
 	}
 
 	csiOpts := dtcsi.CSIOptions{
-		NodeID:   *nodeID,
-		Endpoint: *endpoint,
-		DataDir:  dtcsi.DataPath,
+		NodeID:     *nodeID,
+		Endpoint:   *endpoint,
+		RootDir:    "/tmp",
+		GCInterval: time.Hour,
 	}
 
-	if err := os.MkdirAll(dtcsi.DataPath, 0770); err != nil {
+	if err := os.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.DataPath), 0770); err != nil {
 		log.Error(err, "unable to create data directory for CSI Driver")
 		os.Exit(1)
 	}
 
-	if err := os.MkdirAll(dtcsi.GarbageCollectionPath, 0770); err != nil {
+	if err := os.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.GarbageCollectionPath), 0770); err != nil {
 		log.Error(err, "unable to create garbage collector directory for CSI Driver")
 		os.Exit(1)
 	}
@@ -84,7 +87,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := csigc.NewReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
+	if err := csigc.NewReconciler(mgr.GetClient(), csiOpts).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Garbage Collector")
 		os.Exit(1)
 	}

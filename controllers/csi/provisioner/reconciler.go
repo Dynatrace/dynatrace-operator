@@ -101,9 +101,9 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, fmt.Errorf("failed to fetch connection info: %w", err)
 	}
 
-	envDir := filepath.Join(r.opts.DataDir, ci.TenantUUID)
+	envDir := filepath.Join(r.opts.RootDir, dtcsi.DataPath, ci.TenantUUID)
 	verFile := filepath.Join(envDir, "version")
-	tenantFile := filepath.Join(r.opts.DataDir, fmt.Sprintf("tenant-%s", dk.Name))
+	tenantFile := filepath.Join(r.opts.RootDir, dtcsi.DataPath, fmt.Sprintf("tenant-%s", dk.Name))
 
 	for _, dir := range []string{
 		envDir,

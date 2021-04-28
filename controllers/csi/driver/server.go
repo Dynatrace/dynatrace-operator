@@ -200,11 +200,11 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Namespace '%s' doesn't have DynaKube assigned", nsName))
 	}
 
-	envID, err := ioutil.ReadFile(filepath.Join(svr.opts.DataDir, fmt.Sprintf("tenant-%s", dkName)))
+	envID, err := ioutil.ReadFile(filepath.Join(svr.opts.RootDir, dtcsi.DataPath, fmt.Sprintf("tenant-%s", dkName)))
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("Failed to extract tenant for DynaKube %s: %s", dkName, err.Error()))
 	}
-	envDir := filepath.Join(svr.opts.DataDir, string(envID))
+	envDir := filepath.Join(svr.opts.RootDir, dtcsi.DataPath, string(envID))
 
 	for _, dir := range []string{
 		filepath.Join(envDir, dtcsi.LogDir, podUID),
@@ -242,6 +242,9 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 	}
 
 	gcFile := filepath.Join(envDir, "gc", string(ver), podUID)
+	if err = ioutil.WriteFile(gcFile, nil, 0770); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create file for garbage collector - error: %s", err))
+	}
 	if err = ioutil.WriteFile(filepath.Join(dtcsi.GarbageCollectionPath, volID), []byte(gcFile), 0770); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create link file for garbage collector - error: %s", err))
 	}
@@ -271,10 +274,13 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.No
 	}
 
 	linkFile := filepath.Join(dtcsi.GarbageCollectionPath, volumeID)
-	_, err := ioutil.ReadFile(linkFile)
+	gcFile, err := ioutil.ReadFile(linkFile)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to read link file for garbage collector - error: %s", err))
 	} else if !os.IsNotExist(err) {
+		if err = os.Remove(string(gcFile)); err != nil && !os.IsNotExist(err) {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove file for garbage collector - error: %s", err))
+		}
 		if err = os.Remove(linkFile); err != nil && !os.IsNotExist(err) {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove link file for garbage collector - error: %s", err))
 		}
