@@ -60,7 +60,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}},
 			instance, secret)
 		reconciler := NewReconciler(
-			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider, false,
+			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider,
 		)
 		connectionInfo := dtclient.ConnectionInfo{TenantUUID: testUID}
 		tenantInfo := &dtclient.TenantInfo{ID: testUID}
@@ -123,7 +123,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			}},
 			instance, secret)
 		reconciler := NewReconciler(
-			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider, false,
+			fakeClient, fakeClient, scheme.Scheme, dtcMock, log, instance, mockImageVersionProvider,
 		)
 		connectionInfo := dtclient.ConnectionInfo{TenantUUID: testUID}
 		tenantInfo := &dtclient.TenantInfo{ID: testUID}

@@ -41,6 +41,7 @@ func BuildDynatraceClient(rtc client.Client, instance *dynatracev1alpha1.DynaKub
 	opts := newOptions()
 	opts.appendCertCheck(&spec)
 	opts.appendNetworkZone(&spec)
+	opts.appendDisableHostsRequests(instance.FeatureDisableHostsRequests())
 
 	err = opts.appendProxySettings(rtc, &spec, namespace)
 	if err != nil {
@@ -76,6 +77,10 @@ func (opts *options) appendNetworkZone(spec *dynatracev1alpha1.DynaKubeSpec) {
 
 func (opts *options) appendCertCheck(spec *dynatracev1alpha1.DynaKubeSpec) {
 	opts.Opts = append(opts.Opts, dtclient.SkipCertificateValidation(spec.SkipCertCheck))
+}
+
+func (opts *options) appendDisableHostsRequests(disableHostsRequests bool) {
+	opts.Opts = append(opts.Opts, dtclient.DisableHostsRequests(disableHostsRequests))
 }
 
 func (opts *options) appendProxySettings(rtc client.Client, spec *dynatracev1alpha1.DynaKubeSpec, namespace string) error {

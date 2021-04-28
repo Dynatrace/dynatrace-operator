@@ -137,7 +137,6 @@ func TestDynatraceClientWithServer(t *testing.T) {
 	require.NotNil(t, dtc)
 
 	testAgentVersionGetLatestAgentVersion(t, dtc)
-	testAgentVersionGetAgentVersionForIP(t, dtc)
 	testCommunicationHostsGetCommunicationHosts(t, dtc)
 	testSendEvent(t, dtc)
 	testGetTokenScopes(t, dtc)

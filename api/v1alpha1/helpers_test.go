@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const testAPIURL = "http://test-endpoint/api"
@@ -62,5 +63,22 @@ func TestOneAgentImage(t *testing.T) {
 		customImg := "registry/my/oneagent:latest"
 		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{Image: customImg}}}
 		assert.Equal(t, customImg, dk.ImmutableOneAgentImage())
+	})
+}
+
+func TestTokens(t *testing.T) {
+	testName := "test-name"
+	testValue := "test-value"
+
+	t.Run(`GetTokensName returns custom token name`, func(t *testing.T) {
+		dk := DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: testName},
+			Spec:       DynaKubeSpec{Tokens: testValue},
+		}
+		assert.Equal(t, dk.Tokens(), testValue)
+	})
+	t.Run(`GetTokensName uses instance name as default value`, func(t *testing.T) {
+		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testName}}
+		assert.Equal(t, dk.Tokens(), testName)
 	})
 }

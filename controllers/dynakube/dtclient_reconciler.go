@@ -9,7 +9,6 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,7 +44,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 
 	sts := &instance.Status
 	ns := instance.GetNamespace()
-	secretName := utils.GetTokensName(instance)
+	secretName := instance.Tokens()
 
 	var tokens []*tokenConfig
 

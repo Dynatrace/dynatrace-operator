@@ -25,6 +25,8 @@ type dynatraceClient struct {
 
 	networkZone string
 
+	disableHostsRequests bool
+
 	httpClient *http.Client
 
 	hostCache map[string]hostInfo
@@ -110,6 +112,10 @@ func (dtc *dynatraceClient) getHostInfoForIP(ip string) (*hostInfo, error) {
 }
 
 func (dtc *dynatraceClient) buildHostCache() error {
+	if dtc.disableHostsRequests {
+		return nil
+	}
+
 	url := fmt.Sprintf("%s/v1/entity/infrastructure/hosts?includeDetails=false", dtc.url)
 	resp, err := dtc.makeRequest(url, dynatraceApiToken)
 	if err != nil {

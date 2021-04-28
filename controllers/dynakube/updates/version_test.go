@@ -66,7 +66,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		return dtversion.ImageVersion{}, errors.New("Not implemented")
 	}
 
-	upd, err := ReconcileVersions(ctx, rec, fakeClient, nil, true, errVerProvider)
+	upd, err := ReconcileVersions(ctx, rec, fakeClient, nil, errVerProvider)
 	assert.Error(t, err)
 	assert.False(t, upd)
 
@@ -80,7 +80,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		return dtversion.ImageVersion{Version: testVersion, Hash: testHash}, nil
 	}
 
-	upd, err = ReconcileVersions(ctx, rec, fakeClient, nil, true, sampleVerProvider)
+	upd, err = ReconcileVersions(ctx, rec, fakeClient, nil, sampleVerProvider)
 	assert.NoError(t, err)
 	assert.True(t, upd)
 
@@ -96,7 +96,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		assert.Equal(t, now, *ts)
 	}
 
-	upd, err = ReconcileVersions(ctx, rec, fakeClient, nil, true, sampleVerProvider)
+	upd, err = ReconcileVersions(ctx, rec, fakeClient, nil, sampleVerProvider)
 	assert.NoError(t, err)
 	assert.False(t, upd)
 }
