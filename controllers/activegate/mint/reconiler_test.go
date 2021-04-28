@@ -1,11 +1,11 @@
-package routing
+package mint
 
 import (
 	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
@@ -62,7 +62,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 func TestReconcile(t *testing.T) {
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		r.Instance.Spec.RoutingSpec.CapabilityProperties.CustomProperties = &v1alpha1.DynaKubeValueSource{
+		r.Instance.Spec.MintSpec.CapabilityProperties.CustomProperties = &v1alpha1.DynaKubeValueSource{
 			Value: testValue,
 		}
 		_, err := r.Reconcile()
@@ -97,10 +97,6 @@ func TestReconcile(t *testing.T) {
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
-		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
-			Name:  DTDNSEntryPoint,
-			Value: buildDNSEntryPoint(r.Instance),
-		})
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
@@ -135,7 +131,7 @@ func TestReconcile(t *testing.T) {
 
 		found := false
 		for _, env := range newStatefulSet.Spec.Template.Spec.Containers[0].Env {
-			if env.Name == capability.DTInternalProxy {
+			if env.Name == activegate.DTInternalProxy {
 				found = true
 				assert.Equal(t, testValue, env.Value)
 			}
@@ -166,8 +162,8 @@ func TestReconcile(t *testing.T) {
 
 func TestSetReadinessProbePort(t *testing.T) {
 	r := createDefaultReconciler(t)
-	stsProps := capability.NewStatefulSetProperties(r.Instance, &r.Instance.Spec.RoutingSpec.CapabilityProperties, "", "", "", "", "")
-	sts, err := capability.CreateStatefulSet(stsProps)
+	stsProps := activegate.NewStatefulSetProperties(r.Instance, &r.Instance.Spec.MintSpec.CapabilityProperties, "", "", "", "", "")
+	sts, err := activegate.CreateStatefulSet(stsProps)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, sts)

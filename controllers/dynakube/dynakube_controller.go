@@ -7,8 +7,9 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability/kubemon"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability/routing"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/kubemon"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/mint"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/routing"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/updates"
@@ -199,6 +200,10 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 		return
 	}
 
+	if !r.reconcileMint(rec, dtc) {
+		return
+	}
+
 	if rec.Instance.Spec.InfraMonitoring.Enabled {
 		upd, err := oneagent.NewOneAgentReconciler(
 			r.client, r.apiReader, r.scheme, rec.Log, dtc, rec.Instance, &rec.Instance.Spec.InfraMonitoring, oneagent.InframonFeature,
@@ -257,6 +262,37 @@ func (r *ReconcileDynaKube) reconcileRouting(rec *utils.Reconciliation, dtc dtcl
 		svc := corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      routing.BuildServiceName(rec.Instance.Name, routing.Module),
+				Namespace: rec.Instance.Namespace,
+			},
+		}
+		if err := r.ensureDeleted(&svc); rec.Error(err) {
+			return false
+		}
+	}
+	return true
+}
+
+func (r *ReconcileDynaKube) reconcileMint(rec *utils.Reconciliation, dtc dtclient.Client) bool {
+	if rec.Instance.Spec.MintSpec.Enabled {
+		upd, err := mint.NewReconciler(
+			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion).Reconcile()
+		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "mint reconciled") {
+			return false
+		}
+	} else {
+		sts := appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      rec.Instance.Name + mint.StatefulSetSuffix,
+				Namespace: rec.Instance.Namespace,
+			},
+		}
+		if err := r.ensureDeleted(&sts); rec.Error(err) {
+			return false
+		}
+
+		svc := corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      mint.BuildServiceName(rec.Instance.Name, mint.Module),
 				Namespace: rec.Instance.Namespace,
 			},
 		}

@@ -69,6 +69,12 @@ type DynaKubeSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	RoutingSpec RoutingSpec `json:"routing,omitempty"`
 
+	//  Configuration for Mint
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Mint"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	MintSpec MintSpec `json:"mint,omitempty"`
+
 	//  Configuration for Kubernetes Monitoring
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
@@ -181,9 +187,15 @@ type RoutingSpec struct {
 	CapabilityProperties `json:",inline"`
 }
 
+type MintSpec struct {
+	CapabilityProperties `json:",inline"`
+}
+
 type KubernetesMonitoringSpec struct {
 	CapabilityProperties `json:",inline"`
 }
+
+// EEC - new filed may be needed - to inject file into container?
 
 // CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
 // Such as KubernetesMonitoring or Routing

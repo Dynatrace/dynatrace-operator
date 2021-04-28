@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
@@ -84,8 +84,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: instance.Name + StatefulSetSuffix, Namespace: instance.Namespace}, &statefulSet)
 		assert.NoError(t, err)
 
-		expected, err := capability.CreateStatefulSet(
-			capability.NewStatefulSetProperties(
+		expected, err := activegate.CreateStatefulSet(
+			activegate.NewStatefulSetProperties(
 				instance, &instance.Spec.KubernetesMonitoringSpec.CapabilityProperties,
 				testUID, "", module, capabilityName, serviceAccountOwner,
 			))

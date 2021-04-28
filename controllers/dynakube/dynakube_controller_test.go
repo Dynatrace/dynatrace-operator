@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability/kubemon"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability/routing"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/kubemon"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/routing"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"

@@ -2,7 +2,7 @@ package kubemon
 
 import (
 	v1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
@@ -20,13 +20,13 @@ const (
 )
 
 type Reconciler struct {
-	*capability.Reconciler
+	*activegate.Reconciler
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
 	instance *v1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
 	return &Reconciler{
-		capability.NewReconciler(
+		activegate.NewReconciler(
 			clt, apiReader, scheme, dtc, log, instance, imageVersionProvider,
 			&instance.Spec.KubernetesMonitoringSpec.CapabilityProperties, module, capabilityName, serviceAccountOwner),
 	}
