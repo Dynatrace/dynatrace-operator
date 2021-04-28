@@ -18,8 +18,6 @@ package main
 
 import (
 	"flag"
-	"os"
-
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
 	csigc "github.com/Dynatrace/dynatrace-operator/controllers/csi/gc"
@@ -29,6 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"golang.org/x/sys/unix"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -85,7 +84,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := csigc.AddToManager(mgr, namespace); err != nil {
+	if err := csigc.NewReconciler(mgr.GetClient()).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Garbage Collector")
 		os.Exit(1)
 	}
