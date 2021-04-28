@@ -18,6 +18,10 @@ package main
 
 import (
 	"flag"
+	"os"
+	"path/filepath"
+	"time"
+
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
 	csigc "github.com/Dynatrace/dynatrace-operator/controllers/csi/gc"
@@ -27,10 +31,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"golang.org/x/sys/unix"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"os"
-	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"time"
 )
 
 var (
