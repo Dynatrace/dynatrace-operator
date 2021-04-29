@@ -76,10 +76,10 @@ spec:
               containerPort: 8443
           resources:
             requests:
-              cpu: 10m
-              memory: 64Mi
+              cpu: 300m
+              memory: 128Mi
             limits:
-              cpu: 100m
+              cpu: 600m
               memory: 256Mi
           volumeMounts:
             - name: certs-volume
