@@ -139,7 +139,6 @@ func TestStatefulSet_Container(t *testing.T) {
 	assert.Empty(t, container.Args)
 	assert.Empty(t, container.VolumeMounts)
 	assert.NotNil(t, container.ReadinessProbe)
-	assert.NotNil(t, container.LivenessProbe)
 }
 
 func TestStatefulSet_Volumes(t *testing.T) {
