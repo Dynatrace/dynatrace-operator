@@ -37,6 +37,13 @@ spec:
                   apiVersion: v1
                   fieldPath: spec.nodeName
           imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: 300m
+              memory: 128Mi
+            limits:
+              cpu: 600m
+              memory: 256Mi
           securityContext:
             privileged: true
             runAsUser: 0
