@@ -1,4 +1,4 @@
-package mint
+package capability
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
+	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -26,6 +27,20 @@ const (
 	testUID       = "test-uid"
 	testNamespace = "test-namespace"
 )
+
+var cap = Capability{
+	ModuleName:     "fakeModule",
+	CapabilityName: "fakeCap",
+	Properties: &v1alpha1.CapabilityProperties{
+		Enabled: true,
+	},
+	Configuration: Configuration{
+		SetDnsEntryPoint:     true,
+		SetReadinessPort:     true,
+		SetCommunicationPort: true,
+		CreateService:        true,
+	},
+}
 
 func TestNewReconiler(t *testing.T) {
 	createDefaultReconciler(t)
@@ -51,7 +66,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		return dtversion.ImageVersion{}, nil
 	}
 
-	r := NewReconciler(clt, clt, scheme.Scheme, dtc, log, instance, imgVerProvider)
+	r := NewReconciler(cap, clt, clt, scheme.Scheme, dtc, log, instance, imgVerProvider)
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.Instance)
@@ -62,7 +77,8 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 func TestReconcile(t *testing.T) {
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		r.Instance.Spec.MintSpec.CapabilityProperties.CustomProperties = &v1alpha1.DynaKubeValueSource{
+
+		cap.Properties.CustomProperties = &v1alpha1.DynaKubeValueSource{
 			Value: testValue,
 		}
 		_, err := r.Reconcile()
@@ -73,7 +89,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		var customProperties corev1.Secret
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + Module + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + cap.ModuleName + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
 		assert.NoError(t, err)
 		assert.NotNil(t, customProperties)
 		assert.Contains(t, customProperties.Data, customproperties.DataKey)
@@ -93,10 +109,14 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + StatefulSetSuffix, Namespace: r.Instance.Namespace}, statefulSet)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
+		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
+			Name:  DTDNSEntryPoint,
+			Value: buildDNSEntryPoint(r.Instance, r.CapabilityName),
+		})
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
@@ -112,7 +132,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + StatefulSetSuffix, Namespace: r.Instance.Namespace}, statefulSet)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
@@ -124,7 +144,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		newStatefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + StatefulSetSuffix, Namespace: r.Instance.Namespace}, newStatefulSet)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, newStatefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
@@ -145,7 +165,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(r.Instance.Name, Module), Namespace: r.Instance.Namespace}, service)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(r.Instance.Name, r.ModuleName), Namespace: r.Instance.Namespace}, service)
 		assert.NoError(t, err)
 		assert.NotNil(t, service)
 
@@ -154,7 +174,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + StatefulSetSuffix, Namespace: r.Instance.Namespace}, statefulSet)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, statefulSet)
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
 	})
@@ -162,7 +182,7 @@ func TestReconcile(t *testing.T) {
 
 func TestSetReadinessProbePort(t *testing.T) {
 	r := createDefaultReconciler(t)
-	stsProps := activegate.NewStatefulSetProperties(r.Instance, &r.Instance.Spec.MintSpec.CapabilityProperties, "", "", "", "", "")
+	stsProps := activegate.NewStatefulSetProperties(r.Instance, cap.Properties, "", "", "", "", "")
 	sts, err := activegate.CreateStatefulSet(stsProps)
 
 	assert.NoError(t, err)
@@ -175,4 +195,58 @@ func TestSetReadinessProbePort(t *testing.T) {
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet)
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port)
 	assert.Equal(t, serviceTargetPort, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port.String())
+}
+
+func TestReconciler_calculateStatefulSetName(t *testing.T) {
+	type fields struct {
+		Reconciler *activegate.Reconciler
+		log        logr.Logger
+		Capability Capability
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "instance and module names are defined",
+			fields: fields{
+				Reconciler: &activegate.Reconciler{
+					Instance: &v1alpha1.DynaKube{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "instanceName",
+						},
+					},
+				},
+				Capability: cap,
+			},
+			want: "instanceName-fakeModule",
+		},
+		{
+			name: "empty instance name",
+			fields: fields{
+				Reconciler: &activegate.Reconciler{
+					Instance: &v1alpha1.DynaKube{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "",
+						},
+					},
+				},
+				Capability: cap,
+			},
+			want: "-fakeModule",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &Reconciler{
+				Reconciler: tt.fields.Reconciler,
+				log:        tt.fields.log,
+				Capability: tt.fields.Capability,
+			}
+			if got := r.calculateStatefulSetName(); got != tt.want {
+				t.Errorf("Reconciler.calculateStatefulSetName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

@@ -7,9 +7,7 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/kubemon"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/mint"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/routing"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/updates"
@@ -182,25 +180,7 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 	rec.Update(upd, defaultUpdateInterval, "Found updates")
 	rec.Error(err)
 
-	if rec.Instance.Spec.KubernetesMonitoringSpec.Enabled {
-		upd, err := kubemon.NewReconciler(
-			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
-		).Reconcile()
-		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "kubemon reconciled") {
-			return
-		}
-	} else {
-		sts := appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: rec.Instance.Name + "-kubemon", Namespace: rec.Instance.Namespace}}
-		if err := r.ensureDeleted(&sts); rec.Error(err) {
-			return
-		}
-	}
-
-	if !r.reconcileRouting(rec, dtc) {
-		return
-	}
-
-	if !r.reconcileMint(rec, dtc) {
+	if !r.reconcileCaps(rec, dtc) {
 		return
 	}
 
@@ -240,66 +220,76 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 	return nil
 }
 
-func (r *ReconcileDynaKube) reconcileRouting(rec *utils.Reconciliation, dtc dtclient.Client) bool {
-	if rec.Instance.Spec.RoutingSpec.Enabled {
-		upd, err := routing.NewReconciler(
-			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
-		).Reconcile()
-		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "routing reconciled") {
-			return false
-		}
-	} else {
-		sts := appsv1.StatefulSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      rec.Instance.Name + routing.StatefulSetSuffix,
-				Namespace: rec.Instance.Namespace,
+func (r *ReconcileDynaKube) reconcileCaps(rec *utils.Reconciliation, dtc dtclient.Client) bool {
+	var caps = []capability.Capability{
+		{
+			ModuleName:     "mint",
+			CapabilityName: "metrics_ingest",
+			Properties:     &rec.Instance.Spec.MintSpec.CapabilityProperties,
+			Configuration: capability.Configuration{
+				SetDnsEntryPoint:     true,
+				SetReadinessPort:     true,
+				SetCommunicationPort: true,
+				CreateService:        true,
 			},
-		}
-		if err := r.ensureDeleted(&sts); rec.Error(err) {
-			return false
-		}
+		},
+		{
+			ModuleName:     "routing",
+			CapabilityName: "MSGrouter",
+			Properties:     &rec.Instance.Spec.RoutingSpec.CapabilityProperties,
+			Configuration: capability.Configuration{
+				SetDnsEntryPoint:     true,
+				SetReadinessPort:     true,
+				SetCommunicationPort: true,
+				CreateService:        true,
+			},
+		},
+		{
+			ModuleName:     "kubemon",
+			CapabilityName: "kubernetes_monitoring",
+			Properties:     &rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties,
+			Configuration: capability.Configuration{
+				SetDnsEntryPoint:     false,
+				SetReadinessPort:     false,
+				SetCommunicationPort: false,
+				CreateService:        false,
+			},
+		},
+	}
 
-		svc := corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      routing.BuildServiceName(rec.Instance.Name, routing.Module),
-				Namespace: rec.Instance.Namespace,
-			},
-		}
-		if err := r.ensureDeleted(&svc); rec.Error(err) {
-			return false
+	for _, cap := range caps {
+		if cap.Properties.Enabled {
+			upd, err := capability.NewReconciler(
+				cap, r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
+			).Reconcile()
+			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, cap.ModuleName+" reconciled") {
+				return false
+			}
+		} else {
+			sts := appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      cap.CalculateStatefulSetName(rec.Instance.Name),
+					Namespace: rec.Instance.Namespace,
+				},
+			}
+			if err := r.ensureDeleted(&sts); rec.Error(err) {
+				return false
+			}
+
+			if cap.Configuration.CreateService {
+				svc := corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      capability.BuildServiceName(rec.Instance.Name, cap.ModuleName),
+						Namespace: rec.Instance.Namespace,
+					},
+				}
+				if err := r.ensureDeleted(&svc); rec.Error(err) {
+					return false
+				}
+			}
 		}
 	}
-	return true
-}
 
-func (r *ReconcileDynaKube) reconcileMint(rec *utils.Reconciliation, dtc dtclient.Client) bool {
-	if rec.Instance.Spec.MintSpec.Enabled {
-		upd, err := mint.NewReconciler(
-			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion).Reconcile()
-		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "mint reconciled") {
-			return false
-		}
-	} else {
-		sts := appsv1.StatefulSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      rec.Instance.Name + mint.StatefulSetSuffix,
-				Namespace: rec.Instance.Namespace,
-			},
-		}
-		if err := r.ensureDeleted(&sts); rec.Error(err) {
-			return false
-		}
-
-		svc := corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      mint.BuildServiceName(rec.Instance.Name, mint.Module),
-				Namespace: rec.Instance.Namespace,
-			},
-		}
-		if err := r.ensureDeleted(&svc); rec.Error(err) {
-			return false
-		}
-	}
 	return true
 }
 

@@ -1,4 +1,4 @@
-package mint
+package capability
 
 import (
 	"testing"
