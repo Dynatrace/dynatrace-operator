@@ -102,7 +102,7 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 
 	svr.log.Info("Listening for connections on address", "address", listener.Addr())
 
-	server.Serve(listener)
+	_ = server.Serve(listener)
 
 	return nil
 }
