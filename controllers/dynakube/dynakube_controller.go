@@ -249,10 +249,7 @@ func (r *ReconcileDynaKube) reconcileCaps(rec *utils.Reconciliation, dtc dtclien
 			CapabilityName: "kubernetes_monitoring",
 			Properties:     &rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties,
 			Configuration: capability.Configuration{
-				SetDnsEntryPoint:     false,
-				SetReadinessPort:     false,
-				SetCommunicationPort: false,
-				CreateService:        false,
+				ServiceAccountOwner: "kubernetes-monitoring",
 			},
 		},
 	}

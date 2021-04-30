@@ -2118,7 +2118,7 @@ spec:
                   type: array
               type: object
             mint:
-              description: ' Configuration for Mint  Configuration for Mint'
+              description: ' Configuration for Mint'
               properties:
                 args:
                   description: 'Optional: Adds additional arguments for the ActiveGate

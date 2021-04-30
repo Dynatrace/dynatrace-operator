@@ -29,6 +29,7 @@ type Configuration struct {
 	SetReadinessPort     bool
 	SetCommunicationPort bool
 	CreateService        bool
+	ServiceAccountOwner  string
 }
 
 type Capability struct {
@@ -52,7 +53,7 @@ func NewReconciler(capability Capability, clt client.Client, apiReader client.Re
 	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
 	baseReconciler := activegate.NewReconciler(
 		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider,
-		capability.Properties, capability.ModuleName, capability.CapabilityName, "")
+		capability.Properties, capability.ModuleName, capability.CapabilityName, capability.ServiceAccountOwner)
 
 	if capability.Configuration.SetDnsEntryPoint {
 		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.CapabilityName))
