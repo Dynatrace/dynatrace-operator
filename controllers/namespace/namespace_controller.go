@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,14 +84,10 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, fmt.Errorf("failed to query Namespace: %w", err)
 	}
 
-	codeModuleDynakubes, err := codemodules.FindCodeModules(ctx, r.client)
+	dk, err := codemodules.FindForNamespace(ctx, r.client, &ns)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to query CodeModule enabled Dynaekubes: %w", errors.WithStack(err))
-	}
-
-	dk, err := codemodules.MatchForNamespace(codeModuleDynakubes, &ns)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("could not match CodeModule with namespace: %w", errors.WithStack(err))
+		logger.Info("error when trying to find CodeModule enabled Dynakube", "error", err.Error())
+		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 	}
 
 	if dk == nil {

@@ -128,8 +128,8 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	logger.Info("checking pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
-	oa, response := m.FindDynakubeForPod(ctx, pod)
-	if oa == nil {
+	dk, response := m.findDynakubeForPod(ctx, pod)
+	if dk == nil {
 		return response
 	}
 
@@ -153,7 +153,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	failurePolicy := utils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")
 	image := m.image
 
-	dkVol := oa.Spec.CodeModules.Volume
+	dkVol := dk.Spec.CodeModules.Volume
 	if dkVol == (corev1.VolumeSource{}) {
 		dkVol.EmptyDir = &corev1.EmptyDirVolumeSource{}
 	}
@@ -227,7 +227,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 			{Name: "oneagent-share", MountPath: "/mnt/share"},
 			{Name: "oneagent-config", MountPath: "/mnt/config"},
 		},
-		Resources: oa.Spec.CodeModules.Resources,
+		Resources: dk.Spec.CodeModules.Resources,
 	}
 
 	for i := range pod.Spec.Containers {
@@ -254,7 +254,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 			corev1.EnvVar{Name: "LD_PRELOAD", Value: installPath + "/agent/lib64/liboneagentproc.so"},
 			corev1.EnvVar{Name: "DT_DEPLOYMENT_METADATA", Value: deploymentMetadata.AsString()})
 
-		if oa.Spec.Proxy != nil && (oa.Spec.Proxy.Value != "" || oa.Spec.Proxy.ValueFrom != "") {
+		if dk.Spec.Proxy != nil && (dk.Spec.Proxy.Value != "" || dk.Spec.Proxy.ValueFrom != "") {
 			c.Env = append(c.Env,
 				corev1.EnvVar{
 					Name: "DT_PROXY",
@@ -269,8 +269,8 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 				})
 		}
 
-		if oa.Spec.NetworkZone != "" {
-			c.Env = append(c.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: oa.Spec.NetworkZone})
+		if dk.Spec.NetworkZone != "" {
+			c.Env = append(c.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: dk.Spec.NetworkZone})
 		}
 	}
 
@@ -284,36 +284,22 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 }
 
-func (m *podInjector) FindDynakubeForPod(ctx context.Context, pod *corev1.Pod) (*dynatracev1alpha1.DynaKube, admission.Response) {
-	codeModuleDynakubes, err := codemodules.FindCodeModules(ctx, m.client)
-	if err != nil {
-		logger.Error(err, "error when trying to find Dynakubes with CodeModules enabled")
-
-		// If CodeModules is not enabled, or cannot be found, cannot inject
-		return nil, admission.Patched("")
-	}
-	if len(codeModuleDynakubes) <= 0 {
-		logger.Info("could not find any Dynakubes with CodeModules enabled")
-		// If CodeModules is not enabled, cannot inject
-		return nil, admission.Patched("")
-	}
-
+func (m *podInjector) findDynakubeForPod(ctx context.Context, pod *corev1.Pod) (*dynatracev1alpha1.DynaKube, admission.Response) {
 	namespace := &corev1.Namespace{}
-	err = m.client.Get(ctx, client.ObjectKey{Name: pod.Namespace}, namespace)
+	err := m.client.Get(ctx, client.ObjectKey{Name: pod.Namespace}, namespace)
 	if err != nil {
 		logger.Error(err, "error when trying to find namespace of pod", "pod", pod.Name, "namespace", pod.Namespace)
 		return nil, admission.Errored(http.StatusInternalServerError, err)
 	}
 
-	oa, err := codemodules.MatchForNamespace(codeModuleDynakubes, namespace)
+	dk, err := codemodules.FindForNamespace(ctx, m.client, namespace)
 	if err != nil {
 		return nil, admission.Errored(http.StatusInternalServerError, err)
-	}
-	if oa == nil {
-		// If no DynaKube matches the namespaces labels, do not inject
+	} else if dk == nil {
 		return nil, admission.Patched("")
 	}
-	return oa, admission.Response{}
+
+	return dk, admission.Response{}
 }
 
 // InjectClient injects the client
