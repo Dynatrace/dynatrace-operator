@@ -42,7 +42,7 @@ func matchForNamespace(codeModuleDynakubes []dynatracev1alpha1.DynaKube, namespa
 	}
 
 	if len(matchingModules) > 1 {
-		return nil, errors.New("namespace matches two DynaKubes which is unsupported. " +
+		return nil, errors.New("namespace matches two or more DynaKubes which is unsupported. " +
 			"refine the labels on your namespace metadata or DynaKube/CodeModules specification")
 	}
 	if len(matchingModules) == 0 {
