@@ -241,11 +241,11 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount OneAgent volume: %s", err.Error()))
 	}
 
-	gcFile := filepath.Join(envDir, "gc", string(ver), podUID)
+	gcFile := filepath.Join(envDir, dtcsi.GarbageCollectionPath, string(ver), podUID)
 	if err = ioutil.WriteFile(gcFile, nil, 0770); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create file for garbage collector - error: %s", err))
 	}
-	if err = ioutil.WriteFile(filepath.Join(dtcsi.GarbageCollectionPath, volID), []byte(gcFile), 0770); err != nil {
+	if err = ioutil.WriteFile(filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volID), []byte(gcFile), 0770); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create link file for garbage collector - error: %s", err))
 	}
 

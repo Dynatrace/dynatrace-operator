@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -52,7 +53,7 @@ func (r *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.R
 		if k8serrors.IsNotFound(err) {
 			return r.newReconcileResult(), nil
 		}
-		return r.newReconcileResult(), err
+		return r.newReconcileResult(), errors.WithStack(err)
 	}
 
 	var tkns corev1.Secret
@@ -75,7 +76,7 @@ func (r *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.R
 		return r.newReconcileResult(), fmt.Errorf("failed to query OneAgent version: %w", err)
 	}
 
-	if err := runBinaryGarbageCollection(r.logger, ci.TenantUUID, ver); err != nil {
+	if err := runBinaryGarbageCollection(r.logger, ci.TenantUUID, ver, r.opts); err != nil {
 		return r.newReconcileResult(), fmt.Errorf("garbage collection failed: %w", err)
 	}
 

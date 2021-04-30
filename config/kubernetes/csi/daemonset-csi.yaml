@@ -27,6 +27,8 @@ spec:
             - --endpoint=unix://csi/csi.sock
             - --node-id=$(KUBE_NODE_NAME)
           env:
+            - name: GC_INTERVAL_MINUTES
+              value: "60"
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:

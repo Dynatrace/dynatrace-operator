@@ -144,7 +144,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	if ver != oldVer {
-		gcDir := filepath.Join(envDir, "gc", ver)
+		gcDir := filepath.Join(envDir, dtcsi.GarbageCollectionPath, ver)
 		if err := os.MkdirAll(gcDir, 0755); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to create directory %s: %w", gcDir, err)
 		}
