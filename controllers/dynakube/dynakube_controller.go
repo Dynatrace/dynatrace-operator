@@ -221,40 +221,17 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 }
 
 func (r *ReconcileDynaKube) reconcileCaps(rec *utils.Reconciliation, dtc dtclient.Client) bool {
-	var caps = []capability.Capability{
-		{
-			ModuleName:     "mint",
-			CapabilityName: "metrics_ingest",
-			Properties:     &rec.Instance.Spec.MintSpec.CapabilityProperties,
-			Configuration: capability.Configuration{
-				SetDnsEntryPoint:     true,
-				SetReadinessPort:     true,
-				SetCommunicationPort: true,
-				CreateService:        true,
-			},
-		},
-		{
-			ModuleName:     "routing",
-			CapabilityName: "MSGrouter",
-			Properties:     &rec.Instance.Spec.RoutingSpec.CapabilityProperties,
-			Configuration: capability.Configuration{
-				SetDnsEntryPoint:     true,
-				SetReadinessPort:     true,
-				SetCommunicationPort: true,
-				CreateService:        true,
-			},
-		},
-		{
-			ModuleName:     "kubemon",
-			CapabilityName: "kubernetes_monitoring",
-			Properties:     &rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties,
-			Configuration: capability.Configuration{
-				ServiceAccountOwner: "kubernetes-monitoring",
-			},
-		},
+	var caps = []*capability.Capability{
+		capability.MakeCapapability(capability.Kubemon, &rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
+		capability.MakeCapapability(capability.Routing, &rec.Instance.Spec.RoutingSpec.CapabilityProperties),
+		capability.MakeCapapability(capability.Mint, &rec.Instance.Spec.MintSpec.CapabilityProperties),
 	}
 
 	for _, cap := range caps {
+		if cap == nil {
+			continue
+		}
+
 		if cap.Properties.Enabled {
 			upd, err := capability.NewReconciler(
 				cap, r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,

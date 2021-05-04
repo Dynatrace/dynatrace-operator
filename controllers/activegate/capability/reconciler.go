@@ -24,32 +24,13 @@ const (
 	DTDNSEntryPoint = "DT_DNS_ENTRY_POINT"
 )
 
-type Configuration struct {
-	SetDnsEntryPoint     bool
-	SetReadinessPort     bool
-	SetCommunicationPort bool
-	CreateService        bool
-	ServiceAccountOwner  string
-}
-
-type Capability struct {
-	ModuleName     string
-	CapabilityName string
-	Properties     *dynatracev1alpha1.CapabilityProperties
-	Configuration
-}
-
-func (c *Capability) CalculateStatefulSetName(instanceName string) string {
-	return instanceName + "-" + c.ModuleName
-}
-
 type Reconciler struct {
 	*activegate.Reconciler
 	log logr.Logger
-	Capability
+	*Capability
 }
 
-func NewReconciler(capability Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
+func NewReconciler(capability *Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
 	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
 	baseReconciler := activegate.NewReconciler(
 		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider,

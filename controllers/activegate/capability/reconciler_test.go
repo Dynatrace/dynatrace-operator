@@ -28,7 +28,7 @@ const (
 	testNamespace = "test-namespace"
 )
 
-var cap = Capability{
+var cap = &Capability{
 	ModuleName:     "fakeModule",
 	CapabilityName: "fakeCap",
 	Properties: &v1alpha1.CapabilityProperties{
@@ -201,7 +201,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 	type fields struct {
 		Reconciler *activegate.Reconciler
 		log        logr.Logger
-		Capability Capability
+		Capability *Capability
 	}
 	tests := []struct {
 		name   string
