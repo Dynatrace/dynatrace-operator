@@ -46,7 +46,7 @@ func (r *CSIGarbageCollector) SetupWithManager(mgr ctrl.Manager) error {
 var _ reconcile.Reconciler = &CSIGarbageCollector{}
 
 func (r *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	r.logger.Info("reconciling csi driver", "namespace", request.Namespace, "name", request.Name)
+	r.logger.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
 
 	var dk dynatracev1alpha1.DynaKube
 	if err := r.client.Get(ctx, request.NamespacedName, &dk); err != nil {
