@@ -115,13 +115,13 @@ func TestMakeCapapability(t *testing.T) {
 			},
 		},
 		{
-			name: "mint",
+			name: "metrics",
 			args: args{
 				c:          Mint,
 				properties: validProperties,
 			},
 			want: &Capability{
-				ModuleName:     "mint",
+				ModuleName:     "metrics",
 				CapabilityName: "metrics_ingest",
 				Properties:     validProperties,
 				Configuration: Configuration{

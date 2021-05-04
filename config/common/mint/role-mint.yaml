@@ -1,7 +1,7 @@
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: dynatrace-mint
+  name: dynatrace-metrics
   namespace: dynatrace
 rules:
   - apiGroups:
@@ -9,6 +9,6 @@ rules:
     resources:
       - podsecuritypolicies
     resourceNames:
-      - dynatrace-mint
+      - dynatrace-metrics
     verbs:
       - use

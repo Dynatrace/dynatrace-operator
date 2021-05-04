@@ -60,7 +60,7 @@ func MakeCapapability(ct CapabilityType, crProperties *dynatracev1alpha1.Capabil
 		}
 	case Mint:
 		return &Capability{
-			ModuleName:     "mint",
+			ModuleName:     "metrics",
 			CapabilityName: "metrics_ingest",
 			Properties:     crProperties,
 			Configuration: Configuration{
