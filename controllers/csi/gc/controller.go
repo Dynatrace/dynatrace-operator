@@ -2,7 +2,6 @@ package csigc
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -11,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,31 +83,37 @@ func (r *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.R
 			return reconcile.Result{}, nil
 		}
 
-		return reconcile.Result{}, errors.WithStack(err)
+		r.logger.Error(err, "failed to get DynaKube object")
+		return reconcile.Result{}, nil
 	}
 
 	var tkns corev1.Secret
 	if err := r.client.Get(ctx, client.ObjectKey{Name: utils.GetTokensName(&dk), Namespace: dk.Namespace}, &tkns); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to query tokens: %w", err)
+		r.logger.Error(err, "failed to query tokens")
+		return reconcile.Result{}, nil
 	}
 
 	dtc, err := r.dtcBuildFunc(r.client, &dk, &tkns)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to create Dynatrace client: %w", err)
+		r.logger.Error(err, "failed to create Dynatrace client")
+		return reconcile.Result{}, nil
 	}
 
 	ci, err := dtc.GetConnectionInfo()
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to fetch connection info: %w", err)
+		r.logger.Error(err, "failed to fetch connection info")
+		return reconcile.Result{}, nil
 	}
 
 	ver, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to query OneAgent version: %w", err)
+		r.logger.Error(err, "failed to query OneAgent version")
+		return reconcile.Result{}, nil
 	}
 
 	if err := runBinaryGarbageCollection(r.logger, ci.TenantUUID, ver, r.opts); err != nil {
-		return reconcile.Result{}, fmt.Errorf("garbage collection failed: %w", err)
+		r.logger.Error(err, "garbage collection failed")
+		return reconcile.Result{}, nil
 	}
 
 	return reconcile.Result{}, nil
