@@ -174,6 +174,10 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	dkVol := oa.Spec.CodeModules.Volume
 	if dkVol == (corev1.VolumeSource{}) {
+		dkVol.CSI = &corev1.CSIVolumeSource{
+			Driver: "csi.oneagent.dynatrace.com",
+		}
+	} else if dkVol == (corev1.VolumeSource{EmptyDir: corev1.EmptyDirVolumeSource{}}) {
 		dkVol.EmptyDir = &corev1.EmptyDirVolumeSource{}
 	}
 
