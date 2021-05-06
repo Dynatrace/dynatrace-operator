@@ -44,6 +44,7 @@ import (
 const (
 	podNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
 	podUIDContextKey       = "csi.storage.k8s.io/pod.uid"
+	podFlavorContextKey    = "flavor"
 )
 
 var log = logger.NewDTLogger().WithName("server")
@@ -124,7 +125,7 @@ func (svr *CSIDriverServer) GetPluginCapabilities(context.Context, *csi.GetPlugi
 // csi.NodeServer implementation
 
 func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
-	volumeCfg, err := preflightPublishVolume(req)
+	volumeCfg, err := parsePublishVolumeRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -204,15 +205,14 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 }
 
 type volumeConfig struct {
-	volumeId      string
-	targetPath    string
-	volumeContext map[string]string
-	namespace     string
-	podUID        string
-	flavor        string
+	volumeId   string
+	targetPath string
+	namespace  string
+	podUID     string
+	flavor     string
 }
 
-func preflightPublishVolume(req *csi.NodePublishVolumeRequest) (*volumeConfig, error) {
+func parsePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*volumeConfig, error) {
 	if req.GetVolumeCapability() == nil {
 		return nil, status.Error(codes.InvalidArgument, "Volume capability missing in request")
 	}
@@ -250,7 +250,7 @@ func preflightPublishVolume(req *csi.NodePublishVolumeRequest) (*volumeConfig, e
 		return nil, status.Error(codes.InvalidArgument, "No Pod UID included with request")
 	}
 
-	flavor := volCtx["flavor"]
+	flavor := volCtx[podFlavorContextKey]
 	if flavor == "" {
 		flavor = dtclient.FlavorDefault
 	}
@@ -259,12 +259,11 @@ func preflightPublishVolume(req *csi.NodePublishVolumeRequest) (*volumeConfig, e
 	}
 
 	return &volumeConfig{
-		volumeId:      volID,
-		targetPath:    targetPath,
-		volumeContext: volCtx,
-		namespace:     nsName,
-		podUID:        podUID,
-		flavor:        flavor,
+		volumeId:   volID,
+		targetPath: targetPath,
+		namespace:  nsName,
+		podUID:     podUID,
+		flavor:     flavor,
 	}, nil
 }
 
