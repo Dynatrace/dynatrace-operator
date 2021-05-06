@@ -2,6 +2,7 @@ package csidriver
 
 import (
 	"fmt"
+
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"

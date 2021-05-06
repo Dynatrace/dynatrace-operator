@@ -3,12 +3,13 @@ package csidriver
 import (
 	"context"
 	"fmt"
+	"io/fs"
+	"path/filepath"
+
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"io/fs"
 	corev1 "k8s.io/api/core/v1"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

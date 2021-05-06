@@ -2,10 +2,11 @@ package csidriver
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"k8s.io/utils/mount"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"k8s.io/utils/mount"
 )
 
 const (

@@ -1,10 +1,11 @@
 package csidriver
 
 import (
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 const (
