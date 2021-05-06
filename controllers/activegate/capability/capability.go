@@ -31,7 +31,7 @@ const (
 	Metrics
 )
 
-func MakeCapapability(ct CapabilityType, crProperties *dynatracev1alpha1.CapabilityProperties) *Capability {
+func NewCapapability(ct CapabilityType, crProperties *dynatracev1alpha1.CapabilityProperties) *Capability {
 	if crProperties == nil {
 		return nil
 	}

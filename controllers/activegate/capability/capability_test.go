@@ -8,6 +8,11 @@ import (
 )
 
 func TestCapability_CalculateStatefulSetName(t *testing.T) {
+	const (
+		instanceName = "instance"
+		moduleName   = "module"
+	)
+
 	type fields struct {
 		ModuleName     string
 		CapabilityName string
@@ -26,12 +31,12 @@ func TestCapability_CalculateStatefulSetName(t *testing.T) {
 		{
 			name: "",
 			fields: fields{
-				ModuleName: "mmm",
+				ModuleName: moduleName,
 			},
 			args: args{
-				instanceName: "iiii",
+				instanceName: instanceName,
 			},
-			want: "iiii-mmm",
+			want: instanceName + "-" + moduleName,
 		},
 		{
 			name: "",
@@ -39,19 +44,19 @@ func TestCapability_CalculateStatefulSetName(t *testing.T) {
 				ModuleName: "",
 			},
 			args: args{
-				instanceName: "iiii",
+				instanceName: instanceName,
 			},
-			want: "iiii-",
+			want: instanceName + "-",
 		},
 		{
 			name: "",
 			fields: fields{
-				ModuleName: "mmm",
+				ModuleName: moduleName,
 			},
 			args: args{
 				instanceName: "",
 			},
-			want: "-mmm",
+			want: "-" + moduleName,
 		},
 	}
 	for _, tt := range tests {
@@ -69,7 +74,7 @@ func TestCapability_CalculateStatefulSetName(t *testing.T) {
 	}
 }
 
-func TestMakeCapapability(t *testing.T) {
+func TestNewCapapability(t *testing.T) {
 	validProperties := &dynatracev1alpha1.CapabilityProperties{}
 
 	type args struct {
@@ -151,8 +156,8 @@ func TestMakeCapapability(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := MakeCapapability(tt.args.c, tt.args.properties); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("MakeCapapability() = %v, want %v", got, tt.want)
+			if got := NewCapapability(tt.args.c, tt.args.properties); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewCapapability() = %v, want %v", got, tt.want)
 			}
 		})
 	}

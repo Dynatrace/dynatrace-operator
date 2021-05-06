@@ -126,7 +126,9 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var statefulSet appsv1.StatefulSet
-		name := instance.Name + "-kubemon"
+
+		cap := capability.NewCapapability(capability.Kubemon, &instance.Spec.KubernetesMonitoringSpec.CapabilityProperties)
+		name := cap.CalculateStatefulSetName(instance.Name)
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
 
 		assert.NoError(t, err)
@@ -188,10 +190,13 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	_, err = r.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
+	cap := capability.NewCapapability(capability.Routing, &instance.Spec.RoutingSpec.CapabilityProperties)
+	stsName := cap.CalculateStatefulSetName(testName)
+
 	routingSts := &appsv1.StatefulSet{}
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      testName + "-routing",
+		Name:      stsName,
 	}, routingSts)
 	assert.NoError(t, err)
 	assert.NotNil(t, routingSts)
@@ -199,7 +204,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	routingSvc := &corev1.Service{}
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      capability.BuildServiceName(testName, "routing"),
+		Name:      capability.BuildServiceName(testName, cap.ModuleName),
 	}, routingSvc)
 	assert.NoError(t, err)
 	assert.NotNil(t, routingSvc)
@@ -216,14 +221,14 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      testName + "-routing",
+		Name:      stsName,
 	}, routingSts)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
 
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      capability.BuildServiceName(testName, "routing"),
+		Name:      capability.BuildServiceName(testName, cap.ModuleName),
 	}, routingSvc)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
