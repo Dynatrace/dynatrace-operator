@@ -124,6 +124,95 @@ func (svr *CSIDriverServer) GetPluginCapabilities(context.Context, *csi.GetPlugi
 // csi.NodeServer implementation
 
 func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+	volumeCfg, err := preflightPublishVolume(req)
+	if err != nil {
+		return nil, err
+	}
+
+	notMnt, err := mount.IsNotMountPoint(mount.New(""), volumeCfg.targetPath)
+	if os.IsNotExist(err) {
+		notMnt = true
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if !notMnt {
+		return &csi.NodePublishVolumeResponse{}, nil
+	}
+
+	svr.log.Info("Publishing volume",
+		"target", volumeCfg.targetPath,
+		"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
+		"readonly", req.GetReadonly(),
+		"volumeID", volumeCfg.volumeId,
+		"attributes", req.GetVolumeContext(),
+		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
+	)
+
+	var ns corev1.Namespace
+	if err := svr.client.Get(ctx, client.ObjectKey{Name: volumeCfg.namespace}, &ns); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Failed to query namespace %s: %s", volumeCfg.namespace, err.Error()))
+	}
+
+	dkName := ns.Labels["oneagent.dynatrace.com/instance"] // TODO(lrgar): replace with constant
+	if dkName == "" {
+		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Namespace '%s' doesn't have DynaKube assigned", volumeCfg.namespace))
+	}
+
+	envID, err := ioutil.ReadFile(filepath.Join(svr.opts.DataDir, fmt.Sprintf("tenant-%s", dkName)))
+	if err != nil {
+		return nil, status.Error(codes.Unavailable, fmt.Sprintf("Failed to extract tenant for DynaKube %s: %s", dkName, err.Error()))
+	}
+	envDir := filepath.Join(svr.opts.DataDir, string(envID))
+
+	for _, dir := range []string{
+		filepath.Join(envDir, "log", volumeCfg.podUID),
+		filepath.Join(envDir, "datastorage", volumeCfg.podUID),
+	} {
+		if err = os.MkdirAll(dir, 0770); err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+	}
+
+	ver, err := ioutil.ReadFile(filepath.Join(envDir, "version"))
+	if err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to query agent directory for DynaKube %s: %s", dkName, err.Error()))
+	}
+
+	agentDir := filepath.Join(envDir, "bin", string(ver)+"-"+volumeCfg.flavor)
+
+	if err := BindMount(
+		volumeCfg.targetPath,
+		Mount{Source: agentDir, Target: volumeCfg.targetPath, ReadOnly: true},
+		Mount{
+			Source: filepath.Join(agentDir, "agent", "conf"),
+			Target: filepath.Join(volumeCfg.targetPath, "agent", "conf"),
+		},
+		Mount{
+			Source: filepath.Join(envDir, "log", volumeCfg.podUID),
+			Target: filepath.Join(volumeCfg.targetPath, "log"),
+		},
+		Mount{
+			Source: filepath.Join(envDir, "datastorage", volumeCfg.podUID),
+			Target: filepath.Join(volumeCfg.targetPath, "datastorage"),
+		},
+	); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount OneAgent volume: %s", err.Error()))
+	}
+
+	return &csi.NodePublishVolumeResponse{}, nil
+}
+
+type volumeConfig struct {
+	volumeId      string
+	targetPath    string
+	volumeContext map[string]string
+	namespace     string
+	podUID        string
+	flavor        string
+}
+
+func preflightPublishVolume(req *csi.NodePublishVolumeRequest) (*volumeConfig, error) {
 	if req.GetVolumeCapability() == nil {
 		return nil, status.Error(codes.InvalidArgument, "Volume capability missing in request")
 	}
@@ -169,78 +258,14 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid flavor in request: %s", flavor))
 	}
 
-	notMnt, err := mount.IsNotMountPoint(mount.New(""), targetPath)
-	if os.IsNotExist(err) {
-		notMnt = true
-	} else if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	if !notMnt {
-		return &csi.NodePublishVolumeResponse{}, nil
-	}
-
-	svr.log.Info("Publishing volume",
-		"target", targetPath,
-		"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
-		"readonly", req.GetReadonly(),
-		"volumeID", volID,
-		"attributes", req.GetVolumeContext(),
-		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
-	)
-
-	var ns corev1.Namespace
-	if err := svr.client.Get(ctx, client.ObjectKey{Name: nsName}, &ns); err != nil {
-		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Failed to query namespace %s: %s", nsName, err.Error()))
-	}
-
-	dkName := ns.Labels["oneagent.dynatrace.com/instance"] // TODO(lrgar): replace with constant
-	if dkName == "" {
-		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Namespace '%s' doesn't have DynaKube assigned", nsName))
-	}
-
-	envID, err := ioutil.ReadFile(filepath.Join(svr.opts.DataDir, fmt.Sprintf("tenant-%s", dkName)))
-	if err != nil {
-		return nil, status.Error(codes.Unavailable, fmt.Sprintf("Failed to extract tenant for DynaKube %s: %s", dkName, err.Error()))
-	}
-	envDir := filepath.Join(svr.opts.DataDir, string(envID))
-
-	for _, dir := range []string{
-		filepath.Join(envDir, "log", podUID),
-		filepath.Join(envDir, "datastorage", podUID),
-	} {
-		if err = os.MkdirAll(dir, 0770); err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-	}
-
-	ver, err := ioutil.ReadFile(filepath.Join(envDir, "version"))
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to query agent directory for DynaKube %s: %s", dkName, err.Error()))
-	}
-
-	agentDir := filepath.Join(envDir, "bin", string(ver)+"-"+flavor)
-
-	if err := BindMount(
-		targetPath,
-		Mount{Source: agentDir, Target: targetPath, ReadOnly: true},
-		Mount{
-			Source: filepath.Join(agentDir, "agent", "conf"),
-			Target: filepath.Join(targetPath, "agent", "conf"),
-		},
-		Mount{
-			Source: filepath.Join(envDir, "log", podUID),
-			Target: filepath.Join(targetPath, "log"),
-		},
-		Mount{
-			Source: filepath.Join(envDir, "datastorage", podUID),
-			Target: filepath.Join(targetPath, "datastorage"),
-		},
-	); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount OneAgent volume: %s", err.Error()))
-	}
-
-	return &csi.NodePublishVolumeResponse{}, nil
+	return &volumeConfig{
+		volumeId:      volID,
+		targetPath:    targetPath,
+		volumeContext: volCtx,
+		namespace:     nsName,
+		podUID:        podUID,
+		flavor:        flavor,
+	}, nil
 }
 
 func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
