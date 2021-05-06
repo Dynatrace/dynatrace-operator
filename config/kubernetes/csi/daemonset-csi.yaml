@@ -40,21 +40,17 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 10080
-              name: health-port
+              name: healthz
               protocol: TCP
           livenessProbe:
+            failureThreshold: 3
             httpGet:
               path: /healthz
-              port: health-port
+              port: healthz
               scheme: HTTP
             initialDelaySeconds: 5
-            timeoutSeconds: 1
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: health-port
-              scheme: HTTP
-            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
             timeoutSeconds: 1
           securityContext:
             privileged: true
