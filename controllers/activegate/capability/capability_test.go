@@ -117,7 +117,7 @@ func TestMakeCapapability(t *testing.T) {
 		{
 			name: "metrics",
 			args: args{
-				c:          Mint,
+				c:          Metrics,
 				properties: validProperties,
 			},
 			want: &Capability{

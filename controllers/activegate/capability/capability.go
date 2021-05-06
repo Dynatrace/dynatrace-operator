@@ -28,7 +28,7 @@ type CapabilityType int
 const (
 	Kubemon CapabilityType = iota
 	Routing
-	Mint
+	Metrics
 )
 
 func MakeCapapability(ct CapabilityType, crProperties *dynatracev1alpha1.CapabilityProperties) *Capability {
@@ -58,7 +58,7 @@ func MakeCapapability(ct CapabilityType, crProperties *dynatracev1alpha1.Capabil
 				CreateService:        true,
 			},
 		}
-	case Mint:
+	case Metrics:
 		return &Capability{
 			ModuleName:     "metrics",
 			CapabilityName: "metrics_ingest",

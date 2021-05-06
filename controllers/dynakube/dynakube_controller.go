@@ -224,7 +224,7 @@ func (r *ReconcileDynaKube) reconcileCaps(rec *utils.Reconciliation, dtc dtclien
 	var caps = []*capability.Capability{
 		capability.MakeCapapability(capability.Kubemon, &rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
 		capability.MakeCapapability(capability.Routing, &rec.Instance.Spec.RoutingSpec.CapabilityProperties),
-		capability.MakeCapapability(capability.Mint, &rec.Instance.Spec.MetricsIngestSpec.CapabilityProperties),
+		capability.MakeCapapability(capability.Metrics, &rec.Instance.Spec.MetricsIngestSpec.CapabilityProperties),
 	}
 
 	for _, cap := range caps {
