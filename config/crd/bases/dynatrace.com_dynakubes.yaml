@@ -2117,8 +2117,8 @@ spec:
                     type: object
                   type: array
               type: object
-            mint:
-              description: ' Configuration for Mint'
+            metricsIngest:
+              description: ' Configuration for Metrics Ingest'
               properties:
                 args:
                   description: 'Optional: Adds additional arguments for the ActiveGate
