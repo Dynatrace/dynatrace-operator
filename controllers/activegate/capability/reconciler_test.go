@@ -115,7 +115,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
 			Name:  DTDNSEntryPoint,
-			Value: buildDNSEntryPoint(r.Instance, r.CapabilityName),
+			Value: buildDNSEntryPoint(r.Instance, r.ModuleName),
 		})
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {

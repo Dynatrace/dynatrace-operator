@@ -37,7 +37,7 @@ func NewReconciler(capability *Capability, clt client.Client, apiReader client.R
 		capability.Properties, capability.ModuleName, capability.CapabilityName, capability.ServiceAccountOwner)
 
 	if capability.Configuration.SetDnsEntryPoint {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.CapabilityName))
+		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.ModuleName))
 	}
 
 	if capability.Configuration.SetCommunicationPort {
