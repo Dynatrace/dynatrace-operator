@@ -180,7 +180,7 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 	rec.Update(upd, defaultUpdateInterval, "Found updates")
 	rec.Error(err)
 
-	if !r.reconcileCaps(rec, dtc) {
+	if !r.reconcileActiveGateCapabilities(rec, dtc) {
 		return
 	}
 
@@ -220,7 +220,7 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 	return nil
 }
 
-func (r *ReconcileDynaKube) reconcileCaps(rec *utils.Reconciliation, dtc dtclient.Client) bool {
+func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconciliation, dtc dtclient.Client) bool {
 	var caps = []*capability.Capability{
 		capability.MakeCapapability(capability.Kubemon, &rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
 		capability.MakeCapapability(capability.Routing, &rec.Instance.Spec.RoutingSpec.CapabilityProperties),
