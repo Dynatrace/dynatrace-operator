@@ -26,7 +26,6 @@ import (
 	"strings"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -34,7 +33,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/mount"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -124,20 +122,26 @@ func (svr *CSIDriverServer) GetPluginCapabilities(context.Context, *csi.GetPlugi
 
 // csi.NodeServer implementation
 
+func isMounted(mounter mount.Interface, targetPath string) (bool, error) {
+	isNotMounted, err := mount.IsNotMountPoint(mounter, targetPath)
+	if os.IsNotExist(err) {
+		isNotMounted = true
+	} else if err != nil {
+		return false, status.Error(codes.Internal, err.Error())
+	}
+	return !isNotMounted, nil
+}
+
 func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	volumeCfg, err := parsePublishVolumeRequest(req)
 	if err != nil {
 		return nil, err
 	}
 
-	notMnt, err := mount.IsNotMountPoint(mount.New(""), volumeCfg.targetPath)
-	if os.IsNotExist(err) {
-		notMnt = true
-	} else if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	if !notMnt {
+	mounted, err := isMounted(mount.New(""), volumeCfg.targetPath)
+	if err != nil {
+		return nil, err
+	} else if mounted {
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
@@ -150,51 +154,24 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
 	)
 
-	var ns corev1.Namespace
-	if err := svr.client.Get(ctx, client.ObjectKey{Name: volumeCfg.namespace}, &ns); err != nil {
-		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Failed to query namespace %s: %s", volumeCfg.namespace, err.Error()))
-	}
-
-	dkName := ns.Labels["oneagent.dynatrace.com/instance"] // TODO(lrgar): replace with constant
-	if dkName == "" {
-		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Namespace '%s' doesn't have DynaKube assigned", volumeCfg.namespace))
-	}
-
-	envID, err := ioutil.ReadFile(filepath.Join(svr.opts.DataDir, fmt.Sprintf("tenant-%s", dkName)))
+	bindCfg, err := newBindConfig(ctx, svr, volumeCfg, ioutil.ReadFile, os.MkdirAll)
 	if err != nil {
-		return nil, status.Error(codes.Unavailable, fmt.Sprintf("Failed to extract tenant for DynaKube %s: %s", dkName, err.Error()))
+		return nil, err
 	}
-	envDir := filepath.Join(svr.opts.DataDir, string(envID))
-
-	for _, dir := range []string{
-		filepath.Join(envDir, "log", volumeCfg.podUID),
-		filepath.Join(envDir, "datastorage", volumeCfg.podUID),
-	} {
-		if err = os.MkdirAll(dir, 0770); err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-	}
-
-	ver, err := ioutil.ReadFile(filepath.Join(envDir, "version"))
-	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to query agent directory for DynaKube %s: %s", dkName, err.Error()))
-	}
-
-	agentDir := filepath.Join(envDir, "bin", string(ver)+"-"+volumeCfg.flavor)
 
 	if err := BindMount(
 		volumeCfg.targetPath,
-		Mount{Source: agentDir, Target: volumeCfg.targetPath, ReadOnly: true},
+		Mount{Source: bindCfg.agentDir, Target: volumeCfg.targetPath, ReadOnly: true},
 		Mount{
-			Source: filepath.Join(agentDir, "agent", "conf"),
+			Source: filepath.Join(bindCfg.agentDir, "agent", "conf"),
 			Target: filepath.Join(volumeCfg.targetPath, "agent", "conf"),
 		},
 		Mount{
-			Source: filepath.Join(envDir, "log", volumeCfg.podUID),
+			Source: filepath.Join(bindCfg.envDir, "log", volumeCfg.podUID),
 			Target: filepath.Join(volumeCfg.targetPath, "log"),
 		},
 		Mount{
-			Source: filepath.Join(envDir, "datastorage", volumeCfg.podUID),
+			Source: filepath.Join(bindCfg.envDir, "datastorage", volumeCfg.podUID),
 			Target: filepath.Join(volumeCfg.targetPath, "datastorage"),
 		},
 	); err != nil {
@@ -202,69 +179,6 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
-}
-
-type volumeConfig struct {
-	volumeId   string
-	targetPath string
-	namespace  string
-	podUID     string
-	flavor     string
-}
-
-func parsePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*volumeConfig, error) {
-	if req.GetVolumeCapability() == nil {
-		return nil, status.Error(codes.InvalidArgument, "Volume capability missing in request")
-	}
-
-	volID := req.GetVolumeId()
-	if volID == "" {
-		return nil, status.Error(codes.InvalidArgument, "Volume ID missing in request")
-	}
-
-	targetPath := req.GetTargetPath()
-	if targetPath == "" {
-		return nil, status.Error(codes.InvalidArgument, "Target path missing in request")
-	}
-
-	if req.GetVolumeCapability().GetBlock() != nil {
-		return nil, status.Error(codes.InvalidArgument, "cannot have block access type")
-	}
-
-	if req.GetVolumeCapability().GetMount() == nil {
-		return nil, status.Error(codes.InvalidArgument, "expecting to have mount access type")
-	}
-
-	volCtx := req.GetVolumeContext()
-	if volCtx == nil {
-		return nil, status.Error(codes.InvalidArgument, "Publish context missing in request")
-	}
-
-	nsName := volCtx[podNamespaceContextKey]
-	if nsName == "" {
-		return nil, status.Error(codes.InvalidArgument, "No namespace included with request")
-	}
-
-	podUID := volCtx[podUIDContextKey]
-	if podUID == "" {
-		return nil, status.Error(codes.InvalidArgument, "No Pod UID included with request")
-	}
-
-	flavor := volCtx[podFlavorContextKey]
-	if flavor == "" {
-		flavor = dtclient.FlavorDefault
-	}
-	if flavor != dtclient.FlavorDefault && flavor != dtclient.FlavorMUSL {
-		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid flavor in request: %s", flavor))
-	}
-
-	return &volumeConfig{
-		volumeId:   volID,
-		targetPath: targetPath,
-		namespace:  nsName,
-		podUID:     podUID,
-		flavor:     flavor,
-	}, nil
 }
 
 func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
