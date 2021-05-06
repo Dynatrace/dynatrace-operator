@@ -19,8 +19,8 @@ COPY third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 COPY build/_output/bin /usr/local/bin
 COPY build/bin /usr/local/bin
 
-COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.2.0 /csi-node-driver-registrar /usr/local/bin
-COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.3.0 /livenessprobe /usr/local/bin
+COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.1.0 /csi-node-driver-registrar /usr/local/bin
+COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.2.0 /livenessprobe /usr/local/bin
 
 RUN  /usr/local/bin/user_setup
 
