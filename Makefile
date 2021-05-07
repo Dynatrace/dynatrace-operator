@@ -16,7 +16,7 @@ ifeq ($(origin IMG),undefined)
 ifeq ($(shell git branch --show-current),master)
 IMG=quay.io/dynatrace/dynatrace-operator:snapshot
 else
-IMG=quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s\#[^a-zA-Z0-9_-]\#-\#g")
+IMG=quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s#[^a-zA-Z0-9_-]#-#g")
 endif
 endif
 
