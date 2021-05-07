@@ -224,7 +224,7 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconcili
 	var caps = []*capability.Capability{
 		capability.NewCapability(capability.KubeMon, &rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
 		capability.NewCapability(capability.Routing, &rec.Instance.Spec.RoutingSpec.CapabilityProperties),
-		capability.NewCapability(capability.Metrics, &rec.Instance.Spec.MetricsIngestSpec.CapabilityProperties),
+		capability.NewCapability(capability.Metrics, &dynatracev1alpha1.CapabilityProperties{Enabled: rec.Instance.FeatureEnableMetricsIngest()}),
 	}
 
 	for _, cap := range caps {

@@ -224,7 +224,6 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	in.InfraMonitoring.DeepCopyInto(&out.InfraMonitoring)
 	in.ClassicFullStack.DeepCopyInto(&out.ClassicFullStack)
 	in.RoutingSpec.DeepCopyInto(&out.RoutingSpec)
-	in.MetricsIngestSpec.DeepCopyInto(&out.MetricsIngestSpec)
 	in.KubernetesMonitoringSpec.DeepCopyInto(&out.KubernetesMonitoringSpec)
 }
 
