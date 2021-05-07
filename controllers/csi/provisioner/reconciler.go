@@ -17,15 +17,12 @@ limitations under the License.
 package csiprovisioner
 
 import (
-	"archive/zip"
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -33,7 +30,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -161,123 +157,4 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
-}
-
-func installAgent(rlog logr.Logger, dtc dtclient.Client, flavor, arch, targetDir string) error {
-	tmpFile, err := ioutil.TempFile("", "download")
-	if err != nil {
-		return fmt.Errorf("failed to create temporary file for download: %w", err)
-	}
-	defer func() {
-		_ = tmpFile.Close()
-		if err := os.Remove(tmpFile.Name()); err != nil {
-			rlog.Error(err, "Failed to delete downloaded file", "path", tmpFile.Name())
-		}
-	}()
-
-	rlog.Info("Downloading OneAgent package", "flavor", flavor, "architecture", arch)
-
-	r, err := dtc.GetLatestAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, flavor, arch)
-	if err != nil {
-		return fmt.Errorf("failed to fetch latest OneAgent version: %w", err)
-	}
-	defer r.Close()
-
-	rlog.Info("Saving OneAgent package", "dest", tmpFile.Name())
-
-	size, err := io.Copy(tmpFile, r)
-	if err != nil {
-		return fmt.Errorf("failed to save OneAgent package: %w", err)
-	}
-
-	if _, err := tmpFile.Seek(0, io.SeekStart); err != nil {
-		return fmt.Errorf("failed to save OneAgent package: %w", err)
-	}
-
-	zipr, err := zip.NewReader(tmpFile, size)
-	if err != nil {
-		return fmt.Errorf("failed to open ZIP file: %w", err)
-	}
-
-	rlog.Info("Unzipping OneAgent package")
-	if err := unzip(rlog, zipr, targetDir); err != nil {
-		return fmt.Errorf("failed to unzip file: %w", err)
-	}
-
-	rlog.Info("Unzipped OneAgent package")
-
-	for _, dir := range []string{
-		filepath.Join(targetDir, "log"),
-		filepath.Join(targetDir, "datastorage"),
-	} {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("failed to create directory %s: %w", dir, err)
-		}
-	}
-
-	return nil
-}
-
-func unzip(rlog logr.Logger, r *zip.Reader, outDir string) error {
-	const agentConfPath = "agent/conf/"
-
-	os.MkdirAll(outDir, 0755)
-
-	// Closure to address file descriptors issue with all the deferred .Close() methods
-	extract := func(zipf *zip.File) error {
-		rc, err := zipf.Open()
-		if err != nil {
-			return err
-		}
-
-		defer func() {
-			if err := rc.Close(); err != nil {
-				rlog.Error(err, "Failed to close ZIP entry file", "path", zipf.Name)
-			}
-		}()
-
-		path := filepath.Join(outDir, zipf.Name)
-
-		// Check for ZipSlip (Directory traversal)
-		if !strings.HasPrefix(path, filepath.Clean(outDir)+string(os.PathSeparator)) {
-			return fmt.Errorf("illegal file path: %s", path)
-		}
-
-		mode := zipf.Mode()
-
-		// Mark all files inside ./agent/conf as group-writable
-		if zipf.Name != agentConfPath && strings.HasPrefix(zipf.Name, agentConfPath) {
-			mode |= 020
-		}
-
-		if zipf.FileInfo().IsDir() {
-			return os.MkdirAll(path, mode)
-		}
-
-		if err = os.MkdirAll(filepath.Dir(path), mode); err != nil {
-			return err
-		}
-
-		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
-		if err != nil {
-			return err
-		}
-
-		defer func() {
-			if err := f.Close(); err != nil {
-				rlog.Error(err, "Failed to close target file", "path", f.Name)
-			}
-		}()
-
-		_, err = io.Copy(f, rc)
-		return err
-	}
-
-	for _, f := range r.File {
-		if err := extract(f); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
