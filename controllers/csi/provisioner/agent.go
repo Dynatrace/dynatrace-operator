@@ -135,7 +135,7 @@ func unzip(r *zip.Reader, installAgentCfg *installAgentConfig) error {
 			return fs.MkdirAll(path, mode)
 		}
 
-		if err = os.MkdirAll(filepath.Dir(path), mode); err != nil {
+		if err = fs.MkdirAll(filepath.Dir(path), mode); err != nil {
 			return err
 		}
 
