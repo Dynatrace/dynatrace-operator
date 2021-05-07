@@ -21,7 +21,7 @@ import (
 
 const (
 	containerPort   = 9999
-	DTDNSEntryPoint = "DT_DNS_ENTRY_POINT"
+	dtDNSEntryPoint = "DT_DNS_ENTRY_POINT"
 )
 
 type Reconciler struct {
@@ -45,7 +45,7 @@ func NewReconciler(capability *Capability, clt client.Client, apiReader client.R
 	}
 
 	if capability.Configuration.SetReadinessPort {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(setReadinessProbePort(instance))
+		baseReconciler.AddOnAfterStatefulSetCreateListener(setReadinessProbePort())
 	}
 
 	return &Reconciler{
@@ -55,7 +55,7 @@ func NewReconciler(capability *Capability, clt client.Client, apiReader client.R
 	}
 }
 
-func setReadinessProbePort(_ *dynatracev1alpha1.DynaKube) activegate.StatefulSetEvent {
+func setReadinessProbePort() activegate.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port = intstr.FromString(serviceTargetPort)
 	}
@@ -80,7 +80,7 @@ func addDNSEntryPoint(instance *dynatracev1alpha1.DynaKube, moduleName string) a
 	return func(sts *appsv1.StatefulSet) {
 		sts.Spec.Template.Spec.Containers[0].Env = append(sts.Spec.Template.Spec.Containers[0].Env,
 			corev1.EnvVar{
-				Name:  DTDNSEntryPoint,
+				Name:  dtDNSEntryPoint,
 				Value: buildDNSEntryPoint(instance, moduleName),
 			})
 	}

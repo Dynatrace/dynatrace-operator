@@ -114,7 +114,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
-			Name:  DTDNSEntryPoint,
+			Name:  dtDNSEntryPoint,
 			Value: buildDNSEntryPoint(r.Instance, r.ModuleName),
 		})
 	})
@@ -188,7 +188,7 @@ func TestSetReadinessProbePort(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, sts)
 
-	setReadinessProbePort(r.Instance)(sts)
+	setReadinessProbePort()(sts)
 
 	assert.NotEmpty(t, sts.Spec.Template.Spec.Containers)
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe)

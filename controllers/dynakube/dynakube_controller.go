@@ -222,9 +222,9 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 
 func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconciliation, dtc dtclient.Client) bool {
 	var caps = []*capability.Capability{
-		capability.NewCapapability(capability.Kubemon, &rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
-		capability.NewCapapability(capability.Routing, &rec.Instance.Spec.RoutingSpec.CapabilityProperties),
-		capability.NewCapapability(capability.Metrics, &rec.Instance.Spec.MetricsIngestSpec.CapabilityProperties),
+		capability.NewCapability(capability.KubeMon, &rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
+		capability.NewCapability(capability.Routing, &rec.Instance.Spec.RoutingSpec.CapabilityProperties),
+		capability.NewCapability(capability.Metrics, &rec.Instance.Spec.MetricsIngestSpec.CapabilityProperties),
 	}
 
 	for _, cap := range caps {

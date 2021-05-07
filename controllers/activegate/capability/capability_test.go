@@ -74,7 +74,7 @@ func TestCapability_CalculateStatefulSetName(t *testing.T) {
 	}
 }
 
-func TestNewCapapability(t *testing.T) {
+func TestNewCapability(t *testing.T) {
 	validProperties := &dynatracev1alpha1.CapabilityProperties{}
 
 	type args struct {
@@ -89,7 +89,7 @@ func TestNewCapapability(t *testing.T) {
 		{
 			name: "kubemon",
 			args: args{
-				c:          Kubemon,
+				c:          KubeMon,
 				properties: validProperties,
 			},
 			want: &Capability{
@@ -148,7 +148,7 @@ func TestNewCapapability(t *testing.T) {
 		{
 			name: "properties is nil",
 			args: args{
-				c:          Kubemon,
+				c:          KubeMon,
 				properties: nil,
 			},
 			want: nil,
@@ -156,8 +156,8 @@ func TestNewCapapability(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewCapapability(tt.args.c, tt.args.properties); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewCapapability() = %v, want %v", got, tt.want)
+			if got := NewCapability(tt.args.c, tt.args.properties); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewCapability() = %v, want %v", got, tt.want)
 			}
 		})
 	}

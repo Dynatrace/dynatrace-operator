@@ -26,18 +26,18 @@ func (c *Capability) CalculateStatefulSetName(instanceName string) string {
 type CapabilityType int
 
 const (
-	Kubemon CapabilityType = iota
+	KubeMon CapabilityType = iota
 	Routing
 	Metrics
 )
 
-func NewCapapability(ct CapabilityType, crProperties *dynatracev1alpha1.CapabilityProperties) *Capability {
+func NewCapability(ct CapabilityType, crProperties *dynatracev1alpha1.CapabilityProperties) *Capability {
 	if crProperties == nil {
 		return nil
 	}
 
 	switch ct {
-	case Kubemon:
+	case KubeMon:
 		return &Capability{
 			ModuleName:     "kubemon",
 			CapabilityName: "kubernetes_monitoring",
