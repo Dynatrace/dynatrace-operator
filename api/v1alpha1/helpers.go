@@ -95,3 +95,11 @@ func buildImageRegistry(apiURL string) string {
 	registry = strings.TrimSuffix(registry, "/api")
 	return registry
 }
+
+// Tokens returns the name of the Secret to be used for tokens.
+func (dk *DynaKube) Tokens() string {
+	if tkns := dk.Spec.Tokens; tkns != "" {
+		return tkns
+	}
+	return dk.Name
+}

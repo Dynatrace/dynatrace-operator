@@ -51,7 +51,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		return dtversion.ImageVersion{}, nil
 	}
 
-	r := NewReconciler(clt, clt, scheme.Scheme, dtc, log, instance, imgVerProvider, false)
+	r := NewReconciler(clt, clt, scheme.Scheme, dtc, log, instance, imgVerProvider)
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.Instance)
@@ -162,23 +162,6 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
 	})
-}
-
-func TestSetLivenessProbePort(t *testing.T) {
-	r := createDefaultReconciler(t)
-	stsProps := capability.NewStatefulSetProperties(r.Instance, &r.Instance.Spec.RoutingSpec.CapabilityProperties, "", "", "", "", "")
-	sts, err := capability.CreateStatefulSet(stsProps)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, sts)
-
-	setLivenessProbePort(r.Instance)(sts)
-
-	assert.NotEmpty(t, sts.Spec.Template.Spec.Containers)
-	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].LivenessProbe)
-	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].LivenessProbe.HTTPGet)
-	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].LivenessProbe.HTTPGet.Port)
-	assert.Equal(t, serviceTargetPort, sts.Spec.Template.Spec.Containers[0].LivenessProbe.HTTPGet.Port.String())
 }
 
 func TestSetReadinessProbePort(t *testing.T) {

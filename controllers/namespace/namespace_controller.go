@@ -92,13 +92,13 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, nil
 	}
 
-	var apm dynatracev1alpha1.DynaKube
-	if err := r.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: r.namespace}, &apm); err != nil {
+	var dk dynatracev1alpha1.DynaKube
+	if err := r.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: r.namespace}, &dk); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to query DynaKubes: %w", err)
 	}
 
-	tokenName := utils.GetTokensName(&apm)
-	if !apm.Spec.CodeModules.Enabled {
+	tokenName := dk.Tokens()
+	if !dk.Spec.CodeModules.Enabled {
 		r.ensureSecretDeleted(tokenName, targetNS)
 		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 	}
@@ -124,7 +124,7 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, fmt.Errorf("failed to query tokens: %w", err)
 	}
 
-	script, err := newScript(ctx, r.client, apm, tkns, imNodes, r.namespace)
+	script, err := newScript(ctx, r.client, dk, tkns, imNodes, r.namespace)
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to generate init script: %w", err)
 	}

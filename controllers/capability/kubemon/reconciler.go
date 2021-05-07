@@ -24,10 +24,10 @@ type Reconciler struct {
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
-	instance *v1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, enableUpdates bool) *Reconciler {
+	instance *v1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
 	return &Reconciler{
 		capability.NewReconciler(
-			clt, apiReader, scheme, dtc, log, instance, imageVersionProvider, enableUpdates,
+			clt, apiReader, scheme, dtc, log, instance, imageVersionProvider,
 			&instance.Spec.KubernetesMonitoringSpec.CapabilityProperties, module, capabilityName, serviceAccountOwner),
 	}
 }

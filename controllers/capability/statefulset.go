@@ -151,18 +151,6 @@ func buildContainer(stsProperties *statefulSetProperties) corev1.Container {
 			PeriodSeconds:       15,
 			FailureThreshold:    3,
 		},
-		LivenessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path:   "/rest/state",
-					Port:   intstr.IntOrString{IntVal: 9999},
-					Scheme: "HTTPS",
-				},
-			},
-			InitialDelaySeconds: 90,
-			PeriodSeconds:       30,
-			FailureThreshold:    2,
-		},
 	}
 }
 

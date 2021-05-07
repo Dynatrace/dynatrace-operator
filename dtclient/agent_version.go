@@ -7,22 +7,6 @@ import (
 	"io"
 )
 
-func (dtc *dynatraceClient) GetAgentVersionForIP(ip string) (string, error) {
-	if len(ip) == 0 {
-		return "", errors.New("ip is invalid")
-	}
-
-	hostInfo, err := dtc.getHostInfoForIP(ip)
-	if err != nil {
-		return "", err
-	}
-	if hostInfo.version == "" {
-		return "", errors.New("agent version not set for host")
-	}
-
-	return hostInfo.version, nil
-}
-
 // GetVersionForLatest gets the latest agent version for the given OS and installer type.
 func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {
 	if len(os) == 0 || len(installerType) == 0 {

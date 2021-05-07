@@ -29,7 +29,6 @@ type Reconciler struct {
 	dtc                              dtclient.Client
 	log                              logr.Logger
 	imageVersionProvider             dtversion.ImageVersionProvider
-	enableUpdates                    bool
 	feature                          string
 	capabilityName                   string
 	serviceAccountOwner              string
@@ -38,7 +37,7 @@ type Reconciler struct {
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
-	instance *v1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, enableUpdates bool,
+	instance *v1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider,
 	capability *v1alpha1.CapabilityProperties, feature string, capabilityName string, serviceAccountOwner string) *Reconciler {
 	if serviceAccountOwner == "" {
 		serviceAccountOwner = feature
@@ -52,7 +51,6 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		log:                              log,
 		Instance:                         instance,
 		imageVersionProvider:             imageVersionProvider,
-		enableUpdates:                    enableUpdates,
 		feature:                          feature,
 		capabilityName:                   capabilityName,
 		serviceAccountOwner:              serviceAccountOwner,
