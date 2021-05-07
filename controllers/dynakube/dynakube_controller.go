@@ -227,22 +227,18 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconcili
 		capability.NewCapability(capability.Metrics, &dynatracev1alpha1.CapabilityProperties{Enabled: rec.Instance.FeatureEnableMetricsIngest()}),
 	}
 
-	for _, cap := range caps {
-		if cap == nil {
-			continue
-		}
-
-		if cap.Properties.Enabled {
+	for _, c := range caps {
+		if c.Properties.Enabled {
 			upd, err := capability.NewReconciler(
-				cap, r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
+				c, r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
 			).Reconcile()
-			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, cap.ModuleName+" reconciled") {
+			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, c.ModuleName+" reconciled") {
 				return false
 			}
 		} else {
 			sts := appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      cap.CalculateStatefulSetName(rec.Instance.Name),
+					Name:      c.CalculateStatefulSetName(rec.Instance.Name),
 					Namespace: rec.Instance.Namespace,
 				},
 			}
@@ -250,10 +246,10 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconcili
 				return false
 			}
 
-			if cap.Configuration.CreateService {
+			if c.Configuration.CreateService {
 				svc := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      capability.BuildServiceName(rec.Instance.Name, cap.ModuleName),
+						Name:      capability.BuildServiceName(rec.Instance.Name, c.ModuleName),
 						Namespace: rec.Instance.Namespace,
 					},
 				}
