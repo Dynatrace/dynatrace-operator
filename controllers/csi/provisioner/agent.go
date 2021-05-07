@@ -77,7 +77,7 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	}
 
 	logger.Info("Unzipping OneAgent package")
-	if err := unzip(logger, zipr, targetDir); err != nil {
+	if err := unzip(zipr, installAgentCfg); err != nil {
 		return fmt.Errorf("failed to unzip file: %w", err)
 	}
 
@@ -102,7 +102,7 @@ func unzip(r *zip.Reader, installAgentCfg *installAgentConfig) error {
 	logger := installAgentCfg.logger
 	fs := installAgentCfg.fs
 
-	os.MkdirAll(outDir, 0755)
+	_ = fs.MkdirAll(outDir, 0755)
 
 	// Closure to address file descriptors issue with all the deferred .Close() methods
 	extract := func(zipf *zip.File) error {
@@ -113,7 +113,7 @@ func unzip(r *zip.Reader, installAgentCfg *installAgentConfig) error {
 
 		defer func() {
 			if err := rc.Close(); err != nil {
-				rlog.Error(err, "Failed to close ZIP entry file", "path", zipf.Name)
+				logger.Error(err, "Failed to close ZIP entry file", "path", zipf.Name)
 			}
 		}()
 
@@ -132,21 +132,21 @@ func unzip(r *zip.Reader, installAgentCfg *installAgentConfig) error {
 		}
 
 		if zipf.FileInfo().IsDir() {
-			return os.MkdirAll(path, mode)
+			return fs.MkdirAll(path, mode)
 		}
 
 		if err = os.MkdirAll(filepath.Dir(path), mode); err != nil {
 			return err
 		}
 
-		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
+		f, err := fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
 		if err != nil {
 			return err
 		}
 
 		defer func() {
 			if err := f.Close(); err != nil {
-				rlog.Error(err, "Failed to close target file", "path", f.Name)
+				logger.Error(err, "Failed to close target file", "path", f.Name)
 			}
 		}()
 

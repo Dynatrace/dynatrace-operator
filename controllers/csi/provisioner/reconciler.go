@@ -118,7 +118,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	if oldDynaKubeTenant != ci.TenantUUID {
-		ioutil.WriteFile(tenantFile, []byte(ci.TenantUUID), 0644)
+		_ = ioutil.WriteFile(tenantFile, []byte(ci.TenantUUID), 0644)
 	}
 
 	ver, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
@@ -143,7 +143,9 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 			targetDir := filepath.Join(envDir, "bin", ver+"-"+flavor)
 
 			if _, err := os.Stat(targetDir); os.IsNotExist(err) {
-				if err := installAgent(rlog, dtc, flavor, arch, targetDir); err != nil {
+				installAgentCfg := newInstallAgentConfig(rlog, dtc, flavor, arch, targetDir)
+
+				if err := installAgent(installAgentCfg); err != nil {
 					if errDel := os.RemoveAll(targetDir); errDel != nil {
 						rlog.Error(errDel, "failed to delete target directory", "path", targetDir)
 					}
