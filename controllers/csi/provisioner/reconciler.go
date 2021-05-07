@@ -19,6 +19,8 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	"io"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -42,17 +44,23 @@ var log = logger.NewDTLogger().WithName("provisioner")
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
-	client       client.Client
-	opts         dtcsi.CSIOptions
-	dtcBuildFunc dynakube.DynatraceClientFunc
+	client        client.Client
+	opts          dtcsi.CSIOptions
+	dtcBuildFunc  dynakube.DynatraceClientFunc
+	mkDirAllFunc  func(path string, perm fs.FileMode) error
+	writeFileFunc func(filename string, data []byte, perm fs.FileMode) error
+	readFileFunc  func(filename string) ([]byte, error)
 }
 
 // NewReconciler returns a new OneAgentProvisioner
 func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
-		client:       mgr.GetClient(),
-		opts:         opts,
-		dtcBuildFunc: dynakube.BuildDynatraceClient,
+		client:        mgr.GetClient(),
+		opts:          opts,
+		dtcBuildFunc:  dynakube.BuildDynatraceClient,
+		mkDirAllFunc:  os.MkdirAll,
+		writeFileFunc: ioutil.WriteFile,
+		readFileFunc:  ioutil.ReadFile,
 	}
 }
 
@@ -105,20 +113,20 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		filepath.Join(envDir, "log"),
 		filepath.Join(envDir, "datastorage"),
 	} {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := r.mkDirAllFunc(dir, 0755); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
 
 	var oldDynaKubeTenant string
-	if b, err := ioutil.ReadFile(tenantFile); err != nil && !os.IsNotExist(err) {
+	if b, err := r.readFileFunc(tenantFile); err != nil && !os.IsNotExist(err) {
 		return reconcile.Result{}, fmt.Errorf("failed to query assigned DynaKube tenant: %w", err)
 	} else {
 		oldDynaKubeTenant = string(b)
 	}
 
 	if oldDynaKubeTenant != ci.TenantUUID {
-		_ = ioutil.WriteFile(tenantFile, []byte(ci.TenantUUID), 0644)
+		_ = r.writeFileFunc(tenantFile, []byte(ci.TenantUUID), 0644)
 	}
 
 	ver, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
@@ -127,7 +135,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	var oldVer string
-	if b, err := ioutil.ReadFile(verFile); err != nil && !os.IsNotExist(err) {
+	if b, err := r.readFileFunc(verFile); err != nil && !os.IsNotExist(err) {
 		return reconcile.Result{}, fmt.Errorf("failed to query installed OneAgent version: %w", err)
 	} else {
 		oldVer = string(b)
@@ -155,7 +163,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 			}
 		}
 
-		ioutil.WriteFile(verFile, []byte(ver), 0644)
+		_ = r.writeFileFunc(verFile, []byte(ver), 0644)
 	}
 
 	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
