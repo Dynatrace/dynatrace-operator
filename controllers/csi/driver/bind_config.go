@@ -3,10 +3,10 @@ package csidriver
 import (
 	"context"
 	"fmt"
-	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"io/fs"
 	"path/filepath"
 
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

@@ -3,13 +3,13 @@ package csidriver
 import (
 	"context"
 	"fmt"
-	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"io/fs"
 	"path"
 	"strings"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
