@@ -26,6 +26,7 @@ spec:
           args:
             - --endpoint=unix://csi/csi.sock
             - --node-id=$(KUBE_NODE_NAME)
+            - --health-probe-bind-address=:10080
           env:
             - name: POD_NAMESPACE
               valueFrom:
@@ -37,6 +38,20 @@ spec:
                   apiVersion: v1
                   fieldPath: spec.nodeName
           imagePullPolicy: Always
+          ports:
+            - containerPort: 10080
+              name: healthz
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: healthz
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 1
           securityContext:
             privileged: true
             runAsUser: 0
