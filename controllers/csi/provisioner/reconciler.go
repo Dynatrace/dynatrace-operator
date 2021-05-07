@@ -123,7 +123,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	if oldDynaKubeTenant != ci.TenantUUID {
-		ioutil.WriteFile(tenantFile, []byte(ci.TenantUUID), 0644)
+		_ = ioutil.WriteFile(tenantFile, []byte(ci.TenantUUID), 0644)
 	}
 
 	ver, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
@@ -227,7 +227,7 @@ func installAgent(rlog logr.Logger, dtc dtclient.Client, flavor, arch, targetDir
 }
 
 func unzip(rlog logr.Logger, r *zip.Reader, outDir string) error {
-	os.MkdirAll(outDir, 0755)
+	_ = os.MkdirAll(outDir, 0755)
 
 	// Closure to address file descriptors issue with all the deferred .Close() methods
 	extract := func(zipf *zip.File) error {

@@ -28,13 +28,16 @@ func runBinaryGarbageCollection(logger logr.Logger, envID string, latestVersion 
 		if err != nil {
 			return err
 		}
+
+		binaryPath := filepath.Join(opts.RootDir, dtcsi.DataPath, envID, "bin", dir.Name())
+
 		if len(subDirs) == 0 {
 			logger.Info("Garbage collector deleting unused version", "version", dir.Name())
-			err = os.RemoveAll(filepath.Join(opts.RootDir, dtcsi.DataPath, envID, "bin", dir.Name()+"-default"))
+			err = os.RemoveAll(binaryPath + "-default")
 			if err != nil {
 				return errors.WithStack(err)
 			}
-			err = os.RemoveAll(filepath.Join(opts.RootDir, dtcsi.DataPath, envID, "bin", dir.Name()+"-musl"))
+			err = os.RemoveAll(binaryPath + "-musl")
 			if err != nil {
 				return errors.WithStack(err)
 			}
