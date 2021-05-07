@@ -34,10 +34,17 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+)
+
+const (
+	logDir     = "log"
+	dataDir    = "datastorage"
+	versionDir = "version"
 )
 
 var log = logger.NewDTLogger().WithName("provisioner")
@@ -76,27 +83,20 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	rlog := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	rlog.Info("Reconciling DynaKube")
 
-	var dk dynatracev1alpha1.DynaKube
-	if err := r.client.Get(ctx, request.NamespacedName, &dk); err != nil {
+	dk, err := getCodeModule(ctx, r.client, request.NamespacedName)
+	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
-	}
-
-	if !dk.Spec.CodeModules.Enabled {
+	} else if dk == nil {
 		rlog.Info("Code modules disabled")
 		return reconcile.Result{RequeueAfter: 30 * time.Minute}, nil
 	}
 
-	var tkns corev1.Secret
-	if err := r.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tkns); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to query tokens: %w", err)
-	}
-
-	dtc, err := r.dtcBuildFunc(r.client, &dk, &tkns)
+	dtc, err := buildDtc(r, ctx, dk)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to create Dynatrace client: %w", err)
+		return reconcile.Result{}, err
 	}
 
 	ci, err := dtc.GetConnectionInfo()
@@ -105,66 +105,124 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	envDir := filepath.Join(r.opts.DataDir, ci.TenantUUID)
-	verFile := filepath.Join(envDir, "version")
 	tenantFile := filepath.Join(r.opts.DataDir, fmt.Sprintf("tenant-%s", dk.Name))
 
-	for _, dir := range []string{
-		envDir,
-		filepath.Join(envDir, "log"),
-		filepath.Join(envDir, "datastorage"),
-	} {
-		if err := r.mkDirAllFunc(dir, 0755); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to create directory %s: %w", dir, err)
-		}
+	if err = createCSIDirectories(envDir, r.mkDirAllFunc); err != nil {
+		return reconcile.Result{}, err
 	}
 
-	var oldDynaKubeTenant string
-	if b, err := r.readFileFunc(tenantFile); err != nil && !os.IsNotExist(err) {
-		return reconcile.Result{}, fmt.Errorf("failed to query assigned DynaKube tenant: %w", err)
-	} else {
-		oldDynaKubeTenant = string(b)
+	if err = updateTenantFile(ci.TenantUUID, tenantFile, r.writeFileFunc, r.readFileFunc); err != nil {
+		return reconcile.Result{}, err
 	}
 
-	if oldDynaKubeTenant != ci.TenantUUID {
-		_ = r.writeFileFunc(tenantFile, []byte(ci.TenantUUID), 0644)
+	if err = updateAgent(dtc, envDir, rlog, r.writeFileFunc, r.readFileFunc); err != nil {
+		return reconcile.Result{}, err
 	}
 
+	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+}
+
+func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1alpha1.DynaKube) (dtclient.Client, error) {
+	var tkns corev1.Secret
+	if err := r.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tkns); err != nil {
+		return nil, fmt.Errorf("failed to query tokens: %w", err)
+	}
+
+	dtc, err := r.dtcBuildFunc(r.client, dk, &tkns)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Dynatrace client: %w", err)
+	}
+
+	return dtc, nil
+}
+
+func getCodeModule(ctx context.Context, clt client.Client, namespacedName types.NamespacedName) (*dynatracev1alpha1.DynaKube, error) {
+	var dk dynatracev1alpha1.DynaKube
+	if err := clt.Get(ctx, namespacedName, &dk); err != nil {
+		return nil, err
+	}
+
+	if !dk.Spec.CodeModules.Enabled {
+		return nil, nil
+	}
+
+	return &dk, nil
+}
+
+func updateAgent(dtc dtclient.Client, envDir string, logger logr.Logger, writeFileFunc func(filename string, data []byte, perm fs.FileMode) error, readFileFunc func(filename string) ([]byte, error)) error {
+	versionFile := filepath.Join(envDir, versionDir)
 	ver, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to query OneAgent version: %w", err)
+		return fmt.Errorf("failed to query OneAgent version: %w", err)
 	}
 
 	var oldVer string
-	if b, err := r.readFileFunc(verFile); err != nil && !os.IsNotExist(err) {
-		return reconcile.Result{}, fmt.Errorf("failed to query installed OneAgent version: %w", err)
+	if b, err := readFileFunc(versionFile); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to query installed OneAgent version: %w", err)
 	} else {
 		oldVer = string(b)
 	}
 
+	if ver != oldVer {
+		if err = installAgentVersion(ver, envDir, dtc, logger, writeFileFunc); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func installAgentVersion(version string, envDir string, dtc dtclient.Client, logger logr.Logger, writeFileFunc func(filename string, data []byte, perm fs.FileMode) error) error {
+	versionFile := filepath.Join(envDir, versionDir)
 	arch := dtclient.ArchX86
 	if runtime.GOARCH == "arm64" {
 		arch = dtclient.ArchARM
 	}
 
-	if ver != oldVer {
-		for _, flavor := range []string{dtclient.FlavorDefault, dtclient.FlavorMUSL} {
-			targetDir := filepath.Join(envDir, "bin", ver+"-"+flavor)
+	for _, flavor := range []string{dtclient.FlavorDefault, dtclient.FlavorMUSL} {
+		targetDir := filepath.Join(envDir, "bin", version+"-"+flavor)
 
-			if _, err := os.Stat(targetDir); os.IsNotExist(err) {
-				installAgentCfg := newInstallAgentConfig(rlog, dtc, flavor, arch, targetDir)
+		if _, err := os.Stat(targetDir); os.IsNotExist(err) {
+			installAgentCfg := newInstallAgentConfig(logger, dtc, flavor, arch, targetDir)
 
 				if err := installAgent(installAgentCfg); err != nil {
-					if errDel := os.RemoveAll(targetDir); errDel != nil {
-						rlog.Error(errDel, "failed to delete target directory", "path", targetDir)
-					}
-
-					return reconcile.Result{}, fmt.Errorf("failed to install agent: %w", err)
+				if errDel := os.RemoveAll(targetDir); errDel != nil {
+					logger.Error(errDel, "failed to delete target directory", "path", targetDir)
 				}
+
+				return fmt.Errorf("failed to install agent: %w", err)
 			}
 		}
-
-		_ = r.writeFileFunc(verFile, []byte(ver), 0644)
 	}
 
-	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+	_ = writeFileFunc(versionFile, []byte(version), 0644)
+	return nil
+}
+
+func updateTenantFile(tenantUUID string, tenantFile string, writeFileFunc func(filename string, data []byte, perm fs.FileMode) error, readFileFunc func(filename string) ([]byte, error)) error {
+	var oldDynaKubeTenant string
+	if b, err := readFileFunc(tenantFile); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to query assigned DynaKube tenant: %w", err)
+	} else {
+		oldDynaKubeTenant = string(b)
+	}
+
+	if oldDynaKubeTenant != tenantUUID {
+		_ = writeFileFunc(tenantFile, []byte(tenantUUID), 0644)
+	}
+
+	return nil
+}
+
+func createCSIDirectories(envDir string, mkDirAllFunc func(path string, perm fs.FileMode) error) error {
+	for _, dir := range []string{
+		envDir,
+		filepath.Join(envDir, logDir),
+		filepath.Join(envDir, dataDir),
+	} {
+		if err := mkDirAllFunc(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
+	}
+	return nil
 }

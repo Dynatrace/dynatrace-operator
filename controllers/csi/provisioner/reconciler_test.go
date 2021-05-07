@@ -3,21 +3,22 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	"io/fs"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"io/fs"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"strings"
-	"testing"
-	"time"
 )
 
 const (
@@ -25,10 +26,6 @@ const (
 	testError   = "test-error"
 	testUid     = "test-uid"
 	testVersion = "test-version"
-
-	logDir     = "log"
-	dataDir    = "datastorage"
-	versionDir = "version"
 )
 
 func TestOneAgentProvisioner_Reconcile(t *testing.T) {
