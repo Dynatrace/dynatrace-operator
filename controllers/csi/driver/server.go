@@ -213,13 +213,13 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 	gcSymLink := filepath.Join(dtcsi.GarbageCollectionPath, volumeID)
 
 	gcFile, err := os.Readlink(gcSymLink)
-	if err != nil && !os.IsNotExist(err) {
+	if err != nil && os.IsNotExist(err) {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to read SymLink file for garbage collector - error: %s", err))
-	} else if !os.IsNotExist(err) {
-		if err = os.Remove(gcFile); err != nil && !os.IsNotExist(err) {
+	} else if os.IsNotExist(err) {
+		if err = os.Remove(gcFile); err != nil && os.IsNotExist(err) {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove file for garbage collector - error: %s", err))
 		}
-		if err = os.Remove(gcSymLink); err != nil && !os.IsNotExist(err) {
+		if err = os.Remove(gcSymLink); err != nil && os.IsNotExist(err) {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove SymLink for garbage collector - error: %s", err))
 		}
 	}
