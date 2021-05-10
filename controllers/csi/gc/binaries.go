@@ -30,6 +30,7 @@ func runBinaryGarbageCollection(logger logr.Logger, envID string, latestVersion 
 		}
 
 		binaryPath := filepath.Join(opts.RootDir, dtcsi.DataPath, envID, "bin", dir.Name())
+		logger.Info("garbage collecting path", "binaryPath", binaryPath)
 
 		if len(subDirs) == 0 {
 			logger.Info("Garbage collector deleting unused version", "version", dir.Name())
