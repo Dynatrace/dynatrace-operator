@@ -110,6 +110,7 @@ func (r *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, nil
 	}
 
+	r.logger.Info("running binary garbage collection")
 	if err := runBinaryGarbageCollection(r.logger, ci.TenantUUID, ver, r.opts); err != nil {
 		r.logger.Error(err, "garbage collection failed")
 		return reconcile.Result{}, nil
