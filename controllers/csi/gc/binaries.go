@@ -21,6 +21,10 @@ func runBinaryGarbageCollection(logger logr.Logger, envID string, latestVersion 
 	}
 
 	for _, dir := range gcDirs {
+		binaryPath := filepath.Join(opts.RootDir, dtcsi.DataPath, envID, "bin", dir.Name())
+		logger.Info("garbage collecting path", "binaryPath", binaryPath)
+		logger.Info("current latest version", "latestVersion", latestVersion)
+
 		if dir.Name() == latestVersion {
 			continue
 		}
@@ -29,7 +33,6 @@ func runBinaryGarbageCollection(logger logr.Logger, envID string, latestVersion 
 			return err
 		}
 
-		binaryPath := filepath.Join(opts.RootDir, dtcsi.DataPath, envID, "bin", dir.Name())
 		logger.Info("garbage collecting path", "binaryPath", binaryPath)
 
 		if len(subDirs) == 0 {
