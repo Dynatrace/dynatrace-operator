@@ -79,6 +79,7 @@ func (r *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.R
 	var dk dynatracev1alpha1.DynaKube
 	if err := r.client.Get(ctx, request.NamespacedName, &dk); err != nil {
 		if k8serrors.IsNotFound(err) {
+			r.logger.Error(err, "given DynaKube object not found")
 			return reconcile.Result{}, nil
 		}
 
