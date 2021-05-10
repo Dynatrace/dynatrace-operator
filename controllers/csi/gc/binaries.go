@@ -11,8 +11,9 @@ import (
 
 func runBinaryGarbageCollection(logger logr.Logger, envID string, latestVersion string, opts dtcsi.CSIOptions) error {
 	gcPath := filepath.Join(opts.RootDir, dtcsi.DataPath, envID, dtcsi.GarbageCollectionPath)
+	logger.Info("gc path", "gcPath", gcPath)
 	gcDirs, err := os.ReadDir(gcPath)
-	if err != nil && os.IsNotExist(err) {
+	if err != nil {
 		if os.IsNotExist(err) {
 			logger.Info("Garbage collector usage file could not be found")
 			return nil
