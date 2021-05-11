@@ -27,24 +27,24 @@ const (
 type Reconciler struct {
 	*activegate.Reconciler
 	log logr.Logger
-	*Capability
+	Capability
 }
 
-func NewReconciler(capability *Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
+func NewReconciler(capability Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
 	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
 	baseReconciler := activegate.NewReconciler(
 		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider,
-		capability.Properties, capability.ModuleName, capability.CapabilityName, capability.ServiceAccountOwner)
+		capability.GetProperties(), capability.GetModuleName(), capability.GetCapabilityName(), capability.GetConfiguration().ServiceAccountOwner)
 
-	if capability.Configuration.SetDnsEntryPoint {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.ModuleName))
+	if capability.GetConfiguration().SetDnsEntryPoint {
+		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.GetModuleName()))
 	}
 
-	if capability.Configuration.SetCommunicationPort {
+	if capability.GetConfiguration().SetCommunicationPort {
 		baseReconciler.AddOnAfterStatefulSetCreateListener(setCommunicationsPort(instance))
 	}
 
-	if capability.Configuration.SetReadinessPort {
+	if capability.GetConfiguration().SetReadinessPort {
 		baseReconciler.AddOnAfterStatefulSetCreateListener(setReadinessProbePort())
 	}
 
@@ -73,7 +73,7 @@ func setCommunicationsPort(_ *dynatracev1alpha1.DynaKube) activegate.StatefulSet
 }
 
 func (r *Reconciler) calculateStatefulSetName() string {
-	return r.Capability.CalculateStatefulSetName(r.Instance.Name)
+	return CalculateStatefulSetName(r.Capability, r.Instance.Name)
 }
 
 func addDNSEntryPoint(instance *dynatracev1alpha1.DynaKube, moduleName string) activegate.StatefulSetEvent {
@@ -91,7 +91,7 @@ func buildDNSEntryPoint(instance *dynatracev1alpha1.DynaKube, moduleName string)
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
-	if r.Configuration.CreateService {
+	if r.GetConfiguration().CreateService {
 		update, err = r.createServiceIfNotExists()
 		if update || err != nil {
 			return update, errors.WithStack(err)
@@ -103,11 +103,11 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 }
 
 func (r *Reconciler) createServiceIfNotExists() (bool, error) {
-	service := createService(r.Instance, r.ModuleName)
+	service := createService(r.Instance, r.GetModuleName())
 
 	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
 	if err != nil && k8serrors.IsNotFound(err) {
-		r.log.Info("creating service", "module", r.ModuleName)
+		r.log.Info("creating service", "module", r.GetModuleName())
 
 		if err := controllerutil.SetControllerReference(r.Instance, service, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)

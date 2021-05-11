@@ -28,19 +28,11 @@ const (
 	testNamespace = "test-namespace"
 )
 
-var cap = &Capability{
-	ModuleName:     "fakeModule",
-	CapabilityName: "fakeCap",
-	Properties: &v1alpha1.CapabilityProperties{
+var cap = NewMetricsCapability(
+	&v1alpha1.CapabilityProperties{
 		Enabled: true,
 	},
-	Configuration: Configuration{
-		SetDnsEntryPoint:     true,
-		SetReadinessPort:     true,
-		SetCommunicationPort: true,
-		CreateService:        true,
-	},
-}
+)
 
 func TestNewReconiler(t *testing.T) {
 	createDefaultReconciler(t)
@@ -78,7 +70,7 @@ func TestReconcile(t *testing.T) {
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
 
-		cap.Properties.CustomProperties = &v1alpha1.DynaKubeValueSource{
+		cap.GetProperties().CustomProperties = &v1alpha1.DynaKubeValueSource{
 			Value: testValue,
 		}
 		_, err := r.Reconcile()
@@ -89,7 +81,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		var customProperties corev1.Secret
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + cap.ModuleName + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + cap.GetModuleName() + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
 		assert.NoError(t, err)
 		assert.NotNil(t, customProperties)
 		assert.Contains(t, customProperties.Data, customproperties.DataKey)
@@ -115,7 +107,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
 			Name:  dtDNSEntryPoint,
-			Value: buildDNSEntryPoint(r.Instance, r.ModuleName),
+			Value: buildDNSEntryPoint(r.Instance, r.GetModuleName()),
 		})
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
@@ -165,7 +157,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		service := &corev1.Service{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(r.Instance.Name, r.ModuleName), Namespace: r.Instance.Namespace}, service)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(r.Instance.Name, r.GetModuleName()), Namespace: r.Instance.Namespace}, service)
 		assert.NoError(t, err)
 		assert.NotNil(t, service)
 
@@ -182,7 +174,7 @@ func TestReconcile(t *testing.T) {
 
 func TestSetReadinessProbePort(t *testing.T) {
 	r := createDefaultReconciler(t)
-	stsProps := activegate.NewStatefulSetProperties(r.Instance, cap.Properties, "", "", "", "", "")
+	stsProps := activegate.NewStatefulSetProperties(r.Instance, cap.GetProperties(), "", "", "", "", "")
 	sts, err := activegate.CreateStatefulSet(stsProps)
 
 	assert.NoError(t, err)
@@ -201,7 +193,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 	type fields struct {
 		Reconciler *activegate.Reconciler
 		log        logr.Logger
-		Capability *Capability
+		Capability *MetricsCapability
 	}
 	tests := []struct {
 		name   string
@@ -220,7 +212,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 				},
 				Capability: cap,
 			},
-			want: "instanceName-fakeModule",
+			want: "instanceName-metrics",
 		},
 		{
 			name: "empty instance name",
@@ -234,7 +226,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 				},
 				Capability: cap,
 			},
-			want: "-fakeModule",
+			want: "-" + cap.GetModuleName(),
 		},
 	}
 	for _, tt := range tests {

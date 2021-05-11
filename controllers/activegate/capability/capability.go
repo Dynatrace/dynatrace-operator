@@ -12,65 +12,93 @@ type Configuration struct {
 	ServiceAccountOwner  string
 }
 
-type Capability struct {
-	ModuleName     string
-	CapabilityName string
-	Properties     *dynatracev1alpha1.CapabilityProperties
+type Capability interface {
+	GetModuleName() string
+	GetCapabilityName() string
+	GetProperties() *dynatracev1alpha1.CapabilityProperties
+	GetConfiguration() Configuration
+}
+
+type capabilityBase struct {
+	moduleName     string
+	capabilityName string
+	properties     *dynatracev1alpha1.CapabilityProperties
 	Configuration
 }
 
-func (c *Capability) CalculateStatefulSetName(instanceName string) string {
-	return instanceName + "-" + c.ModuleName
+func (c *capabilityBase) GetProperties() *dynatracev1alpha1.CapabilityProperties {
+	return c.properties
 }
 
-type CapabilityType int
+func (c *capabilityBase) GetConfiguration() Configuration {
+	return c.Configuration
+}
 
-const (
-	KubeMon CapabilityType = iota
-	Routing
-	Metrics
-)
+func (c *capabilityBase) GetModuleName() string {
+	return c.moduleName
+}
 
-func NewCapability(ct CapabilityType, crProperties *dynatracev1alpha1.CapabilityProperties) *Capability {
-	if crProperties == nil {
-		return nil
-	}
+func (c *capabilityBase) GetCapabilityName() string {
+	return c.capabilityName
+}
 
-	switch ct {
-	case KubeMon:
-		return &Capability{
-			ModuleName:     "kubemon",
-			CapabilityName: "kubernetes_monitoring",
-			Properties:     crProperties,
+func CalculateStatefulSetName(capability Capability, instanceName string) string {
+	return instanceName + "-" + capability.GetModuleName()
+}
+
+type KubeMonCapability struct {
+	capabilityBase
+}
+
+type RoutingCapability struct {
+	capabilityBase
+}
+
+type MetricsCapability struct {
+	capabilityBase
+}
+
+func NewKubeMonCapability(crProperties *dynatracev1alpha1.CapabilityProperties) *KubeMonCapability {
+	return &KubeMonCapability{
+		capabilityBase{
+			moduleName:     "kubemon",
+			capabilityName: "kubernetes-monitoring",
+			properties:     crProperties,
 			Configuration: Configuration{
 				ServiceAccountOwner: "kubernetes-monitoring",
 			},
-		}
-	case Routing:
-		return &Capability{
-			ModuleName:     "routing",
-			CapabilityName: "MSGrouter",
-			Properties:     crProperties,
-			Configuration: Configuration{
-				SetDnsEntryPoint:     true,
-				SetReadinessPort:     true,
-				SetCommunicationPort: true,
-				CreateService:        true,
-			},
-		}
-	case Metrics:
-		return &Capability{
-			ModuleName:     "metrics",
-			CapabilityName: "metrics_ingest",
-			Properties:     crProperties,
-			Configuration: Configuration{
-				SetDnsEntryPoint:     true,
-				SetReadinessPort:     true,
-				SetCommunicationPort: true,
-				CreateService:        true,
-			},
-		}
+		},
 	}
+}
 
-	return nil
+func NewRoutingCapability(crProperties *dynatracev1alpha1.CapabilityProperties) *RoutingCapability {
+	return &RoutingCapability{
+		capabilityBase{
+			moduleName:     "routing",
+			capabilityName: "MSGrouter",
+			properties:     crProperties,
+			Configuration: Configuration{
+				SetDnsEntryPoint:     true,
+				SetReadinessPort:     true,
+				SetCommunicationPort: true,
+				CreateService:        true,
+			},
+		},
+	}
+}
+
+func NewMetricsCapability(crProperties *dynatracev1alpha1.CapabilityProperties) *MetricsCapability {
+	return &MetricsCapability{
+		capabilityBase{
+			moduleName:     "metrics",
+			capabilityName: "metrics_ingest",
+			properties:     crProperties,
+			Configuration: Configuration{
+				SetDnsEntryPoint:     true,
+				SetReadinessPort:     true,
+				SetCommunicationPort: true,
+				CreateService:        true,
+			},
+		},
+	}
 }

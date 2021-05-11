@@ -127,8 +127,8 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		var statefulSet appsv1.StatefulSet
 
-		kubeMonCapability := capability.NewCapability(capability.KubeMon, &instance.Spec.KubernetesMonitoringSpec.CapabilityProperties)
-		name := kubeMonCapability.CalculateStatefulSetName(instance.Name)
+		kubeMonCapability := capability.NewKubeMonCapability(&instance.Spec.KubernetesMonitoringSpec.CapabilityProperties)
+		name := capability.CalculateStatefulSetName(kubeMonCapability, instance.Name)
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
 
 		assert.NoError(t, err)
@@ -190,8 +190,8 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	_, err = r.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
-	routingCapability := capability.NewCapability(capability.Routing, &instance.Spec.RoutingSpec.CapabilityProperties)
-	stsName := routingCapability.CalculateStatefulSetName(testName)
+	routingCapability := capability.NewRoutingCapability(&instance.Spec.RoutingSpec.CapabilityProperties)
+	stsName := capability.CalculateStatefulSetName(routingCapability, testName)
 
 	routingSts := &appsv1.StatefulSet{}
 	err = r.client.Get(context.TODO(), client.ObjectKey{
@@ -204,7 +204,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	routingSvc := &corev1.Service{}
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      capability.BuildServiceName(testName, routingCapability.ModuleName),
+		Name:      capability.BuildServiceName(testName, routingCapability.GetModuleName()),
 	}, routingSvc)
 	assert.NoError(t, err)
 	assert.NotNil(t, routingSvc)
@@ -228,7 +228,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      capability.BuildServiceName(testName, routingCapability.ModuleName),
+		Name:      capability.BuildServiceName(testName, routingCapability.GetModuleName()),
 	}, routingSvc)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))

@@ -221,24 +221,24 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 }
 
 func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconciliation, dtc dtclient.Client) bool {
-	var caps = []*capability.Capability{
-		capability.NewCapability(capability.KubeMon, &rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
-		capability.NewCapability(capability.Routing, &rec.Instance.Spec.RoutingSpec.CapabilityProperties),
-		capability.NewCapability(capability.Metrics, &dynatracev1alpha1.CapabilityProperties{Enabled: rec.Instance.FeatureEnableMetricsIngest()}),
+	var caps = []capability.Capability{
+		capability.NewKubeMonCapability(&rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
+		capability.NewRoutingCapability(&rec.Instance.Spec.RoutingSpec.CapabilityProperties),
+		capability.NewMetricsCapability(&dynatracev1alpha1.CapabilityProperties{Enabled: rec.Instance.FeatureEnableMetricsIngest()}),
 	}
 
 	for _, c := range caps {
-		if c.Properties.Enabled {
+		if c.GetProperties().Enabled {
 			upd, err := capability.NewReconciler(
 				c, r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
 			).Reconcile()
-			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, c.ModuleName+" reconciled") {
+			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, c.GetModuleName()+" reconciled") {
 				return false
 			}
 		} else {
 			sts := appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      c.CalculateStatefulSetName(rec.Instance.Name),
+					Name:      capability.CalculateStatefulSetName(c, rec.Instance.Name),
 					Namespace: rec.Instance.Namespace,
 				},
 			}
@@ -246,10 +246,10 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconcili
 				return false
 			}
 
-			if c.Configuration.CreateService {
+			if c.GetConfiguration().CreateService {
 				svc := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      capability.BuildServiceName(rec.Instance.Name, c.ModuleName),
+						Name:      capability.BuildServiceName(rec.Instance.Name, c.GetModuleName()),
 						Namespace: rec.Instance.Namespace,
 					},
 				}
