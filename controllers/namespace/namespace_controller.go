@@ -99,7 +99,7 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 
 	tokenName := dk.Tokens()
 	if !dk.Spec.CodeModules.Enabled {
-		r.ensureSecretDeleted(tokenName, targetNS)
+		_ = r.ensureSecretDeleted(tokenName, targetNS)
 		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 	}
 

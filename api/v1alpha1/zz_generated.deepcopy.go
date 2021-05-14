@@ -19,7 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -253,6 +253,8 @@ func (in *DynaKubeStatus) DeepCopyInto(out *DynaKubeStatus) {
 		in, out := &in.LastClusterVersionProbeTimestamp, &out.LastClusterVersionProbeTimestamp
 		*out = (*in).DeepCopy()
 	}
+	in.ConnectionInfo.DeepCopyInto(&out.ConnectionInfo)
+	out.CommunicationHostForClient = in.CommunicationHostForClient
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
 		*out = make([]metav1.Condition, len(*in))

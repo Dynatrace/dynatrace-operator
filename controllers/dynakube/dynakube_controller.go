@@ -113,7 +113,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	}
 
 	rec := utils.NewReconciliation(reqLogger, instance)
-	r.reconcileImpl(ctx, rec)
+	r.reconcileDynaKube(ctx, rec)
 
 	if rec.Err != nil {
 		if rec.Updated || instance.Status.SetPhaseOnError(rec.Err) {
@@ -140,7 +140,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	return reconcile.Result{RequeueAfter: rec.RequeueAfter}, nil
 }
 
-func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconciliation) {
+func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Reconciliation) {
 	dtcReconciler := DynatraceClientReconciler{
 		Client:              r.client,
 		DynatraceClientFunc: r.dtcBuildFunc,
@@ -201,7 +201,7 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 
 	if rec.Instance.Spec.InfraMonitoring.Enabled {
 		upd, err := oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, rec.Log, dtc, rec.Instance, &rec.Instance.Spec.InfraMonitoring, oneagent.InframonFeature,
+			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.InfraMonitoring, oneagent.InframonFeature,
 		).Reconcile(ctx, rec)
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
 			return
@@ -215,7 +215,7 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 
 	if rec.Instance.Spec.ClassicFullStack.Enabled {
 		upd, err := oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, rec.Log, dtc, rec.Instance, &rec.Instance.Spec.ClassicFullStack, oneagent.ClassicFeature,
+			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.ClassicFullStack, oneagent.ClassicFeature,
 		).Reconcile(ctx, rec)
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "classic fullstack reconciled") {
 			return

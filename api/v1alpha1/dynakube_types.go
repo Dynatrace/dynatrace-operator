@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -280,6 +281,15 @@ type DynaKubeStatus struct {
 
 	// EnvironmentID contains the environment ID corresponding to the API URL
 	EnvironmentID string `json:"environmentID,omitempty"`
+
+	// KubeSystemUUID contains the UUID of the current Kubernetes cluster
+	KubeSystemUUID string `json:"kubeSystemUUID,omitempty"`
+
+	// ConnectionInfo caches information about the tenant and its communication hosts
+	ConnectionInfo dtclient.ConnectionInfo `json:"connectionInfo,omitempty"`
+
+	// CommunicationHostForClient caches a communication host specific to the api url.
+	CommunicationHostForClient dtclient.CommunicationHost `json:"communicationHostForClient,omitempty"`
 
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
