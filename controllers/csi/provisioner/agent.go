@@ -3,14 +3,17 @@ package csiprovisioner
 import (
 	"archive/zip"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	"github.com/go-logr/logr"
-	"github.com/spf13/afero"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/go-logr/logr"
+	"github.com/spf13/afero"
 )
+
+const agentConfPath = "agent/conf/"
 
 type installAgentConfig struct {
 	logger    logr.Logger
@@ -96,8 +99,6 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 }
 
 func unzip(r *zip.Reader, installAgentCfg *installAgentConfig) error {
-	const agentConfPath = "agent/conf/"
-
 	outDir := installAgentCfg.targetDir
 	logger := installAgentCfg.logger
 	fs := installAgentCfg.fs
