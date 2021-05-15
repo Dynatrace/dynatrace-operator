@@ -19,7 +19,6 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
-	"io"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -32,6 +31,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -185,7 +185,7 @@ func installAgentVersion(version string, envDir string, dtc dtclient.Client, log
 		if _, err := os.Stat(targetDir); os.IsNotExist(err) {
 			installAgentCfg := newInstallAgentConfig(logger, dtc, flavor, arch, targetDir)
 
-				if err := installAgent(installAgentCfg); err != nil {
+			if err := installAgent(installAgentCfg); err != nil {
 				if errDel := os.RemoveAll(targetDir); errDel != nil {
 					logger.Error(errDel, "failed to delete target directory", "path", targetDir)
 				}
