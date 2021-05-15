@@ -32,10 +32,35 @@ func SetDynakubeStatus(instance *dynatracev1alpha1.DynaKube, opts Options) error
 		return errors.WithStack(err)
 	}
 
+	communicationHostStatus := dynatracev1alpha1.CommunicationHostStatus{
+		Protocol: communicationHost.Protocol,
+		Host:     communicationHost.Host,
+		Port:     communicationHost.Port,
+	}
+
+	connectionInfoStatus := dynatracev1alpha1.ConnectionInfoStatus{
+		CommunicationHosts: communicationHostsToStatus(connectionInfo.CommunicationHosts),
+		TenantUUID:         connectionInfo.TenantUUID,
+	}
+
 	instance.Status.KubeSystemUUID = string(uid)
-	instance.Status.CommunicationHostForClient = communicationHost
-	instance.Status.ConnectionInfo = connectionInfo
+	instance.Status.CommunicationHostForClient = communicationHostStatus
+	instance.Status.ConnectionInfo = connectionInfoStatus
 	instance.Status.EnvironmentID = connectionInfo.TenantUUID
 
 	return nil
+}
+
+func communicationHostsToStatus(communicationHosts []dtclient.CommunicationHost) []dynatracev1alpha1.CommunicationHostStatus {
+	var communicationHostStatuses []dynatracev1alpha1.CommunicationHostStatus
+
+	for _, communicationHost := range communicationHosts {
+		communicationHostStatuses = append(communicationHostStatuses, dynatracev1alpha1.CommunicationHostStatus{
+			Protocol: communicationHost.Protocol,
+			Host:     communicationHost.Host,
+			Port:     communicationHost.Port,
+		})
+	}
+
+	return communicationHostStatuses
 }

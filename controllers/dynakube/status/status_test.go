@@ -84,7 +84,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 		assert.Equal(t, testUUID, instance.Status.ConnectionInfo.TenantUUID)
 		assert.Equal(t, testUUID, instance.Status.EnvironmentID)
 		assert.NotNil(t, instance.Status.ConnectionInfo.CommunicationHosts)
-		assert.Equal(t, []dtclient.CommunicationHost{
+		assert.Equal(t, []dynatracev1alpha1.CommunicationHostStatus{
 			{
 				Protocol: testProtocol,
 				Host:     testHost,

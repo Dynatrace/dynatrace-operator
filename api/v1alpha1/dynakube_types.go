@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -286,10 +285,10 @@ type DynaKubeStatus struct {
 	KubeSystemUUID string `json:"kubeSystemUUID,omitempty"`
 
 	// ConnectionInfo caches information about the tenant and its communication hosts
-	ConnectionInfo dtclient.ConnectionInfo `json:"connectionInfo,omitempty"`
+	ConnectionInfo ConnectionInfoStatus `json:"connectionInfo,omitempty"`
 
 	// CommunicationHostForClient caches a communication host specific to the api url.
-	CommunicationHostForClient dtclient.CommunicationHost `json:"communicationHostForClient,omitempty"`
+	CommunicationHostForClient CommunicationHostStatus `json:"communicationHostForClient,omitempty"`
 
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
@@ -297,6 +296,17 @@ type DynaKubeStatus struct {
 	ActiveGate ActiveGateStatus `json:"activeGate,omitempty"`
 
 	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
+}
+
+type ConnectionInfoStatus struct {
+	CommunicationHosts []CommunicationHostStatus `json:"communicationHosts,omitempty"`
+	TenantUUID         string                    `json:"tenantUUID,omitempty"`
+}
+
+type CommunicationHostStatus struct {
+	Protocol string `json:"protocol,omitempty"`
+	Host     string `json:"host,omitempty"`
+	Port     uint32 `json:"port,omitempty"`
 }
 
 type VersionStatus struct {

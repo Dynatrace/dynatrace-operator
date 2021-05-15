@@ -99,7 +99,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 		r.instance.Status.OneAgent.LastHostsRequestTimestamp = rec.Now.DeepCopy()
 		rec.Update(true, 5*time.Minute, "updated last host request time stamp")
 
-		upd, err := r.reconcileInstanceStatuses(ctx, r.logger, r.instance)
+		upd, err = r.reconcileInstanceStatuses(ctx, r.logger, r.instance)
 		rec.Update(upd, 5*time.Minute, "Instance statuses reconciled")
 		if rec.Error(err) {
 			return false, err
@@ -120,7 +120,7 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Rec
 	dsDesired, err := r.getDesiredDaemonSet(rec)
 	if err != nil {
 		rec.Log.Info("Failed to get desired daemonset")
-		return updateCR, err
+		return false, err
 	}
 
 	// Set OneAgent instance as the owner and controller
