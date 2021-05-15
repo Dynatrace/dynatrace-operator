@@ -30,8 +30,8 @@ const (
 func TestStatusOptions(t *testing.T) {
 	// Checks if StatusOptions struct and its properties exists
 	_ = Options{
-		dtc:       &dtclient.MockDynatraceClient{},
-		apiClient: fake.NewClient(),
+		Dtc:       &dtclient.MockDynatraceClient{},
+		ApiClient: fake.NewClient(),
 	}
 }
 
@@ -46,8 +46,8 @@ func TestSetDynakubeStatus(t *testing.T) {
 			},
 		})
 		options := Options{
-			dtc:       dtc,
-			apiClient: clt,
+			Dtc:       dtc,
+			ApiClient: clt,
 		}
 
 		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
@@ -102,8 +102,8 @@ func TestSetDynakubeStatus(t *testing.T) {
 		dtc := &dtclient.MockDynatraceClient{}
 		clt := fake.NewClient()
 		options := Options{
-			dtc:       dtc,
-			apiClient: clt,
+			Dtc:       dtc,
+			ApiClient: clt,
 		}
 
 		err := SetDynakubeStatus(instance, options)
@@ -119,8 +119,8 @@ func TestSetDynakubeStatus(t *testing.T) {
 			},
 		})
 		options := Options{
-			dtc:       dtc,
-			apiClient: clt,
+			Dtc:       dtc,
+			ApiClient: clt,
 		}
 
 		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{}, fmt.Errorf(testError))
@@ -138,8 +138,8 @@ func TestSetDynakubeStatus(t *testing.T) {
 			},
 		})
 		options := Options{
-			dtc:       dtc,
-			apiClient: clt,
+			Dtc:       dtc,
+			ApiClient: clt,
 		}
 
 		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{

@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/status"
 	"net/http"
 	"time"
 
@@ -148,8 +149,18 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 		UpdatePaaSToken:     true,
 	}
 	dtc, upd, err := dtcReconciler.Reconcile(ctx, rec.Instance)
+
 	rec.Update(upd, defaultUpdateInterval, "Token conditions updated")
 	if rec.Error(err) {
+		return
+	}
+
+	err = status.SetDynakubeStatus(rec.Instance, status.Options{
+		Dtc:       dtc,
+		ApiClient: r.apiReader,
+	})
+	if rec.Error(err) {
+		rec.Log.Error(err, "could not set Dynakube status")
 		return
 	}
 
@@ -161,7 +172,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	}
 
 	if rec.Instance.Spec.EnableIstio {
-		if upd, err := istio.NewController(r.config, r.scheme).ReconcileIstio(rec.Instance, dtc); err != nil {
+		if upd, err = istio.NewController(r.config, r.scheme).ReconcileIstio(rec.Instance, dtc); err != nil {
 			// If there are errors log them, but move on.
 			rec.Log.Info("Istio: failed to reconcile objects", "error", err)
 		} else if upd {
@@ -182,7 +193,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	rec.Error(err)
 
 	if rec.Instance.Spec.KubernetesMonitoringSpec.Enabled {
-		upd, err := kubemon.NewReconciler(
+		upd, err = kubemon.NewReconciler(
 			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
 		).Reconcile()
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "kubemon reconciled") {
@@ -200,7 +211,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	}
 
 	if rec.Instance.Spec.InfraMonitoring.Enabled {
-		upd, err := oneagent.NewOneAgentReconciler(
+		upd, err = oneagent.NewOneAgentReconciler(
 			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.InfraMonitoring, oneagent.InframonFeature,
 		).Reconcile(ctx, rec)
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
@@ -214,7 +225,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	}
 
 	if rec.Instance.Spec.ClassicFullStack.Enabled {
-		upd, err := oneagent.NewOneAgentReconciler(
+		upd, err = oneagent.NewOneAgentReconciler(
 			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.ClassicFullStack, oneagent.ClassicFeature,
 		).Reconcile(ctx, rec)
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "classic fullstack reconciled") {

@@ -9,13 +9,13 @@ import (
 )
 
 type Options struct {
-	dtc       dtclient.Client
-	apiClient client.Client
+	Dtc       dtclient.Client
+	ApiClient client.Reader
 }
 
 func SetDynakubeStatus(instance *dynatracev1alpha1.DynaKube, opts Options) error {
-	clt := opts.apiClient
-	dtc := opts.dtc
+	clt := opts.ApiClient
+	dtc := opts.Dtc
 
 	uid, err := kubesystem.GetUID(clt)
 	if err != nil {
