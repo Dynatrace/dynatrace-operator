@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/controllers/bootstrapper"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/namespace"
 	"github.com/Dynatrace/dynatrace-operator/controllers/nodes"
@@ -59,6 +60,7 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 		dynakube.Add,
 		namespace.Add,
 		nodes.Add,
+		bootstrapper.Add,
 	} {
 		if err := f(mgr, ns); err != nil {
 			return nil, err
