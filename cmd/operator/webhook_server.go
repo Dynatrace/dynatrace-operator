@@ -17,27 +17,23 @@ limitations under the License.
 package main
 
 import (
-	"os"
-	"path"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/webhook/server"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	webhook2 "sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Namespace:                  ns,
-		Scheme:                     scheme.Scheme,
-		MetricsBindAddress:         ":8383",
-		Port:                       8443,
-		LeaderElection:             true,
-		LeaderElectionID:           "dynatrace-webhook-server-lock",
-		LeaderElectionResourceLock: "configmaps",
-		LeaderElectionNamespace:    ns,
+		Namespace:          ns,
+		Scheme:             scheme.Scheme,
+		MetricsBindAddress: ":8383",
+		Port:               8443,
 	})
 	if err != nil {
 		return nil, err
@@ -50,7 +46,7 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 	log.Info("SSL certificates configured", "dir", certsDir, "key", keyFile, "cert", certFile)
 
 	// Wait until the certificates are available, otherwise the Manager will fail to start.
-	certFilePath := path.Join(certsDir, certFile)
+	/*certFilePath := path.Join(certsDir, certFile)
 	for threshold := time.Now().Add(5 * time.Minute); time.Now().Before(threshold); {
 		if _, err := os.Stat(certFilePath); os.IsNotExist(err) {
 			log.Info("Waiting for certificates to be available.")
@@ -61,11 +57,40 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 		}
 
 		break
+	}*/
+
+	for threshold := time.Now().Add(5 * time.Minute); time.Now().Before(threshold); {
+		err := server.UpdateCertificate(mgr, ws, ns, log)
+
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				log.Info("Waiting for certificate secret to be available.")
+			} else {
+				log.Info("Failed to update certificates", "error", err)
+			}
+			time.Sleep(10 * time.Second)
+			continue
+		}
+
+		break
 	}
+	startCertificateWatcher(mgr, ws, ns)
 
 	if err := server.AddToManager(mgr, ns); err != nil {
 		return nil, err
 	}
 
 	return mgr, nil
+}
+
+func startCertificateWatcher(mgr manager.Manager, ws *webhook2.Server, ns string) {
+	go func() {
+		for {
+			<-time.After(6 * time.Hour)
+			if err := server.UpdateCertificate(mgr, ws, ns, log); err != nil {
+				log.Info("Failed to update certificates", "error", err)
+			}
+		}
+	}()
+
 }
