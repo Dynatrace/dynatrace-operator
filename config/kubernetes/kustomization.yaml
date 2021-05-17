@@ -4,6 +4,7 @@ resources:
   - operator/podsecuritypolicy-operator.yaml
   - kubernetes-monitoring/podsecuritypolicy-kubernetes-monitoring.yaml
   - routing/podsecuritypolicy-routing.yaml
+  - metrics/podsecuritypolicy-metrics.yaml
   - oneagent/podsecuritypolicy-oneagent.yaml
   - oneagent/podsecuritypolicy-oneagent-unprivileged.yaml
   - oneagent/role-oneagent.yaml
