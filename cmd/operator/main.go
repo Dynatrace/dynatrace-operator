@@ -33,12 +33,11 @@ var (
 )
 
 var subcmdCallbacks = map[string]func(ns string, cfg *rest.Config) (manager.Manager, error){
-	"operator":             startOperator,
-	"webhook-bootstrapper": startWebhookBoostrapper,
-	"webhook-server":       startWebhookServer,
+	"operator":       startOperator,
+	"webhook-server": startWebhookServer,
 }
 
-var errBadSubcmd = errors.New("subcommand must be operator, webhook-bootstrapper, or webhook-server")
+var errBadSubcmd = errors.New("subcommand must be operator, or webhook-server")
 
 var (
 	certsDir string
@@ -48,7 +47,7 @@ var (
 
 func main() {
 	webhookServerFlags := pflag.NewFlagSet("webhook-server", pflag.ExitOnError)
-	webhookServerFlags.StringVar(&certsDir, "certs-dir", "/mnt/webhook-certs", "Directory to look certificates for.")
+	webhookServerFlags.StringVar(&certsDir, "certs-dir", "/tmp/webhook/certs", "Directory to look certificates for.")
 	webhookServerFlags.StringVar(&certFile, "cert", "tls.crt", "File name for the public certificate.")
 	webhookServerFlags.StringVar(&keyFile, "cert-key", "tls.key", "File name for the private key.")
 

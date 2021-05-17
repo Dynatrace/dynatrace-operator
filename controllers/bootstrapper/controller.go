@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"reflect"
 	"time"
 
@@ -22,33 +19,28 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-// time between consecutive queries for a new pod to get ready
 const (
 	webhookName = "dynatrace-webhook"
-	certsDir    = "/mnt/webhook-certs"
 )
 
 // AddToManager creates a new OneAgent Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-func AddToManager(mgr manager.Manager, ns string) error {
+func Add(mgr manager.Manager, ns string) error {
 
 	return add(mgr, &ReconcileWebhook{
 		client:    mgr.GetClient(),
 		scheme:    mgr.GetScheme(),
 		namespace: ns,
 		logger:    log.Log.WithName("webhook.controller"),
-		certsDir:  certsDir,
 	})
 }
 
-// add adds a new OneAgentController to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r *ReconcileWebhook) error {
 	// Create a new controller
 	c, err := controller.New("webhook-bootstrapper-controller", mgr, controller.Options{Reconciler: r})
@@ -68,6 +60,7 @@ func add(mgr manager.Manager, r *ReconcileWebhook) error {
 		// some time before inserting an element so that the Channel has time to initialize.
 		time.Sleep(10 * time.Second)
 
+		// todo(gakr): Change to 6 hours
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
 
@@ -81,14 +74,6 @@ func add(mgr manager.Manager, r *ReconcileWebhook) error {
 			}
 		}
 	}()
-
-	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		r.logger.Error(err, "could not start health endpoint for operator")
-	}
-
-	if err = mgr.AddReadyzCheck("healthz", healthz.Ping); err != nil {
-		r.logger.Error(err, "could not start ready endpoint for operator")
-	}
 
 	return nil
 }
@@ -204,21 +189,6 @@ func (r *ReconcileWebhook) reconcileCerts(ctx context.Context, log logr.Logger) 
 
 	if err != nil {
 		return nil, err
-	}
-
-	for _, key := range []string{"tls.crt", "tls.key"} {
-		f := filepath.Join(r.certsDir, key)
-
-		data, err := ioutil.ReadFile(f)
-		if err != nil && !os.IsNotExist(err) {
-			return nil, err
-		}
-
-		if os.IsNotExist(err) || !bytes.Equal(data, cs.Data[key]) {
-			if err := ioutil.WriteFile(f, cs.Data[key], 0666); err != nil {
-				return nil, err
-			}
-		}
 	}
 
 	return cs.Data["ca.crt"], nil
