@@ -181,10 +181,6 @@ type RoutingSpec struct {
 	CapabilityProperties `json:",inline"`
 }
 
-type MetricsIngestSpec struct {
-	CapabilityProperties `json:",inline"`
-}
-
 type KubernetesMonitoringSpec struct {
 	CapabilityProperties `json:",inline"`
 }
