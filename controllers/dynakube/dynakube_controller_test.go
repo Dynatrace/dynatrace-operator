@@ -5,8 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability/kubemon"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability/routing"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -127,7 +126,10 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 
 		var statefulSet appsv1.StatefulSet
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: instance.Name + kubemon.StatefulSetSuffix, Namespace: testNamespace}, &statefulSet)
+
+		kubeMonCapability := capability.NewKubeMonCapability(&instance.Spec.KubernetesMonitoringSpec.CapabilityProperties)
+		name := capability.CalculateStatefulSetName(kubeMonCapability, instance.Name)
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, statefulSet)
@@ -188,10 +190,13 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	_, err = r.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
+	routingCapability := capability.NewRoutingCapability(&instance.Spec.RoutingSpec.CapabilityProperties)
+	stsName := capability.CalculateStatefulSetName(routingCapability, testName)
+
 	routingSts := &appsv1.StatefulSet{}
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      testName + routing.StatefulSetSuffix,
+		Name:      stsName,
 	}, routingSts)
 	assert.NoError(t, err)
 	assert.NotNil(t, routingSts)
@@ -199,7 +204,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	routingSvc := &corev1.Service{}
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      routing.BuildServiceName(testName, routing.Module),
+		Name:      capability.BuildServiceName(testName, routingCapability.GetModuleName()),
 	}, routingSvc)
 	assert.NoError(t, err)
 	assert.NotNil(t, routingSvc)
@@ -216,14 +221,14 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      testName + routing.StatefulSetSuffix,
+		Name:      stsName,
 	}, routingSts)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
 
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      routing.BuildServiceName(testName, routing.Module),
+		Name:      capability.BuildServiceName(testName, routingCapability.GetModuleName()),
 	}, routingSvc)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))

@@ -1,4 +1,4 @@
-package capability
+package activegate
 
 import (
 	"context"
