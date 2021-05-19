@@ -187,7 +187,7 @@ func TestNewKubeMonCapability(t *testing.T) {
 			want: &KubeMonCapability{
 				capabilityBase: capabilityBase{
 					moduleName:     "kubemon",
-					capabilityName: "kubernetes-monitoring",
+					capabilityName: "kubernetes_monitoring",
 					properties:     props,
 					Configuration: Configuration{
 						ServiceAccountOwner: "kubernetes-monitoring",
