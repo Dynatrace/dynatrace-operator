@@ -25,6 +25,7 @@ const (
 	DriverName            = "csi.oneagent.dynatrace.com"
 	GarbageCollectionPath = "gc"
 	LogDir                = "log"
+	VersionDir            = "version"
 )
 
 type CSIOptions struct {
