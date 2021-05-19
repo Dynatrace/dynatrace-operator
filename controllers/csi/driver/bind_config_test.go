@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	testName   = "test-name"
-	testTenant = "test-tenant"
+	dkName     = "a-dynakube"
+	tenantUuid = "a-tenant-uuid"
 )
 
 func TestCSIDriverServer_NewBindConfig(t *testing.T) {
@@ -29,8 +29,8 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			client: clt,
 		}
 		volumeCfg := &volumeConfig{
-			namespace: testNamespace,
-			podUID:    testUid,
+			namespace: namespace,
+			podUID:    podUid,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
@@ -41,18 +41,18 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 				return nil
 			})
 
-		assert.EqualError(t, err, "rpc error: code = FailedPrecondition desc = Failed to query namespace test-namespace: namespaces \"test-namespace\" not found")
+		assert.NotNil(t, err)
 		assert.Nil(t, bindCfg)
 	})
 	t.Run(`no dynakube instance label`, func(t *testing.T) {
 		clt := fake.NewClient(
-			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}})
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}})
 		srv := &CSIDriverServer{
 			client: clt,
 		}
 		volumeCfg := &volumeConfig{
-			namespace: testNamespace,
-			podUID:    testUid,
+			namespace: namespace,
+			podUID:    podUid,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
@@ -63,18 +63,18 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 				return nil
 			})
 
-		assert.EqualError(t, err, "rpc error: code = FailedPrecondition desc = Namespace 'test-namespace' doesn't have DynaKube assigned")
+		assert.NotNil(t, err)
 		assert.Nil(t, bindCfg)
 	})
 	t.Run(`failed to extract tenant from file`, func(t *testing.T) {
 		clt := fake.NewClient(
-			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace, Labels: map[string]string{webhook.LabelInstance: testName}}})
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}})
 		srv := &CSIDriverServer{
 			client: clt,
 		}
 		volumeCfg := &volumeConfig{
-			namespace: testNamespace,
-			podUID:    testUid,
+			namespace: namespace,
+			podUID:    podUid,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
@@ -85,23 +85,23 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 				return nil
 			})
 
-		assert.EqualError(t, err, "rpc error: code = Unavailable desc = Failed to extract tenant for DynaKube test-name: test error message")
+		assert.NotNil(t, err)
 		assert.Nil(t, bindCfg)
 	})
 	t.Run(`failed to create directories`, func(t *testing.T) {
 		clt := fake.NewClient(
-			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace, Labels: map[string]string{webhook.LabelInstance: testName}}})
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}})
 		srv := &CSIDriverServer{
 			client: clt,
 		}
 		volumeCfg := &volumeConfig{
-			namespace: testNamespace,
-			podUID:    testUid,
+			namespace: namespace,
+			podUID:    podUid,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
 			func(filename string) ([]byte, error) {
-				return []byte(testTenant), nil
+				return []byte(tenantUuid), nil
 			},
 			func(path string, perm fs.FileMode) error {
 				return fmt.Errorf(testError)
@@ -112,13 +112,13 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 	})
 	t.Run(`failed to read version file`, func(t *testing.T) {
 		clt := fake.NewClient(
-			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace, Labels: map[string]string{webhook.LabelInstance: testName}}})
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}})
 		srv := &CSIDriverServer{
 			client: clt,
 		}
 		volumeCfg := &volumeConfig{
-			namespace: testNamespace,
-			podUID:    testUid,
+			namespace: namespace,
+			podUID:    podUid,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
@@ -126,33 +126,33 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 				if strings.HasSuffix(filename, "version") {
 					return []byte(""), fmt.Errorf(testError)
 				}
-				return []byte(testTenant), nil
+				return []byte(tenantUuid), nil
 			},
 			func(path string, perm fs.FileMode) error {
 				return nil
 			})
 
-		assert.EqualError(t, err, "rpc error: code = Internal desc = Failed to query agent directory for DynaKube test-name: test error message")
+		assert.NotNil(t, err)
 		assert.Nil(t, bindCfg)
 	})
 	t.Run(`create correct bind config`, func(t *testing.T) {
 		clt := fake.NewClient(
-			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace, Labels: map[string]string{webhook.LabelInstance: testName}}},
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}},
 			&dynatracev1alpha1.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Name: testName},
+				ObjectMeta: metav1.ObjectMeta{Name: dkName},
 			},
 		)
 		srv := &CSIDriverServer{
 			client: clt,
 		}
 		volumeCfg := &volumeConfig{
-			namespace: testNamespace,
-			podUID:    testUid,
+			namespace: namespace,
+			podUID:    podUid,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
 			func(filename string) ([]byte, error) {
-				return []byte(testTenant), nil
+				return []byte(tenantUuid), nil
 			},
 			func(path string, perm fs.FileMode) error {
 				return nil
@@ -160,7 +160,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, bindCfg)
-		assert.Equal(t, path.Join(dtcsi.DataPath, testTenant, "bin", testTenant), bindCfg.agentDir)
-		assert.Equal(t, path.Join(dtcsi.DataPath, testTenant), bindCfg.envDir)
+		assert.Equal(t, path.Join(dtcsi.DataPath, tenantUuid, "bin", tenantUuid), bindCfg.agentDir)
+		assert.Equal(t, path.Join(dtcsi.DataPath, tenantUuid), bindCfg.envDir)
 	})
 }

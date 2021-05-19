@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	testId        = "test-id"
-	testUid       = "test-uid"
-	testNamespace = "test-namespace"
-	testTarget    = "target"
+	volumeId   = "a-volume-id"
+	podUid     = "a-pod-uid"
+	namespace  = "a-namespace"
+	targetPath = "a-target-path"
 )
 
 func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
@@ -33,7 +33,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 	t.Run(`No target path`, func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{},
-			VolumeId:         testId,
+			VolumeId:         volumeId,
 		}
 		volumeCfg, err := parsePublishVolumeRequest(request)
 
@@ -47,8 +47,8 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 					Block: &csi.VolumeCapability_BlockVolume{},
 				},
 			},
-			VolumeId:   testId,
-			TargetPath: testTarget,
+			VolumeId:   volumeId,
+			TargetPath: targetPath,
 		}
 		volumeCfg, err := parsePublishVolumeRequest(request)
 
@@ -58,8 +58,8 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 	t.Run(`Access type is not of type mount access`, func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{},
-			VolumeId:         testId,
-			TargetPath:       testTarget,
+			VolumeId:         volumeId,
+			TargetPath:       targetPath,
 		}
 		volumeCfg, err := parsePublishVolumeRequest(request)
 
@@ -73,8 +73,8 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 					Mount: &csi.VolumeCapability_MountVolume{},
 				},
 			},
-			VolumeId:   testId,
-			TargetPath: testTarget,
+			VolumeId:   volumeId,
+			TargetPath: targetPath,
 		}
 		volumeCfg, err := parsePublishVolumeRequest(request)
 
@@ -88,8 +88,8 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 					Mount: &csi.VolumeCapability_MountVolume{},
 				},
 			},
-			VolumeId:      testId,
-			TargetPath:    testTarget,
+			VolumeId:      volumeId,
+			TargetPath:    targetPath,
 			VolumeContext: map[string]string{},
 		}
 		volumeCfg, err := parsePublishVolumeRequest(request)
@@ -104,10 +104,10 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 					Mount: &csi.VolumeCapability_MountVolume{},
 				},
 			},
-			VolumeId:   testId,
-			TargetPath: testTarget,
+			VolumeId:   volumeId,
+			TargetPath: targetPath,
 			VolumeContext: map[string]string{
-				podNamespaceContextKey: testNamespace,
+				podNamespaceContextKey: namespace,
 			},
 		}
 		volumeCfg, err := parsePublishVolumeRequest(request)
@@ -122,20 +122,20 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 					Mount: &csi.VolumeCapability_MountVolume{},
 				},
 			},
-			VolumeId:   testId,
-			TargetPath: testTarget,
+			VolumeId:   volumeId,
+			TargetPath: targetPath,
 			VolumeContext: map[string]string{
-				podNamespaceContextKey: testNamespace,
-				podUIDContextKey:       testUid,
+				podNamespaceContextKey: namespace,
+				podUIDContextKey:       podUid,
 			},
 		}
 		volumeCfg, err := parsePublishVolumeRequest(request)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, volumeCfg)
-		assert.Equal(t, testUid, volumeCfg.podUID)
-		assert.Equal(t, testNamespace, volumeCfg.namespace)
-		assert.Equal(t, testId, volumeCfg.volumeId)
-		assert.Equal(t, testTarget, volumeCfg.targetPath)
+		assert.Equal(t, podUid, volumeCfg.podUID)
+		assert.Equal(t, namespace, volumeCfg.namespace)
+		assert.Equal(t, volumeId, volumeCfg.volumeId)
+		assert.Equal(t, targetPath, volumeCfg.targetPath)
 	})
 }
