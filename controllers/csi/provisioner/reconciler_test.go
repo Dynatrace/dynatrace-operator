@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -12,8 +13,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,6 +30,33 @@ const (
 	testUid     = "test-uid"
 	testVersion = "test-version"
 )
+
+type mkDirAllErrorFs struct {
+	afero.Fs
+}
+
+func (fs *mkDirAllErrorFs) MkdirAll(_ string, _ os.FileMode) error {
+	return fmt.Errorf(testError)
+}
+
+type readFileErrorFs struct {
+	afero.Fs
+}
+
+func (fs *readFileErrorFs) Open(_ string) (afero.File, error) {
+	return nil, fmt.Errorf(testError)
+}
+
+type readVersionFileErrorFs struct {
+	afero.Fs
+}
+
+func (fs *readVersionFileErrorFs) Open(name string) (afero.File, error) {
+	if strings.HasSuffix(name, versionDir) {
+		return nil, fmt.Errorf(testError)
+	}
+	return fs.Fs.Open(name)
+}
 
 func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`no dynakube instance`, func(t *testing.T) {
@@ -140,6 +170,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run(`error creating directories`, func(t *testing.T) {
+		errorfs := &mkDirAllErrorFs{
+			Fs: afero.NewMemMapFs(),
+		}
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: testUid,
@@ -165,9 +198,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(rtc client.Client, instance *v1alpha1.DynaKube, secret *v1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			mkDirAllFunc: func(path string, perm fs.FileMode) error {
-				return fmt.Errorf(testError)
-			},
+			fs: errorfs,
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: testName}})
 
@@ -176,6 +207,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run(`error reading tenant file`, func(t *testing.T) {
+		errorFs := &readFileErrorFs{
+			Fs: afero.NewMemMapFs(),
+		}
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: testUid,
@@ -201,12 +235,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(rtc client.Client, instance *v1alpha1.DynaKube, secret *v1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			mkDirAllFunc: func(path string, perm fs.FileMode) error {
-				return nil
-			},
-			readFileFunc: func(filename string) ([]byte, error) {
-				return nil, fmt.Errorf(testError)
-			},
+			fs: errorFs,
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: testName}})
 
@@ -215,7 +244,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run(`error getting latest agent version`, func(t *testing.T) {
-		writtenFiles := make(map[string][]byte)
+		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: testUid,
@@ -244,27 +273,43 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(rtc client.Client, instance *v1alpha1.DynaKube, secret *v1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			mkDirAllFunc: func(path string, perm fs.FileMode) error {
-				return nil
-			},
-			readFileFunc: func(filename string) ([]byte, error) {
-				return nil, nil
-			},
-			writeFileFunc: func(filename string, data []byte, perm fs.FileMode) error {
-				writtenFiles[filename] = data
-				return nil
-			},
+			fs: memFs,
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: testName}})
-
-		assert.Contains(t, writtenFiles, "tenant-test-name")
-		assert.Equal(t, testUid, string(writtenFiles["tenant-test-name"]))
 
 		assert.EqualError(t, err, "failed to query OneAgent version: "+testError)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
+
+		exists, err := afero.Exists(memFs, testUid)
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		exists, err = afero.Exists(memFs, filepath.Join(testUid, logDir))
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		exists, err = afero.Exists(memFs, filepath.Join(testUid, dataDir))
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		exists, err = afero.Exists(memFs, "tenant-test-name")
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		data, err := afero.ReadFile(memFs, "tenant-test-name")
+
+		assert.NoError(t, err)
+		assert.Equal(t, testUid, string(data))
 	})
 	t.Run(`error reading install version`, func(t *testing.T) {
+		errorFs := &readVersionFileErrorFs{
+			Fs: afero.NewMemMapFs(),
+		}
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: testUid,
@@ -293,27 +338,41 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(rtc client.Client, instance *v1alpha1.DynaKube, secret *v1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			mkDirAllFunc: func(path string, perm fs.FileMode) error {
-				return nil
-			},
-			readFileFunc: func(filename string) ([]byte, error) {
-				if strings.HasSuffix(filename, versionDir) {
-					return nil, fmt.Errorf(testError)
-				}
-				return nil, nil
-			},
-			writeFileFunc: func(filename string, data []byte, perm fs.FileMode) error {
-				return nil
-			},
+			fs: errorFs,
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: testName}})
 
 		assert.EqualError(t, err, "failed to query installed OneAgent version: "+testError)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
+
+		exists, err := afero.Exists(errorFs, testUid)
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		exists, err = afero.Exists(errorFs, filepath.Join(testUid, logDir))
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		exists, err = afero.Exists(errorFs, filepath.Join(testUid, dataDir))
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		exists, err = afero.Exists(errorFs, "tenant-test-name")
+
+		assert.NoError(t, err)
+		assert.True(t, exists)
+
+		data, err := afero.ReadFile(errorFs, "tenant-test-name")
+
+		assert.NoError(t, err)
+		assert.Equal(t, testUid, string(data))
 	})
 	t.Run(`correct directories are created`, func(t *testing.T) {
-		createdDirs := make(map[string]fs.FileMode)
+		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: testUid,
@@ -342,32 +401,33 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(rtc client.Client, instance *v1alpha1.DynaKube, secret *v1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			mkDirAllFunc: func(path string, perm fs.FileMode) error {
-				createdDirs[path] = perm
-				return nil
-			},
-			readFileFunc: func(filename string) ([]byte, error) {
-				if strings.HasSuffix(filename, versionDir) {
-					return []byte(testVersion), nil
-				}
-				return nil, nil
-			},
-			writeFileFunc: func(filename string, data []byte, perm fs.FileMode) error {
-				return nil
-			},
+			fs: memFs,
 		}
+
+		err := afero.WriteFile(memFs, filepath.Join(testUid, versionDir), []byte(testVersion), fs.FileMode(0755))
+
+		require.NoError(t, err)
+
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: testName}})
-
-		assert.Contains(t, createdDirs, testUid)
-		assert.Contains(t, createdDirs, filepath.Join(testUid, logDir))
-		assert.Contains(t, createdDirs, filepath.Join(testUid, dataDir))
-
-		assert.Equal(t, fs.FileMode(0755), createdDirs[testUid])
-		assert.Equal(t, fs.FileMode(0755), createdDirs[filepath.Join(testUid, logDir)])
-		assert.Equal(t, fs.FileMode(0755), createdDirs[filepath.Join(testUid, dataDir)])
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{RequeueAfter: 5 * time.Minute}, result)
+
+		for _, path := range []string{
+			testUid,
+			filepath.Join(testUid, logDir),
+			filepath.Join(testUid, dataDir),
+		} {
+			exists, err := afero.Exists(memFs, path)
+
+			assert.NoError(t, err)
+			assert.True(t, exists)
+
+			fileInfo, err := memFs.Stat(path)
+
+			assert.NoError(t, err)
+			assert.True(t, fileInfo.IsDir())
+		}
 	})
 }

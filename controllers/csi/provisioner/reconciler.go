@@ -19,8 +19,6 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
-	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -32,6 +30,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/go-logr/logr"
+	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -51,23 +50,19 @@ var log = logger.NewDTLogger().WithName("provisioner")
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
-	client        client.Client
-	opts          dtcsi.CSIOptions
-	dtcBuildFunc  dynakube.DynatraceClientFunc
-	mkDirAllFunc  func(path string, perm fs.FileMode) error
-	writeFileFunc func(filename string, data []byte, perm fs.FileMode) error
-	readFileFunc  func(filename string) ([]byte, error)
+	client       client.Client
+	opts         dtcsi.CSIOptions
+	dtcBuildFunc dynakube.DynatraceClientFunc
+	fs           afero.Fs
 }
 
 // NewReconciler returns a new OneAgentProvisioner
 func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
-		client:        mgr.GetClient(),
-		opts:          opts,
-		dtcBuildFunc:  dynakube.BuildDynatraceClient,
-		mkDirAllFunc:  os.MkdirAll,
-		writeFileFunc: ioutil.WriteFile,
-		readFileFunc:  ioutil.ReadFile,
+		client:       mgr.GetClient(),
+		opts:         opts,
+		dtcBuildFunc: dynakube.BuildDynatraceClient,
+		fs:           afero.NewOsFs(),
 	}
 }
 
@@ -107,15 +102,15 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	envDir := filepath.Join(r.opts.DataDir, ci.TenantUUID)
 	tenantFile := filepath.Join(r.opts.DataDir, fmt.Sprintf("tenant-%s", dk.Name))
 
-	if err = createCSIDirectories(envDir, r.mkDirAllFunc); err != nil {
+	if err = r.createCSIDirectories(envDir); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err = updateTenantFile(ci.TenantUUID, tenantFile, r.writeFileFunc, r.readFileFunc); err != nil {
+	if err = r.updateTenantFile(ci.TenantUUID, tenantFile); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err = updateAgent(dtc, envDir, rlog, r.writeFileFunc, r.readFileFunc); err != nil {
+	if err = r.updateAgent(dtc, envDir, rlog); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -149,7 +144,7 @@ func getCodeModule(ctx context.Context, clt client.Client, namespacedName types.
 	return &dk, nil
 }
 
-func updateAgent(dtc dtclient.Client, envDir string, logger logr.Logger, writeFileFunc func(filename string, data []byte, perm fs.FileMode) error, readFileFunc func(filename string) ([]byte, error)) error {
+func (r *OneAgentProvisioner) updateAgent(dtc dtclient.Client, envDir string, logger logr.Logger) error {
 	versionFile := filepath.Join(envDir, versionDir)
 	ver, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
@@ -157,14 +152,14 @@ func updateAgent(dtc dtclient.Client, envDir string, logger logr.Logger, writeFi
 	}
 
 	var oldVer string
-	if b, err := readFileFunc(versionFile); err != nil && !os.IsNotExist(err) {
+	if b, err := afero.ReadFile(r.fs, versionFile); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to query installed OneAgent version: %w", err)
 	} else {
 		oldVer = string(b)
 	}
 
 	if ver != oldVer {
-		if err = installAgentVersion(ver, envDir, dtc, logger, writeFileFunc); err != nil {
+		if err = r.installAgentVersion(ver, envDir, dtc, logger); err != nil {
 			return err
 		}
 	}
@@ -172,7 +167,7 @@ func updateAgent(dtc dtclient.Client, envDir string, logger logr.Logger, writeFi
 	return nil
 }
 
-func installAgentVersion(version string, envDir string, dtc dtclient.Client, logger logr.Logger, writeFileFunc func(filename string, data []byte, perm fs.FileMode) error) error {
+func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string, dtc dtclient.Client, logger logr.Logger) error {
 	versionFile := filepath.Join(envDir, versionDir)
 	arch := dtclient.ArchX86
 	if runtime.GOARCH == "arm64" {
@@ -182,11 +177,11 @@ func installAgentVersion(version string, envDir string, dtc dtclient.Client, log
 	for _, flavor := range []string{dtclient.FlavorDefault, dtclient.FlavorMUSL} {
 		targetDir := filepath.Join(envDir, "bin", version+"-"+flavor)
 
-		if _, err := os.Stat(targetDir); os.IsNotExist(err) {
+		if _, err := r.fs.Stat(targetDir); os.IsNotExist(err) {
 			installAgentCfg := newInstallAgentConfig(logger, dtc, flavor, arch, targetDir)
 
 			if err := installAgent(installAgentCfg); err != nil {
-				if errDel := os.RemoveAll(targetDir); errDel != nil {
+				if errDel := r.fs.RemoveAll(targetDir); errDel != nil {
 					logger.Error(errDel, "failed to delete target directory", "path", targetDir)
 				}
 
@@ -195,32 +190,32 @@ func installAgentVersion(version string, envDir string, dtc dtclient.Client, log
 		}
 	}
 
-	_ = writeFileFunc(versionFile, []byte(version), 0644)
+	_ = afero.WriteFile(r.fs, versionFile, []byte(version), 0644)
 	return nil
 }
 
-func updateTenantFile(tenantUUID string, tenantFile string, writeFileFunc func(filename string, data []byte, perm fs.FileMode) error, readFileFunc func(filename string) ([]byte, error)) error {
+func (r *OneAgentProvisioner) updateTenantFile(tenantUUID string, tenantFile string) error {
 	var oldDynaKubeTenant string
-	if b, err := readFileFunc(tenantFile); err != nil && !os.IsNotExist(err) {
+	if b, err := afero.ReadFile(r.fs, tenantFile); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to query assigned DynaKube tenant: %w", err)
 	} else {
 		oldDynaKubeTenant = string(b)
 	}
 
 	if oldDynaKubeTenant != tenantUUID {
-		_ = writeFileFunc(tenantFile, []byte(tenantUUID), 0644)
+		_ = afero.WriteFile(r.fs, tenantFile, []byte(tenantUUID), 0644)
 	}
 
 	return nil
 }
 
-func createCSIDirectories(envDir string, mkDirAllFunc func(path string, perm fs.FileMode) error) error {
+func (r *OneAgentProvisioner) createCSIDirectories(envDir string) error {
 	for _, dir := range []string{
 		envDir,
 		filepath.Join(envDir, logDir),
 		filepath.Join(envDir, dataDir),
 	} {
-		if err := mkDirAllFunc(dir, 0755); err != nil {
+		if err := r.fs.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
