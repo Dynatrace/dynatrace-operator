@@ -11,7 +11,7 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/go-logr/logr"
@@ -202,7 +202,7 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: mergedLabels,
 					Annotations: map[string]string{
-						capability.AnnotationVersion: instance.Status.OneAgent.Version,
+						activegate.AnnotationVersion: instance.Status.OneAgent.Version,
 					},
 				},
 				Spec: podSpec,
@@ -223,7 +223,7 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 	if err != nil {
 		return nil, err
 	}
-	ds.Annotations[capability.AnnotationTemplateHash] = dsHash
+	ds.Annotations[activegate.AnnotationTemplateHash] = dsHash
 
 	return ds, nil
 }
@@ -589,7 +589,7 @@ func generateDaemonSetHash(ds *appsv1.DaemonSet) (string, error) {
 
 func getTemplateHash(a metav1.Object) string {
 	if annotations := a.GetAnnotations(); annotations != nil {
-		return annotations[capability.AnnotationTemplateHash]
+		return annotations[activegate.AnnotationTemplateHash]
 	}
 	return ""
 }
