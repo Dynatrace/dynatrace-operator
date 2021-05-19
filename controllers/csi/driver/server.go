@@ -178,12 +178,12 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount OneAgent volume: %s", err.Error()))
 	}
 
-	gcFile := filepath.Join(bindCfg.envDir, dtcsi.GarbageCollectionPath, bindCfg.version, volumeCfg.podUID)
-	if err = ioutil.WriteFile(gcFile, nil, 0770); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create file for garbage collector - error: %s", err))
+	podToVersionReference := filepath.Join(bindCfg.envDir, dtcsi.GarbageCollectionPath, bindCfg.version, volumeCfg.podUID)
+	if err = ioutil.WriteFile(podToVersionReference, nil, 0770); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create pod to version reference file - error: %s", err))
 	}
-	if err = os.Symlink(gcFile, filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeCfg.volumeId)); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create SymLink for garbage collector - error: %s", err))
+	if err = os.Symlink(podToVersionReference, filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeCfg.volumeId)); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create volume to pod reference SymLink for garbage collector - error: %s", err))
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
@@ -210,17 +210,17 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount volume: %s", err.Error()))
 	}
 
-	gcSymLink := filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeID)
+	volumeToPodReference := filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeID)
 
-	gcFile, err := os.Readlink(gcSymLink)
+	podToVersionReference, err := os.Readlink(volumeToPodReference)
 	if err != nil && !os.IsNotExist(err) {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to read SymLink file for garbage collector - error: %s", err))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to read volume to pod SymLink for garbage collector - error: %s", err))
 	} else if !os.IsNotExist(err) {
-		if err = os.Remove(gcFile); err != nil && !os.IsNotExist(err) {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove file for garbage collector - error: %s", err))
+		if err = os.Remove(podToVersionReference); err != nil && !os.IsNotExist(err) {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove pod to version reference file for garbage collector - error: %s", err))
 		}
-		if err = os.Remove(gcSymLink); err != nil && !os.IsNotExist(err) {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove SymLink for garbage collector - error: %s", err))
+		if err = os.Remove(volumeToPodReference); err != nil && !os.IsNotExist(err) {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove volume to pod SymLink for garbage collector - error: %s", err))
 		}
 	}
 

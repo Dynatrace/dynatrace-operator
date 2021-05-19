@@ -1,54 +1,55 @@
 package csigc
 
 import (
-	"os"
 	"path/filepath"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"github.com/spf13/afero"
 )
 
-func runBinaryGarbageCollection(logger logr.Logger, envID string, latestVersion string, opts dtcsi.CSIOptions) error {
-	gcPath := filepath.Join(opts.RootDir, dtcsi.DataPath, envID, dtcsi.GarbageCollectionPath)
-	logger.Info("gc path", "gcPath", gcPath)
-	gcDirs, err := os.ReadDir(gcPath)
+func (gc *CSIGarbageCollector) runBinaryGarbageCollection(envID string, latestVersion string) error {
+	fs := &afero.Afero{Fs: gc.fs}
+
+	versionReferenceBasePath := filepath.Join(gc.opts.RootDir, dtcsi.DataPath, envID, dtcsi.GarbageCollectionPath)
+	gc.logger.Info("gc path", "versionReferenceBasePath", versionReferenceBasePath, "latestVersion", latestVersion)
+	versionReferences, err := fs.ReadDir(versionReferenceBasePath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			logger.Info("Garbage collector usage file could not be found")
+		exists, _ := fs.DirExists(versionReferenceBasePath)
+		if !exists {
+			gc.logger.Info("Garbage collector usage file could not be found")
 			return nil
 		}
 		return errors.WithStack(err)
 	}
 
-	for _, dir := range gcDirs {
-		binaryPath := filepath.Join(opts.RootDir, dtcsi.DataPath, envID, "bin", dir.Name())
-		logger.Info("garbage collecting path", "binaryPath", binaryPath)
-		logger.Info("current latest version", "latestVersion", latestVersion)
+	for _, version := range versionReferences {
+		binaryPath := filepath.Join(gc.opts.RootDir, dtcsi.DataPath, envID, "bin", version.Name())
+		gc.logger.Info("garbage collecting path", "binaryPath", binaryPath)
 
-		if dir.Name() == latestVersion {
+		if version.Name() == latestVersion {
 			continue
 		}
-		subDirs, err := os.ReadDir(filepath.Join(gcPath, dir.Name()))
+		podReferences, err := fs.ReadDir(filepath.Join(versionReferenceBasePath, version.Name()))
 		if err != nil {
 			return err
 		}
 
-		logger.Info("garbage collecting path", "binaryPath", binaryPath)
+		gc.logger.Info("garbage collecting path", "binaryPath", binaryPath)
 
-		if len(subDirs) == 0 {
-			logger.Info("Garbage collector deleting unused version", "version", dir.Name())
-			err = os.RemoveAll(binaryPath + "-default")
+		if len(podReferences) == 0 {
+			gc.logger.Info("Garbage collector deleting unused version", "version", version.Name())
+			err = fs.RemoveAll(binaryPath + "-default")
 			if err != nil {
-				return errors.WithStack(err)
+				gc.logger.Info("warning - failed to delete default binary path", "version", version.Name())
 			}
-			err = os.RemoveAll(binaryPath + "-musl")
+			err = fs.RemoveAll(binaryPath + "-musl")
 			if err != nil {
-				return errors.WithStack(err)
+				gc.logger.Info("warning - failed to delete musl binary path", "version", version.Name())
 			}
-			err = os.RemoveAll(filepath.Join(gcPath, dir.Name()))
+			err = fs.RemoveAll(filepath.Join(versionReferenceBasePath, version.Name()))
 			if err != nil {
-				return errors.WithStack(err)
+				gc.logger.Info("warning - failed to delete version reference base path", "version", version.Name())
 			}
 		}
 	}

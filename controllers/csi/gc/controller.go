@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
+	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -22,6 +23,7 @@ type CSIGarbageCollector struct {
 	logger       logr.Logger
 	opts         dtcsi.CSIOptions
 	dtcBuildFunc dynakube.DynatraceClientFunc
+	fs           afero.Fs
 }
 
 // NewReconciler returns a new CSIGarbageCollector
@@ -31,59 +33,60 @@ func NewReconciler(client client.Client, opts dtcsi.CSIOptions) *CSIGarbageColle
 		logger:       log.Log.WithName("csi.gc.controller"),
 		opts:         opts,
 		dtcBuildFunc: dynakube.BuildDynatraceClient,
+		fs:           afero.NewOsFs(),
 	}
 }
 
-func (r *CSIGarbageCollector) SetupWithManager(mgr ctrl.Manager) error {
+func (gc *CSIGarbageCollector) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&dynatracev1alpha1.DynaKube{}).
-		Complete(r)
+		Complete(gc)
 }
 
 var _ reconcile.Reconciler = &CSIGarbageCollector{}
 
-func (r *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	r.logger.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
-	reconcileResult := reconcile.Result{RequeueAfter: r.opts.GCInterval}
+func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	gc.logger.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
+	reconcileResult := reconcile.Result{RequeueAfter: gc.opts.GCInterval}
 
 	var dk dynatracev1alpha1.DynaKube
-	if err := r.client.Get(ctx, request.NamespacedName, &dk); err != nil {
+	if err := gc.client.Get(ctx, request.NamespacedName, &dk); err != nil {
 		if k8serrors.IsNotFound(err) {
-			r.logger.Error(err, "given DynaKube object not found")
+			gc.logger.Error(err, "given DynaKube object not found")
 			return reconcileResult, nil
 		}
 
-		r.logger.Error(err, "failed to get DynaKube object")
+		gc.logger.Error(err, "failed to get DynaKube object")
 		return reconcileResult, nil
 	}
 
-	var tkns corev1.Secret
-	if err := r.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tkns); err != nil {
-		r.logger.Error(err, "failed to query tokens")
+	var tokens corev1.Secret
+	if err := gc.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
+		gc.logger.Error(err, "failed to query tokens")
 		return reconcileResult, nil
 	}
 
-	dtc, err := r.dtcBuildFunc(r.client, &dk, &tkns)
+	dtc, err := gc.dtcBuildFunc(gc.client, &dk, &tokens)
 	if err != nil {
-		r.logger.Error(err, "failed to create Dynatrace client")
+		gc.logger.Error(err, "failed to create Dynatrace client")
 		return reconcileResult, nil
 	}
 
 	ci, err := dtc.GetConnectionInfo()
 	if err != nil {
-		r.logger.Error(err, "failed to fetch connection info")
+		gc.logger.Error(err, "failed to fetch connection info")
 		return reconcileResult, nil
 	}
 
 	ver, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
-		r.logger.Error(err, "failed to query OneAgent version")
+		gc.logger.Error(err, "failed to query OneAgent version")
 		return reconcileResult, nil
 	}
 
-	r.logger.Info("running binary garbage collection")
-	if err := runBinaryGarbageCollection(r.logger, ci.TenantUUID, ver, r.opts); err != nil {
-		r.logger.Error(err, "garbage collection failed")
+	gc.logger.Info("running binary garbage collection")
+	if err := gc.runBinaryGarbageCollection(ci.TenantUUID, ver); err != nil {
+		gc.logger.Error(err, "garbage collection failed")
 		return reconcileResult, nil
 	}
 
