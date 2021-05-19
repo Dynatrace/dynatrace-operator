@@ -50,6 +50,14 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		}).
 		Build()
 	dtc := &dtclient.MockDynatraceClient{}
+
+	dtc.On("GetAGTenantInfo").
+		Return(&dtclient.TenantInfo{
+			ID:                    "123",
+			Token:                 "asdf",
+			Endpoints:             []string{"aaa", "bbb", "ccc"},
+			CommunicationEndpoint: "comm",
+		}, nil)
 	instance := &v1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,

@@ -15,8 +15,11 @@ type TenantInfo struct {
 	CommunicationEndpoint string
 }
 
-func (dtc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
-	url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dtc.url)
+type responseReader func(*dynatraceClient, []byte) (*TenantInfo, error)
+
+func (dtc *dynatraceClient) GetTenantInfo(apiEndpoint string, readResponseForTenantInfo responseReader) (*TenantInfo, error) {
+	url := fmt.Sprintf(apiEndpoint, dtc.url)
+
 	response, err := dtc.makeRequest(
 		url,
 		dynatracePaaSToken,
@@ -41,7 +44,7 @@ func (dtc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	tenantInfo, err := dtc.readResponseForTenantInfo(data)
+	tenantInfo, err := readResponseForTenantInfo(dtc, data)
 	if err != nil {
 		dtc.logger.Error(err, err.Error())
 		return nil, errors.WithStack(err)
@@ -52,6 +55,37 @@ func (dtc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
 
 	tenantInfo.CommunicationEndpoint = tenantInfo.findCommunicationEndpoint()
 	return tenantInfo, nil
+}
+
+func (dtc *dynatraceClient) GetAGTenantInfo() (*TenantInfo, error) {
+	const apiEndpoint = "%s/v1/deployment/installer/gateway/connectioninfo"
+	return dtc.GetTenantInfo(apiEndpoint, (*dynatraceClient).readResponseForAGTenantInfo)
+}
+
+func (dtc *dynatraceClient) GetAgentTenantInfo() (*TenantInfo, error) {
+	const apiEndpoint = "%s/v1/deployment/installer/agent/connectioninfo"
+	return dtc.GetTenantInfo(apiEndpoint, (*dynatraceClient).readResponseForTenantInfo)
+}
+
+func (dtc *dynatraceClient) readResponseForAGTenantInfo(response []byte) (*TenantInfo, error) {
+	type jsonResponse struct {
+		TenantUUID             string
+		TenantToken            string
+		CommunicationEndpoints string
+	}
+
+	jr := &jsonResponse{}
+	err := json.Unmarshal(response, jr)
+	if err != nil {
+		dtc.logger.Error(err, "error unmarshalling json response")
+		return nil, errors.WithStack(err)
+	}
+
+	return &TenantInfo{
+		ID:        jr.TenantUUID,
+		Token:     jr.TenantToken,
+		Endpoints: strings.Split(jr.CommunicationEndpoints, ","),
+	}, nil
 }
 
 func (dtc *dynatraceClient) readResponseForTenantInfo(response []byte) (*TenantInfo, error) {

@@ -52,8 +52,11 @@ type Client interface {
 	// GetTokenScopes returns the list of scopes assigned to a token if successful.
 	GetTokenScopes(token string) (TokenScopes, error)
 
-	// GetTenantInfo returns TenantInfo that holds UUID, Tenant Token and Endpoints
-	GetTenantInfo() (*TenantInfo, error)
+	// GetAgentTenantInfo returns TenantInfo that holds UUID, Tenant Token and Endpoints
+	GetAgentTenantInfo() (*TenantInfo, error)
+
+	// GetAGTenantInfo returns TenantInfo that holds UUID, Tenant Token and Endpoints
+	GetAGTenantInfo() (*TenantInfo, error)
 }
 
 // Known OS values.

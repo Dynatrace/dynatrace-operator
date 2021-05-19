@@ -117,6 +117,13 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			}, nil)
 		mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+		mockClient.On("GetAGTenantInfo").
+			Return(&dtclient.TenantInfo{
+				ID:                    "123",
+				Token:                 "asdf",
+				Endpoints:             []string{"aaa", "bbb", "ccc"},
+				CommunicationEndpoint: "comm",
+			}, nil)
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -182,6 +189,13 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 		}, nil)
 	mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 	mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+	mockClient.On("GetAGTenantInfo").
+		Return(&dtclient.TenantInfo{
+			ID:                    "123",
+			Token:                 "asdf",
+			Endpoints:             []string{"aaa", "bbb", "ccc"},
+			CommunicationEndpoint: "comm",
+		}, nil)
 
 	_, err := r.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
