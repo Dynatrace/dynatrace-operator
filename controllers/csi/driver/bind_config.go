@@ -53,7 +53,7 @@ func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeC
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to query agent directory for DynaKube %s: %s", dkName, err.Error()))
 	}
 
-	agentDir := filepath.Join(envDir, "bin", string(ver)+"-"+volumeCfg.flavor)
+	agentDir := filepath.Join(envDir, "bin", string(ver))
 
 	return &bindConfig{
 		agentDir: agentDir,

@@ -10,7 +10,6 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +31,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		volumeCfg := &volumeConfig{
 			namespace: testNamespace,
 			podUID:    testUid,
-			flavor:    dtclient.FlavorMUSL,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
@@ -55,7 +53,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		volumeCfg := &volumeConfig{
 			namespace: testNamespace,
 			podUID:    testUid,
-			flavor:    dtclient.FlavorMUSL,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
@@ -78,7 +75,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		volumeCfg := &volumeConfig{
 			namespace: testNamespace,
 			podUID:    testUid,
-			flavor:    dtclient.FlavorMUSL,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
@@ -101,7 +97,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		volumeCfg := &volumeConfig{
 			namespace: testNamespace,
 			podUID:    testUid,
-			flavor:    dtclient.FlavorMUSL,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
@@ -124,7 +119,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		volumeCfg := &volumeConfig{
 			namespace: testNamespace,
 			podUID:    testUid,
-			flavor:    dtclient.FlavorMUSL,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
@@ -154,7 +148,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		volumeCfg := &volumeConfig{
 			namespace: testNamespace,
 			podUID:    testUid,
-			flavor:    dtclient.FlavorMUSL,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
@@ -167,7 +160,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, bindCfg)
-		assert.Equal(t, path.Join(dtcsi.DataPath, testTenant, "bin", fmt.Sprintf("%s-musl", testTenant)), bindCfg.agentDir)
+		assert.Equal(t, path.Join(dtcsi.DataPath, testTenant, "bin", testTenant), bindCfg.agentDir)
 		assert.Equal(t, path.Join(dtcsi.DataPath, testTenant), bindCfg.envDir)
 	})
 }
