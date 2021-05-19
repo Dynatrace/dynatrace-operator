@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/spf13/afero"
@@ -52,7 +53,7 @@ type readVersionFileErrorFs struct {
 }
 
 func (fs *readVersionFileErrorFs) Open(name string) (afero.File, error) {
-	if strings.HasSuffix(name, versionDir) {
+	if strings.HasSuffix(name, dtcsi.VersionDir) {
 		return nil, fmt.Errorf(testError)
 	}
 	return fs.Fs.Open(name)
@@ -202,7 +203,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: testName}})
 
-		assert.EqualError(t, err, "failed to create directory "+testUid+": "+testError)
+		assert.EqualError(t, err, "failed to create directory "+filepath.Join(dtcsi.DataPath, testUid)+": "+testError)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 	})
@@ -281,27 +282,28 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 
-		exists, err := afero.Exists(memFs, testUid)
+		testUidPath := filepath.Join(dtcsi.DataPath, testUid)
+		exists, err := afero.Exists(memFs, testUidPath)
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		exists, err = afero.Exists(memFs, filepath.Join(testUid, logDir))
+		exists, err = afero.Exists(memFs, filepath.Join(testUidPath, dtcsi.LogDir))
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		exists, err = afero.Exists(memFs, filepath.Join(testUid, dataDir))
+		exists, err = afero.Exists(memFs, filepath.Join(testUidPath, dtcsi.DatastorageDir))
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		exists, err = afero.Exists(memFs, "tenant-test-name")
+		exists, err = afero.Exists(memFs, filepath.Join(dtcsi.DataPath, "tenant-test-name"))
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		data, err := afero.ReadFile(memFs, "tenant-test-name")
+		data, err := afero.ReadFile(memFs, filepath.Join(dtcsi.DataPath, "tenant-test-name"))
 
 		assert.NoError(t, err)
 		assert.Equal(t, testUid, string(data))
@@ -346,27 +348,28 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 
-		exists, err := afero.Exists(errorFs, testUid)
+		testUidPath := filepath.Join(dtcsi.DataPath, testUid)
+		exists, err := afero.Exists(errorFs, testUidPath)
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		exists, err = afero.Exists(errorFs, filepath.Join(testUid, logDir))
+		exists, err = afero.Exists(errorFs, filepath.Join(testUidPath, dtcsi.LogDir))
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		exists, err = afero.Exists(errorFs, filepath.Join(testUid, dataDir))
+		exists, err = afero.Exists(errorFs, filepath.Join(testUidPath, dtcsi.DatastorageDir))
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		exists, err = afero.Exists(errorFs, "tenant-test-name")
+		exists, err = afero.Exists(errorFs, filepath.Join(dtcsi.DataPath, "tenant-test-name"))
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		data, err := afero.ReadFile(errorFs, "tenant-test-name")
+		data, err := afero.ReadFile(errorFs, filepath.Join(dtcsi.DataPath, "tenant-test-name"))
 
 		assert.NoError(t, err)
 		assert.Equal(t, testUid, string(data))
@@ -404,7 +407,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			fs: memFs,
 		}
 
-		err := afero.WriteFile(memFs, filepath.Join(testUid, versionDir), []byte(testVersion), fs.FileMode(0755))
+		err := afero.WriteFile(memFs, filepath.Join(dtcsi.DataPath, testUid, dtcsi.VersionDir), []byte(testVersion), fs.FileMode(0755))
 
 		require.NoError(t, err)
 
@@ -415,9 +418,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.Equal(t, reconcile.Result{RequeueAfter: 5 * time.Minute}, result)
 
 		for _, path := range []string{
-			testUid,
-			filepath.Join(testUid, logDir),
-			filepath.Join(testUid, dataDir),
+			filepath.Join(dtcsi.DataPath, testUid),
+			filepath.Join(dtcsi.DataPath, testUid, dtcsi.LogDir),
+			filepath.Join(dtcsi.DataPath, testUid, dtcsi.DatastorageDir),
 		} {
 			exists, err := afero.Exists(memFs, path)
 
