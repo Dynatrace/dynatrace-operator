@@ -28,6 +28,8 @@ spec:
             - --node-id=$(KUBE_NODE_NAME)
             - --health-probe-bind-address=:10080
           env:
+            - name: GC_INTERVAL_MINUTES
+              value: "60"
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:

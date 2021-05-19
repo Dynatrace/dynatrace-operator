@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
@@ -128,7 +129,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
 			func(filename string) ([]byte, error) {
-				if strings.HasPrefix(filename, testTenant) {
+				if strings.HasSuffix(filename, "version") {
 					return []byte(""), fmt.Errorf(testError)
 				}
 				return []byte(testTenant), nil
@@ -166,7 +167,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, bindCfg)
-		assert.Equal(t, path.Join(testTenant, "bin", fmt.Sprintf("%s-musl", testTenant)), bindCfg.agentDir)
-		assert.Equal(t, testTenant, bindCfg.envDir)
+		assert.Equal(t, path.Join(dtcsi.DataPath, testTenant, "bin", fmt.Sprintf("%s-musl", testTenant)), bindCfg.agentDir)
+		assert.Equal(t, path.Join(dtcsi.DataPath, testTenant), bindCfg.envDir)
 	})
 }
