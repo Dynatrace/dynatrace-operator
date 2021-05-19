@@ -3,6 +3,7 @@ package capability
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
@@ -24,6 +25,9 @@ import (
 const (
 	containerPort   = 9999
 	dtDNSEntryPoint = "DT_DNS_ENTRY_POINT"
+	dtTenantUUID    = "DT_TENANT"
+	dtTenantToken   = "DT_TOKEN"
+	dtServer        = "DT_SERVER"
 )
 
 type Reconciler struct {
@@ -36,6 +40,8 @@ func NewReconciler(capability capability.Capability, clt client.Client, apiReade
 	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
 	baseReconciler := sts.NewReconciler(
 		clt, apiReader, scheme, log, instance, imageVersionProvider, capability)
+
+	baseReconciler.AddOnAfterStatefulSetCreateListener(addTenantInfo(dtc))
 
 	if capability.GetConfiguration().SetDnsEntryPoint {
 		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.GetModuleName()))
@@ -75,6 +81,29 @@ func setCommunicationsPort(_ *dynatracev1alpha1.DynaKube) events.StatefulSetEven
 
 func (r *Reconciler) calculateStatefulSetName() string {
 	return capability.CalculateStatefulSetName(r.Capability, r.Instance.Name)
+}
+
+func addTenantInfo(dtc dtclient.Client) activegate.StatefulSetEvent {
+	info, err := dtc.GetAGTenantInfo()
+	if err != nil {
+		return nil
+	}
+
+	return func(sts *appsv1.StatefulSet) {
+		sts.Spec.Template.Spec.Containers[0].Env = append(sts.Spec.Template.Spec.Containers[0].Env,
+			corev1.EnvVar{
+				Name:  dtServer,
+				Value: strings.Join(info.Endpoints, ","),
+			},
+			corev1.EnvVar{
+				Name:  dtTenantUUID,
+				Value: info.ID,
+			},
+			corev1.EnvVar{
+				Name:  dtTenantToken,
+				Value: info.Token,
+			})
+	}
 }
 
 func addDNSEntryPoint(instance *dynatracev1alpha1.DynaKube, moduleName string) events.StatefulSetEvent {
