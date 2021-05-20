@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
-	_ "github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"

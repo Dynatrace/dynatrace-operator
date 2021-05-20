@@ -188,6 +188,7 @@ func mockDynatraceClientFunc(communicationHosts *[]string) dynakube.DynatraceCli
 
 		dtc := new(dtclient.MockDynatraceClient)
 		dtc.On("GetLatestAgentVersion", "unix", "default").Return("17", nil)
+		dtc.On("GetLatestAgentVersion", "unix", "paas").Return("18", nil)
 		dtc.On("GetConnectionInfo").Return(connInfo, nil)
 		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
 			Protocol: "https",
