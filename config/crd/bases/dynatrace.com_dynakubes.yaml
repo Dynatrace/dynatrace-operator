@@ -2507,6 +2507,10 @@ spec:
                 for the PaaS token validity was sent
               format: date-time
               type: string
+            latestAgentVersion:
+              description: LatestAgentVersionUnixDefault caches the current agent
+                version which is configured for the environment
+              type: string
             oneAgent:
               properties:
                 imageHash:

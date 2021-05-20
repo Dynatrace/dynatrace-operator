@@ -290,6 +290,9 @@ type DynaKubeStatus struct {
 	// CommunicationHostForClient caches a communication host specific to the api url.
 	CommunicationHostForClient CommunicationHostStatus `json:"communicationHostForClient,omitempty"`
 
+	// LatestAgentVersionUnixDefault caches the current agent version which is configured for the environment
+	LatestAgentVersionUnixDefault string `json:"latestAgentVersion,omitempty"`
+
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 

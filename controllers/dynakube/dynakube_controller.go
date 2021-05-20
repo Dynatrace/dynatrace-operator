@@ -171,7 +171,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	}
 
 	if rec.Instance.Spec.EnableIstio {
-		if upd, err = istio.NewController(r.config, r.scheme).ReconcileIstio(rec.Instance, dtc); err != nil {
+		if upd, err = istio.NewController(r.config, r.scheme).ReconcileIstio(rec.Instance); err != nil {
 			// If there are errors log them, but move on.
 			rec.Log.Info("Istio: failed to reconcile objects", "error", err)
 		} else if upd {
@@ -180,14 +180,14 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	}
 
 	err = dtpullsecret.
-		NewReconciler(r.client, r.apiReader, r.scheme, rec.Instance, dtc, rec.Log, secret).
+		NewReconciler(r.client, r.apiReader, r.scheme, rec.Instance, rec.Log, secret).
 		Reconcile()
 	if rec.Error(err) {
 		rec.Log.Error(err, "could not reconcile Dynatrace pull secret")
 		return
 	}
 
-	upd, err = updates.ReconcileVersions(ctx, rec, r.client, dtc, dtversion.GetImageVersion)
+	upd, err = updates.ReconcileVersions(ctx, rec, r.client, dtversion.GetImageVersion)
 	rec.Update(upd, defaultUpdateInterval, "Found updates")
 	rec.Error(err)
 

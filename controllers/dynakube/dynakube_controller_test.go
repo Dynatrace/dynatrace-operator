@@ -25,6 +25,7 @@ const (
 	testUID       = "test-uid"
 	testPaasToken = "test-paas-token"
 	testAPIToken  = "test-api-token"
+	testVersion   = "1.217-12345-678910"
 
 	testUUID = "test-uuid"
 
@@ -73,6 +74,8 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{TenantUUID: "abc123456"}, nil)
+		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
+
 		instance := &v1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -169,6 +172,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		}, nil)
 		mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -250,6 +254,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	}, nil)
 	mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 	mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 
 	_, err := r.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)

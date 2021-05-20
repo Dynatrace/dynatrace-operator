@@ -7,7 +7,6 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,7 +23,6 @@ func ReconcileVersions(
 	ctx context.Context,
 	rec *utils.Reconciliation,
 	cl client.Client,
-	dtc dtclient.Client,
 	verProvider VersionProviderCallback,
 ) (bool, error) {
 	upd := false
@@ -36,7 +34,7 @@ func ReconcileVersions(
 
 	if needsOneAgentUpdate && !dk.NeedsImmutableOneAgent() {
 		upd = true
-		if err := updateOneAgentInstallerVersion(rec, dk, dtc); err != nil {
+		if err := updateOneAgentInstallerVersion(rec, dk); err != nil {
 			rec.Log.Error(err, "Failed to fetch OneAgent installer version")
 		}
 	}
@@ -116,13 +114,9 @@ func updateImageVersion(
 	return nil
 }
 
-func updateOneAgentInstallerVersion(rec *utils.Reconciliation, dk *dynatracev1alpha1.DynaKube, dtc dtclient.Client) error {
+func updateOneAgentInstallerVersion(rec *utils.Reconciliation, dk *dynatracev1alpha1.DynaKube) error {
 	dk.Status.OneAgent.LastUpdateProbeTimestamp = rec.Now.DeepCopy()
-
-	ver, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
-	if err != nil {
-		return err
-	}
+	ver := dk.Status.LatestAgentVersionUnixDefault
 
 	oldVer := dk.Status.OneAgent.Version
 

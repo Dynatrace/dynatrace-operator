@@ -24,7 +24,8 @@ const (
 	testAnotherPort     = uint32(5678)
 	testAnotherProtocol = "test-another-protocol"
 
-	testError = "test-error"
+	testError   = "test-error"
+	testVersion = "1.217.12345-678910"
 )
 
 func TestStatusOptions(t *testing.T) {
@@ -72,6 +73,8 @@ func TestSetDynakubeStatus(t *testing.T) {
 			TenantUUID: testUUID,
 		}, nil)
 
+		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
+
 		err := SetDynakubeStatus(instance, options)
 
 		assert.NoError(t, err)
@@ -96,6 +99,8 @@ func TestSetDynakubeStatus(t *testing.T) {
 				Port:     testAnotherPort,
 			},
 		}, instance.Status.ConnectionInfo.CommunicationHosts)
+		assert.NotNil(t, instance.Status.LatestAgentVersionUnixDefault)
+		assert.Equal(t, testVersion, instance.Status.LatestAgentVersionUnixDefault)
 	})
 	t.Run(`error querying kube system uid`, func(t *testing.T) {
 		instance := &dynatracev1alpha1.DynaKube{}
@@ -149,6 +154,47 @@ func TestSetDynakubeStatus(t *testing.T) {
 		}, nil)
 
 		dtc.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{}, fmt.Errorf(testError))
+
+		err := SetDynakubeStatus(instance, options)
+		assert.EqualError(t, err, testError)
+	})
+	t.Run(`error querying latest agent version`, func(t *testing.T) {
+		instance := &dynatracev1alpha1.DynaKube{}
+		dtc := &dtclient.MockDynatraceClient{}
+		clt := fake.NewClient(&v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: kubesystem.Namespace,
+				UID:  testUUID,
+			},
+		})
+		options := Options{
+			Dtc:       dtc,
+			ApiClient: clt,
+		}
+
+		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+			Protocol: testProtocol,
+			Host:     testHost,
+			Port:     testPort,
+		}, nil)
+
+		dtc.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
+			CommunicationHosts: []dtclient.CommunicationHost{
+				{
+					Protocol: testProtocol,
+					Host:     testHost,
+					Port:     testPort,
+				},
+				{
+					Protocol: testAnotherProtocol,
+					Host:     testAnotherHost,
+					Port:     testAnotherPort,
+				},
+			},
+			TenantUUID: testUUID,
+		}, nil)
+
+		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return("", fmt.Errorf(testError))
 
 		err := SetDynakubeStatus(instance, options)
 		assert.EqualError(t, err, testError)

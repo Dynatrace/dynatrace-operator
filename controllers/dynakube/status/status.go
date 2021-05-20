@@ -32,11 +32,12 @@ func SetDynakubeStatus(instance *dynatracev1alpha1.DynaKube, opts Options) error
 		return errors.WithStack(err)
 	}
 
-	communicationHostStatus := dynatracev1alpha1.CommunicationHostStatus{
-		Protocol: communicationHost.Protocol,
-		Host:     communicationHost.Host,
-		Port:     communicationHost.Port,
+	latestAgentVersion, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
+	if err != nil {
+		return errors.WithStack(err)
 	}
+
+	communicationHostStatus := dynatracev1alpha1.CommunicationHostStatus(communicationHost)
 
 	connectionInfoStatus := dynatracev1alpha1.ConnectionInfoStatus{
 		CommunicationHosts: communicationHostsToStatus(connectionInfo.CommunicationHosts),
@@ -47,6 +48,7 @@ func SetDynakubeStatus(instance *dynatracev1alpha1.DynaKube, opts Options) error
 	instance.Status.CommunicationHostForClient = communicationHostStatus
 	instance.Status.ConnectionInfo = connectionInfoStatus
 	instance.Status.EnvironmentID = connectionInfo.TenantUUID
+	instance.Status.LatestAgentVersionUnixDefault = latestAgentVersion
 
 	return nil
 }
@@ -55,11 +57,7 @@ func communicationHostsToStatus(communicationHosts []dtclient.CommunicationHost)
 	var communicationHostStatuses []dynatracev1alpha1.CommunicationHostStatus
 
 	for _, communicationHost := range communicationHosts {
-		communicationHostStatuses = append(communicationHostStatuses, dynatracev1alpha1.CommunicationHostStatus{
-			Protocol: communicationHost.Protocol,
-			Host:     communicationHost.Host,
-			Port:     communicationHost.Port,
-		})
+		communicationHostStatuses = append(communicationHostStatuses, dynatracev1alpha1.CommunicationHostStatus(communicationHost))
 	}
 
 	return communicationHostStatuses
