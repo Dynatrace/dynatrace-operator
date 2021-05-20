@@ -115,9 +115,14 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 }
 
 func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
+	initContainers := make([]corev1.Container, 0)
+	if isKubernetesMonitoringEnabled(stsProperties) {
+		initContainers = append(initContainers, buildCertificateLoaderInitContainer(stsProperties))
+	}
+
 	return corev1.PodSpec{
 		Containers:         []corev1.Container{buildContainer(stsProperties)},
-		InitContainers:     []corev1.Container{buildCertificateLoaderInitContainer(stsProperties)},
+		InitContainers:     initContainers,
 		NodeSelector:       stsProperties.NodeSelector,
 		ServiceAccountName: determineServiceAccountName(stsProperties),
 		Affinity: &corev1.Affinity{
