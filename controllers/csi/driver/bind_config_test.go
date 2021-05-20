@@ -41,7 +41,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 				return nil
 			})
 
-		assert.NotNil(t, err)
+		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
 	})
 	t.Run(`no dynakube instance label`, func(t *testing.T) {
@@ -63,7 +63,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 				return nil
 			})
 
-		assert.NotNil(t, err)
+		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
 	})
 	t.Run(`failed to extract tenant from file`, func(t *testing.T) {
@@ -85,7 +85,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 				return nil
 			})
 
-		assert.NotNil(t, err)
+		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
 	})
 	t.Run(`failed to create directories`, func(t *testing.T) {
@@ -132,7 +132,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 				return nil
 			})
 
-		assert.NotNil(t, err)
+		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
 	})
 	t.Run(`create correct bind config`, func(t *testing.T) {
