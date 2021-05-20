@@ -42,6 +42,8 @@ const (
 	DTDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
 
 	ProxyKey = "ProxyKey"
+
+	trustStoreVolume = "truststore-volume"
 )
 
 type StatefulSetEvent func(sts *appsv1.StatefulSet)
@@ -115,6 +117,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 	return corev1.PodSpec{
 		Containers:         []corev1.Container{buildContainer(stsProperties)},
+		InitContainers:     []corev1.Container{buildCertificateLoaderInitContainer(stsProperties)},
 		NodeSelector:       stsProperties.NodeSelector,
 		ServiceAccountName: determineServiceAccountName(stsProperties),
 		Affinity: &corev1.Affinity{
@@ -130,6 +133,31 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 			{Name: stsProperties.Name + dtpullsecret.PullSecretSuffix},
 		},
 	}
+}
+
+func buildCertificateLoaderInitContainer(stsProperties *statefulSetProperties) corev1.Container {
+	return corev1.Container{
+		Name:            "certificate-loader",
+		Image:           stsProperties.DynaKube.ActiveGateImage(),
+		Resources:       stsProperties.CapabilityProperties.Resources,
+		ImagePullPolicy: corev1.PullAlways,
+		WorkingDir:      "/var/lib/dynatrace/gateway",
+		Command:         []string{"/bin/bash"},
+		Args:            []string{"-c", "/opt/dynatrace/gateway/k8scrt2jks.sh"},
+		VolumeMounts:    buildCertificateLoaderVolumeMounts(stsProperties),
+	}
+}
+
+func buildCertificateLoaderVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMount {
+	var volumeMounts []corev1.VolumeMount
+
+	volumeMounts = append(volumeMounts, corev1.VolumeMount{
+		ReadOnly:  false,
+		Name:      trustStoreVolume,
+		MountPath: "/var/lib/dynatrace/gateway/ssl",
+	})
+
+	return volumeMounts
 }
 
 func buildContainer(stsProperties *statefulSetProperties) corev1.Container {
@@ -171,6 +199,14 @@ func buildVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
 		)
 	}
 
+	if isKubernetesMonitoringEnabled(stsProperties) {
+		volumes = append(volumes, corev1.Volume{
+			Name: trustStoreVolume,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			}},
+		)
+	}
 	return volumes
 }
 
@@ -190,6 +226,15 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 			Name:      customproperties.VolumeName,
 			MountPath: customproperties.MountPath,
 			SubPath:   customproperties.DataPath,
+		})
+	}
+
+	if isKubernetesMonitoringEnabled(stsProperties) {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      trustStoreVolume,
+			MountPath: "/opt/dynatrace/gateway/jre/lib/security/cacerts",
+			SubPath:   "k8s-local.jks",
 		})
 	}
 
@@ -269,6 +314,10 @@ func isCustomPropertiesNilOrEmpty(customProperties *dynatracev1alpha1.DynaKubeVa
 
 func isProxyNilOrEmpty(proxy *dynatracev1alpha1.DynaKubeProxy) bool {
 	return proxy == nil || (proxy.Value == "" && proxy.ValueFrom == "")
+}
+
+func isKubernetesMonitoringEnabled(stsProperties *statefulSetProperties) bool {
+	return stsProperties != nil && stsProperties.DynaKube != nil && stsProperties.DynaKube.Spec.KubernetesMonitoringSpec.Enabled
 }
 
 func generateStatefulSetHash(sts *appsv1.StatefulSet) (string, error) {
