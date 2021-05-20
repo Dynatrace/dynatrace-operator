@@ -3,7 +3,7 @@
 ## Hack on Dynatrace Operator
 
 [Operator SDK](https://github.com/operator-framework/operator-sdk) is the underlying framework for Dynatrace Operator. The `operator-sdk` tool needs to be installed upfront as outlined in the
-[Operator SDK User Guide](https://github.com/operator-framework/operator-sdk/blob/master/doc/user-guide.md#install-the-operator-sdk-cli).
+[Operator SDK User Guide](https://sdk.operatorframework.io/docs/installation/).
 
 ### Installation
 
