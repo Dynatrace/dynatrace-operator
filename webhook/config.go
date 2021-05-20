@@ -11,10 +11,6 @@ const (
 	// AnnotationInjected is set to "true" by the webhook to Pods to indicate that it has been modified.
 	AnnotationInjected = "oneagent.dynatrace.com/injected"
 
-	// AnnotationFlavor can be set on a Pod to configure which code modules flavor to download. It's set to "default"
-	// if not set.
-	AnnotationFlavor = "oneagent.dynatrace.com/flavor"
-
 	// AnnotationTechnologies can be set on a Pod to configure which code module technologies to download. It's set to
 	// "all" if not set.
 	AnnotationTechnologies = "oneagent.dynatrace.com/technologies"
