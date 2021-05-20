@@ -89,16 +89,17 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{RequeueAfter: 30 * time.Minute}, nil
 	}
 
+	if dk.ConnectionInfo().TenantUUID == "" {
+		rlog.Info("DynaKube instance has not been reconciled yet and some values usually cached are missing, retrying in a few seconds")
+		return reconcile.Result{RequeueAfter: 15 * time.Second}, nil
+	}
+
 	dtc, err := buildDtc(r, ctx, dk)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	ci, err := dtc.GetConnectionInfo()
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to fetch connection info: %w", err)
-	}
-
+	ci := dk.ConnectionInfo()
 	envDir := filepath.Join(r.opts.DataDir, ci.TenantUUID)
 	tenantFile := filepath.Join(r.opts.DataDir, fmt.Sprintf("tenant-%s", dk.Name))
 
@@ -110,7 +111,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	if err = r.updateAgent(dtc, envDir, rlog); err != nil {
+	if err = r.updateAgent(dk, dtc, envDir, rlog); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -144,12 +145,9 @@ func getCodeModule(ctx context.Context, clt client.Client, namespacedName types.
 	return &dk, nil
 }
 
-func (r *OneAgentProvisioner) updateAgent(dtc dtclient.Client, envDir string, logger logr.Logger) error {
+func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, dtc dtclient.Client, envDir string, logger logr.Logger) error {
 	versionFile := filepath.Join(envDir, versionDir)
-	ver, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
-	if err != nil {
-		return fmt.Errorf("failed to query OneAgent version: %w", err)
-	}
+	ver := dk.Status.LatestAgentVersionUnixPaas
 
 	var oldVer string
 	if b, err := afero.ReadFile(r.fs, versionFile); err != nil && !os.IsNotExist(err) {
@@ -159,7 +157,7 @@ func (r *OneAgentProvisioner) updateAgent(dtc dtclient.Client, envDir string, lo
 	}
 
 	if ver != oldVer {
-		if err = r.installAgentVersion(ver, envDir, dtc, logger); err != nil {
+		if err := r.installAgentVersion(ver, envDir, dtc, logger); err != nil {
 			return err
 		}
 	}

@@ -99,6 +99,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 							Enabled: true,
 						},
 					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: testUid,
+						},
+					},
 				},
 			),
 		}
@@ -120,6 +125,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 							Enabled: true,
 						},
 					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: testUid,
+						},
+					},
 				},
 				&v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -134,38 +144,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: testName}})
 
 		assert.EqualError(t, err, "failed to create Dynatrace client: "+testError)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{}, result)
-	})
-	t.Run(`error when querying dynatrace client for connection info`, func(t *testing.T) {
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{}, fmt.Errorf(testError))
-
-		r := &OneAgentProvisioner{
-			client: fake.NewClient(
-				&v1alpha1.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: testName,
-					},
-					Spec: v1alpha1.DynaKubeSpec{
-						CodeModules: v1alpha1.CodeModulesSpec{
-							Enabled: true,
-						},
-					},
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: testName,
-					},
-				},
-			),
-			dtcBuildFunc: func(rtc client.Client, instance *v1alpha1.DynaKube, secret *v1.Secret) (dtclient.Client, error) {
-				return mockClient, nil
-			},
-		}
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: testName}})
-
-		assert.EqualError(t, err, "failed to fetch connection info: "+testError)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 	})
@@ -186,6 +164,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					Spec: v1alpha1.DynaKubeSpec{
 						CodeModules: v1alpha1.CodeModulesSpec{
 							Enabled: true,
+						},
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: testUid,
 						},
 					},
 				},
@@ -225,6 +208,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 							Enabled: true,
 						},
 					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: testUid,
+						},
+					},
 				},
 				&v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -242,69 +230,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.EqualError(t, err, "failed to query assigned DynaKube tenant: "+testError)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
-	})
-	t.Run(`error getting latest agent version`, func(t *testing.T) {
-		memFs := afero.NewMemMapFs()
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			TenantUUID: testUid,
-		}, nil)
-		mockClient.On("GetLatestAgentVersion",
-			mock.AnythingOfType("string"),
-			mock.AnythingOfType("string")).Return("", fmt.Errorf(testError))
-		r := &OneAgentProvisioner{
-			client: fake.NewClient(
-				&v1alpha1.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: testName,
-					},
-					Spec: v1alpha1.DynaKubeSpec{
-						CodeModules: v1alpha1.CodeModulesSpec{
-							Enabled: true,
-						},
-					},
-				},
-				&v1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: testName,
-					},
-				},
-			),
-			dtcBuildFunc: func(rtc client.Client, instance *v1alpha1.DynaKube, secret *v1.Secret) (dtclient.Client, error) {
-				return mockClient, nil
-			},
-			fs: memFs,
-		}
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: testName}})
-
-		assert.EqualError(t, err, "failed to query OneAgent version: "+testError)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{}, result)
-
-		exists, err := afero.Exists(memFs, testUid)
-
-		assert.NoError(t, err)
-		assert.True(t, exists)
-
-		exists, err = afero.Exists(memFs, filepath.Join(testUid, logDir))
-
-		assert.NoError(t, err)
-		assert.True(t, exists)
-
-		exists, err = afero.Exists(memFs, filepath.Join(testUid, dataDir))
-
-		assert.NoError(t, err)
-		assert.True(t, exists)
-
-		exists, err = afero.Exists(memFs, "tenant-test-name")
-
-		assert.NoError(t, err)
-		assert.True(t, exists)
-
-		data, err := afero.ReadFile(memFs, "tenant-test-name")
-
-		assert.NoError(t, err)
-		assert.Equal(t, testUid, string(data))
 	})
 	t.Run(`error reading install version`, func(t *testing.T) {
 		errorFs := &readVersionFileErrorFs{
@@ -326,6 +251,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					Spec: v1alpha1.DynaKubeSpec{
 						CodeModules: v1alpha1.CodeModulesSpec{
 							Enabled: true,
+						},
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: testUid,
 						},
 					},
 				},
@@ -380,6 +310,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		mockClient.On("GetLatestAgentVersion",
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return(testVersion, nil)
+
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
 				&v1alpha1.DynaKube{
@@ -390,6 +321,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						CodeModules: v1alpha1.CodeModulesSpec{
 							Enabled: true,
 						},
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: testUid,
+						},
+						LatestAgentVersionUnixPaas: testVersion,
 					},
 				},
 				&v1.Secret{

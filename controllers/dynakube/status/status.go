@@ -32,7 +32,12 @@ func SetDynakubeStatus(instance *dynatracev1alpha1.DynaKube, opts Options) error
 		return errors.WithStack(err)
 	}
 
-	latestAgentVersion, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
+	latestAgentVersionUnixDefault, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	latestAgentVersionUnixPaas, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -48,7 +53,8 @@ func SetDynakubeStatus(instance *dynatracev1alpha1.DynaKube, opts Options) error
 	instance.Status.CommunicationHostForClient = communicationHostStatus
 	instance.Status.ConnectionInfo = connectionInfoStatus
 	instance.Status.EnvironmentID = connectionInfo.TenantUUID
-	instance.Status.LatestAgentVersionUnixDefault = latestAgentVersion
+	instance.Status.LatestAgentVersionUnixDefault = latestAgentVersionUnixDefault
+	instance.Status.LatestAgentVersionUnixPaas = latestAgentVersionUnixPaas
 
 	return nil
 }
