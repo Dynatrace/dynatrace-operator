@@ -1,12 +1,13 @@
 package csigc
 
 import (
+	"path/filepath"
+	"testing"
+
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
-	"path/filepath"
-	"testing"
 )
 
 const (

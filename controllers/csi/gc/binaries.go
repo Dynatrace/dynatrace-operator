@@ -1,10 +1,10 @@
 package csigc
 
 import (
-	"github.com/go-logr/logr"
 	"path/filepath"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
