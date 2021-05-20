@@ -87,7 +87,6 @@ spec:
             initialDelaySeconds: 5
             timeoutSeconds: 5
           securityContext:
-            privileged: true
             runAsUser: 0
           volumeMounts:
             - name: plugin-dir
