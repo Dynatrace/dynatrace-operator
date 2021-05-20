@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/pkg/errors"
@@ -38,7 +37,6 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 			},
 		}).
 		Build()
-	dtc := &dtclient.MockDynatraceClient{}
 	instance := &dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -47,12 +45,11 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		return dtversion.ImageVersion{}, nil
 	}
 
-	r := NewReconciler(clt, clt, scheme.Scheme, dtc, log, instance, imgVerProvider,
+	r := NewReconciler(clt, clt, scheme.Scheme, log, instance, imgVerProvider,
 		&instance.Spec.RoutingSpec.CapabilityProperties, "router", "MSGrouter", "")
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.scheme)
-	require.NotNil(t, r.dtc)
 	require.NotNil(t, r.log)
 	require.NotNil(t, r.Instance)
 	require.NotNil(t, r.imageVersionProvider)

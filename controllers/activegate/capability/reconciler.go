@@ -7,7 +7,6 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -30,10 +29,10 @@ type Reconciler struct {
 	Capability
 }
 
-func NewReconciler(capability Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
+func NewReconciler(capability Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, log logr.Logger,
 	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
 	baseReconciler := activegate.NewReconciler(
-		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider,
+		clt, apiReader, scheme, log, instance, imageVersionProvider,
 		capability.GetProperties(), capability.GetModuleName(), capability.GetCapabilityName(), capability.GetConfiguration().ServiceAccountOwner)
 
 	if capability.GetConfiguration().SetDnsEntryPoint {
