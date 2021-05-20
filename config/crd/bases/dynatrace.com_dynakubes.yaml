@@ -2484,10 +2484,6 @@ spec:
                 tenantUUID:
                   type: string
               type: object
-            environmentID:
-              description: EnvironmentID contains the environment ID corresponding
-                to the API URL
-              type: string
             kubeSystemUUID:
               description: KubeSystemUUID contains the UUID of the current Kubernetes
                 cluster

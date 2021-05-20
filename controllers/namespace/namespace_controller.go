@@ -111,10 +111,10 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 
 	imNodes := map[string]string{}
 	for i := range ims.Items {
-		if s := &ims.Items[i].Status; s.EnvironmentID != "" && ims.Items[i].Spec.InfraMonitoring.Enabled {
+		if s := &ims.Items[i].Status; s.ConnectionInfo.TenantUUID != "" && ims.Items[i].Spec.InfraMonitoring.Enabled {
 			for key := range s.OneAgent.Instances {
 				if key != "" {
-					imNodes[key] = s.EnvironmentID
+					imNodes[key] = s.ConnectionInfo.TenantUUID
 				}
 			}
 		}

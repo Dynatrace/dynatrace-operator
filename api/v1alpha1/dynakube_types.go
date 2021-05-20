@@ -278,9 +278,6 @@ type DynaKubeStatus struct {
 	// LastClusterVersionProbeTimestamp indicates when the cluster's version was last checked
 	LastClusterVersionProbeTimestamp *metav1.Time `json:"lastClusterVersionProbeTimestamp,omitempty"`
 
-	// EnvironmentID contains the environment ID corresponding to the API URL
-	EnvironmentID string `json:"environmentID,omitempty"`
-
 	// KubeSystemUUID contains the UUID of the current Kubernetes cluster
 	KubeSystemUUID string `json:"kubeSystemUUID,omitempty"`
 

@@ -52,7 +52,6 @@ func SetDynakubeStatus(instance *dynatracev1alpha1.DynaKube, opts Options) error
 	instance.Status.KubeSystemUUID = string(uid)
 	instance.Status.CommunicationHostForClient = communicationHostStatus
 	instance.Status.ConnectionInfo = connectionInfoStatus
-	instance.Status.EnvironmentID = connectionInfo.TenantUUID
 	instance.Status.LatestAgentVersionUnixDefault = latestAgentVersionUnixDefault
 	instance.Status.LatestAgentVersionUnixPaas = latestAgentVersionUnixPaas
 
