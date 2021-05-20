@@ -19,9 +19,13 @@ package main
 import (
 	"flag"
 	"os"
+	"path/filepath"
+	"strconv"
+	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
+	csigc "github.com/Dynatrace/dynatrace-operator/controllers/csi/gc"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/controllers/csi/provisioner"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -46,11 +50,18 @@ func main() {
 
 	version.LogVersion()
 
+	namespace := os.Getenv("POD_NAMESPACE")
+	gcInterval, err := strconv.Atoi(os.Getenv("GC_INTERVAL_MINUTES"))
+	if err != nil {
+		log.Error(err, "unable to convert GC_INTERVAL_MINUTES to int")
+		os.Exit(1)
+	}
+
 	defaultUmask := unix.Umask(0002)
 	defer unix.Umask(defaultUmask)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Namespace:              os.Getenv("POD_NAMESPACE"),
+		Namespace:              namespace,
 		Scheme:                 scheme.Scheme,
 		HealthProbeBindAddress: *probeAddr,
 	})
@@ -60,9 +71,20 @@ func main() {
 	}
 
 	csiOpts := dtcsi.CSIOptions{
-		NodeID:   *nodeID,
-		Endpoint: *endpoint,
-		DataDir:  "/tmp/data",
+		NodeID:     *nodeID,
+		Endpoint:   *endpoint,
+		RootDir:    "/tmp",
+		GCInterval: time.Duration(gcInterval) * time.Minute,
+	}
+
+	if err := os.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.DataPath), 0770); err != nil {
+		log.Error(err, "unable to create data directory for CSI Driver")
+		os.Exit(1)
+	}
+
+	if err := os.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.GarbageCollectionPath), 0770); err != nil {
+		log.Error(err, "unable to create garbage collector directory for CSI Driver")
+		os.Exit(1)
 	}
 
 	if err := csidriver.NewServer(mgr, csiOpts).SetupWithManager(mgr); err != nil {
@@ -77,6 +99,11 @@ func main() {
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		log.Error(err, "unable to set up health check")
+		os.Exit(1)
+	}
+
+	if err := csigc.NewReconciler(mgr.GetClient(), csiOpts).SetupWithManager(mgr); err != nil {
+		log.Error(err, "unable to create CSI Garbage Collector")
 		os.Exit(1)
 	}
 

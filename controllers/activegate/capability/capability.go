@@ -62,7 +62,7 @@ func NewKubeMonCapability(crProperties *dynatracev1alpha1.CapabilityProperties) 
 	return &KubeMonCapability{
 		capabilityBase{
 			moduleName:     "kubemon",
-			capabilityName: "kubernetes-monitoring",
+			capabilityName: "kubernetes_monitoring",
 			properties:     crProperties,
 			Configuration: Configuration{
 				ServiceAccountOwner: "kubernetes-monitoring",

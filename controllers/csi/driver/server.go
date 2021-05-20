@@ -163,19 +163,27 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		volumeCfg.targetPath,
 		Mount{Source: bindCfg.agentDir, Target: volumeCfg.targetPath, ReadOnly: true},
 		Mount{
-			Source: filepath.Join(bindCfg.agentDir, "agent", "conf"),
-			Target: filepath.Join(volumeCfg.targetPath, "agent", "conf"),
+			Source: filepath.Join(bindCfg.agentDir, dtcsi.AgentConfDir),
+			Target: filepath.Join(volumeCfg.targetPath, dtcsi.AgentConfDir),
 		},
 		Mount{
-			Source: filepath.Join(bindCfg.envDir, "log", volumeCfg.podUID),
-			Target: filepath.Join(volumeCfg.targetPath, "log"),
+			Source: filepath.Join(bindCfg.envDir, dtcsi.LogDir, volumeCfg.podUID),
+			Target: filepath.Join(volumeCfg.targetPath, dtcsi.LogDir),
 		},
 		Mount{
-			Source: filepath.Join(bindCfg.envDir, "datastorage", volumeCfg.podUID),
-			Target: filepath.Join(volumeCfg.targetPath, "datastorage"),
+			Source: filepath.Join(bindCfg.envDir, dtcsi.DatastorageDir, volumeCfg.podUID),
+			Target: filepath.Join(volumeCfg.targetPath, dtcsi.DatastorageDir),
 		},
 	); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount OneAgent volume: %s", err.Error()))
+	}
+
+	podToVersionReference := filepath.Join(bindCfg.envDir, dtcsi.GarbageCollectionPath, bindCfg.version, volumeCfg.podUID)
+	if err = ioutil.WriteFile(podToVersionReference, nil, 0770); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create pod to version reference file - error: %s", err))
+	}
+	if err = os.Symlink(podToVersionReference, filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeCfg.volumeId)); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create volume to pod reference SymLink for garbage collector - error: %s", err))
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
@@ -194,12 +202,26 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 	}
 
 	if err := BindUnmount(
-		Mount{Target: filepath.Join(targetPath, "agent", "conf")},
-		Mount{Target: filepath.Join(targetPath, "log")},
-		Mount{Target: filepath.Join(targetPath, "datastorage")},
+		Mount{Target: filepath.Join(targetPath, dtcsi.AgentConfDir)},
+		Mount{Target: filepath.Join(targetPath, dtcsi.LogDir)},
+		Mount{Target: filepath.Join(targetPath, dtcsi.DatastorageDir)},
 		Mount{Target: targetPath},
 	); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount volume: %s", err.Error()))
+	}
+
+	volumeToPodReference := filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeID)
+
+	podToVersionReference, err := os.Readlink(volumeToPodReference)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to read volume to pod SymLink for garbage collector - error: %s", err))
+	} else if !os.IsNotExist(err) {
+		if err = os.Remove(podToVersionReference); err != nil && !os.IsNotExist(err) {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove pod to version reference file for garbage collector - error: %s", err))
+		}
+		if err = os.Remove(volumeToPodReference); err != nil && !os.IsNotExist(err) {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove volume to pod SymLink for garbage collector - error: %s", err))
+		}
 	}
 
 	// Delete the mount point.

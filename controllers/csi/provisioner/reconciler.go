@@ -40,12 +40,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const (
-	logDir     = "log"
-	dataDir    = "datastorage"
-	versionDir = "version"
-)
-
 var log = logger.NewDTLogger().WithName("provisioner")
 
 // OneAgentProvisioner reconciles a DynaKube object
@@ -75,7 +69,7 @@ func (r *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 var _ reconcile.Reconciler = &OneAgentProvisioner{}
 
 func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	rlog := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	rlog := log.WithValues("namespace", request.Namespace, "name", request.Name)
 	rlog.Info("Reconciling DynaKube")
 
 	dk, err := getCodeModule(ctx, r.client, request.NamespacedName)
@@ -100,8 +94,8 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	ci := dk.ConnectionInfo()
-	envDir := filepath.Join(r.opts.DataDir, ci.TenantUUID)
-	tenantFile := filepath.Join(r.opts.DataDir, fmt.Sprintf("tenant-%s", dk.Name))
+	envDir := filepath.Join(r.opts.RootDir, dtcsi.DataPath, ci.TenantUUID)
+	tenantFile := filepath.Join(r.opts.RootDir, dtcsi.DataPath, fmt.Sprintf("tenant-%s", dk.Name))
 
 	if err = r.createCSIDirectories(envDir); err != nil {
 		return reconcile.Result{}, err
@@ -146,7 +140,7 @@ func getCodeModule(ctx context.Context, clt client.Client, namespacedName types.
 }
 
 func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, dtc dtclient.Client, envDir string, logger logr.Logger) error {
-	versionFile := filepath.Join(envDir, versionDir)
+	versionFile := filepath.Join(envDir, dtcsi.VersionDir)
 	ver := dk.Status.LatestAgentVersionUnixPaas
 
 	var oldVer string
@@ -166,10 +160,16 @@ func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, dtc dt
 }
 
 func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string, dtc dtclient.Client, logger logr.Logger) error {
-	versionFile := filepath.Join(envDir, versionDir)
+	versionFile := filepath.Join(envDir, dtcsi.VersionDir)
 	arch := dtclient.ArchX86
 	if runtime.GOARCH == "arm64" {
 		arch = dtclient.ArchARM
+	}
+
+	gcDir := filepath.Join(envDir, dtcsi.GarbageCollectionPath, version)
+	if err := os.MkdirAll(gcDir, 0755); err != nil {
+		logger.Error(err, "failed to create directory %s: %w", gcDir)
+		return err
 	}
 
 	for _, flavor := range []string{dtclient.FlavorDefault, dtclient.FlavorMUSL} {
@@ -210,8 +210,8 @@ func (r *OneAgentProvisioner) updateTenantFile(tenantUUID string, tenantFile str
 func (r *OneAgentProvisioner) createCSIDirectories(envDir string) error {
 	for _, dir := range []string{
 		envDir,
-		filepath.Join(envDir, logDir),
-		filepath.Join(envDir, dataDir),
+		filepath.Join(envDir, dtcsi.LogDir),
+		filepath.Join(envDir, dtcsi.DatastorageDir),
 	} {
 		if err := r.fs.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)

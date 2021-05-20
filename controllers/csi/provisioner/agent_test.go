@@ -30,7 +30,7 @@ type failFs struct {
 }
 
 func (fs failFs) OpenFile(string, int, os.FileMode) (afero.File, error) {
-	return nil, fmt.Errorf(testError)
+	return nil, fmt.Errorf(errorMsg)
 }
 
 func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
@@ -44,7 +44,7 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 		}
 
 		err := installAgent(installAgentCfg)
-		assert.EqualError(t, err, "failed to create temporary file for download: "+testError)
+		assert.EqualError(t, err, "failed to create temporary file for download: "+errorMsg)
 	})
 	t.Run(`error when downloading latest agent`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -53,7 +53,7 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			On("GetLatestAgent",
 				dtclient.OsUnix, dtclient.InstallerTypePaaS,
 				mock.AnythingOfType("string"), mock.AnythingOfType("string")).
-			Return(ioutil.NopCloser(strings.NewReader("")), fmt.Errorf(testError))
+			Return(ioutil.NopCloser(strings.NewReader("")), fmt.Errorf(errorMsg))
 		installAgentCfg := &installAgentConfig{
 			fs:     fs,
 			dtc:    dtc,
@@ -61,7 +61,7 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 		}
 
 		err := installAgent(installAgentCfg)
-		assert.EqualError(t, err, "failed to fetch latest OneAgent version: "+testError)
+		assert.EqualError(t, err, "failed to fetch latest OneAgent version: "+errorMsg)
 	})
 	t.Run(`error unzipping file`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
