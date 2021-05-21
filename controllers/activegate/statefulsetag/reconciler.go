@@ -1,4 +1,4 @@
-package activegate
+package statefulsetag
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/shared"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
@@ -33,14 +35,16 @@ type Reconciler struct {
 	capabilityName                   string
 	serviceAccountOwner              string
 	capability                       *v1alpha1.CapabilityProperties
-	onAfterStatefulSetCreateListener []StatefulSetEvent
+	onAfterStatefulSetCreateListener []shared.StatefulSetEvent
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
-	instance *v1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider,
-	capability *v1alpha1.CapabilityProperties, feature string, capabilityName string, serviceAccountOwner string) *Reconciler {
+	instance *v1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, capability capability.Capability) *Reconciler {
+
+	serviceAccountOwner := capability.GetConfiguration().ServiceAccountOwner
+
 	if serviceAccountOwner == "" {
-		serviceAccountOwner = feature
+		serviceAccountOwner = capability.GetModuleName()
 	}
 
 	return &Reconciler{
@@ -51,15 +55,15 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		log:                              log,
 		Instance:                         instance,
 		imageVersionProvider:             imageVersionProvider,
-		feature:                          feature,
-		capabilityName:                   capabilityName,
+		feature:                          capability.GetModuleName(),
+		capabilityName:                   capability.GetCapabilityName(),
 		serviceAccountOwner:              serviceAccountOwner,
-		capability:                       capability,
-		onAfterStatefulSetCreateListener: []StatefulSetEvent{},
+		capability:                       capability.GetProperties(),
+		onAfterStatefulSetCreateListener: []shared.StatefulSetEvent{},
 	}
 }
 
-func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event StatefulSetEvent) {
+func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event shared.StatefulSetEvent) {
 	r.onAfterStatefulSetCreateListener = append(r.onAfterStatefulSetCreateListener, event)
 }
 

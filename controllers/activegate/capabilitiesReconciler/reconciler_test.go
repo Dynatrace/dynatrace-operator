@@ -1,11 +1,12 @@
-package capability
+package capabilitiesReconciler
 
 import (
 	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/statefulsetag"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
@@ -28,7 +29,7 @@ const (
 	testNamespace = "test-namespace"
 )
 
-var cap = NewDataIngestCapability(
+var cap = capability.NewDataIngestCapability(
 	&v1alpha1.CapabilityProperties{
 		Enabled: true,
 	},
@@ -143,7 +144,7 @@ func TestReconcile(t *testing.T) {
 
 		found := false
 		for _, env := range newStatefulSet.Spec.Template.Spec.Containers[0].Env {
-			if env.Name == activegate.DTInternalProxy {
+			if env.Name == statefulsetag.DTInternalProxy {
 				found = true
 				assert.Equal(t, testValue, env.Value)
 			}
@@ -174,8 +175,8 @@ func TestReconcile(t *testing.T) {
 
 func TestSetReadinessProbePort(t *testing.T) {
 	r := createDefaultReconciler(t)
-	stsProps := activegate.NewStatefulSetProperties(r.Instance, cap.GetProperties(), "", "", "", "", "")
-	sts, err := activegate.CreateStatefulSet(stsProps)
+	stsProps := statefulsetag.NewStatefulSetProperties(r.Instance, cap.GetProperties(), "", "", "", "", "")
+	sts, err := statefulsetag.CreateStatefulSet(stsProps)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, sts)
@@ -191,9 +192,9 @@ func TestSetReadinessProbePort(t *testing.T) {
 
 func TestReconciler_calculateStatefulSetName(t *testing.T) {
 	type fields struct {
-		Reconciler *activegate.Reconciler
+		Reconciler *statefulsetag.Reconciler
 		log        logr.Logger
-		Capability *DataIngestCapability
+		Capability *capability.DataIngestCapability
 	}
 	tests := []struct {
 		name   string
@@ -203,7 +204,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 		{
 			name: "instance and module names are defined",
 			fields: fields{
-				Reconciler: &activegate.Reconciler{
+				Reconciler: &statefulsetag.Reconciler{
 					Instance: &v1alpha1.DynaKube{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "instanceName",
@@ -217,7 +218,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 		{
 			name: "empty instance name",
 			fields: fields{
-				Reconciler: &activegate.Reconciler{
+				Reconciler: &statefulsetag.Reconciler{
 					Instance: &v1alpha1.DynaKube{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "",

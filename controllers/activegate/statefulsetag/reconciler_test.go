@@ -1,10 +1,11 @@
-package activegate
+package statefulsetag
 
 import (
 	"context"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
@@ -47,8 +48,10 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		return dtversion.ImageVersion{}, nil
 	}
 
+	capability.NewRoutingCapability(&instance.Spec.RoutingSpec.CapabilityProperties)
+
 	r := NewReconciler(clt, clt, scheme.Scheme, dtc, log, instance, imgVerProvider,
-		&instance.Spec.RoutingSpec.CapabilityProperties, "router", "MSGrouter", "")
+		capability.NewRoutingCapability(&instance.Spec.RoutingSpec.CapabilityProperties))
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.scheme)

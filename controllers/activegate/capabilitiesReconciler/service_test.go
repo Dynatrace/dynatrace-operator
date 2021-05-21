@@ -1,10 +1,10 @@
-package capability
+package capabilitiesReconciler
 
 import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/statefulsetag"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,9 +29,9 @@ func TestCreateService(t *testing.T) {
 	serviceSpec := service.Spec
 	assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
 	assert.Equal(t, map[string]string{
-		activegate.KeyActiveGate: testName,
-		activegate.KeyDynatrace:  activegate.ValueActiveGate,
-		activegate.KeyFeature:    testFeature,
+		statefulsetag.KeyActiveGate: testName,
+		statefulsetag.KeyDynatrace:  statefulsetag.ValueActiveGate,
+		statefulsetag.KeyFeature:    testFeature,
 	}, serviceSpec.Selector)
 
 	ports := serviceSpec.Ports

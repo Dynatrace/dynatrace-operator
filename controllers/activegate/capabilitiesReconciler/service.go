@@ -1,11 +1,11 @@
-package capability
+package capabilitiesReconciler
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/statefulsetag"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -21,11 +21,11 @@ func createService(instance *v1alpha1.DynaKube, feature string) *corev1.Service 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      BuildServiceName(instance.Name, feature),
 			Namespace: instance.Namespace,
-			Labels:    activegate.BuildLabelsFromInstance(instance, feature),
+			Labels:    statefulsetag.BuildLabelsFromInstance(instance, feature),
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
-			Selector: activegate.BuildLabelsFromInstance(instance, feature),
+			Selector: statefulsetag.BuildLabelsFromInstance(instance, feature),
 			Ports: []corev1.ServicePort{
 				{
 					Protocol:   corev1.ProtocolTCP,
