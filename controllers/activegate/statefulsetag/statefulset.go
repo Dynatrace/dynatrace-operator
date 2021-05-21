@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
+	"os"
 	"strconv"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -56,10 +57,11 @@ type statefulSetProperties struct {
 	capabilityName        string
 	serviceAccountOwner   string
 	onAfterCreateListener []shared.StatefulSetEvent
+	initContainers        []corev1.Container
 }
 
-func NewStatefulSetProperties(instance *dynatracev1alpha1.DynaKube, capabilityProperties *dynatracev1alpha1.CapabilityProperties,
-	kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string) *statefulSetProperties {
+func NewStatefulSetProperties_IC(instance *dynatracev1alpha1.DynaKube, capabilityProperties *dynatracev1alpha1.CapabilityProperties,
+	kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string, ic []corev1.Container) *statefulSetProperties {
 	if serviceAccountOwner == "" {
 		serviceAccountOwner = feature
 	}
@@ -73,7 +75,13 @@ func NewStatefulSetProperties(instance *dynatracev1alpha1.DynaKube, capabilityPr
 		capabilityName:        capabilityName,
 		serviceAccountOwner:   serviceAccountOwner,
 		onAfterCreateListener: []shared.StatefulSetEvent{},
+		initContainers:        ic,
 	}
+}
+
+func NewStatefulSetProperties(instance *dynatracev1alpha1.DynaKube, capabilityProperties *dynatracev1alpha1.CapabilityProperties,
+	kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string) *statefulSetProperties {
+	return NewStatefulSetProperties_IC(instance, capabilityProperties, kubeSystemUID, customPropertiesHash, feature, capabilityName, serviceAccountOwner, nil)
 }
 
 func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
@@ -114,14 +122,9 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 }
 
 func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
-	initContainers := make([]corev1.Container, 0)
-	if isKubernetesMonitoringEnabled(stsProperties) {
-		initContainers = append(initContainers, buildCertificateLoaderInitContainer(stsProperties))
-	}
-
 	return corev1.PodSpec{
 		Containers:         []corev1.Container{buildContainer(stsProperties)},
-		InitContainers:     initContainers,
+		InitContainers:     buildInitContainers(stsProperties),
 		NodeSelector:       stsProperties.NodeSelector,
 		ServiceAccountName: determineServiceAccountName(stsProperties),
 		Affinity: &corev1.Affinity{
@@ -139,29 +142,19 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 	}
 }
 
-func buildCertificateLoaderInitContainer(stsProperties *statefulSetProperties) corev1.Container {
-	return corev1.Container{
-		Name:            "certificate-loader",
-		Image:           stsProperties.DynaKube.ActiveGateImage(),
-		Resources:       stsProperties.CapabilityProperties.Resources,
-		ImagePullPolicy: corev1.PullAlways,
-		WorkingDir:      "/var/lib/dynatrace/gateway",
-		Command:         []string{"/bin/bash"},
-		Args:            []string{"-c", "/opt/dynatrace/gateway/k8scrt2jks.sh"},
-		VolumeMounts:    buildCertificateLoaderVolumeMounts(stsProperties),
+func buildInitContainers(stsProperties *statefulSetProperties) []corev1.Container {
+	ics := stsProperties.initContainers
+
+	fmt.Fprintln(os.Stdout, ics)
+
+	for _, ic := range ics {
+		ic.Image = stsProperties.DynaKube.ActiveGateImage()
+		ic.Resources = stsProperties.CapabilityProperties.Resources
 	}
-}
 
-func buildCertificateLoaderVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMount {
-	var volumeMounts []corev1.VolumeMount
+	fmt.Fprintln(os.Stdout, ics)
 
-	volumeMounts = append(volumeMounts, corev1.VolumeMount{
-		ReadOnly:  false,
-		Name:      trustStoreVolume,
-		MountPath: "/var/lib/dynatrace/gateway/ssl",
-	})
-
-	return volumeMounts
+	return ics
 }
 
 func buildContainer(stsProperties *statefulSetProperties) corev1.Container {

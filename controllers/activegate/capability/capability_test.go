@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func Test_capabilityBase_GetProperties(t *testing.T) {
@@ -191,6 +192,22 @@ func TestNewKubeMonCapability(t *testing.T) {
 					properties:     props,
 					Configuration: Configuration{
 						ServiceAccountOwner: "kubernetes-monitoring",
+					},
+					initContainersTemplates: []v1.Container{
+						{
+							Name:            "certificate-loader",
+							ImagePullPolicy: v1.PullAlways,
+							WorkingDir:      "/var/lib/dynatrace/gateway",
+							Command:         []string{"/bin/bash"},
+							Args:            []string{"-c", "/opt/dynatrace/gateway/k8scrt2jks.sh"},
+							VolumeMounts: []v1.VolumeMount{
+								{
+									ReadOnly:  false,
+									Name:      "truststore-volume",
+									MountPath: "/var/lib/dynatrace/gateway/ssl",
+								},
+							},
+						},
 					},
 				},
 			},
