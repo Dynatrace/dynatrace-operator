@@ -58,10 +58,12 @@ type statefulSetProperties struct {
 	serviceAccountOwner   string
 	onAfterCreateListener []shared.StatefulSetEvent
 	initContainers        []corev1.Container
+	containerVolumeMounts []corev1.VolumeMount
+	volumes               []corev1.Volume
 }
 
 func NewStatefulSetProperties_IC(instance *dynatracev1alpha1.DynaKube, capabilityProperties *dynatracev1alpha1.CapabilityProperties,
-	kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string, ic []corev1.Container) *statefulSetProperties {
+	kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string, ic []corev1.Container, cvm []corev1.VolumeMount, v []corev1.Volume) *statefulSetProperties {
 	if serviceAccountOwner == "" {
 		serviceAccountOwner = feature
 	}
@@ -76,12 +78,14 @@ func NewStatefulSetProperties_IC(instance *dynatracev1alpha1.DynaKube, capabilit
 		serviceAccountOwner:   serviceAccountOwner,
 		onAfterCreateListener: []shared.StatefulSetEvent{},
 		initContainers:        ic,
+		containerVolumeMounts: cvm,
+		volumes:               v,
 	}
 }
 
 func NewStatefulSetProperties(instance *dynatracev1alpha1.DynaKube, capabilityProperties *dynatracev1alpha1.CapabilityProperties,
 	kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string) *statefulSetProperties {
-	return NewStatefulSetProperties_IC(instance, capabilityProperties, kubeSystemUID, customPropertiesHash, feature, capabilityName, serviceAccountOwner, nil)
+	return NewStatefulSetProperties_IC(instance, capabilityProperties, kubeSystemUID, customPropertiesHash, feature, capabilityName, serviceAccountOwner, nil, nil, nil)
 }
 
 func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
@@ -196,13 +200,8 @@ func buildVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
 		)
 	}
 
-	if isKubernetesMonitoringEnabled(stsProperties) {
-		volumes = append(volumes, corev1.Volume{
-			Name: trustStoreVolume,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			}},
-		)
+	for _, volume := range stsProperties.volumes {
+		volumes = append(volumes, volume)
 	}
 	return volumes
 }
@@ -226,13 +225,8 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 		})
 	}
 
-	if isKubernetesMonitoringEnabled(stsProperties) {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			ReadOnly:  true,
-			Name:      trustStoreVolume,
-			MountPath: "/opt/dynatrace/gateway/jre/lib/security/cacerts",
-			SubPath:   "k8s-local.jks",
-		})
+	for _, volumeMount := range stsProperties.containerVolumeMounts {
+		volumeMounts = append(volumeMounts, volumeMount)
 	}
 
 	return volumeMounts

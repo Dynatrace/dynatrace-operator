@@ -38,6 +38,8 @@ type Reconciler struct {
 	capability                       *v1alpha1.CapabilityProperties
 	onAfterStatefulSetCreateListener []shared.StatefulSetEvent
 	ic                               []v1.Container
+	containerVolumeMounts            []v1.VolumeMount
+	volumes                          []v1.Volume
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
@@ -63,6 +65,8 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		capability:                       capability.GetProperties(),
 		onAfterStatefulSetCreateListener: []shared.StatefulSetEvent{},
 		ic:                               capability.GetInitContainersTemplates(),
+		containerVolumeMounts:            capability.GetContainerVolumeMounts(),
+		volumes:                          capability.GetVolumes(),
 	}
 }
 
@@ -129,7 +133,7 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 	}
 
 	stsProperties := NewStatefulSetProperties_IC(
-		r.Instance, r.capability, kubeUID, cpHash, r.feature, r.capabilityName, r.serviceAccountOwner, r.ic)
+		r.Instance, r.capability, kubeUID, cpHash, r.feature, r.capabilityName, r.serviceAccountOwner, r.ic, r.containerVolumeMounts, r.volumes)
 	stsProperties.onAfterCreateListener = r.onAfterStatefulSetCreateListener
 
 	desiredSts, err := CreateStatefulSet(stsProperties)

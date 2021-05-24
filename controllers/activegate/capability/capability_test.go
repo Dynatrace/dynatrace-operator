@@ -209,6 +209,18 @@ func TestNewKubeMonCapability(t *testing.T) {
 							},
 						},
 					},
+					containerVolumeMounts: []v1.VolumeMount{{
+						ReadOnly:  true,
+						Name:      trustStoreVolume,
+						MountPath: "/opt/dynatrace/gateway/jre/lib/security/cacerts",
+						SubPath:   "k8s-local.jks",
+					}},
+					volumes: []v1.Volume{{
+						Name: trustStoreVolume,
+						VolumeSource: v1.VolumeSource{
+							EmptyDir: &v1.EmptyDirVolumeSource{},
+						},
+					}},
 				},
 			},
 		},

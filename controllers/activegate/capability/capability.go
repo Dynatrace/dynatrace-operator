@@ -5,6 +5,10 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+const (
+	trustStoreVolume = "truststore-volume"
+)
+
 type Configuration struct {
 	SetDnsEntryPoint     bool
 	SetReadinessPort     bool
@@ -19,6 +23,8 @@ type Capability interface {
 	GetProperties() *dynatracev1alpha1.CapabilityProperties
 	GetConfiguration() Configuration
 	GetInitContainersTemplates() []v1.Container
+	GetContainerVolumeMounts() []v1.VolumeMount
+	GetVolumes() []v1.Volume
 }
 
 type capabilityBase struct {
@@ -27,6 +33,8 @@ type capabilityBase struct {
 	properties     *dynatracev1alpha1.CapabilityProperties
 	Configuration
 	initContainersTemplates []v1.Container
+	containerVolumeMounts   []v1.VolumeMount
+	volumes                 []v1.Volume
 }
 
 func (c *capabilityBase) GetProperties() *dynatracev1alpha1.CapabilityProperties {
@@ -51,6 +59,14 @@ func (c *capabilityBase) GetCapabilityName() string {
 //   Resources:
 func (c *capabilityBase) GetInitContainersTemplates() []v1.Container {
 	return c.initContainersTemplates
+}
+
+func (c *capabilityBase) GetContainerVolumeMounts() []v1.VolumeMount {
+	return c.containerVolumeMounts
+}
+
+func (c *capabilityBase) GetVolumes() []v1.Volume {
+	return c.volumes
 }
 
 func CalculateStatefulSetName(capability Capability, instanceName string) string {
@@ -94,6 +110,18 @@ func NewKubeMonCapability(crProperties *dynatracev1alpha1.CapabilityProperties) 
 					},
 				},
 			},
+			containerVolumeMounts: []v1.VolumeMount{{
+				ReadOnly:  true,
+				Name:      trustStoreVolume,
+				MountPath: "/opt/dynatrace/gateway/jre/lib/security/cacerts",
+				SubPath:   "k8s-local.jks",
+			}},
+			volumes: []v1.Volume{{
+				Name: trustStoreVolume,
+				VolumeSource: v1.VolumeSource{
+					EmptyDir: &v1.EmptyDirVolumeSource{},
+				},
+			}},
 		},
 	}
 }
