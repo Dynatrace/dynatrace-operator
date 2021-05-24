@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
-	"os"
 	"strconv"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -149,14 +148,10 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 func buildInitContainers(stsProperties *statefulSetProperties) []corev1.Container {
 	ics := stsProperties.initContainers
 
-	fmt.Fprintln(os.Stdout, ics)
-
-	for _, ic := range ics {
-		ic.Image = stsProperties.DynaKube.ActiveGateImage()
-		ic.Resources = stsProperties.CapabilityProperties.Resources
+	for idx, _ := range ics {
+		ics[idx].Image = stsProperties.DynaKube.ActiveGateImage()
+		ics[idx].Resources = stsProperties.CapabilityProperties.Resources
 	}
-
-	fmt.Fprintln(os.Stdout, ics)
 
 	return ics
 }
