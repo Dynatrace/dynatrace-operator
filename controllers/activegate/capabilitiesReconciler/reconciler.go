@@ -7,7 +7,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/shared"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/statefulsetag"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
@@ -27,14 +27,14 @@ const (
 )
 
 type Reconciler struct {
-	*statefulsetag.Reconciler
+	*statefulset.Reconciler
 	log logr.Logger
 	capability.Capability
 }
 
 func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
 	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
-	baseReconciler := statefulsetag.NewReconciler(
+	baseReconciler := statefulset.NewReconciler(
 		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider, capability)
 
 	if capability.GetConfiguration().SetDnsEntryPoint {

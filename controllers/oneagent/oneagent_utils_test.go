@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/statefulsetag"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
@@ -59,7 +59,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 
 	ds2, err := newDaemonSetForCR(consoleLogger, &dynatracev1alpha1.DynaKube{ObjectMeta: oaKey}, &dynatracev1alpha1.FullStackSpec{}, "classic", "cluster1")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, ds2.Annotations[statefulsetag.AnnotationTemplateHash])
+	assert.NotEmpty(t, ds2.Annotations[statefulset.AnnotationTemplateHash])
 
 	assert.True(t, hasDaemonSetChanged(ds1, ds2))
 }
@@ -79,8 +79,8 @@ func TestHasSpecChanged(t *testing.T) {
 			ds2, err := newDaemonSetForCR(consoleLogger, &newInstance, &newInstance.Spec.ClassicFullStack, "classic", "cluster1")
 			assert.NoError(t, err)
 
-			assert.NotEmpty(t, ds1.Annotations[statefulsetag.AnnotationTemplateHash])
-			assert.NotEmpty(t, ds2.Annotations[statefulsetag.AnnotationTemplateHash])
+			assert.NotEmpty(t, ds1.Annotations[statefulset.AnnotationTemplateHash])
+			assert.NotEmpty(t, ds2.Annotations[statefulset.AnnotationTemplateHash])
 
 			assert.Equal(t, exp, hasDaemonSetChanged(ds1, ds2))
 		})

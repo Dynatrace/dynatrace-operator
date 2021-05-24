@@ -1,4 +1,4 @@
-package statefulsetag
+package statefulset
 
 import "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 

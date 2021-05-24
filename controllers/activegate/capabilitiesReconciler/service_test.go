@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/statefulsetag"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/statefulset"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,9 +29,9 @@ func TestCreateService(t *testing.T) {
 	serviceSpec := service.Spec
 	assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
 	assert.Equal(t, map[string]string{
-		statefulsetag.KeyActiveGate: testName,
-		statefulsetag.KeyDynatrace:  statefulsetag.ValueActiveGate,
-		statefulsetag.KeyFeature:    testFeature,
+		statefulset.KeyActiveGate: testName,
+		statefulset.KeyDynatrace:  statefulset.ValueActiveGate,
+		statefulset.KeyFeature:    testFeature,
 	}, serviceSpec.Selector)
 
 	ports := serviceSpec.Ports

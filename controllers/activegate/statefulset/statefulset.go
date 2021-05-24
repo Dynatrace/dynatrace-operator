@@ -1,4 +1,4 @@
-package statefulsetag
+package statefulset
 
 import (
 	"encoding/json"
@@ -43,48 +43,42 @@ const (
 	DTDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
 
 	ProxyKey = "ProxyKey"
-
-	trustStoreVolume = "truststore-volume"
 )
 
 type statefulSetProperties struct {
 	*dynatracev1alpha1.DynaKube
 	*dynatracev1alpha1.CapabilityProperties
-	customPropertiesHash  string
-	kubeSystemUID         types.UID
-	feature               string
-	capabilityName        string
-	serviceAccountOwner   string
-	onAfterCreateListener []shared.StatefulSetEvent
-	initContainers        []corev1.Container
-	containerVolumeMounts []corev1.VolumeMount
-	volumes               []corev1.Volume
+	customPropertiesHash    string
+	kubeSystemUID           types.UID
+	feature                 string
+	capabilityName          string
+	serviceAccountOwner     string
+	onAfterCreateListener   []shared.StatefulSetEvent
+	initContainersTemplates []corev1.Container
+	containerVolumeMounts   []corev1.VolumeMount
+	volumes                 []corev1.Volume
 }
 
-func NewStatefulSetProperties_IC(instance *dynatracev1alpha1.DynaKube, capabilityProperties *dynatracev1alpha1.CapabilityProperties,
-	kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string, ic []corev1.Container, cvm []corev1.VolumeMount, v []corev1.Volume) *statefulSetProperties {
+func NewStatefulSetProperties(instance *dynatracev1alpha1.DynaKube, capabilityProperties *dynatracev1alpha1.CapabilityProperties,
+	kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string,
+	initContainers []corev1.Container, containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume) *statefulSetProperties {
 	if serviceAccountOwner == "" {
 		serviceAccountOwner = feature
 	}
 
 	return &statefulSetProperties{
-		DynaKube:              instance,
-		CapabilityProperties:  capabilityProperties,
-		customPropertiesHash:  customPropertiesHash,
-		kubeSystemUID:         kubeSystemUID,
-		feature:               feature,
-		capabilityName:        capabilityName,
-		serviceAccountOwner:   serviceAccountOwner,
-		onAfterCreateListener: []shared.StatefulSetEvent{},
-		initContainers:        ic,
-		containerVolumeMounts: cvm,
-		volumes:               v,
+		DynaKube:                instance,
+		CapabilityProperties:    capabilityProperties,
+		customPropertiesHash:    customPropertiesHash,
+		kubeSystemUID:           kubeSystemUID,
+		feature:                 feature,
+		capabilityName:          capabilityName,
+		serviceAccountOwner:     serviceAccountOwner,
+		onAfterCreateListener:   []shared.StatefulSetEvent{},
+		initContainersTemplates: initContainers,
+		containerVolumeMounts:   containerVolumeMounts,
+		volumes:                 volumes,
 	}
-}
-
-func NewStatefulSetProperties(instance *dynatracev1alpha1.DynaKube, capabilityProperties *dynatracev1alpha1.CapabilityProperties,
-	kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string) *statefulSetProperties {
-	return NewStatefulSetProperties_IC(instance, capabilityProperties, kubeSystemUID, customPropertiesHash, feature, capabilityName, serviceAccountOwner, nil, nil, nil)
 }
 
 func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
@@ -146,7 +140,7 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 }
 
 func buildInitContainers(stsProperties *statefulSetProperties) []corev1.Container {
-	ics := stsProperties.initContainers
+	ics := stsProperties.initContainersTemplates
 
 	for idx, _ := range ics {
 		ics[idx].Image = stsProperties.DynaKube.ActiveGateImage()

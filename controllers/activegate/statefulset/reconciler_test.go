@@ -1,4 +1,4 @@
-package statefulsetag
+package statefulset
 
 import (
 	"context"
