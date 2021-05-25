@@ -1,4 +1,4 @@
-package statefulset
+package statefulsetr
 
 import (
 	"context"
@@ -8,7 +8,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/shared"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/events"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
@@ -36,7 +37,7 @@ type Reconciler struct {
 	capabilityName                   string
 	serviceAccountOwner              string
 	capability                       *v1alpha1.CapabilityProperties
-	onAfterStatefulSetCreateListener []shared.StatefulSetEvent
+	onAfterStatefulSetCreateListener []events.StatefulSetEvent
 	initContainersTemplates          []v1.Container
 	containerVolumeMounts            []v1.VolumeMount
 	volumes                          []v1.Volume
@@ -63,14 +64,14 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		capabilityName:                   capability.GetCapabilityName(),
 		serviceAccountOwner:              serviceAccountOwner,
 		capability:                       capability.GetProperties(),
-		onAfterStatefulSetCreateListener: []shared.StatefulSetEvent{},
+		onAfterStatefulSetCreateListener: []events.StatefulSetEvent{},
 		initContainersTemplates:          capability.GetInitContainersTemplates(),
 		containerVolumeMounts:            capability.GetContainerVolumeMounts(),
 		volumes:                          capability.GetVolumes(),
 	}
 }
 
-func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event shared.StatefulSetEvent) {
+func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event events.StatefulSetEvent) {
 	r.onAfterStatefulSetCreateListener = append(r.onAfterStatefulSetCreateListener, event)
 }
 
@@ -132,11 +133,11 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	stsProperties := NewStatefulSetProperties(
+	stsProperties := statefulset.NewStatefulSetProperties(
 		r.Instance, r.capability, kubeUID, cpHash, r.feature, r.capabilityName, r.serviceAccountOwner, r.initContainersTemplates, r.containerVolumeMounts, r.volumes)
-	stsProperties.onAfterCreateListener = r.onAfterStatefulSetCreateListener
+	stsProperties.OnAfterCreateListener = r.onAfterStatefulSetCreateListener
 
-	desiredSts, err := CreateStatefulSet(stsProperties)
+	desiredSts, err := statefulset.CreateStatefulSet(stsProperties)
 	return desiredSts, errors.WithStack(err)
 }
 
@@ -163,7 +164,7 @@ func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet)
 	if err != nil {
 		return false, err
 	}
-	if !HasStatefulSetChanged(currentSts, desiredSts) {
+	if !statefulset.HasStatefulSetChanged(currentSts, desiredSts) {
 		return false, nil
 	}
 

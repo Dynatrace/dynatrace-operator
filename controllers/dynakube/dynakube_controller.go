@@ -7,8 +7,9 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capabilitiesReconciler"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capabilityr"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/service"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/updates"
@@ -230,7 +231,7 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconcili
 
 	for _, c := range caps {
 		if c.GetProperties().Enabled {
-			upd, err := capabilitiesReconciler.NewReconciler(
+			upd, err := capabilityr.NewReconciler(
 				c, r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
 			).Reconcile()
 			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, c.GetModuleName()+" reconciled") {
@@ -250,7 +251,7 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconcili
 			if c.GetConfiguration().CreateService {
 				svc := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      capabilitiesReconciler.BuildServiceName(rec.Instance.Name, c.GetModuleName()),
+						Name:      service.BuildServiceName(rec.Instance.Name, c.GetModuleName()),
 						Namespace: rec.Instance.Namespace,
 					},
 				}

@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/shared"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/events"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
@@ -48,15 +48,15 @@ const (
 type statefulSetProperties struct {
 	*dynatracev1alpha1.DynaKube
 	*dynatracev1alpha1.CapabilityProperties
-	customPropertiesHash    string
-	kubeSystemUID           types.UID
-	feature                 string
-	capabilityName          string
-	serviceAccountOwner     string
-	onAfterCreateListener   []shared.StatefulSetEvent
-	initContainersTemplates []corev1.Container
-	containerVolumeMounts   []corev1.VolumeMount
-	volumes                 []corev1.Volume
+	CustomPropertiesHash    string
+	KubeSystemUID           types.UID
+	Feature                 string
+	CapabilityName          string
+	ServiceAccountOwner     string
+	OnAfterCreateListener   []events.StatefulSetEvent
+	InitContainersTemplates []corev1.Container
+	ContainerVolumeMounts   []corev1.VolumeMount
+	Volumes                 []corev1.Volume
 }
 
 func NewStatefulSetProperties(instance *dynatracev1alpha1.DynaKube, capabilityProperties *dynatracev1alpha1.CapabilityProperties,
@@ -69,43 +69,43 @@ func NewStatefulSetProperties(instance *dynatracev1alpha1.DynaKube, capabilityPr
 	return &statefulSetProperties{
 		DynaKube:                instance,
 		CapabilityProperties:    capabilityProperties,
-		customPropertiesHash:    customPropertiesHash,
-		kubeSystemUID:           kubeSystemUID,
-		feature:                 feature,
-		capabilityName:          capabilityName,
-		serviceAccountOwner:     serviceAccountOwner,
-		onAfterCreateListener:   []shared.StatefulSetEvent{},
-		initContainersTemplates: initContainers,
-		containerVolumeMounts:   containerVolumeMounts,
-		volumes:                 volumes,
+		CustomPropertiesHash:    customPropertiesHash,
+		KubeSystemUID:           kubeSystemUID,
+		Feature:                 feature,
+		CapabilityName:          capabilityName,
+		ServiceAccountOwner:     serviceAccountOwner,
+		OnAfterCreateListener:   []events.StatefulSetEvent{},
+		InitContainersTemplates: initContainers,
+		ContainerVolumeMounts:   containerVolumeMounts,
+		Volumes:                 volumes,
 	}
 }
 
 func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        stsProperties.Name + "-" + stsProperties.feature,
+			Name:        stsProperties.Name + "-" + stsProperties.Feature,
 			Namespace:   stsProperties.Namespace,
-			Labels:      BuildLabels(stsProperties.DynaKube, stsProperties.feature, stsProperties.CapabilityProperties),
+			Labels:      BuildLabels(stsProperties.DynaKube, stsProperties.Feature, stsProperties.CapabilityProperties),
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Replicas:            stsProperties.Replicas,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector:            &metav1.LabelSelector{MatchLabels: BuildLabelsFromInstance(stsProperties.DynaKube, stsProperties.feature)},
+			Selector:            &metav1.LabelSelector{MatchLabels: BuildLabelsFromInstance(stsProperties.DynaKube, stsProperties.Feature)},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: BuildLabels(stsProperties.DynaKube, stsProperties.feature, stsProperties.CapabilityProperties),
+					Labels: BuildLabels(stsProperties.DynaKube, stsProperties.Feature, stsProperties.CapabilityProperties),
 					Annotations: map[string]string{
 						AnnotationVersion:         stsProperties.Status.ActiveGate.Version,
-						AnnotationCustomPropsHash: stsProperties.customPropertiesHash,
+						AnnotationCustomPropsHash: stsProperties.CustomPropertiesHash,
 					},
 				},
 				Spec: buildTemplateSpec(stsProperties),
 			},
 		}}
 
-	for _, onAfterCreateListener := range stsProperties.onAfterCreateListener {
+	for _, onAfterCreateListener := range stsProperties.OnAfterCreateListener {
 		onAfterCreateListener(sts)
 	}
 
@@ -140,7 +140,7 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 }
 
 func buildInitContainers(stsProperties *statefulSetProperties) []corev1.Container {
-	ics := stsProperties.initContainersTemplates
+	ics := stsProperties.InitContainersTemplates
 
 	for idx, _ := range ics {
 		ics[idx].Image = stsProperties.DynaKube.ActiveGateImage()
@@ -189,7 +189,7 @@ func buildVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
 		)
 	}
 
-	for _, volume := range stsProperties.volumes {
+	for _, volume := range stsProperties.Volumes {
 		volumes = append(volumes, volume)
 	}
 	return volumes
@@ -197,7 +197,7 @@ func buildVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
 
 func determineCustomPropertiesSource(stsProperties *statefulSetProperties) string {
 	if stsProperties.CustomProperties.ValueFrom == "" {
-		return fmt.Sprintf("%s-%s-%s", stsProperties.Name, stsProperties.serviceAccountOwner, customproperties.Suffix)
+		return fmt.Sprintf("%s-%s-%s", stsProperties.Name, stsProperties.ServiceAccountOwner, customproperties.Suffix)
 	}
 	return stsProperties.CustomProperties.ValueFrom
 }
@@ -214,7 +214,7 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 		})
 	}
 
-	for _, volumeMount := range stsProperties.containerVolumeMounts {
+	for _, volumeMount := range stsProperties.ContainerVolumeMounts {
 		volumeMounts = append(volumeMounts, volumeMount)
 	}
 
@@ -225,7 +225,7 @@ func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
 	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(stsProperties.kubeSystemUID))
 
 	envs := []corev1.EnvVar{
-		{Name: DTCapabilities, Value: stsProperties.capabilityName},
+		{Name: DTCapabilities, Value: stsProperties.CapabilityName},
 		{Name: DTIdSeedNamespace, Value: stsProperties.Namespace},
 		{Name: DTIdSeedClusterId, Value: string(stsProperties.kubeSystemUID)},
 		{Name: DTDeploymentMetadata, Value: deploymentMetadata.AsString()},
@@ -266,7 +266,7 @@ func buildProxyEnv(proxy *dynatracev1alpha1.DynaKubeProxy) corev1.EnvVar {
 
 func determineServiceAccountName(stsProperties *statefulSetProperties) string {
 	if stsProperties.ServiceAccountName == "" {
-		return serviceAccountPrefix + stsProperties.serviceAccountOwner
+		return serviceAccountPrefix + stsProperties.ServiceAccountOwner
 	}
 	return stsProperties.ServiceAccountName
 }

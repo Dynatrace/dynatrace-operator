@@ -1,4 +1,4 @@
-package capabilitiesReconciler
+package capabilityr
 
 import (
 	"context"
@@ -6,8 +6,10 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/shared"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/consts"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/events"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulsetr"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/service"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
@@ -27,14 +29,14 @@ const (
 )
 
 type Reconciler struct {
-	*statefulset.Reconciler
+	*statefulsetr.Reconciler
 	log logr.Logger
 	capability.Capability
 }
 
 func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
 	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
-	baseReconciler := statefulset.NewReconciler(
+	baseReconciler := statefulsetr.NewReconciler(
 		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider, capability)
 
 	if capability.GetConfiguration().SetDnsEntryPoint {
@@ -56,17 +58,17 @@ func NewReconciler(capability capability.Capability, clt client.Client, apiReade
 	}
 }
 
-func setReadinessProbePort() shared.StatefulSetEvent {
+func setReadinessProbePort() events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
-		sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port = intstr.FromString(serviceTargetPort)
+		sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.ServiceTargetPort)
 	}
 }
 
-func setCommunicationsPort(_ *dynatracev1alpha1.DynaKube) shared.StatefulSetEvent {
+func setCommunicationsPort(_ *dynatracev1alpha1.DynaKube) events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		sts.Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{
 			{
-				Name:          serviceTargetPort,
+				Name:          consts.ServiceTargetPort,
 				ContainerPort: containerPort,
 			},
 		}
@@ -77,7 +79,7 @@ func (r *Reconciler) calculateStatefulSetName() string {
 	return capability.CalculateStatefulSetName(r.Capability, r.Instance.Name)
 }
 
-func addDNSEntryPoint(instance *dynatracev1alpha1.DynaKube, moduleName string) shared.StatefulSetEvent {
+func addDNSEntryPoint(instance *dynatracev1alpha1.DynaKube, moduleName string) events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		sts.Spec.Template.Spec.Containers[0].Env = append(sts.Spec.Template.Spec.Containers[0].Env,
 			corev1.EnvVar{
@@ -88,7 +90,7 @@ func addDNSEntryPoint(instance *dynatracev1alpha1.DynaKube, moduleName string) s
 }
 
 func buildDNSEntryPoint(instance *dynatracev1alpha1.DynaKube, moduleName string) string {
-	return fmt.Sprintf("https://%s/communication", buildServiceHostName(instance.Name, moduleName))
+	return fmt.Sprintf("https://%s/communication", service.BuildServiceHostName(instance.Name, moduleName))
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
@@ -104,7 +106,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 }
 
 func (r *Reconciler) createServiceIfNotExists() (bool, error) {
-	service := createService(r.Instance, r.GetModuleName())
+	service := service.CreateService(r.Instance, r.GetModuleName())
 
 	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
 	if err != nil && k8serrors.IsNotFound(err) {
