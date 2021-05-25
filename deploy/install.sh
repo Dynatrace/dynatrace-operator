@@ -277,6 +277,10 @@ checkForExistingCluster() {
     echo "Error: Cluster already exists: ${CONNECTION_NAME}"
     exit 1
   fi
+  if echo "$response" | grep -Fq "\"endpointUrl\":\"${K8S_ENDPOINT}"; then
+    echo "Error: Cluster endpoint already exists: ${K8S_ENDPOINT}"
+    exit 1
+  fi
 }
 
 checkTokenScopes() {
