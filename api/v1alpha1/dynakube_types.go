@@ -183,6 +183,10 @@ type FullStackSpec struct {
 	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
 }
 
+type MetricsIngestSpec struct {
+	CapabilityProperties `json:",inline"`
+}
+
 type RoutingSpec struct {
 	CapabilityProperties `json:",inline"`
 }
