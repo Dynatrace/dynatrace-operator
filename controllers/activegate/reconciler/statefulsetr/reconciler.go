@@ -18,7 +18,6 @@ import (
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,9 +37,9 @@ type Reconciler struct {
 	serviceAccountOwner              string
 	capability                       *v1alpha1.CapabilityProperties
 	onAfterStatefulSetCreateListener []events.StatefulSetEvent
-	initContainersTemplates          []v1.Container
-	containerVolumeMounts            []v1.VolumeMount
-	volumes                          []v1.Volume
+	initContainersTemplates          []corev1.Container
+	containerVolumeMounts            []corev1.VolumeMount
+	volumes                          []corev1.Volume
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,

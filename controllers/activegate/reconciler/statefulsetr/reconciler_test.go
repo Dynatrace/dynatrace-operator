@@ -26,13 +26,10 @@ import (
 )
 
 const (
-	testName                 = "test-name"
-	testNamespace            = "test-namespace"
-	testKey                  = "test-key"
-	testValue                = "test-value"
-	testUID                  = "test-uid"
-	routingStatefulSetSuffix = "-router"
-	testFeature              = "router"
+	testName      = "test-name"
+	testNamespace = "test-namespace"
+	testValue     = "test-value"
+	testUID       = "test-uid"
 )
 
 func TestNewReconiler(t *testing.T) {

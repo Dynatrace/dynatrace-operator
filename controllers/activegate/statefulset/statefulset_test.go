@@ -31,9 +31,9 @@ func TestNewStatefulSetBuilder(t *testing.T) {
 	assert.NotNil(t, stsBuilder)
 	assert.NotNil(t, stsBuilder.DynaKube)
 	assert.NotNil(t, stsBuilder.CapabilityProperties)
-	assert.NotNil(t, stsBuilder.CustomPropertiesHash)
-	assert.NotEmpty(t, stsBuilder.CustomPropertiesHash)
-	assert.NotEmpty(t, stsBuilder.KubeSystemUID)
+	assert.NotNil(t, stsBuilder.customPropertiesHash)
+	assert.NotEmpty(t, stsBuilder.customPropertiesHash)
+	assert.NotEmpty(t, stsBuilder.kubeSystemUID)
 }
 
 func TestStatefulSetBuilder_Build(t *testing.T) {
