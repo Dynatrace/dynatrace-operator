@@ -9,6 +9,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,6 +39,7 @@ const (
 	DTNetworkZone     = "DT_NETWORK_ZONE"
 	DTGroup           = "DT_GROUP"
 	DTInternalProxy   = "DT_INTERNAL_PROXY"
+	DTDeployMetadata  = "DT_DEPLOY_METADATA"
 
 	ProxyKey = "ProxyKey"
 )
@@ -195,10 +197,13 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 }
 
 func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
+	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(stsProperties.kubeSystemUID))
+
 	envs := []corev1.EnvVar{
 		{Name: DTCapabilities, Value: stsProperties.capabilityName},
 		{Name: DTIdSeedNamespace, Value: stsProperties.Namespace},
 		{Name: DTIdSeedClusterId, Value: string(stsProperties.kubeSystemUID)},
+		{Name: DTDeployMetadata, Value: deploymentMetadata.AsString()},
 	}
 	envs = append(envs, stsProperties.Env...)
 

@@ -6,6 +6,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -194,6 +195,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 func TestStatefulSet_Env(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
+	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(testUID))
 
 	t.Run(`without proxy`, func(t *testing.T) {
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
@@ -202,6 +204,7 @@ func TestStatefulSet_Env(t *testing.T) {
 			{Name: DTCapabilities, Value: "MSGrouter"},
 			{Name: DTIdSeedNamespace, Value: instance.Namespace},
 			{Name: DTIdSeedClusterId, Value: testUID},
+			{Name: DTDeployMetadata, Value: deploymentMetadata.AsString()},
 			{Name: testKey, Value: testValue},
 		}, envVars)
 	})
