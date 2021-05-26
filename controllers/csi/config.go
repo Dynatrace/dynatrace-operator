@@ -22,6 +22,7 @@ const (
 	AgentConfDir          = "agent/conf"
 	DataPath              = "data"
 	DatastorageDir        = "datastorage"
+	DaemonSetName         = "dynatrace-oneagent-csi-driver"
 	DriverName            = "csi.oneagent.dynatrace.com"
 	GarbageCollectionPath = "gc"
 	LogDir                = "log"
