@@ -45,20 +45,6 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 	ws.CertName = certFile
 	log.Info("SSL certificates configured", "dir", certsDir, "key", keyFile, "cert", certFile)
 
-	// Wait until the certificates are available, otherwise the Manager will fail to start.
-	/*certFilePath := path.Join(certsDir, certFile)
-	for threshold := time.Now().Add(5 * time.Minute); time.Now().Before(threshold); {
-		if _, err := os.Stat(certFilePath); os.IsNotExist(err) {
-			log.Info("Waiting for certificates to be available.")
-			time.Sleep(10 * time.Second)
-			continue
-		} else if err != nil {
-			return nil, err
-		}
-
-		break
-	}*/
-
 	for threshold := time.Now().Add(5 * time.Minute); time.Now().Before(threshold); {
 		err := server.UpdateCertificate(mgr, ws, ns)
 
@@ -87,8 +73,9 @@ func startCertificateWatcher(mgr manager.Manager, ws *webhook2.Server, ns string
 	go func() {
 		for {
 			<-time.After(6 * time.Hour)
+			log.Info("checking for new certificates")
 			if err := server.UpdateCertificate(mgr, ws, ns); err != nil {
-				log.Info("Failed to update certificates", "error", err)
+				log.Info("failed to update certificates", "error", err)
 			}
 		}
 	}()

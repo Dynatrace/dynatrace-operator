@@ -37,7 +37,7 @@ func Add(mgr manager.Manager, ns string) error {
 		client:    mgr.GetClient(),
 		scheme:    mgr.GetScheme(),
 		namespace: ns,
-		logger:    log.Log.WithName("webhook.controller"),
+		logger:    log.Log.WithName("operator.webhook-bootstrapper"),
 	})
 }
 
