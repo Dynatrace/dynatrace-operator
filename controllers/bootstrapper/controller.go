@@ -60,8 +60,7 @@ func add(mgr manager.Manager, r *ReconcileWebhook) error {
 		// some time before inserting an element so that the Channel has time to initialize.
 		time.Sleep(10 * time.Second)
 
-		// todo(gakr): Change to 6 hours
-		ticker := time.NewTicker(5 * time.Minute)
+		ticker := time.NewTicker(3 * time.Hour)
 		defer ticker.Stop()
 
 		ch <- event.GenericEvent{
@@ -191,7 +190,7 @@ func (r *ReconcileWebhook) reconcileCerts(ctx context.Context, log logr.Logger) 
 		return nil, err
 	}
 
-	return cs.Data["ca.crt"], nil
+	return append(cs.Data["ca.crt"], cs.Data["ca.crt.old"]...), nil
 }
 
 func (r *ReconcileWebhook) reconcileWebhookConfig(ctx context.Context, log logr.Logger, rootCerts []byte) error {

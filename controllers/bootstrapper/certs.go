@@ -15,7 +15,7 @@ import (
 
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), 128)
 
-const renewalThreshold = 4 * time.Hour
+const renewalThreshold = 12 * time.Hour
 
 // Certs handles creation and renewal of CA and SSL/TLS server certificates.
 type Certs struct {
@@ -170,6 +170,7 @@ func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 		return fmt.Errorf("failed to generate root certificate: %w", err)
 	}
 
+	cs.Data["ca.crt.old"] = cs.Data["ca.crt"]
 	cs.Data["ca.crt"] = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: rootPublicCertDER})
 	return nil
 }
