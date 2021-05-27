@@ -20,7 +20,7 @@ func TestCertsValidation(t *testing.T) {
 	firstCerts := Certs{Log: logger, Domain: domain, now: now}
 
 	require.NoError(t, firstCerts.ValidateCerts())
-	require.Equal(t, len(firstCerts.Data), 4)
+	require.Equal(t, len(firstCerts.Data), 5)
 	requireValidCerts(t, domain, now.Add(5*time.Minute), firstCerts.Data["ca.crt"], firstCerts.Data["tls.crt"])
 
 	t.Run("up-to-date certs", func(t *testing.T) {
@@ -32,6 +32,7 @@ func TestCertsValidation(t *testing.T) {
 
 		// No changes should have been applied.
 		assert.Equal(t, string(firstCerts.Data["ca.crt"]), string(newCerts.Data["ca.crt"]))
+		assert.Equal(t, string(firstCerts.Data["ca.crt.old"]), "")
 		assert.Equal(t, string(firstCerts.Data["ca.key"]), string(newCerts.Data["ca.key"]))
 		assert.Equal(t, string(firstCerts.Data["tls.crt"]), string(newCerts.Data["tls.crt"]))
 		assert.Equal(t, string(firstCerts.Data["tls.key"]), string(newCerts.Data["tls.key"]))
@@ -46,6 +47,7 @@ func TestCertsValidation(t *testing.T) {
 
 		// Server certificates should have been updated.
 		assert.Equal(t, string(firstCerts.Data["ca.crt"]), string(newCerts.Data["ca.crt"]))
+		assert.Equal(t, string(firstCerts.Data["ca.crt.old"]), "")
 		assert.Equal(t, string(firstCerts.Data["ca.key"]), string(newCerts.Data["ca.key"]))
 		assert.NotEqual(t, string(firstCerts.Data["tls.crt"]), string(newCerts.Data["tls.crt"]))
 		assert.NotEqual(t, string(firstCerts.Data["tls.key"]), string(newCerts.Data["tls.key"]))
@@ -59,6 +61,7 @@ func TestCertsValidation(t *testing.T) {
 		requireValidCerts(t, domain, newTime, newCerts.Data["ca.crt"], newCerts.Data["tls.crt"])
 
 		// Server certificates should have been updated.
+		assert.Equal(t, string(firstCerts.Data["ca.crt"]), string(newCerts.Data["ca.crt.old"]))
 		assert.NotEqual(t, string(firstCerts.Data["ca.crt"]), string(newCerts.Data["ca.crt"]))
 		assert.NotEqual(t, string(firstCerts.Data["ca.key"]), string(newCerts.Data["ca.key"]))
 		assert.NotEqual(t, string(firstCerts.Data["tls.crt"]), string(newCerts.Data["tls.crt"]))
