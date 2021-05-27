@@ -26,7 +26,6 @@ const (
 	containerPort   = 9999
 	dtDNSEntryPoint = "DT_DNS_ENTRY_POINT"
 	dtTenantUUID    = "DT_TENANT"
-	dtTenantToken   = "DT_TOKEN"
 	dtServer        = "DT_SERVER"
 )
 
@@ -98,10 +97,6 @@ func addTenantInfo(dtc dtclient.Client) activegate.StatefulSetEvent {
 			corev1.EnvVar{
 				Name:  dtTenantUUID,
 				Value: info.ID,
-			},
-			corev1.EnvVar{
-				Name:  dtTenantToken,
-				Value: info.Token,
 			})
 	}
 }
