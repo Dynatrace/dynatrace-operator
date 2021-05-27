@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"net/http"
 	"net/url"
 	"os"
@@ -175,7 +176,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	dkVol := oa.Spec.CodeModules.Volume
 	if dkVol == (corev1.VolumeSource{}) {
 		dkVol.CSI = &corev1.CSIVolumeSource{
-			Driver: "csi.oneagent.dynatrace.com",
+			Driver: dtcsi.DriverName,
 		}
 	}
 

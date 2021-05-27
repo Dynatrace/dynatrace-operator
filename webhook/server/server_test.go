@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -55,11 +57,28 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	require.Equal(t, resp.Result.Message, "namespace 'test-namespace' is assigned to DynaKube instance 'dynakube' but doesn't exist")
 }
 
-func TestPodInjection(t *testing.T) {
-	decoder, err := admission.NewDecoder(scheme.Scheme)
-	require.NoError(t, err)
+func CreatePodInjector(decoder *admission.Decoder, enableCSIDriver bool) *podInjector {
+	codeModules := dynatracev1alpha1.CodeModulesSpec{
+		Enabled: true,
+		Resources: corev1.ResourceRequirements{
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("1"),
+				corev1.ResourceMemory: resource.MustParse("500M"),
+			},
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+				corev1.ResourceMemory: resource.MustParse("100M"),
+			},
+		},
+	}
 
-	inj := &podInjector{
+	if !enableCSIDriver {
+		codeModules.Volume = corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		}
+	}
+
+	return &podInjector{
 		client: fake.NewClient(
 			&dynatracev1alpha1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
@@ -69,22 +88,7 @@ func TestPodInjection(t *testing.T) {
 						Enabled:           true,
 						UseImmutableImage: true,
 					},
-					CodeModules: dynatracev1alpha1.CodeModulesSpec{
-						Enabled: true,
-						Resources: corev1.ResourceRequirements{
-							Limits: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("1"),
-								corev1.ResourceMemory: resource.MustParse("500M"),
-							},
-							Requests: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("100m"),
-								corev1.ResourceMemory: resource.MustParse("100M"),
-							},
-						},
-						Volume: corev1.VolumeSource{
-							EmptyDir: &corev1.EmptyDirVolumeSource{},
-						},
-					},
+					CodeModules: codeModules,
 				},
 				Status: dynatracev1alpha1.DynaKubeStatus{
 					OneAgent: dynatracev1alpha1.OneAgentStatus{
@@ -103,6 +107,13 @@ func TestPodInjection(t *testing.T) {
 		image:     "test-api-url.com/linux/codemodule",
 		namespace: "dynatrace",
 	}
+}
+
+func TestPodInjection(t *testing.T) {
+	decoder, err := admission.NewDecoder(scheme.Scheme)
+	require.NoError(t, err)
+
+	inj := CreatePodInjector(decoder, true)
 
 	basePod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-pod-123456", Namespace: "test-namespace"},
@@ -237,47 +248,7 @@ func TestPodInjectionWithCSI(t *testing.T) {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	require.NoError(t, err)
 
-	inj := &podInjector{
-		client: fake.NewClient(
-			&dynatracev1alpha1.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-				Spec: dynatracev1alpha1.DynaKubeSpec{
-					APIURL: "https://test-api-url.com/api",
-					InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-						Enabled:           true,
-						UseImmutableImage: true,
-					},
-					CodeModules: dynatracev1alpha1.CodeModulesSpec{
-						Enabled: true,
-						Resources: corev1.ResourceRequirements{
-							Limits: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("1"),
-								corev1.ResourceMemory: resource.MustParse("500M"),
-							},
-							Requests: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("100m"),
-								corev1.ResourceMemory: resource.MustParse("100M"),
-							},
-						},
-					},
-				},
-				Status: dynatracev1alpha1.DynaKubeStatus{
-					OneAgent: dynatracev1alpha1.OneAgentStatus{
-						UseImmutableImage: true,
-					},
-				},
-			},
-			&corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
-				},
-			},
-		),
-		decoder:   decoder,
-		image:     "test-api-url.com/linux/codemodule",
-		namespace: "dynatrace",
-	}
+	inj := CreatePodInjector(decoder, false)
 
 	basePod := corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{Name: "test-pod-123456", Namespace: "test-namespace"},
@@ -387,7 +358,7 @@ func TestPodInjectionWithCSI(t *testing.T) {
 					Name: "oneagent-bin",
 					VolumeSource: corev1.VolumeSource{
 						CSI: &corev1.CSIVolumeSource{
-							Driver: "csi.oneagent.dynatrace.com",
+							Driver: dtcsi.DriverName,
 						},
 					},
 				},
@@ -410,31 +381,46 @@ func TestPodInjectionWithCSI(t *testing.T) {
 	}, updPod)
 }
 
+func CreateDynakubeInstance(csiDriverNotSet bool, agentVersionSet bool) *dynatracev1alpha1.DynaKube {
+	instance := &dynatracev1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
+		Spec: dynatracev1alpha1.DynaKubeSpec{
+			InfraMonitoring: dynatracev1alpha1.FullStackSpec{
+				Enabled:           true,
+				UseImmutableImage: true,
+			},
+			CodeModules: dynatracev1alpha1.CodeModulesSpec{
+				Enabled: true,
+			},
+		},
+		Status: dynatracev1alpha1.DynaKubeStatus{
+			OneAgent: dynatracev1alpha1.OneAgentStatus{
+				UseImmutableImage: true,
+			},
+		},
+	}
+
+	if csiDriverNotSet {
+		instance.Spec.CodeModules.Volume = corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		}
+	}
+
+	if agentVersionSet {
+		instance.Spec.OneAgent = dynatracev1alpha1.OneAgentSpec{
+			Version: "test-version",
+		}
+	}
+
+	return instance
+}
+
 func TestUseImmutableImage(t *testing.T) {
 	t.Run(`do not use immutable image`, func(t *testing.T) {
 		decoder, err := admission.NewDecoder(scheme.Scheme)
 		require.NoError(t, err)
 
-		instance := &dynatracev1alpha1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-					Enabled:           true,
-					UseImmutableImage: true,
-				},
-				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-					Enabled: true,
-					Volume: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
-				},
-			},
-		}
+		instance := CreateDynakubeInstance(true, false)
 
 		inj := &podInjector{
 			client: fake.NewClient(
@@ -579,26 +565,7 @@ func TestUseImmutableImage(t *testing.T) {
 		decoder, err := admission.NewDecoder(scheme.Scheme)
 		require.NoError(t, err)
 
-		instance := &dynatracev1alpha1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-					Enabled:           true,
-					UseImmutableImage: true,
-				},
-				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-					Enabled: true,
-					Volume: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
-				},
-			},
-		}
+		instance := CreateDynakubeInstance(true, false)
 
 		inj := &podInjector{
 			client: fake.NewClient(
@@ -744,29 +711,7 @@ func TestUseImmutableImage(t *testing.T) {
 		decoder, err := admission.NewDecoder(scheme.Scheme)
 		require.NoError(t, err)
 
-		instance := &dynatracev1alpha1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-					Enabled:           true,
-					UseImmutableImage: true,
-				},
-				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-					Enabled: true,
-					Volume: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
-				},
-				OneAgent: dynatracev1alpha1.OneAgentSpec{
-					Image: "test-image",
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
-				},
-			},
-		}
+		instance := CreateDynakubeInstance(true, false)
 
 		inj := &podInjector{
 			client: fake.NewClient(
@@ -911,23 +856,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 		decoder, err := admission.NewDecoder(scheme.Scheme)
 		require.NoError(t, err)
 
-		instance := &dynatracev1alpha1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-					Enabled:           true,
-					UseImmutableImage: true,
-				},
-				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-					Enabled: true,
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
-				},
-			},
-		}
+		instance := CreateDynakubeInstance(false, false)
 
 		inj := &podInjector{
 			client: fake.NewClient(
@@ -1048,7 +977,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 						Name: "oneagent-bin",
 						VolumeSource: corev1.VolumeSource{
 							CSI: &corev1.CSIVolumeSource{
-								Driver: "csi.oneagent.dynatrace.com",
+								Driver: dtcsi.DriverName,
 							},
 						},
 					},
@@ -1074,23 +1003,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 		decoder, err := admission.NewDecoder(scheme.Scheme)
 		require.NoError(t, err)
 
-		instance := &dynatracev1alpha1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-					Enabled:           true,
-					UseImmutableImage: true,
-				},
-				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-					Enabled: true,
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
-				},
-			},
-		}
+		instance := CreateDynakubeInstance(false, false)
 
 		inj := &podInjector{
 			client: fake.NewClient(
@@ -1211,7 +1124,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 						Name: "oneagent-bin",
 						VolumeSource: corev1.VolumeSource{
 							CSI: &corev1.CSIVolumeSource{
-								Driver: "csi.oneagent.dynatrace.com",
+								Driver: dtcsi.DriverName,
 							},
 						},
 					},
@@ -1238,26 +1151,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 		decoder, err := admission.NewDecoder(scheme.Scheme)
 		require.NoError(t, err)
 
-		instance := &dynatracev1alpha1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-					Enabled:           true,
-					UseImmutableImage: true,
-				},
-				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-					Enabled: true,
-				},
-				OneAgent: dynatracev1alpha1.OneAgentSpec{
-					Image: "test-image",
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
-				},
-			},
-		}
+		instance := CreateDynakubeInstance(false, false)
 
 		inj := &podInjector{
 			client: fake.NewClient(
@@ -1375,7 +1269,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 						Name: "oneagent-bin",
 						VolumeSource: corev1.VolumeSource{
 							CSI: &corev1.CSIVolumeSource{
-								Driver: "csi.oneagent.dynatrace.com",
+								Driver: dtcsi.DriverName,
 							},
 						},
 					},
@@ -1403,29 +1297,7 @@ func TestAgentVersion(t *testing.T) {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	require.NoError(t, err)
 
-	instance := &dynatracev1alpha1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-		Spec: dynatracev1alpha1.DynaKubeSpec{
-			InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-				Enabled:           true,
-				UseImmutableImage: true,
-			},
-			CodeModules: dynatracev1alpha1.CodeModulesSpec{
-				Enabled: true,
-				Volume: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			OneAgent: dynatracev1alpha1.OneAgentSpec{
-				Version: "test-version",
-			},
-		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			OneAgent: dynatracev1alpha1.OneAgentStatus{
-				UseImmutableImage: true,
-			},
-		},
-	}
+	instance := CreateDynakubeInstance(true, true)
 
 	inj := &podInjector{
 		client: fake.NewClient(
@@ -1568,26 +1440,7 @@ func TestAgentVersionWithCSI(t *testing.T) {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	require.NoError(t, err)
 
-	instance := &dynatracev1alpha1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-		Spec: dynatracev1alpha1.DynaKubeSpec{
-			InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-				Enabled:           true,
-				UseImmutableImage: true,
-			},
-			CodeModules: dynatracev1alpha1.CodeModulesSpec{
-				Enabled: true,
-			},
-			OneAgent: dynatracev1alpha1.OneAgentSpec{
-				Version: "test-version",
-			},
-		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			OneAgent: dynatracev1alpha1.OneAgentStatus{
-				UseImmutableImage: true,
-			},
-		},
-	}
+	instance := CreateDynakubeInstance(false, true)
 
 	inj := &podInjector{
 		client: fake.NewClient(
@@ -1705,7 +1558,7 @@ func TestAgentVersionWithCSI(t *testing.T) {
 					Name: "oneagent-bin",
 					VolumeSource: corev1.VolumeSource{
 						CSI: &corev1.CSIVolumeSource{
-							Driver: "csi.oneagent.dynatrace.com",
+							Driver: dtcsi.DriverName,
 						},
 					},
 				},
