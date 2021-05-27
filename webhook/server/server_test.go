@@ -119,7 +119,7 @@ func TestPodInjection(t *testing.T) {
 	require.NoError(t, err)
 
 	basePod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-pod-123456", Namespace: "test-namespace"},
+		ObjectMeta: metav1.ObjectMeta{Name: "test-pod-12345", Namespace: "test-namespace"},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{{
 				Name:  "test-container",
@@ -157,94 +157,31 @@ func TestPodInjection(t *testing.T) {
 	var updPod corev1.Pod
 	require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-	assert.Equal(t, corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-pod-123456",
-			Namespace: "test-namespace",
-			Annotations: map[string]string{
-				"oneagent.dynatrace.com/injected": "true",
-			},
+	expected := buildResultPod(t)
+
+	expected.Spec.Volumes[0] = corev1.Volume{
+		Name: "oneagent-bin",
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
-		Spec: corev1.PodSpec{
-			InitContainers: []corev1.Container{{
-				Name:            installOneAgentContainerName,
-				Image:           "test-api-url.com/linux/codemodule",
-				ImagePullPolicy: corev1.PullAlways,
-				Command:         []string{"/usr/bin/env"},
-				Args:            []string{"bash", "/mnt/config/init.sh"},
-				Env: []corev1.EnvVar{
-					{Name: "FLAVOR", Value: "default"},
-					{Name: "TECHNOLOGIES", Value: "all"},
-					{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
-					{Name: "INSTALLER_URL", Value: ""},
-					{Name: "FAILURE_POLICY", Value: "silent"},
-					{Name: "CONTAINERS_COUNT", Value: "1"},
-					{Name: "MODE", Value: "installer"},
-					{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
-					{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
-					{Name: "K8S_BASEPODNAME", Value: "test-pod"},
-					{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
-					{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-					{Name: "CONTAINER_1_NAME", Value: "test-container"},
-					{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{Name: "oneagent-bin", MountPath: "/mnt/bin"},
-					{Name: "oneagent-share", MountPath: "/mnt/share"},
-					{Name: "oneagent-config", MountPath: "/mnt/config"},
-				},
-				Resources: corev1.ResourceRequirements{
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("1"),
-						corev1.ResourceMemory: resource.MustParse("500M"),
-					},
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("100m"),
-						corev1.ResourceMemory: resource.MustParse("100M"),
-					},
-				},
-			}},
-			Containers: []corev1.Container{{
-				Name:  "test-container",
-				Image: "alpine",
-				Env: []corev1.EnvVar{
-					{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
-					{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator;script_version=snapshot;orchestrator_id="},
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
-					{Name: "oneagent-bin", MountPath: "/opt/dynatrace/oneagent-paas"},
-					{
-						Name:      "oneagent-share",
-						MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-						SubPath:   "container_test-container.conf",
-					},
-				},
-			}},
-			Volumes: []corev1.Volume{
-				{
-					Name: "oneagent-bin",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
-				},
-				{
-					Name: "oneagent-share",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
-				},
-				{
-					Name: "oneagent-config",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: dtwebhook.SecretConfigName,
-						},
-					},
-				},
-			},
+	}
+
+	setEnvVar(t, &expected, "MODE", "installer")
+
+	expected.Spec.InitContainers[0].Image = "test-api-url.com/linux/codemodule"
+
+	expected.Spec.InitContainers[0].Resources = corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1"),
+			corev1.ResourceMemory: resource.MustParse("500M"),
 		},
-	}, updPod)
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("100M"),
+		},
+	}
+
+	assert.Equal(t, expected, updPod)
 }
 
 func TestPodInjectionWithCSI(t *testing.T) {
@@ -254,7 +191,7 @@ func TestPodInjectionWithCSI(t *testing.T) {
 	inj, _ := createPodInjector(t, decoder)
 
 	basePod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-pod-123456", Namespace: "test-namespace"},
+		ObjectMeta: metav1.ObjectMeta{Name: "test-pod-12345", Namespace: "test-namespace"},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{{
 				Name:  "test-container",
@@ -292,96 +229,22 @@ func TestPodInjectionWithCSI(t *testing.T) {
 	var updPod corev1.Pod
 	require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-	assert.Equal(t, corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-pod-123456",
-			Namespace: "test-namespace",
-			Annotations: map[string]string{
-				"oneagent.dynatrace.com/injected": "true",
-			},
+	expected := buildResultPod(t)
+
+	expected.Spec.InitContainers[0].Image = "test-api-url.com/linux/codemodule"
+
+	expected.Spec.InitContainers[0].Resources = corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("1"),
+			corev1.ResourceMemory: resource.MustParse("500M"),
 		},
-		Spec: corev1.PodSpec{
-			InitContainers: []corev1.Container{{
-				Name:            installOneAgentContainerName,
-				Image:           "test-api-url.com/linux/codemodule",
-				ImagePullPolicy: corev1.PullAlways,
-				Command:         []string{"/usr/bin/env"},
-				Args:            []string{"bash", "/mnt/config/init.sh"},
-				Env: []corev1.EnvVar{
-					{Name: "FLAVOR", Value: "default"},
-					{Name: "TECHNOLOGIES", Value: "all"},
-					{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
-					{Name: "INSTALLER_URL", Value: ""},
-					{Name: "FAILURE_POLICY", Value: "silent"},
-					{Name: "CONTAINERS_COUNT", Value: "1"},
-					{Name: "MODE", Value: "provisioned"},
-					{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
-					{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
-					{Name: "K8S_BASEPODNAME", Value: "test-pod"},
-					{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
-					{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-					{Name: "CONTAINER_1_NAME", Value: "test-container"},
-					{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{Name: "oneagent-bin", MountPath: "/mnt/bin"},
-					{Name: "oneagent-share", MountPath: "/mnt/share"},
-					{Name: "oneagent-config", MountPath: "/mnt/config"},
-				},
-				Resources: corev1.ResourceRequirements{
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("1"),
-						corev1.ResourceMemory: resource.MustParse("500M"),
-					},
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("100m"),
-						corev1.ResourceMemory: resource.MustParse("100M"),
-					},
-				},
-			}},
-			Containers: []corev1.Container{{
-				Name:  "test-container",
-				Image: "alpine",
-				Env: []corev1.EnvVar{
-					{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
-					{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator;script_version=snapshot;orchestrator_id="},
-				},
-				VolumeMounts: []corev1.VolumeMount{
-					{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
-					{Name: "oneagent-bin", MountPath: "/opt/dynatrace/oneagent-paas"},
-					{
-						Name:      "oneagent-share",
-						MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-						SubPath:   "container_test-container.conf",
-					},
-				},
-			}},
-			Volumes: []corev1.Volume{
-				{
-					Name: "oneagent-bin",
-					VolumeSource: corev1.VolumeSource{
-						CSI: &corev1.CSIVolumeSource{
-							Driver: dtcsi.DriverName,
-						},
-					},
-				},
-				{
-					Name: "oneagent-share",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
-				},
-				{
-					Name: "oneagent-config",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: dtwebhook.SecretConfigName,
-						},
-					},
-				},
-			},
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("100m"),
+			corev1.ResourceMemory: resource.MustParse("100M"),
 		},
-	}, updPod)
+	}
+
+	assert.Equal(t, expected, updPod)
 }
 
 func createDynakubeInstance(_ *testing.T) *dynatracev1alpha1.DynaKube {
@@ -485,85 +348,18 @@ func TestUseImmutableImage(t *testing.T) {
 		var updPod corev1.Pod
 		require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-		assert.Equal(t, corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-pod-12345",
-				Namespace: "test-namespace",
-				Annotations: map[string]string{
-					"oneagent.dynatrace.com/injected": "true",
-					"oneagent.dynatrace.com/image":    "customregistry/linux/codemodule",
-				},
+		expected := buildResultPod(t)
+		expected.Spec.Volumes[0] = corev1.Volume{
+			Name: "oneagent-bin",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
-			Spec: corev1.PodSpec{
-				InitContainers: []corev1.Container{{
-					Name:            installOneAgentContainerName,
-					Image:           "test-image",
-					ImagePullPolicy: corev1.PullAlways,
-					Command:         []string{"/usr/bin/env"},
-					Args:            []string{"bash", "/mnt/config/init.sh"},
-					Env: []corev1.EnvVar{
-						{Name: "FLAVOR", Value: "default"},
-						{Name: "TECHNOLOGIES", Value: "all"},
-						{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
-						{Name: "INSTALLER_URL", Value: ""},
-						{Name: "FAILURE_POLICY", Value: "silent"},
-						{Name: "CONTAINERS_COUNT", Value: "1"},
-						{Name: "MODE", Value: "installer"},
-						{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
-						{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
-						{Name: "K8S_BASEPODNAME", Value: "test-pod"},
-						{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
-						{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-						{Name: "CONTAINER_1_NAME", Value: "test-container"},
-						{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{Name: "oneagent-bin", MountPath: "/mnt/bin"},
-						{Name: "oneagent-share", MountPath: "/mnt/share"},
-						{Name: "oneagent-config", MountPath: "/mnt/config"},
-					},
-				}},
-				Containers: []corev1.Container{{
-					Name:  "test-container",
-					Image: "alpine",
-					Env: []corev1.EnvVar{
-						{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
-						{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator;script_version=snapshot;orchestrator_id="},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
-						{Name: "oneagent-bin", MountPath: "/opt/dynatrace/oneagent-paas"},
-						{
-							Name:      "oneagent-share",
-							MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-							SubPath:   "container_test-container.conf",
-						},
-					},
-				}},
-				Volumes: []corev1.Volume{
-					{
-						Name: "oneagent-bin",
-						VolumeSource: corev1.VolumeSource{
-							EmptyDir: &corev1.EmptyDirVolumeSource{},
-						},
-					},
-					{
-						Name: "oneagent-share",
-						VolumeSource: corev1.VolumeSource{
-							EmptyDir: &corev1.EmptyDirVolumeSource{},
-						},
-					},
-					{
-						Name: "oneagent-config",
-						VolumeSource: corev1.VolumeSource{
-							Secret: &corev1.SecretVolumeSource{
-								SecretName: dtwebhook.SecretConfigName,
-							},
-						},
-					},
-				},
-			},
-		}, updPod)
+		}
+		setEnvVar(t, &expected, "MODE", "installer")
+
+		expected.ObjectMeta.Annotations["oneagent.dynatrace.com/image"] = "customregistry/linux/codemodule"
+
+		assert.Equal(t, expected, updPod)
 	})
 	t.Run(`use immutable image`, func(t *testing.T) {
 		decoder, err := admission.NewDecoder(scheme.Scheme)
@@ -631,85 +427,18 @@ func TestUseImmutableImage(t *testing.T) {
 		var updPod corev1.Pod
 		require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-		assert.Equal(t, corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-pod-12345",
-				Namespace: "test-namespace",
-				Annotations: map[string]string{
-					"oneagent.dynatrace.com/injected": "true",
-					"oneagent.dynatrace.com/image":    "customregistry/linux/codemodule",
-				},
+		expected := buildResultPod(t)
+		expected.Spec.Volumes[0] = corev1.Volume{
+			Name: "oneagent-bin",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
-			Spec: corev1.PodSpec{
-				InitContainers: []corev1.Container{{
-					Name:            installOneAgentContainerName,
-					Image:           "test-image",
-					ImagePullPolicy: corev1.PullAlways,
-					Command:         []string{"/usr/bin/env"},
-					Args:            []string{"bash", "/mnt/config/init.sh"},
-					Env: []corev1.EnvVar{
-						{Name: "FLAVOR", Value: "default"},
-						{Name: "TECHNOLOGIES", Value: "all"},
-						{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
-						{Name: "INSTALLER_URL", Value: ""},
-						{Name: "FAILURE_POLICY", Value: "silent"},
-						{Name: "CONTAINERS_COUNT", Value: "1"},
-						{Name: "MODE", Value: "installer"},
-						{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
-						{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
-						{Name: "K8S_BASEPODNAME", Value: "test-pod"},
-						{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
-						{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-						{Name: "CONTAINER_1_NAME", Value: "test-container"},
-						{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{Name: "oneagent-bin", MountPath: "/mnt/bin"},
-						{Name: "oneagent-share", MountPath: "/mnt/share"},
-						{Name: "oneagent-config", MountPath: "/mnt/config"},
-					},
-				}},
-				Containers: []corev1.Container{{
-					Name:  "test-container",
-					Image: "alpine",
-					Env: []corev1.EnvVar{
-						{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
-						{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator;script_version=snapshot;orchestrator_id="},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
-						{Name: "oneagent-bin", MountPath: "/opt/dynatrace/oneagent-paas"},
-						{
-							Name:      "oneagent-share",
-							MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-							SubPath:   "container_test-container.conf",
-						},
-					},
-				}},
-				Volumes: []corev1.Volume{
-					{
-						Name: "oneagent-bin",
-						VolumeSource: corev1.VolumeSource{
-							EmptyDir: &corev1.EmptyDirVolumeSource{},
-						},
-					},
-					{
-						Name: "oneagent-share",
-						VolumeSource: corev1.VolumeSource{
-							EmptyDir: &corev1.EmptyDirVolumeSource{},
-						},
-					},
-					{
-						Name: "oneagent-config",
-						VolumeSource: corev1.VolumeSource{
-							Secret: &corev1.SecretVolumeSource{
-								SecretName: dtwebhook.SecretConfigName,
-							},
-						},
-					},
-				},
-			},
-		}, updPod)
+		}
+		setEnvVar(t, &expected, "MODE", "installer")
+
+		expected.ObjectMeta.Annotations["oneagent.dynatrace.com/image"] = "customregistry/linux/codemodule"
+
+		assert.Equal(t, expected, updPod)
 	})
 
 	t.Run(`honor custom image name`, func(t *testing.T) {
@@ -776,84 +505,16 @@ func TestUseImmutableImage(t *testing.T) {
 		var updPod corev1.Pod
 		require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-		assert.Equal(t, corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-pod-12345",
-				Namespace: "test-namespace",
-				Annotations: map[string]string{
-					"oneagent.dynatrace.com/injected": "true",
-				},
+		expected := buildResultPod(t)
+		expected.Spec.Volumes[0] = corev1.Volume{
+			Name: "oneagent-bin",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
-			Spec: corev1.PodSpec{
-				InitContainers: []corev1.Container{{
-					Name:            installOneAgentContainerName,
-					Image:           "test-image",
-					ImagePullPolicy: corev1.PullAlways,
-					Command:         []string{"/usr/bin/env"},
-					Args:            []string{"bash", "/mnt/config/init.sh"},
-					Env: []corev1.EnvVar{
-						{Name: "FLAVOR", Value: "default"},
-						{Name: "TECHNOLOGIES", Value: "all"},
-						{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
-						{Name: "INSTALLER_URL", Value: ""},
-						{Name: "FAILURE_POLICY", Value: "silent"},
-						{Name: "CONTAINERS_COUNT", Value: "1"},
-						{Name: "MODE", Value: "installer"},
-						{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
-						{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
-						{Name: "K8S_BASEPODNAME", Value: "test-pod"},
-						{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
-						{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-						{Name: "CONTAINER_1_NAME", Value: "test-container"},
-						{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{Name: "oneagent-bin", MountPath: "/mnt/bin"},
-						{Name: "oneagent-share", MountPath: "/mnt/share"},
-						{Name: "oneagent-config", MountPath: "/mnt/config"},
-					},
-				}},
-				Containers: []corev1.Container{{
-					Name:  "test-container",
-					Image: "alpine",
-					Env: []corev1.EnvVar{
-						{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
-						{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator;script_version=snapshot;orchestrator_id="},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
-						{Name: "oneagent-bin", MountPath: "/opt/dynatrace/oneagent-paas"},
-						{
-							Name:      "oneagent-share",
-							MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-							SubPath:   "container_test-container.conf",
-						},
-					},
-				}},
-				Volumes: []corev1.Volume{
-					{
-						Name: "oneagent-bin",
-						VolumeSource: corev1.VolumeSource{
-							EmptyDir: &corev1.EmptyDirVolumeSource{},
-						},
-					},
-					{
-						Name: "oneagent-share",
-						VolumeSource: corev1.VolumeSource{
-							EmptyDir: &corev1.EmptyDirVolumeSource{},
-						},
-					},
-					{
-						Name: "oneagent-config",
-						VolumeSource: corev1.VolumeSource{
-							Secret: &corev1.SecretVolumeSource{
-								SecretName: dtwebhook.SecretConfigName,
-							},
-						},
-					},
-				},
-			},
-		}, updPod)
+		}
+		setEnvVar(t, &expected, "MODE", "installer")
+
+		assert.Equal(t, expected, updPod)
 	})
 }
 
@@ -923,87 +584,11 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 		var updPod corev1.Pod
 		require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-		assert.Equal(t, corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-pod-12345",
-				Namespace: "test-namespace",
-				Annotations: map[string]string{
-					"oneagent.dynatrace.com/injected": "true",
-					"oneagent.dynatrace.com/image":    "customregistry/linux/codemodule",
-				},
-			},
-			Spec: corev1.PodSpec{
-				InitContainers: []corev1.Container{{
-					Name:            installOneAgentContainerName,
-					Image:           "test-image",
-					ImagePullPolicy: corev1.PullAlways,
-					Command:         []string{"/usr/bin/env"},
-					Args:            []string{"bash", "/mnt/config/init.sh"},
-					Env: []corev1.EnvVar{
-						{Name: "FLAVOR", Value: "default"},
-						{Name: "TECHNOLOGIES", Value: "all"},
-						{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
-						{Name: "INSTALLER_URL", Value: ""},
-						{Name: "FAILURE_POLICY", Value: "silent"},
-						{Name: "CONTAINERS_COUNT", Value: "1"},
-						{Name: "MODE", Value: "provisioned"},
-						{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
-						{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
-						{Name: "K8S_BASEPODNAME", Value: "test-pod"},
-						{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
-						{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-						{Name: "CONTAINER_1_NAME", Value: "test-container"},
-						{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{Name: "oneagent-bin", MountPath: "/mnt/bin"},
-						{Name: "oneagent-share", MountPath: "/mnt/share"},
-						{Name: "oneagent-config", MountPath: "/mnt/config"},
-					},
-				}},
-				Containers: []corev1.Container{{
-					Name:  "test-container",
-					Image: "alpine",
-					Env: []corev1.EnvVar{
-						{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
-						{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator;script_version=snapshot;orchestrator_id="},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
-						{Name: "oneagent-bin", MountPath: "/opt/dynatrace/oneagent-paas"},
-						{
-							Name:      "oneagent-share",
-							MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-							SubPath:   "container_test-container.conf",
-						},
-					},
-				}},
-				Volumes: []corev1.Volume{
-					{
-						Name: "oneagent-bin",
-						VolumeSource: corev1.VolumeSource{
-							CSI: &corev1.CSIVolumeSource{
-								Driver: dtcsi.DriverName,
-							},
-						},
-					},
-					{
-						Name: "oneagent-share",
-						VolumeSource: corev1.VolumeSource{
-							EmptyDir: &corev1.EmptyDirVolumeSource{},
-						},
-					},
-					{
-						Name: "oneagent-config",
-						VolumeSource: corev1.VolumeSource{
-							Secret: &corev1.SecretVolumeSource{
-								SecretName: dtwebhook.SecretConfigName,
-							},
-						},
-					},
-				},
-			},
-		}, updPod)
+		expected := buildResultPod(t)
+
+		expected.ObjectMeta.Annotations["oneagent.dynatrace.com/image"] = "customregistry/linux/codemodule"
+
+		assert.Equal(t, expected, updPod)
 	})
 	t.Run(`use immutable image`, func(t *testing.T) {
 		decoder, err := admission.NewDecoder(scheme.Scheme)
@@ -1070,87 +655,11 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 		var updPod corev1.Pod
 		require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-		assert.Equal(t, corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-pod-12345",
-				Namespace: "test-namespace",
-				Annotations: map[string]string{
-					"oneagent.dynatrace.com/injected": "true",
-					"oneagent.dynatrace.com/image":    "customregistry/linux/codemodule",
-				},
-			},
-			Spec: corev1.PodSpec{
-				InitContainers: []corev1.Container{{
-					Name:            installOneAgentContainerName,
-					Image:           "test-image",
-					ImagePullPolicy: corev1.PullAlways,
-					Command:         []string{"/usr/bin/env"},
-					Args:            []string{"bash", "/mnt/config/init.sh"},
-					Env: []corev1.EnvVar{
-						{Name: "FLAVOR", Value: "default"},
-						{Name: "TECHNOLOGIES", Value: "all"},
-						{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
-						{Name: "INSTALLER_URL", Value: ""},
-						{Name: "FAILURE_POLICY", Value: "silent"},
-						{Name: "CONTAINERS_COUNT", Value: "1"},
-						{Name: "MODE", Value: "provisioned"},
-						{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
-						{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
-						{Name: "K8S_BASEPODNAME", Value: "test-pod"},
-						{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
-						{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-						{Name: "CONTAINER_1_NAME", Value: "test-container"},
-						{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{Name: "oneagent-bin", MountPath: "/mnt/bin"},
-						{Name: "oneagent-share", MountPath: "/mnt/share"},
-						{Name: "oneagent-config", MountPath: "/mnt/config"},
-					},
-				}},
-				Containers: []corev1.Container{{
-					Name:  "test-container",
-					Image: "alpine",
-					Env: []corev1.EnvVar{
-						{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
-						{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator;script_version=snapshot;orchestrator_id="},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
-						{Name: "oneagent-bin", MountPath: "/opt/dynatrace/oneagent-paas"},
-						{
-							Name:      "oneagent-share",
-							MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-							SubPath:   "container_test-container.conf",
-						},
-					},
-				}},
-				Volumes: []corev1.Volume{
-					{
-						Name: "oneagent-bin",
-						VolumeSource: corev1.VolumeSource{
-							CSI: &corev1.CSIVolumeSource{
-								Driver: dtcsi.DriverName,
-							},
-						},
-					},
-					{
-						Name: "oneagent-share",
-						VolumeSource: corev1.VolumeSource{
-							EmptyDir: &corev1.EmptyDirVolumeSource{},
-						},
-					},
-					{
-						Name: "oneagent-config",
-						VolumeSource: corev1.VolumeSource{
-							Secret: &corev1.SecretVolumeSource{
-								SecretName: dtwebhook.SecretConfigName,
-							},
-						},
-					},
-				},
-			},
-		}, updPod)
+		expected := buildResultPod(t)
+
+		expected.ObjectMeta.Annotations["oneagent.dynatrace.com/image"] = "customregistry/linux/codemodule"
+
+		assert.Equal(t, expected, updPod)
 	})
 
 	t.Run(`honor custom image name`, func(t *testing.T) {
@@ -1216,86 +725,9 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 		var updPod corev1.Pod
 		require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-		assert.Equal(t, corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-pod-12345",
-				Namespace: "test-namespace",
-				Annotations: map[string]string{
-					"oneagent.dynatrace.com/injected": "true",
-				},
-			},
-			Spec: corev1.PodSpec{
-				InitContainers: []corev1.Container{{
-					Name:            installOneAgentContainerName,
-					Image:           "test-image",
-					ImagePullPolicy: corev1.PullAlways,
-					Command:         []string{"/usr/bin/env"},
-					Args:            []string{"bash", "/mnt/config/init.sh"},
-					Env: []corev1.EnvVar{
-						{Name: "FLAVOR", Value: "default"},
-						{Name: "TECHNOLOGIES", Value: "all"},
-						{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
-						{Name: "INSTALLER_URL", Value: ""},
-						{Name: "FAILURE_POLICY", Value: "silent"},
-						{Name: "CONTAINERS_COUNT", Value: "1"},
-						{Name: "MODE", Value: "provisioned"},
-						{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
-						{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
-						{Name: "K8S_BASEPODNAME", Value: "test-pod"},
-						{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
-						{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-						{Name: "CONTAINER_1_NAME", Value: "test-container"},
-						{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{Name: "oneagent-bin", MountPath: "/mnt/bin"},
-						{Name: "oneagent-share", MountPath: "/mnt/share"},
-						{Name: "oneagent-config", MountPath: "/mnt/config"},
-					},
-				}},
-				Containers: []corev1.Container{{
-					Name:  "test-container",
-					Image: "alpine",
-					Env: []corev1.EnvVar{
-						{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
-						{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator;script_version=snapshot;orchestrator_id="},
-					},
-					VolumeMounts: []corev1.VolumeMount{
-						{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
-						{Name: "oneagent-bin", MountPath: "/opt/dynatrace/oneagent-paas"},
-						{
-							Name:      "oneagent-share",
-							MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-							SubPath:   "container_test-container.conf",
-						},
-					},
-				}},
-				Volumes: []corev1.Volume{
-					{
-						Name: "oneagent-bin",
-						VolumeSource: corev1.VolumeSource{
-							CSI: &corev1.CSIVolumeSource{
-								Driver: dtcsi.DriverName,
-							},
-						},
-					},
-					{
-						Name: "oneagent-share",
-						VolumeSource: corev1.VolumeSource{
-							EmptyDir: &corev1.EmptyDirVolumeSource{},
-						},
-					},
-					{
-						Name: "oneagent-config",
-						VolumeSource: corev1.VolumeSource{
-							Secret: &corev1.SecretVolumeSource{
-								SecretName: dtwebhook.SecretConfigName,
-							},
-						},
-					},
-				},
-			},
-		}, updPod)
+		expected := buildResultPod(t)
+
+		assert.Equal(t, expected, updPod)
 	})
 }
 
