@@ -171,6 +171,15 @@ func buildVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
 		)
 	}
 
+	volumes = append(volumes, corev1.Volume{
+		Name: "ag-secrets",
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: "ag-secrets",
+			},
+		},
+	})
+
 	return volumes
 }
 
@@ -183,6 +192,12 @@ func determineCustomPropertiesSource(stsProperties *statefulSetProperties) strin
 
 func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMount {
 	var volumeMounts []corev1.VolumeMount
+
+	volumeMounts = append(volumeMounts, corev1.VolumeMount{
+		ReadOnly:  true,
+		Name:      "ag-secrets",
+		MountPath: "/var/lib/dynatrace/secrets",
+	})
 
 	if !isCustomPropertiesNilOrEmpty(stsProperties.CustomProperties) {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
