@@ -7,8 +7,7 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability/kubemon"
-	"github.com/Dynatrace/dynatrace-operator/controllers/capability/routing"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/updates"
@@ -181,21 +180,7 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 	rec.Update(upd, defaultUpdateInterval, "Found updates")
 	rec.Error(err)
 
-	if rec.Instance.Spec.KubernetesMonitoringSpec.Enabled {
-		upd, err := kubemon.NewReconciler(
-			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
-		).Reconcile()
-		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "kubemon reconciled") {
-			return
-		}
-	} else {
-		sts := appsv1.StatefulSet{ObjectMeta: metav1.ObjectMeta{Name: rec.Instance.Name + "-kubemon", Namespace: rec.Instance.Namespace}}
-		if err := r.ensureDeleted(&sts); rec.Error(err) {
-			return
-		}
-	}
-
-	if !r.reconcileRouting(rec, dtc) {
+	if !r.reconcileActiveGateCapabilities(rec, dtc) {
 		return
 	}
 
@@ -235,35 +220,46 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 	return nil
 }
 
-func (r *ReconcileDynaKube) reconcileRouting(rec *utils.Reconciliation, dtc dtclient.Client) bool {
-	if rec.Instance.Spec.RoutingSpec.Enabled {
-		upd, err := routing.NewReconciler(
-			r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
-		).Reconcile()
-		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "routing reconciled") {
-			return false
-		}
-	} else {
-		sts := appsv1.StatefulSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      rec.Instance.Name + routing.StatefulSetSuffix,
-				Namespace: rec.Instance.Namespace,
-			},
-		}
-		if err := r.ensureDeleted(&sts); rec.Error(err) {
-			return false
-		}
+func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconciliation, dtc dtclient.Client) bool {
+	var caps = []capability.Capability{
+		capability.NewKubeMonCapability(&rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
+		capability.NewRoutingCapability(&rec.Instance.Spec.RoutingSpec.CapabilityProperties),
+		capability.NewMetricsCapability(&dynatracev1alpha1.CapabilityProperties{Enabled: rec.Instance.FeatureEnableMetricsIngest()}),
+	}
 
-		svc := corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      routing.BuildServiceName(rec.Instance.Name, routing.Module),
-				Namespace: rec.Instance.Namespace,
-			},
-		}
-		if err := r.ensureDeleted(&svc); rec.Error(err) {
-			return false
+	for _, c := range caps {
+		if c.GetProperties().Enabled {
+			upd, err := capability.NewReconciler(
+				c, r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
+			).Reconcile()
+			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, c.GetModuleName()+" reconciled") {
+				return false
+			}
+		} else {
+			sts := appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      capability.CalculateStatefulSetName(c, rec.Instance.Name),
+					Namespace: rec.Instance.Namespace,
+				},
+			}
+			if err := r.ensureDeleted(&sts); rec.Error(err) {
+				return false
+			}
+
+			if c.GetConfiguration().CreateService {
+				svc := corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      capability.BuildServiceName(rec.Instance.Name, c.GetModuleName()),
+						Namespace: rec.Instance.Namespace,
+					},
+				}
+				if err := r.ensureDeleted(&svc); rec.Error(err) {
+					return false
+				}
+			}
 		}
 	}
+
 	return true
 }
 

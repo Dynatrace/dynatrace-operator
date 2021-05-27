@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -178,7 +179,7 @@ func TestUnbindMount(t *testing.T) {
 		assert.Equal(t, target0, mounter.MountPoints[0].Path)
 	})
 	t.Run(`unbind`, func(t *testing.T) {
-		tmpDir := t.TempDir()
+		tmpDir, _ := filepath.EvalSymlinks(t.TempDir())
 		source0 := path.Join(tmpDir, "source-0")
 		target0 := path.Join(tmpDir, "target-0")
 		source1 := path.Join(tmpDir, "source-1")

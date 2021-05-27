@@ -1,4 +1,4 @@
-package capability
+package activegate
 
 import (
 	"testing"
@@ -98,7 +98,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 			{
 				Key:      kubernetesBetaArch,
 				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{amd64, arm64},
+				Values:   []string{amd64},
 			},
 			{
 				Key:      kubernetesBetaOS,
@@ -111,7 +111,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 			{
 				Key:      kubernetesArch,
 				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{amd64, arm64},
+				Values:   []string{amd64},
 			},
 			{
 				Key:      kubernetesOS,
