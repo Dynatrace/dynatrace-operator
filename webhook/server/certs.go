@@ -15,7 +15,6 @@ import (
 	webhook2 "sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-// todo remove log
 func UpdateCertificate(mgr manager.Manager, ws *webhook2.Server, ns string) error {
 	var secret corev1.Secret
 
@@ -26,7 +25,9 @@ func UpdateCertificate(mgr manager.Manager, ws *webhook2.Server, ns string) erro
 
 	if _, err := os.Stat(ws.CertDir); os.IsNotExist(err) {
 		err = os.MkdirAll(ws.CertDir, 0755)
-		return fmt.Errorf("could not create cert directory: %s", err)
+		if err != nil {
+			return fmt.Errorf("could not create cert directory: %s", err)
+		}
 	}
 	// todo(gakr): don't pull from secrets if filename is different
 	for _, filename := range []string{"tls.crt", "tls.key"} {

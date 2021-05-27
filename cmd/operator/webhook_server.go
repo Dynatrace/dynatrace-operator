@@ -60,7 +60,7 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 	}*/
 
 	for threshold := time.Now().Add(5 * time.Minute); time.Now().Before(threshold); {
-		err := server.UpdateCertificate(mgr, ws, ns, log)
+		err := server.UpdateCertificate(mgr, ws, ns)
 
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
@@ -87,7 +87,7 @@ func startCertificateWatcher(mgr manager.Manager, ws *webhook2.Server, ns string
 	go func() {
 		for {
 			<-time.After(6 * time.Hour)
-			if err := server.UpdateCertificate(mgr, ws, ns, log); err != nil {
+			if err := server.UpdateCertificate(mgr, ws, ns); err != nil {
 				log.Info("Failed to update certificates", "error", err)
 			}
 		}
