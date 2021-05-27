@@ -31,3 +31,20 @@ rules:
       - get
       - update
       - delete
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+    verbs:
+      - list
+      - create
+      - watch
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - mutatingwebhookconfigurations
+    resourceNames:
+      - dynatrace-webhook
+    verbs:
+      - get
+      - update
