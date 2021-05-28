@@ -17,6 +17,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+const (
+	testNamespace = "test-namespace"
+)
+
 func TestInjectAnnotation(t *testing.T) {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	require.NoError(t, err)
@@ -54,7 +58,7 @@ func TestInjectAnnotation(t *testing.T) {
 		pod := v1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-pod-123456",
-				Namespace: "test-namespace",
+				Namespace: testNamespace,
 				Annotations: map[string]string{
 					webhook.AnnotationInject: "false",
 				},
@@ -72,6 +76,7 @@ func TestInjectAnnotation(t *testing.T) {
 
 		req := admission.Request{
 			AdmissionRequest: admissionv1.AdmissionRequest{
+				Namespace: testNamespace,
 				Object: runtime.RawExtension{
 					Raw: basePodBytes,
 				},

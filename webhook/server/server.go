@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/codemodules"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
@@ -128,9 +127,18 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	logger.Info("checking pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
-	dk, response := m.findDynakubeForPod(ctx, pod)
-	if dk == nil {
-		return response
+	namespace := &corev1.Namespace{}
+	err = m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, namespace)
+	if err != nil {
+		logger.Error(err, "error when trying to find namespace of pod", "pod", pod.Name, "namespace", req.Namespace)
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
+
+	dk, err := codemodules.FindForNamespace(ctx, m.client, namespace)
+	if err != nil {
+		return admission.Errored(http.StatusInternalServerError, err)
+	} else if dk == nil {
+		return admission.Patched("")
 	}
 
 	logger.Info("injecting into pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
@@ -282,24 +290,6 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
-}
-
-func (m *podInjector) findDynakubeForPod(ctx context.Context, pod *corev1.Pod) (*dynatracev1alpha1.DynaKube, admission.Response) {
-	namespace := &corev1.Namespace{}
-	err := m.client.Get(ctx, client.ObjectKey{Name: pod.Namespace}, namespace)
-	if err != nil {
-		logger.Error(err, "error when trying to find namespace of pod", "pod", pod.Name, "namespace", pod.Namespace)
-		return nil, admission.Errored(http.StatusInternalServerError, err)
-	}
-
-	dk, err := codemodules.FindForNamespace(ctx, m.client, namespace)
-	if err != nil {
-		return nil, admission.Errored(http.StatusInternalServerError, err)
-	} else if dk == nil {
-		return nil, admission.Patched("")
-	}
-
-	return dk, admission.Response{}
 }
 
 // InjectClient injects the client

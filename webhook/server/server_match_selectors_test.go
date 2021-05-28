@@ -127,7 +127,7 @@ func TestMatchLabels(t *testing.T) {
 				Object: runtime.RawExtension{
 					Raw: basePodBytes,
 				},
-				//Namespace: "test-namespace",
+				Namespace: pod.Namespace,
 			},
 		}
 
@@ -279,6 +279,7 @@ func TestMatchExpressions(t *testing.T) {
 
 		req := admission.Request{
 			AdmissionRequest: admissionv1.AdmissionRequest{
+				Namespace: pod.Namespace,
 				Object: runtime.RawExtension{
 					Raw: basePodBytes,
 				},
@@ -390,6 +391,7 @@ func TestErrorOnMultipleMatchingCodeModules(t *testing.T) {
 
 		req := admission.Request{
 			AdmissionRequest: admissionv1.AdmissionRequest{
+				Namespace: pod.Namespace,
 				Object: runtime.RawExtension{
 					Raw: basePodBytes,
 				},

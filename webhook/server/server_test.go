@@ -968,6 +968,7 @@ func TestNoCodeModulesEnabled(t *testing.T) {
 			Object: runtime.RawExtension{
 				Raw: basePodBytes,
 			},
+			Namespace: pod.Namespace,
 		},
 	}
 
