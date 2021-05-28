@@ -68,7 +68,8 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 	})
 	t.Run(`failed to extract tenant from file`, func(t *testing.T) {
 		clt := fake.NewClient(
-			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}})
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}},
+			createTestInstance(t))
 		srv := &CSIDriverServer{
 			client: clt,
 		}
@@ -90,7 +91,8 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 	})
 	t.Run(`failed to create directories`, func(t *testing.T) {
 		clt := fake.NewClient(
-			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}})
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}},
+			createTestInstance(t))
 		srv := &CSIDriverServer{
 			client: clt,
 		}
@@ -112,7 +114,8 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 	})
 	t.Run(`failed to read version file`, func(t *testing.T) {
 		clt := fake.NewClient(
-			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}})
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}},
+			createTestInstance(t))
 		srv := &CSIDriverServer{
 			client: clt,
 		}
@@ -141,6 +144,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			&dynatracev1alpha1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{Name: dkName},
 			},
+			createTestInstance(t),
 		)
 		srv := &CSIDriverServer{
 			client: clt,
@@ -163,4 +167,28 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		assert.Equal(t, path.Join(dtcsi.DataPath, tenantUuid, "bin", tenantUuid), bindCfg.agentDir)
 		assert.Equal(t, path.Join(dtcsi.DataPath, tenantUuid), bindCfg.envDir)
 	})
+}
+
+func createTestInstance(_ *testing.T) *dynatracev1alpha1.DynaKube {
+	return &dynatracev1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dkName,
+			Namespace: "dynatrace",
+		},
+		Spec: dynatracev1alpha1.DynaKubeSpec{
+			CodeModules: dynatracev1alpha1.CodeModulesSpec{
+				Enabled: true,
+				Volume: v1.VolumeSource{
+					CSI: &v1.CSIVolumeSource{
+						Driver: dtcsi.DriverName,
+					},
+				},
+				Selector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						webhook.LabelInstance: dkName,
+					},
+				},
+			},
+		},
+	}
 }
