@@ -74,8 +74,10 @@ func startCertificateWatcher(mgr manager.Manager, ws *webhook2.Server, ns string
 		for {
 			<-time.After(6 * time.Hour)
 			log.Info("checking for new certificates")
-			if err := server.UpdateCertificate(mgr, ws, ns); err != nil {
+			if updated, err := server.UpdateCertificate(mgr, ws, ns); err != nil {
 				log.Info("failed to update certificates", "error", err)
+			} else if updated {
+				log.Info("updated certificate successfully")
 			}
 		}
 	}()
