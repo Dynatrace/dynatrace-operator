@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	v12 "k8s.io/api/storage/v1"
 	"net/http"
 	"time"
 
@@ -186,13 +187,18 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 	}
 
 	if rec.Instance.Spec.CodeModules.Enabled && (rec.Instance.Spec.CodeModules.Volume == corev1.VolumeSource{}) {
-		upd, err := dtcsi.NewCSIReconciler(r.client, r.scheme, r.logger, rec.Instance).Reconcile()
+		upd, err := dtcsi.NewCSIReconciler(r.client, r.scheme, rec.Log, rec.Instance).Reconcile()
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "CSI driver reconciled") {
 			return
 		}
 	} else {
 		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dtcsi.DaemonSetName, Namespace: rec.Instance.Namespace}}
 		if err := r.ensureDeleted(&ds); rec.Error(err) {
+			return
+		}
+
+		driver := v12.CSIDriver{ObjectMeta: metav1.ObjectMeta{Name: dtcsi.DriverName}}
+		if err := r.ensureDeleted(&driver); rec.Error(err) {
 			return
 		}
 	}

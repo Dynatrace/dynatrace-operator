@@ -218,6 +218,7 @@ func prepareMetadata() metav1.ObjectMeta {
 		Labels: map[string]string{
 			"dynatrace.com/operator": "dynatrace",
 		},
+		Annotations: map[string]string{},
 	}
 }
 
@@ -344,6 +345,10 @@ func prepareRegistrarSpec() v1.Container {
 			{
 				Name:      "plugin-dir",
 				MountPath: "/csi",
+			},
+			{
+				Name:      "registration-dir",
+				MountPath: "/registration",
 			},
 		},
 	}
