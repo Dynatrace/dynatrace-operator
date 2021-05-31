@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
@@ -156,7 +157,7 @@ func TestPodInjection(t *testing.T) {
 				Command:         []string{"/usr/bin/env"},
 				Args:            []string{"bash", "/mnt/config/init.sh"},
 				Env: []corev1.EnvVar{
-					{Name: "FLAVOR", Value: "default"},
+					{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
 					{Name: "TECHNOLOGIES", Value: "all"},
 					{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
 					{Name: "INSTALLER_URL", Value: ""},
@@ -329,7 +330,7 @@ func TestUseImmutableImage(t *testing.T) {
 					Command:         []string{"/usr/bin/env"},
 					Args:            []string{"bash", "/mnt/config/init.sh"},
 					Env: []corev1.EnvVar{
-						{Name: "FLAVOR", Value: "default"},
+						{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
 						{Name: "TECHNOLOGIES", Value: "all"},
 						{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
 						{Name: "INSTALLER_URL", Value: ""},
@@ -490,7 +491,7 @@ func TestUseImmutableImage(t *testing.T) {
 					Command:         []string{"/usr/bin/env"},
 					Args:            []string{"bash", "/mnt/config/init.sh"},
 					Env: []corev1.EnvVar{
-						{Name: "FLAVOR", Value: "default"},
+						{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
 						{Name: "TECHNOLOGIES", Value: "all"},
 						{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
 						{Name: "INSTALLER_URL", Value: ""},
@@ -652,7 +653,7 @@ func TestUseImmutableImage(t *testing.T) {
 					Command:         []string{"/usr/bin/env"},
 					Args:            []string{"bash", "/mnt/config/init.sh"},
 					Env: []corev1.EnvVar{
-						{Name: "FLAVOR", Value: "default"},
+						{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
 						{Name: "TECHNOLOGIES", Value: "all"},
 						{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
 						{Name: "INSTALLER_URL", Value: ""},
@@ -815,7 +816,7 @@ func TestAgentVersion(t *testing.T) {
 				Command:         []string{"/usr/bin/env"},
 				Args:            []string{"bash", "/mnt/config/init.sh"},
 				Env: []corev1.EnvVar{
-					{Name: "FLAVOR", Value: "default"},
+					{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
 					{Name: "TECHNOLOGIES", Value: "all"},
 					{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
 					{Name: "INSTALLER_URL", Value: ""},

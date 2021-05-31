@@ -42,7 +42,6 @@ import (
 const (
 	podNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
 	podUIDContextKey       = "csi.storage.k8s.io/pod.uid"
-	podFlavorContextKey    = "flavor"
 )
 
 var log = logger.NewDTLogger().WithName("server")
