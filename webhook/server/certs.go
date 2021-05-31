@@ -29,14 +29,22 @@ func UpdateCertificate(mgr manager.Manager, ws *webhook2.Server, ns string) erro
 			return fmt.Errorf("could not create cert directory: %s", err)
 		}
 	}
-	// todo(gakr): don't pull from secrets if filename is different
-	for _, filename := range []string{"tls.crt", "tls.key"} {
-		f := filepath.Join(ws.CertDir, filename)
 
-		data, err := ioutil.ReadFile(f)
+	for _, filename := range []string{"tls.crt", "tls.key"} {
+		tmp_file := filepath.Join(ws.CertDir, filename+".tmp")
+		orig_file := filepath.Join(ws.CertDir, filename)
+
+		data, err := ioutil.ReadFile(orig_file)
 
 		if os.IsNotExist(err) || !bytes.Equal(data, secret.Data[filename]) {
-			if err := ioutil.WriteFile(f, secret.Data[filename], 0666); err != nil {
+			// write to tmp and move file, otherwise certwatcher.go will read file before cert data is written
+			if err := ioutil.WriteFile(tmp_file, secret.Data[filename], 0666); err != nil {
+				return err
+			}
+			if err := os.Remove(orig_file); !os.IsNotExist(err) && err != nil {
+				return err
+			}
+			if err := os.Rename(tmp_file, orig_file); err != nil {
 				return err
 			}
 		} else {
