@@ -273,10 +273,12 @@ EOF
 checkForExistingCluster() {
   response=$(apiRequest "GET" "/config/v1/kubernetes/credentials" "")
 
+  # To check the exact name we need to include the `\` at the end
   if echo "$response" | grep -Fq "\"name\":\"${CONNECTION_NAME}\""; then
     echo "Error: Cluster already exists: ${CONNECTION_NAME}"
     exit 1
   fi
+  # To check the endpoint URL we must not include the `\` at the end
   if echo "$response" | grep -Fq "\"endpointUrl\":\"${K8S_ENDPOINT}"; then
     echo "Error: Cluster endpoint already exists: ${K8S_ENDPOINT}"
     exit 1
