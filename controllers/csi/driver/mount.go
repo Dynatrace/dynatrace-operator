@@ -31,12 +31,29 @@ type Mount struct {
 	ReadOnly bool
 }
 
+type bindOptions struct {
+	rootDir string
+	mounts  []Mount
+	mounter mount.Interface
+}
+
 func BindMount(rootDir string, mnts ...Mount) error {
 	if err := os.MkdirAll(rootDir, 0750); err != nil {
 		return fmt.Errorf("failed to create root directory %s: %w", rootDir, err)
 	}
 
-	mounter := mount.New("")
+	return bindMount(&bindOptions{
+		mounter: mount.New(""),
+		mounts:  mnts,
+		rootDir: rootDir,
+	})
+}
+
+func bindMount(options *bindOptions) error {
+	mounter := options.mounter
+	mnts := options.mounts
+	rootDir := options.rootDir
+
 	for i, mnt := range mnts {
 		opts := []string{"bind"}
 		if mnt.ReadOnly {
@@ -47,7 +64,11 @@ func BindMount(rootDir string, mnts ...Mount) error {
 			var errList strings.Builder
 			errList.WriteString(fmt.Sprintf("failed to mount device: %s at %s: %s", mnt.Source, mnt.Target, err.Error()))
 
-			if err := BindUnmount(mnts[0:i]...); err != nil {
+			if err := bindUnmount(&bindOptions{
+				mounter: mounter,
+				mounts:  mnts[0:i],
+				rootDir: rootDir,
+			}); err != nil {
 				errList.WriteString(fmt.Sprintf(", failed to unmount after failed operation: %s", err.Error()))
 			} else {
 				if err := os.RemoveAll(rootDir); err != nil {
@@ -58,14 +79,22 @@ func BindMount(rootDir string, mnts ...Mount) error {
 			return errors.New(errList.String())
 		}
 	}
-
 	return nil
 }
 
 func BindUnmount(mnts ...Mount) error {
-	var errList []string
-
 	mounter := mount.New("")
+	return bindUnmount(&bindOptions{
+		mounter: mounter,
+		mounts:  mnts,
+	})
+}
+
+func bindUnmount(options *bindOptions) error {
+	var errList []string
+	mounter := options.mounter
+	mnts := options.mounts
+
 	for _, mnt := range mnts {
 		// Unmount only if the target path is really a mount point.
 		notMnt, err := mount.IsNotMountPoint(mounter, mnt.Target)

@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
+	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -165,7 +166,6 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 	pod.Annotations[dtwebhook.AnnotationInjected] = "true"
 
-	flavor := utils.GetField(pod.Annotations, dtwebhook.AnnotationFlavor, "default")
 	technologies := url.QueryEscape(utils.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
 	installPath := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 	installerURL := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, "")
@@ -227,7 +227,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		Command:         []string{"/usr/bin/env"},
 		Args:            []string{"bash", "/mnt/config/init.sh"},
 		Env: []corev1.EnvVar{
-			{Name: "FLAVOR", Value: flavor},
+			{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
 			{Name: "TECHNOLOGIES", Value: technologies},
 			{Name: "INSTALLPATH", Value: installPath},
 			{Name: "INSTALLER_URL", Value: installerURL},
