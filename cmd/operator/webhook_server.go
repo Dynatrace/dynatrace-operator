@@ -46,7 +46,7 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 	log.Info("SSL certificates configured", "dir", certsDir, "key", keyFile, "cert", certFile)
 
 	for threshold := time.Now().Add(5 * time.Minute); time.Now().Before(threshold); {
-		err := server.UpdateCertificate(mgr, ws, ns)
+		_, err := server.UpdateCertificate(mgr, ws, ns)
 
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
