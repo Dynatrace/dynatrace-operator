@@ -40,6 +40,13 @@ spec:
                   apiVersion: v1
                   fieldPath: spec.nodeName
           imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 100m
+              memory: 100Mi
           ports:
             - containerPort: 10080
               name: healthz
