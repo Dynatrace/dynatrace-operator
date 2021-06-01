@@ -19,9 +19,13 @@ package main
 import (
 	"flag"
 	"os"
+	"path/filepath"
+	"strconv"
+	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
+	csigc "github.com/Dynatrace/dynatrace-operator/controllers/csi/gc"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/controllers/csi/provisioner"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -29,11 +33,13 @@ import (
 	"golang.org/x/sys/unix"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 )
 
 var (
-	nodeID   = flag.String("node-id", "", "node id")
-	endpoint = flag.String("endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
+	nodeID    = flag.String("node-id", "", "node id")
+	endpoint  = flag.String("endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
+	probeAddr = flag.String("health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 
 	log = logger.NewDTLogger().WithName("server")
 )
@@ -44,12 +50,20 @@ func main() {
 
 	version.LogVersion()
 
+	namespace := os.Getenv("POD_NAMESPACE")
+	gcInterval, err := strconv.Atoi(os.Getenv("GC_INTERVAL_MINUTES"))
+	if err != nil {
+		log.Error(err, "unable to convert GC_INTERVAL_MINUTES to int")
+		os.Exit(1)
+	}
+
 	defaultUmask := unix.Umask(0002)
 	defer unix.Umask(defaultUmask)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Namespace: os.Getenv("POD_NAMESPACE"),
-		Scheme:    scheme.Scheme,
+		Namespace:              namespace,
+		Scheme:                 scheme.Scheme,
+		HealthProbeBindAddress: *probeAddr,
 	})
 	if err != nil {
 		log.Error(err, "unable to start manager")
@@ -57,9 +71,20 @@ func main() {
 	}
 
 	csiOpts := dtcsi.CSIOptions{
-		NodeID:   *nodeID,
-		Endpoint: *endpoint,
-		DataDir:  "/tmp/data",
+		NodeID:     *nodeID,
+		Endpoint:   *endpoint,
+		RootDir:    "/tmp",
+		GCInterval: time.Duration(gcInterval) * time.Minute,
+	}
+
+	if err := os.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.DataPath), 0770); err != nil {
+		log.Error(err, "unable to create data directory for CSI Driver")
+		os.Exit(1)
+	}
+
+	if err := os.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.GarbageCollectionPath), 0770); err != nil {
+		log.Error(err, "unable to create garbage collector directory for CSI Driver")
+		os.Exit(1)
 	}
 
 	if err := csidriver.NewServer(mgr, csiOpts).SetupWithManager(mgr); err != nil {
@@ -69,6 +94,16 @@ func main() {
 
 	if err := csiprovisioner.NewReconciler(mgr, csiOpts).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Provisioner")
+		os.Exit(1)
+	}
+
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		log.Error(err, "unable to set up health check")
+		os.Exit(1)
+	}
+
+	if err := csigc.NewReconciler(mgr.GetClient(), csiOpts).SetupWithManager(mgr); err != nil {
+		log.Error(err, "unable to create CSI Garbage Collector")
 		os.Exit(1)
 	}
 

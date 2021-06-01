@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
@@ -892,7 +891,7 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 				Command:         []string{"/usr/bin/env"},
 				Args:            []string{"bash", "/mnt/config/init.sh"},
 				Env: []corev1.EnvVar{
-					{Name: "FLAVOR", Value: "default"},
+					{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
 					{Name: "TECHNOLOGIES", Value: "all"},
 					{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
 					{Name: "INSTALLER_URL", Value: ""},

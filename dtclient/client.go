@@ -76,8 +76,9 @@ const (
 
 // Known flavors.
 const (
-	FlavorDefault = "default"
-	FlavorMUSL    = "musl"
+	FlavorDefault     = "default"
+	FlavorMUSL        = "musl"
+	FlavorMultidistro = "multidistro"
 )
 
 // Known architectures.

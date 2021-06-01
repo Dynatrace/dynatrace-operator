@@ -26,7 +26,10 @@ spec:
           args:
             - --endpoint=unix://csi/csi.sock
             - --node-id=$(KUBE_NODE_NAME)
+            - --health-probe-bind-address=:10080
           env:
+            - name: GC_INTERVAL_MINUTES
+              value: "60"
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -37,6 +40,27 @@ spec:
                   apiVersion: v1
                   fieldPath: spec.nodeName
           imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 100m
+              memory: 100Mi
+          ports:
+            - containerPort: 10080
+              name: healthz
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: healthz
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            timeoutSeconds: 1
           securityContext:
             privileged: true
             runAsUser: 0
@@ -52,8 +76,10 @@ spec:
               mountPath: /var/lib/kubelet/pods
               mountPropagation: Bidirectional
         - name: registrar
-          image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.1.0
+          image: quay.io/dynatrace/dynatrace-operator:snapshot
           imagePullPolicy: IfNotPresent
+          command:
+            - csi-node-driver-registrar
           args:
             - --csi-address=/csi/csi.sock
             - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
@@ -67,13 +93,17 @@ spec:
               port: healthz
             initialDelaySeconds: 5
             timeoutSeconds: 5
+          securityContext:
+            runAsUser: 0
           volumeMounts:
             - name: plugin-dir
               mountPath: /csi
             - name: registration-dir
               mountPath: /registration
         - name: liveness-probe
-          image: k8s.gcr.io/sig-storage/livenessprobe:v2.2.0
+          image: quay.io/dynatrace/dynatrace-operator:snapshot
+          command:
+            - livenessprobe
           args:
             - --csi-address=/csi/csi.sock
             - --health-port=9898
