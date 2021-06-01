@@ -20,7 +20,6 @@ import (
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v12 "k8s.io/api/storage/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -194,11 +193,6 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 	} else {
 		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dtcsi.DaemonSetName, Namespace: rec.Instance.Namespace}}
 		if err := r.ensureDeleted(&ds); rec.Error(err) {
-			return
-		}
-
-		driver := v12.CSIDriver{ObjectMeta: metav1.ObjectMeta{Name: dtcsi.DriverName}}
-		if err := r.ensureDeleted(&driver); rec.Error(err) {
 			return
 		}
 	}

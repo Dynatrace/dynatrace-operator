@@ -2,9 +2,7 @@ package oneagent
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"os"
 	"reflect"
 	"strconv"
@@ -18,11 +16,9 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -82,7 +78,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 
 	rec.Update(utils.SetUseImmutableImageStatus(r.instance, r.fullStack), 5*time.Minute, "UseImmutableImage changed")
 
-	upd, err := r.reconcileRollout(ctx, rec)
+	upd, err := r.reconcileRollout(rec)
 	if err != nil {
 		return false, err
 	} else if upd {
@@ -117,7 +113,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 	return upd, nil
 }
 
-func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Reconciliation) (bool, error) {
+func (r *ReconcileOneAgent) reconcileRollout(rec *utils.Reconciliation) (bool, error) {
 	updateCR := false
 
 	// Define a new DaemonSet object
@@ -133,20 +129,9 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Rec
 	}
 
 	// Check if this DaemonSet already exists
-	dsActual := &appsv1.DaemonSet{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: dsDesired.Name, Namespace: dsDesired.Namespace}, dsActual)
-	if err != nil && k8serrors.IsNotFound(err) {
-		rec.Log.Info("Creating new daemonset")
-		if err = r.client.Create(ctx, dsDesired); err != nil {
-			return false, err
-		}
-	} else if err != nil {
-		return false, err
-	} else if hasDaemonSetChanged(dsDesired, dsActual) {
-		rec.Log.Info("Updating existing daemonset")
-		if err = r.client.Update(ctx, dsDesired); err != nil {
-			return false, err
-		}
+	updateCR, err = utils.CreateOrUpdateDaemonSet(r.client, r.logger, dsDesired)
+	if err != nil {
+		return updateCR, err
 	}
 
 	if rec.Instance.Status.Tokens != rec.Instance.Tokens() {
@@ -223,7 +208,7 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 		ds.Spec.Template.ObjectMeta.Annotations["container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"] = "unconfined"
 	}
 
-	dsHash, err := generateDaemonSetHash(ds)
+	dsHash, err := utils.GenerateDaemonSetHash(ds)
 	if err != nil {
 		return nil, err
 	}
@@ -570,32 +555,6 @@ func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.
 	}
 
 	return append(env, remaining...)
-}
-
-func hasDaemonSetChanged(a, b *appsv1.DaemonSet) bool {
-	return getTemplateHash(a) != getTemplateHash(b)
-}
-
-func generateDaemonSetHash(ds *appsv1.DaemonSet) (string, error) {
-	data, err := json.Marshal(ds)
-	if err != nil {
-		return "", err
-	}
-
-	hasher := fnv.New32()
-	_, err = hasher.Write(data)
-	if err != nil {
-		return "", err
-	}
-
-	return strconv.FormatUint(uint64(hasher.Sum32()), 10), nil
-}
-
-func getTemplateHash(a metav1.Object) string {
-	if annotations := a.GetAnnotations(); annotations != nil {
-		return annotations[activegate.AnnotationTemplateHash]
-	}
-	return ""
 }
 
 func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client) (bool, error) {

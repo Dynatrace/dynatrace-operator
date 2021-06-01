@@ -1,19 +1,17 @@
 package dtcsi
 
 import (
-	"context"
 	"encoding/json"
 	"hash/fnv"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
+	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	v12 "k8s.io/api/storage/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -40,12 +38,6 @@ func NewCSIReconciler(client client.Client, scheme *runtime.Scheme, logger logr.
 func (r *ReconcileCSI) Reconcile() (bool, error) {
 	r.logger.Info("Reconciling CSI driver")
 
-	driver := buildCSIDriver()
-	created, err := r.createCSIDriverIfNotExists(driver)
-	if created || err != nil {
-		return created, errors.WithStack(err)
-	}
-
 	ds, err := buildDesiredCSIDaemonSet()
 	if err != nil {
 		return false, errors.WithStack(err)
@@ -55,97 +47,12 @@ func (r *ReconcileCSI) Reconcile() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	created, err = r.createDaemonSetIfNotExists(ds)
-	if created || err != nil {
-		return created, errors.WithStack(err)
-	}
-
-	updated, err := r.updateDaemonSetIfOutdated(ds)
-	if updated || err != nil {
-		return updated, errors.WithStack(err)
+	upd, err := utils.CreateOrUpdateDaemonSet(r.client, r.logger, ds)
+	if upd || err != nil {
+		return upd, errors.WithStack(err)
 	}
 
 	return false, nil
-}
-
-func buildCSIDriver() *v12.CSIDriver {
-	trueVal := true
-	falseVal := false
-	return &v12.CSIDriver{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: DriverName,
-		},
-		Spec: v12.CSIDriverSpec{
-			AttachRequired: &falseVal,
-			PodInfoOnMount: &trueVal,
-			VolumeLifecycleModes: []v12.VolumeLifecycleMode{
-				v12.VolumeLifecycleEphemeral,
-			},
-		},
-	}
-}
-
-func (r *ReconcileCSI) createCSIDriverIfNotExists(desiredCSIDriver *v12.CSIDriver) (bool, error) {
-	_, err := r.getCSIDriver(desiredCSIDriver)
-	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
-		r.logger.Info("creating new CSI driver")
-		return true, r.client.Create(context.TODO(), desiredCSIDriver)
-	}
-	return false, err
-}
-
-func (r *ReconcileCSI) getCSIDriver(desiredCSIDriver *v12.CSIDriver) (*v12.CSIDriver, error) {
-	var actualDriver v12.CSIDriver
-	err := r.client.Get(context.TODO(), client.ObjectKey{Name: desiredCSIDriver.Name, Namespace: desiredCSIDriver.Namespace}, &actualDriver)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return &actualDriver, nil
-}
-
-func (r *ReconcileCSI) createDaemonSetIfNotExists(desiredSts *appsv1.DaemonSet) (bool, error) {
-	_, err := r.getDaemonSet(desiredSts)
-	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
-		r.logger.Info("creating new daemonset set for CSI driver")
-		return true, r.client.Create(context.TODO(), desiredSts)
-	}
-	return false, err
-}
-
-func (r *ReconcileCSI) getDaemonSet(desiredDs *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
-	var actualDs appsv1.DaemonSet
-	err := r.client.Get(context.TODO(), client.ObjectKey{Name: desiredDs.Name, Namespace: desiredDs.Namespace}, &actualDs)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return &actualDs, nil
-}
-
-func (r *ReconcileCSI) updateDaemonSetIfOutdated(desiredDs *appsv1.DaemonSet) (bool, error) {
-	currentSts, err := r.getDaemonSet(desiredDs)
-	if err != nil {
-		return false, err
-	}
-	if !hasDaemonSetChanged(currentSts, desiredDs) {
-		return false, nil
-	}
-
-	r.logger.Info("updating existing CSI driver daemonset")
-	if err = r.client.Update(context.TODO(), desiredDs); err != nil {
-		return false, err
-	}
-	return true, err
-}
-
-func hasDaemonSetChanged(a, b *appsv1.DaemonSet) bool {
-	return getTemplateHash(a) != getTemplateHash(b)
-}
-
-func getTemplateHash(a metav1.Object) string {
-	if annotations := a.GetAnnotations(); annotations != nil {
-		return annotations[activegate.AnnotationTemplateHash]
-	}
-	return ""
 }
 
 func buildDesiredCSIDaemonSet() (*appsv1.DaemonSet, error) {
