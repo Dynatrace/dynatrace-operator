@@ -204,7 +204,7 @@ func TestStatefulSet_Env(t *testing.T) {
 			{Name: DTCapabilities, Value: "MSGrouter"},
 			{Name: DTIdSeedNamespace, Value: instance.Namespace},
 			{Name: DTIdSeedClusterId, Value: testUID},
-			{Name: DTDeployMetadata, Value: deploymentMetadata.AsString()},
+			{Name: DTDeploymentMetadata, Value: deploymentMetadata.AsString()},
 			{Name: testKey, Value: testValue},
 		}, envVars)
 	})

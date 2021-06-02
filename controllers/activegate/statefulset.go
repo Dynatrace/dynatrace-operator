@@ -33,13 +33,13 @@ const (
 	AnnotationVersion         = "internal.operator.dynatrace.com/version"
 	AnnotationCustomPropsHash = "internal.operator.dynatrace.com/custom-properties-hash"
 
-	DTCapabilities    = "DT_CAPABILITIES"
-	DTIdSeedNamespace = "DT_ID_SEED_NAMESPACE"
-	DTIdSeedClusterId = "DT_ID_SEED_K8S_CLUSTER_ID"
-	DTNetworkZone     = "DT_NETWORK_ZONE"
-	DTGroup           = "DT_GROUP"
-	DTInternalProxy   = "DT_INTERNAL_PROXY"
-	DTDeployMetadata  = "DT_DEPLOY_METADATA"
+	DTCapabilities       = "DT_CAPABILITIES"
+	DTIdSeedNamespace    = "DT_ID_SEED_NAMESPACE"
+	DTIdSeedClusterId    = "DT_ID_SEED_K8S_CLUSTER_ID"
+	DTNetworkZone        = "DT_NETWORK_ZONE"
+	DTGroup              = "DT_GROUP"
+	DTInternalProxy      = "DT_INTERNAL_PROXY"
+	DTDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
 
 	ProxyKey = "ProxyKey"
 )
@@ -203,7 +203,7 @@ func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
 		{Name: DTCapabilities, Value: stsProperties.capabilityName},
 		{Name: DTIdSeedNamespace, Value: stsProperties.Namespace},
 		{Name: DTIdSeedClusterId, Value: string(stsProperties.kubeSystemUID)},
-		{Name: DTDeployMetadata, Value: deploymentMetadata.AsString()},
+		{Name: DTDeploymentMetadata, Value: deploymentMetadata.AsString()},
 	}
 	envs = append(envs, stsProperties.Env...)
 
