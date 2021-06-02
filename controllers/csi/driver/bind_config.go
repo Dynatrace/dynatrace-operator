@@ -43,7 +43,7 @@ func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeC
 		filepath.Join(envDir, "log", volumeCfg.podUID),
 		filepath.Join(envDir, "datastorage", volumeCfg.podUID),
 	} {
-		if err = mkDirFunc(dir, 0770); err != nil {
+		if err = mkDirFunc(dir, 0777); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
