@@ -186,7 +186,7 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 	}
 
 	if rec.Instance.Spec.CodeModules.Enabled && (rec.Instance.Spec.CodeModules.Volume == corev1.VolumeSource{}) {
-		upd, err := dtcsi.NewCSIReconciler(r.client, r.scheme, rec.Log, rec.Instance).Reconcile()
+		upd, err := dtcsi.NewReconciler(r.client, r.scheme, rec.Log, rec.Instance).Reconcile()
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "CSI driver reconciled") {
 			return
 		}

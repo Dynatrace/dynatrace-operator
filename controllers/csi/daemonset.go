@@ -1,8 +1,10 @@
 package dtcsi
 
 import (
+	"context"
 	"encoding/json"
 	"hash/fnv"
+	"os"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -19,15 +21,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type ReconcileCSI struct {
+type Reconciler struct {
 	client   client.Client
 	scheme   *runtime.Scheme
 	logger   logr.Logger
 	instance *v1alpha1.DynaKube
 }
 
-func NewCSIReconciler(client client.Client, scheme *runtime.Scheme, logger logr.Logger, instance *v1alpha1.DynaKube) *ReconcileCSI {
-	return &ReconcileCSI{
+func NewReconciler(client client.Client, scheme *runtime.Scheme, logger logr.Logger, instance *v1alpha1.DynaKube) *Reconciler {
+	return &Reconciler{
 		client:   client,
 		scheme:   scheme,
 		logger:   logger,
@@ -35,10 +37,15 @@ func NewCSIReconciler(client client.Client, scheme *runtime.Scheme, logger logr.
 	}
 }
 
-func (r *ReconcileCSI) Reconcile() (bool, error) {
+func (r *Reconciler) Reconcile() (bool, error) {
 	r.logger.Info("Reconciling CSI driver")
 
-	ds, err := buildDesiredCSIDaemonSet()
+	operatorImage, err := r.getOperatorImage()
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	ds, err := buildDesiredCSIDaemonSet(operatorImage)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
@@ -55,11 +62,23 @@ func (r *ReconcileCSI) Reconcile() (bool, error) {
 	return false, nil
 }
 
-func buildDesiredCSIDaemonSet() (*appsv1.DaemonSet, error) {
+func (r *Reconciler) getOperatorImage() (string, error) {
+	var operatorPod v1.Pod
+	operatorPodName := os.Getenv("POD_NAME")
+	operatorNamespace := os.Getenv("POD_NAMESPACE")
+
+	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: operatorPodName, Namespace: operatorNamespace}, &operatorPod); err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return operatorPod.Spec.Containers[0].Image, nil
+}
+
+func buildDesiredCSIDaemonSet(operatorImage string) (*appsv1.DaemonSet, error) {
 	metadata := prepareMetadata()
-	driver := prepareDriverSpec()
-	registrar := prepareRegistrarSpec()
-	livenessprobe := preparelivenessProbeSpec()
+	driver := prepareDriverSpec(operatorImage)
+	registrar := prepareRegistrarSpec(operatorImage)
+	livenessprobe := preparelivenessProbeSpec(operatorImage)
 	vol := prepareVolumes()
 
 	ds := &appsv1.DaemonSet{
@@ -129,14 +148,14 @@ func prepareMetadata() metav1.ObjectMeta {
 	}
 }
 
-func prepareDriverSpec() v1.Container {
+func prepareDriverSpec(operatorImage string) v1.Container {
 	privileged := true
 	userID := int64(0)
 	bidirectional := v1.MountPropagationBidirectional
 
 	return v1.Container{
 		Name:    "driver",
-		Image:   "quay.io/dynatrace/dynatrace-operator:snapshot",
+		Image:   operatorImage,
 		Command: []string{"csi-driver"},
 		Args: []string{
 			"--endpoint=unix://csi/csi.sock",
@@ -214,12 +233,12 @@ func prepareDriverSpec() v1.Container {
 	}
 }
 
-func prepareRegistrarSpec() v1.Container {
+func prepareRegistrarSpec(operatorImage string) v1.Container {
 	userID := int64(0)
 
 	return v1.Container{
 		Name:            "registrar",
-		Image:           "quay.io/dynatrace/dynatrace-operator:snapshot",
+		Image:           operatorImage,
 		ImagePullPolicy: v1.PullIfNotPresent,
 		Command: []string{
 			"csi-node-driver-registrar",
@@ -261,10 +280,10 @@ func prepareRegistrarSpec() v1.Container {
 	}
 }
 
-func preparelivenessProbeSpec() v1.Container {
+func preparelivenessProbeSpec(operatorImage string) v1.Container {
 	return v1.Container{
 		Name:  "liveness-probe",
-		Image: "quay.io/dynatrace/dynatrace-operator:snapshot",
+		Image: operatorImage,
 		Command: []string{
 			"livenessprobe",
 		},
