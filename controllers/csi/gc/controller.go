@@ -2,6 +2,7 @@ package csigc
 
 import (
 	"context"
+	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
@@ -47,7 +48,7 @@ var _ reconcile.Reconciler = &CSIGarbageCollector{}
 
 func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	gc.logger.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
-	reconcileResult := reconcile.Result{RequeueAfter: gc.opts.GCInterval}
+	reconcileResult := reconcile.Result{RequeueAfter: 60 * time.Minute}
 
 	var dk dynatracev1alpha1.DynaKube
 	if err := gc.client.Get(ctx, request.NamespacedName, &dk); err != nil {

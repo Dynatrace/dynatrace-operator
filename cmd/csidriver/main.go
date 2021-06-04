@@ -20,8 +20,6 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
-	"strconv"
-	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
@@ -51,11 +49,6 @@ func main() {
 	version.LogVersion()
 
 	namespace := os.Getenv("POD_NAMESPACE")
-	gcInterval, err := strconv.Atoi(os.Getenv("GC_INTERVAL_MINUTES"))
-	if err != nil {
-		log.Error(err, "unable to convert GC_INTERVAL_MINUTES to int")
-		os.Exit(1)
-	}
 
 	defaultUmask := unix.Umask(0002)
 	defer unix.Umask(defaultUmask)
@@ -71,10 +64,9 @@ func main() {
 	}
 
 	csiOpts := dtcsi.CSIOptions{
-		NodeID:     *nodeID,
-		Endpoint:   *endpoint,
-		RootDir:    "/tmp",
-		GCInterval: time.Duration(gcInterval) * time.Minute,
+		NodeID:   *nodeID,
+		Endpoint: *endpoint,
+		RootDir:  "/tmp",
 	}
 
 	if err := os.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.DataPath), 0770); err != nil {

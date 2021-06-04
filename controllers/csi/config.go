@@ -16,8 +16,6 @@ limitations under the License.
 
 package dtcsi
 
-import "time"
-
 const (
 	AgentConfDir          = "agent/conf"
 	DataPath              = "data"
@@ -30,8 +28,7 @@ const (
 )
 
 type CSIOptions struct {
-	NodeID     string
-	Endpoint   string
-	RootDir    string
-	GCInterval time.Duration
+	NodeID   string
+	Endpoint string
+	RootDir  string
 }

@@ -164,10 +164,6 @@ func prepareDriverSpec(operatorImage string) v1.Container {
 		},
 		Env: []v1.EnvVar{
 			{
-				Name:  "GC_INTERVAL_MINUTES",
-				Value: "60",
-			},
-			{
 				Name: "POD_NAMESPACE",
 				ValueFrom: &v1.EnvVarSource{
 					FieldRef: &v1.ObjectFieldSelector{

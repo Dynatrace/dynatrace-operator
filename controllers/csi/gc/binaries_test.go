@@ -21,10 +21,9 @@ func newMockGarbageCollector() (CSIGarbageCollector, string) {
 	log := logger.NewDTLogger()
 	fs := afero.NewMemMapFs()
 	opts := dtcsi.CSIOptions{
-		GCInterval: 1,
-		RootDir:    "/tmp",
-		Endpoint:   "endpoint",
-		NodeID:     "nodeID123",
+		RootDir:  "/tmp",
+		Endpoint: "endpoint",
+		NodeID:   "nodeID123",
 	}
 
 	versionReferenceBasePath := filepath.Join(opts.RootDir, dtcsi.DataPath, envID, dtcsi.GarbageCollectionPath)
