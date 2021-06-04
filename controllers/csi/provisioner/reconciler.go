@@ -174,23 +174,22 @@ func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string,
 		return err
 	}
 
-	for _, flavor := range []string{dtclient.FlavorDefault, dtclient.FlavorMUSL} {
-		targetDir := filepath.Join(envDir, "bin", version+"-"+flavor)
+	targetDir := filepath.Join(envDir, "bin", version)
 
-		if _, err := r.fs.Stat(targetDir); os.IsNotExist(err) {
-			installAgentCfg := newInstallAgentConfig(logger, dtc, flavor, arch, targetDir)
+	if _, err := r.fs.Stat(targetDir); os.IsNotExist(err) {
+		installAgentCfg := newInstallAgentConfig(logger, dtc, arch, targetDir)
 
-			if err := installAgent(installAgentCfg); err != nil {
-				if errDel := r.fs.RemoveAll(targetDir); errDel != nil {
-					logger.Error(errDel, "failed to delete target directory", "path", targetDir)
-				}
-
-				return fmt.Errorf("failed to install agent: %w", err)
+		if err := installAgent(installAgentCfg); err != nil {
+			if err := r.fs.RemoveAll(targetDir); err != nil {
+				logger.Error(err, "failed to delete target directory", "path", targetDir)
 			}
+
+			return fmt.Errorf("failed to install agent: %w", err)
 		}
 	}
 
 	_ = afero.WriteFile(r.fs, versionFile, []byte(version), 0644)
+
 	return nil
 }
 

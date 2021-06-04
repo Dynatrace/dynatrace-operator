@@ -18,18 +18,15 @@ const agentConfPath = "agent/conf/"
 type installAgentConfig struct {
 	logger    logr.Logger
 	dtc       dtclient.Client
-	flavor    string
 	arch      string
 	targetDir string
 	fs        afero.Fs
 }
 
-func newInstallAgentConfig(logger logr.Logger, dtc dtclient.Client,
-	flavor, arch, targetDir string) *installAgentConfig {
+func newInstallAgentConfig(logger logr.Logger, dtc dtclient.Client, arch, targetDir string) *installAgentConfig {
 	return &installAgentConfig{
 		logger:    logger,
 		dtc:       dtc,
-		flavor:    flavor,
 		arch:      arch,
 		targetDir: targetDir,
 		fs:        afero.NewOsFs(),
@@ -39,7 +36,6 @@ func newInstallAgentConfig(logger logr.Logger, dtc dtclient.Client,
 func installAgent(installAgentCfg *installAgentConfig) error {
 	logger := installAgentCfg.logger
 	dtc := installAgentCfg.dtc
-	flavor := installAgentCfg.flavor
 	arch := installAgentCfg.arch
 	targetDir := installAgentCfg.targetDir
 	fs := installAgentCfg.fs
@@ -55,13 +51,13 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 		}
 	}()
 
-	logger.Info("Downloading OneAgent package", "flavor", flavor, "architecture", arch)
+	logger.Info("Downloading OneAgent package", "architecture", arch)
 
-	r, err := dtc.GetLatestAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, flavor, arch)
+	r, err := dtc.GetLatestAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch)
 	if err != nil {
 		return fmt.Errorf("failed to fetch latest OneAgent version: %w", err)
 	}
-	defer r.Close()
+	defer func(r io.ReadCloser) { _ = r.Close() }(r)
 
 	logger.Info("Saving OneAgent package", "dest", tmpFile.Name())
 

@@ -33,11 +33,11 @@ func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeC
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Namespace '%s' doesn't have DynaKube assigned", volumeCfg.namespace))
 	}
 
-	envID, err := readFileFunc(filepath.Join(svr.opts.RootDir, dtcsi.DataPath, fmt.Sprintf("tenant-%s", dkName)))
+	tenantUUID, err := readFileFunc(filepath.Join(svr.opts.RootDir, dtcsi.DataPath, fmt.Sprintf("tenant-%s", dkName)))
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("Failed to extract tenant for DynaKube %s: %s", dkName, err.Error()))
 	}
-	envDir := filepath.Join(svr.opts.RootDir, dtcsi.DataPath, string(envID))
+	envDir := filepath.Join(svr.opts.RootDir, dtcsi.DataPath, string(tenantUUID))
 
 	for _, dir := range []string{
 		filepath.Join(envDir, "log", volumeCfg.podUID),
@@ -53,7 +53,7 @@ func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeC
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to query agent directory for DynaKube %s: %s", dkName, err.Error()))
 	}
 
-	agentDir := filepath.Join(envDir, "bin", string(ver)+"-"+volumeCfg.flavor)
+	agentDir := filepath.Join(envDir, "bin", string(ver))
 
 	return &bindConfig{
 		agentDir: agentDir,
