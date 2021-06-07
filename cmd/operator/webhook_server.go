@@ -21,11 +21,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/webhook/server"
+	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	webhook2 "sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
@@ -44,9 +45,10 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 	ws.KeyName = keyFile
 	ws.CertName = certFile
 	log.Info("SSL certificates configured", "dir", certsDir, "key", keyFile, "cert", certFile)
+	fs := afero.NewOsFs()
 
 	for threshold := time.Now().Add(5 * time.Minute); time.Now().Before(threshold); {
-		_, err := server.UpdateCertificate(mgr, ws, ns)
+		_, err := server.UpdateCertificate(mgr.GetAPIReader(), fs, ws.CertDir, ns)
 
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
@@ -60,7 +62,7 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 
 		break
 	}
-	startCertificateWatcher(mgr, ws, ns)
+	startCertificateWatcher(mgr.GetAPIReader(), fs, ws.CertDir, ns)
 
 	if err := server.AddToManager(mgr, ns); err != nil {
 		return nil, err
@@ -69,12 +71,12 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 	return mgr, nil
 }
 
-func startCertificateWatcher(mgr manager.Manager, ws *webhook2.Server, ns string) {
+func startCertificateWatcher(apiReader client.Reader, fs afero.Fs, certDir string, ns string) {
 	go func() {
 		for {
 			<-time.After(6 * time.Hour)
 			log.Info("checking for new certificates")
-			if updated, err := server.UpdateCertificate(mgr, ws, ns); err != nil {
+			if updated, err := server.UpdateCertificate(apiReader, fs, certDir, ns); err != nil {
 				log.Info("failed to update certificates", "error", err)
 			} else if updated {
 				log.Info("updated certificate successfully")
