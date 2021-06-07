@@ -30,17 +30,17 @@ const (
 )
 
 func Add(mgr manager.Manager, ns string) error {
-	return add(mgr, &ReconcileWebhook{
+	return add(mgr, &ReconcileWebhookCertificates{
 		client:    mgr.GetClient(),
 		scheme:    mgr.GetScheme(),
 		namespace: ns,
-		logger:    log.Log.WithName("operator.webhook-bootstrapper"),
+		logger:    log.Log.WithName("operator.webhook-certificates"),
 	})
 }
 
-func add(mgr manager.Manager, r *ReconcileWebhook) error {
+func add(mgr manager.Manager, r *ReconcileWebhookCertificates) error {
 	// Create a new controller
-	c, err := controller.New("webhook-bootstrapper-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("webhook-certificates-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
@@ -74,18 +74,17 @@ func add(mgr manager.Manager, r *ReconcileWebhook) error {
 	return nil
 }
 
-// ReconcileWebhook reconciles the webhook
-type ReconcileWebhook struct {
+// ReconcileWebhookCertificates updates certificates secret for the webhooks
+type ReconcileWebhookCertificates struct {
 	client    client.Client
 	scheme    *runtime.Scheme
 	logger    logr.Logger
 	namespace string
-	certsDir  string
 	now       time.Time
 }
 
-func (r *ReconcileWebhook) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	r.logger.Info("reconciling webhook", "namespace", request.Namespace, "name", request.Name)
+func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	r.logger.Info("reconciling webhook certificates", "namespace", request.Namespace, "name", request.Name)
 
 	rootCerts, err := r.reconcileCerts(ctx, r.logger)
 	if err != nil {
@@ -103,7 +102,7 @@ func (r *ReconcileWebhook) Reconcile(ctx context.Context, request reconcile.Requ
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileWebhook) reconcileService(ctx context.Context, log logr.Logger) error {
+func (r *ReconcileWebhookCertificates) reconcileService(ctx context.Context, log logr.Logger) error {
 	log.Info("Reconciling Service...")
 
 	expected := corev1.Service{
@@ -142,7 +141,7 @@ func (r *ReconcileWebhook) reconcileService(ctx context.Context, log logr.Logger
 	return err
 }
 
-func (r *ReconcileWebhook) reconcileCerts(ctx context.Context, log logr.Logger) ([]byte, error) {
+func (r *ReconcileWebhookCertificates) reconcileCerts(ctx context.Context, log logr.Logger) ([]byte, error) {
 	log.Info("Reconciling certificates...")
 
 	var newSecret bool
@@ -185,7 +184,7 @@ func (r *ReconcileWebhook) reconcileCerts(ctx context.Context, log logr.Logger) 
 	return append(cs.Data["ca.crt"], cs.Data["ca.crt.old"]...), nil
 }
 
-func (r *ReconcileWebhook) reconcileWebhookConfig(ctx context.Context, log logr.Logger, rootCerts []byte) error {
+func (r *ReconcileWebhookCertificates) reconcileWebhookConfig(ctx context.Context, log logr.Logger, rootCerts []byte) error {
 	log.Info("Reconciling MutatingWebhookConfiguration...")
 
 	scope := admissionregistrationv1beta1.NamespacedScope

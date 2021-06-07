@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func TestReconcileWebhook(t *testing.T) {
+func TestReconcileWebhookCertificates(t *testing.T) {
 	logger := zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout))
 	ns := "dynatrace"
 
@@ -31,7 +31,7 @@ func TestReconcileWebhook(t *testing.T) {
 	require.NoError(t, err)
 
 	c := fake.NewClient()
-	r := ReconcileWebhook{client: c, logger: logger, namespace: ns, scheme: scheme.Scheme, certsDir: tmpDir}
+	r := ReconcileWebhookCertificates{client: c, logger: logger, namespace: ns, scheme: scheme.Scheme}
 
 	reconcileAndGetCreds := func(days time.Duration) map[string]string {
 		r.now = now.Add(days * 24 * time.Hour)
