@@ -24,7 +24,7 @@ type Certs struct {
 	SrcData map[string][]byte
 	Data    map[string][]byte
 
-	now time.Time
+	Now time.Time
 
 	rootPrivateKey *rsa.PrivateKey
 	rootPublicCert *x509.Certificate
@@ -41,8 +41,8 @@ func (cs *Certs) ValidateCerts() error {
 	}
 
 	now := time.Now().UTC()
-	if !cs.now.IsZero() {
-		now = cs.now
+	if !cs.Now.IsZero() {
+		now = cs.Now
 	}
 
 	renewRootCerts := cs.validateRootCerts(now)

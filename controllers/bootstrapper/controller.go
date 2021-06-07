@@ -167,7 +167,7 @@ func (r *ReconcileWebhook) reconcileCerts(ctx context.Context, log logr.Logger) 
 		Log:     log,
 		Domain:  fmt.Sprintf("%s.%s.svc", webhookName, r.namespace),
 		SrcData: secret.Data,
-		now:     r.now,
+		Now:     r.now,
 	}
 
 	if err := cs.ValidateCerts(); err != nil {
