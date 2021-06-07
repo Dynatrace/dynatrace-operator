@@ -1,4 +1,4 @@
-package bootstrapper
+package webhookcerts
 
 import (
 	"bytes"
@@ -39,7 +39,6 @@ func Add(mgr manager.Manager, ns string) error {
 }
 
 func add(mgr manager.Manager, r *ReconcileWebhookCertificates) error {
-	// Create a new controller
 	c, err := controller.New("webhook-certificates-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err

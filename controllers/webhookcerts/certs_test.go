@@ -1,4 +1,4 @@
-package bootstrapper
+package webhookcerts
 
 import (
 	"crypto/x509"
