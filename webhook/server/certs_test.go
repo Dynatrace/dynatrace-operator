@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/controllers/bootstrapper"
+	"github.com/Dynatrace/dynatrace-operator/controllers/webhookcerts"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"
@@ -77,7 +77,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 }
 
 func generateCerts(now time.Time, logger logr.Logger) (corev1.Secret, error) {
-	validCerts := bootstrapper.Certs{Log: logger, Domain: domain, Now: now}
+	validCerts := webhookcerts.Certs{Log: logger, Domain: domain, Now: now}
 	if err := validCerts.ValidateCerts(); err != nil {
 		return corev1.Secret{}, err
 	}
