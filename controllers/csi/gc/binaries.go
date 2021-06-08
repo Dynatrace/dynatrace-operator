@@ -6,7 +6,6 @@ import (
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
@@ -41,36 +40,24 @@ func init() {
 	metrics.Registry.MustRegister(gcRunsMetric)
 }
 
-func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, latestVersion string) error {
+func (gc *CSIGarbageCollector) runBinaryGarbageCollection(versionReferences []os.FileInfo, tenantUUID string, latestVersion string) error {
 	fs := &afero.Afero{Fs: gc.fs}
-	logger := gc.logger.WithValues("tenant", tenantUUID, "latestVersion", latestVersion)
 	gcRunsMetric.Inc()
-
-	versionReferencesBase := filepath.Join(gc.opts.RootDir, tenantUUID, dtcsi.GarbageCollectionPath)
-	logger.Info("run garbage collection for binaries", "versionReferencesBase", versionReferencesBase)
-
-	versionReferences, err := fs.ReadDir(versionReferencesBase)
-	if err != nil {
-		exists, _ := fs.DirExists(versionReferencesBase)
-		if !exists {
-			logger.Info("skipped, version reference base directory not exists", "path", versionReferencesBase)
-			return nil
-		}
-		return errors.WithStack(err)
-	}
+	versionReferencesBase := filepath.Join(gc.opts.RootDir, dtcsi.DataPath, tenantUUID, dtcsi.GarbageCollectionPath)
+	gc.logger.Info("run garbage collection for binaries", "versionReferencesBase", versionReferencesBase)
 
 	for _, fileInfo := range versionReferences {
 		version := fileInfo.Name()
 		references := filepath.Join(versionReferencesBase, version)
 
-		shouldDelete := isNotLatestVersion(version, latestVersion, logger) &&
-			shouldDeleteVersion(fs, references, logger.WithValues("version", version))
+		shouldDelete := isNotLatestVersion(version, latestVersion, gc.logger) &&
+			shouldDeleteVersion(fs, references, gc.logger.WithValues("version", version))
 
 		if shouldDelete {
 			binaryPath := filepath.Join(gc.opts.RootDir, tenantUUID, "bin", version)
-			logger.Info("deleting unused version", "version", version, "path", binaryPath)
+			gc.logger.Info("deleting unused version", "version", version, "path", binaryPath)
 
-			removeUnusedVersion(fs, binaryPath, references, logger)
+			removeUnusedVersion(fs, binaryPath, references, gc.logger)
 		}
 	}
 	return nil
