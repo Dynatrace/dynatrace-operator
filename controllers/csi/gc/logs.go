@@ -10,11 +10,11 @@ import (
 	"github.com/spf13/afero"
 )
 
-//const (
-//	maxLogFolderSize    = 300000
-//	maxAmountOfLogFiles = 1000
-//	maxLogAge           = 14 * 24 * time.Hour
-//)
+const (
+	maxLogFolderSize    = 300000
+	maxAmountOfLogFiles = 1000
+	maxLogAge           = 14 * 24 * time.Hour
+)
 
 func (gc *CSIGarbageCollector) runLogGarbageCollection(versionReferences []os.FileInfo, tenantUUID string) error {
 	fs := &afero.Afero{Fs: gc.fs}
@@ -33,8 +33,7 @@ func (gc *CSIGarbageCollector) runLogGarbageCollection(versionReferences []os.Fi
 
 	deadPods := difference(gcPodUIDs, logPodUIDs)
 
-	// shouldDelete := len(deadPods) > 0 && (sizeTooBig(fs, logPath) || len(deadPods) > maxAmountOfLogFiles)
-	shouldDelete := true
+	shouldDelete := len(deadPods) > 0 && (sizeTooBig(fs, logPath) || len(deadPods) > maxAmountOfLogFiles)
 	if shouldDelete {
 		err = gc.removeDeadLogFolders(deadPods, fs, logPath)
 		if err != nil {
@@ -60,24 +59,23 @@ func (gc *CSIGarbageCollector) removeDeadLogFolders(deadPods []os.FileInfo, fs *
 }
 
 func isOlderThanTwoWeeks(t time.Time) bool {
-	//return time.Since(t) > maxLogAge
-	return time.Since(t) > 5*time.Minute
+	return time.Since(t) > maxLogAge
 }
 
-//func sizeTooBig(fs *afero.Afero, logPath string) bool {
-//	var size int64
-//	_ = fs.Walk(logPath, func(_ string, info os.FileInfo, err error) error {
-//		if err != nil {
-//			return err
-//		}
-//		if !info.IsDir() {
-//			size += info.Size()
-//		}
-//		return err
-//	})
-//
-//	return size > maxLogFolderSize
-//}
+func sizeTooBig(fs *afero.Afero, logPath string) bool {
+	var size int64
+	_ = fs.Walk(logPath, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return err
+	})
+
+	return size > maxLogFolderSize
+}
 
 func (gc *CSIGarbageCollector) getPodUIDs(fs *afero.Afero, versionReferences []os.FileInfo, tenantUUID string) ([]os.FileInfo, error) {
 	var podUIDs []os.FileInfo
