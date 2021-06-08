@@ -195,16 +195,16 @@ func TestNewKubeMonCapability(t *testing.T) {
 					},
 					initContainersTemplates: []v1.Container{
 						{
-							Name:            "certificate-loader",
+							Name:            initContainerTemplateName,
 							ImagePullPolicy: v1.PullAlways,
-							WorkingDir:      "/var/lib/dynatrace/gateway",
+							WorkingDir:      k8scrt2jksWorkingDir,
 							Command:         []string{"/bin/bash"},
-							Args:            []string{"-c", "/opt/dynatrace/gateway/k8scrt2jks.sh"},
+							Args:            []string{"-c", k8scrt2jksPath},
 							VolumeMounts: []v1.VolumeMount{
 								{
 									ReadOnly:  false,
-									Name:      "truststore-volume",
-									MountPath: "/var/lib/dynatrace/gateway/ssl",
+									Name:      trustStoreVolume,
+									MountPath: activeGateSslPath,
 								},
 							},
 						},
@@ -212,8 +212,8 @@ func TestNewKubeMonCapability(t *testing.T) {
 					containerVolumeMounts: []v1.VolumeMount{{
 						ReadOnly:  true,
 						Name:      trustStoreVolume,
-						MountPath: "/opt/dynatrace/gateway/jre/lib/security/cacerts",
-						SubPath:   "k8s-local.jks",
+						MountPath: activeGateCacertsPath,
+						SubPath:   k8sCertificateFile,
 					}},
 					volumes: []v1.Volume{{
 						Name: trustStoreVolume,

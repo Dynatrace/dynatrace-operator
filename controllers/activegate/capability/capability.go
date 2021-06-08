@@ -6,7 +6,13 @@ import (
 )
 
 const (
-	trustStoreVolume = "truststore-volume"
+	trustStoreVolume          = "truststore-volume"
+	k8scrt2jksPath            = "/opt/dynatrace/gateway/k8scrt2jks.sh"
+	activeGateCacertsPath     = "/opt/dynatrace/gateway/jre/lib/security/cacerts"
+	activeGateSslPath         = "/var/lib/dynatrace/gateway/ssl"
+	k8sCertificateFile        = "k8s-local.jks"
+	k8scrt2jksWorkingDir      = "/var/lib/dynatrace/gateway"
+	initContainerTemplateName = "certificate-loader"
 )
 
 type Configuration struct {
@@ -96,16 +102,16 @@ func NewKubeMonCapability(crProperties *dynatracev1alpha1.CapabilityProperties) 
 			},
 			initContainersTemplates: []v1.Container{
 				{
-					Name:            "certificate-loader",
+					Name:            initContainerTemplateName,
 					ImagePullPolicy: v1.PullAlways,
-					WorkingDir:      "/var/lib/dynatrace/gateway",
+					WorkingDir:      k8scrt2jksWorkingDir,
 					Command:         []string{"/bin/bash"},
-					Args:            []string{"-c", "/opt/dynatrace/gateway/k8scrt2jks.sh"},
+					Args:            []string{"-c", k8scrt2jksPath},
 					VolumeMounts: []v1.VolumeMount{
 						{
 							ReadOnly:  false,
-							Name:      "truststore-volume",
-							MountPath: "/var/lib/dynatrace/gateway/ssl",
+							Name:      trustStoreVolume,
+							MountPath: activeGateSslPath,
 						},
 					},
 				},
@@ -113,8 +119,8 @@ func NewKubeMonCapability(crProperties *dynatracev1alpha1.CapabilityProperties) 
 			containerVolumeMounts: []v1.VolumeMount{{
 				ReadOnly:  true,
 				Name:      trustStoreVolume,
-				MountPath: "/opt/dynatrace/gateway/jre/lib/security/cacerts",
-				SubPath:   "k8s-local.jks",
+				MountPath: activeGateCacertsPath,
+				SubPath:   k8sCertificateFile,
 			}},
 			volumes: []v1.Volume{{
 				Name: trustStoreVolume,

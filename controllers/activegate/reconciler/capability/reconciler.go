@@ -1,4 +1,4 @@
-package capabilityr
+package capability
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/consts"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/events"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulsetr"
+	rsfs "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/service"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -29,14 +29,14 @@ const (
 )
 
 type Reconciler struct {
-	*statefulsetr.Reconciler
+	*rsfs.Reconciler
 	log logr.Logger
 	capability.Capability
 }
 
 func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
 	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
-	baseReconciler := statefulsetr.NewReconciler(
+	baseReconciler := rsfs.NewReconciler(
 		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider, capability)
 
 	if capability.GetConfiguration().SetDnsEntryPoint {
