@@ -10,30 +10,31 @@ import (
 	"github.com/spf13/afero"
 )
 
-const (
-	maxLogFolderSize    = 300000
-	maxAmountOfLogFiles = 1000
-	maxLogAge           = 14 * 24 * time.Hour
-)
+//const (
+//	maxLogFolderSize    = 300000
+//	maxAmountOfLogFiles = 1000
+//	maxLogAge           = 14 * 24 * time.Hour
+//)
 
 func (gc *CSIGarbageCollector) runLogGarbageCollection(versionReferences []os.FileInfo, tenantUUID string) error {
 	fs := &afero.Afero{Fs: gc.fs}
 	gcPodUIDs, err := gc.getPodUIDs(fs, versionReferences, tenantUUID)
 	if err != nil {
-		gc.logger.Error(err, "failed to get podUIDs")
+		gc.logger.Info("skipped, failed to get podUIDs")
 		return errors.WithStack(err)
 	}
 
 	logPath := filepath.Join(gc.opts.RootDir, dtcsi.DataPath, tenantUUID, dtcsi.LogDir)
 	logPodUIDs, err := fs.ReadDir(logPath)
 	if err != nil {
-		gc.logger.Error(err, "skipped, failed to get references")
+		gc.logger.Info("skipped, failed to get references")
 		return errors.WithStack(err)
 	}
 
 	deadPods := difference(gcPodUIDs, logPodUIDs)
 
-	shouldDelete := len(deadPods) > 0 && (sizeTooBig(fs, logPath) || len(deadPods) > maxAmountOfLogFiles)
+	// shouldDelete := len(deadPods) > 0 && (sizeTooBig(fs, logPath) || len(deadPods) > maxAmountOfLogFiles)
+	shouldDelete := true
 	if shouldDelete {
 		err = gc.removeDeadLogFolders(deadPods, fs, logPath)
 		if err != nil {
@@ -59,23 +60,24 @@ func (gc *CSIGarbageCollector) removeDeadLogFolders(deadPods []os.FileInfo, fs *
 }
 
 func isOlderThanTwoWeeks(t time.Time) bool {
-	return time.Since(t) > maxLogAge
+	//return time.Since(t) > maxLogAge
+	return time.Since(t) > 5*time.Minute
 }
 
-func sizeTooBig(fs *afero.Afero, logPath string) bool {
-	var size int64
-	_ = fs.Walk(logPath, func(_ string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			size += info.Size()
-		}
-		return err
-	})
-
-	return size > maxLogFolderSize
-}
+//func sizeTooBig(fs *afero.Afero, logPath string) bool {
+//	var size int64
+//	_ = fs.Walk(logPath, func(_ string, info os.FileInfo, err error) error {
+//		if err != nil {
+//			return err
+//		}
+//		if !info.IsDir() {
+//			size += info.Size()
+//		}
+//		return err
+//	})
+//
+//	return size > maxLogFolderSize
+//}
 
 func (gc *CSIGarbageCollector) getPodUIDs(fs *afero.Afero, versionReferences []os.FileInfo, tenantUUID string) ([]os.FileInfo, error) {
 	var podUIDs []os.FileInfo
@@ -87,7 +89,7 @@ func (gc *CSIGarbageCollector) getPodUIDs(fs *afero.Afero, versionReferences []o
 
 		podReferences, err := fs.ReadDir(references)
 		if err != nil {
-			gc.logger.Error(err, "skipped, failed to get references")
+			gc.logger.Info("skipped, failed to get references")
 			return nil, errors.WithStack(err)
 		}
 
