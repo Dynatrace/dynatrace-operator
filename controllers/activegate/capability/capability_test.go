@@ -255,16 +255,16 @@ func TestNewMetricsCapability(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *MetricsCapability
+		want *DataIngestCapability
 	}{
 		{
 			name: "",
 			args: args{
 				crProperties: props,
 			},
-			want: &MetricsCapability{
+			want: &DataIngestCapability{
 				capabilityBase: capabilityBase{
-					moduleName:     "metrics",
+					moduleName:     "data-ingest",
 					capabilityName: "metrics_ingest",
 					properties:     props,
 					Configuration: Configuration{
@@ -280,8 +280,8 @@ func TestNewMetricsCapability(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewMetricsCapability(tt.args.crProperties); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewMetricsCapability() = %v, want %v", got, tt.want)
+			if got := NewDataIngestCapability(tt.args.crProperties); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewDataIngestCapability() = %v, want %v", got, tt.want)
 			}
 		})
 	}

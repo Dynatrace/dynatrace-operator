@@ -69,11 +69,11 @@ type DynaKubeSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	RoutingSpec RoutingSpec `json:"routing,omitempty"`
 
-	//  Configuration for Metrics Ingest
+	//  Configuration for Data Ingest
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Metrics Ingest"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Data Ingest"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	MetricsIngestSpec MetricsIngestSpec `json:"metricsIngest,omitempty"`
+	DataIngestSpec DataIngestSpec `json:"dataIngest,omitempty"`
 
 	//  Configuration for Kubernetes Monitoring
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
@@ -183,7 +183,7 @@ type FullStackSpec struct {
 	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
 }
 
-type MetricsIngestSpec struct {
+type DataIngestSpec struct {
 	CapabilityProperties `json:",inline"`
 }
 

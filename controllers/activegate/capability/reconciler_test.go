@@ -28,7 +28,7 @@ const (
 	testNamespace = "test-namespace"
 )
 
-var cap = NewMetricsCapability(
+var cap = NewDataIngestCapability(
 	&v1alpha1.CapabilityProperties{
 		Enabled: true,
 	},
@@ -193,7 +193,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 	type fields struct {
 		Reconciler *activegate.Reconciler
 		log        logr.Logger
-		Capability *MetricsCapability
+		Capability *DataIngestCapability
 	}
 	tests := []struct {
 		name   string
@@ -212,7 +212,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 				},
 				Capability: cap,
 			},
-			want: "instanceName-metrics",
+			want: "instanceName-data_ingest",
 		},
 		{
 			name: "empty instance name",
