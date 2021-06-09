@@ -212,7 +212,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 				},
 				Capability: cap,
 			},
-			want: "instanceName-data_ingest",
+			want: "instanceName-data-ingest",
 		},
 		{
 			name: "empty instance name",
