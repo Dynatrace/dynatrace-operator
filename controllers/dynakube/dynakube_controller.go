@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/tokens"
 	"net/http"
 	"time"
 
@@ -156,6 +157,15 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 	secret, err := r.getTokenSecret(ctx, rec.Instance)
 	if err != nil {
 		rec.Log.Error(err, "could not find token secret")
+		return
+	}
+
+	upd, err = tokens.
+		NewReconciler(r.client, r.apiReader, r.scheme, rec.Instance, dtc, rec.Log).
+		Reconcile()
+	rec.Update(upd, defaultUpdateInterval, "AG tokens conditions updated")
+	if rec.Error(err) {
+		rec.Log.Error(err, "could not reconcile AG tokens")
 		return
 	}
 

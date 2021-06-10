@@ -59,6 +59,9 @@ spec:
                     implementation from the Dynatrace environment set as API URL.'
                   type: string
               type: object
+            agTokensSecret:
+              description: Tokens for ActiveGates
+              type: string
             apiUrl:
               description: Location of the Dynatrace API to connect to, including
                 your specific environment ID

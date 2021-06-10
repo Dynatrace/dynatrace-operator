@@ -46,25 +46,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 	ns := instance.GetNamespace()
 	secretName := instance.Tokens()
 
-	var tokens []*tokenConfig
-
-	if r.UpdatePaaSToken {
-		tokens = append(tokens, &tokenConfig{
-			Type:      dynatracev1alpha1.PaaSTokenConditionType,
-			Key:       dtclient.DynatracePaasToken,
-			Scope:     dtclient.TokenScopeInstallerDownload,
-			Timestamp: &sts.LastPaaSTokenProbeTimestamp,
-		})
-	}
-
-	if r.UpdateAPIToken {
-		tokens = append(tokens, &tokenConfig{
-			Type:      dynatracev1alpha1.APITokenConditionType,
-			Key:       dtclient.DynatraceApiToken,
-			Scope:     dtclient.TokenScopeDataExport,
-			Timestamp: &sts.LastAPITokenProbeTimestamp,
-		})
-	}
+	tokens := r.collectTokens(sts)
 
 	updateCR := false
 
@@ -208,6 +190,29 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 	}
 
 	return dtc, updateCR, nil
+}
+
+func (r *DynatraceClientReconciler) collectTokens(sts *dynatracev1alpha1.DynaKubeStatus) []*tokenConfig {
+	var tokens []*tokenConfig
+
+	if r.UpdatePaaSToken {
+		tokens = append(tokens, &tokenConfig{
+			Type:      dynatracev1alpha1.PaaSTokenConditionType,
+			Key:       dtclient.DynatracePaasToken,
+			Scope:     dtclient.TokenScopeInstallerDownload,
+			Timestamp: &sts.LastPaaSTokenProbeTimestamp,
+		})
+	}
+
+	if r.UpdateAPIToken {
+		tokens = append(tokens, &tokenConfig{
+			Type:      dynatracev1alpha1.APITokenConditionType,
+			Key:       dtclient.DynatraceApiToken,
+			Scope:     dtclient.TokenScopeDataExport,
+			Timestamp: &sts.LastAPITokenProbeTimestamp,
+		})
+	}
+	return tokens
 }
 
 func setCondition(conditions *[]metav1.Condition, condition metav1.Condition) bool {

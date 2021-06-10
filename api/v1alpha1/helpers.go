@@ -96,7 +96,7 @@ func buildImageRegistry(apiURL string) string {
 	return registry
 }
 
-// Tokens returns the name of the Secret to be used for tokens.
+// Tokens returns the name of the Secret to be used for Api- and Paas- tokens.
 func (dk *DynaKube) Tokens() string {
 	if tkns := dk.Spec.Tokens; tkns != "" {
 		return tkns
