@@ -163,6 +163,38 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 
 	if pod.Annotations[dtwebhook.AnnotationInjected] == "true" {
+		var ic *corev1.Container
+		var name, image string
+		for _, c := range pod.Spec.Containers {
+			if c.Name == "install-oneagent" {
+				ic = &c
+				continue
+			}
+
+			preloaded := false
+			for _, e := range c.Env {
+				if e.Name == "LD_PRELOAD" {
+					preloaded = true
+					break
+				}
+			}
+
+			if !preloaded {
+				// container does not have LD_PRELOAD set
+
+				deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
+				UpdateContainer(&c, &oa, pod, deploymentMetadata)
+
+				name = c.Name
+				image = c.Image
+			}
+		}
+
+		if name != "" && image != "" {
+			l := len(pod.Spec.Containers)
+			UpdateInstallContainer(ic, l, name, image)
+		}
+
 		return admission.Patched("")
 	}
 	pod.Annotations[dtwebhook.AnnotationInjected] = "true"
@@ -255,45 +287,9 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	for i := range pod.Spec.Containers {
 		c := &pod.Spec.Containers[i]
 
-		ic.Env = append(ic.Env,
-			corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_NAME", i+1), Value: c.Name},
-			corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_IMAGE", i+1), Value: c.Image})
+		UpdateInstallContainer(&ic, i+1, c.Name, c.Image)
 
-		c.VolumeMounts = append(c.VolumeMounts,
-			corev1.VolumeMount{
-				Name:      "oneagent-share",
-				MountPath: "/etc/ld.so.preload",
-				SubPath:   "ld.so.preload",
-			},
-			corev1.VolumeMount{Name: "oneagent-bin", MountPath: installPath},
-			corev1.VolumeMount{
-				Name:      "oneagent-share",
-				MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-				SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
-			})
-
-		c.Env = append(c.Env,
-			corev1.EnvVar{Name: "LD_PRELOAD", Value: installPath + "/agent/lib64/liboneagentproc.so"},
-			corev1.EnvVar{Name: "DT_DEPLOYMENT_METADATA", Value: deploymentMetadata.AsString()})
-
-		if oa.Spec.Proxy != nil && (oa.Spec.Proxy.Value != "" || oa.Spec.Proxy.ValueFrom != "") {
-			c.Env = append(c.Env,
-				corev1.EnvVar{
-					Name: "DT_PROXY",
-					ValueFrom: &corev1.EnvVarSource{
-						SecretKeyRef: &corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: dtwebhook.SecretConfigName,
-							},
-							Key: "proxy",
-						},
-					},
-				})
-		}
-
-		if oa.Spec.NetworkZone != "" {
-			c.Env = append(c.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: oa.Spec.NetworkZone})
-		}
+		UpdateContainer(c, &oa, pod, deploymentMetadata)
 	}
 
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
@@ -316,4 +312,63 @@ func (m *podInjector) InjectClient(c client.Client) error {
 func (m *podInjector) InjectDecoder(d *admission.Decoder) error {
 	m.decoder = d
 	return nil
+}
+
+// Add Container to list of Containers of Install Container
+func UpdateInstallContainer(ic *corev1.Container, number int, name string, image string) {
+	ic.Env = append(ic.Env,
+		corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_NAME", number), Value: name},
+		corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_IMAGE", number), Value: image})
+}
+
+// Set missing preload Variables
+func UpdateContainer(c *corev1.Container, oa *dynatracev1alpha1.DynaKube,
+	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
+
+	installPath := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
+
+	c.VolumeMounts = append(c.VolumeMounts,
+		corev1.VolumeMount{
+			Name:      "oneagent-share",
+			MountPath: "/etc/ld.so.preload",
+			SubPath:   "ld.so.preload",
+		},
+		corev1.VolumeMount{
+			Name:      "oneagent-bin",
+			MountPath: installPath,
+		},
+		corev1.VolumeMount{
+			Name:      "oneagent-share",
+			MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
+			SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
+		})
+
+	c.Env = append(c.Env,
+		corev1.EnvVar{
+			Name:  "LD_PRELOAD",
+			Value: installPath + "/agent/lib64/liboneagentproc.so",
+		},
+		corev1.EnvVar{
+			Name:  "DT_DEPLOYMENT_METADATA",
+			Value: deploymentMetadata.AsString(),
+		})
+
+	if oa.Spec.Proxy != nil && (oa.Spec.Proxy.Value != "" || oa.Spec.Proxy.ValueFrom != "") {
+		c.Env = append(c.Env,
+			corev1.EnvVar{
+				Name: "DT_PROXY",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: dtwebhook.SecretConfigName,
+						},
+						Key: "proxy",
+					},
+				},
+			})
+	}
+
+	if oa.Spec.NetworkZone != "" {
+		c.Env = append(c.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: oa.Spec.NetworkZone})
+	}
 }
