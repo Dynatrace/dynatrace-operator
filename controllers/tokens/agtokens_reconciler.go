@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	TokensSecretsName = "dynatrace-tokens"
+	SecretsName = "dynatrace-tokens"
 )
 
 type Reconciler struct {
@@ -69,7 +69,7 @@ func (r *Reconciler) reconcileAGTokens() error {
 
 func (r *Reconciler) createAGTokensSecretIfNotExists(secretData map[string][]byte) (*corev1.Secret, error) {
 	var config corev1.Secret
-	err := r.apiReader.Get(context.TODO(), client.ObjectKey{Name: TokensSecretsName, Namespace: r.instance.Namespace}, &config)
+	err := r.apiReader.Get(context.TODO(), client.ObjectKey{Name: SecretsName, Namespace: r.instance.Namespace}, &config)
 	if k8serrors.IsNotFound(err) {
 		r.log.Info("Creating AG Tokens secret")
 		return r.createAGTokensSecret(secretData)
@@ -93,7 +93,7 @@ func (r *Reconciler) createAGTokensSecret(agTokensSecretData map[string][]byte) 
 
 	err := r.Create(context.TODO(), agTokens)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create secret '%s': %w", TokensSecretsName, err)
+		return nil, fmt.Errorf("failed to create secret '%s': %w", SecretsName, err)
 	}
 	return agTokens, nil
 }
@@ -123,7 +123,7 @@ func isAGTokensSecretEqual(currentSecret *corev1.Secret, desired map[string][]by
 func BuildAGTokensSecret(instance *dynatracev1alpha1.DynaKube, agTokensSecretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      TokensSecretsName,
+			Name:      SecretsName,
 			Namespace: instance.Namespace,
 		},
 		Type: corev1.SecretTypeOpaque,

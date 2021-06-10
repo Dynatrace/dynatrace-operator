@@ -1,12 +1,12 @@
 package statefulset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/controllers/tokens"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/controllers/tokens"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -127,7 +127,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 		Name: TokensSecretVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: tokens.TokensSecretsName,
+				SecretName: tokens.SecretsName,
 			},
 		},
 	})
@@ -169,7 +169,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 			Name: TokensSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: tokens.TokensSecretsName,
+					SecretName: tokens.SecretsName,
 				},
 			},
 		})
