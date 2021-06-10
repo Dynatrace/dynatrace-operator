@@ -142,6 +142,7 @@ func mockDynatraceClientFunc(communicationHosts *[]string) dynakube.DynatraceCli
 		}, nil)
 		dtc.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		dtc.On("GetTokenScopes", "43").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+		dtc.On("GetAGTenantInfo").Return(&dtclient.TenantInfo{}, nil)
 
 		return dtc, nil
 	}
