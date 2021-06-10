@@ -127,7 +127,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 		Name: TokensSecretVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: tokens.TokensSecretsName,
+				SecretName: tokens.SecretsName,
 			},
 		},
 	})
@@ -169,7 +169,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 			Name: TokensSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: tokens.TokensSecretsName,
+					SecretName: tokens.SecretsName,
 				},
 			},
 		})

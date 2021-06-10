@@ -172,7 +172,6 @@ func (r *Reconciler) deleteStatefulSetIfOldLabelsAreUsed(desiredSts *appsv1.Stat
 	if !reflect.DeepEqual(currentSts.Labels, desiredSts.Labels) {
 		r.log.Info("Deleting existing stateful set")
 
-		// why do we delete desiredSts instead of currentSts???
 		if err = r.Delete(context.TODO(), desiredSts); err != nil {
 			return false, err
 		}

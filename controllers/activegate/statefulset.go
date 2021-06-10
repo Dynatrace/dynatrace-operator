@@ -178,7 +178,7 @@ func buildVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
 		Name: TokensSecretVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: tokens.TokensSecretsName,
+				SecretName: tokens.SecretsName,
 			},
 		},
 	})
