@@ -27,6 +27,10 @@ type DynaKubeSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom PullSecret",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
 
+	// Tokens for ActiveGates
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="AG Tokens",order=2,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
+	AGTokensSecret string `json:"agTokensSecret,omitempty"`
+
 	// Disable certificate validation checks for installer download and API communication
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Skip Certificate Check",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	SkipCertCheck bool `json:"skipCertCheck,omitempty"`

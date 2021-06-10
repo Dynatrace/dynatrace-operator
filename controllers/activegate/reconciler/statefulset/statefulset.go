@@ -3,6 +3,7 @@ package statefulset
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/tokens"
 	"hash/fnv"
 	"strconv"
 
@@ -43,6 +44,8 @@ const (
 	DTDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
 
 	ProxyKey = "ProxyKey"
+
+	TokensSecretVolumeName = "dynatrace-tokens-volume"
 )
 
 type statefulSetProperties struct {
@@ -192,10 +195,10 @@ func buildVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
 	volumes = append(volumes, stsProperties.volumes...)
 
 	volumes = append(volumes, corev1.Volume{
-		Name: "ag-secrets",
+		Name: TokensSecretVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: "ag-secrets",
+				SecretName: tokens.TokensSecretsName,
 			},
 		},
 	})
@@ -214,8 +217,8 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 	var volumeMounts []corev1.VolumeMount
 
 	volumeMounts = append(volumeMounts, corev1.VolumeMount{
+		Name:      TokensSecretVolumeName,
 		ReadOnly:  true,
-		Name:      "ag-secrets",
 		MountPath: "/var/lib/dynatrace/secrets",
 	})
 
