@@ -3,13 +3,13 @@ package activegate
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/controllers/tokens"
 	"hash/fnv"
 	"strconv"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/controllers/tokens"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -178,7 +178,7 @@ func buildVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
 		Name: TokensSecretVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: tokens.TokensSecretsName,
+				SecretName: tokens.SecretsName,
 			},
 		},
 	})

@@ -3,7 +3,6 @@ package dynakube
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/controllers/tokens"
 	"net/http"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/updates"
 	"github.com/Dynatrace/dynatrace-operator/controllers/istio"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/controllers/tokens"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
