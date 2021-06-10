@@ -2,14 +2,12 @@ package capability
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/consts"
 	rsfs "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/service"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
@@ -147,7 +145,7 @@ func TestReconcile(t *testing.T) {
 
 		found := false
 		for _, env := range newStatefulSet.Spec.Template.Spec.Containers[0].Env {
-			if env.Name == statefulset.DTInternalProxy {
+			if env.Name == rsfs.DTInternalProxy {
 				found = true
 				assert.Equal(t, testValue, env.Value)
 			}
@@ -161,7 +159,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		svc := &corev1.Service{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: service.BuildServiceName(r.Instance.Name, r.GetModuleName()), Namespace: r.Instance.Namespace}, svc)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(r.Instance.Name, r.GetModuleName()), Namespace: r.Instance.Namespace}, svc)
 		assert.NoError(t, err)
 		assert.NotNil(t, svc)
 
@@ -178,8 +176,8 @@ func TestReconcile(t *testing.T) {
 
 func TestSetReadinessProbePort(t *testing.T) {
 	r := createDefaultReconciler(t)
-	stsProps := statefulset.NewStatefulSetProperties(r.Instance, cap.GetProperties(), "", "", "", "", "", nil, nil, nil)
-	sts, err := statefulset.CreateStatefulSet(stsProps)
+	stsProps := rsfs.NewStatefulSetProperties(r.Instance, cap.GetProperties(), "", "", "", "", "", nil, nil, nil)
+	sts, err := rsfs.CreateStatefulSet(stsProps)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, sts)

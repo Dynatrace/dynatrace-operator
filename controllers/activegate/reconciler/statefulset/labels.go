@@ -9,8 +9,8 @@ const (
 	ValueActiveGate = "activegate"
 )
 
-func BuildLabels(instance *v1alpha1.DynaKube, feature string, capabilityProperties *v1alpha1.CapabilityProperties) map[string]string {
-	return MergeLabels(instance.Labels,
+func buildLabels(instance *v1alpha1.DynaKube, feature string, capabilityProperties *v1alpha1.CapabilityProperties) map[string]string {
+	return mergeLabels(instance.Labels,
 		BuildLabelsFromInstance(instance, feature),
 		capabilityProperties.Labels)
 }
@@ -23,7 +23,7 @@ func BuildLabelsFromInstance(instance *v1alpha1.DynaKube, feature string) map[st
 	}
 }
 
-func MergeLabels(labels ...map[string]string) map[string]string {
+func mergeLabels(labels ...map[string]string) map[string]string {
 	res := map[string]string{}
 	for _, m := range labels {
 		for k, v := range m {

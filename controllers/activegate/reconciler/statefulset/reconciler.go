@@ -2,14 +2,13 @@ package statefulset
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
 	"hash/fnv"
 	"reflect"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/events"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
@@ -132,11 +131,11 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	stsProperties := statefulset.NewStatefulSetProperties(
+	stsProperties := NewStatefulSetProperties(
 		r.Instance, r.capability, kubeUID, cpHash, r.feature, r.capabilityName, r.serviceAccountOwner, r.initContainersTemplates, r.containerVolumeMounts, r.volumes)
 	stsProperties.OnAfterCreateListener = r.onAfterStatefulSetCreateListener
 
-	desiredSts, err := statefulset.CreateStatefulSet(stsProperties)
+	desiredSts, err := CreateStatefulSet(stsProperties)
 	return desiredSts, errors.WithStack(err)
 }
 
@@ -163,7 +162,7 @@ func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet)
 	if err != nil {
 		return false, err
 	}
-	if !statefulset.HasStatefulSetChanged(currentSts, desiredSts) {
+	if !HasStatefulSetChanged(currentSts, desiredSts) {
 		return false, nil
 	}
 

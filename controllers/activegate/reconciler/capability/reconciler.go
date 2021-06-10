@@ -3,13 +3,12 @@ package capability
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/consts"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/events"
 	rsfs "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/service"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
@@ -90,7 +89,7 @@ func addDNSEntryPoint(instance *dynatracev1alpha1.DynaKube, moduleName string) e
 }
 
 func buildDNSEntryPoint(instance *dynatracev1alpha1.DynaKube, moduleName string) string {
-	return fmt.Sprintf("https://%s/communication", service.BuildServiceHostName(instance.Name, moduleName))
+	return fmt.Sprintf("https://%s/communication", buildServiceHostName(instance.Name, moduleName))
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
@@ -106,7 +105,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 }
 
 func (r *Reconciler) createServiceIfNotExists() (bool, error) {
-	service := service.CreateService(r.Instance, r.GetModuleName())
+	service := createService(r.Instance, r.GetModuleName())
 
 	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
 	if err != nil && k8serrors.IsNotFound(err) {
