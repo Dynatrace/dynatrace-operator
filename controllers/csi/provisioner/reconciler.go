@@ -80,7 +80,6 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	} else if dk == nil {
 		rlog.Info("Code modules or csi driver disabled")
-
 		return reconcile.Result{RequeueAfter: 30 * time.Minute}, nil
 	}
 
@@ -133,14 +132,6 @@ func getCodeModule(ctx context.Context, clt client.Client, namespacedName types.
 	}
 
 	if !dk.Spec.CodeModules.Enabled || hasInvalidCSIVolumeSource(dk) {
-
-		// Adding this log output since golang debugging seems broken
-		// in current IntelliJ version. These lines should not end up in the PR
-		if hasInvalidCSIVolumeSource(dk) {
-			rlog := log.WithValues("namespace", namespacedName)
-			rlog.Info("csi provisioning skipped due to invalid CSI volume source")
-		}
-
 		return nil, nil
 	}
 
