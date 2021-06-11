@@ -79,7 +79,13 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		}
 		return reconcile.Result{}, err
 	} else if dk == nil {
-		rlog.Info("Code modules disabled")
+		rlog.Info("Code modules or csi driver disabled")
+
+		// Adding this log output since golang debugging seems broken
+		// in current IntelliJ version. These lines should not end up in the PR
+		if hasInvalidCSIVolumeSource(*dk) {
+			rlog.Info("csi provisioning skipped due to invalid CSI volume source")
+		}
 		return reconcile.Result{RequeueAfter: 30 * time.Minute}, nil
 	}
 
@@ -131,11 +137,15 @@ func getCodeModule(ctx context.Context, clt client.Client, namespacedName types.
 		return nil, err
 	}
 
-	if !dk.Spec.CodeModules.Enabled {
+	if !dk.Spec.CodeModules.Enabled || hasInvalidCSIVolumeSource(dk) {
 		return nil, nil
 	}
 
 	return &dk, nil
+}
+
+func hasInvalidCSIVolumeSource(dk dynatracev1alpha1.DynaKube) bool {
+	return dk.Spec.CodeModules.Volume.CSI == nil || dk.Spec.CodeModules.Volume.CSI.Driver != dtcsi.DriverName
 }
 
 func (r *OneAgentProvisioner) updateAgent(dtc dtclient.Client, envDir string, logger logr.Logger) error {
