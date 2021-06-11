@@ -2,11 +2,11 @@ package capability
 
 import (
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"

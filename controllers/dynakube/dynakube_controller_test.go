@@ -2,11 +2,11 @@ package dynakube
 
 import (
 	"context"
-	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
+	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"

@@ -3,11 +3,11 @@ package statefulset
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
 	"hash/fnv"
 	"strconv"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"

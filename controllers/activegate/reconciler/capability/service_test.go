@@ -1,11 +1,11 @@
 package capability
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
