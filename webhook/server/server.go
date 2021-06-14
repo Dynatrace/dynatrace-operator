@@ -164,7 +164,9 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	if pod.Annotations[dtwebhook.AnnotationInjected] == "true" {
 		var name, image string
-		for _, c := range pod.Spec.Containers {
+		for i := range pod.Spec.Containers {
+			c := &pod.Spec.Containers[i]
+
 			preloaded := false
 			for _, e := range c.Env {
 				if e.Name == "LD_PRELOAD" {
@@ -177,7 +179,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 				// container does not have LD_PRELOAD set
 
 				deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
-				UpdateContainer(&c, &oa, pod, deploymentMetadata)
+				UpdateContainer(c, &oa, pod, deploymentMetadata)
 
 				name = c.Name
 				image = c.Image
@@ -186,10 +188,12 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 		if name != "" && image != "" {
 			logger.Info("instrumenting missing container", "name", name)
-			for _, c := range pod.Spec.InitContainers {
+			for i := range pod.Spec.InitContainers {
+				c := &pod.Spec.InitContainers[i]
+
 				if c.Name == "install-oneagent" {
 					l := len(pod.Spec.Containers)
-					UpdateInstallContainer(&c, l, name, image)
+					UpdateInstallContainer(c, l, name, image)
 
 					marshaledPod, err := json.MarshalIndent(pod, "", "  ")
 					if err != nil {
