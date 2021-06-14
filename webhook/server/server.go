@@ -318,6 +318,7 @@ func (m *podInjector) InjectDecoder(d *admission.Decoder) error {
 
 // UpdateInstallContainer Add Container to list of Containers of Install Container
 func UpdateInstallContainer(ic *corev1.Container, number int, name string, image string) {
+	logger.Info("updating install container with new container", "containerName", name, "containerImage", image)
 	ic.Env = append(ic.Env,
 		corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_NAME", number), Value: name},
 		corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_IMAGE", number), Value: image})
@@ -327,6 +328,7 @@ func UpdateInstallContainer(ic *corev1.Container, number int, name string, image
 func UpdateContainer(c *corev1.Container, oa *dynatracev1alpha1.DynaKube,
 	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
 
+	logger.Info("updating container with missing preload variables", "containerName", c.Name)
 	installPath := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 
 	c.VolumeMounts = append(c.VolumeMounts,
