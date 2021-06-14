@@ -73,11 +73,11 @@ func main() {
 	csiOpts := dtcsi.CSIOptions{
 		NodeID:     *nodeID,
 		Endpoint:   *endpoint,
-		RootDir:    "/tmp",
+		RootDir:    dtcsi.DataPath,
 		GCInterval: time.Duration(gcInterval) * time.Minute,
 	}
 
-	if err := os.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.DataPath), 0770); err != nil {
+	if err := os.MkdirAll(filepath.Join(csiOpts.RootDir), 0770); err != nil {
 		log.Error(err, "unable to create data directory for CSI Driver")
 		os.Exit(1)
 	}
@@ -87,7 +87,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := csidriver.NewServer(mgr, csiOpts).SetupWithManager(mgr); err != nil {
+	if err := csidriver.NewServer(mgr.GetClient(), csiOpts).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Driver server")
 		os.Exit(1)
 	}

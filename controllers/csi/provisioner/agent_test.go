@@ -110,16 +110,6 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 		err = installAgent(installAgentCfg)
 		assert.NoError(t, err)
 
-		for _, dir := range []string{
-			filepath.Join(testDir, "log"),
-			filepath.Join(testDir, "datastorage"),
-		} {
-			info, err := fs.Stat(dir)
-			assert.NoError(t, err)
-			assert.NotNil(t, info)
-			assert.True(t, info.IsDir())
-		}
-
 		info, err := fs.Stat(filepath.Join(testDir, testFilename))
 		assert.NoError(t, err)
 		assert.NotNil(t, info)

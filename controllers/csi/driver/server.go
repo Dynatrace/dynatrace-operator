@@ -47,22 +47,24 @@ const (
 var log = logger.NewDTLogger().WithName("server")
 
 type CSIDriverServer struct {
-	client client.Client
-	log    logr.Logger
-	opts   dtcsi.CSIOptions
-	fs     afero.Afero
+	client  client.Client
+	log     logr.Logger
+	opts    dtcsi.CSIOptions
+	fs      afero.Afero
+	mounter mount.Interface
 }
 
 var _ manager.Runnable = &CSIDriverServer{}
 var _ csi.IdentityServer = &CSIDriverServer{}
 var _ csi.NodeServer = &CSIDriverServer{}
 
-func NewServer(mgr ctrl.Manager, opts dtcsi.CSIOptions) *CSIDriverServer {
+func NewServer(client client.Client, opts dtcsi.CSIOptions) *CSIDriverServer {
 	return &CSIDriverServer{
-		client: mgr.GetClient(),
-		log:    log,
-		opts:   opts,
-		fs:     afero.Afero{Fs: afero.NewOsFs()},
+		client:  client,
+		log:     log,
+		opts:    opts,
+		fs:      afero.Afero{Fs: afero.NewOsFs()},
+		mounter: mount.New(""),
 	}
 }
 
@@ -139,10 +141,9 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, err
 	}
 
-	mounted, err := isMounted(mount.New(""), volumeCfg.targetPath)
-	if err != nil {
+	if isMounted, err := isMounted(mount.New(""), volumeCfg.targetPath); err != nil {
 		return nil, err
-	} else if mounted {
+	} else if isMounted {
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
@@ -160,23 +161,9 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, err
 	}
 
-	if err := BindMount(
-		volumeCfg.targetPath,
-		Mount{Source: bindCfg.agentDir, Target: volumeCfg.targetPath, ReadOnly: true},
-		Mount{
-			Source: filepath.Join(bindCfg.agentDir, dtcsi.AgentConfDir),
-			Target: filepath.Join(volumeCfg.targetPath, dtcsi.AgentConfDir),
-		},
-		Mount{
-			Source: filepath.Join(bindCfg.envDir, dtcsi.LogDir, volumeCfg.podUID),
-			Target: filepath.Join(volumeCfg.targetPath, dtcsi.LogDir),
-		},
-		Mount{
-			Source: filepath.Join(bindCfg.envDir, dtcsi.DatastorageDir, volumeCfg.podUID),
-			Target: filepath.Join(volumeCfg.targetPath, dtcsi.DatastorageDir),
-		},
-	); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount OneAgent volume: %s", err.Error()))
+	if err := svr.mountOneAgent(bindCfg, volumeCfg); err != nil {
+		//TODO _ = svr.umountOneAgent("???")
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err.Error()))
 	}
 
 	podToVersionReference := filepath.Join(bindCfg.envDir, dtcsi.GarbageCollectionPath, bindCfg.version, volumeCfg.podUID)
@@ -203,13 +190,8 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 		return nil, status.Error(codes.InvalidArgument, "Target path missing in request")
 	}
 
-	if err := BindUnmount(
-		Mount{Target: filepath.Join(targetPath, dtcsi.AgentConfDir)},
-		Mount{Target: filepath.Join(targetPath, dtcsi.LogDir)},
-		Mount{Target: filepath.Join(targetPath, dtcsi.DatastorageDir)},
-		Mount{Target: targetPath},
-	); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount volume: %s", err.Error()))
+	if err := svr.umountOneAgent(targetPath); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount oneagent volume: %s", err.Error()))
 	}
 
 	volumeToPodReference := filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeID)
@@ -287,4 +269,46 @@ func logGRPC(log logr.Logger) grpc.UnaryServerInterceptor {
 		}
 		return resp, err
 	}
+}
+
+func (svr *CSIDriverServer) mountOneAgent(bindCfg *bindConfig, volumeCfg *volumeConfig) error {
+	//TODO const-ify run/mapped/var/work strings
+	//TODO probably give all directories proper names and create methods for them
+	mappedDir := filepath.Join(bindCfg.envDir, "run", volumeCfg.podUID, "mapped")
+	_ = svr.fs.MkdirAll(mappedDir, os.ModePerm)
+
+	upperDir := filepath.Join(bindCfg.envDir, "run", volumeCfg.podUID, "var")
+	_ = svr.fs.MkdirAll(upperDir, os.ModePerm)
+
+	workDir := filepath.Join(bindCfg.envDir, "run", volumeCfg.podUID, "work")
+	_ = svr.fs.MkdirAll(workDir, os.ModePerm)
+
+	overlayOptions := []string{
+		"lowerdir=" + bindCfg.agentDir,
+		"upperdir=" + upperDir,
+		"workdir=" + workDir,
+	}
+
+	if err := svr.fs.MkdirAll(volumeCfg.targetPath, os.ModePerm); err != nil {
+		return err
+	}
+
+	if err := svr.mounter.Mount("overlay", mappedDir, "overlay", overlayOptions); err != nil {
+		return err
+	}
+	if err := svr.mounter.Mount(mappedDir, volumeCfg.targetPath, "", []string{"bind"}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (svr *CSIDriverServer) umountOneAgent(targetPath string) error {
+	if err := svr.mounter.Unmount(targetPath); err != nil {
+		return err
+	}
+
+	//TODO svr.mounter.Unmount(mappedDir)
+
+	return nil
 }

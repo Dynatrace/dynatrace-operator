@@ -93,8 +93,8 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, fmt.Errorf("failed to fetch connection info: %w", err)
 	}
 
-	envDir := filepath.Join(r.opts.RootDir, dtcsi.DataPath, ci.TenantUUID)
-	tenantFile := filepath.Join(r.opts.RootDir, dtcsi.DataPath, fmt.Sprintf("tenant-%s", dk.Name))
+	envDir := filepath.Join(r.opts.RootDir, ci.TenantUUID)
+	tenantFile := filepath.Join(r.opts.RootDir, fmt.Sprintf("tenant-%s", dk.Name))
 
 	if err = r.createCSIDirectories(envDir); err != nil {
 		return reconcile.Result{}, err
@@ -209,14 +209,9 @@ func (r *OneAgentProvisioner) updateTenantFile(tenantUUID string, tenantFile str
 }
 
 func (r *OneAgentProvisioner) createCSIDirectories(envDir string) error {
-	for _, dir := range []string{
-		envDir,
-		filepath.Join(envDir, dtcsi.LogDir),
-		filepath.Join(envDir, dtcsi.DatastorageDir),
-	} {
-		if err := r.fs.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("failed to create directory %s: %w", dir, err)
-		}
+	if err := r.fs.MkdirAll(envDir, 0755); err != nil {
+		return fmt.Errorf("failed to create directory %s: %w", envDir, err)
 	}
+
 	return nil
 }

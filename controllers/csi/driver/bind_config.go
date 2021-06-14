@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/spf13/afero"
 	"google.golang.org/grpc/codes"
@@ -31,20 +30,11 @@ func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeC
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("Namespace '%s' doesn't have DynaKube assigned", volumeCfg.namespace))
 	}
 
-	tenantUUID, err := fs.ReadFile(filepath.Join(svr.opts.RootDir, dtcsi.DataPath, fmt.Sprintf("tenant-%s", dkName)))
+	tenantUUID, err := fs.ReadFile(filepath.Join(svr.opts.RootDir, fmt.Sprintf("tenant-%s", dkName)))
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("Failed to extract tenant for DynaKube %s: %s", dkName, err.Error()))
 	}
-	envDir := filepath.Join(svr.opts.RootDir, dtcsi.DataPath, string(tenantUUID))
-
-	for _, dir := range []string{
-		filepath.Join(envDir, "log", volumeCfg.podUID),
-		filepath.Join(envDir, "datastorage", volumeCfg.podUID),
-	} {
-		if err = fs.MkdirAll(dir, 0777); err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-	}
+	envDir := filepath.Join(svr.opts.RootDir, string(tenantUUID))
 
 	ver, err := fs.ReadFile(filepath.Join(envDir, "version"))
 	if err != nil {

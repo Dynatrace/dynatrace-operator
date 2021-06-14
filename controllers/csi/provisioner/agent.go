@@ -37,7 +37,6 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	logger := installAgentCfg.logger
 	dtc := installAgentCfg.dtc
 	arch := installAgentCfg.arch
-	targetDir := installAgentCfg.targetDir
 	fs := installAgentCfg.fs
 
 	tmpFile, err := afero.TempFile(fs, "", "download")
@@ -81,15 +80,6 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	}
 
 	logger.Info("Unzipped OneAgent package")
-
-	for _, dir := range []string{
-		filepath.Join(targetDir, "log"),
-		filepath.Join(targetDir, "datastorage"),
-	} {
-		if err := fs.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("failed to create directory %s: %w", dir, err)
-		}
-	}
 
 	return nil
 }
