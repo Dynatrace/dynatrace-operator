@@ -163,14 +163,8 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 
 	if pod.Annotations[dtwebhook.AnnotationInjected] == "true" {
-		var ic *corev1.Container
 		var name, image string
 		for _, c := range pod.Spec.Containers {
-			if c.Name == "install-oneagent" {
-				ic = &c
-				continue
-			}
-
 			preloaded := false
 			for _, e := range c.Env {
 				if e.Name == "LD_PRELOAD" {
@@ -191,6 +185,14 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		}
 
 		if name != "" && image != "" {
+			var ic *corev1.Container
+			for _, c := range pod.Spec.InitContainers {
+				if c.Name == "install-oneagent" {
+					ic = &c
+					break
+				}
+			}
+
 			l := len(pod.Spec.Containers)
 			UpdateInstallContainer(ic, l, name, image)
 		}
@@ -314,14 +316,14 @@ func (m *podInjector) InjectDecoder(d *admission.Decoder) error {
 	return nil
 }
 
-// Add Container to list of Containers of Install Container
+// UpdateInstallContainer Add Container to list of Containers of Install Container
 func UpdateInstallContainer(ic *corev1.Container, number int, name string, image string) {
 	ic.Env = append(ic.Env,
 		corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_NAME", number), Value: name},
 		corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_IMAGE", number), Value: image})
 }
 
-// Set missing preload Variables
+// UpdateContainer Set missing preload Variables
 func UpdateContainer(c *corev1.Container, oa *dynatracev1alpha1.DynaKube,
 	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
 
