@@ -163,7 +163,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 
 	if pod.Annotations[dtwebhook.AnnotationInjected] == "true" {
-		var name, image string
+		var needsUpdate = false
 		for i := range pod.Spec.Containers {
 			c := &pod.Spec.Containers[i]
 
@@ -177,32 +177,30 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 			if !preloaded {
 				// container does not have LD_PRELOAD set
+				logger.Info("instrumenting missing container", "name", c.Name)
 
 				deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
 				UpdateContainer(c, &oa, pod, deploymentMetadata)
 
-				name = c.Name
-				image = c.Image
+				for j := range pod.Spec.InitContainers {
+					ci := &pod.Spec.InitContainers[j]
+
+					if ci.Name == "install-oneagent" {
+						l := len(pod.Spec.Containers)
+						UpdateInstallContainer(ci, l, c.Name, c.Image)
+					}
+				}
+				needsUpdate = true
 			}
 		}
 
-		if name != "" && image != "" {
-			logger.Info("instrumenting missing container", "name", name)
-			for i := range pod.Spec.InitContainers {
-				c := &pod.Spec.InitContainers[i]
-
-				if c.Name == "install-oneagent" {
-					l := len(pod.Spec.Containers)
-					UpdateInstallContainer(c, l, name, image)
-
-					marshaledPod, err := json.MarshalIndent(pod, "", "  ")
-					if err != nil {
-						return admission.Errored(http.StatusInternalServerError, err)
-					}
-					logger.Info("new install container", "marshaledPod", marshaledPod)
-					return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
-				}
+		if needsUpdate {
+			logger.Info("updating pod with missing containers")
+			marshaledPod, err := json.MarshalIndent(pod, "", "  ")
+			if err != nil {
+				return admission.Errored(http.StatusInternalServerError, err)
 			}
+			return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 		}
 
 		return admission.Patched("")
