@@ -185,16 +185,19 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		}
 
 		if name != "" && image != "" {
-			var ic *corev1.Container
+			logger.Info("instrumenting missing container", "name", name)
 			for _, c := range pod.Spec.InitContainers {
 				if c.Name == "install-oneagent" {
-					ic = &c
-					break
+					l := len(pod.Spec.Containers)
+					UpdateInstallContainer(&c, l, name, image)
+
+					marshaledPod, err := json.MarshalIndent(pod, "", "  ")
+					if err != nil {
+						return admission.Errored(http.StatusInternalServerError, err)
+					}
+					return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 				}
 			}
-
-			l := len(pod.Spec.Containers)
-			UpdateInstallContainer(ic, l, name, image)
 		}
 
 		return admission.Patched("")
