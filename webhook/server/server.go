@@ -195,6 +195,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 					if err != nil {
 						return admission.Errored(http.StatusInternalServerError, err)
 					}
+					logger.Info("new install container", "marshaledPod", marshaledPod)
 					return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 				}
 			}
