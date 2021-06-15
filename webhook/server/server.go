@@ -187,7 +187,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 					for j := range pod.Spec.InitContainers {
 						ic := &pod.Spec.InitContainers[j]
 
-						if ic.Name == "install-oneagent" {
+						if ic.Name == dtwebhook.InstallContainerName {
 							installContainer = ic
 							break
 						}
@@ -269,7 +269,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
 
 	ic := corev1.Container{
-		Name:            "install-oneagent",
+		Name:            dtwebhook.InstallContainerName,
 		Image:           image,
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/usr/bin/env"},

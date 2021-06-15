@@ -23,8 +23,6 @@ import (
 )
 
 const (
-	installOneAgentContainerName = "install-oneagent"
-
 	testVersion = "test-version"
 )
 
@@ -887,7 +885,7 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 		},
 		Spec: corev1.PodSpec{
 			InitContainers: []corev1.Container{{
-				Name:            installOneAgentContainerName,
+				Name:            dtwebhook.InstallContainerName,
 				Image:           "test-image",
 				ImagePullPolicy: corev1.PullAlways,
 				Command:         []string{"/usr/bin/env"},
