@@ -164,6 +164,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	if pod.Annotations[dtwebhook.AnnotationInjected] == "true" {
 		var needsUpdate = false
+		var installContainer *corev1.Container
 		for i := range pod.Spec.Containers {
 			c := &pod.Spec.Containers[i]
 
@@ -182,14 +183,18 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 				deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
 				UpdateContainer(c, &oa, pod, deploymentMetadata)
 
-				for j := range pod.Spec.InitContainers {
-					ci := &pod.Spec.InitContainers[j]
+				if installContainer == nil {
+					for j := range pod.Spec.InitContainers {
+						ic := &pod.Spec.InitContainers[j]
 
-					if ci.Name == "install-oneagent" {
-						l := len(pod.Spec.Containers)
-						UpdateInstallContainer(ci, l, c.Name, c.Image)
+						if ic.Name == "install-oneagent" {
+							installContainer = ic
+							break
+						}
 					}
 				}
+				UpdateInstallContainer(installContainer, i+1, c.Name, c.Image)
+
 				needsUpdate = true
 			}
 		}
