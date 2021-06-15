@@ -228,6 +228,7 @@ func (r *ReconcileWebhook) reconcileWebhookConfig(ctx context.Context, log logr.
 	log.Info("Reconciling MutatingWebhookConfiguration...")
 
 	scope := admissionregistrationv1beta1.NamespacedScope
+	reinvocationPolicy := admissionregistrationv1beta1.IfNeededReinvocationPolicy
 	path := "/inject"
 	webhookConfiguration := &admissionregistrationv1beta1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
@@ -240,6 +241,7 @@ func (r *ReconcileWebhook) reconcileWebhookConfig(ctx context.Context, log logr.
 		Webhooks: []admissionregistrationv1beta1.MutatingWebhook{{
 			Name:                    "webhook.dynatrace.com",
 			AdmissionReviewVersions: []string{"v1beta1"},
+			ReinvocationPolicy:      &reinvocationPolicy,
 			Rules: []admissionregistrationv1beta1.RuleWithOperations{{
 				Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create},
 				Rule: admissionregistrationv1beta1.Rule{
