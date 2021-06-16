@@ -21,6 +21,7 @@ spec:
       containers:
         - name: driver
           image: quay.io/dynatrace/dynatrace-operator:snapshot
+          imagePullPolicy: Always
           command:
             - csi-driver
           args:
@@ -39,7 +40,6 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.nodeName
-          imagePullPolicy: Always
           resources:
             requests:
               cpu: 100m
@@ -80,7 +80,7 @@ spec:
               name: dynatrace-oneagent-data-dir
         - name: registrar
           image: quay.io/dynatrace/dynatrace-operator:snapshot
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           command:
             - csi-node-driver-registrar
           args:
@@ -105,6 +105,7 @@ spec:
               mountPath: /registration
         - name: liveness-probe
           image: quay.io/dynatrace/dynatrace-operator:snapshot
+          imagePullPolicy: Always
           command:
             - livenessprobe
           args:
