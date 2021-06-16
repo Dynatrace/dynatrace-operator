@@ -69,6 +69,8 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 		return fmt.Errorf("failed to save OneAgent package: %w", err)
 	}
 
+	logger.Info("Saved OneAgent package", "dest", tmpFile.Name(), "size", size)
+
 	zipr, err := zip.NewReader(tmpFile, size)
 	if err != nil {
 		return fmt.Errorf("failed to open ZIP file: %w", err)
