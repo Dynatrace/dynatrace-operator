@@ -79,6 +79,7 @@ func buildDesiredCSIDaemonSet(operatorImage string) (*appsv1.DaemonSet, error) {
 	driver := prepareDriverSpec(operatorImage)
 	registrar := prepareRegistrarSpec(operatorImage)
 	livenessprobe := preparelivenessProbeSpec(operatorImage)
+	readinessProbe := prepareReadinessProbeSpec(operatorImage)
 	vol := prepareVolumes()
 
 	ds := &appsv1.DaemonSet{
@@ -105,6 +106,7 @@ func buildDesiredCSIDaemonSet(operatorImage string) (*appsv1.DaemonSet, error) {
 						driver,
 						registrar,
 						livenessprobe,
+						readinessProbe,
 					},
 					ServiceAccountName: DaemonSetName,
 					Volumes:            vol,
@@ -203,6 +205,20 @@ func prepareDriverSpec(operatorImage string) v1.Container {
 				},
 			},
 		},
+		ReadinessProbe: &v1.Probe{
+			FailureThreshold:    3,
+			InitialDelaySeconds: 5,
+			PeriodSeconds:       5,
+			SuccessThreshold:    1,
+			TimeoutSeconds:      1,
+			Handler: v1.Handler{
+				HTTPGet: &v1.HTTPGetAction{
+					Path:   "/healthz",
+					Port:   intstr.FromString("healthz"),
+					Scheme: "HTTP",
+				},
+			},
+		},
 		SecurityContext: &v1.SecurityContext{
 			Privileged: &privileged,
 			RunAsUser:  &userID,
@@ -282,6 +298,26 @@ func preparelivenessProbeSpec(operatorImage string) v1.Container {
 		Image: operatorImage,
 		Command: []string{
 			"livenessprobe",
+		},
+		Args: []string{
+			"--csi-address=/csi/csi.sock",
+			"--health-port=9898",
+		},
+		VolumeMounts: []v1.VolumeMount{
+			{
+				Name:      "plugin-dir",
+				MountPath: "/csi",
+			},
+		},
+	}
+}
+
+func prepareReadinessProbeSpec(operatorImage string) v1.Container {
+	return v1.Container{
+		Name:  "readiness-probe",
+		Image: operatorImage,
+		Command: []string{
+			"readinessprobe",
 		},
 		Args: []string{
 			"--csi-address=/csi/csi.sock",
