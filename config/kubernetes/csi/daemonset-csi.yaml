@@ -75,6 +75,9 @@ spec:
             - name: mountpoint-dir
               mountPath: /var/lib/kubelet/pods
               mountPropagation: Bidirectional
+            - mountPath: /data
+              mountPropagation: Bidirectional
+              name: dynatrace-oneagent-data-dir
         - name: registrar
           image: quay.io/dynatrace/dynatrace-operator:snapshot
           imagePullPolicy: IfNotPresent
@@ -127,4 +130,8 @@ spec:
         - name: mountpoint-dir
           hostPath:
             path: /var/lib/kubelet/pods
+            type: DirectoryOrCreate
+        - name: dynatrace-oneagent-data-dir
+          hostPath:
+            path: /tmp/dynatrace-oneagent-data
             type: DirectoryOrCreate
