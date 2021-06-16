@@ -140,38 +140,41 @@ func getCodeModule(ctx context.Context, clt client.Client, namespacedName types.
 
 func (r *OneAgentProvisioner) updateAgent(dtc dtclient.Client, envDir string, logger logr.Logger) error {
 	versionFile := filepath.Join(envDir, dtcsi.VersionDir)
-	ver, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
+
+	latestAgentVersion, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
-		return fmt.Errorf("failed to query OneAgent version: %w", err)
+		return fmt.Errorf("failed to query OneAgent latestAgentVersion: %w", err)
 	}
 
-	var oldVer string
-	if b, err := afero.ReadFile(r.fs, versionFile); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to query installed OneAgent version: %w", err)
+	var currentVersion string
+	if currentVersionBytes, err := afero.ReadFile(r.fs, versionFile); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to query installed OneAgent latestAgentVersion: %w", err)
 	} else {
-		oldVer = string(b)
+		currentVersion = string(currentVersionBytes)
 	}
 
-	if ver != oldVer {
-		if err = r.installAgentVersion(ver, envDir, dtc, logger); err != nil {
-			return err
-		}
+	if latestAgentVersion == currentVersion {
+		return nil
 	}
 
-	return nil
+	if err = r.installAgentVersion(latestAgentVersion, envDir, dtc, logger); err != nil {
+		return err
+	}
+
+	//TODO why do we need it here?
+	//gcDir := filepath.Join(envDir, dtcsi.GarbageCollectionPath, latestAgentVersion)
+	//if err := os.MkdirAll(gcDir, 0755); err != nil {
+	//	logger.Error(err, "failed to create directory %s: %w", gcDir)
+	//	return err
+	//}
+
+	return afero.WriteFile(r.fs, versionFile, []byte(latestAgentVersion), 0644)
 }
 
 func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string, dtc dtclient.Client, logger logr.Logger) error {
-	versionFile := filepath.Join(envDir, dtcsi.VersionDir)
 	arch := dtclient.ArchX86
 	if runtime.GOARCH == "arm64" {
 		arch = dtclient.ArchARM
-	}
-
-	gcDir := filepath.Join(envDir, dtcsi.GarbageCollectionPath, version)
-	if err := os.MkdirAll(gcDir, 0755); err != nil {
-		logger.Error(err, "failed to create directory %s: %w", gcDir)
-		return err
 	}
 
 	targetDir := filepath.Join(envDir, "bin", version)
@@ -180,15 +183,11 @@ func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string,
 		installAgentCfg := newInstallAgentConfig(logger, dtc, arch, targetDir)
 
 		if err := installAgent(installAgentCfg); err != nil {
-			if err := r.fs.RemoveAll(targetDir); err != nil {
-				logger.Error(err, "failed to delete target directory", "path", targetDir)
-			}
+			_ = r.fs.RemoveAll(targetDir)
 
 			return fmt.Errorf("failed to install agent: %w", err)
 		}
 	}
-
-	_ = afero.WriteFile(r.fs, versionFile, []byte(version), 0644)
 
 	return nil
 }

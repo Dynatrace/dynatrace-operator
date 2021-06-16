@@ -277,11 +277,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			},
 			fs: memFs,
 		}
+
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		assert.EqualError(t, err, "failed to query OneAgent version: "+errorMsg)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{}, result)
+		assert.Error(t, err)
+		assert.Empty(t, result)
 
 		exists, err := afero.Exists(memFs, tenantUUID)
 
@@ -332,11 +332,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			},
 			fs: errorFs,
 		}
+
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		assert.EqualError(t, err, "failed to query installed OneAgent version: "+errorMsg)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{}, result)
+		assert.Error(t, err)
+		assert.Empty(t, result)
 
 		exists, err := afero.Exists(errorFs, tenantUUID)
 
