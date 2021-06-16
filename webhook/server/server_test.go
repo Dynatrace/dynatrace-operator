@@ -965,3 +965,97 @@ func setEnvVar(_ *testing.T, pod *corev1.Pod, name string, value string) {
 		}
 	}
 }
+
+func TestInstrumentThirdPartyContainers(t *testing.T) {
+	decoder, err := admission.NewDecoder(scheme.Scheme)
+	require.NoError(t, err)
+
+	inj, _ := createPodInjector(t, decoder)
+
+	var testContainerName, testContainerImage = "test-container", "alpine"
+	var thirdPartyContainerName, thirdPartyContainerImage = "third-party-container", "sidecar-image"
+	basePod := corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        "test-pod-12345",
+			Namespace:   "test-namespace",
+			Annotations: map[string]string{dtwebhook.AnnotationInjected: "true"}},
+		Spec: corev1.PodSpec{
+			InitContainers: []corev1.Container{{
+				Name:  dtwebhook.InstallContainerName,
+				Image: "test-installer",
+				Env: []corev1.EnvVar{
+					{
+						Name:  "CONTAINER_1_NAME",
+						Value: testContainerName,
+					},
+					{
+						Name:  "CONTAINER_1_IMAGE",
+						Value: testContainerImage,
+					},
+				},
+			}},
+			Containers: []corev1.Container{
+				{
+					Name:  testContainerName,
+					Image: testContainerImage,
+					Env: []corev1.EnvVar{{
+						Name:  "LD_PRELOAD",
+						Value: "test-install-path",
+					}},
+				},
+				{
+					Name:  thirdPartyContainerName,
+					Image: thirdPartyContainerImage,
+				},
+			},
+		},
+	}
+
+	basePodBytes, err := json.Marshal(&basePod)
+	require.NoError(t, err)
+
+	// check setup
+	require.Equal(t, "LD_PRELOAD", basePod.Spec.Containers[0].Env[0].Name)
+
+	var baseInstallContainer = basePod.Spec.InitContainers[0]
+	require.Equal(t, 2, len(baseInstallContainer.Env))
+	require.Equal(t, "CONTAINER_1_NAME", baseInstallContainer.Env[0].Name)
+	require.Equal(t, testContainerName, baseInstallContainer.Env[0].Value)
+	require.Equal(t, "CONTAINER_1_IMAGE", baseInstallContainer.Env[1].Name)
+	require.Equal(t, testContainerImage, baseInstallContainer.Env[1].Value)
+
+	// handle request
+	req := admission.Request{
+		AdmissionRequest: admissionv1.AdmissionRequest{
+			Object: runtime.RawExtension{
+				Raw: basePodBytes,
+			},
+			Namespace: "test-namespace",
+		},
+	}
+	resp := inj.Handle(context.TODO(), req)
+	require.NoError(t, resp.Complete(req))
+
+	// update pod with response
+	patchType := admissionv1.PatchTypeJSONPatch
+	assert.Equal(t, resp.PatchType, &patchType)
+
+	patch, err := jsonpatch.DecodePatch(resp.Patch)
+	require.NoError(t, err)
+
+	updPodBytes, err := patch.Apply(basePodBytes)
+	require.NoError(t, err)
+
+	var updPod corev1.Pod
+	require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
+
+	// check updated pod
+	require.Equal(t, "LD_PRELOAD", updPod.Spec.Containers[1].Env[0].Name)
+
+	var updInstallContainer = updPod.Spec.InitContainers[0]
+	require.Equal(t, 4, len(updInstallContainer.Env))
+	require.Equal(t, "CONTAINER_2_NAME", updInstallContainer.Env[2].Name)
+	require.Equal(t, thirdPartyContainerName, updInstallContainer.Env[2].Value)
+	require.Equal(t, "CONTAINER_2_IMAGE", updInstallContainer.Env[3].Name)
+	require.Equal(t, thirdPartyContainerImage, updInstallContainer.Env[3].Value)
+}
