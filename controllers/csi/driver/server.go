@@ -163,19 +163,28 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 
 	if err := svr.mountOneAgent(bindCfg, volumeCfg); err != nil {
 		//TODO _ = svr.umountOneAgent("???")
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err.Error()))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}
 
-	podToVersionReference := filepath.Join(bindCfg.envDir, dtcsi.GarbageCollectionPath, bindCfg.version, volumeCfg.podUID)
-	if err = svr.fs.WriteFile(podToVersionReference, nil, 0770); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create pod to version reference file - error: %s", err))
-	}
-
-	if err = svr.fs.Fs.(afero.Linker).SymlinkIfPossible(podToVersionReference, filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeCfg.volumeId)); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create volume to pod reference SymLink for garbage collector - error: %s", err))
+	if err := svr.makePodToVersionReference(bindCfg.podToVersionReferenceDir, volumeCfg.podUID, volumeCfg.volumeId); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create pod to version reference: %s", err))
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
+}
+
+//TODO test
+func (svr *CSIDriverServer) makePodToVersionReference(podToVersionReferenceDir string, podUID string, volumeID string) error {
+	podToVersionReference := filepath.Join(podToVersionReferenceDir, podUID)
+	if err := svr.fs.WriteFile(podToVersionReference, nil, 0770); err != nil {
+		return err
+	}
+
+	if err := svr.fs.Fs.(afero.Linker).SymlinkIfPossible(podToVersionReference, filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeID)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
