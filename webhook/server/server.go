@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/codemodules"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
@@ -163,7 +164,9 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	dkVol := dk.Spec.CodeModules.Volume
 	if dkVol == (corev1.VolumeSource{}) {
-		dkVol.EmptyDir = &corev1.EmptyDirVolumeSource{}
+		dkVol.CSI = &corev1.CSIVolumeSource{
+			Driver: dtcsi.DriverName,
+		}
 	}
 
 	mode := "provisioned"

@@ -54,7 +54,7 @@ type RoutingCapability struct {
 	capabilityBase
 }
 
-type MetricsCapability struct {
+type DataIngestCapability struct {
 	capabilityBase
 }
 
@@ -87,10 +87,10 @@ func NewRoutingCapability(crProperties *dynatracev1alpha1.CapabilityProperties) 
 	}
 }
 
-func NewMetricsCapability(crProperties *dynatracev1alpha1.CapabilityProperties) *MetricsCapability {
-	return &MetricsCapability{
+func NewDataIngestCapability(crProperties *dynatracev1alpha1.CapabilityProperties) *DataIngestCapability {
+	return &DataIngestCapability{
 		capabilityBase{
-			moduleName:     "metrics",
+			moduleName:     "data-ingest",
 			capabilityName: "metrics_ingest",
 			properties:     crProperties,
 			Configuration: Configuration{
