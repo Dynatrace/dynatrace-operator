@@ -94,6 +94,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err := mgr.AddReadyzCheck("healthz", healthz.Ping); err != nil {
+		log.Error(err, "unable to set up ready check")
+		os.Exit(1)
+	}
+
 	if err := csigc.NewReconciler(mgr.GetClient(), csiOpts).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Garbage Collector")
 		os.Exit(1)
