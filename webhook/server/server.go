@@ -181,14 +181,6 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
-		},
-		corev1.Volume{
-			Name: "oneagent-config",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dtwebhook.SecretConfigName,
-				},
-			},
 		})
 
 	var sc *corev1.SecurityContext
@@ -236,7 +228,6 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		VolumeMounts: []corev1.VolumeMount{
 			{Name: "oneagent-bin", MountPath: "/mnt/bin"},
 			{Name: "oneagent-share", MountPath: "/mnt/share"},
-			{Name: "oneagent-config", MountPath: "/mnt/config"},
 		},
 		Resources: dk.Spec.CodeModules.Resources,
 	}
