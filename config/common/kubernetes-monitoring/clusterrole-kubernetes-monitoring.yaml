@@ -33,5 +33,8 @@ rules:
       - get
   - nonResourceURLs:
       - /metrics
+      - /version
+      - /readyz
+      - /healthz
     verbs:
       - get
