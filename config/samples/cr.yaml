@@ -66,7 +66,7 @@ spec:
   # Configure pod monitoring
   codeModules:
     # Enable pod monitoring
-    enabled: false
+    enabled: true
 
     # Optional: resource settings for injected OneAgent init-container. Consumption of the OneAgent heavily depends
     # on the workload to monitor; please adjust values accordingly.
@@ -92,7 +92,7 @@ spec:
   # Configure infrastructure monitoring
   infraMonitoring:
     # Enable infrastructure monitoring
-    enabled: false
+    enabled: true
 
     # Optional: node selector to control on which nodes the OneAgent will be deployed.
     #
@@ -157,7 +157,7 @@ spec:
 
   classicFullStack:
     # Enable classic oneagent monitoring
-    enabled: true
+    enabled: false
 
     # Optional: node selector to control on which nodes the OneAgent will be deployed.
     #
