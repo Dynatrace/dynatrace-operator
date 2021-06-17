@@ -62,39 +62,40 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 }
 
 func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, *dynatracev1alpha1.DynaKube) {
-	dynakube :=&dynatracev1alpha1.DynaKube{
-				ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-				Spec: dynatracev1alpha1.DynaKubeSpec{
-					APIURL: "https://test-api-url.com/api",
-					InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-						Enabled:           true,
-						UseImmutableImage: true,
+	dynakube := &dynatracev1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
+		Spec: dynatracev1alpha1.DynaKubeSpec{
+			APIURL: "https://test-api-url.com/api",
+			InfraMonitoring: dynatracev1alpha1.FullStackSpec{
+				Enabled:           true,
+				UseImmutableImage: true,
+			},
+			CodeModules: dynatracev1alpha1.CodeModulesSpec{
+				Enabled: true,
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("1"),
+						corev1.ResourceMemory: resource.MustParse("500M"),
 					},
-					CodeModules: dynatracev1alpha1.CodeModulesSpec{
-						Enabled: true,
-						Resources: corev1.ResourceRequirements{
-							Limits: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("1"),
-								corev1.ResourceMemory: resource.MustParse("500M"),
-							},
-							Requests: corev1.ResourceList{
-								corev1.ResourceCPU:    resource.MustParse("100m"),
-								corev1.ResourceMemory: resource.MustParse("100M"),
-							},
-						},
-						Selector: metav1.LabelSelector{
-							MatchLabels: map[string]string{
-								"inject": "true",
-							},
-						},
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse("100m"),
+						corev1.ResourceMemory: resource.MustParse("100M"),
 					},
 				},
-				Status: dynatracev1alpha1.DynaKubeStatus{
-					OneAgent: dynatracev1alpha1.OneAgentStatus{
-						UseImmutableImage: true,
+				Selector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"inject": "true",
 					},
 				},
-			}return &podInjector{
+			},
+		},
+		Status: dynatracev1alpha1.DynaKubeStatus{
+			OneAgent: dynatracev1alpha1.OneAgentStatus{
+				UseImmutableImage: true,
+			},
+		},
+	}
+	return &podInjector{
 		client: fake.NewClient(
 			dynakube,
 			&corev1.Namespace{
@@ -253,28 +254,29 @@ func TestPodInjectionWithCSI(t *testing.T) {
 	assert.Equal(t, expected, updPod)
 }
 
-func createDynakubeInstance(_ *testing.T) *dynatracev1alpha1.DynaKube {	instance := &dynatracev1alpha1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-					Enabled:           true,
-					UseImmutableImage: true,
-				},
-				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-					Enabled: true,
-					Selector: metav1.LabelSelector{
-						MatchLabels: map[string]string{
-							"inject": "true",
-						},
+func createDynakubeInstance(_ *testing.T) *dynatracev1alpha1.DynaKube {
+	instance := &dynatracev1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
+		Spec: dynatracev1alpha1.DynaKubeSpec{
+			InfraMonitoring: dynatracev1alpha1.FullStackSpec{
+				Enabled:           true,
+				UseImmutableImage: true,
+			},
+			CodeModules: dynatracev1alpha1.CodeModulesSpec{
+				Enabled: true,
+				Selector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"inject": "true",
 					},
 				},
 			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
-				},
+		},
+		Status: dynatracev1alpha1.DynaKubeStatus{
+			OneAgent: dynatracev1alpha1.OneAgentStatus{
+				UseImmutableImage: true,
 			},
-		}
+		},
+	}
 
 	return instance
 }
@@ -384,7 +386,7 @@ func TestUseImmutableImage(t *testing.T) {
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Labels: map[string]string{"inject": "true"},
 					},
 				},
 			),
@@ -464,7 +466,7 @@ func TestUseImmutableImage(t *testing.T) {
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Labels: map[string]string{"inject": "true"},
 					},
 				},
 			),
@@ -615,7 +617,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Labels: map[string]string{"inject": "true"},
 					},
 				},
 			),
@@ -761,7 +763,7 @@ func TestAgentVersion(t *testing.T) {
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+					Labels: map[string]string{"inject": "true"},
 				},
 			},
 		),
