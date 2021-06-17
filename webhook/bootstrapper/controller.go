@@ -249,12 +249,6 @@ func (r *ReconcileWebhook) reconcileWebhookConfig(ctx context.Context, log logr.
 					Scope:       &scope,
 				},
 			}},
-			NamespaceSelector: &metav1.LabelSelector{
-				MatchExpressions: []metav1.LabelSelectorRequirement{{
-					Key:      webhook.LabelInstance,
-					Operator: metav1.LabelSelectorOpExists,
-				}},
-			},
 			ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
 				Service: &admissionregistrationv1beta1.ServiceReference{
 					Name:      webhookName,

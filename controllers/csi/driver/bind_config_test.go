@@ -11,7 +11,6 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,7 +67,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 	})
 	t.Run(`failed to extract tenant from file`, func(t *testing.T) {
 		clt := fake.NewClient(
-			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}},
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{"someLabel": dkName}}},
 			createTestInstance(t))
 		srv := &CSIDriverServer{
 			client: clt,
@@ -91,7 +90,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 	})
 	t.Run(`failed to create directories`, func(t *testing.T) {
 		clt := fake.NewClient(
-			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}},
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{"someLabel": dkName}}},
 			createTestInstance(t))
 		srv := &CSIDriverServer{
 			client: clt,
@@ -114,7 +113,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 	})
 	t.Run(`failed to read version file`, func(t *testing.T) {
 		clt := fake.NewClient(
-			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}},
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{"someLabel": dkName}}},
 			createTestInstance(t))
 		srv := &CSIDriverServer{
 			client: clt,
@@ -140,7 +139,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 	})
 	t.Run(`create correct bind config`, func(t *testing.T) {
 		clt := fake.NewClient(
-			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}},
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{"someLabel": dkName}}},
 			&dynatracev1alpha1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{Name: dkName},
 			},
@@ -185,7 +184,7 @@ func createTestInstance(_ *testing.T) *dynatracev1alpha1.DynaKube {
 				},
 				Selector: metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						webhook.LabelInstance: dkName,
+						"someLabel": dkName,
 					},
 				},
 			},
