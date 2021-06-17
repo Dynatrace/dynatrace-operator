@@ -91,7 +91,7 @@ spec:
   # Enables and configures the OneAgent to automatically run on all your K8s nodes
   #
   classicFullStack:
-    enabled: true
+    enabled: false
 
   # Enables and configures an ActiveGate instance that allows routing
   # of OneAgent traffic
