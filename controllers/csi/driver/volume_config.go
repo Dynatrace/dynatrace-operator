@@ -1,9 +1,6 @@
 package csidriver
 
 import (
-	"fmt"
-
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,7 +11,6 @@ type volumeConfig struct {
 	targetPath string
 	namespace  string
 	podUID     string
-	flavor     string
 }
 
 func parsePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*volumeConfig, error) {
@@ -55,19 +51,10 @@ func parsePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*volumeConfig
 		return nil, status.Error(codes.InvalidArgument, "No Pod UID included with request")
 	}
 
-	flavor := volCtx[podFlavorContextKey]
-	if flavor == "" {
-		flavor = dtclient.FlavorDefault
-	}
-	if flavor != dtclient.FlavorDefault && flavor != dtclient.FlavorMUSL {
-		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("invalid flavor in request: %s", flavor))
-	}
-
 	return &volumeConfig{
 		volumeId:   volID,
 		targetPath: targetPath,
 		namespace:  nsName,
 		podUID:     podUID,
-		flavor:     flavor,
 	}, nil
 }

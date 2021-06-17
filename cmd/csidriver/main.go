@@ -57,7 +57,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	defaultUmask := unix.Umask(0002)
+	defaultUmask := unix.Umask(0000)
 	defer unix.Umask(defaultUmask)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{

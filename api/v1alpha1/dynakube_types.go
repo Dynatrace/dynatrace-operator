@@ -69,6 +69,12 @@ type DynaKubeSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	RoutingSpec RoutingSpec `json:"routing,omitempty"`
 
+	//  Configuration for Data Ingest
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Data Ingest"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	DataIngestSpec DataIngestSpec `json:"dataIngest,omitempty"`
+
 	//  Configuration for Kubernetes Monitoring
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
@@ -175,6 +181,10 @@ type FullStackSpec struct {
 	// Defines if you want to use the immutable image or the installer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Use immutable image",order=28,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
+}
+
+type DataIngestSpec struct {
+	CapabilityProperties `json:",inline"`
 }
 
 type RoutingSpec struct {

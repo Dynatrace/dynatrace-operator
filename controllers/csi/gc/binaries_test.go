@@ -5,97 +5,102 @@ import (
 	"testing"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
-	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
-const envID = "asd12345"
+const (
+	tenantUUID = "asd12345"
+	version_1  = "1"
+	version_2  = "2"
+	version_3  = "3"
+	rootDir    = "/tmp"
+)
 
-func newMockGarbageCollector() (CSIGarbageCollector, string) {
-	clt := fake.NewClient()
-	dtcMock := &dtclient.MockDynatraceClient{}
-	log := logger.NewDTLogger()
-	fs := afero.NewMemMapFs()
-	opts := dtcsi.CSIOptions{
-		GCInterval: 1,
-		RootDir:    "/tmp",
-		Endpoint:   "endpoint",
-		NodeID:     "nodeID123",
-	}
+var (
+	versionReferenceBasePath = filepath.Join(rootDir, dtcsi.DataPath, tenantUUID, dtcsi.GarbageCollectionPath)
+)
 
-	versionReferenceBasePath := filepath.Join(opts.RootDir, dtcsi.DataPath, envID, dtcsi.GarbageCollectionPath)
-	_ = fs.MkdirAll(versionReferenceBasePath, 0770)
+func TestBinaryGarbageCollector_succeedsWhenVersionReferenceBaseDirectoryNotExists(t *testing.T) {
+	gc := newMockGarbageCollector()
 
-	return CSIGarbageCollector{
-		client:       clt,
-		dtcBuildFunc: dynakube.StaticDynatraceClient(dtcMock),
-		logger:       log,
-		opts:         opts,
-		fs:           fs,
-	}, versionReferenceBasePath
+	err := gc.runBinaryGarbageCollection(tenantUUID, version_1)
 
+	assert.NoError(t, err)
 }
 
-func TestBinaryGarbageCollector_BinaryGarbageCollection(t *testing.T) {
-	gc, versionReferenceBasePath := newMockGarbageCollector()
+func TestBinaryGarbageCollector_succeedsWhenNoVersionsAvailable(t *testing.T) {
+	gc := newMockGarbageCollector()
+	_ = gc.fs.MkdirAll(versionReferenceBasePath, 0770)
 
-	oldVersion := "1.100.0"
-	latestVersion := "1.101.0"
+	err := gc.runBinaryGarbageCollection(tenantUUID, version_1)
 
-	if err := gc.fs.MkdirAll(filepath.Join(versionReferenceBasePath, oldVersion), 0770); err != nil {
+	assert.NoError(t, err)
+}
+
+func TestBinaryGarbageCollector_ignoresLatest(t *testing.T) {
+	gc := newMockGarbageCollector()
+	gc.mockUnusedVersions(version_1)
+
+	err := gc.runBinaryGarbageCollection(tenantUUID, version_1)
+
+	assert.NoError(t, err)
+	gc.assertVersionExists(t, version_1)
+}
+
+func TestBinaryGarbageCollector_removesUnused(t *testing.T) {
+	gc := newMockGarbageCollector()
+	gc.mockUnusedVersions(version_1, version_2, version_3)
+
+	err := gc.runBinaryGarbageCollection(tenantUUID, version_2)
+
+	assert.NoError(t, err)
+	gc.assertVersionNotExists(t, version_1, version_3)
+}
+
+func TestBinaryGarbageCollector_ignoresUsed(t *testing.T) {
+	gc := newMockGarbageCollector()
+	gc.mockUsedVersions(version_1, version_2, version_3)
+
+	err := gc.runBinaryGarbageCollection(tenantUUID, version_3)
+
+	assert.NoError(t, err)
+	gc.assertVersionExists(t, version_1, version_2, version_3)
+}
+
+func newMockGarbageCollector() *CSIGarbageCollector {
+	return &CSIGarbageCollector{
+		logger: logger.NewDTLogger(),
+		opts:   dtcsi.CSIOptions{RootDir: rootDir},
+		fs:     afero.NewMemMapFs(),
+	}
+}
+
+func (gc *CSIGarbageCollector) mockUnusedVersions(versions ...string) {
+	for _, version := range versions {
+		_ = gc.fs.MkdirAll(filepath.Join(versionReferenceBasePath, version), 0770)
+	}
+}
+func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
+	for _, version := range versions {
+		_ = gc.fs.MkdirAll(filepath.Join(versionReferenceBasePath, version), 0770)
+		_, _ = gc.fs.Create(filepath.Join(versionReferenceBasePath, version, "somePodID"))
+	}
+}
+
+func (gc *CSIGarbageCollector) assertVersionNotExists(t *testing.T, versions ...string) {
+	for _, version := range versions {
+		exists, err := afero.DirExists(gc.fs, filepath.Join(versionReferenceBasePath, version))
+		assert.False(t, exists)
 		assert.NoError(t, err)
 	}
+}
 
-	t.Run(`only latest version available`, func(t *testing.T) {
-		_ = gc.fs.MkdirAll(filepath.Join(versionReferenceBasePath, latestVersion), 0770)
-
-		err := gc.runBinaryGarbageCollection(envID, latestVersion)
-		assert.NoError(t, err)
-
-		exists, err := afero.DirExists(gc.fs, filepath.Join(versionReferenceBasePath, latestVersion))
+func (gc *CSIGarbageCollector) assertVersionExists(t *testing.T, versions ...string) {
+	for _, version := range versions {
+		exists, err := afero.DirExists(gc.fs, filepath.Join(versionReferenceBasePath, version))
 		assert.True(t, exists)
 		assert.NoError(t, err)
-	})
-
-	t.Run(`garbage collector removes unused version`, func(t *testing.T) {
-		_ = gc.fs.MkdirAll(filepath.Join(versionReferenceBasePath, latestVersion), 0770)
-		_ = gc.fs.MkdirAll(filepath.Join(versionReferenceBasePath, oldVersion), 0770)
-
-		err := gc.runBinaryGarbageCollection(envID, latestVersion)
-		assert.NoError(t, err)
-
-		latestExists, err := afero.DirExists(gc.fs, filepath.Join(versionReferenceBasePath, latestVersion))
-		assert.True(t, latestExists)
-		assert.NoError(t, err)
-
-		oldExists, err := afero.DirExists(gc.fs, filepath.Join(versionReferenceBasePath, oldVersion))
-		assert.False(t, oldExists)
-		assert.NoError(t, err)
-	})
-
-	t.Run(`garbage collector not removes used version`, func(t *testing.T) {
-		_ = gc.fs.MkdirAll(filepath.Join(versionReferenceBasePath, latestVersion), 0770)
-		_ = gc.fs.MkdirAll(filepath.Join(versionReferenceBasePath, oldVersion), 0770)
-		_, _ = gc.fs.Create(filepath.Join(versionReferenceBasePath, oldVersion, "somePodID"))
-
-		err := gc.runBinaryGarbageCollection(envID, latestVersion)
-		assert.NoError(t, err)
-
-		latestExists, err := afero.DirExists(gc.fs, filepath.Join(versionReferenceBasePath, latestVersion))
-		assert.True(t, latestExists)
-		assert.NoError(t, err)
-
-		oldExists, err := afero.DirExists(gc.fs, filepath.Join(versionReferenceBasePath, oldVersion))
-		assert.True(t, oldExists)
-		assert.NoError(t, err)
-	})
-
-	t.Run(`garbage collecting no version`, func(t *testing.T) {
-		err := gc.runBinaryGarbageCollection(envID, latestVersion)
-		assert.NoError(t, err)
-	})
+	}
 }

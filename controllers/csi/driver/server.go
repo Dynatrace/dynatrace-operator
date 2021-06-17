@@ -19,7 +19,6 @@ package csidriver
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -30,6 +29,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/go-logr/logr"
+	"github.com/spf13/afero"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -42,7 +42,6 @@ import (
 const (
 	podNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
 	podUIDContextKey       = "csi.storage.k8s.io/pod.uid"
-	podFlavorContextKey    = "flavor"
 )
 
 var log = logger.NewDTLogger().WithName("server")
@@ -51,6 +50,7 @@ type CSIDriverServer struct {
 	client client.Client
 	log    logr.Logger
 	opts   dtcsi.CSIOptions
+	fs     afero.Afero
 }
 
 var _ manager.Runnable = &CSIDriverServer{}
@@ -62,6 +62,7 @@ func NewServer(mgr ctrl.Manager, opts dtcsi.CSIOptions) *CSIDriverServer {
 		client: mgr.GetClient(),
 		log:    log,
 		opts:   opts,
+		fs:     afero.Afero{Fs: afero.NewOsFs()},
 	}
 }
 
@@ -76,7 +77,7 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 	}
 
 	if proto == "unix" {
-		if err := os.Remove(addr); err != nil && !os.IsNotExist(err) {
+		if err := svr.fs.Remove(addr); err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("failed to remove old endpoint on '%s': %w", addr, err)
 		}
 	}
@@ -154,7 +155,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
 	)
 
-	bindCfg, err := newBindConfig(ctx, svr, volumeCfg, ioutil.ReadFile, os.MkdirAll)
+	bindCfg, err := newBindConfig(ctx, svr, volumeCfg, svr.fs)
 	if err != nil {
 		return nil, err
 	}
@@ -179,10 +180,11 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 	}
 
 	podToVersionReference := filepath.Join(bindCfg.envDir, dtcsi.GarbageCollectionPath, bindCfg.version, volumeCfg.podUID)
-	if err = ioutil.WriteFile(podToVersionReference, nil, 0770); err != nil {
+	if err = svr.fs.WriteFile(podToVersionReference, nil, 0770); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create pod to version reference file - error: %s", err))
 	}
-	if err = os.Symlink(podToVersionReference, filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeCfg.volumeId)); err != nil {
+
+	if err = svr.fs.Fs.(afero.Linker).SymlinkIfPossible(podToVersionReference, filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeCfg.volumeId)); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create volume to pod reference SymLink for garbage collector - error: %s", err))
 	}
 
@@ -212,21 +214,21 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 
 	volumeToPodReference := filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeID)
 
-	podToVersionReference, err := os.Readlink(volumeToPodReference)
+	podToVersionReference, err := svr.fs.Fs.(afero.LinkReader).ReadlinkIfPossible(volumeToPodReference)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to read volume to pod SymLink for garbage collector - error: %s", err))
 	} else if !os.IsNotExist(err) {
-		if err = os.Remove(podToVersionReference); err != nil && !os.IsNotExist(err) {
+		if err = svr.fs.Remove(podToVersionReference); err != nil && !os.IsNotExist(err) {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove pod to version reference file for garbage collector - error: %s", err))
 		}
-		if err = os.Remove(volumeToPodReference); err != nil && !os.IsNotExist(err) {
+		if err = svr.fs.Remove(volumeToPodReference); err != nil && !os.IsNotExist(err) {
 			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove volume to pod SymLink for garbage collector - error: %s", err))
 		}
 	}
 
 	// Delete the mount point.
 	// Does not return error for non-existent path, repeated calls OK for idempotency.
-	if err := os.RemoveAll(targetPath); err != nil {
+	if err := svr.fs.RemoveAll(targetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
