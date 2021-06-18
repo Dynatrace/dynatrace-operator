@@ -5,7 +5,10 @@ import (
 	"fmt"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
+	sts "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
@@ -25,16 +28,15 @@ const (
 )
 
 type Reconciler struct {
-	*activegate.Reconciler
+	*sts.Reconciler
 	log logr.Logger
-	Capability
+	capability.Capability
 }
 
-func NewReconciler(capability Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
+func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
 	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
-	baseReconciler := activegate.NewReconciler(
-		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider,
-		capability.GetProperties(), capability.GetModuleName(), capability.GetCapabilityName(), capability.GetConfiguration().ServiceAccountOwner)
+	baseReconciler := sts.NewReconciler(
+		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider, capability)
 
 	if capability.GetConfiguration().SetDnsEntryPoint {
 		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.GetModuleName()))
@@ -55,17 +57,17 @@ func NewReconciler(capability Capability, clt client.Client, apiReader client.Re
 	}
 }
 
-func setReadinessProbePort() activegate.StatefulSetEvent {
+func setReadinessProbePort() events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
-		sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port = intstr.FromString(serviceTargetPort)
+		sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.ServiceTargetPort)
 	}
 }
 
-func setCommunicationsPort(_ *dynatracev1alpha1.DynaKube) activegate.StatefulSetEvent {
+func setCommunicationsPort(_ *dynatracev1alpha1.DynaKube) events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		sts.Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{
 			{
-				Name:          serviceTargetPort,
+				Name:          consts.ServiceTargetPort,
 				ContainerPort: containerPort,
 			},
 		}
@@ -73,10 +75,10 @@ func setCommunicationsPort(_ *dynatracev1alpha1.DynaKube) activegate.StatefulSet
 }
 
 func (r *Reconciler) calculateStatefulSetName() string {
-	return CalculateStatefulSetName(r.Capability, r.Instance.Name)
+	return capability.CalculateStatefulSetName(r.Capability, r.Instance.Name)
 }
 
-func addDNSEntryPoint(instance *dynatracev1alpha1.DynaKube, moduleName string) activegate.StatefulSetEvent {
+func addDNSEntryPoint(instance *dynatracev1alpha1.DynaKube, moduleName string) events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		sts.Spec.Template.Spec.Containers[0].Env = append(sts.Spec.Template.Spec.Containers[0].Env,
 			corev1.EnvVar{

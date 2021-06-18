@@ -5,15 +5,11 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-)
-
-const (
-	servicePort       = 443
-	serviceTargetPort = "ag-https"
 )
 
 func createService(instance *v1alpha1.DynaKube, feature string) *corev1.Service {
@@ -21,16 +17,16 @@ func createService(instance *v1alpha1.DynaKube, feature string) *corev1.Service 
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      BuildServiceName(instance.Name, feature),
 			Namespace: instance.Namespace,
-			Labels:    activegate.BuildLabelsFromInstance(instance, feature),
+			Labels:    statefulset.BuildLabelsFromInstance(instance, feature),
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
-			Selector: activegate.BuildLabelsFromInstance(instance, feature),
+			Selector: statefulset.BuildLabelsFromInstance(instance, feature),
 			Ports: []corev1.ServicePort{
 				{
 					Protocol:   corev1.ProtocolTCP,
-					Port:       servicePort,
-					TargetPort: intstr.FromString(serviceTargetPort),
+					Port:       consts.ServicePort,
+					TargetPort: intstr.FromString(consts.ServiceTargetPort),
 				},
 			},
 		},
