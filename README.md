@@ -107,8 +107,8 @@ spec:
   #
   infraMonitoring:
     # Enable infrastructure monitoring
-    enabled: true    
-    
+    enabled: true
+
   # To be released
   #
   # Enables and configures monitoring pods by injecting oneagent init containers into them.
@@ -171,7 +171,7 @@ $ kubectl delete -f https://github.com/Dynatrace/dynatrace-operator/releases/lat
 
 <details><summary>Installation</summary>
 
-To create the namespace and apply the operator run the following commands (for OpenShift > 3.11!)
+To create the namespace and apply the operator run the following commands (for OpenShift 4.x)
 
 ```sh
 $ oc adm new-project --node-selector="" dynatrace
