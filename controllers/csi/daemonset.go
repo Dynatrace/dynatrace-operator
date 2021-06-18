@@ -211,7 +211,7 @@ func prepareDriverSpec(operatorImage string) v1.Container {
 			TimeoutSeconds:      1,
 			Handler: v1.Handler{
 				HTTPGet: &v1.HTTPGetAction{
-					Path:   "/healthz",
+					Path:   "/readyz",
 					Port:   intstr.FromString("healthz"),
 					Scheme: "HTTP",
 				},
