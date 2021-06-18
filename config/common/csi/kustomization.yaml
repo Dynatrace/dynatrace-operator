@@ -1,5 +1,4 @@
 resources:
-  - csidriver.yaml
   - serviceaccount-csi.yaml
   - clusterrole-csi.yaml
   - clusterrolebinding-csi.yaml
