@@ -163,45 +163,47 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 
 	if pod.Annotations[dtwebhook.AnnotationInjected] == "true" {
-		var needsUpdate = false
-		var installContainer *corev1.Container
-		for i := range pod.Spec.Containers {
-			c := &pod.Spec.Containers[i]
+		if oa.FeatureEnableInstrumentMissingContainers() {
+			var needsUpdate = false
+			var installContainer *corev1.Container
+			for i := range pod.Spec.Containers {
+				c := &pod.Spec.Containers[i]
 
-			preloaded := false
-			for _, e := range c.Env {
-				if e.Name == "LD_PRELOAD" {
-					preloaded = true
-					break
-				}
-			}
-
-			if !preloaded {
-				// container does not have LD_PRELOAD set
-				logger.Info("instrumenting missing container", "name", c.Name)
-
-				deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
-				updateContainer(c, &oa, pod, deploymentMetadata)
-
-				if installContainer == nil {
-					for j := range pod.Spec.InitContainers {
-						ic := &pod.Spec.InitContainers[j]
-
-						if ic.Name == dtwebhook.InstallContainerName {
-							installContainer = ic
-							break
-						}
+				preloaded := false
+				for _, e := range c.Env {
+					if e.Name == "LD_PRELOAD" {
+						preloaded = true
+						break
 					}
 				}
-				updateInstallContainer(installContainer, i+1, c.Name, c.Image)
 
-				needsUpdate = true
+				if !preloaded {
+					// container does not have LD_PRELOAD set
+					logger.Info("instrumenting missing container", "name", c.Name)
+
+					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
+					updateContainer(c, &oa, pod, deploymentMetadata)
+
+					if installContainer == nil {
+						for j := range pod.Spec.InitContainers {
+							ic := &pod.Spec.InitContainers[j]
+
+							if ic.Name == dtwebhook.InstallContainerName {
+								installContainer = ic
+								break
+							}
+						}
+					}
+					updateInstallContainer(installContainer, i+1, c.Name, c.Image)
+
+					needsUpdate = true
+				}
 			}
-		}
 
-		if needsUpdate {
-			logger.Info("updating pod with missing containers")
-			return getResponse(pod, &req)
+			if needsUpdate {
+				logger.Info("updating pod with missing containers")
+				return getResponse(pod, &req)
+			}
 		}
 
 		return admission.Patched("")

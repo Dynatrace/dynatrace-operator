@@ -21,11 +21,12 @@ import (
 )
 
 const (
-	annotationFeaturePrefix                   = "alpha.operator.dynatrace.com/feature-"
-	annotationFeatureDisableActiveGateUpdates = annotationFeaturePrefix + "disable-activegate-updates"
-	annotationFeatureDisableHostsRequests     = annotationFeaturePrefix + "disable-hosts-requests"
-	annotationFeatureOneAgentMaxUnavailable   = annotationFeaturePrefix + "oneagent-max-unavailable"
-	annotationFeatureEnableMetricsIngest      = annotationFeaturePrefix + "enable-metrics-ingest"
+	annotationFeaturePrefix                            = "alpha.operator.dynatrace.com/feature-"
+	annotationFeatureDisableActiveGateUpdates          = annotationFeaturePrefix + "disable-activegate-updates"
+	annotationFeatureDisableHostsRequests              = annotationFeaturePrefix + "disable-hosts-requests"
+	annotationFeatureOneAgentMaxUnavailable            = annotationFeaturePrefix + "oneagent-max-unavailable"
+	annotationFeatureEnableMetricsIngest               = annotationFeaturePrefix + "enable-metrics-ingest"
+	annotationFeatureEnableInstrumentMissingContainers = annotationFeaturePrefix + "enable-instrument-missing-containers"
 )
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
@@ -56,4 +57,9 @@ func (dk *DynaKube) FeatureOneAgentMaxUnavailable() int {
 // FeatureEnableMetricsIngest is a feature flag to enable metrics ingest API
 func (dk *DynaKube) FeatureEnableMetricsIngest() bool {
 	return dk.Annotations[annotationFeatureEnableMetricsIngest] == "true"
+}
+
+// FeatureEnableInstrumentMissingContainers is a feature flag to enable instrumenting missing containers.
+func (dk *DynaKube) FeatureEnableInstrumentMissingContainers() bool {
+	return dk.Annotations[annotationFeatureEnableInstrumentMissingContainers] == "true"
 }
