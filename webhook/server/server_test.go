@@ -970,7 +970,13 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	require.NoError(t, err)
 
-	inj, _ := createPodInjector(t, decoder)
+	inj, instance := createPodInjector(t, decoder)
+
+	// enable feature
+	instance.Annotations = map[string]string{}
+	instance.Annotations[instance.GetFeatureEnableInstrumentMissingContainers()] = "true"
+	err = inj.client.Update(context.TODO(), instance)
+	require.NoError(t, err)
 
 	var testContainerName, testContainerImage = "test-container", "alpine"
 	var thirdPartyContainerName, thirdPartyContainerImage = "third-party-container", "sidecar-image"
@@ -1038,7 +1044,7 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 
 	// update pod with response
 	patchType := admissionv1.PatchTypeJSONPatch
-	assert.Equal(t, resp.PatchType, &patchType)
+	assert.Equal(t, &patchType, resp.PatchType)
 
 	patch, err := jsonpatch.DecodePatch(resp.Patch)
 	require.NoError(t, err)

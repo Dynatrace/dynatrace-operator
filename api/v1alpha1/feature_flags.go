@@ -63,3 +63,8 @@ func (dk *DynaKube) FeatureEnableMetricsIngest() bool {
 func (dk *DynaKube) FeatureEnableInstrumentMissingContainers() bool {
 	return dk.Annotations[annotationFeatureEnableInstrumentMissingContainers] == "true"
 }
+
+// GetFeatureEnableInstrumentMissingContainers returns the annotation for FeatureEnableInstrumentMissingContainers
+func (dk *DynaKube) GetFeatureEnableInstrumentMissingContainers() string {
+	return annotationFeatureEnableInstrumentMissingContainers
+}
