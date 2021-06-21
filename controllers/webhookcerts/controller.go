@@ -1,12 +1,9 @@
-package bootstrapper
+package webhookcerts
 
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"reflect"
 	"time"
 
@@ -22,36 +19,27 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-// time between consecutive queries for a new pod to get ready
 const (
 	webhookName = "dynatrace-webhook"
-	certsDir    = "/mnt/webhook-certs"
 )
 
-// AddToManager creates a new OneAgent Controller and adds it to the Manager. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
-func AddToManager(mgr manager.Manager, ns string) error {
-
-	return add(mgr, &ReconcileWebhook{
+func Add(mgr manager.Manager, ns string) error {
+	return add(mgr, &ReconcileWebhookCertificates{
 		client:    mgr.GetClient(),
 		scheme:    mgr.GetScheme(),
 		namespace: ns,
-		logger:    log.Log.WithName("webhook.controller"),
-		certsDir:  certsDir,
+		logger:    log.Log.WithName("operator.webhook-certificates"),
 	})
 }
 
-// add adds a new OneAgentController to mgr with r as the reconcile.Reconciler
-func add(mgr manager.Manager, r *ReconcileWebhook) error {
-	// Create a new controller
-	c, err := controller.New("webhook-bootstrapper-controller", mgr, controller.Options{Reconciler: r})
+func add(mgr manager.Manager, r *ReconcileWebhookCertificates) error {
+	c, err := controller.New("webhook-certificates-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
@@ -68,7 +56,7 @@ func add(mgr manager.Manager, r *ReconcileWebhook) error {
 		// some time before inserting an element so that the Channel has time to initialize.
 		time.Sleep(10 * time.Second)
 
-		ticker := time.NewTicker(5 * time.Minute)
+		ticker := time.NewTicker(3 * time.Hour)
 		defer ticker.Stop()
 
 		ch <- event.GenericEvent{
@@ -82,34 +70,20 @@ func add(mgr manager.Manager, r *ReconcileWebhook) error {
 		}
 	}()
 
-	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		r.logger.Error(err, "could not start health endpoint for operator")
-	}
-
-	if err = mgr.AddReadyzCheck("healthz", healthz.Ping); err != nil {
-		r.logger.Error(err, "could not start ready endpoint for operator")
-	}
-
 	return nil
 }
 
-// ReconcileWebhook reconciles the webhook
-type ReconcileWebhook struct {
+// ReconcileWebhookCertificates updates certificates secret for the webhooks
+type ReconcileWebhookCertificates struct {
 	client    client.Client
 	scheme    *runtime.Scheme
 	logger    logr.Logger
 	namespace string
-	certsDir  string
 	now       time.Time
 }
 
-// Reconcile reads that state of the cluster for a OneAgent object and makes changes based on the state read
-// and what is in the OneAgent.Spec
-// Note:
-// The Controller will requeue the Request to be processed again if the returned error is non-nil or
-// Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileWebhook) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	r.logger.Info("reconciling webhook", "namespace", request.Namespace, "name", request.Name)
+func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	r.logger.Info("reconciling webhook certificates", "namespace", request.Namespace, "name", request.Name)
 
 	rootCerts, err := r.reconcileCerts(ctx, r.logger)
 	if err != nil {
@@ -127,7 +101,7 @@ func (r *ReconcileWebhook) Reconcile(ctx context.Context, request reconcile.Requ
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileWebhook) reconcileService(ctx context.Context, log logr.Logger) error {
+func (r *ReconcileWebhookCertificates) reconcileService(ctx context.Context, log logr.Logger) error {
 	log.Info("Reconciling Service...")
 
 	expected := corev1.Service{
@@ -166,7 +140,7 @@ func (r *ReconcileWebhook) reconcileService(ctx context.Context, log logr.Logger
 	return err
 }
 
-func (r *ReconcileWebhook) reconcileCerts(ctx context.Context, log logr.Logger) ([]byte, error) {
+func (r *ReconcileWebhookCertificates) reconcileCerts(ctx context.Context, log logr.Logger) ([]byte, error) {
 	log.Info("Reconciling certificates...")
 
 	var newSecret bool
@@ -183,7 +157,7 @@ func (r *ReconcileWebhook) reconcileCerts(ctx context.Context, log logr.Logger) 
 		Log:     log,
 		Domain:  fmt.Sprintf("%s.%s.svc", webhookName, r.namespace),
 		SrcData: secret.Data,
-		now:     r.now,
+		Now:     r.now,
 	}
 
 	if err := cs.ValidateCerts(); err != nil {
@@ -206,25 +180,10 @@ func (r *ReconcileWebhook) reconcileCerts(ctx context.Context, log logr.Logger) 
 		return nil, err
 	}
 
-	for _, key := range []string{"tls.crt", "tls.key"} {
-		f := filepath.Join(r.certsDir, key)
-
-		data, err := ioutil.ReadFile(f)
-		if err != nil && !os.IsNotExist(err) {
-			return nil, err
-		}
-
-		if os.IsNotExist(err) || !bytes.Equal(data, cs.Data[key]) {
-			if err := ioutil.WriteFile(f, cs.Data[key], 0666); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	return cs.Data["ca.crt"], nil
+	return append(cs.Data["ca.crt"], cs.Data["ca.crt.old"]...), nil
 }
 
-func (r *ReconcileWebhook) reconcileWebhookConfig(ctx context.Context, log logr.Logger, rootCerts []byte) error {
+func (r *ReconcileWebhookCertificates) reconcileWebhookConfig(ctx context.Context, log logr.Logger, rootCerts []byte) error {
 	log.Info("Reconciling MutatingWebhookConfiguration...")
 
 	scope := admissionregistrationv1beta1.NamespacedScope

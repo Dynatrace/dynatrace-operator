@@ -4,7 +4,8 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,16 +30,16 @@ func TestCreateService(t *testing.T) {
 	serviceSpec := service.Spec
 	assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
 	assert.Equal(t, map[string]string{
-		activegate.KeyActiveGate: testName,
-		activegate.KeyDynatrace:  activegate.ValueActiveGate,
-		activegate.KeyFeature:    testFeature,
+		statefulset.KeyActiveGate: testName,
+		statefulset.KeyDynatrace:  statefulset.ValueActiveGate,
+		statefulset.KeyFeature:    testFeature,
 	}, serviceSpec.Selector)
 
 	ports := serviceSpec.Ports
 	assert.Contains(t, ports, corev1.ServicePort{
 		Protocol:   corev1.ProtocolTCP,
-		Port:       servicePort,
-		TargetPort: intstr.FromString(serviceTargetPort),
+		Port:       consts.ServicePort,
+		TargetPort: intstr.FromString(consts.ServiceTargetPort),
 	})
 }
 

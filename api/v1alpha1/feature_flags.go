@@ -25,7 +25,6 @@ const (
 	annotationFeatureDisableActiveGateUpdates        = annotationFeaturePrefix + "disable-activegate-updates"
 	annotationFeatureDisableHostsRequests            = annotationFeaturePrefix + "disable-hosts-requests"
 	annotationFeatureOneAgentMaxUnavailable          = annotationFeaturePrefix + "oneagent-max-unavailable"
-	annotationFeatureEnableMetricsIngest             = annotationFeaturePrefix + "enable-metrics-ingest"
 	annotationFeatureEnableWebhookReinvocationPolicy = annotationFeaturePrefix + "enable-webhook-reinvocation-policy"
 )
 
@@ -52,11 +51,6 @@ func (dk *DynaKube) FeatureOneAgentMaxUnavailable() int {
 	}
 
 	return val
-}
-
-// FeatureEnableMetricsIngest is a feature flag to enable metrics ingest API
-func (dk *DynaKube) FeatureEnableMetricsIngest() bool {
-	return dk.Annotations[annotationFeatureEnableMetricsIngest] == "true"
 }
 
 // FeatureEnableWebhookReinvocationPolicy is a feature flag to enable instrumenting missing containers

@@ -1,4 +1,4 @@
-package bootstrapper
+package webhookcerts
 
 import (
 	"crypto/rand"
@@ -15,7 +15,7 @@ import (
 
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), 128)
 
-const renewalThreshold = 4 * time.Hour
+const renewalThreshold = 12 * time.Hour
 
 // Certs handles creation and renewal of CA and SSL/TLS server certificates.
 type Certs struct {
@@ -24,7 +24,7 @@ type Certs struct {
 	SrcData map[string][]byte
 	Data    map[string][]byte
 
-	now time.Time
+	Now time.Time
 
 	rootPrivateKey *rsa.PrivateKey
 	rootPublicCert *x509.Certificate
@@ -41,8 +41,8 @@ func (cs *Certs) ValidateCerts() error {
 	}
 
 	now := time.Now().UTC()
-	if !cs.now.IsZero() {
-		now = cs.now
+	if !cs.Now.IsZero() {
+		now = cs.Now
 	}
 
 	renewRootCerts := cs.validateRootCerts(now)
@@ -170,6 +170,7 @@ func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 		return fmt.Errorf("failed to generate root certificate: %w", err)
 	}
 
+	cs.Data["ca.crt.old"] = cs.Data["ca.crt"]
 	cs.Data["ca.crt"] = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: rootPublicCertDER})
 	return nil
 }

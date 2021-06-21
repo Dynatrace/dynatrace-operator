@@ -15,9 +15,9 @@ resources:
   - routing/serviceaccount-routing.yaml
   - routing/role-routing.yaml
   - routing/rolebinding-routing.yaml
-  - metrics/serviceaccount-metrics.yaml
-  - metrics/role-metrics.yaml
-  - metrics/rolebinding-metrics.yaml
+  - data-ingest/serviceaccount-data-ingest.yaml
+  - data-ingest/role-data-ingest.yaml
+  - data-ingest/rolebinding-data-ingest.yaml
   - oneagent/serviceaccount-oneagent.yaml
   - oneagent/serviceaccount-oneagent-unprivileged.yaml
   - webhook/clusterrole-webhook.yaml
@@ -29,4 +29,5 @@ resources:
   - webhook/service.yaml
   - webhook/serviceaccount-webhook.yaml
 bases:
+  - csi
   - ../crd
