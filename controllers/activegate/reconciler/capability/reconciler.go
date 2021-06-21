@@ -82,7 +82,7 @@ func (r *Reconciler) calculateStatefulSetName() string {
 	return capability.CalculateStatefulSetName(r.Capability, r.Instance.Name)
 }
 
-func addTenantInfo(dtc dtclient.Client) activegate.StatefulSetEvent {
+func addTenantInfo(dtc dtclient.Client) events.StatefulSetEvent {
 	info, err := dtc.GetAGTenantInfo()
 	if err != nil {
 		return nil
