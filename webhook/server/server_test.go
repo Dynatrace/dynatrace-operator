@@ -974,7 +974,7 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 
 	// enable feature
 	instance.Annotations = map[string]string{}
-	instance.Annotations[instance.GetFeatureEnableInstrumentMissingContainers()] = "true"
+	instance.Annotations[instance.GetFeatureEnableWebhookReinvocationPolicy()] = "true"
 	err = inj.client.Update(context.TODO(), instance)
 	require.NoError(t, err)
 

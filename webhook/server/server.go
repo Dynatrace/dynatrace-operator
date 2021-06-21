@@ -163,7 +163,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 
 	if pod.Annotations[dtwebhook.AnnotationInjected] == "true" {
-		if oa.FeatureEnableInstrumentMissingContainers() {
+		if oa.FeatureEnableWebhookReinvocationPolicy() {
 			var needsUpdate = false
 			var installContainer *corev1.Container
 			for i := range pod.Spec.Containers {
