@@ -169,7 +169,7 @@ func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string,
 	}
 
 	gcDir := filepath.Join(envDir, dtcsi.GarbageCollectionPath, version)
-	if err := os.MkdirAll(gcDir, 0755); err != nil {
+	if err := r.fs.MkdirAll(gcDir, 0755); err != nil {
 		logger.Error(err, "failed to create directory %s: %w", gcDir)
 		return err
 	}
