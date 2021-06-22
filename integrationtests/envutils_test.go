@@ -26,7 +26,7 @@ const (
 	DefaultTestNamespace = "dynatrace"
 )
 
-var schema = apiextensionsv1.JSONSchemaProps{
+var dkSchema = apiextensionsv1.JSONSchemaProps{
 	Description: "DynaKube is the Schema for the DynaKube API",
 	Type:        "object",
 	Properties: map[string]apiextensionsv1.JSONSchemaProps{
@@ -34,17 +34,37 @@ var schema = apiextensionsv1.JSONSchemaProps{
 			Description: "Location of the Dynatrace API to connect to, including your specific environment ID",
 			Type:        "string",
 		},
-		"": {},
-
-		//APIURL:      DefaultTestAPIURL,
-		//Tokens:      "token-test",
-		//EnableIstio: true,
-		//ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-		//	Enabled: true,
-		//},
+		"tokens": {
+			Description: "Credentials for the DynaKube to connect back to Dynatrace.",
+			Type:        "string",
+		},
+		"enableIstio": {
+			Description: "If enabled, Istio on the cluster will be configured automatically to allow access to the Dynatrace environment",
+			Type:        "boolean",
+		},
+		"classicFullStack": {
+			Description: "Configuration for ClassicFullStack Monitoring",
+			Properties: map[string]apiextensionsv1.JSONSchemaProps{
+				"enabled": {
+					Description: "Enables FullStack Monitoring",
+					Type:        "boolean",
+				},
+			},
+			Type: "object",
+		},
 	},
 }
-var validation = apiextensionsv1.CustomResourceValidation{OpenAPIV3Schema: &schema}
+var dkValidation = apiextensionsv1.CustomResourceValidation{OpenAPIV3Schema: &dkSchema}
+
+var istioSchema = apiextensionsv1.JSONSchemaProps{
+	Description: "test",
+	Type:        "object",
+	Properties: map[string]apiextensionsv1.JSONSchemaProps{
+
+	},
+}
+var istioValidation = apiextensionsv1.CustomResourceValidation{OpenAPIV3Schema: &istioSchema}
+
 var testEnvironmentCRDs = []client.Object{
 	&apiextensionsv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
@@ -67,7 +87,7 @@ var testEnvironmentCRDs = []client.Object{
 					Subresources: &apiextensionsv1.CustomResourceSubresources{
 						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
 					},
-					Schema: &validation,
+					Schema: &dkValidation,
 				},
 			},
 		},
@@ -92,7 +112,7 @@ var testEnvironmentCRDs = []client.Object{
 					Subresources: &apiextensionsv1.CustomResourceSubresources{
 						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
 					},
-					Schema: &validation,
+					Schema: &istioValidation,
 				},
 			},
 		},
@@ -117,7 +137,7 @@ var testEnvironmentCRDs = []client.Object{
 					Subresources: &apiextensionsv1.CustomResourceSubresources{
 						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
 					},
-					Schema: &validation,
+					Schema: &istioValidation,
 				},
 			},
 		},
