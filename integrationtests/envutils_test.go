@@ -27,9 +27,22 @@ const (
 )
 
 var schema = apiextensionsv1.JSONSchemaProps{
-	Description:            "test",
-	Type:                   "object",
-	Properties: map[string]apiextensionsv1.JSONSchemaProps{},
+	Description: "DynaKube is the Schema for the DynaKube API",
+	Type:        "object",
+	Properties: map[string]apiextensionsv1.JSONSchemaProps{
+		"apiUrl": {
+			Description: "Location of the Dynatrace API to connect to, including your specific environment ID",
+			Type:        "string",
+		},
+		"": {},
+
+		//APIURL:      DefaultTestAPIURL,
+		//Tokens:      "token-test",
+		//EnableIstio: true,
+		//ClassicFullStack: dynatracev1alpha1.FullStackSpec{
+		//	Enabled: true,
+		//},
+	},
 }
 var validation = apiextensionsv1.CustomResourceValidation{OpenAPIV3Schema: &schema}
 var testEnvironmentCRDs = []client.Object{
@@ -48,8 +61,9 @@ var testEnvironmentCRDs = []client.Object{
 			Scope: apiextensionsv1.NamespaceScoped,
 			Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
 				{
-					Name: "v1alpha1",
+					Name:    "v1alpha1",
 					Storage: true,
+					Served:  true,
 					Subresources: &apiextensionsv1.CustomResourceSubresources{
 						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
 					},
@@ -73,7 +87,7 @@ var testEnvironmentCRDs = []client.Object{
 			Scope: apiextensionsv1.NamespaceScoped,
 			Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
 				{
-					Name: "v1alpha3",
+					Name:    "v1alpha3",
 					Storage: true,
 					Subresources: &apiextensionsv1.CustomResourceSubresources{
 						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
@@ -98,7 +112,7 @@ var testEnvironmentCRDs = []client.Object{
 			Scope: apiextensionsv1.NamespaceScoped,
 			Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
 				{
-					Name: "v1alpha3",
+					Name:    "v1alpha3",
 					Storage: true,
 					Subresources: &apiextensionsv1.CustomResourceSubresources{
 						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
