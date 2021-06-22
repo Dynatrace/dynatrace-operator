@@ -141,7 +141,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, err
 	}
 
-	if isMounted, err := isMounted(mount.New(""), volumeCfg.targetPath); err != nil {
+	if isMounted, err := isMounted(svr.mounter, volumeCfg.targetPath); err != nil {
 		return nil, err
 	} else if isMounted {
 		return &csi.NodePublishVolumeResponse{}, nil
