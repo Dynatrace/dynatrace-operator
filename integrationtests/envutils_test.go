@@ -26,6 +26,12 @@ const (
 	DefaultTestNamespace = "dynatrace"
 )
 
+var schema = apiextensionsv1.JSONSchemaProps{
+	Description:            "test",
+	Type:                   "object",
+	Properties: map[string]apiextensionsv1.JSONSchemaProps{},
+}
+var validation = apiextensionsv1.CustomResourceValidation{OpenAPIV3Schema: &schema}
 var testEnvironmentCRDs = []client.Object{
 	&apiextensionsv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
@@ -43,9 +49,11 @@ var testEnvironmentCRDs = []client.Object{
 			Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
 				{
 					Name: "v1alpha1",
+					Storage: true,
 					Subresources: &apiextensionsv1.CustomResourceSubresources{
 						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
 					},
+					Schema: &validation,
 				},
 			},
 		},
@@ -66,9 +74,11 @@ var testEnvironmentCRDs = []client.Object{
 			Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
 				{
 					Name: "v1alpha3",
+					Storage: true,
 					Subresources: &apiextensionsv1.CustomResourceSubresources{
 						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
 					},
+					Schema: &validation,
 				},
 			},
 		},
@@ -89,9 +99,11 @@ var testEnvironmentCRDs = []client.Object{
 			Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
 				{
 					Name: "v1alpha3",
+					Storage: true,
 					Subresources: &apiextensionsv1.CustomResourceSubresources{
 						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
 					},
+					Schema: &validation,
 				},
 			},
 		},
