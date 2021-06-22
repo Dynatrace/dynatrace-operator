@@ -5,7 +5,9 @@ package integrationtests
 import (
 	"context"
 	"fmt"
+	"go/build"
 	"os"
+	"path/filepath"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
@@ -26,72 +28,14 @@ const (
 	DefaultTestNamespace = "dynatrace"
 )
 
-var dkSchema = apiextensionsv1.JSONSchemaProps{
-	Description: "DynaKube is the Schema for the DynaKube API",
-	Type:        "object",
-	Properties: map[string]apiextensionsv1.JSONSchemaProps{
-		"apiUrl": {
-			Description: "Location of the Dynatrace API to connect to, including your specific environment ID",
-			Type:        "string",
-		},
-		"tokens": {
-			Description: "Credentials for the DynaKube to connect back to Dynatrace.",
-			Type:        "string",
-		},
-		"enableIstio": {
-			Description: "If enabled, Istio on the cluster will be configured automatically to allow access to the Dynatrace environment",
-			Type:        "boolean",
-		},
-		"classicFullStack": {
-			Description: "Configuration for ClassicFullStack Monitoring",
-			Properties: map[string]apiextensionsv1.JSONSchemaProps{
-				"enabled": {
-					Description: "Enables FullStack Monitoring",
-					Type:        "boolean",
-				},
-			},
-			Type: "object",
-		},
-	},
-}
-var dkValidation = apiextensionsv1.CustomResourceValidation{OpenAPIV3Schema: &dkSchema}
-
 var istioSchema = apiextensionsv1.JSONSchemaProps{
 	Description: "test",
 	Type:        "object",
-	Properties: map[string]apiextensionsv1.JSONSchemaProps{
-
-	},
+	Properties:  map[string]apiextensionsv1.JSONSchemaProps{},
 }
 var istioValidation = apiextensionsv1.CustomResourceValidation{OpenAPIV3Schema: &istioSchema}
 
 var testEnvironmentCRDs = []client.Object{
-	&apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "dynakubes.dynatrace.com",
-		},
-		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
-			Group: "dynatrace.com",
-			Names: apiextensionsv1.CustomResourceDefinitionNames{
-				Kind:     "DynaKube",
-				ListKind: "DynaKubeList",
-				Plural:   "dynakubes",
-				Singular: "dynakube",
-			},
-			Scope: apiextensionsv1.NamespaceScoped,
-			Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
-				{
-					Name:    "v1alpha1",
-					Storage: true,
-					Served:  true,
-					Subresources: &apiextensionsv1.CustomResourceSubresources{
-						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
-					},
-					Schema: &dkValidation,
-				},
-			},
-		},
-	},
 	&apiextensionsv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "virtualservices.networking.istio.io",
@@ -159,7 +103,11 @@ type ControllerTestEnvironment struct {
 func newTestEnvironment() (*ControllerTestEnvironment, error) {
 	kubernetesAPIServer := &envtest.Environment{
 		KubeAPIServerFlags: append(envtest.DefaultKubeAPIServerFlags, "--allow-privileged"),
-		CRDs:               testEnvironmentCRDs,
+		CRDDirectoryPaths: []string{
+			filepath.Join("..", "config", "crd", "bases"),
+			// ToDo: currently this is the only way to get the CRD - see https://github.com/kubernetes-sigs/controller-runtime/pull/1393
+			filepath.Join(build.Default.GOPATH, "pkg", "mod", "istio.io", "api@v0.0.0-20201217173512-1f62aaeb5ee3", "kubernetes"),
+		},
 	}
 
 	cfg, err := kubernetesAPIServer.Start()
