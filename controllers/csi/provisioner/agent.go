@@ -51,27 +51,18 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	}()
 
 	logger.Info("Downloading OneAgent package", "architecture", arch)
-
-	r, err := dtc.GetLatestAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch)
+	err = dtc.GetLatestAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch, tmpFile)
 	if err != nil {
 		return fmt.Errorf("failed to fetch latest OneAgent version: %w", err)
 	}
-	defer func(r io.ReadCloser) { _ = r.Close() }(r)
+	logger.Info("Saved OneAgent package", "dest", tmpFile.Name())
 
-	logger.Info("Saving OneAgent package", "dest", tmpFile.Name())
-
-	size, err := io.Copy(tmpFile, r)
+	fileInfo, err := tmpFile.Stat()
 	if err != nil {
-		return fmt.Errorf("failed to save OneAgent package: %w", err)
+		return fmt.Errorf("failed to determine agent archive file size: %w", err)
 	}
 
-	if _, err := tmpFile.Seek(0, io.SeekStart); err != nil {
-		return fmt.Errorf("failed to save OneAgent package: %w", err)
-	}
-
-	logger.Info("Saved OneAgent package", "dest", tmpFile.Name(), "size", size)
-
-	zipr, err := zip.NewReader(tmpFile, size)
+	zipr, err := zip.NewReader(tmpFile, fileInfo.Size())
 	if err != nil {
 		return fmt.Errorf("failed to open ZIP file: %w", err)
 	}
