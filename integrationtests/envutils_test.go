@@ -14,7 +14,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,66 +26,6 @@ const (
 	DefaultTestAPIURL    = "https://ENVIRONMENTID.live.dynatrace.com/api"
 	DefaultTestNamespace = "dynatrace"
 )
-
-var istioSchema = apiextensionsv1.JSONSchemaProps{
-	Description: "test",
-	Type:        "object",
-	Properties:  map[string]apiextensionsv1.JSONSchemaProps{},
-}
-var istioValidation = apiextensionsv1.CustomResourceValidation{OpenAPIV3Schema: &istioSchema}
-
-var testEnvironmentCRDs = []client.Object{
-	&apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "virtualservices.networking.istio.io",
-		},
-		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
-			Group: "networking.istio.io",
-			Names: apiextensionsv1.CustomResourceDefinitionNames{
-				Kind:     "VirtualService",
-				ListKind: "VirtualServiceList",
-				Plural:   "virtualservices",
-				Singular: "virtualservice",
-			},
-			Scope: apiextensionsv1.NamespaceScoped,
-			Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
-				{
-					Name:    "v1alpha3",
-					Storage: true,
-					Subresources: &apiextensionsv1.CustomResourceSubresources{
-						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
-					},
-					Schema: &istioValidation,
-				},
-			},
-		},
-	},
-	&apiextensionsv1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "serviceentries.networking.istio.io",
-		},
-		Spec: apiextensionsv1.CustomResourceDefinitionSpec{
-			Group: "networking.istio.io",
-			Names: apiextensionsv1.CustomResourceDefinitionNames{
-				Kind:     "ServiceEntry",
-				ListKind: "ServiceEntryList",
-				Plural:   "serviceentries",
-				Singular: "serviceentry",
-			},
-			Scope: apiextensionsv1.NamespaceScoped,
-			Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
-				{
-					Name:    "v1alpha3",
-					Storage: true,
-					Subresources: &apiextensionsv1.CustomResourceSubresources{
-						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
-					},
-					Schema: &istioValidation,
-				},
-			},
-		},
-	},
-}
 
 func init() {
 	os.Setenv("POD_NAMESPACE", DefaultTestNamespace)
