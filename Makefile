@@ -85,6 +85,15 @@ deploy-ocp: manifests kustomize
 	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
 	$(KUSTOMIZE) build config/deploy | oc apply -f -
 
+deploy-ocp3.11: manifests kustomize
+	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
+	rm -f config/deploy/kustomization.yaml
+	mkdir -p config/deploy
+	cd config/deploy && $(KUSTOMIZE) create
+	cd config/deploy && $(KUSTOMIZE) edit add base ../openshift3.11
+	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
+	$(KUSTOMIZE) build config/deploy | oc apply -f -
+
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/bases

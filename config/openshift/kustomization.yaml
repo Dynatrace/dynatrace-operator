@@ -6,6 +6,7 @@ resources:
   - oneagent/securitycontextconstraints-unprivileged.yaml
 bases:
   - ../common
+  - ../common/csi
 patchesJson6902:
   - target:
       group: apps

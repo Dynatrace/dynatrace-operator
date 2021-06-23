@@ -29,5 +29,4 @@ resources:
   - webhook/service.yaml
   - webhook/serviceaccount-webhook.yaml
 bases:
-  - csi
   - ../crd
