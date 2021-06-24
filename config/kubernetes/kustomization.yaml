@@ -15,6 +15,7 @@ resources:
 bases:
   - ../common
   - ../common/csi
+  - ../common/webhook
 patchesJson6902:
   - target:
       group: rbac.authorization.k8s.io

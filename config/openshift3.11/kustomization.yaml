@@ -28,21 +28,20 @@ patchesJson6902:
       namespace: dynatrace
     path: operator/serviceaccount-patch.yaml
   - target:
-      group: ""
-      version: v1
-      kind: ServiceAccount
-      name: dynatrace-webhook
-      namespace: dynatrace
-    path: operator/serviceaccount-patch.yaml
-  - target:
       group: apiextensions.k8s.io
       version: v1
       kind: CustomResourceDefinition
       name: dynakubes.dynatrace.com
     path: patchesocp3.11/crd-patch.yaml
   - target:
-      group: admissionregistration.k8s.io
+      group: rbac.authorization.k8s.io
       version: v1
-      kind: MutatingWebhookConfiguration
-      name: dynatrace-webhook
-    path: patchesocp3.11/mutatingwebhook-patch.yaml
+      kind: ClusterRole
+      name: dynatrace-operator
+    path: operator/clusterrole-patch.yaml
+  - target:
+      group: rbac.authorization.k8s.io
+      version: v1
+      kind: ClusterRole
+      name: dynatrace-operator
+    path: operator/clusterrole-patch.yaml
