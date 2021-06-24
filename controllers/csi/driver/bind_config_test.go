@@ -30,7 +30,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, afero.Afero{})
@@ -46,7 +45,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, afero.Afero{})
@@ -63,7 +61,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.fs)
@@ -81,7 +78,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
 		_ = srv.fs.WriteFile(filepath.Join(srv.opts.RootDir, "tenant-"+dkName), []byte(tenantUuid), os.ModePerm)
@@ -100,7 +96,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.fs)
@@ -122,7 +117,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
 		_ = srv.fs.WriteFile(filepath.Join(srv.opts.RootDir, "tenant-"+dkName), []byte(tenantUuid), os.ModePerm)

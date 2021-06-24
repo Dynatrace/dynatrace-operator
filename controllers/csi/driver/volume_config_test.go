@@ -112,8 +112,8 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		}
 		volumeCfg, err := parsePublishVolumeRequest(request)
 
-		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = No Pod UID included with request")
-		assert.Nil(t, volumeCfg)
+		assert.NoError(t, err)
+		assert.NotNil(t, volumeCfg)
 	})
 	t.Run(`request is parsed correctly`, func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
@@ -126,14 +126,12 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			TargetPath: targetPath,
 			VolumeContext: map[string]string{
 				podNamespaceContextKey: namespace,
-				podUIDContextKey:       podUid,
 			},
 		}
 		volumeCfg, err := parsePublishVolumeRequest(request)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, volumeCfg)
-		assert.Equal(t, podUid, volumeCfg.podUID)
 		assert.Equal(t, namespace, volumeCfg.namespace)
 		assert.Equal(t, volumeId, volumeCfg.volumeId)
 		assert.Equal(t, targetPath, volumeCfg.targetPath)

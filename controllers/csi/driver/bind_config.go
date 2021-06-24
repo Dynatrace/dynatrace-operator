@@ -16,10 +16,10 @@ import (
 )
 
 type bindConfig struct {
-	agentDir                 string
-	envDir                   string
-	version                  string
-	podToVersionReferenceDir string
+	agentDir                    string
+	envDir                      string
+	version                     string
+	volumeToVersionReferenceDir string
 }
 
 func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeConfig, fs afero.Afero) (*bindConfig, error) {
@@ -47,15 +47,15 @@ func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeC
 	version := string(versionBytes)
 	agentDir := filepath.Join(envDir, "bin", version)
 
-	podToVersionReferenceDir := filepath.Join(envDir, dtcsi.GarbageCollectionPath, string(versionBytes))
-	if err := svr.fs.MkdirAll(podToVersionReferenceDir, os.ModePerm); err != nil {
+	volumeToVersionReferenceDir := filepath.Join(envDir, dtcsi.GarbageCollectionPath, string(versionBytes))
+	if err := svr.fs.MkdirAll(volumeToVersionReferenceDir, os.ModePerm); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create pod to version reference directory: %s", err))
 	}
 
 	return &bindConfig{
-		agentDir:                 agentDir,
-		envDir:                   envDir,
-		version:                  version,
-		podToVersionReferenceDir: podToVersionReferenceDir,
+		agentDir:                    agentDir,
+		envDir:                      envDir,
+		version:                     version,
+		volumeToVersionReferenceDir: volumeToVersionReferenceDir,
 	}, nil
 }

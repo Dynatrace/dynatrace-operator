@@ -135,7 +135,6 @@ func TestServer_NodePublishVolume(t *testing.T) {
 		VolumeId: podUid,
 		VolumeContext: map[string]string{
 			podNamespaceContextKey: namespace,
-			podUIDContextKey:       podUid,
 		},
 		TargetPath: "/path/to/container/filesystem/opt/dynatrace/oneagent",
 		VolumeCapability: &csi.VolumeCapability{

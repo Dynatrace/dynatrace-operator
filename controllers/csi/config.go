@@ -19,7 +19,6 @@ package dtcsi
 import "time"
 
 const (
-	AgentConfDir          = "agent/conf" //TODO this got removed, do we need it?
 	DataPath              = "/data"
 	DriverName            = "csi.oneagent.dynatrace.com"
 	GarbageCollectionPath = "gc"
