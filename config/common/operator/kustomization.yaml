@@ -1,0 +1,7 @@
+resources:
+  - clusterrole-operator.yaml
+  - clusterrolebinding-operator.yaml
+  - deployment-operator.yaml
+  - role-operator.yaml
+  - rolebinding-operator.yaml
+  - serviceaccount-operator.yaml

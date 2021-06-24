@@ -24,6 +24,7 @@ endif
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true, preserveUnknownFields=false, crdVersions=v1"
+CRD_OPTIONS_OCP311 ?= "crd:trivialVersions=true, preserveUnknownFields=false, crdVersions=v1beta1"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -85,7 +86,7 @@ deploy-ocp: manifests kustomize
 	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
 	$(KUSTOMIZE) build config/deploy | oc apply -f -
 
-deploy-ocp3.11: manifests kustomize
+deploy-ocp3.11: manifests-ocp311 kustomize
 	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
 	rm -f config/deploy/kustomization.yaml
 	mkdir -p config/deploy
@@ -98,6 +99,9 @@ deploy-ocp3.11: manifests kustomize
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/bases
 	#python3 ./hack/customize_crds.py
+
+manifests-ocp311: controller-gen
+	$(CONTROLLER_GEN) $(CRD_OPTIONS_OCP311) paths="./..." output:crd:artifacts:config=config/crd/bases_ocp311
 
 # Run go fmt against code
 fmt:

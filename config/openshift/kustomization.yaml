@@ -5,9 +5,14 @@ resources:
   - oneagent/securitycontextconstraints.yaml
   - oneagent/securitycontextconstraints-unprivileged.yaml
 bases:
-  - ../common
+  - ../common/data-ingest
+  - ../common/kubernetes-monitoring
+  - ../common/oneagent
+  - ../common/operator
+  - ../common/routing
   - ../common/csi
   - ../common/webhook
+  - ../crd/bases
 patchesJson6902:
   - target:
       group: apps

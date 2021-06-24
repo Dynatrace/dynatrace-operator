@@ -13,9 +13,14 @@ resources:
   - oneagent/rolebinding-oneagent-unprivileged.yaml
   - webhook/podsecuritypolicy-webhook.yaml
 bases:
-  - ../common
+  - ../common/data-ingest
+  - ../common/kubernetes-monitoring
+  - ../common/oneagent
+  - ../common/operator
+  - ../common/routing
   - ../common/csi
   - ../common/webhook
+  - ../crd/bases
 patchesJson6902:
   - target:
       group: rbac.authorization.k8s.io
