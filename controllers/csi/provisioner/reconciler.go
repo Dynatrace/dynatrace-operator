@@ -170,6 +170,12 @@ func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string,
 		arch = dtclient.ArchARM
 	}
 
+	gcDir := filepath.Join(envDir, dtcsi.GarbageCollectionPath, version)
+	if err := r.fs.MkdirAll(gcDir, 0755); err != nil {
+		logger.Error(err, "failed to create directory %s: %w", gcDir)
+		return err
+	}
+
 	targetDir := filepath.Join(envDir, "bin", version)
 
 	if _, err := r.fs.Stat(targetDir); os.IsNotExist(err) {

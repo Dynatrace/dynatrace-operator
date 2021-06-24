@@ -13,7 +13,6 @@ resources:
   - oneagent/rolebinding-oneagent-unprivileged.yaml
   - webhook/podsecuritypolicy-webhook.yaml
 bases:
-  - csi
   - ../common
 patchesJson6902:
   - target:

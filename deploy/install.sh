@@ -134,7 +134,7 @@ buildClassicFullStackArgsField() {
   if [ -n "$CLUSTER_NAME" ]; then
     cat <<EOF
     args:
-    - --set-host-group="${CLUSTER_NAME}"
+    - --set-host-group=${CLUSTER_NAME}
 EOF
   fi
 }

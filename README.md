@@ -107,8 +107,8 @@ spec:
   #
   infraMonitoring:
     # Enable infrastructure monitoring
-    enabled: true    
-    
+    enabled: true
+
   # To be released
   #
   # Enables and configures monitoring pods by injecting oneagent init containers into them.
@@ -171,11 +171,18 @@ $ kubectl delete -f https://github.com/Dynatrace/dynatrace-operator/releases/lat
 
 <details><summary>Installation</summary>
 
-To create the namespace and apply the operator run the following commands
+To create the namespace and apply the operator run the following commands (for OpenShift 4.x)
 
 ```sh
 $ oc adm new-project --node-selector="" dynatrace
 $ oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift.yaml
+```
+
+If you are using *OpenShift 3.11*, make sure to run the following commands, instead of the ones above
+
+```sh
+$ oc adm new-project --node-selector="" dynatrace
+$ oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift3.11.yaml
 ```
 
 A secret holding tokens for authenticating to the Dynatrace cluster needs to be created upfront. Create access tokens of

@@ -1,9 +1,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - csi/securitycontextconstraints-csidriver.yaml
-  - oneagent/securitycontextconstraints.yaml
-  - oneagent/securitycontextconstraints-unprivileged.yaml
+- oneagent/securitycontextconstraints.yaml
+- oneagent/securitycontextconstraints-unprivileged.yaml
 bases:
   - ../common
 patchesJson6902:
@@ -35,3 +34,15 @@ patchesJson6902:
       name: dynatrace-webhook
       namespace: dynatrace
     path: operator/serviceaccount-patch.yaml
+  - target:
+      group: apiextensions.k8s.io
+      version: v1
+      kind: CustomResourceDefinition
+      name: dynakubes.dynatrace.com
+    path: patchesocp3.11/crd-patch.yaml
+  - target:
+      group: admissionregistration.k8s.io
+      version: v1
+      kind: MutatingWebhookConfiguration
+      name: dynatrace-webhook
+    path: patchesocp3.11/mutatingwebhook-patch.yaml
