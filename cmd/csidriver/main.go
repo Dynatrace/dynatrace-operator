@@ -80,8 +80,7 @@ func main() {
 
 	fs := afero.NewOsFs()
 
-	if err := fs.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.DataPath), 0770); err != nil {
-	if err := os.MkdirAll(filepath.Join(csiOpts.RootDir), 0770); err != nil {
+	if err := fs.MkdirAll(filepath.Join(csiOpts.RootDir), 0770); err != nil {
 		log.Error(err, "unable to create data directory for CSI Driver")
 		os.Exit(1)
 	}
