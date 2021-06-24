@@ -10,13 +10,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -30,8 +28,6 @@ import (
 
 const (
 	webhookName = "dynatrace-webhook"
-
-	admissionGroupName = "admissionregistration.k8s.io"
 )
 
 func Add(mgr manager.Manager, ns string) error {
@@ -193,153 +189,68 @@ func (r *ReconcileWebhookCertificates) reconcileCerts(ctx context.Context, log l
 func (r *ReconcileWebhookCertificates) reconcileWebhookConfig(ctx context.Context, log logr.Logger, rootCerts []byte) error {
 	log.Info("Reconciling MutatingWebhookConfiguration...")
 
-	isAdmissionLatest, err := checkAdmissionVersionLatest(r.config, log)
-	if err != nil {
-		return fmt.Errorf("failed to check version for admission group")
-	}
-
 	path := "/inject"
-	objectMeta := metav1.ObjectMeta{
-		Name: webhookName,
-		Labels: map[string]string{
-			"dynatrace.com/operator":           "oneagent",
-			"internal.dynatrace.com/component": "webhook",
+	scope := admissionregistrationv1.NamespacedScope
+	sideEffects := admissionregistrationv1.SideEffectClassNone
+	webhookConfiguration := &admissionregistrationv1.MutatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: webhookName,
+			Labels: map[string]string{
+				"dynatrace.com/operator":           "oneagent",
+				"internal.dynatrace.com/component": "webhook",
+			},
 		},
-	}
-	namespaceSelector := &metav1.LabelSelector{
-		MatchExpressions: []metav1.LabelSelectorRequirement{{
-			Key:      webhook.LabelInstance,
-			Operator: metav1.LabelSelectorOpExists,
+		Webhooks: []admissionregistrationv1.MutatingWebhook{{
+			Name:                    "webhook.dynatrace.com",
+			AdmissionReviewVersions: []string{"v1"},
+			Rules: []admissionregistrationv1.RuleWithOperations{{
+				Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.Create},
+				Rule: admissionregistrationv1.Rule{
+					APIGroups:   []string{""},
+					APIVersions: []string{"v1"},
+					Resources:   []string{"pods"},
+					Scope:       &scope,
+				},
+			}},
+			NamespaceSelector: &metav1.LabelSelector{
+				MatchExpressions: []metav1.LabelSelectorRequirement{{
+					Key:      webhook.LabelInstance,
+					Operator: metav1.LabelSelectorOpExists,
+				}},
+			},
+			ClientConfig: admissionregistrationv1.WebhookClientConfig{
+				Service: &admissionregistrationv1.ServiceReference{
+					Name:      webhookName,
+					Namespace: r.namespace,
+					Path:      &path,
+				},
+				CABundle: rootCerts,
+			},
+			SideEffects: &sideEffects,
 		}},
 	}
-	if isAdmissionLatest {
-		scope := admissionregistrationv1.NamespacedScope
-		sideEffects := admissionregistrationv1.SideEffectClassNone
-		webhookConfiguration := &admissionregistrationv1.MutatingWebhookConfiguration{
-			ObjectMeta: objectMeta,
-			Webhooks: []admissionregistrationv1.MutatingWebhook{{
-				Name:                    "webhook.dynatrace.com",
-				AdmissionReviewVersions: []string{"v1"},
-				Rules: []admissionregistrationv1.RuleWithOperations{{
-					Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.Create},
-					Rule: admissionregistrationv1.Rule{
-						APIGroups:   []string{""},
-						APIVersions: []string{"v1"},
-						Resources:   []string{"pods"},
-						Scope:       &scope,
-					},
-				}},
-				NamespaceSelector: namespaceSelector,
-				ClientConfig: admissionregistrationv1.WebhookClientConfig{
-					Service: &admissionregistrationv1.ServiceReference{
-						Name:      webhookName,
-						Namespace: r.namespace,
-						Path:      &path,
-					},
-					CABundle: rootCerts,
-				},
-				SideEffects: &sideEffects,
-			}},
-		}
 
-		var cfg admissionregistrationv1.MutatingWebhookConfiguration
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: webhookName}, &cfg)
-		if k8serrors.IsNotFound(err) {
-			log.Info("MutatingWebhookConfiguration doesn't exist, creating...")
+	var cfg admissionregistrationv1.MutatingWebhookConfiguration
+	err := r.client.Get(context.TODO(), client.ObjectKey{Name: webhookName}, &cfg)
+	if k8serrors.IsNotFound(err) {
+		log.Info("MutatingWebhookConfiguration doesn't exist, creating...")
 
-			if err = r.client.Create(ctx, webhookConfiguration); err != nil {
-				return err
-			}
-			return nil
-		}
-
-		if err != nil {
+		if err = r.client.Create(ctx, webhookConfiguration); err != nil {
 			return err
 		}
-
-		if len(cfg.Webhooks) == 1 && bytes.Equal(cfg.Webhooks[0].ClientConfig.CABundle, rootCerts) {
-			return nil
-		}
-
-		log.Info("MutatingWebhookConfiguration is outdated, updating...")
-		cfg.Webhooks = webhookConfiguration.Webhooks
-		return r.client.Update(ctx, &cfg)
-	} else {
-		scope := admissionregistrationv1beta1.NamespacedScope
-		webhookConfiguration := &admissionregistrationv1beta1.MutatingWebhookConfiguration{
-			ObjectMeta: objectMeta,
-			Webhooks: []admissionregistrationv1beta1.MutatingWebhook{{
-				Name:                    "webhook.dynatrace.com",
-				AdmissionReviewVersions: []string{"v1beta1"},
-				Rules: []admissionregistrationv1beta1.RuleWithOperations{{
-					Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create},
-					Rule: admissionregistrationv1beta1.Rule{
-						APIGroups:   []string{""},
-						APIVersions: []string{"v1beta1"},
-						Resources:   []string{"pods"},
-						Scope:       &scope,
-					},
-				}},
-				NamespaceSelector: namespaceSelector,
-				ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
-					Service: &admissionregistrationv1beta1.ServiceReference{
-						Name:      webhookName,
-						Namespace: r.namespace,
-						Path:      &path,
-					},
-					CABundle: rootCerts,
-				},
-			}},
-		}
-
-		var cfg admissionregistrationv1beta1.MutatingWebhookConfiguration
-		err = r.client.Get(context.TODO(), client.ObjectKey{Name: webhookName}, &cfg)
-		if k8serrors.IsNotFound(err) {
-			log.Info("MutatingWebhookConfiguration doesn't exist, creating...")
-
-			if err = r.client.Create(ctx, webhookConfiguration); err != nil {
-				return err
-			}
-			return nil
-		}
-
-		if err != nil {
-			return err
-		}
-
-		if len(cfg.Webhooks) == 1 && bytes.Equal(cfg.Webhooks[0].ClientConfig.CABundle, rootCerts) {
-			return nil
-		}
-
-		log.Info("MutatingWebhookConfiguration is outdated, updating...")
-		cfg.Webhooks = webhookConfiguration.Webhooks
-		return r.client.Update(ctx, &cfg)
+		return nil
 	}
-}
 
-// checkAdmissionVersionLatest checks if k8s.io/api/admissionregistration/v1 is available
-func checkAdmissionVersionLatest(config *rest.Config, log logr.Logger) (bool, error) {
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	apiGroupList, err := discoveryClient.ServerGroups()
-	if err != nil {
-		return false, err
+	if len(cfg.Webhooks) == 1 && bytes.Equal(cfg.Webhooks[0].ClientConfig.CABundle, rootCerts) {
+		return nil
 	}
 
-	for _, apiGroup := range apiGroupList.Groups {
-		if apiGroup.Name == admissionGroupName {
-			for _, version := range apiGroup.Versions {
-				if version.Version == "v1" {
-					log.Info("found k8s.io/api/admissionregistration/v1")
-					return true, nil
-				}
-			}
-			break
-		}
-	}
-	log.Info("found k8s.io/api/admissionregistration/v1beta1")
-	return false, nil
+	log.Info("MutatingWebhookConfiguration is outdated, updating...")
+	cfg.Webhooks = webhookConfiguration.Webhooks
+	return r.client.Update(ctx, &cfg)
+
 }
