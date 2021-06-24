@@ -31,7 +31,7 @@ import (
 const (
 	webhookName = "dynatrace-webhook"
 
-	admissionGroupName = "k8s.io/api/admissionregistration"
+	admissionGroupName = "admissionregistration.k8s.io"
 )
 
 func Add(mgr manager.Manager, ns string) error {
@@ -331,7 +331,6 @@ func checkAdmissionVersionLatest(config *rest.Config, log logr.Logger) (bool, er
 
 	for _, apiGroup := range apiGroupList.Groups {
 		if apiGroup.Name == admissionGroupName {
-
 			for _, version := range apiGroup.Versions {
 				if version.Version == "v1" {
 					log.Info("found k8s.io/api/admissionregistration/v1")
