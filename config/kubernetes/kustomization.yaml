@@ -20,7 +20,7 @@ bases:
   - ../common/routing
   - ../common/csi
   - ../common/webhook
-  - ../crd/bases
+  - ../crd/default
 patchesJson6902:
   - target:
       group: rbac.authorization.k8s.io

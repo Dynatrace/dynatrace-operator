@@ -9,7 +9,7 @@ bases:
   - ../common/oneagent
   - ../common/operator
   - ../common/routing
-  - ../crd/bases_ocp311
+  - ../crd/ocp311
 patchesJson6902:
   - target:
       group: apps
