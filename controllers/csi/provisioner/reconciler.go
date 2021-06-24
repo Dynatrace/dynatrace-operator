@@ -161,13 +161,6 @@ func (r *OneAgentProvisioner) updateAgent(dtc dtclient.Client, envDir string, lo
 		return err
 	}
 
-	//TODO why do we need it here?
-	//gcDir := filepath.Join(envDir, dtcsi.GarbageCollectionPath, latestAgentVersion)
-	//if err := os.MkdirAll(gcDir, 0755); err != nil {
-	//	logger.Error(err, "failed to create directory %s: %w", gcDir)
-	//	return err
-	//}
-
 	return afero.WriteFile(r.fs, versionFile, []byte(latestAgentVersion), 0644)
 }
 
