@@ -243,7 +243,7 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 }
 
 func (svr *CSIDriverServer) loadVolumeMetadata(metadataPath string) (*volumeMetadata, error) {
-	data, err := svr.fs.ReadFile(metadataPath)
+	data, err := afero.ReadFile(svr.fs, metadataPath)
 	if err != nil {
 		return nil, err
 	}
@@ -307,8 +307,6 @@ func logGRPC(log logr.Logger) grpc.UnaryServerInterceptor {
 }
 
 func (svr *CSIDriverServer) mountOneAgent(bindCfg *bindConfig, volumeCfg *volumeConfig) error {
-	//TODO const-ify run/mapped/var/work strings
-	//TODO probably give all directories proper names and create methods for them
 	agentDirectoryForPod := filepath.Join(bindCfg.envDir, "run", volumeCfg.volumeId)
 
 	mappedDir := filepath.Join(agentDirectoryForPod, "mapped")
