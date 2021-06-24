@@ -150,7 +150,7 @@ func TestServer_NodePublishVolume(t *testing.T) {
 	assert.NotEmpty(t, mounter.MountPoints)
 }
 
-func TestLoadMetadata(t *testing.T) {
+func TestCreateAndLoadPodMetadata(t *testing.T) {
 
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
 	server := newServerForTesting(t, mounter)

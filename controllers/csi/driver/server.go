@@ -177,7 +177,6 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
-//TODO test
 func (svr *CSIDriverServer) createPodMetadata(bindCfg *bindConfig, volumeID string) error {
 	podToVersionReference := filepath.Join(bindCfg.volumeToVersionReferenceDir, volumeID)
 	if err := svr.fs.WriteFile(podToVersionReference, nil, 0640); err != nil {
@@ -229,6 +228,11 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 	err = svr.fs.Remove(metadata.UsageFilePath)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to delete usage file for pod. %s", err))
+	}
+
+	err = svr.fs.Remove(volumeToPodReference)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to delete metadata file for pod. %s", err))
 	}
 
 	// Delete the mount point.
