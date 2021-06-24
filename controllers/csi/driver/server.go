@@ -243,13 +243,13 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 }
 
 func (svr *CSIDriverServer) loadVolumeMetadata(metadataPath string) (*volumeMetadata, error) {
-	data, err := afero.ReadFile(svr.fs, metadataPath)
+	data, err := svr.fs.ReadFile(metadataPath)
 	if err != nil {
 		return nil, err
 	}
 
 	var metadata *volumeMetadata
-	err = json.Unmarshal(data, metadata)
+	err = json.Unmarshal(data, &metadata)
 
 	return metadata, err
 }

@@ -132,7 +132,7 @@ func TestServer_NodePublishVolume(t *testing.T) {
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
 	server := newServerForTesting(t, mounter)
 	nodePublishVolumeRequest := &csi.NodePublishVolumeRequest{
-		VolumeId: podUid,
+		VolumeId: volumeId,
 		VolumeContext: map[string]string{
 			podNamespaceContextKey: namespace,
 		},
@@ -148,6 +148,30 @@ func TestServer_NodePublishVolume(t *testing.T) {
 	assert.NotNil(t, response)
 
 	assert.NotEmpty(t, mounter.MountPoints)
+}
+
+func TestLoadMetadata(t *testing.T) {
+
+	mounter := mount.NewFakeMounter([]mount.MountPoint{})
+	server := newServerForTesting(t, mounter)
+
+	metadataPath := filepath.Join(server.opts.RootDir, dtcsi.GarbageCollectionPath)
+	err := server.fs.MkdirAll(metadataPath, os.ModePerm)
+	assert.NoError(t, err)
+
+	bindCfg := &bindConfig{
+		agentDir:                    "",
+		envDir:                      tenantUuid,
+		version:                     agentVersion,
+		volumeToVersionReferenceDir: filepath.Join(tenantUuid, dtcsi.GarbageCollectionPath, agentVersion),
+	}
+
+	err = server.createPodMetadata(bindCfg, volumeId)
+	assert.NoError(t, err)
+
+	data, err := server.loadVolumeMetadata(filepath.Join(metadataPath, volumeId))
+	assert.NoError(t, err)
+	assert.NotNil(t, data)
 }
 
 func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServer {

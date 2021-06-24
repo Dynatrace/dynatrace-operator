@@ -9,7 +9,6 @@ import (
 
 const (
 	volumeId   = "a-volume-id"
-	podUid     = "a-pod-uid"
 	namespace  = "a-namespace"
 	targetPath = "a-target-path"
 )
