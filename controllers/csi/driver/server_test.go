@@ -28,6 +28,7 @@ const (
 	testTargetError      = "error"
 	testTargetNotMounted = "not-mounted"
 	testTargetMounted    = "mounted"
+	testTargetPath       = "/path/to/container/filesystem/opt/dynatrace/oneagent-paas"
 
 	testError = "test error message"
 )
@@ -136,7 +137,7 @@ func TestServer_NodePublishVolume(t *testing.T) {
 		VolumeContext: map[string]string{
 			podNamespaceContextKey: namespace,
 		},
-		TargetPath: "/path/to/container/filesystem/opt/dynatrace/oneagent",
+		TargetPath: testTargetPath,
 		VolumeCapability: &csi.VolumeCapability{
 			AccessType: &csi.VolumeCapability_Mount{Mount: &csi.VolumeCapability_MountVolume{}},
 		},
@@ -150,8 +151,27 @@ func TestServer_NodePublishVolume(t *testing.T) {
 	assert.NotEmpty(t, mounter.MountPoints)
 }
 
-func TestCreateAndLoadPodMetadata(t *testing.T) {
+func TestServer_NodeUnpublishVolume(t *testing.T) {
+	mounter := mount.NewFakeMounter([]mount.MountPoint{
+		{Path: testTargetPath},
+		{Path: fmt.Sprintf("/%s/run/%s/mapped", tenantUuid, volumeId)},
+	})
+	server := newServerForTesting(t, mounter)
+	nodeUnpublishVolumeRequest := &csi.NodeUnpublishVolumeRequest{
+		VolumeId:   volumeId,
+		TargetPath: testTargetPath,
+	}
+	mockPublishedVolume(&server, tenantUuid, volumeId)
 
+	response, err := server.NodeUnpublishVolume(nil, nodeUnpublishVolumeRequest)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+
+	assert.Empty(t, mounter.MountPoints)
+}
+
+func TestCreateAndLoadPodMetadata(t *testing.T) {
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
 	server := newServerForTesting(t, mounter)
 
@@ -203,9 +223,7 @@ func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServ
 
 	csiOptions := dtcsi.CSIOptions{RootDir: "/"}
 
-	osFs := afero.NewOsFs()
-	tempDir, _ := afero.TempDir(osFs, "", "")
-	tmpFs := afero.NewBasePathFs(osFs, tempDir)
+	tmpFs := afero.NewMemMapFs()
 
 	_ = tmpFs.MkdirAll(filepath.Join(tenantUuid), os.ModePerm)
 	err = afero.WriteFile(tmpFs, filepath.Join(tenantUuid, dtcsi.VersionDir), []byte(agentVersion), fs.FileMode(0755))
@@ -226,4 +244,10 @@ func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServ
 		fs:      afero.Afero{Fs: tmpFs},
 		mounter: mounter,
 	}
+}
+
+func mockPublishedVolume(server *CSIDriverServer, tenantUuid string, volumeId string) {
+	metadata := fmt.Sprintf("{\"OverlayFSPath\":\"/%s/run/%s\"}", tenantUuid, volumeId)
+
+	_ = server.fs.WriteFile(filepath.Join(server.opts.RootDir, "gc", volumeId), []byte(metadata), os.ModePerm)
 }
