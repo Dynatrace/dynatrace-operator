@@ -15,7 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -36,7 +35,6 @@ func Add(mgr manager.Manager, ns string) error {
 		scheme:    mgr.GetScheme(),
 		namespace: ns,
 		logger:    log.Log.WithName("operator.webhook-certificates"),
-		config:    mgr.GetConfig(),
 	})
 }
 
@@ -82,7 +80,6 @@ type ReconcileWebhookCertificates struct {
 	logger    logr.Logger
 	namespace string
 	now       time.Time
-	config    *rest.Config
 }
 
 func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

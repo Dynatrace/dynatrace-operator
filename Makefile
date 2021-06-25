@@ -97,11 +97,10 @@ deploy-ocp3.11: manifests-ocp311 kustomize
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/bases
-	#python3 ./hack/customize_crds.py
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/default/bases
 
 manifests-ocp311: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS_OCP311) paths="./..." output:crd:artifacts:config=config/crd/bases_ocp311
+	$(CONTROLLER_GEN) $(CRD_OPTIONS_OCP311) paths="./..." output:crd:artifacts:config=config/crd/ocp311/bases
 
 # Run go fmt against code
 fmt:
