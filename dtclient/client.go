@@ -109,9 +109,7 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 		return nil, errors.New("tokens are empty")
 	}
 
-	if strings.HasSuffix(url, "/") {
-		url = url[:len(url)-1]
-	}
+	url = strings.TrimSuffix(url, "/")
 
 	dc := &dynatraceClient{
 		url:       url,
