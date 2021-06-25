@@ -57,8 +57,8 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	}
 	resp := inj.Handle(context.TODO(), req)
 	require.NoError(t, resp.Complete(req))
-	require.False(t, resp.Allowed)
-	require.Equal(t, resp.Result.Message, "namespace 'test-namespace' is assigned to DynaKube instance 'dynakube' but doesn't exist")
+	// Allowed, since WebHook is more general now
+	require.True(t, resp.Allowed)
 }
 
 func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, *dynatracev1alpha1.DynaKube) {
@@ -82,6 +82,11 @@ func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, 
 						corev1.ResourceMemory: resource.MustParse("100M"),
 					},
 				},
+				Selector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"inject": "true",
+					},
+				},
 			},
 		},
 		Status: dynatracev1alpha1.DynaKubeStatus{
@@ -90,14 +95,13 @@ func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, 
 			},
 		},
 	}
-
 	return &podInjector{
 		client: fake.NewClient(
 			dynakube,
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+					Labels: map[string]string{"inject": "true"},
 				},
 			},
 		),
@@ -119,7 +123,10 @@ func TestPodInjection(t *testing.T) {
 	require.NoError(t, err)
 
 	basePod := corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{Name: "test-pod-12345", Namespace: "test-namespace"},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-pod-12345",
+			Namespace: "test-namespace",
+		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{{
 				Name:  "test-container",
@@ -257,6 +264,11 @@ func createDynakubeInstance(_ *testing.T) *dynatracev1alpha1.DynaKube {
 			},
 			CodeModules: dynatracev1alpha1.CodeModulesSpec{
 				Enabled: true,
+				Selector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"inject": "true",
+					},
+				},
 			},
 		},
 		Status: dynatracev1alpha1.DynaKubeStatus{
@@ -295,7 +307,7 @@ func TestUseImmutableImage(t *testing.T) {
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Labels: map[string]string{"inject": "true"},
 					},
 				},
 			),
@@ -374,7 +386,7 @@ func TestUseImmutableImage(t *testing.T) {
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Labels: map[string]string{"inject": "true"},
 					},
 				},
 			),
@@ -454,7 +466,7 @@ func TestUseImmutableImage(t *testing.T) {
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Labels: map[string]string{"inject": "true"},
 					},
 				},
 			),
@@ -530,8 +542,11 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Name: "test-namespace",
+						Labels: map[string]string{
+							"oneagent.dynatrace.com/instance": "oneagent",
+							"inject":                          "true",
+						},
 					},
 				},
 			),
@@ -602,7 +617,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Labels: map[string]string{"inject": "true"},
 					},
 				},
 			),
@@ -673,8 +688,11 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Name: "test-namespace",
+						Labels: map[string]string{
+							"oneagent.dynatrace.com/instance": "oneagent",
+							"inject":                          "true",
+						},
 					},
 				},
 			),
@@ -745,7 +763,7 @@ func TestAgentVersion(t *testing.T) {
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+					Labels: map[string]string{"inject": "true"},
 				},
 			},
 		),
@@ -820,8 +838,11 @@ func TestAgentVersionWithCSI(t *testing.T) {
 			instance,
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+					Name: "test-namespace",
+					Labels: map[string]string{
+						"oneagent.dynatrace.com/instance": "oneagent",
+						"inject":                          "true",
+					},
 				},
 			},
 		),
@@ -966,4 +987,64 @@ func setEnvVar(_ *testing.T, pod *corev1.Pod, name string, value string) {
 			break
 		}
 	}
+}
+
+func TestNoCodeModulesEnabled(t *testing.T) {
+	decoder, err := admission.NewDecoder(scheme.Scheme)
+	require.NoError(t, err)
+
+	inj := &podInjector{
+		client: fake.NewClient(
+			&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "dynatrace",
+				},
+			},
+			&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "test-namespace",
+				},
+			},
+			&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "another-namespace",
+				},
+			},
+		),
+		decoder:   decoder,
+		image:     "test-api-url.com/linux/codemodule",
+		namespace: "dynatrace",
+	}
+	pod := &dynatracev1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: "dynakube-1", Namespace: "dynatrace"},
+		Spec: dynatracev1alpha1.DynaKubeSpec{
+			APIURL: "https://test-api-url.com/api",
+			KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
+				CapabilityProperties: dynatracev1alpha1.CapabilityProperties{
+					Enabled: true,
+				},
+			},
+		},
+		Status: dynatracev1alpha1.DynaKubeStatus{
+			OneAgent: dynatracev1alpha1.OneAgentStatus{
+				UseImmutableImage: true,
+			},
+		},
+	}
+
+	basePodBytes, err := json.Marshal(&pod)
+	require.NoError(t, err)
+
+	req := admission.Request{
+		AdmissionRequest: admissionv1.AdmissionRequest{
+			Object: runtime.RawExtension{
+				Raw: basePodBytes,
+			},
+			Namespace: pod.Namespace,
+		},
+	}
+
+	resp := inj.Handle(context.TODO(), req)
+	require.NoError(t, resp.Complete(req))
+	assert.True(t, resp.Allowed)
 }

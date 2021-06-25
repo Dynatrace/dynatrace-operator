@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/codemodules"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
@@ -18,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -127,41 +126,31 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	logger.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
+	logger.Info("checking pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
-	var ns corev1.Namespace
-	if err := m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
+	namespace := &corev1.Namespace{}
+	err = m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, namespace)
+	if err != nil {
+		logger.Error(err, "error when trying to find namespace of pod", "pod", pod.Name, "namespace", req.Namespace)
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
-	inject := utils.GetField(ns.Annotations, dtwebhook.AnnotationInject, "true")
-	inject = utils.GetField(pod.Annotations, dtwebhook.AnnotationInject, inject)
-	if inject == "false" {
-		return admission.Patched("")
-	}
-
-	oaName := utils.GetField(ns.Labels, dtwebhook.LabelInstance, "")
-	if oaName == "" {
-		return admission.Errored(http.StatusBadRequest, fmt.Errorf("no DynaKube instance set for namespace: %s", req.Namespace))
-	}
-
-	var oa dynatracev1alpha1.DynaKube
-	if err := m.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: m.namespace}, &oa); k8serrors.IsNotFound(err) {
-		return admission.Errored(http.StatusBadRequest, fmt.Errorf(
-			"namespace '%s' is assigned to DynaKube instance '%s' but doesn't exist", req.Namespace, oaName))
-	} else if err != nil {
+	dk, err := codemodules.FindForNamespace(ctx, m.client, namespace)
+	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
-	}
-
-	if !oa.Spec.CodeModules.Enabled {
-		logger.Info("injection disabled")
+	} else if dk == nil {
 		return admission.Patched("")
 	}
+
+	logger.Info("injecting into pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
 	if pod.Annotations == nil {
 		pod.Annotations = map[string]string{}
 	}
 
+	if pod.Annotations[dtwebhook.AnnotationInject] == "false" {
+		return admission.Patched("")
+	}
 	if pod.Annotations[dtwebhook.AnnotationInjected] == "true" {
 		return admission.Patched("")
 	}
@@ -173,7 +162,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	failurePolicy := utils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")
 	image := m.image
 
-	dkVol := oa.Spec.CodeModules.Volume
+	dkVol := dk.Spec.CodeModules.Volume
 	if dkVol == (corev1.VolumeSource{}) {
 		dkVol.CSI = &corev1.CSIVolumeSource{
 			Driver: dtcsi.DriverName,
@@ -249,7 +238,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 			{Name: "oneagent-share", MountPath: "/mnt/share"},
 			{Name: "oneagent-config", MountPath: "/mnt/config"},
 		},
-		Resources: oa.Spec.CodeModules.Resources,
+		Resources: dk.Spec.CodeModules.Resources,
 	}
 
 	for i := range pod.Spec.Containers {
@@ -265,6 +254,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 				MountPath: "/etc/ld.so.preload",
 				SubPath:   "ld.so.preload",
 			},
+
 			corev1.VolumeMount{Name: "oneagent-bin", MountPath: installPath},
 			corev1.VolumeMount{
 				Name:      "oneagent-share",
@@ -276,7 +266,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 			corev1.EnvVar{Name: "LD_PRELOAD", Value: installPath + "/agent/lib64/liboneagentproc.so"},
 			corev1.EnvVar{Name: "DT_DEPLOYMENT_METADATA", Value: deploymentMetadata.AsString()})
 
-		if oa.Spec.Proxy != nil && (oa.Spec.Proxy.Value != "" || oa.Spec.Proxy.ValueFrom != "") {
+		if dk.Spec.Proxy != nil && (dk.Spec.Proxy.Value != "" || dk.Spec.Proxy.ValueFrom != "") {
 			c.Env = append(c.Env,
 				corev1.EnvVar{
 					Name: "DT_PROXY",
@@ -291,8 +281,8 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 				})
 		}
 
-		if oa.Spec.NetworkZone != "" {
-			c.Env = append(c.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: oa.Spec.NetworkZone})
+		if dk.Spec.NetworkZone != "" {
+			c.Env = append(c.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: dk.Spec.NetworkZone})
 		}
 	}
 

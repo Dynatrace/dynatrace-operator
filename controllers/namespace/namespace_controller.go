@@ -9,6 +9,7 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/codemodules"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"
@@ -73,8 +74,8 @@ type ReconcileNamespaces struct {
 
 func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	targetNS := request.Name
-	log := r.logger.WithValues("name", targetNS)
-	log.Info("reconciling Namespace")
+	logger := r.logger.WithValues("name", targetNS)
+	logger.Info("reconciling Namespace")
 
 	var ns corev1.Namespace
 	if err := r.client.Get(ctx, client.ObjectKey{Name: targetNS}, &ns); k8serrors.IsNotFound(err) {
@@ -83,23 +84,20 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, fmt.Errorf("failed to query Namespace: %w", err)
 	}
 
-	if ns.Labels == nil {
-		return reconcile.Result{}, nil
+	dk, err := codemodules.FindForNamespace(ctx, r.client, &ns)
+	if err != nil {
+		logger.Info("error when trying to find CodeModule enabled Dynakube", "error", err.Error())
+		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 	}
 
-	oaName := ns.Labels[webhook.LabelInstance]
-	if oaName == "" {
+	if dk == nil {
+		// No CodeModule enabled Dynakube for given namespace found
 		return reconcile.Result{}, nil
-	}
-
-	var dk dynatracev1alpha1.DynaKube
-	if err := r.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: r.namespace}, &dk); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to query DynaKubes: %w", err)
 	}
 
 	tokenName := dk.Tokens()
 	if !dk.Spec.CodeModules.Enabled {
-		r.ensureSecretDeleted(tokenName, targetNS)
+		_ = r.ensureSecretDeleted(tokenName, targetNS)
 		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 	}
 
@@ -136,7 +134,7 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 
 	// The default cache-based Client doesn't support cross-namespace queries, unless configured to do so in Manager
 	// Options. However, this is our only use-case for it, so using the non-cached Client instead.
-	err = utils.CreateOrUpdateSecretIfNotExists(r.client, r.apiReader, webhook.SecretConfigName, targetNS, data, corev1.SecretTypeOpaque, log)
+	err = utils.CreateOrUpdateSecretIfNotExists(r.client, r.apiReader, webhook.SecretConfigName, targetNS, data, corev1.SecretTypeOpaque, logger)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -161,7 +159,7 @@ func (r *ReconcileNamespaces) ensureSecretDeleted(name string, ns string) error 
 	return nil
 }
 
-func newScript(ctx context.Context, c client.Client, dynaKube dynatracev1alpha1.DynaKube, tkns corev1.Secret, imNodes map[string]string, ns string) (*script, error) {
+func newScript(ctx context.Context, c client.Client, dynaKube *dynatracev1alpha1.DynaKube, tkns corev1.Secret, imNodes map[string]string, ns string) (*script, error) {
 	var kubeSystemNS corev1.Namespace
 	if err := c.Get(ctx, client.ObjectKey{Name: "kube-system"}, &kubeSystemNS); err != nil {
 		return nil, fmt.Errorf("failed to query for cluster ID: %w", err)
@@ -190,7 +188,7 @@ func newScript(ctx context.Context, c client.Client, dynaKube dynatracev1alpha1.
 	}
 
 	return &script{
-		DynaKube:   &dynaKube,
+		DynaKube:   dynaKube,
 		PaaSToken:  string(tkns.Data[utils.DynatracePaasToken]),
 		Proxy:      proxy,
 		TrustedCAs: trustedCAs,
