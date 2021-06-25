@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -931,6 +932,7 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 				VolumeMounts: []corev1.VolumeMount{
 					{Name: "oneagent-bin", MountPath: "/mnt/bin"},
 					{Name: "oneagent-share", MountPath: "/mnt/share"},
+					{Name: "oneagent-config", MountPath: "/mnt/config"},
 				},
 			}},
 			Containers: []corev1.Container{{
@@ -963,6 +965,14 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 					Name: "oneagent-share",
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+				{
+					Name: "oneagent-config",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: dtwebhook.SecretConfigName,
+						},
 					},
 				},
 			},
