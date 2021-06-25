@@ -163,7 +163,7 @@ func TestServer_NodeUnpublishVolume(t *testing.T) {
 	}
 	mockPublishedVolume(&server, tenantUuid, volumeId)
 
-	response, err := server.NodeUnpublishVolume(nil, nodeUnpublishVolumeRequest)
+	response, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, response)
