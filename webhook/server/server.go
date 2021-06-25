@@ -163,6 +163,49 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 
 	if pod.Annotations[dtwebhook.AnnotationInjected] == "true" {
+		if oa.FeatureEnableWebhookReinvocationPolicy() {
+			var needsUpdate = false
+			var installContainer *corev1.Container
+			for i := range pod.Spec.Containers {
+				c := &pod.Spec.Containers[i]
+
+				preloaded := false
+				for _, e := range c.Env {
+					if e.Name == "LD_PRELOAD" {
+						preloaded = true
+						break
+					}
+				}
+
+				if !preloaded {
+					// container does not have LD_PRELOAD set
+					logger.Info("instrumenting missing container", "name", c.Name)
+
+					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
+					updateContainer(c, &oa, pod, deploymentMetadata)
+
+					if installContainer == nil {
+						for j := range pod.Spec.InitContainers {
+							ic := &pod.Spec.InitContainers[j]
+
+							if ic.Name == dtwebhook.InstallContainerName {
+								installContainer = ic
+								break
+							}
+						}
+					}
+					updateInstallContainer(installContainer, i+1, c.Name, c.Image)
+
+					needsUpdate = true
+				}
+			}
+
+			if needsUpdate {
+				logger.Info("updating pod with missing containers")
+				return getResponse(pod, &req)
+			}
+		}
+
 		return admission.Patched("")
 	}
 	pod.Annotations[dtwebhook.AnnotationInjected] = "true"
@@ -224,7 +267,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
 
 	ic := corev1.Container{
-		Name:            "install-oneagent",
+		Name:            dtwebhook.InstallContainerName,
 		Image:           image,
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/usr/bin/env"},
@@ -255,55 +298,14 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	for i := range pod.Spec.Containers {
 		c := &pod.Spec.Containers[i]
 
-		ic.Env = append(ic.Env,
-			corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_NAME", i+1), Value: c.Name},
-			corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_IMAGE", i+1), Value: c.Image})
+		updateInstallContainer(&ic, i+1, c.Name, c.Image)
 
-		c.VolumeMounts = append(c.VolumeMounts,
-			corev1.VolumeMount{
-				Name:      "oneagent-share",
-				MountPath: "/etc/ld.so.preload",
-				SubPath:   "ld.so.preload",
-			},
-			corev1.VolumeMount{Name: "oneagent-bin", MountPath: installPath},
-			corev1.VolumeMount{
-				Name:      "oneagent-share",
-				MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-				SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
-			})
-
-		c.Env = append(c.Env,
-			corev1.EnvVar{Name: "LD_PRELOAD", Value: installPath + "/agent/lib64/liboneagentproc.so"},
-			corev1.EnvVar{Name: "DT_DEPLOYMENT_METADATA", Value: deploymentMetadata.AsString()})
-
-		if oa.Spec.Proxy != nil && (oa.Spec.Proxy.Value != "" || oa.Spec.Proxy.ValueFrom != "") {
-			c.Env = append(c.Env,
-				corev1.EnvVar{
-					Name: "DT_PROXY",
-					ValueFrom: &corev1.EnvVarSource{
-						SecretKeyRef: &corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: dtwebhook.SecretConfigName,
-							},
-							Key: "proxy",
-						},
-					},
-				})
-		}
-
-		if oa.Spec.NetworkZone != "" {
-			c.Env = append(c.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: oa.Spec.NetworkZone})
-		}
+		updateContainer(c, &oa, pod, deploymentMetadata)
 	}
 
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
 
-	marshaledPod, err := json.MarshalIndent(pod, "", "  ")
-	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
-	}
-
-	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
+	return getResponse(pod, &req)
 }
 
 // InjectClient injects the client
@@ -316,4 +318,74 @@ func (m *podInjector) InjectClient(c client.Client) error {
 func (m *podInjector) InjectDecoder(d *admission.Decoder) error {
 	m.decoder = d
 	return nil
+}
+
+// updateInstallContainer adds Container to list of Containers of Install Container
+func updateInstallContainer(ic *corev1.Container, number int, name string, image string) {
+	logger.Info("updating install container with new container", "containerName", name, "containerImage", image)
+	ic.Env = append(ic.Env,
+		corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_NAME", number), Value: name},
+		corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_IMAGE", number), Value: image})
+}
+
+// updateContainer sets missing preload Variables
+func updateContainer(c *corev1.Container, oa *dynatracev1alpha1.DynaKube,
+	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
+
+	logger.Info("updating container with missing preload variables", "containerName", c.Name)
+	installPath := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
+
+	c.VolumeMounts = append(c.VolumeMounts,
+		corev1.VolumeMount{
+			Name:      "oneagent-share",
+			MountPath: "/etc/ld.so.preload",
+			SubPath:   "ld.so.preload",
+		},
+		corev1.VolumeMount{
+			Name:      "oneagent-bin",
+			MountPath: installPath,
+		},
+		corev1.VolumeMount{
+			Name:      "oneagent-share",
+			MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
+			SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
+		})
+
+	c.Env = append(c.Env,
+		corev1.EnvVar{
+			Name:  "LD_PRELOAD",
+			Value: installPath + "/agent/lib64/liboneagentproc.so",
+		},
+		corev1.EnvVar{
+			Name:  "DT_DEPLOYMENT_METADATA",
+			Value: deploymentMetadata.AsString(),
+		})
+
+	if oa.Spec.Proxy != nil && (oa.Spec.Proxy.Value != "" || oa.Spec.Proxy.ValueFrom != "") {
+		c.Env = append(c.Env,
+			corev1.EnvVar{
+				Name: "DT_PROXY",
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: dtwebhook.SecretConfigName,
+						},
+						Key: "proxy",
+					},
+				},
+			})
+	}
+
+	if oa.Spec.NetworkZone != "" {
+		c.Env = append(c.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: oa.Spec.NetworkZone})
+	}
+}
+
+// getResponse tries to format pod as json
+func getResponse(pod *corev1.Pod, req *admission.Request) admission.Response {
+	marshaledPod, err := json.MarshalIndent(pod, "", "  ")
+	if err != nil {
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
+	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 }

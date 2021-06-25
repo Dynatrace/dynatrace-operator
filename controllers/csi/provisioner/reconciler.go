@@ -79,7 +79,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		}
 		return reconcile.Result{}, err
 	} else if dk == nil {
-		rlog.Info("Code modules disabled")
+		rlog.Info("Code modules or csi driver disabled")
 		return reconcile.Result{RequeueAfter: 30 * time.Minute}, nil
 	}
 
@@ -131,11 +131,15 @@ func getCodeModule(ctx context.Context, clt client.Client, namespacedName types.
 		return nil, err
 	}
 
-	if !dk.Spec.CodeModules.Enabled {
+	if !dk.Spec.CodeModules.Enabled || hasInvalidCSIVolumeSource(dk) {
 		return nil, nil
 	}
 
 	return &dk, nil
+}
+
+func hasInvalidCSIVolumeSource(dk dynatracev1alpha1.DynaKube) bool {
+	return dk.Spec.CodeModules.Volume.CSI == nil || dk.Spec.CodeModules.Volume.CSI.Driver != dtcsi.DriverName
 }
 
 func (r *OneAgentProvisioner) updateAgent(dtc dtclient.Client, envDir string, logger logr.Logger) error {
@@ -169,7 +173,7 @@ func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string,
 	}
 
 	gcDir := filepath.Join(envDir, dtcsi.GarbageCollectionPath, version)
-	if err := os.MkdirAll(gcDir, 0755); err != nil {
+	if err := r.fs.MkdirAll(gcDir, 0755); err != nil {
 		logger.Error(err, "failed to create directory %s: %w", gcDir)
 		return err
 	}

@@ -7,6 +7,7 @@ metadata:
     internal.dynatrace.com/component: webhook
 webhooks:
   - name: webhook.dynatrace.com
+    reinvocationPolicy: IfNeeded
     rules:
       - apiGroups: [ "" ]
         apiVersions: [ "v1" ]

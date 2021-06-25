@@ -249,5 +249,4 @@ func (r *ReconcileWebhookCertificates) reconcileWebhookConfig(ctx context.Contex
 	log.Info("MutatingWebhookConfiguration is outdated, updating...")
 	cfg.Webhooks = webhookConfiguration.Webhooks
 	return r.client.Update(ctx, &cfg)
-
 }

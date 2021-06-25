@@ -38,4 +38,7 @@ const (
 
 	// ServiceName is the name used for the webhook's corresponding Service and MutatingWebhookConfiguration objects.
 	ServiceName = "dynatrace-webhook"
+
+	// InstallContainerName is the name used for the install container
+	InstallContainerName = "install-oneagent"
 )
