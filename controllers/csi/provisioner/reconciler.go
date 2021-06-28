@@ -72,13 +72,15 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	rlog := log.WithValues("namespace", request.Namespace, "name", request.Name)
 	rlog.Info("Reconciling DynaKube")
 
-	dk, err := getCodeModule(ctx, r.client, request.NamespacedName)
+	dk, err := r.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
-	} else if dk == nil {
+	}
+
+	if !hasCodeModulesWithCSIVolumeEnabled(dk) {
 		rlog.Info("Code modules or csi driver disabled")
 		return reconcile.Result{RequeueAfter: 30 * time.Minute}, nil
 	}
@@ -126,21 +128,11 @@ func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1alpha1
 	return dtc, nil
 }
 
-func getCodeModule(ctx context.Context, clt client.Client, namespacedName types.NamespacedName) (*dynatracev1alpha1.DynaKube, error) {
+func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1alpha1.DynaKube, error) {
 	var dk dynatracev1alpha1.DynaKube
-	if err := clt.Get(ctx, namespacedName, &dk); err != nil {
-		return nil, err
-	}
+	err := r.client.Get(ctx, name, &dk)
 
-	if !dk.Spec.CodeModules.Enabled || hasInvalidCSIVolumeSource(dk) {
-		return nil, nil
-	}
-
-	return &dk, nil
-}
-
-func hasInvalidCSIVolumeSource(dk dynatracev1alpha1.DynaKube) bool {
-	return dk.Spec.CodeModules.Volume.CSI == nil || dk.Spec.CodeModules.Volume.CSI.Driver != dtcsi.DriverName
+	return &dk, err
 }
 
 func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, dtc dtclient.Client, envDir string, logger logr.Logger) error {
@@ -214,4 +206,13 @@ func (r *OneAgentProvisioner) createCSIDirectories(envDir string) error {
 	}
 
 	return nil
+}
+
+func hasCodeModulesWithCSIVolumeEnabled(dk *dynatracev1alpha1.DynaKube) bool {
+	return dk.Spec.CodeModules.Enabled &&
+		(dk.Spec.CodeModules.Volume == corev1.VolumeSource{} || isDynatraceOneAgentCSIVolumeSource(&dk.Spec.CodeModules.Volume))
+}
+
+func isDynatraceOneAgentCSIVolumeSource(volume *corev1.VolumeSource) bool {
+	return volume.CSI != nil && volume.CSI.Driver == dtcsi.DriverName
 }

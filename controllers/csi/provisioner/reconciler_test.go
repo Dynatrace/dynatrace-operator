@@ -97,9 +97,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					Spec: v1alpha1.DynaKubeSpec{
 						CodeModules: v1alpha1.CodeModulesSpec{
 							Enabled: true,
-							Volume: v1.VolumeSource{
-								CSI: nil,
-							},
+							Volume:  v1.VolumeSource{EmptyDir: &v1.EmptyDirVolumeSource{}},
 						},
 					},
 				},
@@ -450,17 +448,102 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 }
 
-func TestHasInvalidCSIVolumeSource(t *testing.T) {
-	dk := v1alpha1.DynaKube{}
-	assert.True(t, hasInvalidCSIVolumeSource(dk))
+func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
+	t.Run(`default DynaKube object returns false`, func(t *testing.T) {
+		dk := &v1alpha1.DynaKube{}
 
-	dk.Spec.CodeModules.Volume.CSI = &v1.CSIVolumeSource{
-		Driver: invalidDriverName,
-	}
-	assert.True(t, hasInvalidCSIVolumeSource(dk))
+		isEnabled := hasCodeModulesWithCSIVolumeEnabled(dk)
 
-	dk.Spec.CodeModules.Volume.CSI.Driver = dtcsi.DriverName
-	assert.False(t, hasInvalidCSIVolumeSource(dk))
+		assert.False(t, isEnabled)
+	})
+
+	t.Run(`code modules disabled returns false`, func(t *testing.T) {
+		dk := &v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				CodeModules: v1alpha1.CodeModulesSpec{
+					Enabled: false,
+				},
+			},
+		}
+
+		isEnabled := hasCodeModulesWithCSIVolumeEnabled(dk)
+
+		assert.False(t, isEnabled)
+	})
+
+	t.Run(`code modules enabled with no volume returns true`, func(t *testing.T) {
+		dk := &v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				CodeModules: v1alpha1.CodeModulesSpec{
+					Enabled: true,
+				},
+			},
+		}
+
+		isEnabled := hasCodeModulesWithCSIVolumeEnabled(dk)
+
+		assert.True(t, isEnabled)
+	})
+
+	t.Run(`code modules enabled with empty volume returns true`, func(t *testing.T) {
+		dk := &v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				CodeModules: v1alpha1.CodeModulesSpec{
+					Enabled: true,
+					Volume:  v1.VolumeSource{},
+				},
+			},
+		}
+
+		isEnabled := hasCodeModulesWithCSIVolumeEnabled(dk)
+
+		assert.True(t, isEnabled)
+	})
+
+	t.Run(`code modules enabled with csi.oneagent.dynatrace.com volume returns true`, func(t *testing.T) {
+		dk := &v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				CodeModules: v1alpha1.CodeModulesSpec{
+					Enabled: true,
+					Volume:  v1.VolumeSource{CSI: &v1.CSIVolumeSource{Driver: dtcsi.DriverName}},
+				},
+			},
+		}
+
+		isEnabled := hasCodeModulesWithCSIVolumeEnabled(dk)
+
+		assert.True(t, isEnabled)
+	})
+
+	t.Run(`code modules enabled with other csi volume returns false`, func(t *testing.T) {
+		dk := &v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				CodeModules: v1alpha1.CodeModulesSpec{
+					Enabled: true,
+					Volume:  v1.VolumeSource{CSI: &v1.CSIVolumeSource{Driver: invalidDriverName}},
+				},
+			},
+		}
+
+		isEnabled := hasCodeModulesWithCSIVolumeEnabled(dk)
+
+		assert.False(t, isEnabled)
+	})
+
+	t.Run(`code modules enabled with emptydir volume returns false`, func(t *testing.T) {
+		dk := &v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				CodeModules: v1alpha1.CodeModulesSpec{
+					Enabled: true,
+					Volume:  v1.VolumeSource{EmptyDir: &v1.EmptyDirVolumeSource{}},
+				},
+			},
+		}
+
+		isEnabled := hasCodeModulesWithCSIVolumeEnabled(dk)
+
+		assert.False(t, isEnabled)
+	})
 }
 
 func buildValidCodeModulesSpec(_ *testing.T) v1alpha1.CodeModulesSpec {
