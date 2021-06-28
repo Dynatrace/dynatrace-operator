@@ -17,10 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-const (
-	SecretsName = "dynatrace-tokens"
-)
-
 type Reconciler struct {
 	client.Client
 	apiReader client.Reader
@@ -42,12 +38,10 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 }
 
 func (r *Reconciler) Reconcile() (bool, error) {
-	if r.instance.Spec.AGTokensSecret == "" {
-		err := r.reconcileAGTokens()
-		if err != nil {
-			r.log.Error(err, "could not reconcile ag tokens")
-			return false, errors.WithStack(err)
-		}
+	err := r.reconcileAGTokens()
+	if err != nil {
+		r.log.Error(err, "could not reconcile ag tokens")
+		return false, errors.WithStack(err)
 	}
 
 	return false, nil
@@ -69,7 +63,7 @@ func (r *Reconciler) reconcileAGTokens() error {
 
 func (r *Reconciler) createAGTokensSecretIfNotExists(secretData map[string][]byte) (*corev1.Secret, error) {
 	var config corev1.Secret
-	err := r.apiReader.Get(context.TODO(), client.ObjectKey{Name: SecretsName, Namespace: r.instance.Namespace}, &config)
+	err := r.apiReader.Get(context.TODO(), client.ObjectKey{Name: ExtendWithAgTokensSecretSuffix(r.instance.Name), Namespace: r.instance.Namespace}, &config)
 	if k8serrors.IsNotFound(err) {
 		r.log.Info("Creating AG Tokens secret")
 		return r.createAGTokensSecret(secretData)
@@ -93,7 +87,7 @@ func (r *Reconciler) createAGTokensSecret(agTokensSecretData map[string][]byte) 
 
 	err := r.Create(context.TODO(), agTokens)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create secret '%s': %w", SecretsName, err)
+		return nil, fmt.Errorf("failed to create secret '%s': %w", ExtendWithAgTokensSecretSuffix(r.instance.Name), err)
 	}
 	return agTokens, nil
 }
@@ -123,10 +117,14 @@ func isAGTokensSecretEqual(currentSecret *corev1.Secret, desired map[string][]by
 func buildAGTokensSecret(instance *dynatracev1alpha1.DynaKube, agTokensSecretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SecretsName,
+			Name:      ExtendWithAgTokensSecretSuffix(instance.Name),
 			Namespace: instance.Namespace,
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: agTokensSecretData,
 	}
+}
+
+func ExtendWithAgTokensSecretSuffix(name string) string {
+	return name + "-dynatrace-tokens"
 }

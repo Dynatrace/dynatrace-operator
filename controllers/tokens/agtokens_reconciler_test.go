@@ -65,7 +65,7 @@ func TestBuildAGTokensSecret(t *testing.T) {
 			},
 			want: &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      SecretsName,
+					Name:      ExtendWithAgTokensSecretSuffix(instance.Name),
 					Namespace: instance.Namespace,
 				},
 				Type: corev1.SecretTypeOpaque,

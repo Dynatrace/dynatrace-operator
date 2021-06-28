@@ -127,7 +127,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 		Name: TokensSecretVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: tokens.SecretsName,
+				SecretName: tokens.ExtendWithAgTokensSecretSuffix(instance.Name),
 			},
 		},
 	})
@@ -161,7 +161,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
 
 	t.Run(`without custom properties`, func(t *testing.T) {
-		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
+		volumes := buildVolumes(testName, NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", "", nil, nil, nil))
 
 		assert.Len(t, volumes, 1)
@@ -169,7 +169,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 			Name: TokensSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: tokens.SecretsName,
+					SecretName: tokens.ExtendWithAgTokensSecretSuffix(instance.Name),
 				},
 			},
 		})
@@ -178,7 +178,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		capabilityProperties.CustomProperties = &dynatracev1alpha1.DynaKubeValueSource{
 			Value: testValue,
 		}
-		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
+		volumes := buildVolumes("", NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", testFeature, "", "", nil, nil, nil))
 		expectedSecretName := instance.Name + "-router-" + customproperties.Suffix
 
@@ -197,7 +197,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		capabilityProperties.CustomProperties = &dynatracev1alpha1.DynaKubeValueSource{
 			ValueFrom: testKey,
 		}
-		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
+		volumes := buildVolumes("", NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", "", nil, nil, nil))
 		expectedSecretName := testKey
 

@@ -135,7 +135,7 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 						{MatchExpressions: buildKubernetesExpression(kubernetesArch, kubernetesOS)},
 					}}}},
 		Tolerations: stsProperties.Tolerations,
-		Volumes:     buildVolumes(stsProperties),
+		Volumes:     buildVolumes(stsProperties.Name, stsProperties),
 		ImagePullSecrets: []corev1.LocalObjectReference{
 			{Name: stsProperties.Name + dtpullsecret.PullSecretSuffix},
 		},
@@ -176,7 +176,7 @@ func buildContainer(stsProperties *statefulSetProperties) corev1.Container {
 	}
 }
 
-func buildVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
+func buildVolumes(instanceName string, stsProperties *statefulSetProperties) []corev1.Volume {
 	var volumes []corev1.Volume
 
 	if !isCustomPropertiesNilOrEmpty(stsProperties.CustomProperties) {
@@ -198,7 +198,7 @@ func buildVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
 		Name: TokensSecretVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
-				SecretName: tokens.SecretsName,
+				SecretName: tokens.ExtendWithAgTokensSecretSuffix(instanceName),
 			},
 		},
 	})
