@@ -214,9 +214,9 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 		return nil, status.Error(codes.InvalidArgument, "Target path missing in request")
 	}
 
-	volumeToPodReference := filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeID)
+	volumeMetadata := filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeID)
 
-	metadata, err := svr.loadVolumeMetadata(volumeToPodReference)
+	metadata, err := svr.loadVolumeMetadata(volumeMetadata)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to read volume metadata: %s", err))
 	}
@@ -230,7 +230,7 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to delete usage file for pod. %s", err))
 	}
 
-	err = svr.fs.Remove(volumeToPodReference)
+	err = svr.fs.Remove(volumeMetadata)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to delete metadata file for pod. %s", err))
 	}
