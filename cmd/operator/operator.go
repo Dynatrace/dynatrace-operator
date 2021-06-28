@@ -17,6 +17,8 @@ limitations under the License.
 package main
 
 import (
+	"os"
+
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/namespace"
 	"github.com/Dynatrace/dynatrace-operator/controllers/nodes"
@@ -56,12 +58,18 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 		log.Error(err, "could not start ready endpoint for operator")
 	}
 
-	for _, f := range []func(manager.Manager, string) error{
+	funcs := []func(manager.Manager, string) error{
 		dynakube.Add,
 		namespace.Add,
 		nodes.Add,
-		webhookcerts.Add,
-	} {
+	}
+
+	disableWebhook := os.Getenv("DISABLE_WEBHOOK")
+	if disableWebhook == "" || disableWebhook == "false" {
+		funcs = append(funcs, webhookcerts.Add)
+	}
+
+	for _, f := range funcs {
 		if err := f(mgr, ns); err != nil {
 			return nil, err
 		}

@@ -9,7 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -186,10 +186,10 @@ func (r *ReconcileWebhookCertificates) reconcileCerts(ctx context.Context, log l
 func (r *ReconcileWebhookCertificates) reconcileWebhookConfig(ctx context.Context, log logr.Logger, rootCerts []byte) error {
 	log.Info("Reconciling MutatingWebhookConfiguration...")
 
-	scope := admissionregistrationv1beta1.NamespacedScope
-	reinvocationPolicy := admissionregistrationv1beta1.IfNeededReinvocationPolicy
 	path := "/inject"
-	webhookConfiguration := &admissionregistrationv1beta1.MutatingWebhookConfiguration{
+	scope := admissionregistrationv1.NamespacedScope
+	sideEffects := admissionregistrationv1.SideEffectClassNone
+	webhookConfiguration := &admissionregistrationv1.MutatingWebhookConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: webhookName,
 			Labels: map[string]string{
@@ -197,13 +197,12 @@ func (r *ReconcileWebhookCertificates) reconcileWebhookConfig(ctx context.Contex
 				"internal.dynatrace.com/component": "webhook",
 			},
 		},
-		Webhooks: []admissionregistrationv1beta1.MutatingWebhook{{
+		Webhooks: []admissionregistrationv1.MutatingWebhook{{
 			Name:                    "webhook.dynatrace.com",
-			AdmissionReviewVersions: []string{"v1beta1"},
-			ReinvocationPolicy:      &reinvocationPolicy,
-			Rules: []admissionregistrationv1beta1.RuleWithOperations{{
-				Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create},
-				Rule: admissionregistrationv1beta1.Rule{
+			AdmissionReviewVersions: []string{"v1"},
+			Rules: []admissionregistrationv1.RuleWithOperations{{
+				Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.Create},
+				Rule: admissionregistrationv1.Rule{
 					APIGroups:   []string{""},
 					APIVersions: []string{"v1"},
 					Resources:   []string{"pods"},
@@ -216,18 +215,19 @@ func (r *ReconcileWebhookCertificates) reconcileWebhookConfig(ctx context.Contex
 					Operator: metav1.LabelSelectorOpExists,
 				}},
 			},
-			ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
-				Service: &admissionregistrationv1beta1.ServiceReference{
+			ClientConfig: admissionregistrationv1.WebhookClientConfig{
+				Service: &admissionregistrationv1.ServiceReference{
 					Name:      webhookName,
 					Namespace: r.namespace,
 					Path:      &path,
 				},
 				CABundle: rootCerts,
 			},
+			SideEffects: &sideEffects,
 		}},
 	}
 
-	var cfg admissionregistrationv1beta1.MutatingWebhookConfiguration
+	var cfg admissionregistrationv1.MutatingWebhookConfiguration
 	err := r.client.Get(context.TODO(), client.ObjectKey{Name: webhookName}, &cfg)
 	if k8serrors.IsNotFound(err) {
 		log.Info("MutatingWebhookConfiguration doesn't exist, creating...")

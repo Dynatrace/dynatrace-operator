@@ -5,14 +5,15 @@ package integrationtests
 import (
 	"context"
 	"fmt"
+	"go/build"
 	"os"
+	"path/filepath"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,66 +26,6 @@ const (
 	DefaultTestAPIURL    = "https://ENVIRONMENTID.live.dynatrace.com/api"
 	DefaultTestNamespace = "dynatrace"
 )
-
-var testEnvironmentCRDs = []client.Object{
-	&apiextensionsv1beta1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "dynakubes.dynatrace.com",
-		},
-		Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
-			Group:   "dynatrace.com",
-			Version: "v1alpha1",
-			Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
-				Kind:     "DynaKube",
-				ListKind: "DynaKubeList",
-				Plural:   "dynakubes",
-				Singular: "dynakube",
-			},
-			Scope: apiextensionsv1beta1.NamespaceScoped,
-			Subresources: &apiextensionsv1beta1.CustomResourceSubresources{
-				Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{},
-			},
-		},
-	},
-	&apiextensionsv1beta1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "virtualservices.networking.istio.io",
-		},
-		Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
-			Group:   "networking.istio.io",
-			Version: "v1alpha3",
-			Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
-				Kind:     "VirtualService",
-				ListKind: "VirtualServiceList",
-				Plural:   "virtualservices",
-				Singular: "virtualservice",
-			},
-			Scope: apiextensionsv1beta1.NamespaceScoped,
-			Subresources: &apiextensionsv1beta1.CustomResourceSubresources{
-				Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{},
-			},
-		},
-	},
-	&apiextensionsv1beta1.CustomResourceDefinition{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "serviceentries.networking.istio.io",
-		},
-		Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
-			Group:   "networking.istio.io",
-			Version: "v1alpha3",
-			Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
-				Kind:     "ServiceEntry",
-				ListKind: "ServiceEntryList",
-				Plural:   "serviceentries",
-				Singular: "serviceentry",
-			},
-			Scope: apiextensionsv1beta1.NamespaceScoped,
-			Subresources: &apiextensionsv1beta1.CustomResourceSubresources{
-				Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{},
-			},
-		},
-	},
-}
 
 func init() {
 	os.Setenv("POD_NAMESPACE", DefaultTestNamespace)
@@ -101,7 +42,11 @@ type ControllerTestEnvironment struct {
 func newTestEnvironment() (*ControllerTestEnvironment, error) {
 	kubernetesAPIServer := &envtest.Environment{
 		KubeAPIServerFlags: append(envtest.DefaultKubeAPIServerFlags, "--allow-privileged"),
-		CRDs:               testEnvironmentCRDs,
+		CRDDirectoryPaths: []string{
+			filepath.Join("..", "config", "crd", "default", "bases"),
+			// ToDo: currently this is the only way to get the CRD - see https://github.com/kubernetes-sigs/controller-runtime/pull/1393
+			filepath.Join(build.Default.GOPATH, "pkg", "mod", "istio.io", "api@v0.0.0-20201217173512-1f62aaeb5ee3", "kubernetes"),
+		},
 	}
 
 	cfg, err := kubernetesAPIServer.Start()

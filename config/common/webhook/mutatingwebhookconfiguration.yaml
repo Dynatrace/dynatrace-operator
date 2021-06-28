@@ -23,4 +23,5 @@ webhooks:
         name: dynatrace-webhook
         namespace: dynatrace
         path: /inject
-    admissionReviewVersions: [ "v1beta1" ]
+    admissionReviewVersions: [ "v1beta1", "v1" ]
+    sideEffects: None
