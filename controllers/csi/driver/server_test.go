@@ -171,7 +171,7 @@ func TestServer_NodeUnpublishVolume(t *testing.T) {
 	assert.Empty(t, mounter.MountPoints)
 }
 
-func TestCreateAndLoadPodMetadata(t *testing.T) {
+func TestCreateAndLoadVolumeMetadata(t *testing.T) {
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
 	server := newServerForTesting(t, mounter)
 
@@ -186,7 +186,7 @@ func TestCreateAndLoadPodMetadata(t *testing.T) {
 		volumeToVersionReferenceDir: filepath.Join(tenantUuid, dtcsi.GarbageCollectionPath, agentVersion),
 	}
 
-	err = server.createPodMetadata(bindCfg, volumeId)
+	err = server.createVolumeMetadata(bindCfg, volumeId)
 	assert.NoError(t, err)
 
 	data, err := server.loadVolumeMetadata(filepath.Join(metadataPath, volumeId))

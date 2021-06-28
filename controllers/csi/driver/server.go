@@ -170,14 +170,14 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}
 
-	if err := svr.createPodMetadata(bindCfg, volumeCfg.volumeId); err != nil {
+	if err := svr.createVolumeMetadata(bindCfg, volumeCfg.volumeId); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create pod to version reference: %s", err))
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
-func (svr *CSIDriverServer) createPodMetadata(bindCfg *bindConfig, volumeID string) error {
+func (svr *CSIDriverServer) createVolumeMetadata(bindCfg *bindConfig, volumeID string) error {
 	podToVersionReference := filepath.Join(bindCfg.volumeToVersionReferenceDir, volumeID)
 	if err := svr.fs.WriteFile(podToVersionReference, nil, 0640); err != nil {
 		return err
@@ -190,12 +190,12 @@ func (svr *CSIDriverServer) createPodMetadata(bindCfg *bindConfig, volumeID stri
 		OverlayFSPath: filepath.Join(bindCfg.envDir, "run", volumeID),
 	}
 
-	podMetadata, err := json.Marshal(data)
+	volumeMetadata, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 
-	if err := svr.fs.WriteFile(metadataFile, podMetadata, 0640); err != nil {
+	if err := svr.fs.WriteFile(metadataFile, volumeMetadata, 0640); err != nil {
 		return err
 	}
 
