@@ -79,8 +79,13 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		}
 		return reconcile.Result{}, err
 	} else if dk == nil {
-		rlog.Info("Code modules disabled")
+		rlog.Info("Code modules or csi driver disabled")
 		return reconcile.Result{RequeueAfter: 30 * time.Minute}, nil
+	}
+
+	if dk.ConnectionInfo().TenantUUID == "" {
+		rlog.Info("DynaKube instance has not been reconciled yet and some values usually cached are missing, retrying in a few seconds")
+		return reconcile.Result{RequeueAfter: 15 * time.Second}, nil
 	}
 
 	dtc, err := buildDtc(r, ctx, dk)
@@ -88,11 +93,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	ci, err := dtc.GetConnectionInfo()
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to fetch connection info: %w", err)
-	}
-
+	ci := dk.ConnectionInfo()
 	envDir := filepath.Join(r.opts.RootDir, ci.TenantUUID)
 	tenantFile := filepath.Join(r.opts.RootDir, fmt.Sprintf("tenant-%s", dk.Name))
 
@@ -104,7 +105,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	if err = r.updateAgent(dtc, envDir, rlog); err != nil {
+	if err = r.updateAgent(dk, dtc, envDir, rlog); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -131,20 +132,20 @@ func getCodeModule(ctx context.Context, clt client.Client, namespacedName types.
 		return nil, err
 	}
 
-	if !dk.Spec.CodeModules.Enabled {
+	if !dk.Spec.CodeModules.Enabled || hasInvalidCSIVolumeSource(dk) {
 		return nil, nil
 	}
 
 	return &dk, nil
 }
 
-func (r *OneAgentProvisioner) updateAgent(dtc dtclient.Client, envDir string, logger logr.Logger) error {
-	versionFile := filepath.Join(envDir, dtcsi.VersionDir)
+func hasInvalidCSIVolumeSource(dk dynatracev1alpha1.DynaKube) bool {
+	return dk.Spec.CodeModules.Volume.CSI == nil || dk.Spec.CodeModules.Volume.CSI.Driver != dtcsi.DriverName
+}
 
-	latestAgentVersion, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
-	if err != nil {
-		return fmt.Errorf("failed to query OneAgent latestAgentVersion: %w", err)
-	}
+func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, dtc dtclient.Client, envDir string, logger logr.Logger) error {
+	versionFile := filepath.Join(envDir, dtcsi.VersionDir)
+	ver := dk.Status.LatestAgentVersionUnixPaas
 
 	var currentVersion string
 	if currentVersionBytes, err := afero.ReadFile(r.fs, versionFile); err != nil && !os.IsNotExist(err) {
@@ -153,18 +154,17 @@ func (r *OneAgentProvisioner) updateAgent(dtc dtclient.Client, envDir string, lo
 		currentVersion = string(currentVersionBytes)
 	}
 
-	if latestAgentVersion == currentVersion {
-		return nil
+	if ver != currentVersion {
+		if err := r.installAgentVersion(ver, envDir, dtc, logger); err != nil {
+			return err
+		}
 	}
 
-	if err = r.installAgentVersion(latestAgentVersion, envDir, dtc, logger); err != nil {
-		return err
-	}
-
-	return afero.WriteFile(r.fs, versionFile, []byte(latestAgentVersion), 0644)
+	return afero.WriteFile(r.fs, versionFile, []byte(ver), 0644)
 }
 
 func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string, dtc dtclient.Client, logger logr.Logger) error {
+	versionFile := filepath.Join(envDir, dtcsi.VersionDir)
 	arch := dtclient.ArchX86
 	if runtime.GOARCH == "arm64" {
 		arch = dtclient.ArchARM
@@ -187,6 +187,8 @@ func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string,
 			return fmt.Errorf("failed to install agent: %w", err)
 		}
 	}
+
+	_ = afero.WriteFile(r.fs, versionFile, []byte(version), 0644)
 
 	return nil
 }

@@ -36,7 +36,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Data: map[string][]byte{dtclient.DynatracePaasToken: []byte(testPaasToken)},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, mockDTC, logf.Log, secret)
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, logf.Log, secret)
 
 		mockDTC.
 			On("GetConnectionInfo").
@@ -66,14 +66,13 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				CustomPullSecret: testValue,
 			}}
-		r := NewReconciler(nil, nil, nil, instance, nil, nil, nil)
+		r := NewReconciler(nil, nil, nil, instance, nil, nil)
 		err := r.Reconcile()
 
 		assert.NoError(t, err)
 	})
 	t.Run(`Reconcile creates correct docker config`, func(t *testing.T) {
 		expectedJSON := `{"auths":{"test-endpoint.com":{"username":"test-name","password":"test-value","auth":"dGVzdC1uYW1lOnRlc3QtdmFsdWU="}}}`
-		mockDTC := &dtclient.MockDynatraceClient{}
 		instance := &dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -81,20 +80,20 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				APIURL: testEndpoint,
-			}}
+			},
+			Status: dynatracev1alpha1.DynaKubeStatus{
+				ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
+					TenantUUID: testName,
+				},
+			},
+		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, mockDTC, logf.Log,
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, logf.Log,
 			&corev1.Secret{
 				Data: map[string][]byte{
 					dtclient.DynatracePaasToken: []byte(testValue),
 				},
 			})
-
-		mockDTC.
-			On("GetConnectionInfo").
-			Return(dtclient.ConnectionInfo{
-				TenantUUID: testName,
-			}, nil)
 
 		err := r.Reconcile()
 
@@ -114,7 +113,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run(`Reconcile update secret if data changed`, func(t *testing.T) {
 		expectedJSON := `{"auths":{"test-endpoint.com":{"username":"test-name","password":"test-value","auth":"dGVzdC1uYW1lOnRlc3QtdmFsdWU="}}}`
-		mockDTC := &dtclient.MockDynatraceClient{}
 		instance := &dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
@@ -122,20 +120,20 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				APIURL: testEndpoint,
-			}}
+			},
+			Status: dynatracev1alpha1.DynaKubeStatus{
+				ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
+					TenantUUID: testName,
+				},
+			},
+		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, mockDTC, logf.Log,
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, logf.Log,
 			&corev1.Secret{
 				Data: map[string][]byte{
 					dtclient.DynatracePaasToken: []byte(testValue),
 				},
 			})
-
-		mockDTC.
-			On("GetConnectionInfo").
-			Return(dtclient.ConnectionInfo{
-				TenantUUID: testName,
-			}, nil)
 
 		err := r.Reconcile()
 

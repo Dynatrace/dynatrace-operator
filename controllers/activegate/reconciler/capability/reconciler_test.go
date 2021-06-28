@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/go-logr/logr"
@@ -30,7 +29,7 @@ const (
 	testNamespace = "test-namespace"
 )
 
-var cap = capability.NewDataIngestCapability(
+var metricsCapability = capability.NewDataIngestCapability(
 	&v1alpha1.CapabilityProperties{
 		Enabled: true,
 	},
@@ -51,7 +50,6 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 			},
 		}).
 		Build()
-	dtc := &dtclient.MockDynatraceClient{}
 	instance := &v1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -60,7 +58,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		return dtversion.ImageVersion{}, nil
 	}
 
-	r := NewReconciler(cap, clt, clt, scheme.Scheme, dtc, log, instance, imgVerProvider)
+	r := NewReconciler(metricsCapability, clt, clt, scheme.Scheme, log, instance, imgVerProvider)
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.Instance)
@@ -72,7 +70,7 @@ func TestReconcile(t *testing.T) {
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
 
-		cap.GetProperties().CustomProperties = &v1alpha1.DynaKubeValueSource{
+		metricsCapability.GetProperties().CustomProperties = &v1alpha1.DynaKubeValueSource{
 			Value: testValue,
 		}
 		_, err := r.Reconcile()
@@ -83,7 +81,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		var customProperties corev1.Secret
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + cap.GetModuleName() + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + metricsCapability.GetModuleName() + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
 		assert.NoError(t, err)
 		assert.NotNil(t, customProperties)
 		assert.Contains(t, customProperties.Data, customproperties.DataKey)
@@ -176,7 +174,7 @@ func TestReconcile(t *testing.T) {
 
 func TestSetReadinessProbePort(t *testing.T) {
 	r := createDefaultReconciler(t)
-	stsProps := rsfs.NewStatefulSetProperties(r.Instance, cap.GetProperties(), "", "", "", "", "", nil, nil, nil)
+	stsProps := rsfs.NewStatefulSetProperties(r.Instance, metricsCapability.GetProperties(), "", "", "", "", "", nil, nil, nil)
 	sts, err := rsfs.CreateStatefulSet(stsProps)
 
 	assert.NoError(t, err)
@@ -212,7 +210,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 						},
 					},
 				},
-				Capability: cap,
+				Capability: metricsCapability,
 			},
 			want: "instanceName-data-ingest",
 		},
@@ -226,9 +224,9 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 						},
 					},
 				},
-				Capability: cap,
+				Capability: metricsCapability,
 			},
-			want: "-" + cap.GetModuleName(),
+			want: "-" + metricsCapability.GetModuleName(),
 		},
 	}
 	for _, tt := range tests {

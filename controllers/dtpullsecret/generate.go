@@ -10,6 +10,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	dockerConfigJson = ".dockerconfigjson"
+)
+
 type dockerAuthentication struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -33,11 +37,7 @@ func newDockerConfigWithAuth(username string, password string, registry string, 
 }
 
 func (r *Reconciler) GenerateData() (map[string][]byte, error) {
-	connectionInfo, err := r.dtc.GetConnectionInfo()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
+	connectionInfo := r.instance.ConnectionInfo()
 	registry, err := getImageRegistryFromAPIURL(r.instance.Spec.APIURL)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -83,5 +83,5 @@ func pullSecretDataFromDockerConfig(dockerConf *dockerConfig) (map[string][]byte
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return map[string][]byte{".dockerconfigjson": dockerConfJson}, nil
+	return map[string][]byte{dockerConfigJson: dockerConfJson}, nil
 }

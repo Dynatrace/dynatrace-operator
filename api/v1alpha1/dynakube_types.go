@@ -154,7 +154,6 @@ type FullStackSpec struct {
 
 	// Optional: List of environment variables to set for the installer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent environment variable installer arguments",order=22,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
-	// +listType=set
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Optional: If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that
@@ -237,7 +236,6 @@ type CapabilityProperties struct {
 
 	// Optional: List of environment variables to set for the ActiveGate
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Environment variables",order=39,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
-	// +listType=set
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Environment variables"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
@@ -288,8 +286,20 @@ type DynaKubeStatus struct {
 	// LastClusterVersionProbeTimestamp indicates when the cluster's version was last checked
 	LastClusterVersionProbeTimestamp *metav1.Time `json:"lastClusterVersionProbeTimestamp,omitempty"`
 
-	// EnvironmentID contains the environment ID corresponding to the API URL
-	EnvironmentID string `json:"environmentID,omitempty"`
+	// KubeSystemUUID contains the UUID of the current Kubernetes cluster
+	KubeSystemUUID string `json:"kubeSystemUUID,omitempty"`
+
+	// ConnectionInfo caches information about the tenant and its communication hosts
+	ConnectionInfo ConnectionInfoStatus `json:"connectionInfo,omitempty"`
+
+	// CommunicationHostForClient caches a communication host specific to the api url.
+	CommunicationHostForClient CommunicationHostStatus `json:"communicationHostForClient,omitempty"`
+
+	// LatestAgentVersionUnixDefault caches the current agent version for unix and the default installer which is configured for the environment
+	LatestAgentVersionUnixDefault string `json:"latestAgentVersionUnixDefault,omitempty"`
+
+	// LatestAgentVersionUnixDefault caches the current agent version for unix and the PaaS installer which is configured for the environment
+	LatestAgentVersionUnixPaas string `json:"latestAgentVersionUnixPaas,omitempty"`
 
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
@@ -297,6 +307,17 @@ type DynaKubeStatus struct {
 	ActiveGate ActiveGateStatus `json:"activeGate,omitempty"`
 
 	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
+}
+
+type ConnectionInfoStatus struct {
+	CommunicationHosts []CommunicationHostStatus `json:"communicationHosts,omitempty"`
+	TenantUUID         string                    `json:"tenantUUID,omitempty"`
+}
+
+type CommunicationHostStatus struct {
+	Protocol string `json:"protocol,omitempty"`
+	Host     string `json:"host,omitempty"`
+	Port     uint32 `json:"port,omitempty"`
 }
 
 type VersionStatus struct {

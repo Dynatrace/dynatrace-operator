@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -80,7 +81,7 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 	if err := r.client.Get(ctx, client.ObjectKey{Name: targetNS}, &ns); k8serrors.IsNotFound(err) {
 		return reconcile.Result{}, nil
 	} else if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to query Namespace: %w", err)
+		return reconcile.Result{}, errors.WithMessage(err, "failed to query Namespace")
 	}
 
 	if ns.Labels == nil {
@@ -94,26 +95,26 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 
 	var dk dynatracev1alpha1.DynaKube
 	if err := r.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: r.namespace}, &dk); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to query DynaKubes: %w", err)
+		return reconcile.Result{}, errors.WithMessage(err, "failed to query DynaKubes")
 	}
 
 	tokenName := dk.Tokens()
 	if !dk.Spec.CodeModules.Enabled {
-		r.ensureSecretDeleted(tokenName, targetNS)
+		_ = r.ensureSecretDeleted(tokenName, targetNS)
 		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 	}
 
 	var ims dynatracev1alpha1.DynaKubeList
 	if err := r.client.List(ctx, &ims, client.InNamespace(r.namespace)); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to query DynaKubeList: %w", err)
+		return reconcile.Result{}, errors.WithMessage(err, "failed to query DynaKubeList")
 	}
 
 	imNodes := map[string]string{}
 	for i := range ims.Items {
-		if s := &ims.Items[i].Status; s.EnvironmentID != "" && ims.Items[i].Spec.InfraMonitoring.Enabled {
+		if s := &ims.Items[i].Status; s.ConnectionInfo.TenantUUID != "" && ims.Items[i].Spec.InfraMonitoring.Enabled {
 			for key := range s.OneAgent.Instances {
 				if key != "" {
-					imNodes[key] = s.EnvironmentID
+					imNodes[key] = s.ConnectionInfo.TenantUUID
 				}
 			}
 		}
@@ -121,24 +122,24 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 
 	var tkns corev1.Secret
 	if err := r.client.Get(ctx, client.ObjectKey{Name: tokenName, Namespace: r.namespace}, &tkns); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to query tokens: %w", err)
+		return reconcile.Result{}, errors.WithMessage(err, "failed to query tokens")
 	}
 
 	script, err := newScript(ctx, r.client, dk, tkns, imNodes, r.namespace)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to generate init script: %w", err)
+		return reconcile.Result{}, errors.WithMessage(err, "failed to generate init script")
 	}
 
 	data, err := script.generate()
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to generate script: %w", err)
+		return reconcile.Result{}, errors.WithMessage(err, "failed to generate script")
 	}
 
 	// The default cache-based Client doesn't support cross-namespace queries, unless configured to do so in Manager
 	// Options. However, this is our only use-case for it, so using the non-cached Client instead.
 	err = utils.CreateOrUpdateSecretIfNotExists(r.client, r.apiReader, webhook.SecretConfigName, targetNS, data, corev1.SecretTypeOpaque, log)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, errors.WithStack(err)
 	}
 
 	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil

@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -49,7 +49,7 @@ func TestReconcileWebhookCertificates(t *testing.T) {
 	}
 
 	getWebhookCA := func() string {
-		var webhookCfg admissionregistrationv1beta1.MutatingWebhookConfiguration
+		var webhookCfg admissionregistrationv1.MutatingWebhookConfiguration
 		require.NoError(t, c.Get(context.TODO(), types.NamespacedName{Name: webhook.ServiceName}, &webhookCfg))
 		return string(webhookCfg.Webhooks[0].ClientConfig.CABundle)
 	}

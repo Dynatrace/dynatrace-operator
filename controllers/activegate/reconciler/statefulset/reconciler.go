@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -28,7 +27,6 @@ type Reconciler struct {
 	Instance                         *v1alpha1.DynaKube
 	apiReader                        client.Reader
 	scheme                           *runtime.Scheme
-	dtc                              dtclient.Client
 	log                              logr.Logger
 	imageVersionProvider             dtversion.ImageVersionProvider
 	feature                          string
@@ -41,11 +39,10 @@ type Reconciler struct {
 	volumes                          []corev1.Volume
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, log logr.Logger,
 	instance *v1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, capability capability.Capability) *Reconciler {
 
 	serviceAccountOwner := capability.GetConfiguration().ServiceAccountOwner
-
 	if serviceAccountOwner == "" {
 		serviceAccountOwner = capability.GetModuleName()
 	}
@@ -54,7 +51,6 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		Client:                           clt,
 		apiReader:                        apiReader,
 		scheme:                           scheme,
-		dtc:                              dtc,
 		log:                              log,
 		Instance:                         instance,
 		imageVersionProvider:             imageVersionProvider,

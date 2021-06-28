@@ -26,6 +26,17 @@ const (
 	testUID       = "test-uid"
 	testPaasToken = "test-paas-token"
 	testAPIToken  = "test-api-token"
+	testVersion   = "1.217-12345-678910"
+
+	testUUID = "test-uuid"
+
+	testHost     = "test-host"
+	testPort     = uint32(1234)
+	testProtocol = "test-protocol"
+
+	testAnotherHost     = "test-another-host"
+	testAnotherPort     = uint32(5678)
+	testAnotherProtocol = "test-another-protocol"
 )
 
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
@@ -40,15 +51,45 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	})
 	t.Run(`Reconcile works with minimal setup and interface`, func(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
+
+		mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+			Protocol: testProtocol,
+			Host:     testHost,
+			Port:     testPort,
+		}, nil)
+		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
+			CommunicationHosts: []dtclient.CommunicationHost{
+				{
+					Protocol: testProtocol,
+					Host:     testHost,
+					Port:     testPort,
+				},
+				{
+					Protocol: testAnotherProtocol,
+					Host:     testAnotherHost,
+					Port:     testAnotherPort,
+				},
+			},
+			TenantUUID: testUUID,
+		}, nil)
 		mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{TenantUUID: "abc123456"}, nil)
+		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
+		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
+
 		instance := &v1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			}}
 		fakeClient := fake.NewClient(instance,
+			&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: kubesystem.Namespace,
+					UID:  testUID,
+				},
+			},
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -111,13 +152,30 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			},
 		}
 
-		mockClient.
-			On("GetConnectionInfo").
-			Return(dtclient.ConnectionInfo{
-				TenantUUID: testName,
-			}, nil)
+		mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+			Protocol: testProtocol,
+			Host:     testHost,
+			Port:     testPort,
+		}, nil)
+		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
+			CommunicationHosts: []dtclient.CommunicationHost{
+				{
+					Protocol: testProtocol,
+					Host:     testHost,
+					Port:     testPort,
+				},
+				{
+					Protocol: testAnotherProtocol,
+					Host:     testAnotherHost,
+					Port:     testAnotherPort,
+				},
+			},
+			TenantUUID: testUUID,
+		}, nil)
 		mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
+		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -176,13 +234,31 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 	}
-	mockClient.
-		On("GetConnectionInfo").
-		Return(dtclient.ConnectionInfo{
-			TenantUUID: testName,
-		}, nil)
+
+	mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+		Protocol: testProtocol,
+		Host:     testHost,
+		Port:     testPort,
+	}, nil)
+	mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
+		CommunicationHosts: []dtclient.CommunicationHost{
+			{
+				Protocol: testProtocol,
+				Host:     testHost,
+				Port:     testPort,
+			},
+			{
+				Protocol: testAnotherProtocol,
+				Host:     testAnotherHost,
+				Port:     testAnotherPort,
+			},
+		},
+		TenantUUID: testUUID,
+	}, nil)
 	mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 	mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
+	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
 
 	_, err := r.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)

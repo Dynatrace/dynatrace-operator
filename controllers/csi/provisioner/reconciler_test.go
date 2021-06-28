@@ -26,11 +26,12 @@ import (
 )
 
 const (
-	dkName          = "dynakube-test"
-	errorMsg        = "test-error"
-	tenantUUID      = "test-uid"
-	agentVersion    = "12345"
-	dkTenantMapping = "tenant-dynakube-test"
+	dkName            = "dynakube-test"
+	errorMsg          = "test-error"
+	tenantUUID        = "test-uid"
+	agentVersion      = "12345"
+	dkTenantMapping   = "tenant-dynakube-test"
+	invalidDriverName = "csi.not.dynatrace.com"
 )
 
 type mkDirAllErrorFs struct {
@@ -71,13 +72,34 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 	})
-	t.Run(`code modules not enabled`, func(t *testing.T) {
+	t.Run(`code modules disabled`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
 				&v1alpha1.DynaKube{
 					Spec: v1alpha1.DynaKubeSpec{
 						CodeModules: v1alpha1.CodeModulesSpec{
 							Enabled: false,
+						},
+					},
+				},
+			),
+		}
+		result, err := r.Reconcile(context.TODO(), reconcile.Request{})
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, reconcile.Result{RequeueAfter: 30 * time.Minute}, result)
+	})
+	t.Run(`csi driver disabled`, func(t *testing.T) {
+		r := &OneAgentProvisioner{
+			client: fake.NewClient(
+				&v1alpha1.DynaKube{
+					Spec: v1alpha1.DynaKubeSpec{
+						CodeModules: v1alpha1.CodeModulesSpec{
+							Enabled: true,
+							Volume: v1.VolumeSource{
+								CSI: nil,
+							},
 						},
 					},
 				},
@@ -97,8 +119,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Spec: v1alpha1.DynaKubeSpec{
-						CodeModules: v1alpha1.CodeModulesSpec{
-							Enabled: true,
+						CodeModules: buildValidCodeModulesSpec(t),
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
 						},
 					},
 				},
@@ -118,8 +143,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Spec: v1alpha1.DynaKubeSpec{
-						CodeModules: v1alpha1.CodeModulesSpec{
-							Enabled: true,
+						CodeModules: buildValidCodeModulesSpec(t),
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
 						},
 					},
 				},
@@ -150,9 +178,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Spec: v1alpha1.DynaKubeSpec{
-						CodeModules: v1alpha1.CodeModulesSpec{
-							Enabled: true,
-						},
+						CodeModules: buildValidCodeModulesSpec(t),
 					},
 				},
 				&v1.Secret{
@@ -167,9 +193,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		assert.EqualError(t, err, "failed to fetch connection info: "+errorMsg)
+		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{}, result)
+		assert.Equal(t, reconcile.Result{RequeueAfter: 15 * time.Second}, result)
 	})
 	t.Run(`error creating directories`, func(t *testing.T) {
 		errorfs := &mkDirAllErrorFs{
@@ -186,8 +212,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Spec: v1alpha1.DynaKubeSpec{
-						CodeModules: v1alpha1.CodeModulesSpec{
-							Enabled: true,
+						CodeModules: buildValidCodeModulesSpec(t),
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
 						},
 					},
 				},
@@ -223,8 +252,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Spec: v1alpha1.DynaKubeSpec{
-						CodeModules: v1alpha1.CodeModulesSpec{
-							Enabled: true,
+						CodeModules: buildValidCodeModulesSpec(t),
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
 						},
 					},
 				},
@@ -261,8 +293,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Spec: v1alpha1.DynaKubeSpec{
-						CodeModules: v1alpha1.CodeModulesSpec{
-							Enabled: true,
+						CodeModules: buildValidCodeModulesSpec(t),
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
 						},
 					},
 				},
@@ -316,8 +351,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Spec: v1alpha1.DynaKubeSpec{
-						CodeModules: v1alpha1.CodeModulesSpec{
-							Enabled: true,
+						CodeModules: buildValidCodeModulesSpec(t),
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
 						},
 					},
 				},
@@ -369,9 +407,13 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 						Name: dkName,
 					},
 					Spec: v1alpha1.DynaKubeSpec{
-						CodeModules: v1alpha1.CodeModulesSpec{
-							Enabled: true,
+						CodeModules: buildValidCodeModulesSpec(t),
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
 						},
+						LatestAgentVersionUnixPaas: agentVersion,
 					},
 				},
 				&v1.Secret{
@@ -406,4 +448,28 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, fileInfo.IsDir())
 	})
+}
+
+func TestHasInvalidCSIVolumeSource(t *testing.T) {
+	dk := v1alpha1.DynaKube{}
+	assert.True(t, hasInvalidCSIVolumeSource(dk))
+
+	dk.Spec.CodeModules.Volume.CSI = &v1.CSIVolumeSource{
+		Driver: invalidDriverName,
+	}
+	assert.True(t, hasInvalidCSIVolumeSource(dk))
+
+	dk.Spec.CodeModules.Volume.CSI.Driver = dtcsi.DriverName
+	assert.False(t, hasInvalidCSIVolumeSource(dk))
+}
+
+func buildValidCodeModulesSpec(_ *testing.T) v1alpha1.CodeModulesSpec {
+	return v1alpha1.CodeModulesSpec{
+		Enabled: true,
+		Volume: v1.VolumeSource{
+			CSI: &v1.CSIVolumeSource{
+				Driver: dtcsi.DriverName,
+			},
+		},
+	}
 }
