@@ -2754,6 +2754,18 @@ spec:
                     description: Version contains the version to be deployed.
                     type: string
                 type: object
+              communicationHostForClient:
+                description: CommunicationHostForClient caches a communication host
+                  specific to the api url.
+                properties:
+                  host:
+                    type: string
+                  port:
+                    format: int32
+                    type: integer
+                  protocol:
+                    type: string
+                type: object
               conditions:
                 description: Conditions includes status about the current state of
                   the instance
@@ -2825,9 +2837,28 @@ spec:
                   - type
                   type: object
                 type: array
-              environmentID:
-                description: EnvironmentID contains the environment ID corresponding
-                  to the API URL
+              connectionInfo:
+                description: ConnectionInfo caches information about the tenant and
+                  its communication hosts
+                properties:
+                  communicationHosts:
+                    items:
+                      properties:
+                        host:
+                          type: string
+                        port:
+                          format: int32
+                          type: integer
+                        protocol:
+                          type: string
+                      type: object
+                    type: array
+                  tenantUUID:
+                    type: string
+                type: object
+              kubeSystemUUID:
+                description: KubeSystemUUID contains the UUID of the current Kubernetes
+                  cluster
                 type: string
               lastAPITokenProbeTimestamp:
                 description: LastAPITokenProbeTimestamp tracks when the last request
@@ -2843,6 +2874,16 @@ spec:
                 description: LastPaaSTokenProbeTimestamp tracks when the last request
                   for the PaaS token validity was sent
                 format: date-time
+                type: string
+              latestAgentVersionUnixDefault:
+                description: LatestAgentVersionUnixDefault caches the current agent
+                  version for unix and the default installer which is configured for
+                  the environment
+                type: string
+              latestAgentVersionUnixPaas:
+                description: LatestAgentVersionUnixDefault caches the current agent
+                  version for unix and the PaaS installer which is configured for
+                  the environment
                 type: string
               oneAgent:
                 properties:
