@@ -1,4 +1,4 @@
-package bootstrapper
+package webhookcerts
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func TestReconcileWebhook(t *testing.T) {
+func TestReconcileWebhookCertificates(t *testing.T) {
 	logger := zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout))
 	ns := "dynatrace"
 
@@ -31,7 +31,7 @@ func TestReconcileWebhook(t *testing.T) {
 	require.NoError(t, err)
 
 	c := fake.NewClient()
-	r := ReconcileWebhook{client: c, logger: logger, namespace: ns, scheme: scheme.Scheme, certsDir: tmpDir}
+	r := ReconcileWebhookCertificates{client: c, logger: logger, namespace: ns, scheme: scheme.Scheme}
 
 	reconcileAndGetCreds := func(days time.Duration) map[string]string {
 		r.now = now.Add(days * 24 * time.Hour)
@@ -49,7 +49,7 @@ func TestReconcileWebhook(t *testing.T) {
 	}
 
 	getWebhookCA := func() string {
-		var webhookCfg admissionregistrationv1beta1.MutatingWebhookConfiguration
+		var webhookCfg admissionregistrationv1.MutatingWebhookConfiguration
 		require.NoError(t, c.Get(context.TODO(), types.NamespacedName{Name: webhook.ServiceName}, &webhookCfg))
 		return string(webhookCfg.Webhooks[0].ClientConfig.CABundle)
 	}
@@ -65,6 +65,7 @@ func TestReconcileWebhook(t *testing.T) {
 	assert.NotEmpty(t, secret0["tls.key"])
 	assert.NotEmpty(t, secret0["ca.crt"])
 	assert.NotEmpty(t, secret0["ca.key"])
+	assert.Equal(t, secret0["ca.crt.old"], "")
 	assert.Equal(t, secret0["ca.crt"], getWebhookCA())
 
 	// Day 1: Certificates are valid, no changes.
@@ -80,6 +81,7 @@ func TestReconcileWebhook(t *testing.T) {
 	assert.NotEqual(t, secret1["tls.key"], secret8["tls.key"])
 	assert.Equal(t, secret1["ca.crt"], secret8["ca.crt"])
 	assert.Equal(t, secret1["ca.key"], secret8["ca.key"])
+	assert.Equal(t, secret8["ca.crt.old"], "")
 	assert.Equal(t, secret8["ca.crt"], getWebhookCA())
 
 	// Day 9: TLS certificates were renewed recently, no changes.
@@ -95,11 +97,12 @@ func TestReconcileWebhook(t *testing.T) {
 	assert.NotEqual(t, secret9["tls.key"], secret400["tls.key"])
 	assert.NotEqual(t, secret9["ca.crt"], secret400["ca.crt"])
 	assert.NotEqual(t, secret9["ca.key"], secret400["ca.key"])
-	assert.Equal(t, secret400["ca.crt"], getWebhookCA())
+	assert.Equal(t, secret400["ca.crt"]+secret9["ca.crt"], getWebhookCA())
+	assert.Equal(t, secret400["ca.crt.old"], secret9["ca.crt"])
 
 	// Day 401: CA and TLS certificates were renewed recently, no changes.
 
 	secret401 := reconcileAndGetCreds(401)
 	assert.Equal(t, secret400, secret401)
-	assert.Equal(t, secret401["ca.crt"], getWebhookCA())
+	assert.Equal(t, secret401["ca.crt"]+secret401["ca.crt.old"], getWebhookCA())
 }

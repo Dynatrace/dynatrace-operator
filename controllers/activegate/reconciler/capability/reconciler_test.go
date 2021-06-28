@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
+	rsfs "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
@@ -27,7 +29,7 @@ const (
 	testNamespace = "test-namespace"
 )
 
-var metricsCapability = NewDataIngestCapability(
+var metricsCapability = capability.NewDataIngestCapability(
 	&v1alpha1.CapabilityProperties{
 		Enabled: true,
 	},
@@ -141,7 +143,7 @@ func TestReconcile(t *testing.T) {
 
 		found := false
 		for _, env := range newStatefulSet.Spec.Template.Spec.Containers[0].Env {
-			if env.Name == activegate.DTInternalProxy {
+			if env.Name == rsfs.DTInternalProxy {
 				found = true
 				assert.Equal(t, testValue, env.Value)
 			}
@@ -154,10 +156,10 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, update)
 		assert.NoError(t, err)
 
-		service := &corev1.Service{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(r.Instance.Name, r.GetModuleName()), Namespace: r.Instance.Namespace}, service)
+		svc := &corev1.Service{}
+		err = r.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(r.Instance.Name, r.GetModuleName()), Namespace: r.Instance.Namespace}, svc)
 		assert.NoError(t, err)
-		assert.NotNil(t, service)
+		assert.NotNil(t, svc)
 
 		update, err = r.Reconcile()
 		assert.True(t, update)
@@ -172,8 +174,8 @@ func TestReconcile(t *testing.T) {
 
 func TestSetReadinessProbePort(t *testing.T) {
 	r := createDefaultReconciler(t)
-	stsProps := activegate.NewStatefulSetProperties(r.Instance, metricsCapability.GetProperties(), "", "", "", "", "")
-	sts, err := activegate.CreateStatefulSet(stsProps)
+	stsProps := rsfs.NewStatefulSetProperties(r.Instance, metricsCapability.GetProperties(), "", "", "", "", "", nil, nil, nil)
+	sts, err := rsfs.CreateStatefulSet(stsProps)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, sts)
@@ -184,14 +186,14 @@ func TestSetReadinessProbePort(t *testing.T) {
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe)
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet)
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port)
-	assert.Equal(t, serviceTargetPort, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port.String())
+	assert.Equal(t, consts.ServiceTargetPort, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port.String())
 }
 
 func TestReconciler_calculateStatefulSetName(t *testing.T) {
 	type fields struct {
-		Reconciler *activegate.Reconciler
+		Reconciler *rsfs.Reconciler
 		log        logr.Logger
-		Capability *DataIngestCapability
+		Capability *capability.DataIngestCapability
 	}
 	tests := []struct {
 		name   string
@@ -201,7 +203,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 		{
 			name: "instance and module names are defined",
 			fields: fields{
-				Reconciler: &activegate.Reconciler{
+				Reconciler: &rsfs.Reconciler{
 					Instance: &v1alpha1.DynaKube{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "instanceName",
@@ -215,7 +217,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 		{
 			name: "empty instance name",
 			fields: fields{
-				Reconciler: &activegate.Reconciler{
+				Reconciler: &rsfs.Reconciler{
 					Instance: &v1alpha1.DynaKube{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "",

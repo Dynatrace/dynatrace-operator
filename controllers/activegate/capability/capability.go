@@ -2,6 +2,17 @@ package capability
 
 import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	v1 "k8s.io/api/core/v1"
+)
+
+const (
+	trustStoreVolume          = "truststore-volume"
+	k8scrt2jksPath            = "/opt/dynatrace/gateway/k8scrt2jks.sh"
+	activeGateCacertsPath     = "/opt/dynatrace/gateway/jre/lib/security/cacerts"
+	activeGateSslPath         = "/var/lib/dynatrace/gateway/ssl"
+	k8sCertificateFile        = "k8s-local.jks"
+	k8scrt2jksWorkingDir      = "/var/lib/dynatrace/gateway"
+	initContainerTemplateName = "certificate-loader"
 )
 
 type Configuration struct {
@@ -17,6 +28,9 @@ type Capability interface {
 	GetCapabilityName() string
 	GetProperties() *dynatracev1alpha1.CapabilityProperties
 	GetConfiguration() Configuration
+	GetInitContainersTemplates() []v1.Container
+	GetContainerVolumeMounts() []v1.VolumeMount
+	GetVolumes() []v1.Volume
 }
 
 type capabilityBase struct {
@@ -24,6 +38,9 @@ type capabilityBase struct {
 	capabilityName string
 	properties     *dynatracev1alpha1.CapabilityProperties
 	Configuration
+	initContainersTemplates []v1.Container
+	containerVolumeMounts   []v1.VolumeMount
+	volumes                 []v1.Volume
 }
 
 func (c *capabilityBase) GetProperties() *dynatracev1alpha1.CapabilityProperties {
@@ -40,6 +57,22 @@ func (c *capabilityBase) GetModuleName() string {
 
 func (c *capabilityBase) GetCapabilityName() string {
 	return c.capabilityName
+}
+
+// Note:
+// Caller must set following fields:
+//   Image:
+//   Resources:
+func (c *capabilityBase) GetInitContainersTemplates() []v1.Container {
+	return c.initContainersTemplates
+}
+
+func (c *capabilityBase) GetContainerVolumeMounts() []v1.VolumeMount {
+	return c.containerVolumeMounts
+}
+
+func (c *capabilityBase) GetVolumes() []v1.Volume {
+	return c.volumes
 }
 
 func CalculateStatefulSetName(capability Capability, instanceName string) string {
@@ -67,6 +100,34 @@ func NewKubeMonCapability(crProperties *dynatracev1alpha1.CapabilityProperties) 
 			Configuration: Configuration{
 				ServiceAccountOwner: "kubernetes-monitoring",
 			},
+			initContainersTemplates: []v1.Container{
+				{
+					Name:            initContainerTemplateName,
+					ImagePullPolicy: v1.PullAlways,
+					WorkingDir:      k8scrt2jksWorkingDir,
+					Command:         []string{"/bin/bash"},
+					Args:            []string{"-c", k8scrt2jksPath},
+					VolumeMounts: []v1.VolumeMount{
+						{
+							ReadOnly:  false,
+							Name:      trustStoreVolume,
+							MountPath: activeGateSslPath,
+						},
+					},
+				},
+			},
+			containerVolumeMounts: []v1.VolumeMount{{
+				ReadOnly:  true,
+				Name:      trustStoreVolume,
+				MountPath: activeGateCacertsPath,
+				SubPath:   k8sCertificateFile,
+			}},
+			volumes: []v1.Volume{{
+				Name: trustStoreVolume,
+				VolumeSource: v1.VolumeSource{
+					EmptyDir: &v1.EmptyDirVolumeSource{},
+				},
+			}},
 		},
 	}
 }
