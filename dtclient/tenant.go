@@ -17,7 +17,7 @@ type TenantInfo struct {
 
 type responseReader func(*dynatraceClient, []byte) (*TenantInfo, error)
 
-func (dtc *dynatraceClient) GetTenantInfo(apiEndpoint string, readResponseForTenantInfo responseReader) (*TenantInfo, error) {
+func (dtc *dynatraceClient) getTenantInfo(apiEndpoint string, readResponseForTenantInfo responseReader) (*TenantInfo, error) {
 	url := fmt.Sprintf(apiEndpoint, dtc.url)
 
 	response, err := dtc.makeRequest(
@@ -59,12 +59,12 @@ func (dtc *dynatraceClient) GetTenantInfo(apiEndpoint string, readResponseForTen
 
 func (dtc *dynatraceClient) GetAGTenantInfo() (*TenantInfo, error) {
 	const apiEndpoint = "%s/v1/deployment/installer/gateway/connectioninfo"
-	return dtc.GetTenantInfo(apiEndpoint, (*dynatraceClient).readResponseForAGTenantInfo)
+	return dtc.getTenantInfo(apiEndpoint, (*dynatraceClient).readResponseForAGTenantInfo)
 }
 
 func (dtc *dynatraceClient) GetAgentTenantInfo() (*TenantInfo, error) {
 	const apiEndpoint = "%s/v1/deployment/installer/agent/connectioninfo"
-	return dtc.GetTenantInfo(apiEndpoint, (*dynatraceClient).readResponseForTenantInfo)
+	return dtc.getTenantInfo(apiEndpoint, (*dynatraceClient).readResponseForTenantInfo)
 }
 
 func (dtc *dynatraceClient) readResponseForAGTenantInfo(response []byte) (*TenantInfo, error) {

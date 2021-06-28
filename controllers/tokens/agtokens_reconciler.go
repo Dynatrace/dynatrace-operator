@@ -85,7 +85,7 @@ func (r *Reconciler) updateAGTokensIfOutdated(agTokens *corev1.Secret, agTokensS
 }
 
 func (r *Reconciler) createAGTokensSecret(agTokensSecretData map[string][]byte) (*corev1.Secret, error) {
-	agTokens := BuildAGTokensSecret(r.instance, agTokensSecretData)
+	agTokens := buildAGTokensSecret(r.instance, agTokensSecretData)
 
 	if err := controllerutil.SetControllerReference(r.instance, agTokens, r.scheme); err != nil {
 		return nil, errors.WithStack(err)
@@ -120,7 +120,7 @@ func isAGTokensSecretEqual(currentSecret *corev1.Secret, desired map[string][]by
 	return reflect.DeepEqual(desired, currentSecret.Data)
 }
 
-func BuildAGTokensSecret(instance *dynatracev1alpha1.DynaKube, agTokensSecretData map[string][]byte) *corev1.Secret {
+func buildAGTokensSecret(instance *dynatracev1alpha1.DynaKube, agTokensSecretData map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      SecretsName,

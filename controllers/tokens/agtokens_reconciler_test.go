@@ -75,8 +75,8 @@ func TestBuildAGTokensSecret(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := BuildAGTokensSecret(tt.args.instance, tt.args.agTokensSecretData); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("BuildAGTokensSecret() = %v, want %v", got, tt.want)
+			if got := buildAGTokensSecret(tt.args.instance, tt.args.agTokensSecretData); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("buildAGTokensSecret() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -143,7 +143,7 @@ func Test_isAGTokensSecretEqual(t *testing.T) {
 		{
 			name: "equal",
 			args: args{
-				currentSecret: BuildAGTokensSecret(&v1alpha1.DynaKube{}, secretsData),
+				currentSecret: buildAGTokensSecret(&v1alpha1.DynaKube{}, secretsData),
 				desired:       secretsData,
 			},
 			want: true,
@@ -151,7 +151,7 @@ func Test_isAGTokensSecretEqual(t *testing.T) {
 		{
 			name: "inequal - subset of data",
 			args: args{
-				currentSecret: BuildAGTokensSecret(&v1alpha1.DynaKube{}, lessSecretsData),
+				currentSecret: buildAGTokensSecret(&v1alpha1.DynaKube{}, lessSecretsData),
 				desired:       secretsData,
 			},
 			want: false,
@@ -159,7 +159,7 @@ func Test_isAGTokensSecretEqual(t *testing.T) {
 		{
 			name: "inequal - superset of data",
 			args: args{
-				currentSecret: BuildAGTokensSecret(&v1alpha1.DynaKube{}, moreSecretsData),
+				currentSecret: buildAGTokensSecret(&v1alpha1.DynaKube{}, moreSecretsData),
 				desired:       secretsData,
 			},
 			want: false,
@@ -167,7 +167,7 @@ func Test_isAGTokensSecretEqual(t *testing.T) {
 		{
 			name: "inequal - completly different data",
 			args: args{
-				currentSecret: BuildAGTokensSecret(&v1alpha1.DynaKube{}, map[string][]byte{"other": []byte("data")}),
+				currentSecret: buildAGTokensSecret(&v1alpha1.DynaKube{}, map[string][]byte{"other": []byte("data")}),
 				desired:       secretsData,
 			},
 			want: false,
