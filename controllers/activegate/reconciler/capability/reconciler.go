@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
 	sts "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -33,10 +32,10 @@ type Reconciler struct {
 	capability.Capability
 }
 
-func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtc dtclient.Client, log logr.Logger,
+func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, log logr.Logger,
 	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
 	baseReconciler := sts.NewReconciler(
-		clt, apiReader, scheme, dtc, log, instance, imageVersionProvider, capability)
+		clt, apiReader, scheme, log, instance, imageVersionProvider, capability)
 
 	if capability.GetConfiguration().SetDnsEntryPoint {
 		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.GetModuleName()))

@@ -19,6 +19,8 @@ package v1alpha1
 import (
 	"fmt"
 	"strings"
+
+	"github.com/Dynatrace/dynatrace-operator/dtclient"
 )
 
 const (
@@ -102,4 +104,23 @@ func (dk *DynaKube) Tokens() string {
 		return tkns
 	}
 	return dk.Name
+}
+
+func (dk *DynaKube) CommunicationHostForClient() dtclient.CommunicationHost {
+	return dtclient.CommunicationHost(dk.Status.CommunicationHostForClient)
+}
+
+func (dk *DynaKube) ConnectionInfo() dtclient.ConnectionInfo {
+	return dtclient.ConnectionInfo{
+		CommunicationHosts: dk.CommunicationHosts(),
+		TenantUUID:         dk.Status.ConnectionInfo.TenantUUID,
+	}
+}
+
+func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
+	var communicationHosts []dtclient.CommunicationHost
+	for _, communicationHost := range dk.Status.ConnectionInfo.CommunicationHosts {
+		communicationHosts = append(communicationHosts, dtclient.CommunicationHost(communicationHost))
+	}
+	return communicationHosts
 }

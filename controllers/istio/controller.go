@@ -66,8 +66,7 @@ func (c *Controller) initialiseIstioClient(config *rest.Config) (istioclientset.
 
 // ReconcileIstio - runs the istio's reconcile workflow,
 // creating/deleting VS & SE for external communications
-func (c *Controller) ReconcileIstio(instance *dynatracev1alpha1.DynaKube,
-	dtc dtclient.Client) (updated bool, err error) {
+func (c *Controller) ReconcileIstio(instance *dynatracev1alpha1.DynaKube) (updated bool, err error) {
 
 	enabled, err := CheckIstioEnabled(c.config)
 	if err != nil {
@@ -79,11 +78,7 @@ func (c *Controller) ReconcileIstio(instance *dynatracev1alpha1.DynaKube,
 		return false, nil
 	}
 
-	apiHost, err := dtc.GetCommunicationHostForClient()
-	if err != nil {
-		return false, fmt.Errorf("istio: failed to get host for Dynatrace API URL: %w", err)
-	}
-
+	apiHost := instance.CommunicationHostForClient()
 	if upd, err := c.reconcileIstioConfigurations(instance, []dtclient.CommunicationHost{apiHost}, "api-url"); err != nil {
 		return false, fmt.Errorf("istio: error reconciling config for Dynatrace API URL: %w", err)
 	} else if upd {
@@ -91,11 +86,7 @@ func (c *Controller) ReconcileIstio(instance *dynatracev1alpha1.DynaKube,
 	}
 
 	// Fetch endpoints via Dynatrace client
-	ci, err := dtc.GetConnectionInfo()
-	if err != nil {
-		return false, fmt.Errorf("istio: failed to get Dynatrace communication endpoints: %w", err)
-	}
-
+	ci := instance.ConnectionInfo()
 	if upd, err := c.reconcileIstioConfigurations(instance, ci.CommunicationHosts, "communication-endpoint"); err != nil {
 		return false, fmt.Errorf("istio: error reconciling config for Dynatrace communication endpoints: %w", err)
 	} else if upd {
@@ -123,9 +114,9 @@ func (c *Controller) reconcileIstioConfigurations(instance *dynatracev1alpha1.Dy
 func (c *Controller) reconcileIstioRemoveConfigurations(instance *dynatracev1alpha1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
-	labels := labels.SelectorFromSet(buildIstioLabels(instance.GetName(), role)).String()
+	labelSelector := labels.SelectorFromSet(buildIstioLabels(instance.GetName(), role)).String()
 	listOps := &metav1.ListOptions{
-		LabelSelector: labels,
+		LabelSelector: labelSelector,
 	}
 
 	seen := map[string]bool{}

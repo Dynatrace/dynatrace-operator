@@ -286,8 +286,20 @@ type DynaKubeStatus struct {
 	// LastClusterVersionProbeTimestamp indicates when the cluster's version was last checked
 	LastClusterVersionProbeTimestamp *metav1.Time `json:"lastClusterVersionProbeTimestamp,omitempty"`
 
-	// EnvironmentID contains the environment ID corresponding to the API URL
-	EnvironmentID string `json:"environmentID,omitempty"`
+	// KubeSystemUUID contains the UUID of the current Kubernetes cluster
+	KubeSystemUUID string `json:"kubeSystemUUID,omitempty"`
+
+	// ConnectionInfo caches information about the tenant and its communication hosts
+	ConnectionInfo ConnectionInfoStatus `json:"connectionInfo,omitempty"`
+
+	// CommunicationHostForClient caches a communication host specific to the api url.
+	CommunicationHostForClient CommunicationHostStatus `json:"communicationHostForClient,omitempty"`
+
+	// LatestAgentVersionUnixDefault caches the current agent version for unix and the default installer which is configured for the environment
+	LatestAgentVersionUnixDefault string `json:"latestAgentVersionUnixDefault,omitempty"`
+
+	// LatestAgentVersionUnixDefault caches the current agent version for unix and the PaaS installer which is configured for the environment
+	LatestAgentVersionUnixPaas string `json:"latestAgentVersionUnixPaas,omitempty"`
 
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
@@ -295,6 +307,17 @@ type DynaKubeStatus struct {
 	ActiveGate ActiveGateStatus `json:"activeGate,omitempty"`
 
 	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
+}
+
+type ConnectionInfoStatus struct {
+	CommunicationHosts []CommunicationHostStatus `json:"communicationHosts,omitempty"`
+	TenantUUID         string                    `json:"tenantUUID,omitempty"`
+}
+
+type CommunicationHostStatus struct {
+	Protocol string `json:"protocol,omitempty"`
+	Host     string `json:"host,omitempty"`
+	Port     uint32 `json:"port,omitempty"`
 }
 
 type VersionStatus struct {

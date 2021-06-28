@@ -121,6 +121,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					Spec: v1alpha1.DynaKubeSpec{
 						CodeModules: buildValidCodeModulesSpec(t),
 					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
+						},
+					},
 				},
 			),
 		}
@@ -139,6 +144,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 					Spec: v1alpha1.DynaKubeSpec{
 						CodeModules: buildValidCodeModulesSpec(t),
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
+						},
 					},
 				},
 				&v1.Secret{
@@ -183,9 +193,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		assert.EqualError(t, err, "failed to fetch connection info: "+errorMsg)
+		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{}, result)
+		assert.Equal(t, reconcile.Result{RequeueAfter: 15 * time.Second}, result)
 	})
 	t.Run(`error creating directories`, func(t *testing.T) {
 		errorfs := &mkDirAllErrorFs{
@@ -203,6 +213,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 					Spec: v1alpha1.DynaKubeSpec{
 						CodeModules: buildValidCodeModulesSpec(t),
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
+						},
 					},
 				},
 				&v1.Secret{
@@ -238,6 +253,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 					Spec: v1alpha1.DynaKubeSpec{
 						CodeModules: buildValidCodeModulesSpec(t),
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
+						},
 					},
 				},
 				&v1.Secret{
@@ -275,6 +295,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					Spec: v1alpha1.DynaKubeSpec{
 						CodeModules: buildValidCodeModulesSpec(t),
 					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
+						},
+					},
 				},
 				&v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
@@ -289,9 +314,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		assert.EqualError(t, err, "failed to query OneAgent version: "+errorMsg)
+		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{}, result)
+		assert.Equal(t, reconcile.Result{RequeueAfter: 5 * time.Minute}, result)
 
 		tenantPath := filepath.Join(dtcsi.DataPath, tenantUUID)
 		exists, err := afero.Exists(memFs, tenantPath)
@@ -338,6 +363,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 					Spec: v1alpha1.DynaKubeSpec{
 						CodeModules: buildValidCodeModulesSpec(t),
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
+						},
 					},
 				},
 				&v1.Secret{
@@ -400,6 +430,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					},
 					Spec: v1alpha1.DynaKubeSpec{
 						CodeModules: buildValidCodeModulesSpec(t),
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
+						},
+						LatestAgentVersionUnixPaas: agentVersion,
 					},
 				},
 				&v1.Secret{

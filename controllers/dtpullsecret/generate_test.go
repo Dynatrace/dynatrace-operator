@@ -1,9 +1,25 @@
 package dtpullsecret
 
 import (
+	b64 "encoding/base64"
+	"encoding/json"
+	"fmt"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
+)
+
+const (
+	testTenant     = "test-tenant"
+	testProtocol   = "http"
+	testHost       = "test-host"
+	testPort       = 1234
+	testApiUrl     = "https://test-api-url/api"
+	testApiUrlHost = "test-api-url"
 )
 
 func TestGetImageRegistryFromAPIURL(t *testing.T) {
@@ -18,4 +34,56 @@ func TestGetImageRegistryFromAPIURL(t *testing.T) {
 			assert.Equal(t, "host.com", host)
 		}
 	}
+}
+
+func TestReconciler_GenerateData(t *testing.T) {
+	instance := &v1alpha1.DynaKube{
+		Spec: v1alpha1.DynaKubeSpec{
+			APIURL: testApiUrl,
+		},
+		Status: v1alpha1.DynaKubeStatus{
+			ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+				CommunicationHosts: []v1alpha1.CommunicationHostStatus{
+					{
+						Protocol: testProtocol,
+						Host:     testHost,
+						Port:     testPort,
+					},
+				},
+				TenantUUID: testTenant,
+			},
+		},
+	}
+	r := &Reconciler{
+		instance: instance,
+		token: &v1.Secret{
+			Data: map[string][]byte{
+				dtclient.DynatracePaasToken: []byte(testPaasToken),
+			},
+		},
+	}
+
+	data, err := r.GenerateData()
+
+	assert.NoError(t, err)
+	assert.NotNil(t, data)
+	assert.NotEmpty(t, data)
+
+	auth := fmt.Sprintf("%s:%s", testTenant, testPaasToken)
+	expected := dockerConfig{
+		Auths: map[string]dockerAuthentication{
+			testApiUrlHost: {
+				Username: testTenant,
+				Password: testPaasToken,
+				Auth:     b64.StdEncoding.EncodeToString([]byte(auth)),
+			},
+		},
+	}
+
+	var actual dockerConfig
+	err = json.Unmarshal(data[dockerConfigJson], &actual)
+
+	require.NoError(t, err)
+	assert.NotNil(t, actual)
+	assert.Equal(t, expected, actual)
 }

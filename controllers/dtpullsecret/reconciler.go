@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -25,19 +24,17 @@ type Reconciler struct {
 	client.Client
 	apiReader client.Reader
 	instance  *dynatracev1alpha1.DynaKube
-	dtc       dtclient.Client
 	log       logr.Logger
 	token     *corev1.Secret
 	scheme    *runtime.Scheme
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1alpha1.DynaKube, dtc dtclient.Client, log logr.Logger, token *corev1.Secret) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1alpha1.DynaKube, log logr.Logger, token *corev1.Secret) *Reconciler {
 	return &Reconciler{
 		Client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
 		instance:  instance,
-		dtc:       dtc,
 		log:       log,
 		token:     token,
 	}
