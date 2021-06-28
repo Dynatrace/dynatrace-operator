@@ -315,8 +315,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		assert.Error(t, err)
-		assert.Empty(t, result)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, result)
 
 		exists, err := afero.Exists(memFs, tenantUUID)
 
