@@ -167,8 +167,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`error when querying dynatrace client for connection info`, func(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{}, fmt.Errorf(errorMsg))
-
+		mockClient.On("GetAGTenantInfo").
+			Return(&dtclient.TenantInfo{
+				ConnectionInfo: dtclient.ConnectionInfo{},
+			}, nil)
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
 				&v1alpha1.DynaKube{
@@ -200,9 +202,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			Fs: afero.NewMemMapFs(),
 		}
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			TenantUUID: tenantUUID,
-		}, nil)
+		mockClient.On("GetAgentTenantInfo").
+			Return(&dtclient.TenantInfo{
+				ConnectionInfo: dtclient.ConnectionInfo{
+					TenantUUID: tenantUUID,
+				},
+			}, nil)
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
 				&v1alpha1.DynaKube{
@@ -240,9 +245,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			Fs: afero.NewMemMapFs(),
 		}
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			TenantUUID: tenantUUID,
-		}, nil)
+		mockClient.On("GetAgentTenantInfo").
+			Return(&dtclient.TenantInfo{
+				ConnectionInfo: dtclient.ConnectionInfo{
+					TenantUUID: tenantUUID,
+				},
+			}, nil)
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
 				&v1alpha1.DynaKube{
@@ -278,9 +286,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`error getting latest agent version`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			TenantUUID: tenantUUID,
-		}, nil)
+		mockClient.On("GetAgentTenantInfo").
+			Return(&dtclient.TenantInfo{
+				ConnectionInfo: dtclient.ConnectionInfo{
+					TenantUUID: tenantUUID,
+				},
+			}, nil)
 		mockClient.On("GetLatestAgentVersion",
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return("", fmt.Errorf(errorMsg))
@@ -336,9 +347,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			Fs: afero.NewMemMapFs(),
 		}
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			TenantUUID: tenantUUID,
-		}, nil)
+		mockClient.On("GetAgentTenantInfo").
+			Return(&dtclient.TenantInfo{
+				ConnectionInfo: dtclient.ConnectionInfo{
+					TenantUUID: tenantUUID,
+				},
+			}, nil)
 		mockClient.On("GetLatestAgentVersion",
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return(agentVersion, nil)
@@ -392,9 +406,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`correct directories are created`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			TenantUUID: tenantUUID,
-		}, nil)
+		mockClient.On("GetAgentTenantInfo").
+			Return(&dtclient.TenantInfo{
+				ConnectionInfo: dtclient.ConnectionInfo{
+					TenantUUID: tenantUUID,
+				},
+			}, nil)
 		mockClient.On("GetLatestAgentVersion",
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return(agentVersion, nil)

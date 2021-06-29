@@ -165,7 +165,7 @@ func (r *ReconcileNamespaces) ensureSecretDeleted(name string, ns string) error 
 func newScript(ctx context.Context, c client.Client, dynaKube dynatracev1alpha1.DynaKube, tkns corev1.Secret, imNodes map[string]string, ns string) (*script, error) {
 	var kubeSystemNS corev1.Namespace
 	if err := c.Get(ctx, client.ObjectKey{Name: "kube-system"}, &kubeSystemNS); err != nil {
-		return nil, fmt.Errorf("failed to query for cluster ID: %w", err)
+		return nil, fmt.Errorf("failed to query for cluster UUID: %w", err)
 	}
 
 	var proxy string

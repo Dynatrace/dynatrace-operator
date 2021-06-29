@@ -64,7 +64,9 @@ func TestApiURL(t *testing.T) {
 	dtc, err := dtclient.NewClient(apiURL, apiToken, paasToken)
 	assert.NoError(t, err)
 
-	connectionInfo, err := dtc.GetConnectionInfo()
+	tenantInfo, err := dtc.GetAgentTenantInfo()
+	connectionInfo := tenantInfo.ConnectionInfo
+
 	assert.NoError(t, err)
 	assert.NotNil(t, connectionInfo)
 	assert.Equal(t, environmentId, connectionInfo.TenantUUID)

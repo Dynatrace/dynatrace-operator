@@ -138,7 +138,8 @@ func TestParseEndpoints(t *testing.T) {
 }
 
 func testCommunicationHostsGetCommunicationHosts(t *testing.T, dynatraceClient Client) {
-	res, err := dynatraceClient.GetConnectionInfo()
+	tenantInfo, err := dynatraceClient.GetAgentTenantInfo()
+	res := tenantInfo.ConnectionInfo
 
 	assert.NoError(t, err)
 	assert.ObjectsAreEqualValues(res.CommunicationHosts, []CommunicationHost{

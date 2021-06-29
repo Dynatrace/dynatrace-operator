@@ -27,7 +27,9 @@ func SetDynakubeStatus(instance *dynatracev1alpha1.DynaKube, opts Options) error
 		return errors.WithStack(err)
 	}
 
-	connectionInfo, err := dtc.GetConnectionInfo()
+	tenantInfo, err := dtc.GetAgentTenantInfo()
+	connectionInfo := tenantInfo.ConnectionInfo
+
 	if err != nil {
 		return errors.WithStack(err)
 	}

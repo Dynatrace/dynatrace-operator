@@ -3,6 +3,7 @@ package capability
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"strings"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -40,7 +41,7 @@ func NewReconciler(capability capability.Capability, clt client.Client, apiReade
 	baseReconciler := sts.NewReconciler(
 		clt, apiReader, scheme, log, instance, imageVersionProvider, capability)
 
-	baseReconciler.AddOnAfterStatefulSetCreateListener(addTenantInfo(dtc))
+	//baseReconciler.AddOnAfterStatefulSetCreateListener(addTenantInfo(dtc))
 
 	if capability.GetConfiguration().SetDnsEntryPoint {
 		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.GetModuleName()))
@@ -96,7 +97,7 @@ func addTenantInfo(dtc dtclient.Client) events.StatefulSetEvent {
 			},
 			corev1.EnvVar{
 				Name:  dtTenantUUID,
-				Value: info.ID,
+				Value: info.ConnectionInfo.TenantUUID,
 			})
 	}
 }

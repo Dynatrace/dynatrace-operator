@@ -2,11 +2,10 @@ package dtclient
 
 import (
 	"encoding/json"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 const connectionInfoEndpoint = "/v1/deployment/installer/agent/connectioninfo"
@@ -18,7 +17,7 @@ var tenantResponse = struct {
 }{
 	TenantUUID:             "abcd",
 	TenantToken:            "1234",
-	CommunicationEndpoints: []string{"/some/url"},
+	CommunicationEndpoints: []string{"https://host/path"},
 }
 
 func TestTenant(t *testing.T) {
@@ -30,7 +29,7 @@ func TestTenant(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, tenantInfo)
 
-		assert.Equal(t, tenantResponse.TenantUUID, tenantInfo.ID)
+		assert.Equal(t, tenantResponse.TenantUUID, tenantInfo.ConnectionInfo.TenantUUID)
 		assert.Equal(t, tenantResponse.TenantToken, tenantInfo.Token)
 		assert.Equal(t, tenantResponse.CommunicationEndpoints, tenantInfo.Endpoints)
 		assert.Equal(t,

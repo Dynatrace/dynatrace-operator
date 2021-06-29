@@ -57,24 +57,29 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			Host:     testHost,
 			Port:     testPort,
 		}, nil)
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			CommunicationHosts: []dtclient.CommunicationHost{
-				{
-					Protocol: testProtocol,
-					Host:     testHost,
-					Port:     testPort,
+		mockClient.On("GetAgentTenantInfo").
+			Return(&dtclient.TenantInfo{
+				ConnectionInfo: dtclient.ConnectionInfo{
+					CommunicationHosts: []dtclient.CommunicationHost{
+						{
+							Protocol: testProtocol,
+							Host:     testHost,
+							Port:     testPort,
+						},
+						{
+							Protocol: testAnotherProtocol,
+							Host:     testAnotherHost,
+							Port:     testAnotherPort,
+						},
+					},
+					TenantUUID: testUUID,
 				},
-				{
-					Protocol: testAnotherProtocol,
-					Host:     testAnotherHost,
-					Port:     testAnotherPort,
-				},
-			},
-			TenantUUID: testUUID,
-		}, nil)
+			}, nil)
 		mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{TenantUUID: "abc123456"}, nil)
+		mockClient.On("GetAgentTenantInfo").Return(&dtclient.TenantInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{TenantUUID: "abc123456"},
+		}, nil)
 		mockClient.On("GetAGTenantInfo").Return(&dtclient.TenantInfo{}, nil)
 		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
@@ -158,20 +163,22 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			Host:     testHost,
 			Port:     testPort,
 		}, nil)
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			CommunicationHosts: []dtclient.CommunicationHost{
-				{
-					Protocol: testProtocol,
-					Host:     testHost,
-					Port:     testPort,
+		mockClient.On("GetAgentTenantInfo").Return(&dtclient.TenantInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
+				CommunicationHosts: []dtclient.CommunicationHost{
+					{
+						Protocol: testProtocol,
+						Host:     testHost,
+						Port:     testPort,
+					},
+					{
+						Protocol: testAnotherProtocol,
+						Host:     testAnotherHost,
+						Port:     testAnotherPort,
+					},
 				},
-				{
-					Protocol: testAnotherProtocol,
-					Host:     testAnotherHost,
-					Port:     testAnotherPort,
-				},
+				TenantUUID: testUUID,
 			},
-			TenantUUID: testUUID,
 		}, nil)
 		mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
@@ -179,7 +186,9 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
 		mockClient.On("GetAGTenantInfo").
 			Return(&dtclient.TenantInfo{
-				ID:                    "123",
+				ConnectionInfo: dtclient.ConnectionInfo{
+					TenantUUID: "123",
+				},
 				Token:                 "asdf",
 				Endpoints:             []string{"aaa", "bbb", "ccc"},
 				CommunicationEndpoint: "comm",
@@ -248,28 +257,34 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 		Host:     testHost,
 		Port:     testPort,
 	}, nil)
-	mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-		CommunicationHosts: []dtclient.CommunicationHost{
-			{
-				Protocol: testProtocol,
-				Host:     testHost,
-				Port:     testPort,
+
+	mockClient.On("GetAgentTenantInfo").
+		Return(&dtclient.TenantInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
+				CommunicationHosts: []dtclient.CommunicationHost{
+					{
+						Protocol: testProtocol,
+						Host:     testHost,
+						Port:     testPort,
+					},
+					{
+						Protocol: testAnotherProtocol,
+						Host:     testAnotherHost,
+						Port:     testAnotherPort,
+					},
+				},
+				TenantUUID: testUUID,
 			},
-			{
-				Protocol: testAnotherProtocol,
-				Host:     testAnotherHost,
-				Port:     testAnotherPort,
-			},
-		},
-		TenantUUID: testUUID,
-	}, nil)
+		}, nil)
 	mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 	mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
 	mockClient.On("GetAGTenantInfo").
 		Return(&dtclient.TenantInfo{
-			ID:                    "123",
+			ConnectionInfo: dtclient.ConnectionInfo{
+				TenantUUID: "123",
+			},
 			Token:                 "asdf",
 			Endpoints:             []string{"aaa", "bbb", "ccc"},
 			CommunicationEndpoint: "comm",

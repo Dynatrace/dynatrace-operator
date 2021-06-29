@@ -9,7 +9,7 @@ import (
 )
 
 type TenantInfo struct {
-	ID                    string
+	ConnectionInfo
 	Token                 string
 	Endpoints             []string
 	CommunicationEndpoint string
@@ -54,6 +54,13 @@ func (dtc *dynatraceClient) getTenantInfo(apiEndpoint string, readResponseForTen
 	}
 
 	tenantInfo.CommunicationEndpoint = tenantInfo.findCommunicationEndpoint()
+
+	tenantInfo.ConnectionInfo, err = dtc.readResponseForConnectionInfo(data)
+	if err != nil {
+		dtc.logger.Error(err, err.Error())
+		return nil, errors.WithStack(err)
+	}
+
 	return tenantInfo, nil
 }
 
@@ -82,7 +89,9 @@ func (dtc *dynatraceClient) readResponseForAGTenantInfo(response []byte) (*Tenan
 	}
 
 	return &TenantInfo{
-		ID:        jr.TenantUUID,
+		ConnectionInfo: ConnectionInfo{
+			TenantUUID: jr.TenantUUID,
+		},
 		Token:     jr.TenantToken,
 		Endpoints: strings.Split(jr.CommunicationEndpoints, ","),
 	}, nil
@@ -103,7 +112,9 @@ func (dtc *dynatraceClient) readResponseForTenantInfo(response []byte) (*TenantI
 	}
 
 	return &TenantInfo{
-		ID:        jr.TenantUUID,
+		ConnectionInfo: ConnectionInfo{
+			TenantUUID: jr.TenantUUID,
+		},
 		Token:     jr.TenantToken,
 		Endpoints: jr.CommunicationEndpoints,
 	}, nil
@@ -131,7 +142,7 @@ func (tenantInfo *TenantInfo) findCommunicationEndpointIndex() int {
 		return -1
 	}
 	for i, endpoint := range tenantInfo.Endpoints {
-		if strings.Contains(endpoint, tenantInfo.ID) {
+		if strings.Contains(endpoint, tenantInfo.ConnectionInfo.TenantUUID) {
 			return i
 		}
 	}

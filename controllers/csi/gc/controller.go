@@ -72,7 +72,8 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return reconcileResult, nil
 	}
 
-	ci, err := dtc.GetConnectionInfo()
+	ti, err := dtc.GetAgentTenantInfo()
+	ci := ti.ConnectionInfo
 	if err != nil {
 		gc.logger.Info("failed to fetch connection info")
 		return reconcileResult, nil

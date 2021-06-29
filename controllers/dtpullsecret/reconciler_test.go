@@ -38,9 +38,10 @@ func TestReconciler_Reconcile(t *testing.T) {
 		fakeClient := fake.NewClient()
 		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, logf.Log, secret)
 
-		mockDTC.
-			On("GetConnectionInfo").
-			Return(dtclient.ConnectionInfo{}, nil)
+		mockDTC.On("GetAgentTenantInfo").
+			Return(&dtclient.TenantInfo{
+				ConnectionInfo: dtclient.ConnectionInfo{},
+			}, nil)
 
 		err := r.Reconcile()
 
