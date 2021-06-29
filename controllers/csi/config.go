@@ -19,12 +19,9 @@ package dtcsi
 import "time"
 
 const (
-	AgentConfDir          = "agent/conf"
-	DataPath              = "data"
-	DatastorageDir        = "datastorage"
+	DataPath              = "/data"
 	DriverName            = "csi.oneagent.dynatrace.com"
 	GarbageCollectionPath = "gc"
-	LogDir                = "log"
 	VersionDir            = "version"
 )
 

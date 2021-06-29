@@ -30,7 +30,7 @@ type Client interface {
 	GetLatestAgentVersion(os, installerType string) (string, error)
 
 	// GetLatestAgent returns a reader with the contents of the download. Must be closed by caller.
-	GetLatestAgent(os, installerType, flavor, arch string) (io.ReadCloser, error)
+	GetLatestAgent(os, installerType, flavor, arch string, writer io.Writer) error
 
 	// GetCommunicationHosts returns, on success, the list of communication hosts used for available
 	// communication endpoints that the Dynatrace OneAgent can use to connect to.
@@ -109,9 +109,7 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 		return nil, errors.New("tokens are empty")
 	}
 
-	if strings.HasSuffix(url, "/") {
-		url = url[:len(url)-1]
-	}
+	url = strings.TrimSuffix(url, "/")
 
 	dc := &dynatraceClient{
 		url:       url,

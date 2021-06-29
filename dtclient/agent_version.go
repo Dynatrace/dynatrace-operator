@@ -69,17 +69,20 @@ func (dtc *dynatraceClient) readResponseForLatestVersion(response []byte) (strin
 }
 
 // GetVersionForLatest gets the latest agent package for the given OS and installer type.
-func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch string) (io.ReadCloser, error) {
+func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch string, writer io.Writer) error {
 	if len(os) == 0 || len(installerType) == 0 {
-		return nil, errors.New("os or installerType is empty")
+		return errors.New("os or installerType is empty")
 	}
 
 	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest?bitness=64&flavor=%s&arch=%s",
 		dtc.url, os, installerType, flavor, arch)
+
 	resp, err := dtc.makeRequest(url, dynatracePaaSToken)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	defer func() { _ = resp.Body.Close() }()
 
-	return resp.Body, err
+	_, err = io.Copy(writer, resp.Body)
+	return err
 }

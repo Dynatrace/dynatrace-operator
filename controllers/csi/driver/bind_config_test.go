@@ -30,7 +30,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, afero.Afero{})
@@ -46,7 +45,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, afero.Afero{})
@@ -63,7 +61,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.fs)
@@ -81,10 +78,9 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
-		_ = srv.fs.WriteFile(filepath.Join(srv.opts.RootDir, dtcsi.DataPath, "tenant-"+dkName), []byte(tenantUuid), os.ModePerm)
+		_ = srv.fs.WriteFile(filepath.Join(srv.opts.RootDir, "tenant-"+dkName), []byte(tenantUuid), os.ModePerm)
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.fs)
 
@@ -100,7 +96,6 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.fs)
@@ -122,17 +117,16 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
-		_ = srv.fs.WriteFile(filepath.Join(srv.opts.RootDir, dtcsi.DataPath, "tenant-"+dkName), []byte(tenantUuid), os.ModePerm)
-		_ = srv.fs.WriteFile(filepath.Join(srv.opts.RootDir, dtcsi.DataPath, tenantUuid, "version"), []byte(agentVersion), os.ModePerm)
+		_ = srv.fs.WriteFile(filepath.Join(srv.opts.RootDir, "tenant-"+dkName), []byte(tenantUuid), os.ModePerm)
+		_ = srv.fs.WriteFile(filepath.Join(srv.opts.RootDir, tenantUuid, "version"), []byte(agentVersion), os.ModePerm)
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.fs)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, bindCfg)
-		assert.Equal(t, filepath.Join(srv.opts.RootDir, dtcsi.DataPath, tenantUuid, "bin", agentVersion), bindCfg.agentDir)
-		assert.Equal(t, filepath.Join(srv.opts.RootDir, dtcsi.DataPath, tenantUuid), bindCfg.envDir)
+		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid, "bin", agentVersion), bindCfg.agentDir)
+		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid), bindCfg.envDir)
 	})
 }

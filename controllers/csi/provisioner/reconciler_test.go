@@ -97,9 +97,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					Spec: v1alpha1.DynaKubeSpec{
 						CodeModules: v1alpha1.CodeModulesSpec{
 							Enabled: true,
-							Volume: v1.VolumeSource{
-								CSI: nil,
-							},
+							Volume:  v1.VolumeSource{EmptyDir: &v1.EmptyDirVolumeSource{}},
 						},
 					},
 				},
@@ -233,7 +231,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		assert.EqualError(t, err, "failed to create directory "+filepath.Join(dtcsi.DataPath, tenantUUID)+": "+errorMsg)
+		assert.EqualError(t, err, "failed to create directory "+filepath.Join(tenantUUID)+": "+errorMsg)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 	})
@@ -312,34 +310,23 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			},
 			fs: memFs,
 		}
+
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		assert.NoError(t, err)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{RequeueAfter: 5 * time.Minute}, result)
+		assert.NotEmpty(t, result)
 
-		tenantPath := filepath.Join(dtcsi.DataPath, tenantUUID)
-		exists, err := afero.Exists(memFs, tenantPath)
+		exists, err := afero.Exists(memFs, tenantUUID)
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		exists, err = afero.Exists(memFs, filepath.Join(tenantPath, dtcsi.LogDir))
+		exists, err = afero.Exists(memFs, dkTenantMapping)
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		exists, err = afero.Exists(memFs, filepath.Join(tenantPath, dtcsi.DatastorageDir))
-
-		assert.NoError(t, err)
-		assert.True(t, exists)
-
-		exists, err = afero.Exists(memFs, filepath.Join(dtcsi.DataPath, dkTenantMapping))
-
-		assert.NoError(t, err)
-		assert.True(t, exists)
-
-		data, err := afero.ReadFile(memFs, filepath.Join(dtcsi.DataPath, dkTenantMapping))
+		data, err := afero.ReadFile(memFs, dkTenantMapping)
 
 		assert.NoError(t, err)
 		assert.Equal(t, tenantUUID, string(data))
@@ -381,34 +368,23 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			},
 			fs: errorFs,
 		}
+
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		assert.EqualError(t, err, "failed to query installed OneAgent version: "+errorMsg)
-		assert.NotNil(t, result)
-		assert.Equal(t, reconcile.Result{}, result)
+		assert.Error(t, err)
+		assert.Empty(t, result)
 
-		tenantPath := filepath.Join(dtcsi.DataPath, tenantUUID)
-		exists, err := afero.Exists(errorFs, tenantPath)
+		exists, err := afero.Exists(errorFs, tenantUUID)
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		exists, err = afero.Exists(errorFs, filepath.Join(tenantPath, dtcsi.LogDir))
+		exists, err = afero.Exists(errorFs, dkTenantMapping)
 
 		assert.NoError(t, err)
 		assert.True(t, exists)
 
-		exists, err = afero.Exists(errorFs, filepath.Join(tenantPath, dtcsi.DatastorageDir))
-
-		assert.NoError(t, err)
-		assert.True(t, exists)
-
-		exists, err = afero.Exists(errorFs, filepath.Join(dtcsi.DataPath, dkTenantMapping))
-
-		assert.NoError(t, err)
-		assert.True(t, exists)
-
-		data, err := afero.ReadFile(errorFs, filepath.Join(dtcsi.DataPath, dkTenantMapping))
+		data, err := afero.ReadFile(errorFs, dkTenantMapping)
 
 		assert.NoError(t, err)
 		assert.Equal(t, tenantUUID, string(data))
@@ -450,7 +426,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			fs: memFs,
 		}
 
-		err := afero.WriteFile(memFs, filepath.Join(dtcsi.DataPath, tenantUUID, dtcsi.VersionDir), []byte(agentVersion), fs.FileMode(0755))
+		err := afero.WriteFile(memFs, filepath.Join(tenantUUID, dtcsi.VersionDir), []byte(agentVersion), fs.FileMode(0755))
 
 		require.NoError(t, err)
 
@@ -460,35 +436,114 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{RequeueAfter: 5 * time.Minute}, result)
 
-		for _, path := range []string{
-			filepath.Join(dtcsi.DataPath, tenantUUID),
-			filepath.Join(dtcsi.DataPath, tenantUUID, dtcsi.LogDir),
-			filepath.Join(dtcsi.DataPath, tenantUUID, dtcsi.DatastorageDir),
-		} {
-			exists, err := afero.Exists(memFs, path)
+		exists, err := afero.Exists(memFs, tenantUUID)
 
-			assert.NoError(t, err)
-			assert.True(t, exists)
+		assert.NoError(t, err)
+		assert.True(t, exists)
 
-			fileInfo, err := memFs.Stat(path)
+		fileInfo, err := memFs.Stat(tenantUUID)
 
-			assert.NoError(t, err)
-			assert.True(t, fileInfo.IsDir())
-		}
+		assert.NoError(t, err)
+		assert.True(t, fileInfo.IsDir())
 	})
 }
 
-func TestHasInvalidCSIVolumeSource(t *testing.T) {
-	dk := v1alpha1.DynaKube{}
-	assert.True(t, hasInvalidCSIVolumeSource(dk))
+func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
+	t.Run(`default DynaKube object returns false`, func(t *testing.T) {
+		dk := &v1alpha1.DynaKube{}
 
-	dk.Spec.CodeModules.Volume.CSI = &v1.CSIVolumeSource{
-		Driver: invalidDriverName,
-	}
-	assert.True(t, hasInvalidCSIVolumeSource(dk))
+		isEnabled := hasCodeModulesWithCSIVolumeEnabled(dk)
 
-	dk.Spec.CodeModules.Volume.CSI.Driver = dtcsi.DriverName
-	assert.False(t, hasInvalidCSIVolumeSource(dk))
+		assert.False(t, isEnabled)
+	})
+
+	t.Run(`code modules disabled returns false`, func(t *testing.T) {
+		dk := &v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				CodeModules: v1alpha1.CodeModulesSpec{
+					Enabled: false,
+				},
+			},
+		}
+
+		isEnabled := hasCodeModulesWithCSIVolumeEnabled(dk)
+
+		assert.False(t, isEnabled)
+	})
+
+	t.Run(`code modules enabled with no volume returns true`, func(t *testing.T) {
+		dk := &v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				CodeModules: v1alpha1.CodeModulesSpec{
+					Enabled: true,
+				},
+			},
+		}
+
+		isEnabled := hasCodeModulesWithCSIVolumeEnabled(dk)
+
+		assert.True(t, isEnabled)
+	})
+
+	t.Run(`code modules enabled with empty volume returns true`, func(t *testing.T) {
+		dk := &v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				CodeModules: v1alpha1.CodeModulesSpec{
+					Enabled: true,
+					Volume:  v1.VolumeSource{},
+				},
+			},
+		}
+
+		isEnabled := hasCodeModulesWithCSIVolumeEnabled(dk)
+
+		assert.True(t, isEnabled)
+	})
+
+	t.Run(`code modules enabled with csi.oneagent.dynatrace.com volume returns true`, func(t *testing.T) {
+		dk := &v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				CodeModules: v1alpha1.CodeModulesSpec{
+					Enabled: true,
+					Volume:  v1.VolumeSource{CSI: &v1.CSIVolumeSource{Driver: dtcsi.DriverName}},
+				},
+			},
+		}
+
+		isEnabled := hasCodeModulesWithCSIVolumeEnabled(dk)
+
+		assert.True(t, isEnabled)
+	})
+
+	t.Run(`code modules enabled with other csi volume returns false`, func(t *testing.T) {
+		dk := &v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				CodeModules: v1alpha1.CodeModulesSpec{
+					Enabled: true,
+					Volume:  v1.VolumeSource{CSI: &v1.CSIVolumeSource{Driver: invalidDriverName}},
+				},
+			},
+		}
+
+		isEnabled := hasCodeModulesWithCSIVolumeEnabled(dk)
+
+		assert.False(t, isEnabled)
+	})
+
+	t.Run(`code modules enabled with emptydir volume returns false`, func(t *testing.T) {
+		dk := &v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				CodeModules: v1alpha1.CodeModulesSpec{
+					Enabled: true,
+					Volume:  v1.VolumeSource{EmptyDir: &v1.EmptyDirVolumeSource{}},
+				},
+			},
+		}
+
+		isEnabled := hasCodeModulesWithCSIVolumeEnabled(dk)
+
+		assert.False(t, isEnabled)
+	})
 }
 
 func buildValidCodeModulesSpec(_ *testing.T) v1alpha1.CodeModulesSpec {

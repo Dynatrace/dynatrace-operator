@@ -21,6 +21,7 @@ spec:
       containers:
         - name: driver
           image: quay.io/dynatrace/dynatrace-operator:snapshot
+          imagePullPolicy: Always
           command:
             - csi-driver
           args:
@@ -39,14 +40,7 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.nodeName
-          imagePullPolicy: Always
-          resources:
-            requests:
-              cpu: 100m
-              memory: 100Mi
-            limits:
-              cpu: 100m
-              memory: 100Mi
+          resources: {}
           ports:
             - containerPort: 10080
               name: healthz
@@ -75,9 +69,12 @@ spec:
             - name: mountpoint-dir
               mountPath: /var/lib/kubelet/pods
               mountPropagation: Bidirectional
+            - mountPath: /data
+              mountPropagation: Bidirectional
+              name: dynatrace-oneagent-data-dir
         - name: registrar
           image: quay.io/dynatrace/dynatrace-operator:snapshot
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           command:
             - csi-node-driver-registrar
           args:
@@ -102,6 +99,7 @@ spec:
               mountPath: /registration
         - name: liveness-probe
           image: quay.io/dynatrace/dynatrace-operator:snapshot
+          imagePullPolicy: Always
           command:
             - livenessprobe
           args:
@@ -127,4 +125,8 @@ spec:
         - name: mountpoint-dir
           hostPath:
             path: /var/lib/kubelet/pods
+            type: DirectoryOrCreate
+        - name: dynatrace-oneagent-data-dir
+          hostPath:
+            path: /tmp/dynatrace-oneagent-data
             type: DirectoryOrCreate

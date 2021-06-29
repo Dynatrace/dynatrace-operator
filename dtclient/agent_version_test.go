@@ -185,3 +185,5 @@ func handleLatestAgentVersion(request *http.Request, writer http.ResponseWriter)
 		writeError(writer, http.StatusMethodNotAllowed)
 	}
 }
+
+//TODO test GetLatestAgent
