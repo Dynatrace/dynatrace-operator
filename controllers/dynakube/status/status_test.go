@@ -159,7 +159,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 		}, nil)
 
 		dtc.On("GetAgentTenantInfo").Return(&dtclient.TenantInfo{
-			ConnectionInfo:        dtclient.ConnectionInfo{},
+			ConnectionInfo: dtclient.ConnectionInfo{},
 		}, fmt.Errorf(testError))
 
 		err := SetDynakubeStatus(instance, options)
@@ -186,7 +186,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 		}, nil)
 
 		dtc.On("GetAgentTenantInfo").Return(&dtclient.TenantInfo{
-			ConnectionInfo:        dtclient.ConnectionInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
 				CommunicationHosts: []dtclient.CommunicationHost{
 					{
 						Protocol: testProtocol,
@@ -229,7 +229,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 		}, nil)
 
 		dtc.On("GetAgentTenantInfo").Return(&dtclient.TenantInfo{
-			ConnectionInfo:        dtclient.ConnectionInfo{
+			ConnectionInfo: dtclient.ConnectionInfo{
 				CommunicationHosts: []dtclient.CommunicationHost{
 					{
 						Protocol: testProtocol,

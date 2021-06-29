@@ -3,9 +3,6 @@ package capability
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	"strings"
-
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
@@ -83,24 +80,24 @@ func (r *Reconciler) calculateStatefulSetName() string {
 	return capability.CalculateStatefulSetName(r.Capability, r.Instance.Name)
 }
 
-func addTenantInfo(dtc dtclient.Client) events.StatefulSetEvent {
-	info, err := dtc.GetAGTenantInfo()
-	if err != nil {
-		return nil
-	}
-
-	return func(sts *appsv1.StatefulSet) {
-		sts.Spec.Template.Spec.Containers[0].Env = append(sts.Spec.Template.Spec.Containers[0].Env,
-			corev1.EnvVar{
-				Name:  dtServer,
-				Value: strings.Join(info.Endpoints, ","),
-			},
-			corev1.EnvVar{
-				Name:  dtTenantUUID,
-				Value: info.ConnectionInfo.TenantUUID,
-			})
-	}
-}
+//func addTenantInfo(dtc dtclient.Client) events.StatefulSetEvent {
+//	info, err := dtc.GetAGTenantInfo()
+//	if err != nil {
+//		return nil
+//	}
+//
+//	return func(sts *appsv1.StatefulSet) {
+//		sts.Spec.Template.Spec.Containers[0].Env = append(sts.Spec.Template.Spec.Containers[0].Env,
+//			corev1.EnvVar{
+//				Name:  dtServer,
+//				Value: strings.Join(info.Endpoints, ","),
+//			},
+//			corev1.EnvVar{
+//				Name:  dtTenantUUID,
+//				Value: info.AgentConnectionInfo.TenantUUID,
+//			})
+//	}
+//}
 
 func addDNSEntryPoint(instance *dynatracev1alpha1.DynaKube, moduleName string) events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {

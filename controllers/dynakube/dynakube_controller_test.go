@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+	"net/url"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -190,8 +191,8 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					TenantUUID: "123",
 				},
 				Token:                 "asdf",
-				Endpoints:             []string{"aaa", "bbb", "ccc"},
-				CommunicationEndpoint: "comm",
+				Endpoints:             nil,
+				CommunicationEndpoint: nil,
 			}, nil)
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{
@@ -280,15 +281,21 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
+
+	url1, _ := url.Parse("https://aaa")
+	url2, _ := url.Parse("https://bbb")
+	url3, _ := url.Parse("http://ccc")
+
 	mockClient.On("GetAGTenantInfo").
 		Return(&dtclient.TenantInfo{
 			ConnectionInfo: dtclient.ConnectionInfo{
 				TenantUUID: "123",
 			},
 			Token:                 "asdf",
-			Endpoints:             []string{"aaa", "bbb", "ccc"},
-			CommunicationEndpoint: "comm",
-		}, nil)
+			Endpoints:             []*url.URL{url1, url2, url3},
+			CommunicationEndpoint: url1,
+		},
+			nil)
 
 	_, err := r.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)

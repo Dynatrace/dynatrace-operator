@@ -3,6 +3,7 @@ package dtclient
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -11,8 +12,8 @@ import (
 type TenantInfo struct {
 	ConnectionInfo
 	Token                 string
-	Endpoints             []string
-	CommunicationEndpoint string
+	Endpoints             []*url.URL
+	CommunicationEndpoint *url.URL
 }
 
 type responseReader func(*dynatraceClient, []byte) (*TenantInfo, error)
@@ -53,7 +54,7 @@ func (dtc *dynatraceClient) getTenantInfo(apiEndpoint string, readResponseForTen
 		dtc.logger.Info("tenant has no endpoints")
 	}
 
-	tenantInfo.CommunicationEndpoint = tenantInfo.findCommunicationEndpoint()
+	tenantInfo.CommunicationEndpoint, _ = tenantInfo.findCommunicationEndpoint()
 
 	tenantInfo.ConnectionInfo, err = dtc.readResponseForConnectionInfo(data)
 	if err != nil {
@@ -88,12 +89,23 @@ func (dtc *dynatraceClient) readResponseForAGTenantInfo(response []byte) (*Tenan
 		return nil, errors.WithStack(err)
 	}
 
+	ce := strings.Split(jr.CommunicationEndpoints, ",")
+	endpointUrls := make([]*url.URL, len(ce))
+	for i, endpoint := range ce {
+		endpointUrl, err := url.Parse(endpoint)
+		if err != nil {
+			dtc.logger.Error(err, "error parsing endpoint")
+			return nil, errors.WithStack(err)
+		}
+		endpointUrls[i] = endpointUrl
+	}
+
 	return &TenantInfo{
 		ConnectionInfo: ConnectionInfo{
 			TenantUUID: jr.TenantUUID,
 		},
 		Token:     jr.TenantToken,
-		Endpoints: strings.Split(jr.CommunicationEndpoints, ","),
+		Endpoints: endpointUrls,
 	}, nil
 }
 
@@ -111,30 +123,42 @@ func (dtc *dynatraceClient) readResponseForTenantInfo(response []byte) (*TenantI
 		return nil, errors.WithStack(err)
 	}
 
+	endpointUrls := make([]*url.URL, len(jr.CommunicationEndpoints))
+	for i, endpoint := range jr.CommunicationEndpoints {
+		endpointUrl, err := url.Parse(endpoint)
+		if err != nil {
+			dtc.logger.Error(err, "error parsing endpoint")
+			return nil, errors.WithStack(err)
+		}
+		endpointUrls[i] = endpointUrl
+	}
+
 	return &TenantInfo{
 		ConnectionInfo: ConnectionInfo{
 			TenantUUID: jr.TenantUUID,
 		},
 		Token:     jr.TenantToken,
-		Endpoints: jr.CommunicationEndpoints,
+		Endpoints: endpointUrls,
 	}, nil
 }
 
-func (tenantInfo *TenantInfo) findCommunicationEndpoint() string {
+func (tenantInfo *TenantInfo) findCommunicationEndpoint() (*url.URL, error) {
 	endpointIndex := tenantInfo.findCommunicationEndpointIndex()
 	if endpointIndex < 0 {
-		return ""
+		return nil, nil
 	}
 
 	endpoint := tenantInfo.Endpoints[endpointIndex]
-	if !strings.HasSuffix(endpoint, DtCommunicationSuffix) {
-		if !strings.HasSuffix(endpoint, Slash) {
-			endpoint += Slash
+
+	if !strings.HasSuffix(endpoint.Path, DtCommunicationSuffix) {
+		suffixUrl, err := url.Parse(DtCommunicationSuffix)
+		if err != nil {
+			return nil, err
 		}
-		endpoint += DtCommunicationSuffix
+		endpoint = endpoint.ResolveReference(suffixUrl)
 	}
 
-	return endpoint
+	return endpoint, nil
 }
 
 func (tenantInfo *TenantInfo) findCommunicationEndpointIndex() int {
@@ -142,7 +166,7 @@ func (tenantInfo *TenantInfo) findCommunicationEndpointIndex() int {
 		return -1
 	}
 	for i, endpoint := range tenantInfo.Endpoints {
-		if strings.Contains(endpoint, tenantInfo.ConnectionInfo.TenantUUID) {
+		if strings.Contains(endpoint.Path, tenantInfo.ConnectionInfo.TenantUUID) {
 			return i
 		}
 	}

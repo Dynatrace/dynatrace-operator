@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
 	"net/http"
-	"strings"
+	"net/url"
 	"testing"
 )
 
 const connectionInfoEndpoint = "/v1/deployment/installer/agent/connectioninfo"
+
+const testurl = "https://host/path"
 
 var tenantResponse = struct {
 	TenantUUID             string
@@ -17,7 +19,7 @@ var tenantResponse = struct {
 }{
 	TenantUUID:             "abcd",
 	TenantToken:            "1234",
-	CommunicationEndpoints: []string{"https://host/path"},
+	CommunicationEndpoints: []string{testurl},
 }
 
 func TestTenant(t *testing.T) {
@@ -31,9 +33,14 @@ func TestTenant(t *testing.T) {
 
 		assert.Equal(t, tenantResponse.TenantUUID, tenantInfo.ConnectionInfo.TenantUUID)
 		assert.Equal(t, tenantResponse.TenantToken, tenantInfo.Token)
-		assert.Equal(t, tenantResponse.CommunicationEndpoints, tenantInfo.Endpoints)
+
+		u, _ := url.Parse(testurl)
+		assert.Equal(t, []*url.URL{u}, tenantInfo.Endpoints)
+
+		comm, _ := url.Parse("communication")
+		uCommunication := u.ResolveReference(comm)
 		assert.Equal(t,
-			strings.Join([]string{tenantResponse.CommunicationEndpoints[0], DtCommunicationSuffix}, Slash),
+			uCommunication,
 			tenantInfo.CommunicationEndpoint)
 	})
 	t.Run("GetAgentTenantInfo handle internal server error", func(t *testing.T) {
