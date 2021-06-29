@@ -2,15 +2,12 @@ package csigc
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -81,46 +78,17 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return reconcileResult, nil
 	}
 
-	ver, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
+	latestAgentVersion, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
 		gc.logger.Info("failed to query OneAgent version")
 		return reconcileResult, nil
 	}
 
-	versionReferences, err := gc.getVersionReferences(ci.TenantUUID)
-	if err != nil {
-		gc.logger.Error(err, "failed to get version references")
-		return reconcileResult, errors.WithStack(err)
-	}
-
 	gc.logger.Info("running binary garbage collection")
-	if err = gc.runBinaryGarbageCollection(versionReferences, ci.TenantUUID, ver); err != nil {
-		gc.logger.Error(err, "binary garbage collection failed")
-		return reconcileResult, err
-	}
+	gc.runBinaryGarbageCollection(ci.TenantUUID, latestAgentVersion)
 
 	gc.logger.Info("running log garbage collection")
-	if err = gc.runLogGarbageCollection(versionReferences, ci.TenantUUID); err != nil {
-		gc.logger.Error(err, "log garbage collection failed")
-		return reconcileResult, err
-	}
+	gc.runLogGarbageCollection(ci.TenantUUID)
 
 	return reconcileResult, nil
-}
-
-func (gc *CSIGarbageCollector) getVersionReferences(tenantUUID string) ([]os.FileInfo, error) {
-	fs := &afero.Afero{Fs: gc.fs}
-
-	versionReferencesBase := filepath.Join(gc.opts.RootDir, dtcsi.DataPath, tenantUUID, dtcsi.GarbageCollectionPath)
-	versionReferences, err := fs.ReadDir(versionReferencesBase)
-	if err != nil {
-		exists, _ := fs.DirExists(versionReferencesBase)
-		if !exists {
-			gc.logger.Info("skipped, version reference base directory not exists", "path", versionReferencesBase)
-			return nil, nil
-		}
-		return nil, errors.WithStack(err)
-	}
-
-	return versionReferences, nil
 }

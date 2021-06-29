@@ -24,19 +24,32 @@ var (
 	versionReferenceBasePath = filepath.Join(rootDir, tenantUUID, dtcsi.GarbageCollectionPath)
 )
 
-func TestBinaryGarbageCollector_succeedsWhenVersionReferenceBaseDirectoryNotExists(t *testing.T) {
-	resetMetrics()
+func TestBinaryGarbageCollector_versionReferenceGenerationSuccess(t *testing.T) {
 	gc := NewMockGarbageCollector()
+	gc.mockUnusedVersions(version_1, version_2, version_3)
 
 	versionReferences, err := gc.getVersionReferences(tenantUUID)
 	assert.NoError(t, err)
 
-	err = gc.runBinaryGarbageCollection(versionReferences, tenantUUID, version_1)
+	assert.NotNil(t, versionReferences)
+	assert.NoError(t, err)
+}
+
+func TestBinaryGarbageCollector_succeedsWhenVersionReferenceBaseDirectoryNotExists(t *testing.T) {
+	resetMetrics()
+	gc := NewMockGarbageCollector()
+	gc.mockUnusedVersions(version_1, version_2, version_3)
+
+	versionReferences, err := gc.getVersionReferences(tenantUUID)
+	assert.NoError(t, err)
+
+	gc.runBinaryGarbageCollection(tenantUUID, version_1)
 
 	assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 	assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
 	assert.Equal(t, float64(0), testutil.ToFloat64(reclaimedMemoryMetric))
 
+	assert.NotNil(t, versionReferences)
 	assert.NoError(t, err)
 }
 
@@ -45,16 +58,11 @@ func TestBinaryGarbageCollector_succeedsWhenNoVersionsAvailable(t *testing.T) {
 	gc := NewMockGarbageCollector()
 	_ = gc.fs.MkdirAll(versionReferenceBasePath, 0770)
 
-	versionReferences, err := gc.getVersionReferences(tenantUUID)
-	assert.NoError(t, err)
-
-	err = gc.runBinaryGarbageCollection(versionReferences, tenantUUID, version_1)
+	gc.runBinaryGarbageCollection(tenantUUID, version_1)
 
 	assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 	assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
 	assert.Equal(t, float64(0), testutil.ToFloat64(reclaimedMemoryMetric))
-
-	assert.NoError(t, err)
 }
 
 func TestBinaryGarbageCollector_ignoresLatest(t *testing.T) {
@@ -62,16 +70,12 @@ func TestBinaryGarbageCollector_ignoresLatest(t *testing.T) {
 	gc := NewMockGarbageCollector()
 	gc.mockUnusedVersions(version_1)
 
-	versionReferences, err := gc.getVersionReferences(tenantUUID)
-	assert.NoError(t, err)
-
-	err = gc.runBinaryGarbageCollection(versionReferences, tenantUUID, version_1)
+	gc.runBinaryGarbageCollection(tenantUUID, version_1)
 
 	assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 	assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
 	assert.Equal(t, float64(0), testutil.ToFloat64(reclaimedMemoryMetric))
 
-	assert.NoError(t, err)
 	gc.assertVersionExists(t, version_1)
 }
 
@@ -80,33 +84,25 @@ func TestBinaryGarbageCollector_removesUnused(t *testing.T) {
 	gc := NewMockGarbageCollector()
 	gc.mockUnusedVersions(version_1, version_2, version_3)
 
-	versionReferences, err := gc.getVersionReferences(tenantUUID)
-	assert.NoError(t, err)
-
-	err = gc.runBinaryGarbageCollection(versionReferences, tenantUUID, version_2)
+	gc.runBinaryGarbageCollection(tenantUUID, version_2)
 
 	assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 	assert.Equal(t, float64(2), testutil.ToFloat64(foldersRemovedMetric))
 
-	assert.NoError(t, err)
 	gc.assertVersionNotExists(t, version_1, version_3)
 }
 
 func TestBinaryGarbageCollector_ignoresUsed(t *testing.T) {
 	resetMetrics()
 	gc := NewMockGarbageCollector()
-	gc.MockUsedVersions(version_1, version_2, version_3)
+	gc.mockUsedVersions(version_1, version_2, version_3)
 
-	versionReferences, err := gc.getVersionReferences(tenantUUID)
-	assert.NoError(t, err)
-
-	err = gc.runBinaryGarbageCollection(versionReferences, tenantUUID, version_3)
+	gc.runBinaryGarbageCollection(tenantUUID, version_3)
 
 	assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 	assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
 	assert.Equal(t, float64(0), testutil.ToFloat64(reclaimedMemoryMetric))
 
-	assert.NoError(t, err)
 	gc.assertVersionExists(t, version_1, version_2, version_3)
 }
 
@@ -123,7 +119,7 @@ func (gc *CSIGarbageCollector) mockUnusedVersions(versions ...string) {
 		_ = gc.fs.MkdirAll(filepath.Join(versionReferenceBasePath, version), 0770)
 	}
 }
-func (gc *CSIGarbageCollector) MockUsedVersions(versions ...string) {
+func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
 	for _, version := range versions {
 		_ = gc.fs.MkdirAll(filepath.Join(versionReferenceBasePath, version), 0770)
 		_, _ = gc.fs.Create(filepath.Join(versionReferenceBasePath, version, "somePodID"))
