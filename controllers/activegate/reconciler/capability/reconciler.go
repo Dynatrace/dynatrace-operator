@@ -3,6 +3,7 @@ package capability
 import (
 	"context"
 	"fmt"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
@@ -23,8 +24,6 @@ import (
 const (
 	containerPort   = 9999
 	dtDNSEntryPoint = "DT_DNS_ENTRY_POINT"
-	dtTenantUUID    = "DT_TENANT"
-	dtServer        = "DT_SERVER"
 )
 
 type Reconciler struct {

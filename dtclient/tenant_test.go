@@ -2,10 +2,11 @@ package dtclient
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/url"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const connectionInfoEndpoint = "/v1/deployment/installer/agent/connectioninfo"

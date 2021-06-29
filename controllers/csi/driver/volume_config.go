@@ -19,7 +19,7 @@ func parsePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*volumeConfig
 
 	volID := req.GetVolumeId()
 	if volID == "" {
-		return nil, status.Error(codes.InvalidArgument, "Volume UUID missing in request")
+		return nil, status.Error(codes.InvalidArgument, "Volume ID missing in request")
 	}
 
 	targetPath := req.GetTargetPath()
