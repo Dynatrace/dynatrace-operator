@@ -2,24 +2,24 @@ package csidriver
 
 import (
 	"context"
-	"fmt"
-	"io/fs"
-	"path"
-	"strings"
+	"os"
+	"path/filepath"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	dkName     = "a-dynakube"
-	tenantUuid = "a-tenant-uuid"
+	dkName       = "a-dynakube"
+	tenantUuid   = "a-tenant-uuid"
+	agentVersion = "1.2-3"
 )
 
 func TestCSIDriverServer_NewBindConfig(t *testing.T) {
@@ -30,16 +30,9 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
-			func(filename string) ([]byte, error) {
-				return []byte(""), nil
-			},
-			func(path string, perm fs.FileMode) error {
-				return nil
-			})
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, afero.Afero{})
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -52,16 +45,9 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
-			func(filename string) ([]byte, error) {
-				return []byte(""), nil
-			},
-			func(path string, perm fs.FileMode) error {
-				return nil
-			})
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, afero.Afero{})
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -71,19 +57,13 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}})
 		srv := &CSIDriverServer{
 			client: clt,
+			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
-			func(filename string) ([]byte, error) {
-				return []byte(""), fmt.Errorf(testError)
-			},
-			func(path string, perm fs.FileMode) error {
-				return nil
-			})
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.fs)
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -93,21 +73,18 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}})
 		srv := &CSIDriverServer{
 			client: clt,
+			opts:   dtcsi.CSIOptions{RootDir: "/"},
+			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
-			func(filename string) ([]byte, error) {
-				return []byte(tenantUuid), nil
-			},
-			func(path string, perm fs.FileMode) error {
-				return fmt.Errorf(testError)
-			})
+		_ = srv.fs.WriteFile(filepath.Join(srv.opts.RootDir, "tenant-"+dkName), []byte(tenantUuid), os.ModePerm)
 
-		assert.EqualError(t, err, "rpc error: code = Internal desc = test error message")
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.fs)
+
+		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
 	})
 	t.Run(`failed to read version file`, func(t *testing.T) {
@@ -115,22 +92,13 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}})
 		srv := &CSIDriverServer{
 			client: clt,
+			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
-			func(filename string) ([]byte, error) {
-				if strings.HasSuffix(filename, "version") {
-					return []byte(""), fmt.Errorf(testError)
-				}
-				return []byte(tenantUuid), nil
-			},
-			func(path string, perm fs.FileMode) error {
-				return nil
-			})
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.fs)
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -144,23 +112,21 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		)
 		srv := &CSIDriverServer{
 			client: clt,
+			opts:   dtcsi.CSIOptions{RootDir: "/"},
+			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
-			podUID:    podUid,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg,
-			func(filename string) ([]byte, error) {
-				return []byte(tenantUuid), nil
-			},
-			func(path string, perm fs.FileMode) error {
-				return nil
-			})
+		_ = srv.fs.WriteFile(filepath.Join(srv.opts.RootDir, "tenant-"+dkName), []byte(tenantUuid), os.ModePerm)
+		_ = srv.fs.WriteFile(filepath.Join(srv.opts.RootDir, tenantUuid, "version"), []byte(agentVersion), os.ModePerm)
+
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.fs)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, bindCfg)
-		assert.Equal(t, path.Join(dtcsi.DataPath, tenantUuid, "bin", tenantUuid), bindCfg.agentDir)
-		assert.Equal(t, path.Join(dtcsi.DataPath, tenantUuid), bindCfg.envDir)
+		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid, "bin", agentVersion), bindCfg.agentDir)
+		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid), bindCfg.envDir)
 	})
 }

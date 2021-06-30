@@ -35,7 +35,9 @@ func TestReconcileNamespace(t *testing.T) {
 				},
 			},
 			Status: dynatracev1alpha1.DynaKubeStatus{
-				EnvironmentID: "abc12345",
+				ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
+					TenantUUID: "abc12345",
+				},
 				OneAgent: dynatracev1alpha1.OneAgentStatus{
 					Instances: map[string]dynatracev1alpha1.OneAgentInstance{
 						"node1": {},

@@ -8,9 +8,11 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
+	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
+	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/updates"
 	"github.com/Dynatrace/dynatrace-operator/controllers/istio"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
@@ -113,7 +115,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	}
 
 	rec := utils.NewReconciliation(reqLogger, instance)
-	r.reconcileImpl(ctx, rec)
+	r.reconcileDynaKube(ctx, rec)
 
 	if rec.Err != nil {
 		if rec.Updated || instance.Status.SetPhaseOnError(rec.Err) {
@@ -140,7 +142,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	return reconcile.Result{RequeueAfter: rec.RequeueAfter}, nil
 }
 
-func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconciliation) {
+func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Reconciliation) {
 	dtcReconciler := DynatraceClientReconciler{
 		Client:              r.client,
 		DynatraceClientFunc: r.dtcBuildFunc,
@@ -148,8 +150,18 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 		UpdatePaaSToken:     true,
 	}
 	dtc, upd, err := dtcReconciler.Reconcile(ctx, rec.Instance)
+
 	rec.Update(upd, defaultUpdateInterval, "Token conditions updated")
 	if rec.Error(err) {
+		return
+	}
+
+	err = status.SetDynakubeStatus(rec.Instance, status.Options{
+		Dtc:       dtc,
+		ApiClient: r.apiReader,
+	})
+	if rec.Error(err) {
+		rec.Log.Error(err, "could not set Dynakube status")
 		return
 	}
 
@@ -161,7 +173,7 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 	}
 
 	if rec.Instance.Spec.EnableIstio {
-		if upd, err := istio.NewController(r.config, r.scheme).ReconcileIstio(rec.Instance, dtc); err != nil {
+		if upd, err = istio.NewController(r.config, r.scheme).ReconcileIstio(rec.Instance); err != nil {
 			// If there are errors log them, but move on.
 			rec.Log.Info("Istio: failed to reconcile objects", "error", err)
 		} else if upd {
@@ -170,18 +182,18 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 	}
 
 	err = dtpullsecret.
-		NewReconciler(r.client, r.apiReader, r.scheme, rec.Instance, dtc, rec.Log, secret).
+		NewReconciler(r.client, r.apiReader, r.scheme, rec.Instance, rec.Log, secret).
 		Reconcile()
 	if rec.Error(err) {
 		rec.Log.Error(err, "could not reconcile Dynatrace pull secret")
 		return
 	}
 
-	upd, err = updates.ReconcileVersions(ctx, rec, r.client, dtc, dtversion.GetImageVersion)
+	upd, err = updates.ReconcileVersions(ctx, rec, r.client, dtversion.GetImageVersion)
 	rec.Update(upd, defaultUpdateInterval, "Found updates")
 	rec.Error(err)
 
-	if !r.reconcileActiveGateCapabilities(rec, dtc) {
+	if !r.reconcileActiveGateCapabilities(rec) {
 		return
 	}
 
@@ -198,8 +210,8 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 	}
 
 	if rec.Instance.Spec.InfraMonitoring.Enabled {
-		upd, err := oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, rec.Log, dtc, rec.Instance, &rec.Instance.Spec.InfraMonitoring, oneagent.InframonFeature,
+		upd, err = oneagent.NewOneAgentReconciler(
+			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.InfraMonitoring, oneagent.InframonFeature,
 		).Reconcile(ctx, rec)
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
 			return
@@ -212,8 +224,8 @@ func (r *ReconcileDynaKube) reconcileImpl(ctx context.Context, rec *utils.Reconc
 	}
 
 	if rec.Instance.Spec.ClassicFullStack.Enabled {
-		upd, err := oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, rec.Log, dtc, rec.Instance, &rec.Instance.Spec.ClassicFullStack, oneagent.ClassicFeature,
+		upd, err = oneagent.NewOneAgentReconciler(
+			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.ClassicFullStack, oneagent.ClassicFeature,
 		).Reconcile(ctx, rec)
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "classic fullstack reconciled") {
 			return
@@ -233,17 +245,17 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 	return nil
 }
 
-func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconciliation, dtc dtclient.Client) bool {
+func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconciliation) bool {
 	var caps = []capability.Capability{
 		capability.NewKubeMonCapability(&rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
 		capability.NewRoutingCapability(&rec.Instance.Spec.RoutingSpec.CapabilityProperties),
-		capability.NewMetricsCapability(&dynatracev1alpha1.CapabilityProperties{Enabled: rec.Instance.FeatureEnableMetricsIngest()}),
+		capability.NewDataIngestCapability(&rec.Instance.Spec.DataIngestSpec.CapabilityProperties),
 	}
 
 	for _, c := range caps {
 		if c.GetProperties().Enabled {
-			upd, err := capability.NewReconciler(
-				c, r.client, r.apiReader, r.scheme, dtc, rec.Log, rec.Instance, dtversion.GetImageVersion,
+			upd, err := rcap.NewReconciler(
+				c, r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, dtversion.GetImageVersion,
 			).Reconcile()
 			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, c.GetModuleName()+" reconciled") {
 				return false
@@ -262,7 +274,7 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconcili
 			if c.GetConfiguration().CreateService {
 				svc := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      capability.BuildServiceName(rec.Instance.Name, c.GetModuleName()),
+						Name:      rcap.BuildServiceName(rec.Instance.Name, c.GetModuleName()),
 						Namespace: rec.Instance.Namespace,
 					},
 				}

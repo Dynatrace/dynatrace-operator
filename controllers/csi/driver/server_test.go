@@ -1,12 +1,26 @@
 package csidriver
 
 import (
+	"context"
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/webhook"
+	"github.com/container-storage-interface/spec/lib/go/csi"
+	logr "github.com/go-logr/logr/testing"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/mount"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -14,6 +28,7 @@ const (
 	testTargetError      = "error"
 	testTargetNotMounted = "not-mounted"
 	testTargetMounted    = "mounted"
+	testTargetPath       = "/path/to/container/filesystem/opt/dynatrace/oneagent-paas"
 
 	testError = "test error message"
 )
@@ -112,4 +127,204 @@ func TestCSIDriverServer_parseEndpoint(t *testing.T) {
 		assert.Equal(t, "", protocol)
 		assert.Equal(t, "", address)
 	})
+}
+
+func TestServer_NodePublishVolume(t *testing.T) {
+	mounter := mount.NewFakeMounter([]mount.MountPoint{})
+	server := newServerForTesting(t, mounter)
+	nodePublishVolumeRequest := &csi.NodePublishVolumeRequest{
+		VolumeId: volumeId,
+		VolumeContext: map[string]string{
+			podNamespaceContextKey: namespace,
+		},
+		TargetPath: testTargetPath,
+		VolumeCapability: &csi.VolumeCapability{
+			AccessType: &csi.VolumeCapability_Mount{Mount: &csi.VolumeCapability_MountVolume{}},
+		},
+	}
+	mockOneAgent(t, &server)
+
+	response, err := server.NodePublishVolume(context.TODO(), nodePublishVolumeRequest)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+	assert.NotEmpty(t, mounter.MountPoints)
+	assertReferencesForPublishedVolume(t, mounter, server.fs)
+}
+
+func TestServer_NodeUnpublishVolume(t *testing.T) {
+	nodeUnpublishVolumeRequest := &csi.NodeUnpublishVolumeRequest{
+		VolumeId:   volumeId,
+		TargetPath: testTargetPath,
+	}
+
+	t.Run(`valid metadata`, func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{
+			{Path: testTargetPath},
+			{Path: fmt.Sprintf("/%s/run/%s/mapped", tenantUuid, volumeId)},
+		})
+		server := newServerForTesting(t, mounter)
+		mockPublishedVolume(t, &server)
+
+		response, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, response)
+		assert.Empty(t, mounter.MountPoints)
+		assertNoReferencesForUnpublishedVolume(t, server.fs)
+	})
+
+	t.Run(`invalid metadata`, func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{
+			{Path: testTargetPath},
+			{Path: fmt.Sprintf("/%s/run/%s/mapped", tenantUuid, volumeId)},
+		})
+		server := newServerForTesting(t, mounter)
+
+		response, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, response)
+		assert.NotEmpty(t, mounter.MountPoints)
+		assertNoReferencesForUnpublishedVolume(t, server.fs)
+	})
+}
+
+func TestCSIDriverServer_NodePublishAndUnpublishVolume(t *testing.T) {
+	nodePublishVolumeRequest := &csi.NodePublishVolumeRequest{
+		VolumeId: volumeId,
+		VolumeContext: map[string]string{
+			podNamespaceContextKey: namespace,
+		},
+		TargetPath: testTargetPath,
+		VolumeCapability: &csi.VolumeCapability{
+			AccessType: &csi.VolumeCapability_Mount{Mount: &csi.VolumeCapability_MountVolume{}},
+		},
+	}
+	nodeUnpublishVolumeRequest := &csi.NodeUnpublishVolumeRequest{
+		VolumeId:   volumeId,
+		TargetPath: testTargetPath,
+	}
+	mounter := mount.NewFakeMounter([]mount.MountPoint{})
+	server := newServerForTesting(t, mounter)
+	mockOneAgent(t, &server)
+
+	publishResponse, err := server.NodePublishVolume(context.TODO(), nodePublishVolumeRequest)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, publishResponse)
+	assert.NotEmpty(t, mounter.MountPoints)
+	assertReferencesForPublishedVolume(t, mounter, server.fs)
+
+	unpublishResponse, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, unpublishResponse)
+	assert.Empty(t, mounter.MountPoints)
+	assertNoReferencesForUnpublishedVolume(t, server.fs)
+}
+
+func TestCreateAndLoadVolumeMetadata(t *testing.T) {
+	mounter := mount.NewFakeMounter([]mount.MountPoint{})
+	server := newServerForTesting(t, mounter)
+
+	metadataPath := filepath.Join(server.opts.RootDir, dtcsi.GarbageCollectionPath)
+	err := server.fs.MkdirAll(metadataPath, os.ModePerm)
+	assert.NoError(t, err)
+
+	bindCfg := &bindConfig{
+		agentDir:                    "",
+		envDir:                      tenantUuid,
+		version:                     agentVersion,
+		volumeToVersionReferenceDir: filepath.Join(tenantUuid, dtcsi.GarbageCollectionPath, agentVersion),
+	}
+
+	err = server.storeVolumeMetadata(bindCfg, volumeId)
+	assert.NoError(t, err)
+
+	var metadata volumeMetadata
+	err = server.loadVolumeMetadata(filepath.Join(metadataPath, volumeId), &metadata)
+	assert.NoError(t, err)
+	assert.NotNil(t, metadata)
+}
+
+func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServer {
+	var err error
+
+	objects := []client.Object{
+		&v1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   namespace,
+				Labels: map[string]string{webhook.LabelInstance: dkName},
+			},
+		},
+		&v1alpha1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dkName,
+			},
+			Spec: v1alpha1.DynaKubeSpec{
+				CodeModules: v1alpha1.CodeModulesSpec{
+					Enabled: true,
+				},
+			},
+		},
+		&v1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dkName,
+			},
+		},
+	}
+
+	csiOptions := dtcsi.CSIOptions{RootDir: "/"}
+
+	tmpFs := afero.NewMemMapFs()
+
+	err = afero.WriteFile(tmpFs, filepath.Join(csiOptions.RootDir, "tenant-"+dkName), []byte(tenantUuid), os.ModePerm)
+	require.NoError(t, err)
+
+	return CSIDriverServer{
+		client:  fake.NewClient(objects...),
+		log:     logr.TestLogger{T: t},
+		opts:    csiOptions,
+		fs:      afero.Afero{Fs: tmpFs},
+		mounter: mounter,
+	}
+}
+
+func mockPublishedVolume(t *testing.T, server *CSIDriverServer) {
+	metadata := fmt.Sprintf("{\"OverlayFSPath\":\"/%s/run/%s\", \"UsageFilePath\":\"/%s/gc/%s\"}", tenantUuid, volumeId, tenantUuid, agentVersion)
+
+	err := server.fs.WriteFile(filepath.Join(server.opts.RootDir, "gc", volumeId), []byte(metadata), os.ModePerm)
+	require.NoError(t, err)
+}
+
+func mockOneAgent(t *testing.T, server *CSIDriverServer) {
+	err := afero.WriteFile(server.fs, filepath.Join(server.opts.RootDir, tenantUuid, dtcsi.VersionDir), []byte(agentVersion), fs.FileMode(0755))
+	require.NoError(t, err)
+}
+
+func assertReferencesForPublishedVolume(t *testing.T, mounter *mount.FakeMounter, fs afero.Afero) {
+	assert.NotEmpty(t, mounter.MountPoints)
+
+	metadataPath := filepath.Join("/", "gc", volumeId)
+	exists, err := fs.Exists(metadataPath)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+
+	versionReferencePath := filepath.Join("/", tenantUuid, "gc", agentVersion)
+	exists, err = fs.Exists(versionReferencePath)
+	assert.NoError(t, err)
+	assert.True(t, exists)
+}
+
+func assertNoReferencesForUnpublishedVolume(t *testing.T, fs afero.Afero) {
+	metadataPath := filepath.Join("/", "gc", volumeId)
+	exists, err := fs.Exists(metadataPath)
+	assert.NoError(t, err)
+	assert.False(t, exists)
+
+	versionReferencePath := filepath.Join("/", tenantUuid, "gc", agentVersion, volumeId)
+	exists, err = fs.Exists(versionReferencePath)
+	assert.NoError(t, err)
+	assert.False(t, exists)
 }

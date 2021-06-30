@@ -37,7 +37,6 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	logger := installAgentCfg.logger
 	dtc := installAgentCfg.dtc
 	arch := installAgentCfg.arch
-	targetDir := installAgentCfg.targetDir
 	fs := installAgentCfg.fs
 
 	tmpFile, err := afero.TempFile(fs, "", "download")
@@ -52,25 +51,18 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	}()
 
 	logger.Info("Downloading OneAgent package", "architecture", arch)
-
-	r, err := dtc.GetLatestAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch)
+	err = dtc.GetLatestAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch, tmpFile)
 	if err != nil {
 		return fmt.Errorf("failed to fetch latest OneAgent version: %w", err)
 	}
-	defer func(r io.ReadCloser) { _ = r.Close() }(r)
+	logger.Info("Saved OneAgent package", "dest", tmpFile.Name())
 
-	logger.Info("Saving OneAgent package", "dest", tmpFile.Name())
-
-	size, err := io.Copy(tmpFile, r)
+	fileInfo, err := tmpFile.Stat()
 	if err != nil {
-		return fmt.Errorf("failed to save OneAgent package: %w", err)
+		return fmt.Errorf("failed to determine agent archive file size: %w", err)
 	}
 
-	if _, err := tmpFile.Seek(0, io.SeekStart); err != nil {
-		return fmt.Errorf("failed to save OneAgent package: %w", err)
-	}
-
-	zipr, err := zip.NewReader(tmpFile, size)
+	zipr, err := zip.NewReader(tmpFile, fileInfo.Size())
 	if err != nil {
 		return fmt.Errorf("failed to open ZIP file: %w", err)
 	}
@@ -81,15 +73,6 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	}
 
 	logger.Info("Unzipped OneAgent package")
-
-	for _, dir := range []string{
-		filepath.Join(targetDir, "log"),
-		filepath.Join(targetDir, "datastorage"),
-	} {
-		if err := fs.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("failed to create directory %s: %w", dir, err)
-		}
-	}
 
 	return nil
 }

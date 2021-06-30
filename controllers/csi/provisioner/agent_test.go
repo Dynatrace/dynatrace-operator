@@ -5,10 +5,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -50,10 +48,9 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetLatestAgent",
-				dtclient.OsUnix, dtclient.InstallerTypePaaS,
-				mock.AnythingOfType("string"), mock.AnythingOfType("string")).
-			Return(ioutil.NopCloser(strings.NewReader("")), fmt.Errorf(errorMsg))
+			On("GetLatestAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+				mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
+			Return(fmt.Errorf(errorMsg))
 		installAgentCfg := &installAgentConfig{
 			fs:     fs,
 			dtc:    dtc,
@@ -65,41 +62,47 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 	})
 	t.Run(`error unzipping file`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		zipFile := setupTestZip(t, fs)
-		defer func() { _ = zipFile.Close() }()
-
-		_, err := zipFile.Seek(0, io.SeekStart)
-		require.NoError(t, err)
 
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetLatestAgent",
-				dtclient.OsUnix, dtclient.InstallerTypePaaS,
-				mock.AnythingOfType("string"), mock.AnythingOfType("string")).
-			Return(zipFile, nil)
+			On("GetLatestAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+				mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
+			Run(func(args mock.Arguments) {
+				writer := args.Get(4).(io.Writer)
+
+				zipFile := setupTestZip(t, fs)
+				defer func() { _ = zipFile.Close() }()
+
+				_, err := io.Copy(writer, zipFile)
+				require.NoError(t, err)
+			}).
+			Return(nil)
 		installAgentCfg := &installAgentConfig{
 			fs:     fs,
 			dtc:    dtc,
 			logger: log,
 		}
 
-		err = installAgent(installAgentCfg)
+		err := installAgent(installAgentCfg)
 		assert.EqualError(t, err, "failed to unzip file: illegal file path: test.txt")
 	})
 	t.Run(`downloading and unzipping agent`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		zipFile := setupTestZip(t, fs)
-		defer func() { _ = zipFile.Close() }()
-
-		_, err := zipFile.Seek(0, io.SeekStart)
-		require.NoError(t, err)
 
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetLatestAgent",
-				dtclient.OsUnix, dtclient.InstallerTypePaaS,
-				mock.AnythingOfType("string"), mock.AnythingOfType("string")).
-			Return(zipFile, nil)
+			On("GetLatestAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+				mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
+			Run(func(args mock.Arguments) {
+				writer := args.Get(4).(io.Writer)
+
+				zipFile := setupTestZip(t, fs)
+				defer func() { _ = zipFile.Close() }()
+
+				_, err := io.Copy(writer, zipFile)
+				require.NoError(t, err)
+			}).
+			Return(nil)
 		installAgentCfg := &installAgentConfig{
 			fs:        fs,
 			dtc:       dtc,
@@ -107,18 +110,8 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			targetDir: testDir,
 		}
 
-		err = installAgent(installAgentCfg)
+		err := installAgent(installAgentCfg)
 		assert.NoError(t, err)
-
-		for _, dir := range []string{
-			filepath.Join(testDir, "log"),
-			filepath.Join(testDir, "datastorage"),
-		} {
-			info, err := fs.Stat(dir)
-			assert.NoError(t, err)
-			assert.NotNil(t, info)
-			assert.True(t, info.IsDir())
-		}
 
 		info, err := fs.Stat(filepath.Join(testDir, testFilename))
 		assert.NoError(t, err)
@@ -153,9 +146,6 @@ func TestOneAgentProvisioner_Unzip(t *testing.T) {
 		zipFile := setupTestZip(t, fs)
 		defer func() { _ = zipFile.Close() }()
 
-		_, err := zipFile.Seek(0, io.SeekStart)
-		require.NoError(t, err)
-
 		fileInfo, err := zipFile.Stat()
 		require.NoError(t, err)
 
@@ -173,9 +163,6 @@ func TestOneAgentProvisioner_Unzip(t *testing.T) {
 		}
 		zipFile := setupTestZip(t, fs)
 		defer func() { _ = zipFile.Close() }()
-
-		_, err := zipFile.Seek(0, io.SeekStart)
-		require.NoError(t, err)
 
 		fileInfo, err := zipFile.Stat()
 		require.NoError(t, err)
@@ -243,6 +230,9 @@ func setupTestZip(t *testing.T, fs afero.Fs) afero.File {
 	require.NoError(t, err)
 
 	err = zipFile.Sync()
+	require.NoError(t, err)
+
+	_, err = zipFile.Seek(0, io.SeekStart)
 	require.NoError(t, err)
 
 	return zipFile

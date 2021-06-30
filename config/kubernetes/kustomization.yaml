@@ -4,7 +4,7 @@ resources:
   - operator/podsecuritypolicy-operator.yaml
   - kubernetes-monitoring/podsecuritypolicy-kubernetes-monitoring.yaml
   - routing/podsecuritypolicy-routing.yaml
-  - metrics/podsecuritypolicy-metrics.yaml
+  - data-ingest/podsecuritypolicy-data-ingest.yaml
   - oneagent/podsecuritypolicy-oneagent.yaml
   - oneagent/podsecuritypolicy-oneagent-unprivileged.yaml
   - oneagent/role-oneagent.yaml
@@ -13,8 +13,14 @@ resources:
   - oneagent/rolebinding-oneagent-unprivileged.yaml
   - webhook/podsecuritypolicy-webhook.yaml
 bases:
-  - csi
-  - ../common
+  - ../common/data-ingest
+  - ../common/kubernetes-monitoring
+  - ../common/oneagent
+  - ../common/operator
+  - ../common/routing
+  - ../common/csi
+  - ../common/webhook
+  - ../crd/default
 patchesJson6902:
   - target:
       group: rbac.authorization.k8s.io

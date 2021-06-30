@@ -28,6 +28,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/version"
+	"github.com/spf13/afero"
 	"golang.org/x/sys/unix"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -50,7 +51,7 @@ func main() {
 
 	namespace := os.Getenv("POD_NAMESPACE")
 
-	defaultUmask := unix.Umask(0002)
+	defaultUmask := unix.Umask(0000)
 	defer unix.Umask(defaultUmask)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -66,20 +67,22 @@ func main() {
 	csiOpts := dtcsi.CSIOptions{
 		NodeID:   *nodeID,
 		Endpoint: *endpoint,
-		RootDir:  "/tmp",
+		RootDir:  dtcsi.DataPath,
 	}
 
-	if err := os.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.DataPath), 0770); err != nil {
+	fs := afero.NewOsFs()
+
+	if err := fs.MkdirAll(filepath.Join(csiOpts.RootDir), 0770); err != nil {
 		log.Error(err, "unable to create data directory for CSI Driver")
 		os.Exit(1)
 	}
 
-	if err := os.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.GarbageCollectionPath), 0770); err != nil {
+	if err := fs.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.GarbageCollectionPath), 0770); err != nil {
 		log.Error(err, "unable to create garbage collector directory for CSI Driver")
 		os.Exit(1)
 	}
 
-	if err := csidriver.NewServer(mgr, csiOpts).SetupWithManager(mgr); err != nil {
+	if err := csidriver.NewServer(mgr.GetClient(), csiOpts).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Driver server")
 		os.Exit(1)
 	}

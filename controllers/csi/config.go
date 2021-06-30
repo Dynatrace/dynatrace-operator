@@ -17,13 +17,10 @@ limitations under the License.
 package dtcsi
 
 const (
-	AgentConfDir          = "agent/conf"
-	DataPath              = "data"
-	DatastorageDir        = "datastorage"
+	DataPath              = "/data"
 	DaemonSetName         = "dynatrace-oneagent-csi-driver"
 	DriverName            = "csi.oneagent.dynatrace.com"
 	GarbageCollectionPath = "gc"
-	LogDir                = "log"
 	VersionDir            = "version"
 )
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
+	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -25,6 +26,17 @@ const (
 	testUID       = "test-uid"
 	testPaasToken = "test-paas-token"
 	testAPIToken  = "test-api-token"
+	testVersion   = "1.217-12345-678910"
+
+	testUUID = "test-uuid"
+
+	testHost     = "test-host"
+	testPort     = uint32(1234)
+	testProtocol = "test-protocol"
+
+	testAnotherHost     = "test-another-host"
+	testAnotherPort     = uint32(5678)
+	testAnotherProtocol = "test-another-protocol"
 )
 
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
@@ -39,15 +51,45 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	})
 	t.Run(`Reconcile works with minimal setup and interface`, func(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
+
+		mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+			Protocol: testProtocol,
+			Host:     testHost,
+			Port:     testPort,
+		}, nil)
+		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
+			CommunicationHosts: []dtclient.CommunicationHost{
+				{
+					Protocol: testProtocol,
+					Host:     testHost,
+					Port:     testPort,
+				},
+				{
+					Protocol: testAnotherProtocol,
+					Host:     testAnotherHost,
+					Port:     testAnotherPort,
+				},
+			},
+			TenantUUID: testUUID,
+		}, nil)
 		mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{TenantUUID: "abc123456"}, nil)
+		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
+		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
+
 		instance := &v1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
 				Namespace: testNamespace,
 			}}
 		fakeClient := fake.NewClient(instance,
+			&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: kubesystem.Namespace,
+					UID:  testUID,
+				},
+			},
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      testName,
@@ -110,13 +152,30 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			},
 		}
 
-		mockClient.
-			On("GetConnectionInfo").
-			Return(dtclient.ConnectionInfo{
-				TenantUUID: testName,
-			}, nil)
+		mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+			Protocol: testProtocol,
+			Host:     testHost,
+			Port:     testPort,
+		}, nil)
+		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
+			CommunicationHosts: []dtclient.CommunicationHost{
+				{
+					Protocol: testProtocol,
+					Host:     testHost,
+					Port:     testPort,
+				},
+				{
+					Protocol: testAnotherProtocol,
+					Host:     testAnotherHost,
+					Port:     testAnotherPort,
+				},
+			},
+			TenantUUID: testUUID,
+		}, nil)
 		mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
+		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -175,13 +234,31 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 	}
-	mockClient.
-		On("GetConnectionInfo").
-		Return(dtclient.ConnectionInfo{
-			TenantUUID: testName,
-		}, nil)
+
+	mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+		Protocol: testProtocol,
+		Host:     testHost,
+		Port:     testPort,
+	}, nil)
+	mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
+		CommunicationHosts: []dtclient.CommunicationHost{
+			{
+				Protocol: testProtocol,
+				Host:     testHost,
+				Port:     testPort,
+			},
+			{
+				Protocol: testAnotherProtocol,
+				Host:     testAnotherHost,
+				Port:     testAnotherPort,
+			},
+		},
+		TenantUUID: testUUID,
+	}, nil)
 	mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 	mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
+	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
 
 	_, err := r.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
@@ -204,7 +281,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	routingSvc := &corev1.Service{}
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      capability.BuildServiceName(testName, routingCapability.GetModuleName()),
+		Name:      rcap.BuildServiceName(testName, routingCapability.GetModuleName()),
 	}, routingSvc)
 	assert.NoError(t, err)
 	assert.NotNil(t, routingSvc)
@@ -228,7 +305,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 
 	err = r.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      capability.BuildServiceName(testName, routingCapability.GetModuleName()),
+		Name:      rcap.BuildServiceName(testName, routingCapability.GetModuleName()),
 	}, routingSvc)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))

@@ -72,15 +72,22 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	rlog := log.WithValues("namespace", request.Namespace, "name", request.Name)
 	rlog.Info("Reconciling DynaKube")
 
-	dk, err := getCodeModule(ctx, r.client, request.NamespacedName)
+	dk, err := r.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
-	} else if dk == nil {
-		rlog.Info("Code modules disabled")
+	}
+
+	if !hasCodeModulesWithCSIVolumeEnabled(dk) {
+		rlog.Info("Code modules or csi driver disabled")
 		return reconcile.Result{RequeueAfter: 30 * time.Minute}, nil
+	}
+
+	if dk.ConnectionInfo().TenantUUID == "" {
+		rlog.Info("DynaKube instance has not been reconciled yet and some values usually cached are missing, retrying in a few seconds")
+		return reconcile.Result{RequeueAfter: 15 * time.Second}, nil
 	}
 
 	dtc, err := buildDtc(r, ctx, dk)
@@ -88,13 +95,9 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	ci, err := dtc.GetConnectionInfo()
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to fetch connection info: %w", err)
-	}
-
-	envDir := filepath.Join(r.opts.RootDir, dtcsi.DataPath, ci.TenantUUID)
-	tenantFile := filepath.Join(r.opts.RootDir, dtcsi.DataPath, fmt.Sprintf("tenant-%s", dk.Name))
+	ci := dk.ConnectionInfo()
+	envDir := filepath.Join(r.opts.RootDir, ci.TenantUUID)
+	tenantFile := filepath.Join(r.opts.RootDir, fmt.Sprintf("tenant-%s", dk.Name))
 
 	if err = r.createCSIDirectories(envDir); err != nil {
 		return reconcile.Result{}, err
@@ -104,7 +107,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	if err = r.updateAgent(dtc, envDir, rlog); err != nil {
+	if err = r.updateAgent(dk, dtc, envDir, rlog); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -125,40 +128,31 @@ func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1alpha1
 	return dtc, nil
 }
 
-func getCodeModule(ctx context.Context, clt client.Client, namespacedName types.NamespacedName) (*dynatracev1alpha1.DynaKube, error) {
+func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1alpha1.DynaKube, error) {
 	var dk dynatracev1alpha1.DynaKube
-	if err := clt.Get(ctx, namespacedName, &dk); err != nil {
-		return nil, err
-	}
+	err := r.client.Get(ctx, name, &dk)
 
-	if !dk.Spec.CodeModules.Enabled {
-		return nil, nil
-	}
-
-	return &dk, nil
+	return &dk, err
 }
 
-func (r *OneAgentProvisioner) updateAgent(dtc dtclient.Client, envDir string, logger logr.Logger) error {
+func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, dtc dtclient.Client, envDir string, logger logr.Logger) error {
 	versionFile := filepath.Join(envDir, dtcsi.VersionDir)
-	ver, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
-	if err != nil {
-		return fmt.Errorf("failed to query OneAgent version: %w", err)
-	}
+	ver := dk.Status.LatestAgentVersionUnixPaas
 
-	var oldVer string
-	if b, err := afero.ReadFile(r.fs, versionFile); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to query installed OneAgent version: %w", err)
+	var currentVersion string
+	if currentVersionBytes, err := afero.ReadFile(r.fs, versionFile); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to query installed OneAgent latestAgentVersion: %w", err)
 	} else {
-		oldVer = string(b)
+		currentVersion = string(currentVersionBytes)
 	}
 
-	if ver != oldVer {
-		if err = r.installAgentVersion(ver, envDir, dtc, logger); err != nil {
+	if ver != currentVersion {
+		if err := r.installAgentVersion(ver, envDir, dtc, logger); err != nil {
 			return err
 		}
 	}
 
-	return nil
+	return afero.WriteFile(r.fs, versionFile, []byte(ver), 0644)
 }
 
 func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string, dtc dtclient.Client, logger logr.Logger) error {
@@ -169,7 +163,7 @@ func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string,
 	}
 
 	gcDir := filepath.Join(envDir, dtcsi.GarbageCollectionPath, version)
-	if err := os.MkdirAll(gcDir, 0755); err != nil {
+	if err := r.fs.MkdirAll(gcDir, 0755); err != nil {
 		logger.Error(err, "failed to create directory %s: %w", gcDir)
 		return err
 	}
@@ -180,9 +174,7 @@ func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string,
 		installAgentCfg := newInstallAgentConfig(logger, dtc, arch, targetDir)
 
 		if err := installAgent(installAgentCfg); err != nil {
-			if err := r.fs.RemoveAll(targetDir); err != nil {
-				logger.Error(err, "failed to delete target directory", "path", targetDir)
-			}
+			_ = r.fs.RemoveAll(targetDir)
 
 			return fmt.Errorf("failed to install agent: %w", err)
 		}
@@ -209,14 +201,18 @@ func (r *OneAgentProvisioner) updateTenantFile(tenantUUID string, tenantFile str
 }
 
 func (r *OneAgentProvisioner) createCSIDirectories(envDir string) error {
-	for _, dir := range []string{
-		envDir,
-		filepath.Join(envDir, dtcsi.LogDir),
-		filepath.Join(envDir, dtcsi.DatastorageDir),
-	} {
-		if err := r.fs.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("failed to create directory %s: %w", dir, err)
-		}
+	if err := r.fs.MkdirAll(envDir, 0755); err != nil {
+		return fmt.Errorf("failed to create directory %s: %w", envDir, err)
 	}
+
 	return nil
+}
+
+func hasCodeModulesWithCSIVolumeEnabled(dk *dynatracev1alpha1.DynaKube) bool {
+	return dk.Spec.CodeModules.Enabled &&
+		(dk.Spec.CodeModules.Volume == corev1.VolumeSource{} || isDynatraceOneAgentCSIVolumeSource(&dk.Spec.CodeModules.Volume))
+}
+
+func isDynatraceOneAgentCSIVolumeSource(volume *corev1.VolumeSource) bool {
+	return volume.CSI != nil && volume.CSI.Driver == dtcsi.DriverName
 }

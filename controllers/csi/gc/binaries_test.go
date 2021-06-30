@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	versionReferenceBasePath = filepath.Join(rootDir, dtcsi.DataPath, tenantUUID, dtcsi.GarbageCollectionPath)
+	versionReferenceBasePath = filepath.Join(rootDir, tenantUUID, dtcsi.GarbageCollectionPath)
 )
 
 func TestBinaryGarbageCollector_succeedsWhenVersionReferenceBaseDirectoryNotExists(t *testing.T) {

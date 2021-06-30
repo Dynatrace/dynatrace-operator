@@ -76,7 +76,6 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		logger:    consoleLogger,
 		instance:  dynakube,
 		feature:   ClassicFeature,
-		dtc:       dtClient,
 		fullStack: &dynakube.Spec.ClassicFullStack,
 	}
 
@@ -161,7 +160,6 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		apiReader: c,
 		scheme:    scheme.Scheme,
 		logger:    consoleLogger,
-		dtc:       dtcMock,
 		fullStack: &base.Spec.ClassicFullStack,
 		feature:   ClassicFeature,
 		instance:  &base,
@@ -211,7 +209,6 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 			instance:  &base,
 			feature:   ClassicFeature,
 			fullStack: &base.Spec.ClassicFullStack,
-			dtc:       dtcMock,
 		}
 
 		// arrange
@@ -263,7 +260,6 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		apiReader: c,
 		scheme:    scheme.Scheme,
 		logger:    consoleLogger,
-		dtc:       dtcMock,
 		instance:  &base,
 		fullStack: &base.Spec.ClassicFullStack,
 		feature:   ClassicFeature,
@@ -290,8 +286,10 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		assert.NoError(t, err)
 
 		reconciler.instance = dk
-		reconciler.Reconcile(context.TODO(), &rec)
+		upd, err := reconciler.Reconcile(context.TODO(), &rec)
 
+		assert.NoError(t, err)
+		assert.True(t, upd)
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
 		assert.NotEmpty(t, dk.Status.OneAgent.Instances)
 	})
@@ -320,8 +318,10 @@ func TestReconcile_InstancesSet(t *testing.T) {
 
 		reconciler.instance = dk
 		reconciler.fullStack = &dk.Spec.ClassicFullStack
-		reconciler.Reconcile(context.TODO(), &rec)
+		upd, err := reconciler.Reconcile(context.TODO(), &rec)
 
+		assert.NoError(t, err)
+		assert.True(t, upd)
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
 		assert.NotEmpty(t, dk.Status.OneAgent.Instances)
 	})

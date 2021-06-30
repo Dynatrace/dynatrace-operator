@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dynatrace-data-ingest
+  namespace: dynatrace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dynatrace-data-ingest
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-data-ingest
+    namespace: dynatrace

@@ -1,4 +1,4 @@
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   name: dynatrace-webhook
@@ -7,6 +7,7 @@ metadata:
     internal.dynatrace.com/component: webhook
 webhooks:
   - name: webhook.dynatrace.com
+    reinvocationPolicy: IfNeeded
     rules:
       - apiGroups: [ "" ]
         apiVersions: [ "v1" ]
@@ -22,4 +23,5 @@ webhooks:
         name: dynatrace-webhook
         namespace: dynatrace
         path: /inject
-    admissionReviewVersions: [ "v1beta1" ]
+    admissionReviewVersions: [ "v1beta1", "v1" ]
+    sideEffects: None

@@ -21,11 +21,11 @@ import (
 )
 
 const (
-	annotationFeaturePrefix                   = "alpha.operator.dynatrace.com/feature-"
-	annotationFeatureDisableActiveGateUpdates = annotationFeaturePrefix + "disable-activegate-updates"
-	annotationFeatureDisableHostsRequests     = annotationFeaturePrefix + "disable-hosts-requests"
-	annotationFeatureOneAgentMaxUnavailable   = annotationFeaturePrefix + "oneagent-max-unavailable"
-	annotationFeatureEnableMetricsIngest      = annotationFeaturePrefix + "enable-metrics-ingest"
+	annotationFeaturePrefix                          = "alpha.operator.dynatrace.com/feature-"
+	annotationFeatureDisableActiveGateUpdates        = annotationFeaturePrefix + "disable-activegate-updates"
+	annotationFeatureDisableHostsRequests            = annotationFeaturePrefix + "disable-hosts-requests"
+	annotationFeatureOneAgentMaxUnavailable          = annotationFeaturePrefix + "oneagent-max-unavailable"
+	annotationFeatureEnableWebhookReinvocationPolicy = annotationFeaturePrefix + "enable-webhook-reinvocation-policy"
 )
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
@@ -53,7 +53,13 @@ func (dk *DynaKube) FeatureOneAgentMaxUnavailable() int {
 	return val
 }
 
-// FeatureEnableMetricsIngest is a feature flag to enable metrics ingest API
-func (dk *DynaKube) FeatureEnableMetricsIngest() bool {
-	return dk.Annotations[annotationFeatureEnableMetricsIngest] == "true"
+// FeatureEnableWebhookReinvocationPolicy is a feature flag to enable instrumenting missing containers
+// by enabling reinvocation for webhook.
+func (dk *DynaKube) FeatureEnableWebhookReinvocationPolicy() bool {
+	return dk.Annotations[annotationFeatureEnableWebhookReinvocationPolicy] == "true"
+}
+
+// GetFeatureEnableWebhookReinvocationPolicy returns the annotation for FeatureEnableWebhookReinvocationPolicy
+func (dk *DynaKube) GetFeatureEnableWebhookReinvocationPolicy() string {
+	return annotationFeatureEnableWebhookReinvocationPolicy
 }

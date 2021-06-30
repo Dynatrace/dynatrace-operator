@@ -7,6 +7,10 @@ mkdir artefacts
 
 kustomize build ./config/kubernetes -o kubernetes.yaml
 kustomize build ./config/openshift -o openshift.yaml
+kustomize build ./config/openshift3.11 -o openshift3.11.yaml
 
 sed "s/quay.io\/dynatrace\/${template_image}/docker.io\/dynatrace\/${current_image}/g" kubernetes.yaml >artefacts/kubernetes.yaml
 sed "s/quay.io\/dynatrace\/${template_image}/registry.connect.redhat.com\/dynatrace\/${current_image}/g" openshift.yaml >artefacts/openshift.yaml
+sed "s/quay.io\/dynatrace\/${template_image}/registry.connect.redhat.com\/dynatrace\/${current_image}/g" openshift3.11.yaml >artefacts/openshift3.11.yaml
+
+cp ./config/samples/cr.yaml artefacts/cr.yaml
