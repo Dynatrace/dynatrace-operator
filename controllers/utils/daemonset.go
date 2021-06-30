@@ -6,7 +6,7 @@ import (
 	"hash/fnv"
 	"strconv"
 
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -65,7 +65,7 @@ func HasDaemonSetChanged(a, b *appsv1.DaemonSet) bool {
 
 func getTemplateHash(a metav1.Object) string {
 	if annotations := a.GetAnnotations(); annotations != nil {
-		return annotations[activegate.AnnotationTemplateHash]
+		return annotations[statefulset.AnnotationTemplateHash]
 	}
 	return ""
 }

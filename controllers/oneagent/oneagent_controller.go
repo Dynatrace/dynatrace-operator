@@ -553,32 +553,6 @@ func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.
 	return append(env, remaining...)
 }
 
-func hasDaemonSetChanged(a, b *appsv1.DaemonSet) bool {
-	return getTemplateHash(a) != getTemplateHash(b)
-}
-
-func generateDaemonSetHash(ds *appsv1.DaemonSet) (string, error) {
-	data, err := json.Marshal(ds)
-	if err != nil {
-		return "", err
-	}
-
-	hasher := fnv.New32()
-	_, err = hasher.Write(data)
-	if err != nil {
-		return "", err
-	}
-
-	return strconv.FormatUint(uint64(hasher.Sum32()), 10), nil
-}
-
-func getTemplateHash(a metav1.Object) string {
-	if annotations := a.GetAnnotations(); annotations != nil {
-		return annotations[statefulset.AnnotationTemplateHash]
-	}
-	return ""
-}
-
 func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube) (bool, error) {
 	pods, listOpts, err := r.getPods(ctx, instance, r.feature)
 	if err != nil {

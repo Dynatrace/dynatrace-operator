@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -117,7 +117,7 @@ func buildDesiredCSIDaemonSet(operatorImage string) (*appsv1.DaemonSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	ds.Annotations[activegate.AnnotationTemplateHash] = dsHash
+	ds.Annotations[statefulset.AnnotationTemplateHash] = dsHash
 
 	return ds, nil
 }
