@@ -173,6 +173,18 @@ EOF
   fi
 }
 
+buildDataIngestSection() {
+  cat <<EOF
+  dataIngest:
+    enabled: true
+EOF
+  if [ -n "$CLUSTER_NAME" ]; then
+    cat <<EOF
+    group: ${CLUSTER_NAME}
+EOF
+  fi
+}
+
 applyDynaKubeCR() {
   dynakube="$(
     cat <<EOF
@@ -186,6 +198,7 @@ $(buildGlobalSection)
 $(buildClassicFullStackSection)
 $(buildRoutingSection)
 $(buildKubeMonSection)
+$(buildDataIngestSection)
 EOF
   )"
 
