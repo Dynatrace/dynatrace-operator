@@ -35,7 +35,7 @@ func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeC
 
 	tenantUUID, err := fs.ReadFile(filepath.Join(svr.opts.RootDir, fmt.Sprintf("tenant-%s", dkName)))
 	if err != nil {
-		return nil, status.Error(codes.Unavailable, fmt.Sprintf("Failed to extract tenant for DynaKube %s: %s", dkName, err.Error()))
+		return nil, status.Error(codes.Unavailable, fmt.Sprintf("failed to extract tenant for DynaKube %s", dkName))
 	}
 	envDir := filepath.Join(svr.opts.RootDir, string(tenantUUID))
 
