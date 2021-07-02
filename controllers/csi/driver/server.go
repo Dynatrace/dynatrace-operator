@@ -192,12 +192,12 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 
 	if strings.HasPrefix(metadata.UsageFilePath, svr.opts.RootDir) {
 		if err = svr.fs.Remove(metadata.UsageFilePath); err != nil && !os.IsNotExist(err) {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove version reference for pod: %s", err))
+			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to remove version reference for pod: %s", err))
 		}
 	}
 
 	if err = svr.fs.Remove(volumeMetadataPath); err != nil && !os.IsNotExist(err) {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to remove volume to pod reference: %s", err))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to remove volume to pod reference: %s", err))
 	}
 
 	if err = svr.fs.RemoveAll(targetPath); err != nil {
