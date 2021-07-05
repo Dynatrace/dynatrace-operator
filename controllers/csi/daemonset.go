@@ -225,6 +225,11 @@ func prepareDriverSpec(operatorImage string) v1.Container {
 				MountPath:        "/var/lib/kubelet/pods",
 				MountPropagation: &bidirectional,
 			},
+			{
+				Name:             "dynatrace-oneagent-data-dir",
+				MountPath:        "/data",
+				MountPropagation: &bidirectional,
+			},
 		},
 	}
 }
@@ -235,7 +240,7 @@ func prepareRegistrarSpec(operatorImage string) v1.Container {
 	return v1.Container{
 		Name:            "registrar",
 		Image:           operatorImage,
-		ImagePullPolicy: v1.PullIfNotPresent,
+		ImagePullPolicy: v1.PullAlways,
 		Command: []string{
 			"csi-node-driver-registrar",
 		},
@@ -278,8 +283,9 @@ func prepareRegistrarSpec(operatorImage string) v1.Container {
 
 func preparelivenessProbeSpec(operatorImage string) v1.Container {
 	return v1.Container{
-		Name:  "liveness-probe",
-		Image: operatorImage,
+		Name:            "liveness-probe",
+		Image:           operatorImage,
+		ImagePullPolicy: v1.PullAlways,
 		Command: []string{
 			"livenessprobe",
 		},
@@ -333,6 +339,15 @@ func prepareVolumes() []v1.Volume {
 			VolumeSource: v1.VolumeSource{
 				HostPath: &v1.HostPathVolumeSource{
 					Path: "/var/lib/kubelet/pods",
+					Type: &hostPathDirOrCreate,
+				},
+			},
+		},
+		{
+			Name: "dynatrace-oneagent-data-dir",
+			VolumeSource: v1.VolumeSource{
+				HostPath: &v1.HostPathVolumeSource{
+					Path: "/tmp/dynatrace-oneagent-data",
 					Type: &hostPathDirOrCreate,
 				},
 			},
