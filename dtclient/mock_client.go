@@ -31,9 +31,9 @@ func (o *MockDynatraceClient) GetLatestAgent(os, installerType, flavor, arch str
 	return args.Error(0)
 }
 
-func (o *MockDynatraceClient) GetCommunicationHostForClient() (CommunicationHost, error) {
+func (o *MockDynatraceClient) GetCommunicationHostForClient() (*CommunicationHost, error) {
 	args := o.Called()
-	return args.Get(0).(CommunicationHost), args.Error(1)
+	return args.Get(0).(*CommunicationHost), args.Error(1)
 }
 
 func (o *MockDynatraceClient) SendEvent(event *EventData) error {

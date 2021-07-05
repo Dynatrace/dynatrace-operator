@@ -64,7 +64,7 @@ func TestResponseForLatestVersion(t *testing.T) {
 		}
 	}
 	{
-		_, err := readFromString("")
+		_, err := readFromString("{}")
 		assert.Error(t, err, "empty response")
 	}
 	{

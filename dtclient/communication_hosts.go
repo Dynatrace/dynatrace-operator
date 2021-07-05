@@ -9,7 +9,7 @@ import (
 
 // ConnectionInfo => struct of TenantUUID and CommunicationHosts
 type ConnectionInfo struct {
-	CommunicationHosts []CommunicationHost
+	CommunicationHosts []*CommunicationHost
 	TenantUUID         string
 }
 
@@ -20,8 +20,8 @@ type CommunicationHost struct {
 	Port     uint32
 }
 
-func (dtc *dynatraceClient) GetCommunicationHostForClient() (CommunicationHost, error) {
-	return dtc.parseEndpoint(dtc.url)
+func (dtc *dynatraceClient) GetCommunicationHostForClient() (*CommunicationHost, error) {
+	return parseEndpoint(dtc.url)
 }
 
 func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (ConnectionInfo, error) {
@@ -38,12 +38,12 @@ func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conn
 	}
 
 	t := resp.TenantUUID
-	ch := make([]CommunicationHost, 0, len(resp.CommunicationEndpoints))
+	ch := make([]*CommunicationHost, 0, len(resp.CommunicationEndpoints))
 
 	for _, s := range resp.CommunicationEndpoints {
 		logger := dtc.logger.WithValues("url", s)
 
-		e, err := dtc.parseEndpoint(s)
+		e, err := parseEndpoint(s)
 		if err != nil {
 			logger.Info("failed to parse communication endpoint")
 			continue
@@ -63,16 +63,19 @@ func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conn
 	return ci, nil
 }
 
-func (dtc *dynatraceClient) parseEndpoint(s string) (CommunicationHost, error) {
+func parseEndpoint(s string) (*CommunicationHost, error) {
 	u, err := url.ParseRequestURI(s)
 	if err != nil {
-		return CommunicationHost{}, errors.New("failed to parse URL")
+		return nil, errors.New("failed to parse URL")
 	}
+	return parseEndpointURL(u)
+}
 
+func parseEndpointURL(u *url.URL) (*CommunicationHost, error) {
 	if u.Scheme == "" {
-		return CommunicationHost{}, errors.New("no protocol provided")
+		return nil, errors.New("no protocol provided")
 	} else if u.Scheme != "http" && u.Scheme != "https" {
-		return CommunicationHost{}, errors.New("unknown protocol")
+		return nil, errors.New("unknown protocol")
 	}
 
 	rp := u.Port() // Empty if not included in the URI
@@ -88,12 +91,12 @@ func (dtc *dynatraceClient) parseEndpoint(s string) (CommunicationHost, error) {
 	} else {
 		q, err := strconv.ParseUint(rp, 10, 32)
 		if err != nil {
-			return CommunicationHost{}, errors.New("failed to parse port")
+			return nil, errors.New("failed to parse port")
 		}
 		p = uint32(q)
 	}
 
-	return CommunicationHost{
+	return &CommunicationHost{
 		Protocol: u.Scheme,
 		Host:     u.Hostname(),
 		Port:     p,

@@ -44,7 +44,7 @@ func TestReadCommunicationHosts(t *testing.T) {
 	{
 		m, err := readFromString(goodCommunicationEndpointsResponse)
 		if assert.NoError(t, err) {
-			expected := []CommunicationHost{
+			expected := []*CommunicationHost{
 				{Protocol: "https", Host: "example.live.dynatrace.com", Port: 443},
 				{Protocol: "https", Host: "managedhost.com", Port: 9999},
 				{Protocol: "https", Host: "10.0.0.1", Port: 8000},
@@ -56,7 +56,7 @@ func TestReadCommunicationHosts(t *testing.T) {
 	{
 		m, err := readFromString(mixedCommunicationEndpointsResponse)
 		if assert.NoError(t, err) {
-			expected := []CommunicationHost{
+			expected := []*CommunicationHost{
 				{Protocol: "https", Host: "example.live.dynatrace.com", Port: 443},
 			}
 			assert.Equal(t, expected, m.CommunicationHosts)
@@ -74,46 +74,43 @@ func TestReadCommunicationHosts(t *testing.T) {
 
 func TestParseEndpoints(t *testing.T) {
 	var err error
-	var ch CommunicationHost
+	var ch *CommunicationHost
 
-	// Successful parsing
-	dc := &dynatraceClient{}
-
-	ch, err = dc.parseEndpoint("https://example.live.dynatrace.com/communication")
+	ch, err = parseEndpoint("https://example.live.dynatrace.com/communication")
 	assert.NoError(t, err)
-	assert.Equal(t, CommunicationHost{
+	assert.Equal(t, &CommunicationHost{
 		Protocol: "https",
 		Host:     "example.live.dynatrace.com",
 		Port:     443,
 	}, ch)
 
-	ch, err = dc.parseEndpoint("https://managedhost.com:9999/here/communication")
+	ch, err = parseEndpoint("https://managedhost.com:9999/here/communication")
 	assert.NoError(t, err)
-	assert.Equal(t, CommunicationHost{
+	assert.Equal(t, &CommunicationHost{
 		Protocol: "https",
 		Host:     "managedhost.com",
 		Port:     9999,
 	}, ch)
 
-	ch, err = dc.parseEndpoint("https://example.live.dynatrace.com/communication")
+	ch, err = parseEndpoint("https://example.live.dynatrace.com/communication")
 	assert.NoError(t, err)
-	assert.Equal(t, CommunicationHost{
+	assert.Equal(t, &CommunicationHost{
 		Protocol: "https",
 		Host:     "example.live.dynatrace.com",
 		Port:     443,
 	}, ch)
 
-	ch, err = dc.parseEndpoint("https://10.0.0.1:8000/communication")
+	ch, err = parseEndpoint("https://10.0.0.1:8000/communication")
 	assert.NoError(t, err)
-	assert.Equal(t, CommunicationHost{
+	assert.Equal(t, &CommunicationHost{
 		Protocol: "https",
 		Host:     "10.0.0.1",
 		Port:     8000,
 	}, ch)
 
-	ch, err = dc.parseEndpoint("http://insecurehost/communication")
+	ch, err = parseEndpoint("http://insecurehost/communication")
 	assert.NoError(t, err)
-	assert.Equal(t, CommunicationHost{
+	assert.Equal(t, &CommunicationHost{
 		Protocol: "http",
 		Host:     "insecurehost",
 		Port:     80,
@@ -121,19 +118,19 @@ func TestParseEndpoints(t *testing.T) {
 
 	// Failures
 
-	_, err = dc.parseEndpoint("https://managedhost.com:notaport/here/communication")
+	_, err = parseEndpoint("https://managedhost.com:notaport/here/communication")
 	assert.Error(t, err)
 
-	_, err = dc.parseEndpoint("example.live.dynatrace.com:80/communication")
+	_, err = parseEndpoint("example.live.dynatrace.com:80/communication")
 	assert.Error(t, err)
 
-	_, err = dc.parseEndpoint("ftp://randomhost.com:80/communication")
+	_, err = parseEndpoint("ftp://randomhost.com:80/communication")
 	assert.Error(t, err)
 
-	_, err = dc.parseEndpoint("unix:///some/local/file")
+	_, err = parseEndpoint("unix:///some/local/file")
 	assert.Error(t, err)
 
-	_, err = dc.parseEndpoint("shouldnotbeparsed")
+	_, err = parseEndpoint("shouldnotbeparsed")
 	assert.Error(t, err)
 }
 
@@ -142,7 +139,7 @@ func testCommunicationHostsGetCommunicationHosts(t *testing.T, dynatraceClient C
 	res := tenantInfo.ConnectionInfo
 
 	assert.NoError(t, err)
-	assert.ObjectsAreEqualValues(res.CommunicationHosts, []CommunicationHost{
+	assert.ObjectsAreEqualValues(res.CommunicationHosts, []*CommunicationHost{
 		{Host: "host1.dynatracelabs.com", Port: 80, Protocol: "http"},
 		{Host: "host2.dynatracelabs.com", Port: 443, Protocol: "https"},
 		{Host: "12.0.9.1", Port: 80, Protocol: "http"},

@@ -79,7 +79,7 @@ func (c *Controller) ReconcileIstio(instance *dynatracev1alpha1.DynaKube) (updat
 	}
 
 	apiHost := instance.CommunicationHostForClient()
-	if upd, err := c.reconcileIstioConfigurations(instance, []dtclient.CommunicationHost{apiHost}, "api-url"); err != nil {
+	if upd, err := c.reconcileIstioConfigurations(instance, []*dtclient.CommunicationHost{&apiHost}, "api-url"); err != nil {
 		return false, fmt.Errorf("istio: error reconciling config for Dynatrace API URL: %w", err)
 	} else if upd {
 		return true, nil
@@ -97,7 +97,7 @@ func (c *Controller) ReconcileIstio(instance *dynatracev1alpha1.DynaKube) (updat
 }
 
 func (c *Controller) reconcileIstioConfigurations(instance *dynatracev1alpha1.DynaKube,
-	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
+	comHosts []*dtclient.CommunicationHost, role string) (bool, error) {
 
 	add, err := c.reconcileIstioCreateConfigurations(instance, comHosts, role)
 	if err != nil {
@@ -112,7 +112,7 @@ func (c *Controller) reconcileIstioConfigurations(instance *dynatracev1alpha1.Dy
 }
 
 func (c *Controller) reconcileIstioRemoveConfigurations(instance *dynatracev1alpha1.DynaKube,
-	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
+	comHosts []*dtclient.CommunicationHost, role string) (bool, error) {
 
 	labelSelector := labels.SelectorFromSet(buildIstioLabels(instance.GetName(), role)).String()
 	listOps := &metav1.ListOptions{
@@ -191,7 +191,7 @@ func (c *Controller) removeIstioConfigurationForVirtualService(listOps *metav1.L
 }
 
 func (c *Controller) reconcileIstioCreateConfigurations(instance *dynatracev1alpha1.DynaKube,
-	communicationHosts []dtclient.CommunicationHost, role string) (bool, error) {
+	communicationHosts []*dtclient.CommunicationHost, role string) (bool, error) {
 
 	crdProbe := c.verifyIstioCrdAvailability(instance)
 	if crdProbe != probeTypeFound {
@@ -235,7 +235,7 @@ func (c *Controller) verifyIstioCrdAvailability(instance *dynatracev1alpha1.Dyna
 }
 
 func (c *Controller) handleIstioConfigurationForVirtualService(instance *dynatracev1alpha1.DynaKube,
-	name string, communicationHost dtclient.CommunicationHost, role string) (bool, error) {
+	name string, communicationHost *dtclient.CommunicationHost, role string) (bool, error) {
 
 	probe, err := c.kubernetesObjectProbe(VirtualServiceGVK, instance.GetNamespace(), name)
 	if probe == probeObjectFound {
@@ -263,7 +263,7 @@ func (c *Controller) handleIstioConfigurationForVirtualService(instance *dynatra
 }
 
 func (c *Controller) handleIstioConfigurationForServiceEntry(instance *dynatracev1alpha1.DynaKube,
-	name string, communicationHost dtclient.CommunicationHost, role string) (bool, error) {
+	name string, communicationHost *dtclient.CommunicationHost, role string) (bool, error) {
 
 	probe, err := c.kubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), name)
 	if probe == probeObjectFound {

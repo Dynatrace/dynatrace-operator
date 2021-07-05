@@ -117,10 +117,11 @@ func (dk *DynaKube) ConnectionInfo() dtclient.ConnectionInfo {
 	}
 }
 
-func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
-	var communicationHosts []dtclient.CommunicationHost
+func (dk *DynaKube) CommunicationHosts() []*dtclient.CommunicationHost {
+	var communicationHosts []*dtclient.CommunicationHost
 	for _, communicationHost := range dk.Status.ConnectionInfo.CommunicationHosts {
-		communicationHosts = append(communicationHosts, dtclient.CommunicationHost(communicationHost))
+		ch := dtclient.CommunicationHost(communicationHost)
+		communicationHosts = append(communicationHosts, &ch)
 	}
 	return communicationHosts
 }

@@ -33,7 +33,7 @@ type Client interface {
 	GetLatestAgent(os, installerType, flavor, arch string, writer io.Writer) error
 
 	// GetCommunicationHostForClient returns a CommunicationHost for the client's API URL. Or error, if failed to be parsed.
-	GetCommunicationHostForClient() (CommunicationHost, error)
+	GetCommunicationHostForClient() (*CommunicationHost, error)
 
 	// SendEvent posts events to dynatrace API
 	SendEvent(eventData *EventData) error

@@ -52,7 +52,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 			ApiClient: clt,
 		}
 
-		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+		dtc.On("GetCommunicationHostForClient").Return(&dtclient.CommunicationHost{
 			Protocol: testProtocol,
 			Host:     testHost,
 			Port:     testPort,
@@ -61,7 +61,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 		dtc.On("GetAgentTenantInfo").Return(
 			&dtclient.TenantInfo{
 				ConnectionInfo: dtclient.ConnectionInfo{
-					CommunicationHosts: []dtclient.CommunicationHost{
+					CommunicationHosts: []*dtclient.CommunicationHost{
 						{
 							Protocol: testProtocol,
 							Host:     testHost,
@@ -133,7 +133,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 			ApiClient: clt,
 		}
 
-		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{}, fmt.Errorf(testError))
+		dtc.On("GetCommunicationHostForClient").Return(&dtclient.CommunicationHost{}, fmt.Errorf(testError))
 
 		err := SetDynakubeStatus(instance, options)
 		assert.EqualError(t, err, testError)
@@ -152,7 +152,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 			ApiClient: clt,
 		}
 
-		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+		dtc.On("GetCommunicationHostForClient").Return(&dtclient.CommunicationHost{
 			Protocol: testProtocol,
 			Host:     testHost,
 			Port:     testPort,
@@ -179,7 +179,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 			ApiClient: clt,
 		}
 
-		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+		dtc.On("GetCommunicationHostForClient").Return(&dtclient.CommunicationHost{
 			Protocol: testProtocol,
 			Host:     testHost,
 			Port:     testPort,
@@ -187,7 +187,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 
 		dtc.On("GetAgentTenantInfo").Return(&dtclient.TenantInfo{
 			ConnectionInfo: dtclient.ConnectionInfo{
-				CommunicationHosts: []dtclient.CommunicationHost{
+				CommunicationHosts: []*dtclient.CommunicationHost{
 					{
 						Protocol: testProtocol,
 						Host:     testHost,
@@ -222,7 +222,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 			ApiClient: clt,
 		}
 
-		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+		dtc.On("GetCommunicationHostForClient").Return(&dtclient.CommunicationHost{
 			Protocol: testProtocol,
 			Host:     testHost,
 			Port:     testPort,
@@ -230,7 +230,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 
 		dtc.On("GetAgentTenantInfo").Return(&dtclient.TenantInfo{
 			ConnectionInfo: dtclient.ConnectionInfo{
-				CommunicationHosts: []dtclient.CommunicationHost{
+				CommunicationHosts: []*dtclient.CommunicationHost{
 					{
 						Protocol: testProtocol,
 						Host:     testHost,

@@ -53,7 +53,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Reconcile works with minimal setup and interface`, func(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
 
-		mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+		mockClient.On("GetCommunicationHostForClient").Return(&dtclient.CommunicationHost{
 			Protocol: testProtocol,
 			Host:     testHost,
 			Port:     testPort,
@@ -61,7 +61,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		mockClient.On("GetAgentTenantInfo").
 			Return(&dtclient.TenantInfo{
 				ConnectionInfo: dtclient.ConnectionInfo{
-					CommunicationHosts: []dtclient.CommunicationHost{
+					CommunicationHosts: []*dtclient.CommunicationHost{
 						{
 							Protocol: testProtocol,
 							Host:     testHost,
@@ -159,14 +159,14 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			},
 		}
 
-		mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+		mockClient.On("GetCommunicationHostForClient").Return(&dtclient.CommunicationHost{
 			Protocol: testProtocol,
 			Host:     testHost,
 			Port:     testPort,
 		}, nil)
 		mockClient.On("GetAgentTenantInfo").Return(&dtclient.TenantInfo{
 			ConnectionInfo: dtclient.ConnectionInfo{
-				CommunicationHosts: []dtclient.CommunicationHost{
+				CommunicationHosts: []*dtclient.CommunicationHost{
 					{
 						Protocol: testProtocol,
 						Host:     testHost,
@@ -253,7 +253,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 	}
 
-	mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+	mockClient.On("GetCommunicationHostForClient").Return(&dtclient.CommunicationHost{
 		Protocol: testProtocol,
 		Host:     testHost,
 		Port:     testPort,
@@ -262,7 +262,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	mockClient.On("GetAgentTenantInfo").
 		Return(&dtclient.TenantInfo{
 			ConnectionInfo: dtclient.ConnectionInfo{
-				CommunicationHosts: []dtclient.CommunicationHost{
+				CommunicationHosts: []*dtclient.CommunicationHost{
 					{
 						Protocol: testProtocol,
 						Host:     testHost,
