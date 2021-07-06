@@ -202,7 +202,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	rec.Update(upd, defaultUpdateInterval, "Found updates")
 	rec.Error(err)
 
-	if !r.reconcileActiveGateCapabilities(rec) {
+	if !r.reconcileActiveGateCapabilities(rec, dtc) {
 		return
 	}
 
@@ -242,7 +242,7 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 	return nil
 }
 
-func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconciliation) bool {
+func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconciliation, dtc dtclient.Client) bool {
 	var caps = []capability.Capability{
 		capability.NewKubeMonCapability(&rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
 		capability.NewRoutingCapability(&rec.Instance.Spec.RoutingSpec.CapabilityProperties),
@@ -252,7 +252,7 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconcili
 	for _, c := range caps {
 		if c.GetProperties().Enabled {
 			upd, err := rcap.NewReconciler(
-				c, r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, dtversion.GetImageVersion,
+				c, r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, dtversion.GetImageVersion, dtc,
 			).Reconcile()
 			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, c.GetModuleName()+" reconciled") {
 				return false

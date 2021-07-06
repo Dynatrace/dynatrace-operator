@@ -3,6 +3,9 @@ package capability
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/tokens"
+	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"strings"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
@@ -24,6 +27,8 @@ import (
 const (
 	containerPort   = 9999
 	dtDNSEntryPoint = "DT_DNS_ENTRY_POINT"
+	dtServer        = "DT_SERVER"
+	dtTenantUUID    = "DT_TENANT"
 )
 
 type Reconciler struct {
@@ -32,12 +37,11 @@ type Reconciler struct {
 	capability.Capability
 }
 
-func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, log logr.Logger,
-	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
+func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, log logr.Logger, instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, dtc dtclient.Client) *Reconciler {
 	baseReconciler := sts.NewReconciler(
 		clt, apiReader, scheme, log, instance, imageVersionProvider, capability)
 
-	//baseReconciler.AddOnAfterStatefulSetCreateListener(addTenantInfo(dtc))
+	baseReconciler.AddOnAfterStatefulSetCreateListener(addTenantInfo(dtc, instance.Name))
 
 	if capability.GetConfiguration().SetDnsEntryPoint {
 		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.GetModuleName()))
@@ -79,24 +83,54 @@ func (r *Reconciler) calculateStatefulSetName() string {
 	return capability.CalculateStatefulSetName(r.Capability, r.Instance.Name)
 }
 
-//func addTenantInfo(dtc dtclient.Client) events.StatefulSetEvent {
-//	info, err := dtc.GetAGTenantInfo()
-//	if err != nil {
-//		return nil
-//	}
-//
-//	return func(sts *appsv1.StatefulSet) {
-//		sts.Spec.Template.Spec.Containers[0].Env = append(sts.Spec.Template.Spec.Containers[0].Env,
-//			corev1.EnvVar{
-//				Name:  dtServer,
-//				Value: strings.Join(info.Endpoints, ","),
-//			},
-//			corev1.EnvVar{
-//				Name:  dtTenantUUID,
-//				Value: info.AgentConnectionInfo.TenantUUID,
-//			})
-//	}
-//}
+func addTenantInfo(dtc dtclient.Client, instanceName string) events.StatefulSetEvent {
+	info, err := dtc.GetAGTenantInfo()
+	if err != nil {
+		return nil
+	}
+
+	return func(sts *appsv1.StatefulSet) {
+		sts.Spec.Template.Spec.Containers[0].Env = append(sts.Spec.Template.Spec.Containers[0].Env,
+			corev1.EnvVar{
+				Name:  dtServer,
+				Value: getEndpoints(info),
+			},
+			corev1.EnvVar{
+				Name:  dtTenantUUID,
+				Value: info.TenantUUID,
+			})
+
+		const TokensSecretVolumeName = "ag-tokens-volume"
+		sts.Spec.Template.Spec.Volumes = append(sts.Spec.Template.Spec.Volumes, corev1.Volume{
+			Name: TokensSecretVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: tokens.ExtendWithAgTokensSecretSuffix(instanceName),
+				},
+			},
+		})
+
+		sts.Spec.Template.Spec.Containers[0].VolumeMounts = append(sts.Spec.Template.Spec.Containers[0].VolumeMounts,
+			corev1.VolumeMount{
+				Name:      TokensSecretVolumeName,
+				ReadOnly:  true,
+				MountPath: "/var/lib/dynatrace/secrets",
+			},
+		)
+	}
+}
+
+func getEndpoints(info *dtclient.TenantInfo) string {
+	var endpoints strings.Builder
+	endpointsLen := len(info.Endpoints)
+	for i, endpoint := range info.Endpoints {
+		endpoints.WriteString(endpoint.String())
+		if i < endpointsLen-1 {
+			endpoints.WriteRune(',')
+		}
+	}
+	return endpoints.String()
+}
 
 func addDNSEntryPoint(instance *dynatracev1alpha1.DynaKube, moduleName string) events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {

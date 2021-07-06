@@ -2,6 +2,7 @@ package capability
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -59,7 +60,10 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		return dtversion.ImageVersion{}, nil
 	}
 
-	r := NewReconciler(metricsCapability, clt, clt, scheme.Scheme, log, instance, imgVerProvider)
+	mockClient := &dtclient.MockDynatraceClient{}
+	mockClient.On("GetAGTenantInfo").Return(&dtclient.TenantInfo{}, nil)
+
+	r := NewReconciler(metricsCapability, clt, clt, scheme.Scheme, log, instance, imgVerProvider, mockClient)
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.Instance)

@@ -6,7 +6,6 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/controllers/tokens"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -122,15 +121,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 			},
 		}})
 	assert.Equal(t, capabilityProperties.Tolerations, templateSpec.Tolerations)
-	assert.Len(t, templateSpec.Volumes, 1)
-	assert.Contains(t, templateSpec.Volumes, corev1.Volume{
-		Name: TokensSecretVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: tokens.ExtendWithAgTokensSecretSuffix(instance.Name),
-			},
-		},
-	})
+	assert.Len(t, templateSpec.Volumes, 0)
 	assert.NotEmpty(t, templateSpec.ImagePullSecrets)
 	assert.Contains(t, templateSpec.ImagePullSecrets, corev1.LocalObjectReference{Name: instance.Name + dtpullsecret.PullSecretSuffix})
 }
@@ -147,12 +138,7 @@ func TestStatefulSet_Container(t *testing.T) {
 	assert.Equal(t, corev1.PullAlways, container.ImagePullPolicy)
 	assert.NotEmpty(t, container.Env)
 	assert.Empty(t, container.Args)
-	assert.Len(t, container.VolumeMounts, 1)
-	assert.Contains(t, container.VolumeMounts, corev1.VolumeMount{
-		ReadOnly:  true,
-		Name:      TokensSecretVolumeName,
-		MountPath: "/var/lib/dynatrace/secrets",
-	})
+	assert.Len(t, container.VolumeMounts, 0)
 	assert.NotNil(t, container.ReadinessProbe)
 }
 
@@ -164,15 +150,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		volumes := buildVolumes(testName, NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", "", nil, nil, nil))
 
-		assert.Len(t, volumes, 1)
-		assert.Contains(t, volumes, corev1.Volume{
-			Name: TokensSecretVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: tokens.ExtendWithAgTokensSecretSuffix(instance.Name),
-				},
-			},
-		})
+		assert.Len(t, volumes, 0)
 	})
 	t.Run(`custom properties from value string`, func(t *testing.T) {
 		capabilityProperties.CustomProperties = &dynatracev1alpha1.DynaKubeValueSource{
@@ -291,29 +269,19 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 	t.Run(`without custom properties`, func(t *testing.T) {
 		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", "", nil, nil, nil))
-		assert.Len(t, volumeMounts, 1)
-		assert.Contains(t, volumeMounts, corev1.VolumeMount{
-			ReadOnly:  true,
-			Name:      TokensSecretVolumeName,
-			MountPath: "/var/lib/dynatrace/secrets",
-		})
+		assert.Len(t, volumeMounts, 0)
 	})
 	t.Run(`with custom properties`, func(t *testing.T) {
 		capabilityProperties.CustomProperties = &dynatracev1alpha1.DynaKubeValueSource{Value: testValue}
 		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", "", nil, nil, nil))
 
-		assert.Len(t, volumeMounts, 2)
+		assert.Len(t, volumeMounts, 1)
 		assert.Contains(t, volumeMounts, corev1.VolumeMount{
 			ReadOnly:  true,
 			Name:      customproperties.VolumeName,
 			MountPath: customproperties.MountPath,
 			SubPath:   customproperties.DataPath,
-		})
-		assert.Contains(t, volumeMounts, corev1.VolumeMount{
-			ReadOnly:  true,
-			Name:      TokensSecretVolumeName,
-			MountPath: "/var/lib/dynatrace/secrets",
 		})
 	})
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/controllers/tokens"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -194,14 +193,14 @@ func buildVolumes(instanceName string, stsProperties *statefulSetProperties) []c
 
 	volumes = append(volumes, stsProperties.volumes...)
 
-	volumes = append(volumes, corev1.Volume{
-		Name: TokensSecretVolumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: tokens.ExtendWithAgTokensSecretSuffix(instanceName),
-			},
-		},
-	})
+	//volumes = append(volumes, corev1.Volume{
+	//	Name: TokensSecretVolumeName,
+	//	VolumeSource: corev1.VolumeSource{
+	//		Secret: &corev1.SecretVolumeSource{
+	//			SecretName: tokens.ExtendWithAgTokensSecretSuffix(instanceName),
+	//		},
+	//	},
+	//})
 
 	return volumes
 }
@@ -216,11 +215,11 @@ func determineCustomPropertiesSource(stsProperties *statefulSetProperties) strin
 func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMount {
 	var volumeMounts []corev1.VolumeMount
 
-	volumeMounts = append(volumeMounts, corev1.VolumeMount{
-		Name:      TokensSecretVolumeName,
-		ReadOnly:  true,
-		MountPath: "/var/lib/dynatrace/secrets",
-	})
+	//volumeMounts = append(volumeMounts, corev1.VolumeMount{
+	//	Name:      TokensSecretVolumeName,
+	//	ReadOnly:  true,
+	//	MountPath: "/var/lib/dynatrace/secrets",
+	//})
 
 	if !isCustomPropertiesNilOrEmpty(stsProperties.CustomProperties) {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{

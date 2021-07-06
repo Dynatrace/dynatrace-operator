@@ -77,10 +77,6 @@ func (dtc *dynatraceClient) getTenantInfo(apiEndpoint string, readResponseForTen
 		return nil, errors.WithStack(err)
 	}
 
-	for _, s := range strings.Split(tenantInfo.String(), "\n") {
-		dtc.logger.Info(s)
-	}
-
 	return tenantInfo, nil
 }
 
