@@ -3,8 +3,6 @@ package capability
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/controllers/tokens"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"strings"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -13,6 +11,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
 	sts "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
+	"github.com/Dynatrace/dynatrace-operator/controllers/tokens"
+	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
