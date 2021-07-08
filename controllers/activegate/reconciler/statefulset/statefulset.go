@@ -66,10 +66,6 @@ func NewStatefulSetProperties(instance *dynatracev1alpha1.DynaKube, capabilityPr
 		serviceAccountOwner = feature
 	}
 
-	s := statefulSetProperties{}
-	if s.DynaKube.Spec.CodeModules.Enabled {
-
-	}
 	return &statefulSetProperties{
 		DynaKube:                instance,
 		CapabilityProperties:    capabilityProperties,

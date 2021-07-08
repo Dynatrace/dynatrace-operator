@@ -195,7 +195,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 func TestStatefulSet_Env(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.RoutingSpec.CapabilityProperties
-	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(testUID))
+	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(testUID), *instance)
 
 	t.Run(`without proxy`, func(t *testing.T) {
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,

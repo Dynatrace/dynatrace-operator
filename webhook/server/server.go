@@ -181,7 +181,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 					// container does not have LD_PRELOAD set
 					logger.Info("instrumenting missing container", "name", c.Name)
 
-					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
+					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, oa)
 					updateContainer(c, &oa, pod, deploymentMetadata)
 
 					if installContainer == nil {
@@ -264,7 +264,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		basePodName = basePodName[:p]
 	}
 
-	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
+	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, oa)
 
 	ic := corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
