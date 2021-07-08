@@ -25,6 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -50,6 +51,7 @@ func NewReconciler(mgr manager.Manager) *ReconcileDynaKube {
 		scheme:       mgr.GetScheme(),
 		dtcBuildFunc: BuildDynatraceClient,
 		config:       mgr.GetConfig(),
+		recorder:     mgr.GetEventRecorderFor("Dynakube Controller"),
 	}
 }
 
@@ -85,6 +87,7 @@ type ReconcileDynaKube struct {
 	dtcBuildFunc DynatraceClientFunc
 	logger       logr.Logger
 	config       *rest.Config
+	recorder     record.EventRecorder
 }
 
 type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
@@ -172,7 +175,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	}
 
 	if rec.Instance.Spec.EnableIstio {
-		if upd, err = istio.NewController(r.config, r.scheme).ReconcileIstio(rec.Instance); err != nil {
+		if upd, err = istio.NewController(r.config, r.scheme, r.recorder).ReconcileIstio(rec.Instance); err != nil {
 			// If there are errors log them, but move on.
 			rec.Log.Info("Istio: failed to reconcile objects", "error", err)
 		} else if upd {

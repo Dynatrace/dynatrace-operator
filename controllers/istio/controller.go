@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -39,17 +40,19 @@ type Controller struct {
 	logger    logr.Logger
 	config    *rest.Config
 	namespace string
+	recorder  record.EventRecorder
 }
 
 // NewController - creates new instance of istio controller
-func NewController(config *rest.Config, scheme *runtime.Scheme) *Controller {
+func NewController(config *rest.Config, scheme *runtime.Scheme, recorder record.EventRecorder) *Controller {
 	c := &Controller{
 		config:    config,
 		scheme:    scheme,
 		logger:    log.Log.WithName("istio.controller"),
 		namespace: os.Getenv("POD_NAMESPACE"),
+		recorder:  recorder,
 	}
-	istioClient, err := c.initialiseIstioClient(config)
+	istioClient, err := c.initializeIstioClient(config)
 	if err != nil {
 		return nil
 	}
@@ -58,7 +61,7 @@ func NewController(config *rest.Config, scheme *runtime.Scheme) *Controller {
 	return c
 }
 
-func (c *Controller) initialiseIstioClient(config *rest.Config) (istioclientset.Interface, error) {
+func (c *Controller) initializeIstioClient(config *rest.Config) (istioclientset.Interface, error) {
 	ic, err := istioclientset.NewForConfig(config)
 	if err != nil {
 		c.logger.Error(err, "istio: failed to initialize client")
@@ -159,6 +162,10 @@ func (c *Controller) removeIstioConfigurationForServiceEntry(listOps *metav1.Lis
 				c.logger.Error(err, fmt.Sprintf("istio: error deleting service entry, %s : %v", se.GetName(), err))
 				continue
 			}
+			c.recorder.Eventf(&se,
+				"Normal",
+				"RemoveIstioConfigurationForServiceEntry",
+				"Removed istio configuration, %s: %v", se.Kind, se.GetName())
 			del = true
 		}
 	}
@@ -186,6 +193,10 @@ func (c *Controller) removeIstioConfigurationForVirtualService(listOps *metav1.L
 				c.logger.Error(err, fmt.Sprintf("istio: error deleting virtual service, %s : %v", vs.GetName(), err))
 				continue
 			}
+			c.recorder.Eventf(&vs,
+				"Normal",
+				"RemoveIstioConfigurationForVirtualService",
+				"Removed istio configuration, %s: %v", vs.Kind, vs.GetName())
 			del = true
 		}
 	}
@@ -301,6 +312,10 @@ func (c *Controller) createIstioConfigurationForServiceEntry(dynaKube *dynatrace
 	if sve == nil {
 		return fmt.Errorf("could not create service entry with spec %v", serviceEntry.Spec)
 	}
+	c.recorder.Eventf(serviceEntry,
+		"Normal",
+		"CreateIstioConfigurationForServiceEntry",
+		"Created istio configuration, %s: %v", serviceEntry.Kind, serviceEntry.GetName())
 
 	return nil
 }
@@ -319,6 +334,10 @@ func (c *Controller) createIstioConfigurationForVirtualService(dynaKube *dynatra
 	if vs == nil {
 		return fmt.Errorf("could not create virtual service with spec %v", virtualService.Spec)
 	}
+	c.recorder.Eventf(virtualService,
+		"Normal",
+		"CreateIstioConfigurationForVirtualService",
+		"Created istio configuration, %s: %v", virtualService.Kind, virtualService.GetName())
 
 	return nil
 }
