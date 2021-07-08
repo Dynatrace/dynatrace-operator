@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -36,7 +37,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Data: map[string][]byte{dtclient.DynatracePaasToken: []byte(testPaasToken)},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, logf.Log, secret)
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, logf.Log, secret, record.NewFakeRecorder(10))
 
 		mockDTC.
 			On("GetConnectionInfo").
@@ -66,7 +67,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				CustomPullSecret: testValue,
 			}}
-		r := NewReconciler(nil, nil, nil, instance, nil, nil)
+		r := NewReconciler(nil, nil, nil, instance, nil, nil, nil)
 		err := r.Reconcile()
 
 		assert.NoError(t, err)
@@ -93,7 +94,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Data: map[string][]byte{
 					dtclient.DynatracePaasToken: []byte(testValue),
 				},
-			})
+			}, record.NewFakeRecorder(10))
 
 		err := r.Reconcile()
 
@@ -133,7 +134,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Data: map[string][]byte{
 					dtclient.DynatracePaasToken: []byte(testValue),
 				},
-			})
+			}, record.NewFakeRecorder(10))
 
 		err := r.Reconcile()
 
