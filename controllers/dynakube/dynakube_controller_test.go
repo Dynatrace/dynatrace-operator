@@ -18,6 +18,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -43,6 +44,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
 		r := &ReconcileDynaKube{
 			client: fake.NewClient(),
+			recorder: record.NewFakeRecorder(10),
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{})
 
@@ -107,6 +109,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
+			recorder: record.NewFakeRecorder(10),
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -150,6 +153,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
+			recorder: record.NewFakeRecorder(10),
 		}
 
 		mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
@@ -230,6 +234,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 		dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
 			return mockClient, nil
 		},
+		recorder: record.NewFakeRecorder(10),
 	}
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
