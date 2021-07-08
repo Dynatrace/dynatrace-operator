@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -36,6 +37,7 @@ type ReconcileNodes struct {
 	logger       logr.Logger
 	dtClientFunc dynakube.DynatraceClientFunc
 	local        bool
+	recorder     record.EventRecorder
 }
 
 // Add creates a new Nodes Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -49,6 +51,7 @@ func Add(mgr manager.Manager, ns string) error {
 		logger:       log.Log.WithName("nodes.controller"),
 		dtClientFunc: dynakube.BuildDynatraceClient,
 		local:        os.Getenv("RUN_LOCAL") == "true",
+		recorder:     mgr.GetEventRecorderFor("Nodes Controller"),
 	})
 }
 
@@ -394,6 +397,7 @@ func (r *ReconcileNodes) markForTermination(c *Cache, dk *dynatracev1alpha1.Dyna
 
 	r.logger.Info("sending mark for termination event to dynatrace server", "dynakube", dk.Name, "ip", ipAddress,
 		"node", nodeName)
+	r.recorder.Event(&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: nodeName}}, "Normal", "MarkForTermination", "One of the Nodes was marked for termination")
 
 	return r.sendMarkedForTermination(dk, ipAddress, cachedNode.LastSeen)
 }

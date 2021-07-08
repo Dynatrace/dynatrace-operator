@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/tools/record"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -148,6 +149,7 @@ func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDy
 		logger:       zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
 		dtClientFunc: dynakube.StaticDynatraceClient(dtClient),
 		local:        true,
+		recorder:     record.NewFakeRecorder(1),
 	}
 }
 
