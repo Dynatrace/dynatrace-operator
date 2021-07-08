@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/container-storage-interface/spec v1.3.0
 	github.com/containers/image/v5 v5.9.0
+	github.com/daixiang0/gci v0.2.9 // indirect
 	github.com/evanphx/json-patch v4.9.0+incompatible
 	github.com/go-logr/logr v0.3.0
 	github.com/pkg/errors v0.9.1
@@ -13,7 +14,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
 	go.uber.org/zap v1.16.0
-	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009
+	golang.org/x/sys v0.0.0-20200930185726-fdedc70b468f
 	google.golang.org/grpc v1.28.1
 	istio.io/api v0.0.0-20201217173512-1f62aaeb5ee3
 	istio.io/client-go v1.8.1
