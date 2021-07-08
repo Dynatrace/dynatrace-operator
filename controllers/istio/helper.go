@@ -64,18 +64,6 @@ func buildServiceEntry(name, namespace, host, protocol string, port uint32) *ist
 	return buildServiceEntryFQDN(name, namespace, host, protocol, port)
 }
 
-// BuildVirtualService returns an Istio VirtualService object for the given communication endpoint.
-func buildVirtualService(name, namespace, host, protocol string, port uint32) *istiov1alpha3.VirtualService {
-	if net.ParseIP(host) != nil { // It's an IP.
-		return nil
-	}
-
-	return &istiov1alpha3.VirtualService{
-		ObjectMeta: buildObjectMeta(name, namespace),
-		Spec:       buildVirtualServiceSpec(host, protocol, port),
-	}
-}
-
 // buildServiceEntryFQDN returns an Istio ServiceEntry object for the given communication endpoint with a FQDN host.
 func buildServiceEntryFQDN(name, namespace, host, protocol string, port uint32) *istiov1alpha3.ServiceEntry {
 	portStr := strconv.Itoa(int(port))
@@ -92,26 +80,6 @@ func buildServiceEntryFQDN(name, namespace, host, protocol string, port uint32) 
 			}},
 			Location:   istio.ServiceEntry_MESH_EXTERNAL,
 			Resolution: istio.ServiceEntry_DNS,
-		},
-	}
-}
-
-// buildServiceEntryIP returns an Istio ServiceEntry object for the given communication endpoint with IP.
-func buildServiceEntryIP(name, namespace, host string, port uint32) *istiov1alpha3.ServiceEntry {
-	portStr := strconv.Itoa(int(port))
-
-	return &istiov1alpha3.ServiceEntry{
-		ObjectMeta: buildObjectMeta(name, namespace),
-		Spec: istio.ServiceEntry{
-			Hosts:     []string{"ignored.subdomain"},
-			Addresses: []string{host + "/32"},
-			Ports: []*istio.Port{{
-				Name:     "TCP-" + portStr,
-				Number:   port,
-				Protocol: "TCP",
-			}},
-			Location:   istio.ServiceEntry_MESH_EXTERNAL,
-			Resolution: istio.ServiceEntry_NONE,
 		},
 	}
 }
@@ -149,4 +117,11 @@ func buildIstioLabels(name, role string) map[string]string {
 		"oneagent":             name,
 		"dynatrace-istio-role": role,
 	}
+}
+
+func isIp(host string) bool {
+	if net.ParseIP(host) != nil {
+		return true
+	}
+	return false
 }

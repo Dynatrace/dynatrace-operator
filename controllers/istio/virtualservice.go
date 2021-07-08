@@ -1,11 +1,25 @@
 package istio
 
-import istio "istio.io/api/networking/v1alpha3"
+import (
+	istio "istio.io/api/networking/v1alpha3"
+	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
+)
 
 const (
 	protocolHttp  = "http"
 	protocolHttps = "https"
 )
+
+func buildVirtualService(name, namespace, host, protocol string, port uint32) *istiov1alpha3.VirtualService {
+	if isIp(host) {
+		return nil
+	}
+
+	return &istiov1alpha3.VirtualService{
+		ObjectMeta: buildObjectMeta(name, namespace),
+		Spec:       buildVirtualServiceSpec(host, protocol, port),
+	}
+}
 
 func buildVirtualServiceSpec(host, protocol string, port uint32) istio.VirtualService {
 	virtualServiceSpec := istio.VirtualService{}
