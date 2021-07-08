@@ -37,7 +37,7 @@ func NewDeploymentMetadata(orchestratorID string, instance dynatracev1alpha1.Dyn
 }
 
 func (metadata *DeploymentMetadata) AsArgs() []string {
-	checkMetaData(metadata)
+	checkDeployments(metadata)
 
 	res := []string{
 		formatMetadataArgument(keyOrchestrationTech, orchestrationTech),
@@ -65,7 +65,7 @@ func (metadata *DeploymentMetadata) AsArgs() []string {
 }
 
 func (metadata *DeploymentMetadata) AsString() string {
-	checkMetaData(metadata)
+	checkDeployments(metadata)
 
 	res := []string{
 		formatKeyValue(keyOrchestrationTech, orchestrationTech),
@@ -92,7 +92,7 @@ func (metadata *DeploymentMetadata) AsString() string {
 	return strings.Join(res, ";")
 }
 
-func checkMetaData(metadata *DeploymentMetadata) {
+func checkDeployments(metadata *DeploymentMetadata) {
 	if metadata.DynaKube.Spec.CodeModules.Enabled {
 		metadata.codeModulesDeployed = "true"
 	}
