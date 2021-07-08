@@ -128,5 +128,5 @@ spec:
             type: DirectoryOrCreate
         - name: dynatrace-oneagent-data-dir
           hostPath:
-            path: /tmp/dynatrace-oneagent-data
+            path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
             type: DirectoryOrCreate
