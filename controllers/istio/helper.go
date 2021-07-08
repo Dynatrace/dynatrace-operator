@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net"
-	"os"
 	"strconv"
 	"strings"
 
@@ -57,33 +56,33 @@ func CheckIstioEnabled(cfg *rest.Config) (bool, error) {
 }
 
 // BuildServiceEntry returns an Istio ServiceEntry object for the given communication endpoint.
-func buildServiceEntry(name, host, protocol string, port uint32) *istiov1alpha3.ServiceEntry {
+func buildServiceEntry(name, namespace, host, protocol string, port uint32) *istiov1alpha3.ServiceEntry {
 	if net.ParseIP(host) != nil { // It's an IP.
-		return buildServiceEntryIP(name, host, port)
+		return buildServiceEntryIP(name, namespace, host, port)
 	}
 
-	return buildServiceEntryFQDN(name, host, protocol, port)
+	return buildServiceEntryFQDN(name, namespace, host, protocol, port)
 }
 
 // BuildVirtualService returns an Istio VirtualService object for the given communication endpoint.
-func buildVirtualService(name, host, protocol string, port uint32) *istiov1alpha3.VirtualService {
+func buildVirtualService(name, namespace, host, protocol string, port uint32) *istiov1alpha3.VirtualService {
 	if net.ParseIP(host) != nil { // It's an IP.
 		return nil
 	}
 
 	return &istiov1alpha3.VirtualService{
-		ObjectMeta: buildObjectMeta(name),
+		ObjectMeta: buildObjectMeta(name, namespace),
 		Spec:       buildVirtualServiceSpec(host, protocol, port),
 	}
 }
 
 // buildServiceEntryFQDN returns an Istio ServiceEntry object for the given communication endpoint with a FQDN host.
-func buildServiceEntryFQDN(name, host, protocol string, port uint32) *istiov1alpha3.ServiceEntry {
+func buildServiceEntryFQDN(name, namespace, host, protocol string, port uint32) *istiov1alpha3.ServiceEntry {
 	portStr := strconv.Itoa(int(port))
 	protocolStr := strings.ToUpper(protocol)
 
 	return &istiov1alpha3.ServiceEntry{
-		ObjectMeta: buildObjectMeta(name),
+		ObjectMeta: buildObjectMeta(name, namespace),
 		Spec: istio.ServiceEntry{
 			Hosts: []string{host},
 			Ports: []*istio.Port{{
@@ -98,11 +97,11 @@ func buildServiceEntryFQDN(name, host, protocol string, port uint32) *istiov1alp
 }
 
 // buildServiceEntryIP returns an Istio ServiceEntry object for the given communication endpoint with IP.
-func buildServiceEntryIP(name, host string, port uint32) *istiov1alpha3.ServiceEntry {
+func buildServiceEntryIP(name, namespace, host string, port uint32) *istiov1alpha3.ServiceEntry {
 	portStr := strconv.Itoa(int(port))
 
 	return &istiov1alpha3.ServiceEntry{
-		ObjectMeta: buildObjectMeta(name),
+		ObjectMeta: buildObjectMeta(name, namespace),
 		Spec: istio.ServiceEntry{
 			Hosts:     []string{"ignored.subdomain"},
 			Addresses: []string{host + "/32"},
@@ -123,56 +122,10 @@ func buildNameForEndpoint(name string, protocol string, host string, port uint32
 	return hex.EncodeToString(sum[:])
 }
 
-func buildVirtualServiceSpec(host, protocol string, port uint32) istio.VirtualService {
-	virtualServiceSpec := istio.VirtualService{}
-	virtualServiceSpec.Hosts = []string{host}
-	switch protocol {
-	case "https":
-		virtualServiceSpec.Tls = buildVirtualServiceTLSRoute(host, port)
-	case "http":
-		virtualServiceSpec.Http = buildVirtualServiceHttpRoute(port, host)
-	}
-
-	return virtualServiceSpec
-}
-
-func buildVirtualServiceTLSRoute(host string, port uint32) []*istio.TLSRoute {
-	return []*istio.TLSRoute{{
-		Match: []*istio.TLSMatchAttributes{{
-			SniHosts: []string{host},
-			Port:     port,
-		}},
-		Route: []*istio.RouteDestination{{
-			Destination: &istio.Destination{
-				Host: host,
-				Port: &istio.PortSelector{
-					Number: port,
-				},
-			},
-		}},
-	}}
-}
-
-func buildVirtualServiceHttpRoute(port uint32, host string) []*istio.HTTPRoute {
-	return []*istio.HTTPRoute{{
-		Match: []*istio.HTTPMatchRequest{{
-			Port: port,
-		}},
-		Route: []*istio.HTTPRouteDestination{{
-			Destination: &istio.Destination{
-				Host: host,
-				Port: &istio.PortSelector{
-					Number: port,
-				},
-			},
-		}},
-	}}
-}
-
-func buildObjectMeta(name string) v1.ObjectMeta {
+func buildObjectMeta(name string, namespace string) v1.ObjectMeta {
 	return v1.ObjectMeta{
 		Name:      name,
-		Namespace: os.Getenv("POD_NAMESPACE"),
+		Namespace: namespace,
 	}
 }
 
