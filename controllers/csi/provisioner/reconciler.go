@@ -34,6 +34,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -48,6 +49,7 @@ type OneAgentProvisioner struct {
 	opts         dtcsi.CSIOptions
 	dtcBuildFunc dynakube.DynatraceClientFunc
 	fs           afero.Fs
+	recorder     record.EventRecorder
 }
 
 // NewReconciler returns a new OneAgentProvisioner
@@ -57,6 +59,7 @@ func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgentProvisio
 		opts:         opts,
 		dtcBuildFunc: dynakube.BuildDynatraceClient,
 		fs:           afero.NewOsFs(),
+		recorder:     mgr.GetEventRecorderFor("OneAgentProvisioner"),
 	}
 }
 
@@ -150,6 +153,7 @@ func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, dtc dt
 		if err := r.installAgentVersion(ver, envDir, dtc, logger); err != nil {
 			return err
 		}
+		r.recorder.Eventf(dk, "Normal", "InstallAgentVersion", "Installed agent version: %s to envDir: %s", ver, envDir)
 	}
 
 	return afero.WriteFile(r.fs, versionFile, []byte(ver), 0644)
