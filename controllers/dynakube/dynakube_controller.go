@@ -245,7 +245,7 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconcili
 	for _, c := range caps {
 		if c.GetProperties().Enabled {
 			upd, err := rcap.NewReconciler(
-				c, r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, dtversion.GetImageVersion,
+				c, r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, dtversion.GetImageVersion, r.recorder,
 			).Reconcile()
 			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, c.GetModuleName()+" reconciled") {
 				return false
