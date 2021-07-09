@@ -201,7 +201,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 
 	if rec.Instance.Spec.InfraMonitoring.Enabled {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.InfraMonitoring, oneagent.InframonFeature,
+			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.InfraMonitoring, oneagent.InframonFeature, r.recorder,
 		).Reconcile(ctx, rec)
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
 			return
@@ -215,7 +215,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 
 	if rec.Instance.Spec.ClassicFullStack.Enabled {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.ClassicFullStack, oneagent.ClassicFeature,
+			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.ClassicFullStack, oneagent.ClassicFeature, r.recorder,
 		).Reconcile(ctx, rec)
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "classic fullstack reconciled") {
 			return

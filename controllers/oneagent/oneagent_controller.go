@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -40,7 +41,7 @@ const (
 )
 
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
-func NewOneAgentReconciler(client client.Client, apiReader client.Reader, scheme *runtime.Scheme, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fullStack *dynatracev1alpha1.FullStackSpec, feature string) *ReconcileOneAgent {
+func NewOneAgentReconciler(client client.Client, apiReader client.Reader, scheme *runtime.Scheme, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fullStack *dynatracev1alpha1.FullStackSpec, feature string, recorder record.EventRecorder) *ReconcileOneAgent {
 	return &ReconcileOneAgent{
 		client:    client,
 		apiReader: apiReader,
@@ -49,6 +50,7 @@ func NewOneAgentReconciler(client client.Client, apiReader client.Reader, scheme
 		instance:  instance,
 		fullStack: fullStack,
 		feature:   feature,
+		recorder:  recorder,
 	}
 }
 
@@ -63,6 +65,7 @@ type ReconcileOneAgent struct {
 	instance  *dynatracev1alpha1.DynaKube
 	fullStack *dynatracev1alpha1.FullStackSpec
 	feature   string
+	recorder  record.EventRecorder
 }
 
 // Reconcile reads that state of the cluster for a OneAgent object and makes changes based on the state read
@@ -136,6 +139,7 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Rec
 		if err = r.client.Create(ctx, dsDesired); err != nil {
 			return false, err
 		}
+		r.recorder.Event(dsActual, "Normal", "CreateNewDaemonSet", "Creating new daemonset")
 	} else if err != nil {
 		return false, err
 	} else if hasDaemonSetChanged(dsDesired, dsActual) {
@@ -143,6 +147,7 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Rec
 		if err = r.client.Update(ctx, dsDesired); err != nil {
 			return false, err
 		}
+		r.recorder.Event(dsActual, "Normal", "UpdateNewDaemonSet", "Updating existing daemonset")
 	}
 
 	if rec.Instance.Status.Tokens != rec.Instance.Tokens() {
@@ -609,6 +614,7 @@ func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logge
 
 	if instance.Status.OneAgent.Instances == nil || !reflect.DeepEqual(instance.Status.OneAgent.Instances, instanceStatuses) {
 		instance.Status.OneAgent.Instances = instanceStatuses
+		r.recorder.Event(instance, "Normal", "ReconcileInstanceStatuses", "Instance statuses reconciled")
 		return true, err
 	}
 

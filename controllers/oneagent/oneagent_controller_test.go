@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
@@ -77,6 +78,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		instance:  dynakube,
 		feature:   ClassicFeature,
 		fullStack: &dynakube.Spec.ClassicFullStack,
+		recorder:  record.NewFakeRecorder(20),
 	}
 
 	rec := utils.Reconciliation{Log: consoleLogger, Instance: dynakube}
@@ -163,6 +165,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		fullStack: &base.Spec.ClassicFullStack,
 		feature:   ClassicFeature,
 		instance:  &base,
+		recorder:  record.NewFakeRecorder(20),
 	}
 
 	t.Run("reconcileRollout Tokens status set, if empty", func(t *testing.T) {
@@ -209,6 +212,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 			instance:  &base,
 			feature:   ClassicFeature,
 			fullStack: &base.Spec.ClassicFullStack,
+			recorder:  record.NewFakeRecorder(20),
 		}
 
 		// arrange
@@ -263,6 +267,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		instance:  &base,
 		fullStack: &base.Spec.ClassicFullStack,
 		feature:   ClassicFeature,
+		recorder:  record.NewFakeRecorder(20),
 	}
 
 	t.Run("reconcileImpl Instances set, if autoUpdate is true", func(t *testing.T) {
