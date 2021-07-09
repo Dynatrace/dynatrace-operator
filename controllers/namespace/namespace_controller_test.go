@@ -69,7 +69,7 @@ func TestReconcileNamespace(t *testing.T) {
 		apiReader: c,
 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
 		namespace: "dynatrace",
-		recorder: record.NewFakeRecorder(10),
+		recorder:  record.NewFakeRecorder(10),
 	}
 
 	_, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: "test-namespace"}})
