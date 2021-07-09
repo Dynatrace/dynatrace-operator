@@ -16,6 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -40,12 +41,12 @@ func Add(mgr manager.Manager, ns string) error {
 		logger.Info("OneAgentAPM object detected - Namespace reconciler disabled until the OneAgent Operator has been uninstalled")
 		return nil
 	}
-
 	return add(mgr, &ReconcileNamespaces{
 		client:    mgr.GetClient(),
 		apiReader: mgr.GetAPIReader(),
 		namespace: ns,
 		logger:    logger,
+		recorder:  mgr.GetEventRecorderFor("Namespace Controller"),
 	})
 }
 
@@ -70,6 +71,7 @@ type ReconcileNamespaces struct {
 	apiReader client.Reader
 	logger    logr.Logger
 	namespace string
+	recorder  record.EventRecorder
 }
 
 func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -88,13 +90,13 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, nil
 	}
 
-	oaName := ns.Labels[webhook.LabelInstance]
-	if oaName == "" {
+	dkName := ns.Labels[webhook.LabelInstance]
+	if dkName == "" {
 		return reconcile.Result{}, nil
 	}
 
 	var dk dynatracev1alpha1.DynaKube
-	if err := r.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: r.namespace}, &dk); err != nil {
+	if err := r.client.Get(ctx, client.ObjectKey{Name: dkName, Namespace: r.namespace}, &dk); err != nil {
 		return reconcile.Result{}, errors.WithMessage(err, "failed to query DynaKubes")
 	}
 
@@ -137,7 +139,7 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 
 	// The default cache-based Client doesn't support cross-namespace queries, unless configured to do so in Manager
 	// Options. However, this is our only use-case for it, so using the non-cached Client instead.
-	err = utils.CreateOrUpdateSecretIfNotExists(r.client, r.apiReader, webhook.SecretConfigName, targetNS, data, corev1.SecretTypeOpaque, log)
+	err = utils.CreateOrUpdateSecretIfNotExists(r.client, r.apiReader, webhook.SecretConfigName, targetNS, data, corev1.SecretTypeOpaque, log, r.recorder)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}

@@ -16,6 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -111,7 +112,7 @@ func GetDeployment(c client.Client, ns string) (*appsv1.Deployment, error) {
 }
 
 // CreateOrUpdateSecretIfNotExists creates a secret in case it does not exist or updates it if there are changes
-func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretName string, targetNS string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
+func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretName string, targetNS string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger, recorder record.EventRecorder) error {
 	var cfg corev1.Secret
 	err := r.Get(context.TODO(), client.ObjectKey{Name: secretName, Namespace: targetNS}, &cfg)
 	if k8serrors.IsNotFound(err) {
@@ -126,6 +127,7 @@ func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretNam
 		}); err != nil {
 			return errors.Wrapf(err, "failed to create secret %s", secretName)
 		}
+		recorder.Eventf(&cfg, "Normal", "CreateOneAgentConfigSecret", "Creating OneAgent config secret, name: %s, namespace: %s", secretName, targetNS)
 		return nil
 	}
 
@@ -139,6 +141,7 @@ func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretNam
 		if err := c.Update(context.TODO(), &cfg); err != nil {
 			return errors.Wrapf(err, "failed to update secret %s", secretName)
 		}
+		recorder.Eventf(&cfg, "Normal", "UpdateOneAgentConfigSecret", "Updateing OneAgent config secret, name: %s, namespace: %s", secretName, targetNS)
 	}
 
 	return nil
