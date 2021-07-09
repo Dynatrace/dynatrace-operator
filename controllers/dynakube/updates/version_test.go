@@ -32,6 +32,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -66,7 +67,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		return dtversion.ImageVersion{}, errors.New("Not implemented")
 	}
 
-	upd, err := ReconcileVersions(ctx, rec, fakeClient, errVerProvider)
+	upd, err := ReconcileVersions(ctx, rec, fakeClient, errVerProvider, record.NewFakeRecorder(10))
 	assert.Error(t, err)
 	assert.False(t, upd)
 
@@ -80,7 +81,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		return dtversion.ImageVersion{Version: testVersion, Hash: testHash}, nil
 	}
 
-	upd, err = ReconcileVersions(ctx, rec, fakeClient, sampleVerProvider)
+	upd, err = ReconcileVersions(ctx, rec, fakeClient, sampleVerProvider, record.NewFakeRecorder(10))
 	assert.NoError(t, err)
 	assert.True(t, upd)
 
@@ -96,7 +97,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		assert.Equal(t, now, *ts)
 	}
 
-	upd, err = ReconcileVersions(ctx, rec, fakeClient, sampleVerProvider)
+	upd, err = ReconcileVersions(ctx, rec, fakeClient, sampleVerProvider, record.NewFakeRecorder(10))
 	assert.NoError(t, err)
 	assert.False(t, upd)
 }

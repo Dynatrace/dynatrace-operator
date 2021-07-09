@@ -191,7 +191,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 		return
 	}
 
-	upd, err = updates.ReconcileVersions(ctx, rec, r.client, dtversion.GetImageVersion)
+	upd, err = updates.ReconcileVersions(ctx, rec, r.client, dtversion.GetImageVersion, r.recorder)
 	rec.Update(upd, defaultUpdateInterval, "Found updates")
 	rec.Error(err)
 
