@@ -15,6 +15,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -31,7 +32,7 @@ func TestReconcileWebhookCertificates(t *testing.T) {
 	require.NoError(t, err)
 
 	c := fake.NewClient()
-	r := ReconcileWebhookCertificates{client: c, logger: logger, namespace: ns, scheme: scheme.Scheme}
+	r := ReconcileWebhookCertificates{client: c, logger: logger, namespace: ns, scheme: scheme.Scheme, recorder: record.NewFakeRecorder(10)}
 
 	reconcileAndGetCreds := func(days time.Duration) map[string]string {
 		r.now = now.Add(days * 24 * time.Hour)
