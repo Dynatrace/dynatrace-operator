@@ -63,7 +63,7 @@ func (r *ReconcileDynaKube) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, logger logr.Logger, config *rest.Config) *ReconcileDynaKube {
+func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, logger logr.Logger, config *rest.Config, recorder record.EventRecorder) *ReconcileDynaKube {
 	return &ReconcileDynaKube{
 		client:       c,
 		apiReader:    apiReader,
@@ -71,6 +71,7 @@ func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *run
 		dtcBuildFunc: dtcBuildFunc,
 		logger:       logger,
 		config:       config,
+		recorder:     recorder,
 	}
 }
 
