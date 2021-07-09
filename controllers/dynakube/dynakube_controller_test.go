@@ -43,7 +43,7 @@ const (
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
 		r := &ReconcileDynaKube{
-			client: fake.NewClient(),
+			client:   fake.NewClient(),
 			recorder: record.NewFakeRecorder(10),
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{})
