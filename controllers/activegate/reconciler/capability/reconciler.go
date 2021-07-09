@@ -17,6 +17,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -30,10 +31,11 @@ type Reconciler struct {
 	*sts.Reconciler
 	log logr.Logger
 	capability.Capability
+	recorder record.EventRecorder
 }
 
 func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, log logr.Logger,
-	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
+	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, recorder record.EventRecorder) *Reconciler {
 	baseReconciler := sts.NewReconciler(
 		clt, apiReader, scheme, log, instance, imageVersionProvider, capability)
 
@@ -53,6 +55,7 @@ func NewReconciler(capability capability.Capability, clt client.Client, apiReade
 		Reconciler: baseReconciler,
 		log:        log,
 		Capability: capability,
+		recorder:   recorder,
 	}
 }
 
@@ -108,8 +111,9 @@ func (r *Reconciler) createServiceIfNotExists() (bool, error) {
 
 	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
 	if err != nil && k8serrors.IsNotFound(err) {
-		r.log.Info("creating service", "module", r.GetModuleName())
-
+		logMessage := fmt.Sprintf("createing service %s", r.GetModuleName())
+		r.log.Info(logMessage)
+		r.recorder.Event(service, "Normal", "CreateActiveGateService", logMessage)
 		if err := controllerutil.SetControllerReference(r.Instance, service, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)
 		}
