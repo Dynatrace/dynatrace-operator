@@ -99,7 +99,7 @@ deploy-local:
 	./build/deploy_local.sh
 
 # Generate manifests e.g. CRD, RBAC etc.
-manifests: controller-gen
+manifests: controller-gen manifests-ocp311
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/default/bases
 
 manifests-ocp311: controller-gen

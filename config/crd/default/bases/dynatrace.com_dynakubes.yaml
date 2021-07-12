@@ -2832,42 +2832,37 @@ spec:
             latestAgentVersionUnixPaas:
               description: LatestAgentVersionUnixDefault caches the current agent
                 version for unix and the PaaS installer which is configured for the
-                environment
-              type: string
-            oneAgent:
-              properties:
-                imageHash:
-                  description: ImageHash contains the last image hash seen.
-                  type: string
-                instances:
-                  additionalProperties:
-                    properties:
-                      ipAddress:
-                        type: string
-                      podName:
-                        type: string
+                 environment
+                type: string
+              oneAgent:
+                properties:
+                  imageHash:
+                    description: ImageHash contains the last image hash seen.
+                    type: string
+                  instances:
+                    additionalProperties:
+                      properties:
+                        ipAddress:
+                          type: string
+                        podName:
+                          type: string
+                      type: object
                     type: object
-                  type: object
-                lastHostsRequestTimestamp:
-                  description: LastHostsRequestTimestamp indicates the last timestamp
-                    the Operator queried for hosts
-                  format: date-time
-                  type: string
-                lastUpdateProbeTimestamp:
-                  description: LastUpdateProbeTimestamp defines the last timestamp
-                    when the querying for updates have been done
-                  format: date-time
-                  type: string
-                useImmutableImage:
-                  description: UseImmutableImage is set when an immutable image is
-                    currently in use
-                  type: boolean
-                version:
-                  description: Version contains the version to be deployed.
-                  type: string
-              type: object
-            phase:
-              description: Defines the current state (Running, Updating, Error, ...)
+                  lastUpdateProbeTimestamp:
+                    description: LastUpdateProbeTimestamp defines the last timestamp
+                      when the querying for updates have been done
+                    format: date-time
+                    type: string
+                  useImmutableImage:
+                    description: UseImmutableImage is set when an immutable image
+                      is currently in use
+                    type: boolean
+                  version:
+                    description: Version contains the version to be deployed.
+                    type: string
+                type: object
+              phase:
+                description: Defines the current state (Running, Updating, Error,...)
               type: string
             tokens:
               description: Credentials used to connect back to Dynatrace.

@@ -30,8 +30,6 @@ import (
 const (
 	// time between consecutive queries for a new pod to get ready
 	splayTimeSeconds                      = uint16(10)
-	defaultUpdateInterval                 = 15 * time.Minute
-	updateEnvVar                          = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
 	ClassicFeature                        = "classic"
 	InframonFeature                       = "inframon"
 	defaultOneAgentImage                  = "docker.io/dynatrace/oneagent:latest"
@@ -85,25 +83,10 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 		r.logger.Info("Rollout reconciled")
 	}
 
-	updInterval := defaultUpdateInterval
-	if val := os.Getenv(updateEnvVar); val != "" {
-		x, err := strconv.Atoi(val)
-		if err != nil {
-			r.logger.Info("Conversion of ONEAGENT_OPERATOR_UPDATE_INTERVAL failed")
-		} else {
-			updInterval = time.Duration(x) * time.Minute
-		}
-	}
-
-	if rec.IsOutdated(r.instance.Status.OneAgent.LastHostsRequestTimestamp, updInterval) {
-		r.instance.Status.OneAgent.LastHostsRequestTimestamp = rec.Now.DeepCopy()
-		rec.Update(true, 5*time.Minute, "updated last host request time stamp")
-
-		upd, err = r.reconcileInstanceStatuses(ctx, r.logger, r.instance)
-		rec.Update(upd, 5*time.Minute, "Instance statuses reconciled")
-		if rec.Error(err) {
-			return false, err
-		}
+	upd, err = r.reconcileInstanceStatuses(ctx, r.logger, r.instance)
+	rec.Update(upd, 5*time.Minute, "Instance statuses reconciled")
+	if rec.Error(err) {
+		return false, err
 	}
 
 	// Finally we have to determine the correct non error phase
