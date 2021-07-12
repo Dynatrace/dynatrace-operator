@@ -15,7 +15,15 @@ import (
 )
 
 // ProbeThreshold is the minimum time to wait between version upgrades.
-const ProbeThreshold = 15 * time.Minute
+const (
+	ProbeThreshold = 15 * time.Minute
+
+	// possible metrics
+	FailedUpdateOneAgentInstallerVersionEvent = "FailedUpdateOneAgentInstallerVersion"
+	UpdateOneAgentInstallerVersionEvent       = "UpdateOneAgentInstallerVersion"
+	FailedUpdateImageVersionEvent             = "FailedUpdateImageVersion"
+	UpdateImageVersionEvent                   = "UpdateImageVersion"
+)
 
 // VersionProviderCallback fetches the version for a given image.
 type VersionProviderCallback func(string, *dtversion.DockerConfig) (dtversion.ImageVersion, error)
@@ -40,8 +48,8 @@ func ReconcileVersions(
 		if err := updateOneAgentInstallerVersion(rec, dk, recorder); err != nil {
 			rec.Log.Error(err, "Failed to fetch OneAgent installer version")
 			recorder.Eventf(dk,
-				"Warning",
-				"FailedUpdateOneAgentInstallerVersion",
+				corev1.EventTypeWarning,
+				FailedUpdateOneAgentInstallerVersionEvent,
 				"Failed to fetch OneAgent installer version, err: %s", err)
 		}
 	}
@@ -79,8 +87,8 @@ func ReconcileVersions(
 		if err := updateImageVersion(rec, dk, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.VersionStatus, &dockerCfg, verProvider, false, recorder); err != nil {
 			rec.Log.Error(err, "Failed to update OneAgent image version")
 			recorder.Eventf(dk,
-				"Warning",
-				"FailedUpdateImageVersion",
+				corev1.EventTypeWarning,
+				FailedUpdateImageVersionEvent,
 				"Failed to update OnAgent image version, err: %s", err)
 		}
 	}
@@ -119,7 +127,7 @@ func updateImageVersion(
 
 	logMessage := fmt.Sprintf("Update found image: %s, oldVersion: %s, newVersion: %s, oldHash: %s, newHash: %s", img, target.Version, ver.Version, target.ImageHash, ver.Hash)
 	rec.Log.Info(logMessage)
-	recorder.Event(dk, "Normal", "UpdateImageVersion", logMessage)
+	recorder.Event(dk, corev1.EventTypeNormal, UpdateImageVersionEvent, logMessage)
 	target.Version = ver.Version
 	target.ImageHash = ver.Hash
 	return nil
@@ -145,7 +153,7 @@ func updateOneAgentInstallerVersion(rec *utils.Reconciliation, dk *dynatracev1al
 
 	logMessage := fmt.Sprintf("OneAgent update found old-version=%s new-version=%s", oldVer, ver)
 	rec.Log.Info(logMessage)
-	recorder.Event(dk, "Normal", "UpdateOneAgentInstallerVersion", logMessage)
+	recorder.Event(dk, corev1.EventTypeNormal, UpdateOneAgentInstallerVersionEvent, logMessage)
 	dk.Status.OneAgent.Version = ver
 	return nil
 }
