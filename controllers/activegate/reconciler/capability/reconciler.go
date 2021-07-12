@@ -25,6 +25,10 @@ import (
 const (
 	containerPort   = 9999
 	dtDNSEntryPoint = "DT_DNS_ENTRY_POINT"
+
+	// possible events
+	CreateActiveGateServiceEvent       = "CreateActiveGateService"
+	FailedCreateActiveGateServiceEvent = "FailedCreateActiveGateService"
 )
 
 type Reconciler struct {
@@ -114,8 +118,8 @@ func (r *Reconciler) createServiceIfNotExists() (bool, error) {
 		logMessage := fmt.Sprintf("createing service %s", r.GetModuleName())
 		r.log.Info(logMessage)
 		r.recorder.Event(service,
-			"Normal",
-			"CreateActiveGateService",
+			corev1.EventTypeNormal,
+			CreateActiveGateServiceEvent,
 			logMessage)
 		if err := controllerutil.SetControllerReference(r.Instance, service, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)
@@ -124,8 +128,8 @@ func (r *Reconciler) createServiceIfNotExists() (bool, error) {
 		err = r.Create(context.TODO(), service)
 		if err != nil {
 			r.recorder.Eventf(service,
-				"Warning",
-				"FailedCreateActiveGateService",
+				corev1.EventTypeWarning,
+				FailedCreateActiveGateServiceEvent,
 				"Failed to create service %s, err: %s", r.GetModuleName(), err)
 		}
 		return true, errors.WithStack(err)

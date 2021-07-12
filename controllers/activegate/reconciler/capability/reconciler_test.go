@@ -13,6 +13,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
+	t_utils "github.com/Dynatrace/dynatrace-operator/testing_utils"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -87,6 +88,17 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, customProperties)
 		assert.Contains(t, customProperties.Data, customproperties.DataKey)
 		assert.Equal(t, testValue, string(customProperties.Data[customproperties.DataKey]))
+		t_utils.AssertEvents(t,
+			r.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    CreateActiveGateServiceEvent,
+					Message:   metricsCapability.GetModuleName(),
+				},
+			},
+		)
+
 	})
 	t.Run(`create stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
@@ -110,6 +122,16 @@ func TestReconcile(t *testing.T) {
 			Name:  dtDNSEntryPoint,
 			Value: buildDNSEntryPoint(r.Instance, r.GetModuleName()),
 		})
+		t_utils.AssertEvents(t,
+			r.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    CreateActiveGateServiceEvent,
+					Message:   r.GetModuleName(),
+				},
+			},
+		)
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
@@ -150,6 +172,16 @@ func TestReconcile(t *testing.T) {
 			}
 		}
 		assert.True(t, found)
+		t_utils.AssertEvents(t,
+			r.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    CreateActiveGateServiceEvent,
+					Message:   r.GetModuleName(),
+				},
+			},
+		)
 	})
 	t.Run(`create service`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
@@ -170,6 +202,16 @@ func TestReconcile(t *testing.T) {
 		err = r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, statefulSet)
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
+		t_utils.AssertEvents(t,
+			r.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    CreateActiveGateServiceEvent,
+					Message:   r.GetModuleName(),
+				},
+			},
+		)
 	})
 }
 
