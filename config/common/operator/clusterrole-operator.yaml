@@ -48,3 +48,10 @@ rules:
     verbs:
       - get
       - update
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch

@@ -12,12 +12,19 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
 	PullSecretSuffix = "-pull-secret"
+
+	//possible metrics
+	FailedCreatePullSecretEvent = "FailedCreatePullSecret"
+	CreatePullSecretEvent       = "CreatePullSecret"
+	FailedUpdatePullSecretEvent = "FailedUpdatePullSecret"
+	UpdatePullSecretEvent       = "UpdatePullSecret"
 )
 
 type Reconciler struct {
@@ -27,9 +34,10 @@ type Reconciler struct {
 	log       logr.Logger
 	token     *corev1.Secret
 	scheme    *runtime.Scheme
+	recorder  record.EventRecorder
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1alpha1.DynaKube, log logr.Logger, token *corev1.Secret) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1alpha1.DynaKube, log logr.Logger, token *corev1.Secret, recorder record.EventRecorder) *Reconciler {
 	return &Reconciler{
 		Client:    clt,
 		apiReader: apiReader,
@@ -37,6 +45,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		instance:  instance,
 		log:       log,
 		token:     token,
+		recorder:  recorder,
 	}
 }
 
@@ -92,8 +101,17 @@ func (r *Reconciler) createPullSecret(pullSecretData map[string][]byte) (*corev1
 
 	err := r.Create(context.TODO(), pullSecret)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create secret '%s': %w", extendWithPullSecretSuffix(r.instance.Name), err)
+		err = fmt.Errorf("failed to create secret '%s': %w", extendWithPullSecretSuffix(r.instance.Name), err)
+		r.recorder.Event(pullSecret,
+			corev1.EventTypeWarning,
+			FailedCreatePullSecretEvent,
+			err.Error())
+		return nil, err
 	}
+	r.recorder.Event(pullSecret,
+		corev1.EventTypeNormal,
+		CreatePullSecretEvent,
+		"Created pull secret.")
 	return pullSecret, nil
 }
 
@@ -101,8 +119,17 @@ func (r *Reconciler) updatePullSecret(pullSecret *corev1.Secret, desiredPullSecr
 	r.log.Info(fmt.Sprintf("Updating secret %s", pullSecret.Name))
 	pullSecret.Data = desiredPullSecretData
 	if err := r.Update(context.TODO(), pullSecret); err != nil {
-		return fmt.Errorf("failed to update secret %s: %w", pullSecret.Name, err)
+		err = fmt.Errorf("failed to update secret %s: %w", pullSecret.Name, err)
+		r.recorder.Event(pullSecret,
+			corev1.EventTypeWarning,
+			FailedUpdatePullSecretEvent,
+			err.Error())
+		return err
 	}
+	r.recorder.Event(pullSecret,
+		corev1.EventTypeNormal,
+		UpdatePullSecretEvent,
+		"Updated pull secret.")
 	return nil
 }
 

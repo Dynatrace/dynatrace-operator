@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	t_utils "github.com/Dynatrace/dynatrace-operator/testing_utils"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,6 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -31,7 +33,7 @@ func TestReconcileWebhookCertificates(t *testing.T) {
 	require.NoError(t, err)
 
 	c := fake.NewClient()
-	r := ReconcileWebhookCertificates{client: c, logger: logger, namespace: ns, scheme: scheme.Scheme}
+	r := ReconcileWebhookCertificates{client: c, logger: logger, namespace: ns, scheme: scheme.Scheme, recorder: record.NewFakeRecorder(20)}
 
 	reconcileAndGetCreds := func(days time.Duration) map[string]string {
 		r.now = now.Add(days * 24 * time.Hour)
@@ -105,4 +107,33 @@ func TestReconcileWebhookCertificates(t *testing.T) {
 	secret401 := reconcileAndGetCreds(401)
 	assert.Equal(t, secret400, secret401)
 	assert.Equal(t, secret401["ca.crt"]+secret401["ca.crt.old"], getWebhookCA())
+	t_utils.AssertEvents(t,
+		r.recorder.(*record.FakeRecorder).Events,
+		t_utils.Events{
+			{
+				EventType: corev1.EventTypeNormal,
+				Reason:    CreateCertificateSecretEvent,
+			},
+			{
+				EventType: corev1.EventTypeNormal,
+				Reason:    CreateWebhookServiceEvent,
+			},
+			{
+				EventType: corev1.EventTypeNormal,
+				Reason:    CreateMutatingWebhookConfigurationEvent,
+			},
+			{
+				EventType: corev1.EventTypeNormal,
+				Reason:    UpdateCertificateSecretEvent,
+			},
+			{
+				EventType: corev1.EventTypeNormal,
+				Reason:    UpdateCertificateSecretEvent,
+			},
+			{
+				EventType: corev1.EventTypeNormal,
+				Reason:    UpdateMutatingWebhookConfigurationEvent,
+			},
+		},
+	)
 }

@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -24,6 +25,10 @@ import (
 
 const (
 	cacheName = "dynatrace-node-cache"
+
+	//possible events
+	FailedMarkForTerminationEvent = "FailedMarkForTermination"
+	MarkForTerminationEvent       = "MarkForTermination"
 )
 
 var unschedulableTaints = []string{"ToBeDeletedByClusterAutoscaler"}
@@ -36,6 +41,7 @@ type ReconcileNodes struct {
 	logger       logr.Logger
 	dtClientFunc dynakube.DynatraceClientFunc
 	local        bool
+	recorder     record.EventRecorder
 }
 
 // Add creates a new Nodes Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -49,6 +55,7 @@ func Add(mgr manager.Manager, ns string) error {
 		logger:       log.Log.WithName("nodes.controller"),
 		dtClientFunc: dynakube.BuildDynatraceClient,
 		local:        os.Getenv("RUN_LOCAL") == "true",
+		recorder:     mgr.GetEventRecorderFor("Nodes Controller"),
 	})
 }
 
@@ -373,8 +380,14 @@ func (r *ReconcileNodes) reconcileUnschedulableNode(node *corev1.Node, c *Cache)
 			return err
 		}
 	}
-
-	return r.markForTermination(c, oneAgent, instance.IPAddress, node.Name)
+	err = r.markForTermination(c, oneAgent, instance.IPAddress, node.Name)
+	if err != nil {
+		r.recorder.Eventf(&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: node.Name}},
+			corev1.EventTypeWarning,
+			FailedMarkForTerminationEvent,
+			"Failed to mark one of the Nodes for termination, err: %s", err)
+	}
+	return err
 }
 
 func (r *ReconcileNodes) markForTermination(c *Cache, dk *dynatracev1alpha1.DynaKube,
@@ -394,6 +407,10 @@ func (r *ReconcileNodes) markForTermination(c *Cache, dk *dynatracev1alpha1.Dyna
 
 	r.logger.Info("sending mark for termination event to dynatrace server", "dynakube", dk.Name, "ip", ipAddress,
 		"node", nodeName)
+	r.recorder.Event(&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: nodeName}},
+		corev1.EventTypeNormal,
+		MarkForTerminationEvent,
+		"One of the Nodes was marked for termination")
 
 	return r.sendMarkedForTermination(dk, ipAddress, cachedNode.LastSeen)
 }
