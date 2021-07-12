@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	t_utils "github.com/Dynatrace/dynatrace-operator/testing_utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	appsv1 "k8s.io/api/apps/v1"
@@ -92,6 +93,19 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	assert.Equal(t, dkName+"-"+reconciler.feature, dsActual.GetObjectMeta().GetName(), "wrong name")
 	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "wrong policy")
 	mock.AssertExpectationsForObjects(t, dtClient)
+	t_utils.AssertEvents(t,
+		reconciler.recorder.(*record.FakeRecorder).Events,
+		t_utils.Events{
+			{
+				EventType: corev1.EventTypeNormal,
+				Reason:    CreateNewDaemonSetEvent,
+			},
+			{
+				EventType: corev1.EventTypeNormal,
+				Reason:    ReconcileInstanceStatusesEvent,
+			},
+		},
+	)
 }
 
 func TestReconcile_PhaseSetCorrectly(t *testing.T) {
@@ -165,7 +179,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		fullStack: &base.Spec.ClassicFullStack,
 		feature:   ClassicFeature,
 		instance:  &base,
-		recorder:  record.NewFakeRecorder(20),
+		recorder:  record.NewFakeRecorder(5),
 	}
 
 	t.Run("reconcileRollout Tokens status set, if empty", func(t *testing.T) {
@@ -182,6 +196,15 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		assert.True(t, updateCR)
 		assert.Equal(t, dk.Tokens(), dk.Status.Tokens)
 		assert.Equal(t, nil, err)
+		t_utils.AssertEvents(t,
+			reconciler.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    CreateNewDaemonSetEvent,
+				},
+			},
+		)
 	})
 	t.Run("reconcileRollout Tokens status set, if status has wrong name", func(t *testing.T) {
 		// arrange
@@ -212,7 +235,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 			instance:  &base,
 			feature:   ClassicFeature,
 			fullStack: &base.Spec.ClassicFullStack,
-			recorder:  record.NewFakeRecorder(20),
+			recorder:  record.NewFakeRecorder(5),
 		}
 
 		// arrange
@@ -230,6 +253,15 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		assert.Equal(t, dk.Tokens(), dk.Status.Tokens)
 		assert.Equal(t, customTokenName, dk.Status.Tokens)
 		assert.Equal(t, nil, err)
+		t_utils.AssertEvents(t,
+			reconciler.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    CreateNewDaemonSetEvent,
+				},
+			},
+		)
 	})
 }
 
@@ -297,6 +329,19 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		assert.True(t, upd)
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
 		assert.NotEmpty(t, dk.Status.OneAgent.Instances)
+		t_utils.AssertEvents(t,
+			reconciler.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    CreateNewDaemonSetEvent,
+				},
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    ReconcileInstanceStatusesEvent,
+				},
+			},
+		)
 	})
 
 	t.Run("reconcileImpl Instances set, if agentUpdateDisabled is true", func(t *testing.T) {
@@ -322,6 +367,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		assert.NoError(t, err)
 
 		reconciler.instance = dk
+		reconciler.recorder = record.NewFakeRecorder(5)
 		reconciler.fullStack = &dk.Spec.ClassicFullStack
 		upd, err := reconciler.Reconcile(context.TODO(), &rec)
 
@@ -329,6 +375,15 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		assert.True(t, upd)
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
 		assert.NotEmpty(t, dk.Status.OneAgent.Instances)
+		t_utils.AssertEvents(t,
+			reconciler.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    ReconcileInstanceStatusesEvent,
+				},
+			},
+		)
 	})
 }
 
