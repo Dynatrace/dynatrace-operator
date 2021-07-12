@@ -41,9 +41,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var (
-	log = logger.NewDTLogger().WithName("provisioner")
+const (
+	FailedInstallAgentVersionEvent = "FailedInstallAgentVersion"
+	InstallAgentVersionEvent       = "InstallAgentVersion"
 )
+
+var log = logger.NewDTLogger().WithName("provisioner")
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
@@ -153,14 +156,14 @@ func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, dtc dt
 	if ver != currentVersion {
 		if err := r.installAgentVersion(ver, envDir, dtc, logger); err != nil {
 			r.recorder.Eventf(dk,
-				"Warning",
-				"FailedInstallAgentVersion",
+				corev1.EventTypeWarning,
+				FailedInstallAgentVersionEvent,
 				"Failed to installed agent version: %s to envDir: %s, err: %s", ver, envDir, err)
 			return err
 		}
 		r.recorder.Eventf(dk,
-			"Normal",
-			"InstallAgentVersion",
+			corev1.EventTypeNormal,
+			InstallAgentVersionEvent,
 			"Installed agent version: %s to envDir: %s", ver, envDir)
 	}
 
