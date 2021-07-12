@@ -23,6 +23,12 @@ import (
 const (
 	DynatracePaasToken = "paasToken"
 	DynatraceApiToken  = "apiToken"
+
+	// possible metrics
+	FailedCreateOneAgentConfigSecretEvent = "FailedCreateOneAgentConfigSecret"
+	CreateOneAgentConfigSecretEvent       = "CreateOneAgentConfigSecret"
+	FailedUpdateOneAgentConfigSecretEvent = "FailedUpdateOneAgentConfigSecret"
+	UpdateOneAgentConfigSecretEvent       = "UpdateOneAgentConfigSecret"
 )
 
 type Reconciliation struct {
@@ -126,14 +132,14 @@ func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretNam
 			Data: data,
 		}); err != nil {
 			recorder.Eventf(&cfg,
-				"Warning",
-				"FailedCreateOneAgentConfigSecret",
+				corev1.EventTypeWarning,
+				FailedCreateOneAgentConfigSecretEvent,
 				"Failed creating OneAgent config secret, name: %s, namespace: %s, err: %s", secretName, targetNS, err)
 			return errors.Wrapf(err, "failed to create secret %s", secretName)
 		}
 		recorder.Eventf(&cfg,
-			"Normal",
-			"CreateOneAgentConfigSecret",
+			corev1.EventTypeNormal,
+			CreateOneAgentConfigSecretEvent,
 			"Creating OneAgent config secret, name: %s, namespace: %s", secretName, targetNS)
 		return nil
 	}
@@ -147,14 +153,14 @@ func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretNam
 		cfg.Data = data
 		if err := c.Update(context.TODO(), &cfg); err != nil {
 			recorder.Eventf(&cfg,
-				"Warning",
-				"FailedUpdateOneAgentConfigSecret",
+				corev1.EventTypeWarning,
+				FailedUpdateOneAgentConfigSecretEvent,
 				"Failed updating OneAgent config secret, name: %s, namespace: %s, err: %s", secretName, targetNS, err)
 			return errors.Wrapf(err, "failed to update secret %s", secretName)
 		}
 		recorder.Eventf(&cfg,
-			"Normal",
-			"UpdateOneAgentConfigSecret",
+			corev1.EventTypeNormal,
+			UpdateOneAgentConfigSecretEvent,
 			"Updateing OneAgent config secret, name: %s, namespace: %s", secretName, targetNS)
 	}
 

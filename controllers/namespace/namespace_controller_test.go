@@ -7,7 +7,9 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	t_utils "github.com/Dynatrace/dynatrace-operator/testing_utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -85,4 +87,13 @@ func TestReconcileNamespace(t *testing.T) {
 	require.Contains(t, nsSecret.Data, "init.sh")
 	require.NotEmpty(t, scriptSample) // sanity check to confirm that the sample script has been embedded
 	require.Equal(t, scriptSample, string(nsSecret.Data["init.sh"]))
+	t_utils.AssertEvents(t,
+		r.recorder.(*record.FakeRecorder).Events,
+		t_utils.Events{
+			{
+				EventType: corev1.EventTypeNormal,
+				Reason:    utils.CreateOneAgentConfigSecretEvent,
+			},
+		},
+	)
 }
