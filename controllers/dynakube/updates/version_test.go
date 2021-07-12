@@ -28,6 +28,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	t_utils "github.com/Dynatrace/dynatrace-operator/testing_utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -66,8 +67,8 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 	errVerProvider := func(img string, dockerConfig *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
 		return dtversion.ImageVersion{}, errors.New("Not implemented")
 	}
-
-	upd, err := ReconcileVersions(ctx, rec, fakeClient, errVerProvider, record.NewFakeRecorder(10))
+	recorder := record.NewFakeRecorder(10)
+	upd, err := ReconcileVersions(ctx, rec, fakeClient, errVerProvider, recorder)
 	assert.Error(t, err)
 	assert.False(t, upd)
 
@@ -81,7 +82,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		return dtversion.ImageVersion{Version: testVersion, Hash: testHash}, nil
 	}
 
-	upd, err = ReconcileVersions(ctx, rec, fakeClient, sampleVerProvider, record.NewFakeRecorder(10))
+	upd, err = ReconcileVersions(ctx, rec, fakeClient, sampleVerProvider, recorder)
 	assert.NoError(t, err)
 	assert.True(t, upd)
 
@@ -97,9 +98,22 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		assert.Equal(t, now, *ts)
 	}
 
-	upd, err = ReconcileVersions(ctx, rec, fakeClient, sampleVerProvider, record.NewFakeRecorder(10))
+	upd, err = ReconcileVersions(ctx, rec, fakeClient, sampleVerProvider, recorder)
 	assert.NoError(t, err)
 	assert.False(t, upd)
+	t_utils.AssertEvents(t,
+		recorder.Events,
+		t_utils.Events{
+			{
+				EventType: corev1.EventTypeNormal,
+				Reason:    UpdateImageVersionEvent,
+			},
+			{
+				EventType: corev1.EventTypeNormal,
+				Reason:    UpdateImageVersionEvent,
+			},
+		},
+	)
 }
 
 // Adding *testing.T parameter to prevent usage in production code
