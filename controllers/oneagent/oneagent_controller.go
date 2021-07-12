@@ -137,6 +137,10 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Rec
 	if err != nil && k8serrors.IsNotFound(err) {
 		rec.Log.Info("Creating new daemonset")
 		if err = r.client.Create(ctx, dsDesired); err != nil {
+			r.recorder.Eventf(dsActual,
+				"Warning",
+				"FailedCreateNewDaemonSet",
+				"Failed to create new daemonset, err: %s", err)
 			return false, err
 		}
 		r.recorder.Event(dsActual, "Normal", "CreateNewDaemonSet", "Creating new daemonset")
@@ -145,6 +149,10 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Rec
 	} else if hasDaemonSetChanged(dsDesired, dsActual) {
 		rec.Log.Info("Updating existing daemonset")
 		if err = r.client.Update(ctx, dsDesired); err != nil {
+			r.recorder.Eventf(dsActual,
+				"Warning",
+				"FailedUpdateNewDaemonSet",
+				"Failed to update new daemonset, err: %s", err)
 			return false, err
 		}
 		r.recorder.Event(dsActual, "Normal", "UpdateNewDaemonSet", "Updating existing daemonset")

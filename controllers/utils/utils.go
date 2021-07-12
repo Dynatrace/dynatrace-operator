@@ -125,9 +125,16 @@ func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretNam
 			Type: secretType,
 			Data: data,
 		}); err != nil {
+			recorder.Eventf(&cfg,
+				"Warning",
+				"FailedCreateOneAgentConfigSecret",
+				"Failed creating OneAgent config secret, name: %s, namespace: %s, err: %s", secretName, targetNS, err)
 			return errors.Wrapf(err, "failed to create secret %s", secretName)
 		}
-		recorder.Eventf(&cfg, "Normal", "CreateOneAgentConfigSecret", "Creating OneAgent config secret, name: %s, namespace: %s", secretName, targetNS)
+		recorder.Eventf(&cfg,
+			"Normal",
+			"CreateOneAgentConfigSecret",
+			"Creating OneAgent config secret, name: %s, namespace: %s", secretName, targetNS)
 		return nil
 	}
 
@@ -139,9 +146,16 @@ func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretNam
 		log.Info(fmt.Sprintf("Updating secret %s", secretName))
 		cfg.Data = data
 		if err := c.Update(context.TODO(), &cfg); err != nil {
+			recorder.Eventf(&cfg,
+				"Warning",
+				"FailedUpdateOneAgentConfigSecret",
+				"Failed updating OneAgent config secret, name: %s, namespace: %s, err: %s", secretName, targetNS, err)
 			return errors.Wrapf(err, "failed to update secret %s", secretName)
 		}
-		recorder.Eventf(&cfg, "Normal", "UpdateOneAgentConfigSecret", "Updateing OneAgent config secret, name: %s, namespace: %s", secretName, targetNS)
+		recorder.Eventf(&cfg,
+			"Normal",
+			"UpdateOneAgentConfigSecret",
+			"Updateing OneAgent config secret, name: %s, namespace: %s", secretName, targetNS)
 	}
 
 	return nil

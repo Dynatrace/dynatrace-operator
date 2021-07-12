@@ -160,6 +160,10 @@ func (c *Controller) removeIstioConfigurationForServiceEntry(listOps *metav1.Lis
 				Delete(context.TODO(), se.GetName(), metav1.DeleteOptions{})
 			if err != nil {
 				c.logger.Error(err, fmt.Sprintf("istio: error deleting service entry, %s : %v", se.GetName(), err))
+				c.recorder.Eventf(&se,
+					"Warning",
+					"FailedRemoveIstioConfigurationForServiceEntry",
+					"Failed to remove istio configuration, %s: %v, err: %s", se.Kind, se.GetName(), err)
 				continue
 			}
 			c.recorder.Eventf(&se,
@@ -191,6 +195,10 @@ func (c *Controller) removeIstioConfigurationForVirtualService(listOps *metav1.L
 				Delete(context.TODO(), vs.GetName(), metav1.DeleteOptions{})
 			if err != nil {
 				c.logger.Error(err, fmt.Sprintf("istio: error deleting virtual service, %s : %v", vs.GetName(), err))
+				c.recorder.Eventf(&vs,
+					"Warning",
+					"FailedRemoveIstioConfigurationForVirtualService",
+					"Failed to removed istio configuration, %s: %v, err: %s", vs.Kind, vs.GetName(), err)
 				continue
 			}
 			c.recorder.Eventf(&vs,
@@ -268,10 +276,18 @@ func (c *Controller) handleIstioConfigurationForVirtualService(instance *dynatra
 	err = c.createIstioConfigurationForVirtualService(instance, virtualService, role)
 	if err != nil {
 		c.logger.Error(err, "istio: failed to create VirtualService")
+		c.recorder.Eventf(virtualService,
+			"Warning",
+			"FailedCreateIstioConfigurationForVirtualService",
+			"Failed to create istio configuration, %s: %v, err: %s", virtualService.Kind, virtualService.GetName(), err)
 		return false, err
 	}
 	c.logger.Info("istio: VirtualService created", "objectName", name, "host", communicationHost.Host,
 		"port", communicationHost.Port, "protocol", communicationHost.Protocol)
+	c.recorder.Eventf(virtualService,
+		"Normal",
+		"CreateIstioConfigurationForVirtualService",
+		"Created istio configuration, %s: %v", virtualService.Kind, virtualService.GetName())
 
 	return true, nil
 }
@@ -291,9 +307,17 @@ func (c *Controller) handleIstioConfigurationForServiceEntry(instance *dynatrace
 	err = c.createIstioConfigurationForServiceEntry(instance, serviceEntry, role)
 	if err != nil {
 		c.logger.Error(err, "istio: failed to create ServiceEntry")
+		c.recorder.Eventf(serviceEntry,
+			"Warning",
+			"FailedCreateIstioConfigurationForServiceEntry",
+			"Failed to create istio configuration, %s: %v, err: %s", serviceEntry.Kind, serviceEntry.GetName(), err)
 		return false, err
 	}
 	c.logger.Info("istio: ServiceEntry created", "objectName", name, "host", communicationHost.Host, "port", communicationHost.Port)
+	c.recorder.Eventf(serviceEntry,
+		"Normal",
+		"CreateIstioConfigurationForServiceEntry",
+		"Created istio configuration, %s: %v", serviceEntry.Kind, serviceEntry.GetName())
 
 	return true, nil
 }
@@ -312,11 +336,6 @@ func (c *Controller) createIstioConfigurationForServiceEntry(dynaKube *dynatrace
 	if sve == nil {
 		return fmt.Errorf("could not create service entry with spec %v", serviceEntry.Spec)
 	}
-	c.recorder.Eventf(serviceEntry,
-		"Normal",
-		"CreateIstioConfigurationForServiceEntry",
-		"Created istio configuration, %s: %v", serviceEntry.Kind, serviceEntry.GetName())
-
 	return nil
 }
 
@@ -334,10 +353,6 @@ func (c *Controller) createIstioConfigurationForVirtualService(dynaKube *dynatra
 	if vs == nil {
 		return fmt.Errorf("could not create virtual service with spec %v", virtualService.Spec)
 	}
-	c.recorder.Eventf(virtualService,
-		"Normal",
-		"CreateIstioConfigurationForVirtualService",
-		"Created istio configuration, %s: %v", virtualService.Kind, virtualService.GetName())
 
 	return nil
 }

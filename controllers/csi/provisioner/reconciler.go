@@ -152,9 +152,16 @@ func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, dtc dt
 
 	if ver != currentVersion {
 		if err := r.installAgentVersion(ver, envDir, dtc, logger); err != nil {
+			r.recorder.Eventf(dk,
+				"Warning",
+				"FailedInstallAgentVersion",
+				"Failed to installed agent version: %s to envDir: %s, err: %s", ver, envDir, err)
 			return err
 		}
-		r.recorder.Eventf(dk, "Normal", "InstallAgentVersion", "Installed agent version: %s to envDir: %s", ver, envDir)
+		r.recorder.Eventf(dk,
+			"Normal",
+			"InstallAgentVersion",
+			"Installed agent version: %s to envDir: %s", ver, envDir)
 	}
 
 	return afero.WriteFile(r.fs, versionFile, []byte(ver), 0644)
