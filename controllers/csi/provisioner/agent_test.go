@@ -134,6 +134,7 @@ func TestOneAgentProvisioner_Unzip(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		installAgentCfg := &installAgentConfig{
 			targetDir: "/",
+			logger:    log,
 			fs:        fs,
 		}
 		zipFile := setupTestZip(t, fs)
@@ -146,6 +147,7 @@ func TestOneAgentProvisioner_Unzip(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		installAgentCfg := &installAgentConfig{
 			targetDir: testDir,
+			logger:    log,
 			fs:        fs,
 		}
 		zipFile := setupTestZip(t, fs)

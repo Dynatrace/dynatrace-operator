@@ -69,6 +69,7 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 
 func unzip(file afero.File, installAgentCfg *installAgentConfig) error {
 	target := installAgentCfg.targetDir
+	logger := installAgentCfg.logger
 	fs := installAgentCfg.fs
 
 	if file == nil {
@@ -80,6 +81,11 @@ func unzip(file afero.File, installAgentCfg *installAgentConfig) error {
 		return fmt.Errorf("failed to determine agent archive file size: %w", err)
 	}
 
+	logger.Info("determined file info",
+		"name", fileInfo.Name(),
+		"size", fileInfo.Size(),
+		"mode", fileInfo.Mode(),
+		"file name", file.Name())
 	reader, err := zip.NewReader(file, fileInfo.Size())
 	if err != nil {
 		return fmt.Errorf("failed to open ZIP file: %w", err)
