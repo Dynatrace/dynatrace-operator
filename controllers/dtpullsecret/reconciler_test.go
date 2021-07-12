@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	t_utils "github.com/Dynatrace/dynatrace-operator/testing_utils"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,6 +58,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, pullSecret.Data)
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
+		t_utils.AssertEvents(t,
+			r.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    CreatePullSecretEvent,
+					Message:   "Created pull secret.",
+				},
+			},
+		)
 	})
 	t.Run(`Reconcile does not reconcile with custom pull secret`, func(t *testing.T) {
 		instance := &dynatracev1alpha1.DynaKube{
@@ -111,6 +122,16 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
 		assert.Equal(t, expectedJSON, string(pullSecret.Data[".dockerconfigjson"]))
+		t_utils.AssertEvents(t,
+			r.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    CreatePullSecretEvent,
+					Message:   "Created pull secret.",
+				},
+			},
+		)
 	})
 	t.Run(`Reconcile update secret if data changed`, func(t *testing.T) {
 		expectedJSON := `{"auths":{"test-endpoint.com":{"username":"test-name","password":"test-value","auth":"dGVzdC1uYW1lOnRlc3QtdmFsdWU="}}}`
@@ -166,5 +187,20 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
 		assert.Equal(t, expectedJSON, string(pullSecret.Data[".dockerconfigjson"]))
+		t_utils.AssertEvents(t,
+			r.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    CreatePullSecretEvent,
+					Message:   "Created pull secret.",
+				},
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    UpdatePullSecretEvent,
+					Message:   "Updated pull secret.",
+				},
+			},
+		)
 	})
 }
