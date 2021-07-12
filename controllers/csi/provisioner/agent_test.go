@@ -3,6 +3,7 @@ package csiprovisioner
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/klauspost/compress/zip"
 	"io"
 	"os"
 	"path/filepath"
@@ -121,14 +122,20 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 }
 
 func TestOneAgentProvisioner_Unzip(t *testing.T) {
-	t.Run(`file nil`, func(t *testing.T) {
+	t.Run(`create output directory`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		installAgentCfg := &installAgentConfig{
 			targetDir: testDir,
 			fs:        fs,
 		}
-		err := unzip(nil, installAgentCfg)
-		require.EqualError(t, err, "file is nil")
+		zipReader := &zip.Reader{File: nil}
+		err := unzip(zipReader, installAgentCfg)
+
+		assert.NoError(t, err)
+
+		exists, err := afero.Exists(fs, testDir)
+		assert.NoError(t, err)
+		assert.True(t, exists)
 	})
 	t.Run(`illegal file path`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -140,7 +147,13 @@ func TestOneAgentProvisioner_Unzip(t *testing.T) {
 		zipFile := setupTestZip(t, fs)
 		defer func() { _ = zipFile.Close() }()
 
-		err := unzip(zipFile, installAgentCfg)
+		fileInfo, err := zipFile.Stat()
+		require.NoError(t, err)
+
+		reader, err := zip.NewReader(zipFile, fileInfo.Size())
+		require.NoError(t, err)
+
+		err = unzip(reader, installAgentCfg)
 		require.EqualError(t, err, "illegal file path: /test.txt")
 	})
 	t.Run(`unzip test zip file`, func(t *testing.T) {
@@ -153,7 +166,13 @@ func TestOneAgentProvisioner_Unzip(t *testing.T) {
 		zipFile := setupTestZip(t, fs)
 		defer func() { _ = zipFile.Close() }()
 
-		err := unzip(zipFile, installAgentCfg)
+		fileInfo, err := zipFile.Stat()
+		require.NoError(t, err)
+
+		reader, err := zip.NewReader(zipFile, fileInfo.Size())
+		require.NoError(t, err)
+
+		err = unzip(reader, installAgentCfg)
 		require.NoError(t, err)
 
 		exists, err := afero.Exists(fs, filepath.Join(testDir, testFilename))

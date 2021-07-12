@@ -57,26 +57,7 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	}
 	logger.Info("Saved OneAgent package", "dest", tmpFile.Name())
 
-	logger.Info("Unzipping OneAgent package")
-	if err := unzip(tmpFile, installAgentCfg); err != nil {
-		return fmt.Errorf("failed to unzip file: %w", err)
-	}
-
-	logger.Info("Unzipped OneAgent package")
-
-	return nil
-}
-
-func unzip(file afero.File, installAgentCfg *installAgentConfig) error {
-	target := installAgentCfg.targetDir
-	logger := installAgentCfg.logger
-	fs := installAgentCfg.fs
-
-	if file == nil {
-		return fmt.Errorf("file is nil")
-	}
-
-	fileInfo, err := file.Stat()
+	fileInfo, err := tmpFile.Stat()
 	if err != nil {
 		return fmt.Errorf("failed to determine agent archive file size: %w", err)
 	}
@@ -85,17 +66,33 @@ func unzip(file afero.File, installAgentCfg *installAgentConfig) error {
 		"name", fileInfo.Name(),
 		"size", fileInfo.Size(),
 		"mode", fileInfo.Mode(),
-		"file name", file.Name())
-	reader, err := zip.NewReader(file, fileInfo.Size())
+		"file name", tmpFile.Name())
+	reader, err := zip.NewReader(tmpFile, fileInfo.Size())
 	if err != nil {
 		return fmt.Errorf("failed to open ZIP file: %w", err)
 	}
+
+	logger.Info("Unzipping OneAgent package")
+	if err := unzip(reader, installAgentCfg); err != nil {
+		return fmt.Errorf("failed to unzip file: %w", err)
+	}
+
+	logger.Info("Unzipped OneAgent package")
+
+	return nil
+}
+
+func unzip(reader *zip.Reader, installAgentCfg *installAgentConfig) error {
+	target := installAgentCfg.targetDir
+	logger := installAgentCfg.logger
+	fs := installAgentCfg.fs
 
 	_ = fs.MkdirAll(target, 0755)
 
 	for _, file := range reader.File {
 		err := func() error {
 			path := filepath.Join(target, file.Name)
+			logger.Info("reading file", "path", path)
 
 			// Check for ZipSlip: https://snyk.io/research/zip-slip-vulnerability
 			if !strings.HasPrefix(path, filepath.Clean(target)+string(os.PathSeparator)) {
