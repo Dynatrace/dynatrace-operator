@@ -7,10 +7,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
+	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	t_utils "github.com/Dynatrace/dynatrace-operator/testing_utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -117,6 +119,15 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
+		t_utils.AssertEvents(t,
+			r.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    dtpullsecret.CreatePullSecretEvent,
+				},
+			},
+		)
 	})
 	t.Run(`Reconcile reconciles Kubernetes Monitoring if enabled`, func(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
@@ -196,6 +207,15 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, statefulSet)
+		t_utils.AssertEvents(t,
+			r.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				{
+					EventType: corev1.EventTypeNormal,
+					Reason:    dtpullsecret.CreatePullSecretEvent,
+				},
+			},
+		)
 	})
 }
 
@@ -314,4 +334,18 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	}, routingSvc)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
+	t_utils.AssertEvents(t,
+		r.recorder.(*record.FakeRecorder).Events,
+		t_utils.Events{
+			{
+				EventType: corev1.EventTypeNormal,
+				Reason:    dtpullsecret.CreatePullSecretEvent,
+			},
+			{
+				EventType: corev1.EventTypeNormal,
+				Reason:    rcap.CreateActiveGateServiceEvent,
+				Message:   routingCapability.GetModuleName(),
+			},
+		},
+	)
 }
