@@ -14,8 +14,10 @@ type Event struct {
 }
 type Events []Event
 
+// FakeEventRecorders(aka.: FakeRecorders) push the "sent" events into a string channel, using this format: "eventType eventReason eventMessage"
+// So this function just parses this format and compares the produced fields with the fields of the provided Event structs IN ORDER.
+// In case of the Event.Message field it only checks if it "CONTAINED" in sent event.
 func AssertEvents(t *testing.T, eventsCh chan string, expectedEvents Events) {
-	close(eventsCh)
 	assert.Equal(t, len(eventsCh), len(expectedEvents))
 	for _, event := range expectedEvents {
 		eventString := <-eventsCh
