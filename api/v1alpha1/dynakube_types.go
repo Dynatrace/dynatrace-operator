@@ -342,9 +342,6 @@ type OneAgentStatus struct {
 	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
 
 	Instances map[string]OneAgentInstance `json:"instances,omitempty"`
-
-	// LastHostsRequestTimestamp indicates the last timestamp the Operator queried for hosts
-	LastHostsRequestTimestamp *metav1.Time `json:"lastHostsRequestTimestamp,omitempty"`
 }
 
 type OneAgentInstance struct {
