@@ -95,9 +95,17 @@ func (r *Reconciler) createPullSecret(pullSecretData map[string][]byte) (*corev1
 
 	err := r.Create(context.TODO(), pullSecret)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create secret '%s': %w", extendWithPullSecretSuffix(r.instance.Name), err)
+		err = fmt.Errorf("failed to create secret '%s': %w", extendWithPullSecretSuffix(r.instance.Name), err)
+		r.recorder.Event(pullSecret,
+			"Warning",
+			"FailedCreatePullSecret",
+			err.Error())
+		return nil, err
 	}
-	r.recorder.Event(pullSecret, "Normal", "CreatePullSecret", "Created pull secret.")
+	r.recorder.Event(pullSecret,
+		"Normal",
+		"CreatePullSecret",
+		"Created pull secret.")
 	return pullSecret, nil
 }
 
@@ -105,9 +113,17 @@ func (r *Reconciler) updatePullSecret(pullSecret *corev1.Secret, desiredPullSecr
 	r.log.Info(fmt.Sprintf("Updating secret %s", pullSecret.Name))
 	pullSecret.Data = desiredPullSecretData
 	if err := r.Update(context.TODO(), pullSecret); err != nil {
-		return fmt.Errorf("failed to update secret %s: %w", pullSecret.Name, err)
+		err = fmt.Errorf("failed to update secret %s: %w", pullSecret.Name, err)
+		r.recorder.Event(pullSecret,
+			"Warning",
+			"FailedUpdatePullSecret",
+			err.Error())
+		return err
 	}
-	r.recorder.Event(pullSecret, "Normal", "UpdatePullSecret", "Updated pull secret.")
+	r.recorder.Event(pullSecret,
+		"Normal",
+		"UpdatePullSecret",
+		"Updated pull secret.")
 	return nil
 }
 

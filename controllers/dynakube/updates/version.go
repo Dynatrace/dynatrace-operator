@@ -39,6 +39,10 @@ func ReconcileVersions(
 		upd = true
 		if err := updateOneAgentInstallerVersion(rec, dk, recorder); err != nil {
 			rec.Log.Error(err, "Failed to fetch OneAgent installer version")
+			recorder.Eventf(dk,
+				"Warning",
+				"FailedUpdateOneAgentInstallerVersion",
+				"Failed to fetch OneAgent installer version, err: %s", err)
 		}
 	}
 
@@ -74,6 +78,10 @@ func ReconcileVersions(
 	if needsImmutableOneAgentUpdate {
 		if err := updateImageVersion(rec, dk, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.VersionStatus, &dockerCfg, verProvider, false, recorder); err != nil {
 			rec.Log.Error(err, "Failed to update OneAgent image version")
+			recorder.Eventf(dk,
+				"Warning",
+				"FailedUpdateImageVersion",
+				"Failed to update OnAgent image version, err: %s", err)
 		}
 	}
 

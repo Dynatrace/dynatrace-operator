@@ -376,8 +376,14 @@ func (r *ReconcileNodes) reconcileUnschedulableNode(node *corev1.Node, c *Cache)
 			return err
 		}
 	}
-
-	return r.markForTermination(c, oneAgent, instance.IPAddress, node.Name)
+	err = r.markForTermination(c, oneAgent, instance.IPAddress, node.Name)
+	if err != nil {
+		r.recorder.Eventf(&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: node.Name}},
+			"Warning",
+			"FailedMarkForTermination",
+			"Failed to mark one of the Nodes for termination, err: %s", err)
+	}
+	return err
 }
 
 func (r *ReconcileNodes) markForTermination(c *Cache, dk *dynatracev1alpha1.DynaKube,
@@ -397,7 +403,10 @@ func (r *ReconcileNodes) markForTermination(c *Cache, dk *dynatracev1alpha1.Dyna
 
 	r.logger.Info("sending mark for termination event to dynatrace server", "dynakube", dk.Name, "ip", ipAddress,
 		"node", nodeName)
-	r.recorder.Event(&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: nodeName}}, "Normal", "MarkForTermination", "One of the Nodes was marked for termination")
+	r.recorder.Event(&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: nodeName}},
+		"Normal",
+		"MarkForTermination",
+		"One of the Nodes was marked for termination")
 
 	return r.sendMarkedForTermination(dk, ipAddress, cachedNode.LastSeen)
 }

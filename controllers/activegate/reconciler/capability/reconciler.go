@@ -113,12 +113,21 @@ func (r *Reconciler) createServiceIfNotExists() (bool, error) {
 	if err != nil && k8serrors.IsNotFound(err) {
 		logMessage := fmt.Sprintf("createing service %s", r.GetModuleName())
 		r.log.Info(logMessage)
-		r.recorder.Event(service, "Normal", "CreateActiveGateService", logMessage)
+		r.recorder.Event(service,
+			"Normal",
+			"CreateActiveGateService",
+			logMessage)
 		if err := controllerutil.SetControllerReference(r.Instance, service, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)
 		}
 
 		err = r.Create(context.TODO(), service)
+		if err != nil {
+			r.recorder.Eventf(service,
+				"Warning",
+				"FailedCreateActiveGateService",
+				"Failed to create service %s, err: %s", r.GetModuleName(), err)
+		}
 		return true, errors.WithStack(err)
 	}
 	return false, errors.WithStack(err)
