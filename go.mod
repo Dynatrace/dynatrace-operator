@@ -7,6 +7,7 @@ require (
 	github.com/containers/image/v5 v5.9.0
 	github.com/evanphx/json-patch v4.9.0+incompatible
 	github.com/go-logr/logr v0.3.0
+	github.com/klauspost/compress v1.11.3 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.15.0 // indirect
 	github.com/spf13/afero v1.6.0

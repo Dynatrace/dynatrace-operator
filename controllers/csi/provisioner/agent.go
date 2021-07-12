@@ -1,7 +1,6 @@
 package csiprovisioner
 
 import (
-	"archive/zip"
 	"fmt"
 	"io"
 	"os"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
+	"github.com/klauspost/compress/zip"
 	"github.com/spf13/afero"
 )
 
@@ -57,18 +57,8 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	}
 	logger.Info("Saved OneAgent package", "dest", tmpFile.Name())
 
-	fileInfo, err := tmpFile.Stat()
-	if err != nil {
-		return fmt.Errorf("failed to determine agent archive file size: %w", err)
-	}
-
-	zipr, err := zip.NewReader(tmpFile, fileInfo.Size())
-	if err != nil {
-		return fmt.Errorf("failed to open ZIP file: %w", err)
-	}
-
 	logger.Info("Unzipping OneAgent package")
-	if err := unzip(zipr, installAgentCfg); err != nil {
+	if err := unzip(tmpFile, installAgentCfg); err != nil {
 		return fmt.Errorf("failed to unzip file: %w", err)
 	}
 
@@ -77,65 +67,66 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	return nil
 }
 
-func unzip(r *zip.Reader, installAgentCfg *installAgentConfig) error {
-	outDir := installAgentCfg.targetDir
-	logger := installAgentCfg.logger
+func unzip(file afero.File, installAgentCfg *installAgentConfig) error {
+	target := installAgentCfg.targetDir
 	fs := installAgentCfg.fs
 
-	_ = fs.MkdirAll(outDir, 0755)
-
-	// Closure to address file descriptors issue with all the deferred .Close() methods
-	extract := func(zipf *zip.File) error {
-		rc, err := zipf.Open()
-		if err != nil {
-			return err
-		}
-
-		defer func() {
-			if err := rc.Close(); err != nil {
-				logger.Error(err, "Failed to close ZIP entry file", "path", zipf.Name)
-			}
-		}()
-
-		path := filepath.Join(outDir, zipf.Name)
-
-		// Check for ZipSlip (Directory traversal)
-		if !strings.HasPrefix(path, filepath.Clean(outDir)+string(os.PathSeparator)) {
-			return fmt.Errorf("illegal file path: %s", path)
-		}
-
-		mode := zipf.Mode()
-
-		// Mark all files inside ./agent/conf as group-writable
-		if zipf.Name != agentConfPath && strings.HasPrefix(zipf.Name, agentConfPath) {
-			mode |= 020
-		}
-
-		if zipf.FileInfo().IsDir() {
-			return fs.MkdirAll(path, mode)
-		}
-
-		if err = fs.MkdirAll(filepath.Dir(path), mode); err != nil {
-			return err
-		}
-
-		f, err := fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
-		if err != nil {
-			return err
-		}
-
-		defer func() {
-			if err := f.Close(); err != nil {
-				logger.Error(err, "Failed to close target file", "path", f.Name)
-			}
-		}()
-
-		_, err = io.Copy(f, rc)
-		return err
+	if file == nil {
+		return fmt.Errorf("file is nil")
 	}
 
-	for _, f := range r.File {
-		if err := extract(f); err != nil {
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to determine agent archive file size: %w", err)
+	}
+
+	reader, err := zip.NewReader(file, fileInfo.Size())
+	if err != nil {
+		return fmt.Errorf("failed to open ZIP file: %w", err)
+	}
+
+	_ = fs.MkdirAll(target, 0755)
+
+	for _, file := range reader.File {
+		err := func() error {
+			path := filepath.Join(target, file.Name)
+
+			// Check for ZipSlip: https://snyk.io/research/zip-slip-vulnerability
+			if !strings.HasPrefix(path, filepath.Clean(target)+string(os.PathSeparator)) {
+				return fmt.Errorf("illegal file path: %s", path)
+			}
+
+			mode := file.Mode()
+
+			// Mark all files inside ./agent/conf as group-writable
+			if file.Name != agentConfPath && strings.HasPrefix(file.Name, agentConfPath) {
+				mode |= 020
+			}
+
+			if file.FileInfo().IsDir() {
+				return fs.MkdirAll(path, mode)
+			}
+
+			if err := fs.MkdirAll(filepath.Dir(path), mode); err != nil {
+				return err
+			}
+
+			dstFile, err := fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
+			if err != nil {
+				return err
+			}
+			defer func() { _ = dstFile.Close() }()
+
+			srcFile, err := file.Open()
+			if err != nil {
+				return err
+			}
+			defer func() { _ = srcFile.Close() }()
+
+			_, err = io.Copy(dstFile, srcFile)
+			return err
+		}()
+		if err != nil {
 			return err
 		}
 	}
