@@ -38,6 +38,13 @@ const (
 	defaultOneAgentImage                  = "docker.io/dynatrace/oneagent:latest"
 	defaultServiceAccountName             = "dynatrace-dynakube-oneagent"
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
+
+	// possible events
+	FailedCreateNewDaemonSetEvent  = "FailedCreateNewDaemonSet"
+	CreateNewDaemonSetEvent        = "CreateNewDaemonSet"
+	FailedUpdateNewDaemonSetEvent  = "FailedUpdateNewDaemonSet"
+	UpdateNewDaemonSetEvent        = "UpdateNewDaemonSet"
+	ReconcileInstanceStatusesEvent = "ReconcileInstanceStatuses"
 )
 
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
@@ -138,24 +145,24 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Rec
 		rec.Log.Info("Creating new daemonset")
 		if err = r.client.Create(ctx, dsDesired); err != nil {
 			r.recorder.Eventf(dsActual,
-				"Warning",
-				"FailedCreateNewDaemonSet",
+				corev1.EventTypeWarning,
+				FailedCreateNewDaemonSetEvent,
 				"Failed to create new daemonset, err: %s", err)
 			return false, err
 		}
-		r.recorder.Event(dsActual, "Normal", "CreateNewDaemonSet", "Creating new daemonset")
+		r.recorder.Event(dsActual, corev1.EventTypeNormal, CreateNewDaemonSetEvent, "Creating new daemonset")
 	} else if err != nil {
 		return false, err
 	} else if hasDaemonSetChanged(dsDesired, dsActual) {
 		rec.Log.Info("Updating existing daemonset")
 		if err = r.client.Update(ctx, dsDesired); err != nil {
 			r.recorder.Eventf(dsActual,
-				"Warning",
-				"FailedUpdateNewDaemonSet",
+				corev1.EventTypeWarning,
+				FailedUpdateNewDaemonSetEvent,
 				"Failed to update new daemonset, err: %s", err)
 			return false, err
 		}
-		r.recorder.Event(dsActual, "Normal", "UpdateNewDaemonSet", "Updating existing daemonset")
+		r.recorder.Event(dsActual, corev1.EventTypeNormal, UpdateNewDaemonSetEvent, "Updating existing daemonset")
 	}
 
 	if rec.Instance.Status.Tokens != rec.Instance.Tokens() {
@@ -622,7 +629,7 @@ func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logge
 
 	if instance.Status.OneAgent.Instances == nil || !reflect.DeepEqual(instance.Status.OneAgent.Instances, instanceStatuses) {
 		instance.Status.OneAgent.Instances = instanceStatuses
-		r.recorder.Event(instance, "Normal", "ReconcileInstanceStatuses", "Instance statuses reconciled")
+		r.recorder.Event(instance, corev1.EventTypeNormal, ReconcileInstanceStatusesEvent, "Instance statuses reconciled")
 		return true, err
 	}
 
