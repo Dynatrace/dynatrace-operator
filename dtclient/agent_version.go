@@ -68,7 +68,7 @@ func (dtc *dynatraceClient) readResponseForLatestVersion(response []byte) (strin
 	return v, nil
 }
 
-// GetVersionForLatest gets the latest agent package for the given OS and installer type.
+// GetLatestAgent gets the latest agent package for the given OS and installer type.
 func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch string, writer io.Writer) error {
 	if len(os) == 0 || len(installerType) == 0 {
 		return errors.New("os or installerType is empty")

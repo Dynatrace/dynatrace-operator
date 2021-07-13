@@ -45,9 +45,9 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	}
 	defer func() {
 		_ = tmpFile.Close()
-		if err := fs.Remove(tmpFile.Name()); err != nil {
-			logger.Error(err, "Failed to delete downloaded file", "path", tmpFile.Name())
-		}
+		//if err := fs.Remove(tmpFile.Name()); err != nil {
+		//	logger.Error(err, "Failed to delete downloaded file", "path", tmpFile.Name())
+		//}
 	}()
 
 	logger.Info("Downloading OneAgent package", "architecture", arch)
@@ -67,7 +67,7 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	if err != nil {
 		logger.Error(err, "error copying file")
 	}
-	logger.Info("Copied %d bytes.", bytesCopied)
+	logger.Info("Copied files.", "bytes", bytesCopied)
 
 	fileInfo, err := tmpFile.Stat()
 	if err != nil {
