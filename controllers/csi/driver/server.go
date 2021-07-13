@@ -48,7 +48,7 @@ const (
 	podNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
 )
 
-var memoryUsageMetric = prometheus.NewHistogram(prometheus.HistogramOpts{
+var memoryUsageMetric = prometheus.NewGauge(prometheus.GaugeOpts{
 	Namespace: "dynatrace",
 	Subsystem: "csi_driver",
 	Name:      "memory_usage",
@@ -113,7 +113,7 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 
 	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC(log)))
 	go func() {
-		ticker := time.NewTicker(500 * time.Millisecond)
+		ticker := time.NewTicker(5000 * time.Millisecond)
 		for {
 			select {
 			case <-ctx.Done():
@@ -123,7 +123,7 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 			case <-ticker.C:
 				var m runtime.MemStats
 				runtime.ReadMemStats(&m)
-				memoryUsageMetric.Observe(float64(m.Alloc))
+				memoryUsageMetric.Set(float64(m.Alloc))
 			}
 		}
 	}()
