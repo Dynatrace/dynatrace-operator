@@ -45,9 +45,9 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	}
 	defer func() {
 		_ = tmpFile.Close()
-		//if err := fs.Remove(tmpFile.Name()); err != nil {
-		//	logger.Error(err, "Failed to delete downloaded file", "path", tmpFile.Name())
-		//}
+		if err := fs.Remove(tmpFile.Name()); err != nil {
+			logger.Error(err, "Failed to delete downloaded file", "path", tmpFile.Name())
+		}
 	}()
 
 	logger.Info("Downloading OneAgent package", "architecture", arch)
@@ -57,48 +57,33 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	}
 	logger.Info("Saved OneAgent package", "dest", tmpFile.Name())
 
-	newFile, err := os.Create("/tmp/copied-paas.zip")
-	if err != nil {
-		logger.Error(err, "error creating new file")
-	}
-	defer newFile.Close()
-
-	bytesCopied, err := io.Copy(newFile, tmpFile)
-	if err != nil {
-		logger.Error(err, "error copying file")
-	}
-	logger.Info("Copied files.", "bytes", bytesCopied)
-
-	fileInfo, err := tmpFile.Stat()
-	if err != nil {
-		return fmt.Errorf("failed to determine agent archive file size: %w", err)
-	}
-
-	logger.Info("determined file info",
-		"name", fileInfo.Name(),
-		"size", fileInfo.Size(),
-		"mode", fileInfo.Mode(),
-		"file name", tmpFile.Name())
-	reader, err := zip.OpenReader(tmpFile.Name())
-	if err != nil {
-		return fmt.Errorf("failed to open ZIP file: %w", err)
-	}
-	defer func() { _ = reader.Close() }()
-
 	logger.Info("Unzipping OneAgent package")
-	if err := unzip(reader, installAgentCfg); err != nil {
+	if err := unzip(tmpFile, installAgentCfg); err != nil {
 		return fmt.Errorf("failed to unzip file: %w", err)
 	}
-
 	logger.Info("Unzipped OneAgent package")
 
 	return nil
 }
 
-func unzip(reader *zip.ReadCloser, installAgentCfg *installAgentConfig) error {
+func unzip(file afero.File, installAgentCfg *installAgentConfig) error {
 	target := installAgentCfg.targetDir
 	logger := installAgentCfg.logger
 	fs := installAgentCfg.fs
+
+	if file == nil {
+		return fmt.Errorf("file is nil")
+	}
+
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to determine agent archive file size: %w", err)
+	}
+
+	reader, err := zip.NewReader(file, fileInfo.Size())
+	if err != nil {
+		return fmt.Errorf("failed to open ZIP file: %w", err)
+	}
 
 	_ = fs.MkdirAll(target, 0755)
 
