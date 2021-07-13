@@ -67,10 +67,11 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 		"size", fileInfo.Size(),
 		"mode", fileInfo.Mode(),
 		"file name", tmpFile.Name())
-	reader, err := zip.NewReader(tmpFile, fileInfo.Size())
+	reader, err := zip.OpenReader(tmpFile.Name())
 	if err != nil {
 		return fmt.Errorf("failed to open ZIP file: %w", err)
 	}
+	defer func() { _ = reader.Close() }()
 
 	logger.Info("Unzipping OneAgent package")
 	if err := unzip(reader, installAgentCfg); err != nil {
@@ -82,7 +83,7 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	return nil
 }
 
-func unzip(reader *zip.Reader, installAgentCfg *installAgentConfig) error {
+func unzip(reader *zip.ReadCloser, installAgentCfg *installAgentConfig) error {
 	target := installAgentCfg.targetDir
 	logger := installAgentCfg.logger
 	fs := installAgentCfg.fs
