@@ -3,7 +3,6 @@ package csiprovisioner
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/klauspost/compress/zip"
 	"io"
 	"os"
 	"path/filepath"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
+	"github.com/klauspost/compress/zip"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
