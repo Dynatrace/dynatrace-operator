@@ -40,7 +40,32 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var log = logger.NewDTLogger().WithName("provisioner")
+var (
+	log = logger.NewDTLogger().WithName("provisioner")
+
+//	memoryUsageMetric = prometheus.NewGauge(prometheus.GaugeOpts{
+//		Namespace: "dynatrace",
+//		Subsystem: "csi-driver",
+//		Name: "csi_reconciler_memory_usage",
+//		Help: "Memory usage of the csi driver",
+//	})
+//	podsMetric = prometheus.NewGauge(prometheus.GaugeOpts{
+//		Namespace: "dynatrace",
+//		Subsystem: "csi-driver",
+//		Name: "csi_pods",
+//		Help: " Number of pods",
+//	})
+//	agentVersionsMetric = prometheus.NewGauge(prometheus.GaugeOpts{
+//		Namespace: "dynatrace",
+//		Subsystem: "csi-driver",
+//		Name: "csi_agent_versions",
+//		Help: " Agent versions",
+//	})
+)
+
+// func init(){
+// 	metrics.Registry.MustRegister()
+// }
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {

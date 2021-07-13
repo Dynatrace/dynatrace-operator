@@ -23,13 +23,16 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/afero"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -38,11 +41,23 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 const (
 	podNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
 )
+
+var memoryUsageMetric = prometheus.NewHistogram(prometheus.HistogramOpts{
+	Namespace: "dynatrace",
+	Subsystem: "csi_driver",
+	Name:      "memory_usage",
+	Help:      "Memory usage of the csi driver",
+})
+
+func init() {
+	metrics.Registry.MustRegister(memoryUsageMetric)
+}
 
 var log = logger.NewDTLogger().WithName("server")
 
@@ -98,10 +113,19 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 
 	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC(log)))
 	go func() {
-		<-ctx.Done()
-		svr.log.Info("Stopping server")
-		server.GracefulStop()
-		svr.log.Info("Stopped server")
+		ticker := time.NewTicker(500 * time.Millisecond)
+		for {
+			select {
+			case <-ctx.Done():
+				svr.log.Info("Stopping server")
+				server.GracefulStop()
+				svr.log.Info("Stopped server")
+			case <-ticker.C:
+				var m runtime.MemStats
+				runtime.ReadMemStats(&m)
+				memoryUsageMetric.Observe(float64(m.Alloc))
+			}
+		}
 	}()
 
 	csi.RegisterIdentityServer(server, svr)
