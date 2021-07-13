@@ -68,7 +68,6 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 
 func unzip(file afero.File, installAgentCfg *installAgentConfig) error {
 	target := installAgentCfg.targetDir
-	logger := installAgentCfg.logger
 	fs := installAgentCfg.fs
 
 	if file == nil {
@@ -90,7 +89,6 @@ func unzip(file afero.File, installAgentCfg *installAgentConfig) error {
 	for _, file := range reader.File {
 		err := func() error {
 			path := filepath.Join(target, file.Name)
-			logger.Info("reading file", "path", path)
 
 			// Check for ZipSlip: https://snyk.io/research/zip-slip-vulnerability
 			if !strings.HasPrefix(path, filepath.Clean(target)+string(os.PathSeparator)) {

@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/spf13/afero"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,7 +20,7 @@ const (
 	paasToken = "some-PaaS-token"
 )
 
-const hostsResponse = `[
+const agentVersionHostsResponse = `[
   {
 	"entityId": "dynatraceSampleEntityId",
     "displayName": "good",
@@ -41,6 +44,8 @@ const hostsResponse = `[
     ]
   }
 ]`
+
+const agentResponse = `zip-content`
 
 func TestResponseForLatestVersion(t *testing.T) {
 	dc := &dynatraceClient{
@@ -163,13 +168,50 @@ func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client)
 	}
 }
 
-type ipHandler struct{}
+func TestGetLatestAgent(t *testing.T) {
+	fs := afero.NewMemMapFs()
+
+	dynatraceServer, _ := createTestDynatraceClient(t, &ipHandler{fs})
+	defer dynatraceServer.Close()
+
+	dtc := dynatraceClient{
+		logger:     log.Log.WithName("dtc"),
+		apiToken:   apiToken,
+		paasToken:  paasToken,
+		httpClient: dynatraceServer.Client(),
+		url:        dynatraceServer.URL,
+	}
+
+	file, err := afero.TempFile(fs, "client", "installer")
+	require.NoError(t, err)
+
+	err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, FlavorMultidistro, "arch", file)
+	require.NoError(t, err)
+
+	resp, err := afero.ReadFile(fs, file.Name())
+	require.NoError(t, err)
+
+	assert.Equal(t, agentResponse, string(resp))
+}
+
+type ipHandler struct {
+	fs afero.Fs
+}
 
 func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	switch request.Method {
 	case "GET":
 		writer.WriteHeader(http.StatusOK)
-		_, _ = writer.Write([]byte(hostsResponse))
+		resp := []byte(agentVersionHostsResponse)
+		if strings.HasSuffix(request.URL.Path, "/latest") {
+			// write to temp file and write content to response
+			writer.Header().Set("Content-Type", "application/octet-stream")
+			file, _ := afero.TempFile(ipHandler.fs, "server", "installer")
+			_, _ = file.WriteString(agentResponse)
+
+			resp, _ = afero.ReadFile(ipHandler.fs, file.Name())
+		}
+		_, _ = writer.Write(resp)
 	default:
 		writeError(writer, http.StatusMethodNotAllowed)
 	}
@@ -185,5 +227,3 @@ func handleLatestAgentVersion(request *http.Request, writer http.ResponseWriter)
 		writeError(writer, http.StatusMethodNotAllowed)
 	}
 }
-
-//TODO test GetLatestAgent

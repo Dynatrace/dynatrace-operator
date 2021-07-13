@@ -7,7 +7,7 @@ import (
 	"io"
 )
 
-// GetVersionForLatest gets the latest agent version for the given OS and installer type.
+// GetLatestAgentVersion gets the latest agent version for the given OS and installer type.
 func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {
 	if len(os) == 0 || len(installerType) == 0 {
 		return "", errors.New("os or installerType is empty")
@@ -74,6 +74,7 @@ func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch strin
 		return errors.New("os or installerType is empty")
 	}
 
+	// todo: handle 404
 	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest?bitness=64&flavor=%s&arch=%s",
 		dtc.url, os, installerType, flavor, arch)
 
