@@ -57,6 +57,18 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	}
 	logger.Info("Saved OneAgent package", "dest", tmpFile.Name())
 
+	newFile, err := os.Create("/tmp/copied-paas.zip")
+	if err != nil {
+		logger.Error(err, "error creating new file")
+	}
+	defer newFile.Close()
+
+	bytesCopied, err := io.Copy(newFile, tmpFile)
+	if err != nil {
+		logger.Error(err, "error copying file")
+	}
+	logger.Info("Copied %d bytes.", bytesCopied)
+
 	fileInfo, err := tmpFile.Stat()
 	if err != nil {
 		return fmt.Errorf("failed to determine agent archive file size: %w", err)
