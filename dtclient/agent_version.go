@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 )
 
 // GetLatestAgentVersion gets the latest agent version for the given OS and installer type.
@@ -83,11 +84,15 @@ func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch strin
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	responseData, err := dtc.getServerResponseData(resp)
-	if err != nil {
-		return err
+	if resp.StatusCode != http.StatusOK {
+		var errorResponse serverErrorResponse
+		err = json.NewDecoder(resp.Body).Decode(&errorResponse)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("http code %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
 	}
 
-	_, err = writer.Write(responseData)
+	_, err = io.Copy(writer, resp.Body)
 	return err
 }
