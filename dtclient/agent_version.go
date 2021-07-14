@@ -74,7 +74,6 @@ func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch strin
 		return errors.New("os or installerType is empty")
 	}
 
-	// todo: handle 404
 	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest?bitness=64&flavor=%s&arch=%s",
 		dtc.url, os, installerType, flavor, arch)
 
@@ -84,6 +83,11 @@ func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch strin
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	_, err = io.Copy(writer, resp.Body)
+	responseData, err := dtc.getServerResponseData(resp)
+	if err != nil {
+		return err
+	}
+
+	_, err = writer.Write(responseData)
 	return err
 }

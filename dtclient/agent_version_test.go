@@ -19,7 +19,8 @@ const (
 	paasToken = "some-PaaS-token"
 )
 
-const agentVersionHostsResponse = `[
+const (
+	agentVersionHostsResponse = `[
   {
 	"entityId": "dynatraceSampleEntityId",
     "displayName": "good",
@@ -44,7 +45,8 @@ const agentVersionHostsResponse = `[
   }
 ]`
 
-const agentResponse = `zip-content`
+	agentResponse = `zip-content`
+)
 
 func TestResponseForLatestVersion(t *testing.T) {
 	dc := &dynatraceClient{
@@ -181,16 +183,25 @@ func TestGetLatestAgent(t *testing.T) {
 		url:        dynatraceServer.URL,
 	}
 
-	file, err := afero.TempFile(fs, "client", "installer")
-	require.NoError(t, err)
+	t.Run(`file download successful`, func(t *testing.T) {
+		file, err := afero.TempFile(fs, "client", "installer")
+		require.NoError(t, err)
 
-	err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, FlavorMultidistro, "arch", file)
-	require.NoError(t, err)
+		err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, FlavorMultidistro, "arch", file)
+		require.NoError(t, err)
 
-	resp, err := afero.ReadFile(fs, file.Name())
-	require.NoError(t, err)
+		resp, err := afero.ReadFile(fs, file.Name())
+		require.NoError(t, err)
 
-	assert.Equal(t, agentResponse, string(resp))
+		assert.Equal(t, agentResponse, string(resp))
+	})
+	t.Run(`missing agent error`, func(t *testing.T) {
+		file, err := afero.TempFile(fs, "client", "installer")
+		require.NoError(t, err)
+
+		err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, FlavorMultidistro, "invalid", file)
+		require.Error(t, err)
+	})
 }
 
 type ipHandler struct {
@@ -198,6 +209,13 @@ type ipHandler struct {
 }
 
 func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
+	query := request.URL.Query()
+	arch, present := query["arch"]
+	if present && arch[0] == "invalid" {
+		writeError(writer, http.StatusNotFound)
+		return
+	}
+
 	switch request.Method {
 	case "GET":
 		writer.WriteHeader(http.StatusOK)
