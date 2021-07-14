@@ -22,54 +22,45 @@ var (
 	versionReferenceBasePath = filepath.Join(rootDir, tenantUUID, dtcsi.GarbageCollectionPath)
 )
 
-func TestBinaryGarbageCollector_succeedsWhenVersionReferenceBaseDirectoryNotExists(t *testing.T) {
-	gc := newMockGarbageCollector()
+func TestBinaryGarbageCollector_versionReferenceGenerationSuccess(t *testing.T) {
+	gc := NewMockGarbageCollector()
+	gc.mockUnusedVersions(version_1, version_2, version_3)
 
-	err := gc.runBinaryGarbageCollection(tenantUUID, version_1)
-
+	versionReferences, err := gc.getVersionReferences(tenantUUID)
 	assert.NoError(t, err)
-}
 
-func TestBinaryGarbageCollector_succeedsWhenNoVersionsAvailable(t *testing.T) {
-	gc := newMockGarbageCollector()
-	_ = gc.fs.MkdirAll(versionReferenceBasePath, 0770)
-
-	err := gc.runBinaryGarbageCollection(tenantUUID, version_1)
-
+	assert.NotNil(t, versionReferences)
 	assert.NoError(t, err)
 }
 
 func TestBinaryGarbageCollector_ignoresLatest(t *testing.T) {
-	gc := newMockGarbageCollector()
+	gc := NewMockGarbageCollector()
 	gc.mockUnusedVersions(version_1)
 
-	err := gc.runBinaryGarbageCollection(tenantUUID, version_1)
+	gc.runBinaryGarbageCollection(tenantUUID, version_1)
 
-	assert.NoError(t, err)
 	gc.assertVersionExists(t, version_1)
 }
 
 func TestBinaryGarbageCollector_removesUnused(t *testing.T) {
-	gc := newMockGarbageCollector()
+	gc := NewMockGarbageCollector()
 	gc.mockUnusedVersions(version_1, version_2, version_3)
 
-	err := gc.runBinaryGarbageCollection(tenantUUID, version_2)
+	gc.runBinaryGarbageCollection(tenantUUID, version_2)
 
-	assert.NoError(t, err)
 	gc.assertVersionNotExists(t, version_1, version_3)
 }
 
 func TestBinaryGarbageCollector_ignoresUsed(t *testing.T) {
-	gc := newMockGarbageCollector()
+	gc := NewMockGarbageCollector()
 	gc.mockUsedVersions(version_1, version_2, version_3)
 
-	err := gc.runBinaryGarbageCollection(tenantUUID, version_3)
+	gc.runBinaryGarbageCollection(tenantUUID, version_3)
 
-	assert.NoError(t, err)
 	gc.assertVersionExists(t, version_1, version_2, version_3)
 }
 
-func newMockGarbageCollector() *CSIGarbageCollector {
+func NewMockGarbageCollector() *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		logger: logger.NewDTLogger(),
 		opts:   dtcsi.CSIOptions{RootDir: rootDir},
