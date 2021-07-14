@@ -66,6 +66,7 @@ var (
 
 func init() {
 	metrics.Registry.MustRegister(memoryUsageMetric)
+	metrics.Registry.MustRegister(podsAttachedMetric)
 }
 
 var log = logger.NewDTLogger().WithName("server")

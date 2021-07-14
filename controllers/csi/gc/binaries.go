@@ -24,7 +24,7 @@ var (
 		Namespace: "dynatrace",
 		Subsystem: "csi_driver",
 		Name:      "gc_folder_rmv",
-		Help:      "Amount of folders deleted by the GC.",
+		Help:      "Number of folders deleted by the GC.",
 	})
 
 	gcRunsMetric = prometheus.NewCounter(prometheus.CounterOpts{
