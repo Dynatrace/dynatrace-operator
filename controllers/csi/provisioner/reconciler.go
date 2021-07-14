@@ -30,6 +30,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -37,35 +38,24 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var (
 	log = logger.NewDTLogger().WithName("provisioner")
 
-//	memoryUsageMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-//		Namespace: "dynatrace",
-//		Subsystem: "csi-driver",
-//		Name: "csi_reconciler_memory_usage",
-//		Help: "Memory usage of the csi driver",
-//	})
-//	podsMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-//		Namespace: "dynatrace",
-//		Subsystem: "csi-driver",
-//		Name: "csi_pods",
-//		Help: " Number of pods",
-//	})
-//	agentVersionsMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-//		Namespace: "dynatrace",
-//		Subsystem: "csi-driver",
-//		Name: "csi_agent_versions",
-//		Help: " Agent versions",
-//	})
+	agentVersionsMetric = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "dynatrace",
+		Subsystem: "csi_driver",
+		Name:      "csi_agent_versions",
+		Help:      "Number of Agent versions.",
+	})
 )
 
-// func init(){
-// 	metrics.Registry.MustRegister()
-// }
+func init() {
+	metrics.Registry.MustRegister(agentVersionsMetric)
+}
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
@@ -104,7 +94,6 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		}
 		return reconcile.Result{}, err
 	}
-
 	if !hasCodeModulesWithCSIVolumeEnabled(dk) {
 		rlog.Info("Code modules or csi driver disabled")
 		return reconcile.Result{RequeueAfter: 30 * time.Minute}, nil

@@ -48,12 +48,21 @@ const (
 	podNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
 )
 
-var memoryUsageMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-	Namespace: "dynatrace",
-	Subsystem: "csi_driver",
-	Name:      "memory_usage",
-	Help:      "Memory usage of the csi driver",
-})
+var (
+	memoryUsageMetric = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "dynatrace",
+		Subsystem: "csi_driver",
+		Name:      "memory_usage",
+		Help:      "Memory usage of the csi driver in bytes",
+	})
+	podsAttachedMetric = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "dynatrace",
+		Subsystem: "csi_driver",
+		Name:      "pods_attached",
+		Help:      "Number of pods currently with attached volumes by the csi driver",
+	})
+	memoryMetricTick = 5000 * time.Millisecond
+)
 
 func init() {
 	metrics.Registry.MustRegister(memoryUsageMetric)
@@ -113,7 +122,7 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 
 	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC(log)))
 	go func() {
-		ticker := time.NewTicker(5000 * time.Millisecond)
+		ticker := time.NewTicker(memoryMetricTick)
 		for {
 			select {
 			case <-ctx.Done():
@@ -194,6 +203,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to store volume metadata: %s", err))
 	}
 
+	podsAttachedMetric.Inc()
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
@@ -229,7 +239,7 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 	}
 
 	svr.log.Info("volume has been unpublished", "targetPath", targetPath)
-
+	podsAttachedMetric.Dec()
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
