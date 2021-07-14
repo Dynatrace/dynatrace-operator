@@ -10,6 +10,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -22,6 +23,7 @@ func NewReconciler(mgr manager.Manager) *ReconcileNamespaces {
 	return &ReconcileNamespaces{
 		client:    mgr.GetClient(),
 		apiReader: mgr.GetAPIReader(),
+		logger:    log.Log.WithName("namespace.controller"),
 	}
 }
 
@@ -39,8 +41,8 @@ type ReconcileNamespaces struct {
 
 func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	targetNS := request.Name
-	log := r.logger.WithValues("name", targetNS)
-	log.Info("reconciling Namespace")
+	r.logger.WithValues("name", targetNS)
+	r.logger.Info("reconciling Namespace")
 
 	var ns corev1.Namespace
 	if err := r.client.Get(ctx, client.ObjectKey{Name: targetNS}, &ns); k8serrors.IsNotFound(err) {
