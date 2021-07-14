@@ -110,18 +110,17 @@ func TestLogGarbageCollector_logFileInfo_MultipleVolumeIDs_WithUnmountedAndMount
 }
 
 func TestLogGarbageCollector_modificationDateOlderThanTwoWeeks(t *testing.T) {
-	gc := NewMockGarbageCollector()
+	t.Run("is false for current timestamp", func(t *testing.T) {
+		isOlder := isOlderThanTwoWeeks(time.Now())
 
-	_ = gc.fs.MkdirAll(logPath, 0770)
-	gc.mockUnmountedVolumeIDPath(version_1, version_2)
-	gc.mockLogsInPodFolders(5, version_1, version_2)
+		assert.False(t, isOlder)
+	})
+	
+	t.Run("is true for timestamp 14 days in past", func(t *testing.T) {
+		isOlder := isOlderThanTwoWeeks(time.Now().AddDate(0, 0, -14))
 
-	logs, err := gc.getLogFileInfo(tenantUUID, &afero.Afero{Fs: gc.fs})
-	assert.NoError(t, err)
-	assert.NotNil(t, logs)
-
-	older := isOlderThanTwoWeeks(logs.UnusedVolumeIDs[0].ModTime())
-	assert.True(t, older)
+		assert.True(t, isOlder)
+	})
 }
 
 func TestLogGarbageCollector_cleanUpSuccessful(t *testing.T) {
