@@ -40,7 +40,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var log = logger.NewDTLogger().WithName("provisioner")
+var (
+	log = logger.NewDTLogger().WithName("provisioner")
+)
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
@@ -79,7 +81,6 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		}
 		return reconcile.Result{}, err
 	}
-
 	if !hasCodeModulesWithCSIVolumeEnabled(dk) {
 		rlog.Info("Code modules or csi driver disabled")
 		return reconcile.Result{RequeueAfter: 30 * time.Minute}, nil
