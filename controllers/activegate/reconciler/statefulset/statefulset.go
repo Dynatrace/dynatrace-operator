@@ -219,7 +219,7 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 }
 
 func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
-	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(stsProperties.kubeSystemUID))
+	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(stsProperties.kubeSystemUID), *stsProperties.DynaKube)
 
 	envs := []corev1.EnvVar{
 		{Name: DTCapabilities, Value: stsProperties.capabilityName},
