@@ -142,16 +142,12 @@ func (r *ReconcileNamespaceMapping) replicateInitScriptAsSecret(namespaceMap []n
 
 func (r *ReconcileNamespaceMapping) prepareScriptForDynaKube(dk string, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) (*script, error) {
 	var dynaKube dynatracev1alpha1.DynaKube
-	err := r.client.Get(context.TODO(), client.ObjectKey{Name: dk, Namespace: r.namespace}, &dynaKube)
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return nil, nil
-		}
+	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: dk, Namespace: r.namespace}, &dynaKube); err != nil {
 		return nil, err
 	}
 
 	var tokens corev1.Secret
-	if err = r.client.Get(context.TODO(), client.ObjectKey{Name: dynaKube.Tokens(), Namespace: r.namespace}, &tokens); err != nil {
+	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: dynaKube.Tokens(), Namespace: r.namespace}, &tokens); err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
@@ -209,9 +205,9 @@ func (r *ReconcileNamespaceMapping) getInfraMonitoringNodes() (map[string]string
 	return imNodes, nil
 }
 
-func getCodeModulesNamespaceMapping(data map[string]string) []namespaceMapping {
+func getCodeModulesNamespaceMapping(configMapData map[string]string) []namespaceMapping {
 	var mapping []namespaceMapping
-	for ns, dk := range data {
+	for ns, dk := range configMapData {
 		mapping = append(mapping, namespaceMapping{
 			namespace: ns,
 			dynakube:  dk,
