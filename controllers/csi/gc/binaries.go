@@ -17,21 +17,21 @@ var (
 		Namespace: "dynatrace",
 		Subsystem: "csi_driver",
 		Name:      "gc_reclaimed",
-		Help:      "Amount of memory reclaimed by the GC.",
+		Help:      "Amount of memory reclaimed by the GC",
 	})
 
 	foldersRemovedMetric = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "dynatrace",
 		Subsystem: "csi_driver",
 		Name:      "gc_folder_rmv",
-		Help:      "Number of folders deleted by the GC.",
+		Help:      "Number of folders deleted by the GC",
 	})
 
 	gcRunsMetric = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "dynatrace",
 		Subsystem: "csi_driver",
 		Name:      "gc_runs",
-		Help:      "Number of GC runs.",
+		Help:      "Number of GC runs",
 	})
 )
 

@@ -292,7 +292,7 @@ func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServ
 }
 
 func mockPublishedVolume(t *testing.T, server *CSIDriverServer) {
-	metadata := fmt.Sprintf("{\"OverlayFSPath\":\"/%s/run/%s\", \"UsageFilePath\":\"/%s/gc/%s\"}", tenantUuid, volumeId, tenantUuid, agentVersion)
+	metadata := fmt.Sprintf("{\"OverlayFSPath\":\"/%s/run/%s\", \"UsageFilePath\":\"/%s/gc/%s/%s\"}", tenantUuid, volumeId, tenantUuid, agentVersion, volumeId)
 
 	err := server.fs.WriteFile(filepath.Join(server.opts.RootDir, "gc", volumeId), []byte(metadata), os.ModePerm)
 	require.NoError(t, err)
