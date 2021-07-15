@@ -74,11 +74,15 @@ func unzip(file afero.File, installAgentCfg *installAgentConfig) error {
 		return fmt.Errorf("file is nil")
 	}
 
-	reader, err := zip.OpenReader(file.Name())
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return fmt.Errorf("unable to determine file info: %w", err)
+	}
+
+	reader, err := zip.NewReader(file, fileInfo.Size())
 	if err != nil {
 		return fmt.Errorf("failed to open ZIP file: %w", err)
 	}
-	defer func() { _ = reader.Close() }()
 
 	_ = fs.MkdirAll(target, 0755)
 
