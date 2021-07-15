@@ -1,11 +1,12 @@
 package istio
 
 import (
-	istio "istio.io/api/networking/v1alpha3"
-	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	"net"
 	"strconv"
 	"strings"
+
+	istio "istio.io/api/networking/v1alpha3"
+	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 )
 
 const (

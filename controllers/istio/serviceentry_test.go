@@ -1,13 +1,14 @@
 package istio
 
 import (
+	"strconv"
+	"strings"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	istio "istio.io/api/networking/v1alpha3"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strconv"
-	"strings"
-	"testing"
 )
 
 const (
