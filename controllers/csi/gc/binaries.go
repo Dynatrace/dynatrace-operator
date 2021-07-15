@@ -44,6 +44,7 @@ func init() {
 func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, latestVersion string) error {
 	fs := &afero.Afero{Fs: gc.fs}
 	logger := gc.logger.WithValues("tenant", tenantUUID, "latestVersion", latestVersion)
+	gcRunsMetric.Inc()
 
 	versionReferencesBase := filepath.Join(gc.opts.RootDir, tenantUUID, dtcsi.GarbageCollectionPath)
 	logger.Info("run garbage collection for binaries", "versionReferencesBase", versionReferencesBase)
@@ -72,7 +73,6 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, lat
 			removeUnusedVersion(fs, binaryPath, references, logger)
 		}
 	}
-	gcRunsMetric.Inc()
 	return nil
 }
 

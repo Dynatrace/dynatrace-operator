@@ -253,8 +253,8 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 		tmp := strings.Split(metadata.UsageFilePath, string(os.PathSeparator))
 		version := tmp[len(tmp)-2]
 		AgentsVersionsMetric.WithLabelValues(version).Dec()
+		volumesAttachedMetric.Dec()
 	}
-	volumesAttachedMetric.Dec()
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
