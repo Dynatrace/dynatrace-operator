@@ -13,14 +13,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
-	t_utils "github.com/Dynatrace/dynatrace-operator/testing_utils"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -60,7 +58,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		return dtversion.ImageVersion{}, nil
 	}
 
-	r := NewReconciler(metricsCapability, clt, clt, scheme.Scheme, log, instance, imgVerProvider, record.NewFakeRecorder(10))
+	r := NewReconciler(metricsCapability, clt, clt, scheme.Scheme, log, instance, imgVerProvider)
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.Instance)
@@ -88,16 +86,6 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, customProperties)
 		assert.Contains(t, customProperties.Data, customproperties.DataKey)
 		assert.Equal(t, testValue, string(customProperties.Data[customproperties.DataKey]))
-		t_utils.AssertEvents(t,
-			r.recorder.(*record.FakeRecorder).Events,
-			t_utils.Events{
-				{
-					EventType: corev1.EventTypeNormal,
-					Reason:    CreateActiveGateServiceEvent,
-					Message:   metricsCapability.GetModuleName(),
-				},
-			},
-		)
 
 	})
 	t.Run(`create stateful set`, func(t *testing.T) {
@@ -122,16 +110,6 @@ func TestReconcile(t *testing.T) {
 			Name:  dtDNSEntryPoint,
 			Value: buildDNSEntryPoint(r.Instance, r.GetModuleName()),
 		})
-		t_utils.AssertEvents(t,
-			r.recorder.(*record.FakeRecorder).Events,
-			t_utils.Events{
-				{
-					EventType: corev1.EventTypeNormal,
-					Reason:    CreateActiveGateServiceEvent,
-					Message:   r.GetModuleName(),
-				},
-			},
-		)
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
@@ -172,16 +150,6 @@ func TestReconcile(t *testing.T) {
 			}
 		}
 		assert.True(t, found)
-		t_utils.AssertEvents(t,
-			r.recorder.(*record.FakeRecorder).Events,
-			t_utils.Events{
-				{
-					EventType: corev1.EventTypeNormal,
-					Reason:    CreateActiveGateServiceEvent,
-					Message:   r.GetModuleName(),
-				},
-			},
-		)
 	})
 	t.Run(`create service`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
@@ -202,16 +170,6 @@ func TestReconcile(t *testing.T) {
 		err = r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, statefulSet)
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
-		t_utils.AssertEvents(t,
-			r.recorder.(*record.FakeRecorder).Events,
-			t_utils.Events{
-				{
-					EventType: corev1.EventTypeNormal,
-					Reason:    CreateActiveGateServiceEvent,
-					Message:   r.GetModuleName(),
-				},
-			},
-		)
 	})
 }
 

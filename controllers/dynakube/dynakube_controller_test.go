@@ -7,12 +7,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
-	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
-	t_utils "github.com/Dynatrace/dynatrace-operator/testing_utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -20,7 +18,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -45,8 +42,7 @@ const (
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
 		r := &ReconcileDynaKube{
-			client:   fake.NewClient(),
-			recorder: record.NewFakeRecorder(10),
+			client: fake.NewClient(),
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{})
 
@@ -111,7 +107,6 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			recorder: record.NewFakeRecorder(10),
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -119,15 +114,6 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		t_utils.AssertEvents(t,
-			r.recorder.(*record.FakeRecorder).Events,
-			t_utils.Events{
-				{
-					EventType: corev1.EventTypeNormal,
-					Reason:    dtpullsecret.CreatePullSecretEvent,
-				},
-			},
-		)
 	})
 	t.Run(`Reconcile reconciles Kubernetes Monitoring if enabled`, func(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
@@ -164,7 +150,6 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			recorder: record.NewFakeRecorder(10),
 		}
 
 		mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
@@ -207,15 +192,6 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, statefulSet)
-		t_utils.AssertEvents(t,
-			r.recorder.(*record.FakeRecorder).Events,
-			t_utils.Events{
-				{
-					EventType: corev1.EventTypeNormal,
-					Reason:    dtpullsecret.CreatePullSecretEvent,
-				},
-			},
-		)
 	})
 }
 
@@ -254,7 +230,6 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 		dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
 			return mockClient, nil
 		},
-		recorder: record.NewFakeRecorder(10),
 	}
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -334,18 +309,4 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	}, routingSvc)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
-	t_utils.AssertEvents(t,
-		r.recorder.(*record.FakeRecorder).Events,
-		t_utils.Events{
-			{
-				EventType: corev1.EventTypeNormal,
-				Reason:    dtpullsecret.CreatePullSecretEvent,
-			},
-			{
-				EventType: corev1.EventTypeNormal,
-				Reason:    rcap.CreateActiveGateServiceEvent,
-				Message:   routingCapability.GetModuleName(),
-			},
-		},
-	)
 }

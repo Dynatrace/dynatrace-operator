@@ -23,7 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -38,16 +37,10 @@ const (
 	defaultOneAgentImage                  = "docker.io/dynatrace/oneagent:latest"
 	defaultServiceAccountName             = "dynatrace-dynakube-oneagent"
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
-
-	// possible events
-	FailedCreateNewDaemonSetEvent = "FailedCreateNewDaemonSet"
-	CreateNewDaemonSetEvent       = "CreateNewDaemonSet"
-	FailedUpdateNewDaemonSetEvent = "FailedUpdateNewDaemonSet"
-	UpdateNewDaemonSetEvent       = "UpdateNewDaemonSet"
 )
 
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
-func NewOneAgentReconciler(client client.Client, apiReader client.Reader, scheme *runtime.Scheme, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fullStack *dynatracev1alpha1.FullStackSpec, feature string, recorder record.EventRecorder) *ReconcileOneAgent {
+func NewOneAgentReconciler(client client.Client, apiReader client.Reader, scheme *runtime.Scheme, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fullStack *dynatracev1alpha1.FullStackSpec, feature string) *ReconcileOneAgent {
 	return &ReconcileOneAgent{
 		client:    client,
 		apiReader: apiReader,
@@ -56,7 +49,6 @@ func NewOneAgentReconciler(client client.Client, apiReader client.Reader, scheme
 		instance:  instance,
 		fullStack: fullStack,
 		feature:   feature,
-		recorder:  recorder,
 	}
 }
 
@@ -71,7 +63,6 @@ type ReconcileOneAgent struct {
 	instance  *dynatracev1alpha1.DynaKube
 	fullStack *dynatracev1alpha1.FullStackSpec
 	feature   string
-	recorder  record.EventRecorder
 }
 
 // Reconcile reads that state of the cluster for a OneAgent object and makes changes based on the state read
@@ -143,25 +134,15 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Rec
 	if err != nil && k8serrors.IsNotFound(err) {
 		rec.Log.Info("Creating new daemonset")
 		if err = r.client.Create(ctx, dsDesired); err != nil {
-			r.recorder.Eventf(dsActual,
-				corev1.EventTypeWarning,
-				FailedCreateNewDaemonSetEvent,
-				"Failed to create new daemonset, err: %s", err)
 			return false, err
 		}
-		r.recorder.Event(dsActual, corev1.EventTypeNormal, CreateNewDaemonSetEvent, "Creating new daemonset")
 	} else if err != nil {
 		return false, err
 	} else if hasDaemonSetChanged(dsDesired, dsActual) {
 		rec.Log.Info("Updating existing daemonset")
 		if err = r.client.Update(ctx, dsDesired); err != nil {
-			r.recorder.Eventf(dsActual,
-				corev1.EventTypeWarning,
-				FailedUpdateNewDaemonSetEvent,
-				"Failed to update new daemonset, err: %s", err)
 			return false, err
 		}
-		r.recorder.Event(dsActual, corev1.EventTypeNormal, UpdateNewDaemonSetEvent, "Updating existing daemonset")
 	}
 
 	if rec.Instance.Status.Tokens != rec.Instance.Tokens() {

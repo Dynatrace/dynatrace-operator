@@ -25,7 +25,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -51,7 +50,6 @@ func NewReconciler(mgr manager.Manager) *ReconcileDynaKube {
 		scheme:       mgr.GetScheme(),
 		dtcBuildFunc: BuildDynatraceClient,
 		config:       mgr.GetConfig(),
-		recorder:     mgr.GetEventRecorderFor("Dynakube Controller"),
 	}
 }
 
@@ -63,7 +61,7 @@ func (r *ReconcileDynaKube) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, logger logr.Logger, config *rest.Config, recorder record.EventRecorder) *ReconcileDynaKube {
+func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, logger logr.Logger, config *rest.Config) *ReconcileDynaKube {
 	return &ReconcileDynaKube{
 		client:       c,
 		apiReader:    apiReader,
@@ -71,7 +69,6 @@ func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *run
 		dtcBuildFunc: dtcBuildFunc,
 		logger:       logger,
 		config:       config,
-		recorder:     recorder,
 	}
 }
 
@@ -88,7 +85,6 @@ type ReconcileDynaKube struct {
 	dtcBuildFunc DynatraceClientFunc
 	logger       logr.Logger
 	config       *rest.Config
-	recorder     record.EventRecorder
 }
 
 type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
@@ -176,7 +172,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	}
 
 	if rec.Instance.Spec.EnableIstio {
-		if upd, err = istio.NewController(r.config, r.scheme, r.recorder).ReconcileIstio(rec.Instance); err != nil {
+		if upd, err = istio.NewController(r.config, r.scheme).ReconcileIstio(rec.Instance); err != nil {
 			// If there are errors log them, but move on.
 			rec.Log.Info("Istio: failed to reconcile objects", "error", err)
 		} else if upd {
@@ -185,14 +181,14 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	}
 
 	err = dtpullsecret.
-		NewReconciler(r.client, r.apiReader, r.scheme, rec.Instance, rec.Log, secret, r.recorder).
+		NewReconciler(r.client, r.apiReader, r.scheme, rec.Instance, rec.Log, secret).
 		Reconcile()
 	if rec.Error(err) {
 		rec.Log.Error(err, "could not reconcile Dynatrace pull secret")
 		return
 	}
 
-	upd, err = updates.ReconcileVersions(ctx, rec, r.client, dtversion.GetImageVersion, r.recorder)
+	upd, err = updates.ReconcileVersions(ctx, rec, r.client, dtversion.GetImageVersion)
 	rec.Update(upd, defaultUpdateInterval, "Found updates")
 	rec.Error(err)
 
@@ -202,7 +198,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 
 	if rec.Instance.Spec.InfraMonitoring.Enabled {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.InfraMonitoring, oneagent.InframonFeature, r.recorder,
+			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.InfraMonitoring, oneagent.InframonFeature,
 		).Reconcile(ctx, rec)
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
 			return
@@ -216,7 +212,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 
 	if rec.Instance.Spec.ClassicFullStack.Enabled {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.ClassicFullStack, oneagent.ClassicFeature, r.recorder,
+			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.ClassicFullStack, oneagent.ClassicFeature,
 		).Reconcile(ctx, rec)
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "classic fullstack reconciled") {
 			return
@@ -246,7 +242,7 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconcili
 	for _, c := range caps {
 		if c.GetProperties().Enabled {
 			upd, err := rcap.NewReconciler(
-				c, r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, dtversion.GetImageVersion, r.recorder,
+				c, r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, dtversion.GetImageVersion,
 			).Reconcile()
 			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, c.GetModuleName()+" reconciled") {
 				return false

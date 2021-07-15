@@ -17,7 +17,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -25,21 +24,16 @@ import (
 const (
 	containerPort   = 9999
 	dtDNSEntryPoint = "DT_DNS_ENTRY_POINT"
-
-	// possible events
-	CreateActiveGateServiceEvent       = "CreateActiveGateService"
-	FailedCreateActiveGateServiceEvent = "FailedCreateActiveGateService"
 )
 
 type Reconciler struct {
 	*sts.Reconciler
 	log logr.Logger
 	capability.Capability
-	recorder record.EventRecorder
 }
 
 func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, log logr.Logger,
-	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, recorder record.EventRecorder) *Reconciler {
+	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
 	baseReconciler := sts.NewReconciler(
 		clt, apiReader, scheme, log, instance, imageVersionProvider, capability)
 
@@ -59,7 +53,6 @@ func NewReconciler(capability capability.Capability, clt client.Client, apiReade
 		Reconciler: baseReconciler,
 		log:        log,
 		Capability: capability,
-		recorder:   recorder,
 	}
 }
 
@@ -117,21 +110,11 @@ func (r *Reconciler) createServiceIfNotExists() (bool, error) {
 	if err != nil && k8serrors.IsNotFound(err) {
 		logMessage := fmt.Sprintf("createing service %s", r.GetModuleName())
 		r.log.Info(logMessage)
-		r.recorder.Event(service,
-			corev1.EventTypeNormal,
-			CreateActiveGateServiceEvent,
-			logMessage)
 		if err := controllerutil.SetControllerReference(r.Instance, service, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)
 		}
 
 		err = r.Create(context.TODO(), service)
-		if err != nil {
-			r.recorder.Eventf(service,
-				corev1.EventTypeWarning,
-				FailedCreateActiveGateServiceEvent,
-				"Failed to create service %s, err: %s", r.GetModuleName(), err)
-		}
 		return true, errors.WithStack(err)
 	}
 	return false, errors.WithStack(err)
