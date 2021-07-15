@@ -131,12 +131,14 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC(log)))
 	go func() {
 		ticker := time.NewTicker(memoryMetricTick)
+	L:
 		for {
 			select {
 			case <-ctx.Done():
 				svr.log.Info("Stopping server")
 				server.GracefulStop()
 				svr.log.Info("Stopped server")
+				break L
 			case <-ticker.C:
 				var m runtime.MemStats
 				runtime.ReadMemStats(&m)
