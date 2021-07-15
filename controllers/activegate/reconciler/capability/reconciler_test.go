@@ -86,7 +86,6 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, customProperties)
 		assert.Contains(t, customProperties.Data, customproperties.DataKey)
 		assert.Equal(t, testValue, string(customProperties.Data[customproperties.DataKey]))
-
 	})
 	t.Run(`create stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)

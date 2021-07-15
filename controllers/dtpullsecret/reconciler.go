@@ -18,12 +18,6 @@ import (
 
 const (
 	PullSecretSuffix = "-pull-secret"
-
-	//possible metrics
-	FailedCreatePullSecretEvent = "FailedCreatePullSecret"
-	CreatePullSecretEvent       = "CreatePullSecret"
-	FailedUpdatePullSecretEvent = "FailedUpdatePullSecret"
-	UpdatePullSecretEvent       = "UpdatePullSecret"
 )
 
 type Reconciler struct {
@@ -98,8 +92,7 @@ func (r *Reconciler) createPullSecret(pullSecretData map[string][]byte) (*corev1
 
 	err := r.Create(context.TODO(), pullSecret)
 	if err != nil {
-		err = fmt.Errorf("failed to create secret '%s': %w", extendWithPullSecretSuffix(r.instance.Name), err)
-		return nil, err
+		return nil, fmt.Errorf("failed to create secret '%s': %w", extendWithPullSecretSuffix(r.instance.Name), err)
 	}
 	return pullSecret, nil
 }
@@ -108,8 +101,7 @@ func (r *Reconciler) updatePullSecret(pullSecret *corev1.Secret, desiredPullSecr
 	r.log.Info(fmt.Sprintf("Updating secret %s", pullSecret.Name))
 	pullSecret.Data = desiredPullSecretData
 	if err := r.Update(context.TODO(), pullSecret); err != nil {
-		err = fmt.Errorf("failed to update secret %s: %w", pullSecret.Name, err)
-		return err
+		return fmt.Errorf("failed to update secret %s: %w", pullSecret.Name, err)
 	}
 	return nil
 }

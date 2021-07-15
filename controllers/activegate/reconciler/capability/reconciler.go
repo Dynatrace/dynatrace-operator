@@ -108,8 +108,7 @@ func (r *Reconciler) createServiceIfNotExists() (bool, error) {
 
 	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
 	if err != nil && k8serrors.IsNotFound(err) {
-		logMessage := fmt.Sprintf("createing service %s", r.GetModuleName())
-		r.log.Info(logMessage)
+		r.log.Info("creating service", "module", r.GetModuleName())
 		if err := controllerutil.SetControllerReference(r.Instance, service, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)
 		}

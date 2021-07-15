@@ -11,13 +11,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
-	t_utils "github.com/Dynatrace/dynatrace-operator/testing_utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
@@ -73,15 +71,6 @@ func TestNodesReconciler_DeleteNode(t *testing.T) {
 		assert.Equal(t, "5.6.7.8", info.IPAddress)
 		assert.Equal(t, "oneagent2", info.Instance)
 	}
-	t_utils.AssertEvents(t,
-		ctrl.recorder.(*record.FakeRecorder).Events,
-		t_utils.Events{
-			{
-				EventType: corev1.EventTypeNormal,
-				Reason:    MarkForTerminationEvent,
-			},
-		},
-	)
 }
 
 func TestNodesReconciler_NodeNotFound(t *testing.T) {
@@ -109,15 +98,6 @@ func TestNodesReconciler_NodeNotFound(t *testing.T) {
 
 	_, err := nodesCache.Get("node2")
 	assert.Equal(t, err, ErrNotFound)
-	t_utils.AssertEvents(t,
-		ctrl.recorder.(*record.FakeRecorder).Events,
-		t_utils.Events{
-			{
-				EventType: corev1.EventTypeNormal,
-				Reason:    MarkForTerminationEvent,
-			},
-		},
-	)
 }
 
 func TestNodeReconciler_NodeHasTaint(t *testing.T) {
@@ -158,15 +138,6 @@ func TestNodeReconciler_NodeHasTaint(t *testing.T) {
 	// Added one minute buffer to account for operation times
 	now := time.Now().UTC()
 	assert.True(t, node.LastMarkedForTermination.Add(time.Minute).After(now))
-	t_utils.AssertEvents(t,
-		ctrl.recorder.(*record.FakeRecorder).Events,
-		t_utils.Events{
-			{
-				EventType: corev1.EventTypeNormal,
-				Reason:    MarkForTerminationEvent,
-			},
-		},
-	)
 }
 
 func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDynatraceClient) *ReconcileNodes {
@@ -177,7 +148,6 @@ func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDy
 		logger:       zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
 		dtClientFunc: dynakube.StaticDynatraceClient(dtClient),
 		local:        true,
-		recorder:     record.NewFakeRecorder(1),
 	}
 }
 

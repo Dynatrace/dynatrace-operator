@@ -65,6 +65,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 	errVerProvider := func(img string, dockerConfig *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
 		return dtversion.ImageVersion{}, errors.New("Not implemented")
 	}
+
 	upd, err := ReconcileVersions(ctx, rec, fakeClient, errVerProvider)
 	assert.Error(t, err)
 	assert.False(t, upd)

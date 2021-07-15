@@ -2,7 +2,6 @@ package updates
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -14,9 +13,7 @@ import (
 )
 
 // ProbeThreshold is the minimum time to wait between version upgrades.
-const (
-	ProbeThreshold = 15 * time.Minute
-)
+const ProbeThreshold = 15 * time.Minute
 
 // VersionProviderCallback fetches the version for a given image.
 type VersionProviderCallback func(string, *dtversion.DockerConfig) (dtversion.ImageVersion, error)
@@ -66,13 +63,13 @@ func ReconcileVersions(
 	upd = true // updateImageVersion() always updates the status
 
 	if needsActiveGateUpdate {
-		if err := updateImageVersion(rec, dk, dk.ActiveGateImage(), &dk.Status.ActiveGate.VersionStatus, &dockerCfg, verProvider, true); err != nil {
+		if err := updateImageVersion(rec, dk.ActiveGateImage(), &dk.Status.ActiveGate.VersionStatus, &dockerCfg, verProvider, true); err != nil {
 			rec.Log.Error(err, "Failed to update ActiveGate image version")
 		}
 	}
 
 	if needsImmutableOneAgentUpdate {
-		if err := updateImageVersion(rec, dk, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.VersionStatus, &dockerCfg, verProvider, false); err != nil {
+		if err := updateImageVersion(rec, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.VersionStatus, &dockerCfg, verProvider, false); err != nil {
 			rec.Log.Error(err, "Failed to update OneAgent image version")
 		}
 	}
@@ -82,7 +79,6 @@ func ReconcileVersions(
 
 func updateImageVersion(
 	rec *utils.Reconciliation,
-	dk *dynatracev1alpha1.DynaKube,
 	img string,
 	target *dynatracev1alpha1.VersionStatus,
 	dockerCfg *dtversion.DockerConfig,
@@ -108,8 +104,10 @@ func updateImageVersion(
 		}
 	}
 
-	logMessage := fmt.Sprintf("Update found image: %s, oldVersion: %s, newVersion: %s, oldHash: %s, newHash: %s", img, target.Version, ver.Version, target.ImageHash, ver.Hash)
-	rec.Log.Info(logMessage)
+	rec.Log.Info("Update found",
+		"image", img,
+		"oldVersion", target.Version, "newVersion", ver.Version,
+		"oldHash", target.ImageHash, "newHash", ver.Hash)
 	target.Version = ver.Version
 	target.ImageHash = ver.Hash
 	return nil
@@ -133,8 +131,7 @@ func updateOneAgentInstallerVersion(rec *utils.Reconciliation, dk *dynatracev1al
 		}
 	}
 
-	logMessage := fmt.Sprintf("OneAgent update found old-version=%s new-version=%s", oldVer, ver)
-	rec.Log.Info(logMessage)
+	rec.Log.Info("OneAgent update found", "oldVersion", oldVer, "newVersion", ver)
 	dk.Status.OneAgent.Version = ver
 	return nil
 }

@@ -90,7 +90,6 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	assert.Equal(t, dkName+"-"+reconciler.feature, dsActual.GetObjectMeta().GetName(), "wrong name")
 	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "wrong policy")
 	mock.AssertExpectationsForObjects(t, dtClient)
-
 }
 
 func TestReconcile_PhaseSetCorrectly(t *testing.T) {

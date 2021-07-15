@@ -56,7 +56,6 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, pullSecret.Data)
 		assert.Contains(t, pullSecret.Data, ".dockerconfigjson")
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
-
 	})
 	t.Run(`Reconcile does not reconcile with custom pull secret`, func(t *testing.T) {
 		instance := &dynatracev1alpha1.DynaKube{
