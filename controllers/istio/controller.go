@@ -10,6 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -30,6 +31,16 @@ const (
 	probeTypeFound
 	probeTypeNotFound
 	probeUnknown
+
+	// possible events
+	FailedRemoveIstioConfigurationForServiceEntryEvent   = "FailedRemoveIstioConfigurationForServiceEntry"
+	RemoveIstioConfigurationForServiceEntryEvent         = "RemoveIstioConfigurationForServiceEntry"
+	FailedRemoveIstioConfigurationForVirtualServiceEvent = "FailedRemoveIstioConfigurationForVirtualService"
+	RemoveIstioConfigurationForVirtualServiceEvent       = "RemoveIstioConfigurationForVirtualService"
+	FailedCreateIstioConfigurationForVirtualServiceEvent = "FailedCreateIstioConfigurationForVirtualService"
+	CreateIstioConfigurationForVirtualServiceEvent       = "CreateIstioConfigurationForVirtualService"
+	FailedCreateIstioConfigurationForServiceEntryEvent   = "FailedCreateIstioConfigurationForServiceEntry"
+	CreateIstioConfigurationForServiceEntryEvent         = "CreateIstioConfigurationForServiceEntry"
 )
 
 // Controller - manager istioclientset and config
@@ -161,14 +172,14 @@ func (c *Controller) removeIstioConfigurationForServiceEntry(listOps *metav1.Lis
 			if err != nil {
 				c.logger.Error(err, fmt.Sprintf("istio: error deleting service entry, %s : %v", se.GetName(), err))
 				c.recorder.Eventf(&se,
-					"Warning",
-					"FailedRemoveIstioConfigurationForServiceEntry",
+					corev1.EventTypeWarning,
+					FailedRemoveIstioConfigurationForServiceEntryEvent,
 					"Failed to remove istio configuration, %s: %v, err: %s", se.Kind, se.GetName(), err)
 				continue
 			}
 			c.recorder.Eventf(&se,
-				"Normal",
-				"RemoveIstioConfigurationForServiceEntry",
+				corev1.EventTypeNormal,
+				RemoveIstioConfigurationForServiceEntryEvent,
 				"Removed istio configuration, %s: %v", se.Kind, se.GetName())
 			del = true
 		}
@@ -196,14 +207,14 @@ func (c *Controller) removeIstioConfigurationForVirtualService(listOps *metav1.L
 			if err != nil {
 				c.logger.Error(err, fmt.Sprintf("istio: error deleting virtual service, %s : %v", vs.GetName(), err))
 				c.recorder.Eventf(&vs,
-					"Warning",
-					"FailedRemoveIstioConfigurationForVirtualService",
+					corev1.EventTypeWarning,
+					FailedRemoveIstioConfigurationForVirtualServiceEvent,
 					"Failed to removed istio configuration, %s: %v, err: %s", vs.Kind, vs.GetName(), err)
 				continue
 			}
 			c.recorder.Eventf(&vs,
-				"Normal",
-				"RemoveIstioConfigurationForVirtualService",
+				corev1.EventTypeNormal,
+				RemoveIstioConfigurationForVirtualServiceEvent,
 				"Removed istio configuration, %s: %v", vs.Kind, vs.GetName())
 			del = true
 		}
@@ -277,16 +288,16 @@ func (c *Controller) handleIstioConfigurationForVirtualService(instance *dynatra
 	if err != nil {
 		c.logger.Error(err, "istio: failed to create VirtualService")
 		c.recorder.Eventf(virtualService,
-			"Warning",
-			"FailedCreateIstioConfigurationForVirtualService",
+			corev1.EventTypeWarning,
+			FailedCreateIstioConfigurationForVirtualServiceEvent,
 			"Failed to create istio configuration, %s: %v, err: %s", virtualService.Kind, virtualService.GetName(), err)
 		return false, err
 	}
 	c.logger.Info("istio: VirtualService created", "objectName", name, "host", communicationHost.Host,
 		"port", communicationHost.Port, "protocol", communicationHost.Protocol)
 	c.recorder.Eventf(virtualService,
-		"Normal",
-		"CreateIstioConfigurationForVirtualService",
+		corev1.EventTypeNormal,
+		CreateIstioConfigurationForVirtualServiceEvent,
 		"Created istio configuration, %s: %v", virtualService.Kind, virtualService.GetName())
 
 	return true, nil
@@ -308,15 +319,15 @@ func (c *Controller) handleIstioConfigurationForServiceEntry(instance *dynatrace
 	if err != nil {
 		c.logger.Error(err, "istio: failed to create ServiceEntry")
 		c.recorder.Eventf(serviceEntry,
-			"Warning",
-			"FailedCreateIstioConfigurationForServiceEntry",
+			corev1.EventTypeWarning,
+			FailedCreateIstioConfigurationForServiceEntryEvent,
 			"Failed to create istio configuration, %s: %v, err: %s", serviceEntry.Kind, serviceEntry.GetName(), err)
 		return false, err
 	}
 	c.logger.Info("istio: ServiceEntry created", "objectName", name, "host", communicationHost.Host, "port", communicationHost.Port)
 	c.recorder.Eventf(serviceEntry,
-		"Normal",
-		"CreateIstioConfigurationForServiceEntry",
+		corev1.EventTypeNormal,
+		CreateIstioConfigurationForServiceEntryEvent,
 		"Created istio configuration, %s: %v", serviceEntry.Kind, serviceEntry.GetName())
 
 	return true, nil
