@@ -168,15 +168,13 @@ func TestServer_NodeUnpublishVolume(t *testing.T) {
 		server := newServerForTesting(t, mounter)
 		mockPublishedVolume(t, &server)
 
-		assert.Equal(t, float64(1), testutil.ToFloat64(volumesAttachedMetric))
-		assert.Equal(t, 1, testutil.CollectAndCount(AgentsVersionsMetric))
-		assert.Equal(t, float64(1), testutil.ToFloat64(AgentsVersionsMetric.WithLabelValues(agentVersion)))
+		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
+		assert.Equal(t, float64(1), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
 		response, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
 
-		assert.Equal(t, float64(0), testutil.ToFloat64(volumesAttachedMetric))
-		assert.Equal(t, 1, testutil.CollectAndCount(AgentsVersionsMetric))
-		assert.Equal(t, float64(0), testutil.ToFloat64(AgentsVersionsMetric.WithLabelValues(agentVersion)))
+		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
+		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
@@ -194,9 +192,8 @@ func TestServer_NodeUnpublishVolume(t *testing.T) {
 
 		response, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
 
-		assert.Equal(t, float64(0), testutil.ToFloat64(volumesAttachedMetric))
-		assert.Equal(t, 1, testutil.CollectAndCount(AgentsVersionsMetric))
-		assert.Equal(t, float64(0), testutil.ToFloat64(AgentsVersionsMetric.WithLabelValues(agentVersion)))
+		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
+		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
@@ -227,9 +224,8 @@ func TestCSIDriverServer_NodePublishAndUnpublishVolume(t *testing.T) {
 
 	publishResponse, err := server.NodePublishVolume(context.TODO(), nodePublishVolumeRequest)
 
-	assert.Equal(t, float64(1), testutil.ToFloat64(volumesAttachedMetric))
-	assert.Equal(t, 1, testutil.CollectAndCount(AgentsVersionsMetric))
-	assert.Equal(t, float64(1), testutil.ToFloat64(AgentsVersionsMetric.WithLabelValues(agentVersion)))
+	assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
+	assert.Equal(t, float64(1), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
 	assert.NoError(t, err)
 	assert.NotNil(t, publishResponse)
@@ -238,9 +234,8 @@ func TestCSIDriverServer_NodePublishAndUnpublishVolume(t *testing.T) {
 
 	unpublishResponse, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
 
-	assert.Equal(t, float64(0), testutil.ToFloat64(volumesAttachedMetric))
-	assert.Equal(t, 1, testutil.CollectAndCount(AgentsVersionsMetric))
-	assert.Equal(t, float64(0), testutil.ToFloat64(AgentsVersionsMetric.WithLabelValues(agentVersion)))
+	assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
+	assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
 	assert.NoError(t, err)
 	assert.NotNil(t, unpublishResponse)
@@ -321,8 +316,7 @@ func mockPublishedVolume(t *testing.T, server *CSIDriverServer) {
 	err := server.fs.WriteFile(filepath.Join(server.opts.RootDir, "gc", volumeId), []byte(metadata), os.ModePerm)
 	require.NoError(t, err)
 
-	AgentsVersionsMetric.WithLabelValues(agentVersion).Inc()
-	volumesAttachedMetric.Inc()
+	agentsVersionsMetric.WithLabelValues(agentVersion).Inc()
 }
 
 func mockOneAgent(t *testing.T, server *CSIDriverServer) {
@@ -357,6 +351,5 @@ func assertNoReferencesForUnpublishedVolume(t *testing.T, fs afero.Afero) {
 }
 
 func resetMetrics() {
-	volumesAttachedMetric.Set(0)
-	AgentsVersionsMetric.WithLabelValues(agentVersion).Set(0)
+	agentsVersionsMetric.WithLabelValues(agentVersion).Set(0)
 }

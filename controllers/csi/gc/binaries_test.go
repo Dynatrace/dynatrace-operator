@@ -75,8 +75,6 @@ func TestBinaryGarbageCollector_removesUnused(t *testing.T) {
 
 	assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 	assert.Equal(t, float64(2), testutil.ToFloat64(foldersRemovedMetric))
-	// assert.Equal(t, float64(0), testutil.ToFloat64(reclaimedMemoryMetric))
-	// ^ the in memory file system doesn't provide size so its always 0 evethough it shouldn't be
 
 	assert.NoError(t, err)
 	gc.assertVersionNotExists(t, version_1, version_3)

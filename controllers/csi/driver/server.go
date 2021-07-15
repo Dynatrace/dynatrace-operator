@@ -45,7 +45,8 @@ import (
 )
 
 const (
-	podNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
+	podNamespaceContextKey   = "csi.storage.k8s.io/pod.namespace"
+	versionOffsetInUsagePath = -2
 )
 
 var (
@@ -55,13 +56,7 @@ var (
 		Name:      "memory_usage",
 		Help:      "Memory usage of the csi driver in bytes",
 	})
-	volumesAttachedMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "dynatrace",
-		Subsystem: "csi_driver",
-		Name:      "volumes_attached",
-		Help:      "Number of csi volumes currently attached",
-	})
-	AgentsVersionsMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	agentsVersionsMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "dynatrace",
 		Subsystem: "csi_driver",
 		Name:      "agent_versions",
@@ -72,8 +67,7 @@ var (
 
 func init() {
 	metrics.Registry.MustRegister(memoryUsageMetric)
-	metrics.Registry.MustRegister(volumesAttachedMetric)
-	metrics.Registry.MustRegister(AgentsVersionsMetric)
+	metrics.Registry.MustRegister(agentsVersionsMetric)
 }
 
 var log = logger.NewDTLogger().WithName("server")
@@ -131,14 +125,14 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC(log)))
 	go func() {
 		ticker := time.NewTicker(memoryMetricTick)
-	L:
-		for {
+		done := false
+		for !done {
 			select {
 			case <-ctx.Done():
 				svr.log.Info("Stopping server")
 				server.GracefulStop()
 				svr.log.Info("Stopped server")
-				break L
+				done = true
 			case <-ticker.C:
 				var m runtime.MemStats
 				runtime.ReadMemStats(&m)
@@ -212,9 +206,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 	if err := svr.storeVolumeMetadata(bindCfg, volumeCfg.volumeId); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to store volume metadata: %s", err))
 	}
-
-	volumesAttachedMetric.Inc()
-	AgentsVersionsMetric.WithLabelValues(bindCfg.version).Inc()
+	agentsVersionsMetric.WithLabelValues(bindCfg.version).Inc()
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
@@ -251,14 +243,17 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 
 	svr.log.Info("volume has been unpublished", "targetPath", targetPath)
 
-	if len(metadata.UsageFilePath) > 0 {
-		tmp := strings.Split(metadata.UsageFilePath, string(os.PathSeparator))
-		version := tmp[len(tmp)-2]
-		AgentsVersionsMetric.WithLabelValues(version).Dec()
-		volumesAttachedMetric.Dec()
-	}
+	fireVolumeUnpublishedMetric(metadata.UsageFilePath)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
+}
+
+func fireVolumeUnpublishedMetric(usageFilePath string) {
+	if len(usageFilePath) > 0 {
+		tmp := strings.Split(usageFilePath, string(os.PathSeparator))
+		version := tmp[len(tmp)+versionOffsetInUsagePath]
+		agentsVersionsMetric.WithLabelValues(version).Dec()
+	}
 }
 
 func (svr *CSIDriverServer) NodeStageVolume(context.Context, *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
