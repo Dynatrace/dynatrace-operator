@@ -40,11 +40,10 @@ const (
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
 
 	// possible events
-	FailedCreateNewDaemonSetEvent  = "FailedCreateNewDaemonSet"
-	CreateNewDaemonSetEvent        = "CreateNewDaemonSet"
-	FailedUpdateNewDaemonSetEvent  = "FailedUpdateNewDaemonSet"
-	UpdateNewDaemonSetEvent        = "UpdateNewDaemonSet"
-	ReconcileInstanceStatusesEvent = "ReconcileInstanceStatuses"
+	FailedCreateNewDaemonSetEvent = "FailedCreateNewDaemonSet"
+	CreateNewDaemonSetEvent       = "CreateNewDaemonSet"
+	FailedUpdateNewDaemonSetEvent = "FailedUpdateNewDaemonSet"
+	UpdateNewDaemonSetEvent       = "UpdateNewDaemonSet"
 )
 
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
@@ -629,7 +628,6 @@ func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logge
 
 	if instance.Status.OneAgent.Instances == nil || !reflect.DeepEqual(instance.Status.OneAgent.Instances, instanceStatuses) {
 		instance.Status.OneAgent.Instances = instanceStatuses
-		r.recorder.Event(instance, corev1.EventTypeNormal, ReconcileInstanceStatusesEvent, "Instance statuses reconciled")
 		return true, err
 	}
 

@@ -100,10 +100,6 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 				EventType: corev1.EventTypeNormal,
 				Reason:    CreateNewDaemonSetEvent,
 			},
-			{
-				EventType: corev1.EventTypeNormal,
-				Reason:    ReconcileInstanceStatusesEvent,
-			},
 		},
 	)
 }
@@ -336,10 +332,6 @@ func TestReconcile_InstancesSet(t *testing.T) {
 					EventType: corev1.EventTypeNormal,
 					Reason:    CreateNewDaemonSetEvent,
 				},
-				{
-					EventType: corev1.EventTypeNormal,
-					Reason:    ReconcileInstanceStatusesEvent,
-				},
 			},
 		)
 	})
@@ -375,15 +367,6 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		assert.True(t, upd)
 		assert.NotNil(t, dk.Status.OneAgent.Instances)
 		assert.NotEmpty(t, dk.Status.OneAgent.Instances)
-		t_utils.AssertEvents(t,
-			reconciler.recorder.(*record.FakeRecorder).Events,
-			t_utils.Events{
-				{
-					EventType: corev1.EventTypeNormal,
-					Reason:    ReconcileInstanceStatusesEvent,
-				},
-			},
-		)
 	})
 }
 
