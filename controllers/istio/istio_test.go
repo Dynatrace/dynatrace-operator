@@ -1,15 +1,12 @@
 package istio
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +31,7 @@ func initMockServer(t *testing.T, list *metav1.APIGroupList) *httptest.Server {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write(output)
+		_, _ = w.Write(output)
 	}))
 
 	return server
@@ -99,125 +96,6 @@ func TestIstioWrongConfig(t *testing.T) {
 	} else {
 		t.Error("got true, expected false with error")
 	}
-}
-
-func TestServiceEntryGeneration(t *testing.T) {
-	seTest1 := bytes.NewBufferString(`{
-		"apiVersion": "networking.istio.io/v1alpha3",
-		"kind": "ServiceEntry",
-		"metadata": {
-			"name": "com1",
-			"namespace": "dynatrace"
-		},
-		"spec": {
-			"hosts": [ "comtest.com" ],
-			"location": "MESH_EXTERNAL",
-			"ports": [{
-				"name": "https-9999",
-				"number": 9999,
-				"protocol": "HTTPS"
-			}],
-			"resolution": "DNS"
-		}
-	}`)
-
-	se := istiov1alpha3.ServiceEntry{}
-	err := json.Unmarshal(seTest1.Bytes(), &se)
-	if err != nil {
-		t.Error(err)
-	}
-	assert.ObjectsAreEqualValues(&se, buildServiceEntry("com1", "comtest.com", "https", 9999))
-
-	seTest2 := bytes.NewBufferString(`{
-		    "apiVersion": "networking.istio.io/v1alpha3",
-		    "kind": "ServiceEntry",
-		    "metadata": {
-		        "name": "com1",
-		        "namespace": "dynatrace"
-		    },
-		    "spec": {
-		        "hosts": [ "ignored.subdomain" ],
-		        "addresses": [ "42.42.42.42/32" ],
-		        "location": "MESH_EXTERNAL",
-		        "ports": [{
-		            "name": "TCP-8888",
-		            "number": 8888,
-		            "protocol": "TCP"
-		        }],
-		        "resolution": "NONE"
-		    }
-		}`)
-	se = istiov1alpha3.ServiceEntry{}
-	err = json.Unmarshal(seTest2.Bytes(), &se)
-	if err != nil {
-		t.Error(err)
-	}
-	assert.ObjectsAreEqualValues(&se, buildServiceEntry("com1", "42.42.42.42", "https", 8888))
-}
-
-func TestVirtualServiceGeneration(t *testing.T) {
-	vsTest1 := bytes.NewBufferString(`{
-		"apiVersion": "networking.istio.io/v1alpha3",
-		"kind": "VirtualService",
-		"metadata": {
-			"name": "com1",
-			"namespace": "dynatrace"
-		},
-		"spec": {
-			"hosts": [ "comtest.com" ],
-			"tls": [{
-				"match": [{
-					"port": 8888,
-					"sni_hosts": [ "comtest.com" ]
-				}],
-				"route": [{
-					"destination": {
-						"host": "comtest.com",
-						"port": { "number": 8888 }
-					}
-				}]
-			}]
-		}
-	}`)
-
-	vs := istiov1alpha3.VirtualService{}
-	err := json.Unmarshal(vsTest1.Bytes(), &vs)
-	if err != nil {
-		t.Error(err)
-	}
-	assert.ObjectsAreEqualValues(&vs, buildVirtualService("com1", "comtest.com", "https", 8888))
-
-	vsTest2 := bytes.NewBufferString(`{
-		"apiVersion": "networking.istio.io/v1alpha3",
-		"kind": "VirtualService",
-		"metadata": {
-			"name": "com1",
-			"namespace": "dynatrace"
-		},
-		"spec": {
-			"hosts": [ "comtest.com" ],
-			"http": [{
-				"match": [{
-					"port": 7777
-				}],
-				"route": [{
-					"destination": {
-						"host": "comtest.com",
-						"port": { "number": 7777 }
-					}
-				}]
-			}]
-		}
-	}`)
-
-	vs = istiov1alpha3.VirtualService{}
-	err = json.Unmarshal(vsTest2.Bytes(), &vs)
-	if err != nil {
-		t.Error(err)
-	}
-	assert.ObjectsAreEqualValues(&vs, buildVirtualService("com1", "comtest.com", "http", 7777))
-
-	assert.Nil(t, buildVirtualService("com1", "42.42.42.42", "HTTP", 8888))
 }
 
 func TestMapErrorToObjectProbeResult(t *testing.T) {
