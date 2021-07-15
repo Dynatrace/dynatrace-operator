@@ -87,8 +87,5 @@ func buildIstioLabels(name, role string) map[string]string {
 }
 
 func isIp(host string) bool {
-	if net.ParseIP(host) != nil {
-		return true
-	}
-	return false
+	return net.ParseIP(host) != nil
 }
