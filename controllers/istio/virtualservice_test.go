@@ -47,7 +47,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 		}
 		result := buildVirtualService(testName, testNamespace, testHost, protocolHttps, testPort)
 
-		assert.True(t, reflect.DeepEqual(expected, result))
+		assert.EqualValues(t, expected, result)
 	})
 	t.Run("generate for http connection", func(t *testing.T) {
 		expected := &istiov1alpha3.VirtualService{
@@ -71,8 +71,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 		}
 		result := buildVirtualService(testName, testNamespace, testHost, protocolHttp, testPort)
 
-		assert.ObjectsAreEqualValues(&expected, result)
-
+		assert.EqualValues(t, expected, result)
 	})
 	t.Run("generate for invalid protocol", func(t *testing.T) {
 		const invalidHost = "42.42.42.42"
