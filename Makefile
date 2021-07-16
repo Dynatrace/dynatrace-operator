@@ -96,7 +96,7 @@ deploy-ocp3.11: manifests-ocp311 kustomize
 	$(KUSTOMIZE) build config/deploy | oc apply -f -
 
 deploy-local:
-	./build/deploy-local.sh
+	./build/deploy_local.sh
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
