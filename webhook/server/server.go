@@ -101,6 +101,7 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 		image:     pod.Spec.Containers[0].Image,
 		apmExists: apmExists,
 		clusterID: string(UID),
+		recorder:  mgr.GetEventRecorderFor("Webhook Server"),
 	}})
 	return nil
 }
