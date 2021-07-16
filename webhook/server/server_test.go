@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	t_utils "github.com/Dynatrace/dynatrace-operator/testing"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/stretchr/testify/assert"
@@ -59,6 +60,15 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	require.NoError(t, resp.Complete(req))
 	require.False(t, resp.Allowed)
 	require.Equal(t, resp.Result.Message, "namespace 'test-namespace' is assigned to DynaKube instance 'dynakube' but doesn't exist")
+	t_utils.AssertEvents(t,
+		inj.recorder.(*record.FakeRecorder).Events,
+		t_utils.Events{
+			t_utils.Event{
+				EventType: corev1.EventTypeWarning,
+				Reason:    MissingDynakubeEvent,
+			},
+		},
+	)
 }
 
 func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, *dynatracev1alpha1.DynaKube) {
@@ -183,6 +193,15 @@ func TestPodInjection(t *testing.T) {
 	}
 
 	assert.Equal(t, expected, updPod)
+	t_utils.AssertEvents(t,
+		inj.recorder.(*record.FakeRecorder).Events,
+		t_utils.Events{
+			t_utils.Event{
+				EventType: corev1.EventTypeNormal,
+				Reason:    InjectEvent,
+			},
+		},
+	)
 }
 
 func TestPodInjectionWithCSI(t *testing.T) {
@@ -246,6 +265,16 @@ func TestPodInjectionWithCSI(t *testing.T) {
 	}
 
 	assert.Equal(t, expected, updPod)
+
+	t_utils.AssertEvents(t,
+		inj.recorder.(*record.FakeRecorder).Events,
+		t_utils.Events{
+			t_utils.Event{
+				EventType: corev1.EventTypeNormal,
+				Reason:    InjectEvent,
+			},
+		},
+	)
 }
 
 func createDynakubeInstance(_ *testing.T) *dynatracev1alpha1.DynaKube {
@@ -362,6 +391,15 @@ func TestUseImmutableImage(t *testing.T) {
 		expected.ObjectMeta.Annotations["oneagent.dynatrace.com/image"] = "customregistry/linux/codemodule"
 
 		assert.Equal(t, expected, updPod)
+		t_utils.AssertEvents(t,
+			inj.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				t_utils.Event{
+					EventType: corev1.EventTypeNormal,
+					Reason:    InjectEvent,
+				},
+			},
+		)
 	})
 	t.Run(`use immutable image`, func(t *testing.T) {
 		decoder, err := admission.NewDecoder(scheme.Scheme)
@@ -442,6 +480,15 @@ func TestUseImmutableImage(t *testing.T) {
 		expected.ObjectMeta.Annotations["oneagent.dynatrace.com/image"] = "customregistry/linux/codemodule"
 
 		assert.Equal(t, expected, updPod)
+		t_utils.AssertEvents(t,
+			inj.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				t_utils.Event{
+					EventType: corev1.EventTypeNormal,
+					Reason:    InjectEvent,
+				},
+			},
+		)
 	})
 
 	t.Run(`honor custom image name`, func(t *testing.T) {
@@ -519,6 +566,15 @@ func TestUseImmutableImage(t *testing.T) {
 		setEnvVar(t, &expected, "MODE", "installer")
 
 		assert.Equal(t, expected, updPod)
+		t_utils.AssertEvents(t,
+			inj.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				t_utils.Event{
+					EventType: corev1.EventTypeNormal,
+					Reason:    InjectEvent,
+				},
+			},
+		)
 	})
 }
 
@@ -594,6 +650,15 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 		expected.ObjectMeta.Annotations["oneagent.dynatrace.com/image"] = "customregistry/linux/codemodule"
 
 		assert.Equal(t, expected, updPod)
+		t_utils.AssertEvents(t,
+			inj.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				t_utils.Event{
+					EventType: corev1.EventTypeNormal,
+					Reason:    InjectEvent,
+				},
+			},
+		)
 	})
 	t.Run(`use immutable image`, func(t *testing.T) {
 		decoder, err := admission.NewDecoder(scheme.Scheme)
@@ -666,6 +731,15 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 		expected.ObjectMeta.Annotations["oneagent.dynatrace.com/image"] = "customregistry/linux/codemodule"
 
 		assert.Equal(t, expected, updPod)
+		t_utils.AssertEvents(t,
+			inj.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				t_utils.Event{
+					EventType: corev1.EventTypeNormal,
+					Reason:    InjectEvent,
+				},
+			},
+		)
 	})
 
 	t.Run(`honor custom image name`, func(t *testing.T) {
@@ -735,6 +809,15 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 		expected := buildResultPod(t)
 
 		assert.Equal(t, expected, updPod)
+		t_utils.AssertEvents(t,
+			inj.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				t_utils.Event{
+					EventType: corev1.EventTypeNormal,
+					Reason:    InjectEvent,
+				},
+			},
+		)
 	})
 }
 
@@ -814,6 +897,15 @@ func TestAgentVersion(t *testing.T) {
 	setEnvVar(t, &expected, "MODE", "installer")
 
 	assert.Equal(t, expected, updPod)
+	t_utils.AssertEvents(t,
+		inj.recorder.(*record.FakeRecorder).Events,
+		t_utils.Events{
+			t_utils.Event{
+				EventType: corev1.EventTypeNormal,
+				Reason:    InjectEvent,
+			},
+		},
+	)
 }
 
 func TestAgentVersionWithCSI(t *testing.T) {
@@ -883,6 +975,16 @@ func TestAgentVersionWithCSI(t *testing.T) {
 
 	expected := buildResultPod(t)
 	assert.Equal(t, expected, updPod)
+
+	t_utils.AssertEvents(t,
+		inj.recorder.(*record.FakeRecorder).Events,
+		t_utils.Events{
+			t_utils.Event{
+				EventType: corev1.EventTypeNormal,
+				Reason:    InjectEvent,
+			},
+		},
+	)
 }
 
 func buildResultPod(_ *testing.T) corev1.Pod {
@@ -1075,4 +1177,14 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 	require.Equal(t, thirdPartyContainerName, updInstallContainer.Env[2].Value)
 	require.Equal(t, "CONTAINER_2_IMAGE", updInstallContainer.Env[3].Name)
 	require.Equal(t, thirdPartyContainerImage, updInstallContainer.Env[3].Value)
+
+	t_utils.AssertEvents(t,
+		inj.recorder.(*record.FakeRecorder).Events,
+		t_utils.Events{
+			t_utils.Event{
+				EventType: corev1.EventTypeNormal,
+				Reason:    UpdatePodEvent,
+			},
+		},
+	)
 }

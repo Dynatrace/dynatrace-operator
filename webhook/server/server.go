@@ -19,6 +19,7 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,7 +52,6 @@ func AddToManager(mgr manager.Manager, ns string) error {
 			return err
 		}
 	}
-
 	registerHealthzEndpoint(mgr)
 	return nil
 }
@@ -157,7 +157,11 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	var oa dynatracev1alpha1.DynaKube
 	if err := m.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: m.namespace}, &oa); k8serrors.IsNotFound(err) {
 		template := "namespace '%s' is assigned to DynaKube instance '%s' but doesn't exist"
-		m.recorder.Eventf(&ns, corev1.EventTypeWarning, MissingDynakubeEvent, template, req.Namespace, oaName)
+		m.recorder.Eventf(
+			&dynatracev1alpha1.DynaKube{ObjectMeta: v1.ObjectMeta{Name: "placeholder", Namespace: m.namespace}},
+			corev1.EventTypeWarning,
+			MissingDynakubeEvent,
+			template, req.Namespace, oaName)
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf(
 			template, req.Namespace, oaName))
 	} else if err != nil {
@@ -323,7 +327,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	m.recorder.Eventf(&oa,
 		corev1.EventTypeNormal,
 		InjectEvent,
-		"Injecting the necessary info into pod %s in namespace %s", pod.GenerateName, pod.Namespace)
+		"Injecting the necessary info into pod %s in namespace %s", basePodName, ns.Name)
 	return getResponse(pod, &req)
 }
 
