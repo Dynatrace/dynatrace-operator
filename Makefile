@@ -95,6 +95,9 @@ deploy-ocp3.11: manifests-ocp311 kustomize
 	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
 	$(KUSTOMIZE) build config/deploy | oc apply -f -
 
+deploy-local:
+	./build/deploy-local.sh
+
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/default/bases
