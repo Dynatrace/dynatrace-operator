@@ -23,7 +23,8 @@ spec:
         name: apps
         version: v1
       specDescriptors:
-      - description: Location of the Dynatrace API to connect to, including your specific environment ID
+      - description: Location of the Dynatrace API to connect to, including your specific
+          environment ID
         displayName: API URL
         path: apiUrl
         x-descriptors:
@@ -33,7 +34,8 @@ spec:
         path: tokens
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Disable certificate validation checks for installer download and API communication
+      - description: Disable certificate validation checks for installer download
+          and API communication
         displayName: Skip Certificate Check
         path: skipCertCheck
         x-descriptors:
@@ -49,7 +51,9 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: 'Optional: Adds custom RootCAs from a configmap This property only affects certificates used to communicate with the Dynatrace API. The property is not applied to the ActiveGate'
+      - description: 'Optional: Adds custom RootCAs from a configmap This property
+          only affects certificates used to communicate with the Dynatrace API. The
+          property is not applied to the ActiveGate'
         displayName: Trusted CAs
         path: trustedCAs
         x-descriptors:
@@ -67,31 +71,38 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: If enabled, Istio on the cluster will be configured automatically to allow access to the Dynatrace environment
+      - description: If enabled, Istio on the cluster will be configured automatically
+          to allow access to the Dynatrace environment
         displayName: Enable Istio automatic management
         path: enableIstio
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: 'Optional: the ActiveGate container image. Defaults to the latest ActiveGate image provided by the Docker Registry implementation from the Dynatrace environment set as API URL.'
+      - description: 'Optional: the ActiveGate container image. Defaults to the latest
+          ActiveGate image provided by the Docker Registry implementation from the
+          Dynatrace environment set as API URL.'
         displayName: Image
         path: activeGate.image
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'Optional: If specified, indicates the OneAgent version to use Defaults to latest Example: {major.minor.release} - 1.200.0'
+      - description: 'Optional: If specified, indicates the OneAgent version to use
+          Defaults to latest Example: {major.minor.release} - 1.200.0'
         displayName: OneAgent version
         path: oneAgent.version
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'Optional: the Dynatrace installer container image Defaults to docker.io/dynatrace/oneagent:latest for Kubernetes and to registry.connect.redhat.com/dynatrace/oneagent for OpenShift'
+      - description: 'Optional: the Dynatrace installer container image Defaults to
+          docker.io/dynatrace/oneagent:latest for Kubernetes and to registry.connect.redhat.com/dynatrace/oneagent
+          for OpenShift'
         displayName: Image
         path: oneAgent.image
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Disable automatic restarts of OneAgent pods in case a new version is available
+      - description: Disable automatic restarts of OneAgent pods in case a new version
+          is available
         displayName: Automatically update Agent
         path: oneAgent.autoUpdate
         x-descriptors:
@@ -140,13 +151,15 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Optional: Defines the time to wait until OneAgent pod is ready after update - default 300 sec'
+      - description: 'Optional: Defines the time to wait until OneAgent pod is ready
+          after update - default 300 sec'
         displayName: Wait seconds until ready
         path: classicFullStack.waitReadySeconds
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:number
-      - description: 'Optional: Defines the time to wait until OneAgent pod is ready after update - default 300 sec'
+      - description: 'Optional: Defines the time to wait until OneAgent pod is ready
+          after update - default 300 sec'
         displayName: Wait seconds until ready
         path: infraMonitoring.waitReadySeconds
         x-descriptors:
@@ -188,13 +201,17 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Optional: If specified, indicates the pod''s priority. Name must be defined by creating a PriorityClass object with that name. If not specified the setting will be removed from the DaemonSet.'
+      - description: 'Optional: If specified, indicates the pod''s priority. Name
+          must be defined by creating a PriorityClass object with that name. If not
+          specified the setting will be removed from the DaemonSet.'
         displayName: Priority Class name
         path: classicFullStack.priorityClassName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:PriorityClass
-      - description: 'Optional: If specified, indicates the pod''s priority. Name must be defined by creating a PriorityClass object with that name. If not specified the setting will be removed from the DaemonSet.'
+      - description: 'Optional: If specified, indicates the pod''s priority. Name
+          must be defined by creating a PriorityClass object with that name. If not
+          specified the setting will be removed from the DaemonSet.'
         displayName: Priority Class name
         path: infraMonitoring.priorityClassName
         x-descriptors:
@@ -212,13 +229,15 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'Optional: set custom Service Account Name used with OneAgent pods'
+      - description: 'Optional: set custom Service Account Name used with OneAgent
+          pods'
         displayName: Service Account name
         path: classicFullStack.serviceAccountName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:ServiceAccount
-      - description: 'Optional: set custom Service Account Name used with OneAgent pods'
+      - description: 'Optional: set custom Service Account Name used with OneAgent
+          pods'
         displayName: Service Account name
         path: infraMonitoring.serviceAccountName
         x-descriptors:
@@ -282,7 +301,8 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: 'Optional: define resources requests and limits for single ActiveGate pods'
+      - description: 'Optional: define resources requests and limits for single ActiveGate
+          pods'
         displayName: Resource Requirements
         path: kubernetesMonitoring.resources
         x-descriptors:
@@ -317,7 +337,8 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Optional: set custom Service Account Name used with ActiveGate pods'
+      - description: 'Optional: set custom Service Account Name used with ActiveGate
+          pods'
         displayName: Service Account name
         path: kubernetesMonitoring.serviceAccountName
         x-descriptors:
