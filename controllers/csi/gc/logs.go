@@ -28,7 +28,11 @@ func (gc *CSIGarbageCollector) runLogGarbageCollection(tenantUUID string) {
 		return
 	}
 
-	shouldDelete := logs.NumberOfFiles > 0 && (logs.OverallSize > maxLogFolderSizeBytes || logs.NumberOfFiles > maxNumberOfLogFiles)
+	gc.removeLogsIfNecessary(logs, maxLogFolderSizeBytes, maxNumberOfLogFiles, tenantUUID, fs)
+}
+
+func (gc *CSIGarbageCollector) removeLogsIfNecessary(logs *logFileInfo, maxSize int64, maxFile int64, tenantUUID string, fs *afero.Afero) {
+	shouldDelete := logs.NumberOfFiles > 0 && (logs.OverallSize > maxSize || logs.NumberOfFiles > maxFile)
 	if shouldDelete {
 		gc.tryRemoveLogFolders(logs.UnusedVolumeIDs, tenantUUID, fs)
 	}
