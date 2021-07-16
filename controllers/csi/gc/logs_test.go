@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,7 +19,7 @@ func TestLogGarbageCollector_noErrorWithoutLogs(t *testing.T) {
 	gc := NewMockGarbageCollector()
 
 	_ = gc.fs.MkdirAll(logPath, 0770)
-	logs, err := gc.getLogFileInfo(tenantUUID, &afero.Afero{Fs: gc.fs})
+	logs, err := gc.getLogFileInfo(tenantUUID)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &logFileInfo{
@@ -31,11 +31,9 @@ func TestLogGarbageCollector_noErrorWithoutLogs(t *testing.T) {
 
 func TestLogGarbageCollector_emptyLogFileInfoWithNoUnmountedLogs(t *testing.T) {
 	gc := NewMockGarbageCollector()
-
-	_ = gc.fs.MkdirAll(logPath, 0770)
 	gc.mockMountedVolumeIDPath(version_1)
 
-	logs, err := gc.getLogFileInfo(tenantUUID, &afero.Afero{Fs: gc.fs})
+	logs, err := gc.getLogFileInfo(tenantUUID)
 
 	assert.NoError(t, err)
 	assert.Equal(t, &logFileInfo{
@@ -51,7 +49,7 @@ func TestLogGarbageCollector_logFileInfo_JustVolumeID_WithUnmountedLogs(t *testi
 	_ = gc.fs.MkdirAll(logPath, 0770)
 	gc.mockUnmountedVolumeIDPath(version_1)
 
-	logs, err := gc.getLogFileInfo(tenantUUID, &afero.Afero{Fs: gc.fs})
+	logs, err := gc.getLogFileInfo(tenantUUID)
 
 	assert.NoError(t, err)
 	assert.Equal(t, int64(0), logs.NumberOfFiles)
@@ -66,7 +64,7 @@ func TestLogGarbageCollector_logFileInfo_SingleVolumeID_WithUnmountedLogs(t *tes
 	gc.mockUnmountedVolumeIDPath(version_1)
 	gc.mockLogsInPodFolders(5, version_1)
 
-	logs, err := gc.getLogFileInfo(tenantUUID, &afero.Afero{Fs: gc.fs})
+	logs, err := gc.getLogFileInfo(tenantUUID)
 
 	assert.NoError(t, err)
 	assert.Equal(t, int64(5), logs.NumberOfFiles)
@@ -81,7 +79,7 @@ func TestLogGarbageCollector_logFileInfo_MultipleVolumeIDs_WithUnmountedLogs(t *
 	gc.mockUnmountedVolumeIDPath(version_1, version_2, version_3)
 	gc.mockLogsInPodFolders(5, version_1, version_2)
 
-	logs, err := gc.getLogFileInfo(tenantUUID, &afero.Afero{Fs: gc.fs})
+	logs, err := gc.getLogFileInfo(tenantUUID)
 
 	assert.NoError(t, err)
 	assert.Equal(t, int64(10), logs.NumberOfFiles)
@@ -99,7 +97,7 @@ func TestLogGarbageCollector_logFileInfo_MultipleVolumeIDs_WithUnmountedAndMount
 	gc.mockUnmountedVolumeIDPath(version_1, version_2)
 	gc.mockLogsInPodFolders(5, version_1, version_2)
 
-	logs, err := gc.getLogFileInfo(tenantUUID, &afero.Afero{Fs: gc.fs})
+	logs, err := gc.getLogFileInfo(tenantUUID)
 
 	assert.NoError(t, err)
 	assert.Equal(t, int64(10), logs.NumberOfFiles)
@@ -115,7 +113,7 @@ func TestLogGarbageCollector_modificationDateOlderThanTwoWeeks(t *testing.T) {
 
 		assert.False(t, isOlder)
 	})
-	
+
 	t.Run("is true for timestamp 14 days in past", func(t *testing.T) {
 		isOlder := isOlderThanTwoWeeks(time.Now().AddDate(0, 0, -14))
 
@@ -130,15 +128,66 @@ func TestLogGarbageCollector_cleanUpSuccessful(t *testing.T) {
 	gc.mockUnmountedVolumeIDPath(version_1, version_2)
 	gc.mockLogsInPodFolders(5, version_1, version_2)
 
-	logs, err := gc.getLogFileInfo(tenantUUID, &afero.Afero{Fs: gc.fs})
+	logs, err := gc.getLogFileInfo(tenantUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, logs)
 
 	older := isOlderThanTwoWeeks(logs.UnusedVolumeIDs[0].ModTime())
 	assert.True(t, older)
 
-	gc.tryRemoveLogFolders(logs.UnusedVolumeIDs, tenantUUID, &afero.Afero{Fs: gc.fs})
+	gc.tryRemoveLogFolders(logs.UnusedVolumeIDs, tenantUUID)
 	assert.NoDirExists(t, filepath.Join(logPath, logs.UnusedVolumeIDs[0].Name()))
+}
+
+func TestLogGarbageCollector_removeLogsNecessary_filesGetDeleted(t *testing.T) {
+	gc := NewMockGarbageCollector()
+
+	_ = gc.fs.MkdirAll(logPath, 0770)
+	gc.mockUnmountedVolumeIDPath(version_1, version_2)
+	gc.mockLogsInPodFolders(5, version_1, version_2)
+
+	logs, err := gc.getLogFileInfo(tenantUUID)
+	assert.NoError(t, err)
+	assert.NotNil(t, logs)
+
+	gc.removeLogsIfNecessary(logs, int64(0), int64(1), tenantUUID)
+	newLogs, err := gc.getLogFileInfo(tenantUUID)
+	assert.NotEqual(t, newLogs, logs)
+	assert.Equal(t, newLogs.NumberOfFiles, int64(0))
+}
+
+func TestLogGarbageCollector_removeLogsNecessary_tooLessFiles(t *testing.T) {
+	gc := NewMockGarbageCollector()
+
+	_ = gc.fs.MkdirAll(logPath, 0770)
+	gc.mockUnmountedVolumeIDPath(version_1, version_2)
+	gc.mockLogsInPodFolders(5, version_1, version_2)
+
+	logs, err := gc.getLogFileInfo(tenantUUID)
+	assert.NoError(t, err)
+	assert.NotNil(t, logs)
+
+	gc.removeLogsIfNecessary(logs, int64(0), int64(11), tenantUUID)
+	newLogs, err := gc.getLogFileInfo(tenantUUID)
+	assert.Equal(t, newLogs, logs)
+	assert.Equal(t, newLogs.NumberOfFiles, int64(10))
+}
+
+func TestLogGarbageCollector_removeLogsNecessary_FileSizeTooSmall(t *testing.T) {
+	gc := NewMockGarbageCollector()
+
+	_ = gc.fs.MkdirAll(logPath, 0770)
+	gc.mockUnmountedVolumeIDPath(version_1, version_2)
+	gc.mockLogsInPodFolders(5, version_1, version_2)
+
+	logs, err := gc.getLogFileInfo(tenantUUID)
+	assert.NoError(t, err)
+	assert.NotNil(t, logs)
+
+	gc.removeLogsIfNecessary(logs, int64(10), int64(11), tenantUUID)
+	newLogs, err := gc.getLogFileInfo(tenantUUID)
+	assert.Equal(t, newLogs, logs)
+	assert.Equal(t, newLogs.NumberOfFiles, int64(10))
 }
 
 func (gc *CSIGarbageCollector) mockMountedVolumeIDPath(volumeIDs ...string) {
