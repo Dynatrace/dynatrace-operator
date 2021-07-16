@@ -1,17 +1,50 @@
 package csigc
 
 import (
+	"os"
 	"path/filepath"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/afero"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
+
+var (
+	reclaimedMemoryMetric = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "dynatrace",
+		Subsystem: "csi_driver",
+		Name:      "gc_reclaimed",
+		Help:      "Amount of memory reclaimed by the GC",
+	})
+
+	foldersRemovedMetric = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "dynatrace",
+		Subsystem: "csi_driver",
+		Name:      "gc_folder_rmv",
+		Help:      "Number of folders deleted by the GC",
+	})
+
+	gcRunsMetric = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "dynatrace",
+		Subsystem: "csi_driver",
+		Name:      "gc_runs",
+		Help:      "Number of GC runs",
+	})
+)
+
+func init() {
+	metrics.Registry.MustRegister(reclaimedMemoryMetric)
+	metrics.Registry.MustRegister(foldersRemovedMetric)
+	metrics.Registry.MustRegister(gcRunsMetric)
+}
 
 func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, latestVersion string) error {
 	fs := &afero.Afero{Fs: gc.fs}
 	logger := gc.logger.WithValues("tenant", tenantUUID, "latestVersion", latestVersion)
+	gcRunsMetric.Inc()
 
 	versionReferencesBase := filepath.Join(gc.opts.RootDir, tenantUUID, dtcsi.GarbageCollectionPath)
 	logger.Info("run garbage collection for binaries", "versionReferencesBase", versionReferencesBase)
@@ -40,7 +73,6 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, lat
 			removeUnusedVersion(fs, binaryPath, references, logger)
 		}
 	}
-
 	return nil
 }
 
@@ -68,11 +100,30 @@ func isNotLatestVersion(version string, latestVersion string, logger logr.Logger
 }
 
 func removeUnusedVersion(fs *afero.Afero, binaryPath string, references string, logger logr.Logger) {
-	if err := fs.RemoveAll(binaryPath); err != nil {
+	size, _ := dirSize(fs, binaryPath)
+	err := fs.RemoveAll(binaryPath)
+	if err != nil {
 		logger.Info("delete failed", "path", binaryPath)
+	} else {
+		foldersRemovedMetric.Inc()
+		reclaimedMemoryMetric.Add(float64(size))
 	}
 
 	if err := fs.RemoveAll(references); err != nil {
 		logger.Info("delete failed", "path", references)
 	}
+}
+
+func dirSize(fs *afero.Afero, path string) (int64, error) {
+	var size int64
+	err := fs.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return err
+	})
+	return size, err
 }
