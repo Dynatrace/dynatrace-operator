@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
-	t_utils "github.com/Dynatrace/dynatrace-operator/testing_utils"
+	t_utils "github.com/Dynatrace/dynatrace-operator/testing"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -112,27 +112,27 @@ func TestReconcileWebhookCertificates(t *testing.T) {
 		t_utils.Events{
 			{
 				EventType: corev1.EventTypeNormal,
-				Reason:    CreateCertificateSecretEvent,
+				Reason:    createCertificateSecretEvent,
 			},
 			{
 				EventType: corev1.EventTypeNormal,
-				Reason:    CreateWebhookServiceEvent,
+				Reason:    createWebhookServiceEvent,
 			},
 			{
 				EventType: corev1.EventTypeNormal,
-				Reason:    CreateMutatingWebhookConfigurationEvent,
+				Reason:    createMutatingWebhookConfigurationEvent,
 			},
 			{
 				EventType: corev1.EventTypeNormal,
-				Reason:    UpdateCertificateSecretEvent,
+				Reason:    updateCertificateSecretEvent,
 			},
 			{
 				EventType: corev1.EventTypeNormal,
-				Reason:    UpdateCertificateSecretEvent,
+				Reason:    updateCertificateSecretEvent,
 			},
 			{
 				EventType: corev1.EventTypeNormal,
-				Reason:    UpdateMutatingWebhookConfigurationEvent,
+				Reason:    updateMutatingWebhookConfigurationEvent,
 			},
 		},
 	)

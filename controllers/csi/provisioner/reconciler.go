@@ -42,8 +42,8 @@ import (
 )
 
 const (
-	FailedInstallAgentVersionEvent = "FailedInstallAgentVersion"
-	InstallAgentVersionEvent       = "InstallAgentVersion"
+	failedInstallAgentVersionEvent = "FailedInstallAgentVersion"
+	installAgentVersionEvent       = "InstallAgentVersion"
 )
 
 var log = logger.NewDTLogger().WithName("provisioner")
@@ -157,13 +157,13 @@ func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, dtc dt
 		if err := r.installAgentVersion(ver, envDir, dtc, logger); err != nil {
 			r.recorder.Eventf(dk,
 				corev1.EventTypeWarning,
-				FailedInstallAgentVersionEvent,
+				failedInstallAgentVersionEvent,
 				"Failed to installed agent version: %s to envDir: %s, err: %s", ver, envDir, err)
 			return err
 		}
 		r.recorder.Eventf(dk,
 			corev1.EventTypeNormal,
-			InstallAgentVersionEvent,
+			installAgentVersionEvent,
 			"Installed agent version: %s to envDir: %s", ver, envDir)
 	}
 

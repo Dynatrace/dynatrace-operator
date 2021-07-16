@@ -29,17 +29,16 @@ import (
 const (
 	webhookName = "dynatrace-webhook"
 
-	// possible events
-	FailedCreateWebhookServiceEvent               = "FailedCreateWebhookService"
-	CreateWebhookServiceEvent                     = "CreateWebhookService"
-	FailedCreateCertificateSecretEvent            = "FailedCreateCertificateSecret"
-	CreateCertificateSecretEvent                  = "CreateCertificateSecret"
-	FailedUpdateCertificateSecretEvent            = "FailedUpdateCertificateSecret"
-	UpdateCertificateSecretEvent                  = "UpdateCertificateSecret"
-	FailedCreateMutatingWebhookConfigurationEvent = "FailedCreateMutatingWebhookConfiguration"
-	CreateMutatingWebhookConfigurationEvent       = "CreateMutatingWebhookConfiguration"
-	FailedUpdateMutatingWebhookConfigurationEvent = "FailedUpdateMutatingWebhookConfiguration"
-	UpdateMutatingWebhookConfigurationEvent       = "UpdateMutatingWebhookConfiguration"
+	failedCreateWebhookServiceEvent               = "FailedCreateWebhookService"
+	createWebhookServiceEvent                     = "CreateWebhookService"
+	failedCreateCertificateSecretEvent            = "FailedCreateCertificateSecret"
+	createCertificateSecretEvent                  = "CreateCertificateSecret"
+	failedUpdateCertificateSecretEvent            = "FailedUpdateCertificateSecret"
+	updateCertificateSecretEvent                  = "UpdateCertificateSecret"
+	failedCreateMutatingWebhookConfigurationEvent = "FailedCreateMutatingWebhookConfiguration"
+	createMutatingWebhookConfigurationEvent       = "CreateMutatingWebhookConfiguration"
+	failedUpdateMutatingWebhookConfigurationEvent = "FailedUpdateMutatingWebhookConfiguration"
+	updateMutatingWebhookConfigurationEvent       = "UpdateMutatingWebhookConfiguration"
 )
 
 func Add(mgr manager.Manager, ns string) error {
@@ -149,11 +148,11 @@ func (r *ReconcileWebhookCertificates) reconcileService(ctx context.Context, log
 		if err = r.client.Create(ctx, &expected); err != nil {
 			r.recorder.Eventf(&expected,
 				corev1.EventTypeWarning,
-				FailedCreateWebhookServiceEvent,
+				failedCreateWebhookServiceEvent,
 				"Failed to create Webhook service, err: %s", err)
 			return err
 		}
-		r.recorder.Event(&expected, corev1.EventTypeNormal, CreateWebhookServiceEvent, "Webhook service created")
+		r.recorder.Event(&expected, corev1.EventTypeNormal, createWebhookServiceEvent, "Webhook service created")
 		return nil
 	}
 
@@ -193,21 +192,21 @@ func (r *ReconcileWebhookCertificates) reconcileCerts(ctx context.Context, log l
 			Data:       cs.Data,
 		}
 		err = r.client.Create(ctx, &secret)
-		eventReason = CreateCertificateSecretEvent
+		eventReason = createCertificateSecretEvent
 		eventMessage = fmt.Sprintf("create certificates secret, name: %s, namespace: %s", webhook.SecretCertsName, r.namespace)
 	} else if !reflect.DeepEqual(cs.Data, secret.Data) {
 		log.Info("Updating certificates secret...")
 		secret.Data = cs.Data
 		err = r.client.Update(ctx, &secret)
-		eventReason = UpdateCertificateSecretEvent
+		eventReason = updateCertificateSecretEvent
 		eventMessage = fmt.Sprintf("update certificates secret, name: %s, namespace: %s", webhook.SecretCertsName, r.namespace)
 	}
 
 	if err != nil {
-		if eventReason == CreateCertificateSecretEvent {
-			eventReason = FailedCreateCertificateSecretEvent
+		if eventReason == createCertificateSecretEvent {
+			eventReason = failedCreateCertificateSecretEvent
 		} else {
-			eventReason = FailedUpdateCertificateSecretEvent
+			eventReason = failedUpdateCertificateSecretEvent
 		}
 		eventMessage = fmt.Sprintf("Failed to %s, err: %s", eventMessage, err)
 		r.recorder.Event(&secret, corev1.EventTypeWarning, eventReason, eventMessage)
@@ -271,13 +270,13 @@ func (r *ReconcileWebhookCertificates) reconcileWebhookConfig(ctx context.Contex
 		if err = r.client.Create(ctx, webhookConfiguration); err != nil {
 			r.recorder.Eventf(webhookConfiguration,
 				corev1.EventTypeWarning,
-				FailedCreateMutatingWebhookConfigurationEvent,
+				failedCreateMutatingWebhookConfigurationEvent,
 				"Failed to create MutatingWebhookConfiguration, err: %s", err)
 			return err
 		}
 		r.recorder.Event(webhookConfiguration,
 			corev1.EventTypeNormal,
-			CreateMutatingWebhookConfigurationEvent,
+			createMutatingWebhookConfigurationEvent,
 			"Created MutatingWebhookConfiguration")
 		return nil
 	}
@@ -285,7 +284,7 @@ func (r *ReconcileWebhookCertificates) reconcileWebhookConfig(ctx context.Contex
 	if err != nil {
 		r.recorder.Eventf(webhookConfiguration,
 			corev1.EventTypeWarning,
-			FailedUpdateMutatingWebhookConfigurationEvent,
+			failedUpdateMutatingWebhookConfigurationEvent,
 			"Failed to update MutatingWebhookConfiguration, err: %s", err)
 		return err
 	}
@@ -297,7 +296,7 @@ func (r *ReconcileWebhookCertificates) reconcileWebhookConfig(ctx context.Contex
 	log.Info("MutatingWebhookConfiguration is outdated, updating...")
 	r.recorder.Event(webhookConfiguration,
 		corev1.EventTypeNormal,
-		UpdateMutatingWebhookConfigurationEvent,
+		updateMutatingWebhookConfigurationEvent,
 		"Updating MutatingWebhookConfiguration")
 	cfg.Webhooks = webhookConfiguration.Webhooks
 	return r.client.Update(ctx, &cfg)

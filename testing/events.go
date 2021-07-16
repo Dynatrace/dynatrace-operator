@@ -1,4 +1,4 @@
-package testing_utils
+package testing
 
 import (
 	"strings"
