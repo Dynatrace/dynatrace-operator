@@ -216,7 +216,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 				m.recorder.Eventf(&oa,
 					corev1.EventTypeNormal,
 					UpdatePodEvent,
-					"Updating pod %s in namespace %s with missing containers", pod.Name, pod.Namespace)
+					"Updating pod %s in namespace %s with missing containers", pod.GenerateName, pod.Namespace)
 				return getResponse(pod, &req)
 			}
 		}
@@ -320,10 +320,10 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
 
-	m.recorder.Eventf(pod,
+	m.recorder.Eventf(&oa,
 		corev1.EventTypeNormal,
 		InjectEvent,
-		"Injecting the necessary info into pod %s in namespace %s", pod.Name, pod.Namespace)
+		"Injecting the necessary info into pod %s in namespace %s", pod.GenerateName, pod.Namespace)
 	return getResponse(pod, &req)
 }
 
