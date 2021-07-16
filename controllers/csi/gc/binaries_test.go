@@ -38,19 +38,12 @@ func TestBinaryGarbageCollector_versionReferenceGenerationSuccess(t *testing.T) 
 func TestBinaryGarbageCollector_succeedsWhenVersionReferenceBaseDirectoryNotExists(t *testing.T) {
 	resetMetrics()
 	gc := NewMockGarbageCollector()
-	gc.mockUnusedVersions(version_1, version_2, version_3)
-
-	versionReferences, err := gc.getVersionReferences(tenantUUID)
-	assert.NoError(t, err)
 
 	gc.runBinaryGarbageCollection(tenantUUID, version_1)
 
 	assert.Equal(t, float64(1), testutil.ToFloat64(gcRunsMetric))
 	assert.Equal(t, float64(0), testutil.ToFloat64(foldersRemovedMetric))
 	assert.Equal(t, float64(0), testutil.ToFloat64(reclaimedMemoryMetric))
-
-	assert.NotNil(t, versionReferences)
-	assert.NoError(t, err)
 }
 
 func TestBinaryGarbageCollector_succeedsWhenNoVersionsAvailable(t *testing.T) {

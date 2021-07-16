@@ -1,12 +1,12 @@
 package csigc
 
 import (
-	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
