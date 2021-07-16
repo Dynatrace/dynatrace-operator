@@ -152,6 +152,7 @@ func TestLogGarbageCollector_removeLogsNecessary_filesGetDeleted(t *testing.T) {
 
 	gc.removeLogsIfNecessary(logs, int64(0), int64(1), tenantUUID)
 	newLogs, err := gc.getLogFileInfo(tenantUUID)
+	assert.NoError(t, err)
 	assert.NotEqual(t, newLogs, logs)
 	assert.Equal(t, newLogs.NumberOfFiles, int64(0))
 }
@@ -169,6 +170,7 @@ func TestLogGarbageCollector_removeLogsNecessary_tooLessFiles(t *testing.T) {
 
 	gc.removeLogsIfNecessary(logs, int64(0), int64(11), tenantUUID)
 	newLogs, err := gc.getLogFileInfo(tenantUUID)
+	assert.NoError(t, err)
 	assert.Equal(t, newLogs, logs)
 	assert.Equal(t, newLogs.NumberOfFiles, int64(10))
 }
@@ -186,6 +188,7 @@ func TestLogGarbageCollector_removeLogsNecessary_FileSizeTooSmall(t *testing.T) 
 
 	gc.removeLogsIfNecessary(logs, int64(10), int64(11), tenantUUID)
 	newLogs, err := gc.getLogFileInfo(tenantUUID)
+	assert.NoError(t, err)
 	assert.Equal(t, newLogs, logs)
 	assert.Equal(t, newLogs.NumberOfFiles, int64(10))
 }
