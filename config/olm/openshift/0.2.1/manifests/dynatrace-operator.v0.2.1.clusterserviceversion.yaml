@@ -17,19 +17,6 @@ metadata:
             },
             "apiUrl": "https://ENVIRONMENTID.live.dynatrace.com/api",
             "classicFullStack": {
-              "enabled": false,
-              "tolerations": [
-                {
-                  "effect": "NoSchedule",
-                  "key": "node-role.kubernetes.io/master",
-                  "operator": "Exists"
-                }
-              ]
-            },
-            "codeModules": {
-              "enabled": true
-            },
-            "infraMonitoring": {
               "enabled": true,
               "tolerations": [
                 {

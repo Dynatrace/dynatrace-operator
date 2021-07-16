@@ -1,6 +1,7 @@
 FROM scratch
 
 # Core 0.2.1 labels.
+LABEL operators.operatorframework.io.bundle.channel.default.v1=alpha
 LABEL operators.operatorframework.io.0.2.1.mediatype.v1=registry+v1
 LABEL operators.operatorframework.io.0.2.1.manifests.v1=manifests/
 LABEL operators.operatorframework.io.0.2.1.metadata.v1=metadata/
