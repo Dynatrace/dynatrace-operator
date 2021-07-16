@@ -20,11 +20,18 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+)
+
+const (
+	InjectEvent          = "Inject"
+	UpdatePodEvent       = "UpdatePod"
+	MissingDynakubeEvent = "MissingDynakube"
 )
 
 var logger = log.Log.WithName("oneagent.webhook")
@@ -112,6 +119,7 @@ type podInjector struct {
 	namespace string
 	apmExists bool
 	clusterID string
+	recorder  record.EventRecorder
 }
 
 // podAnnotator adds an annotation to every incoming pods
@@ -147,8 +155,10 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	var oa dynatracev1alpha1.DynaKube
 	if err := m.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: m.namespace}, &oa); k8serrors.IsNotFound(err) {
+		template := "namespace '%s' is assigned to DynaKube instance '%s' but doesn't exist"
+		m.recorder.Eventf(&ns, corev1.EventTypeWarning, MissingDynakubeEvent, template, req.Namespace, oaName)
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf(
-			"namespace '%s' is assigned to DynaKube instance '%s' but doesn't exist", req.Namespace, oaName))
+			template, req.Namespace, oaName))
 	} else if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
@@ -202,6 +212,10 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 			if needsUpdate {
 				logger.Info("updating pod with missing containers")
+				m.recorder.Eventf(&oa,
+					corev1.EventTypeNormal,
+					UpdatePodEvent,
+					"Updating pod %s in namespace %s with missing containers", pod.Name, pod.Namespace)
 				return getResponse(pod, &req)
 			}
 		}
@@ -305,6 +319,10 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
 
+	m.recorder.Eventf(pod,
+		corev1.EventTypeNormal,
+		InjectEvent,
+		"Injecting the necessary info into pod %s in namespace %s", pod.Name, pod.Namespace)
 	return getResponse(pod, &req)
 }
 

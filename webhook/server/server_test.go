@@ -19,6 +19,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -41,6 +42,7 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 		decoder:   decoder,
 		image:     "operator-image",
 		namespace: "dynatrace",
+		recorder:  record.NewFakeRecorder(10),
 	}
 
 	basePod := corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "test-pod-123456", Namespace: "test-namespace"}}
@@ -102,6 +104,7 @@ func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, 
 		decoder:   decoder,
 		image:     "test-api-url.com/linux/codemodule",
 		namespace: "dynatrace",
+		recorder:  record.NewFakeRecorder(10),
 	}, dynakube
 }
 
@@ -300,6 +303,7 @@ func TestUseImmutableImage(t *testing.T) {
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
+			recorder:  record.NewFakeRecorder(10),
 		}
 
 		basePod := corev1.Pod{
@@ -379,6 +383,7 @@ func TestUseImmutableImage(t *testing.T) {
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
+			recorder:  record.NewFakeRecorder(10),
 		}
 
 		basePod := corev1.Pod{
@@ -459,6 +464,7 @@ func TestUseImmutableImage(t *testing.T) {
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
+			recorder:  record.NewFakeRecorder(10),
 		}
 
 		basePod := corev1.Pod{
@@ -536,6 +542,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
+			recorder:  record.NewFakeRecorder(10),
 		}
 
 		basePod := corev1.Pod{
@@ -607,6 +614,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
+			recorder:  record.NewFakeRecorder(10),
 		}
 
 		basePod := corev1.Pod{
@@ -679,6 +687,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
+			recorder:  record.NewFakeRecorder(10),
 		}
 
 		basePod := corev1.Pod{
@@ -750,6 +759,7 @@ func TestAgentVersion(t *testing.T) {
 		decoder:   decoder,
 		image:     "test-image",
 		namespace: "dynatrace",
+		recorder:  record.NewFakeRecorder(10),
 	}
 
 	basePod := corev1.Pod{
@@ -826,6 +836,7 @@ func TestAgentVersionWithCSI(t *testing.T) {
 		decoder:   decoder,
 		image:     "test-image",
 		namespace: "dynatrace",
+		recorder:  record.NewFakeRecorder(10),
 	}
 
 	basePod := corev1.Pod{
