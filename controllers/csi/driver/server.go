@@ -33,6 +33,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/spf13/afero"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -60,7 +61,7 @@ var (
 		Namespace: "dynatrace",
 		Subsystem: "csi_driver",
 		Name:      "agent_versions",
-		Help:      "Number of an agent version currently mounted",
+		Help:      "Number of an agent version currently mounted by the CI driver",
 	}, []string{"version"})
 	memoryMetricTick = 5000 * time.Millisecond
 )
@@ -243,16 +244,23 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 
 	svr.log.Info("volume has been unpublished", "targetPath", targetPath)
 
-	fireVolumeUnpublishedMetric(metadata.UsageFilePath)
+	svr.fireVolumeUnpublishedMetric(metadata.UsageFilePath)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func fireVolumeUnpublishedMetric(usageFilePath string) {
+func (svr *CSIDriverServer) fireVolumeUnpublishedMetric(usageFilePath string) {
 	if len(usageFilePath) > 0 {
 		tmp := strings.Split(usageFilePath, string(os.PathSeparator))
 		version := tmp[len(tmp)+versionOffsetInUsagePath]
 		agentsVersionsMetric.WithLabelValues(version).Dec()
+		var m = &dto.Metric{}
+		if err := agentsVersionsMetric.WithLabelValues(version).Write(m); err != nil {
+			svr.log.Error(err, "Failed to get the value of agent version metric")
+		}
+		if m.Gauge.GetValue() <= float64(0) {
+			agentsVersionsMetric.DeleteLabelValues(version)
+		}
 	}
 }
 
