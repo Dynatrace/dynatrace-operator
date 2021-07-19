@@ -41,45 +41,54 @@ func init() {
 	metrics.Registry.MustRegister(gcRunsMetric)
 }
 
-func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, latestVersion string) error {
+func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, latestVersion string) {
 	fs := &afero.Afero{Fs: gc.fs}
-	logger := gc.logger.WithValues("tenant", tenantUUID, "latestVersion", latestVersion)
 	gcRunsMetric.Inc()
+	versionReferences, err := gc.getVersionReferences(tenantUUID)
+	if err != nil {
+		gc.logger.Info("failed to get version references", "error", err)
+		return
+	}
 
 	versionReferencesBase := filepath.Join(gc.opts.RootDir, tenantUUID, dtcsi.GarbageCollectionPath)
-	logger.Info("run garbage collection for binaries", "versionReferencesBase", versionReferencesBase)
-
-	versionReferences, err := fs.ReadDir(versionReferencesBase)
-	if err != nil {
-		exists, _ := fs.DirExists(versionReferencesBase)
-		if !exists {
-			logger.Info("skipped, version reference base directory not exists", "path", versionReferencesBase)
-			return nil
-		}
-		return errors.WithStack(err)
-	}
 
 	for _, fileInfo := range versionReferences {
 		version := fileInfo.Name()
 		references := filepath.Join(versionReferencesBase, version)
 
-		shouldDelete := isNotLatestVersion(version, latestVersion, logger) &&
-			shouldDeleteVersion(fs, references, logger.WithValues("version", version))
+		shouldDelete := isNotLatestVersion(version, latestVersion, gc.logger) &&
+			shouldDeleteVersion(fs, references, gc.logger.WithValues("version", version))
 
 		if shouldDelete {
 			binaryPath := filepath.Join(gc.opts.RootDir, tenantUUID, "bin", version)
-			logger.Info("deleting unused version", "version", version, "path", binaryPath)
+			gc.logger.Info("deleting unused version", "version", version, "path", binaryPath)
 
-			removeUnusedVersion(fs, binaryPath, references, logger)
+			removeUnusedVersion(fs, binaryPath, references, gc.logger)
 		}
 	}
-	return nil
+}
+
+func (gc *CSIGarbageCollector) getVersionReferences(tenantUUID string) ([]os.FileInfo, error) {
+	fs := &afero.Afero{Fs: gc.fs}
+
+	versionReferencesBase := filepath.Join(gc.opts.RootDir, tenantUUID, dtcsi.GarbageCollectionPath)
+	versionReferences, err := fs.ReadDir(versionReferencesBase)
+	if err != nil {
+		exists, _ := fs.DirExists(versionReferencesBase)
+		if !exists {
+			gc.logger.Info("skipped, version reference base directory not exists", "path", versionReferencesBase)
+			return nil, nil
+		}
+		return nil, errors.WithStack(err)
+	}
+
+	return versionReferences, nil
 }
 
 func shouldDeleteVersion(fs *afero.Afero, references string, logger logr.Logger) bool {
 	podReferences, err := fs.ReadDir(references)
 	if err != nil {
-		logger.Error(err, "skipped, failed to get references")
+		logger.Info("skipped, failed to get references", "error", err)
 		return false
 
 	} else if len(podReferences) > 0 {
