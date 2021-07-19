@@ -21,24 +21,25 @@ type logFileInfo struct {
 }
 
 func (gc *CSIGarbageCollector) runLogGarbageCollection(tenantUUID string) {
-	logs, err := gc.getLogFileInfo(tenantUUID)
+	agentDirectoryForPod := filepath.Join(gc.opts.RootDir, tenantUUID, "run")
+	logs, err := gc.getLogFileInfo(agentDirectoryForPod)
 	if err != nil {
 		gc.logger.Info("failed to get log file information")
 		return
 	}
 
-	gc.removeLogsIfNecessary(logs, maxLogFolderSizeBytes, maxNumberOfLogFiles, tenantUUID)
+	gc.removeLogsIfNecessary(logs, maxLogFolderSizeBytes, maxNumberOfLogFiles, agentDirectoryForPod)
 }
 
-func (gc *CSIGarbageCollector) removeLogsIfNecessary(logs *logFileInfo, maxSize int64, maxFile int64, tenantUUID string) {
+func (gc *CSIGarbageCollector) removeLogsIfNecessary(logs *logFileInfo, maxSize int64, maxFile int64, agentDirectoryForPod string) {
 	shouldDelete := logs.NumberOfFiles > 0 && (logs.OverallSize > maxSize || logs.NumberOfFiles > maxFile)
 	if shouldDelete {
-		gc.tryRemoveLogFolders(logs.UnusedVolumeIDs, tenantUUID)
+		gc.tryRemoveLogFolders(logs.UnusedVolumeIDs, agentDirectoryForPod)
 	}
 }
 
-func (gc *CSIGarbageCollector) getLogFileInfo(tenantUUID string) (*logFileInfo, error) {
-	unusedVolumeIDs, err := gc.getUnusedVolumeIDs(tenantUUID)
+func (gc *CSIGarbageCollector) getLogFileInfo(agentDirectoryForPod string) (*logFileInfo, error) {
+	unusedVolumeIDs, err := gc.getUnusedVolumeIDs(agentDirectoryForPod)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +47,7 @@ func (gc *CSIGarbageCollector) getLogFileInfo(tenantUUID string) (*logFileInfo, 
 	var nrOfFiles int64
 	var size int64
 	for _, volumeID := range unusedVolumeIDs {
-		_ = afero.Walk(gc.fs, filepath.Join(gc.opts.RootDir, tenantUUID, "run", volumeID.Name(), "var"), func(_ string, file os.FileInfo, err error) error {
+		_ = afero.Walk(gc.fs, filepath.Join(agentDirectoryForPod, volumeID.Name(), "var"), func(_ string, file os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -65,10 +66,9 @@ func (gc *CSIGarbageCollector) getLogFileInfo(tenantUUID string) (*logFileInfo, 
 	}, nil
 }
 
-func (gc *CSIGarbageCollector) getUnusedVolumeIDs(tenantUUID string) ([]os.FileInfo, error) {
+func (gc *CSIGarbageCollector) getUnusedVolumeIDs(agentDirectoryForPod string) ([]os.FileInfo, error) {
 	var unusedVolumeIDs []os.FileInfo
 
-	agentDirectoryForPod := filepath.Join(gc.opts.RootDir, tenantUUID, "run")
 	volumeIDs, err := afero.ReadDir(gc.fs, agentDirectoryForPod)
 	if err != nil {
 		return nil, err
@@ -88,10 +88,10 @@ func (gc *CSIGarbageCollector) getUnusedVolumeIDs(tenantUUID string) ([]os.FileI
 	return unusedVolumeIDs, nil
 }
 
-func (gc *CSIGarbageCollector) tryRemoveLogFolders(unusedVolumeIDs []os.FileInfo, tenantUUID string) {
+func (gc *CSIGarbageCollector) tryRemoveLogFolders(unusedVolumeIDs []os.FileInfo, agentDirectoryForPod string) {
 	for _, unusedVolumeID := range unusedVolumeIDs {
 		if isOlderThanTwoWeeks(unusedVolumeID.ModTime()) {
-			if err := gc.fs.RemoveAll(filepath.Join(gc.opts.RootDir, tenantUUID, "run", unusedVolumeID.Name())); err != nil {
+			if err := gc.fs.RemoveAll(filepath.Join(agentDirectoryForPod, unusedVolumeID.Name())); err != nil {
 				gc.logger.Info("failed to remove logs for pod", "podUID", unusedVolumeID.Name(), "error", err)
 			}
 		}
