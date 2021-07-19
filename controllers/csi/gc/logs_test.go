@@ -46,7 +46,6 @@ func TestLogGarbageCollector_emptyLogFileInfoWithNoUnmountedLogs(t *testing.T) {
 func TestLogGarbageCollector_logFileInfo_JustVolumeID_WithUnmountedLogs(t *testing.T) {
 	gc := NewMockGarbageCollector()
 
-	_ = gc.fs.MkdirAll(logPath, 0770)
 	gc.mockUnmountedVolumeIDPath(version_1)
 
 	logs, err := gc.getLogFileInfo(tenantUUID)
@@ -60,7 +59,6 @@ func TestLogGarbageCollector_logFileInfo_JustVolumeID_WithUnmountedLogs(t *testi
 func TestLogGarbageCollector_logFileInfo_SingleVolumeID_WithUnmountedLogs(t *testing.T) {
 	gc := NewMockGarbageCollector()
 
-	_ = gc.fs.MkdirAll(logPath, 0770)
 	gc.mockUnmountedVolumeIDPath(version_1)
 	gc.mockLogsInPodFolders(5, version_1)
 
@@ -75,7 +73,6 @@ func TestLogGarbageCollector_logFileInfo_SingleVolumeID_WithUnmountedLogs(t *tes
 func TestLogGarbageCollector_logFileInfo_MultipleVolumeIDs_WithUnmountedLogs(t *testing.T) {
 	gc := NewMockGarbageCollector()
 
-	_ = gc.fs.MkdirAll(logPath, 0770)
 	gc.mockUnmountedVolumeIDPath(version_1, version_2, version_3)
 	gc.mockLogsInPodFolders(5, version_1, version_2)
 
@@ -92,7 +89,6 @@ func TestLogGarbageCollector_logFileInfo_MultipleVolumeIDs_WithUnmountedLogs(t *
 func TestLogGarbageCollector_logFileInfo_MultipleVolumeIDs_WithUnmountedAndMountedLogs(t *testing.T) {
 	gc := NewMockGarbageCollector()
 
-	_ = gc.fs.MkdirAll(logPath, 0770)
 	gc.mockMountedVolumeIDPath(version_3)
 	gc.mockUnmountedVolumeIDPath(version_1, version_2)
 	gc.mockLogsInPodFolders(5, version_1, version_2)
@@ -124,7 +120,6 @@ func TestLogGarbageCollector_modificationDateOlderThanTwoWeeks(t *testing.T) {
 func TestLogGarbageCollector_cleanUpSuccessful(t *testing.T) {
 	gc := NewMockGarbageCollector()
 
-	_ = gc.fs.MkdirAll(logPath, 0770)
 	gc.mockUnmountedVolumeIDPath(version_1, version_2)
 	gc.mockLogsInPodFolders(5, version_1, version_2)
 
@@ -142,7 +137,6 @@ func TestLogGarbageCollector_cleanUpSuccessful(t *testing.T) {
 func TestLogGarbageCollector_removeLogsNecessary_filesGetDeleted(t *testing.T) {
 	gc := NewMockGarbageCollector()
 
-	_ = gc.fs.MkdirAll(logPath, 0770)
 	gc.mockUnmountedVolumeIDPath(version_1, version_2)
 	gc.mockLogsInPodFolders(5, version_1, version_2)
 
@@ -160,7 +154,6 @@ func TestLogGarbageCollector_removeLogsNecessary_filesGetDeleted(t *testing.T) {
 func TestLogGarbageCollector_removeLogsNecessary_tooLessFiles(t *testing.T) {
 	gc := NewMockGarbageCollector()
 
-	_ = gc.fs.MkdirAll(logPath, 0770)
 	gc.mockUnmountedVolumeIDPath(version_1, version_2)
 	gc.mockLogsInPodFolders(5, version_1, version_2)
 
@@ -178,7 +171,6 @@ func TestLogGarbageCollector_removeLogsNecessary_tooLessFiles(t *testing.T) {
 func TestLogGarbageCollector_removeLogsNecessary_FileSizeTooSmall(t *testing.T) {
 	gc := NewMockGarbageCollector()
 
-	_ = gc.fs.MkdirAll(logPath, 0770)
 	gc.mockUnmountedVolumeIDPath(version_1, version_2)
 	gc.mockLogsInPodFolders(5, version_1, version_2)
 
