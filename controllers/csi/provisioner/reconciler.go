@@ -26,6 +26,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
@@ -55,6 +56,7 @@ type OneAgentProvisioner struct {
 	dtcBuildFunc dynakube.DynatraceClientFunc
 	fs           afero.Fs
 	recorder     record.EventRecorder
+	db           storage.Access
 }
 
 // NewReconciler returns a new OneAgentProvisioner
@@ -65,6 +67,7 @@ func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgentProvisio
 		dtcBuildFunc: dynakube.BuildDynatraceClient,
 		fs:           afero.NewOsFs(),
 		recorder:     mgr.GetEventRecorderFor("OneAgentProvisioner"),
+		db:           storage.NewAccess(),
 	}
 }
 
@@ -80,6 +83,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	rlog := log.WithValues("namespace", request.Namespace, "name", request.Name)
 	rlog.Info("Reconciling DynaKube")
 
+	// Get Dynakube
 	dk, err := r.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -97,25 +101,43 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{RequeueAfter: 15 * time.Second}, nil
 	}
 
+	// Create dtc client
 	dtc, err := buildDtc(r, ctx, dk)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	ci := dk.ConnectionInfo()
-	envDir := filepath.Join(r.opts.RootDir, ci.TenantUUID)
-	tenantFile := filepath.Join(r.opts.RootDir, fmt.Sprintf("tenant-%s", dk.Name))
+	// Get tenant info from storage
+	tenant, err := r.db.GetTenant(dk.ConnectionInfo().TenantUUID)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	oldTenant := *tenant
 
+	// Create necessary directories
+	envDir := filepath.Join(r.opts.RootDir, tenant.UUID)
 	if err = r.createCSIDirectories(envDir); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err = r.updateTenantFile(ci.TenantUUID, tenantFile); err != nil {
+	// Check the state, update if necessary
+	r.updateTenantDynakube(tenant, dk.Name)
+
+	if err = r.updateAgent(dk, tenant, dtc, envDir, rlog); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err = r.updateAgent(dk, dtc, envDir, rlog); err != nil {
-		return reconcile.Result{}, err
+	if oldTenant != *tenant {
+		var err error
+		// New tenants doesn't have these fields set in the begining
+		if oldTenant.Dynakube != "" && oldTenant.LatestVersion == "" {
+			err = r.db.InsertTenant(tenant)
+		} else {
+			err = r.db.UpdateTenant(tenant)
+		}
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 	}
 
 	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
@@ -142,45 +164,26 @@ func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.Namesp
 	return &dk, err
 }
 
-func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, dtc dtclient.Client, envDir string, logger logr.Logger) error {
-	versionFile := filepath.Join(envDir, dtcsi.VersionDir)
-	ver := dk.Status.LatestAgentVersionUnixPaas
+func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, tenant *storage.Tenant, dtc dtclient.Client, envDir string, logger logr.Logger) error {
+	currentVersion := dk.Status.LatestAgentVersionUnixPaas
 
-	var currentVersion string
-	if currentVersionBytes, err := afero.ReadFile(r.fs, versionFile); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to query installed OneAgent latestAgentVersion: %w", err)
-	} else {
-		currentVersion = string(currentVersionBytes)
-	}
-
-	if ver != currentVersion {
-		if err := r.installAgentVersion(ver, envDir, dtc, logger); err != nil {
-			r.recorder.Eventf(dk,
-				corev1.EventTypeWarning,
-				failedInstallAgentVersionEvent,
-				"Failed to installed agent version: %s to envDir: %s, err: %s", ver, envDir, err)
+	if currentVersion != tenant.LatestVersion {
+		tenant.LatestVersion = currentVersion
+		if err := r.installAgentVersion(currentVersion, envDir, dtc, logger); err != nil {
 			return err
 		}
 		r.recorder.Eventf(dk,
 			corev1.EventTypeNormal,
 			installAgentVersionEvent,
-			"Installed agent version: %s to envDir: %s", ver, envDir)
+			"Installed agent version: %s to envDir: %s", currentVersion, envDir)
 	}
-
-	return afero.WriteFile(r.fs, versionFile, []byte(ver), 0644)
+	return nil
 }
 
 func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string, dtc dtclient.Client, logger logr.Logger) error {
-	versionFile := filepath.Join(envDir, dtcsi.VersionDir)
 	arch := dtclient.ArchX86
 	if runtime.GOARCH == "arm64" {
 		arch = dtclient.ArchARM
-	}
-
-	gcDir := filepath.Join(envDir, dtcsi.GarbageCollectionPath, version)
-	if err := r.fs.MkdirAll(gcDir, 0755); err != nil {
-		logger.Error(err, "failed to create directory %s: %w", gcDir)
-		return err
 	}
 
 	targetDir := filepath.Join(envDir, "bin", version)
@@ -194,25 +197,13 @@ func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string,
 			return fmt.Errorf("failed to install agent: %w", err)
 		}
 	}
-
-	_ = afero.WriteFile(r.fs, versionFile, []byte(version), 0644)
-
 	return nil
 }
 
-func (r *OneAgentProvisioner) updateTenantFile(tenantUUID string, tenantFile string) error {
-	var oldDynaKubeTenant string
-	if b, err := afero.ReadFile(r.fs, tenantFile); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to query assigned DynaKube tenant: %w", err)
-	} else {
-		oldDynaKubeTenant = string(b)
+func (r *OneAgentProvisioner) updateTenantDynakube(tenant *storage.Tenant, currentDynakube string) {
+	if tenant.Dynakube != currentDynakube {
+		tenant.Dynakube = currentDynakube
 	}
-
-	if oldDynaKubeTenant != tenantUUID {
-		_ = afero.WriteFile(r.fs, tenantFile, []byte(tenantUUID), 0644)
-	}
-
-	return nil
 }
 
 func (r *OneAgentProvisioner) createCSIDirectories(envDir string) error {

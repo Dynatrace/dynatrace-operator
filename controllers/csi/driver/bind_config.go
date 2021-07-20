@@ -39,7 +39,7 @@ func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeC
 	}
 	envDir := filepath.Join(svr.opts.RootDir, string(tenantUUID))
 
-	versionBytes, err := fs.ReadFile(filepath.Join(envDir, "version"))
+	versionBytes, err := fs.ReadFile(filepath.Join(envDir, dtcsi.VersionDir))
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to query agent directory for DynaKube %s: %s", dkName, err.Error()))
 	}
@@ -47,7 +47,7 @@ func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeC
 	version := string(versionBytes)
 	agentDir := filepath.Join(envDir, "bin", version)
 
-	volumeToVersionReferenceDir := filepath.Join(envDir, dtcsi.GarbageCollectionPath, string(versionBytes))
+	volumeToVersionReferenceDir := filepath.Join(envDir, dtcsi.GarbageCollectionPath, version)
 	if err := svr.fs.MkdirAll(volumeToVersionReferenceDir, os.ModePerm); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to create pod to version reference directory: %s", err))
 	}
