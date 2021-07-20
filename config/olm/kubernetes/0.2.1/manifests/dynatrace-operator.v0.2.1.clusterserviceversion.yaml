@@ -40,7 +40,7 @@ metadata:
       ]
     capabilities: Deep Insights
     categories: Monitoring,Logging & Tracing
-    containerImage: docker.io/dynatrace/dynatrace-operator
+    containerImage: docker.io/dynatrace/dynatrace-operator:v0.2.1
     operators.operatorframework.io/builder: operator-sdk-v1.5.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/Dynatrace/dynatrace-operator
@@ -768,4 +768,5 @@ spec:
   provider:
     name: Dynatrace LLC
     url: www.dynatrace.com
+  replaces: dynatrace-operator.v0.1.0
   version: 0.2.1

@@ -11,10 +11,6 @@ LABEL operators.operatorframework.io.metrics.builder=operator-sdk-v1.5.0
 LABEL operators.operatorframework.io.metrics.project_layout=go.kubebuilder.io/v3
 LABEL operators.operatorframework.io.bundle.channel.default.v1=alpha
 
-# Labels for testing.
-LABEL operators.operatorframework.io.test.mediatype.v1=scorecard+v1
-LABEL operators.operatorframework.io.test.config.v1=tests/scorecard/
-
 # Copy files to locations specified by labels.
 COPY 0.2.1/manifests /manifests/
 COPY 0.2.1/metadata /metadata/
