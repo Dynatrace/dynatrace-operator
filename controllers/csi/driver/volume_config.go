@@ -6,10 +6,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	podUIDContextKey       = "csi.storage.k8s.io/pod.uid"
+	podNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
+)
+
 type volumeConfig struct {
 	volumeId   string
 	targetPath string
 	namespace  string
+	podUID     string
 }
 
 func parsePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*volumeConfig, error) {
@@ -45,9 +51,15 @@ func parsePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*volumeConfig
 		return nil, status.Error(codes.InvalidArgument, "No namespace included with request")
 	}
 
+	podUID := volCtx[podUIDContextKey]
+	if podUID == "" {
+		return nil, status.Error(codes.InvalidArgument, "No Pod UID included with request")
+	}
+
 	return &volumeConfig{
 		volumeId:   volID,
 		targetPath: targetPath,
 		namespace:  nsName,
+		podUID:     podUID,
 	}, nil
 }

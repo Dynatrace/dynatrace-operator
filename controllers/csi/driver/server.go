@@ -18,7 +18,6 @@ package csidriver
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -28,6 +27,7 @@ import (
 	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -43,11 +43,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
-)
-
-const (
-	podNamespaceContextKey   = "csi.storage.k8s.io/pod.namespace"
-	versionOffsetInUsagePath = -2
 )
 
 var (
@@ -79,11 +74,7 @@ type CSIDriverServer struct {
 	opts    dtcsi.CSIOptions
 	fs      afero.Afero
 	mounter mount.Interface
-}
-
-type volumeMetadata struct {
-	UsageFilePath string
-	OverlayFSPath string
+	db      storage.Access
 }
 
 var _ manager.Runnable = &CSIDriverServer{}
@@ -97,6 +88,7 @@ func NewServer(client client.Client, opts dtcsi.CSIOptions) *CSIDriverServer {
 		opts:    opts,
 		fs:      afero.Afero{Fs: afero.NewOsFs()},
 		mounter: mount.New(""),
+		db:      storage.NewAccess(),
 	}
 }
 
@@ -195,7 +187,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
 	)
 
-	bindCfg, err := newBindConfig(ctx, svr, volumeCfg, svr.fs)
+	bindCfg, err := newBindConfig(ctx, svr, volumeCfg, svr.db)
 	if err != nil {
 		return nil, err
 	}
@@ -204,8 +196,8 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}
 
-	if err := svr.storeVolumeMetadata(bindCfg, volumeCfg.volumeId); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to store volume metadata: %s", err))
+	if err := svr.storePodInfo(bindCfg, volumeCfg); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to store pod info: %s", err))
 	}
 	agentsVersionsMetric.WithLabelValues(bindCfg.version).Inc()
 	return &csi.NodePublishVolumeResponse{}, nil
@@ -217,25 +209,19 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 		return nil, err
 	}
 
-	volumeMetadataPath := filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeID)
-
-	var metadata volumeMetadata
-	if err = svr.loadVolumeMetadata(volumeMetadataPath, &metadata); err != nil {
-		svr.log.Info("failed to load volume metadata", "error", err.Error())
+	pod, err := svr.loadPodInfo(volumeID)
+	if err != nil {
+		svr.log.Info("failed to load pod info", "error", err.Error())
 	}
 
-	if err = svr.umountOneAgent(targetPath, &metadata); err != nil {
+	overlayFSPath := filepath.Join(svr.opts.RootDir, pod.TenantUUID, "run", volumeID)
+
+	if err = svr.umountOneAgent(targetPath, overlayFSPath); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount oneagent volume: %s", err.Error()))
 	}
 
-	if strings.HasPrefix(metadata.UsageFilePath, svr.opts.RootDir) {
-		if err = svr.fs.Remove(metadata.UsageFilePath); err != nil && !os.IsNotExist(err) {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to remove version reference for pod: %s", err))
-		}
-	}
-
-	if err = svr.fs.Remove(volumeMetadataPath); err != nil && !os.IsNotExist(err) {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to remove volume to pod reference: %s", err))
+	if err = svr.db.DeletePod(pod); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	if err = svr.fs.RemoveAll(targetPath); err != nil {
@@ -244,23 +230,14 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 
 	svr.log.Info("volume has been unpublished", "targetPath", targetPath)
 
-	svr.fireVolumeUnpublishedMetric(metadata.UsageFilePath)
+	fireVolumeUnpublishedMetric(*pod)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func (svr *CSIDriverServer) fireVolumeUnpublishedMetric(usageFilePath string) {
-	if len(usageFilePath) > 0 {
-		tmp := strings.Split(usageFilePath, string(os.PathSeparator))
-		version := tmp[len(tmp)+versionOffsetInUsagePath]
-		agentsVersionsMetric.WithLabelValues(version).Dec()
-		var m = &dto.Metric{}
-		if err := agentsVersionsMetric.WithLabelValues(version).Write(m); err != nil {
-			svr.log.Error(err, "failed to get the value of agent version metric")
-		}
-		if m.Gauge.GetValue() <= float64(0) {
-			agentsVersionsMetric.DeleteLabelValues(version)
-		}
+func fireVolumeUnpublishedMetric(pod storage.Pod) {
+	if len(pod.Version) > 0 {
+		agentsVersionsMetric.WithLabelValues(pod.Version).Dec()
 	}
 }
 
@@ -321,13 +298,13 @@ func (svr *CSIDriverServer) mountOneAgent(bindCfg *bindConfig, volumeCfg *volume
 	return nil
 }
 
-func (svr *CSIDriverServer) umountOneAgent(targetPath string, metadata *volumeMetadata) error {
+func (svr *CSIDriverServer) umountOneAgent(targetPath string, overlayFSPath string) error {
 	if err := svr.mounter.Unmount(targetPath); err != nil {
 		svr.log.Error(err, "Unmount failed", "path", targetPath)
 	}
 
-	if filepath.IsAbs(metadata.OverlayFSPath) {
-		agentDirectoryForPod := filepath.Join(metadata.OverlayFSPath, "mapped")
+	if filepath.IsAbs(overlayFSPath) {
+		agentDirectoryForPod := filepath.Join(overlayFSPath, "mapped")
 		if err := svr.mounter.Unmount(agentDirectoryForPod); err != nil {
 			svr.log.Error(err, "Unmount failed", "path", agentDirectoryForPod)
 		}
@@ -336,39 +313,22 @@ func (svr *CSIDriverServer) umountOneAgent(targetPath string, metadata *volumeMe
 	return nil
 }
 
-func (svr *CSIDriverServer) storeVolumeMetadata(bindCfg *bindConfig, volumeID string) error {
-	podToVersionReference := filepath.Join(bindCfg.volumeToVersionReferenceDir, volumeID)
-	if err := svr.fs.WriteFile(podToVersionReference, nil, 0640); err != nil {
-		return err
+func (svr *CSIDriverServer) storePodInfo(bindCfg *bindConfig, volumeCfg *volumeConfig) error {
+	pod := storage.Pod{
+		UID:        volumeCfg.podUID,
+		VolumeID:   volumeCfg.volumeId,
+		Version:    bindCfg.version,
+		TenantUUID: bindCfg.tenantUUID,
 	}
-
-	metadata := volumeMetadata{
-		UsageFilePath: podToVersionReference,
-		OverlayFSPath: filepath.Join(bindCfg.envDir, "run", volumeID),
-	}
-
-	volumeMetadata, err := json.Marshal(metadata)
-	if err != nil {
-		return err
-	}
-
-	metadataFile := filepath.Join(svr.opts.RootDir, dtcsi.GarbageCollectionPath, volumeID)
-	if err = svr.fs.WriteFile(metadataFile, volumeMetadata, 0640); err != nil {
-		return err
-	}
-
-	return nil
+	return svr.db.InsertPod(&pod)
 }
 
-func (svr *CSIDriverServer) loadVolumeMetadata(metadataPath string, metadata *volumeMetadata) error {
-	data, err := svr.fs.ReadFile(metadataPath)
+func (svr *CSIDriverServer) loadPodInfo(volumeID string) (*storage.Pod, error) {
+	pod, err := svr.db.GetPodViaVolumeId(volumeID)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	err = json.Unmarshal(data, &metadata)
-
-	return err
+	return pod, nil
 }
 
 func logGRPC(log logr.Logger) grpc.UnaryServerInterceptor {

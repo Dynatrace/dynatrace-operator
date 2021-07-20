@@ -129,7 +129,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 
 	if oldTenant != *tenant {
 		var err error
-		// New tenants doesn't have these fields set in the begining
+		// New tenants doesn't have these fields set in the beginning
 		if oldTenant.Dynakube != "" && oldTenant.LatestVersion == "" {
 			err = r.db.InsertTenant(tenant)
 		} else {

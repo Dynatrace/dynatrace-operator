@@ -24,8 +24,8 @@ const (
 	podsTableName       = "pods"
 	podsCreateStatement = `
 	CREATE TABLE IF NOT EXISTS pods (
-		UUID VARCHAR,
-		VolumeId VARCHAR,
+		UID VARCHAR,
+		VolumeID VARCHAR,
 		Version VARCHAR,
 		TenantUUID VARCHAR,
 		PRIMARY KEY (UUID)
@@ -71,11 +71,24 @@ const (
 	WHERE UUID = ?;
 	`
 
-	getTenantUUIDStatement = `
-	SELECT UUID
+	getTenantViaDynakubeStatement = `
+	SELECT UUID, LatestVersion
 	FROM tenants
 	WHERE Dynakube = ?;
 	`
+
+	insertPodStatement = `
+	INSERT INTO pods (UID, VolumeID, Version, TenantUUID)
+	VALUES (?,?,?,?);
+	`
+
+	getPodViaVolumeIDStatement = `
+	SELECT UID, Version, TenantUUID
+	FROM pods
+	WHERE VolumeID = ?;
+	`
+
+	deletePodStatement = "DELETE FROM pods WHERE UID = ?;"
 )
 
 var (
@@ -89,8 +102,8 @@ type Tenant struct {
 }
 
 type Pod struct {
-	UUID       string
-	VolumeId   string
+	UID        string
+	VolumeID   string
 	Version    string
 	TenantUUID string
 }
@@ -131,57 +144,12 @@ func (a *Access) init() error {
 func (a *Access) createTables() error {
 	if _, err := a.conn.Exec(tenantsCreateStatement); err != nil {
 		err = fmt.Errorf("couldn't create the table %s, err: %s", tenantsTableName, err)
-		log.Info(err.Error())
+		log.Error(err, err.Error())
 		return err
 	}
 	if _, err := a.conn.Exec(podsCreateStatement); err != nil {
 		err = fmt.Errorf("couldn't create the table %s, err: %s", podsTableName, err)
-		log.Info(err.Error())
-		return err
-	}
-	return nil
-}
-
-func (a *Access) GetLatestVersion(tenantUUID string) (string, error) {
-	var latestVersion string
-	row := a.conn.QueryRow(latestVersionStatement, tenantUUID)
-	err := row.Scan(&latestVersion)
-	if err != nil && err != sql.ErrNoRows {
-		err = fmt.Errorf("couldn't get latest version for tenant %s, err: %s", tenantUUID, err)
-		log.Info(err.Error())
-		return "", err
-	}
-	return latestVersion, nil
-}
-
-func (a *Access) UpdateLatestVersion(tenantUUID, version string) error {
-	_, err := a.conn.Exec(updateLatestVersionStatement, version, tenantUUID)
-	if err != nil {
-		err = fmt.Errorf("couldn't update latest version for tenant %s, err: %s", tenantUUID, err)
-		log.Info(err.Error())
-		return err
-	}
-	return nil
-}
-
-// Returns ("",nil) if not there
-func (a *Access) GetDynaKube(tenantUUID string) (string, error) {
-	var dk string
-	row := a.conn.QueryRow(getDynakubeStatement, tenantUUID)
-	err := row.Scan(&dk)
-	if err != nil && err != sql.ErrNoRows {
-		err = fmt.Errorf("couldn't get Dynakube field for tenant %s, err: %s", tenantUUID, err)
-		log.Info(err.Error())
-		return "", err
-	}
-	return dk, nil
-}
-
-func (a *Access) UpdateDynaKube(tenantUUID, dynakube string) error {
-	_, err := a.conn.Exec(updateDynakubeStatement, dynakube, tenantUUID)
-	if err != nil {
-		err = fmt.Errorf("couldn't update Dynakube field for tenant %s, err: %s", tenantUUID, err)
-		log.Info(err.Error())
+		log.Error(err, err.Error())
 		return err
 	}
 	return nil
@@ -190,9 +158,9 @@ func (a *Access) UpdateDynaKube(tenantUUID, dynakube string) error {
 func (a *Access) InsertTenant(tenant *Tenant) error {
 	_, err := a.conn.Exec(insertTenantStatement, tenant.UUID, tenant.LatestVersion, tenant.Dynakube)
 	if err != nil {
-		err = fmt.Errorf("couldn't update tenant, UUID %s, LatestVersion %s, Dynakube %s, err: %s",
+		err = fmt.Errorf("couldn't insert tenant, UUID %s, LatestVersion %s, Dynakube %s, err: %s",
 			tenant.UUID, tenant.LatestVersion, tenant.Dynakube, err)
-		log.Info(err.Error())
+		log.Error(err, err.Error())
 		return err
 	}
 	return nil
@@ -201,15 +169,14 @@ func (a *Access) InsertTenant(tenant *Tenant) error {
 func (a *Access) UpdateTenant(tenant *Tenant) error {
 	_, err := a.conn.Exec(updateTenantStatement, tenant.LatestVersion, tenant.Dynakube, tenant.UUID)
 	if err != nil {
-		err = fmt.Errorf("couldn't insert tenant, UUID %s, LatestVersion %s, Dynakube %s, err: %s",
+		err = fmt.Errorf("couldn't update tenant, UUID %s, LatestVersion %s, Dynakube %s, err: %s",
 			tenant.UUID, tenant.LatestVersion, tenant.Dynakube, err)
-		log.Info(err.Error())
+		log.Error(err, err.Error())
 		return err
 	}
 	return nil
 }
 
-// Returns (nil,nil) if not there
 func (a *Access) GetTenant(uuid string) (*Tenant, error) {
 	var latestVersion string
 	var dynakube string
@@ -226,15 +193,50 @@ func (a *Access) GetTenant(uuid string) (*Tenant, error) {
 	return &Tenant{uuid, latestVersion, dynakube}, nil
 }
 
-// Returns ("",nil) if not there
-func (a *Access) GetTenantUUID(dynakube string) (string, error) {
+func (a *Access) GetTenantViaDynakube(dynakube string) (*Tenant, error) {
 	var tenantUUID string
-	row := a.conn.QueryRow(getTenantUUIDStatement, dynakube)
+	var latestVersion string
+	row := a.conn.QueryRow(getTenantViaDynakubeStatement, dynakube)
 	err := row.Scan(&tenantUUID)
 	if err != nil && err != sql.ErrNoRows {
-		err = fmt.Errorf("couldn't get tenant UUID field for Dynakube %s, err: %s", dynakube, err)
-		log.Info(err.Error())
-		return "", err
+		err = fmt.Errorf("couldn't get tenant field for Dynakube %s, err: %s", dynakube, err)
+		log.Error(err, err.Error())
+		return nil, err
 	}
-	return tenantUUID, nil
+	return &Tenant{tenantUUID, latestVersion, dynakube}, nil
+}
+
+func (a *Access) InsertPod(pod *Pod) error {
+	_, err := a.conn.Exec(insertPodStatement, pod.UID, pod.VolumeID, pod.Version, pod.TenantUUID)
+	if err != nil {
+		err = fmt.Errorf("couldn't insert pod, UID %s, VolumeID %s, Version %s, TenantUUId: %s err: %s",
+			pod.UID, pod.VolumeID, pod.Version, pod.TenantUUID, err)
+		log.Error(err, err.Error())
+		return err
+	}
+	return nil
+}
+
+func (a *Access) GetPodViaVolumeId(volumeID string) (*Pod, error) {
+	var uid string
+	var version string
+	var tenantUUID string
+	row := a.conn.QueryRow(getPodViaVolumeIDStatement, volumeID)
+	err := row.Scan(&uid, &version, &tenantUUID)
+	if err != nil && err != sql.ErrNoRows {
+		err = fmt.Errorf("couldn't get pod field for VolumeID %s, err: %s", volumeID, err)
+		log.Error(err, err.Error())
+		return nil, err
+	}
+	return &Pod{uid, volumeID, version, tenantUUID}, nil
+}
+
+func (a *Access) DeletePod(pod *Pod) error {
+	_, err := a.conn.Exec(deletePodStatement, pod.UID)
+	if err != nil {
+		err = fmt.Errorf("couldn't delete pod, UID %s, err: %s", pod.UID, err)
+		log.Error(err, err.Error())
+		return err
+	}
+	return nil
 }
