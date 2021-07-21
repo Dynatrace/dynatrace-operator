@@ -3,14 +3,15 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"path/filepath"
 
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	_ "modernc.org/sqlite"
 )
 
 const (
 	driverName = "sqlite"
-	dbPath     = "./csi.db"
 
 	tenantsTableName       = "tenants"
 	tenantsCreateStatement = `
@@ -74,7 +75,8 @@ const (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("provisioner")
+	log    = logger.NewDTLogger().WithName("provisioner")
+	DBPath = filepath.Join(dtcsi.DataPath, "csi.db")
 )
 
 type Tenant struct {
@@ -114,7 +116,7 @@ func (a *Access) Connect(driver, path string) error {
 }
 
 func (a *Access) init() error {
-	if err := a.Connect(driverName, dbPath); err != nil {
+	if err := a.Connect(driverName, DBPath); err != nil {
 		return err
 	}
 	if err := a.createTables(); err != nil {
