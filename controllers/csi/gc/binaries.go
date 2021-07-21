@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 
-	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -44,59 +43,54 @@ func init() {
 func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, latestVersion string) {
 	fs := &afero.Afero{Fs: gc.fs}
 	gcRunsMetric.Inc()
-	versionReferences, err := gc.getVersionReferences(tenantUUID)
+
+	binaryDir := filepath.Join(gc.opts.RootDir, tenantUUID, "bin")
+	usedVersions, err := gc.getUsedVersions(tenantUUID)
 	if err != nil {
-		gc.logger.Info("failed to get version references", "error", err)
+		gc.logger.Info("failed to get used versions", "error", err)
+		return
+	}
+	storedVersions, err := gc.getStoredVersions(fs, binaryDir)
+	if err != nil {
+		gc.logger.Info("failed to get stored versions", "error", err)
 		return
 	}
 
-	versionReferencesBase := filepath.Join(gc.opts.RootDir, tenantUUID, dtcsi.GarbageCollectionPath)
-
-	for _, fileInfo := range versionReferences {
-		version := fileInfo.Name()
-		references := filepath.Join(versionReferencesBase, version)
-
+	for _, version := range storedVersions {
 		shouldDelete := isNotLatestVersion(version, latestVersion, gc.logger) &&
-			shouldDeleteVersion(fs, references, gc.logger.WithValues("version", version))
+			shouldDeleteVersion(version, usedVersions)
 
 		if shouldDelete {
-			binaryPath := filepath.Join(gc.opts.RootDir, tenantUUID, "bin", version)
+			binaryPath := filepath.Join(binaryDir, version)
 			gc.logger.Info("deleting unused version", "version", version, "path", binaryPath)
 
-			removeUnusedVersion(fs, binaryPath, references, gc.logger)
+			removeUnusedVersion(fs, binaryPath, gc.logger)
 		}
 	}
 }
 
-func (gc *CSIGarbageCollector) getVersionReferences(tenantUUID string) ([]os.FileInfo, error) {
-	fs := &afero.Afero{Fs: gc.fs}
-
-	versionReferencesBase := filepath.Join(gc.opts.RootDir, tenantUUID, dtcsi.GarbageCollectionPath)
-	versionReferences, err := fs.ReadDir(versionReferencesBase)
+func (gc *CSIGarbageCollector) getUsedVersions(tenantUUID string) (map[string]bool, error) {
+	versions, err := gc.db.GetUsedVersions(tenantUUID)
 	if err != nil {
-		exists, _ := fs.DirExists(versionReferencesBase)
-		if !exists {
-			gc.logger.Info("skipped, version reference base directory not exists", "path", versionReferencesBase)
-			return nil, nil
-		}
 		return nil, errors.WithStack(err)
 	}
-
-	return versionReferences, nil
+	return versions, nil
 }
 
-func shouldDeleteVersion(fs *afero.Afero, references string, logger logr.Logger) bool {
-	podReferences, err := fs.ReadDir(references)
+func (gc *CSIGarbageCollector) getStoredVersions(fs *afero.Afero, binaryDir string) ([]string, error) {
+	versions := []string{}
+	bins, err := fs.ReadDir(binaryDir)
 	if err != nil {
-		logger.Info("skipped, failed to get references", "error", err)
-		return false
-
-	} else if len(podReferences) > 0 {
-		logger.Info("skipped, in use", "references", len(podReferences))
-		return false
+		return nil, errors.WithStack(err)
 	}
+	for _, bin := range bins {
+		versions = append(versions, bin.Name())
+	}
+	return versions, nil
+}
 
-	return true
+func shouldDeleteVersion(version string, usedVersions map[string]bool) bool {
+	return !usedVersions[version]
 }
 
 func isNotLatestVersion(version string, latestVersion string, logger logr.Logger) bool {
@@ -108,7 +102,7 @@ func isNotLatestVersion(version string, latestVersion string, logger logr.Logger
 	return true
 }
 
-func removeUnusedVersion(fs *afero.Afero, binaryPath string, references string, logger logr.Logger) {
+func removeUnusedVersion(fs *afero.Afero, binaryPath string, logger logr.Logger) {
 	size, _ := dirSize(fs, binaryPath)
 	err := fs.RemoveAll(binaryPath)
 	if err != nil {
@@ -116,10 +110,6 @@ func removeUnusedVersion(fs *afero.Afero, binaryPath string, references string, 
 	} else {
 		foldersRemovedMetric.Inc()
 		reclaimedMemoryMetric.Add(float64(size))
-	}
-
-	if err := fs.RemoveAll(references); err != nil {
-		logger.Info("delete failed", "path", references)
 	}
 }
 

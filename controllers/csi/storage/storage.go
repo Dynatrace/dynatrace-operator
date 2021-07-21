@@ -31,30 +31,6 @@ const (
 		PRIMARY KEY (UUID)
 	);`
 
-	latestVersionStatement = `
-	SELECT LatestVersion
-	FROM tenants
-	WHERE UUID = ?;
-	`
-
-	updateLatestVersionStatement = `
-	UPDATE tenants
-	SET LatestVersion = ?
-	WHERE UUID = ?;
-	`
-
-	getDynakubeStatement = `
-	SELECT Dynakube
-	FROM tenants
-	WHERE UUID = ?;
-	`
-
-	updateDynakubeStatement = `
-	UPDATE tenants
-	SET Dynakube = ?
-	WHERE UUID = ?;
-	`
-
 	insertTenantStatement = `
 	INSERT INTO tenants (UUID, LatestVersion, Dynakube)
 	VALUES (?,?,?);
@@ -89,6 +65,12 @@ const (
 	`
 
 	deletePodStatement = "DELETE FROM pods WHERE UID = ?;"
+
+	getUsedVersionsStatement = `
+	SELECT Version
+	FROM pods
+	WHERE TenantUUID = ?
+	`
 )
 
 var (
@@ -239,4 +221,28 @@ func (a *Access) DeletePod(pod *Pod) error {
 		return err
 	}
 	return nil
+}
+
+func (a *Access) GetUsedVersions(tenantUUID string) (map[string]bool, error) {
+	rows, err := a.conn.Query(getUsedVersionsStatement, tenantUUID)
+	if err != nil {
+		err = fmt.Errorf("couldn't get used version info for tenantUUID %s, err: %s", tenantUUID, err)
+		log.Error(err, err.Error())
+		return nil, err
+	}
+	versions := map[string]bool{}
+	defer rows.Close()
+	for rows.Next() {
+		var version string
+		err := rows.Scan(&version)
+		if err != nil {
+			err = fmt.Errorf("failed to scan from database for tenantUUID %s, err: %s", tenantUUID, err)
+			log.Error(err, err.Error())
+			return nil, err
+		}
+		if _, ok := versions[version]; !ok {
+			versions[version] = true
+		}
+	}
+	return versions, nil
 }
