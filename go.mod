@@ -17,7 +17,6 @@ require (
 	github.com/stretchr/testify v1.6.1
 	go.uber.org/zap v1.16.0
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
-	golang.org/x/tools v0.0.0-20201124115921-2c860bdd6e78 // indirect
 	google.golang.org/grpc v1.28.1
 	istio.io/api v0.0.0-20201217173512-1f62aaeb5ee3
 	istio.io/client-go v1.8.1
@@ -26,6 +25,6 @@ require (
 	k8s.io/apimachinery v0.19.4
 	k8s.io/client-go v0.19.4
 	k8s.io/utils v0.0.0-20200912215256-4140de9c8800
-	modernc.org/sqlite v1.11.2 // indirect
+	modernc.org/sqlite v1.11.2
 	sigs.k8s.io/controller-runtime v0.7.0
 )
