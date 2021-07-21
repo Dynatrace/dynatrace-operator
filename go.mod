@@ -8,6 +8,7 @@ require (
 	github.com/evanphx/json-patch v4.9.0+incompatible
 	github.com/go-logr/logr v0.3.0
 	github.com/klauspost/compress v1.11.3 // indirect
+	github.com/mattn/go-sqlite3 v1.14.8
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.7.1
 	github.com/prometheus/client_model v0.2.0
@@ -25,6 +26,5 @@ require (
 	k8s.io/apimachinery v0.19.4
 	k8s.io/client-go v0.19.4
 	k8s.io/utils v0.0.0-20200912215256-4140de9c8800
-	modernc.org/sqlite v1.11.2
 	sigs.k8s.io/controller-runtime v0.7.0
 )

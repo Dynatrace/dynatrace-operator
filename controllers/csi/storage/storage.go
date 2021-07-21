@@ -7,11 +7,11 @@ import (
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/logger"
-	_ "modernc.org/sqlite"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
-	driverName = "sqlite"
+	driverName = "sqlite3"
 
 	tenantsTableName       = "tenants"
 	tenantsCreateStatement = `
