@@ -69,7 +69,7 @@ const (
 	getUsedVersionsStatement = `
 	SELECT Version
 	FROM pods
-	WHERE TenantUUID = ?
+	WHERE TenantUUID = ?;
 	`
 )
 
