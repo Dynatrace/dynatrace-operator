@@ -197,15 +197,38 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 		return
 	}
 
-	if rec.Instance.Spec.CodeModules.Enabled && (rec.Instance.Spec.CodeModules.Volume == corev1.VolumeSource{}) {
+	checker, err := dtcsi.NewChecker(r.client, r.logger, "dynatrace")
+	if err != nil {
+		log.Error(err, "unable to create checker")
+		return
+	}
+	if rec.Instance.Spec.CodeModules.Enabled {
 		upd, err := dtcsi.NewReconciler(r.client, r.scheme, rec.Log, rec.Instance).Reconcile()
 		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "CSI driver reconciled") {
 			return
 		}
-	} else {
-		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dtcsi.DaemonSetName, Namespace: rec.Instance.Namespace}}
-		if err := r.ensureDeleted(&ds); rec.Error(err) {
+		if err = checker.Add(rec.Instance.Name); err != nil {
+			log.Error(err, "unable to add dynakube to config map",
+				"dynakube", rec.Instance.Name)
 			return
+		}
+	} else {
+		if err = checker.Remove(rec.Instance.Name); err != nil {
+			log.Error(err, "unable to remove dynakube from config map",
+				"dynakube", rec.Instance.Name)
+			return
+		}
+		hasEntries, err := checker.Any()
+		if err != nil {
+			log.Error(err, "unable to check if entries exist in config map")
+			return
+		}
+		if !hasEntries {
+			// no dynakubes with code modules exist anymore
+			ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dtcsi.DaemonSetName, Namespace: rec.Instance.Namespace}}
+			if err := r.ensureDeleted(&ds); rec.Error(err) {
+				return
+			}
 		}
 	}
 
