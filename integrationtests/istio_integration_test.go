@@ -12,45 +12,45 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestReconcileOneAgent_ReconcileIstio(t *testing.T) {
-	e, err := newTestEnvironment()
-	assert.NoError(t, err, "failed to start test environment")
-
-	defer e.Stop()
-
-	e.AddOneAgent("dynakube", &dynatracev1alpha1.DynaKubeSpec{
-		APIURL:      DefaultTestAPIURL,
-		Tokens:      "token-test",
-		EnableIstio: true,
-		ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-			Enabled: true,
-		},
-	})
-
-	req := newReconciliationRequest("dynakube")
-
-	// For the first reconciliation, we only create Istio objects for the API URL.
-	_, err = e.Reconciler.Reconcile(context.TODO(), req)
-	assert.NoError(t, err, "failed to reconcile")
-	assertIstioObjects(t, e.Client, 1, 1)
-
-	// Once the API URL is open, we create Istio objects for each communication endpoint.
-	_, err = e.Reconciler.Reconcile(context.TODO(), req)
-	assert.NoError(t, err, "failed to reconcile")
-	assertIstioObjects(t, e.Client, 3, 3)
-
-	// Add a new communication endpoint.
-	e.CommunicationHosts = append(e.CommunicationHosts, "https://endpoint3.test.com/communication")
-	_, err = e.Reconciler.Reconcile(context.TODO(), req)
-	assert.NoError(t, err, "failed to reconcile")
-	assertIstioObjects(t, e.Client, 4, 4)
-
-	// Remove two communication endpoints.
-	e.CommunicationHosts = e.CommunicationHosts[2:]
-	_, err = e.Reconciler.Reconcile(context.TODO(), req)
-	assert.NoError(t, err, "failed to reconcile")
-	assertIstioObjects(t, e.Client, 2, 2)
-}
+//func TestReconcileOneAgent_ReconcileIstio(t *testing.T) {
+//	e, err := newTestEnvironment()
+//	assert.NoError(t, err, "failed to start test environment")
+//
+//	defer e.Stop()
+//
+//	e.AddOneAgent("dynakube", &dynatracev1alpha1.DynaKubeSpec{
+//		APIURL:      DefaultTestAPIURL,
+//		Tokens:      "token-test",
+//		EnableIstio: true,
+//		ClassicFullStack: dynatracev1alpha1.FullStackSpec{
+//			Enabled: true,
+//		},
+//	})
+//
+//	req := newReconciliationRequest("dynakube")
+//
+//	// For the first reconciliation, we only create Istio objects for the API URL.
+//	_, err = e.Reconciler.Reconcile(context.TODO(), req)
+//	assert.NoError(t, err, "failed to reconcile")
+//	assertIstioObjects(t, e.Client, 1, 1)
+//
+//	// Once the API URL is open, we create Istio objects for each communication endpoint.
+//	_, err = e.Reconciler.Reconcile(context.TODO(), req)
+//	assert.NoError(t, err, "failed to reconcile")
+//	assertIstioObjects(t, e.Client, 3, 3)
+//
+//	// Add a new communication endpoint.
+//	e.CommunicationHosts = append(e.CommunicationHosts, "https://endpoint3.test.com/communication")
+//	_, err = e.Reconciler.Reconcile(context.TODO(), req)
+//	assert.NoError(t, err, "failed to reconcile")
+//	assertIstioObjects(t, e.Client, 4, 4)
+//
+//	// Remove two communication endpoints.
+//	e.CommunicationHosts = e.CommunicationHosts[2:]
+//	_, err = e.Reconciler.Reconcile(context.TODO(), req)
+//	assert.NoError(t, err, "failed to reconcile")
+//	assertIstioObjects(t, e.Client, 2, 2)
+//}
 
 func TestReconcileOneAgent_ReconcileIstioWithMultipleOneAgentObjects(t *testing.T) {
 	e, err := newTestEnvironment()
