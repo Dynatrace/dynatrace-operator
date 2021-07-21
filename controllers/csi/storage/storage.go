@@ -29,7 +29,7 @@ const (
 		VolumeID VARCHAR,
 		Version VARCHAR,
 		TenantUUID VARCHAR,
-		PRIMARY KEY (UUID)
+		PRIMARY KEY (UID)
 	);`
 
 	insertTenantStatement = `
