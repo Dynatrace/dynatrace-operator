@@ -22,18 +22,22 @@ import (
 )
 
 type Reconciler struct {
-	client   client.Client
-	scheme   *runtime.Scheme
-	logger   logr.Logger
-	instance *v1alpha1.DynaKube
+	client            client.Client
+	scheme            *runtime.Scheme
+	logger            logr.Logger
+	instance          *v1alpha1.DynaKube
+	operatorPodName   string
+	operatorNamespace string
 }
 
 func NewReconciler(client client.Client, scheme *runtime.Scheme, logger logr.Logger, instance *v1alpha1.DynaKube) *Reconciler {
 	return &Reconciler{
-		client:   client,
-		scheme:   scheme,
-		logger:   logger,
-		instance: instance,
+		client:            client,
+		scheme:            scheme,
+		logger:            logger,
+		instance:          instance,
+		operatorPodName:   os.Getenv("POD_NAME"),
+		operatorNamespace: os.Getenv("POD_NAMESPACE"),
 	}
 }
 
@@ -64,10 +68,7 @@ func (r *Reconciler) Reconcile() (bool, error) {
 
 func (r *Reconciler) getOperatorImage() (string, error) {
 	var operatorPod v1.Pod
-	operatorPodName := os.Getenv("POD_NAME")
-	operatorNamespace := os.Getenv("POD_NAMESPACE")
-
-	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: operatorPodName, Namespace: operatorNamespace}, &operatorPod); err != nil {
+	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: r.operatorPodName, Namespace: r.operatorNamespace}, &operatorPod); err != nil {
 		return "", errors.WithStack(err)
 	}
 
@@ -75,43 +76,7 @@ func (r *Reconciler) getOperatorImage() (string, error) {
 }
 
 func buildDesiredCSIDaemonSet(operatorImage string) (*appsv1.DaemonSet, error) {
-	metadata := prepareMetadata()
-	driver := prepareDriverSpec(operatorImage)
-	registrar := prepareRegistrarSpec(operatorImage)
-	livenessprobe := preparelivenessProbeSpec(operatorImage)
-	vol := prepareVolumes()
-
-	ds := &appsv1.DaemonSet{
-		ObjectMeta: metadata,
-		Spec: appsv1.DaemonSetSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"internal.oneagent.dynatrace.com/component": "csi-driver",
-					"internal.oneagent.dynatrace.com/app":       "csi-driver",
-				},
-			},
-			Template: v1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						"kubectl.kubernetes.io/default-logs-container": "driver",
-					},
-					Labels: map[string]string{
-						"internal.oneagent.dynatrace.com/component": "csi-driver",
-						"internal.oneagent.dynatrace.com/app":       "csi-driver",
-					},
-				},
-				Spec: v1.PodSpec{
-					Containers: []v1.Container{
-						driver,
-						registrar,
-						livenessprobe,
-					},
-					ServiceAccountName: DaemonSetName,
-					Volumes:            vol,
-				},
-			},
-		},
-	}
+	ds := prepareDaemonSet(operatorImage)
 
 	dsHash, err := generateDaemonSetHash(ds)
 	if err != nil {
@@ -120,6 +85,48 @@ func buildDesiredCSIDaemonSet(operatorImage string) (*appsv1.DaemonSet, error) {
 	ds.Annotations[statefulset.AnnotationTemplateHash] = dsHash
 
 	return ds, nil
+}
+
+func prepareDaemonSet(operatorImage string) *appsv1.DaemonSet {
+	metadata := prepareMetadata()
+	labels := prepareDaemonSetLabels()
+	driver := prepareDriverSpec(operatorImage)
+	registrar := prepareRegistrarSpec(operatorImage)
+	livenessprobe := preparelivenessProbeSpec(operatorImage)
+	volumes := prepareVolumes()
+
+	return &appsv1.DaemonSet{
+		ObjectMeta: metadata,
+		Spec: appsv1.DaemonSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			Template: v1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{
+						"kubectl.kubernetes.io/default-logs-container": "driver",
+					},
+					Labels: labels,
+				},
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						driver,
+						registrar,
+						livenessprobe,
+					},
+					ServiceAccountName: DaemonSetName,
+					Volumes:            volumes,
+				},
+			},
+		},
+	}
+}
+
+func prepareDaemonSetLabels() map[string]string {
+	return map[string]string{
+		"internal.oneagent.dynatrace.com/component": "csi-driver",
+		"internal.oneagent.dynatrace.com/app":       "csi-driver",
+	}
 }
 
 func generateDaemonSetHash(ds *appsv1.DaemonSet) (string, error) {
@@ -151,7 +158,9 @@ func prepareMetadata() metav1.ObjectMeta {
 func prepareDriverSpec(operatorImage string) v1.Container {
 	privileged := true
 	userID := int64(0)
-	bidirectional := v1.MountPropagationBidirectional
+	envVars := prepareDriverEnvVars()
+	livenessProbe := prepareDriverLivenessProbe()
+	volumeMounts := prepareDriverVolumeMounts()
 
 	return v1.Container{
 		Name:    "driver",
@@ -162,25 +171,7 @@ func prepareDriverSpec(operatorImage string) v1.Container {
 			"--node-id=$(KUBE_NODE_NAME)",
 			"--health-probe-bind-address=:10080",
 		},
-		Env: []v1.EnvVar{
-			{
-				Name: "POD_NAMESPACE",
-				ValueFrom: &v1.EnvVarSource{
-					FieldRef: &v1.ObjectFieldSelector{
-						FieldPath: "metadata.namespace",
-					},
-				},
-			},
-			{
-				Name: "KUBE_NODE_NAME",
-				ValueFrom: &v1.EnvVarSource{
-					FieldRef: &v1.ObjectFieldSelector{
-						APIVersion: "v1",
-						FieldPath:  "spec.nodeName",
-					},
-				},
-			},
-		},
+		Env:             envVars,
 		ImagePullPolicy: v1.PullAlways,
 		Ports: []v1.ContainerPort{
 			{
@@ -189,20 +180,7 @@ func prepareDriverSpec(operatorImage string) v1.Container {
 				ContainerPort: 10080,
 			},
 		},
-		LivenessProbe: &v1.Probe{
-			FailureThreshold:    3,
-			InitialDelaySeconds: 5,
-			PeriodSeconds:       5,
-			SuccessThreshold:    1,
-			TimeoutSeconds:      1,
-			Handler: v1.Handler{
-				HTTPGet: &v1.HTTPGetAction{
-					Path:   "/healthz",
-					Port:   intstr.FromString("healthz"),
-					Scheme: "HTTP",
-				},
-			},
-		},
+		LivenessProbe: &livenessProbe,
 		SecurityContext: &v1.SecurityContext{
 			Privileged: &privileged,
 			RunAsUser:  &userID,
@@ -210,32 +188,78 @@ func prepareDriverSpec(operatorImage string) v1.Container {
 				Level: "s0",
 			},
 		},
-		VolumeMounts: []v1.VolumeMount{
-			{
-				Name:      "plugin-dir",
-				MountPath: "/csi",
+		VolumeMounts: volumeMounts,
+	}
+}
+
+func prepareDriverEnvVars() []v1.EnvVar {
+	return []v1.EnvVar{
+		{
+			Name: "POD_NAMESPACE",
+			ValueFrom: &v1.EnvVarSource{
+				FieldRef: &v1.ObjectFieldSelector{
+					FieldPath: "metadata.namespace",
+				},
 			},
-			{
-				Name:             "plugins-dir",
-				MountPath:        "/var/lib/kubelet/plugins",
-				MountPropagation: &bidirectional,
+		},
+		{
+			Name: "KUBE_NODE_NAME",
+			ValueFrom: &v1.EnvVarSource{
+				FieldRef: &v1.ObjectFieldSelector{
+					APIVersion: "v1",
+					FieldPath:  "spec.nodeName",
+				},
 			},
-			{
-				Name:             "mountpoint-dir",
-				MountPath:        "/var/lib/kubelet/pods",
-				MountPropagation: &bidirectional,
+		},
+	}
+}
+
+func prepareDriverLivenessProbe() v1.Probe {
+	return v1.Probe{
+		FailureThreshold:    3,
+		InitialDelaySeconds: 5,
+		PeriodSeconds:       5,
+		SuccessThreshold:    1,
+		TimeoutSeconds:      1,
+		Handler: v1.Handler{
+			HTTPGet: &v1.HTTPGetAction{
+				Path:   "/healthz",
+				Port:   intstr.FromString("healthz"),
+				Scheme: "HTTP",
 			},
-			{
-				Name:             "dynatrace-oneagent-data-dir",
-				MountPath:        "/data",
-				MountPropagation: &bidirectional,
-			},
+		},
+	}
+}
+
+func prepareDriverVolumeMounts() []v1.VolumeMount {
+	bidirectional := v1.MountPropagationBidirectional
+	return []v1.VolumeMount{
+		{
+			Name:      "plugin-dir",
+			MountPath: "/csi",
+		},
+		{
+			Name:             "plugins-dir",
+			MountPath:        "/var/lib/kubelet/plugins",
+			MountPropagation: &bidirectional,
+		},
+		{
+			Name:             "mountpoint-dir",
+			MountPath:        "/var/lib/kubelet/pods",
+			MountPropagation: &bidirectional,
+		},
+		{
+			Name:             "dynatrace-oneagent-data-dir",
+			MountPath:        "/data",
+			MountPropagation: &bidirectional,
 		},
 	}
 }
 
 func prepareRegistrarSpec(operatorImage string) v1.Container {
 	userID := int64(0)
+	livenessProbe := prepareRegistrarLivenessProbe()
+	volumeMounts := prepareRegistrarVolumeMounts()
 
 	return v1.Container{
 		Name:            "registrar",
@@ -255,28 +279,36 @@ func prepareRegistrarSpec(operatorImage string) v1.Container {
 				ContainerPort: 9809,
 			},
 		},
-		LivenessProbe: &v1.Probe{
-			InitialDelaySeconds: 5,
-			TimeoutSeconds:      5,
-			Handler: v1.Handler{
-				HTTPGet: &v1.HTTPGetAction{
-					Path: "/healthz",
-					Port: intstr.FromString("healthz"),
-				},
-			},
-		},
+		LivenessProbe: &livenessProbe,
 		SecurityContext: &v1.SecurityContext{
 			RunAsUser: &userID,
 		},
-		VolumeMounts: []v1.VolumeMount{
-			{
-				Name:      "plugin-dir",
-				MountPath: "/csi",
+		VolumeMounts: volumeMounts,
+	}
+}
+
+func prepareRegistrarLivenessProbe() v1.Probe {
+	return v1.Probe{
+		InitialDelaySeconds: 5,
+		TimeoutSeconds:      5,
+		Handler: v1.Handler{
+			HTTPGet: &v1.HTTPGetAction{
+				Path: "/healthz",
+				Port: intstr.FromString("healthz"),
 			},
-			{
-				Name:      "registration-dir",
-				MountPath: "/registration",
-			},
+		},
+	}
+}
+
+func prepareRegistrarVolumeMounts() []v1.VolumeMount {
+	return []v1.VolumeMount{
+		{
+			Name:      "plugin-dir",
+			MountPath: "/csi",
+		},
+		{
+			Name:      "registration-dir",
+			MountPath: "/registration",
 		},
 	}
 }
