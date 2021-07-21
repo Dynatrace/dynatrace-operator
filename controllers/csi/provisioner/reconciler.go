@@ -126,13 +126,14 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	if err = r.updateAgent(dk, tenant, dtc, envDir, rlog); err != nil {
 		return reconcile.Result{}, err
 	}
-
 	if oldTenant != *tenant {
 		var err error
 		// New tenants doesn't have these fields set in the beginning
-		if oldTenant.Dynakube != "" && oldTenant.LatestVersion == "" {
+		if oldTenant.Dynakube == "" && oldTenant.LatestVersion == "" {
+			log.Info("Adding tenant:", "uuid", tenant.UUID, "version", tenant.LatestVersion, "dynakube", tenant.Dynakube)
 			err = r.db.InsertTenant(tenant)
 		} else {
+			log.Info("Updateing tenant:", "uuid", tenant.UUID, "oldVersion", oldTenant.LatestVersion, "newVersion", tenant.LatestVersion, "oldDynakube", oldTenant.Dynakube, "newDynakube", tenant.Dynakube)
 			err = r.db.UpdateTenant(tenant)
 		}
 		if err != nil {

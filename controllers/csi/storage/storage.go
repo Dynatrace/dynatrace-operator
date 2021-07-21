@@ -181,7 +181,7 @@ func (a *Access) GetTenantViaDynakube(dynakube string) (*Tenant, error) {
 	var tenantUUID string
 	var latestVersion string
 	row := a.conn.QueryRow(getTenantViaDynakubeStatement, dynakube)
-	err := row.Scan(&tenantUUID)
+	err := row.Scan(&tenantUUID, &latestVersion)
 	if err != nil && err != sql.ErrNoRows {
 		err = fmt.Errorf("couldn't get tenant field for Dynakube %s, err: %s", dynakube, err)
 		log.Error(err, err.Error())
