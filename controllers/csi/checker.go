@@ -4,28 +4,27 @@ import (
 	"context"
 	"errors"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // ErrMissing is returned when there's a problem with the ConfigMap
 var ErrMissing = errors.New("config map is missing or invalid")
+var log = logf.Log.WithName("csi-checker")
 
 const configMapName = "csi-code-modules-checker-map"
 
 type Checker struct {
 	client    client.Client
-	logger    logr.Logger
 	namespace string
 }
 
-func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace string) (*Checker, error) {
+func NewChecker(kubernetesClient client.Client, namespace string) (*Checker, error) {
 	return &Checker{
 		client:    kubernetesClient,
-		logger:    logger,
 		namespace: namespace,
 	}, nil
 }
@@ -38,7 +37,7 @@ func (c *Checker) Add(dynakube string) error {
 		return ErrMissing
 	}
 
-	c.logger.Info("Adding Dynakube with CodeModules enabled",
+	log.Info("Adding Dynakube with CodeModules enabled",
 		"dynakube", dynakube)
 	configMap.Data[dynakube] = ""
 	return c.client.Update(context.TODO(), configMap)
@@ -52,7 +51,7 @@ func (c *Checker) Remove(dynakube string) error {
 		return ErrMissing
 	}
 
-	c.logger.Info("Removing Dynakube with CodeModules disabled",
+	log.Info("Removing Dynakube with CodeModules disabled",
 		"dynakube", dynakube)
 	delete(configMap.Data, dynakube)
 	return c.client.Update(context.TODO(), configMap)
@@ -66,7 +65,7 @@ func (c *Checker) Any() (bool, error) {
 		return false, ErrMissing
 	}
 
-	c.logger.Info("Checking if ConfigMap has entries")
+	log.Info("Checking if ConfigMap has entries")
 	return len(configMap.Data) > 0, nil
 }
 
@@ -78,7 +77,7 @@ func (c *Checker) loadConfigMap() (*corev1.ConfigMap, error) {
 		client.ObjectKey{Name: configMapName, Namespace: c.namespace},
 		configMap)
 	if err != nil {
-		c.logger.Error(err, "error getting config map from client")
+		log.Error(err, "error getting config map from client")
 	}
 
 	if k8serrors.IsNotFound(err) {
@@ -90,11 +89,11 @@ func (c *Checker) loadConfigMap() (*corev1.ConfigMap, error) {
 			},
 			Data: map[string]string{},
 		}
-		c.logger.Info("creating ConfigMap")
+		log.Info("creating ConfigMap")
 		err = c.client.Create(context.TODO(), configMap)
 	}
 	if err != nil {
-		c.logger.Error(err, "error loading config map")
+		log.Error(err, "error loading config map")
 	}
 	return configMap, err
 }
