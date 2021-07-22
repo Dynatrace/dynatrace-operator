@@ -23,20 +23,23 @@ type Checker struct {
 }
 
 func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace string) (*Checker, error) {
-	var configMap corev1.ConfigMap
+	configMap := &corev1.ConfigMap{}
 	// check for existing config map
-	err := kubernetesClient.Get(context.TODO(), client.ObjectKey{Name: configMapName, Namespace: namespace}, &configMap)
+	err := kubernetesClient.Get(
+		context.TODO(),
+		client.ObjectKey{Name: configMapName, Namespace: namespace},
+		configMap)
 
 	if k8serrors.IsNotFound(err) {
 		// create config map
-		configMap = corev1.ConfigMap{
+		configMap = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      configMapName,
 				Namespace: namespace,
 			},
 			Data: map[string]string{},
 		}
-		err = kubernetesClient.Create(context.TODO(), &configMap)
+		err = kubernetesClient.Create(context.TODO(), configMap)
 	}
 	if err != nil {
 		return nil, err
@@ -46,7 +49,7 @@ func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace st
 	return &Checker{
 		client:    kubernetesClient,
 		logger:    logger,
-		configMap: &configMap,
+		configMap: configMap,
 	}, nil
 }
 
