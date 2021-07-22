@@ -197,7 +197,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 		return
 	}
 
-	checker, err := dtcsi.NewChecker(r.client, r.logger, "dynatrace")
+	checker, err := dtcsi.NewChecker(r.client, rec.Log, "dynatrace")
 	if err != nil {
 		log.Error(err, "unable to create checker")
 		return
