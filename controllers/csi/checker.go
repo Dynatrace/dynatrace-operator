@@ -77,6 +77,9 @@ func (c *Checker) loadConfigMap() (*corev1.ConfigMap, error) {
 		context.TODO(),
 		client.ObjectKey{Name: configMapName, Namespace: c.namespace},
 		configMap)
+	if err != nil {
+		c.logger.Error(err, "error getting config map from client")
+	}
 
 	if k8serrors.IsNotFound(err) {
 		// create config map
@@ -89,6 +92,9 @@ func (c *Checker) loadConfigMap() (*corev1.ConfigMap, error) {
 		}
 		c.logger.Info("creating ConfigMap")
 		err = c.client.Create(context.TODO(), configMap)
+	}
+	if err != nil {
+		c.logger.Error(err, "error loading config map")
 	}
 	return configMap, err
 }
