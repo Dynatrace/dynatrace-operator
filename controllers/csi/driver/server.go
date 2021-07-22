@@ -220,9 +220,10 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount oneagent volume: %s", err.Error()))
 	}
 
-	if err = svr.db.DeletePod(pod); err != nil {
+	if err = svr.db.DeletePodInfo(pod); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	svr.log.Info("deleted pod info", "UID", pod.UID, "VolumeId", pod.VolumeID, "Version", pod.Version, "TenantUUID", pod.TenantUUID)
 
 	if err = svr.fs.RemoveAll(targetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -320,6 +321,7 @@ func (svr *CSIDriverServer) storePodInfo(bindCfg *bindConfig, volumeCfg *volumeC
 		Version:    bindCfg.version,
 		TenantUUID: bindCfg.tenantUUID,
 	}
+	svr.log.Info("inserting pod info", "UID", pod.UID, "VolumeId", pod.VolumeID, "Version", pod.Version, "TenantUUID", pod.TenantUUID)
 	return svr.db.InsertPod(&pod)
 }
 
@@ -328,6 +330,7 @@ func (svr *CSIDriverServer) loadPodInfo(volumeID string) (*storage.Pod, error) {
 	if err != nil {
 		return nil, err
 	}
+	svr.log.Info("loaded pod info", "UID", pod.UID, "VolumeId", pod.VolumeID, "Version", pod.Version, "TenantUUID", pod.TenantUUID)
 	return pod, nil
 }
 

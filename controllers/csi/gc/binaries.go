@@ -42,19 +42,22 @@ func init() {
 
 func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, latestVersion string) {
 	fs := &afero.Afero{Fs: gc.fs}
+	binaryDir := filepath.Join(gc.opts.RootDir, tenantUUID, "bin")
 	gcRunsMetric.Inc()
 
-	binaryDir := filepath.Join(gc.opts.RootDir, tenantUUID, "bin")
 	usedVersions, err := gc.getUsedVersions(tenantUUID)
 	if err != nil {
 		gc.logger.Info("failed to get used versions", "error", err)
 		return
 	}
+	gc.logger.Info("got all used versions", "tenantUUID", tenantUUID, "len(usedVersions)", len(usedVersions))
+
 	storedVersions, err := gc.getStoredVersions(fs, binaryDir)
 	if err != nil {
 		gc.logger.Info("failed to get stored versions", "error", err)
 		return
 	}
+	gc.logger.Info("got all stored versions", "tenantUUID", tenantUUID, "len(storedVersions)", len(storedVersions))
 
 	for _, version := range storedVersions {
 		shouldDelete := isNotLatestVersion(version, latestVersion, gc.logger) &&
