@@ -42,6 +42,7 @@ func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace st
 		return nil, err
 	}
 
+	logger.Info("creating checker", "configmap", configMap)
 	return &Checker{
 		client:    kubernetesClient,
 		logger:    logger,
@@ -53,6 +54,7 @@ func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace st
 // Should happen when Dynakube was created or setting was enabled.
 func (c *Checker) Add(dynakube string) error {
 	if c.configMap.Data == nil {
+		c.logger.Info("error adding value", "configmap", c.configMap)
 		return ErrMissing
 	}
 
