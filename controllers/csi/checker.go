@@ -76,7 +76,7 @@ func (c *Checker) Any() (bool, error) {
 	}
 
 	c.logger.Info("Checking if ConfigMap has entries")
-	return len(configMap.Data) > 0, nil
+	return len(configMap.Data) > 1, nil
 }
 
 func (c *Checker) loadConfigMap() (*corev1.ConfigMap, error) {
@@ -97,7 +97,9 @@ func (c *Checker) loadConfigMap() (*corev1.ConfigMap, error) {
 				Name:      configMapName,
 				Namespace: c.namespace,
 			},
-			Data: map[string]string{},
+			Data: map[string]string{
+				"empty": "",
+			},
 		}
 		c.logger.Info("creating ConfigMap")
 		err = c.client.Create(context.TODO(), configMap)
