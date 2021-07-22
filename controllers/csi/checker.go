@@ -34,7 +34,10 @@ func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace st
 // Should happen when Dynakube was created or setting was enabled.
 func (c *Checker) Add(dynakube string) error {
 	configMap, err := c.loadConfigMap()
-	if err != nil || configMap.Data == nil {
+	if err != nil {
+		return err
+	}
+	if configMap.Data == nil {
 		return ErrMissing
 	}
 
@@ -48,7 +51,10 @@ func (c *Checker) Add(dynakube string) error {
 // Should happen when Dynakube was deleted or setting was disabled.
 func (c *Checker) Remove(dynakube string) error {
 	configMap, err := c.loadConfigMap()
-	if err != nil || configMap.Data == nil {
+	if err != nil {
+		return err
+	}
+	if configMap.Data == nil {
 		return ErrMissing
 	}
 
@@ -62,7 +68,10 @@ func (c *Checker) Remove(dynakube string) error {
 // If entries exist, there are Dynakubes with CodeModules enabled.
 func (c *Checker) Any() (bool, error) {
 	configMap, err := c.loadConfigMap()
-	if err != nil || configMap.Data == nil {
+	if err != nil {
+		return false, err
+	}
+	if configMap.Data == nil {
 		return false, ErrMissing
 	}
 
