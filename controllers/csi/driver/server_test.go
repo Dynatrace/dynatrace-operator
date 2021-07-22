@@ -3,13 +3,12 @@ package csidriver
 import (
 	"context"
 	"fmt"
-	"io/fs"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -137,6 +136,7 @@ func TestServer_NodePublishVolume(t *testing.T) {
 		VolumeId: volumeId,
 		VolumeContext: map[string]string{
 			podNamespaceContextKey: namespace,
+			podUIDContextKey:       podUID,
 		},
 		TargetPath: testTargetPath,
 		VolumeCapability: &csi.VolumeCapability{
@@ -150,7 +150,7 @@ func TestServer_NodePublishVolume(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, response)
 	assert.NotEmpty(t, mounter.MountPoints)
-	assertReferencesForPublishedVolume(t, mounter, server.fs)
+	assertReferencesForPublishedVolume(t, &server, mounter)
 }
 
 func TestServer_NodeUnpublishVolume(t *testing.T) {
@@ -173,13 +173,13 @@ func TestServer_NodeUnpublishVolume(t *testing.T) {
 
 		response, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
 
-		assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
+		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
 		assert.Empty(t, mounter.MountPoints)
-		assertNoReferencesForUnpublishedVolume(t, server.fs)
+		assertNoReferencesForUnpublishedVolume(t, &server)
 	})
 
 	t.Run(`invalid metadata`, func(t *testing.T) {
@@ -192,13 +192,13 @@ func TestServer_NodeUnpublishVolume(t *testing.T) {
 
 		response, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
 
-		assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
+		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
-		assertNoReferencesForUnpublishedVolume(t, server.fs)
+		assertNoReferencesForUnpublishedVolume(t, &server)
 	})
 }
 
@@ -208,6 +208,7 @@ func TestCSIDriverServer_NodePublishAndUnpublishVolume(t *testing.T) {
 		VolumeId: volumeId,
 		VolumeContext: map[string]string{
 			podNamespaceContextKey: namespace,
+			podUIDContextKey:       podUID,
 		},
 		TargetPath: testTargetPath,
 		VolumeCapability: &csi.VolumeCapability{
@@ -230,46 +231,45 @@ func TestCSIDriverServer_NodePublishAndUnpublishVolume(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, publishResponse)
 	assert.NotEmpty(t, mounter.MountPoints)
-	assertReferencesForPublishedVolume(t, mounter, server.fs)
+	assertReferencesForPublishedVolume(t, &server, mounter)
 
 	unpublishResponse, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
 
-	assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
+	assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
 	assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
 	assert.NoError(t, err)
 	assert.NotNil(t, unpublishResponse)
 	assert.Empty(t, mounter.MountPoints)
-	assertNoReferencesForUnpublishedVolume(t, server.fs)
+	assertNoReferencesForUnpublishedVolume(t, &server)
 }
 
-func TestCreateAndLoadVolumeMetadata(t *testing.T) {
+func TestStoreAndLoadPodInfo(t *testing.T) {
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
 	server := newServerForTesting(t, mounter)
 
-	metadataPath := filepath.Join(server.opts.RootDir, dtcsi.GarbageCollectionPath)
-	err := server.fs.MkdirAll(metadataPath, os.ModePerm)
-	assert.NoError(t, err)
-
 	bindCfg := &bindConfig{
-		agentDir:                    "",
-		envDir:                      tenantUuid,
-		version:                     agentVersion,
-		volumeToVersionReferenceDir: filepath.Join(tenantUuid, dtcsi.GarbageCollectionPath, agentVersion),
+		agentDir:   "",
+		envDir:     tenantUuid,
+		version:    agentVersion,
+		tenantUUID: tenantUuid,
 	}
 
-	err = server.storeVolumeMetadata(bindCfg, volumeId)
-	assert.NoError(t, err)
+	volumeCfg := volumeConfig{
+		volumeId:   volumeId,
+		targetPath: targetPath,
+		namespace:  namespace,
+		podUID:     podUID,
+	}
 
-	var metadata volumeMetadata
-	err = server.loadVolumeMetadata(filepath.Join(metadataPath, volumeId), &metadata)
+	err := server.storePodInfo(bindCfg, &volumeCfg)
 	assert.NoError(t, err)
-	assert.NotNil(t, metadata)
+	pod, err := server.loadPodInfo(volumeCfg.volumeId)
+	assert.NoError(t, err)
+	assert.NotNil(t, pod)
 }
 
 func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServer {
-	var err error
-
 	objects := []client.Object{
 		&v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -298,58 +298,47 @@ func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServ
 
 	tmpFs := afero.NewMemMapFs()
 
-	err = afero.WriteFile(tmpFs, filepath.Join(csiOptions.RootDir, "tenant-"+dkName), []byte(tenantUuid), os.ModePerm)
-	require.NoError(t, err)
-
 	return CSIDriverServer{
 		client:  fake.NewClient(objects...),
 		log:     logr.TestLogger{T: t},
 		opts:    csiOptions,
 		fs:      afero.Afero{Fs: tmpFs},
 		mounter: mounter,
+		db:      storage.FakeMemoryDB(),
 	}
 }
 
 func mockPublishedVolume(t *testing.T, server *CSIDriverServer) {
-	metadata := fmt.Sprintf("{\"OverlayFSPath\":\"/%s/run/%s\", \"UsageFilePath\":\"/%s/gc/%s/%s\"}", tenantUuid, volumeId, tenantUuid, agentVersion, volumeId)
-
-	err := server.fs.WriteFile(filepath.Join(server.opts.RootDir, "gc", volumeId), []byte(metadata), os.ModePerm)
+	mockOneAgent(t, server)
+	err := server.db.InsertPodInfo(&storage.Pod{UID: podUID, VolumeID: volumeId, Version: agentVersion, TenantUUID: tenantUuid})
 	require.NoError(t, err)
-
 	agentsVersionsMetric.WithLabelValues(agentVersion).Inc()
 }
 
 func mockOneAgent(t *testing.T, server *CSIDriverServer) {
-	err := afero.WriteFile(server.fs, filepath.Join(server.opts.RootDir, tenantUuid, dtcsi.VersionDir), []byte(agentVersion), fs.FileMode(0755))
+	err := server.db.InsertTenant(&storage.Tenant{UUID: tenantUuid, LatestVersion: agentVersion, Dynakube: dkName})
 	require.NoError(t, err)
 }
 
-func assertReferencesForPublishedVolume(t *testing.T, mounter *mount.FakeMounter, fs afero.Afero) {
+func assertReferencesForPublishedVolume(t *testing.T, server *CSIDriverServer, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
-
-	metadataPath := filepath.Join("/", "gc", volumeId)
-	exists, err := fs.Exists(metadataPath)
+	pod, err := server.loadPodInfo(volumeId)
 	assert.NoError(t, err)
-	assert.True(t, exists)
-
-	versionReferencePath := filepath.Join("/", tenantUuid, "gc", agentVersion)
-	exists, err = fs.Exists(versionReferencePath)
-	assert.NoError(t, err)
-	assert.True(t, exists)
+	assert.Equal(t, pod.UID, podUID)
+	assert.Equal(t, pod.VolumeID, volumeId)
+	assert.Equal(t, pod.Version, agentVersion)
+	assert.Equal(t, pod.TenantUUID, tenantUuid)
 }
 
-func assertNoReferencesForUnpublishedVolume(t *testing.T, fs afero.Afero) {
-	metadataPath := filepath.Join("/", "gc", volumeId)
-	exists, err := fs.Exists(metadataPath)
+func assertNoReferencesForUnpublishedVolume(t *testing.T, server *CSIDriverServer) {
+	pod, err := server.loadPodInfo(volumeId)
 	assert.NoError(t, err)
-	assert.False(t, exists)
-
-	versionReferencePath := filepath.Join("/", tenantUuid, "gc", agentVersion, volumeId)
-	exists, err = fs.Exists(versionReferencePath)
-	assert.NoError(t, err)
-	assert.False(t, exists)
+	assert.Equal(t, pod.UID, "")
+	assert.Equal(t, pod.VolumeID, volumeId)
+	assert.Equal(t, pod.Version, "")
+	assert.Equal(t, pod.TenantUUID, "")
 }
 
 func resetMetrics() {
-	agentsVersionsMetric.DeleteLabelValues(agentVersion)
+	agentsVersionsMetric.WithLabelValues(agentVersion).Set(0)
 }

@@ -322,7 +322,7 @@ func (svr *CSIDriverServer) storePodInfo(bindCfg *bindConfig, volumeCfg *volumeC
 		TenantUUID: bindCfg.tenantUUID,
 	}
 	svr.log.Info("inserting pod info", "UID", pod.UID, "VolumeId", pod.VolumeID, "Version", pod.Version, "TenantUUID", pod.TenantUUID)
-	return svr.db.InsertPod(&pod)
+	return svr.db.InsertPodInfo(&pod)
 }
 
 func (svr *CSIDriverServer) loadPodInfo(volumeID string) (*storage.Pod, error) {
