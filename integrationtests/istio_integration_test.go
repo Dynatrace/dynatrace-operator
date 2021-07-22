@@ -2,15 +2,6 @@
 
 package integrationtests
 
-import (
-	"context"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
 //func TestReconcileOneAgent_ReconcileIstio(t *testing.T) {
 //	e, err := newTestEnvironment()
 //	assert.NoError(t, err, "failed to start test environment")
@@ -113,35 +104,35 @@ import (
 //	assertIstioObjects(t, e.Client, 4, 4)
 //}
 
-// assertIstioObjects confirms that we have the expected number of ServiceEntry and VirtualService objects, set by ese and evs respectively.
-func assertIstioObjects(t *testing.T, c client.Client, ese, evs int) {
-	var lst []string
-
-	lst = findServiceEntries(t, c)
-	assert.Equal(t, ese, len(lst), "unexpected number of ServiceEntry objects: %v", lst)
-
-	lst = findVirtualServices(t, c)
-	assert.Equal(t, evs, len(lst), "unexpected number of VirtualService objects: %v", lst)
-}
-
-func findServiceEntries(t *testing.T, c client.Client) []string {
-	var lst istiov1alpha3.ServiceEntryList
-	assert.NoError(t, c.List(context.TODO(), &lst), "failed to query ServiceEntry objects")
-
-	var out []string
-	for _, x := range lst.Items {
-		out = append(out, x.Spec.Hosts...)
-	}
-	return out
-}
-
-func findVirtualServices(t *testing.T, c client.Client) []string {
-	var lst istiov1alpha3.VirtualServiceList
-	assert.NoError(t, c.List(context.TODO(), &lst), "failed to query VirtualService objects")
-
-	var out []string
-	for _, x := range lst.Items {
-		out = append(out, x.Spec.Hosts...)
-	}
-	return out
-}
+//// assertIstioObjects confirms that we have the expected number of ServiceEntry and VirtualService objects, set by ese and evs respectively.
+//func assertIstioObjects(t *testing.T, c client.Client, ese, evs int) {
+//	var lst []string
+//
+//	lst = findServiceEntries(t, c)
+//	assert.Equal(t, ese, len(lst), "unexpected number of ServiceEntry objects: %v", lst)
+//
+//	lst = findVirtualServices(t, c)
+//	assert.Equal(t, evs, len(lst), "unexpected number of VirtualService objects: %v", lst)
+//}
+//
+//func findServiceEntries(t *testing.T, c client.Client) []string {
+//	var lst istiov1alpha3.ServiceEntryList
+//	assert.NoError(t, c.List(context.TODO(), &lst), "failed to query ServiceEntry objects")
+//
+//	var out []string
+//	for _, x := range lst.Items {
+//		out = append(out, x.Spec.Hosts...)
+//	}
+//	return out
+//}
+//
+//func findVirtualServices(t *testing.T, c client.Client) []string {
+//	var lst istiov1alpha3.VirtualServiceList
+//	assert.NoError(t, c.List(context.TODO(), &lst), "failed to query VirtualService objects")
+//
+//	var out []string
+//	for _, x := range lst.Items {
+//		out = append(out, x.Spec.Hosts...)
+//	}
+//	return out
+//}
