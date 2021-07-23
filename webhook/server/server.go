@@ -30,9 +30,9 @@ import (
 )
 
 const (
-	InjectEvent          = "Inject"
-	UpdatePodEvent       = "UpdatePod"
-	MissingDynakubeEvent = "MissingDynakube"
+	injectEvent          = "Inject"
+	updatePodEvent       = "UpdatePod"
+	missingDynakubeEvent = "MissingDynakube"
 )
 
 var logger = log.Log.WithName("oneagent.webhook")
@@ -160,7 +160,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		m.recorder.Eventf(
 			&dynatracev1alpha1.DynaKube{ObjectMeta: v1.ObjectMeta{Name: "placeholder", Namespace: m.namespace}},
 			corev1.EventTypeWarning,
-			MissingDynakubeEvent,
+			missingDynakubeEvent,
 			template, req.Namespace, oaName)
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf(
 			template, req.Namespace, oaName))
@@ -219,7 +219,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 				logger.Info("updating pod with missing containers")
 				m.recorder.Eventf(&oa,
 					corev1.EventTypeNormal,
-					UpdatePodEvent,
+					updatePodEvent,
 					"Updating pod %s in namespace %s with missing containers", pod.GenerateName, pod.Namespace)
 				return getResponse(pod, &req)
 			}
@@ -326,7 +326,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	m.recorder.Eventf(&oa,
 		corev1.EventTypeNormal,
-		InjectEvent,
+		injectEvent,
 		"Injecting the necessary info into pod %s in namespace %s", basePodName, ns.Name)
 	return getResponse(pod, &req)
 }

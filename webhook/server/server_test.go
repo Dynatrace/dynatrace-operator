@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	testVersion = "test-version"
+	testVersion                 = "test-version"
+	fakeEventRecorderBufferSize = 10
 )
 
 func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
@@ -43,7 +44,7 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 		decoder:   decoder,
 		image:     "operator-image",
 		namespace: "dynatrace",
-		recorder:  record.NewFakeRecorder(10),
+		recorder:  record.NewFakeRecorder(fakeEventRecorderBufferSize),
 	}
 
 	basePod := corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "test-pod-123456", Namespace: "test-namespace"}}
@@ -65,7 +66,7 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 		t_utils.Events{
 			t_utils.Event{
 				EventType: corev1.EventTypeWarning,
-				Reason:    MissingDynakubeEvent,
+				Reason:    missingDynakubeEvent,
 			},
 		},
 	)
@@ -114,7 +115,7 @@ func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, 
 		decoder:   decoder,
 		image:     "test-api-url.com/linux/codemodule",
 		namespace: "dynatrace",
-		recorder:  record.NewFakeRecorder(10),
+		recorder:  record.NewFakeRecorder(fakeEventRecorderBufferSize),
 	}, dynakube
 }
 
@@ -198,7 +199,7 @@ func TestPodInjection(t *testing.T) {
 		t_utils.Events{
 			t_utils.Event{
 				EventType: corev1.EventTypeNormal,
-				Reason:    InjectEvent,
+				Reason:    injectEvent,
 			},
 		},
 	)
@@ -271,7 +272,7 @@ func TestPodInjectionWithCSI(t *testing.T) {
 		t_utils.Events{
 			t_utils.Event{
 				EventType: corev1.EventTypeNormal,
-				Reason:    InjectEvent,
+				Reason:    injectEvent,
 			},
 		},
 	)
@@ -332,7 +333,7 @@ func TestUseImmutableImage(t *testing.T) {
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
-			recorder:  record.NewFakeRecorder(10),
+			recorder:  record.NewFakeRecorder(fakeEventRecorderBufferSize),
 		}
 
 		basePod := corev1.Pod{
@@ -396,7 +397,7 @@ func TestUseImmutableImage(t *testing.T) {
 			t_utils.Events{
 				t_utils.Event{
 					EventType: corev1.EventTypeNormal,
-					Reason:    InjectEvent,
+					Reason:    injectEvent,
 				},
 			},
 		)
@@ -421,7 +422,7 @@ func TestUseImmutableImage(t *testing.T) {
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
-			recorder:  record.NewFakeRecorder(10),
+			recorder:  record.NewFakeRecorder(fakeEventRecorderBufferSize),
 		}
 
 		basePod := corev1.Pod{
@@ -485,7 +486,7 @@ func TestUseImmutableImage(t *testing.T) {
 			t_utils.Events{
 				t_utils.Event{
 					EventType: corev1.EventTypeNormal,
-					Reason:    InjectEvent,
+					Reason:    injectEvent,
 				},
 			},
 		)
@@ -511,7 +512,7 @@ func TestUseImmutableImage(t *testing.T) {
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
-			recorder:  record.NewFakeRecorder(10),
+			recorder:  record.NewFakeRecorder(fakeEventRecorderBufferSize),
 		}
 
 		basePod := corev1.Pod{
@@ -571,7 +572,7 @@ func TestUseImmutableImage(t *testing.T) {
 			t_utils.Events{
 				t_utils.Event{
 					EventType: corev1.EventTypeNormal,
-					Reason:    InjectEvent,
+					Reason:    injectEvent,
 				},
 			},
 		)
@@ -598,7 +599,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
-			recorder:  record.NewFakeRecorder(10),
+			recorder:  record.NewFakeRecorder(fakeEventRecorderBufferSize),
 		}
 
 		basePod := corev1.Pod{
@@ -655,7 +656,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 			t_utils.Events{
 				t_utils.Event{
 					EventType: corev1.EventTypeNormal,
-					Reason:    InjectEvent,
+					Reason:    injectEvent,
 				},
 			},
 		)
@@ -679,7 +680,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
-			recorder:  record.NewFakeRecorder(10),
+			recorder:  record.NewFakeRecorder(fakeEventRecorderBufferSize),
 		}
 
 		basePod := corev1.Pod{
@@ -736,7 +737,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 			t_utils.Events{
 				t_utils.Event{
 					EventType: corev1.EventTypeNormal,
-					Reason:    InjectEvent,
+					Reason:    injectEvent,
 				},
 			},
 		)
@@ -761,7 +762,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 			decoder:   decoder,
 			image:     "test-image",
 			namespace: "dynatrace",
-			recorder:  record.NewFakeRecorder(10),
+			recorder:  record.NewFakeRecorder(fakeEventRecorderBufferSize),
 		}
 
 		basePod := corev1.Pod{
@@ -814,7 +815,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 			t_utils.Events{
 				t_utils.Event{
 					EventType: corev1.EventTypeNormal,
-					Reason:    InjectEvent,
+					Reason:    injectEvent,
 				},
 			},
 		)
@@ -842,7 +843,7 @@ func TestAgentVersion(t *testing.T) {
 		decoder:   decoder,
 		image:     "test-image",
 		namespace: "dynatrace",
-		recorder:  record.NewFakeRecorder(10),
+		recorder:  record.NewFakeRecorder(fakeEventRecorderBufferSize),
 	}
 
 	basePod := corev1.Pod{
@@ -902,7 +903,7 @@ func TestAgentVersion(t *testing.T) {
 		t_utils.Events{
 			t_utils.Event{
 				EventType: corev1.EventTypeNormal,
-				Reason:    InjectEvent,
+				Reason:    injectEvent,
 			},
 		},
 	)
@@ -928,7 +929,7 @@ func TestAgentVersionWithCSI(t *testing.T) {
 		decoder:   decoder,
 		image:     "test-image",
 		namespace: "dynatrace",
-		recorder:  record.NewFakeRecorder(10),
+		recorder:  record.NewFakeRecorder(fakeEventRecorderBufferSize),
 	}
 
 	basePod := corev1.Pod{
@@ -981,7 +982,7 @@ func TestAgentVersionWithCSI(t *testing.T) {
 		t_utils.Events{
 			t_utils.Event{
 				EventType: corev1.EventTypeNormal,
-				Reason:    InjectEvent,
+				Reason:    injectEvent,
 			},
 		},
 	)
@@ -1183,7 +1184,7 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 		t_utils.Events{
 			t_utils.Event{
 				EventType: corev1.EventTypeNormal,
-				Reason:    UpdatePodEvent,
+				Reason:    updatePodEvent,
 			},
 		},
 	)
