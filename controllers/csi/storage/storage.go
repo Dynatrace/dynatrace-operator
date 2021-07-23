@@ -12,11 +12,25 @@ type Tenant struct {
 	Dynakube      string
 }
 
+func NewTenant(uuid, latestVersion, dynakube string) *Tenant {
+	if uuid == "" || latestVersion == "" || dynakube == "" {
+		return nil
+	}
+	return &Tenant{uuid, latestVersion, dynakube}
+}
+
 type Volume struct {
 	ID         string
 	PodUID     string
 	Version    string
 	TenantUUID string
+}
+
+func NewVolume(id, podUID, version, tenantUUID string) *Volume {
+	if id == "" || podUID == "" || version == "" || tenantUUID == "" {
+		return nil
+	}
+	return &Volume{id, podUID, version, tenantUUID}
 }
 
 type Access interface {
