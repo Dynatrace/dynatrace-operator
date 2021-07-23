@@ -112,6 +112,17 @@ type OneAgentSpec struct {
 	AutoUpdate *bool `json:"autoUpdate,omitempty"`
 }
 
+type ReadOnlySpec struct {
+	// Optional: Enable support for read only host-filesystems.
+	// Defaults to false
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable support for read-only host-filesystem",order=13,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	Enabled bool `json:"enabled,omitempty"`
+
+	// Mandatory if read-only filesystem support is enabled.
+	// Determines the volume to which the installation files are stored during installation of the OneAgent
+	InstallationVolume corev1.VolumeSource `json:"installationVolume,omitempty"`
+}
+
 type CodeModulesSpec struct {
 	// Enables code modules monitoring
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CodeModules Monitoring",order=14,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
@@ -180,6 +191,8 @@ type FullStackSpec struct {
 	// Defines if you want to use the immutable image or the installer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Use immutable image",order=28,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
+
+	ReadOnly ReadOnlySpec `json:"readOnly,omitempty"`
 }
 
 type DataIngestSpec struct {

@@ -3,7 +3,6 @@ package oneagent
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"hash/fnv"
 	"os"
 	"reflect"
@@ -309,7 +308,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 			},
 			Resources:       resources,
 			SecurityContext: secCtx,
-			VolumeMounts:    prepareVolumeMounts(instance),
+			VolumeMounts:    prepareVolumeMounts(instance, fs),
 		}},
 		HostNetwork:        true,
 		HostPID:            true,
@@ -355,7 +354,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 				},
 			},
 		},
-		Volumes: prepareVolumes(instance),
+		Volumes: prepareVolumes(instance, fs),
 	}
 
 	if instance.Status.OneAgent.UseImmutableImage {
@@ -404,168 +403,6 @@ func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *dynatracev1alpha1
 
 	p.Containers[0].Image = instance.ImmutableOneAgentImage()
 	return nil
-}
-
-func prepareVolumes(instance *dynatracev1alpha1.DynaKube) []corev1.Volume {
-	volumes := []corev1.Volume{
-		{
-			Name: "host-root",
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/",
-				},
-			},
-		},
-	}
-
-	if instance.Spec.TrustedCAs != "" {
-		volumes = append(volumes, corev1.Volume{
-			Name: "certs",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: instance.Spec.TrustedCAs,
-					},
-					Items: []corev1.KeyToPath{
-						{
-							Key:  "certs",
-							Path: "certs.pem",
-						},
-					},
-				},
-			},
-		})
-	}
-
-	return volumes
-}
-
-func prepareVolumeMounts(instance *dynatracev1alpha1.DynaKube) []corev1.VolumeMount {
-	volumeMounts := []corev1.VolumeMount{
-		{
-			Name:      "host-root",
-			MountPath: "/mnt/root",
-		},
-	}
-
-	if instance.Spec.TrustedCAs != "" {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      "certs",
-			MountPath: "/mnt/dynatrace/certs",
-		})
-	}
-
-	return volumeMounts
-}
-
-func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, feature string, clusterID string) []corev1.EnvVar {
-	type reservedEnvVar struct {
-		Name    string
-		Default func(ev *corev1.EnvVar)
-		Value   *corev1.EnvVar
-	}
-
-	reserved := []reservedEnvVar{
-		{
-			Name: "DT_K8S_NODE_NAME",
-			Default: func(ev *corev1.EnvVar) {
-				ev.ValueFrom = &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}
-			},
-		},
-		{
-			Name: "DT_K8S_CLUSTER_ID",
-			Default: func(ev *corev1.EnvVar) {
-				ev.Value = clusterID
-			},
-		},
-	}
-
-	if feature == InframonFeature {
-		reserved = append(reserved,
-			reservedEnvVar{
-				Name: "ONEAGENT_DISABLE_CONTAINER_INJECTION",
-				Default: func(ev *corev1.EnvVar) {
-					ev.Value = "true"
-				},
-			})
-	}
-
-	if !instance.Status.OneAgent.UseImmutableImage {
-		reserved = append(reserved,
-			reservedEnvVar{
-				Name: "ONEAGENT_INSTALLER_DOWNLOAD_TOKEN",
-				Default: func(ev *corev1.EnvVar) {
-					ev.ValueFrom = &corev1.EnvVarSource{
-						SecretKeyRef: &corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{Name: instance.Tokens()},
-							Key:                  utils.DynatracePaasToken,
-						},
-					}
-				},
-			},
-			reservedEnvVar{
-				Name: "ONEAGENT_INSTALLER_SCRIPT_URL",
-				Default: func(ev *corev1.EnvVar) {
-					ev.Value = fmt.Sprintf("%s/v1/deployment/installer/agent/unix/default/latest?arch=x86&flavor=default", instance.Spec.APIURL)
-				},
-			},
-			reservedEnvVar{
-				Name: "ONEAGENT_INSTALLER_SKIP_CERT_CHECK",
-				Default: func(ev *corev1.EnvVar) {
-					ev.Value = strconv.FormatBool(instance.Spec.SkipCertCheck)
-				},
-			})
-
-		if p := instance.Spec.Proxy; p != nil && (p.Value != "" || p.ValueFrom != "") {
-			reserved = append(reserved, reservedEnvVar{
-				Name: "https_proxy",
-				Default: func(ev *corev1.EnvVar) {
-					if p.ValueFrom != "" {
-						ev.ValueFrom = &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: instance.Spec.Proxy.ValueFrom},
-								Key:                  "proxy",
-							},
-						}
-					} else {
-						p.Value = instance.Spec.Proxy.Value
-					}
-				},
-			})
-		}
-	}
-
-	reservedMap := map[string]*reservedEnvVar{}
-	for i := range reserved {
-		reservedMap[reserved[i].Name] = &reserved[i]
-	}
-
-	// Split defined environment variables between those reserved and the rest
-
-	instanceEnv := fs.Env
-
-	var remaining []corev1.EnvVar
-	for i := range instanceEnv {
-		if p := reservedMap[instanceEnv[i].Name]; p != nil {
-			p.Value = &instanceEnv[i]
-			continue
-		}
-		remaining = append(remaining, instanceEnv[i])
-	}
-
-	// Add reserved environment variables in that order, and generate a default if unset.
-
-	var env []corev1.EnvVar
-	for i := range reserved {
-		ev := reserved[i].Value
-		if ev == nil {
-			ev = &corev1.EnvVar{Name: reserved[i].Name}
-			reserved[i].Default(ev)
-		}
-		env = append(env, *ev)
-	}
-
-	return append(env, remaining...)
 }
 
 func hasDaemonSetChanged(a, b *appsv1.DaemonSet) bool {
