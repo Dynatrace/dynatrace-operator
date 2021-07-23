@@ -276,7 +276,7 @@ spec:
   # of OneAgent traffic
   routing:
     # Enable Kubernetes routing functionality
-    enabled: false
+    enabled: true
 
     # Amount of replicas of activegate routing pods
     #
@@ -343,7 +343,7 @@ spec:
   # of Kubernetes environments
   kubernetesMonitoring:
     # Enable Kubernetes monitoring functionality
-    enabled: false
+    enabled: true
 
     # Amount of replicas of activegate pods
     #
