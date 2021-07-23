@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	mapper "github.com/Dynatrace/dynatrace-operator/namespacesmapper"
 	"net/http"
 	"time"
 
@@ -220,6 +221,13 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	} else {
 		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: rec.Instance.Name + "-classic", Namespace: rec.Instance.Namespace}}
 		if err := r.ensureDeleted(&ds); rec.Error(err) {
+			return
+		}
+	}
+
+	if rec.Instance.Spec.CodeModules.Enabled || rec.Instance.Spec.DataIngestSpec.Enabled {
+		if err := mapper.MapFromDynaKube(ctx, r.client, rec.Instance.Namespace, rec.Instance); err != nil {
+			rec.Log.Error(err, "update of a map of namespaces failed")
 			return
 		}
 	}

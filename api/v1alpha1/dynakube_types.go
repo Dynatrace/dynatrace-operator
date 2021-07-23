@@ -123,6 +123,10 @@ type CodeModulesSpec struct {
 
 	// Optional: use OneAgent binaries from volume
 	Volume corev1.VolumeSource `json:"volume,omitempty"`
+
+	// Optional: set selector for DynaKube to know in which namespaces to inject into
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Selector",order=16,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:selector"}
+	Selector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 }
 
 type FullStackSpec struct {
@@ -184,6 +188,10 @@ type FullStackSpec struct {
 
 type DataIngestSpec struct {
 	CapabilityProperties `json:",inline"`
+
+	// Optional: set selector for DynaKube to know in which namespaces to inject into
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Selector",order=16,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:selector"}
+	Selector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 }
 
 type RoutingSpec struct {
