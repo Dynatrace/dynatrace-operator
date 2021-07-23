@@ -256,7 +256,7 @@ func (svr *CSIDriverServer) fireVolumeUnpublishedMetric(usageFilePath string) {
 		agentsVersionsMetric.WithLabelValues(version).Dec()
 		var m = &dto.Metric{}
 		if err := agentsVersionsMetric.WithLabelValues(version).Write(m); err != nil {
-			svr.log.Error(err, "Failed to get the value of agent version metric")
+			svr.log.Error(err, "failed to get the value of agent version metric")
 		}
 		if m.Gauge.GetValue() <= float64(0) {
 			agentsVersionsMetric.DeleteLabelValues(version)
