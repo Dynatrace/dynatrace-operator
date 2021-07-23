@@ -495,29 +495,6 @@ func TestResources(t *testing.T) {
 	})
 }
 
-func TestArguments(t *testing.T) {
-	log := logger.NewDTLogger()
-	instance := dynatracev1alpha1.DynaKube{
-		Spec: dynatracev1alpha1.DynaKubeSpec{
-			APIURL:   testURL,
-			OneAgent: dynatracev1alpha1.OneAgentSpec{},
-			ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-				UseImmutableImage: true,
-				Args:              []string{testValue},
-			},
-		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			OneAgent: dynatracev1alpha1.OneAgentStatus{
-				UseImmutableImage: true,
-			},
-		},
-	}
-
-	podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
-	assert.NotNil(t, podSpecs)
-	assert.NotEmpty(t, podSpecs.Containers)
-	assert.Contains(t, podSpecs.Containers[0].Args, testValue)
-}
 func TestServiceAccountName(t *testing.T) {
 	log := logger.NewDTLogger()
 	t.Run(`has default values`, func(t *testing.T) {

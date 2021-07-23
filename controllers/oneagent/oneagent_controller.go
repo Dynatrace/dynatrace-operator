@@ -251,41 +251,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 		dnsPolicy = corev1.DNSClusterFirstWithHostNet
 	}
 
-	// K8s 1.18+ is expected to drop the "beta.kubernetes.io" labels in favor of "kubernetes.io" which was added on K8s 1.14.
-	// To support both older and newer K8s versions we use node affinity.
-
-	var secCtx *corev1.SecurityContext
-	if unprivileged {
-		secCtx = &corev1.SecurityContext{
-			Capabilities: &corev1.Capabilities{
-				Drop: []corev1.Capability{
-					"ALL",
-				},
-				Add: []corev1.Capability{
-					"CHOWN",
-					"DAC_OVERRIDE",
-					"DAC_READ_SEARCH",
-					"FOWNER",
-					"FSETID",
-					"KILL",
-					"NET_ADMIN",
-					"NET_RAW",
-					"SETFCAP",
-					"SETGID",
-					"SETUID",
-					"SYS_ADMIN",
-					"SYS_CHROOT",
-					"SYS_PTRACE",
-					"SYS_RESOURCE",
-				},
-			},
-		}
-	} else {
-		trueVar := true
-		secCtx = &corev1.SecurityContext{
-			Privileged: &trueVar,
-		}
-	}
+	secCtx := prepareSecurityContext(unprivileged, fs)
 
 	p = corev1.PodSpec{
 		Containers: []corev1.Container{{
