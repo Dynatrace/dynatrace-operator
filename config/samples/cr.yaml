@@ -155,11 +155,30 @@ spec:
     #
     # useImmutableImage: false
 
+    # To be released
+    #
+    # Optional: Enables and configures support for a read-only host filesystem
+    #
     # readOnly:
+
+    #   Enable support for read-only host filesystems
+    #
     #   enabled: false
+
+    #   Define which volume to use to store oneagent installation files
+    #   Defaults to an empty-dir
+    #
     #   installationVolume:
     #     emptyDir: {}
+
+    #   Defines which user id to use for the installation process
+    #   Defaults to 1001
+    #
     #   userId: 1001
+
+    #   Defines which group id to use for the installation process
+    #   Defaults to 1001
+    #
     #   groupId: 1001
 
   classicFullStack:
@@ -227,12 +246,30 @@ spec:
     #
     # useImmutableImage: false
 
-    # Optional:
+    # To be released
+    #
+    # Optional: Enables and configures support for a read-only host filesystem
+    #
     # readOnly:
+
+    #   Enable support for read-only host filesystems
+    #
     #   enabled: false
+
+    #   Define which volume to use to store oneagent installation files
+    #   Defaults to an empty-dir
+    #
     #   installationVolume:
     #     emptyDir: {}
+
+    #   Defines which user id to use for the installation process
+    #   Defaults to 1001
+    #
     #   userId: 1001
+
+    #   Defines which group id to use for the installation process
+    #   Defaults to 1001
+    #
     #   groupId: 1001
 
   # Enables and configures an ActiveGate instance that allows routing

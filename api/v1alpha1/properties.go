@@ -18,10 +18,10 @@ package v1alpha1
 
 import (
 	"fmt"
-	v1 "k8s.io/api/core/v1"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	v1 "k8s.io/api/core/v1"
 )
 
 const (
