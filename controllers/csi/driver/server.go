@@ -61,7 +61,7 @@ var (
 		Namespace: "dynatrace",
 		Subsystem: "csi_driver",
 		Name:      "agent_versions",
-		Help:      "Number of an agent version currently mounted by the CI driver",
+		Help:      "Number of an agent version currently mounted by the CSI driver",
 	}, []string{"version"})
 	memoryMetricTick = 5000 * time.Millisecond
 )
