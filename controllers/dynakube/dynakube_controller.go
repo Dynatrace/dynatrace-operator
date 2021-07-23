@@ -198,6 +198,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	}
 
 	if err = r.reconcileCodeModules(rec); err != nil {
+		rec.Log.Error(err, "could not reconcile Dynatrace code modules")
 		return
 	}
 
