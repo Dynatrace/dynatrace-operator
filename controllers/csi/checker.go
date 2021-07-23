@@ -2,7 +2,6 @@ package dtcsi
 
 import (
 	"context"
-	"errors"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -11,10 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ErrMissing is returned when there's a problem with the ConfigMap
-var ErrMissing = errors.New("config map is missing or invalid")
-
-const configMapName = "csi-code-modules-checker-map"
+const configMapName = "dynatrace-csi-checker"
 
 type Checker struct {
 	client    client.Client
@@ -56,7 +52,7 @@ func (c *Checker) Add(dynakube string) error {
 // Should happen when Dynakube was deleted or setting was disabled.
 func (c *Checker) Remove(dynakube string) error {
 	if c.configMap.Data == nil {
-		return ErrMissing
+		return nil
 	}
 
 	if _, contains := c.configMap.Data[dynakube]; contains {
@@ -86,9 +82,6 @@ func loadConfigMap(kubernetesClient client.Client, logger logr.Logger, namespace
 		context.TODO(),
 		client.ObjectKey{Name: configMapName, Namespace: namespace},
 		configMap)
-	if err != nil {
-		logger.Error(err, "error getting config map from client")
-	}
 
 	if k8serrors.IsNotFound(err) {
 		// create config map
@@ -100,9 +93,6 @@ func loadConfigMap(kubernetesClient client.Client, logger logr.Logger, namespace
 		}
 		logger.Info("creating ConfigMap")
 		err = kubernetesClient.Create(context.TODO(), configMap)
-	}
-	if err != nil {
-		logger.Error(err, "error loading config map")
 	}
 	return configMap, err
 }

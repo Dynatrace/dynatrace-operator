@@ -76,7 +76,7 @@ func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *run
 // blank assignment to verify that ReconcileActiveGate implements reconcile.Reconciler
 var _ reconcile.Reconciler = &ReconcileDynaKube{}
 
-// ReconcileActiveGate reconciles a DynaKube object
+// ReconcileDynaKube reconciles a DynaKube object
 type ReconcileDynaKube struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
@@ -197,34 +197,8 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 		return
 	}
 
-	checker, err := dtcsi.NewChecker(r.client, rec.Log, "dynatrace")
-	if err != nil {
-		log.Error(err, "unable to create checker")
+	if err = r.reconcileCodeModules(rec); err != nil {
 		return
-	}
-	if rec.Instance.Spec.CodeModules.Enabled {
-		upd, err := dtcsi.NewReconciler(r.client, r.scheme, rec.Log, rec.Instance).Reconcile()
-		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "CSI driver reconciled") {
-			return
-		}
-		if err = checker.Add(rec.Instance.Name); err != nil {
-			log.Error(err, "unable to add dynakube to config map",
-				"dynakube", rec.Instance.Name)
-			return
-		}
-	} else {
-		if err = checker.Remove(rec.Instance.Name); err != nil {
-			log.Error(err, "unable to remove dynakube from config map",
-				"dynakube", rec.Instance.Name)
-			return
-		}
-		if !checker.Any() {
-			// no dynakubes with code modules exist anymore
-			ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dtcsi.DaemonSetName, Namespace: rec.Instance.Namespace}}
-			if err := r.ensureDeleted(&ds); rec.Error(err) {
-				return
-			}
-		}
 	}
 
 	if rec.Instance.Spec.InfraMonitoring.Enabled {
@@ -322,4 +296,35 @@ func (r *ReconcileDynaKube) updateCR(ctx context.Context, log logr.Logger, insta
 		return nil
 	}
 	return errors.WithStack(err)
+}
+
+func (r *ReconcileDynaKube) reconcileCodeModules(rec *utils.Reconciliation) error {
+	checker, err := dtcsi.NewChecker(r.client, rec.Log, "dynatrace")
+	if err != nil {
+		return err
+	}
+	if rec.Instance.Spec.CodeModules.Enabled {
+		if !checker.Any() {
+			// enable csi driver, if first Dynakube with CodeModules enabled
+			upd, err := dtcsi.NewReconciler(r.client, r.scheme, rec.Log, rec.Instance).Reconcile()
+			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "CSI driver reconciled") {
+				return err
+			}
+		}
+		if err = checker.Add(rec.Instance.Name); err != nil {
+			return err
+		}
+	} else {
+		if err = checker.Remove(rec.Instance.Name); err != nil {
+			return err
+		}
+		if !checker.Any() {
+			// disable csi driver, no Dynakubes with CodeModules enabled exist anymore
+			ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dtcsi.DaemonSetName, Namespace: rec.Instance.Namespace}}
+			if err = r.ensureDeleted(&ds); rec.Error(err) {
+				return err
+			}
+		}
+	}
+	return nil
 }
