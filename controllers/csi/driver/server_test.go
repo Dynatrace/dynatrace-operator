@@ -195,8 +195,8 @@ func TestServer_NodeUnpublishVolume(t *testing.T) {
 		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
-		assert.Error(t, err)
-		assert.Nil(t, response)
+		assert.NoError(t, err)
+		assert.NotNil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
 		assertNoReferencesForUnpublishedVolume(t, &server)
 	})
@@ -332,8 +332,8 @@ func assertReferencesForPublishedVolume(t *testing.T, server *CSIDriverServer, m
 
 func assertNoReferencesForUnpublishedVolume(t *testing.T, server *CSIDriverServer) {
 	volume, err := server.loadVolumeInfo(volumeId)
-	assert.Error(t, err)
-	assert.Nil(t, volume)
+	assert.NoError(t, err)
+	assert.Equal(t, &storage.Volume{}, volume)
 }
 
 func resetMetrics() {

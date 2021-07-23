@@ -212,7 +212,6 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 	volume, err := svr.loadVolumeInfo(volumeID)
 	if err != nil {
 		svr.log.Info("failed to load volume info", "error", err.Error())
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to load volume info, unmount not possible without it: %s", err.Error()))
 	}
 
 	overlayFSPath := filepath.Join(svr.opts.RootDir, volume.TenantUUID, "run", volumeID)
@@ -332,7 +331,7 @@ func (svr *CSIDriverServer) loadVolumeInfo(volumeID string) (*storage.Volume, er
 		return nil, err
 	}
 	if volume == nil {
-		return nil, fmt.Errorf("missing volume info for volumeID %s", volumeID)
+		return &storage.Volume{}, nil
 	}
 	svr.log.Info("loaded volume info", "ID", volume.ID, "PodUID", volume.PodUID, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 	return volume, nil
