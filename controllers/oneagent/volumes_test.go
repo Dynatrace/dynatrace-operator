@@ -36,7 +36,7 @@ func TestPrepareVolumes(t *testing.T) {
 		fullstackSpec := &v1alpha1.FullStackSpec{
 			ReadOnly: v1alpha1.ReadOnlySpec{
 				Enabled: true,
-				InstallationVolume: v1.VolumeSource{
+				InstallationVolume: &v1.VolumeSource{
 					EmptyDir: &v1.EmptyDirVolumeSource{},
 				},
 			},
@@ -56,7 +56,7 @@ func TestPrepareVolumes(t *testing.T) {
 		fullstackSpec := &v1alpha1.FullStackSpec{
 			ReadOnly: v1alpha1.ReadOnlySpec{
 				Enabled: true,
-				InstallationVolume: v1.VolumeSource{
+				InstallationVolume: &v1.VolumeSource{
 					EmptyDir: &v1.EmptyDirVolumeSource{},
 				},
 			},
@@ -97,7 +97,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		fullstackSpec := &v1alpha1.FullStackSpec{
 			ReadOnly: v1alpha1.ReadOnlySpec{
 				Enabled: true,
-				InstallationVolume: v1.VolumeSource{
+				InstallationVolume: &v1.VolumeSource{
 					EmptyDir: &v1.EmptyDirVolumeSource{},
 				},
 			},
@@ -119,7 +119,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		fullstackSpec := &v1alpha1.FullStackSpec{
 			ReadOnly: v1alpha1.ReadOnlySpec{
 				Enabled: true,
-				InstallationVolume: v1.VolumeSource{
+				InstallationVolume: &v1.VolumeSource{
 					EmptyDir: &v1.EmptyDirVolumeSource{},
 				},
 			},

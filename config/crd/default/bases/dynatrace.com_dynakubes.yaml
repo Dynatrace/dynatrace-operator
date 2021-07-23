@@ -213,10 +213,18 @@ spec:
                         description: 'Optional: Enable support for read only host-filesystems.
                           Defaults to false'
                         type: boolean
+                      groupId:
+                        description: Used if read-only filesystem support is enabled
+                          Controls with which group id the OneAgent will be installed
+                          Defaults to 1001
+                        format: int64
+                        minimum: 0
+                        type: integer
                       installationVolume:
-                        description: Mandatory if read-only filesystem support is
-                          enabled. Determines the volume to which the installation
-                          files are stored during installation of the OneAgent
+                        description: Used if read-only filesystem support is enabled.
+                          Determines the volume to which the installation files are
+                          stored during installation of the OneAgent Defaults to an
+                          empty-dir
                         properties:
                           awsElasticBlockStore:
                             description: 'AWSElasticBlockStore represents an AWS Disk
@@ -1729,6 +1737,13 @@ spec:
                             - volumePath
                             type: object
                         type: object
+                      userId:
+                        description: Used if read-only filesystem support is enabled
+                          Controls with which user id the OneAgent will be installed
+                          Defaults to 1001
+                        format: int64
+                        minimum: 0
+                        type: integer
                     type: object
                   resources:
                     description: 'Optional: define resources requests and limits for
@@ -3685,10 +3700,18 @@ spec:
                         description: 'Optional: Enable support for read only host-filesystems.
                           Defaults to false'
                         type: boolean
+                      groupId:
+                        description: Used if read-only filesystem support is enabled
+                          Controls with which group id the OneAgent will be installed
+                          Defaults to 1001
+                        format: int64
+                        minimum: 0
+                        type: integer
                       installationVolume:
-                        description: Mandatory if read-only filesystem support is
-                          enabled. Determines the volume to which the installation
-                          files are stored during installation of the OneAgent
+                        description: Used if read-only filesystem support is enabled.
+                          Determines the volume to which the installation files are
+                          stored during installation of the OneAgent Defaults to an
+                          empty-dir
                         properties:
                           awsElasticBlockStore:
                             description: 'AWSElasticBlockStore represents an AWS Disk
@@ -5201,6 +5224,13 @@ spec:
                             - volumePath
                             type: object
                         type: object
+                      userId:
+                        description: Used if read-only filesystem support is enabled
+                          Controls with which user id the OneAgent will be installed
+                          Defaults to 1001
+                        format: int64
+                        minimum: 0
+                        type: integer
                     type: object
                   resources:
                     description: 'Optional: define resources requests and limits for

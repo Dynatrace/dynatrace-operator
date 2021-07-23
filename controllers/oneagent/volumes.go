@@ -60,7 +60,7 @@ func prepareVolumes(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.
 func getInstallationVolume(fs *dynatracev1alpha1.FullStackSpec) corev1.Volume {
 	return corev1.Volume{
 		Name:         oneagentInstallationMountName,
-		VolumeSource: fs.ReadOnly.InstallationVolume,
+		VolumeSource: fs.ReadOnly.GetInstallationVolume(),
 	}
 }
 

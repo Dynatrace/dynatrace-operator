@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -81,4 +82,44 @@ func TestTokens(t *testing.T) {
 		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testName}}
 		assert.Equal(t, dk.Tokens(), testName)
 	})
+}
+
+func TestReadOnlySpec_GetUserId(t *testing.T) {
+	const testId = 1234
+
+	readOnlySpec := ReadOnlySpec{}
+	assert.Equal(t, int64(defaultUserId), *readOnlySpec.GetUserId())
+
+	readOnlySpec.UserId = int64Pointer(testId)
+	assert.Equal(t, int64(testId), *readOnlySpec.GetUserId())
+}
+
+func TestReadOnlySpec_GetGroupId(t *testing.T) {
+	const testId = 1234
+
+	readOnlySpec := ReadOnlySpec{}
+	assert.Equal(t, int64(defaultGroupId), *readOnlySpec.GetGroupId())
+
+	readOnlySpec.GroupId = int64Pointer(testId)
+	assert.Equal(t, int64(testId), *readOnlySpec.GetGroupId())
+}
+
+func TestReadOnlySpec_GetInstallationVolume(t *testing.T) {
+	const testPath = "my/test/path"
+
+	readOnlySpec := ReadOnlySpec{}
+	assert.Equal(t, v1.VolumeSource{
+		EmptyDir: &v1.EmptyDirVolumeSource{},
+	}, readOnlySpec.GetInstallationVolume())
+
+	readOnlySpec.InstallationVolume = &v1.VolumeSource{
+		HostPath: &v1.HostPathVolumeSource{
+			Path: testPath,
+		},
+	}
+	assert.Equal(t, v1.VolumeSource{
+		HostPath: &v1.HostPathVolumeSource{
+			Path: testPath,
+		},
+	}, readOnlySpec.GetInstallationVolume())
 }

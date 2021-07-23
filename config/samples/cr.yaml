@@ -155,6 +155,13 @@ spec:
     #
     # useImmutableImage: false
 
+    # readOnly:
+    #   enabled: false
+    #   installationVolume:
+    #     emptyDir: {}
+    #   userId: 1001
+    #   groupId: 1001
+
   classicFullStack:
     # Enable classic oneagent monitoring
     enabled: false
@@ -220,11 +227,19 @@ spec:
     #
     # useImmutableImage: false
 
+    # Optional:
+    # readOnly:
+    #   enabled: false
+    #   installationVolume:
+    #     emptyDir: {}
+    #   userId: 1001
+    #   groupId: 1001
+
   # Enables and configures an ActiveGate instance that allows routing
   # of OneAgent traffic
   routing:
     # Enable Kubernetes routing functionality
-    enabled: true
+    enabled: false
 
     # Amount of replicas of activegate routing pods
     #
@@ -291,7 +306,7 @@ spec:
   # of Kubernetes environments
   kubernetesMonitoring:
     # Enable Kubernetes monitoring functionality
-    enabled: true
+    enabled: false
 
     # Amount of replicas of activegate pods
     #

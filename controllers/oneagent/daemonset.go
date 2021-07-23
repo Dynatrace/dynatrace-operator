@@ -25,15 +25,15 @@ func prepareSecurityContext(unprivileged bool, fs *dynatracev1alpha1.FullStackSp
 	}
 
 	if fs.ReadOnly.Enabled {
-		secCtx = setReadOnlySecurityContextOptions(*secCtx)
+		secCtx = setReadOnlySecurityContextOptions(*secCtx, fs)
 	}
 
 	return secCtx
 }
 
-func setReadOnlySecurityContextOptions(secCtx corev1.SecurityContext) *corev1.SecurityContext {
-	secCtx.RunAsUser = int64Pointer(1001)
-	secCtx.RunAsGroup = int64Pointer(1001)
+func setReadOnlySecurityContextOptions(secCtx corev1.SecurityContext, fs *dynatracev1alpha1.FullStackSpec) *corev1.SecurityContext {
+	secCtx.RunAsUser = fs.ReadOnly.GetUserId()
+	secCtx.RunAsGroup = fs.ReadOnly.GetGroupId()
 	return &secCtx
 }
 
@@ -71,9 +71,5 @@ func getUnprivilegedSecurityContext() *corev1.SecurityContext {
 }
 
 func boolPointer(value bool) *bool {
-	return &value
-}
-
-func int64Pointer(value int64) *int64 {
 	return &value
 }

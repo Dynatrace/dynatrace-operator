@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	v1 "k8s.io/api/core/v1"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -26,6 +27,9 @@ import (
 const (
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
 	PullSecretSuffix = "-pull-secret"
+
+	defaultUserId  = 1001
+	defaultGroupId = 1001
 )
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
@@ -123,4 +127,31 @@ func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
 		communicationHosts = append(communicationHosts, dtclient.CommunicationHost(communicationHost))
 	}
 	return communicationHosts
+}
+
+func (readOnlySpec *ReadOnlySpec) GetUserId() *int64 {
+	if readOnlySpec.UserId == nil {
+		return int64Pointer(defaultUserId)
+	}
+	return readOnlySpec.UserId
+}
+
+func (readOnlySpec *ReadOnlySpec) GetGroupId() *int64 {
+	if readOnlySpec.GroupId == nil {
+		return int64Pointer(defaultGroupId)
+	}
+	return readOnlySpec.GroupId
+}
+
+func (readOnlySpec *ReadOnlySpec) GetInstallationVolume() v1.VolumeSource {
+	if readOnlySpec.InstallationVolume == nil {
+		return v1.VolumeSource{
+			EmptyDir: &v1.EmptyDirVolumeSource{},
+		}
+	}
+	return *readOnlySpec.InstallationVolume
+}
+
+func int64Pointer(value int64) *int64 {
+	return &value
 }

@@ -21,7 +21,7 @@ func TestNewPodSpecForCR_ReadOnlyMode(t *testing.T) {
 	fullstackSpec := &dynatracev1alpha1.FullStackSpec{
 		ReadOnly: dynatracev1alpha1.ReadOnlySpec{
 			Enabled: true,
-			InstallationVolume: corev1.VolumeSource{
+			InstallationVolume: &corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
 					Path: testReadOnlyInstallationVolumePath,
 				},
