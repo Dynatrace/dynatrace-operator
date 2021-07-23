@@ -267,6 +267,20 @@ func TestStoreAndLoadPodInfo(t *testing.T) {
 	volume, err := server.loadVolumeInfo(volumeCfg.volumeId)
 	assert.NoError(t, err)
 	assert.NotNil(t, volume)
+	assert.Equal(t, volumeId, volume.ID)
+	assert.Equal(t, podUID, volume.PodUID)
+	assert.Equal(t, agentVersion, volume.Version)
+	assert.Equal(t, tenantUuid, volume.TenantUUID)
+}
+
+func TestLoadPodInfo_Empty(t *testing.T) {
+	mounter := mount.NewFakeMounter([]mount.MountPoint{})
+	server := newServerForTesting(t, mounter)
+
+	volume, err := server.loadVolumeInfo(volumeId)
+	assert.NoError(t, err)
+	assert.NotNil(t, volume)
+	assert.Equal(t, &storage.Volume{}, volume)
 }
 
 func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServer {

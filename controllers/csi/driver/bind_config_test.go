@@ -52,6 +52,25 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
 	})
+	t.Run(`no tenant in storage`, func(t *testing.T) {
+		clt := fake.NewClient(
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}},
+			&dynatracev1alpha1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: dkName},
+			},
+		)
+		srv := &CSIDriverServer{
+			client: clt,
+		}
+		volumeCfg := &volumeConfig{
+			namespace: namespace,
+		}
+
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, storage.FakeMemoryDB())
+
+		assert.Error(t, err)
+		assert.Nil(t, bindCfg)
+	})
 	t.Run(`create correct bind config`, func(t *testing.T) {
 		clt := fake.NewClient(
 			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}},

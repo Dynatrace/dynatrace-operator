@@ -101,7 +101,6 @@ func isNotLatestVersion(version string, latestVersion string, logger logr.Logger
 		logger.Info("skipped, is latest")
 		return false
 	}
-
 	return true
 }
 
