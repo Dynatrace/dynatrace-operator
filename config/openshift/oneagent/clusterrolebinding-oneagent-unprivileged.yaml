@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-dynakube-oneagent-unprivileged
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-dynakube-oneagent-unprivileged
+    namespace: dynatrace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-dynakube-oneagent-unprivileged

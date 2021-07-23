@@ -78,17 +78,17 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return reconcileResult, nil
 	}
 
-	ver, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
+	latestAgentVersion, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
 		gc.logger.Info("failed to query OneAgent version")
 		return reconcileResult, nil
 	}
 
 	gc.logger.Info("running binary garbage collection")
-	if err := gc.runBinaryGarbageCollection(ci.TenantUUID, ver); err != nil {
-		gc.logger.Error(err, "garbage collection failed")
-		return reconcileResult, nil
-	}
+	gc.runBinaryGarbageCollection(ci.TenantUUID, latestAgentVersion)
+
+	gc.logger.Info("running log garbage collection")
+	gc.runLogGarbageCollection(ci.TenantUUID)
 
 	return reconcileResult, nil
 }
