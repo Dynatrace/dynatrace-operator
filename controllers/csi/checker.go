@@ -20,7 +20,7 @@ type Checker struct {
 }
 
 func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace string) (*Checker, error) {
-	configMap, err := loadConfigMap(kubernetesClient, logger, namespace)
+	configMap, err := loadOrCreateConfigMap(kubernetesClient, logger, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,8 @@ func (c *Checker) Any() bool {
 	return len(c.configMap.Data) > 0
 }
 
-func loadConfigMap(kubernetesClient client.Client, logger logr.Logger, namespace string) (*corev1.ConfigMap, error) {
+// loadOrCreateConfigMap loads existing ConfigMap or creates it if it doesn't exist
+func loadOrCreateConfigMap(kubernetesClient client.Client, logger logr.Logger, namespace string) (*corev1.ConfigMap, error) {
 	configMap := &corev1.ConfigMap{}
 	// check for existing config map
 	err := kubernetesClient.Get(
