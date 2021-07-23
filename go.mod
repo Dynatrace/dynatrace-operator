@@ -8,7 +8,8 @@ require (
 	github.com/evanphx/json-patch v4.9.0+incompatible
 	github.com/go-logr/logr v0.3.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.7.1 // indirect
+	github.com/prometheus/client_golang v1.7.1
+	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.15.0 // indirect
 	github.com/spf13/afero v1.6.0
 	github.com/spf13/pflag v1.0.5
@@ -19,7 +20,7 @@ require (
 	istio.io/api v0.0.0-20201217173512-1f62aaeb5ee3
 	istio.io/client-go v1.8.1
 	k8s.io/api v0.19.4
-	k8s.io/apiextensions-apiserver v0.19.4
+	k8s.io/apiextensions-apiserver v0.19.4 // indirect
 	k8s.io/apimachinery v0.19.4
 	k8s.io/client-go v0.19.4
 	k8s.io/utils v0.0.0-20200912215256-4140de9c8800
