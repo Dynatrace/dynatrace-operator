@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -46,11 +47,13 @@ func Add(mgr manager.Manager, _ string) error {
 // NewReconciler returns a new ReconcileActiveGate
 func NewReconciler(mgr manager.Manager) *ReconcileDynaKube {
 	return &ReconcileDynaKube{
-		client:       mgr.GetClient(),
-		apiReader:    mgr.GetAPIReader(),
-		scheme:       mgr.GetScheme(),
-		dtcBuildFunc: BuildDynatraceClient,
-		config:       mgr.GetConfig(),
+		client:            mgr.GetClient(),
+		apiReader:         mgr.GetAPIReader(),
+		scheme:            mgr.GetScheme(),
+		dtcBuildFunc:      BuildDynatraceClient,
+		config:            mgr.GetConfig(),
+		operatorPodName:   os.Getenv("POD_NAME"),
+		operatorNamespace: os.Getenv("POD_NAMESPACE"),
 	}
 }
 
@@ -64,12 +67,14 @@ func (r *ReconcileDynaKube) SetupWithManager(mgr ctrl.Manager) error {
 
 func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, logger logr.Logger, config *rest.Config) *ReconcileDynaKube {
 	return &ReconcileDynaKube{
-		client:       c,
-		apiReader:    apiReader,
-		scheme:       scheme,
-		dtcBuildFunc: dtcBuildFunc,
-		logger:       logger,
-		config:       config,
+		client:            c,
+		apiReader:         apiReader,
+		scheme:            scheme,
+		dtcBuildFunc:      dtcBuildFunc,
+		logger:            logger,
+		config:            config,
+		operatorPodName:   os.Getenv("POD_NAME"),
+		operatorNamespace: os.Getenv("POD_NAMESPACE"),
 	}
 }
 
@@ -80,12 +85,14 @@ var _ reconcile.Reconciler = &ReconcileDynaKube{}
 type ReconcileDynaKube struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client       client.Client
-	apiReader    client.Reader
-	scheme       *runtime.Scheme
-	dtcBuildFunc DynatraceClientFunc
-	logger       logr.Logger
-	config       *rest.Config
+	client            client.Client
+	apiReader         client.Reader
+	scheme            *runtime.Scheme
+	dtcBuildFunc      DynatraceClientFunc
+	logger            logr.Logger
+	config            *rest.Config
+	operatorPodName   string
+	operatorNamespace string
 }
 
 type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
@@ -300,7 +307,7 @@ func (r *ReconcileDynaKube) updateCR(ctx context.Context, log logr.Logger, insta
 }
 
 func (r *ReconcileDynaKube) checkCodeModules(rec *utils.Reconciliation, scheme *runtime.Scheme) error {
-	checker, err := dtcsi.NewChecker(r.client, rec.Log, rec.Instance.Namespace)
+	checker, err := dtcsi.NewChecker(r.client, rec.Log, rec.Instance.Namespace, r.operatorPodName, r.operatorNamespace)
 	if err != nil {
 		return err
 	}

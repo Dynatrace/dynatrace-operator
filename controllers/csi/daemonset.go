@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"hash/fnv"
-	"os"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -30,14 +29,16 @@ type Reconciler struct {
 	operatorNamespace string
 }
 
-func NewReconciler(client client.Client, scheme *runtime.Scheme, logger logr.Logger, instance *v1alpha1.DynaKube) *Reconciler {
+func NewReconciler(
+	client client.Client, scheme *runtime.Scheme, logger logr.Logger,
+	instance *v1alpha1.DynaKube, operatorPodName, operatorNamespace string) *Reconciler {
 	return &Reconciler{
 		client:            client,
 		scheme:            scheme,
 		logger:            logger,
 		instance:          instance,
-		operatorPodName:   os.Getenv("POD_NAME"),
-		operatorNamespace: os.Getenv("POD_NAMESPACE"),
+		operatorPodName:   operatorPodName,
+		operatorNamespace: operatorNamespace,
 	}
 }
 

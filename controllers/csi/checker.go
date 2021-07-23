@@ -20,22 +20,26 @@ const (
 )
 
 type Checker struct {
-	client    client.Client
-	logger    logr.Logger
-	configMap *corev1.ConfigMap
-	namespace string
+	client            client.Client
+	logger            logr.Logger
+	configMap         *corev1.ConfigMap
+	namespace         string
+	operatorPodName   string
+	operatorNamespace string
 }
 
-func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace string) (*Checker, error) {
+func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace string, operatorPodName, operatorNamespace string) (*Checker, error) {
 	configMap, err := loadOrCreateConfigMap(kubernetesClient, logger, namespace)
 	if err != nil {
 		return nil, err
 	}
 	return &Checker{
-		client:    kubernetesClient,
-		logger:    logger,
-		configMap: configMap,
-		namespace: namespace,
+		client:            kubernetesClient,
+		logger:            logger,
+		configMap:         configMap,
+		namespace:         namespace,
+		operatorPodName:   operatorPodName,
+		operatorNamespace: operatorNamespace,
 	}, nil
 }
 
@@ -43,7 +47,7 @@ func (c *Checker) ConfigureCsiDriver(rec *utils.Reconciliation, scheme *runtime.
 	if rec.Instance.Spec.CodeModules.Enabled {
 		if !c.any() {
 			// enable csi driver, if first Dynakube with CodeModules enabled
-			upd, err := NewReconciler(c.client, scheme, c.logger, rec.Instance).Reconcile()
+			upd, err := NewReconciler(c.client, scheme, c.logger, rec.Instance, c.operatorPodName, c.operatorNamespace).Reconcile()
 			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "CSI driver reconciled") {
 				return err
 			}
