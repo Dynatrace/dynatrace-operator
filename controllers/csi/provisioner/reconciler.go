@@ -112,6 +112,10 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	// Incase of a new tenant
+	if tenant == nil {
+		tenant = &storage.Tenant{UUID: dk.ConnectionInfo().TenantUUID}
+	}
 	oldTenant := *tenant
 
 	// Create necessary directories

@@ -196,7 +196,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}
 
-	if err := svr.storePodInfo(bindCfg, volumeCfg); err != nil {
+	if err := svr.storeVolumeInfo(bindCfg, volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to store pod info: %s", err))
 	}
 	agentsVersionsMetric.WithLabelValues(bindCfg.version).Inc()
@@ -209,21 +209,22 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 		return nil, err
 	}
 
-	pod, err := svr.loadPodInfo(volumeID)
+	volume, err := svr.loadVolumeInfo(volumeID)
 	if err != nil {
-		svr.log.Info("failed to load pod info", "error", err.Error())
+		svr.log.Info("failed to load volume info", "error", err.Error())
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to load volume info, unmount not possible without it: %s", err.Error()))
 	}
 
-	overlayFSPath := filepath.Join(svr.opts.RootDir, pod.TenantUUID, "run", volumeID)
+	overlayFSPath := filepath.Join(svr.opts.RootDir, volume.TenantUUID, "run", volumeID)
 
 	if err = svr.umountOneAgent(targetPath, overlayFSPath); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount oneagent volume: %s", err.Error()))
 	}
 
-	if err = svr.db.DeletePodInfo(pod); err != nil {
+	if err = svr.db.DeleteVolumeInfo(volume.ID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	svr.log.Info("deleted pod info", "UID", pod.UID, "VolumeId", pod.VolumeID, "Version", pod.Version, "TenantUUID", pod.TenantUUID)
+	svr.log.Info("deleted volume info", "ID", volume.ID, "PodUID", volume.PodUID, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 
 	if err = svr.fs.RemoveAll(targetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -231,14 +232,14 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 
 	svr.log.Info("volume has been unpublished", "targetPath", targetPath)
 
-	fireVolumeUnpublishedMetric(*pod)
+	fireVolumeUnpublishedMetric(*volume)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func fireVolumeUnpublishedMetric(pod storage.Pod) {
-	if len(pod.Version) > 0 {
-		agentsVersionsMetric.WithLabelValues(pod.Version).Dec()
+func fireVolumeUnpublishedMetric(volume storage.Volume) {
+	if len(volume.Version) > 0 {
+		agentsVersionsMetric.WithLabelValues(volume.Version).Dec()
 	}
 }
 
@@ -314,24 +315,27 @@ func (svr *CSIDriverServer) umountOneAgent(targetPath string, overlayFSPath stri
 	return nil
 }
 
-func (svr *CSIDriverServer) storePodInfo(bindCfg *bindConfig, volumeCfg *volumeConfig) error {
-	pod := storage.Pod{
-		UID:        volumeCfg.podUID,
-		VolumeID:   volumeCfg.volumeId,
+func (svr *CSIDriverServer) storeVolumeInfo(bindCfg *bindConfig, volumeCfg *volumeConfig) error {
+	volume := storage.Volume{
+		ID:         volumeCfg.volumeId,
+		PodUID:     volumeCfg.podUID,
 		Version:    bindCfg.version,
 		TenantUUID: bindCfg.tenantUUID,
 	}
-	svr.log.Info("inserting pod info", "UID", pod.UID, "VolumeId", pod.VolumeID, "Version", pod.Version, "TenantUUID", pod.TenantUUID)
-	return svr.db.InsertPodInfo(&pod)
+	svr.log.Info("inserting volume info", "ID", volume.ID, "PodUID", volume.PodUID, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	return svr.db.InsertVolumeInfo(&volume)
 }
 
-func (svr *CSIDriverServer) loadPodInfo(volumeID string) (*storage.Pod, error) {
-	pod, err := svr.db.GetPodViaVolumeId(volumeID)
+func (svr *CSIDriverServer) loadVolumeInfo(volumeID string) (*storage.Volume, error) {
+	volume, err := svr.db.GetVolumeInfo(volumeID)
 	if err != nil {
 		return nil, err
 	}
-	svr.log.Info("loaded pod info", "UID", pod.UID, "VolumeId", pod.VolumeID, "Version", pod.Version, "TenantUUID", pod.TenantUUID)
-	return pod, nil
+	if volume == nil {
+		return nil, fmt.Errorf("missing volume info for volumeID %s", volumeID)
+	}
+	svr.log.Info("loaded volume info", "ID", volume.ID, "PodUID", volume.PodUID, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	return volume, nil
 }
 
 func logGRPC(log logr.Logger) grpc.UnaryServerInterceptor {

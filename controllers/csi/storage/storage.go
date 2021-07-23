@@ -12,9 +12,9 @@ type Tenant struct {
 	Dynakube      string
 }
 
-type Pod struct {
-	UID        string
-	VolumeID   string
+type Volume struct {
+	ID         string
+	PodUID     string
 	Version    string
 	TenantUUID string
 }
@@ -25,9 +25,9 @@ type Access interface {
 	GetTenant(uuid string) (*Tenant, error)
 	GetTenantViaDynakube(dynakube string) (*Tenant, error)
 
-	InsertPodInfo(pod *Pod) error
-	DeletePodInfo(pod *Pod) error
-	GetPodViaVolumeId(volumeID string) (*Pod, error)
+	InsertVolumeInfo(volume *Volume) error
+	DeleteVolumeInfo(volumeID string) error
+	GetVolumeInfo(volumeID string) (*Volume, error)
 	GetUsedVersions(tenantUUID string) (map[string]bool, error)
 }
 

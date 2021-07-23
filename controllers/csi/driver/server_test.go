@@ -195,8 +195,8 @@ func TestServer_NodeUnpublishVolume(t *testing.T) {
 		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
-		assert.NoError(t, err)
-		assert.NotNil(t, response)
+		assert.Error(t, err)
+		assert.Nil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
 		assertNoReferencesForUnpublishedVolume(t, &server)
 	})
@@ -262,11 +262,11 @@ func TestStoreAndLoadPodInfo(t *testing.T) {
 		podUID:     podUID,
 	}
 
-	err := server.storePodInfo(bindCfg, &volumeCfg)
+	err := server.storeVolumeInfo(bindCfg, &volumeCfg)
 	assert.NoError(t, err)
-	pod, err := server.loadPodInfo(volumeCfg.volumeId)
+	volume, err := server.loadVolumeInfo(volumeCfg.volumeId)
 	assert.NoError(t, err)
-	assert.NotNil(t, pod)
+	assert.NotNil(t, volume)
 }
 
 func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServer {
@@ -310,7 +310,7 @@ func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServ
 
 func mockPublishedVolume(t *testing.T, server *CSIDriverServer) {
 	mockOneAgent(t, server)
-	err := server.db.InsertPodInfo(&storage.Pod{UID: podUID, VolumeID: volumeId, Version: agentVersion, TenantUUID: tenantUuid})
+	err := server.db.InsertVolumeInfo(&storage.Volume{ID: volumeId, PodUID: podUID, Version: agentVersion, TenantUUID: tenantUuid})
 	require.NoError(t, err)
 	agentsVersionsMetric.WithLabelValues(agentVersion).Inc()
 }
@@ -322,21 +322,18 @@ func mockOneAgent(t *testing.T, server *CSIDriverServer) {
 
 func assertReferencesForPublishedVolume(t *testing.T, server *CSIDriverServer, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
-	pod, err := server.loadPodInfo(volumeId)
+	volume, err := server.loadVolumeInfo(volumeId)
 	assert.NoError(t, err)
-	assert.Equal(t, pod.UID, podUID)
-	assert.Equal(t, pod.VolumeID, volumeId)
-	assert.Equal(t, pod.Version, agentVersion)
-	assert.Equal(t, pod.TenantUUID, tenantUuid)
+	assert.Equal(t, volume.ID, volumeId)
+	assert.Equal(t, volume.PodUID, podUID)
+	assert.Equal(t, volume.Version, agentVersion)
+	assert.Equal(t, volume.TenantUUID, tenantUuid)
 }
 
 func assertNoReferencesForUnpublishedVolume(t *testing.T, server *CSIDriverServer) {
-	pod, err := server.loadPodInfo(volumeId)
-	assert.NoError(t, err)
-	assert.Equal(t, pod.UID, "")
-	assert.Equal(t, pod.VolumeID, volumeId)
-	assert.Equal(t, pod.Version, "")
-	assert.Equal(t, pod.TenantUUID, "")
+	volume, err := server.loadVolumeInfo(volumeId)
+	assert.Error(t, err)
+	assert.Nil(t, volume)
 }
 
 func resetMetrics() {

@@ -121,7 +121,7 @@ func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
 	_ = gc.fs.Mkdir(binaryDir, 0770)
 	for i, version := range versions {
 		_, _ = gc.fs.Create(filepath.Join(binaryDir, version))
-		_ = gc.db.InsertPodInfo(&storage.Pod{UID: fmt.Sprintf("pod%b", i), VolumeID: fmt.Sprintf("volume%b", i), Version: version, TenantUUID: tenantUUID})
+		_ = gc.db.InsertVolumeInfo(&storage.Volume{ID: fmt.Sprintf("pod%b", i), PodUID: fmt.Sprintf("volume%b", i), Version: version, TenantUUID: tenantUUID})
 	}
 }
 

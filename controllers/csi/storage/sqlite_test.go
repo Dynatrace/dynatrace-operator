@@ -14,9 +14,9 @@ func TestNewAccess(t *testing.T) {
 	assert.NotNil(t, db.conn)
 
 	var podsTable string
-	row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", podsTableName)
+	row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", volumesTableName)
 	row.Scan(&podsTable)
-	assert.Equal(t, podsTable, podsTableName)
+	assert.Equal(t, podsTable, volumesTableName)
 
 	var tentatsTable string
 	row = db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", tenantsTableName)
@@ -29,7 +29,7 @@ func TestNewAccess_badPath(t *testing.T) {
 	db := NewAccess()
 
 	var podsTable string
-	row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", podsTableName)
+	row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", volumesTableName)
 	err := row.Scan(&podsTable)
 	assert.Error(t, err)
 
@@ -62,9 +62,9 @@ func TestCreateTables(t *testing.T) {
 	assert.Nil(t, err)
 
 	var podsTable string
-	row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", podsTableName)
+	row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", volumesTableName)
 	row.Scan(&podsTable)
-	assert.Equal(t, podsTable, podsTableName)
+	assert.Equal(t, podsTable, volumesTableName)
 
 	var tentatsTable string
 	row = db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", tenantsTableName)
@@ -81,8 +81,13 @@ func TestInsertUpdateGetTenant(t *testing.T) {
 		Dynakube:      "dynakube-test",
 	}
 
+	// Get but empty
+	gt, err := db.GetTenant(tenant.UUID)
+	assert.NoError(t, err)
+	assert.Nil(t, gt)
+
 	// Insert
-	err := db.InsertTenant(&tenant)
+	err = db.InsertTenant(&tenant)
 	assert.Nil(t, err)
 	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE UUID = ?;", tenantsTableName), tenant.UUID)
 	var uuid string
@@ -106,7 +111,7 @@ func TestInsertUpdateGetTenant(t *testing.T) {
 	assert.Equal(t, dk, tenant.Dynakube)
 
 	// Get
-	gt, err := db.GetTenant(tenant.UUID)
+	gt, err = db.GetTenant(tenant.UUID)
 	assert.NoError(t, err)
 	assert.Equal(t, gt.UUID, tenant.UUID)
 	assert.Equal(t, gt.LatestVersion, tenant.LatestVersion)
@@ -120,58 +125,63 @@ func TestInsertUpdateGetTenant(t *testing.T) {
 	assert.Equal(t, gt.Dynakube, tenant.Dynakube)
 }
 
-func TestInsertGetDeletePod(t *testing.T) {
+func TestInsertGetDeleteVolume(t *testing.T) {
 	db := FakeMemoryDB()
-	podV1 := Pod{
-		UID:        "123asd",
-		VolumeID:   "1vol",
+	volumeV1 := Volume{
+		ID:         "123asd",
+		PodUID:     "1vol",
 		Version:    "123.456",
 		TenantUUID: "asl123",
 	}
-	podV2 := Pod{
-		UID:        "23asd",
-		VolumeID:   "2vol",
+	volumeV2 := Volume{
+		ID:         "23asd",
+		PodUID:     "2vol",
 		Version:    "223.456",
 		TenantUUID: "asl123",
 	}
 
+	// Get but empty
+	vo, err := db.GetVolumeInfo(volumeV1.PodUID)
+	assert.NoError(t, err)
+	assert.Nil(t, vo)
+
 	// Insert
-	err := db.InsertPodInfo(&podV1)
+	err = db.InsertVolumeInfo(&volumeV1)
 	assert.NoError(t, err)
-	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE UID = ?;", podsTableName), podV1.UID)
-	var uid string
-	var vid string
-	var v string
+	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE ID = ?;", volumesTableName), volumeV1.ID)
+	var id string
+	var puid string
+	var ver string
 	var tuid string
-	err = row.Scan(&uid, &vid, &v, &tuid)
+	err = row.Scan(&id, &puid, &ver, &tuid)
 	assert.NoError(t, err)
-	assert.Equal(t, uid, podV1.UID)
-	assert.Equal(t, vid, podV1.VolumeID)
-	assert.Equal(t, v, podV1.Version)
-	assert.Equal(t, tuid, podV1.TenantUUID)
+	assert.Equal(t, id, volumeV1.ID)
+	assert.Equal(t, puid, volumeV1.PodUID)
+	assert.Equal(t, ver, volumeV1.Version)
+	assert.Equal(t, tuid, volumeV1.TenantUUID)
 
 	// Get via volume id
-	p, err := db.GetPodViaVolumeId(podV1.VolumeID)
+	vo, err = db.GetVolumeInfo(volumeV1.ID)
 	assert.NoError(t, err)
-	assert.Equal(t, p.UID, podV1.UID)
-	assert.Equal(t, p.VolumeID, podV1.VolumeID)
-	assert.Equal(t, p.Version, podV1.Version)
-	assert.Equal(t, p.TenantUUID, podV1.TenantUUID)
+	assert.Equal(t, vo.ID, volumeV1.ID)
+	assert.Equal(t, vo.PodUID, volumeV1.PodUID)
+	assert.Equal(t, vo.Version, volumeV1.Version)
+	assert.Equal(t, vo.TenantUUID, volumeV1.TenantUUID)
 
 	// Get used versions
-	db.InsertPodInfo(&podV2)
-	versions, err := db.GetUsedVersions(podV1.TenantUUID)
+	db.InsertVolumeInfo(&volumeV2)
+	versions, err := db.GetUsedVersions(volumeV1.TenantUUID)
 	assert.NoError(t, err)
 	assert.Equal(t, len(versions), 2)
-	assert.True(t, versions[podV1.Version])
-	assert.True(t, versions[podV2.Version])
+	assert.True(t, versions[volumeV1.Version])
+	assert.True(t, versions[volumeV2.Version])
 
 	// Delete
-	err = db.DeletePodInfo(&podV2)
+	err = db.DeleteVolumeInfo(volumeV2.ID)
 	assert.NoError(t, err)
-	versions, err = db.GetUsedVersions(podV1.TenantUUID)
+	versions, err = db.GetUsedVersions(volumeV1.TenantUUID)
 	assert.NoError(t, err)
 	assert.Equal(t, len(versions), 1)
-	assert.True(t, versions[podV1.Version])
-	assert.False(t, versions[podV2.Version])
+	assert.True(t, versions[volumeV1.Version])
+	assert.False(t, versions[volumeV2.Version])
 }

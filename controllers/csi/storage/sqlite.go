@@ -14,20 +14,20 @@ const (
 	tenantsTableName       = "tenants"
 	tenantsCreateStatement = `
 	CREATE TABLE IF NOT EXISTS tenants (
-		UUID VARCHAR,
-		LatestVersion VARCHAR,
-		Dynakube VARCHAR,
+		UUID VARCHAR NOT NULL,
+		LatestVersion VARCHAR NOT NULL,
+		Dynakube VARCHAR NOT NULL,
 		PRIMARY KEY (UUID)
 	); `
 
-	podsTableName       = "pods"
-	podsCreateStatement = `
-	CREATE TABLE IF NOT EXISTS pods (
-		UID VARCHAR,
-		VolumeID VARCHAR,
-		Version VARCHAR,
-		TenantUUID VARCHAR,
-		PRIMARY KEY (UID)
+	volumesTableName       = "volumes"
+	volumesCreateStatement = `
+	CREATE TABLE IF NOT EXISTS volumes (
+		ID VARCHAR NOT NULL,
+		PodUID VARCHAR NOT NULL,
+		Version VARCHAR NOT NULL,
+		TenantUUID VARCHAR NOT NULL,
+		PRIMARY KEY (ID)
 	);`
 
 	insertTenantStatement = `
@@ -52,22 +52,22 @@ const (
 	WHERE Dynakube = ?;
 	`
 
-	insertPodStatement = `
-	INSERT INTO pods (UID, VolumeID, Version, TenantUUID)
+	insertVolumeStatement = `
+	INSERT INTO volumes (ID, PodUID, Version, TenantUUID)
 	VALUES (?,?,?,?);
 	`
 
-	getPodViaVolumeIDStatement = `
-	SELECT UID, Version, TenantUUID
-	FROM pods
-	WHERE VolumeID = ?;
+	getVolumeStatement = `
+	SELECT PodUID, Version, TenantUUID
+	FROM volumes
+	WHERE ID = ?;
 	`
 
-	deletePodStatement = "DELETE FROM pods WHERE UID = ?;"
+	deleteVolumeStatement = "DELETE FROM volumes WHERE ID = ?;"
 
 	getUsedVersionsStatement = `
 	SELECT Version
-	FROM pods
+	FROM volumes
 	WHERE TenantUUID = ?;
 	`
 )
@@ -114,8 +114,8 @@ func (a *SqliteAccess) createTables() error {
 	if _, err := a.conn.Exec(tenantsCreateStatement); err != nil {
 		return fmt.Errorf("couldn't create the table %s, err: %s", tenantsTableName, err)
 	}
-	if _, err := a.conn.Exec(podsCreateStatement); err != nil {
-		return fmt.Errorf("couldn't create the table %s, err: %s", podsTableName, err)
+	if _, err := a.conn.Exec(volumesCreateStatement); err != nil {
+		return fmt.Errorf("couldn't create the table %s, err: %s", volumesTableName, err)
 	}
 	return nil
 }
@@ -147,7 +147,7 @@ func (a *SqliteAccess) GetTenant(uuid string) (*Tenant, error) {
 		return nil, fmt.Errorf("couldn't get tenant for UUID %s, err: %s", uuid, err)
 	}
 	if err == sql.ErrNoRows {
-		return &Tenant{UUID: uuid}, nil
+		return nil, nil
 	}
 	return &Tenant{uuid, latestVersion, dynakube}, nil
 }
@@ -160,34 +160,40 @@ func (a *SqliteAccess) GetTenantViaDynakube(dynakube string) (*Tenant, error) {
 	if err != nil && err != sql.ErrNoRows {
 		return nil, fmt.Errorf("couldn't get tenant field for Dynakube %s, err: %s", dynakube, err)
 	}
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
 	return &Tenant{tenantUUID, latestVersion, dynakube}, nil
 }
 
-func (a *SqliteAccess) InsertPodInfo(pod *Pod) error {
-	_, err := a.conn.Exec(insertPodStatement, pod.UID, pod.VolumeID, pod.Version, pod.TenantUUID)
+func (a *SqliteAccess) InsertVolumeInfo(volume *Volume) error {
+	_, err := a.conn.Exec(insertVolumeStatement, volume.ID, volume.PodUID, volume.Version, volume.TenantUUID)
 	if err != nil {
-		return fmt.Errorf("couldn't insert pod info, UID %s, VolumeID %s, Version %s, TenantUUId: %s err: %s",
-			pod.UID, pod.VolumeID, pod.Version, pod.TenantUUID, err)
+		return fmt.Errorf("couldn't insert volume info, UID %s, VolumeID %s, Version %s, TenantUUId: %s err: %s",
+			volume.ID, volume.PodUID, volume.Version, volume.TenantUUID, err)
 	}
 	return nil
 }
 
-func (a *SqliteAccess) GetPodViaVolumeId(volumeID string) (*Pod, error) {
-	var uid string
+func (a *SqliteAccess) GetVolumeInfo(volumeID string) (*Volume, error) {
+	var podUID string
 	var version string
 	var tenantUUID string
-	row := a.conn.QueryRow(getPodViaVolumeIDStatement, volumeID)
-	err := row.Scan(&uid, &version, &tenantUUID)
+	row := a.conn.QueryRow(getVolumeStatement, volumeID)
+	err := row.Scan(&podUID, &version, &tenantUUID)
 	if err != nil && err != sql.ErrNoRows {
-		return nil, fmt.Errorf("couldn't get pod field for VolumeID %s, err: %s", volumeID, err)
+		return nil, fmt.Errorf("couldn't get volume field for VolumeID %s, err: %s", volumeID, err)
 	}
-	return &Pod{uid, volumeID, version, tenantUUID}, nil
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return &Volume{volumeID, podUID, version, tenantUUID}, nil
 }
 
-func (a *SqliteAccess) DeletePodInfo(pod *Pod) error {
-	_, err := a.conn.Exec(deletePodStatement, pod.UID)
+func (a *SqliteAccess) DeleteVolumeInfo(volumeID string) error {
+	_, err := a.conn.Exec(deleteVolumeStatement, volumeID)
 	if err != nil {
-		return fmt.Errorf("couldn't delete pod, UID %s, err: %s", pod.UID, err)
+		return fmt.Errorf("couldn't delete pod, UID %s, err: %s", volumeID, err)
 	}
 	return nil
 }
