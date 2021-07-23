@@ -218,12 +218,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 				"dynakube", rec.Instance.Name)
 			return
 		}
-		hasEntries, err := checker.Any()
-		if err != nil {
-			log.Error(err, "unable to check if entries exist in config map")
-			return
-		}
-		if !hasEntries {
+		if !checker.Any() {
 			// no dynakubes with code modules exist anymore
 			ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dtcsi.DaemonSetName, Namespace: rec.Instance.Namespace}}
 			if err := r.ensureDeleted(&ds); rec.Error(err) {

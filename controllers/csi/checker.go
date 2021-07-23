@@ -40,7 +40,7 @@ func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace st
 // Should happen when Dynakube was created or setting was enabled.
 func (c *Checker) Add(dynakube string) error {
 	if c.configMap.Data == nil {
-		return ErrMissing
+		c.configMap.Data = map[string]string{}
 	}
 
 	if _, contains := c.configMap.Data[dynakube]; !contains {
@@ -70,13 +70,13 @@ func (c *Checker) Remove(dynakube string) error {
 
 // Any checks if ConfigMap contains entries.
 // If entries exist, there are Dynakubes with CodeModules enabled.
-func (c *Checker) Any() (bool, error) {
+func (c *Checker) Any() bool {
 	if c.configMap.Data == nil {
-		return false, ErrMissing
+		return false
 	}
 
 	c.logger.Info("Checking if ConfigMap has entries")
-	return len(c.configMap.Data) > 1, nil
+	return len(c.configMap.Data) > 0
 }
 
 func loadConfigMap(kubernetesClient client.Client, logger logr.Logger, namespace string) (*corev1.ConfigMap, error) {
@@ -96,9 +96,6 @@ func loadConfigMap(kubernetesClient client.Client, logger logr.Logger, namespace
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      configMapName,
 				Namespace: namespace,
-			},
-			Data: map[string]string{
-				"empty": "",
 			},
 		}
 		logger.Info("creating ConfigMap")
