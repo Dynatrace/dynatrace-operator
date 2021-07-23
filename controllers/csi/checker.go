@@ -19,13 +19,19 @@ const configMapName = "csi-code-modules-checker-map"
 type Checker struct {
 	client    client.Client
 	logger    logr.Logger
+	configMap *corev1.ConfigMap
 	namespace string
 }
 
 func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace string) (*Checker, error) {
+	configMap, err := loadConfigMap(kubernetesClient, logger, namespace)
+	if err != nil {
+		return nil, err
+	}
 	return &Checker{
 		client:    kubernetesClient,
 		logger:    logger,
+		configMap: configMap,
 		namespace: namespace,
 	}, nil
 }
@@ -33,61 +39,55 @@ func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace st
 // Add name of Dynakube with CodeModules enabled to ConfigMap.
 // Should happen when Dynakube was created or setting was enabled.
 func (c *Checker) Add(dynakube string) error {
-	configMap, err := c.loadConfigMap()
-	if err != nil {
-		return err
-	}
-	if configMap.Data == nil {
+	if c.configMap.Data == nil {
 		return ErrMissing
 	}
 
-	c.logger.Info("Adding Dynakube with CodeModules enabled",
-		"dynakube", dynakube)
-	configMap.Data[dynakube] = ""
-	return c.client.Update(context.TODO(), configMap)
+	if _, contains := c.configMap.Data[dynakube]; !contains {
+		c.logger.Info("Adding Dynakube with CodeModules enabled",
+			"dynakube", dynakube)
+		c.configMap.Data[dynakube] = ""
+		return c.client.Update(context.TODO(), c.configMap)
+	}
+	return nil
 }
 
 // Remove name of Dynakube from ConfigMap.
 // Should happen when Dynakube was deleted or setting was disabled.
 func (c *Checker) Remove(dynakube string) error {
-	configMap, err := c.loadConfigMap()
-	if err != nil {
-		return err
-	}
-	if configMap.Data == nil {
+	if c.configMap.Data == nil {
 		return ErrMissing
 	}
 
-	c.logger.Info("Removing Dynakube with CodeModules disabled",
-		"dynakube", dynakube)
-	delete(configMap.Data, dynakube)
-	return c.client.Update(context.TODO(), configMap)
+	if _, contains := c.configMap.Data[dynakube]; contains {
+		c.logger.Info("Removing Dynakube with CodeModules disabled",
+			"dynakube", dynakube)
+		delete(c.configMap.Data, dynakube)
+		return c.client.Update(context.TODO(), c.configMap)
+	}
+	return nil
 }
 
 // Any checks if ConfigMap contains entries.
 // If entries exist, there are Dynakubes with CodeModules enabled.
 func (c *Checker) Any() (bool, error) {
-	configMap, err := c.loadConfigMap()
-	if err != nil {
-		return false, err
-	}
-	if configMap.Data == nil {
+	if c.configMap.Data == nil {
 		return false, ErrMissing
 	}
 
 	c.logger.Info("Checking if ConfigMap has entries")
-	return len(configMap.Data) > 1, nil
+	return len(c.configMap.Data) > 1, nil
 }
 
-func (c *Checker) loadConfigMap() (*corev1.ConfigMap, error) {
+func loadConfigMap(kubernetesClient client.Client, logger logr.Logger, namespace string) (*corev1.ConfigMap, error) {
 	configMap := &corev1.ConfigMap{}
 	// check for existing config map
-	err := c.client.Get(
+	err := kubernetesClient.Get(
 		context.TODO(),
-		client.ObjectKey{Name: configMapName, Namespace: c.namespace},
+		client.ObjectKey{Name: configMapName, Namespace: namespace},
 		configMap)
 	if err != nil {
-		c.logger.Error(err, "error getting config map from client")
+		logger.Error(err, "error getting config map from client")
 	}
 
 	if k8serrors.IsNotFound(err) {
@@ -95,17 +95,17 @@ func (c *Checker) loadConfigMap() (*corev1.ConfigMap, error) {
 		configMap = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      configMapName,
-				Namespace: c.namespace,
+				Namespace: namespace,
 			},
 			Data: map[string]string{
 				"empty": "",
 			},
 		}
-		c.logger.Info("creating ConfigMap")
-		err = c.client.Create(context.TODO(), configMap)
+		logger.Info("creating ConfigMap")
+		err = kubernetesClient.Create(context.TODO(), configMap)
 	}
 	if err != nil {
-		c.logger.Error(err, "error loading config map")
+		logger.Error(err, "error loading config map")
 	}
 	return configMap, err
 }
