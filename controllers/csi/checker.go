@@ -2,15 +2,22 @@ package dtcsi
 
 import (
 	"context"
+	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const configMapName = "dynatrace-csi-checker"
+const (
+	configMapName         = "dynatrace-csi-checker"
+	defaultUpdateInterval = 5 * time.Minute
+)
 
 type Checker struct {
 	client    client.Client
@@ -32,9 +39,36 @@ func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace st
 	}, nil
 }
 
+func (c *Checker) ConfigureCsiDriver(rec *utils.Reconciliation, scheme *runtime.Scheme) error {
+	if rec.Instance.Spec.CodeModules.Enabled {
+		if !c.any() {
+			// enable csi driver, if first Dynakube with CodeModules enabled
+			upd, err := NewReconciler(c.client, scheme, c.logger, rec.Instance).Reconcile()
+			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "CSI driver reconciled") {
+				return err
+			}
+		}
+		if err := c.add(rec.Instance.Name); err != nil {
+			return err
+		}
+	} else {
+		if err := c.remove(rec.Instance.Name); err != nil {
+			return err
+		}
+		if !c.any() {
+			// disable csi driver, no Dynakubes with CodeModules enabled exist anymore
+			ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: DaemonSetName, Namespace: rec.Instance.Namespace}}
+			if err := c.ensureDeleted(&ds); rec.Error(err) {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // Add name of Dynakube with CodeModules enabled to ConfigMap.
 // Should happen when Dynakube was created or setting was enabled.
-func (c *Checker) Add(dynakube string) error {
+func (c *Checker) add(dynakube string) error {
 	if c.configMap.Data == nil {
 		c.configMap.Data = map[string]string{}
 	}
@@ -50,7 +84,7 @@ func (c *Checker) Add(dynakube string) error {
 
 // Remove name of Dynakube from ConfigMap.
 // Should happen when Dynakube was deleted or setting was disabled.
-func (c *Checker) Remove(dynakube string) error {
+func (c *Checker) remove(dynakube string) error {
 	if c.configMap.Data == nil {
 		return nil
 	}
@@ -66,7 +100,7 @@ func (c *Checker) Remove(dynakube string) error {
 
 // Any checks if ConfigMap contains entries.
 // If entries exist, there are Dynakubes with CodeModules enabled.
-func (c *Checker) Any() bool {
+func (c *Checker) any() bool {
 	if c.configMap.Data == nil {
 		return false
 	}
@@ -96,4 +130,11 @@ func loadOrCreateConfigMap(kubernetesClient client.Client, logger logr.Logger, n
 		err = kubernetesClient.Create(context.TODO(), configMap)
 	}
 	return configMap, err
+}
+
+func (c *Checker) ensureDeleted(obj client.Object) error {
+	if err := c.client.Delete(context.TODO(), obj); err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
