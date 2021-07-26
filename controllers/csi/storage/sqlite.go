@@ -80,6 +80,8 @@ type SqliteAccess struct {
 	conn *sql.DB
 }
 
+// Creates a new SqliteAccess,
+//connects to the database and creates the necessary tables if they don't exists
 func NewAccess() *SqliteAccess {
 	a := SqliteAccess{}
 	err := a.init()
@@ -89,6 +91,7 @@ func NewAccess() *SqliteAccess {
 	return &a
 }
 
+// Connects to the database via the provided driver and path to the database.
 func (a *SqliteAccess) Connect(driver, path string) error {
 	db, err := sql.Open(driver, path)
 	if err != nil {
@@ -100,6 +103,7 @@ func (a *SqliteAccess) Connect(driver, path string) error {
 	return nil
 }
 
+//Connects to the database and creates the necessary tables if they don't exists
 func (a *SqliteAccess) init() error {
 	if err := a.Connect(sqliteDriverName, dbPath); err != nil {
 		return err
@@ -122,14 +126,15 @@ func (a *SqliteAccess) createTables() error {
 
 func (a *SqliteAccess) InsertTenant(tenant *Tenant) error {
 	errMessageTemplate := "couldn't insert tenant, UUID %s, LatestVersion %s, Dynakube %s, err: %s"
-	return a.exectueStatement(insertTenantStatement, errMessageTemplate, tenant.UUID, tenant.LatestVersion, tenant.Dynakube)
+	return a.executeStatement(insertTenantStatement, errMessageTemplate, tenant.UUID, tenant.LatestVersion, tenant.Dynakube)
 }
 
 func (a *SqliteAccess) UpdateTenant(tenant *Tenant) error {
 	errMessageTemplate := "couldn't update tenant, LatestVersion %s, Dynakube %s, UUID %s, err: %s"
-	return a.exectueStatement(updateTenantStatement, errMessageTemplate, tenant.LatestVersion, tenant.Dynakube, tenant.UUID)
+	return a.executeStatement(updateTenantStatement, errMessageTemplate, tenant.LatestVersion, tenant.Dynakube, tenant.UUID)
 }
 
+// Gets a Tenant from the database, return (nil, nil) if the tenant is not in the database.
 func (a *SqliteAccess) GetTenant(uuid string) (*Tenant, error) {
 	var latestVersion string
 	var dynakube string
@@ -138,6 +143,8 @@ func (a *SqliteAccess) GetTenant(uuid string) (*Tenant, error) {
 	return NewTenant(uuid, latestVersion, dynakube), nil
 }
 
+// Gets a Tenant from the database via its dynakube, return (nil, nil) if the tenant is not in the database.
+// Needed during NodePublishVolume.
 func (a *SqliteAccess) GetTenantViaDynakube(dynakube string) (*Tenant, error) {
 	var tenantUUID string
 	var latestVersion string
@@ -148,9 +155,10 @@ func (a *SqliteAccess) GetTenantViaDynakube(dynakube string) (*Tenant, error) {
 
 func (a *SqliteAccess) InsertVolumeInfo(volume *Volume) error {
 	errMessageTemplate := "couldn't insert volume info, UID %s, VolumeID %s, Version %s, TenantUUId: %s err: %s"
-	return a.exectueStatement(insertVolumeStatement, errMessageTemplate, volume.ID, volume.PodUID, volume.Version, volume.TenantUUID)
+	return a.executeStatement(insertVolumeStatement, errMessageTemplate, volume.ID, volume.PodUID, volume.Version, volume.TenantUUID)
 }
 
+// Gets a Volume from the database, return (nil, nil) if the volume is not in the database.
 func (a *SqliteAccess) GetVolumeInfo(volumeID string) (*Volume, error) {
 	var podUID string
 	var version string
@@ -162,9 +170,10 @@ func (a *SqliteAccess) GetVolumeInfo(volumeID string) (*Volume, error) {
 
 func (a *SqliteAccess) DeleteVolumeInfo(volumeID string) error {
 	errMessageTemplate := "couldn't delete pod, UID %s, err: %s"
-	return a.exectueStatement(deleteVolumeStatement, errMessageTemplate, volumeID)
+	return a.executeStatement(deleteVolumeStatement, errMessageTemplate, volumeID)
 }
 
+// Gets all unique versions present in the `volumes` database in map.
 func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, error) {
 	rows, err := a.conn.Query(getUsedVersionsStatement, tenantUUID)
 	if err != nil {
@@ -185,7 +194,10 @@ func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, erro
 	return versions, nil
 }
 
-func (a *SqliteAccess) exectueStatement(statement, errMessageTemplate string, vars ...interface{}) error {
+// Excutes the provided SQL statement on the database.
+// The `vars` are passed to the SQL statement (in-order), to fill in the SQL wildcards.
+// The `errMessageTemplate` will be passed the same `vars` + the `err` object, so the template needs to have len(vars) + 1 wildcards.
+func (a *SqliteAccess) executeStatement(statement, errMessageTemplate string, vars ...interface{}) error {
 	_, err := a.conn.Exec(statement, vars...)
 	if err != nil {
 		vars = append(vars, err)
@@ -194,6 +206,11 @@ func (a *SqliteAccess) exectueStatement(statement, errMessageTemplate string, va
 	return nil
 }
 
+// Excutes the provided SQL SELECT statement on the database.
+// The SQL statement should always return a single row.
+// The `id` is passed to the SQL query to fill in an SQL wildcard
+// The `vars` are filled with the values of the return of the SELECT statement, so the `vars` need to be pointers.
+// The `errMessageTemplate` will be passed the `id` + the `err` object, so the template needs to have 2 wildcards.
 func (a *SqliteAccess) querySimpleStatement(statement, id, errMessageTemplate string, vars ...interface{}) error {
 	row := a.conn.QueryRow(statement, id)
 	err := row.Scan(vars...)

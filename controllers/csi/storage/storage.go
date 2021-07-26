@@ -12,6 +12,7 @@ type Tenant struct {
 	Dynakube      string
 }
 
+// Return a new Tenant if all fields are set.
 func NewTenant(uuid, latestVersion, dynakube string) *Tenant {
 	if uuid == "" || latestVersion == "" || dynakube == "" {
 		return nil
@@ -26,6 +27,7 @@ type Volume struct {
 	TenantUUID string
 }
 
+// Return a new Volume if all fields are set.
 func NewVolume(id, podUID, version, tenantUUID string) *Volume {
 	if id == "" || podUID == "" || version == "" || tenantUUID == "" {
 		return nil
