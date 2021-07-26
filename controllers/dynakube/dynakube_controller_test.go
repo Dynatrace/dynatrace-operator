@@ -37,6 +37,10 @@ const (
 	testAnotherHost     = "test-another-host"
 	testAnotherPort     = uint32(5678)
 	testAnotherProtocol = "test-another-protocol"
+
+	testOperatorPodName    = "test-operator-name"
+	testDynatraceNamespace = "dynatrace"
+	testOperatorImage      = "test-operator-image"
 )
 
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
@@ -328,14 +332,31 @@ func TestReconcile_CodeModules(t *testing.T) {
 			dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
+			operatorPodName:   testOperatorPodName,
+			operatorNamespace: testDynatraceNamespace,
 		}
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{
-			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+			NamespacedName: types.NamespacedName{Namespace: "dynatrace", Name: testName},
 		})
 
 		require.NoError(t, err)
 		require.NotNil(t, result)
+
+		configMap := &corev1.ConfigMap{}
+		err = fakeClient.Get(context.TODO(),
+			client.ObjectKey{
+				Name:      "dynatrace-csi-checker",
+				Namespace: testDynatraceNamespace,
+			}, configMap)
+		require.NoError(t, err)
+
+		assert.NotNil(t, configMap.Data)
+		assert.Equal(t, 1, len(configMap.Data))
+
+		val, ok := configMap.Data[testName]
+		assert.True(t, ok)
+		assert.Equal(t, "", val)
 	})
 }
 
@@ -373,7 +394,7 @@ func buildFakeClient(dynakubeSpec v1alpha1.DynaKubeSpec) client.Client {
 	instance := &v1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
-			Namespace: testNamespace,
+			Namespace: testDynatraceNamespace,
 		},
 		Spec: dynakubeSpec,
 	}
@@ -381,7 +402,7 @@ func buildFakeClient(dynakubeSpec v1alpha1.DynaKubeSpec) client.Client {
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
-				Namespace: testNamespace,
+				Namespace: testDynatraceNamespace,
 			},
 			Data: map[string][]byte{
 				dtclient.DynatracePaasToken: []byte(testPaasToken),
@@ -391,6 +412,19 @@ func buildFakeClient(dynakubeSpec v1alpha1.DynaKubeSpec) client.Client {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: kubesystem.Namespace,
 				UID:  testUID,
-			}})
+			}},
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testOperatorPodName,
+				Namespace: testDynatraceNamespace,
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name: testOperatorImage,
+					},
+				},
+			},
+		})
 	return fakeClient
 }

@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	configMapName         = "dynatrace-csi-checker"
-	defaultUpdateInterval = 5 * time.Minute
+	configMapName = "dynatrace-csi-checker"
 )
 
 type Checker struct {
@@ -43,13 +42,19 @@ func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace st
 	}, nil
 }
 
-func (c *Checker) ConfigureCsiDriver(rec *utils.Reconciliation, scheme *runtime.Scheme) error {
+func (c *Checker) ConfigureCsiDriver(rec *utils.Reconciliation, scheme *runtime.Scheme, updateInterval time.Duration) error {
 	if rec.Instance.Spec.CodeModules.Enabled {
 		if !c.any() {
 			// enable csi driver, if first Dynakube with CodeModules enabled
 			upd, err := NewReconciler(c.client, scheme, c.logger, rec.Instance, c.operatorPodName, c.operatorNamespace).Reconcile()
-			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "CSI driver reconciled") {
+			if err != nil {
 				return err
+			}
+			if err = c.add(rec.Instance.Name); err != nil {
+				return err
+			}
+			if rec.Update(upd, updateInterval, "CSI driver reconciled") {
+				return nil
 			}
 		}
 		if err := c.add(rec.Instance.Name); err != nil {

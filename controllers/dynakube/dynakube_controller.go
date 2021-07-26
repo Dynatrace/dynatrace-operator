@@ -205,7 +205,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	}
 
 	if err = r.checkCodeModules(rec, r.scheme); err != nil {
-		rec.Log.Error(err, "could not  Dynatrace code modules")
+		rec.Log.Error(err, "could not check code modules")
 		return
 	}
 
@@ -311,5 +311,5 @@ func (r *ReconcileDynaKube) checkCodeModules(rec *utils.Reconciliation, scheme *
 	if err != nil {
 		return err
 	}
-	return checker.ConfigureCsiDriver(rec, scheme)
+	return checker.ConfigureCsiDriver(rec, scheme, defaultUpdateInterval)
 }
