@@ -71,6 +71,39 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
 	})
+	t.Run(`failed to create directories`, func(t *testing.T) {
+		clt := fake.NewClient(
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}})
+		srv := &CSIDriverServer{
+			client: clt,
+			opts:   dtcsi.CSIOptions{RootDir: "/"},
+			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
+		}
+		volumeCfg := &volumeConfig{
+			namespace: namespace,
+		}
+
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, storage.FakeMemoryDB())
+
+		assert.Error(t, err)
+		assert.Nil(t, bindCfg)
+	})
+	t.Run(`failed to read version file`, func(t *testing.T) {
+		clt := fake.NewClient(
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}})
+		srv := &CSIDriverServer{
+			client: clt,
+			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
+		}
+		volumeCfg := &volumeConfig{
+			namespace: namespace,
+		}
+
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, storage.FakeMemoryDB())
+
+		assert.Error(t, err)
+		assert.Nil(t, bindCfg)
+	})
 	t.Run(`create correct bind config`, func(t *testing.T) {
 		clt := fake.NewClient(
 			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}},

@@ -199,7 +199,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 	}
 
 	if err := svr.storeVolumeInfo(bindCfg, volumeCfg); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to store pod info: %s", err))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to store volume info: %s", err))
 	}
 	agentsVersionsMetric.WithLabelValues(bindCfg.version).Inc()
 	return &csi.NodePublishVolumeResponse{}, nil

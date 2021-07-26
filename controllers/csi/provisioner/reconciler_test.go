@@ -2,6 +2,7 @@ package csiprovisioner
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -261,6 +262,49 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, exists)
 	})
+	t.Run(`error getting tenant`, func(t *testing.T) {
+		memFs := afero.NewMemMapFs()
+		mockClient := &dtclient.MockDynatraceClient{}
+		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
+			TenantUUID: tenantUUID,
+		}, nil)
+		mockClient.On("GetLatestAgentVersion",
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("string")).Return(agentVersion, nil)
+		r := &OneAgentProvisioner{
+			client: fake.NewClient(
+				&v1alpha1.DynaKube{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dkName,
+					},
+					Spec: v1alpha1.DynaKubeSpec{
+						CodeModules: buildValidCodeModulesSpec(t),
+					},
+					Status: v1alpha1.DynaKubeStatus{
+						ConnectionInfo: v1alpha1.ConnectionInfoStatus{
+							TenantUUID: tenantUUID,
+						},
+					},
+				},
+				&v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dkName,
+					},
+				},
+			),
+			dtcBuildFunc: func(rtc client.Client, instance *v1alpha1.DynaKube, secret *v1.Secret) (dtclient.Client, error) {
+				return mockClient, nil
+			},
+			fs: memFs,
+			db: &failDB{},
+		}
+
+		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
+
+		assert.Error(t, err)
+		assert.Empty(t, result)
+
+	})
 	t.Run(`correct directories are created`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		memDB := storage.FakeMemoryDB()
@@ -426,4 +470,19 @@ func buildValidCodeModulesSpec(_ *testing.T) v1alpha1.CodeModulesSpec {
 			},
 		},
 	}
+}
+
+type failDB struct{}
+
+func (f *failDB) InsertTenant(tenant *storage.Tenant) error      { return sql.ErrTxDone }
+func (f *failDB) UpdateTenant(tenant *storage.Tenant) error      { return sql.ErrTxDone }
+func (f *failDB) GetTenant(uuid string) (*storage.Tenant, error) { return nil, sql.ErrTxDone }
+func (f *failDB) GetTenantViaDynakube(dynakube string) (*storage.Tenant, error) {
+	return nil, sql.ErrTxDone
+}
+func (f *failDB) InsertVolumeInfo(volume *storage.Volume) error          { return sql.ErrTxDone }
+func (f *failDB) DeleteVolumeInfo(volumeID string) error                 { return sql.ErrTxDone }
+func (f *failDB) GetVolumeInfo(volumeID string) (*storage.Volume, error) { return nil, sql.ErrTxDone }
+func (f *failDB) GetUsedVersions(tenantUUID string) (map[string]bool, error) {
+	return nil, sql.ErrTxDone
 }
