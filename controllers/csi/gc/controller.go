@@ -53,7 +53,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	var dk dynatracev1alpha1.DynaKube
 	if err := gc.client.Get(ctx, request.NamespacedName, &dk); err != nil {
 		if k8serrors.IsNotFound(err) {
-			gc.logger.Error(err, "given DynaKube object not found")
+			gc.logger.Info("given DynaKube object not found")
 			return reconcileResult, nil
 		}
 
@@ -75,21 +75,21 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 
 	ci, err := dtc.GetConnectionInfo()
 	if err != nil {
-		gc.logger.Error(err, "failed to fetch connection info")
+		gc.logger.Info("failed to fetch connection info")
 		return reconcileResult, nil
 	}
 
-	ver, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
+	latestAgentVersion, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
-		gc.logger.Error(err, "failed to query OneAgent version")
+		gc.logger.Info("failed to query OneAgent version")
 		return reconcileResult, nil
 	}
 
 	gc.logger.Info("running binary garbage collection")
-	if err := gc.runBinaryGarbageCollection(ci.TenantUUID, ver); err != nil {
-		gc.logger.Error(err, "garbage collection failed")
-		return reconcileResult, nil
-	}
+	gc.runBinaryGarbageCollection(ci.TenantUUID, latestAgentVersion)
+
+	gc.logger.Info("running log garbage collection")
+	gc.runLogGarbageCollection(ci.TenantUUID)
 
 	return reconcileResult, nil
 }

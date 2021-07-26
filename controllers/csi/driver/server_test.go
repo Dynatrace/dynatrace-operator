@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	logr "github.com/go-logr/logr/testing"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -159,6 +160,7 @@ func TestServer_NodeUnpublishVolume(t *testing.T) {
 	}
 
 	t.Run(`valid metadata`, func(t *testing.T) {
+		resetMetrics()
 		mounter := mount.NewFakeMounter([]mount.MountPoint{
 			{Path: testTargetPath},
 			{Path: fmt.Sprintf("/%s/run/%s/mapped", tenantUuid, volumeId)},
@@ -166,7 +168,13 @@ func TestServer_NodeUnpublishVolume(t *testing.T) {
 		server := newServerForTesting(t, mounter)
 		mockPublishedVolume(t, &server)
 
+		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
+		assert.Equal(t, float64(1), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
+
 		response, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
+
+		assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
+		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
@@ -175,6 +183,7 @@ func TestServer_NodeUnpublishVolume(t *testing.T) {
 	})
 
 	t.Run(`invalid metadata`, func(t *testing.T) {
+		resetMetrics()
 		mounter := mount.NewFakeMounter([]mount.MountPoint{
 			{Path: testTargetPath},
 			{Path: fmt.Sprintf("/%s/run/%s/mapped", tenantUuid, volumeId)},
@@ -182,6 +191,9 @@ func TestServer_NodeUnpublishVolume(t *testing.T) {
 		server := newServerForTesting(t, mounter)
 
 		response, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
+
+		assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
+		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
@@ -191,6 +203,7 @@ func TestServer_NodeUnpublishVolume(t *testing.T) {
 }
 
 func TestCSIDriverServer_NodePublishAndUnpublishVolume(t *testing.T) {
+	resetMetrics()
 	nodePublishVolumeRequest := &csi.NodePublishVolumeRequest{
 		VolumeId: volumeId,
 		VolumeContext: map[string]string{
@@ -211,12 +224,18 @@ func TestCSIDriverServer_NodePublishAndUnpublishVolume(t *testing.T) {
 
 	publishResponse, err := server.NodePublishVolume(context.TODO(), nodePublishVolumeRequest)
 
+	assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
+	assert.Equal(t, float64(1), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
+
 	assert.NoError(t, err)
 	assert.NotNil(t, publishResponse)
 	assert.NotEmpty(t, mounter.MountPoints)
 	assertReferencesForPublishedVolume(t, mounter, server.fs)
 
 	unpublishResponse, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
+
+	assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
+	assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
 	assert.NoError(t, err)
 	assert.NotNil(t, unpublishResponse)
@@ -292,10 +311,12 @@ func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServ
 }
 
 func mockPublishedVolume(t *testing.T, server *CSIDriverServer) {
-	metadata := fmt.Sprintf("{\"OverlayFSPath\":\"/%s/run/%s\", \"UsageFilePath\":\"/%s/gc/%s\"}", tenantUuid, volumeId, tenantUuid, agentVersion)
+	metadata := fmt.Sprintf("{\"OverlayFSPath\":\"/%s/run/%s\", \"UsageFilePath\":\"/%s/gc/%s/%s\"}", tenantUuid, volumeId, tenantUuid, agentVersion, volumeId)
 
 	err := server.fs.WriteFile(filepath.Join(server.opts.RootDir, "gc", volumeId), []byte(metadata), os.ModePerm)
 	require.NoError(t, err)
+
+	agentsVersionsMetric.WithLabelValues(agentVersion).Inc()
 }
 
 func mockOneAgent(t *testing.T, server *CSIDriverServer) {
@@ -327,4 +348,8 @@ func assertNoReferencesForUnpublishedVolume(t *testing.T, fs afero.Afero) {
 	exists, err = fs.Exists(versionReferencePath)
 	assert.NoError(t, err)
 	assert.False(t, exists)
+}
+
+func resetMetrics() {
+	agentsVersionsMetric.DeleteLabelValues(agentVersion)
 }

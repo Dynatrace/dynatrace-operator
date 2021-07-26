@@ -57,6 +57,8 @@ func main() {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Namespace:              namespace,
 		Scheme:                 scheme.Scheme,
+		MetricsBindAddress:     ":8080",
+		Port:                   8383,
 		HealthProbeBindAddress: *probeAddr,
 	})
 	if err != nil {
