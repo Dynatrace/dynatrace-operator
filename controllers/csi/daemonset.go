@@ -380,7 +380,7 @@ func prepareVolumes() []v1.Volume {
 			Name: "dynatrace-oneagent-data-dir",
 			VolumeSource: v1.VolumeSource{
 				HostPath: &v1.HostPathVolumeSource{
-					Path: "/tmp/dynatrace-oneagent-data",
+					Path: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data",
 					Type: &hostPathDirOrCreate,
 				},
 			},

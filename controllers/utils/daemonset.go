@@ -18,7 +18,7 @@ import (
 func CreateOrUpdateDaemonSet(c client.Client, logger logr.Logger, desiredDs *appsv1.DaemonSet) (bool, error) {
 	currentDs, err := getDaemonSet(c, desiredDs)
 	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
-		logger.Info("creating new daemonset set for CSI driver")
+		logger.Info("creating new daemonset for CSI driver")
 		return true, c.Create(context.TODO(), desiredDs)
 	} else if err != nil {
 		return false, nil
