@@ -46,6 +46,7 @@ func (c *Checker) ConfigureCsiDriver(rec *utils.Reconciliation, scheme *runtime.
 	if rec.Instance.Spec.CodeModules.Enabled {
 		if !c.any() {
 			// enable csi driver, if first Dynakube with CodeModules enabled
+			c.logger.Info("enabling csi driver")
 			upd, err := NewReconciler(c.client, scheme, c.logger, rec.Instance, c.operatorPodName, c.operatorNamespace).Reconcile()
 			if err != nil {
 				return err
@@ -65,6 +66,7 @@ func (c *Checker) ConfigureCsiDriver(rec *utils.Reconciliation, scheme *runtime.
 			return err
 		}
 		if !c.any() {
+			c.logger.Info("ensuring csi driver is disabled")
 			// disable csi driver, no Dynakubes with CodeModules enabled exist anymore
 			// ensures csi driver is disabled, when additional CodeModules are disabled
 			ds := appsv1.DaemonSet{
@@ -89,8 +91,6 @@ func (c *Checker) add(dynakube string) error {
 	}
 
 	if _, contains := c.configMap.Data[dynakube]; !contains {
-		c.logger.Info("Adding Dynakube with CodeModules enabled",
-			"dynakube", dynakube)
 		c.configMap.Data[dynakube] = ""
 		return c.client.Update(context.TODO(), c.configMap)
 	}
@@ -105,8 +105,6 @@ func (c *Checker) remove(dynakube string) error {
 	}
 
 	if _, contains := c.configMap.Data[dynakube]; contains {
-		c.logger.Info("Removing Dynakube with CodeModules disabled",
-			"dynakube", dynakube)
 		delete(c.configMap.Data, dynakube)
 		return c.client.Update(context.TODO(), c.configMap)
 	}
@@ -120,7 +118,6 @@ func (c *Checker) any() bool {
 		return false
 	}
 
-	c.logger.Info("Checking if ConfigMap has entries")
 	return len(c.configMap.Data) > 0
 }
 
