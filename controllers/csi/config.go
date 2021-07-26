@@ -23,6 +23,11 @@ const (
 	DriverName            = "csi.oneagent.dynatrace.com"
 	GarbageCollectionPath = "gc"
 	VersionDir            = "version"
+	AgentBinaryDir        = "bin"
+	AgentRunDir           = "run"
+	OverlayMappedDirPath  = "mapped"
+	OverlayVarDirPath     = "var"
+	OverlayWorkDirPath    = "work"
 )
 
 type CSIOptions struct {

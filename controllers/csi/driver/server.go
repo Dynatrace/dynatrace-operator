@@ -75,6 +75,7 @@ type CSIDriverServer struct {
 	fs      afero.Afero
 	mounter mount.Interface
 	db      storage.Access
+	fph     storage.FilePathHandler
 }
 
 var _ manager.Runnable = &CSIDriverServer{}
@@ -89,6 +90,7 @@ func NewServer(client client.Client, opts dtcsi.CSIOptions) *CSIDriverServer {
 		fs:      afero.Afero{Fs: afero.NewOsFs()},
 		mounter: mount.New(""),
 		db:      storage.NewAccess(),
+		fph:     storage.FilePathHandler{RootDir: opts.RootDir},
 	}
 }
 
@@ -214,7 +216,7 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 		svr.log.Info("failed to load volume info", "error", err.Error())
 	}
 
-	overlayFSPath := filepath.Join(svr.opts.RootDir, volume.TenantUUID, "run", volumeID)
+	overlayFSPath := svr.fph.AgentRunDirForVolume(volume.TenantUUID, volumeID)
 
 	if err = svr.umountOneAgent(targetPath, overlayFSPath); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount oneagent volume: %s", err.Error()))
@@ -267,19 +269,17 @@ func (svr *CSIDriverServer) NodeExpandVolume(context.Context, *csi.NodeExpandVol
 }
 
 func (svr *CSIDriverServer) mountOneAgent(bindCfg *bindConfig, volumeCfg *volumeConfig) error {
-	agentDirectoryForPod := filepath.Join(bindCfg.envDir, "run", volumeCfg.volumeId)
-
-	mappedDir := filepath.Join(agentDirectoryForPod, "mapped")
+	mappedDir := svr.fph.OverlayMappedDir(bindCfg.tenantUUID, volumeCfg.volumeId)
 	_ = svr.fs.MkdirAll(mappedDir, os.ModePerm)
 
-	upperDir := filepath.Join(agentDirectoryForPod, "var")
+	upperDir := svr.fph.OverlayVarDir(bindCfg.tenantUUID, volumeCfg.volumeId)
 	_ = svr.fs.MkdirAll(upperDir, os.ModePerm)
 
-	workDir := filepath.Join(agentDirectoryForPod, "work")
+	workDir := svr.fph.OverlayWorkDir(bindCfg.tenantUUID, volumeCfg.volumeId)
 	_ = svr.fs.MkdirAll(workDir, os.ModePerm)
 
 	overlayOptions := []string{
-		"lowerdir=" + bindCfg.agentDir,
+		"lowerdir=" + svr.fph.AgentBinaryDirForVersion(bindCfg.tenantUUID, bindCfg.version),
 		"upperdir=" + upperDir,
 		"workdir=" + workDir,
 	}
@@ -305,7 +305,7 @@ func (svr *CSIDriverServer) umountOneAgent(targetPath string, overlayFSPath stri
 	}
 
 	if filepath.IsAbs(overlayFSPath) {
-		agentDirectoryForPod := filepath.Join(overlayFSPath, "mapped")
+		agentDirectoryForPod := filepath.Join(overlayFSPath, dtcsi.OverlayMappedDirPath)
 		if err := svr.mounter.Unmount(agentDirectoryForPod); err != nil {
 			svr.log.Error(err, "Unmount failed", "path", agentDirectoryForPod)
 		}

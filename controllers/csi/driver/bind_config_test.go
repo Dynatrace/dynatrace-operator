@@ -78,11 +78,13 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: dkName},
 			},
 		)
+		opts := dtcsi.CSIOptions{RootDir: "/"}
 		srv := &CSIDriverServer{
 			client: clt,
-			opts:   dtcsi.CSIOptions{RootDir: "/"},
+			opts:   opts,
 			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
 			db:     storage.FakeMemoryDB(),
+			fph:    storage.FilePathHandler{RootDir: opts.RootDir},
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
@@ -94,7 +96,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, bindCfg)
-		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid, "bin", agentVersion), bindCfg.agentDir)
-		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid), bindCfg.envDir)
+		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid, "bin", agentVersion), srv.fph.AgentBinaryDirForVersion(tenantUuid, agentVersion))
+		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid), srv.fph.EnvDir(tenantUuid))
 	})
 }

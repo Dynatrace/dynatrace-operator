@@ -249,8 +249,6 @@ func TestStoreAndLoadPodInfo(t *testing.T) {
 	server := newServerForTesting(t, mounter)
 
 	bindCfg := &bindConfig{
-		agentDir:   "",
-		envDir:     tenantUuid,
 		version:    agentVersion,
 		tenantUUID: tenantUuid,
 	}
@@ -319,6 +317,7 @@ func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServ
 		fs:      afero.Afero{Fs: tmpFs},
 		mounter: mounter,
 		db:      storage.FakeMemoryDB(),
+		fph:     storage.FilePathHandler{RootDir: csiOptions.RootDir},
 	}
 }
 

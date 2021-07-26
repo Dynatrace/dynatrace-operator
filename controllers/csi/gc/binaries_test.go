@@ -30,7 +30,7 @@ func TestBinaryGarbageCollector_getUsedVersions(t *testing.T) {
 	gc := NewMockGarbageCollector()
 	gc.mockUsedVersions(version_1, version_2, version_3)
 
-	usedVersions, err := gc.getUsedVersions(tenantUUID)
+	usedVersions, err := gc.db.GetUsedVersions(tenantUUID)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, usedVersions)
@@ -108,6 +108,7 @@ func NewMockGarbageCollector() *CSIGarbageCollector {
 		opts:   dtcsi.CSIOptions{RootDir: rootDir},
 		fs:     afero.NewMemMapFs(),
 		db:     storage.FakeMemoryDB(),
+		fph:    storage.FilePathHandler{RootDir: rootDir},
 	}
 }
 

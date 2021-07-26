@@ -3,7 +3,6 @@ package csidriver
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
@@ -15,8 +14,6 @@ import (
 
 type bindConfig struct {
 	tenantUUID string
-	agentDir   string
-	envDir     string
 	version    string
 }
 
@@ -38,12 +35,8 @@ func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeC
 	if tenant == nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("tenant is missing from storage for DynaKube %s", dkName))
 	}
-	envDir := filepath.Join(svr.opts.RootDir, tenant.UUID)
-	agentDir := filepath.Join(envDir, "bin", tenant.LatestVersion)
 	return &bindConfig{
 		tenantUUID: tenant.UUID,
-		agentDir:   agentDir,
-		envDir:     envDir,
 		version:    tenant.LatestVersion,
 	}, nil
 }

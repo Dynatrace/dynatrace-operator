@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"runtime"
 	"time"
 
@@ -57,6 +56,7 @@ type OneAgentProvisioner struct {
 	fs           afero.Fs
 	recorder     record.EventRecorder
 	db           storage.Access
+	fph          storage.FilePathHandler
 }
 
 // NewReconciler returns a new OneAgentProvisioner
@@ -68,6 +68,7 @@ func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgentProvisio
 		fs:           afero.NewOsFs(),
 		recorder:     mgr.GetEventRecorderFor("OneAgentProvisioner"),
 		db:           storage.NewAccess(),
+		fph:          storage.FilePathHandler{RootDir: opts.RootDir},
 	}
 }
 
@@ -119,15 +120,14 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	oldTenant := *tenant
 
 	// Create necessary directories
-	envDir := filepath.Join(r.opts.RootDir, tenant.UUID)
-	if err = r.createCSIDirectories(envDir); err != nil {
+	if err = r.createCSIDirectories(r.fph.EnvDir(tenant.UUID)); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	// Check the state, update if necessary
 	r.updateTenantDynakube(tenant, dk.Name)
 
-	if err = r.updateAgent(dk, tenant, dtc, envDir, rlog); err != nil {
+	if err = r.updateAgent(dk, tenant, dtc, rlog); err != nil {
 		return reconcile.Result{}, err
 	}
 	if oldTenant != *tenant {
@@ -169,12 +169,12 @@ func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.Namesp
 	return &dk, err
 }
 
-func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, tenant *storage.Tenant, dtc dtclient.Client, envDir string, logger logr.Logger) error {
+func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, tenant *storage.Tenant, dtc dtclient.Client, logger logr.Logger) error {
 	currentVersion := dk.Status.LatestAgentVersionUnixPaas
 
 	if currentVersion != tenant.LatestVersion {
 		tenant.LatestVersion = currentVersion
-		if err := r.installAgentVersion(currentVersion, envDir, dtc, logger); err != nil {
+		if err := r.installAgentVersion(currentVersion, tenant.UUID, dtc, logger); err != nil {
 			return err
 		}
 		r.recorder.Eventf(dk,
@@ -185,13 +185,13 @@ func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, tenant
 	return nil
 }
 
-func (r *OneAgentProvisioner) installAgentVersion(version string, envDir string, dtc dtclient.Client, logger logr.Logger) error {
+func (r *OneAgentProvisioner) installAgentVersion(version string, tenantUUID string, dtc dtclient.Client, logger logr.Logger) error {
 	arch := dtclient.ArchX86
 	if runtime.GOARCH == "arm64" {
 		arch = dtclient.ArchARM
 	}
 
-	targetDir := filepath.Join(envDir, "bin", version)
+	targetDir := r.fph.AgentBinaryDirForVersion(tenantUUID, version)
 
 	if _, err := r.fs.Stat(targetDir); os.IsNotExist(err) {
 		installAgentCfg := newInstallAgentConfig(logger, dtc, arch, targetDir)

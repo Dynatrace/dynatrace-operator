@@ -2,7 +2,6 @@ package csigc
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -42,17 +41,16 @@ func init() {
 
 func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, latestVersion string) {
 	fs := &afero.Afero{Fs: gc.fs}
-	binaryDir := filepath.Join(gc.opts.RootDir, tenantUUID, "bin")
 	gcRunsMetric.Inc()
 
-	usedVersions, err := gc.getUsedVersions(tenantUUID)
+	usedVersions, err := gc.db.GetUsedVersions(tenantUUID)
 	if err != nil {
 		gc.logger.Info("failed to get used versions", "error", err)
 		return
 	}
 	gc.logger.Info("got all used versions", "tenantUUID", tenantUUID, "len(usedVersions)", len(usedVersions))
 
-	storedVersions, err := gc.getStoredVersions(fs, binaryDir)
+	storedVersions, err := gc.getStoredVersions(fs, tenantUUID)
 	if err != nil {
 		gc.logger.Info("failed to get stored versions", "error", err)
 		return
@@ -64,7 +62,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, lat
 			shouldDeleteVersion(version, usedVersions)
 
 		if shouldDelete {
-			binaryPath := filepath.Join(binaryDir, version)
+			binaryPath := gc.fph.AgentBinaryDirForVersion(tenantUUID, version)
 			gc.logger.Info("deleting unused version", "version", version, "path", binaryPath)
 
 			removeUnusedVersion(fs, binaryPath, gc.logger)
@@ -72,17 +70,9 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, lat
 	}
 }
 
-func (gc *CSIGarbageCollector) getUsedVersions(tenantUUID string) (map[string]bool, error) {
-	versions, err := gc.db.GetUsedVersions(tenantUUID)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	return versions, nil
-}
-
-func (gc *CSIGarbageCollector) getStoredVersions(fs *afero.Afero, binaryDir string) ([]string, error) {
+func (gc *CSIGarbageCollector) getStoredVersions(fs *afero.Afero, tenantUUID string) ([]string, error) {
 	versions := []string{}
-	bins, err := fs.ReadDir(binaryDir)
+	bins, err := fs.ReadDir(gc.fph.AgentBinaryDir(tenantUUID))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
