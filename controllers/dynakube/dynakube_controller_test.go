@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -315,49 +316,99 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	assert.True(t, k8serrors.IsNotFound(err))
 }
 
-func TestReconcile_CodeModules(t *testing.T) {
-	t.Run("Reconcile enabled CodeModules", func(t *testing.T) {
-		dynakubeSpec := v1alpha1.DynaKubeSpec{
-			CodeModules: v1alpha1.CodeModulesSpec{
-				Enabled: true,
-			},
-		}
-		fakeClient := buildFakeClient(dynakubeSpec)
-		mockClient := buildMockDtClient()
+func TestReconcile_CodeModules_EnableCSI(t *testing.T) {
+	dynakube := buildDynakube(testName, true)
+	fakeClient := buildFakeClient(dynakube)
+	r := buildReconciliation(fakeClient)
 
-		r := &ReconcileDynaKube{
-			client:    fakeClient,
-			apiReader: fakeClient,
-			scheme:    scheme.Scheme,
-			dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
-				return mockClient, nil
-			},
-			operatorPodName:   testOperatorPodName,
-			operatorNamespace: testDynatraceNamespace,
-		}
-
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{
-			NamespacedName: types.NamespacedName{Namespace: "dynatrace", Name: testName},
-		})
-
-		require.NoError(t, err)
-		require.NotNil(t, result)
-
-		configMap := &corev1.ConfigMap{}
-		err = fakeClient.Get(context.TODO(),
-			client.ObjectKey{
-				Name:      "dynatrace-csi-checker",
-				Namespace: testDynatraceNamespace,
-			}, configMap)
-		require.NoError(t, err)
-
-		assert.NotNil(t, configMap.Data)
-		assert.Equal(t, 1, len(configMap.Data))
-
-		val, ok := configMap.Data[testName]
-		assert.True(t, ok)
-		assert.Equal(t, "", val)
+	result, err := r.Reconcile(context.TODO(), reconcile.Request{
+		NamespacedName: types.NamespacedName{Namespace: "dynatrace", Name: testName},
 	})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	daemonSet := &appsv1.DaemonSet{}
+	err = fakeClient.Get(context.TODO(),
+		client.ObjectKey{
+			Name:      dtcsi.DaemonSetName,
+			Namespace: testDynatraceNamespace,
+		}, daemonSet)
+	require.NoError(t, err)
+
+	assert.Equal(t, 3, len(daemonSet.Spec.Template.Spec.Containers))
+	assert.Equal(t, "driver", daemonSet.Spec.Template.Spec.Containers[0].Name)
+
+	configMap := &corev1.ConfigMap{}
+	err = fakeClient.Get(context.TODO(),
+		client.ObjectKey{
+			Name:      dtcsi.CheckerConfigMapName,
+			Namespace: testDynatraceNamespace,
+		}, configMap)
+	require.NoError(t, err)
+	assert.NotNil(t, configMap.Data)
+	assert.Equal(t, 1, len(configMap.Data))
+
+	val, ok := configMap.Data[testName]
+	assert.True(t, ok)
+	assert.Equal(t, "", val)
+}
+
+func TestReconcile_CodeModules_DisableCSI(t *testing.T) {
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dtcsi.CheckerConfigMapName,
+			Namespace: testDynatraceNamespace,
+		},
+		Data: map[string]string{
+			testName: "",
+		},
+	}
+	daemonSet := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dtcsi.DaemonSetName,
+			Namespace: testDynatraceNamespace,
+		},
+	}
+	dynakube := buildDynakube(testName, false)
+	fakeClient := buildFakeClient(dynakube, configMap, daemonSet)
+	r := buildReconciliation(fakeClient)
+
+	result, err := r.Reconcile(context.TODO(), reconcile.Request{
+		NamespacedName: types.NamespacedName{Namespace: "dynatrace", Name: testName},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	updatedDaemonSet := &appsv1.DaemonSet{}
+	err = fakeClient.Get(context.TODO(),
+		client.ObjectKey{
+			Name:      dtcsi.DaemonSetName,
+			Namespace: testDynatraceNamespace,
+		}, updatedDaemonSet)
+	require.Error(t, err)
+
+	updatedConfigMap := &corev1.ConfigMap{}
+	err = fakeClient.Get(context.TODO(),
+		client.ObjectKey{
+			Name:      dtcsi.CheckerConfigMapName,
+			Namespace: testDynatraceNamespace,
+		}, updatedConfigMap)
+	require.NoError(t, err)
+	assert.Nil(t, updatedConfigMap.Data)
+}
+
+func buildDynakube(name string, codeModulesEnabled bool) *v1alpha1.DynaKube {
+	return &v1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: testDynatraceNamespace,
+		},
+		Spec: v1alpha1.DynaKubeSpec{
+			CodeModules: v1alpha1.CodeModulesSpec{
+				Enabled: codeModulesEnabled,
+			},
+		},
+	}
 }
 
 func buildMockDtClient() *dtclient.MockDynatraceClient {
@@ -390,15 +441,9 @@ func buildMockDtClient() *dtclient.MockDynatraceClient {
 	return mockClient
 }
 
-func buildFakeClient(dynakubeSpec v1alpha1.DynaKubeSpec) client.Client {
-	instance := &v1alpha1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testDynatraceNamespace,
-		},
-		Spec: dynakubeSpec,
-	}
-	fakeClient := fake.NewClient(instance,
+func buildFakeClient(objs ...client.Object) client.Client {
+	objs = append(
+		objs,
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -426,5 +471,20 @@ func buildFakeClient(dynakubeSpec v1alpha1.DynaKubeSpec) client.Client {
 				},
 			},
 		})
+	fakeClient := fake.NewClient(objs...)
 	return fakeClient
+}
+
+func buildReconciliation(fakeClient client.Client) *ReconcileDynaKube {
+	r := &ReconcileDynaKube{
+		client:    fakeClient,
+		apiReader: fakeClient,
+		scheme:    scheme.Scheme,
+		dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
+			return buildMockDtClient(), nil
+		},
+		operatorPodName:   testOperatorPodName,
+		operatorNamespace: testDynatraceNamespace,
+	}
+	return r
 }

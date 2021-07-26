@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	configMapName = "dynatrace-csi-checker"
+	CheckerConfigMapName = "dynatrace-csi-checker"
 )
 
 type Checker struct {
@@ -66,7 +66,13 @@ func (c *Checker) ConfigureCsiDriver(rec *utils.Reconciliation, scheme *runtime.
 		}
 		if !c.any() {
 			// disable csi driver, no Dynakubes with CodeModules enabled exist anymore
-			ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: DaemonSetName, Namespace: rec.Instance.Namespace}}
+			// ensures csi driver is disabled, when additional CodeModules are disabled
+			ds := appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      DaemonSetName,
+					Namespace: rec.Instance.Namespace,
+				},
+			}
 			if err := c.ensureDeleted(&ds); rec.Error(err) {
 				return err
 			}
@@ -124,14 +130,14 @@ func loadOrCreateConfigMap(kubernetesClient client.Client, logger logr.Logger, n
 	// check for existing config map
 	err := kubernetesClient.Get(
 		context.TODO(),
-		client.ObjectKey{Name: configMapName, Namespace: namespace},
+		client.ObjectKey{Name: CheckerConfigMapName, Namespace: namespace},
 		configMap)
 
 	if k8serrors.IsNotFound(err) {
 		// create config map
 		configMap = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      configMapName,
+				Name:      CheckerConfigMapName,
 				Namespace: namespace,
 			},
 		}
