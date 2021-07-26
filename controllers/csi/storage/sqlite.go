@@ -139,8 +139,8 @@ func (a *SqliteAccess) GetTenant(uuid string) (*Tenant, error) {
 	var latestVersion string
 	var dynakube string
 	errMessageTemplate := "couldn't get tenant for UUID %s, err: %s"
-	a.querySimpleStatement(getTenantStatement, uuid, errMessageTemplate, &latestVersion, &dynakube)
-	return NewTenant(uuid, latestVersion, dynakube), nil
+	err := a.querySimpleStatement(getTenantStatement, uuid, errMessageTemplate, &latestVersion, &dynakube)
+	return NewTenant(uuid, latestVersion, dynakube), err
 }
 
 // Gets a Tenant from the database via its dynakube, return (nil, nil) if the tenant is not in the database.
@@ -149,8 +149,8 @@ func (a *SqliteAccess) GetTenantViaDynakube(dynakube string) (*Tenant, error) {
 	var tenantUUID string
 	var latestVersion string
 	errMessageTemplate := "couldn't get tenant field for Dynakube %s, err: %s"
-	a.querySimpleStatement(getTenantViaDynakubeStatement, dynakube, errMessageTemplate, &tenantUUID, &latestVersion)
-	return NewTenant(tenantUUID, latestVersion, dynakube), nil
+	err := a.querySimpleStatement(getTenantViaDynakubeStatement, dynakube, errMessageTemplate, &tenantUUID, &latestVersion)
+	return NewTenant(tenantUUID, latestVersion, dynakube), err
 }
 
 func (a *SqliteAccess) InsertVolumeInfo(volume *Volume) error {
@@ -164,8 +164,8 @@ func (a *SqliteAccess) GetVolumeInfo(volumeID string) (*Volume, error) {
 	var version string
 	var tenantUUID string
 	errMessageTemplate := "couldn't get volume field for VolumeID %s, err: %s"
-	a.querySimpleStatement(getVolumeStatement, volumeID, errMessageTemplate, &podUID, &version, &tenantUUID)
-	return NewVolume(volumeID, podUID, version, tenantUUID), nil
+	err := a.querySimpleStatement(getVolumeStatement, volumeID, errMessageTemplate, &podUID, &version, &tenantUUID)
+	return NewVolume(volumeID, podUID, version, tenantUUID), err
 }
 
 func (a *SqliteAccess) DeleteVolumeInfo(volumeID string) error {
@@ -223,12 +223,12 @@ func (a *SqliteAccess) querySimpleStatement(statement, id, errMessageTemplate st
 func emptyMemoryDB() SqliteAccess {
 	path := ":memory:"
 	db := SqliteAccess{}
-	db.Connect(sqliteDriverName, path)
+	_ = db.Connect(sqliteDriverName, path)
 	return db
 }
 
 func FakeMemoryDB() *SqliteAccess {
 	db := emptyMemoryDB()
-	db.createTables()
+	_ = db.createTables()
 	return &db
 }
