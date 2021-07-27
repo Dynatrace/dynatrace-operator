@@ -40,7 +40,6 @@ func Add(mgr manager.Manager, ns string) error {
 		logger.Info("OneAgentAPM object detected - Namespace reconciler disabled until the OneAgent Operator has been uninstalled")
 		return nil
 	}
-
 	return add(mgr, &ReconcileNamespaces{
 		client:    mgr.GetClient(),
 		apiReader: mgr.GetAPIReader(),
@@ -88,13 +87,13 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, nil
 	}
 
-	oaName := ns.Labels[webhook.LabelInstance]
-	if oaName == "" {
+	dkName := ns.Labels[webhook.LabelInstance]
+	if dkName == "" {
 		return reconcile.Result{}, nil
 	}
 
 	var dk dynatracev1alpha1.DynaKube
-	if err := r.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: r.namespace}, &dk); err != nil {
+	if err := r.client.Get(ctx, client.ObjectKey{Name: dkName, Namespace: r.namespace}, &dk); err != nil {
 		return reconcile.Result{}, errors.WithMessage(err, "failed to query DynaKubes")
 	}
 

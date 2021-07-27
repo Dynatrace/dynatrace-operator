@@ -34,15 +34,19 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var (
-	log = logger.NewDTLogger().WithName("provisioner")
+const (
+	failedInstallAgentVersionEvent = "FailedInstallAgentVersion"
+	installAgentVersionEvent       = "InstallAgentVersion"
 )
+
+var log = logger.NewDTLogger().WithName("provisioner")
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
@@ -50,6 +54,7 @@ type OneAgentProvisioner struct {
 	opts         dtcsi.CSIOptions
 	dtcBuildFunc dynakube.DynatraceClientFunc
 	fs           afero.Fs
+	recorder     record.EventRecorder
 }
 
 // NewReconciler returns a new OneAgentProvisioner
@@ -59,6 +64,7 @@ func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgentProvisio
 		opts:         opts,
 		dtcBuildFunc: dynakube.BuildDynatraceClient,
 		fs:           afero.NewOsFs(),
+		recorder:     mgr.GetEventRecorderFor("OneAgentProvisioner"),
 	}
 }
 
@@ -149,8 +155,16 @@ func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, dtc dt
 
 	if ver != currentVersion {
 		if err := r.installAgentVersion(ver, envDir, dtc, logger); err != nil {
+			r.recorder.Eventf(dk,
+				corev1.EventTypeWarning,
+				failedInstallAgentVersionEvent,
+				"Failed to installed agent version: %s to envDir: %s, err: %s", ver, envDir, err)
 			return err
 		}
+		r.recorder.Eventf(dk,
+			corev1.EventTypeNormal,
+			installAgentVersionEvent,
+			"Installed agent version: %s to envDir: %s", ver, envDir)
 	}
 
 	return afero.WriteFile(r.fs, versionFile, []byte(ver), 0644)

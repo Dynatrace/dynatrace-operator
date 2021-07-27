@@ -374,7 +374,6 @@ func (r *ReconcileNodes) reconcileUnschedulableNode(node *corev1.Node, c *Cache)
 			return err
 		}
 	}
-
 	return r.markForTermination(c, oneAgent, instance.IPAddress, node.Name)
 }
 

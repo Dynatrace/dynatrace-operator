@@ -49,7 +49,7 @@ func NewController(config *rest.Config, scheme *runtime.Scheme) *Controller {
 		logger:    log.Log.WithName("istio.controller"),
 		namespace: os.Getenv("POD_NAMESPACE"),
 	}
-	istioClient, err := c.initialiseIstioClient(config)
+	istioClient, err := c.initializeIstioClient(config)
 	if err != nil {
 		return nil
 	}
@@ -58,7 +58,7 @@ func NewController(config *rest.Config, scheme *runtime.Scheme) *Controller {
 	return c
 }
 
-func (c *Controller) initialiseIstioClient(config *rest.Config) (istioclientset.Interface, error) {
+func (c *Controller) initializeIstioClient(config *rest.Config) (istioclientset.Interface, error) {
 	ic, err := istioclientset.NewForConfig(config)
 	if err != nil {
 		c.logger.Error(err, "istio: failed to initialize client")
@@ -301,7 +301,6 @@ func (c *Controller) createIstioConfigurationForServiceEntry(dynaKube *dynatrace
 	if sve == nil {
 		return fmt.Errorf("could not create service entry with spec %v", serviceEntry.Spec)
 	}
-
 	return nil
 }
 
