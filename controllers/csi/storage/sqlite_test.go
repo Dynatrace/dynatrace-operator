@@ -9,34 +9,8 @@ import (
 
 func TestNewAccess(t *testing.T) {
 	dbPath = ":memory:"
-	db := NewAccess()
-
+	db := NewAccess().(*SqliteAccess)
 	assert.NotNil(t, db.conn)
-
-	var podsTable string
-	row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", volumesTableName)
-	row.Scan(&podsTable)
-	assert.Equal(t, podsTable, volumesTableName)
-
-	var tentatsTable string
-	row = db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", tenantsTableName)
-	row.Scan(&tentatsTable)
-	assert.Equal(t, tentatsTable, tenantsTableName)
-}
-
-func TestNewAccess_badPath(t *testing.T) {
-	dbPath = "/asd"
-	db := NewAccess()
-
-	var podsTable string
-	row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", volumesTableName)
-	err := row.Scan(&podsTable)
-	assert.Error(t, err)
-
-	var tentatsTable string
-	row = db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", tenantsTableName)
-	err = row.Scan(&tentatsTable)
-	assert.Error(t, err)
 }
 
 func TestConnect(t *testing.T) {
@@ -66,10 +40,10 @@ func TestCreateTables(t *testing.T) {
 	row.Scan(&podsTable)
 	assert.Equal(t, podsTable, volumesTableName)
 
-	var tentatsTable string
+	var tenantsTable string
 	row = db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", tenantsTableName)
-	row.Scan(&tentatsTable)
-	assert.Equal(t, tentatsTable, tenantsTableName)
+	row.Scan(&tenantsTable)
+	assert.Equal(t, tenantsTable, tenantsTableName)
 
 }
 
@@ -129,19 +103,19 @@ func TestInsertGetDeleteVolume(t *testing.T) {
 	db := FakeMemoryDB()
 	volumeV1 := Volume{
 		ID:         "123asd",
-		PodUID:     "1vol",
+		PodName:    "1vol",
 		Version:    "123.456",
 		TenantUUID: "asl123",
 	}
 	volumeV2 := Volume{
 		ID:         "23asd",
-		PodUID:     "2vol",
+		PodName:    "2vol",
 		Version:    "223.456",
 		TenantUUID: "asl123",
 	}
 
 	// Get but empty
-	vo, err := db.GetVolumeInfo(volumeV1.PodUID)
+	vo, err := db.GetVolumeInfo(volumeV1.PodName)
 	assert.NoError(t, err)
 	assert.Nil(t, vo)
 
@@ -156,7 +130,7 @@ func TestInsertGetDeleteVolume(t *testing.T) {
 	err = row.Scan(&id, &puid, &ver, &tuid)
 	assert.NoError(t, err)
 	assert.Equal(t, id, volumeV1.ID)
-	assert.Equal(t, puid, volumeV1.PodUID)
+	assert.Equal(t, puid, volumeV1.PodName)
 	assert.Equal(t, ver, volumeV1.Version)
 	assert.Equal(t, tuid, volumeV1.TenantUUID)
 
@@ -164,7 +138,7 @@ func TestInsertGetDeleteVolume(t *testing.T) {
 	vo, err = db.GetVolumeInfo(volumeV1.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, vo.ID, volumeV1.ID)
-	assert.Equal(t, vo.PodUID, volumeV1.PodUID)
+	assert.Equal(t, vo.PodName, volumeV1.PodName)
 	assert.Equal(t, vo.Version, volumeV1.Version)
 	assert.Equal(t, vo.TenantUUID, volumeV1.TenantUUID)
 

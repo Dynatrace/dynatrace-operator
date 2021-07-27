@@ -2,7 +2,6 @@ package csiprovisioner
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -296,7 +295,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				return mockClient, nil
 			},
 			fs: memFs,
-			db: &failDB{},
+			db: &storage.FakeFailDB{},
 		}
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
@@ -470,19 +469,4 @@ func buildValidCodeModulesSpec(_ *testing.T) v1alpha1.CodeModulesSpec {
 			},
 		},
 	}
-}
-
-type failDB struct{}
-
-func (f *failDB) InsertTenant(tenant *storage.Tenant) error      { return sql.ErrTxDone }
-func (f *failDB) UpdateTenant(tenant *storage.Tenant) error      { return sql.ErrTxDone }
-func (f *failDB) GetTenant(uuid string) (*storage.Tenant, error) { return nil, sql.ErrTxDone }
-func (f *failDB) GetTenantViaDynakube(dynakube string) (*storage.Tenant, error) {
-	return nil, sql.ErrTxDone
-}
-func (f *failDB) InsertVolumeInfo(volume *storage.Volume) error          { return sql.ErrTxDone }
-func (f *failDB) DeleteVolumeInfo(volumeID string) error                 { return sql.ErrTxDone }
-func (f *failDB) GetVolumeInfo(volumeID string) (*storage.Volume, error) { return nil, sql.ErrTxDone }
-func (f *failDB) GetUsedVersions(tenantUUID string) (map[string]bool, error) {
-	return nil, sql.ErrTxDone
 }

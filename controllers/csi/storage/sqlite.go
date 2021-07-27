@@ -24,7 +24,7 @@ const (
 	volumesCreateStatement = `
 	CREATE TABLE IF NOT EXISTS volumes (
 		ID VARCHAR NOT NULL,
-		PodUID VARCHAR NOT NULL,
+		PodName VARCHAR NOT NULL,
 		Version VARCHAR NOT NULL,
 		TenantUUID VARCHAR NOT NULL,
 		PRIMARY KEY (ID)
@@ -53,12 +53,12 @@ const (
 	`
 
 	insertVolumeStatement = `
-	INSERT INTO volumes (ID, PodUID, Version, TenantUUID)
+	INSERT INTO volumes (ID, PodName, Version, TenantUUID)
 	VALUES (?,?,?,?);
 	`
 
 	getVolumeStatement = `
-	SELECT PodUID, Version, TenantUUID
+	SELECT PodName, Version, TenantUUID
 	FROM volumes
 	WHERE ID = ?;
 	`
@@ -69,6 +69,11 @@ const (
 	SELECT Version
 	FROM volumes
 	WHERE TenantUUID = ?;
+	`
+
+	getPodNamesStatement = `
+	SELECT PodName
+	FROM volumes;
 	`
 )
 
@@ -82,9 +87,9 @@ type SqliteAccess struct {
 
 // Creates a new SqliteAccess,
 //connects to the database and creates the necessary tables if they don't exists
-func NewAccess() *SqliteAccess {
+func NewAccess() Access {
 	a := SqliteAccess{}
-	err := a.init()
+	err := a.Connect(sqliteDriverName, dbPath)
 	if err != nil {
 		log.Error(err, "Failed to init the database, err: %s", err.Error())
 	}
@@ -104,7 +109,7 @@ func (a *SqliteAccess) Connect(driver, path string) error {
 }
 
 //Connects to the database and creates the necessary tables if they don't exists
-func (a *SqliteAccess) init() error {
+func (a *SqliteAccess) Setup() error {
 	if err := a.Connect(sqliteDriverName, dbPath); err != nil {
 		return err
 	}
@@ -155,17 +160,17 @@ func (a *SqliteAccess) GetTenantViaDynakube(dynakube string) (*Tenant, error) {
 
 func (a *SqliteAccess) InsertVolumeInfo(volume *Volume) error {
 	errMessageTemplate := "couldn't insert volume info, UID %s, VolumeID %s, Version %s, TenantUUId: %s err: %s"
-	return a.executeStatement(insertVolumeStatement, errMessageTemplate, volume.ID, volume.PodUID, volume.Version, volume.TenantUUID)
+	return a.executeStatement(insertVolumeStatement, errMessageTemplate, volume.ID, volume.PodName, volume.Version, volume.TenantUUID)
 }
 
 // Gets a Volume from the database, return (nil, nil) if the volume is not in the database.
 func (a *SqliteAccess) GetVolumeInfo(volumeID string) (*Volume, error) {
-	var podUID string
+	var PodName string
 	var version string
 	var tenantUUID string
 	errMessageTemplate := "couldn't get volume field for VolumeID %s, err: %s"
-	err := a.querySimpleStatement(getVolumeStatement, volumeID, errMessageTemplate, &podUID, &version, &tenantUUID)
-	return NewVolume(volumeID, podUID, version, tenantUUID), err
+	err := a.querySimpleStatement(getVolumeStatement, volumeID, errMessageTemplate, &PodName, &version, &tenantUUID)
+	return NewVolume(volumeID, PodName, version, tenantUUID), err
 }
 
 func (a *SqliteAccess) DeleteVolumeInfo(volumeID string) error {
@@ -194,6 +199,26 @@ func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, erro
 	return versions, nil
 }
 
+// Gets all PodNames present in the `volumes` database in map with their corresponding volumeIDs.
+func (a *SqliteAccess) GetPodNames() (map[string]string, error) {
+	rows, err := a.conn.Query(getPodNamesStatement)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get PodName info for, err: %s", err)
+	}
+	podNames := map[string]string{}
+	defer rows.Close()
+	for rows.Next() {
+		var podName string
+		var volumeID string
+		err := rows.Scan(&podName, &volumeID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan from database for PodName, err: %s", err)
+		}
+		podNames[podName] = volumeID
+	}
+	return podNames, nil
+}
+
 // Excutes the provided SQL statement on the database.
 // The `vars` are passed to the SQL statement (in-order), to fill in the SQL wildcards.
 // The `errMessageTemplate` will be passed the same `vars` + the `err` object, so the template needs to have len(vars) + 1 wildcards.
@@ -218,17 +243,4 @@ func (a *SqliteAccess) querySimpleStatement(statement, id, errMessageTemplate st
 		return fmt.Errorf(errMessageTemplate, id, err)
 	}
 	return nil
-}
-
-func emptyMemoryDB() SqliteAccess {
-	path := ":memory:"
-	db := SqliteAccess{}
-	_ = db.Connect(sqliteDriverName, path)
-	return db
-}
-
-func FakeMemoryDB() *SqliteAccess {
-	db := emptyMemoryDB()
-	_ = db.createTables()
-	return &db
 }

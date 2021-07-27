@@ -22,7 +22,7 @@ func NewTenant(uuid, latestVersion, dynakube string) *Tenant {
 
 type Volume struct {
 	ID         string
-	PodUID     string
+	PodName    string
 	Version    string
 	TenantUUID string
 }
@@ -36,6 +36,8 @@ func NewVolume(id, podUID, version, tenantUUID string) *Volume {
 }
 
 type Access interface {
+	Setup() error
+
 	InsertTenant(tenant *Tenant) error
 	UpdateTenant(tenant *Tenant) error
 	GetTenant(uuid string) (*Tenant, error)
@@ -44,6 +46,7 @@ type Access interface {
 	InsertVolumeInfo(volume *Volume) error
 	DeleteVolumeInfo(volumeID string) error
 	GetVolumeInfo(volumeID string) (*Volume, error)
+	GetPodNames() (map[string]string, error)
 	GetUsedVersions(tenantUUID string) (map[string]bool, error)
 }
 

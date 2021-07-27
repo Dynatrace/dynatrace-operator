@@ -136,7 +136,7 @@ func TestServer_NodePublishVolume(t *testing.T) {
 		VolumeId: volumeId,
 		VolumeContext: map[string]string{
 			podNamespaceContextKey: namespace,
-			podUIDContextKey:       podUID,
+			podNameContextKey:      podUID,
 		},
 		TargetPath: testTargetPath,
 		VolumeCapability: &csi.VolumeCapability{
@@ -208,7 +208,7 @@ func TestCSIDriverServer_NodePublishAndUnpublishVolume(t *testing.T) {
 		VolumeId: volumeId,
 		VolumeContext: map[string]string{
 			podNamespaceContextKey: namespace,
-			podUIDContextKey:       podUID,
+			podNameContextKey:      podUID,
 		},
 		TargetPath: testTargetPath,
 		VolumeCapability: &csi.VolumeCapability{
@@ -257,7 +257,7 @@ func TestStoreAndLoadPodInfo(t *testing.T) {
 		volumeId:   volumeId,
 		targetPath: targetPath,
 		namespace:  namespace,
-		podUID:     podUID,
+		podName:    podUID,
 	}
 
 	err := server.storeVolumeInfo(bindCfg, &volumeCfg)
@@ -266,7 +266,7 @@ func TestStoreAndLoadPodInfo(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, volume)
 	assert.Equal(t, volumeId, volume.ID)
-	assert.Equal(t, podUID, volume.PodUID)
+	assert.Equal(t, podUID, volume.PodName)
 	assert.Equal(t, agentVersion, volume.Version)
 	assert.Equal(t, tenantUuid, volume.TenantUUID)
 }
@@ -323,7 +323,7 @@ func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServ
 
 func mockPublishedVolume(t *testing.T, server *CSIDriverServer) {
 	mockOneAgent(t, server)
-	err := server.db.InsertVolumeInfo(&storage.Volume{ID: volumeId, PodUID: podUID, Version: agentVersion, TenantUUID: tenantUuid})
+	err := server.db.InsertVolumeInfo(&storage.Volume{ID: volumeId, PodName: podUID, Version: agentVersion, TenantUUID: tenantUuid})
 	require.NoError(t, err)
 	agentsVersionsMetric.WithLabelValues(agentVersion).Inc()
 }
@@ -338,7 +338,7 @@ func assertReferencesForPublishedVolume(t *testing.T, server *CSIDriverServer, m
 	volume, err := server.loadVolumeInfo(volumeId)
 	assert.NoError(t, err)
 	assert.Equal(t, volume.ID, volumeId)
-	assert.Equal(t, volume.PodUID, podUID)
+	assert.Equal(t, volume.PodName, podUID)
 	assert.Equal(t, volume.Version, agentVersion)
 	assert.Equal(t, volume.TenantUUID, tenantUuid)
 }

@@ -19,15 +19,13 @@ package dtcsi
 import "time"
 
 const (
-	DataPath              = "/data"
-	DriverName            = "csi.oneagent.dynatrace.com"
-	GarbageCollectionPath = "gc"
-	VersionDir            = "version"
-	AgentBinaryDir        = "bin"
-	AgentRunDir           = "run"
-	OverlayMappedDirPath  = "mapped"
-	OverlayVarDirPath     = "var"
-	OverlayWorkDirPath    = "work"
+	DataPath             = "/data"
+	DriverName           = "csi.oneagent.dynatrace.com"
+	AgentBinaryDir       = "bin"
+	AgentRunDir          = "run"
+	OverlayMappedDirPath = "mapped"
+	OverlayVarDirPath    = "var"
+	OverlayWorkDirPath   = "work"
 )
 
 type CSIOptions struct {

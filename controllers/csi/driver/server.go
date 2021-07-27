@@ -225,7 +225,7 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 	if err = svr.db.DeleteVolumeInfo(volume.ID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	svr.log.Info("deleted volume info", "ID", volume.ID, "PodUID", volume.PodUID, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	svr.log.Info("deleted volume info", "ID", volume.ID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 
 	if err = svr.fs.RemoveAll(targetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -317,11 +317,11 @@ func (svr *CSIDriverServer) umountOneAgent(targetPath string, overlayFSPath stri
 func (svr *CSIDriverServer) storeVolumeInfo(bindCfg *bindConfig, volumeCfg *volumeConfig) error {
 	volume := storage.Volume{
 		ID:         volumeCfg.volumeId,
-		PodUID:     volumeCfg.podUID,
+		PodName:    volumeCfg.podName,
 		Version:    bindCfg.version,
 		TenantUUID: bindCfg.tenantUUID,
 	}
-	svr.log.Info("inserting volume info", "ID", volume.ID, "PodUID", volume.PodUID, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	svr.log.Info("inserting volume info", "ID", volume.ID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 	return svr.db.InsertVolumeInfo(&volume)
 }
 
@@ -333,7 +333,7 @@ func (svr *CSIDriverServer) loadVolumeInfo(volumeID string) (*storage.Volume, er
 	if volume == nil {
 		return &storage.Volume{}, nil
 	}
-	svr.log.Info("loaded volume info", "ID", volume.ID, "PodUID", volume.PodUID, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	svr.log.Info("loaded volume info", "ID", volume.ID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 	return volume, nil
 }
 

@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	podUIDContextKey       = "csi.storage.k8s.io/pod.uid"
+	podNameContextKey      = "csi.storage.k8s.io/pod.name"
 	podNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
 )
 
@@ -15,7 +15,7 @@ type volumeConfig struct {
 	volumeId   string
 	targetPath string
 	namespace  string
-	podUID     string
+	podName    string
 }
 
 func parsePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*volumeConfig, error) {
@@ -51,15 +51,15 @@ func parsePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*volumeConfig
 		return nil, status.Error(codes.InvalidArgument, "No namespace included with request")
 	}
 
-	podUID := volCtx[podUIDContextKey]
-	if podUID == "" {
-		return nil, status.Error(codes.InvalidArgument, "No Pod UID included with request")
+	podName := volCtx[podNameContextKey]
+	if podName == "" {
+		return nil, status.Error(codes.InvalidArgument, "No Pod Name included with request")
 	}
 
 	return &volumeConfig{
 		volumeId:   volID,
 		targetPath: targetPath,
 		namespace:  nsName,
-		podUID:     podUID,
+		podName:    podName,
 	}, nil
 }

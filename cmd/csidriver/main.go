@@ -27,6 +27,7 @@ import (
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
 	csigc "github.com/Dynatrace/dynatrace-operator/controllers/csi/gc"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/controllers/csi/provisioner"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/version"
@@ -87,8 +88,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := fs.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.GarbageCollectionPath), 0770); err != nil {
-		log.Error(err, "unable to create garbage collector directory for CSI Driver")
+	if err := csigc.CheckStorageCorrectness(mgr.GetClient(), &storage.SqliteAccess{}, log); err != nil {
+		log.Error(err, "failed to setup database storage for CSI Driver")
 		os.Exit(1)
 	}
 
