@@ -341,7 +341,7 @@ func TestReconcile_CodeModules_EnableCSI(t *testing.T) {
 	configMap := &corev1.ConfigMap{}
 	err = fakeClient.Get(context.TODO(),
 		client.ObjectKey{
-			Name:      dtcsi.CheckerConfigMapName,
+			Name:      dtcsi.CsiMapperConfigMapName,
 			Namespace: testDynatraceNamespace,
 		}, configMap)
 	require.NoError(t, err)
@@ -356,7 +356,7 @@ func TestReconcile_CodeModules_EnableCSI(t *testing.T) {
 func TestReconcile_CodeModules_DisableCSI(t *testing.T) {
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dtcsi.CheckerConfigMapName,
+			Name:      dtcsi.CsiMapperConfigMapName,
 			Namespace: testDynatraceNamespace,
 		},
 		Data: map[string]string{
@@ -390,7 +390,7 @@ func TestReconcile_CodeModules_DisableCSI(t *testing.T) {
 	updatedConfigMap := &corev1.ConfigMap{}
 	err = fakeClient.Get(context.TODO(),
 		client.ObjectKey{
-			Name:      dtcsi.CheckerConfigMapName,
+			Name:      dtcsi.CsiMapperConfigMapName,
 			Namespace: testDynatraceNamespace,
 		}, updatedConfigMap)
 	require.NoError(t, err)

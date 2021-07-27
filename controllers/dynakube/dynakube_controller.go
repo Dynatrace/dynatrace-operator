@@ -204,7 +204,10 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 		return
 	}
 
-	if err = r.checkCodeModules(rec, r.scheme); err != nil {
+	// Check Code Modules if CSI driver is needed
+	err = dtcsi.ConfigureCsiDriver(
+		r.client, r.scheme, r.operatorPodName, r.operatorNamespace, rec, defaultUpdateInterval)
+	if err != nil {
 		rec.Log.Error(err, "could not check code modules")
 		return
 	}
@@ -304,12 +307,4 @@ func (r *ReconcileDynaKube) updateCR(ctx context.Context, log logr.Logger, insta
 		return nil
 	}
 	return errors.WithStack(err)
-}
-
-func (r *ReconcileDynaKube) checkCodeModules(rec *utils.Reconciliation, scheme *runtime.Scheme) error {
-	checker, err := dtcsi.NewChecker(r.client, rec.Log, rec.Instance.Namespace, r.operatorPodName, r.operatorNamespace)
-	if err != nil {
-		return err
-	}
-	return checker.ConfigureCsiDriver(rec, scheme, defaultUpdateInterval)
 }

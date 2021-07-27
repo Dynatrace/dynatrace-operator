@@ -5,68 +5,62 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+var log = logf.Log.WithName("csi_mapper")
 
 const (
-	CheckerConfigMapName = "dynatrace-csi-checker"
+	CsiMapperConfigMapName = "dynatrace-csi-mapper"
 )
 
-type Checker struct {
-	client            client.Client
-	logger            logr.Logger
-	configMap         *corev1.ConfigMap
-	namespace         string
-	operatorPodName   string
-	operatorNamespace string
+type csiMapper struct {
+	client    client.Client
+	configMap *corev1.ConfigMap
 }
 
-func NewChecker(kubernetesClient client.Client, logger logr.Logger, namespace string, operatorPodName, operatorNamespace string) (*Checker, error) {
-	configMap, err := loadOrCreateConfigMap(kubernetesClient, logger, namespace)
+func ConfigureCsiDriver(
+	client client.Client, scheme *runtime.Scheme, operatorPodName, operatorNamespace string,
+	rec *utils.Reconciliation, updateInterval time.Duration) error {
+	configMap, err := loadOrCreateConfigMap(client, rec.Instance.Namespace)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &Checker{
-		client:            kubernetesClient,
-		logger:            logger,
-		configMap:         configMap,
-		namespace:         namespace,
-		operatorPodName:   operatorPodName,
-		operatorNamespace: operatorNamespace,
-	}, nil
-}
 
-func (c *Checker) ConfigureCsiDriver(rec *utils.Reconciliation, scheme *runtime.Scheme, updateInterval time.Duration) error {
+	csiMapper := &csiMapper{
+		client:    client,
+		configMap: configMap,
+	}
 	if rec.Instance.Spec.CodeModules.Enabled {
-		if !c.any() {
+		if !csiMapper.any() {
 			// enable csi driver, if first Dynakube with CodeModules enabled
-			c.logger.Info("enabling csi driver")
-			upd, err := NewReconciler(c.client, scheme, c.logger, rec.Instance, c.operatorPodName, c.operatorNamespace).Reconcile()
+			log.Info("enabling csi driver")
+			upd, err := NewReconciler(client, scheme, rec.Log, rec.Instance, operatorPodName, operatorNamespace).Reconcile()
 			if err != nil {
 				return err
 			}
-			if err = c.add(rec.Instance.Name); err != nil {
+			if err = csiMapper.add(rec.Instance.Name); err != nil {
 				return err
 			}
 			if rec.Update(upd, updateInterval, "CSI driver reconciled") {
 				return nil
 			}
 		}
-		if err := c.add(rec.Instance.Name); err != nil {
+		if err := csiMapper.add(rec.Instance.Name); err != nil {
 			return err
 		}
 	} else {
-		if err := c.remove(rec.Instance.Name); err != nil {
+		if err := csiMapper.remove(rec.Instance.Name); err != nil {
 			return err
 		}
-		if !c.any() {
-			c.logger.Info("ensuring csi driver is disabled")
+		if !csiMapper.any() {
+			log.Info("ensuring csi driver is disabled")
 			// disable csi driver, no Dynakubes with CodeModules enabled exist anymore
 			// ensures csi driver is disabled, when additional CodeModules are disabled
 			ds := appsv1.DaemonSet{
@@ -75,7 +69,7 @@ func (c *Checker) ConfigureCsiDriver(rec *utils.Reconciliation, scheme *runtime.
 					Namespace: rec.Instance.Namespace,
 				},
 			}
-			if err := c.ensureDeleted(&ds); rec.Error(err) {
+			if err := csiMapper.ensureDeleted(&ds); rec.Error(err) {
 				return err
 			}
 		}
@@ -83,9 +77,9 @@ func (c *Checker) ConfigureCsiDriver(rec *utils.Reconciliation, scheme *runtime.
 	return nil
 }
 
-// Add name of Dynakube with CodeModules enabled to ConfigMap.
+// add name of Dynakube with CodeModules enabled to ConfigMap.
 // Should happen when Dynakube was created or setting was enabled.
-func (c *Checker) add(dynakube string) error {
+func (c *csiMapper) add(dynakube string) error {
 	if c.configMap.Data == nil {
 		c.configMap.Data = map[string]string{}
 	}
@@ -97,9 +91,9 @@ func (c *Checker) add(dynakube string) error {
 	return nil
 }
 
-// Remove name of Dynakube from ConfigMap.
+// remove name of Dynakube from ConfigMap.
 // Should happen when Dynakube was deleted or setting was disabled.
-func (c *Checker) remove(dynakube string) error {
+func (c *csiMapper) remove(dynakube string) error {
 	if c.configMap.Data == nil {
 		return nil
 	}
@@ -111,9 +105,9 @@ func (c *Checker) remove(dynakube string) error {
 	return nil
 }
 
-// Any checks if ConfigMap contains entries.
+// any checks if ConfigMap contains entries.
 // If entries exist, there are Dynakubes with CodeModules enabled.
-func (c *Checker) any() bool {
+func (c *csiMapper) any() bool {
 	if c.configMap.Data == nil {
 		return false
 	}
@@ -122,29 +116,29 @@ func (c *Checker) any() bool {
 }
 
 // loadOrCreateConfigMap loads existing ConfigMap or creates it if it doesn't exist
-func loadOrCreateConfigMap(kubernetesClient client.Client, logger logr.Logger, namespace string) (*corev1.ConfigMap, error) {
+func loadOrCreateConfigMap(kubernetesClient client.Client, namespace string) (*corev1.ConfigMap, error) {
 	configMap := &corev1.ConfigMap{}
 	// check for existing config map
 	err := kubernetesClient.Get(
 		context.TODO(),
-		client.ObjectKey{Name: CheckerConfigMapName, Namespace: namespace},
+		client.ObjectKey{Name: CsiMapperConfigMapName, Namespace: namespace},
 		configMap)
 
 	if k8serrors.IsNotFound(err) {
 		// create config map
 		configMap = &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      CheckerConfigMapName,
+				Name:      CsiMapperConfigMapName,
 				Namespace: namespace,
 			},
 		}
-		logger.Info("creating ConfigMap")
+		log.Info("creating ConfigMap")
 		err = kubernetesClient.Create(context.TODO(), configMap)
 	}
 	return configMap, err
 }
 
-func (c *Checker) ensureDeleted(obj client.Object) error {
+func (c *csiMapper) ensureDeleted(obj client.Object) error {
 	if err := c.client.Delete(context.TODO(), obj); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
