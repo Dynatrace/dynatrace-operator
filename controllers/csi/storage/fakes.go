@@ -1,18 +1,39 @@
 package storage
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
-func emptyMemoryDB() SqliteAccess {
-	path := ":memory:"
+func emptyMemoryDB() *SqliteAccess {
+	dbPath = ":memory:"
 	db := SqliteAccess{}
-	_ = db.Connect(sqliteDriverName, path)
-	return db
+	_ = db.Connect(sqliteDriverName, dbPath)
+	return &db
 }
 
 func FakeMemoryDB() *SqliteAccess {
 	db := emptyMemoryDB()
 	_ = db.createTables()
-	return &db
+	return db
+}
+
+func checkIfTablesExist(db *SqliteAccess) bool {
+	var volumesTable string
+	row := db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", volumesTableName)
+	err := row.Scan(&volumesTable)
+	if err != nil {
+		return false
+	}
+	var tentatsTable string
+	row = db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", tenantsTableName)
+	err = row.Scan(&tentatsTable)
+	if err != nil {
+		return false
+	}
+	if tentatsTable != tenantsTableName || volumesTable != volumesTableName {
+		return false
+	}
+	return true
 }
 
 type FakeFailDB struct{}

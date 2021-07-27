@@ -72,13 +72,13 @@ const (
 	`
 
 	getPodNamesStatement = `
-	SELECT PodName
+	SELECT PodName, ID
 	FROM volumes;
 	`
 )
 
 var (
-	log = logger.NewDTLogger().WithName("provisioner")
+	log = logger.NewDTLogger().WithName("storage")
 )
 
 type SqliteAccess struct {

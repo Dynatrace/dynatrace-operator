@@ -13,6 +13,25 @@ func TestNewAccess(t *testing.T) {
 	assert.NotNil(t, db.conn)
 }
 
+func TestSetup(t *testing.T) {
+	dbPath = ":memory:"
+	db := SqliteAccess{}
+	err := db.Setup()
+
+	assert.NoError(t, err)
+	assert.True(t, checkIfTablesExist(&db))
+}
+
+func TestSetup_badPath(t *testing.T) {
+	dbPath = "/asd"
+	db := SqliteAccess{}
+	err := db.Setup()
+
+	assert.Error(t, err)
+
+	assert.False(t, checkIfTablesExist(&db))
+}
+
 func TestConnect(t *testing.T) {
 	path := ":memory:"
 	db := SqliteAccess{}
@@ -103,13 +122,13 @@ func TestInsertGetDeleteVolume(t *testing.T) {
 	db := FakeMemoryDB()
 	volumeV1 := Volume{
 		ID:         "123asd",
-		PodName:    "1vol",
+		PodName:    "pod1",
 		Version:    "123.456",
 		TenantUUID: "asl123",
 	}
 	volumeV2 := Volume{
 		ID:         "23asd",
-		PodName:    "2vol",
+		PodName:    "pod2",
 		Version:    "223.456",
 		TenantUUID: "asl123",
 	}
@@ -149,6 +168,13 @@ func TestInsertGetDeleteVolume(t *testing.T) {
 	assert.Equal(t, len(versions), 2)
 	assert.True(t, versions[volumeV1.Version])
 	assert.True(t, versions[volumeV2.Version])
+
+	// Get pod names
+	podNames, err := db.GetPodNames()
+	assert.NoError(t, err)
+	assert.Equal(t, len(podNames), 2)
+	assert.Equal(t, volumeV1.ID, podNames[volumeV1.PodName])
+	assert.Equal(t, volumeV2.ID, podNames[volumeV2.PodName])
 
 	// Delete
 	err = db.DeleteVolumeInfo(volumeV2.ID)

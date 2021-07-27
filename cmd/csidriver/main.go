@@ -88,8 +88,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := csigc.CheckStorageCorrectness(mgr.GetClient(), &storage.SqliteAccess{}, log); err != nil {
+	access := storage.SqliteAccess{}
+	if err := access.Setup(); err != nil {
 		log.Error(err, "failed to setup database storage for CSI Driver")
+		os.Exit(1)
+	}
+	if err := storage.CheckStorageCorrectness(mgr.GetClient(), &access, log); err != nil {
+		log.Error(err, "failed to correct database storage for CSI Driver")
 		os.Exit(1)
 	}
 

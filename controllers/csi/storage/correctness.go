@@ -1,19 +1,17 @@
-package csigc
+package storage
 
 import (
 	"context"
 
-	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CheckStorageCorrectness(cl client.Client, access storage.Access, log logr.Logger) error {
-	if err := access.Setup(); err != nil {
-		return err
-	}
+// Checks if the entries in the storage are actually valid
+// Removes not valid entries
+func CheckStorageCorrectness(cl client.Client, access Access, log logr.Logger) error {
 	podNames, err := access.GetPodNames()
 	if err != nil {
 		return err
