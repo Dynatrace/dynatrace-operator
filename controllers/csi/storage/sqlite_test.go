@@ -35,14 +35,14 @@ func TestSetup_badPath(t *testing.T) {
 func TestConnect(t *testing.T) {
 	path := ":memory:"
 	db := SqliteAccess{}
-	err := db.Connect(sqliteDriverName, path)
+	err := db.connect(sqliteDriverName, path)
 	assert.NoError(t, err)
 	assert.NotNil(t, db.conn)
 }
 
 func TestConnect_badDriver(t *testing.T) {
 	db := SqliteAccess{}
-	err := db.Connect("die", "")
+	err := db.connect("die", "")
 	assert.Error(t, err)
 	assert.Nil(t, db.conn)
 }

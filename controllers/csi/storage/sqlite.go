@@ -85,19 +85,18 @@ type SqliteAccess struct {
 	conn *sql.DB
 }
 
-// Creates a new SqliteAccess,
-//connects to the database and creates the necessary tables if they don't exists
+// Creates a new SqliteAccess, connects to the database.
 func NewAccess() Access {
 	a := SqliteAccess{}
-	err := a.Connect(sqliteDriverName, dbPath)
+	err := a.connect(sqliteDriverName, dbPath)
 	if err != nil {
-		log.Error(err, "Failed to init the database, err: %s", err.Error())
+		log.Error(err, "Failed to connect to the database, err: %s", err.Error())
 	}
 	return &a
 }
 
 // Connects to the database via the provided driver and path to the database.
-func (a *SqliteAccess) Connect(driver, path string) error {
+func (a *SqliteAccess) connect(driver, path string) error {
 	db, err := sql.Open(driver, path)
 	if err != nil {
 		err := fmt.Errorf("couldn't connect to db %s, err: %s", path, err)
@@ -108,23 +107,23 @@ func (a *SqliteAccess) Connect(driver, path string) error {
 	return nil
 }
 
-//Connects to the database and creates the necessary tables if they don't exists
-func (a *SqliteAccess) Setup() error {
-	if err := a.Connect(sqliteDriverName, dbPath); err != nil {
-		return err
-	}
-	if err := a.createTables(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (a *SqliteAccess) createTables() error {
 	if _, err := a.conn.Exec(tenantsCreateStatement); err != nil {
 		return fmt.Errorf("couldn't create the table %s, err: %s", tenantsTableName, err)
 	}
 	if _, err := a.conn.Exec(volumesCreateStatement); err != nil {
 		return fmt.Errorf("couldn't create the table %s, err: %s", volumesTableName, err)
+	}
+	return nil
+}
+
+//Connects to the database and creates the necessary tables if they don't exists
+func (a *SqliteAccess) Setup() error {
+	if err := a.connect(sqliteDriverName, dbPath); err != nil {
+		return err
+	}
+	if err := a.createTables(); err != nil {
+		return err
 	}
 	return nil
 }

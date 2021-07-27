@@ -7,7 +7,7 @@ import (
 func emptyMemoryDB() *SqliteAccess {
 	dbPath = ":memory:"
 	db := SqliteAccess{}
-	_ = db.Connect(sqliteDriverName, dbPath)
+	_ = db.connect(sqliteDriverName, dbPath)
 	return &db
 }
 
