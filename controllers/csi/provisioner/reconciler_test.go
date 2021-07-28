@@ -43,12 +43,31 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`no dynakube instance`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(),
+			db:     storage.FakeMemoryDB(),
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{})
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
+	})
+	t.Run(`dynakube deleted`, func(t *testing.T) {
+		db := storage.FakeMemoryDB()
+		tenant := storage.Tenant{UUID: tenantUUID, LatestVersion: agentVersion, Dynakube: dkName}
+		db.InsertTenant(&tenant)
+		r := &OneAgentProvisioner{
+			client: fake.NewClient(),
+			db:     db,
+		}
+		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: tenant.Dynakube}})
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+		assert.Equal(t, reconcile.Result{}, result)
+
+		ten, err := db.GetTenant(tenant.UUID)
+		assert.NoError(t, err)
+		assert.Nil(t, ten)
 	})
 	t.Run(`code modules disabled`, func(t *testing.T) {
 		r := &OneAgentProvisioner{

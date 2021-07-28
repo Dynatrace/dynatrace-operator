@@ -88,6 +88,10 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	dk, err := r.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
+			tenant, _ := r.db.GetTenantViaDynakube(request.NamespacedName.Name)
+			if tenant != nil {
+				r.db.DeleteTenant(tenant.UUID)
+			}
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, err
