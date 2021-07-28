@@ -65,6 +65,8 @@ const (
 
 	deleteVolumeStatement = "DELETE FROM volumes WHERE ID = ?;"
 
+	deleteTenantStatement = "DELETE FROM tenants WHERE UUID = ?;"
+
 	getUsedVersionsStatement = `
 	SELECT Version
 	FROM volumes
@@ -72,8 +74,13 @@ const (
 	`
 
 	getPodNamesStatement = `
-	SELECT PodName, ID
+	SELECT ID, PodName
 	FROM volumes;
+	`
+
+	getDynakubesStatement = `
+	SELECT UUID, Dynakube
+	FROM tenants;
 	`
 )
 
@@ -136,6 +143,11 @@ func (a *SqliteAccess) InsertTenant(tenant *Tenant) error {
 func (a *SqliteAccess) UpdateTenant(tenant *Tenant) error {
 	errMessageTemplate := "couldn't update tenant, LatestVersion %s, Dynakube %s, UUID %s, err: %s"
 	return a.executeStatement(updateTenantStatement, errMessageTemplate, tenant.LatestVersion, tenant.Dynakube, tenant.UUID)
+}
+
+func (a *SqliteAccess) DeleteTenant(uuid string) error {
+	errMessageTemplate := "couldn't delete tenant, UUID %s, err: %s"
+	return a.executeStatement(deleteTenantStatement, errMessageTemplate, uuid)
 }
 
 // Gets a Tenant from the database, return (nil, nil) if the tenant is not in the database.
@@ -202,20 +214,40 @@ func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, erro
 func (a *SqliteAccess) GetPodNames() (map[string]string, error) {
 	rows, err := a.conn.Query(getPodNamesStatement)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get PodName info for, err: %s", err)
+		return nil, fmt.Errorf("couldn't get PodNames for, err: %s", err)
 	}
 	podNames := map[string]string{}
 	defer rows.Close()
 	for rows.Next() {
 		var podName string
 		var volumeID string
-		err := rows.Scan(&podName, &volumeID)
+		err := rows.Scan(&volumeID, &podName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan from database for PodName, err: %s", err)
 		}
 		podNames[podName] = volumeID
 	}
 	return podNames, nil
+}
+
+// Gets all PodNames present in the `volumes` database in map with their corresponding volumeIDs.
+func (a *SqliteAccess) GetDynakubes() (map[string]string, error) {
+	rows, err := a.conn.Query(getDynakubesStatement)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get Dynakubes for, err: %s", err)
+	}
+	dynakubes := map[string]string{}
+	defer rows.Close()
+	for rows.Next() {
+		var uuid string
+		var dynakube string
+		err := rows.Scan(&uuid, &dynakube)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan from database for Dynakube, err: %s", err)
+		}
+		dynakubes[dynakube] = uuid
+	}
+	return dynakubes, nil
 }
 
 // Excutes the provided SQL statement on the database.

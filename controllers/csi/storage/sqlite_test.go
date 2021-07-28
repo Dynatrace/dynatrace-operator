@@ -68,54 +68,76 @@ func TestCreateTables(t *testing.T) {
 
 func TestInsertUpdateGetTenant(t *testing.T) {
 	db := FakeMemoryDB()
-	tenant := Tenant{
+	tenant1 := Tenant{
 		UUID:          "123asd",
 		LatestVersion: "123.456",
-		Dynakube:      "dynakube-test",
+		Dynakube:      "dynakube-test1",
+	}
+	tenant2 := Tenant{
+		UUID:          "223asd",
+		LatestVersion: "223.456",
+		Dynakube:      "dynakube-test2",
 	}
 
 	// Get but empty
-	gt, err := db.GetTenant(tenant.UUID)
+	gt, err := db.GetTenant(tenant1.UUID)
 	assert.NoError(t, err)
 	assert.Nil(t, gt)
 
 	// Insert
-	err = db.InsertTenant(&tenant)
+	err = db.InsertTenant(&tenant1)
 	assert.Nil(t, err)
-	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE UUID = ?;", tenantsTableName), tenant.UUID)
+	err = db.InsertTenant(&tenant2)
+	assert.Nil(t, err)
+	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE UUID = ?;", tenantsTableName), tenant1.UUID)
 	var uuid string
 	var lv string
 	var dk string
 	err = row.Scan(&uuid, &lv, &dk)
 	assert.NoError(t, err)
-	assert.Equal(t, uuid, tenant.UUID)
-	assert.Equal(t, lv, tenant.LatestVersion)
-	assert.Equal(t, dk, tenant.Dynakube)
+	assert.Equal(t, uuid, tenant1.UUID)
+	assert.Equal(t, lv, tenant1.LatestVersion)
+	assert.Equal(t, dk, tenant1.Dynakube)
 
 	// Update
-	tenant.LatestVersion = "132.546"
-	err = db.UpdateTenant(&tenant)
+	tenant1.LatestVersion = "132.546"
+	err = db.UpdateTenant(&tenant1)
 	assert.NoError(t, err)
-	row = db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE UUID = ?;", tenantsTableName), tenant.UUID)
+	row = db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE UUID = ?;", tenantsTableName), tenant1.UUID)
 	err = row.Scan(&uuid, &lv, &dk)
 	assert.NoError(t, err)
-	assert.Equal(t, uuid, tenant.UUID)
-	assert.Equal(t, lv, tenant.LatestVersion)
-	assert.Equal(t, dk, tenant.Dynakube)
+	assert.Equal(t, uuid, tenant1.UUID)
+	assert.Equal(t, lv, tenant1.LatestVersion)
+	assert.Equal(t, dk, tenant1.Dynakube)
 
 	// Get
-	gt, err = db.GetTenant(tenant.UUID)
+	gt, err = db.GetTenant(tenant1.UUID)
 	assert.NoError(t, err)
-	assert.Equal(t, gt.UUID, tenant.UUID)
-	assert.Equal(t, gt.LatestVersion, tenant.LatestVersion)
-	assert.Equal(t, gt.Dynakube, tenant.Dynakube)
+	assert.Equal(t, gt.UUID, tenant1.UUID)
+	assert.Equal(t, gt.LatestVersion, tenant1.LatestVersion)
+	assert.Equal(t, gt.Dynakube, tenant1.Dynakube)
 
 	// Get via Dynakube
-	gt, err = db.GetTenantViaDynakube(tenant.Dynakube)
+	gt, err = db.GetTenantViaDynakube(tenant1.Dynakube)
 	assert.NoError(t, err)
-	assert.Equal(t, gt.UUID, tenant.UUID)
-	assert.Equal(t, gt.LatestVersion, tenant.LatestVersion)
-	assert.Equal(t, gt.Dynakube, tenant.Dynakube)
+	assert.Equal(t, gt.UUID, tenant1.UUID)
+	assert.Equal(t, gt.LatestVersion, tenant1.LatestVersion)
+	assert.Equal(t, gt.Dynakube, tenant1.Dynakube)
+
+	// Get Dynakubes
+	dynakubes, err := db.GetDynakubes()
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(dynakubes))
+	assert.Equal(t, tenant1.UUID, dynakubes[tenant1.Dynakube])
+	assert.Equal(t, tenant2.UUID, dynakubes[tenant2.Dynakube])
+
+	// Delete
+	err = db.DeleteTenant(tenant1.UUID)
+	assert.NoError(t, err)
+	dynakubes, err = db.GetDynakubes()
+	assert.NoError(t, err)
+	assert.Equal(t, len(dynakubes), 1)
+	assert.Equal(t, tenant2.UUID, dynakubes[tenant2.Dynakube])
 }
 
 func TestInsertGetDeleteVolume(t *testing.T) {
