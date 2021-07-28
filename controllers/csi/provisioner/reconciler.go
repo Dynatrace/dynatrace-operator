@@ -175,6 +175,10 @@ func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, tenant
 	if currentVersion != tenant.LatestVersion {
 		tenant.LatestVersion = currentVersion
 		if err := r.installAgentVersion(currentVersion, tenant.UUID, dtc, logger); err != nil {
+			r.recorder.Eventf(dk,
+				corev1.EventTypeWarning,
+				failedInstallAgentVersionEvent,
+				"Failed to installed agent version: %s to tenant: %s, err: %s", currentVersion, tenant.UUID, err)
 			return err
 		}
 		r.recorder.Eventf(dk,

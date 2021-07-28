@@ -33,6 +33,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/spf13/afero"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -232,14 +233,21 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 
 	svr.log.Info("volume has been unpublished", "targetPath", targetPath)
 
-	fireVolumeUnpublishedMetric(*volume)
+	svr.fireVolumeUnpublishedMetric(*volume)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func fireVolumeUnpublishedMetric(volume storage.Volume) {
+func (svr *CSIDriverServer) fireVolumeUnpublishedMetric(volume storage.Volume) {
 	if len(volume.Version) > 0 {
 		agentsVersionsMetric.WithLabelValues(volume.Version).Dec()
+		var m = &dto.Metric{}
+		if err := agentsVersionsMetric.WithLabelValues(volume.Version).Write(m); err != nil {
+			svr.log.Error(err, "failed to get the value of agent version metric")
+		}
+		if m.Gauge.GetValue() <= float64(0) {
+			agentsVersionsMetric.DeleteLabelValues(volume.Version)
+		}
 	}
 }
 

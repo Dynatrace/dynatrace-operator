@@ -173,7 +173,7 @@ func TestServer_NodeUnpublishVolume(t *testing.T) {
 
 		response, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
 
-		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
+		assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
 		assert.NoError(t, err)
@@ -235,7 +235,7 @@ func TestCSIDriverServer_NodePublishAndUnpublishVolume(t *testing.T) {
 
 	unpublishResponse, err := server.NodeUnpublishVolume(context.TODO(), nodeUnpublishVolumeRequest)
 
-	assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
+	assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
 	assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(agentVersion)))
 
 	assert.NoError(t, err)
