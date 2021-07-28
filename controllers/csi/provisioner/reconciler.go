@@ -180,7 +180,7 @@ func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, tenant
 		r.recorder.Eventf(dk,
 			corev1.EventTypeNormal,
 			installAgentVersionEvent,
-			"Installed agent version: %s to envDir: %s", currentVersion, envDir)
+			"Installed agent version: %s to tenant: %s", currentVersion, tenant.UUID)
 	}
 	return nil
 }
