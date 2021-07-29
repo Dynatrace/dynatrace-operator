@@ -77,7 +77,7 @@ func main() {
 
 	signalHandler := ctrl.SetupSignalHandler()
 
-	startWebhookAndBootstrapperIfDebugFlagSet(startupInfo{
+	startWebhookIfDebugFlagSet(startupInfo{
 		cfg:           cfg,
 		namespace:     namespace,
 		signalHandler: signalHandler,

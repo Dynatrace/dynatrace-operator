@@ -17,7 +17,7 @@ type startupInfo struct {
 
 type subCommand func(string, *rest.Config) (manager.Manager, error)
 
-func startWebhookAndBootstrapperIfDebugFlagSet(info startupInfo) {
+func startWebhookIfDebugFlagSet(info startupInfo) {
 	if isDebugFlagSet() {
 		log.Info("debug mode enabled")
 		log.Info("starting webhook and bootstrapper")
