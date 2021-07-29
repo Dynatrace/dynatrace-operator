@@ -3,6 +3,7 @@ package istio
 import (
 	"context"
 	"fmt"
+	"os"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -35,18 +36,20 @@ type Controller struct {
 	istioClient istioclientset.Interface
 	scheme      *runtime.Scheme
 
-	logger logr.Logger
-	config *rest.Config
+	logger    logr.Logger
+	config    *rest.Config
+	namespace string
 }
 
 // NewController - creates new instance of istio controller
 func NewController(config *rest.Config, scheme *runtime.Scheme) *Controller {
 	c := &Controller{
-		config: config,
-		scheme: scheme,
-		logger: log.Log.WithName("istio.controller"),
+		config:    config,
+		scheme:    scheme,
+		logger:    log.Log.WithName("istio.controller"),
+		namespace: os.Getenv("POD_NAMESPACE"),
 	}
-	istioClient, err := c.initialiseIstioClient(config)
+	istioClient, err := c.initializeIstioClient(config)
 	if err != nil {
 		return nil
 	}
@@ -55,7 +58,7 @@ func NewController(config *rest.Config, scheme *runtime.Scheme) *Controller {
 	return c
 }
 
-func (c *Controller) initialiseIstioClient(config *rest.Config) (istioclientset.Interface, error) {
+func (c *Controller) initializeIstioClient(config *rest.Config) (istioclientset.Interface, error) {
 	ic, err := istioclientset.NewForConfig(config)
 	if err != nil {
 		c.logger.Error(err, "istio: failed to initialize client")
@@ -245,7 +248,7 @@ func (c *Controller) handleIstioConfigurationForVirtualService(instance *dynatra
 		return false, err
 	}
 
-	virtualService := buildVirtualService(name, communicationHost.Host, communicationHost.Protocol,
+	virtualService := buildVirtualService(name, c.namespace, communicationHost.Host, communicationHost.Protocol,
 		communicationHost.Port)
 	if virtualService == nil {
 		return false, nil
@@ -273,7 +276,7 @@ func (c *Controller) handleIstioConfigurationForServiceEntry(instance *dynatrace
 		return false, err
 	}
 
-	serviceEntry := buildServiceEntry(name, communicationHost.Host, communicationHost.Protocol, communicationHost.Port)
+	serviceEntry := buildServiceEntry(name, c.namespace, communicationHost.Host, communicationHost.Protocol, communicationHost.Port)
 	err = c.createIstioConfigurationForServiceEntry(instance, serviceEntry, role)
 	if err != nil {
 		c.logger.Error(err, "istio: failed to create ServiceEntry")
@@ -298,7 +301,6 @@ func (c *Controller) createIstioConfigurationForServiceEntry(dynaKube *dynatrace
 	if sve == nil {
 		return fmt.Errorf("could not create service entry with spec %v", serviceEntry.Spec)
 	}
-
 	return nil
 }
 

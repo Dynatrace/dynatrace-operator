@@ -1,9 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../../openshift
-  - ../../samples
+- ../../openshift
+- ../../samples
 images:
-  - name: docker.io/dynatrace/dynatrace-operator:snapshot
-    newName: registry.connect.redhat.com/dynatrace/dynatrace-operator
-    newTag: v0.2.1
+- name: docker.io/dynatrace/dynatrace-operator:snapshot
+  newName: registry.connect.redhat.com/dynatrace/dynatrace-operator
+  newTag: v0.2.1

@@ -105,6 +105,7 @@ func (r *ReconcileNodes) onUpdate(node string) error {
 		return err
 	}
 
+	r.logger.Info("updating nodes cache", "node", node)
 	return r.updateCache(c)
 }
 
@@ -373,7 +374,6 @@ func (r *ReconcileNodes) reconcileUnschedulableNode(node *corev1.Node, c *Cache)
 			return err
 		}
 	}
-
 	return r.markForTermination(c, oneAgent, instance.IPAddress, node.Name)
 }
 

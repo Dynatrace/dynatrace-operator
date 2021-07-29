@@ -83,7 +83,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 		r.logger.Info("Rollout reconciled")
 	}
 
-	upd, err = r.reconcileInstanceStatuses(ctx, r.logger, r.instance)
+	upd, err = r.reconcileInstanceStatuses(ctx)
 	rec.Update(upd, 5*time.Minute, "Instance statuses reconciled")
 	if rec.Error(err) {
 		return false, err
@@ -149,11 +149,11 @@ func (r *ReconcileOneAgent) getDesiredDaemonSet(rec *utils.Reconciliation) (*app
 	return dsDesired, nil
 }
 
-func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1alpha1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
+func (r *ReconcileOneAgent) getPods(ctx context.Context) ([]corev1.Pod, []client.ListOption, error) {
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
-		client.InNamespace((*instance).GetNamespace()),
-		client.MatchingLabels(buildLabels(instance.Name, feature)),
+		client.InNamespace((r.instance).GetNamespace()),
+		client.MatchingLabels(buildLabels(r.instance.Name, r.feature)),
 	}
 	err := r.client.List(ctx, podList, listOps...)
 	return podList.Items, listOps, err
@@ -577,10 +577,10 @@ func getTemplateHash(a metav1.Object) string {
 	return ""
 }
 
-func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube) (bool, error) {
-	pods, listOpts, err := r.getPods(ctx, instance, r.feature)
+func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context) (bool, error) {
+	pods, listOpts, err := r.getPods(ctx)
 	if err != nil {
-		handlePodListError(logger, err, listOpts)
+		handlePodListError(r.logger, err, listOpts)
 	}
 
 	instanceStatuses, err := getInstanceStatuses(pods)
@@ -590,8 +590,8 @@ func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logge
 		}
 	}
 
-	if instance.Status.OneAgent.Instances == nil || !reflect.DeepEqual(instance.Status.OneAgent.Instances, instanceStatuses) {
-		instance.Status.OneAgent.Instances = instanceStatuses
+	if r.instance.Status.OneAgent.Instances == nil || !reflect.DeepEqual(r.instance.Status.OneAgent.Instances, instanceStatuses) {
+		r.instance.Status.OneAgent.Instances = instanceStatuses
 		return true, err
 	}
 

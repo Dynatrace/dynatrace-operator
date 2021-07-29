@@ -23,13 +23,17 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/spf13/afero"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -38,11 +42,34 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 const (
-	podNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
+	podNamespaceContextKey   = "csi.storage.k8s.io/pod.namespace"
+	versionOffsetInUsagePath = -2
 )
+
+var (
+	memoryUsageMetric = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "dynatrace",
+		Subsystem: "csi_driver",
+		Name:      "memory_usage",
+		Help:      "Memory usage of the csi driver in bytes",
+	})
+	agentsVersionsMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "dynatrace",
+		Subsystem: "csi_driver",
+		Name:      "agent_versions",
+		Help:      "Number of an agent version currently mounted by the CSI driver",
+	}, []string{"version"})
+	memoryMetricTick = 5000 * time.Millisecond
+)
+
+func init() {
+	metrics.Registry.MustRegister(memoryUsageMetric)
+	metrics.Registry.MustRegister(agentsVersionsMetric)
+}
 
 var log = logger.NewDTLogger().WithName("server")
 
@@ -98,10 +125,21 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 
 	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC(log)))
 	go func() {
-		<-ctx.Done()
-		svr.log.Info("Stopping server")
-		server.GracefulStop()
-		svr.log.Info("Stopped server")
+		ticker := time.NewTicker(memoryMetricTick)
+		done := false
+		for !done {
+			select {
+			case <-ctx.Done():
+				svr.log.Info("Stopping server")
+				server.GracefulStop()
+				svr.log.Info("Stopped server")
+				done = true
+			case <-ticker.C:
+				var m runtime.MemStats
+				runtime.ReadMemStats(&m)
+				memoryUsageMetric.Set(float64(m.Alloc))
+			}
+		}
 	}()
 
 	csi.RegisterIdentityServer(server, svr)
@@ -169,7 +207,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 	if err := svr.storeVolumeMetadata(bindCfg, volumeCfg.volumeId); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to store volume metadata: %s", err))
 	}
-
+	agentsVersionsMetric.WithLabelValues(bindCfg.version).Inc()
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
@@ -206,7 +244,24 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 
 	svr.log.Info("volume has been unpublished", "targetPath", targetPath)
 
+	svr.fireVolumeUnpublishedMetric(metadata.UsageFilePath)
+
 	return &csi.NodeUnpublishVolumeResponse{}, nil
+}
+
+func (svr *CSIDriverServer) fireVolumeUnpublishedMetric(usageFilePath string) {
+	if len(usageFilePath) > 0 {
+		tmp := strings.Split(usageFilePath, string(os.PathSeparator))
+		version := tmp[len(tmp)+versionOffsetInUsagePath]
+		agentsVersionsMetric.WithLabelValues(version).Dec()
+		var m = &dto.Metric{}
+		if err := agentsVersionsMetric.WithLabelValues(version).Write(m); err != nil {
+			svr.log.Error(err, "failed to get the value of agent version metric")
+		}
+		if m.Gauge.GetValue() <= float64(0) {
+			agentsVersionsMetric.DeleteLabelValues(version)
+		}
+	}
 }
 
 func (svr *CSIDriverServer) NodeStageVolume(context.Context, *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {

@@ -4,6 +4,10 @@ resources:
   - csi/securitycontextconstraints-csidriver.yaml
   - oneagent/securitycontextconstraints.yaml
   - oneagent/securitycontextconstraints-unprivileged.yaml
+  - oneagent/clusterrole-oneagent.yaml
+  - oneagent/clusterrolebinding-oneagent.yaml
+  - oneagent/clusterrole-oneagent-unprivileged.yaml
+  - oneagent/clusterrolebinding-oneagent-unprivileged.yaml
 bases:
   - ../common/data-ingest
   - ../common/kubernetes-monitoring

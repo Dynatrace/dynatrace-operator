@@ -108,7 +108,6 @@ func updateImageVersion(
 		"image", img,
 		"oldVersion", target.Version, "newVersion", ver.Version,
 		"oldHash", target.ImageHash, "newHash", ver.Hash)
-
 	target.Version = ver.Version
 	target.ImageHash = ver.Hash
 	return nil
