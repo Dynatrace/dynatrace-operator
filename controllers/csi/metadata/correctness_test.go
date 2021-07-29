@@ -13,35 +13,35 @@ import (
 
 var (
 	testTen1 = Tenant{
-		UUID:          "asc1",
+		TenantUUID:    "asc1",
 		LatestVersion: "123",
 		Dynakube:      "dk1",
 	}
 	testTen2 = Tenant{
-		UUID:          "asc2",
+		TenantUUID:    "asc2",
 		LatestVersion: "223",
 		Dynakube:      "dk2",
 	}
 	testTen3 = Tenant{
-		UUID:          "asc3",
+		TenantUUID:    "asc3",
 		LatestVersion: "323",
 		Dynakube:      "dk3",
 	}
 
 	testVol1 = Volume{
-		ID:         "vol-1",
+		VolumeID:   "vol-1",
 		PodName:    "pod1",
 		Version:    testTen1.LatestVersion,
 		TenantUUID: testTen1.Dynakube,
 	}
 	testVol2 = Volume{
-		ID:         "vol-2",
+		VolumeID:   "vol-2",
 		PodName:    "pod2",
 		Version:    testTen2.LatestVersion,
 		TenantUUID: testTen2.Dynakube,
 	}
 	testVol3 = Volume{
-		ID:         "vol-3",
+		VolumeID:   "vol-3",
 		PodName:    "pod3",
 		Version:    testTen3.LatestVersion,
 		TenantUUID: testTen3.Dynakube,
@@ -80,7 +80,7 @@ func TestCheckStorageCorrectness_DoNothing(t *testing.T) {
 	err := CheckStorageCorrectness(client, db, log)
 
 	assert.NoError(t, err)
-	vol, err := db.GetVolumeInfo(testVol1.ID)
+	vol, err := db.GetVolumeInfo(testVol1.VolumeID)
 	assert.NoError(t, err)
 	assert.Equal(t, &testVol1, vol)
 }
@@ -102,31 +102,31 @@ func TestCheckStorageCorrectness_PURGE(t *testing.T) {
 	err := CheckStorageCorrectness(client, db, log)
 	assert.NoError(t, err)
 
-	vol, err := db.GetVolumeInfo(testVol1.ID)
+	vol, err := db.GetVolumeInfo(testVol1.VolumeID)
 	assert.NoError(t, err)
 	assert.Equal(t, &testVol1, vol)
 
-	ten, err := db.GetTenant(testTen1.UUID)
+	ten, err := db.GetTenant(testTen1.TenantUUID)
 	assert.NoError(t, err)
 	assert.Equal(t, &testTen1, ten)
 
 	// PURGED
-	vol, err = db.GetVolumeInfo(testVol2.ID)
+	vol, err = db.GetVolumeInfo(testVol2.VolumeID)
 	assert.NoError(t, err)
 	assert.Nil(t, vol)
 
 	// PURGED
-	vol, err = db.GetVolumeInfo(testVol3.ID)
+	vol, err = db.GetVolumeInfo(testVol3.VolumeID)
 	assert.NoError(t, err)
 	assert.Nil(t, vol)
 
 	// PURGED
-	ten, err = db.GetTenant(testTen2.UUID)
+	ten, err = db.GetTenant(testTen2.TenantUUID)
 	assert.NoError(t, err)
 	assert.Nil(t, ten)
 
 	// PURGED
-	ten, err = db.GetTenant(testTen3.UUID)
+	ten, err = db.GetTenant(testTen3.TenantUUID)
 	assert.NoError(t, err)
 	assert.Nil(t, ten)
 }

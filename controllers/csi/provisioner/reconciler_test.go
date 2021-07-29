@@ -53,7 +53,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`dynakube deleted`, func(t *testing.T) {
 		db := metadata.FakeMemoryDB()
-		tenant := metadata.Tenant{UUID: tenantUUID, LatestVersion: agentVersion, Dynakube: dkName}
+		tenant := metadata.Tenant{TenantUUID: tenantUUID, LatestVersion: agentVersion, Dynakube: dkName}
 		db.InsertTenant(&tenant)
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(),
@@ -65,7 +65,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 
-		ten, err := db.GetTenant(tenant.UUID)
+		ten, err := db.GetTenant(tenant.TenantUUID)
 		assert.NoError(t, err)
 		assert.Nil(t, ten)
 	})
@@ -326,7 +326,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`correct directories are created`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		memDB := metadata.FakeMemoryDB()
-		memDB.InsertTenant(&metadata.Tenant{UUID: tenantUUID, LatestVersion: agentVersion, Dynakube: dkName})
+		memDB.InsertTenant(metadata.NewTenant(tenantUUID, agentVersion, dkName))
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: tenantUUID,

@@ -222,10 +222,10 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount oneagent volume: %s", err.Error()))
 	}
 
-	if err = svr.db.DeleteVolumeInfo(volume.ID); err != nil {
+	if err = svr.db.DeleteVolumeInfo(volume.VolumeID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	svr.log.Info("deleted volume info", "ID", volume.ID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	svr.log.Info("deleted volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 
 	if err = svr.fs.RemoveAll(targetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -322,14 +322,9 @@ func (svr *CSIDriverServer) umountOneAgent(targetPath string, overlayFSPath stri
 }
 
 func (svr *CSIDriverServer) storeVolumeInfo(bindCfg *bindConfig, volumeCfg *volumeConfig) error {
-	volume := metadata.Volume{
-		ID:         volumeCfg.volumeId,
-		PodName:    volumeCfg.podName,
-		Version:    bindCfg.version,
-		TenantUUID: bindCfg.tenantUUID,
-	}
-	svr.log.Info("inserting volume info", "ID", volume.ID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
-	return svr.db.InsertVolumeInfo(&volume)
+	volume := metadata.NewVolume(volumeCfg.volumeId, volumeCfg.podName, bindCfg.version, bindCfg.tenantUUID)
+	svr.log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	return svr.db.InsertVolumeInfo(volume)
 }
 
 func (svr *CSIDriverServer) loadVolumeInfo(volumeID string) (*metadata.Volume, error) {
@@ -340,7 +335,7 @@ func (svr *CSIDriverServer) loadVolumeInfo(volumeID string) (*metadata.Volume, e
 	if volume == nil {
 		return &metadata.Volume{}, nil
 	}
-	svr.log.Info("loaded volume info", "ID", volume.ID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	svr.log.Info("loaded volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 	return volume, nil
 }
 

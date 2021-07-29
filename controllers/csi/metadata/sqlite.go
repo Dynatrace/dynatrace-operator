@@ -3,7 +3,9 @@ package metadata
 import (
 	"database/sql"
 	"fmt"
+	"path/filepath"
 
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -85,7 +87,8 @@ const (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("storage")
+	log    = logger.NewDTLogger().WithName("storage")
+	dbPath = filepath.Join(dtcsi.DataPath, "csi.db")
 )
 
 type SqliteAccess struct {
@@ -137,12 +140,12 @@ func (a *SqliteAccess) Setup() error {
 
 func (a *SqliteAccess) InsertTenant(tenant *Tenant) error {
 	errMessageTemplate := "couldn't insert tenant, UUID %s, LatestVersion %s, Dynakube %s, err: %s"
-	return a.executeStatement(insertTenantStatement, errMessageTemplate, tenant.UUID, tenant.LatestVersion, tenant.Dynakube)
+	return a.executeStatement(insertTenantStatement, errMessageTemplate, tenant.TenantUUID, tenant.LatestVersion, tenant.Dynakube)
 }
 
 func (a *SqliteAccess) UpdateTenant(tenant *Tenant) error {
 	errMessageTemplate := "couldn't update tenant, LatestVersion %s, Dynakube %s, UUID %s, err: %s"
-	return a.executeStatement(updateTenantStatement, errMessageTemplate, tenant.LatestVersion, tenant.Dynakube, tenant.UUID)
+	return a.executeStatement(updateTenantStatement, errMessageTemplate, tenant.LatestVersion, tenant.Dynakube, tenant.TenantUUID)
 }
 
 func (a *SqliteAccess) DeleteTenant(uuid string) error {
@@ -171,7 +174,7 @@ func (a *SqliteAccess) GetTenantViaDynakube(dynakube string) (*Tenant, error) {
 
 func (a *SqliteAccess) InsertVolumeInfo(volume *Volume) error {
 	errMessageTemplate := "couldn't insert volume info, UID %s, VolumeID %s, Version %s, TenantUUId: %s err: %s"
-	return a.executeStatement(insertVolumeStatement, errMessageTemplate, volume.ID, volume.PodName, volume.Version, volume.TenantUUID)
+	return a.executeStatement(insertVolumeStatement, errMessageTemplate, volume.VolumeID, volume.PodName, volume.Version, volume.TenantUUID)
 }
 
 // Gets a Volume from the database, return (nil, nil) if the volume is not in the database.

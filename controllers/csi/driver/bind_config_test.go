@@ -123,7 +123,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			namespace: namespace,
 		}
 
-		srv.db.InsertTenant(&metadata.Tenant{UUID: tenantUuid, LatestVersion: agentVersion, Dynakube: dkName})
+		srv.db.InsertTenant(metadata.NewTenant(tenantUuid, agentVersion, dkName))
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.db)
 

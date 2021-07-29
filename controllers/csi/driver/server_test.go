@@ -265,7 +265,7 @@ func TestStoreAndLoadPodInfo(t *testing.T) {
 	volume, err := server.loadVolumeInfo(volumeCfg.volumeId)
 	assert.NoError(t, err)
 	assert.NotNil(t, volume)
-	assert.Equal(t, volumeId, volume.ID)
+	assert.Equal(t, volumeId, volume.VolumeID)
 	assert.Equal(t, podUID, volume.PodName)
 	assert.Equal(t, agentVersion, volume.Version)
 	assert.Equal(t, tenantUuid, volume.TenantUUID)
@@ -323,13 +323,13 @@ func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServ
 
 func mockPublishedVolume(t *testing.T, server *CSIDriverServer) {
 	mockOneAgent(t, server)
-	err := server.db.InsertVolumeInfo(&metadata.Volume{ID: volumeId, PodName: podUID, Version: agentVersion, TenantUUID: tenantUuid})
+	err := server.db.InsertVolumeInfo(metadata.NewVolume(volumeId, podUID, agentVersion, tenantUuid))
 	require.NoError(t, err)
 	agentsVersionsMetric.WithLabelValues(agentVersion).Inc()
 }
 
 func mockOneAgent(t *testing.T, server *CSIDriverServer) {
-	err := server.db.InsertTenant(&metadata.Tenant{UUID: tenantUuid, LatestVersion: agentVersion, Dynakube: dkName})
+	err := server.db.InsertTenant(metadata.NewTenant(tenantUuid, agentVersion, dkName))
 	require.NoError(t, err)
 }
 
@@ -337,7 +337,7 @@ func assertReferencesForPublishedVolume(t *testing.T, server *CSIDriverServer, m
 	assert.NotEmpty(t, mounter.MountPoints)
 	volume, err := server.loadVolumeInfo(volumeId)
 	assert.NoError(t, err)
-	assert.Equal(t, volume.ID, volumeId)
+	assert.Equal(t, volume.VolumeID, volumeId)
 	assert.Equal(t, volume.PodName, podUID)
 	assert.Equal(t, volume.Version, agentVersion)
 	assert.Equal(t, volume.TenantUUID, tenantUuid)

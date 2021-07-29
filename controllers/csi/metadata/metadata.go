@@ -1,13 +1,7 @@
 package metadata
 
-import (
-	"path/filepath"
-
-	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-)
-
 type Tenant struct {
-	UUID          string
+	TenantUUID    string
 	LatestVersion string
 	Dynakube      string
 }
@@ -21,7 +15,7 @@ func NewTenant(uuid, latestVersion, dynakube string) *Tenant {
 }
 
 type Volume struct {
-	ID         string
+	VolumeID   string
 	PodName    string
 	Version    string
 	TenantUUID string
@@ -51,5 +45,3 @@ type Access interface {
 	GetPodNames() (map[string]string, error)
 	GetUsedVersions(tenantUUID string) (map[string]bool, error)
 }
-
-var dbPath = filepath.Join(dtcsi.DataPath, "csi.db")

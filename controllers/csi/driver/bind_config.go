@@ -36,7 +36,7 @@ func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeC
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("tenant is missing from metadata for DynaKube %s", dkName))
 	}
 	return &bindConfig{
-		tenantUUID: tenant.UUID,
+		tenantUUID: tenant.TenantUUID,
 		version:    tenant.LatestVersion,
 	}, nil
 }
