@@ -1,10 +1,29 @@
 #!/bin/bash
 
+set -e
+
 cli="kubectl"
 missing_value="<no value>"
 selected_dynakube=""
 api_url=""
 paas_token=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+  --dynakube)
+    selected_dynakube="$2"
+    shift 2
+    ;;
+  --oc)
+    cli="oc"
+    shift 1
+    ;;
+  *)
+    echo "Warning: skipping unsupported option: $1"
+    shift
+    ;;
+  esac
+done
 
 log_info() {
   printf "[%s] %s\n" "$1" "$2"
@@ -28,17 +47,23 @@ checkDynakube() {
   fi
 
   # check dynakube cr exists
+  if [[ -n "$selected_dynakube" ]] ; then
+    if ! "${cli}" get dynakube "${selected_dynakube}" -n dynatrace >/dev/null 2>&1 ; then
+      log_info "dynakube" "selected dynakube does not exist!"
+      exit 1
+    fi
+  fi
+
   names="$("${cli}" get dynakube -n dynatrace -o jsonpath={..metadata.name})"
   if [ -z "$names" ]; then
     log_info "dynakube" "cr does not exist"
     exit 1
   fi
 
-  for name in $names; do
-    #  echo $name
-    selected_dynakube=$name
-  done
-  # todo: handle multiple different dynakubes by selecting one
+  read -ra names_arr <<<"$names"
+  if [ -n "$selected_dynakube" ] ; then
+    selected_dynakube="${names_arr[0]}"
+  fi
 
   log_info "dynakube" "'${selected_dynakube}' selected"
 
@@ -54,7 +79,7 @@ checkDynakube() {
 checkApiUrl() {
   api_url=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.apiUrl}}")
   url_end="${api_url##*/}"
-  if [ ! "$url_end" = "api" ]; then
+  if [ "$url_end" != "api" ]; then
     log_info "dynakube" "api url has to end on '/api'"
     exit 1
   fi
@@ -69,8 +94,6 @@ checkSecret() {
     secret_name=$tokens
   fi
 
-
-#  eval "$secret"
   if ! "${cli}" get secret "$secret_name" -n dynatrace &>/dev/null; then
     log_info "dynakube" "secret with the name '${secret_name}' is missing"
     exit 1
