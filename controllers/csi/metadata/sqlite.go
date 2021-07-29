@@ -139,26 +139,45 @@ func (a *SqliteAccess) Setup() error {
 }
 
 func (a *SqliteAccess) InsertTenant(tenant *Tenant) error {
-	errMessageTemplate := "couldn't insert tenant, UUID %s, LatestVersion %s, Dynakube %s, err: %s"
-	return a.executeStatement(insertTenantStatement, errMessageTemplate, tenant.TenantUUID, tenant.LatestVersion, tenant.Dynakube)
+	err := a.executeStatement(insertTenantStatement, tenant.TenantUUID, tenant.LatestVersion, tenant.Dynakube)
+	if err != nil {
+		err = fmt.Errorf("couldn't insert tenant, UUID %s, LatestVersion %s, Dynakube %s, err: %s",
+			tenant.TenantUUID,
+			tenant.LatestVersion,
+			tenant.Dynakube,
+			err)
+	}
+	return err
 }
 
 func (a *SqliteAccess) UpdateTenant(tenant *Tenant) error {
-	errMessageTemplate := "couldn't update tenant, LatestVersion %s, Dynakube %s, UUID %s, err: %s"
-	return a.executeStatement(updateTenantStatement, errMessageTemplate, tenant.LatestVersion, tenant.Dynakube, tenant.TenantUUID)
+	err := a.executeStatement(updateTenantStatement, tenant.LatestVersion, tenant.Dynakube, tenant.TenantUUID)
+	if err != nil {
+		err = fmt.Errorf("couldn't update tenant, LatestVersion %s, Dynakube %s, UUID %s, err: %s",
+			tenant.LatestVersion,
+			tenant.Dynakube,
+			tenant.TenantUUID,
+			err)
+	}
+	return err
 }
 
 func (a *SqliteAccess) DeleteTenant(uuid string) error {
-	errMessageTemplate := "couldn't delete tenant, UUID %s, err: %s"
-	return a.executeStatement(deleteTenantStatement, errMessageTemplate, uuid)
+	err := a.executeStatement(deleteTenantStatement, uuid)
+	if err != nil {
+		err = fmt.Errorf("couldn't delete tenant, UUID %s, err: %s", uuid, err)
+	}
+	return err
 }
 
 // Gets a Tenant from the database, return (nil, nil) if the tenant is not in the database.
 func (a *SqliteAccess) GetTenant(uuid string) (*Tenant, error) {
 	var latestVersion string
 	var dynakube string
-	errMessageTemplate := "couldn't get tenant for UUID %s, err: %s"
-	err := a.querySimpleStatement(getTenantStatement, uuid, errMessageTemplate, &latestVersion, &dynakube)
+	err := a.querySimpleStatement(getTenantStatement, uuid, &latestVersion, &dynakube)
+	if err != nil {
+		err = fmt.Errorf("couldn't get tenant for UUID %s, err: %s", uuid, err)
+	}
 	return NewTenant(uuid, latestVersion, dynakube), err
 }
 
@@ -167,14 +186,24 @@ func (a *SqliteAccess) GetTenant(uuid string) (*Tenant, error) {
 func (a *SqliteAccess) GetTenantViaDynakube(dynakube string) (*Tenant, error) {
 	var tenantUUID string
 	var latestVersion string
-	errMessageTemplate := "couldn't get tenant field for Dynakube %s, err: %s"
-	err := a.querySimpleStatement(getTenantViaDynakubeStatement, dynakube, errMessageTemplate, &tenantUUID, &latestVersion)
+	err := a.querySimpleStatement(getTenantViaDynakubeStatement, dynakube, &tenantUUID, &latestVersion)
+	if err != nil {
+		err = fmt.Errorf("couldn't get tenant field for Dynakube %s, err: %s", dynakube, err)
+	}
 	return NewTenant(tenantUUID, latestVersion, dynakube), err
 }
 
 func (a *SqliteAccess) InsertVolumeInfo(volume *Volume) error {
-	errMessageTemplate := "couldn't insert volume info, UID %s, VolumeID %s, Version %s, TenantUUId: %s err: %s"
-	return a.executeStatement(insertVolumeStatement, errMessageTemplate, volume.VolumeID, volume.PodName, volume.Version, volume.TenantUUID)
+	err := a.executeStatement(insertVolumeStatement, volume.VolumeID, volume.PodName, volume.Version, volume.TenantUUID)
+	if err != nil {
+		err = fmt.Errorf("couldn't insert volume info, UID %s, VolumeID %s, Version %s, TenantUUId: %s err: %s",
+			volume.VolumeID,
+			volume.PodName,
+			volume.Version,
+			volume.TenantUUID,
+			err)
+	}
+	return err
 }
 
 // Gets a Volume from the database, return (nil, nil) if the volume is not in the database.
@@ -182,14 +211,19 @@ func (a *SqliteAccess) GetVolumeInfo(volumeID string) (*Volume, error) {
 	var PodName string
 	var version string
 	var tenantUUID string
-	errMessageTemplate := "couldn't get volume field for VolumeID %s, err: %s"
-	err := a.querySimpleStatement(getVolumeStatement, volumeID, errMessageTemplate, &PodName, &version, &tenantUUID)
+	err := a.querySimpleStatement(getVolumeStatement, volumeID, &PodName, &version, &tenantUUID)
+	if err != nil {
+		err = fmt.Errorf("couldn't get volume field for VolumeID %s, err: %s", volumeID, err)
+	}
 	return NewVolume(volumeID, PodName, version, tenantUUID), err
 }
 
 func (a *SqliteAccess) DeleteVolumeInfo(volumeID string) error {
-	errMessageTemplate := "couldn't delete pod, UID %s, err: %s"
-	return a.executeStatement(deleteVolumeStatement, errMessageTemplate, volumeID)
+	err := a.executeStatement(deleteVolumeStatement, volumeID)
+	if err != nil {
+		err = fmt.Errorf("couldn't delete volume VolumeID %s, err: %s", volumeID, err)
+	}
+	return err
 }
 
 // Gets all unique versions present in the `volumes` database in map.
@@ -255,26 +289,20 @@ func (a *SqliteAccess) GetDynakubes() (map[string]string, error) {
 
 // Excutes the provided SQL statement on the database.
 // The `vars` are passed to the SQL statement (in-order), to fill in the SQL wildcards.
-// The `errMessageTemplate` will be passed the same `vars` + the `err` object, so the template needs to have len(vars) + 1 wildcards.
-func (a *SqliteAccess) executeStatement(statement, errMessageTemplate string, vars ...interface{}) error {
+func (a *SqliteAccess) executeStatement(statement string, vars ...interface{}) error {
 	_, err := a.conn.Exec(statement, vars...)
-	if err != nil {
-		vars = append(vars, err)
-		return fmt.Errorf(errMessageTemplate, vars...)
-	}
-	return nil
+	return err
 }
 
 // Excutes the provided SQL SELECT statement on the database.
 // The SQL statement should always return a single row.
 // The `id` is passed to the SQL query to fill in an SQL wildcard
 // The `vars` are filled with the values of the return of the SELECT statement, so the `vars` need to be pointers.
-// The `errMessageTemplate` will be passed the `id` + the `err` object, so the template needs to have 2 wildcards.
-func (a *SqliteAccess) querySimpleStatement(statement, id, errMessageTemplate string, vars ...interface{}) error {
+func (a *SqliteAccess) querySimpleStatement(statement, id string, vars ...interface{}) error {
 	row := a.conn.QueryRow(statement, id)
 	err := row.Scan(vars...)
 	if err != nil && err != sql.ErrNoRows {
-		return fmt.Errorf(errMessageTemplate, id, err)
+		return err
 	}
 	return nil
 }
