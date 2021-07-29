@@ -22,12 +22,27 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/webhook/server"
 	"github.com/spf13/afero"
+	"github.com/spf13/pflag"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
+
+var (
+	certsDir string
+	certFile string
+	keyFile  string
+)
+
+func webhookServerFlags() *pflag.FlagSet {
+	webhookServerFlags := pflag.NewFlagSet("webhook-server", pflag.ExitOnError)
+	webhookServerFlags.StringVar(&certsDir, "certs-dir", "/tmp/webhook/certs", "Directory to look certificates for.")
+	webhookServerFlags.StringVar(&certFile, "cert", "tls.crt", "File name for the public certificate.")
+	webhookServerFlags.StringVar(&keyFile, "cert-key", "tls.key", "File name for the private key.")
+	return webhookServerFlags
+}
 
 func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
