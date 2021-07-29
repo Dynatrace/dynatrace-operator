@@ -1,18 +1,18 @@
 #!/bin/bash
 
-cli="kubectl" # todo: oc for openshift
+cli="kubectl"
 missing_value="<no value>"
 selected_dynakube=""
 api_url=""
 paas_token=""
 
-log() {
+log_info() {
   printf "[%s] %s\n" "$1" "$2"
 }
 
 checkNs() {
   if ! "${cli}" get ns dynatrace >/dev/null 2>&1; then
-    log "namespace" "missing namespace 'dynatrace'"
+    log_info "namespace" "missing namespace 'dynatrace'"
     exit 1
   fi
 }
@@ -21,16 +21,16 @@ checkDynakube() {
   # check dynakube crd exists
   crd="$("${cli}" get dynakube -n dynatrace >/dev/null)"
   if [ -z "$crd" ]; then
-    log "dynakube" "crd exists"
+    log_info "dynakube" "crd exists"
   else
-    log "dynakube" "crd missing"
+    log_info "dynakube" "crd missing"
     exit 1
   fi
 
   # check dynakube cr exists
   names="$("${cli}" get dynakube -n dynatrace -o jsonpath={..metadata.name})"
   if [ -z "$names" ]; then
-    log "dynakube" "cr does not exist"
+    log_info "dynakube" "cr does not exist"
     exit 1
   fi
 
@@ -40,40 +40,47 @@ checkDynakube() {
   done
   # todo: handle multiple different dynakubes by selecting one
 
-  log "dynakube" "'${selected_dynakube}' selected"
+  log_info "dynakube" "'${selected_dynakube}' selected"
 
-  log "dynakube" "checking api url"
+  log_info "dynakube" "checking api url"
   checkApiUrl
-  log "dynakube" "api url valid"
+  log_info "dynakube" "api url valid"
 
-  log "dynakube" "checking secret"
+  log_info "dynakube" "checking secret"
   checkSecret
-  log "dynakube" "secret valid"
+  log_info "dynakube" "secret valid"
 }
 
 checkApiUrl() {
   api_url=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.apiUrl}}")
   url_end="${api_url##*/}"
   if [ ! "$url_end" = "api" ]; then
-    log "dynakube" "api url has to end on '/api'"
+    log_info "dynakube" "api url has to end on '/api'"
     exit 1
   fi
   # todo: check for valid url?
 }
 
 checkSecret() {
-  # todo: check for different secret name (.spec.tokens)
-  secret="$("${cli}" get secret "$selected_dynakube" -n dynatrace &>/dev/null)"
-  if [ -n "$secret" ]; then
-    log "dynakube" "secret with the name '${selected_dynakube}' is missing"
+  # use dynakube name or tokens value if set
+  secret_name="$selected_dynakube"
+  tokens=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.tokens}}")
+  if [[ "$tokens" != "$missing_value" ]]; then
+    secret_name=$tokens
+  fi
+
+
+#  eval "$secret"
+  if ! "${cli}" get secret "$secret_name" -n dynatrace &>/dev/null; then
+    log_info "dynakube" "secret with the name '${secret_name}' is missing"
     exit 1
   fi
 
   token_names=("apiToken" "paasToken")
   for token_name in "${token_names[@]}"; do
-    token=$("${cli}" get secret dynakube -n dynatrace --template="{{.data.${token_name}}}")
-    if [ "$token" = "$missing_value" ]; then
-      log "dynakube" "token '${token_name}' does not exist in secret '$selected_dynakube'"
+    token=$("${cli}" get secret "$secret_name" -n dynatrace --template="{{.data.${token_name}}}")
+    if [[ "$token" == "$missing_value" ]]; then
+      log_info "dynakube" "token '${token_name}' does not exist in secret '${secret_name}'"
       exit 1
     fi
 
@@ -84,14 +91,15 @@ checkSecret() {
 }
 
 checkConnection() {
-  # todo: get operator pod
-  # todo: connect to container and use api url to make connection to cluster: with proxy, trustedCA, ...
+  operator_pod=$("${cli}" get pods --no-headers -o custom-columns=":metadata.name" | grep dynatrace-operator)
+  log_info "connection" "using pod '$operator_pod'"
+  container_cli="${cli} exec ${operator_pod} -- /bin/bash -c"
 
   curl_params=(
     -sI
     -o "/dev/null"
     "${api_url}/v1/deployment/installer/agent/unix/default/latest/metainfo"
-    "-H" "Authorization: Api-Token ${paas_token}"
+    "-H" "\"Authorization: Api-Token ${paas_token}\""
   )
 
   # proxy
@@ -110,14 +118,14 @@ checkConnection() {
   fi
 
   if [[ "$proxy" != "" ]]; then
-    log "connection" "using proxy: $proxy"
+    log_info "connection" "using proxy: $proxy"
     curl_params+=("--proxy" "${proxy}")
   fi
 
   # skip cert check
   skip_cert_check=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.skipCertCheck}}")
   if [[ "$skip_cert_check" == "true" ]]; then
-    log "connection" "skipping cert check"
+    log_info "connection" "skipping cert check"
     curl_params+=("--insecure")
   fi
 
@@ -127,30 +135,37 @@ checkConnection() {
     # get custom certificate from config map and save to file
     certs=$("${cli}" get configmap "${custom_ca_map}" -n dynatrace --template="{{.data.certs}}")
     cert_path="/tmp/ca.pem"
-    echo "$certs" >"$cert_path"
 
-    log "connection" "using custom certificate: $cert_path"
+    log_info "connection" "copying certificate to container ..."
+    ca_cmd="$container_cli \"echo '$certs' > $cert_path\""
+    if ! eval "$ca_cmd" ; then
+      log_info "connection" "unable to write custom certificate"
+      exit 1
+    fi
+
+    log_info "connection" "using custom certificate in '$cert_path'"
     curl_params+=("--cacert" "$cert_path")
   fi
 
-  log "connection" "trying to access cluster ..."
-  if ! curl "${curl_params[@]}"; then
-    log "connection" "unable to connect to cluster"
+  log_info "connection" "trying to access cluster ..."
+  connection_cmd="$container_cli \"curl ${curl_params[*]}\""
+  if ! eval "${connection_cmd}"; then
+    log_info "connection" "unable to connect to cluster"
     exit 1
   fi
 }
 
 ####### MAIN #######
-log "namespace" "checking ..."
+log_info "namespace" "checking ..."
 checkNs
-log "namespace" "valid"
+log_info "namespace" "valid"
 
-log "dynakube" "checking ..."
+log_info "dynakube" "checking ..."
 checkDynakube
-log "dynakube" "valid"
+log_info "dynakube" "valid"
 
-log "connection" "checking ..."
+log_info "connection" "checking ..."
 checkConnection
-log "connection" "valid"
+log_info "connection" "valid"
 
 # todo: look through support channel for common pitfalls
