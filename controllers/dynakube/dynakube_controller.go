@@ -3,7 +3,6 @@ package dynakube
 import (
 	"context"
 	"fmt"
-	mapper "github.com/Dynatrace/dynatrace-operator/namespacesmapper"
 	"net/http"
 	"time"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	mapper "github.com/Dynatrace/dynatrace-operator/namespacesmapper"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
