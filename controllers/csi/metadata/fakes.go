@@ -4,6 +4,43 @@ import (
 	"database/sql"
 )
 
+var (
+	testTenant1 = Tenant{
+		TenantUUID:    "asc1",
+		LatestVersion: "123",
+		Dynakube:      "dk1",
+	}
+	testTenant2 = Tenant{
+		TenantUUID:    "asc2",
+		LatestVersion: "223",
+		Dynakube:      "dk2",
+	}
+	testTenant3 = Tenant{
+		TenantUUID:    "asc3",
+		LatestVersion: "323",
+		Dynakube:      "dk3",
+	}
+
+	testVolume1 = Volume{
+		VolumeID:   "vol-1",
+		PodName:    "pod1",
+		Version:    testTenant1.LatestVersion,
+		TenantUUID: testTenant1.TenantUUID,
+	}
+	testVolume2 = Volume{
+		VolumeID:   "vol-2",
+		PodName:    "pod2",
+		Version:    testTenant2.LatestVersion,
+		TenantUUID: testTenant2.TenantUUID,
+	}
+	testVolume3 = Volume{
+		VolumeID:   "vol-3",
+		PodName:    "pod3",
+		Version:    testTenant3.LatestVersion,
+		TenantUUID: testTenant3.TenantUUID,
+	}
+)
+
 func emptyMemoryDB() *SqliteAccess {
 	dbPath = ":memory:"
 	db := SqliteAccess{}
