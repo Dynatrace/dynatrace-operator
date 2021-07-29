@@ -26,8 +26,8 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
 	csigc "github.com/Dynatrace/dynatrace-operator/controllers/csi/gc"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/controllers/csi/provisioner"
-	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/version"
@@ -88,12 +88,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	access := storage.SqliteAccess{}
+	access := metadata.SqliteAccess{}
 	if err := access.Setup(); err != nil {
 		log.Error(err, "failed to setup database storage for CSI Driver")
 		os.Exit(1)
 	}
-	if err := storage.CheckStorageCorrectness(mgr.GetClient(), &access, log); err != nil {
+	if err := metadata.CheckStorageCorrectness(mgr.GetClient(), &access, log); err != nil {
 		log.Error(err, "failed to correct database storage for CSI Driver")
 		os.Exit(1)
 	}

@@ -27,7 +27,7 @@ import (
 	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -74,8 +74,8 @@ type CSIDriverServer struct {
 	opts    dtcsi.CSIOptions
 	fs      afero.Afero
 	mounter mount.Interface
-	db      storage.Access
-	fph     storage.FilePathHandler
+	db      metadata.Access
+	fph     metadata.FilePathHandler
 }
 
 var _ manager.Runnable = &CSIDriverServer{}
@@ -89,8 +89,8 @@ func NewServer(client client.Client, opts dtcsi.CSIOptions) *CSIDriverServer {
 		opts:    opts,
 		fs:      afero.Afero{Fs: afero.NewOsFs()},
 		mounter: mount.New(""),
-		db:      storage.NewAccess(),
-		fph:     storage.FilePathHandler{RootDir: opts.RootDir},
+		db:      metadata.NewAccess(),
+		fph:     metadata.FilePathHandler{RootDir: opts.RootDir},
 	}
 }
 
@@ -238,7 +238,7 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func (svr *CSIDriverServer) fireVolumeUnpublishedMetric(volume storage.Volume) {
+func (svr *CSIDriverServer) fireVolumeUnpublishedMetric(volume metadata.Volume) {
 	if len(volume.Version) > 0 {
 		agentsVersionsMetric.WithLabelValues(volume.Version).Dec()
 		var m = &dto.Metric{}
@@ -322,7 +322,7 @@ func (svr *CSIDriverServer) umountOneAgent(targetPath string, overlayFSPath stri
 }
 
 func (svr *CSIDriverServer) storeVolumeInfo(bindCfg *bindConfig, volumeCfg *volumeConfig) error {
-	volume := storage.Volume{
+	volume := metadata.Volume{
 		ID:         volumeCfg.volumeId,
 		PodName:    volumeCfg.podName,
 		Version:    bindCfg.version,
@@ -332,13 +332,13 @@ func (svr *CSIDriverServer) storeVolumeInfo(bindCfg *bindConfig, volumeCfg *volu
 	return svr.db.InsertVolumeInfo(&volume)
 }
 
-func (svr *CSIDriverServer) loadVolumeInfo(volumeID string) (*storage.Volume, error) {
+func (svr *CSIDriverServer) loadVolumeInfo(volumeID string) (*metadata.Volume, error) {
 	volume, err := svr.db.GetVolumeInfo(volumeID)
 	if err != nil {
 		return nil, err
 	}
 	if volume == nil {
-		return &storage.Volume{}, nil
+		return &metadata.Volume{}, nil
 	}
 	svr.log.Info("loaded volume info", "ID", volume.ID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 	return volume, nil

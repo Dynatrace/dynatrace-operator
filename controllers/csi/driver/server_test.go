@@ -8,7 +8,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -278,7 +278,7 @@ func TestLoadPodInfo_Empty(t *testing.T) {
 	volume, err := server.loadVolumeInfo(volumeId)
 	assert.NoError(t, err)
 	assert.NotNil(t, volume)
-	assert.Equal(t, &storage.Volume{}, volume)
+	assert.Equal(t, &metadata.Volume{}, volume)
 }
 
 func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServer {
@@ -316,20 +316,20 @@ func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServ
 		opts:    csiOptions,
 		fs:      afero.Afero{Fs: tmpFs},
 		mounter: mounter,
-		db:      storage.FakeMemoryDB(),
-		fph:     storage.FilePathHandler{RootDir: csiOptions.RootDir},
+		db:      metadata.FakeMemoryDB(),
+		fph:     metadata.FilePathHandler{RootDir: csiOptions.RootDir},
 	}
 }
 
 func mockPublishedVolume(t *testing.T, server *CSIDriverServer) {
 	mockOneAgent(t, server)
-	err := server.db.InsertVolumeInfo(&storage.Volume{ID: volumeId, PodName: podUID, Version: agentVersion, TenantUUID: tenantUuid})
+	err := server.db.InsertVolumeInfo(&metadata.Volume{ID: volumeId, PodName: podUID, Version: agentVersion, TenantUUID: tenantUuid})
 	require.NoError(t, err)
 	agentsVersionsMetric.WithLabelValues(agentVersion).Inc()
 }
 
 func mockOneAgent(t *testing.T, server *CSIDriverServer) {
-	err := server.db.InsertTenant(&storage.Tenant{UUID: tenantUuid, LatestVersion: agentVersion, Dynakube: dkName})
+	err := server.db.InsertTenant(&metadata.Tenant{UUID: tenantUuid, LatestVersion: agentVersion, Dynakube: dkName})
 	require.NoError(t, err)
 }
 
@@ -346,7 +346,7 @@ func assertReferencesForPublishedVolume(t *testing.T, server *CSIDriverServer, m
 func assertNoReferencesForUnpublishedVolume(t *testing.T, server *CSIDriverServer) {
 	volume, err := server.loadVolumeInfo(volumeId)
 	assert.NoError(t, err)
-	assert.Equal(t, &storage.Volume{}, volume)
+	assert.Equal(t, &metadata.Volume{}, volume)
 }
 
 func resetMetrics() {

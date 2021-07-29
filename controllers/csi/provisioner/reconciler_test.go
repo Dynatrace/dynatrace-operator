@@ -10,7 +10,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/spf13/afero"
@@ -43,7 +43,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`no dynakube instance`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(),
-			db:     storage.FakeMemoryDB(),
+			db:     metadata.FakeMemoryDB(),
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{})
 
@@ -52,8 +52,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run(`dynakube deleted`, func(t *testing.T) {
-		db := storage.FakeMemoryDB()
-		tenant := storage.Tenant{UUID: tenantUUID, LatestVersion: agentVersion, Dynakube: dkName}
+		db := metadata.FakeMemoryDB()
+		tenant := metadata.Tenant{UUID: tenantUUID, LatestVersion: agentVersion, Dynakube: dkName}
 		db.InsertTenant(&tenant)
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(),
@@ -225,7 +225,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				return mockClient, nil
 			},
 			fs: errorfs,
-			db: storage.FakeMemoryDB(),
+			db: metadata.FakeMemoryDB(),
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
@@ -267,7 +267,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				return mockClient, nil
 			},
 			fs: memFs,
-			db: storage.FakeMemoryDB(),
+			db: metadata.FakeMemoryDB(),
 		}
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
@@ -314,7 +314,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				return mockClient, nil
 			},
 			fs: memFs,
-			db: &storage.FakeFailDB{},
+			db: &metadata.FakeFailDB{},
 		}
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
@@ -325,8 +325,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`correct directories are created`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
-		memDB := storage.FakeMemoryDB()
-		memDB.InsertTenant(&storage.Tenant{UUID: tenantUUID, LatestVersion: agentVersion, Dynakube: dkName})
+		memDB := metadata.FakeMemoryDB()
+		memDB.InsertTenant(&metadata.Tenant{UUID: tenantUUID, LatestVersion: agentVersion, Dynakube: dkName})
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: tenantUUID,

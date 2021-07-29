@@ -7,7 +7,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/spf13/afero"
@@ -32,7 +32,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			namespace: namespace,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, storage.FakeMemoryDB())
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, metadata.FakeMemoryDB())
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -47,7 +47,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			namespace: namespace,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, storage.FakeMemoryDB())
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, metadata.FakeMemoryDB())
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -66,7 +66,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			namespace: namespace,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, storage.FakeMemoryDB())
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, metadata.FakeMemoryDB())
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -83,7 +83,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			namespace: namespace,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, storage.FakeMemoryDB())
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, metadata.FakeMemoryDB())
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -99,7 +99,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			namespace: namespace,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, storage.FakeMemoryDB())
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, metadata.FakeMemoryDB())
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -116,14 +116,14 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			client: clt,
 			opts:   opts,
 			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
-			db:     storage.FakeMemoryDB(),
-			fph:    storage.FilePathHandler{RootDir: opts.RootDir},
+			db:     metadata.FakeMemoryDB(),
+			fph:    metadata.FilePathHandler{RootDir: opts.RootDir},
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
 		}
 
-		srv.db.InsertTenant(&storage.Tenant{UUID: tenantUuid, LatestVersion: agentVersion, Dynakube: dkName})
+		srv.db.InsertTenant(&metadata.Tenant{UUID: tenantUuid, LatestVersion: agentVersion, Dynakube: dkName})
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.db)
 

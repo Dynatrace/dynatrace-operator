@@ -5,7 +5,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
@@ -25,8 +25,8 @@ type CSIGarbageCollector struct {
 	opts         dtcsi.CSIOptions
 	dtcBuildFunc dynakube.DynatraceClientFunc
 	fs           afero.Fs
-	db           storage.Access
-	fph          storage.FilePathHandler
+	db           metadata.Access
+	fph          metadata.FilePathHandler
 }
 
 // NewReconciler returns a new CSIGarbageCollector
@@ -37,8 +37,8 @@ func NewReconciler(client client.Client, opts dtcsi.CSIOptions) *CSIGarbageColle
 		opts:         opts,
 		dtcBuildFunc: dynakube.BuildDynatraceClient,
 		fs:           afero.NewOsFs(),
-		db:           storage.NewAccess(),
-		fph:          storage.FilePathHandler{RootDir: opts.RootDir},
+		db:           metadata.NewAccess(),
+		fph:          metadata.FilePathHandler{RootDir: opts.RootDir},
 	}
 }
 

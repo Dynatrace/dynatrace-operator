@@ -25,7 +25,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
@@ -55,8 +55,8 @@ type OneAgentProvisioner struct {
 	dtcBuildFunc dynakube.DynatraceClientFunc
 	fs           afero.Fs
 	recorder     record.EventRecorder
-	db           storage.Access
-	fph          storage.FilePathHandler
+	db           metadata.Access
+	fph          metadata.FilePathHandler
 }
 
 // NewReconciler returns a new OneAgentProvisioner
@@ -67,8 +67,8 @@ func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgentProvisio
 		dtcBuildFunc: dynakube.BuildDynatraceClient,
 		fs:           afero.NewOsFs(),
 		recorder:     mgr.GetEventRecorderFor("OneAgentProvisioner"),
-		db:           storage.NewAccess(),
-		fph:          storage.FilePathHandler{RootDir: opts.RootDir},
+		db:           metadata.NewAccess(),
+		fph:          metadata.FilePathHandler{RootDir: opts.RootDir},
 	}
 }
 
@@ -119,7 +119,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 	// Incase of a new tenant
 	if tenant == nil {
-		tenant = &storage.Tenant{UUID: dk.ConnectionInfo().TenantUUID}
+		tenant = &metadata.Tenant{UUID: dk.ConnectionInfo().TenantUUID}
 	}
 	oldTenant := *tenant
 
@@ -173,7 +173,7 @@ func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.Namesp
 	return &dk, err
 }
 
-func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, tenant *storage.Tenant, dtc dtclient.Client, logger logr.Logger) error {
+func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, tenant *metadata.Tenant, dtc dtclient.Client, logger logr.Logger) error {
 	currentVersion := dk.Status.LatestAgentVersionUnixPaas
 
 	if currentVersion != tenant.LatestVersion {
@@ -213,7 +213,7 @@ func (r *OneAgentProvisioner) installAgentVersion(version string, tenantUUID str
 	return nil
 }
 
-func (r *OneAgentProvisioner) updateTenantDynakube(tenant *storage.Tenant, currentDynakube string) {
+func (r *OneAgentProvisioner) updateTenantDynakube(tenant *metadata.Tenant, currentDynakube string) {
 	if tenant.Dynakube != currentDynakube {
 		tenant.Dynakube = currentDynakube
 	}

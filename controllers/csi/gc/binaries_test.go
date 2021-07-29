@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -107,8 +107,8 @@ func NewMockGarbageCollector() *CSIGarbageCollector {
 		logger: logger.NewDTLogger(),
 		opts:   dtcsi.CSIOptions{RootDir: rootDir},
 		fs:     afero.NewMemMapFs(),
-		db:     storage.FakeMemoryDB(),
-		fph:    storage.FilePathHandler{RootDir: rootDir},
+		db:     metadata.FakeMemoryDB(),
+		fph:    metadata.FilePathHandler{RootDir: rootDir},
 	}
 }
 
@@ -122,7 +122,7 @@ func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
 	_ = gc.fs.Mkdir(binaryDir, 0770)
 	for i, version := range versions {
 		_, _ = gc.fs.Create(filepath.Join(binaryDir, version))
-		_ = gc.db.InsertVolumeInfo(&storage.Volume{ID: fmt.Sprintf("pod%b", i), PodName: fmt.Sprintf("volume%b", i), Version: version, TenantUUID: tenantUUID})
+		_ = gc.db.InsertVolumeInfo(&metadata.Volume{ID: fmt.Sprintf("pod%b", i), PodName: fmt.Sprintf("volume%b", i), Version: version, TenantUUID: tenantUUID})
 	}
 }
 

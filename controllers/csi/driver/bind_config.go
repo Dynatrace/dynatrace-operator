@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/controllers/csi/storage"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,7 +17,7 @@ type bindConfig struct {
 	version    string
 }
 
-func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeConfig, db storage.Access) (*bindConfig, error) {
+func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeConfig, db metadata.Access) (*bindConfig, error) {
 	var ns corev1.Namespace
 	if err := svr.client.Get(ctx, client.ObjectKey{Name: volumeCfg.namespace}, &ns); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("failed to query namespace %s: %s", volumeCfg.namespace, err.Error()))
@@ -33,7 +33,7 @@ func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeC
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("failed to extract tenant for DynaKube %s: %s", dkName, err.Error()))
 	}
 	if tenant == nil {
-		return nil, status.Error(codes.Unavailable, fmt.Sprintf("tenant is missing from storage for DynaKube %s", dkName))
+		return nil, status.Error(codes.Unavailable, fmt.Sprintf("tenant is missing from metadata for DynaKube %s", dkName))
 	}
 	return &bindConfig{
 		tenantUUID: tenant.UUID,
