@@ -3,12 +3,13 @@ package dtcsi
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"hash/fnv"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -18,6 +19,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+)
+
+const (
+	RegistrarDirPath    = "/var/lib/kubelet/plugins_registry/"
+	PluginDirPath       = "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com"
+	PluginsDirPath      = "/var/lib/kubelet/plugins"
+	MountpointDirPath   = "/var/lib/kubelet/pods"
+	OneAgentDataDirPath = "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data"
 )
 
 type Reconciler struct {
@@ -50,7 +59,7 @@ func (r *Reconciler) Reconcile() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	ds, err := buildDesiredCSIDaemonSet(operatorImage)
+	ds, err := buildDesiredCSIDaemonSet(operatorImage, r.operatorNamespace)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
@@ -59,7 +68,7 @@ func (r *Reconciler) Reconcile() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	upd, err := utils.CreateOrUpdateDaemonSet(r.client, r.logger, ds)
+	upd, err := kubeobjects.CreateOrUpdateDaemonSet(r.client, r.logger, ds)
 	if upd || err != nil {
 		return upd, errors.WithStack(err)
 	}
@@ -73,11 +82,15 @@ func (r *Reconciler) getOperatorImage() (string, error) {
 		return "", errors.WithStack(err)
 	}
 
+	if operatorPod.Spec.Containers == nil || len(operatorPod.Spec.Containers) < 1 {
+		return "", fmt.Errorf("invalid operator pod spec")
+	}
+
 	return operatorPod.Spec.Containers[0].Image, nil
 }
 
-func buildDesiredCSIDaemonSet(operatorImage string) (*appsv1.DaemonSet, error) {
-	ds := prepareDaemonSet(operatorImage)
+func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string) (*appsv1.DaemonSet, error) {
+	ds := prepareDaemonSet(operatorImage, operatorNamespace)
 
 	dsHash, err := generateDaemonSetHash(ds)
 	if err != nil {
@@ -88,12 +101,12 @@ func buildDesiredCSIDaemonSet(operatorImage string) (*appsv1.DaemonSet, error) {
 	return ds, nil
 }
 
-func prepareDaemonSet(operatorImage string) *appsv1.DaemonSet {
-	metadata := prepareMetadata()
+func prepareDaemonSet(operatorImage, operatorNamespace string) *appsv1.DaemonSet {
+	metadata := prepareMetadata(operatorNamespace)
 	labels := prepareDaemonSetLabels()
-	driver := prepareDriverSpec(operatorImage)
-	registrar := prepareRegistrarSpec(operatorImage)
-	livenessprobe := preparelivenessProbeSpec(operatorImage)
+	driver := prepareDriverContainer(operatorImage)
+	registrar := prepareRegistrarContainer(operatorImage)
+	livenessprobe := preparelivenessProbeContainer(operatorImage)
 	volumes := prepareVolumes()
 
 	return &appsv1.DaemonSet{
@@ -145,10 +158,10 @@ func generateDaemonSetHash(ds *appsv1.DaemonSet) (string, error) {
 	return strconv.FormatUint(uint64(hasher.Sum32()), 10), nil
 }
 
-func prepareMetadata() metav1.ObjectMeta {
+func prepareMetadata(namespace string) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:      DaemonSetName,
-		Namespace: "dynatrace",
+		Namespace: namespace,
 		Labels: map[string]string{
 			"dynatrace.com/operator": "dynatrace",
 		},
@@ -156,7 +169,7 @@ func prepareMetadata() metav1.ObjectMeta {
 	}
 }
 
-func prepareDriverSpec(operatorImage string) v1.Container {
+func prepareDriverContainer(operatorImage string) v1.Container {
 	privileged := true
 	userID := int64(0)
 	envVars := prepareDriverEnvVars()
@@ -222,13 +235,7 @@ func prepareDriverLivenessProbe() v1.Probe {
 		PeriodSeconds:       5,
 		SuccessThreshold:    1,
 		TimeoutSeconds:      1,
-		Handler: v1.Handler{
-			HTTPGet: &v1.HTTPGetAction{
-				Path:   "/healthz",
-				Port:   intstr.FromString("healthz"),
-				Scheme: "HTTP",
-			},
-		},
+		Handler:             prepareLivenessProbeHandler(),
 	}
 }
 
@@ -257,7 +264,7 @@ func prepareDriverVolumeMounts() []v1.VolumeMount {
 	}
 }
 
-func prepareRegistrarSpec(operatorImage string) v1.Container {
+func prepareRegistrarContainer(operatorImage string) v1.Container {
 	userID := int64(0)
 	livenessProbe := prepareRegistrarLivenessProbe()
 	volumeMounts := prepareRegistrarVolumeMounts()
@@ -292,11 +299,15 @@ func prepareRegistrarLivenessProbe() v1.Probe {
 	return v1.Probe{
 		InitialDelaySeconds: 5,
 		TimeoutSeconds:      5,
-		Handler: v1.Handler{
-			HTTPGet: &v1.HTTPGetAction{
-				Path: "/healthz",
-				Port: intstr.FromString("healthz"),
-			},
+		Handler:             prepareLivenessProbeHandler(),
+	}
+}
+
+func prepareLivenessProbeHandler() v1.Handler {
+	return v1.Handler{
+		HTTPGet: &v1.HTTPGetAction{
+			Path: "/healthz",
+			Port: intstr.FromString("healthz"),
 		},
 	}
 }
@@ -314,7 +325,7 @@ func prepareRegistrarVolumeMounts() []v1.VolumeMount {
 	}
 }
 
-func preparelivenessProbeSpec(operatorImage string) v1.Container {
+func preparelivenessProbeContainer(operatorImage string) v1.Container {
 	return v1.Container{
 		Name:            "liveness-probe",
 		Image:           operatorImage,
@@ -344,7 +355,7 @@ func prepareVolumes() []v1.Volume {
 			Name: "registration-dir",
 			VolumeSource: v1.VolumeSource{
 				HostPath: &v1.HostPathVolumeSource{
-					Path: "/var/lib/kubelet/plugins_registry/",
+					Path: RegistrarDirPath,
 					Type: &hostPathDir,
 				},
 			},
@@ -353,7 +364,7 @@ func prepareVolumes() []v1.Volume {
 			Name: "plugin-dir",
 			VolumeSource: v1.VolumeSource{
 				HostPath: &v1.HostPathVolumeSource{
-					Path: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com",
+					Path: PluginDirPath,
 					Type: &hostPathDirOrCreate,
 				},
 			},
@@ -362,7 +373,7 @@ func prepareVolumes() []v1.Volume {
 			Name: "plugins-dir",
 			VolumeSource: v1.VolumeSource{
 				HostPath: &v1.HostPathVolumeSource{
-					Path: "/var/lib/kubelet/plugins",
+					Path: PluginsDirPath,
 					Type: &hostPathDir,
 				},
 			},
@@ -371,7 +382,7 @@ func prepareVolumes() []v1.Volume {
 			Name: "mountpoint-dir",
 			VolumeSource: v1.VolumeSource{
 				HostPath: &v1.HostPathVolumeSource{
-					Path: "/var/lib/kubelet/pods",
+					Path: MountpointDirPath,
 					Type: &hostPathDirOrCreate,
 				},
 			},
@@ -380,7 +391,7 @@ func prepareVolumes() []v1.Volume {
 			Name: "dynatrace-oneagent-data-dir",
 			VolumeSource: v1.VolumeSource{
 				HostPath: &v1.HostPathVolumeSource{
-					Path: "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data",
+					Path: OneAgentDataDirPath,
 					Type: &hostPathDirOrCreate,
 				},
 			},

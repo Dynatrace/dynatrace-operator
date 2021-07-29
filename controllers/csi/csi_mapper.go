@@ -25,7 +25,7 @@ type csiMapper struct {
 	configMap *corev1.ConfigMap
 }
 
-func ConfigureCsiDriver(
+func ConfigureCSIDriver(
 	client client.Client, scheme *runtime.Scheme, operatorPodName, operatorNamespace string,
 	rec *utils.Reconciliation, updateInterval time.Duration) error {
 	configMap, err := loadOrCreateConfigMap(client, rec.Instance.Namespace)

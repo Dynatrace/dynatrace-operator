@@ -5,7 +5,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
@@ -62,7 +62,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, ds2.Annotations[statefulset.AnnotationTemplateHash])
 
-	assert.True(t, utils.HasDaemonSetChanged(ds1, ds2))
+	assert.True(t, kubeobjects.HasDaemonSetChanged(ds1, ds2))
 }
 
 func TestHasSpecChanged(t *testing.T) {
@@ -83,7 +83,7 @@ func TestHasSpecChanged(t *testing.T) {
 			assert.NotEmpty(t, ds1.Annotations[statefulset.AnnotationTemplateHash])
 			assert.NotEmpty(t, ds2.Annotations[statefulset.AnnotationTemplateHash])
 
-			assert.Equal(t, exp, utils.HasDaemonSetChanged(ds1, ds2))
+			assert.Equal(t, exp, kubeobjects.HasDaemonSetChanged(ds1, ds2))
 		})
 	}
 

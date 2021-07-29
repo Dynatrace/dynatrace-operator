@@ -10,6 +10,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/go-logr/logr"
@@ -125,7 +126,7 @@ func (r *ReconcileOneAgent) reconcileRollout(rec *utils.Reconciliation) (bool, e
 	}
 
 	// Check if this DaemonSet already exists
-	updateCR, err = utils.CreateOrUpdateDaemonSet(r.client, r.logger, dsDesired)
+	updateCR, err = kubeobjects.CreateOrUpdateDaemonSet(r.client, r.logger, dsDesired)
 	if err != nil {
 		return updateCR, err
 	}
@@ -204,7 +205,7 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 		ds.Spec.Template.ObjectMeta.Annotations["container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"] = "unconfined"
 	}
 
-	dsHash, err := utils.GenerateDaemonSetHash(ds)
+	dsHash, err := kubeobjects.GenerateDaemonSetHash(ds)
 	if err != nil {
 		return nil, err
 	}
