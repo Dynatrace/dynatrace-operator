@@ -162,38 +162,38 @@ func (a *SqliteAccess) UpdateTenant(tenant *Tenant) error {
 	return err
 }
 
-func (a *SqliteAccess) DeleteTenant(uuid string) error {
-	err := a.executeStatement(deleteTenantStatement, uuid)
+func (a *SqliteAccess) DeleteTenant(tenantUUID string) error {
+	err := a.executeStatement(deleteTenantStatement, tenantUUID)
 	if err != nil {
-		err = fmt.Errorf("couldn't delete tenant, UUID %s, err: %s", uuid, err)
+		err = fmt.Errorf("couldn't delete tenant, UUID %s, err: %s", tenantUUID, err)
 	}
 	return err
 }
 
 // Gets a Tenant from the database, return (nil, nil) if the tenant is not in the database.
-func (a *SqliteAccess) GetTenant(uuid string) (*Tenant, error) {
+func (a *SqliteAccess) GetTenant(tenantUUID string) (*Tenant, error) {
 	var latestVersion string
 	var dynakube string
-	err := a.querySimpleStatement(getTenantStatement, uuid, &latestVersion, &dynakube)
+	err := a.querySimpleStatement(getTenantStatement, tenantUUID, &latestVersion, &dynakube)
 	if err != nil {
-		err = fmt.Errorf("couldn't get tenant for UUID %s, err: %s", uuid, err)
-	}
-	return NewTenant(uuid, latestVersion, dynakube), err
-}
-
-// Gets a Tenant from the database via its dynakube, return (nil, nil) if the tenant is not in the database.
-// Needed during NodePublishVolume.
-func (a *SqliteAccess) GetTenantViaDynakube(dynakube string) (*Tenant, error) {
-	var tenantUUID string
-	var latestVersion string
-	err := a.querySimpleStatement(getTenantViaDynakubeStatement, dynakube, &tenantUUID, &latestVersion)
-	if err != nil {
-		err = fmt.Errorf("couldn't get tenant field for Dynakube %s, err: %s", dynakube, err)
+		err = fmt.Errorf("couldn't get tenant for UUID %s, err: %s", tenantUUID, err)
 	}
 	return NewTenant(tenantUUID, latestVersion, dynakube), err
 }
 
-func (a *SqliteAccess) InsertVolumeInfo(volume *Volume) error {
+// Gets a Tenant from the database via its dynakube, return (nil, nil) if the tenant is not in the database.
+// Needed during NodePublishVolume.
+func (a *SqliteAccess) GetTenantViaDynakube(dynakubeName string) (*Tenant, error) {
+	var tenantUUID string
+	var latestVersion string
+	err := a.querySimpleStatement(getTenantViaDynakubeStatement, dynakubeName, &tenantUUID, &latestVersion)
+	if err != nil {
+		err = fmt.Errorf("couldn't get tenant field for Dynakube %s, err: %s", dynakubeName, err)
+	}
+	return NewTenant(tenantUUID, latestVersion, dynakubeName), err
+}
+
+func (a *SqliteAccess) InsertVolume(volume *Volume) error {
 	err := a.executeStatement(insertVolumeStatement, volume.VolumeID, volume.PodName, volume.Version, volume.TenantUUID)
 	if err != nil {
 		err = fmt.Errorf("couldn't insert volume info, UID %s, VolumeID %s, Version %s, TenantUUId: %s err: %s",
@@ -207,7 +207,7 @@ func (a *SqliteAccess) InsertVolumeInfo(volume *Volume) error {
 }
 
 // Gets a Volume from the database, return (nil, nil) if the volume is not in the database.
-func (a *SqliteAccess) GetVolumeInfo(volumeID string) (*Volume, error) {
+func (a *SqliteAccess) GetVolume(volumeID string) (*Volume, error) {
 	var PodName string
 	var version string
 	var tenantUUID string
@@ -218,7 +218,7 @@ func (a *SqliteAccess) GetVolumeInfo(volumeID string) (*Volume, error) {
 	return NewVolume(volumeID, PodName, version, tenantUUID), err
 }
 
-func (a *SqliteAccess) DeleteVolumeInfo(volumeID string) error {
+func (a *SqliteAccess) DeleteVolume(volumeID string) error {
 	err := a.executeStatement(deleteVolumeStatement, volumeID)
 	if err != nil {
 		err = fmt.Errorf("couldn't delete volume VolumeID %s, err: %s", volumeID, err)

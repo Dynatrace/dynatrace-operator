@@ -156,12 +156,12 @@ func TestInsertGetDeleteVolume(t *testing.T) {
 	}
 
 	// Get but empty
-	vo, err := db.GetVolumeInfo(volumeV1.PodName)
+	vo, err := db.GetVolume(volumeV1.PodName)
 	assert.NoError(t, err)
 	assert.Nil(t, vo)
 
 	// Insert
-	err = db.InsertVolumeInfo(&volumeV1)
+	err = db.InsertVolume(&volumeV1)
 	assert.NoError(t, err)
 	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE ID = ?;", volumesTableName), volumeV1.VolumeID)
 	var id string
@@ -176,7 +176,7 @@ func TestInsertGetDeleteVolume(t *testing.T) {
 	assert.Equal(t, tuid, volumeV1.TenantUUID)
 
 	// Get via volume id
-	vo, err = db.GetVolumeInfo(volumeV1.VolumeID)
+	vo, err = db.GetVolume(volumeV1.VolumeID)
 	assert.NoError(t, err)
 	assert.Equal(t, vo.VolumeID, volumeV1.VolumeID)
 	assert.Equal(t, vo.PodName, volumeV1.PodName)
@@ -184,7 +184,7 @@ func TestInsertGetDeleteVolume(t *testing.T) {
 	assert.Equal(t, vo.TenantUUID, volumeV1.TenantUUID)
 
 	// Get used versions
-	db.InsertVolumeInfo(&volumeV2)
+	db.InsertVolume(&volumeV2)
 	versions, err := db.GetUsedVersions(volumeV1.TenantUUID)
 	assert.NoError(t, err)
 	assert.Equal(t, len(versions), 2)
@@ -199,7 +199,7 @@ func TestInsertGetDeleteVolume(t *testing.T) {
 	assert.Equal(t, volumeV2.VolumeID, podNames[volumeV2.PodName])
 
 	// Delete
-	err = db.DeleteVolumeInfo(volumeV2.VolumeID)
+	err = db.DeleteVolume(volumeV2.VolumeID)
 	assert.NoError(t, err)
 	versions, err = db.GetUsedVersions(volumeV1.TenantUUID)
 	assert.NoError(t, err)

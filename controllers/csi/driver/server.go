@@ -222,7 +222,7 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount oneagent volume: %s", err.Error()))
 	}
 
-	if err = svr.db.DeleteVolumeInfo(volume.VolumeID); err != nil {
+	if err = svr.db.DeleteVolume(volume.VolumeID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	svr.log.Info("deleted volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
@@ -324,11 +324,11 @@ func (svr *CSIDriverServer) umountOneAgent(targetPath string, overlayFSPath stri
 func (svr *CSIDriverServer) storeVolumeInfo(bindCfg *bindConfig, volumeCfg *volumeConfig) error {
 	volume := metadata.NewVolume(volumeCfg.volumeId, volumeCfg.podName, bindCfg.version, bindCfg.tenantUUID)
 	svr.log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
-	return svr.db.InsertVolumeInfo(volume)
+	return svr.db.InsertVolume(volume)
 }
 
 func (svr *CSIDriverServer) loadVolumeInfo(volumeID string) (*metadata.Volume, error) {
-	volume, err := svr.db.GetVolumeInfo(volumeID)
+	volume, err := svr.db.GetVolume(volumeID)
 	if err != nil {
 		return nil, err
 	}

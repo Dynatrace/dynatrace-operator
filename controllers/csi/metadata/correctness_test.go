@@ -70,7 +70,7 @@ func TestCheckStorageCorrectness_EmptyDB(t *testing.T) {
 
 func TestCheckStorageCorrectness_DoNothing(t *testing.T) {
 	db := FakeMemoryDB()
-	db.InsertVolumeInfo(&testVol1)
+	db.InsertVolume(&testVol1)
 	log := logger.NewDTLogger()
 	client := fake.NewClient(
 		&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVol1.PodName}},
@@ -80,16 +80,16 @@ func TestCheckStorageCorrectness_DoNothing(t *testing.T) {
 	err := CheckStorageCorrectness(client, db, log)
 
 	assert.NoError(t, err)
-	vol, err := db.GetVolumeInfo(testVol1.VolumeID)
+	vol, err := db.GetVolume(testVol1.VolumeID)
 	assert.NoError(t, err)
 	assert.Equal(t, &testVol1, vol)
 }
 
 func TestCheckStorageCorrectness_PURGE(t *testing.T) {
 	db := FakeMemoryDB()
-	db.InsertVolumeInfo(&testVol1)
-	db.InsertVolumeInfo(&testVol2)
-	db.InsertVolumeInfo(&testVol3)
+	db.InsertVolume(&testVol1)
+	db.InsertVolume(&testVol2)
+	db.InsertVolume(&testVol3)
 	db.InsertTenant(&testTen1)
 	db.InsertTenant(&testTen2)
 	db.InsertTenant(&testTen3)
@@ -102,7 +102,7 @@ func TestCheckStorageCorrectness_PURGE(t *testing.T) {
 	err := CheckStorageCorrectness(client, db, log)
 	assert.NoError(t, err)
 
-	vol, err := db.GetVolumeInfo(testVol1.VolumeID)
+	vol, err := db.GetVolume(testVol1.VolumeID)
 	assert.NoError(t, err)
 	assert.Equal(t, &testVol1, vol)
 
@@ -111,12 +111,12 @@ func TestCheckStorageCorrectness_PURGE(t *testing.T) {
 	assert.Equal(t, &testTen1, ten)
 
 	// PURGED
-	vol, err = db.GetVolumeInfo(testVol2.VolumeID)
+	vol, err = db.GetVolume(testVol2.VolumeID)
 	assert.NoError(t, err)
 	assert.Nil(t, vol)
 
 	// PURGED
-	vol, err = db.GetVolumeInfo(testVol3.VolumeID)
+	vol, err = db.GetVolume(testVol3.VolumeID)
 	assert.NoError(t, err)
 	assert.Nil(t, vol)
 

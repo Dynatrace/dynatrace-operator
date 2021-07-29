@@ -34,14 +34,14 @@ type Access interface {
 
 	InsertTenant(tenant *Tenant) error
 	UpdateTenant(tenant *Tenant) error
-	DeleteTenant(uuid string) error
-	GetTenant(uuid string) (*Tenant, error)
-	GetTenantViaDynakube(dynakube string) (*Tenant, error)
+	DeleteTenant(tenantUUID string) error
+	GetTenant(tenantUUID string) (*Tenant, error)
+	GetTenantViaDynakube(dynakubeName string) (*Tenant, error)
 	GetDynakubes() (map[string]string, error)
 
-	InsertVolumeInfo(volume *Volume) error
-	DeleteVolumeInfo(volumeID string) error
-	GetVolumeInfo(volumeID string) (*Volume, error)
+	InsertVolume(volume *Volume) error
+	DeleteVolume(volumeID string) error
+	GetVolume(volumeID string) (*Volume, error)
 	GetPodNames() (map[string]string, error)
 	GetUsedVersions(tenantUUID string) (map[string]bool, error)
 }

@@ -34,7 +34,7 @@ func checkVolumesCorrectness(cl client.Client, access Access, log logr.Logger) e
 		if err := cl.Get(context.TODO(), client.ObjectKey{Name: podName}, &pod); !k8serrors.IsNotFound(err) {
 			continue
 		}
-		if err := access.DeleteVolumeInfo(podNames[podName]); err != nil {
+		if err := access.DeleteVolume(podNames[podName]); err != nil {
 			return err
 		}
 		pruned++

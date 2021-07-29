@@ -323,7 +323,7 @@ func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServ
 
 func mockPublishedVolume(t *testing.T, server *CSIDriverServer) {
 	mockOneAgent(t, server)
-	err := server.db.InsertVolumeInfo(metadata.NewVolume(volumeId, podUID, agentVersion, tenantUuid))
+	err := server.db.InsertVolume(metadata.NewVolume(volumeId, podUID, agentVersion, tenantUuid))
 	require.NoError(t, err)
 	agentsVersionsMetric.WithLabelValues(agentVersion).Inc()
 }
