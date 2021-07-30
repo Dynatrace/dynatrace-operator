@@ -3,6 +3,9 @@
 set -e
 
 cli="kubectl"
+default_image="docker.io/dynatrace/oneagent"
+docker_cli="docker"
+
 missing_value="<no value>"
 selected_dynakube=""
 api_url=""
@@ -18,6 +21,14 @@ while [ $# -gt 0 ]; do
     cli="oc"
     shift 1
     ;;
+  --openshift)
+    default_image="registry.connect.redhat.com/dynatrace/oneagent"
+    shift 1
+    ;;
+  --podman)
+    docker_cli="podman"
+    shift 1
+    ;;
   *)
     echo "Warning: skipping unsupported option: $1"
     shift
@@ -27,6 +38,11 @@ done
 
 log_info() {
   printf "[%s] %s\n" "$1" "$2"
+}
+
+error() {
+  printf "ERROR: %s\n" "$1"
+  exit 1
 }
 
 checkNs() {
@@ -42,23 +58,20 @@ checkDynakube() {
   if [ -z "$crd" ]; then
     log_info "dynakube" "crd exists"
   else
-    log_info "dynakube" "crd missing"
-    exit 1
+    error "dynakube CRD missing"
   fi
 
   # check dynakube cr exists
-  if [[ -n "$selected_dynakube" ]] ; then
+  if [[ -n "$selected_dynakube" ]]; then
     # dynakube set via parameter
-    if ! "${cli}" get dynakube "${selected_dynakube}" -n dynatrace >/dev/null 2>&1 ; then
-      log_info "dynakube" "selected dynakube does not exist!"
-      exit 1
+    if ! "${cli}" get dynakube "${selected_dynakube}" -n dynatrace >/dev/null 2>&1; then
+      error "selected '${selected_dynakube}' dynakube does not exist"
     fi
   else
     # dynakube not set, check for existing
     names="$("${cli}" get dynakube -n dynatrace -o jsonpath={..metadata.name})"
     if [ -z "$names" ]; then
-      log_info "dynakube" "cr does not exist"
-      exit 1
+      error "No dynakube exists"
     fi
 
     read -ra names_arr <<<"$names"
@@ -79,8 +92,7 @@ checkDynakube() {
 checkApiUrl() {
   api_url=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.apiUrl}}")
   if [ "${api_url##*/}" != "api" ]; then
-    log_info "dynakube" "api url has to end on '/api'"
-    exit 1
+    error "ApiUrl has to end on '/api'"
   fi
   # todo: check for valid url?
 }
@@ -94,16 +106,14 @@ checkSecret() {
   fi
 
   if ! "${cli}" get secret "$secret_name" -n dynatrace &>/dev/null; then
-    log_info "dynakube" "secret with the name '${secret_name}' is missing"
-    exit 1
+    error "secret with the name '${secret_name}' is missing"
   fi
 
   token_names=("apiToken" "paasToken")
   for token_name in "${token_names[@]}"; do
     token=$("${cli}" get secret "$secret_name" -n dynatrace --template="{{.data.${token_name}}}")
     if [[ "$token" == "$missing_value" ]]; then
-      log_info "dynakube" "token '${token_name}' does not exist in secret '${secret_name}'"
-      exit 1
+      error "token '${token_name}' does not exist in secret '${secret_name}'"
     fi
 
     if [ "$token_name" = "paasToken" ]; then
@@ -112,7 +122,36 @@ checkSecret() {
   done
 }
 
-checkConnection() {
+checkImagePullable() { # todo: check active gate image the same way (if set)
+  image="$default_image"
+
+  custom_pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.customPullSecret}}")
+  if [[ -n "$custom_pull_secret_name" && "$custom_pull_secret_name" != "$missing_value" ]] ; then
+    log_info "image" "using custom pull secret"
+    pull_secret_name="$custom_pull_secret_name"
+  else
+    log_info "image" "using default pull secret"
+    pull_secret_name="$selected_dynakube-pull-secret"
+  fi
+
+  pull_secret_encoded=$("${cli}" get secret "$pull_secret_name" -n dynatrace -o "jsonpath={.data['\.dockerconfigjson']}")
+  pull_secret="$(echo "$pull_secret_encoded" | base64 -d)"
+
+  # todo: use dockerconfig
+
+  dynakube_image=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.oneagent.image}}")
+  if [[ -n "$dynakube_image" && "$dynakube_image" != "$missing_value" ]]; then
+    image="$dynakube_image"
+  fi
+
+  log_info "image" "checking if '$image' is pullable"
+  image_cmd="${docker_cli} pull ${image} --quiet"
+  if ! $image_cmd ; then
+    error "image '$image' not pullable"
+  fi
+}
+
+checkClusterConnection() {
   operator_pod=$("${cli}" get pods --no-headers -o custom-columns=":metadata.name" | grep dynatrace-operator)
   log_info "connection" "using pod '$operator_pod'"
   container_cli="${cli} exec ${operator_pod} -- /bin/bash -c"
@@ -160,9 +199,8 @@ checkConnection() {
 
     log_info "connection" "copying certificate to container ..."
     ca_cmd="$container_cli \"echo '$certs' > $cert_path\""
-    if ! eval "$ca_cmd" ; then
-      log_info "connection" "unable to write custom certificate"
-      exit 1
+    if ! eval "$ca_cmd"; then
+      error "unable to write custom certificate to container"
     fi
 
     log_info "connection" "using custom certificate in '$cert_path'"
@@ -172,8 +210,7 @@ checkConnection() {
   log_info "connection" "trying to access cluster ..."
   connection_cmd="$container_cli \"curl ${curl_params[*]}\""
   if ! eval "${connection_cmd}"; then
-    log_info "connection" "unable to connect to cluster"
-    exit 1
+    error "unable to connect to cluster"
   fi
 }
 
@@ -184,7 +221,10 @@ checkNs
 log_info "dynakube" "checking ..."
 checkDynakube
 
+log_info "image" "checking ..."
+checkImagePullable
+
 log_info "connection" "checking ..."
-checkConnection
+checkClusterConnection
 
 # todo: look through support channel for common pitfalls
