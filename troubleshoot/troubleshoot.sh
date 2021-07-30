@@ -38,7 +38,7 @@ checkNs() {
 
 checkDynakube() {
   # check dynakube crd exists
-  crd="$("${cli}" get dynakube -n dynatrace >/dev/null)"
+  crd="$("${cli}" get dynakube -n dynatrace >/dev/null 2>&1)"
   if [ -z "$crd" ]; then
     log_info "dynakube" "crd exists"
   else
@@ -48,20 +48,20 @@ checkDynakube() {
 
   # check dynakube cr exists
   if [[ -n "$selected_dynakube" ]] ; then
+    # dynakube set via parameter
     if ! "${cli}" get dynakube "${selected_dynakube}" -n dynatrace >/dev/null 2>&1 ; then
       log_info "dynakube" "selected dynakube does not exist!"
       exit 1
     fi
-  fi
+  else
+    # dynakube not set, check for existing
+    names="$("${cli}" get dynakube -n dynatrace -o jsonpath={..metadata.name})"
+    if [ -z "$names" ]; then
+      log_info "dynakube" "cr does not exist"
+      exit 1
+    fi
 
-  names="$("${cli}" get dynakube -n dynatrace -o jsonpath={..metadata.name})"
-  if [ -z "$names" ]; then
-    log_info "dynakube" "cr does not exist"
-    exit 1
-  fi
-
-  read -ra names_arr <<<"$names"
-  if [ -n "$selected_dynakube" ] ; then
+    read -ra names_arr <<<"$names"
     selected_dynakube="${names_arr[0]}"
   fi
 
@@ -69,17 +69,16 @@ checkDynakube() {
 
   log_info "dynakube" "checking api url"
   checkApiUrl
-  log_info "dynakube" "api url valid"
 
   log_info "dynakube" "checking secret"
   checkSecret
-  log_info "dynakube" "secret valid"
+
+  log_info "dynakube" "'${selected_dynakube}' is valid"
 }
 
 checkApiUrl() {
   api_url=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.apiUrl}}")
-  url_end="${api_url##*/}"
-  if [ "$url_end" != "api" ]; then
+  if [ "${api_url##*/}" != "api" ]; then
     log_info "dynakube" "api url has to end on '/api'"
     exit 1
   fi
@@ -181,14 +180,11 @@ checkConnection() {
 ####### MAIN #######
 log_info "namespace" "checking ..."
 checkNs
-log_info "namespace" "valid"
 
 log_info "dynakube" "checking ..."
 checkDynakube
-log_info "dynakube" "valid"
 
 log_info "connection" "checking ..."
 checkConnection
-log_info "connection" "valid"
 
 # todo: look through support channel for common pitfalls
