@@ -112,6 +112,33 @@ type OneAgentSpec struct {
 	AutoUpdate *bool `json:"autoUpdate,omitempty"`
 }
 
+type ReadOnlySpec struct {
+	// Optional: Enable support for read only host-filesystems.
+	// Defaults to false
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable support for read-only host-filesystem",order=29,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	Enabled bool `json:"enabled,omitempty"`
+
+	// Used if read-only filesystem support is enabled.
+	// Determines the volume to which the installation files are stored during installation of the OneAgent
+	// Defaults to an empty-dir
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Installation volume",order=30,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Volume"}
+	InstallationVolume *corev1.VolumeSource `json:"installationVolume,omitempty"`
+
+	// Used if read-only filesystem support is enabled
+	// Controls with which user id the OneAgent will be installed
+	// Defaults to 1001
+	// +kubebuilder:validation:Minimum=0
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="UserId",order=30,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:number"}
+	UserId *int64 `json:"userId,omitempty"`
+
+	// Used if read-only filesystem support is enabled
+	// Controls with which group id the OneAgent will be installed
+	// Defaults to 1001
+	// +kubebuilder:validation:Minimum=0
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="GroupId",order=31,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:number"}
+	GroupId *int64 `json:"groupId,omitempty"`
+}
+
 type CodeModulesSpec struct {
 	// Enables code modules monitoring
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CodeModules Monitoring",order=14,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
@@ -180,6 +207,8 @@ type FullStackSpec struct {
 	// Defines if you want to use the immutable image or the installer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Use immutable image",order=28,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
+
+	ReadOnly ReadOnlySpec `json:"readOnly,omitempty"`
 }
 
 type DataIngestSpec struct {

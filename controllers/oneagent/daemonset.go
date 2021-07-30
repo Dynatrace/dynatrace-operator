@@ -1,32 +1,75 @@
 package oneagent
 
 import (
-	"fmt"
-
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/version"
+	corev1 "k8s.io/api/core/v1"
 )
 
-func prepareArgs(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, feature string, clusterID string) []string {
-	args := fs.Args
-	if instance.Spec.Proxy != nil && (instance.Spec.Proxy.ValueFrom != "" || instance.Spec.Proxy.Value != "") {
-		args = append(args, "--set-proxy=$(https_proxy)")
-	}
+const (
+	hostRootMount = "host-root"
 
-	if instance.Spec.NetworkZone != "" {
-		args = append(args, fmt.Sprintf("--set-network-zone=%s", instance.Spec.NetworkZone))
-	}
+	oneagentInstallationMountName = "oneagent-installation"
+	oneagentInstallationMountPath = "/mnt/volume_storage_mount"
 
-	if feature == InframonFeature {
-		args = append(args, "--set-host-id-source=k8s-node-name")
+	oneagentReadOnlyMode = "ONEAGENT_READ_ONLY_MODE"
+	enableVolumeStorage  = "ONEAGENT_ENABLE_VOLUME_STORAGE"
+)
+
+func prepareSecurityContext(unprivileged bool, fs *dynatracev1alpha1.FullStackSpec) *corev1.SecurityContext {
+	var secCtx *corev1.SecurityContext
+
+	if unprivileged {
+		secCtx = getUnprivilegedSecurityContext()
 	} else {
-		args = append(args, "--set-host-id-source=auto")
+		secCtx = getPrivilegedSecurityContext()
 	}
 
-	args = append(args, "--set-host-property=OperatorVersion="+version.Version)
+	if fs.ReadOnly.Enabled {
+		secCtx = setReadOnlySecurityContextOptions(*secCtx, fs)
+	}
 
-	metadata := deploymentmetadata.NewDeploymentMetadata(clusterID)
-	args = append(args, metadata.AsArgs()...)
-	return args
+	return secCtx
+}
+
+func setReadOnlySecurityContextOptions(secCtx corev1.SecurityContext, fs *dynatracev1alpha1.FullStackSpec) *corev1.SecurityContext {
+	secCtx.RunAsUser = fs.ReadOnly.GetUserId()
+	secCtx.RunAsGroup = fs.ReadOnly.GetGroupId()
+	return &secCtx
+}
+
+func getPrivilegedSecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		Privileged: boolPointer(true),
+	}
+}
+
+func getUnprivilegedSecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{
+				"ALL",
+			},
+			Add: []corev1.Capability{
+				"CHOWN",
+				"DAC_OVERRIDE",
+				"DAC_READ_SEARCH",
+				"FOWNER",
+				"FSETID",
+				"KILL",
+				"NET_ADMIN",
+				"NET_RAW",
+				"SETFCAP",
+				"SETGID",
+				"SETUID",
+				"SYS_ADMIN",
+				"SYS_CHROOT",
+				"SYS_PTRACE",
+				"SYS_RESOURCE",
+			},
+		},
+	}
+}
+
+func boolPointer(value bool) *bool {
+	return &value
 }

@@ -166,20 +166,19 @@ func (r *ReconcileWebhookCertificates) reconcileCerts(ctx context.Context, log l
 
 	if newSecret {
 		log.Info("Creating certificates secret...")
-		err = r.client.Create(ctx, &corev1.Secret{
+		secret = corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{Name: webhook.SecretCertsName, Namespace: r.namespace},
 			Data:       cs.Data,
-		})
+		}
+		err = r.client.Create(ctx, &secret)
 	} else if !reflect.DeepEqual(cs.Data, secret.Data) {
 		log.Info("Updating certificates secret...")
 		secret.Data = cs.Data
 		err = r.client.Update(ctx, &secret)
 	}
-
 	if err != nil {
 		return nil, err
 	}
-
 	return append(cs.Data["ca.crt"], cs.Data["ca.crt.old"]...), nil
 }
 

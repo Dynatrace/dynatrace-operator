@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 )
 
-// GetVersionForLatest gets the latest agent version for the given OS and installer type.
+// GetLatestAgentVersion gets the latest agent version for the given OS and installer type.
 func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {
 	if len(os) == 0 || len(installerType) == 0 {
 		return "", errors.New("os or installerType is empty")
@@ -68,7 +69,7 @@ func (dtc *dynatraceClient) readResponseForLatestVersion(response []byte) (strin
 	return v, nil
 }
 
-// GetVersionForLatest gets the latest agent package for the given OS and installer type.
+// GetLatestAgent gets the latest agent package for the given OS and installer type.
 func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch string, writer io.Writer) error {
 	if len(os) == 0 || len(installerType) == 0 {
 		return errors.New("os or installerType is empty")
@@ -82,6 +83,15 @@ func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch strin
 		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		var errorResponse serverErrorResponse
+		err = json.NewDecoder(resp.Body).Decode(&errorResponse)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("http code %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
+	}
 
 	_, err = io.Copy(writer, resp.Body)
 	return err
