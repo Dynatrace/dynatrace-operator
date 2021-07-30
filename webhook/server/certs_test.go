@@ -2,12 +2,12 @@ package server
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/certificates"
 	"os"
 	"path"
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/controllers/webhookcerts"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"
@@ -36,7 +36,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 	// check if certs are updated
 	fs := afero.NewMemMapFs()
 
-	updated, err := UpdateCertificate(fakeClient, fs, certsDir, ns)
+	updated, err := UpdateCertificateForWebhook(fakeClient, fs, certsDir, ns)
 	assert.NoError(t, err)
 	assert.True(t, updated)
 
@@ -48,7 +48,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 	}
 
 	// check if called again update is false
-	updated, err = UpdateCertificate(fakeClient, fs, certsDir, ns)
+	updated, err = UpdateCertificateForWebhook(fakeClient, fs, certsDir, ns)
 	assert.NoError(t, err)
 	assert.False(t, updated)
 
@@ -58,13 +58,13 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, fakeClient.Update(context.TODO(), &secret))
 
-	updated, err = UpdateCertificate(fakeClient, fs, certsDir, ns)
+	updated, err = UpdateCertificateForWebhook(fakeClient, fs, certsDir, ns)
 	assert.NoError(t, err)
 	assert.True(t, updated)
 
 	// check if there is an error if secret is no longer there
 	assert.NoError(t, fakeClient.Delete(context.TODO(), &secret))
-	updated, err = UpdateCertificate(fakeClient, fs, certsDir, ns)
+	updated, err = UpdateCertificateForWebhook(fakeClient, fs, certsDir, ns)
 	assert.Error(t, err)
 	assert.False(t, updated)
 
@@ -77,7 +77,7 @@ func TestUpdateWebhookCertificate(t *testing.T) {
 }
 
 func generateCerts(now time.Time, logger logr.Logger) (corev1.Secret, error) {
-	validCerts := webhookcerts.Certs{Log: logger, Domain: domain, Now: now}
+	validCerts := certificates.Certs{Log: logger, Domain: domain, Now: now}
 	if err := validCerts.ValidateCerts(); err != nil {
 		return corev1.Secret{}, err
 	}

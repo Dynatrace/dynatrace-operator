@@ -1,9 +1,10 @@
-package webhookcerts
+package webhook
 
 import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/certificates"
 	"reflect"
 	"time"
 
@@ -153,7 +154,7 @@ func (r *ReconcileWebhookCertificates) reconcileCerts(ctx context.Context, log l
 		return nil, err
 	}
 
-	cs := Certs{
+	cs := certificates.Certs{
 		Log:     log,
 		Domain:  fmt.Sprintf("%s.%s.svc", webhookName, r.namespace),
 		SrcData: secret.Data,

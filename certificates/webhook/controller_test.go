@@ -1,4 +1,4 @@
-package webhookcerts
+package webhook
 
 import (
 	"context"
@@ -25,7 +25,7 @@ func TestReconcileWebhookCertificates(t *testing.T) {
 
 	tmpDir, err := ioutil.TempDir("", "webhook-certs")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	now, err := time.Parse(time.RFC3339, "2018-01-10T00:00:00Z")
 	require.NoError(t, err)

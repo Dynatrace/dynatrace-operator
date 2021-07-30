@@ -34,8 +34,9 @@ var (
 
 var subcmdCallbacks = map[string]func(ns string, cfg *rest.Config) (manager.Manager, error){
 	"csi-driver":     startCSIDriver,
-	"operator":       startOperator,
-	"webhook-server": startWebhookServer,
+	"operator":          startOperator,
+	"webhook-server":    startWebhookServer,
+	"validation-server": startValidationServer,
 }
 
 var errBadSubcmd = errors.New("subcommand must be operator, or webhook-server")

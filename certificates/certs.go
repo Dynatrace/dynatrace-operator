@@ -1,4 +1,4 @@
-package webhookcerts
+package certificates
 
 import (
 	"crypto/rand"

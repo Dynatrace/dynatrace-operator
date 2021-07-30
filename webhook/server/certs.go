@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/certificates/validation"
 	"os"
 	"path/filepath"
 
@@ -13,10 +14,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func UpdateCertificate(apiReader client.Reader, fs afero.Fs, certDir string, ns string) (bool, error) {
+func UpdateCertificateForWebhook(apiReader client.Reader, fs afero.Fs, certDir string, ns string) (bool, error) {
+	return UpdateCertificatesForSecret(apiReader, fs, certDir, ns, webhook.SecretCertsName)
+}
+
+func UpdateCertificateForValidation(apiReader client.Reader, fs afero.Fs, certDir string, ns string) (bool, error) {
+	return UpdateCertificatesForSecret(apiReader, fs, certDir, ns, validation.SecretCertsName)
+}
+
+func UpdateCertificatesForSecret(apiReader client.Reader, fs afero.Fs, certDir string, ns string, secretName string) (bool, error) {
 	var secret corev1.Secret
 
-	err := apiReader.Get(context.TODO(), client.ObjectKey{Name: webhook.SecretCertsName, Namespace: ns}, &secret)
+	err := apiReader.Get(context.TODO(), client.ObjectKey{Name: secretName, Namespace: ns}, &secret)
 	if err != nil {
 		return false, err
 	}
