@@ -4,7 +4,6 @@ set -e
 
 cli="kubectl"
 default_image="docker.io/dynatrace/oneagent"
-docker_cli="docker"
 
 missing_value="<no value>"
 selected_dynakube=""
@@ -23,10 +22,6 @@ while [ $# -gt 0 ]; do
     ;;
   --openshift)
     default_image="registry.connect.redhat.com/dynatrace/oneagent"
-    shift 1
-    ;;
-  --podman)
-    docker_cli="podman"
     shift 1
     ;;
   *)
@@ -124,6 +119,10 @@ checkSecret() {
 
 checkImagePullable() { # todo: check active gate image the same way (if set)
   image="$default_image"
+  dynakube_image=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.oneagent.image}}")
+  if [[ -n "$dynakube_image" && "$dynakube_image" != "$missing_value" ]]; then
+    image="$dynakube_image"
+  fi
 
   custom_pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.customPullSecret}}")
   if [[ -n "$custom_pull_secret_name" && "$custom_pull_secret_name" != "$missing_value" ]] ; then
@@ -137,18 +136,35 @@ checkImagePullable() { # todo: check active gate image the same way (if set)
   pull_secret_encoded=$("${cli}" get secret "$pull_secret_name" -n dynatrace -o "jsonpath={.data['\.dockerconfigjson']}")
   pull_secret="$(echo "$pull_secret_encoded" | base64 -d)"
 
-  # todo: use dockerconfig
+  # parse docker config
+  registry=""
+  username=""
+  password=""
+  auth=""
+  entries=$(echo "$pull_secret" | jq -c '.auths | to_entries[]')
+  for entry in $entries ; do
+#    echo "$entry"
+    registry=$(echo "$entry" | jq -r '.key')
+    username=$(echo "$entry" | jq -r '.value.username')
+    password=$(echo "$entry" | jq -r '.value.password')
+    auth=$(echo "$entry" | jq -r '.value.auth')
+  done
 
-  dynakube_image=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.oneagent.image}}")
-  if [[ -n "$dynakube_image" && "$dynakube_image" != "$missing_value" ]]; then
-    image="$dynakube_image"
-  fi
+  # todo: use curl
+  check_image_cmd=$(curl -u "$username:$password" "$registry/$image")
+  echo "$check_image_cmd"
+#  if ! $check_image_cmd ; then
+#    echo "no"
+#  else
+#    echo "yes"
+#  fi
 
-  log_info "image" "checking if '$image' is pullable"
-  image_cmd="${docker_cli} pull ${image} --quiet"
-  if ! $image_cmd ; then
-    error "image '$image' not pullable"
-  fi
+  # todo: execute in container
+#  log_info "image" "checking if '$image' is pullable"
+#  image_cmd="${docker_cli} pull ${image} --quiet"
+#  if ! $image_cmd ; then
+#    error "image '$image' not pullable"
+#  fi
 }
 
 checkClusterConnection() {
