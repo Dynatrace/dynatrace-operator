@@ -94,6 +94,7 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 	}
 
 	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podInjector{
+		client:    mgr.GetClient(),
 		namespace: ns,
 		image:     pod.Spec.Containers[0].Image,
 		apmExists: apmExists,
@@ -175,7 +176,10 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 
 	initGenerator := script.NewInitGenerator(m.client, &dk, &ns, pod)
-	initGenerator.NewScript(ctx)
+	err = initGenerator.NewScript(ctx)
+	if err != nil {
+		logger.Error(err, "something broke")
+	}
 
 	if pod.Annotations[dtwebhook.AnnotationInjected] == "true" {
 		if dk.FeatureEnableWebhookReinvocationPolicy() {
@@ -267,7 +271,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/usr/bin/env"},
 		Args:            []string{"bash", "/mnt/config/init.sh"},
-		Env: []corev1.EnvVar{ },
+		Env:             []corev1.EnvVar{},
 		SecurityContext: sc,
 		VolumeMounts: []corev1.VolumeMount{
 			{Name: "oneagent-bin", MountPath: "/mnt/bin"},

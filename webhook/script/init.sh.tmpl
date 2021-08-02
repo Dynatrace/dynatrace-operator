@@ -34,7 +34,7 @@ k8s_namespace {{.Namespace}}">>${container_conf_file}
 	if [[ ! -z "{{.HostTenant}}" ]]; then
 		if [[ "{{.TenantUUID}}" == "{{.HostTenant}}" ]]; then
 			echo "k8s_node_name {{.NodeName}}
-k8s_cluster_id {{.ClusterId}}">>${container_conf_file}
+k8s_cluster_id {{.ClusterID}}">>${container_conf_file}
 		fi
 
 	echo "
