@@ -22,9 +22,8 @@ spec:
         - name: driver
           image: quay.io/dynatrace/dynatrace-operator:snapshot
           imagePullPolicy: Always
-          command:
-            - csi-driver
           args:
+            - csi-driver
             - --endpoint=unix://csi/csi.sock
             - --node-id=$(KUBE_NODE_NAME)
             - --health-probe-bind-address=:10080
