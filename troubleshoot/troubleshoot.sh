@@ -140,31 +140,17 @@ checkImagePullable() { # todo: check active gate image the same way (if set)
   registry=""
   username=""
   password=""
-  auth=""
   entries=$(echo "$pull_secret" | jq -c '.auths | to_entries[]')
   for entry in $entries ; do
-#    echo "$entry"
     registry=$(echo "$entry" | jq -r '.key')
     username=$(echo "$entry" | jq -r '.value.username')
     password=$(echo "$entry" | jq -r '.value.password')
-    auth=$(echo "$entry" | jq -r '.value.auth')
   done
 
-  # todo: use curl
-  check_image_cmd=$(curl -u "$username:$password" "$registry/$image")
-  echo "$check_image_cmd"
-#  if ! $check_image_cmd ; then
-#    echo "no"
-#  else
-#    echo "yes"
-#  fi
-
-  # todo: execute in container
-#  log_info "image" "checking if '$image' is pullable"
-#  image_cmd="${docker_cli} pull ${image} --quiet"
-#  if ! $image_cmd ; then
-#    error "image '$image' not pullable"
-#  fi
+  check_registry="curl -u $username:$password --head https://$registry/v2/ -s -o /dev/null"
+  if ! $check_registry ; then
+    error "registry '$registry' unreachable"
+  fi
 }
 
 checkClusterConnection() {
