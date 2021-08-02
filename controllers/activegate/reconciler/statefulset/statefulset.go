@@ -9,7 +9,6 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -119,10 +118,6 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 }
 
 func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
-	pullSecret := stsProperties.Name + dtpullsecret.PullSecretSuffix
-	if stsProperties.DynaKube.Spec.CustomPullSecret != "" {
-		pullSecret = stsProperties.DynaKube.Spec.CustomPullSecret
-	}
 	return corev1.PodSpec{
 		Containers:         []corev1.Container{buildContainer(stsProperties)},
 		InitContainers:     buildInitContainers(stsProperties),
@@ -138,7 +133,7 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 		Tolerations: stsProperties.Tolerations,
 		Volumes:     buildVolumes(stsProperties),
 		ImagePullSecrets: []corev1.LocalObjectReference{
-			{Name: pullSecret},
+			{Name: stsProperties.PullSecret()},
 		},
 	}
 }
