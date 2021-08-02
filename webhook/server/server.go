@@ -5,18 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"os"
-	"strconv"
-	"strings"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
+	"github.com/Dynatrace/dynatrace-operator/webhook/script"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -154,8 +151,8 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("no DynaKube instance set for namespace: %s", req.Namespace))
 	}
 
-	var oa dynatracev1alpha1.DynaKube
-	if err := m.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: m.namespace}, &oa); k8serrors.IsNotFound(err) {
+	var dk dynatracev1alpha1.DynaKube
+	if err := m.client.Get(ctx, client.ObjectKey{Name: oaName, Namespace: m.namespace}, &dk); k8serrors.IsNotFound(err) {
 		template := "namespace '%s' is assigned to DynaKube instance '%s' but doesn't exist"
 		m.recorder.Eventf(
 			&dynatracev1alpha1.DynaKube{ObjectMeta: v1.ObjectMeta{Name: "placeholder", Namespace: m.namespace}},
@@ -168,7 +165,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
-	if !oa.Spec.CodeModules.Enabled {
+	if !dk.Spec.CodeModules.Enabled {
 		logger.Info("injection disabled")
 		return admission.Patched("")
 	}
@@ -177,8 +174,11 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		pod.Annotations = map[string]string{}
 	}
 
+	initGenerator := script.NewInitGenerator(m.client, &dk, &ns, pod)
+	initGenerator.NewScript(ctx)
+
 	if pod.Annotations[dtwebhook.AnnotationInjected] == "true" {
-		if oa.FeatureEnableWebhookReinvocationPolicy() {
+		if dk.FeatureEnableWebhookReinvocationPolicy() {
 			var needsUpdate = false
 			var installContainer *corev1.Container
 			for i := range pod.Spec.Containers {
@@ -197,7 +197,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 					logger.Info("instrumenting missing container", "name", c.Name)
 
 					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
-					updateContainer(c, &oa, pod, deploymentMetadata)
+					updateContainer(c, &dk, pod, deploymentMetadata)
 
 					if installContainer == nil {
 						for j := range pod.Spec.InitContainers {
@@ -217,7 +217,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 			if needsUpdate {
 				logger.Info("updating pod with missing containers")
-				m.recorder.Eventf(&oa,
+				m.recorder.Eventf(&dk,
 					corev1.EventTypeNormal,
 					updatePodEvent,
 					"Updating pod %s in namespace %s with missing containers", pod.GenerateName, pod.Namespace)
@@ -228,23 +228,13 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		return admission.Patched("")
 	}
 	pod.Annotations[dtwebhook.AnnotationInjected] = "true"
-
-	technologies := url.QueryEscape(utils.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
-	installPath := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
-	installerURL := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, "")
-	failurePolicy := utils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")
 	image := m.image
 
-	dkVol := oa.Spec.CodeModules.Volume
+	dkVol := dk.Spec.CodeModules.Volume
 	if dkVol == (corev1.VolumeSource{}) {
 		dkVol.CSI = &corev1.CSIVolumeSource{
 			Driver: dtcsi.DriverName,
 		}
-	}
-
-	mode := "provisioned"
-	if dkVol.EmptyDir != nil {
-		mode = "installer"
 	}
 
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
@@ -269,20 +259,6 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		sc = pod.Spec.Containers[0].SecurityContext.DeepCopy()
 	}
 
-	fieldEnvVar := func(key string) *corev1.EnvVarSource {
-		return &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: key}}
-	}
-
-	basePodName := pod.GenerateName
-	if basePodName == "" {
-		basePodName = pod.Name
-	}
-
-	// Only include up to the last dash character, exclusive.
-	if p := strings.LastIndex(basePodName, "-"); p != -1 {
-		basePodName = basePodName[:p]
-	}
-
 	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
 
 	ic := corev1.Container{
@@ -291,27 +267,14 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/usr/bin/env"},
 		Args:            []string{"bash", "/mnt/config/init.sh"},
-		Env: []corev1.EnvVar{
-			{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
-			{Name: "TECHNOLOGIES", Value: technologies},
-			{Name: "INSTALLPATH", Value: installPath},
-			{Name: "INSTALLER_URL", Value: installerURL},
-			{Name: "FAILURE_POLICY", Value: failurePolicy},
-			{Name: "CONTAINERS_COUNT", Value: strconv.Itoa(len(pod.Spec.Containers))},
-			{Name: "MODE", Value: mode},
-			{Name: "K8S_PODNAME", ValueFrom: fieldEnvVar("metadata.name")},
-			{Name: "K8S_PODUID", ValueFrom: fieldEnvVar("metadata.uid")},
-			{Name: "K8S_BASEPODNAME", Value: basePodName},
-			{Name: "K8S_NAMESPACE", ValueFrom: fieldEnvVar("metadata.namespace")},
-			{Name: "K8S_NODE_NAME", ValueFrom: fieldEnvVar("spec.nodeName")},
-		},
+		Env: []corev1.EnvVar{ },
 		SecurityContext: sc,
 		VolumeMounts: []corev1.VolumeMount{
 			{Name: "oneagent-bin", MountPath: "/mnt/bin"},
 			{Name: "oneagent-share", MountPath: "/mnt/share"},
 			{Name: "oneagent-config", MountPath: "/mnt/config"},
 		},
-		Resources: oa.Spec.CodeModules.Resources,
+		Resources: dk.Spec.CodeModules.Resources,
 	}
 
 	for i := range pod.Spec.Containers {
@@ -319,15 +282,15 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 		updateInstallContainer(&ic, i+1, c.Name, c.Image)
 
-		updateContainer(c, &oa, pod, deploymentMetadata)
+		updateContainer(c, &dk, pod, deploymentMetadata)
 	}
 
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
 
-	m.recorder.Eventf(&oa,
+	m.recorder.Eventf(&dk,
 		corev1.EventTypeNormal,
 		injectEvent,
-		"Injecting the necessary info into pod %s in namespace %s", basePodName, ns.Name)
+		"Injecting the necessary info into pod %s in namespace %s", pod.Name, ns.Name)
 	return getResponse(pod, &req)
 }
 

@@ -20,7 +20,6 @@ import (
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/controllers/namespace"
 	"github.com/Dynatrace/dynatrace-operator/controllers/nodes"
 	"github.com/Dynatrace/dynatrace-operator/controllers/webhookcerts"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -60,7 +59,6 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 
 	funcs := []func(manager.Manager, string) error{
 		dynakube.Add,
-		namespace.Add,
 		nodes.Add,
 	}
 

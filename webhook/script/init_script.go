@@ -1,4 +1,4 @@
-package namespace
+package script
 
 import (
 	"bytes"
@@ -14,6 +14,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/logger"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -33,69 +34,97 @@ var scriptContent string
 
 var scriptTmpl = template.Must(template.New("initScript").Parse(scriptContent))
 
+var log = logger.NewDTLogger()
+
 type scriptParams struct {
 	InstallerMode  string
 	InstallPath    string
 	ShareDir       string
 	ContainerCount int
 	PodUID         string
+	PodName        string
 	PodBaseName    string
 	Namespace      string
 	HostTenant     string
+	TenantUUID     string
 	NodeName       string
 	ClusterID      string
 }
 
-type initGenerator struct {
+type InitGenerator struct {
 	c   client.Client
 	dk  *dynatracev1alpha1.DynaKube
 	ns  *corev1.Namespace
 	pod *corev1.Pod
 }
 
-func (ig initGenerator) NewScript(ctx context.Context) error {
+func NewInitGenerator(client client.Client, dk *dynatracev1alpha1.DynaKube, ns *corev1.Namespace, pod *corev1.Pod) InitGenerator {
+	return InitGenerator{
+		c:   client,
+		dk:  dk,
+		ns:  ns,
+		pod: pod,
+	}
+}
+
+func (ig InitGenerator) NewScript(ctx context.Context) error {
 	tokenName := ig.dk.Tokens()
 	if !ig.dk.Spec.CodeModules.Enabled {
 		_ = ensureSecretDeleted(ig.c, tokenName, ig.ns.Name)
 		return nil // TODO: return someting
 	}
 
-	installerMode, err := ig.InstallerMode()
+	trustedCAs, err := ig.trustedCAs(ctx)
 	if err != nil {
 		return err
 	}
-	hostTenant, err := ig.HostTenant(ctx)
+
+	proxy, err := ig.proxy(context.TODO())
 	if err != nil {
 		return err
 	}
-	clusterID, err := ig.ClusterId(ctx)
+
+	installerMode, err := ig.installerMode(trustedCAs, proxy)
+	if err != nil {
+		return err
+	}
+	hostTenant, err := ig.hostTenant(ctx)
+	if err != nil {
+		return err
+	}
+	clusterID, err := ig.clusterId(ctx)
 	if err != nil {
 		return err
 	}
 	params := scriptParams{
-		InstallerMode: installerMode,
-		InstallPath: ig.InstallPath(),
-		ShareDir: shareDir,
-		ContainerCount: ig.ContainerCount(),
-		PodUID: ig.PodUID(),
-		PodBaseName: ig.BasePodName(),
-		Namespace: ig.ns.Name,
-		HostTenant: hostTenant,
-		NodeName: ig.Node(),
-		ClusterID: clusterID,
+		InstallerMode:  installerMode,
+		InstallPath:    ig.installPath(),
+		ShareDir:       shareDir,
+		ContainerCount: ig.containerCount(),
+		PodUID:         ig.podUID(),
+		PodName:        ig.podName(),
+		PodBaseName:    ig.basePodName(),
+		Namespace:      ig.ns.Name,
+		TenantUUID:     ig.dk.ConnectionInfo().TenantUUID,
+		HostTenant:     hostTenant,
+		NodeName:       ig.nodeName(),
+		ClusterID:      clusterID,
 	}
 
-	script, err := ig.generate(ctx, params)
+	script, err := ig.generate(trustedCAs, proxy, params)
 	if err != nil {
 		return err
 	}
-	err = utils.CreateOrUpdateSecretIfNotExists(ig.c, r.apiReader, webhook.SecretConfigName, ig.ns.Name, script, corev1.SecretTypeOpaque, log)
+	err = utils.CreateOrUpdateSecretIfNotExists(ig.c, dtwebhook.SecretConfigName, ig.ns.Name, script, corev1.SecretTypeOpaque, log)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (ig initGenerator) InstallerMode() (string, error) {
-	if ig.Mode() != "installer" {
+func (ig InitGenerator) installerMode(trustedCA []byte, proxy string) (string, error) {
+	if ig.mode() != "installer" {
 		return "", nil
 	}
 	archivePath := filepath.Join(binDir, fmt.Sprintf("tmp.%d", rand.Intn(1000)))
@@ -104,14 +133,14 @@ func (ig initGenerator) InstallerMode() (string, error) {
 		fmt.Sprintf("--output \"%s\"", archivePath),
 	}
 
-	if url := ig.InstallerURL(); url != "" {
+	if url := ig.installerURL(); url != "" {
 		curlParams = append(curlParams, url)
 	} else {
 		url := fmt.Sprintf("%s/v1/deployment/installer/agent/unix/paas/latest?flavor=%s&include=%s&bitness=64",
-			ig.APIURL(),
-			ig.Flavor(),
-			ig.Technologies())
-		paasToken, err := ig.PAASToken(context.TODO())
+			ig.apiURL(),
+			ig.flavor(),
+			ig.technologies())
+		paasToken, err := ig.paasToken(context.TODO())
 		if err != nil {
 			return "", err
 		}
@@ -123,30 +152,22 @@ func (ig initGenerator) InstallerMode() (string, error) {
 		curlParams = append(curlParams, "--insecure")
 	}
 
-	trustedCA, err := ig.TrustedCAs(context.TODO())
-	if err != nil {
-		return "", err
-	}
 	if trustedCA != nil {
 		curlParams = append(curlParams, "--cacert %s/ca.pem", configDir)
 	}
 
-	proxy, err := ig.Proxy(context.TODO())
-	if err != nil {
-		return "", err
-	}
 	if proxy != "" {
 		curlParams = append(curlParams, "--proxy %s", proxy)
 	}
 
 	curl := strings.Join(curlParams, " ")
-	failCode := ig.FailCode()
+	failCode := ig.failCode()
 
 	curlCommand := fmt.Sprintf(`
 	echo "Downloading OneAgent package..."
 	if ! curl "%s"; then
 		echo "Failed to download the OneAgent package."
-		exit "%s"
+		exit "%d"
 	fi
 	`, curl, failCode)
 
@@ -155,13 +176,13 @@ func (ig initGenerator) InstallerMode() (string, error) {
 	if ! unzip -o -d "%s" "%s"; then
 		echo "Failed to unpack the OneAgent package."
 		mv "%s" "%s/package.zip"
-		exit "%s"
+		exit "%d"
 	fi
 	`, binDir, archivePath, archivePath, binDir, failCode)
 	return (curlCommand + "\n" + unzipCommand), nil
 }
 
-func (ig initGenerator) IMNodes(ctx context.Context) (map[string]string, error) {
+func (ig InitGenerator) imnodes(ctx context.Context) (map[string]string, error) {
 	var ims dynatracev1alpha1.DynaKubeList
 	if err := ig.c.List(ctx, &ims, client.InNamespace(ig.ns.Name)); err != nil {
 		return nil, errors.WithMessage(err, "failed to query DynaKubeList")
@@ -180,7 +201,7 @@ func (ig initGenerator) IMNodes(ctx context.Context) (map[string]string, error) 
 	return imNodes, nil
 }
 
-func (ig initGenerator) PAASToken(ctx context.Context) (string, error) {
+func (ig InitGenerator) paasToken(ctx context.Context) (string, error) {
 	var tokens corev1.Secret
 	if err := ig.c.Get(ctx, client.ObjectKey{Name: ig.dk.Tokens(), Namespace: ig.ns.Name}, &tokens); err != nil {
 		return "", errors.WithMessage(err, "failed to query tokens")
@@ -188,7 +209,7 @@ func (ig initGenerator) PAASToken(ctx context.Context) (string, error) {
 	return string(tokens.Data[utils.DynatracePaasToken]), nil
 }
 
-func (ig initGenerator) ClusterId(ctx context.Context) (string, error) {
+func (ig InitGenerator) clusterId(ctx context.Context) (string, error) {
 	var kubeSystemNS corev1.Namespace
 	if err := ig.c.Get(ctx, client.ObjectKey{Name: "kube-system"}, &kubeSystemNS); err != nil {
 		return "", fmt.Errorf("failed to query for cluster ID: %w", err)
@@ -196,7 +217,7 @@ func (ig initGenerator) ClusterId(ctx context.Context) (string, error) {
 	return string(kubeSystemNS.UID), nil
 }
 
-func (ig initGenerator) Proxy(ctx context.Context) (string, error) {
+func (ig InitGenerator) proxy(ctx context.Context) (string, error) {
 	var proxy string
 	if ig.dk.Spec.Proxy != nil {
 		if ig.dk.Spec.Proxy.ValueFrom != "" {
@@ -212,7 +233,7 @@ func (ig initGenerator) Proxy(ctx context.Context) (string, error) {
 	return proxy, nil
 }
 
-func (ig initGenerator) TrustedCAs(ctx context.Context) ([]byte, error) {
+func (ig InitGenerator) trustedCAs(ctx context.Context) ([]byte, error) {
 	var trustedCAs []byte
 	if ig.dk.Spec.TrustedCAs != "" {
 		var cam corev1.ConfigMap
@@ -224,39 +245,39 @@ func (ig initGenerator) TrustedCAs(ctx context.Context) ([]byte, error) {
 	return trustedCAs, nil
 }
 
-func (ig initGenerator) HostTenant(ctx context.Context) (string, error) {
-	imNodes, err := ig.IMNodes(ctx)
+func (ig InitGenerator) hostTenant(ctx context.Context) (string, error) {
+	imNodes, err := ig.imnodes(ctx)
 	if err != nil {
 		return "", err
 	}
-	return imNodes[ig.Node()], nil
+	return imNodes[ig.nodeName()], nil
 }
 
-func (ig initGenerator) APIURL() string {
+func (ig InitGenerator) apiURL() string {
 	return ig.dk.Spec.APIURL
 }
 
-func (ig initGenerator) Flavor() string {
+func (ig InitGenerator) flavor() string {
 	return dtclient.FlavorMultidistro
 }
 
-func (ig initGenerator) ContainerCount() int {
+func (ig InitGenerator) containerCount() int {
 	return len(ig.pod.Spec.Containers)
 }
 
-func (ig initGenerator) Technologies() string {
+func (ig InitGenerator) technologies() string {
 	return url.QueryEscape(utils.GetField(ig.pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
 }
 
-func (ig initGenerator) InstallPath() string {
+func (ig InitGenerator) installPath() string {
 	return utils.GetField(ig.pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 }
 
-func (ig initGenerator) InstallerURL() string {
+func (ig InitGenerator) installerURL() string {
 	return utils.GetField(ig.pod.Annotations, dtwebhook.AnnotationInstallerUrl, "")
 }
 
-func (ig initGenerator) FailCode() int {
+func (ig InitGenerator) failCode() int {
 	failurePolicy := utils.GetField(ig.pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")
 	if failurePolicy == "fail" {
 		return 1
@@ -264,7 +285,7 @@ func (ig initGenerator) FailCode() int {
 	return 0
 }
 
-func (ig initGenerator) Mode() string {
+func (ig InitGenerator) mode() string {
 	mode := "provisioned"
 	if ig.dk.Spec.CodeModules.Volume.EmptyDir != nil {
 		mode = "installer"
@@ -272,7 +293,7 @@ func (ig initGenerator) Mode() string {
 	return mode
 }
 
-func (ig initGenerator) BasePodName() string {
+func (ig InitGenerator) basePodName() string {
 	basePodName := ig.pod.GenerateName
 	if basePodName == "" {
 		basePodName = ig.pod.Name
@@ -284,48 +305,39 @@ func (ig initGenerator) BasePodName() string {
 	return basePodName
 }
 
-func (ig initGenerator) PodName() string {
+func (ig InitGenerator) podName() string {
 	return ig.pod.Name
 }
 
-func (ig initGenerator) PodUID() string {
+func (ig InitGenerator) podUID() string {
 	return string(ig.pod.UID)
 }
 
-func (ig initGenerator) Node() string {
+func (ig InitGenerator) nodeName() string {
 	return ig.pod.Spec.NodeName
 }
 
- func (ig initGenerator) generate(ctx context.Context, params scriptParams) (map[string][]byte, error) {
- 	var buf bytes.Buffer
+func (ig InitGenerator) generate(trustedCA []byte, proxy string, params scriptParams) (map[string][]byte, error) {
+	var buf bytes.Buffer
 
- 	if err := scriptTmpl.Execute(&buf, params); err != nil {
- 		return nil, err
- 	}
-
- 	data := map[string][]byte{
- 		"init.sh": buf.Bytes(),
- 	}
-
-	trustedCAs, err := ig.TrustedCAs(ctx)
-	if err != nil {
-		return nil, err
-	}
- 	if trustedCAs != nil {
- 		data["ca.pem"] = trustedCAs
- 	}
-
-	proxy, err := ig.Proxy(context.TODO())
-	if err != nil {
+	if err := scriptTmpl.Execute(&buf, params); err != nil {
 		return nil, err
 	}
 
- 	if proxy != "" {
- 		data["proxy"] = []byte(proxy)
- 	}
+	data := map[string][]byte{
+		"init.sh": buf.Bytes(),
+	}
 
- 	return data, nil
- }
+	if trustedCA != nil {
+		data["ca.pem"] = trustedCA
+	}
+
+	if proxy != "" {
+		data["proxy"] = []byte(proxy)
+	}
+
+	return data, nil
+}
 
 func ensureSecretDeleted(c client.Client, name string, ns string) error {
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}

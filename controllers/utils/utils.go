@@ -111,9 +111,9 @@ func GetDeployment(c client.Client, ns string) (*appsv1.Deployment, error) {
 }
 
 // CreateOrUpdateSecretIfNotExists creates a secret in case it does not exist or updates it if there are changes
-func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretName string, targetNS string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
+func CreateOrUpdateSecretIfNotExists(c client.Client, secretName string, targetNS string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
 	var cfg corev1.Secret
-	err := r.Get(context.TODO(), client.ObjectKey{Name: secretName, Namespace: targetNS}, &cfg)
+	err := c.Get(context.TODO(), client.ObjectKey{Name: secretName, Namespace: targetNS}, &cfg)
 	if k8serrors.IsNotFound(err) {
 		log.Info("Creating OneAgent config secret")
 		if err := c.Create(context.TODO(), &corev1.Secret{
