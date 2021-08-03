@@ -3,7 +3,7 @@
 set -e
 
 cli="kubectl"
-default_image="docker.io/dynatrace/oneagent"
+default_oneagent_image="docker.io/dynatrace/oneagent"
 
 missing_value="<no value>"
 selected_dynakube=""
@@ -21,7 +21,7 @@ while [ $# -gt 0 ]; do
     shift 1
     ;;
   --openshift)
-    default_image="registry.connect.redhat.com/dynatrace/oneagent"
+    default_oneagent_image="registry.connect.redhat.com/dynatrace/oneagent"
     shift 1
     ;;
   *)
@@ -90,6 +90,8 @@ checkApiUrl() {
     error "ApiUrl has to end on '/api'"
   fi
   # todo: check for valid url?
+
+  log_info "dynakube" "ApiUrl is correct"
 }
 
 checkSecret() {
@@ -117,13 +119,31 @@ checkSecret() {
   done
 }
 
-checkImagePullable() { # todo: check active gate image the same way (if set)
-  image="$default_image"
-  dynakube_image=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.oneagent.image}}")
+getImage() {
+  type="$1"
+
+  if [[ "$type" == "oneAgent" ]] ; then
+    # oneagent uses docker.io by default
+    image="$default_oneagent_image"
+  else
+    # activegate is not published and uses the cluster registry by default
+    api_url=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.apiUrl}}")
+    image="${api_url#*//}"
+    image="${image%/*}/linux/activegate"
+  fi
+
+  dynakube_image=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.${type}.image}}")
   if [[ -n "$dynakube_image" && "$dynakube_image" != "$missing_value" ]]; then
     image="$dynakube_image"
   fi
 
+  echo "$image"
+}
+
+checkImagePullable() {
+  container_cli="$1"
+
+  # load pull secret
   custom_pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.customPullSecret}}")
   if [[ -n "$custom_pull_secret_name" && "$custom_pull_secret_name" != "$missing_value" ]] ; then
     log_info "image" "using custom pull secret"
@@ -136,27 +156,55 @@ checkImagePullable() { # todo: check active gate image the same way (if set)
   pull_secret_encoded=$("${cli}" get secret "$pull_secret_name" -n dynatrace -o "jsonpath={.data['\.dockerconfigjson']}")
   pull_secret="$(echo "$pull_secret_encoded" | base64 -d)"
 
+  # load used images (default or custom)
+  dynakube_oneagent_image=$(getImage "oneAgent")
+  dynakube_activegate_image=$(getImage "activeGate")
+
+  # split images into registry and image name
+  oneagent_registry="${dynakube_oneagent_image%%/*}"
+  oneagent_image="${dynakube_oneagent_image##"$oneagent_registry/"}"
+  log_info "image" "using '$oneagent_image' on '$oneagent_registry' as oneagent image"
+
+  activegate_registry="${dynakube_activegate_image%%/*}"
+  activegate_image="${dynakube_activegate_image##"$activegate_registry/"}"
+  log_info "image" "using '$activegate_image' on '$activegate_registry' as activegate image"
+
   # parse docker config
-  registry=""
-  username=""
-  password=""
   entries=$(echo "$pull_secret" | jq -c '.auths | to_entries[]')
   for entry in $entries ; do
     registry=$(echo "$entry" | jq -r '.key')
     username=$(echo "$entry" | jq -r '.value.username')
     password=$(echo "$entry" | jq -r '.value.password')
-  done
 
-  check_registry="curl -u $username:$password --head https://$registry/v2/ -s -o /dev/null"
-  if ! $check_registry ; then
-    error "registry '$registry' unreachable"
-  fi
+    check_registry="$container_cli 'curl -u $username:$password --head https://$registry/v2/ -s -o /dev/null'"
+    if ! eval "${check_registry}" ; then
+      error "registry '$registry' unreachable"
+    fi
+
+    log_info "image" "checking images for registry '$registry'"
+
+    # check oneagent image
+    check_image="$container_cli 'curl -u $username:$password --head \
+      https://$registry/v2/$oneagent_image/manifests/latest -s -o /dev/null'"
+    if ! eval "${check_image}" ; then
+      error "image '$oneagent_image' on registry '$registry' unreachable"
+    else
+      log_info "image" "image '$oneagent_image' exists on registry '$registry'"
+    fi
+
+    # check activegate image
+    check_image="$container_cli 'curl -u $username:$password --head \
+      https://$registry/v2/$activegate_image/manifests/latest -s -o /dev/null'"
+    if ! eval "${check_image}" ; then
+      error "image '$activegate_image' on registry '$registry' unreachable"
+    else
+      log_info "image" "image '$activegate_image' exists on registry '$registry'"
+    fi
+  done
 }
 
 checkClusterConnection() {
-  operator_pod=$("${cli}" get pods --no-headers -o custom-columns=":metadata.name" | grep dynatrace-operator)
-  log_info "connection" "using pod '$operator_pod'"
-  container_cli="${cli} exec ${operator_pod} -- /bin/bash -c"
+  container_cli="$1"
 
   curl_params=(
     -sI
@@ -223,10 +271,14 @@ checkNs
 log_info "dynakube" "checking ..."
 checkDynakube
 
+operator_pod=$("${cli}" get pods --no-headers -o custom-columns=":metadata.name" | grep dynatrace-operator)
+log_info "pod" "using pod '$operator_pod'"
+container_cli="${cli} exec ${operator_pod} -- /bin/bash -c"
+
 log_info "image" "checking ..."
-checkImagePullable
+checkImagePullable "$container_cli"
 
 log_info "connection" "checking ..."
-checkClusterConnection
+checkClusterConnection "$container_cli"
 
 # todo: look through support channel for common pitfalls
