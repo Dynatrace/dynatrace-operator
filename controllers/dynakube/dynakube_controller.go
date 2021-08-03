@@ -105,6 +105,9 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
+			if err := mapper.UnmapFromDynaKube(ctx, r.client, request.NamespacedName.Namespace, request.NamespacedName.Name); err != nil {
+				return reconcile.Result{}, err
+			}
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue

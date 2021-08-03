@@ -218,6 +218,52 @@ func MapFromDynaKube(ctx context.Context, clt client.Client, opns string, dk *dy
 	return nil
 }
 
+func removeDynaKubeFromMap(cfgmap *corev1.ConfigMap, dkname string) bool {
+	updated := false
+
+	if cfgmap.Data == nil {
+		cfgmap.Data = make(map[string]string)
+	}
+
+	for namespace, dynakube := range cfgmap.Data {
+		if dynakube == dkname {
+			delete(cfgmap.Data, namespace)
+			updated = true
+		}
+	}
+	return updated
+}
+
+func doUnmapFromDynaKube(ctx context.Context, clt client.Client, opns string, dkname string, mapName string) error {
+	nsmap, err := getOrCreateMap(ctx, clt, opns, mapName)
+	if err != nil {
+		return err
+	}
+
+	if removeDynaKubeFromMap(nsmap, dkname) {
+		if err := clt.Update(ctx, nsmap); err != nil {
+			return errors.WithMessagef(err, "failed to update %s", mapName)
+		}
+	}
+	return nil
+}
+
+func UnmapFromDynaKube(ctx context.Context, clt client.Client, opns string, dkname string) error {
+	diErr := doUnmapFromDynaKube(ctx, clt, opns, dkname, dataIngestMapName)
+	cmErr := doUnmapFromDynaKube(ctx, clt, opns, dkname, codeModulesMapName)
+
+	if diErr != nil && cmErr != nil {
+		return fmt.Errorf("%s ; %s", diErr.Error(), cmErr.Error())
+	}
+	if diErr != nil {
+		return diErr
+	}
+	if cmErr != nil {
+		return cmErr
+	}
+	return nil
+}
+
 func getOrCreateMap(ctx context.Context, clt client.Client, opns string, cfgmapname string) (*corev1.ConfigMap, error) {
 	var cfgmap corev1.ConfigMap
 	if err := clt.Get(ctx, client.ObjectKey{Name: cfgmapname, Namespace: opns}, &cfgmap); err != nil {
