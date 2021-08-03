@@ -203,7 +203,7 @@ checkImagePullable() {
   fi
   log_info "image" "using pull secret '$pull_secret_name'"
 
-  pull_secret_encoded=$("${cli}" get secret "${pull_secret_name}" -n "${selected_namespace}" -o "jsonpath={.data['\.dockerconfigjson']}" >/dev/null 2>&1)
+  pull_secret_encoded=$("${cli}" get secret "${pull_secret_name}" -n "${selected_namespace}" -o "jsonpath={.data['\.dockerconfigjson']}")
   pull_secret="$(echo "${pull_secret_encoded}" | base64 -d)"
 
   # load used images (default or custom)
