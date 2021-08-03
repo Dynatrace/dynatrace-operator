@@ -42,8 +42,9 @@ error() {
 
 checkNs() {
   if ! "${cli}" get ns dynatrace >/dev/null 2>&1; then
-    log_info "namespace" "missing namespace 'dynatrace'"
-    exit 1
+    error "missing namespace 'dynatrace'"
+  else
+    log_info "namespace" "using namespace 'dynatrace'"
   fi
 }
 
@@ -51,22 +52,22 @@ checkDynakube() {
   # check dynakube crd exists
   crd="$("${cli}" get dynakube -n dynatrace >/dev/null 2>&1)"
   if [ -z "$crd" ]; then
-    log_info "dynakube" "crd exists"
+    log_info "dynakube" "CRD for Dynakube exists"
   else
-    error "dynakube CRD missing"
+    error "CRD for Dynakube missing"
   fi
 
   # check dynakube cr exists
   if [[ -n "$selected_dynakube" ]]; then
     # dynakube set via parameter
     if ! "${cli}" get dynakube "${selected_dynakube}" -n dynatrace >/dev/null 2>&1; then
-      error "selected '${selected_dynakube}' dynakube does not exist"
+      error "Selected Dynakube '${selected_dynakube}' does not exist"
     fi
   else
     # dynakube not set, check for existing
     names="$("${cli}" get dynakube -n dynatrace -o jsonpath={..metadata.name})"
     if [ -z "$names" ]; then
-      error "No dynakube exists"
+      error "No Dynakube exists"
     fi
 
     read -ra names_arr <<<"$names"
@@ -104,6 +105,8 @@ checkSecret() {
 
   if ! "${cli}" get secret "$secret_name" -n dynatrace &>/dev/null; then
     error "secret with the name '${secret_name}' is missing"
+  else
+    log_info "dynakube" "secret '$secret_name' exists"
   fi
 
   token_names=("apiToken" "paasToken")
@@ -111,6 +114,8 @@ checkSecret() {
     token=$("${cli}" get secret "$secret_name" -n dynatrace --template="{{.data.${token_name}}}")
     if [[ "$token" == "$missing_value" ]]; then
       error "token '${token_name}' does not exist in secret '${secret_name}'"
+    else
+      log_info "dynakube" "secret token '$token_name' exists"
     fi
 
     if [ "$token_name" = "paasToken" ]; then
@@ -146,12 +151,11 @@ checkImagePullable() {
   # load pull secret
   custom_pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.customPullSecret}}")
   if [[ -n "$custom_pull_secret_name" && "$custom_pull_secret_name" != "$missing_value" ]] ; then
-    log_info "image" "using custom pull secret"
     pull_secret_name="$custom_pull_secret_name"
   else
-    log_info "image" "using default pull secret"
     pull_secret_name="$selected_dynakube-pull-secret"
   fi
+  log_info "image" "using pull secret '$pull_secret_name'"
 
   pull_secret_encoded=$("${cli}" get secret "$pull_secret_name" -n dynatrace -o "jsonpath={.data['\.dockerconfigjson']}")
   pull_secret="$(echo "$pull_secret_encoded" | base64 -d)"
@@ -179,6 +183,8 @@ checkImagePullable() {
     check_registry="$container_cli 'curl -u $username:$password --head https://$registry/v2/ -s -o /dev/null'"
     if ! eval "${check_registry}" ; then
       error "registry '$registry' unreachable"
+    else
+      log_info "image" "registry '$registry' is accessible"
     fi
 
     log_info "image" "checking images for registry '$registry'"
@@ -215,11 +221,12 @@ checkClusterConnection() {
 
   # proxy
   proxy=""
-  proxy_map=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.proxy.valueFrom}}")
-  if [[ "$proxy_map" != "$missing_value" ]]; then
+  proxy_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.proxy.valueFrom}}")
+  if [[ "$proxy_secret_name" != "$missing_value" ]]; then
     # get proxy from secret
-    encoded_proxy=$("${cli}" get secret "${proxy_map}" -n dynatrace --template="{{.data.proxy}}")
+    encoded_proxy=$("${cli}" get secret "${proxy_secret_name}" -n dynatrace --template="{{.data.proxy}}")
     proxy=$(echo "$encoded_proxy" | base64 -d)
+    log_info "connection" "loading proxy from secret '$proxy_secret_name'"
   else
     # try get proxy from dynakube
     proxyValue=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.proxy.value}}")
@@ -231,6 +238,8 @@ checkClusterConnection() {
   if [[ "$proxy" != "" ]]; then
     log_info "connection" "using proxy: $proxy"
     curl_params+=("--proxy" "${proxy}")
+  else
+    log_info "connection" "proxy is not used"
   fi
 
   # skip cert check
@@ -251,16 +260,22 @@ checkClusterConnection() {
     ca_cmd="$container_cli \"echo '$certs' > $cert_path\""
     if ! eval "$ca_cmd"; then
       error "unable to write custom certificate to container"
+    else
+      log_info "connection" "custom certificate successfully written to container!"
     fi
 
     log_info "connection" "using custom certificate in '$cert_path'"
     curl_params+=("--cacert" "$cert_path")
+  else
+    log_info "connection" "custom certificate is not used"
   fi
 
-  log_info "connection" "trying to access cluster ..."
+  log_info "connection" "trying to access cluster '$api_url' ..."
   connection_cmd="$container_cli \"curl ${curl_params[*]}\""
   if ! eval "${connection_cmd}"; then
     error "unable to connect to cluster"
+  else
+    log_info "connection" "cluster is accessible"
   fi
 }
 
@@ -275,10 +290,10 @@ operator_pod=$("${cli}" get pods --no-headers -o custom-columns=":metadata.name"
 log_info "pod" "using pod '$operator_pod'"
 container_cli="${cli} exec ${operator_pod} -- /bin/bash -c"
 
-log_info "image" "checking ..."
-checkImagePullable "$container_cli"
-
 log_info "connection" "checking ..."
 checkClusterConnection "$container_cli"
+
+log_info "image" "checking ..."
+checkImagePullable "$container_cli"
 
 # todo: look through support channel for common pitfalls
