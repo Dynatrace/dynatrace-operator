@@ -143,7 +143,7 @@ checkImmutableImage() {
   use_immutable_image=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" \
     --template="{{.spec.${type}.useImmutableImage}}")
   if [[ "$use_immutable_image" == "true" ]] ; then
-    error "unable to use custom pull secret with immutable image on ${type}"
+    error "unable to use immutable image on ${type} without a private registry (custom pull secret)"
   fi
 }
 
@@ -152,15 +152,20 @@ checkCustomPullSecret() {
     --template="{{.spec.customPullSecret}}")
   if [[ -z "${pull_secret_name}" ]] || [[ "${pull_secret_name}" == "${missing_value}" ]]; then
     log_info "dynakube" "custom pull secret not used"
+
+    # private registry required for immutable image
+    checkImmutableImage "classicFullStack"
+    checkImmutableImage "infraMonitoring"
+
     return
+  else
+    # custom pull secret is set, check secret exists
+    if ! "${cli}" get secret "${pull_secret_name}" -n "${selected_namespace}" >/dev/null 2>&1; then
+      error "secret '${pull_secret_name}' used for pull secret is missing"
+    else
+      log_info "dynakube" "pull secret '${pull_secret_name}' exists"
+    fi
   fi
-
-  if ! "${cli}" get secret "${pull_secret_name}" -n "${selected_namespace}" >/dev/null 2>&1; then
-    error "secret '${pull_secret_name}' used for pull secret is missing"
-  fi
-
-  checkImmutableImage "classicFullStack"
-  checkImmutableImage "infraMonitoring"
 }
 
 getImage() {
@@ -199,7 +204,7 @@ checkImagePullable() {
   log_info "image" "using pull secret '$pull_secret_name'"
 
   pull_secret_encoded=$("${cli}" get secret "${pull_secret_name}" -n "${selected_namespace}" -o "jsonpath={.data['\.dockerconfigjson']}" >/dev/null 2>&1)
-  pull_secret="$(echo "${ull_secret_encoded}" | base64 -d)"
+  pull_secret="$(echo "${pull_secret_encoded}" | base64 -d)"
 
   # load used images (default or custom)
   dynakube_oneagent_image=$(getImage "oneAgent")
