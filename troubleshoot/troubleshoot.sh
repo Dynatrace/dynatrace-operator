@@ -97,6 +97,8 @@ checkApiUrl() {
   api_url=$("${cli}" get dynakube "${selected_dynakube}" -n "$selected_namespace" --template="{{.spec.apiUrl}}")
   if [ "${api_url##*/}" != "api" ]; then
     error "api url has to end on '/api'"
+  else
+    log_info "dynakube" "api url correctly ends on '/api'"
   fi
   # todo: check for valid url?
 
@@ -158,7 +160,7 @@ getImage() {
 checkImagePullable() {
   container_cli="$1"
 
-  log_info "image" "checking if image is pullable ..."
+  log_info "image" "checking if images are pullable ..."
 
   # load pull secret
   custom_pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n "$selected_namespace" --template="{{.spec.customPullSecret}}")
@@ -186,6 +188,8 @@ checkImagePullable() {
   log_info "image" "using '$activegate_image' on '$activegate_registry' as activegate image"
 
   # parse docker config
+  oneagent_image_works=false
+  activegate_image_works=false
   entries=$(echo "$pull_secret" | jq -c '.auths | to_entries[]')
   for entry in $entries ; do
     registry=$(echo "$entry" | jq -r '.key')
@@ -203,22 +207,42 @@ checkImagePullable() {
 
     # check oneagent image
     check_image="$container_cli 'curl -u $username:$password --head \
-      https://$registry/v2/$oneagent_image/manifests/latest -s -o /dev/null'"
-    if ! eval "${check_image}" ; then
-      error "image '$oneagent_image' on registry '$registry' unreachable"
+      https://$registry/v2/$oneagent_image/manifests/latest -s -o /dev/null -w %{http_code}'"
+    check_image_response=$(eval "${check_image}")
+    if [[ "$check_image_response" != "200" ]] ; then
+      log_info "image" "image '$oneagent_image' on registry '$registry' unreachable"
     else
       log_info "image" "image '$oneagent_image' exists on registry '$registry'"
+      if [[ "$registry" == "$oneagent_registry" ]] ; then
+        oneagent_image_works=true
+      fi
     fi
 
     # check activegate image
     check_image="$container_cli 'curl -u $username:$password --head \
-      https://$registry/v2/$activegate_image/manifests/latest -s -o /dev/null'"
-    if ! eval "${check_image}" ; then
-      error "image '$activegate_image' on registry '$registry' unreachable"
+      https://$registry/v2/$activegate_image/manifests/latest -s -o /dev/null -w %{http_code}'"
+    check_image_response=$(eval "${check_image}")
+    if [[ "$check_image_response" != "200" ]] ; then
+      log_info "image" "image '$activegate_image' on registry '$registry' unreachable"
     else
       log_info "image" "image '$activegate_image' exists on registry '$registry'"
+      if [[ "$registry" == "$activegate_registry" ]] ; then
+        activegate_image_works=true
+      fi
     fi
   done
+
+  if [ "$oneagent_image_works" = "true" ] ; then
+    log_info "image" "oneagent image '$dynakube_oneagent_image' works"
+  else
+    error "oneagent image '$dynakube_oneagent_image' missing"
+  fi
+
+  if [ "$activegate_image_works" = "true" ] ; then
+    log_info "image" "activegate image '$dynakube_activegate_image' works"
+  else
+    error "activegate image '$dynakube_activegate_image' missing"
+  fi
 }
 
 checkClusterConnection() {
