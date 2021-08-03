@@ -175,12 +175,6 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		pod.Annotations = map[string]string{}
 	}
 
-	initGenerator := script.NewInitGenerator(m.client, &dk, &ns, pod)
-	err = initGenerator.NewScript(ctx)
-	if err != nil {
-		logger.Error(err, "something broke")
-	}
-
 	if pod.Annotations[dtwebhook.AnnotationInjected] == "true" {
 		if dk.FeatureEnableWebhookReinvocationPolicy() {
 			var needsUpdate = false
@@ -199,9 +193,11 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 				if !preloaded {
 					// container does not have LD_PRELOAD set
 					logger.Info("instrumenting missing container", "name", c.Name)
+					initGenerator := script.NewInitGenerator(m.client, &dk, &ns, pod)
+					init, _ := initGenerator.NewScript(ctx)
 
 					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
-					updateContainer(c, &dk, pod, deploymentMetadata)
+					updateContainer(c, &dk, pod, deploymentMetadata, init["proxy"])
 
 					if installContainer == nil {
 						for j := range pod.Spec.InitContainers {
@@ -213,8 +209,9 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 							}
 						}
 					}
-					updateInstallContainer(installContainer, i+1, c.Name, c.Image)
-
+					installContainer.Env = []corev1.EnvVar{
+						{Name: "INIT", Value: init["init.sh"]},
+					}
 					needsUpdate = true
 				}
 			}
@@ -265,28 +262,36 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID)
 
+	initGenerator := script.NewInitGenerator(m.client, &dk, &ns, pod)
+	init, err := initGenerator.NewScript(ctx)
+	if err != nil {
+		logger.Error(err, "something broke")
+	}
+
 	ic := corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           image,
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/usr/bin/env"},
-		Args:            []string{"bash", "/mnt/config/init.sh"},
-		Env:             []corev1.EnvVar{},
+		Args:            []string{"echo", "${INIT}", "|", "base64", "-d", ">", "./init.sh", "bash", "./init.sh"},
+		Env:             []corev1.EnvVar{
+			{Name: "INIT", Value: init["init.sh"]},
+			{Name: "K8S_PODNAME", ValueFrom: fieldEnvVar("metadata.name")},
+			{Name: "K8S_PODUID", ValueFrom: fieldEnvVar("metadata.uid")},
+			{Name: "K8S_NODE_NAME", ValueFrom: fieldEnvVar("spec.nodeName")},
+		},
 		SecurityContext: sc,
 		VolumeMounts: []corev1.VolumeMount{
 			{Name: "oneagent-bin", MountPath: "/mnt/bin"},
 			{Name: "oneagent-share", MountPath: "/mnt/share"},
-			{Name: "oneagent-config", MountPath: "/mnt/config"},
+		//	{Name: "oneagent-config", MountPath: "/mnt/config"},
 		},
 		Resources: dk.Spec.CodeModules.Resources,
 	}
 
 	for i := range pod.Spec.Containers {
 		c := &pod.Spec.Containers[i]
-
-		updateInstallContainer(&ic, i+1, c.Name, c.Image)
-
-		updateContainer(c, &dk, pod, deploymentMetadata)
+		updateContainer(c, &dk, pod, deploymentMetadata, init["proxy"])
 	}
 
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
@@ -310,17 +315,13 @@ func (m *podInjector) InjectDecoder(d *admission.Decoder) error {
 	return nil
 }
 
-// updateInstallContainer adds Container to list of Containers of Install Container
-func updateInstallContainer(ic *corev1.Container, number int, name string, image string) {
-	logger.Info("updating install container with new container", "containerName", name, "containerImage", image)
-	ic.Env = append(ic.Env,
-		corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_NAME", number), Value: name},
-		corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_IMAGE", number), Value: image})
+ func fieldEnvVar (key string) *corev1.EnvVarSource {
+	return &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: key}}
 }
 
 // updateContainer sets missing preload Variables
 func updateContainer(c *corev1.Container, oa *dynatracev1alpha1.DynaKube,
-	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
+	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata, proxy string) {
 
 	logger.Info("updating container with missing preload variables", "containerName", c.Name)
 	installPath := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
@@ -351,18 +352,11 @@ func updateContainer(c *corev1.Container, oa *dynatracev1alpha1.DynaKube,
 			Value: deploymentMetadata.AsString(),
 		})
 
-	if oa.Spec.Proxy != nil && (oa.Spec.Proxy.Value != "" || oa.Spec.Proxy.ValueFrom != "") {
+	if proxy != "" {
 		c.Env = append(c.Env,
 			corev1.EnvVar{
 				Name: "DT_PROXY",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: dtwebhook.SecretConfigName,
-						},
-						Key: "proxy",
-					},
-				},
+				Value: proxy,
 			})
 	}
 

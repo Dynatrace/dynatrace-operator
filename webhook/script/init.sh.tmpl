@@ -1,44 +1,8 @@
 #!/usr/bin/env bash
 
-set -eu
-
-if [[ -f "/var/lib/dynatrace/oneagent/agent/config/ruxithost.id" ]]; then
-	echo "WARNING: full-stack OneAgent has been injected to this container. App-only and full-stack injection can conflict with each other."
-fi
-
 {{.InstallerMode}}
 
 echo "Configuring OneAgent..."
-echo -n "{{.InstallPath}}/agent/lib64/liboneagentproc.so" >> "{{.ShareDir}}/ld.so.preload"
+{{.LDSOPreload}}
 
-for i in $(seq 1 {{.ContainerCount}} )
-do
-	container_name_var="CONTAINER_${i}_NAME"
-	container_image_var="CONTAINER_${i}_IMAGE"
-
-	container_name="${!container_name_var}"
-	container_image="${!container_image_var}"
-
-	container_conf_file="{{.ShareDir}}/container_${container_name}.conf"
-
-	echo "Writing ${container_conf_file} file..."
-	echo "[container]
-containerName ${container_name}
-imageName ${container_image}
-k8s_fullpodname {{.PodName}}
-k8s_poduid {{.PodUID}}
-k8s_containername ${container_name}
-k8s_basepodname {{.PodBaseName}}
-k8s_namespace {{.Namespace}}">>${container_conf_file}
-
-	if [[ ! -z "{{.HostTenant}}" ]]; then
-		if [[ "{{.TenantUUID}}" == "{{.HostTenant}}" ]]; then
-			echo "k8s_node_name {{.NodeName}}
-k8s_cluster_id {{.ClusterID}}">>${container_conf_file}
-		fi
-
-	echo "
-[host]
-tenant {{.HostTenant}}">>${container_conf_file}
-	fi
-done
+{{.CreateConfFiles}}

@@ -1,6 +1,7 @@
 package script
 
 import (
+	b64 "encoding/base64"
 	"bytes"
 	"context"
 	_ "embed"
@@ -18,8 +19,6 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -32,23 +31,34 @@ const (
 //go:embed init.sh.tmpl
 var scriptContent string
 
+//go:embed containerConfBase.sh.tmpl
+var containerConfBase string
+
+//go:embed containerConfWithTenant.sh.tmpl
+var containerConfWithTenant string
+
 var scriptTmpl = template.Must(template.New("initScript").Parse(scriptContent))
+
+var confBaseTmpl = template.Must(template.New("confBase").Parse(containerConfBase))
+
+var confTenantTmpl = template.Must(template.New("confTenant").Parse(containerConfWithTenant))
 
 var log = logger.NewDTLogger()
 
 type scriptParams struct {
-	InstallerMode  string
-	InstallPath    string
-	ShareDir       string
-	ContainerCount int
-	PodUID         string
-	PodName        string
-	PodBaseName    string
-	Namespace      string
-	HostTenant     string
-	TenantUUID     string
-	NodeName       string
-	ClusterID      string
+	InstallerMode   string
+	LDSOPreload     string
+	CreateConfFiles string
+}
+
+type confParams struct {
+	ConfFile string
+	ContainerName string
+	ImageName string
+	PodBaseName string
+	Namespace string
+	ClusterId string
+	HostTenant string
 }
 
 type InitGenerator struct {
@@ -67,60 +77,41 @@ func NewInitGenerator(client client.Client, dk *dynatracev1alpha1.DynaKube, ns *
 	}
 }
 
-func (ig InitGenerator) NewScript(ctx context.Context) error {
-	tokenName := ig.dk.Tokens()
-	if !ig.dk.Spec.CodeModules.Enabled {
-		_ = ensureSecretDeleted(ig.c, tokenName, ig.ns.Name)
-		return nil // TODO: return someting
-	}
-
+func (ig InitGenerator) NewScript(ctx context.Context) (map[string]string, error) {
 	trustedCAs, err := ig.trustedCAs(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	proxy, err := ig.proxy(context.TODO())
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	installerMode, err := ig.installerMode(trustedCAs, proxy)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	hostTenant, err := ig.hostTenant(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	clusterID, err := ig.clusterId(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	params := scriptParams{
-		InstallerMode:  installerMode,
-		InstallPath:    ig.installPath(),
-		ShareDir:       shareDir,
-		ContainerCount: ig.containerCount(),
-		PodUID:         ig.podUID(),
-		PodName:        ig.podName(),
-		PodBaseName:    ig.basePodName(),
-		Namespace:      ig.ns.Name,
-		TenantUUID:     ig.dk.ConnectionInfo().TenantUUID,
-		HostTenant:     hostTenant,
-		NodeName:       ig.nodeName(),
-		ClusterID:      clusterID,
+		InstallerMode:   installerMode,
+		LDSOPreload: ig.ldSOPreload(),
+		CreateConfFiles: ig.createContainerConfFile(hostTenant, clusterID),
 	}
 
 	script, err := ig.generate(trustedCAs, proxy, params)
 	if err != nil {
-		return err
-	}
-	err = utils.CreateOrUpdateSecretIfNotExists(ig.c, dtwebhook.SecretConfigName, ig.ns.Name, script, corev1.SecretTypeOpaque, log)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return script, nil
 }
 
 func (ig InitGenerator) installerMode(trustedCA []byte, proxy string) (string, error) {
@@ -180,6 +171,40 @@ func (ig InitGenerator) installerMode(trustedCA []byte, proxy string) (string, e
 	fi
 	`, binDir, archivePath, archivePath, binDir, failCode)
 	return (curlCommand + "\n" + unzipCommand), nil
+}
+
+func (ig InitGenerator) ldSOPreload() string {
+	return fmt.Sprintf("echo -n \"%s/agent/lib64/liboneagentproc.so\" >> \"%s/ld.so.preload\"", ig.installPath(), shareDir)
+}
+
+func (ig InitGenerator) createContainerConfFile(hostTenant, clusterId string) string {
+	var createConfFileCmd bytes.Buffer
+	var err error
+	for i := range ig.pod.Spec.Containers {
+		container := &ig.pod.Spec.Containers[i]
+		params := confParams{
+			ConfFile: getConfFilePath(container.Name),
+			ContainerName: container.Name,
+			ImageName: container.Image,
+	        PodBaseName: ig.basePodName(),
+	        Namespace: ig.ns.Name,
+		}
+		if hostTenant == ig.dk.ConnectionInfo().TenantUUID {
+	        params.ClusterId = clusterId
+			params.HostTenant = hostTenant
+			err = confTenantTmpl.Execute(&createConfFileCmd, params)
+		} else {
+			err = confBaseTmpl.Execute(&createConfFileCmd, params)
+		}
+	}
+	if err != nil {
+		log.Error(err, "Something broke")
+	}
+	return createConfFileCmd.String()
+}
+
+func getConfFilePath(containerName string) string {
+	return filepath.Join(shareDir, fmt.Sprintf("container_%s.conf", containerName))
 }
 
 func (ig InitGenerator) imnodes(ctx context.Context) (map[string]string, error) {
@@ -261,10 +286,6 @@ func (ig InitGenerator) flavor() string {
 	return dtclient.FlavorMultidistro
 }
 
-func (ig InitGenerator) containerCount() int {
-	return len(ig.pod.Spec.Containers)
-}
-
 func (ig InitGenerator) technologies() string {
 	return url.QueryEscape(utils.GetField(ig.pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
 }
@@ -305,44 +326,28 @@ func (ig InitGenerator) basePodName() string {
 	return basePodName
 }
 
-func (ig InitGenerator) podName() string {
-	return ig.pod.Name
-}
-
-func (ig InitGenerator) podUID() string {
-	return string(ig.pod.UID)
-}
-
 func (ig InitGenerator) nodeName() string {
 	return ig.pod.Spec.NodeName
 }
 
-func (ig InitGenerator) generate(trustedCA []byte, proxy string, params scriptParams) (map[string][]byte, error) {
+func (ig InitGenerator) generate(trustedCA []byte, proxy string, params scriptParams) (map[string]string, error) {
 	var buf bytes.Buffer
 
 	if err := scriptTmpl.Execute(&buf, params); err != nil {
 		return nil, err
 	}
 
-	data := map[string][]byte{
-		"init.sh": buf.Bytes(),
+	data := map[string]string{
+		"init.sh": b64.StdEncoding.EncodeToString(buf.Bytes()),
 	}
 
 	if trustedCA != nil {
-		data["ca.pem"] = trustedCA
+		data["ca.pem"] = string(trustedCA)
 	}
 
 	if proxy != "" {
-		data["proxy"] = []byte(proxy)
+		data["proxy"] = proxy
 	}
 
 	return data, nil
-}
-
-func ensureSecretDeleted(c client.Client, name string, ns string) error {
-	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: ns}}
-	if err := c.Delete(context.TODO(), &secret); err != nil && !k8serrors.IsNotFound(err) {
-		return err
-	}
-	return nil
 }

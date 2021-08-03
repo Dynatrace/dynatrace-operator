@@ -1,0 +1,14 @@
+echo "Writing {{.ConfFile}} file..."
+echo "
+[container]
+containerName {{.ContainerName}}
+imageName {{.ImageName}}
+k8s_fullpodname ${K8S_PODNAME}
+k8s_poduid ${K8S_PODUID}
+k8s_containername {{.ContainerName}}
+k8s_basepodname {{.PodBaseName}}
+k8s_namespace {{.Namespace}}
+k8s_node_name ${K8S_NODE_NAME}
+k8s_cluster_id {{.ClusterID}}
+[host]
+tenant {{.HostTenant}}">>{{.ConfFile}}
