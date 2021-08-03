@@ -7,6 +7,7 @@ default_oneagent_image="docker.io/dynatrace/oneagent"
 
 missing_value="<no value>"
 selected_dynakube=""
+selected_namespace="dynatrace"
 api_url=""
 paas_token=""
 
@@ -14,6 +15,10 @@ while [ $# -gt 0 ]; do
   case "$1" in
   --dynakube)
     selected_dynakube="$2"
+    shift 2
+    ;;
+  --namespace)
+    selected_namespace="$2"
     shift 2
     ;;
   --oc)
@@ -41,16 +46,19 @@ error() {
 }
 
 checkNs() {
-  if ! "${cli}" get ns dynatrace >/dev/null 2>&1; then
-    error "missing namespace 'dynatrace'"
+  log_info "namespace" "checking if namespace '$selected_namespace' exists .."
+  if ! "${cli}" get ns "$selected_namespace" >/dev/null 2>&1; then
+    error "missing namespace '$selected_namespace'"
   else
-    log_info "namespace" "using namespace 'dynatrace'"
+    log_info "namespace" "using namespace '$selected_namespace'"
   fi
 }
 
 checkDynakube() {
+  log_info "dynakube" "checking if Dynakube is configured correctly ..."
+
   # check dynakube crd exists
-  crd="$("${cli}" get dynakube -n dynatrace >/dev/null 2>&1)"
+  crd="$("${cli}" get dynakube -n "$selected_namespace" >/dev/null 2>&1)"
   if [ -z "$crd" ]; then
     log_info "dynakube" "CRD for Dynakube exists"
   else
@@ -60,50 +68,52 @@ checkDynakube() {
   # check dynakube cr exists
   if [[ -n "$selected_dynakube" ]]; then
     # dynakube set via parameter
-    if ! "${cli}" get dynakube "${selected_dynakube}" -n dynatrace >/dev/null 2>&1; then
+    if ! "${cli}" get dynakube "${selected_dynakube}" -n "$selected_namespace" >/dev/null 2>&1; then
       error "Selected Dynakube '${selected_dynakube}' does not exist"
     fi
   else
     # dynakube not set, check for existing
-    names="$("${cli}" get dynakube -n dynatrace -o jsonpath={..metadata.name})"
+    names="$("${cli}" get dynakube -n "$selected_namespace" -o jsonpath={..metadata.name})"
     if [ -z "$names" ]; then
       error "No Dynakube exists"
     fi
 
     read -ra names_arr <<<"$names"
+    log_info "dynakube" "selecting Dynakube from available: '${names_arr[*]}'"
     selected_dynakube="${names_arr[0]}"
   fi
 
   log_info "dynakube" "'${selected_dynakube}' selected"
 
-  log_info "dynakube" "checking api url"
   checkApiUrl
-
-  log_info "dynakube" "checking secret"
   checkSecret
 
   log_info "dynakube" "'${selected_dynakube}' is valid"
 }
 
 checkApiUrl() {
-  api_url=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.apiUrl}}")
+  log_info "dynakube" "checking if api url is valid..."
+
+  api_url=$("${cli}" get dynakube "${selected_dynakube}" -n "$selected_namespace" --template="{{.spec.apiUrl}}")
   if [ "${api_url##*/}" != "api" ]; then
-    error "ApiUrl has to end on '/api'"
+    error "api url has to end on '/api'"
   fi
   # todo: check for valid url?
 
-  log_info "dynakube" "ApiUrl is correct"
+  log_info "dynakube" "api url is valid"
 }
 
 checkSecret() {
+  log_info "dynakube" "checking if secret is valid ..."
+
   # use dynakube name or tokens value if set
   secret_name="$selected_dynakube"
-  tokens=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.tokens}}")
+  tokens=$("${cli}" get dynakube "${selected_dynakube}" -n "$selected_namespace" --template="{{.spec.tokens}}")
   if [[ "$tokens" != "$missing_value" ]]; then
     secret_name=$tokens
   fi
 
-  if ! "${cli}" get secret "$secret_name" -n dynatrace &>/dev/null; then
+  if ! "${cli}" get secret "$secret_name" -n "$selected_namespace" &>/dev/null; then
     error "secret with the name '${secret_name}' is missing"
   else
     log_info "dynakube" "secret '$secret_name' exists"
@@ -111,7 +121,7 @@ checkSecret() {
 
   token_names=("apiToken" "paasToken")
   for token_name in "${token_names[@]}"; do
-    token=$("${cli}" get secret "$secret_name" -n dynatrace --template="{{.data.${token_name}}}")
+    token=$("${cli}" get secret "$secret_name" -n "$selected_namespace" --template="{{.data.${token_name}}}")
     if [[ "$token" == "$missing_value" ]]; then
       error "token '${token_name}' does not exist in secret '${secret_name}'"
     else
@@ -132,12 +142,12 @@ getImage() {
     image="$default_oneagent_image"
   else
     # activegate is not published and uses the cluster registry by default
-    api_url=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.apiUrl}}")
+    api_url=$("${cli}" get dynakube "${selected_dynakube}" -n "$selected_namespace" --template="{{.spec.apiUrl}}")
     image="${api_url#*//}"
     image="${image%/*}/linux/activegate"
   fi
 
-  dynakube_image=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.${type}.image}}")
+  dynakube_image=$("${cli}" get dynakube "${selected_dynakube}" -n "$selected_namespace" --template="{{.spec.${type}.image}}")
   if [[ -n "$dynakube_image" && "$dynakube_image" != "$missing_value" ]]; then
     image="$dynakube_image"
   fi
@@ -148,8 +158,10 @@ getImage() {
 checkImagePullable() {
   container_cli="$1"
 
+  log_info "image" "checking if image is pullable ..."
+
   # load pull secret
-  custom_pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.customPullSecret}}")
+  custom_pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n "$selected_namespace" --template="{{.spec.customPullSecret}}")
   if [[ -n "$custom_pull_secret_name" && "$custom_pull_secret_name" != "$missing_value" ]] ; then
     pull_secret_name="$custom_pull_secret_name"
   else
@@ -157,7 +169,7 @@ checkImagePullable() {
   fi
   log_info "image" "using pull secret '$pull_secret_name'"
 
-  pull_secret_encoded=$("${cli}" get secret "$pull_secret_name" -n dynatrace -o "jsonpath={.data['\.dockerconfigjson']}")
+  pull_secret_encoded=$("${cli}" get secret "$pull_secret_name" -n "$selected_namespace" -o "jsonpath={.data['\.dockerconfigjson']}")
   pull_secret="$(echo "$pull_secret_encoded" | base64 -d)"
 
   # load used images (default or custom)
@@ -212,6 +224,7 @@ checkImagePullable() {
 checkClusterConnection() {
   container_cli="$1"
 
+  log_info "connection" "checking if connection to cluster is valid ..."
   curl_params=(
     -sI
     -o "/dev/null"
@@ -221,15 +234,15 @@ checkClusterConnection() {
 
   # proxy
   proxy=""
-  proxy_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.proxy.valueFrom}}")
+  proxy_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n "$selected_namespace" --template="{{.spec.proxy.valueFrom}}")
   if [[ "$proxy_secret_name" != "$missing_value" ]]; then
     # get proxy from secret
-    encoded_proxy=$("${cli}" get secret "${proxy_secret_name}" -n dynatrace --template="{{.data.proxy}}")
+    encoded_proxy=$("${cli}" get secret "${proxy_secret_name}" -n "$selected_namespace" --template="{{.data.proxy}}")
     proxy=$(echo "$encoded_proxy" | base64 -d)
     log_info "connection" "loading proxy from secret '$proxy_secret_name'"
   else
     # try get proxy from dynakube
-    proxyValue=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.proxy.value}}")
+    proxyValue=$("${cli}" get dynakube "${selected_dynakube}" -n "$selected_namespace" --template="{{.spec.proxy.value}}")
     if [[ "$proxyValue" != "$missing_value" ]]; then
       proxy=$proxyValue
     fi
@@ -243,17 +256,17 @@ checkClusterConnection() {
   fi
 
   # skip cert check
-  skip_cert_check=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.skipCertCheck}}")
+  skip_cert_check=$("${cli}" get dynakube "${selected_dynakube}" -n "$selected_namespace" --template="{{.spec.skipCertCheck}}")
   if [[ "$skip_cert_check" == "true" ]]; then
     log_info "connection" "skipping cert check"
     curl_params+=("--insecure")
   fi
 
   # trusted ca
-  custom_ca_map=$("${cli}" get dynakube "${selected_dynakube}" -n dynatrace --template="{{.spec.trustedCAs}}")
+  custom_ca_map=$("${cli}" get dynakube "${selected_dynakube}" -n "$selected_namespace" --template="{{.spec.trustedCAs}}")
   if [[ "$custom_ca_map" != "$missing_value" ]]; then
     # get custom certificate from config map and save to file
-    certs=$("${cli}" get configmap "${custom_ca_map}" -n dynatrace --template="{{.data.certs}}")
+    certs=$("${cli}" get configmap "${custom_ca_map}" -n "$selected_namespace" --template="{{.data.certs}}")
     cert_path="/tmp/ca.pem"
 
     log_info "connection" "copying certificate to container ..."
@@ -280,20 +293,16 @@ checkClusterConnection() {
 }
 
 ####### MAIN #######
-log_info "namespace" "checking ..."
-checkNs
 
-log_info "dynakube" "checking ..."
+checkNs
 checkDynakube
 
-operator_pod=$("${cli}" get pods --no-headers -o custom-columns=":metadata.name" | grep dynatrace-operator)
+# choose operator pod to check connection/images
+operator_pod=$("${cli}" get pods -n "$selected_namespace" --no-headers -o custom-columns=":metadata.name" | grep dynatrace-operator)
 log_info "pod" "using pod '$operator_pod'"
 container_cli="${cli} exec ${operator_pod} -- /bin/bash -c"
 
-log_info "connection" "checking ..."
 checkClusterConnection "$container_cli"
-
-log_info "image" "checking ..."
 checkImagePullable "$container_cli"
 
 # todo: look through support channel for common pitfalls
