@@ -32,8 +32,10 @@ const (
 	missingDynakubeEvent = "MissingDynakube"
 )
 
-var logger = log.Log.WithName("oneagent.webhook")
-var debug = os.Getenv("DEBUG_OPERATOR")
+var (
+	logger = log.Log.WithName("oneagent.webhook")
+	debug  = os.Getenv("DEBUG_OPERATOR")
+)
 
 // AddToManager adds the Webhook server to the Manager
 func AddToManager(mgr manager.Manager, ns string) error {
@@ -211,6 +213,10 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 					}
 					installContainer.Env = []corev1.EnvVar{
 						{Name: "INIT", Value: init["init.sh"]},
+						{Name: "CA", Value: init["ca.pem"]},
+						{Name: "K8S_PODNAME", ValueFrom: fieldEnvVar("metadata.name")},
+						{Name: "K8S_PODUID", ValueFrom: fieldEnvVar("metadata.uid")},
+						{Name: "K8S_NODE_NAME", ValueFrom: fieldEnvVar("spec.nodeName")},
 					}
 					needsUpdate = true
 				}
@@ -239,19 +245,17 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
-		corev1.Volume{Name: "oneagent-bin", VolumeSource: dkVol},
+		corev1.Volume{Name: dtwebhook.OneagentBinMount, VolumeSource: dkVol},
 		corev1.Volume{
-			Name: "oneagent-share",
+			Name: dtwebhook.OneagentShareMount,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
 		corev1.Volume{
-			Name: "oneagent-config",
+			Name: dtwebhook.OneagentConfigMount,
 			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dtwebhook.SecretConfigName,
-				},
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		})
 
@@ -274,17 +278,18 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/usr/bin/env"},
 		Args:            []string{"echo", "${INIT}", "|", "base64", "-d", ">", "./init.sh", "bash", "./init.sh"},
-		Env:             []corev1.EnvVar{
+		Env: []corev1.EnvVar{
 			{Name: "INIT", Value: init["init.sh"]},
+			{Name: "CA", Value: init["ca.pem"]},
 			{Name: "K8S_PODNAME", ValueFrom: fieldEnvVar("metadata.name")},
 			{Name: "K8S_PODUID", ValueFrom: fieldEnvVar("metadata.uid")},
 			{Name: "K8S_NODE_NAME", ValueFrom: fieldEnvVar("spec.nodeName")},
 		},
 		SecurityContext: sc,
 		VolumeMounts: []corev1.VolumeMount{
-			{Name: "oneagent-bin", MountPath: "/mnt/bin"},
-			{Name: "oneagent-share", MountPath: "/mnt/share"},
-		//	{Name: "oneagent-config", MountPath: "/mnt/config"},
+			{Name: dtwebhook.OneagentBinMount, MountPath: dtwebhook.InitBinDir},
+			{Name: dtwebhook.OneagentShareMount, MountPath: dtwebhook.InitShareDir},
+			{Name: dtwebhook.OneagentConfigMount, MountPath: dtwebhook.InitConfigDir},
 		},
 		Resources: dk.Spec.CodeModules.Resources,
 	}
@@ -315,7 +320,7 @@ func (m *podInjector) InjectDecoder(d *admission.Decoder) error {
 	return nil
 }
 
- func fieldEnvVar (key string) *corev1.EnvVarSource {
+func fieldEnvVar(key string) *corev1.EnvVarSource {
 	return &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: key}}
 }
 
@@ -328,17 +333,17 @@ func updateContainer(c *corev1.Container, oa *dynatracev1alpha1.DynaKube,
 
 	c.VolumeMounts = append(c.VolumeMounts,
 		corev1.VolumeMount{
-			Name:      "oneagent-share",
-			MountPath: "/etc/ld.so.preload",
+			Name:      dtwebhook.OneagentShareMount,
+			MountPath: dtwebhook.LDSOPreloadPath,
 			SubPath:   "ld.so.preload",
 		},
 		corev1.VolumeMount{
-			Name:      "oneagent-bin",
+			Name:      dtwebhook.OneagentBinMount,
 			MountPath: installPath,
 		},
 		corev1.VolumeMount{
-			Name:      "oneagent-share",
-			MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
+			Name:      dtwebhook.OneagentShareMount,
+			MountPath: dtwebhook.ConfMountPath,
 			SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
 		})
 
@@ -355,7 +360,7 @@ func updateContainer(c *corev1.Container, oa *dynatracev1alpha1.DynaKube,
 	if proxy != "" {
 		c.Env = append(c.Env,
 			corev1.EnvVar{
-				Name: "DT_PROXY",
+				Name:  "DT_PROXY",
 				Value: proxy,
 			})
 	}

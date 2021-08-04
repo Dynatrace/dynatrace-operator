@@ -41,4 +41,15 @@ const (
 
 	// InstallContainerName is the name used for the install container
 	InstallContainerName = "install-oneagent"
+
+	OneagentBinMount    = "oneagent-bin"
+	OneagentShareMount  = "oneagent-share"
+	OneagentConfigMount = "oneagent-config"
+
+	InitBinDir    = "/mnt/bin"
+	InitConfigDir = "/mnt/config"
+	InitShareDir  = "/mnt/share"
+
+	LDSOPreloadPath = "/etc/ld.so.preload"
+	ConfMountPath   = "/var/lib/dynatrace/oneagent/agent/config/container.conf"
 )

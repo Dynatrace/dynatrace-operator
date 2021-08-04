@@ -1,10 +1,10 @@
 package script
 
 import (
-	b64 "encoding/base64"
 	"bytes"
 	"context"
 	_ "embed"
+	b64 "encoding/base64"
 	"fmt"
 	"math/rand"
 	"net/url"
@@ -20,12 +20,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	binDir    = "/mnt/bin"
-	configDir = "/mnt/config"
-	shareDir  = "/mnt/share"
 )
 
 //go:embed init.sh.tmpl
@@ -46,19 +40,20 @@ var confTenantTmpl = template.Must(template.New("confTenant").Parse(containerCon
 var log = logger.NewDTLogger()
 
 type scriptParams struct {
+	CAToFile        string
 	InstallerMode   string
 	LDSOPreload     string
 	CreateConfFiles string
 }
 
 type confParams struct {
-	ConfFile string
+	ConfFile      string
 	ContainerName string
-	ImageName string
-	PodBaseName string
-	Namespace string
-	ClusterId string
-	HostTenant string
+	ImageName     string
+	PodBaseName   string
+	Namespace     string
+	ClusterId     string
+	HostTenant    string
 }
 
 type InitGenerator struct {
@@ -78,9 +73,14 @@ func NewInitGenerator(client client.Client, dk *dynatracev1alpha1.DynaKube, ns *
 }
 
 func (ig InitGenerator) NewScript(ctx context.Context) (map[string]string, error) {
+	params := scriptParams{}
 	trustedCAs, err := ig.trustedCAs(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if trustedCAs != nil {
+		caPath := filepath.Join(dtwebhook.InitConfigDir, "ca.pem")
+		params.CAToFile = fmt.Sprintf("echo ${CA} | base64 -d > %s", caPath)
 	}
 
 	proxy, err := ig.proxy(context.TODO())
@@ -100,11 +100,10 @@ func (ig InitGenerator) NewScript(ctx context.Context) (map[string]string, error
 	if err != nil {
 		return nil, err
 	}
-	params := scriptParams{
-		InstallerMode:   installerMode,
-		LDSOPreload: ig.ldSOPreload(),
-		CreateConfFiles: ig.createContainerConfFile(hostTenant, clusterID),
-	}
+
+	params.InstallerMode = installerMode
+	params.LDSOPreload = ig.ldSOPreload()
+	params.CreateConfFiles = ig.createContainerConfFile(hostTenant, clusterID)
 
 	script, err := ig.generate(trustedCAs, proxy, params)
 	if err != nil {
@@ -118,7 +117,7 @@ func (ig InitGenerator) installerMode(trustedCA []byte, proxy string) (string, e
 	if ig.mode() != "installer" {
 		return "", nil
 	}
-	archivePath := filepath.Join(binDir, fmt.Sprintf("tmp.%d", rand.Intn(1000)))
+	archivePath := filepath.Join(dtwebhook.InitBinDir, fmt.Sprintf("tmp.%d", rand.Intn(1000)))
 	curlParams := []string{
 		"--silent",
 		fmt.Sprintf("--output \"%s\"", archivePath),
@@ -144,7 +143,7 @@ func (ig InitGenerator) installerMode(trustedCA []byte, proxy string) (string, e
 	}
 
 	if trustedCA != nil {
-		curlParams = append(curlParams, "--cacert %s/ca.pem", configDir)
+		curlParams = append(curlParams, "--cacert %s/ca.pem", dtwebhook.InitConfigDir)
 	}
 
 	if proxy != "" {
@@ -169,12 +168,12 @@ func (ig InitGenerator) installerMode(trustedCA []byte, proxy string) (string, e
 		mv "%s" "%s/package.zip"
 		exit "%d"
 	fi
-	`, binDir, archivePath, archivePath, binDir, failCode)
+	`, dtwebhook.InitBinDir, archivePath, archivePath, dtwebhook.InitBinDir, failCode)
 	return (curlCommand + "\n" + unzipCommand), nil
 }
 
 func (ig InitGenerator) ldSOPreload() string {
-	return fmt.Sprintf("echo -n \"%s/agent/lib64/liboneagentproc.so\" >> \"%s/ld.so.preload\"", ig.installPath(), shareDir)
+	return fmt.Sprintf("echo -n \"%s/agent/lib64/liboneagentproc.so\" >> \"%s/ld.so.preload\"", ig.installPath(), dtwebhook.InitShareDir)
 }
 
 func (ig InitGenerator) createContainerConfFile(hostTenant, clusterId string) string {
@@ -183,14 +182,14 @@ func (ig InitGenerator) createContainerConfFile(hostTenant, clusterId string) st
 	for i := range ig.pod.Spec.Containers {
 		container := &ig.pod.Spec.Containers[i]
 		params := confParams{
-			ConfFile: getConfFilePath(container.Name),
+			ConfFile:      getConfFilePath(container.Name),
 			ContainerName: container.Name,
-			ImageName: container.Image,
-	        PodBaseName: ig.basePodName(),
-	        Namespace: ig.ns.Name,
+			ImageName:     container.Image,
+			PodBaseName:   ig.basePodName(),
+			Namespace:     ig.ns.Name,
 		}
 		if hostTenant == ig.dk.ConnectionInfo().TenantUUID {
-	        params.ClusterId = clusterId
+			params.ClusterId = clusterId
 			params.HostTenant = hostTenant
 			err = confTenantTmpl.Execute(&createConfFileCmd, params)
 		} else {
@@ -204,7 +203,7 @@ func (ig InitGenerator) createContainerConfFile(hostTenant, clusterId string) st
 }
 
 func getConfFilePath(containerName string) string {
-	return filepath.Join(shareDir, fmt.Sprintf("container_%s.conf", containerName))
+	return filepath.Join(dtwebhook.InitShareDir, fmt.Sprintf("container_%s.conf", containerName))
 }
 
 func (ig InitGenerator) imnodes(ctx context.Context) (map[string]string, error) {
@@ -342,7 +341,7 @@ func (ig InitGenerator) generate(trustedCA []byte, proxy string, params scriptPa
 	}
 
 	if trustedCA != nil {
-		data["ca.pem"] = string(trustedCA)
+		data["ca.pem"] = b64.StdEncoding.EncodeToString(trustedCA)
 	}
 
 	if proxy != "" {

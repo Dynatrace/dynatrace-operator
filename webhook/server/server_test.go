@@ -6,7 +6,6 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	t_utils "github.com/Dynatrace/dynatrace-operator/testing"
@@ -23,6 +22,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
+
+// TODO: Rework everything here
 
 const (
 	testVersion                 = "test-version"
@@ -1003,22 +1004,13 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 				Image:           "test-image",
 				ImagePullPolicy: corev1.PullAlways,
 				Command:         []string{"/usr/bin/env"},
-				Args:            []string{"bash", "/mnt/config/init.sh"},
+				Args:            []string{"echo", "${INIT}", "|", "base64", "-d", ">", "./init.sh", "bash", "./init.sh"},
 				Env: []corev1.EnvVar{
-					{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
-					{Name: "TECHNOLOGIES", Value: "all"},
-					{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
-					{Name: "INSTALLER_URL", Value: ""},
-					{Name: "FAILURE_POLICY", Value: "silent"},
-					{Name: "CONTAINERS_COUNT", Value: "1"},
-					{Name: "MODE", Value: "provisioned"},
+					{Name: "INIT", Value: ""},
+					{Name: "CA", Value: ""},
 					{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
 					{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
-					{Name: "K8S_BASEPODNAME", Value: "test-pod"},
-					{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
 					{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-					{Name: "CONTAINER_1_NAME", Value: "test-container"},
-					{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{Name: "oneagent-bin", MountPath: "/mnt/bin"},
@@ -1061,9 +1053,7 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 				{
 					Name: "oneagent-config",
 					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: dtwebhook.SecretConfigName,
-						},
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},
 				},
 			},
@@ -1103,16 +1093,7 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 			InitContainers: []corev1.Container{{
 				Name:  dtwebhook.InstallContainerName,
 				Image: "test-installer",
-				Env: []corev1.EnvVar{
-					{
-						Name:  "CONTAINER_1_NAME",
-						Value: testContainerName,
-					},
-					{
-						Name:  "CONTAINER_1_IMAGE",
-						Value: testContainerImage,
-					},
-				},
+				Env:   []corev1.EnvVar{},
 			}},
 			Containers: []corev1.Container{
 				{
@@ -1136,13 +1117,6 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 
 	// check setup
 	require.Equal(t, "LD_PRELOAD", basePod.Spec.Containers[0].Env[0].Name)
-
-	var baseInstallContainer = basePod.Spec.InitContainers[0]
-	require.Equal(t, 2, len(baseInstallContainer.Env))
-	require.Equal(t, "CONTAINER_1_NAME", baseInstallContainer.Env[0].Name)
-	require.Equal(t, testContainerName, baseInstallContainer.Env[0].Value)
-	require.Equal(t, "CONTAINER_1_IMAGE", baseInstallContainer.Env[1].Name)
-	require.Equal(t, testContainerImage, baseInstallContainer.Env[1].Value)
 
 	// handle request
 	req := admission.Request{
@@ -1173,11 +1147,7 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 	require.Equal(t, "LD_PRELOAD", updPod.Spec.Containers[1].Env[0].Name)
 
 	var updInstallContainer = updPod.Spec.InitContainers[0]
-	require.Equal(t, 4, len(updInstallContainer.Env))
-	require.Equal(t, "CONTAINER_2_NAME", updInstallContainer.Env[2].Name)
-	require.Equal(t, thirdPartyContainerName, updInstallContainer.Env[2].Value)
-	require.Equal(t, "CONTAINER_2_IMAGE", updInstallContainer.Env[3].Name)
-	require.Equal(t, thirdPartyContainerImage, updInstallContainer.Env[3].Value)
+	require.Equal(t, 5, len(updInstallContainer.Env))
 
 	t_utils.AssertEvents(t,
 		inj.recorder.(*record.FakeRecorder).Events,
