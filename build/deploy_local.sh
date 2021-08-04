@@ -13,8 +13,7 @@ go_build_args=(
 base_image="dynatrace-operator"
 out_image="quay.io/dynatrace/dynatrace-operator:${TAG}"
 
-go build "${go_build_args[@]}" -o ./build/_output/bin/dynatrace-operator ./cmd/operator/
-CGO_ENABLED=1 go build "${go_build_args[@]}" -o ./build/_output/bin/csi-driver ./cmd/csidriver
+CGO_ENABLED=1 go build "${go_build_args[@]}" -o ./build/_output/bin/dynatrace-operator ./cmd/operator/
 
 go get github.com/google/go-licenses
 go-licenses save ./... --save_path third_party_licenses --force
