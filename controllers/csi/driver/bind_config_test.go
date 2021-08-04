@@ -117,7 +117,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			opts:   opts,
 			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
 			db:     metadata.FakeMemoryDB(),
-			fph:    metadata.FilePathHandler{RootDir: opts.RootDir},
+			path:   metadata.PathResolver{RootDir: opts.RootDir},
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
@@ -129,7 +129,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, bindCfg)
-		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid, "bin", agentVersion), srv.fph.AgentBinaryDirForVersion(tenantUuid, agentVersion))
-		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid), srv.fph.EnvDir(tenantUuid))
+		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid, "bin", agentVersion), srv.path.AgentBinaryDirForVersion(tenantUuid, agentVersion))
+		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid), srv.path.EnvDir(tenantUuid))
 	})
 }

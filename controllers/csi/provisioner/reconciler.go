@@ -56,19 +56,19 @@ type OneAgentProvisioner struct {
 	fs           afero.Fs
 	recorder     record.EventRecorder
 	db           metadata.Access
-	fph          metadata.FilePathHandler
+	path         metadata.PathResolver
 }
 
 // NewReconciler returns a new OneAgentProvisioner
-func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions) *OneAgentProvisioner {
+func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
 		client:       mgr.GetClient(),
 		opts:         opts,
 		dtcBuildFunc: dynakube.BuildDynatraceClient,
 		fs:           afero.NewOsFs(),
 		recorder:     mgr.GetEventRecorderFor("OneAgentProvisioner"),
-		db:           metadata.NewAccess(),
-		fph:          metadata.FilePathHandler{RootDir: opts.RootDir},
+		db:           db,
+		path:         metadata.PathResolver{RootDir: opts.RootDir},
 	}
 }
 
@@ -119,7 +119,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 	oldTenant := *tenant
 
-	if err = r.createCSIDirectories(r.fph.EnvDir(tenant.TenantUUID)); err != nil {
+	if err = r.createCSIDirectories(r.path.EnvDir(tenant.TenantUUID)); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -197,7 +197,7 @@ func (r *OneAgentProvisioner) installAgentVersion(version string, tenantUUID str
 		arch = dtclient.ArchARM
 	}
 
-	targetDir := r.fph.AgentBinaryDirForVersion(tenantUUID, version)
+	targetDir := r.path.AgentBinaryDirForVersion(tenantUUID, version)
 
 	if _, err := r.fs.Stat(targetDir); os.IsNotExist(err) {
 		installAgentCfg := newInstallAgentConfig(logger, dtc, arch, targetDir)

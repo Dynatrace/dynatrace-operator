@@ -26,19 +26,19 @@ type CSIGarbageCollector struct {
 	dtcBuildFunc dynakube.DynatraceClientFunc
 	fs           afero.Fs
 	db           metadata.Access
-	fph          metadata.FilePathHandler
+	path         metadata.PathResolver
 }
 
 // NewReconciler returns a new CSIGarbageCollector
-func NewReconciler(client client.Client, opts dtcsi.CSIOptions) *CSIGarbageCollector {
+func NewReconciler(client client.Client, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		client:       client,
 		logger:       log.Log.WithName("csi.gc.controller"),
 		opts:         opts,
 		dtcBuildFunc: dynakube.BuildDynatraceClient,
 		fs:           afero.NewOsFs(),
-		db:           metadata.NewAccess(),
-		fph:          metadata.FilePathHandler{RootDir: opts.RootDir},
+		db:           db,
+		path:         metadata.PathResolver{RootDir: opts.RootDir},
 	}
 }
 

@@ -317,7 +317,7 @@ func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServ
 		fs:      afero.Afero{Fs: tmpFs},
 		mounter: mounter,
 		db:      metadata.FakeMemoryDB(),
-		fph:     metadata.FilePathHandler{RootDir: csiOptions.RootDir},
+		path:    metadata.PathResolver{RootDir: csiOptions.RootDir},
 	}
 }
 

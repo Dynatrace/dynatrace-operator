@@ -28,18 +28,19 @@ func checkVolumesCorrectness(cl client.Client, access Access, log logr.Logger) e
 	if err != nil {
 		return err
 	}
-	pruned := 0
+	pruned := []string{}
 	for podName := range podNames {
 		var pod corev1.Pod
 		if err := cl.Get(context.TODO(), client.ObjectKey{Name: podName}, &pod); !k8serrors.IsNotFound(err) {
 			continue
 		}
-		if err := access.DeleteVolume(podNames[podName]); err != nil {
+		volumeID := podNames[podName]
+		if err := access.DeleteVolume(volumeID); err != nil {
 			return err
 		}
-		pruned++
+		pruned = append(pruned, volumeID+"|"+podName)
 	}
-	log.Info("CSI volumes database is corrected", "prunedRows", pruned)
+	log.Info("CSI volumes database is corrected (volume|pod)", "prunedRows", pruned)
 	return nil
 }
 
@@ -49,17 +50,18 @@ func checkTenantsCorrectness(cl client.Client, access Access, log logr.Logger) e
 	if err != nil {
 		return err
 	}
-	pruned := 0
+	pruned := []string{}
 	for dynakubeName := range dynakubes {
 		var dynakube dynatracev1alpha1.DynaKube
 		if err := cl.Get(context.TODO(), client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
 			continue
 		}
-		if err := access.DeleteTenant(dynakubes[dynakubeName]); err != nil {
+		tenantUUID := dynakubes[dynakubeName]
+		if err := access.DeleteTenant(tenantUUID); err != nil {
 			return err
 		}
-		pruned++
+		pruned = append(pruned, tenantUUID+"|"+dynakubeName)
 	}
-	log.Info("CSI tenants database is corrected", "prunedRows", pruned)
+	log.Info("CSI tenants database is corrected (tenant|dynakube)", "prunedRows", pruned)
 	return nil
 }

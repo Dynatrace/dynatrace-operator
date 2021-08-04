@@ -42,16 +42,14 @@ var (
 )
 
 func emptyMemoryDB() *SqliteAccess {
-	dbPath = ":memory:"
 	db := SqliteAccess{}
-	_ = db.connect(sqliteDriverName, dbPath)
+	_ = db.connect(sqliteDriverName, ":memory:")
 	return &db
 }
 
 func FakeMemoryDB() *SqliteAccess {
-	dbPath = ":memory:"
 	db := SqliteAccess{}
-	db.Setup()
+	db.Setup(":memory:")
 	_ = db.createTables()
 	return &db
 }
@@ -77,7 +75,7 @@ func checkIfTablesExist(db *SqliteAccess) bool {
 
 type FakeFailDB struct{}
 
-func (f *FakeFailDB) Setup() error                                 { return sql.ErrTxDone }
+func (f *FakeFailDB) Setup(dbPath string) error                    { return sql.ErrTxDone }
 func (f *FakeFailDB) InsertTenant(tenant *Tenant) error            { return sql.ErrTxDone }
 func (f *FakeFailDB) UpdateTenant(tenant *Tenant) error            { return sql.ErrTxDone }
 func (f *FakeFailDB) DeleteTenant(tenantUUID string) error         { return sql.ErrTxDone }

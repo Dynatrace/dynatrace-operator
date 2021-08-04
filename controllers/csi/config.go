@@ -16,7 +16,10 @@ limitations under the License.
 
 package dtcsi
 
-import "time"
+import (
+	"path/filepath"
+	"time"
+)
 
 const (
 	DataPath             = "/data"
@@ -27,6 +30,8 @@ const (
 	OverlayVarDirPath    = "var"
 	OverlayWorkDirPath   = "work"
 )
+
+var MetadataAccessPath = filepath.Join(DataPath, "csi.db")
 
 type CSIOptions struct {
 	NodeID     string

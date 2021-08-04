@@ -8,24 +8,22 @@ import (
 )
 
 func TestNewAccess(t *testing.T) {
-	dbPath = ":memory:"
-	db := NewAccess().(*SqliteAccess)
-	assert.NotNil(t, db.conn)
+	db, err := NewAccess(":memory:")
+	assert.Nil(t, err)
+	assert.NotNil(t, db.(*SqliteAccess).conn)
 }
 
 func TestSetup(t *testing.T) {
-	dbPath = ":memory:"
 	db := SqliteAccess{}
-	err := db.Setup()
+	err := db.Setup(":memory:")
 
 	assert.NoError(t, err)
 	assert.True(t, checkIfTablesExist(&db))
 }
 
 func TestSetup_badPath(t *testing.T) {
-	dbPath = "/asd"
 	db := SqliteAccess{}
-	err := db.Setup()
+	err := db.Setup("/asd")
 
 	assert.Error(t, err)
 

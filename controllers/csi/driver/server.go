@@ -75,22 +75,22 @@ type CSIDriverServer struct {
 	fs      afero.Afero
 	mounter mount.Interface
 	db      metadata.Access
-	fph     metadata.FilePathHandler
+	path    metadata.PathResolver
 }
 
 var _ manager.Runnable = &CSIDriverServer{}
 var _ csi.IdentityServer = &CSIDriverServer{}
 var _ csi.NodeServer = &CSIDriverServer{}
 
-func NewServer(client client.Client, opts dtcsi.CSIOptions) *CSIDriverServer {
+func NewServer(client client.Client, opts dtcsi.CSIOptions, db metadata.Access) *CSIDriverServer {
 	return &CSIDriverServer{
 		client:  client,
 		log:     log,
 		opts:    opts,
 		fs:      afero.Afero{Fs: afero.NewOsFs()},
 		mounter: mount.New(""),
-		db:      metadata.NewAccess(),
-		fph:     metadata.FilePathHandler{RootDir: opts.RootDir},
+		db:      db,
+		path:    metadata.PathResolver{RootDir: opts.RootDir},
 	}
 }
 
@@ -216,7 +216,7 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 		svr.log.Info("failed to load volume info", "error", err.Error())
 	}
 
-	overlayFSPath := svr.fph.AgentRunDirForVolume(volume.TenantUUID, volumeID)
+	overlayFSPath := svr.path.AgentRunDirForVolume(volume.TenantUUID, volumeID)
 
 	if err = svr.umountOneAgent(targetPath, overlayFSPath); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount oneagent volume: %s", err.Error()))
@@ -276,17 +276,17 @@ func (svr *CSIDriverServer) NodeExpandVolume(context.Context, *csi.NodeExpandVol
 }
 
 func (svr *CSIDriverServer) mountOneAgent(bindCfg *bindConfig, volumeCfg *volumeConfig) error {
-	mappedDir := svr.fph.OverlayMappedDir(bindCfg.tenantUUID, volumeCfg.volumeId)
+	mappedDir := svr.path.OverlayMappedDir(bindCfg.tenantUUID, volumeCfg.volumeId)
 	_ = svr.fs.MkdirAll(mappedDir, os.ModePerm)
 
-	upperDir := svr.fph.OverlayVarDir(bindCfg.tenantUUID, volumeCfg.volumeId)
+	upperDir := svr.path.OverlayVarDir(bindCfg.tenantUUID, volumeCfg.volumeId)
 	_ = svr.fs.MkdirAll(upperDir, os.ModePerm)
 
-	workDir := svr.fph.OverlayWorkDir(bindCfg.tenantUUID, volumeCfg.volumeId)
+	workDir := svr.path.OverlayWorkDir(bindCfg.tenantUUID, volumeCfg.volumeId)
 	_ = svr.fs.MkdirAll(workDir, os.ModePerm)
 
 	overlayOptions := []string{
-		"lowerdir=" + svr.fph.AgentBinaryDirForVersion(bindCfg.tenantUUID, bindCfg.version),
+		"lowerdir=" + svr.path.AgentBinaryDirForVersion(bindCfg.tenantUUID, bindCfg.version),
 		"upperdir=" + upperDir,
 		"workdir=" + workDir,
 	}

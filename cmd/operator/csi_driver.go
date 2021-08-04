@@ -88,22 +88,21 @@ func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, error) {
 		return nil, err
 	}
 
-	access := metadata.SqliteAccess{}
-	if err := access.Setup(); err != nil {
+	access, err := metadata.NewAccess(dtcsi.MetadataAccessPath)
+	if err != nil {
 		log.Error(err, "failed to setup database storage for CSI Driver")
 		os.Exit(1)
 	}
-	if err := metadata.CheckStorageCorrectness(mgr.GetClient(), &access, log); err != nil {
+	if err := metadata.CheckStorageCorrectness(mgr.GetClient(), access, log); err != nil {
 		log.Error(err, "failed to correct database storage for CSI Driver")
-		os.Exit(1)
 	}
 
-	if err := csidriver.NewServer(mgr.GetClient(), csiOpts).SetupWithManager(mgr); err != nil {
+	if err := csidriver.NewServer(mgr.GetClient(), csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Driver server")
 		return nil, err
 	}
 
-	if err := csiprovisioner.NewReconciler(mgr, csiOpts).SetupWithManager(mgr); err != nil {
+	if err := csiprovisioner.NewReconciler(mgr, csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Provisioner")
 		return nil, err
 	}
@@ -113,7 +112,7 @@ func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, error) {
 		return nil, err
 	}
 
-	if err := csigc.NewReconciler(mgr.GetClient(), csiOpts).SetupWithManager(mgr); err != nil {
+	if err := csigc.NewReconciler(mgr.GetClient(), csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Garbage Collector")
 		return nil, err
 	}

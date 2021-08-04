@@ -108,7 +108,7 @@ func NewMockGarbageCollector() *CSIGarbageCollector {
 		opts:   dtcsi.CSIOptions{RootDir: rootDir},
 		fs:     afero.NewMemMapFs(),
 		db:     metadata.FakeMemoryDB(),
-		fph:    metadata.FilePathHandler{RootDir: rootDir},
+		path:   metadata.PathResolver{RootDir: rootDir},
 	}
 }
 

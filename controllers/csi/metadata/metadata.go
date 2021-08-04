@@ -30,7 +30,7 @@ func NewVolume(id, podUID, version, tenantUUID string) *Volume {
 }
 
 type Access interface {
-	Setup() error
+	Setup(path string) error
 
 	InsertTenant(tenant *Tenant) error
 	UpdateTenant(tenant *Tenant) error

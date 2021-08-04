@@ -62,7 +62,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, lat
 			shouldDeleteVersion(version, usedVersions)
 
 		if shouldDelete {
-			binaryPath := gc.fph.AgentBinaryDirForVersion(tenantUUID, version)
+			binaryPath := gc.path.AgentBinaryDirForVersion(tenantUUID, version)
 			gc.logger.Info("deleting unused version", "version", version, "path", binaryPath)
 
 			removeUnusedVersion(fs, binaryPath, gc.logger)
@@ -72,7 +72,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, lat
 
 func (gc *CSIGarbageCollector) getStoredVersions(fs *afero.Afero, tenantUUID string) ([]string, error) {
 	versions := []string{}
-	bins, err := fs.ReadDir(gc.fph.AgentBinaryDir(tenantUUID))
+	bins, err := fs.ReadDir(gc.path.AgentBinaryDir(tenantUUID))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

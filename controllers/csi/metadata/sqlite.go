@@ -3,9 +3,7 @@ package metadata
 import (
 	"database/sql"
 	"fmt"
-	"path/filepath"
 
-	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -87,8 +85,7 @@ const (
 )
 
 var (
-	log    = logger.NewDTLogger().WithName("storage")
-	dbPath = filepath.Join(dtcsi.DataPath, "csi.db")
+	log = logger.NewDTLogger().WithName("storage")
 )
 
 type SqliteAccess struct {
@@ -96,13 +93,14 @@ type SqliteAccess struct {
 }
 
 // Creates a new SqliteAccess, connects to the database.
-func NewAccess() Access {
+func NewAccess(path string) (Access, error) {
 	a := SqliteAccess{}
-	err := a.connect(sqliteDriverName, dbPath)
+	err := a.Setup(path)
 	if err != nil {
 		log.Error(err, "Failed to connect to the database, err: %s", err.Error())
+		return nil, err
 	}
-	return &a
+	return &a, nil
 }
 
 // Connects to the database via the provided driver and path to the database.
@@ -128,8 +126,8 @@ func (a *SqliteAccess) createTables() error {
 }
 
 //Connects to the database and creates the necessary tables if they don't exists
-func (a *SqliteAccess) Setup() error {
-	if err := a.connect(sqliteDriverName, dbPath); err != nil {
+func (a *SqliteAccess) Setup(path string) error {
+	if err := a.connect(sqliteDriverName, path); err != nil {
 		return err
 	}
 	if err := a.createTables(); err != nil {
