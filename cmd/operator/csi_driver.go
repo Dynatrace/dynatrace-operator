@@ -17,6 +17,8 @@ limitations under the License.
 package main
 
 import (
+	"path/filepath"
+
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
 	csigc "github.com/Dynatrace/dynatrace-operator/controllers/csi/gc"
@@ -27,7 +29,6 @@ import (
 	"golang.org/x/sys/unix"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
-	"path/filepath"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -64,9 +65,9 @@ func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, error) {
 	}
 
 	csiOpts := dtcsi.CSIOptions{
-		NodeID:     nodeID,
-		Endpoint:   endpoint,
-		RootDir:    dtcsi.DataPath,
+		NodeID:   nodeID,
+		Endpoint: endpoint,
+		RootDir:  dtcsi.DataPath,
 	}
 
 	fs := afero.NewOsFs()

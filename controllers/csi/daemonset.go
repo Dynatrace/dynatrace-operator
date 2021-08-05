@@ -177,8 +177,8 @@ func prepareDriverContainer(operatorImage string) v1.Container {
 	volumeMounts := prepareDriverVolumeMounts()
 
 	return v1.Container{
-		Name:    "driver",
-		Image:   operatorImage,
+		Name:  "driver",
+		Image: operatorImage,
 		Args: []string{
 			"csi-driver",
 			"--endpoint=unix://csi/csi.sock",
