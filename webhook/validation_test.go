@@ -1,15 +1,28 @@
 package webhook
 
 import (
+	"context"
+	"encoding/json"
 	"path/filepath"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	v1 "k8s.io/api/admission/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+)
+
+const (
+	testName      = "test-name"
+	testNamespace = "test-namespace"
 )
 
 func setupTestEnvironment(_ *testing.T) *envtest.Environment {
@@ -46,7 +59,165 @@ func TestAddDynakubeValidationWebhookToManager(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestHasConflictingNodeSelectors(t *testing.T) {
+func TestDynakubeValidator_Handle(t *testing.T) {
+	t.Run(`valid dynakube specs`, func(t *testing.T) {
+		assertAllowedResponse(t, v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				ClassicFullStack: v1alpha1.FullStackSpec{
+					Enabled: false,
+				},
+				InfraMonitoring: v1alpha1.FullStackSpec{
+					Enabled: false,
+				},
+			},
+		})
+
+		assertAllowedResponse(t, v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				ClassicFullStack: v1alpha1.FullStackSpec{
+					Enabled: true,
+				},
+				InfraMonitoring: v1alpha1.FullStackSpec{
+					Enabled: false,
+				},
+			},
+		})
+
+		assertAllowedResponse(t, v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				ClassicFullStack: v1alpha1.FullStackSpec{
+					Enabled: false,
+				},
+				InfraMonitoring: v1alpha1.FullStackSpec{
+					Enabled: true,
+				},
+			},
+		})
+
+		assertAllowedResponse(t, v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				ClassicFullStack: v1alpha1.FullStackSpec{
+					Enabled: true,
+					NodeSelector: map[string]string{
+						"label1": "value1",
+					},
+				},
+				InfraMonitoring: v1alpha1.FullStackSpec{
+					Enabled: true,
+					NodeSelector: map[string]string{
+						"label2": "value1",
+					},
+				},
+			},
+		})
+
+		assertAllowedResponse(t, v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				ClassicFullStack: v1alpha1.FullStackSpec{
+					Enabled: true,
+					NodeSelector: map[string]string{
+						"label1": "value1",
+					},
+				},
+				InfraMonitoring: v1alpha1.FullStackSpec{
+					Enabled: true,
+					NodeSelector: map[string]string{
+						"label1": "value2",
+					},
+				},
+			},
+		})
+	})
+	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
+		assertDeniedResponse(t, v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				ClassicFullStack: v1alpha1.FullStackSpec{
+					Enabled: true,
+				},
+				InfraMonitoring: v1alpha1.FullStackSpec{
+					Enabled: true,
+				},
+			},
+		}, errorConflictingInfraMonitoringAndClassicNodeSelectors)
+
+		assertDeniedResponse(t, v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				ClassicFullStack: v1alpha1.FullStackSpec{
+					Enabled: true,
+					NodeSelector: map[string]string{
+						"label1": "value1",
+					},
+				},
+				InfraMonitoring: v1alpha1.FullStackSpec{
+					Enabled: true,
+					NodeSelector: map[string]string{
+						"label1": "value1",
+					},
+				},
+			},
+		}, errorConflictingInfraMonitoringAndClassicNodeSelectors)
+
+		assertDeniedResponse(t, v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				ClassicFullStack: v1alpha1.FullStackSpec{
+					Enabled: true,
+					NodeSelector: map[string]string{
+						"label1": "value1",
+						"label2": "value2",
+					},
+				},
+				InfraMonitoring: v1alpha1.FullStackSpec{
+					Enabled: true,
+					NodeSelector: map[string]string{
+						"label1": "value1",
+					},
+				},
+			},
+		}, errorConflictingInfraMonitoringAndClassicNodeSelectors)
+	})
+}
+
+func assertDeniedResponse(t *testing.T, dynakube v1alpha1.DynaKube, reason string) {
+	response := handleRequest(t, dynakube)
+	assert.False(t, response.Allowed)
+	assert.Equal(t, metav1.StatusReason(reason), response.Result.Reason)
+}
+
+func assertAllowedResponse(t *testing.T, dynakube v1alpha1.DynaKube) {
+	response := handleRequest(t, dynakube)
+	assert.True(t, response.Allowed)
+}
+
+func handleRequest(t *testing.T, dynakube v1alpha1.DynaKube) admission.Response {
+	clt := fake.NewClient()
+	validator := &dynakubeValidator{
+		logger: logger.NewDTLogger(),
+		clt:    clt,
+	}
+
+	data, err := json.Marshal(dynakube)
+	require.NoError(t, err)
+
+	return validator.Handle(context.TODO(), admission.Request{
+		AdmissionRequest: v1.AdmissionRequest{
+			Name:      testName,
+			Namespace: testNamespace,
+			Object:    runtime.RawExtension{Raw: data},
+		},
+	})
+}
+
+func TestDynakubeValidator_InjectClient(t *testing.T) {
+	validator := &dynakubeValidator{}
+	clt := fake.NewClient()
+	err := validator.InjectClient(clt)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, validator.clt)
+	assert.Equal(t, clt, validator.clt)
+}
+
+func TestHasConflictingConfiguration(t *testing.T) {
 	t.Run(`no conflicts`, func(t *testing.T) {
 		dynakube := buildTestInstance(t)
 
@@ -56,7 +227,7 @@ func TestHasConflictingNodeSelectors(t *testing.T) {
 		dynakube.Spec.ClassicFullStack.NodeSelector = map[string]string{
 			"label2": "value2",
 		}
-		assert.False(t, hasConflictingNodeSelectors(dynakube))
+		assert.False(t, hasConflictingConfiguration(dynakube))
 
 		dynakube.Spec.InfraMonitoring.NodeSelector = map[string]string{
 			"label1": "value1",
@@ -64,7 +235,7 @@ func TestHasConflictingNodeSelectors(t *testing.T) {
 		dynakube.Spec.ClassicFullStack.NodeSelector = map[string]string{
 			"label1": "value2",
 		}
-		assert.False(t, hasConflictingNodeSelectors(dynakube))
+		assert.False(t, hasConflictingConfiguration(dynakube))
 
 		dynakube.Spec.InfraMonitoring.NodeSelector = map[string]string{
 			"label1": "value2",
@@ -72,7 +243,7 @@ func TestHasConflictingNodeSelectors(t *testing.T) {
 		dynakube.Spec.ClassicFullStack.NodeSelector = map[string]string{
 			"label1": "value1",
 		}
-		assert.False(t, hasConflictingNodeSelectors(dynakube))
+		assert.False(t, hasConflictingConfiguration(dynakube))
 	})
 
 	t.Run(`conflicting node selectors`, func(t *testing.T) {
@@ -84,7 +255,7 @@ func TestHasConflictingNodeSelectors(t *testing.T) {
 		dynakube.Spec.ClassicFullStack.NodeSelector = map[string]string{
 			"label1": "value1",
 		}
-		assert.True(t, hasConflictingNodeSelectors(dynakube))
+		assert.True(t, hasConflictingConfiguration(dynakube))
 
 		dynakube.Spec.InfraMonitoring.NodeSelector = map[string]string{
 			// Empty map matches everything
@@ -92,7 +263,7 @@ func TestHasConflictingNodeSelectors(t *testing.T) {
 		dynakube.Spec.ClassicFullStack.NodeSelector = map[string]string{
 			"label1": "value1",
 		}
-		assert.True(t, hasConflictingNodeSelectors(dynakube))
+		assert.True(t, hasConflictingConfiguration(dynakube))
 
 		dynakube.Spec.InfraMonitoring.NodeSelector = map[string]string{
 			"label1": "value1",
@@ -100,7 +271,7 @@ func TestHasConflictingNodeSelectors(t *testing.T) {
 		dynakube.Spec.ClassicFullStack.NodeSelector = map[string]string{
 			// Empty map matches everything
 		}
-		assert.True(t, hasConflictingNodeSelectors(dynakube))
+		assert.True(t, hasConflictingConfiguration(dynakube))
 
 		dynakube.Spec.InfraMonitoring.NodeSelector = map[string]string{
 			// Empty map matches everything
@@ -108,8 +279,7 @@ func TestHasConflictingNodeSelectors(t *testing.T) {
 		dynakube.Spec.ClassicFullStack.NodeSelector = map[string]string{
 			// Empty map matches everything
 		}
-		assert.True(t, hasConflictingNodeSelectors(dynakube))
-
+		assert.True(t, hasConflictingConfiguration(dynakube))
 	})
 }
 
