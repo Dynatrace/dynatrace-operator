@@ -140,6 +140,21 @@ func TestNodeReconciler_NodeHasTaint(t *testing.T) {
 	assert.True(t, node.LastMarkedForTermination.Add(time.Minute).After(now))
 }
 
+func Test_RemoveNode_ServerError(t *testing.T) {
+	fakeClient := createDefaultFakeClient()
+
+	dtClient := &dtclient.MockDynatraceClient{}
+	dtClient.On("GetEntityIDForIP", mock.Anything).Return("", ErrNotFound)
+
+	ctrl := createDefaultReconciler(fakeClient, dtClient)
+
+	err := ctrl.reconcileAll()
+	require.NoError(t, err)
+
+	err = ctrl.onDeletion("node1")
+	require.Error(t, err)
+}
+
 func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDynatraceClient) *ReconcileNodes {
 	return &ReconcileNodes{
 		namespace:    testNamespace,
@@ -178,6 +193,12 @@ func createDefaultFakeClient() client.Client {
 				OneAgent: dynatracev1alpha1.OneAgentStatus{
 					Instances: map[string]dynatracev1alpha1.OneAgentInstance{"node2": {IPAddress: "5.6.7.8"}},
 				},
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "oneagent1",
+				Namespace: testNamespace,
 			},
 		})
 }
