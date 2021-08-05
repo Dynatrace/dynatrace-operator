@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+bases:
+  - ../common/data-ingest
+  - ../common/kubernetes-monitoring
+  - ../common/oneagent
+  - ../common/operator
+  - ../common/routing
+  - ../common/csi
+  - ../common/webhook
+  - ../crd/default
