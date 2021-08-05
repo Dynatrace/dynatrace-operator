@@ -17,10 +17,10 @@ limitations under the License.
 package main
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/certificates/validation"
-	"github.com/Dynatrace/dynatrace-operator/certificates/webhook"
 	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/certificates/validation"
+	"github.com/Dynatrace/dynatrace-operator/certificates/webhook"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/namespace"
 	"github.com/Dynatrace/dynatrace-operator/controllers/nodes"

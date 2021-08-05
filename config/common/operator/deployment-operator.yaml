@@ -25,7 +25,7 @@ spec:
         - name: dynatrace-operator
           args:
             - operator
-          image: quay.io/dynatrace/dynatrace-operator:snapshot
+          image: quay.io/dynatrace/dynatrace-operator:snapshot-validating-webhook
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE

@@ -158,7 +158,6 @@ webhooks:
       - operations:
           - CREATE
           - UPDATE
-          - DELETE
         apiGroups:
           - dynatrace.com
         apiVersions:

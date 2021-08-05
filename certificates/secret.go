@@ -3,15 +3,16 @@ package certificates
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"time"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	admissionv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 const (
@@ -130,6 +131,9 @@ func (r *CertificateReconciler) updateConfiguration(webhookConfiguration *admiss
 	secret, err := r.getSecret()
 	if err != nil {
 		return errors.WithStack(err)
+	}
+	if secret == nil {
+		return errors.Errorf("secret '%s' does not exist", r.buildSecretName())
 	}
 
 	data, hasData := secret.Data[certificate]

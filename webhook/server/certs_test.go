@@ -2,12 +2,12 @@ package server
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/certificates"
 	"os"
 	"path"
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/certificates"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"

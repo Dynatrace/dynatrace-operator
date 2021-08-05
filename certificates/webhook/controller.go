@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/certificates"
 	"reflect"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/certificates"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"

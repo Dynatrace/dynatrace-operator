@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/Dynatrace/dynatrace-operator/webhook/server"
@@ -10,7 +12,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"time"
 )
 
 func startValidationServer(ns string, cfg *rest.Config) (manager.Manager, error) {
