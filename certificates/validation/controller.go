@@ -55,7 +55,7 @@ func (r *webhookReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	}
 
 	if len(validationWebhook.Webhooks) <= 0 {
-		return reconcile.Result{}, errors.New("validation webhook has no client config")
+		return reconcile.Result{}, errors.New("validation webhook configuration has no registered webhooks")
 	}
 
 	err = certificates.NewCertificateReconciler(ctx, r.clt, validationWebhookName, request.Namespace, r.logger).
