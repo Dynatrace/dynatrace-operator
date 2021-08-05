@@ -1,4 +1,2 @@
 resources:
-  - role-routing.yaml
-  - rolebinding-routing.yaml
   - serviceaccount-routing.yaml

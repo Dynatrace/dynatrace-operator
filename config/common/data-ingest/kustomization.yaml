@@ -1,4 +1,2 @@
 resources:
-  - role-data-ingest.yaml
-  - rolebinding-data-ingest.yaml
   - serviceaccount-data-ingest.yaml
