@@ -179,8 +179,8 @@ func prepareDriverContainer(operatorImage string) v1.Container {
 	return v1.Container{
 		Name:    "driver",
 		Image:   operatorImage,
-		Command: []string{"csi-driver"},
 		Args: []string{
+			"csi-driver",
 			"--endpoint=unix://csi/csi.sock",
 			"--node-id=$(KUBE_NODE_NAME)",
 			"--health-probe-bind-address=:10080",
