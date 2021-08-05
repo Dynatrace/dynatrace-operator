@@ -197,7 +197,7 @@ func createDefaultFakeClient() client.Client {
 		},
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "oneagent1",
+				Name:      "oneagent1",
 				Namespace: testNamespace,
 			},
 		})
