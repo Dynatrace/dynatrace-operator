@@ -189,7 +189,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
 	)
 
-	bindCfg, err := newBindConfig(ctx, svr, volumeCfg, svr.db)
+	bindCfg, err := newBindConfig(ctx, svr, volumeCfg)
 	if err != nil {
 		return nil, err
 	}

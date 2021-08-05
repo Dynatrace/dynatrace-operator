@@ -27,12 +27,13 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		clt := fake.NewClient()
 		srv := &CSIDriverServer{
 			client: clt,
+			db:     metadata.FakeMemoryDB(),
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, metadata.FakeMemoryDB())
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg)
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -42,12 +43,13 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}})
 		srv := &CSIDriverServer{
 			client: clt,
+			db:     metadata.FakeMemoryDB(),
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, metadata.FakeMemoryDB())
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg)
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -61,12 +63,13 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		)
 		srv := &CSIDriverServer{
 			client: clt,
+			db:     metadata.FakeMemoryDB(),
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, metadata.FakeMemoryDB())
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg)
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -78,12 +81,13 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			client: clt,
 			opts:   dtcsi.CSIOptions{RootDir: "/"},
 			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
+			db:     metadata.FakeMemoryDB(),
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, metadata.FakeMemoryDB())
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg)
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -94,12 +98,13 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		srv := &CSIDriverServer{
 			client: clt,
 			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
+			db:     metadata.FakeMemoryDB(),
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, metadata.FakeMemoryDB())
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg)
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -125,7 +130,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 
 		srv.db.InsertTenant(metadata.NewTenant(tenantUuid, agentVersion, dkName))
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.db)
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, bindCfg)
