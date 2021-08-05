@@ -98,6 +98,10 @@ deploy-ocp3.11: manifests-ocp311 kustomize
 deploy-local:
 	./build/deploy_local.sh
 
+deploy-local-easy: export TAG=snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
+deploy-local-easy:
+	./build/deploy_local.sh
+
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/default/bases

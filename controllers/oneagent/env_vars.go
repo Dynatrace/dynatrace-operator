@@ -65,11 +65,12 @@ func getReservedEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alp
 	}
 
 	if !instance.Status.OneAgent.UseImmutableImage {
-		reserved = append(reserved, getImmutableImageEnvVars(instance)...)
+		reserved = append(reserved, getLightWeightImageEnvVars(instance)...)
 
-		if p := instance.Spec.Proxy; p != nil && (p.Value != "" || p.ValueFrom != "") {
-			reserved = append(reserved, getProxyEnvVar(instance, p))
-		}
+	}
+
+	if p := instance.Spec.Proxy; p != nil && (p.Value != "" || p.ValueFrom != "") {
+		reserved = append(reserved, getProxyEnvVar(instance, p))
 	}
 
 	if fs.ReadOnly.Enabled {
@@ -113,7 +114,7 @@ func getProxyEnvVar(instance *dynatracev1alpha1.DynaKube, proxy *dynatracev1alph
 	}
 }
 
-func getImmutableImageEnvVars(instance *dynatracev1alpha1.DynaKube) []reservedEnvVar {
+func getLightWeightImageEnvVars(instance *dynatracev1alpha1.DynaKube) []reservedEnvVar {
 	return []reservedEnvVar{{
 		Name: "ONEAGENT_INSTALLER_DOWNLOAD_TOKEN",
 		Default: func(ev *corev1.EnvVar) {

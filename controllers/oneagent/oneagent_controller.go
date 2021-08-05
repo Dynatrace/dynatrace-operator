@@ -339,10 +339,7 @@ func preparePodSpecInstaller(p *corev1.PodSpec, instance *dynatracev1alpha1.Dyna
 }
 
 func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *dynatracev1alpha1.DynaKube) error {
-	pullSecretName := instance.GetName() + "-pull-secret"
-	if instance.Spec.CustomPullSecret != "" {
-		pullSecretName = instance.Spec.CustomPullSecret
-	}
+	pullSecretName := instance.PullSecret()
 
 	p.ImagePullSecrets = append(p.ImagePullSecrets, corev1.LocalObjectReference{
 		Name: pullSecretName,

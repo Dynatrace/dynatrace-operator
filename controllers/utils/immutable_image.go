@@ -2,7 +2,6 @@ package utils
 
 import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -19,14 +18,6 @@ func SetUseImmutableImageStatus(instance *dynatracev1alpha1.DynaKube, fs *dynatr
 
 func BuildPullSecret(instance *dynatracev1alpha1.DynaKube) corev1.LocalObjectReference {
 	return corev1.LocalObjectReference{
-		Name: buildPullSecretName(instance),
+		Name: instance.PullSecret(),
 	}
-}
-
-func buildPullSecretName(instance *dynatracev1alpha1.DynaKube) string {
-	name := instance.Name + dtpullsecret.PullSecretSuffix
-	if instance.Spec.CustomPullSecret != "" {
-		name = instance.Spec.CustomPullSecret
-	}
-	return name
 }
