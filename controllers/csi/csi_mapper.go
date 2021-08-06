@@ -115,7 +115,6 @@ func (c *csiMapper) any() bool {
 	return len(c.configMap.Data) > 0
 }
 
-// loadOrCreateConfigMap loads existing ConfigMap or creates it if it doesn't exist
 func loadOrCreateConfigMap(kubernetesClient client.Client, namespace string) (*corev1.ConfigMap, error) {
 	configMap := &corev1.ConfigMap{}
 	// check for existing config map

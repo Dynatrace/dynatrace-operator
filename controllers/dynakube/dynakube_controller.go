@@ -44,7 +44,7 @@ func Add(mgr manager.Manager, _ string) error {
 	return NewReconciler(mgr).SetupWithManager(mgr)
 }
 
-// NewReconciler returns a new ReconcileActiveGate
+// NewReconciler returns a new ReconcileDynaKube
 func NewReconciler(mgr manager.Manager) *ReconcileDynaKube {
 	return &ReconcileDynaKube{
 		client:            mgr.GetClient(),
@@ -78,7 +78,7 @@ func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *run
 	}
 }
 
-// blank assignment to verify that ReconcileActiveGate implements reconcile.Reconciler
+// blank assignment to verify that ReconcileDynaKube implements reconcile.Reconciler
 var _ reconcile.Reconciler = &ReconcileDynaKube{}
 
 // ReconcileDynaKube reconciles a DynaKube object
