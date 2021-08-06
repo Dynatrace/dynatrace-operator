@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Dynatrace/dynatrace-operator/certificates/validation"
+	"github.com/Dynatrace/dynatrace-operator/controllers/certificates/validation"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"

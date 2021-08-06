@@ -19,8 +19,8 @@ package main
 import (
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/certificates/validation"
-	"github.com/Dynatrace/dynatrace-operator/certificates/webhook"
+	"github.com/Dynatrace/dynatrace-operator/controllers/certificates/validation"
+	"github.com/Dynatrace/dynatrace-operator/controllers/certificates/webhook"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/namespace"
 	"github.com/Dynatrace/dynatrace-operator/controllers/nodes"

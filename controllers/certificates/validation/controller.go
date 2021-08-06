@@ -4,7 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/certificates"
+	"github.com/Dynatrace/dynatrace-operator/controllers/certificates"
+	"github.com/Dynatrace/dynatrace-operator/eventfilter"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -31,7 +32,7 @@ type webhookReconciler struct {
 func Add(mgr manager.Manager, namespace string) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Deployment{}).
-		WithEventFilter(filterForValidationDeployment(namespace)).
+		WithEventFilter(eventfilter.ForObjectNameAndNamespace(validationWebhookName, namespace)).
 		Complete(newWebhookReconciler(mgr))
 }
 

@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/scheme"
-	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/Dynatrace/dynatrace-operator/webhook/server"
+	"github.com/Dynatrace/dynatrace-operator/webhook/validation"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
@@ -20,7 +20,7 @@ func startValidationServer(ns string, cfg *rest.Config) (manager.Manager, error)
 		return mgr, err
 	}
 
-	if err = webhook.AddDynakubeValidationWebhookToManager(mgr); err != nil {
+	if err = validation.AddDynakubeValidationWebhookToManager(mgr); err != nil {
 		return nil, err
 	}
 

@@ -4,7 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/certificates"
+	"github.com/Dynatrace/dynatrace-operator/controllers/certificates"
+	"github.com/Dynatrace/dynatrace-operator/eventfilter"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -25,7 +26,7 @@ const (
 func Add(mgr manager.Manager, ns string) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Deployment{}).
-		WithEventFilter(filterForMutatingDeployment(ns)).
+		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhookName, ns)).
 		Complete(newWebhookReconciler(mgr, ns))
 }
 
