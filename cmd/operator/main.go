@@ -33,7 +33,7 @@ var (
 )
 
 var subcmdCallbacks = map[string]func(ns string, cfg *rest.Config) (manager.Manager, error){
-	"csi-driver":     startCSIDriver,
+	"csi-driver":        startCSIDriver,
 	"operator":          startOperator,
 	"webhook-server":    startWebhookServer,
 	"validation-server": startValidationServer,
@@ -42,7 +42,6 @@ var subcmdCallbacks = map[string]func(ns string, cfg *rest.Config) (manager.Mana
 var errBadSubcmd = errors.New("subcommand must be operator, or webhook-server")
 
 func main() {
-
 	pflag.CommandLine.AddFlagSet(webhookServerFlags())
 	pflag.CommandLine.AddFlagSet(csiDriverFlags())
 	pflag.Parse()

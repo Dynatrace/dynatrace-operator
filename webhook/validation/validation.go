@@ -21,7 +21,7 @@ const (
 The DynaKubes specifications for infraMonitoring and classicFullStack are conflicting. 
 If both are enabled, the nodeSelectors of those specifications must not select the same nodes.
 This is due to the infraMonitoring and classicFullStack functionalities being incompatible.
-In general, it is advised to use infraMonitoring and codeModules instead of classicFullStack.
+In general, it is advised to use infraMonitoring together with codeModules instead of classicFullStack.
 `
 )
 

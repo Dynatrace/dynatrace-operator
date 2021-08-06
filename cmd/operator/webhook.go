@@ -19,9 +19,24 @@ package main
 import (
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/Dynatrace/dynatrace-operator/webhook/server"
+	"github.com/spf13/pflag"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
+
+var (
+	certsDir string
+	certFile string
+	keyFile  string
+)
+
+func webhookServerFlags() *pflag.FlagSet {
+	webhookServerFlagSet := pflag.NewFlagSet("webhook-server", pflag.ExitOnError)
+	webhookServerFlagSet.StringVar(&certsDir, "certs-dir", "/tmp/webhook/certs", "Directory to look certificates for.")
+	webhookServerFlagSet.StringVar(&certFile, "cert", "tls.crt", "File name for the public certificate.")
+	webhookServerFlagSet.StringVar(&keyFile, "cert-key", "tls.key", "File name for the private key.")
+	return webhookServerFlagSet
+}
 
 func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 	mgr, err := newManagerWithCertificates(ns, cfg)
