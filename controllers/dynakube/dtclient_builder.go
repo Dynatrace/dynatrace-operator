@@ -15,7 +15,7 @@ import (
 	"fmt"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -33,7 +33,7 @@ func BuildDynatraceClient(rtc client.Client, instance *dynatracev1alpha1.DynaKub
 	}
 	namespace := instance.GetNamespace()
 	spec := instance.Spec
-	tokens, err := utils.NewTokens(secret)
+	tokens, err := kubeobjects.NewTokens(secret)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -92,7 +92,7 @@ func (opts *options) appendProxySettings(rtc client.Client, spec *dynatracev1alp
 				return fmt.Errorf("failed to get proxy secret: %w", err)
 			}
 
-			proxyURL, err := utils.ExtractToken(proxySecret, Proxy)
+			proxyURL, err := kubeobjects.ExtractToken(proxySecret, Proxy)
 			if err != nil {
 				return fmt.Errorf("failed to extract proxy secret field: %w", err)
 			}

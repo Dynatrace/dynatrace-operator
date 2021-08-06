@@ -1,4 +1,4 @@
-package utils
+package kubeobjects
 
 import (
 	"testing"
@@ -12,6 +12,7 @@ const (
 	testValue            = "test-value"
 	testKey              = "test-key"
 	testValueAlternative = "test-alternative-value"
+	testName             = "test-name"
 )
 
 func TestNewTokens(t *testing.T) {

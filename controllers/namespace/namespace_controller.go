@@ -9,7 +9,8 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -32,7 +33,7 @@ var scriptTmpl = template.Must(template.New("initScript").Parse(scriptContent))
 
 func Add(mgr manager.Manager, ns string) error {
 	logger := log.Log.WithName("namespaces.controller")
-	apmExists, err := utils.CheckIfOneAgentAPMExists(mgr.GetConfig())
+	apmExists, err := kubeobjects.CheckIfOneAgentAPMExists(mgr.GetConfig())
 	if err != nil {
 		return err
 	}
@@ -136,7 +137,7 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 
 	// The default cache-based Client doesn't support cross-namespace queries, unless configured to do so in Manager
 	// Options. However, this is our only use-case for it, so using the non-cached Client instead.
-	err = utils.CreateOrUpdateSecretIfNotExists(r.client, r.apiReader, webhook.SecretConfigName, targetNS, data, corev1.SecretTypeOpaque, log)
+	err = kubeobjects.CreateOrUpdateSecretIfNotExists(r.client, r.apiReader, webhook.SecretConfigName, targetNS, data, corev1.SecretTypeOpaque, log)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
@@ -191,7 +192,7 @@ func newScript(ctx context.Context, c client.Client, dynaKube dynatracev1alpha1.
 
 	return &script{
 		DynaKube:   &dynaKube,
-		PaaSToken:  string(tkns.Data[utils.DynatracePaasToken]),
+		PaaSToken:  string(tkns.Data[dtclient.DynatracePaasToken]),
 		Proxy:      proxy,
 		TrustedCAs: trustedCAs,
 		ClusterID:  string(kubeSystemNS.UID),

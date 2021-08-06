@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -76,7 +75,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.Reco
 		return false, err
 	}
 
-	rec.Update(utils.SetUseImmutableImageStatus(r.instance, r.fullStack), 5*time.Minute, "UseImmutableImage changed")
+	rec.Update(setUseImmutableImageStatus(r.instance, r.fullStack), 5*time.Minute, "UseImmutableImage changed")
 
 	upd, err := r.reconcileRollout(ctx, rec)
 	if err != nil {
@@ -427,4 +426,15 @@ func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1alpha1.OneAge
 	}
 
 	return instanceStatuses, nil
+}
+
+// SetUseImmutableImageStatus updates the status' UseImmutableImage field to indicate whether the Operator should use
+// immutable images or not.
+func setUseImmutableImageStatus(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec) bool {
+	if fs.UseImmutableImage == instance.Status.OneAgent.UseImmutableImage {
+		return false
+	}
+
+	instance.Status.OneAgent.UseImmutableImage = fs.UseImmutableImage
+	return true
 }
