@@ -11,7 +11,6 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	v1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -27,24 +26,20 @@ func Add(mgr manager.Manager, ns string) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Deployment{}).
 		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhookName, ns)).
-		Complete(newWebhookReconciler(mgr, ns))
+		Complete(newWebhookReconciler(mgr))
 }
 
-func newWebhookReconciler(mgr manager.Manager, ns string) *ReconcileWebhookCertificates {
+func newWebhookReconciler(mgr manager.Manager) *ReconcileWebhookCertificates {
 	return &ReconcileWebhookCertificates{
-		client:    mgr.GetClient(),
-		scheme:    mgr.GetScheme(),
-		namespace: ns,
-		logger:    log.Log.WithName("operator.webhook-certificates"),
+		client: mgr.GetClient(),
+		logger: log.Log.WithName("operator.webhook-certificates"),
 	}
 }
 
 // ReconcileWebhookCertificates updates certificates secret for the webhooks
 type ReconcileWebhookCertificates struct {
-	client    client.Client
-	scheme    *runtime.Scheme
-	logger    logr.Logger
-	namespace string
+	client client.Client
+	logger logr.Logger
 }
 
 func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -65,8 +60,10 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 
 	err = certificates.NewCertificateReconciler(ctx, r.client, webhookName, request.Namespace, r.logger).
 		ReconcileCertificateSecretForWebhook(&mutatingWebhook.Webhooks[0].ClientConfig)
-	if err != nil {
-		return reconcile.Result{}, errors.WithStack(err)
+	if k8serrors.IsNotFound(errors.Cause(err)) {
+		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
 	}
 
 	if err = r.client.Update(ctx, &mutatingWebhook); err != nil {

@@ -61,8 +61,10 @@ func (r *webhookReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 	err = certificates.NewCertificateReconciler(ctx, r.clt, validationWebhookName, request.Namespace, r.logger).
 		ReconcileCertificateSecretForWebhook(&validationWebhook.Webhooks[0].ClientConfig)
-	if err != nil {
-		return reconcile.Result{}, errors.WithStack(err)
+	if k8serrors.IsNotFound(errors.Cause(err)) {
+		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
 	}
 
 	if err = r.clt.Update(ctx, &validationWebhook); err != nil {

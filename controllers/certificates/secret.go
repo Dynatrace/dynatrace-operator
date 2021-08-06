@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -133,7 +134,12 @@ func (r *CertificateReconciler) updateConfiguration(webhookConfiguration *admiss
 		return errors.WithStack(err)
 	}
 	if secret == nil {
-		return errors.Errorf("secret '%s' does not exist", r.buildSecretName())
+		// Sometimes the secret cannot be found immediately after creating it
+		// In that case, return "not found" and try again
+		return k8serrors.NewNotFound(schema.GroupResource{
+			Group:    (&corev1.Secret{}).GroupVersionKind().Group,
+			Resource: (&corev1.Secret{}).TypeMeta.Kind,
+		}, r.buildSecretName())
 	}
 
 	data, hasData := secret.Data[certificate]
