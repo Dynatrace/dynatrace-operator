@@ -128,7 +128,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	if err = r.updateAgent(dk, tenant, dtc, rlog); err != nil {
 		return reconcile.Result{}, err
 	}
-	if tenantChanged(oldTenant, *tenant) {
+	if hasTenantChanged(oldTenant, *tenant) {
 		var err error
 		// New tenants doesn't have these fields set in the beginning
 		if oldTenant.Dynakube == "" && oldTenant.LatestVersion == "" {
@@ -146,7 +146,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 }
 
-func tenantChanged(old, new metadata.Tenant) bool {
+func hasTenantChanged(old, new metadata.Tenant) bool {
 	return old != new
 }
 

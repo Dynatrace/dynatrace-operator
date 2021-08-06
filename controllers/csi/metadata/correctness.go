@@ -12,18 +12,18 @@ import (
 
 // Checks if the entries in the storage are actually valid
 // Removes not valid entries
-func CheckStorageCorrectness(cl client.Client, access Access, log logr.Logger) error {
-	if err := checkVolumesCorrectness(cl, access, log); err != nil {
+func CorrectMetadata(cl client.Client, access Access, log logr.Logger) error {
+	if err := correctVolumes(cl, access, log); err != nil {
 		return err
 	}
-	if err := checkTenantsCorrectness(cl, access, log); err != nil {
+	if err := correctTenants(cl, access, log); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Removes volume entries if their pod is no longer exists
-func checkVolumesCorrectness(cl client.Client, access Access, log logr.Logger) error {
+func correctVolumes(cl client.Client, access Access, log logr.Logger) error {
 	podNames, err := access.GetPodNames()
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func checkVolumesCorrectness(cl client.Client, access Access, log logr.Logger) e
 }
 
 // Removes tenant entries if their dynakube no longer exists
-func checkTenantsCorrectness(cl client.Client, access Access, log logr.Logger) error {
+func correctTenants(cl client.Client, access Access, log logr.Logger) error {
 	dynakubes, err := access.GetDynakubes()
 	if err != nil {
 		return err

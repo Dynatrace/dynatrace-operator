@@ -16,7 +16,7 @@ func TestCheckStorageCorrectness_FreshDB(t *testing.T) {
 	db := emptyMemoryDB()
 	log := logger.NewDTLogger()
 
-	err := CheckStorageCorrectness(nil, db, log)
+	err := CorrectMetadata(nil, db, log)
 
 	assert.Error(t, err)
 }
@@ -26,7 +26,7 @@ func TestCheckStorageCorrectness_EmptyDB(t *testing.T) {
 	db := FakeMemoryDB()
 	log := logger.NewDTLogger()
 
-	err := CheckStorageCorrectness(nil, db, log)
+	err := CorrectMetadata(nil, db, log)
 
 	assert.NoError(t, err)
 }
@@ -40,7 +40,7 @@ func TestCheckStorageCorrectness_DoNothing(t *testing.T) {
 		&dynatracev1alpha1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testTenant1.Dynakube}},
 	)
 
-	err := CheckStorageCorrectness(client, db, log)
+	err := CorrectMetadata(client, db, log)
 
 	assert.NoError(t, err)
 	vol, err := db.GetVolume(testVolume1.VolumeID)
@@ -62,7 +62,7 @@ func TestCheckStorageCorrectness_PURGE(t *testing.T) {
 		&dynatracev1alpha1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testTenant1.Dynakube}},
 	)
 
-	err := CheckStorageCorrectness(client, db, log)
+	err := CorrectMetadata(client, db, log)
 	assert.NoError(t, err)
 
 	vol, err := db.GetVolume(testVolume1.VolumeID)

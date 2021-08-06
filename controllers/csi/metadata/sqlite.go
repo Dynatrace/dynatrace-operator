@@ -103,7 +103,6 @@ func NewAccess(path string) (Access, error) {
 	return &a, nil
 }
 
-// Connects to the database via the provided driver and path to the database.
 func (a *SqliteAccess) connect(driver, path string) error {
 	db, err := sql.Open(driver, path)
 	if err != nil {
@@ -168,7 +167,6 @@ func (a *SqliteAccess) DeleteTenant(tenantUUID string) error {
 	return err
 }
 
-// Gets a Tenant from the database, return (nil, nil) if the tenant is not in the database.
 func (a *SqliteAccess) GetTenant(tenantUUID string) (*Tenant, error) {
 	var latestVersion string
 	var dynakube string
@@ -179,8 +177,6 @@ func (a *SqliteAccess) GetTenant(tenantUUID string) (*Tenant, error) {
 	return NewTenant(tenantUUID, latestVersion, dynakube), err
 }
 
-// Gets a Tenant from the database via its dynakube, return (nil, nil) if the tenant is not in the database.
-// Needed during NodePublishVolume.
 func (a *SqliteAccess) GetTenantViaDynakube(dynakubeName string) (*Tenant, error) {
 	var tenantUUID string
 	var latestVersion string
@@ -204,7 +200,6 @@ func (a *SqliteAccess) InsertVolume(volume *Volume) error {
 	return err
 }
 
-// Gets a Volume from the database, return (nil, nil) if the volume is not in the database.
 func (a *SqliteAccess) GetVolume(volumeID string) (*Volume, error) {
 	var PodName string
 	var version string
@@ -224,7 +219,9 @@ func (a *SqliteAccess) DeleteVolume(volumeID string) error {
 	return err
 }
 
-// Gets all unique versions present in the `volumes` database in map.
+// Gets all UNIQUE versions present in the `volumes` database in map.
+// Map is used to make sure we don't return the same version multiple time,
+// it's also easier to check if a version is in it or not. (a Set in style of Golang)
 func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, error) {
 	rows, err := a.conn.Query(getUsedVersionsStatement, tenantUUID)
 	if err != nil {
@@ -265,7 +262,7 @@ func (a *SqliteAccess) GetPodNames() (map[string]string, error) {
 	return podNames, nil
 }
 
-// Gets all PodNames present in the `volumes` database in map with their corresponding volumeIDs.
+// Gets all Dynakubes present in the `tenants` database in map with their corresponding tenantUUIDs.
 func (a *SqliteAccess) GetDynakubes() (map[string]string, error) {
 	rows, err := a.conn.Query(getDynakubesStatement)
 	if err != nil {
