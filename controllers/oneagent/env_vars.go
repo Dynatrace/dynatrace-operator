@@ -16,7 +16,7 @@ type reservedEnvVar struct {
 }
 
 func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, feature string, clusterID string) []corev1.EnvVar {
-	reserved := getReservedEnvVars(instance, fs, clusterID, feature)
+	reserved := getReservedEnvVars(instance, clusterID, feature)
 	reservedMap := envVarsToMap(reserved)
 
 	// Split defined environment variables between those reserved and the rest
@@ -57,11 +57,15 @@ func envVarsToMap(reserved []reservedEnvVar) map[string]*reservedEnvVar {
 	return reservedMap
 }
 
-func getReservedEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, clusterID string, feature string) []reservedEnvVar {
+func getReservedEnvVars(instance *dynatracev1alpha1.DynaKube, clusterID string, feature string) []reservedEnvVar {
 	reserved := getClusterEnvVars(clusterID)
 
 	if feature == InframonFeature {
 		reserved = append(reserved, getInfraMonitoringEnvVar())
+
+		if instance.Spec.InfraMonitoring.ReadOnly.Enabled {
+			reserved = append(reserved, getReadOnlyEnvVars()...)
+		}
 	}
 
 	if !instance.Status.OneAgent.UseImmutableImage {
@@ -71,10 +75,6 @@ func getReservedEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alp
 
 	if p := instance.Spec.Proxy; p != nil && (p.Value != "" || p.ValueFrom != "") {
 		reserved = append(reserved, getProxyEnvVar(instance, p))
-	}
-
-	if fs.ReadOnly.Enabled {
-		reserved = append(reserved, getReadOnlyEnvVars()...)
 	}
 	return reserved
 }

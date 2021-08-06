@@ -257,7 +257,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 		dnsPolicy = corev1.DNSClusterFirstWithHostNet
 	}
 
-	secCtx := prepareSecurityContext(unprivileged, fs)
+	secCtx := prepareSecurityContext(unprivileged)
 
 	p = corev1.PodSpec{
 		Containers: []corev1.Container{{

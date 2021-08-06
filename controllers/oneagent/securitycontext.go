@@ -13,6 +13,9 @@ const (
 
 	oneagentReadOnlyMode = "ONEAGENT_READ_ONLY_MODE"
 	enableVolumeStorage  = "ONEAGENT_ENABLE_VOLUME_STORAGE"
+
+	defaultUserId  = 1001
+	defaultGroupId = 1001
 )
 
 func prepareSecurityContext(unprivileged bool, fs *dynatracev1alpha1.FullStackSpec) *corev1.SecurityContext {
@@ -25,15 +28,15 @@ func prepareSecurityContext(unprivileged bool, fs *dynatracev1alpha1.FullStackSp
 	}
 
 	if fs.ReadOnly.Enabled {
-		secCtx = setReadOnlySecurityContextOptions(*secCtx, fs)
+		secCtx = setReadOnlySecurityContextOptions(*secCtx)
 	}
 
 	return secCtx
 }
 
-func setReadOnlySecurityContextOptions(secCtx corev1.SecurityContext, fs *dynatracev1alpha1.FullStackSpec) *corev1.SecurityContext {
-	secCtx.RunAsUser = fs.ReadOnly.GetUserId()
-	secCtx.RunAsGroup = fs.ReadOnly.GetGroupId()
+func setReadOnlySecurityContextOptions(secCtx corev1.SecurityContext) *corev1.SecurityContext {
+	secCtx.RunAsUser = int64Pointer(defaultUserId)
+	secCtx.RunAsGroup = int64Pointer(defaultGroupId)
 	return &secCtx
 }
 
@@ -71,5 +74,9 @@ func getUnprivilegedSecurityContext() *corev1.SecurityContext {
 }
 
 func boolPointer(value bool) *bool {
+	return &value
+}
+
+func int64Pointer(value int64) *int64 {
 	return &value
 }

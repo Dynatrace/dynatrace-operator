@@ -58,7 +58,7 @@ type DynaKubeSpec struct {
 	CodeModules CodeModulesSpec `json:"codeModules,omitempty"`
 
 	// Configuration for Infra Monitoring
-	InfraMonitoring FullStackSpec `json:"infraMonitoring,omitempty"`
+	InfraMonitoring InfraMonitoringSpec `json:"infraMonitoring,omitempty"`
 
 	// Configuration for ClassicFullStack Monitoring
 	ClassicFullStack FullStackSpec `json:"classicFullStack,omitempty"`
@@ -117,20 +117,6 @@ type ReadOnlySpec struct {
 	// Defaults to an empty-dir
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Installation volume",order=30,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Volume"}
 	InstallationVolume *corev1.VolumeSource `json:"installationVolume,omitempty"`
-
-	// Used if read-only filesystem support is enabled
-	// Controls with which user id the OneAgent will be installed
-	// Defaults to 1001
-	// +kubebuilder:validation:Minimum=0
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="UserId",order=30,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:number"}
-	UserId *int64 `json:"userId,omitempty"`
-
-	// Used if read-only filesystem support is enabled
-	// Controls with which group id the OneAgent will be installed
-	// Defaults to 1001
-	// +kubebuilder:validation:Minimum=0
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="GroupId",order=31,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:number"}
-	GroupId *int64 `json:"groupId,omitempty"`
 }
 
 type CodeModulesSpec struct {
@@ -200,7 +186,12 @@ type FullStackSpec struct {
 	// Defines if you want to use the immutable image or the installer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Use immutable image",order=28,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
+}
 
+type InfraMonitoringSpec struct {
+	FullStackSpec
+
+	// Offers options to enable read-only filesystem support and configuration options for it
 	ReadOnly ReadOnlySpec `json:"readOnly,omitempty"`
 }
 
