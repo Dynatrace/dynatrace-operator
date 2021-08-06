@@ -1,60 +1,3 @@
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: dynatrace-validation
-  namespace: dynatrace
-  labels:
-    dynatrace.com/operator: dynakube
-    internal.dynatrace.com/component: validation
-rules:
-  - apiGroups:
-       - ""
-    resources:
-      - secrets
-    verbs:
-      - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: dynatrace-validation
-  namespace: dynatrace
-  labels:
-    dynatrace.com/operator: dynakube
-    internal.dynatrace.com/component: validation
-subjects:
-  - kind: ServiceAccount
-    name: dynatrace-validation
-    namespace: dynatrace
-roleRef:
-  kind: Role
-  name: dynatrace-validation
-  apiGroup: rbac.authorization.k8s.io
-
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: dynatrace-validation
-  namespace: dynatrace
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: dynatrace-validation
-  namespace: dynatrace
-  labels:
-    dynatrace.com/operator: dynakube
-    internal.dynatrace.com/component: validation
-spec:
-  selector:
-    internal.dynatrace.com/app: validation
-    internal.dynatrace.com/component: validation
-  ports:
-    - port: 443
-      protocol: TCP
-      targetPort: server-port
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -108,7 +51,7 @@ spec:
         - name: dynatrace-validation
           args:
             - validation-server
-          image: quay.io/dynatrace/dynatrace-operator:snapshot-validating-webhook
+          image: quay.io/dynatrace/dynatrace-operator:snapshot
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -139,30 +82,3 @@ spec:
               cpu: 600m
               memory: 256Mi
       serviceAccountName: dynatrace-validation
----
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingWebhookConfiguration
-metadata:
-  name: dynatrace-validation
-webhooks:
-  - admissionReviewVersions:
-      - v1
-      - v1beta1
-      - v1alpha1
-    clientConfig:
-      service:
-        name: dynatrace-validation
-        namespace: dynatrace
-        path: /validate
-    rules:
-      - operations:
-          - CREATE
-          - UPDATE
-        apiGroups:
-          - dynatrace.com
-        apiVersions:
-          - v1alpha1
-        resources:
-          - dynakubes
-    name: validation.dynatrace.com
-    sideEffects: None
