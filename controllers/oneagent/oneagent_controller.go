@@ -10,6 +10,7 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
@@ -69,7 +70,7 @@ type ReconcileOneAgent struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconciliation) (bool, error) {
+func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.Reconciliation) (bool, error) {
 	r.logger.Info("Reconciling OneAgent")
 	if err := validate(r.instance); err != nil {
 		return false, err
@@ -112,7 +113,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 	return upd, nil
 }
 
-func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Reconciliation) (bool, error) {
+func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *controllers.Reconciliation) (bool, error) {
 	updateCR := false
 
 	// Define a new DaemonSet object
@@ -152,7 +153,7 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Rec
 	return updateCR, nil
 }
 
-func (r *ReconcileOneAgent) getDesiredDaemonSet(rec *utils.Reconciliation) (*appsv1.DaemonSet, error) {
+func (r *ReconcileOneAgent) getDesiredDaemonSet(rec *controllers.Reconciliation) (*appsv1.DaemonSet, error) {
 	kubeSysUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
 		return nil, err

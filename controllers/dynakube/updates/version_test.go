@@ -23,9 +23,9 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -60,7 +60,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 	fakeClient := fake.NewClient()
 
 	now := metav1.Now()
-	rec := &utils.Reconciliation{Instance: &dk, Log: logger.NewDTLogger(), Now: now}
+	rec := &controllers.Reconciliation{Instance: &dk, Log: logger.NewDTLogger(), Now: now}
 
 	errVerProvider := func(img string, dockerConfig *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
 		return dtversion.ImageVersion{}, errors.New("Not implemented")
@@ -102,7 +102,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 }
 
 // Adding *testing.T parameter to prevent usage in production code
-func createTestPullSecret(_ *testing.T, clt client.Client, rec *utils.Reconciliation, data []byte) error {
+func createTestPullSecret(_ *testing.T, clt client.Client, rec *controllers.Reconciliation, data []byte) error {
 	return clt.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: rec.Instance.Namespace,

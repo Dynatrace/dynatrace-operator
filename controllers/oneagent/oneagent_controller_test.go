@@ -10,6 +10,7 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
@@ -79,7 +80,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		fullStack: &dynakube.Spec.ClassicFullStack,
 	}
 
-	rec := utils.Reconciliation{Log: consoleLogger, Instance: dynakube}
+	rec := controllers.Reconciliation{Log: consoleLogger, Instance: dynakube}
 	_, err := reconciler.Reconcile(context.TODO(), &rec)
 	assert.NoError(t, err)
 
@@ -170,7 +171,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Spec.Tokens = ""
 		dk.Status.Tokens = ""
-		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
+		rec := controllers.Reconciliation{Log: consoleLogger, Instance: dk}
 
 		// act
 		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
@@ -185,7 +186,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Spec.Tokens = ""
 		dk.Status.Tokens = "not the actual name"
-		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
+		rec := controllers.Reconciliation{Log: consoleLogger, Instance: dk}
 
 		// act
 		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
@@ -216,7 +217,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Status.Tokens = dk.Tokens()
 		dk.Spec.Tokens = customTokenName
-		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
+		rec := controllers.Reconciliation{Log: consoleLogger, Instance: dk}
 
 		// act
 		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
@@ -280,7 +281,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
 
-		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
+		rec := controllers.Reconciliation{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
 		err := reconciler.client.Create(context.TODO(), pod)
 
 		assert.NoError(t, err)
@@ -311,7 +312,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
 
-		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
+		rec := controllers.Reconciliation{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
 		err := reconciler.client.Create(context.TODO(), pod)
 
 		assert.NoError(t, err)

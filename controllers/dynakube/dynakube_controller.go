@@ -7,6 +7,7 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
@@ -15,7 +16,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/updates"
 	"github.com/Dynatrace/dynatrace-operator/controllers/istio"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -113,7 +113,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, err
 	}
 
-	rec := utils.NewReconciliation(reqLogger, instance)
+	rec := controllers.NewReconciliation(reqLogger, instance)
 	r.reconcileDynaKube(ctx, rec)
 
 	if rec.Err != nil {
@@ -141,7 +141,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	return reconcile.Result{RequeueAfter: rec.RequeueAfter}, nil
 }
 
-func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Reconciliation) {
+func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *controllers.Reconciliation) {
 	dtcReconciler := DynatraceClientReconciler{
 		Client:              r.client,
 		DynatraceClientFunc: r.dtcBuildFunc,
@@ -232,7 +232,7 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 	return nil
 }
 
-func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconciliation) bool {
+func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *controllers.Reconciliation) bool {
 	var caps = []capability.Capability{
 		capability.NewKubeMonCapability(&rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
 		capability.NewRoutingCapability(&rec.Instance.Spec.RoutingSpec.CapabilityProperties),
