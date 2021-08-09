@@ -51,10 +51,6 @@ spec:
               activeGate:
                 description: General configuration about ActiveGate instances
                 properties:
-                  autoUpdate:
-                    description: Disable automatic restarts of OneAgent pods in case
-                      a new version is available
-                    type: boolean
                   image:
                     description: 'Optional: the ActiveGate container image. Defaults
                       to the latest ActiveGate image provided by the Docker Registry
@@ -1825,11 +1821,6 @@ spec:
                     description: 'Optional: Runs the OneAgent Pods as unprivileged
                       (Early Adopter)'
                     type: boolean
-                  waitReadySeconds:
-                    description: 'Optional: Defines the time to wait until OneAgent
-                      pod is ready after update - default 300 sec'
-                    minimum: 0
-                    type: integer
                 type: object
               codeModules:
                 description: Configuration for CodeModules Monitoring
@@ -5316,11 +5307,6 @@ spec:
                     description: 'Optional: Runs the OneAgent Pods as unprivileged
                       (Early Adopter)'
                     type: boolean
-                  waitReadySeconds:
-                    description: 'Optional: Defines the time to wait until OneAgent
-                      pod is ready after update - default 300 sec'
-                    minimum: 0
-                    type: integer
                 type: object
               kubernetesMonitoring:
                 description: ' Configuration for Kubernetes Monitoring'
