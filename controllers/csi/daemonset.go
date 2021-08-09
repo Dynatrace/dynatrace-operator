@@ -2,7 +2,6 @@ package dtcsi
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
@@ -79,7 +78,7 @@ func (r *Reconciler) getOperatorImage() (string, error) {
 	}
 
 	if operatorPod.Spec.Containers == nil || len(operatorPod.Spec.Containers) < 1 {
-		return "", fmt.Errorf("invalid operator pod spec")
+		return "", errors.New("invalid operator pod spec")
 	}
 
 	return operatorPod.Spec.Containers[0].Image, nil
@@ -98,20 +97,10 @@ func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace, saName string) (
 }
 
 func prepareDaemonSet(operatorImage, operatorNamespace, saName string) *appsv1.DaemonSet {
-	metadata := prepareMetadata(operatorNamespace)
 	labels := prepareDaemonSetLabels()
-	driver := prepareDriverContainer(operatorImage)
-	registrar := prepareRegistrarContainer(operatorImage)
-	livenessprobe := preparelivenessProbeContainer(operatorImage)
-	volumes := prepareVolumes()
-
-	serviceAccountName := DefaultServiceAccountName
-	if saName != "" {
-		serviceAccountName = saName
-	}
 
 	return &appsv1.DaemonSet{
-		ObjectMeta: metadata,
+		ObjectMeta: prepareMetadata(operatorNamespace),
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
@@ -125,12 +114,12 @@ func prepareDaemonSet(operatorImage, operatorNamespace, saName string) *appsv1.D
 				},
 				Spec: v1.PodSpec{
 					Containers: []v1.Container{
-						driver,
-						registrar,
-						livenessprobe,
+						prepareDriverContainer(operatorImage),
+						prepareRegistrarContainer(operatorImage),
+						preparelivenessProbeContainer(operatorImage),
 					},
-					ServiceAccountName: serviceAccountName,
-					Volumes:            volumes,
+					ServiceAccountName: prepareServiceAccount(saName),
+					Volumes:            prepareVolumes(),
 				},
 			},
 		},
@@ -330,6 +319,14 @@ func preparelivenessProbeContainer(operatorImage string) v1.Container {
 			},
 		},
 	}
+}
+
+func prepareServiceAccount(saName string) string {
+	serviceAccountName := DefaultServiceAccountName
+	if saName != "" {
+		serviceAccountName = saName
+	}
+	return serviceAccountName
 }
 
 func prepareVolumes() []v1.Volume {

@@ -124,7 +124,6 @@ func (r *ReconcileOneAgent) reconcileRollout(rec *utils.Reconciliation) (bool, e
 		return false, err
 	}
 
-	// Check if this DaemonSet already exists
 	updateCR, err = kubeobjects.CreateOrUpdateDaemonSet(r.client, r.logger, dsDesired)
 	if err != nil {
 		return updateCR, err

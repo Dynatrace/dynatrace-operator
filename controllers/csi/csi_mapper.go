@@ -38,18 +38,10 @@ func ConfigureCSIDriver(
 		configMap: configMap,
 	}
 	if rec.Instance.Spec.CodeModules.Enabled {
-		if !csiMapper.any() {
-			// enable csi driver, if first Dynakube with CodeModules enabled
-			log.Info("enabling csi driver")
-			upd, err := NewReconciler(client, scheme, rec.Log, rec.Instance, operatorPodName, operatorNamespace).Reconcile()
+		if !csiMapper.hasActiveCSIDrivers() {
+			err := enableCSIDriver(client, scheme, operatorPodName, operatorNamespace, rec, updateInterval, csiMapper)
 			if err != nil {
 				return err
-			}
-			if err = csiMapper.add(rec.Instance.Name); err != nil {
-				return err
-			}
-			if rec.Update(upd, updateInterval, "CSI driver reconciled") {
-				return nil
 			}
 		}
 		if err := csiMapper.add(rec.Instance.Name); err != nil {
@@ -59,17 +51,9 @@ func ConfigureCSIDriver(
 		if err := csiMapper.remove(rec.Instance.Name); err != nil {
 			return err
 		}
-		if !csiMapper.any() {
-			log.Info("ensuring csi driver is disabled")
-			// disable csi driver, no Dynakubes with CodeModules enabled exist any more
-			// ensures csi driver is disabled, when additional CodeModules are disabled
-			ds := appsv1.DaemonSet{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      DaemonSetName,
-					Namespace: rec.Instance.Namespace,
-				},
-			}
-			if err := csiMapper.ensureDeleted(&ds); rec.Error(err) {
+		if !csiMapper.hasActiveCSIDrivers() {
+			err = disableCSIDriver(rec, csiMapper)
+			if err != nil {
 				return err
 			}
 		}
@@ -77,8 +61,42 @@ func ConfigureCSIDriver(
 	return nil
 }
 
+// disableCSIDriver disables csi driver by removing its daemon set.
+// ensures csi driver is disabled, when additional CodeModules are disabled.
+func disableCSIDriver(rec *utils.Reconciliation, csiMapper *csiMapper) error {
+	log.Info("ensuring csi driver is disabled")
+	ds := appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      DaemonSetName,
+			Namespace: rec.Instance.Namespace,
+		},
+	}
+	if err := csiMapper.ensureDeleted(&ds); rec.Error(err) {
+		return err
+	}
+	return nil
+}
+
+// enableCSIDriver tries to enable csi driver, by creating its daemon set.
+func enableCSIDriver(
+	client client.Client, scheme *runtime.Scheme, operatorPodName string, operatorNamespace string,
+	rec *utils.Reconciliation, updateInterval time.Duration, csiMapper *csiMapper) error {
+
+	log.Info("enabling csi driver")
+	upd, err := NewReconciler(client, scheme, rec.Log, rec.Instance, operatorPodName, operatorNamespace).Reconcile()
+	if err != nil {
+		return err
+	}
+	if err = csiMapper.add(rec.Instance.Name); err != nil {
+		return err
+	}
+	if rec.Update(upd, updateInterval, "CSI driver reconciled") {
+		return nil
+	}
+	return nil
+}
+
 // add name of Dynakube with CodeModules enabled to ConfigMap.
-// Should happen when Dynakube was created or setting was enabled.
 func (c *csiMapper) add(dynakube string) error {
 	if c.configMap.Data == nil {
 		c.configMap.Data = map[string]string{}
@@ -92,7 +110,6 @@ func (c *csiMapper) add(dynakube string) error {
 }
 
 // remove name of Dynakube from ConfigMap.
-// Should happen when Dynakube was deleted or setting was disabled.
 func (c *csiMapper) remove(dynakube string) error {
 	if c.configMap.Data == nil {
 		return nil
@@ -105,9 +122,9 @@ func (c *csiMapper) remove(dynakube string) error {
 	return nil
 }
 
-// any checks if ConfigMap contains entries.
-// If entries exist, there are Dynakubes with CodeModules enabled.
-func (c *csiMapper) any() bool {
+// hasActiveCSIDrivers checks if CSI drivers are currently active,
+// by checking if the ConfigMap has entries.
+func (c *csiMapper) hasActiveCSIDrivers() bool {
 	if c.configMap.Data == nil {
 		return false
 	}
@@ -115,10 +132,10 @@ func (c *csiMapper) any() bool {
 	return len(c.configMap.Data) > 0
 }
 
-func loadOrCreateConfigMap(kubernetesClient client.Client, namespace string) (*corev1.ConfigMap, error) {
+func loadOrCreateConfigMap(clt client.Client, namespace string) (*corev1.ConfigMap, error) {
 	configMap := &corev1.ConfigMap{}
 	// check for existing config map
-	err := kubernetesClient.Get(
+	err := clt.Get(
 		context.TODO(),
 		client.ObjectKey{Name: CsiMapperConfigMapName, Namespace: namespace},
 		configMap)
@@ -132,7 +149,7 @@ func loadOrCreateConfigMap(kubernetesClient client.Client, namespace string) (*c
 			},
 		}
 		log.Info("creating ConfigMap")
-		err = kubernetesClient.Create(context.TODO(), configMap)
+		err = clt.Create(context.TODO(), configMap)
 	}
 	return configMap, err
 }
