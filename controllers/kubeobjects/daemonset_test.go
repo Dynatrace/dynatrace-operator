@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	testname      = "test-name"
-	testNamespace = "test-namespace"
+	testDaemonSetName = "test-name"
+	testNamespace     = "test-namespace"
 )
 
 func Test_CreateOrUpdateDaemonSet_Create(t *testing.T) {
@@ -23,7 +23,7 @@ func Test_CreateOrUpdateDaemonSet_Create(t *testing.T) {
 	dsBefore := appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
-			Name:      testname,
+			Name:      testDaemonSetName,
 		},
 	}
 	fakeClient := fake.NewClient()
@@ -35,7 +35,7 @@ func Test_CreateOrUpdateDaemonSet_Create(t *testing.T) {
 	dsAfter := &appsv1.DaemonSet{}
 	err = fakeClient.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      testname,
+		Name:      testDaemonSetName,
 	}, dsAfter)
 	require.NoError(t, err)
 	assert.Equal(t, dsBefore.Name, dsBefore.Name)
@@ -47,7 +47,7 @@ func Test_CreateOrUpdateDaemonSet_Update(t *testing.T) {
 	dsBefore := appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
-			Name:      testname,
+			Name:      testDaemonSetName,
 			Annotations: map[string]string{
 				AnnotationHash: "old",
 			},
@@ -58,7 +58,7 @@ func Test_CreateOrUpdateDaemonSet_Update(t *testing.T) {
 	dsUpdate := appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
-			Name:      testname,
+			Name:      testDaemonSetName,
 			Annotations: map[string]string{
 				AnnotationHash: "new",
 			},
@@ -71,7 +71,7 @@ func Test_CreateOrUpdateDaemonSet_Update(t *testing.T) {
 	dsAfter := &appsv1.DaemonSet{}
 	err = fakeClient.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
-		Name:      testname,
+		Name:      testDaemonSetName,
 	}, dsAfter)
 	require.NoError(t, err)
 
@@ -86,7 +86,7 @@ func Test_CreateOrUpdateDaemonSet_NoUpdateRequired(t *testing.T) {
 	dsBefore := appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
-			Name:      testname,
+			Name:      testDaemonSetName,
 			Annotations: map[string]string{
 				AnnotationHash: "same",
 			},
@@ -97,7 +97,7 @@ func Test_CreateOrUpdateDaemonSet_NoUpdateRequired(t *testing.T) {
 	dsUpdate := appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
-			Name:      testname,
+			Name:      testDaemonSetName,
 			Annotations: map[string]string{
 				AnnotationHash: "same",
 			},

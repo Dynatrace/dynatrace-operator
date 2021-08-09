@@ -19,11 +19,9 @@ import (
 )
 
 const (
-	testNamespace = "test-namespace"
-	testDynakube  = "test-dynakube"
+	testDynakube = "test-dynakube"
 
-	testOperatorPodName = "test-operator-pod-name"
-	testOperatorImage   = "test-operator-image"
+	testOperatorImage = "test-operator-image"
 )
 
 func Test_ConfigureCSIDriver_Enable(t *testing.T) {
@@ -42,9 +40,8 @@ func Test_ConfigureCSIDriver_Enable(t *testing.T) {
 
 	assert.NotNil(t, configMap.Data)
 	assert.Len(t, configMap.Data, 1)
-	val, ok := configMap.Data[testDynakube]
-	require.True(t, ok)
-	assert.Equal(t, "", val)
+	assert.Contains(t, configMap.Data, testDynakube)
+	assert.Equal(t, "", configMap.Data[testDynakube])
 
 	csiDaemonSet := &appsv1.DaemonSet{}
 	err = fakeClient.Get(context.TODO(), client.ObjectKey{
@@ -101,9 +98,7 @@ func Test_ConfigureCSIDriver_RemoveDynakubeFromDisabledCSI(t *testing.T) {
 
 	assert.NotNil(t, updatedConfigMap.Data)
 	assert.Len(t, updatedConfigMap.Data, 1)
-
-	_, ok := updatedConfigMap.Data[testDynakube]
-	assert.False(t, ok)
+	assert.NotContains(t, updatedConfigMap.Data, testDynakube)
 
 	updatedDaemonSet := &appsv1.DaemonSet{}
 	err = fakeClient.Get(context.TODO(), client.ObjectKey{
@@ -132,11 +127,8 @@ func Test_ConfigureCSIDriver_AddDynakubeToEnabledCSI(t *testing.T) {
 
 	assert.NotNil(t, updatedConfigMap.Data)
 	assert.Len(t, updatedConfigMap.Data, 2)
-
-	_, ok := updatedConfigMap.Data[testDynakube]
-	val, ok := updatedConfigMap.Data[testDynakube]
-	require.True(t, ok)
-	assert.Equal(t, "", val)
+	assert.Contains(t, updatedConfigMap.Data, testDynakube)
+	assert.Equal(t, "", updatedConfigMap.Data[testDynakube])
 
 	updatedDaemonSet := &appsv1.DaemonSet{}
 	err = fakeClient.Get(context.TODO(), client.ObjectKey{
@@ -161,8 +153,7 @@ func prepareFakeClient(objs ...client.Object) client.Client {
 				},
 			},
 		})
-	fakeClient := fake.NewClient(objs...)
-	return fakeClient
+	return fake.NewClient(objs...)
 }
 
 func prepareFakeClientWithEnabledCSI(data map[string]string) client.Client {
