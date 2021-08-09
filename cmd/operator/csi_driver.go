@@ -17,10 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"os"
 	"path/filepath"
-	"strconv"
-	"time"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
@@ -52,12 +49,6 @@ func csiDriverFlags() *pflag.FlagSet {
 }
 
 func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, error) {
-	gcInterval, err := strconv.Atoi(os.Getenv("GC_INTERVAL_MINUTES"))
-	if err != nil {
-		log.Error(err, "unable to convert GC_INTERVAL_MINUTES to int")
-		return nil, err
-	}
-
 	defaultUmask := unix.Umask(0000)
 	defer unix.Umask(defaultUmask)
 
@@ -74,10 +65,9 @@ func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, error) {
 	}
 
 	csiOpts := dtcsi.CSIOptions{
-		NodeID:     nodeID,
-		Endpoint:   endpoint,
-		RootDir:    dtcsi.DataPath,
-		GCInterval: time.Duration(gcInterval) * time.Minute,
+		NodeID:   nodeID,
+		Endpoint: endpoint,
+		RootDir:  dtcsi.DataPath,
 	}
 
 	fs := afero.NewOsFs()

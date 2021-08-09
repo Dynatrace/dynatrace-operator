@@ -173,7 +173,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
+		updateCR, err := reconciler.reconcileRollout(&rec)
 
 		// assert
 		assert.True(t, updateCR)
@@ -188,7 +188,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
+		updateCR, err := reconciler.reconcileRollout(&rec)
 
 		// assert
 		assert.True(t, updateCR)
@@ -219,7 +219,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
+		updateCR, err := reconciler.reconcileRollout(&rec)
 
 		// assert
 		assert.True(t, updateCR)

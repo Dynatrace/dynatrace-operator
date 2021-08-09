@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/status"
@@ -42,14 +44,16 @@ func Add(mgr manager.Manager, _ string) error {
 	return NewReconciler(mgr).SetupWithManager(mgr)
 }
 
-// NewReconciler returns a new ReconcileActiveGate
+// NewReconciler returns a new ReconcileDynaKube
 func NewReconciler(mgr manager.Manager) *ReconcileDynaKube {
 	return &ReconcileDynaKube{
-		client:       mgr.GetClient(),
-		apiReader:    mgr.GetAPIReader(),
-		scheme:       mgr.GetScheme(),
-		dtcBuildFunc: BuildDynatraceClient,
-		config:       mgr.GetConfig(),
+		client:            mgr.GetClient(),
+		apiReader:         mgr.GetAPIReader(),
+		scheme:            mgr.GetScheme(),
+		dtcBuildFunc:      BuildDynatraceClient,
+		config:            mgr.GetConfig(),
+		operatorPodName:   os.Getenv("POD_NAME"),
+		operatorNamespace: os.Getenv("POD_NAMESPACE"),
 	}
 }
 
@@ -63,28 +67,32 @@ func (r *ReconcileDynaKube) SetupWithManager(mgr ctrl.Manager) error {
 
 func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, logger logr.Logger, config *rest.Config) *ReconcileDynaKube {
 	return &ReconcileDynaKube{
-		client:       c,
-		apiReader:    apiReader,
-		scheme:       scheme,
-		dtcBuildFunc: dtcBuildFunc,
-		logger:       logger,
-		config:       config,
+		client:            c,
+		apiReader:         apiReader,
+		scheme:            scheme,
+		dtcBuildFunc:      dtcBuildFunc,
+		logger:            logger,
+		config:            config,
+		operatorPodName:   os.Getenv("POD_NAME"),
+		operatorNamespace: os.Getenv("POD_NAMESPACE"),
 	}
 }
 
-// blank assignment to verify that ReconcileActiveGate implements reconcile.Reconciler
+// blank assignment to verify that ReconcileDynaKube implements reconcile.Reconciler
 var _ reconcile.Reconciler = &ReconcileDynaKube{}
 
-// ReconcileActiveGate reconciles a DynaKube object
+// ReconcileDynaKube reconciles a DynaKube object
 type ReconcileDynaKube struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client       client.Client
-	apiReader    client.Reader
-	scheme       *runtime.Scheme
-	dtcBuildFunc DynatraceClientFunc
-	logger       logr.Logger
-	config       *rest.Config
+	client            client.Client
+	apiReader         client.Reader
+	scheme            *runtime.Scheme
+	dtcBuildFunc      DynatraceClientFunc
+	logger            logr.Logger
+	config            *rest.Config
+	operatorPodName   string
+	operatorNamespace string
 }
 
 type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
@@ -193,6 +201,14 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	rec.Error(err)
 
 	if !r.reconcileActiveGateCapabilities(rec) {
+		return
+	}
+
+	// Check Code Modules if CSI driver is needed
+	err = dtcsi.ConfigureCSIDriver(
+		r.client, r.scheme, r.operatorPodName, r.operatorNamespace, rec, defaultUpdateInterval)
+	if err != nil {
+		rec.Log.Error(err, "could not check code modules")
 		return
 	}
 

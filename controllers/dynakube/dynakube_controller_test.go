@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -37,6 +38,10 @@ const (
 	testAnotherHost     = "test-another-host"
 	testAnotherPort     = uint32(5678)
 	testAnotherProtocol = "test-another-protocol"
+
+	testOperatorPodName    = "test-operator-name"
+	testDynatraceNamespace = "dynatrace"
+	testOperatorImage      = "test-operator-image"
 )
 
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
@@ -309,4 +314,177 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	}, routingSvc)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
+}
+
+func TestReconcile_CodeModules_EnableCSI(t *testing.T) {
+	dynakube := buildDynakube(testName, true)
+	fakeClient := buildFakeClient(dynakube)
+	r := buildReconciliation(fakeClient)
+
+	result, err := r.Reconcile(context.TODO(), reconcile.Request{
+		NamespacedName: types.NamespacedName{Namespace: "dynatrace", Name: testName},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	daemonSet := &appsv1.DaemonSet{}
+	err = fakeClient.Get(context.TODO(),
+		client.ObjectKey{
+			Name:      dtcsi.DaemonSetName,
+			Namespace: testDynatraceNamespace,
+		}, daemonSet)
+	require.NoError(t, err)
+
+	assert.Equal(t, 3, len(daemonSet.Spec.Template.Spec.Containers))
+	assert.Equal(t, "driver", daemonSet.Spec.Template.Spec.Containers[0].Name)
+
+	configMap := &corev1.ConfigMap{}
+	err = fakeClient.Get(context.TODO(),
+		client.ObjectKey{
+			Name:      dtcsi.CsiMapperConfigMapName,
+			Namespace: testDynatraceNamespace,
+		}, configMap)
+	require.NoError(t, err)
+	assert.NotNil(t, configMap.Data)
+	assert.Equal(t, 1, len(configMap.Data))
+
+	val, ok := configMap.Data[testName]
+	assert.True(t, ok)
+	assert.Equal(t, "", val)
+}
+
+func TestReconcile_CodeModules_DisableCSI(t *testing.T) {
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dtcsi.CsiMapperConfigMapName,
+			Namespace: testDynatraceNamespace,
+		},
+		Data: map[string]string{
+			testName: "",
+		},
+	}
+	daemonSet := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dtcsi.DaemonSetName,
+			Namespace: testDynatraceNamespace,
+		},
+	}
+	dynakube := buildDynakube(testName, false)
+	fakeClient := buildFakeClient(dynakube, configMap, daemonSet)
+	r := buildReconciliation(fakeClient)
+
+	result, err := r.Reconcile(context.TODO(), reconcile.Request{
+		NamespacedName: types.NamespacedName{Namespace: "dynatrace", Name: testName},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	updatedDaemonSet := &appsv1.DaemonSet{}
+	err = fakeClient.Get(context.TODO(),
+		client.ObjectKey{
+			Name:      dtcsi.DaemonSetName,
+			Namespace: testDynatraceNamespace,
+		}, updatedDaemonSet)
+	require.Error(t, err)
+
+	updatedConfigMap := &corev1.ConfigMap{}
+	err = fakeClient.Get(context.TODO(),
+		client.ObjectKey{
+			Name:      dtcsi.CsiMapperConfigMapName,
+			Namespace: testDynatraceNamespace,
+		}, updatedConfigMap)
+	require.NoError(t, err)
+	assert.Nil(t, updatedConfigMap.Data)
+}
+
+func buildDynakube(name string, codeModulesEnabled bool) *v1alpha1.DynaKube {
+	return &v1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: testDynatraceNamespace,
+		},
+		Spec: v1alpha1.DynaKubeSpec{
+			CodeModules: v1alpha1.CodeModulesSpec{
+				Enabled: codeModulesEnabled,
+			},
+		},
+	}
+}
+
+func buildMockDtClient() *dtclient.MockDynatraceClient {
+	mockClient := &dtclient.MockDynatraceClient{}
+	mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+		Protocol: testProtocol,
+		Host:     testHost,
+		Port:     testPort,
+	}, nil)
+	mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
+		CommunicationHosts: []dtclient.CommunicationHost{
+			{
+				Protocol: testProtocol,
+				Host:     testHost,
+				Port:     testPort,
+			},
+			{
+				Protocol: testAnotherProtocol,
+				Host:     testAnotherHost,
+				Port:     testAnotherPort,
+			},
+		},
+		TenantUUID: testUUID,
+	}, nil)
+	mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
+	mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
+	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
+
+	return mockClient
+}
+
+func buildFakeClient(objs ...client.Object) client.Client {
+	objs = append(
+		objs,
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testDynatraceNamespace,
+			},
+			Data: map[string][]byte{
+				dtclient.DynatracePaasToken: []byte(testPaasToken),
+				dtclient.DynatraceApiToken:  []byte(testAPIToken),
+			}},
+		&corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: kubesystem.Namespace,
+				UID:  testUID,
+			}},
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testOperatorPodName,
+				Namespace: testDynatraceNamespace,
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Name: testOperatorImage,
+					},
+				},
+			},
+		})
+	fakeClient := fake.NewClient(objs...)
+	return fakeClient
+}
+
+func buildReconciliation(fakeClient client.Client) *ReconcileDynaKube {
+	r := &ReconcileDynaKube{
+		client:    fakeClient,
+		apiReader: fakeClient,
+		scheme:    scheme.Scheme,
+		dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
+			return buildMockDtClient(), nil
+		},
+		operatorPodName:   testOperatorPodName,
+		operatorNamespace: testDynatraceNamespace,
+	}
+	return r
 }
