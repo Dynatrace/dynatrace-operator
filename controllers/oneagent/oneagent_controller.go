@@ -30,15 +30,16 @@ import (
 )
 
 const (
-	// time between consecutive queries for a new pod to get ready
-	splayTimeSeconds                      = uint16(10)
 	defaultUpdateInterval                 = 15 * time.Minute
 	updateEnvVar                          = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
+	relatedImageEnvVar                    = "RELATED_IMAGE_DYNATRACE_ONEAGENT"
 	ClassicFeature                        = "classic"
 	InframonFeature                       = "inframon"
 	defaultOneAgentImage                  = "docker.io/dynatrace/oneagent:latest"
 	defaultServiceAccountName             = "dynatrace-dynakube-oneagent"
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
+	unprivilegedAnnotationKey             = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
+	unprivilegedAnnotationValue           = "unconfined"
 )
 
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
@@ -233,7 +234,7 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 	}
 
 	if unprivileged {
-		ds.Spec.Template.ObjectMeta.Annotations["container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"] = "unconfined"
+		ds.Spec.Template.ObjectMeta.Annotations[unprivilegedAnnotationKey] = unprivilegedAnnotationValue
 	}
 
 	dsHash, err := generateDaemonSetHash(ds)
@@ -248,11 +249,11 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, feature string, unprivileged bool, logger logr.Logger, clusterID string) corev1.PodSpec {
 	p := corev1.PodSpec{}
 
-	sa := "dynatrace-dynakube-oneagent"
+	sa := defaultServiceAccountName
 	if fs.ServiceAccountName != "" {
 		sa = fs.ServiceAccountName
 	} else if unprivileged {
-		sa = "dynatrace-dynakube-oneagent-unprivileged"
+		sa = defaultUnprivilegedServiceAccountName
 	}
 
 	resources := fs.Resources
@@ -357,8 +358,8 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 }
 
 func preparePodSpecInstaller(p *corev1.PodSpec, instance *dynatracev1alpha1.DynaKube) error {
-	img := "docker.io/dynatrace/oneagent:latest"
-	envVarImg := os.Getenv("RELATED_IMAGE_DYNATRACE_ONEAGENT")
+	img := defaultOneAgentImage
+	envVarImg := os.Getenv(relatedImageEnvVar)
 
 	if instance.Spec.OneAgent.Image != "" {
 		img = instance.Spec.OneAgent.Image
