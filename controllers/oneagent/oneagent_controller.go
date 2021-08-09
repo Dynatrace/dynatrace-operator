@@ -549,24 +549,24 @@ func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.
 					ev.Value = strconv.FormatBool(instance.Spec.SkipCertCheck)
 				},
 			})
+	}
 
-		if p := instance.Spec.Proxy; p != nil && (p.Value != "" || p.ValueFrom != "") {
-			reserved = append(reserved, reservedEnvVar{
-				Name: "https_proxy",
-				Default: func(ev *corev1.EnvVar) {
-					if p.ValueFrom != "" {
-						ev.ValueFrom = &corev1.EnvVarSource{
-							SecretKeyRef: &corev1.SecretKeySelector{
-								LocalObjectReference: corev1.LocalObjectReference{Name: instance.Spec.Proxy.ValueFrom},
-								Key:                  "proxy",
-							},
-						}
-					} else {
-						p.Value = instance.Spec.Proxy.Value
+	if p := instance.Spec.Proxy; p != nil && (p.Value != "" || p.ValueFrom != "") {
+		reserved = append(reserved, reservedEnvVar{
+			Name: "https_proxy",
+			Default: func(ev *corev1.EnvVar) {
+				if p.ValueFrom != "" {
+					ev.ValueFrom = &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{Name: instance.Spec.Proxy.ValueFrom},
+							Key:                  "proxy",
+						},
 					}
-				},
-			})
-		}
+				} else {
+					p.Value = instance.Spec.Proxy.Value
+				}
+			},
+		})
 	}
 
 	reservedMap := map[string]*reservedEnvVar{}
