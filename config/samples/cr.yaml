@@ -86,6 +86,10 @@ spec:
     #   name: my-custom-volume
     #   emptyDir: { }
 
+    # Optional: name of the ServiceAccount to assign to the CSIDriver Pods.
+    # Defaults to "dynatrace-oneagent-csi-driver"
+    #
+    # serviceAccountNameCSIDriver: service-account-name
 
   # To be released
   #

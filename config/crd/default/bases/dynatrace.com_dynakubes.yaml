@@ -1864,6 +1864,10 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
+                  serviceAccountNameCSIDriver:
+                    description: 'Optional: name of the ServiceAccount to assign to
+                      the CSIDriver Pods'
+                    type: string
                   volume:
                     description: 'Optional: use OneAgent binaries from volume'
                     properties:

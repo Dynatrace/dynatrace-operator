@@ -55,7 +55,7 @@ func (r *Reconciler) Reconcile() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	ds, err := buildDesiredCSIDaemonSet(operatorImage, r.operatorNamespace)
+	ds, err := buildDesiredCSIDaemonSet(operatorImage, r.operatorNamespace, r.instance.Spec.CodeModules.ServiceAccountNameCSIDriver)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
@@ -85,8 +85,8 @@ func (r *Reconciler) getOperatorImage() (string, error) {
 	return operatorPod.Spec.Containers[0].Image, nil
 }
 
-func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string) (*appsv1.DaemonSet, error) {
-	ds := prepareDaemonSet(operatorImage, operatorNamespace)
+func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace, saName string) (*appsv1.DaemonSet, error) {
+	ds := prepareDaemonSet(operatorImage, operatorNamespace, saName)
 
 	dsHash, err := kubeobjects.GenerateHash(ds)
 	if err != nil {
@@ -97,13 +97,18 @@ func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string) (*appsv1.
 	return ds, nil
 }
 
-func prepareDaemonSet(operatorImage, operatorNamespace string) *appsv1.DaemonSet {
+func prepareDaemonSet(operatorImage, operatorNamespace, saName string) *appsv1.DaemonSet {
 	metadata := prepareMetadata(operatorNamespace)
 	labels := prepareDaemonSetLabels()
 	driver := prepareDriverContainer(operatorImage)
 	registrar := prepareRegistrarContainer(operatorImage)
 	livenessprobe := preparelivenessProbeContainer(operatorImage)
 	volumes := prepareVolumes()
+
+	serviceAccountName := DefaultServiceAccountName
+	if saName != "" {
+		serviceAccountName = saName
+	}
 
 	return &appsv1.DaemonSet{
 		ObjectMeta: metadata,
@@ -124,7 +129,7 @@ func prepareDaemonSet(operatorImage, operatorNamespace string) *appsv1.DaemonSet
 						registrar,
 						livenessprobe,
 					},
-					ServiceAccountName: DaemonSetName,
+					ServiceAccountName: serviceAccountName,
 					Volumes:            volumes,
 				},
 			},

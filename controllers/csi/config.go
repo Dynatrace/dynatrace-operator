@@ -17,11 +17,12 @@ limitations under the License.
 package dtcsi
 
 const (
-	DataPath              = "/data"
-	DaemonSetName         = "dynatrace-oneagent-csi-driver"
-	DriverName            = "csi.oneagent.dynatrace.com"
-	GarbageCollectionPath = "gc"
-	VersionDir            = "version"
+	DataPath                  = "/data"
+	DaemonSetName             = "dynatrace-oneagent-csi-driver"
+	DefaultServiceAccountName = "dynatrace-oneagent-csi-driver"
+	DriverName                = "csi.oneagent.dynatrace.com"
+	GarbageCollectionPath     = "gc"
+	VersionDir                = "version"
 )
 
 type CSIOptions struct {
