@@ -3,10 +3,13 @@ package oneagent
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"hash/fnv"
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -106,10 +109,25 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.Reco
 	}
 
 	// Finally we have to determine the correct non error phase
-	_, err = r.determineOneAgentPhase(r.instance)
+	_, err = r.determineDynaKubePhase(r.instance)
 	rec.Error(err)
 
 	return upd, nil
+}
+
+// validate sanity checks if essential fields in the custom resource are available
+//
+// Return an error in the following conditions
+// - APIURL empty
+func validate(cr *dynatracev1alpha1.DynaKube) error {
+	var msg []string
+	if cr.Spec.APIURL == "" {
+		msg = append(msg, ".spec.apiUrl is missing")
+	}
+	if len(msg) > 0 {
+		return errors.New(strings.Join(msg, ", "))
+	}
+	return nil
 }
 
 func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *controllers.Reconciliation) (bool, error) {
@@ -437,4 +455,31 @@ func setUseImmutableImageStatus(instance *dynatracev1alpha1.DynaKube, fs *dynatr
 
 	instance.Status.OneAgent.UseImmutableImage = fs.UseImmutableImage
 	return true
+}
+
+func (r *ReconcileOneAgent) determineDynaKubePhase(instance *dynatracev1alpha1.DynaKube) (bool, error) {
+	var phaseChanged bool
+	dsActual := &appsv1.DaemonSet{}
+	instanceName := fmt.Sprintf("%s-%s", instance.Name, r.feature)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: instance.Namespace}, dsActual)
+
+	if k8serrors.IsNotFound(err) {
+		return false, nil
+	}
+
+	if err != nil {
+		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Error
+		instance.Status.Phase = dynatracev1alpha1.Error
+		return phaseChanged, err
+	}
+
+	if dsActual.Status.NumberReady == dsActual.Status.CurrentNumberScheduled {
+		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Running
+		instance.Status.Phase = dynatracev1alpha1.Running
+	} else {
+		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Deploying
+		instance.Status.Phase = dynatracev1alpha1.Deploying
+	}
+
+	return phaseChanged, nil
 }
