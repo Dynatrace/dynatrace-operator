@@ -1,0 +1,11 @@
+- op: add
+  path: /rules/-
+  value:
+    apiGroups:
+      - policy
+    resources:
+      - podsecuritypolicies
+    resourceNames:
+      - dynatrace-operator
+    verbs:
+      - use
