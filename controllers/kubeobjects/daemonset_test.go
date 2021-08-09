@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -50,7 +49,7 @@ func Test_CreateOrUpdateDaemonSet_Update(t *testing.T) {
 			Namespace: testNamespace,
 			Name:      testname,
 			Annotations: map[string]string{
-				statefulset.AnnotationTemplateHash: "old",
+				AnnotationHash: "old",
 			},
 		},
 	}
@@ -61,7 +60,7 @@ func Test_CreateOrUpdateDaemonSet_Update(t *testing.T) {
 			Namespace: testNamespace,
 			Name:      testname,
 			Annotations: map[string]string{
-				statefulset.AnnotationTemplateHash: "new",
+				AnnotationHash: "new",
 			},
 		},
 	}
@@ -77,7 +76,7 @@ func Test_CreateOrUpdateDaemonSet_Update(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, dsAfter.Annotations)
-	annotation, ok := dsAfter.Annotations[statefulset.AnnotationTemplateHash]
+	annotation, ok := dsAfter.Annotations[AnnotationHash]
 	assert.True(t, ok)
 	assert.Equal(t, "new", annotation)
 }
@@ -89,7 +88,7 @@ func Test_CreateOrUpdateDaemonSet_NoUpdateRequired(t *testing.T) {
 			Namespace: testNamespace,
 			Name:      testname,
 			Annotations: map[string]string{
-				statefulset.AnnotationTemplateHash: "same",
+				AnnotationHash: "same",
 			},
 		},
 	}
@@ -100,7 +99,7 @@ func Test_CreateOrUpdateDaemonSet_NoUpdateRequired(t *testing.T) {
 			Namespace: testNamespace,
 			Name:      testname,
 			Annotations: map[string]string{
-				statefulset.AnnotationTemplateHash: "same",
+				AnnotationHash: "same",
 			},
 		},
 	}

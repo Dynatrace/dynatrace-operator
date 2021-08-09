@@ -204,11 +204,11 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 		ds.Spec.Template.ObjectMeta.Annotations["container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"] = "unconfined"
 	}
 
-	dsHash, err := kubeobjects.GenerateDaemonSetHash(ds)
+	dsHash, err := kubeobjects.GenerateHash(ds)
 	if err != nil {
 		return nil, err
 	}
-	ds.Annotations[statefulset.AnnotationTemplateHash] = dsHash
+	ds.Annotations[kubeobjects.AnnotationHash] = dsHash
 
 	return ds, nil
 }

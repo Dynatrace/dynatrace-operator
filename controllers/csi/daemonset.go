@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -89,11 +88,11 @@ func (r *Reconciler) getOperatorImage() (string, error) {
 func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string) (*appsv1.DaemonSet, error) {
 	ds := prepareDaemonSet(operatorImage, operatorNamespace)
 
-	dsHash, err := kubeobjects.GenerateDaemonSetHash(ds)
+	dsHash, err := kubeobjects.GenerateHash(ds)
 	if err != nil {
 		return nil, err
 	}
-	ds.Annotations[statefulset.AnnotationTemplateHash] = dsHash
+	ds.Annotations[kubeobjects.AnnotationHash] = dsHash
 
 	return ds, nil
 }

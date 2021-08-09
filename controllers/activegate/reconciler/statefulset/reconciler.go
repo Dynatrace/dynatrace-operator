@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -158,7 +159,7 @@ func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet)
 	if err != nil {
 		return false, err
 	}
-	if !HasStatefulSetChanged(currentSts, desiredSts) {
+	if !kubeobjects.HasChanged(currentSts, desiredSts) {
 		return false, nil
 	}
 
