@@ -61,7 +61,7 @@ func ConfigureCSIDriver(
 		}
 		if !csiMapper.any() {
 			log.Info("ensuring csi driver is disabled")
-			// disable csi driver, no Dynakubes with CodeModules enabled exist anymore
+			// disable csi driver, no Dynakubes with CodeModules enabled exist any more
 			// ensures csi driver is disabled, when additional CodeModules are disabled
 			ds := appsv1.DaemonSet{
 				ObjectMeta: metav1.ObjectMeta{
