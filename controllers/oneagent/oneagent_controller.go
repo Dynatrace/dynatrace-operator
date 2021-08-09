@@ -72,7 +72,7 @@ type ReconcileOneAgent struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.Reconciliation) (bool, error) {
+func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.DynakubeState) (bool, error) {
 	r.logger.Info("Reconciling OneAgent")
 	if err := validate(r.instance); err != nil {
 		return false, err
@@ -130,18 +130,18 @@ func validate(cr *dynatracev1alpha1.DynaKube) error {
 	return nil
 }
 
-func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *controllers.Reconciliation) (bool, error) {
+func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, dkState *controllers.DynakubeState) (bool, error) {
 	updateCR := false
 
 	// Define a new DaemonSet object
-	dsDesired, err := r.getDesiredDaemonSet(rec)
+	dsDesired, err := r.getDesiredDaemonSet(dkState)
 	if err != nil {
-		rec.Log.Info("Failed to get desired daemonset")
+		dkState.Log.Info("Failed to get desired daemonset")
 		return false, err
 	}
 
 	// Set OneAgent instance as the owner and controller
-	if err := controllerutil.SetControllerReference(rec.Instance, dsDesired, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(dkState.Instance, dsDesired, r.scheme); err != nil {
 		return false, err
 	}
 
@@ -149,34 +149,34 @@ func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *controlle
 	dsActual := &appsv1.DaemonSet{}
 	err = r.client.Get(ctx, types.NamespacedName{Name: dsDesired.Name, Namespace: dsDesired.Namespace}, dsActual)
 	if err != nil && k8serrors.IsNotFound(err) {
-		rec.Log.Info("Creating new daemonset")
+		dkState.Log.Info("Creating new daemonset")
 		if err = r.client.Create(ctx, dsDesired); err != nil {
 			return false, err
 		}
 	} else if err != nil {
 		return false, err
 	} else if hasDaemonSetChanged(dsDesired, dsActual) {
-		rec.Log.Info("Updating existing daemonset")
+		dkState.Log.Info("Updating existing daemonset")
 		if err = r.client.Update(ctx, dsDesired); err != nil {
 			return false, err
 		}
 	}
 
-	if rec.Instance.Status.Tokens != rec.Instance.Tokens() {
-		rec.Instance.Status.Tokens = rec.Instance.Tokens()
+	if dkState.Instance.Status.Tokens != dkState.Instance.Tokens() {
+		dkState.Instance.Status.Tokens = dkState.Instance.Tokens()
 		updateCR = true
 	}
 
 	return updateCR, nil
 }
 
-func (r *ReconcileOneAgent) getDesiredDaemonSet(rec *controllers.Reconciliation) (*appsv1.DaemonSet, error) {
+func (r *ReconcileOneAgent) getDesiredDaemonSet(dkState *controllers.DynakubeState) (*appsv1.DaemonSet, error) {
 	kubeSysUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
 		return nil, err
 	}
 
-	dsDesired, err := newDaemonSetForCR(rec.Log, rec.Instance, r.fullStack, string(kubeSysUID), r.feature)
+	dsDesired, err := newDaemonSetForCR(dkState.Log, dkState.Instance, r.fullStack, string(kubeSysUID), r.feature)
 	if err != nil {
 		return nil, err
 	}

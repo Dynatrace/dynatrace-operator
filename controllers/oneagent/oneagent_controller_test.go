@@ -80,8 +80,8 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		fullStack: &dynakube.Spec.ClassicFullStack,
 	}
 
-	rec := controllers.Reconciliation{Log: consoleLogger, Instance: dynakube}
-	_, err := reconciler.Reconcile(context.TODO(), &rec)
+	dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dynakube}
+	_, err := reconciler.Reconcile(context.TODO(), &dkState)
 	assert.NoError(t, err)
 
 	dsActual := &appsv1.DaemonSet{}
@@ -171,10 +171,10 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Spec.Tokens = ""
 		dk.Status.Tokens = ""
-		rec := controllers.Reconciliation{Log: consoleLogger, Instance: dk}
+		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), &dkState)
 
 		// assert
 		assert.True(t, updateCR)
@@ -186,10 +186,10 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Spec.Tokens = ""
 		dk.Status.Tokens = "not the actual name"
-		rec := controllers.Reconciliation{Log: consoleLogger, Instance: dk}
+		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), &dkState)
 
 		// assert
 		assert.True(t, updateCR)
@@ -217,10 +217,10 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Status.Tokens = dk.Tokens()
 		dk.Spec.Tokens = customTokenName
-		rec := controllers.Reconciliation{Log: consoleLogger, Instance: dk}
+		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
+		updateCR, err := reconciler.reconcileRollout(context.TODO(), &dkState)
 
 		// assert
 		assert.True(t, updateCR)
@@ -281,13 +281,13 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
 
-		rec := controllers.Reconciliation{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
+		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
 		err := reconciler.client.Create(context.TODO(), pod)
 
 		assert.NoError(t, err)
 
 		reconciler.instance = dk
-		upd, err := reconciler.Reconcile(context.TODO(), &rec)
+		upd, err := reconciler.Reconcile(context.TODO(), &dkState)
 
 		assert.NoError(t, err)
 		assert.True(t, upd)
@@ -312,14 +312,14 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
 
-		rec := controllers.Reconciliation{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
+		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
 		err := reconciler.client.Create(context.TODO(), pod)
 
 		assert.NoError(t, err)
 
 		reconciler.instance = dk
 		reconciler.fullStack = &dk.Spec.ClassicFullStack
-		upd, err := reconciler.Reconcile(context.TODO(), &rec)
+		upd, err := reconciler.Reconcile(context.TODO(), &dkState)
 
 		assert.NoError(t, err)
 		assert.True(t, upd)
