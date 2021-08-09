@@ -28,7 +28,7 @@ func CreateOrUpdateDaemonSet(c client.Client, logger logr.Logger, desiredDs *app
 		return false, nil
 	}
 
-	logger.Info("updating existing CSI driver daemonset")
+	logger.Info("updating existing daemonset for CSI driver")
 	if err = c.Update(context.TODO(), desiredDs); err != nil {
 		return false, err
 	}

@@ -2,10 +2,7 @@ package dtcsi
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"hash/fnv"
-	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
@@ -92,7 +89,7 @@ func (r *Reconciler) getOperatorImage() (string, error) {
 func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string) (*appsv1.DaemonSet, error) {
 	ds := prepareDaemonSet(operatorImage, operatorNamespace)
 
-	dsHash, err := generateDaemonSetHash(ds)
+	dsHash, err := kubeobjects.GenerateDaemonSetHash(ds)
 	if err != nil {
 		return nil, err
 	}
@@ -141,21 +138,6 @@ func prepareDaemonSetLabels() map[string]string {
 		"internal.oneagent.dynatrace.com/component": "csi-driver",
 		"internal.oneagent.dynatrace.com/app":       "csi-driver",
 	}
-}
-
-func generateDaemonSetHash(ds *appsv1.DaemonSet) (string, error) {
-	data, err := json.Marshal(ds)
-	if err != nil {
-		return "", err
-	}
-
-	hasher := fnv.New32()
-	_, err = hasher.Write(data)
-	if err != nil {
-		return "", err
-	}
-
-	return strconv.FormatUint(uint64(hasher.Sum32()), 10), nil
 }
 
 func prepareMetadata(namespace string) metav1.ObjectMeta {
