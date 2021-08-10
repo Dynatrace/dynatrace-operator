@@ -143,12 +143,10 @@ type FullStackSpec struct {
 
 	// Optional: Arguments to the OneAgent installer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent installer arguments",order=21,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
-	// +listType=set
 	Args []string `json:"args,omitempty"`
 
 	// Optional: List of environment variables to set for the installer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent environment variable installer arguments",order=22,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
-	// +listType=set
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	// Optional: If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that
@@ -227,7 +225,6 @@ type CapabilityProperties struct {
 
 	// Optional: List of environment variables to set for the ActiveGate
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Environment variables",order=39,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
-	// +listType=set
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Environment variables"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"

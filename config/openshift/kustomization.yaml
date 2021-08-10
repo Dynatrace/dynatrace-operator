@@ -10,6 +10,7 @@ resources:
   - oneagent/clusterrolebinding-oneagent-unprivileged.yaml
 bases:
   - ../common/kubernetes-monitoring
+  - ../common/routing
   - ../common/oneagent
   - ../common/operator
   - ../crd/default

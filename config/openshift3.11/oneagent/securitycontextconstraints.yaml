@@ -13,12 +13,12 @@ allowPrivilegedContainer: true
 allowedCapabilities:
   - "*"
 allowedFlexVolumes: null
-defaultAddCapabilities: null
+defaultAddCapabilities: [ ]
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 0
 readOnlyRootFilesystem: false
-requiredDropCapabilities: null
+requiredDropCapabilities: [ ]
 runAsUser:
   type: RunAsAny
 seLinuxContext:

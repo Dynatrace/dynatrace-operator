@@ -73,7 +73,6 @@ spec:
                     items:
                       type: string
                     type: array
-                    x-kubernetes-list-type: set
                   dnsPolicy:
                     description: 'Optional: Sets DNS Policy for the OneAgent pods'
                     type: string
@@ -190,7 +189,6 @@ spec:
                       - name
                       type: object
                     type: array
-                    x-kubernetes-list-type: set
                   labels:
                     additionalProperties:
                       type: string
@@ -1798,7 +1796,6 @@ spec:
                     items:
                       type: string
                     type: array
-                    x-kubernetes-list-type: set
                   dnsPolicy:
                     description: 'Optional: Sets DNS Policy for the OneAgent pods'
                     type: string
@@ -1915,7 +1912,6 @@ spec:
                       - name
                       type: object
                     type: array
-                    x-kubernetes-list-type: set
                   labels:
                     additionalProperties:
                       type: string
@@ -2151,7 +2147,6 @@ spec:
                       - name
                       type: object
                     type: array
-                    x-kubernetes-list-type: set
                   group:
                     description: 'Optional: Set activation group for ActiveGate'
                     type: string
@@ -2407,7 +2402,6 @@ spec:
                       - name
                       type: object
                     type: array
-                    x-kubernetes-list-type: set
                   group:
                     description: 'Optional: Set activation group for ActiveGate'
                     type: string

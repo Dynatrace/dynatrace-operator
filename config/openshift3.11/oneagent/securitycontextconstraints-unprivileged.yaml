@@ -27,10 +27,10 @@ allowedCapabilities:
   - SYS_PTRACE
   - SYS_RESOURCE
 allowedFlexVolumes: null
-defaultAddCapabilities: null
+defaultAddCapabilities: [ ]
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 0
 readOnlyRootFilesystem: false
 requiredDropCapabilities:
   - ALL

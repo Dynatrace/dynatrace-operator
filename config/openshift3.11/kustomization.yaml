@@ -2,12 +2,13 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - oneagent/securitycontextconstraints.yaml
-  - oneagent/securitycontextconstraints-securitycontextconstraints-unprivileged.yaml
+  - oneagent/securitycontextconstraints-unprivileged.yaml
 bases:
   - ../common/kubernetes-monitoring
+  - ../common/routing
   - ../common/oneagent
   - ../common/operator
-  - ../crd/bases_ocp311
+  - ../crd/ocp311
 patchesJson6902:
   - target:
       group: apps
