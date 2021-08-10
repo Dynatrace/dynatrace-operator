@@ -5,7 +5,7 @@ VERSION ?= 0.0.1
 # Default bundle image tag
 BUNDLE_IMG ?= controller-bundle:$(VERSION)
 # Default platform for bundle
-PLATFORM="kubernetes"
+PLATFORM=kubernetes
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
