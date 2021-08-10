@@ -31,15 +31,3 @@ patchesJson6902:
       name: dynatrace-operator
       namespace: dynatrace
     path: operator/serviceaccount-patch.yaml
-  - target:
-      group: rbac.authorization.k8s.io
-      version: v1
-      kind: ClusterRole
-      name: dynatrace-operator
-    path: operator/clusterrole-patch.yaml
-  - target:
-      group: rbac.authorization.k8s.io
-      version: v1
-      kind: ClusterRole
-      name: dynatrace-operator
-    path: operator/clusterrole-patch.yaml
