@@ -4,6 +4,8 @@ SHELL = bash
 VERSION ?= 0.0.1
 # Default bundle image tag
 BUNDLE_IMG ?= controller-bundle:$(VERSION)
+# Default platform for bundle
+PLATFORM="kubernetes"
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -23,8 +25,8 @@ endif
 endif
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true, preserveUnknownFields=false, crdVersions=v1"
-CRD_OPTIONS_OCP311 ?= "crd:trivialVersions=true, preserveUnknownFields=false, crdVersions=v1beta1"
+CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false,crdVersions=v1"
+CRD_OPTIONS_OCP311 ?= "crd:trivialVersions=true,preserveUnknownFields=false,crdVersions=v1beta1"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
