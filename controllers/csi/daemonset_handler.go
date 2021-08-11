@@ -2,6 +2,8 @@ package dtcsi
 
 import (
 	"context"
+	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/types"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -11,22 +13,19 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
-
-var log = logf.Log.WithName("csi_mapper")
 
 func ConfigureCSIDriver(
 	client client.Client, scheme *runtime.Scheme, operatorPodName, operatorNamespace string,
 	rec *utils.Reconciliation, updateInterval time.Duration) error {
 
 	if rec.Instance.Spec.CodeModules.Enabled {
-		err := enableCSIDriver(client, scheme, operatorPodName, operatorNamespace, rec, updateInterval)
+		err := addDynakube(client, scheme, operatorPodName, operatorNamespace, rec, updateInterval)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := disableCSIDriver(client, rec)
+		err := removeDynakube(client, rec)
 		if err != nil {
 			return err
 		}
@@ -34,55 +33,15 @@ func ConfigureCSIDriver(
 	return nil
 }
 
-// disableCSIDriver disables csi driver by removing its daemon set.
-// ensures csi driver is disabled, when additional CodeModules are disabled.
-func disableCSIDriver(clt client.Client, rec *utils.Reconciliation) error {
-	csiDaemonSet, err := getCsiDaemonSet(clt, rec.Instance.Namespace)
-	if k8serrors.IsNotFound(err) {
-		return nil
-	} else if err != nil {
-		return err
-	}
-
-	itemIndex := -1
-	for i, ownerReference := range csiDaemonSet.OwnerReferences {
-		if ownerReference.UID == rec.Instance.UID {
-			itemIndex = i
-			break
-		}
-	}
-
-	if itemIndex == -1 {
-		// Dynakube was not found in existing OwnerReferences
-		return nil
-	}
-
-	if len(csiDaemonSet.OwnerReferences) > 1 {
-		csiDaemonSet.OwnerReferences = append(
-			csiDaemonSet.OwnerReferences[:itemIndex],
-			csiDaemonSet.OwnerReferences[itemIndex+1:]...)
-	} else {
-		// Delete CSI Daemonset manually if no OwnerReferences are left
-		err = clt.Delete(context.TODO(), csiDaemonSet)
-		return err
-	}
-
-	log.Info("Removing Dynakube from CSI Daemonset")
-	err = clt.Update(context.TODO(), csiDaemonSet)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// enableCSIDriver tries to enable csi driver, by creating its daemon set.
-func enableCSIDriver(
+// addDynakube enables csi driver, by creating its DaemonSet (if it does not exist yet)
+// and adds the current Dynakube to the OwnerReferences of the DaemonSet
+func addDynakube(
 	client client.Client, scheme *runtime.Scheme, operatorPodName string, operatorNamespace string,
 	rec *utils.Reconciliation, updateInterval time.Duration) error {
 
-	csiDaemonSet, err := getCsiDaemonSet(client, rec.Instance.Namespace)
+	csiDaemonSet, err := getCSIDaemonSet(client, rec.Instance.Namespace)
 	if k8serrors.IsNotFound(err) {
-		log.Info("enabling csi driver")
+		rec.Log.Info("enabling csi driver")
 		csiDaemonSetReconciler := NewReconciler(client, scheme, rec.Log, rec.Instance, operatorPodName, operatorNamespace)
 		upd, err := csiDaemonSetReconciler.Reconcile()
 		if err != nil {
@@ -111,6 +70,52 @@ func enableCSIDriver(
 	return nil
 }
 
+// removeDynakube removes the current Dynakube from the OwnerReferences of the DaemonSet
+// and deletes the DaemonSet if no Owners are left.
+func removeDynakube(clt client.Client, rec *utils.Reconciliation) error {
+	csiDaemonSet, err := getCSIDaemonSet(clt, rec.Instance.Namespace)
+	if k8serrors.IsNotFound(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+
+	itemIndex, itemFound := findOwnerReferenceIndex(csiDaemonSet.OwnerReferences, rec.Instance.UID)
+	if !itemFound {
+		// Dynakube was not found in existing OwnerReferences
+		return nil
+	}
+
+	err = updateOrDeleteDaemonSet(clt, csiDaemonSet, itemIndex, rec.Log)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func updateOrDeleteDaemonSet(clt client.Client, csiDaemonSet *appsv1.DaemonSet, itemIndex int, log logr.Logger) error {
+	if len(csiDaemonSet.OwnerReferences) > 1 {
+		csiDaemonSet.OwnerReferences = append(
+			csiDaemonSet.OwnerReferences[:itemIndex],
+			csiDaemonSet.OwnerReferences[itemIndex+1:]...)
+	} else {
+		// Delete CSI DaemonSet manually if no OwnerReferences are left
+		return clt.Delete(context.TODO(), csiDaemonSet)
+	}
+
+	log.Info("Removing Dynakube from CSI DaemonSet")
+	return clt.Update(context.TODO(), csiDaemonSet)
+}
+
+func findOwnerReferenceIndex(ownerReferences []metav1.OwnerReference, instanceUID types.UID) (int, bool) {
+	for i, ownerReference := range ownerReferences {
+		if ownerReference.UID == instanceUID {
+			return i, true
+		}
+	}
+	return 0, false
+}
+
 func createOwnerReference(dynakube *v1alpha1.DynaKube) metav1.OwnerReference {
 	trueVal := true
 	return metav1.OwnerReference{
@@ -123,7 +128,7 @@ func createOwnerReference(dynakube *v1alpha1.DynaKube) metav1.OwnerReference {
 	}
 }
 
-func getCsiDaemonSet(clt client.Client, namespace string) (*appsv1.DaemonSet, error) {
+func getCSIDaemonSet(clt client.Client, namespace string) (*appsv1.DaemonSet, error) {
 	csiDaemonSet := &appsv1.DaemonSet{}
 	err := clt.Get(context.TODO(),
 		client.ObjectKey{
