@@ -2,16 +2,16 @@ package dtcsi
 
 import (
 	"context"
-	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/types"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
