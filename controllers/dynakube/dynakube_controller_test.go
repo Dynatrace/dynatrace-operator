@@ -344,6 +344,11 @@ func TestReconcile_CodeModules_DisableCSI(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dtcsi.DaemonSetName,
 			Namespace: testDynatraceNamespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					UID: testUID,
+				},
+			},
 		},
 	}
 	dynakube := buildDynakube(testName, false)
@@ -356,13 +361,13 @@ func TestReconcile_CodeModules_DisableCSI(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, result)
 
-	//updatedDaemonSet := &appsv1.DaemonSet{}
-	//err = fakeClient.Get(context.TODO(),
-	//	client.ObjectKey{
-	//		Name:      dtcsi.DaemonSetName,
-	//		Namespace: testDynatraceNamespace,
-	//	}, updatedDaemonSet)
-	//require.Error(t, err)
+	updatedDaemonSet := &appsv1.DaemonSet{}
+	err = fakeClient.Get(context.TODO(),
+		client.ObjectKey{
+			Name:      dtcsi.DaemonSetName,
+			Namespace: testDynatraceNamespace,
+		}, updatedDaemonSet)
+	require.Error(t, err)
 }
 
 func buildDynakube(name string, codeModulesEnabled bool) *v1alpha1.DynaKube {
@@ -370,6 +375,7 @@ func buildDynakube(name string, codeModulesEnabled bool) *v1alpha1.DynaKube {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: testDynatraceNamespace,
+			UID:       testUID,
 		},
 		Spec: v1alpha1.DynaKubeSpec{
 			CodeModules: v1alpha1.CodeModulesSpec{
