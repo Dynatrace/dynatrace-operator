@@ -87,12 +87,6 @@ type ActiveGateSpec struct {
 	// implementation from the Dynatrace environment set as API URL.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Image string `json:"image,omitempty"`
-
-	// Disable automatic restarts of OneAgent pods in case a new version is available
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Automatically update Agent"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
-	AutoUpdate *bool `json:"autoUpdate,omitempty"`
 }
 
 type OneAgentSpec struct {
@@ -168,11 +162,6 @@ type FullStackSpec struct {
 	// Optional: set tolerations for the OneAgent pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tolerations",order=18,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
-
-	// Optional: Defines the time to wait until OneAgent pod is ready after update - default 300 sec
-	// +kubebuilder:validation:Minimum=0
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Wait seconds until ready",order=19,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:number"}
-	WaitReadySeconds *uint16 `json:"waitReadySeconds,omitempty"`
 
 	// Optional: define resources requests and limits for single pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=20,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
