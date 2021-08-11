@@ -225,7 +225,7 @@ func TestStatefulSet_Env(t *testing.T) {
 
 		for _, envVar := range envVars {
 			if envVar.Name == DTInternalProxy {
-				assert.Equal(t, ProxyKey, envVar.ValueFrom.SecretKeyRef.Key)
+				assert.Equal(t, ProxySecretKey, envVar.ValueFrom.SecretKeyRef.Key)
 				assert.Equal(t, corev1.LocalObjectReference{Name: testName}, envVar.ValueFrom.SecretKeyRef.LocalObjectReference)
 			}
 		}
