@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -20,6 +21,7 @@ import (
 const (
 	testNamespace       = "test-namespace"
 	testOperatorPodName = "test-operator-pod"
+	testOperatorImage   = "test-operator-image"
 )
 
 func TestReconcile_NoOperatorPod(t *testing.T) {
@@ -100,6 +102,24 @@ func TestReconcile_UpdateDaemonSet(t *testing.T) {
 	assert.NotNil(t, updatedDaemonSet.Annotations)
 	assert.Contains(t, updatedDaemonSet.Annotations, kubeobjects.AnnotationHash)
 	assert.NotEqual(t, "old", updatedDaemonSet.Annotations[kubeobjects.AnnotationHash])
+}
+
+func prepareFakeClient(objs ...client.Object) client.Client {
+	objs = append(objs,
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testOperatorPodName,
+				Namespace: testNamespace,
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Image: testOperatorImage,
+					},
+				},
+			},
+		})
+	return fake.NewClient(objs...)
 }
 
 func prepareDynakube() *v1alpha1.DynaKube {
