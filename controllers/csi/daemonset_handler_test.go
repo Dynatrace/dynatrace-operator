@@ -13,6 +13,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -102,14 +103,13 @@ func Test_ConfigureCSIDriver_AddDynakube_CSIStaysEnabled(t *testing.T) {
 }
 
 func getOwnerReferenceFromDynakube(dynakube *v1alpha1.DynaKube) metav1.OwnerReference {
-	trueVal := true
 	return metav1.OwnerReference{
 		APIVersion:         dynakube.APIVersion,
 		Kind:               dynakube.Kind,
 		Name:               dynakube.Name,
 		UID:                dynakube.UID,
-		Controller:         &trueVal,
-		BlockOwnerDeletion: &trueVal,
+		Controller:         pointer.BoolPtr(false),
+		BlockOwnerDeletion: pointer.BoolPtr(false),
 	}
 }
 

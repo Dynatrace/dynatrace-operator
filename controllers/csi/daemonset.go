@@ -12,8 +12,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -54,12 +54,9 @@ func (r *Reconciler) Reconcile() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	ds, err := buildDesiredCSIDaemonSet(operatorImage, r.operatorNamespace, r.instance.Spec.CodeModules.ServiceAccountNameCSIDriver)
+	ds, err := buildDesiredCSIDaemonSet(
+		operatorImage, r.operatorNamespace, r.instance)
 	if err != nil {
-		return false, errors.WithStack(err)
-	}
-
-	if err := controllerutil.SetControllerReference(r.instance, ds, r.scheme); err != nil {
 		return false, errors.WithStack(err)
 	}
 
@@ -84,8 +81,8 @@ func (r *Reconciler) getOperatorImage() (string, error) {
 	return operatorPod.Spec.Containers[0].Image, nil
 }
 
-func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace, saName string) (*appsv1.DaemonSet, error) {
-	ds := prepareDaemonSet(operatorImage, operatorNamespace, saName)
+func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube *v1alpha1.DynaKube) (*appsv1.DaemonSet, error) {
+	ds := prepareDaemonSet(operatorImage, operatorNamespace, dynakube)
 
 	dsHash, err := kubeobjects.GenerateHash(ds)
 	if err != nil {
@@ -96,11 +93,11 @@ func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace, saName string) (
 	return ds, nil
 }
 
-func prepareDaemonSet(operatorImage, operatorNamespace, saName string) *appsv1.DaemonSet {
+func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *v1alpha1.DynaKube) *appsv1.DaemonSet {
 	labels := prepareDaemonSetLabels()
 
 	return &appsv1.DaemonSet{
-		ObjectMeta: prepareMetadata(operatorNamespace),
+		ObjectMeta: prepareMetadata(operatorNamespace, dynakube),
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
@@ -118,7 +115,7 @@ func prepareDaemonSet(operatorImage, operatorNamespace, saName string) *appsv1.D
 						prepareRegistrarContainer(operatorImage),
 						preparelivenessProbeContainer(operatorImage),
 					},
-					ServiceAccountName: prepareServiceAccount(saName),
+					ServiceAccountName: prepareServiceAccount(dynakube.Spec.CodeModules.ServiceAccountNameCSIDriver),
 					Volumes:            prepareVolumes(),
 				},
 			},
@@ -133,7 +130,7 @@ func prepareDaemonSetLabels() map[string]string {
 	}
 }
 
-func prepareMetadata(namespace string) metav1.ObjectMeta {
+func prepareMetadata(namespace string, dynakube *v1alpha1.DynaKube) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:      DaemonSetName,
 		Namespace: namespace,
@@ -141,6 +138,16 @@ func prepareMetadata(namespace string) metav1.ObjectMeta {
 			"dynatrace.com/operator": "dynatrace",
 		},
 		Annotations: map[string]string{},
+		OwnerReferences: []metav1.OwnerReference{
+			{
+				APIVersion:         dynakube.APIVersion,
+				Kind:               dynakube.Kind,
+				Name:               dynakube.Name,
+				UID:                dynakube.UID,
+				Controller:         pointer.BoolPtr(false),
+				BlockOwnerDeletion: pointer.BoolPtr(false),
+			},
+		},
 	}
 }
 

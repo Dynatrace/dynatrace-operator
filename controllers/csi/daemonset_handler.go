@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -117,14 +118,13 @@ func findOwnerReferenceIndex(ownerReferences []metav1.OwnerReference, instanceUI
 }
 
 func createOwnerReference(dynakube *v1alpha1.DynaKube) metav1.OwnerReference {
-	trueVal := true
 	return metav1.OwnerReference{
 		APIVersion:         dynakube.APIVersion,
 		Kind:               dynakube.Kind,
 		Name:               dynakube.Name,
 		UID:                dynakube.UID,
-		Controller:         &trueVal,
-		BlockOwnerDeletion: &trueVal,
+		Controller:         pointer.BoolPtr(false),
+		BlockOwnerDeletion: pointer.BoolPtr(false),
 	}
 }
 
