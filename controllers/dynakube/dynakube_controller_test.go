@@ -337,40 +337,22 @@ func TestReconcile_CodeModules_EnableCSI(t *testing.T) {
 
 	assert.Equal(t, 3, len(daemonSet.Spec.Template.Spec.Containers))
 	assert.Equal(t, "driver", daemonSet.Spec.Template.Spec.Containers[0].Name)
-
-	configMap := &corev1.ConfigMap{}
-	err = fakeClient.Get(context.TODO(),
-		client.ObjectKey{
-			Name:      dtcsi.CsiMapperConfigMapName,
-			Namespace: testDynatraceNamespace,
-		}, configMap)
-	require.NoError(t, err)
-	assert.NotNil(t, configMap.Data)
-	assert.Equal(t, 1, len(configMap.Data))
-
-	val, ok := configMap.Data[testName]
-	assert.True(t, ok)
-	assert.Equal(t, "", val)
 }
 
 func TestReconcile_CodeModules_DisableCSI(t *testing.T) {
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dtcsi.CsiMapperConfigMapName,
-			Namespace: testDynatraceNamespace,
-		},
-		Data: map[string]string{
-			testName: "",
-		},
-	}
 	daemonSet := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dtcsi.DaemonSetName,
 			Namespace: testDynatraceNamespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					UID: testUID,
+				},
+			},
 		},
 	}
 	dynakube := buildDynakube(testName, false)
-	fakeClient := buildFakeClient(dynakube, configMap, daemonSet)
+	fakeClient := buildFakeClient(dynakube, daemonSet)
 	r := buildReconciliation(fakeClient)
 
 	result, err := r.Reconcile(context.TODO(), reconcile.Request{
@@ -386,15 +368,6 @@ func TestReconcile_CodeModules_DisableCSI(t *testing.T) {
 			Namespace: testDynatraceNamespace,
 		}, updatedDaemonSet)
 	require.Error(t, err)
-
-	updatedConfigMap := &corev1.ConfigMap{}
-	err = fakeClient.Get(context.TODO(),
-		client.ObjectKey{
-			Name:      dtcsi.CsiMapperConfigMapName,
-			Namespace: testDynatraceNamespace,
-		}, updatedConfigMap)
-	require.NoError(t, err)
-	assert.Nil(t, updatedConfigMap.Data)
 }
 
 func buildDynakube(name string, codeModulesEnabled bool) *v1alpha1.DynaKube {
@@ -402,6 +375,7 @@ func buildDynakube(name string, codeModulesEnabled bool) *v1alpha1.DynaKube {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: testDynatraceNamespace,
+			UID:       testUID,
 		},
 		Spec: v1alpha1.DynaKubeSpec{
 			CodeModules: v1alpha1.CodeModulesSpec{

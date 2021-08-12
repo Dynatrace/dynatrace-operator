@@ -13,13 +13,16 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	testNamespace       = "test-namespace"
+	testDynakube        = "test-dynakube"
 	testOperatorPodName = "test-operator-pod"
+	testOperatorImage   = "test-operator-image"
 )
 
 func TestReconcile_NoOperatorPod(t *testing.T) {
@@ -35,7 +38,7 @@ func TestReconcile_NoOperatorPod(t *testing.T) {
 func TestReconcile_NoOperatorImage(t *testing.T) {
 	log := logger.NewDTLogger()
 	pod := &corev1.Pod{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      testOperatorPodName,
 			Namespace: testNamespace,
 		},
@@ -51,7 +54,7 @@ func TestReconcile_NoOperatorImage(t *testing.T) {
 func TestReconcile_CreateDaemonSet(t *testing.T) {
 	log := logger.NewDTLogger()
 	fakeClient := prepareFakeClient()
-	dk := prepareDynakube()
+	dk := prepareDynakube(testDynakube)
 	rec := NewReconciler(fakeClient, scheme.Scheme, log, dk, testOperatorPodName, testNamespace)
 
 	result, err := rec.Reconcile()
@@ -74,7 +77,7 @@ func TestReconcile_CreateDaemonSet(t *testing.T) {
 func TestReconcile_UpdateDaemonSet(t *testing.T) {
 	log := logger.NewDTLogger()
 	ds := &appsv1.DaemonSet{
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name:      DaemonSetName,
 			Namespace: testNamespace,
 			Annotations: map[string]string{
@@ -84,7 +87,7 @@ func TestReconcile_UpdateDaemonSet(t *testing.T) {
 	}
 	fakeClient := prepareFakeClient(ds)
 
-	dk := prepareDynakube()
+	dk := prepareDynakube(testDynakube)
 	rec := NewReconciler(fakeClient, scheme.Scheme, log, dk, testOperatorPodName, testNamespace)
 	result, err := rec.Reconcile()
 	require.NoError(t, err)
@@ -102,15 +105,39 @@ func TestReconcile_UpdateDaemonSet(t *testing.T) {
 	assert.NotEqual(t, "old", updatedDaemonSet.Annotations[kubeobjects.AnnotationHash])
 }
 
-func prepareDynakube() *v1alpha1.DynaKube {
+func prepareFakeClient(objs ...client.Object) client.Client {
+	objs = append(objs,
+		&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testOperatorPodName,
+				Namespace: testNamespace,
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						Image: testOperatorImage,
+					},
+				},
+			},
+		})
+	return fake.NewClient(objs...)
+}
+
+func prepareDynakube(name string) *v1alpha1.DynaKube {
 	return &v1alpha1.DynaKube{
-		TypeMeta:   v1.TypeMeta{},
-		ObjectMeta: v1.ObjectMeta{},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "DynaKube",
+			APIVersion: "dynatrace.com/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: testNamespace,
+			UID:       types.UID(name),
+		},
 		Spec: v1alpha1.DynaKubeSpec{
 			CodeModules: v1alpha1.CodeModulesSpec{
 				ServiceAccountNameCSIDriver: "test",
 			},
 		},
-		Status: v1alpha1.DynaKubeStatus{},
 	}
 }
