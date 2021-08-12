@@ -575,18 +575,18 @@ func TestServiceAccountName(t *testing.T) {
 }
 
 func TestOneAgent_Validate(t *testing.T) {
-	oa := newOneAgent()
-	assert.Error(t, validate(oa))
-	oa.Spec.APIURL = "https://f.q.d.n/api"
-	assert.NoError(t, validate(oa))
+	dk := newDynaKube()
+	assert.Error(t, validate(dk))
+	dk.Spec.APIURL = "https://f.q.d.n/api"
+	assert.NoError(t, validate(dk))
 }
 
 func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
-	oaKey := metav1.ObjectMeta{Name: "my-oneagent", Namespace: "my-namespace"}
+	dkKey := metav1.ObjectMeta{Name: "my-dynakube", Namespace: "my-namespace"}
 
-	ds1 := &appsv1.DaemonSet{ObjectMeta: oaKey}
+	ds1 := &appsv1.DaemonSet{ObjectMeta: dkKey}
 
-	ds2, err := newDaemonSetForCR(consoleLogger, &dynatracev1alpha1.DynaKube{ObjectMeta: oaKey}, &dynatracev1alpha1.FullStackSpec{}, "classic", "cluster1")
+	ds2, err := newDaemonSetForCR(consoleLogger, &dynatracev1alpha1.DynaKube{ObjectMeta: dkKey}, &dynatracev1alpha1.FullStackSpec{}, "classic", "cluster1")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, ds2.Annotations[statefulset.AnnotationTemplateHash])
 
@@ -700,4 +700,18 @@ func newResourceRequirements() corev1.ResourceRequirements {
 func parseQuantity(s string) resource.Quantity {
 	q, _ := resource.ParseQuantity(s)
 	return q
+}
+
+func newDynaKube() *dynatracev1alpha1.DynaKube {
+	return &dynatracev1alpha1.DynaKube{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "DynaKube",
+			APIVersion: "dynatrace.com/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-oneagent",
+			Namespace: "my-namespace",
+			UID:       "69e98f18-805a-42de-84b5-3eae66534f75",
+		},
+	}
 }
