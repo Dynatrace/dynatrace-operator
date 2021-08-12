@@ -5,8 +5,8 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,27 +21,27 @@ type VersionProviderCallback func(string, *dtversion.DockerConfig) (dtversion.Im
 // ReconcileImageVersions updates the version and hash for the images used by the rec.Instance DynaKube instance.
 func ReconcileVersions(
 	ctx context.Context,
-	rec *utils.Reconciliation,
+	dkState *controllers.DynakubeState,
 	cl client.Client,
 	verProvider VersionProviderCallback,
 ) (bool, error) {
 	upd := false
-	dk := rec.Instance
+	dk := dkState.Instance
 
 	needsOneAgentUpdate := dk.NeedsOneAgent() &&
-		rec.IsOutdated(dk.Status.OneAgent.LastUpdateProbeTimestamp, ProbeThreshold) &&
+		dkState.IsOutdated(dk.Status.OneAgent.LastUpdateProbeTimestamp, ProbeThreshold) &&
 		dk.ShouldAutoUpdateOneAgent()
 
 	if needsOneAgentUpdate && !dk.NeedsImmutableOneAgent() {
 		upd = true
-		if err := updateOneAgentInstallerVersion(rec, dk); err != nil {
-			rec.Log.Error(err, "Failed to fetch OneAgent installer version")
+		if err := updateOneAgentInstallerVersion(dkState, dk); err != nil {
+			dkState.Log.Error(err, "Failed to fetch OneAgent installer version")
 		}
 	}
 
 	needsActiveGateUpdate := dk.NeedsActiveGate() &&
 		!dk.FeatureDisableActiveGateUpdates() &&
-		rec.IsOutdated(dk.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
+		dkState.IsOutdated(dk.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
 
 	needsImmutableOneAgentUpdate := dk.NeedsImmutableOneAgent() && needsOneAgentUpdate
 
@@ -63,14 +63,14 @@ func ReconcileVersions(
 	upd = true // updateImageVersion() always updates the status
 
 	if needsActiveGateUpdate {
-		if err := updateImageVersion(rec, dk.ActiveGateImage(), &dk.Status.ActiveGate.VersionStatus, &dockerCfg, verProvider, true); err != nil {
-			rec.Log.Error(err, "Failed to update ActiveGate image version")
+		if err := updateImageVersion(dkState, dk.ActiveGateImage(), &dk.Status.ActiveGate.VersionStatus, &dockerCfg, verProvider, true); err != nil {
+			dkState.Log.Error(err, "Failed to update ActiveGate image version")
 		}
 	}
 
 	if needsImmutableOneAgentUpdate {
-		if err := updateImageVersion(rec, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.VersionStatus, &dockerCfg, verProvider, false); err != nil {
-			rec.Log.Error(err, "Failed to update OneAgent image version")
+		if err := updateImageVersion(dkState, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.VersionStatus, &dockerCfg, verProvider, false); err != nil {
+			dkState.Log.Error(err, "Failed to update OneAgent image version")
 		}
 	}
 
@@ -78,14 +78,14 @@ func ReconcileVersions(
 }
 
 func updateImageVersion(
-	rec *utils.Reconciliation,
+	dkState *controllers.DynakubeState,
 	img string,
 	target *dynatracev1alpha1.VersionStatus,
 	dockerCfg *dtversion.DockerConfig,
 	verProvider VersionProviderCallback,
 	allowDowngrades bool,
 ) error {
-	target.LastUpdateProbeTimestamp = rec.Now.DeepCopy()
+	target.LastUpdateProbeTimestamp = dkState.Now.DeepCopy()
 
 	ver, err := verProvider(img, dockerCfg)
 	if err != nil {
@@ -104,7 +104,7 @@ func updateImageVersion(
 		}
 	}
 
-	rec.Log.Info("Update found",
+	dkState.Log.Info("Update found",
 		"image", img,
 		"oldVersion", target.Version, "newVersion", ver.Version,
 		"oldHash", target.ImageHash, "newHash", ver.Hash)
@@ -113,8 +113,8 @@ func updateImageVersion(
 	return nil
 }
 
-func updateOneAgentInstallerVersion(rec *utils.Reconciliation, dk *dynatracev1alpha1.DynaKube) error {
-	dk.Status.OneAgent.LastUpdateProbeTimestamp = rec.Now.DeepCopy()
+func updateOneAgentInstallerVersion(dkState *controllers.DynakubeState, dk *dynatracev1alpha1.DynaKube) error {
+	dk.Status.OneAgent.LastUpdateProbeTimestamp = dkState.Now.DeepCopy()
 	ver := dk.Status.LatestAgentVersionUnixDefault
 
 	oldVer := dk.Status.OneAgent.Version
@@ -131,7 +131,7 @@ func updateOneAgentInstallerVersion(rec *utils.Reconciliation, dk *dynatracev1al
 		}
 	}
 
-	rec.Log.Info("OneAgent update found", "oldVersion", oldVer, "newVersion", ver)
+	dkState.Log.Info("OneAgent update found", "oldVersion", oldVer, "newVersion", ver)
 	dk.Status.OneAgent.Version = ver
 	return nil
 }

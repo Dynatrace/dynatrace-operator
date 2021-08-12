@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -174,9 +174,9 @@ func prepareFakeClientWithEnabledCSI(data map[string]string) client.Client {
 	return fakeClient
 }
 
-func prepareReconciliation(enableCodeModules bool) *utils.Reconciliation {
+func prepareReconciliation(enableCodeModules bool) *controllers.DynakubeState {
 	log := logger.NewDTLogger()
-	rec := &utils.Reconciliation{
+	dkState := &controllers.DynakubeState{
 		Log: log,
 		Instance: &v1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -190,5 +190,5 @@ func prepareReconciliation(enableCodeModules bool) *utils.Reconciliation {
 			},
 		},
 	}
-	return rec
+	return dkState
 }

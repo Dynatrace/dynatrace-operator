@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/Dynatrace/dynatrace-operator/controllers"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,8 +27,8 @@ type csiMapper struct {
 
 func ConfigureCSIDriver(
 	client client.Client, scheme *runtime.Scheme, operatorPodName, operatorNamespace string,
-	rec *utils.Reconciliation, updateInterval time.Duration) error {
-	configMap, err := loadOrCreateConfigMap(client, rec.Instance.Namespace)
+	dkState *controllers.DynakubeState, updateInterval time.Duration) error {
+	configMap, err := loadOrCreateConfigMap(client, dkState.Instance.Namespace)
 	if err != nil {
 		return err
 	}
@@ -37,22 +37,22 @@ func ConfigureCSIDriver(
 		client:    client,
 		configMap: configMap,
 	}
-	if rec.Instance.Spec.CodeModules.Enabled {
+	if dkState.Instance.Spec.CodeModules.Enabled {
 		if !csiMapper.hasActiveCSIDrivers() {
-			err := enableCSIDriver(client, scheme, operatorPodName, operatorNamespace, rec, updateInterval, csiMapper)
+			err := enableCSIDriver(client, scheme, operatorPodName, operatorNamespace, dkState, updateInterval, csiMapper)
 			if err != nil {
 				return err
 			}
 		}
-		if err := csiMapper.add(rec.Instance.Name); err != nil {
+		if err := csiMapper.add(dkState.Instance.Name); err != nil {
 			return err
 		}
 	} else {
-		if err := csiMapper.remove(rec.Instance.Name); err != nil {
+		if err := csiMapper.remove(dkState.Instance.Name); err != nil {
 			return err
 		}
 		if !csiMapper.hasActiveCSIDrivers() {
-			err = disableCSIDriver(rec, csiMapper)
+			err = disableCSIDriver(dkState, csiMapper)
 			if err != nil {
 				return err
 			}
@@ -63,15 +63,15 @@ func ConfigureCSIDriver(
 
 // disableCSIDriver disables csi driver by removing its daemon set.
 // ensures csi driver is disabled, when additional CodeModules are disabled.
-func disableCSIDriver(rec *utils.Reconciliation, csiMapper *csiMapper) error {
+func disableCSIDriver(dkState *controllers.DynakubeState, csiMapper *csiMapper) error {
 	log.Info("ensuring csi driver is disabled")
 	ds := appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      DaemonSetName,
-			Namespace: rec.Instance.Namespace,
+			Namespace: dkState.Instance.Namespace,
 		},
 	}
-	if err := csiMapper.ensureDeleted(&ds); rec.Error(err) {
+	if err := csiMapper.ensureDeleted(&ds); dkState.Error(err) {
 		return err
 	}
 	return nil
@@ -80,17 +80,17 @@ func disableCSIDriver(rec *utils.Reconciliation, csiMapper *csiMapper) error {
 // enableCSIDriver tries to enable csi driver, by creating its daemon set.
 func enableCSIDriver(
 	client client.Client, scheme *runtime.Scheme, operatorPodName string, operatorNamespace string,
-	rec *utils.Reconciliation, updateInterval time.Duration, csiMapper *csiMapper) error {
+	dkState *controllers.DynakubeState, updateInterval time.Duration, csiMapper *csiMapper) error {
 
 	log.Info("enabling csi driver")
-	upd, err := NewReconciler(client, scheme, rec.Log, rec.Instance, operatorPodName, operatorNamespace).Reconcile()
+	upd, err := NewReconciler(client, scheme, dkState.Log, dkState.Instance, operatorPodName, operatorNamespace).Reconcile()
 	if err != nil {
 		return err
 	}
-	if err = csiMapper.add(rec.Instance.Name); err != nil {
+	if err = csiMapper.add(dkState.Instance.Name); err != nil {
 		return err
 	}
-	if rec.Update(upd, updateInterval, "CSI driver reconciled") {
+	if dkState.Update(upd, updateInterval, "CSI driver reconciled") {
 		return nil
 	}
 	return nil
