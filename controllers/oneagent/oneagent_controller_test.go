@@ -11,7 +11,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -174,7 +174,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &dkState)
+		updateCR, err := reconciler.reconcileRollout(&dkState)
 
 		// assert
 		assert.True(t, updateCR)
@@ -189,7 +189,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &dkState)
+		updateCR, err := reconciler.reconcileRollout(&dkState)
 
 		// assert
 		assert.True(t, updateCR)
@@ -220,7 +220,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &dkState)
+		updateCR, err := reconciler.reconcileRollout(&dkState)
 
 		// assert
 		assert.True(t, updateCR)
@@ -588,9 +588,9 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 
 	ds2, err := newDaemonSetForCR(consoleLogger, &dynatracev1alpha1.DynaKube{ObjectMeta: dkKey}, &dynatracev1alpha1.FullStackSpec{}, "classic", "cluster1")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, ds2.Annotations[statefulset.AnnotationTemplateHash])
+	assert.NotEmpty(t, ds2.Annotations[kubeobjects.AnnotationHash])
 
-	assert.True(t, hasDaemonSetChanged(ds1, ds2))
+	assert.True(t, kubeobjects.HasChanged(ds1, ds2))
 }
 
 func TestHasSpecChanged(t *testing.T) {
@@ -608,10 +608,10 @@ func TestHasSpecChanged(t *testing.T) {
 			ds2, err := newDaemonSetForCR(consoleLogger, &newInstance, &newInstance.Spec.ClassicFullStack, "classic", "cluster1")
 			assert.NoError(t, err)
 
-			assert.NotEmpty(t, ds1.Annotations[statefulset.AnnotationTemplateHash])
-			assert.NotEmpty(t, ds2.Annotations[statefulset.AnnotationTemplateHash])
+			assert.NotEmpty(t, ds1.Annotations[kubeobjects.AnnotationHash])
+			assert.NotEmpty(t, ds2.Annotations[kubeobjects.AnnotationHash])
 
-			assert.Equal(t, exp, hasDaemonSetChanged(ds1, ds2))
+			assert.Equal(t, exp, kubeobjects.HasChanged(ds1, ds2))
 		})
 	}
 

@@ -6,6 +6,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -60,11 +61,11 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	assert.Equal(t, buildLabels(instance, testFeature, capabilityProperties), sts.Spec.Template.Labels)
 	assert.Equal(t, sts.Labels, sts.Spec.Template.Labels)
 	assert.NotEqual(t, corev1.PodSpec{}, sts.Spec.Template.Spec)
-	assert.Contains(t, sts.Annotations, AnnotationTemplateHash)
+	assert.Contains(t, sts.Annotations, kubeobjects.AnnotationHash)
 
-	storedHash := sts.Annotations[AnnotationTemplateHash]
+	storedHash := sts.Annotations[kubeobjects.AnnotationHash]
 	sts.Annotations = map[string]string{}
-	hash, err := generateStatefulSetHash(sts)
+	hash, err := kubeobjects.GenerateHash(sts)
 	assert.NoError(t, err)
 	assert.Equal(t, storedHash, hash)
 

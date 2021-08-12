@@ -21,7 +21,6 @@ const (
 	testKey2   = "test-name"
 
 	testSecretName = "super-secret"
-	testNamespace  = "namespace"
 	testSecretType = corev1.SecretType("type")
 )
 
