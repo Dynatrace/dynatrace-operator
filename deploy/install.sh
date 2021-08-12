@@ -96,14 +96,14 @@ checkIfNSExists() {
 }
 
 isOCP311() {
-  "${CLI}" version -o json | tr -d '[[:space:]]'| grep '"serverVersion.*"' | grep '"major":"3","minor":"11.*"'
+  "${CLI}" version -o json | tr -d '[[:space:]]'| grep '"serverVersion.*"' | grep -q '"major":"3","minor":"11.*"'
 }
 
 applyDynatraceOperator() {
   if [ "${CLI}" = "kubectl" ]; then
     "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
   else
-    if [ isOCP311 ]; then
+    if isOCP311; then
       "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift3.11.yaml
     else
       "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift.yaml
