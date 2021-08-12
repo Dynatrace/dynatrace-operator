@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/stretchr/testify/assert"
@@ -24,9 +24,9 @@ const (
 func Test_ConfigureCSIDriver_Enable(t *testing.T) {
 	dynakube := prepareDynakube(testDynakube)
 	fakeClient := prepareFakeClient()
-	rec := prepareReconciliation(dynakube, true)
+	dkState := prepareDynakubeState(dynakube, true)
 
-	err := ConfigureCSIDriver(fakeClient, scheme.Scheme, testOperatorPodName, testNamespace, rec, 10)
+	err := ConfigureCSIDriver(fakeClient, scheme.Scheme, testOperatorPodName, testNamespace, dkState, 10)
 	require.NoError(t, err)
 
 	csiDaemonSet := &appsv1.DaemonSet{}
@@ -44,9 +44,9 @@ func Test_ConfigureCSIDriver_Enable(t *testing.T) {
 func Test_ConfigureCSIDriver_Disable(t *testing.T) {
 	dynakube := prepareDynakube(testDynakube)
 	fakeClient := prepareFakeClientWithEnabledCSI(dynakube)
-	rec := prepareReconciliation(dynakube, false)
+	dkState := prepareDynakubeState(dynakube, false)
 
-	err := ConfigureCSIDriver(fakeClient, scheme.Scheme, testOperatorPodName, testNamespace, rec, 10)
+	err := ConfigureCSIDriver(fakeClient, scheme.Scheme, testOperatorPodName, testNamespace, dkState, 10)
 	require.NoError(t, err)
 
 	updatedDaemonSet := &appsv1.DaemonSet{}
@@ -62,9 +62,9 @@ func Test_ConfigureCSIDriver_RemoveDynakube_CSIStaysDisabled(t *testing.T) {
 	dynakube := prepareDynakube(testDynakube)
 	otherDynakube := prepareDynakube(otherTestDynakube)
 	fakeClient := prepareFakeClientWithEnabledCSI(dynakube, otherDynakube)
-	rec := prepareReconciliation(dynakube, false)
+	dkState := prepareDynakubeState(dynakube, false)
 
-	err := ConfigureCSIDriver(fakeClient, scheme.Scheme, testOperatorPodName, testNamespace, rec, 10)
+	err := ConfigureCSIDriver(fakeClient, scheme.Scheme, testOperatorPodName, testNamespace, dkState, 10)
 	require.NoError(t, err)
 
 	updatedDaemonSet := &appsv1.DaemonSet{}
@@ -84,9 +84,9 @@ func Test_ConfigureCSIDriver_AddDynakube_CSIStaysEnabled(t *testing.T) {
 	dynakube := prepareDynakube(testDynakube)
 	otherDynakube := prepareDynakube(otherTestDynakube)
 	fakeClient := prepareFakeClientWithEnabledCSI(otherDynakube)
-	rec := prepareReconciliation(dynakube, true)
+	dkState := prepareDynakubeState(dynakube, true)
 
-	err := ConfigureCSIDriver(fakeClient, scheme.Scheme, testOperatorPodName, testNamespace, rec, 10)
+	err := ConfigureCSIDriver(fakeClient, scheme.Scheme, testOperatorPodName, testNamespace, dkState, 10)
 	require.NoError(t, err)
 
 	updatedDaemonSet := &appsv1.DaemonSet{}
@@ -131,7 +131,7 @@ func prepareFakeClientWithEnabledCSI(dynakubes ...*v1alpha1.DynaKube) client.Cli
 	return fakeClient
 }
 
-func prepareReconciliation(dynakube *v1alpha1.DynaKube, enableCodeModules bool) *utils.Reconciliation {
+func prepareDynakubeState(dynakube *v1alpha1.DynaKube, enableCodeModules bool) *controllers.DynakubeState {
 	log := logger.NewDTLogger()
 
 	if enableCodeModules {
@@ -142,9 +142,8 @@ func prepareReconciliation(dynakube *v1alpha1.DynaKube, enableCodeModules bool) 
 		}
 	}
 
-	rec := &utils.Reconciliation{
+	return &controllers.DynakubeState{
 		Log:      log,
 		Instance: dynakube,
 	}
-	return rec
 }
