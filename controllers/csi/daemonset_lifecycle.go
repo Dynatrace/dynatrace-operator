@@ -21,12 +21,12 @@ func ConfigureCSIDriver(
 	rec *utils.Reconciliation, updateInterval time.Duration) error {
 
 	if rec.Instance.Spec.CodeModules.Enabled {
-		err := addDynakube(client, scheme, operatorPodName, operatorNamespace, rec, updateInterval)
+		err := addDynakubeOwnerReference(client, scheme, operatorPodName, operatorNamespace, rec, updateInterval)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := removeDynakube(client, rec)
+		err := removeDynakubeOwnerReference(client, rec)
 		if err != nil {
 			return err
 		}
@@ -34,28 +34,42 @@ func ConfigureCSIDriver(
 	return nil
 }
 
-// addDynakube enables csi driver, by creating its DaemonSet (if it does not exist yet)
+// addDynakubeOwnerReference enables csi driver, by creating its DaemonSet (if it does not exist yet)
 // and adds the current Dynakube to the OwnerReferences of the DaemonSet
-func addDynakube(
+func addDynakubeOwnerReference(
 	client client.Client, scheme *runtime.Scheme, operatorPodName string, operatorNamespace string,
 	rec *utils.Reconciliation, updateInterval time.Duration) error {
 
 	csiDaemonSet, err := getCSIDaemonSet(client, rec.Instance.Namespace)
 	if k8serrors.IsNotFound(err) {
-		rec.Log.Info("enabling csi driver")
-		csiDaemonSetReconciler := NewReconciler(client, scheme, rec.Log, rec.Instance, operatorPodName, operatorNamespace)
-		upd, err := csiDaemonSetReconciler.Reconcile()
-		if err != nil {
+		err, upd := createCSIDaemonSet(client, scheme, operatorPodName, operatorNamespace, rec, updateInterval)
+		if err != nil || upd {
 			return err
 		}
-		if rec.Update(upd, updateInterval, "CSI driver reconciled") {
-			return nil
-		}
-		return nil
 	} else if err != nil {
 		return err
 	}
 
+	return addToOwnerReference(client, csiDaemonSet, rec)
+}
+
+func createCSIDaemonSet(
+	client client.Client, scheme *runtime.Scheme, operatorPodName string, operatorNamespace string,
+	rec *utils.Reconciliation, updateInterval time.Duration) (error, bool) {
+
+	rec.Log.Info("enabling csi driver")
+	csiDaemonSetReconciler := NewReconciler(client, scheme, rec.Log, rec.Instance, operatorPodName, operatorNamespace)
+	upd, err := csiDaemonSetReconciler.Reconcile()
+	if err != nil {
+		return err, false
+	}
+	if rec.Update(upd, updateInterval, "CSI driver reconciled") {
+		return nil, true
+	}
+	return nil, false
+}
+
+func addToOwnerReference(client client.Client, csiDaemonSet *appsv1.DaemonSet, rec *utils.Reconciliation) error {
 	for _, ownerReference := range csiDaemonSet.OwnerReferences {
 		if ownerReference.UID == rec.Instance.UID {
 			// Dynakube already defined as Owner of CSI DaemonSet
@@ -64,16 +78,12 @@ func addDynakube(
 	}
 
 	csiDaemonSet.OwnerReferences = append(csiDaemonSet.OwnerReferences, createOwnerReference(rec.Instance))
-	err = client.Update(context.TODO(), csiDaemonSet)
-	if err != nil {
-		return err
-	}
-	return nil
+	return client.Update(context.TODO(), csiDaemonSet)
 }
 
-// removeDynakube removes the current Dynakube from the OwnerReferences of the DaemonSet
+// removeDynakubeOwnerReference removes the current Dynakube from the OwnerReferences of the DaemonSet
 // and deletes the DaemonSet if no Owners are left.
-func removeDynakube(clt client.Client, rec *utils.Reconciliation) error {
+func removeDynakubeOwnerReference(clt client.Client, rec *utils.Reconciliation) error {
 	csiDaemonSet, err := getCSIDaemonSet(clt, rec.Instance.Namespace)
 	if k8serrors.IsNotFound(err) {
 		return nil
@@ -87,14 +97,14 @@ func removeDynakube(clt client.Client, rec *utils.Reconciliation) error {
 		return nil
 	}
 
-	err = updateOrDeleteDaemonSet(clt, csiDaemonSet, itemIndex, rec.Log)
+	err = updateOrDeleteCSIDaemonSet(clt, csiDaemonSet, itemIndex, rec.Log)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func updateOrDeleteDaemonSet(clt client.Client, csiDaemonSet *appsv1.DaemonSet, itemIndex int, log logr.Logger) error {
+func updateOrDeleteCSIDaemonSet(clt client.Client, csiDaemonSet *appsv1.DaemonSet, itemIndex int, log logr.Logger) error {
 	if len(csiDaemonSet.OwnerReferences) > 1 {
 		csiDaemonSet.OwnerReferences = append(
 			csiDaemonSet.OwnerReferences[:itemIndex],
