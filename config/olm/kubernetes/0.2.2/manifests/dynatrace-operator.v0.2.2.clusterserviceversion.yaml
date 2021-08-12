@@ -2,13 +2,50 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[]'
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "dynatrace.com/v1alpha1",
+          "kind": "DynaKube",
+          "metadata": {
+            "name": "dynakube",
+            "namespace": "dynatrace"
+          },
+          "spec": {
+            "activeGate": {
+              "image": ""
+            },
+            "apiUrl": "https://ENVIRONMENTID.live.dynatrace.com/api",
+            "classicFullStack": {
+              "enabled": true,
+              "tolerations": [
+                {
+                  "effect": "NoSchedule",
+                  "key": "node-role.kubernetes.io/master",
+                  "operator": "Exists"
+                }
+              ]
+            },
+            "kubernetesMonitoring": {
+              "enabled": true
+            },
+            "oneAgent": {
+              "image": ""
+            },
+            "routing": {
+              "enabled": true
+            }
+          }
+        }
+      ]
     capabilities: Deep Insights
     categories: Monitoring,Logging & Tracing
-    containerImage: registry.connect.redhat.com/dynatrace/dynatrace-operator
+    containerImage: docker.io/dynatrace/dynatrace-operator:v0.2.2
+    operators.operatorframework.io/builder: operator-sdk-v1.10.1
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/Dynatrace/dynatrace-operator
     support: Dynatrace
-  name: dynatrace-operator.v0.0.0
+  name: dynatrace-operator.v0.2.2
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -151,6 +188,20 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: Defines the time to wait until OneAgent pod is ready
+          after update - default 300 sec'
+        displayName: Wait seconds until ready
+        path: classicFullStack.waitReadySeconds
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:number
+      - description: 'Optional: Defines the time to wait until OneAgent pod is ready
+          after update - default 300 sec'
+        displayName: Wait seconds until ready
+        path: infraMonitoring.waitReadySeconds
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:number
       - description: 'Optional: define resources requests and limits for single pods'
         displayName: Resource Requirements
         path: classicFullStack.resources
@@ -386,8 +437,283 @@ spec:
     mediatype: image/png
   install:
     spec:
-      deployments: null
-    strategy: ""
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - ""
+          - batch
+          - apps
+          - apps.openshift.io
+          - config.openshift.io
+          resources:
+          - nodes
+          - pods
+          - namespaces
+          - deployments
+          - replicasets
+          - deploymentconfigs
+          - replicationcontrollers
+          - jobs
+          - cronjobs
+          - statefulsets
+          - daemonsets
+          - events
+          - resourcequotas
+          - pods/proxy
+          - nodes/proxy
+          - services
+          - clusterversions
+          verbs:
+          - list
+          - watch
+          - get
+        - nonResourceURLs:
+          - /metrics
+          verbs:
+          - get
+        serviceAccountName: dynatrace-kubernetes-monitoring
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - nodes
+          - namespaces
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - create
+        - apiGroups:
+          - ""
+          resourceNames:
+          - dynatrace-dynakube-config
+          resources:
+          - secrets
+          verbs:
+          - get
+          - update
+          - delete
+        serviceAccountName: dynatrace-operator
+      deployments:
+      - name: dynatrace-operator
+        spec:
+          replicas: 1
+          revisionHistoryLimit: 1
+          selector:
+            matchLabels:
+              name: dynatrace-operator
+          strategy:
+            type: Recreate
+          template:
+            metadata:
+              labels:
+                dynatrace: operator
+                name: dynatrace-operator
+                operator: dynakube
+            spec:
+              affinity:
+                nodeAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: beta.kubernetes.io/arch
+                        operator: In
+                        values:
+                        - amd64
+                        - arm64
+                      - key: beta.kubernetes.io/os
+                        operator: In
+                        values:
+                        - linux
+                    - matchExpressions:
+                      - key: kubernetes.io/arch
+                        operator: In
+                        values:
+                        - amd64
+                        - arm64
+                      - key: kubernetes.io/os
+                        operator: In
+                        values:
+                        - linux
+              containers:
+              - args:
+                - operator
+                env:
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                image: docker.io/dynatrace/dynatrace-operator:v0.2.2
+                imagePullPolicy: Always
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: server-port
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                name: dynatrace-operator
+                ports:
+                - containerPort: 8080
+                  name: metrics
+                - containerPort: 10080
+                  name: server-port
+                readinessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: server-port
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 256Mi
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+              serviceAccountName: dynatrace-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - dynatrace.com
+          resources:
+          - dynakubes
+          verbs:
+          - get
+          - list
+          - watch
+          - update
+          - create
+        - apiGroups:
+          - dynatrace.com
+          resources:
+          - dynakubes/finalizers
+          - dynakubes/status
+          verbs:
+          - update
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - daemonsets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          - deployments
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
+          - watch
+          - delete
+          - create
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - list
+          - create
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - networking.istio.io
+          resources:
+          - serviceentries
+          - virtualservices
+          verbs:
+          - get
+          - list
+          - create
+          - update
+          - delete
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - get
+          - update
+          - create
+        serviceAccountName: dynatrace-operator
+    strategy: deployment
   installModes:
   - supported: true
     type: OwnNamespace
@@ -406,8 +732,8 @@ spec:
   links:
   - name: Dynatrace Operator
     url: https://github.com/Dynatrace/dynatrace-operator
-  - name: OpenShift Monitoring Info
-    url: https://www.dynatrace.com/technologies/openshift-monitoring
+  - name: Kubernetes Monitoring Info
+    url: https://www.dynatrace.com/technologies/Kubernetes-monitoring
   maintainers:
   - email: support@dynatrace.com
     name: Dynatrace LLC
@@ -415,4 +741,5 @@ spec:
   provider:
     name: Dynatrace LLC
     url: www.dynatrace.com
-  version: 0.0.0
+  replaces: dynatrace-operator.v0.2.1
+  version: 0.2.2

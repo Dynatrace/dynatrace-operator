@@ -38,7 +38,7 @@ const (
 	DTInternalProxy      = "DT_INTERNAL_PROXY"
 	DTDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
 
-	ProxyKey = "ProxyKey"
+	ProxySecretKey = "proxy"
 )
 
 type statefulSetProperties struct {
@@ -245,7 +245,7 @@ func buildProxyEnv(proxy *dynatracev1alpha1.DynaKubeProxy) corev1.EnvVar {
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: proxy.ValueFrom},
-					Key:                  ProxyKey,
+					Key:                  ProxySecretKey,
 				},
 			},
 		}

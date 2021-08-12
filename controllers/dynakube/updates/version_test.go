@@ -23,9 +23,9 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -60,53 +60,53 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 	fakeClient := fake.NewClient()
 
 	now := metav1.Now()
-	rec := &utils.Reconciliation{Instance: &dk, Log: logger.NewDTLogger(), Now: now}
+	dkState := &controllers.DynakubeState{Instance: &dk, Log: logger.NewDTLogger(), Now: now}
 
 	errVerProvider := func(img string, dockerConfig *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
 		return dtversion.ImageVersion{}, errors.New("Not implemented")
 	}
 
-	upd, err := ReconcileVersions(ctx, rec, fakeClient, errVerProvider)
+	upd, err := ReconcileVersions(ctx, dkState, fakeClient, errVerProvider)
 	assert.Error(t, err)
 	assert.False(t, upd)
 
 	data, err := buildTestDockerAuth(t)
 	require.NoError(t, err)
 
-	err = createTestPullSecret(t, fakeClient, rec, data)
+	err = createTestPullSecret(t, fakeClient, dkState, data)
 	require.NoError(t, err)
 
 	sampleVerProvider := func(img string, dockerConfig *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
 		return dtversion.ImageVersion{Version: testVersion, Hash: testHash}, nil
 	}
 
-	upd, err = ReconcileVersions(ctx, rec, fakeClient, sampleVerProvider)
+	upd, err = ReconcileVersions(ctx, dkState, fakeClient, sampleVerProvider)
 	assert.NoError(t, err)
 	assert.True(t, upd)
 
-	assert.Equal(t, testVersion, rec.Instance.Status.ActiveGate.Version)
-	assert.Equal(t, testHash, rec.Instance.Status.ActiveGate.ImageHash)
-	if ts := rec.Instance.Status.ActiveGate.LastUpdateProbeTimestamp; assert.NotNil(t, ts) {
+	assert.Equal(t, testVersion, dkState.Instance.Status.ActiveGate.Version)
+	assert.Equal(t, testHash, dkState.Instance.Status.ActiveGate.ImageHash)
+	if ts := dkState.Instance.Status.ActiveGate.LastUpdateProbeTimestamp; assert.NotNil(t, ts) {
 		assert.Equal(t, now, *ts)
 	}
 
-	assert.Equal(t, testVersion, rec.Instance.Status.OneAgent.Version)
-	assert.Equal(t, testHash, rec.Instance.Status.OneAgent.ImageHash)
-	if ts := rec.Instance.Status.OneAgent.LastUpdateProbeTimestamp; assert.NotNil(t, ts) {
+	assert.Equal(t, testVersion, dkState.Instance.Status.OneAgent.Version)
+	assert.Equal(t, testHash, dkState.Instance.Status.OneAgent.ImageHash)
+	if ts := dkState.Instance.Status.OneAgent.LastUpdateProbeTimestamp; assert.NotNil(t, ts) {
 		assert.Equal(t, now, *ts)
 	}
 
-	upd, err = ReconcileVersions(ctx, rec, fakeClient, sampleVerProvider)
+	upd, err = ReconcileVersions(ctx, dkState, fakeClient, sampleVerProvider)
 	assert.NoError(t, err)
 	assert.False(t, upd)
 }
 
 // Adding *testing.T parameter to prevent usage in production code
-func createTestPullSecret(_ *testing.T, clt client.Client, rec *utils.Reconciliation, data []byte) error {
+func createTestPullSecret(_ *testing.T, clt client.Client, dkState *controllers.DynakubeState, data []byte) error {
 	return clt.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: rec.Instance.Namespace,
-			Name:      rec.Instance.Name + dtpullsecret.PullSecretSuffix,
+			Namespace: dkState.Instance.Namespace,
+			Name:      dkState.Instance.Name + dtpullsecret.PullSecretSuffix,
 		},
 		Data: map[string][]byte{
 			".dockerconfigjson": data,

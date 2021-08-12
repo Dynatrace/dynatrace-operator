@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -121,7 +121,7 @@ func getLightWeightImageEnvVars(instance *dynatracev1alpha1.DynaKube) []reserved
 			ev.ValueFrom = &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: instance.Tokens()},
-					Key:                  utils.DynatracePaasToken,
+					Key:                  dtclient.DynatracePaasToken,
 				},
 			}
 		}},
