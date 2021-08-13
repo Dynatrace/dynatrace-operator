@@ -192,7 +192,7 @@ func prepareDriverEnvVars() []corev1.EnvVar {
 			Name: "KUBE_NODE_NAME",
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
-					APIVersion: "corev1",
+					APIVersion: "v1",
 					FieldPath:  "spec.nodeName",
 				},
 			},
