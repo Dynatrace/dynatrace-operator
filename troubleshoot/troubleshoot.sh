@@ -59,7 +59,7 @@ checkDynakube() {
 
   # check dynakube crd exists
   crd="$("${cli}" get dynakube -n "${selected_namespace}" >/dev/null 2>&1)"
-  if [ -z "$crd" ]; then
+  if [[ -z "$crd" ]]; then
     log_info "dynakube" "CRD for Dynakube exists"
   else
     error "CRD for Dynakube missing"
@@ -74,7 +74,7 @@ checkDynakube() {
   else
     # dynakube not set, check for existing
     names="$("${cli}" get dynakube -n "${selected_namespace}" -o jsonpath={..metadata.name})"
-    if [ -z "$names" ]; then
+    if [[ -z "$names" ]]; then
       error "No Dynakube exists"
     fi
 
@@ -96,7 +96,7 @@ checkApiUrl() {
   log_info "dynakube" "checking if api url is valid..."
 
   api_url=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.apiUrl}}")
-  if [ "${api_url##*/}" != "api" ]; then
+  if [[ "${api_url##*/}" != "api" ]]; then
     error "api url has to end on '/api'"
   else
     log_info "dynakube" "api url correctly ends on '/api'"
@@ -131,7 +131,7 @@ checkSecret() {
       log_info "dynakube" "secret token '${token_name}' exists"
     fi
 
-    if [ "$token_name" = "paasToken" ]; then
+    if [[ "$token_name" = "paasToken" ]]; then
       paas_token=$(echo "$token" | base64 -d)
     fi
   done
@@ -264,13 +264,13 @@ checkImagePullable() {
     fi
   done
 
-  if [ "$oneagent_image_works" = "true" ] ; then
+  if [[ "$oneagent_image_works" = "true" ]] ; then
     log_info "image" "oneagent image '$dynakube_oneagent_image' works"
   else
     error "oneagent image '$dynakube_oneagent_image' missing"
   fi
 
-  if [ "$activegate_image_works" = "true" ] ; then
+  if [[ "$activegate_image_works" = "true" ]] ; then
     log_info "image" "activegate image '$dynakube_activegate_image' works"
   else
     error "activegate image '$dynakube_activegate_image' missing"
