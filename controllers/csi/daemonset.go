@@ -23,6 +23,11 @@ const (
 	PluginsDirPath      = "/var/lib/kubelet/plugins"
 	MountpointDirPath   = "/var/lib/kubelet/pods"
 	OneAgentDataDirPath = "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data"
+
+	MinCPU    = 50
+	MinMemory = 50
+	MaxCPU    = 200
+	MaxMemory = 100
 )
 
 type Reconciler struct {
@@ -203,12 +208,12 @@ func prepareDriverEnvVars() []corev1.EnvVar {
 func prepareResources() corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    getQuantity(50, resource.Milli),
-			corev1.ResourceMemory: getQuantity(50, resource.Mega),
+			corev1.ResourceCPU:    getQuantity(MinCPU, resource.Milli),
+			corev1.ResourceMemory: getQuantity(MinMemory, resource.Mega),
 		},
 		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    getQuantity(200, resource.Milli),
-			corev1.ResourceMemory: getQuantity(100, resource.Mega),
+			corev1.ResourceCPU:    getQuantity(MaxCPU, resource.Milli),
+			corev1.ResourceMemory: getQuantity(MaxMemory, resource.Mega),
 		},
 	}
 }
