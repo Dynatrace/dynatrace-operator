@@ -201,15 +201,20 @@ func prepareDriverEnvVars() []corev1.EnvVar {
 }
 
 func prepareResources() corev1.ResourceRequirements {
-	quantityCpuLimit := resource.NewScaledQuantity(200, resource.Milli)
-	quantityMemoryLimit := resource.NewScaledQuantity(100, resource.Mega)
-
 	return corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    getQuantity(50, resource.Milli),
+			corev1.ResourceMemory: getQuantity(50, resource.Mega),
+		},
 		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    *quantityCpuLimit,
-			corev1.ResourceMemory: *quantityMemoryLimit,
+			corev1.ResourceCPU:    getQuantity(200, resource.Milli),
+			corev1.ResourceMemory: getQuantity(100, resource.Mega),
 		},
 	}
+}
+
+func getQuantity(value int64, scale resource.Scale) resource.Quantity {
+	return *resource.NewScaledQuantity(value, scale)
 }
 
 func prepareSecurityContext() *corev1.SecurityContext {
