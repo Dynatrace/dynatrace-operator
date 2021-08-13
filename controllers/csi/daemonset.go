@@ -202,7 +202,7 @@ func prepareDriverEnvVars() []corev1.EnvVar {
 
 func prepareResources() corev1.ResourceRequirements {
 	quantityCpuLimit := resource.NewScaledQuantity(200, resource.Milli)
-	quantityMemoryLimit := resource.NewScaledQuantity(200, resource.Mega)
+	quantityMemoryLimit := resource.NewScaledQuantity(100, resource.Mega)
 
 	return corev1.ResourceRequirements{
 		Limits: corev1.ResourceList{
