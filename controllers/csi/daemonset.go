@@ -206,8 +206,8 @@ func prepareResources() corev1.ResourceRequirements {
 
 	return corev1.ResourceRequirements{
 		Limits: corev1.ResourceList{
-			corev1.ResourceLimitsCPU:    *quantityCpuLimit,
-			corev1.ResourceLimitsMemory: *quantityMemoryLimit,
+			corev1.ResourceCPU:    *quantityCpuLimit,
+			corev1.ResourceMemory: *quantityMemoryLimit,
 		},
 	}
 }
