@@ -96,7 +96,8 @@ checkIfNSExists() {
 }
 
 isOCP311() {
-  "${CLI}" version -o json | tr -d '[[:space:]]'| grep '"serverVersion.*"' | grep -q '"major":"3","minor":"11.*"'
+  # Openshift 3.11 uses Kubernetes 1.11, and `oc version` returns the Kubernetes version and NOT the Openshift version
+  "${CLI}" version -o json | tr -d '[[:space:]]'| grep '"serverVersion.*"' | grep -q '"major":"1","minor":"11.*"'
 }
 
 applyDynatraceOperator() {
