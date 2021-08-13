@@ -8,7 +8,8 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -69,7 +70,7 @@ func (r *Reconciler) Reconcile() (bool, error) {
 }
 
 func (r *Reconciler) getOperatorImage() (string, error) {
-	var operatorPod v1.Pod
+	var operatorPod corev1.Pod
 	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: r.operatorPodName, Namespace: r.operatorNamespace}, &operatorPod); err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -102,15 +103,15 @@ func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *v1alpha
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
-			Template: v1.PodTemplateSpec{
+			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
 						"kubectl.kubernetes.io/default-logs-container": "driver",
 					},
 					Labels: labels,
 				},
-				Spec: v1.PodSpec{
-					Containers: []v1.Container{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
 						prepareDriverContainer(operatorImage),
 						prepareRegistrarContainer(operatorImage),
 						preparelivenessProbeContainer(operatorImage),
@@ -151,14 +152,8 @@ func prepareMetadata(namespace string, dynakube *v1alpha1.DynaKube) metav1.Objec
 	}
 }
 
-func prepareDriverContainer(operatorImage string) v1.Container {
-	privileged := true
-	userID := int64(0)
-	envVars := prepareDriverEnvVars()
-	livenessProbe := prepareDriverLivenessProbe()
-	volumeMounts := prepareDriverVolumeMounts()
-
-	return v1.Container{
+func prepareDriverContainer(operatorImage string) corev1.Container {
+	return corev1.Container{
 		Name:  "driver",
 		Image: operatorImage,
 		Args: []string{
@@ -167,42 +162,37 @@ func prepareDriverContainer(operatorImage string) v1.Container {
 			"--node-id=$(KUBE_NODE_NAME)",
 			"--health-probe-bind-address=:10080",
 		},
-		Env:             envVars,
-		ImagePullPolicy: v1.PullAlways,
-		Ports: []v1.ContainerPort{
+		Env:             prepareDriverEnvVars(),
+		ImagePullPolicy: corev1.PullAlways,
+		Ports: []corev1.ContainerPort{
 			{
 				Name:          "healthz",
-				Protocol:      v1.ProtocolTCP,
+				Protocol:      corev1.ProtocolTCP,
 				ContainerPort: 10080,
 			},
 		},
-		LivenessProbe: &livenessProbe,
-		SecurityContext: &v1.SecurityContext{
-			Privileged: &privileged,
-			RunAsUser:  &userID,
-			SELinuxOptions: &v1.SELinuxOptions{
-				Level: "s0",
-			},
-		},
-		VolumeMounts: volumeMounts,
+		Resources:       prepareResources(),
+		LivenessProbe:   prepareDriverLivenessProbe(),
+		SecurityContext: prepareSecurityContext(),
+		VolumeMounts:    prepareDriverVolumeMounts(),
 	}
 }
 
-func prepareDriverEnvVars() []v1.EnvVar {
-	return []v1.EnvVar{
+func prepareDriverEnvVars() []corev1.EnvVar {
+	return []corev1.EnvVar{
 		{
 			Name: "POD_NAMESPACE",
-			ValueFrom: &v1.EnvVarSource{
-				FieldRef: &v1.ObjectFieldSelector{
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "metadata.namespace",
 				},
 			},
 		},
 		{
 			Name: "KUBE_NODE_NAME",
-			ValueFrom: &v1.EnvVarSource{
-				FieldRef: &v1.ObjectFieldSelector{
-					APIVersion: "v1",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					APIVersion: "corev1",
 					FieldPath:  "spec.nodeName",
 				},
 			},
@@ -210,8 +200,33 @@ func prepareDriverEnvVars() []v1.EnvVar {
 	}
 }
 
-func prepareDriverLivenessProbe() v1.Probe {
-	return v1.Probe{
+func prepareResources() corev1.ResourceRequirements {
+	quantityCpuLimit := resource.NewScaledQuantity(200, resource.Milli)
+	quantityMemoryLimit := resource.NewScaledQuantity(200, resource.Mega)
+
+	return corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			corev1.ResourceLimitsCPU:    *quantityCpuLimit,
+			corev1.ResourceLimitsMemory: *quantityMemoryLimit,
+		},
+	}
+}
+
+func prepareSecurityContext() *corev1.SecurityContext {
+	privileged := true
+	userID := int64(0)
+
+	return &corev1.SecurityContext{
+		Privileged: &privileged,
+		RunAsUser:  &userID,
+		SELinuxOptions: &corev1.SELinuxOptions{
+			Level: "s0",
+		},
+	}
+}
+
+func prepareDriverLivenessProbe() *corev1.Probe {
+	return &corev1.Probe{
 		FailureThreshold:    3,
 		InitialDelaySeconds: 5,
 		PeriodSeconds:       5,
@@ -221,9 +236,9 @@ func prepareDriverLivenessProbe() v1.Probe {
 	}
 }
 
-func prepareDriverVolumeMounts() []v1.VolumeMount {
-	bidirectional := v1.MountPropagationBidirectional
-	return []v1.VolumeMount{
+func prepareDriverVolumeMounts() []corev1.VolumeMount {
+	bidirectional := corev1.MountPropagationBidirectional
+	return []corev1.VolumeMount{
 		{
 			Name:      "plugin-dir",
 			MountPath: "/csi",
@@ -246,15 +261,15 @@ func prepareDriverVolumeMounts() []v1.VolumeMount {
 	}
 }
 
-func prepareRegistrarContainer(operatorImage string) v1.Container {
+func prepareRegistrarContainer(operatorImage string) corev1.Container {
 	userID := int64(0)
 	livenessProbe := prepareRegistrarLivenessProbe()
 	volumeMounts := prepareRegistrarVolumeMounts()
 
-	return v1.Container{
+	return corev1.Container{
 		Name:            "registrar",
 		Image:           operatorImage,
-		ImagePullPolicy: v1.PullAlways,
+		ImagePullPolicy: corev1.PullAlways,
 		Command: []string{
 			"csi-node-driver-registrar",
 		},
@@ -263,39 +278,39 @@ func prepareRegistrarContainer(operatorImage string) v1.Container {
 			"--kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock",
 			"--health-port=9809",
 		},
-		Ports: []v1.ContainerPort{
+		Ports: []corev1.ContainerPort{
 			{
 				Name:          "healthz",
 				ContainerPort: 9809,
 			},
 		},
 		LivenessProbe: &livenessProbe,
-		SecurityContext: &v1.SecurityContext{
+		SecurityContext: &corev1.SecurityContext{
 			RunAsUser: &userID,
 		},
 		VolumeMounts: volumeMounts,
 	}
 }
 
-func prepareRegistrarLivenessProbe() v1.Probe {
-	return v1.Probe{
+func prepareRegistrarLivenessProbe() corev1.Probe {
+	return corev1.Probe{
 		InitialDelaySeconds: 5,
 		TimeoutSeconds:      5,
 		Handler:             prepareLivenessProbeHandler(),
 	}
 }
 
-func prepareLivenessProbeHandler() v1.Handler {
-	return v1.Handler{
-		HTTPGet: &v1.HTTPGetAction{
+func prepareLivenessProbeHandler() corev1.Handler {
+	return corev1.Handler{
+		HTTPGet: &corev1.HTTPGetAction{
 			Path: "/healthz",
 			Port: intstr.FromString("healthz"),
 		},
 	}
 }
 
-func prepareRegistrarVolumeMounts() []v1.VolumeMount {
-	return []v1.VolumeMount{
+func prepareRegistrarVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
 		{
 			Name:      "plugin-dir",
 			MountPath: "/csi",
@@ -307,11 +322,11 @@ func prepareRegistrarVolumeMounts() []v1.VolumeMount {
 	}
 }
 
-func preparelivenessProbeContainer(operatorImage string) v1.Container {
-	return v1.Container{
+func preparelivenessProbeContainer(operatorImage string) corev1.Container {
+	return corev1.Container{
 		Name:            "liveness-probe",
 		Image:           operatorImage,
-		ImagePullPolicy: v1.PullAlways,
+		ImagePullPolicy: corev1.PullAlways,
 		Command: []string{
 			"livenessprobe",
 		},
@@ -319,7 +334,7 @@ func preparelivenessProbeContainer(operatorImage string) v1.Container {
 			"--csi-address=/csi/csi.sock",
 			"--health-port=9898",
 		},
-		VolumeMounts: []v1.VolumeMount{
+		VolumeMounts: []corev1.VolumeMount{
 			{
 				Name:      "plugin-dir",
 				MountPath: "/csi",
@@ -336,15 +351,15 @@ func prepareServiceAccount(saName string) string {
 	return serviceAccountName
 }
 
-func prepareVolumes() []v1.Volume {
-	hostPathDir := v1.HostPathDirectory
-	hostPathDirOrCreate := v1.HostPathDirectoryOrCreate
+func prepareVolumes() []corev1.Volume {
+	hostPathDir := corev1.HostPathDirectory
+	hostPathDirOrCreate := corev1.HostPathDirectoryOrCreate
 
-	return []v1.Volume{
+	return []corev1.Volume{
 		{
 			Name: "registration-dir",
-			VolumeSource: v1.VolumeSource{
-				HostPath: &v1.HostPathVolumeSource{
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
 					Path: RegistrarDirPath,
 					Type: &hostPathDir,
 				},
@@ -352,8 +367,8 @@ func prepareVolumes() []v1.Volume {
 		},
 		{
 			Name: "plugin-dir",
-			VolumeSource: v1.VolumeSource{
-				HostPath: &v1.HostPathVolumeSource{
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
 					Path: PluginDirPath,
 					Type: &hostPathDirOrCreate,
 				},
@@ -361,8 +376,8 @@ func prepareVolumes() []v1.Volume {
 		},
 		{
 			Name: "plugins-dir",
-			VolumeSource: v1.VolumeSource{
-				HostPath: &v1.HostPathVolumeSource{
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
 					Path: PluginsDirPath,
 					Type: &hostPathDir,
 				},
@@ -370,8 +385,8 @@ func prepareVolumes() []v1.Volume {
 		},
 		{
 			Name: "mountpoint-dir",
-			VolumeSource: v1.VolumeSource{
-				HostPath: &v1.HostPathVolumeSource{
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
 					Path: MountpointDirPath,
 					Type: &hostPathDirOrCreate,
 				},
@@ -379,8 +394,8 @@ func prepareVolumes() []v1.Volume {
 		},
 		{
 			Name: "dynatrace-oneagent-data-dir",
-			VolumeSource: v1.VolumeSource{
-				HostPath: &v1.HostPathVolumeSource{
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
 					Path: OneAgentDataDirPath,
 					Type: &hostPathDirOrCreate,
 				},
