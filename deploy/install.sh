@@ -95,11 +95,20 @@ checkIfNSExists() {
   fi
 }
 
+isOCP311() {
+  # Openshift 3.11 uses Kubernetes 1.11, and `oc version` returns the Kubernetes version and NOT the Openshift version
+  "${CLI}" version -o json | tr -d '[[:space:]]'| grep '"serverVersion.*"' | grep -q '"major":"1","minor":"11.*"'
+}
+
 applyDynatraceOperator() {
   if [ "${CLI}" = "kubectl" ]; then
     "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
   else
-    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift.yaml
+    if isOCP311; then
+      "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift3.11.yaml
+    else
+      "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift.yaml
+    fi
   fi
 
   "${CLI}" -n dynatrace create secret generic dynakube --from-literal="apiToken=${API_TOKEN}" --from-literal="paasToken=${PAAS_TOKEN}" --dry-run -o yaml | "${CLI}" apply -f -
