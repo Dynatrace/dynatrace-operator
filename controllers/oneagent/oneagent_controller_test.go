@@ -10,7 +10,8 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/Dynatrace/dynatrace-operator/controllers"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -64,7 +65,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	}
 	fakeClient := fake.NewClient(
 		dynakube,
-		NewSecret(dkName, namespace, map[string]string{utils.DynatracePaasToken: "42", utils.DynatraceApiToken: "84"}),
+		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 
 	dtClient := &dtclient.MockDynatraceClient{}
@@ -79,8 +80,8 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		fullStack: &dynakube.Spec.ClassicFullStack,
 	}
 
-	rec := utils.Reconciliation{Log: consoleLogger, Instance: dynakube}
-	_, err := reconciler.Reconcile(context.TODO(), &rec)
+	dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dynakube}
+	_, err := reconciler.Reconcile(context.TODO(), &dkState)
 	assert.NoError(t, err)
 
 	dsActual := &appsv1.DaemonSet{}
@@ -149,7 +150,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		},
 	}
 	c := fake.NewClient(
-		NewSecret(dkName, namespace, map[string]string{utils.DynatracePaasToken: "42", utils.DynatraceApiToken: "84"}),
+		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 	dtcMock := &dtclient.MockDynatraceClient{}
 	version := "1.187"
@@ -170,10 +171,10 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Spec.Tokens = ""
 		dk.Status.Tokens = ""
-		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
+		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
+		updateCR, err := reconciler.reconcileRollout(&dkState)
 
 		// assert
 		assert.True(t, updateCR)
@@ -185,10 +186,10 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Spec.Tokens = ""
 		dk.Status.Tokens = "not the actual name"
-		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
+		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
+		updateCR, err := reconciler.reconcileRollout(&dkState)
 
 		// assert
 		assert.True(t, updateCR)
@@ -198,7 +199,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 
 	t.Run("reconcileRollout Tokens status set, not equal to defined name", func(t *testing.T) {
 		c = fake.NewClient(
-			NewSecret(dkName, namespace, map[string]string{utils.DynatracePaasToken: "42", utils.DynatraceApiToken: "84"}),
+			NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 			sampleKubeSystemNS)
 
 		reconciler := &ReconcileOneAgent{
@@ -216,10 +217,10 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Status.Tokens = dk.Tokens()
 		dk.Spec.Tokens = customTokenName
-		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk}
+		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk}
 
 		// act
-		updateCR, err := reconciler.reconcileRollout(context.TODO(), &rec)
+		updateCR, err := reconciler.reconcileRollout(&dkState)
 
 		// assert
 		assert.True(t, updateCR)
@@ -245,15 +246,15 @@ func TestReconcile_InstancesSet(t *testing.T) {
 
 	// arrange
 	c := fake.NewClient(
-		NewSecret(dkName, namespace, map[string]string{utils.DynatracePaasToken: "42", utils.DynatraceApiToken: "84"}),
+		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 	dtcMock := &dtclient.MockDynatraceClient{}
 	version := "1.187"
 	oldVersion := "1.186"
 	hostIP := "1.2.3.4"
 	dtcMock.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(version, nil)
-	dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{utils.DynatracePaasToken}, nil)
-	dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{utils.DynatraceApiToken}, nil)
+	dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.DynatracePaasToken}, nil)
+	dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.DynatraceApiToken}, nil)
 
 	reconciler := &ReconcileOneAgent{
 		client:    c,
@@ -280,13 +281,13 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
 
-		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
+		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
 		err := reconciler.client.Create(context.TODO(), pod)
 
 		assert.NoError(t, err)
 
 		reconciler.instance = dk
-		upd, err := reconciler.Reconcile(context.TODO(), &rec)
+		upd, err := reconciler.Reconcile(context.TODO(), &dkState)
 
 		assert.NoError(t, err)
 		assert.True(t, upd)
@@ -311,14 +312,14 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
 
-		rec := utils.Reconciliation{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
+		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
 		err := reconciler.client.Create(context.TODO(), pod)
 
 		assert.NoError(t, err)
 
 		reconciler.instance = dk
 		reconciler.fullStack = &dk.Spec.ClassicFullStack
-		upd, err := reconciler.Reconcile(context.TODO(), &rec)
+		upd, err := reconciler.Reconcile(context.TODO(), &dkState)
 
 		assert.NoError(t, err)
 		assert.True(t, upd)
@@ -571,4 +572,146 @@ func TestServiceAccountName(t *testing.T) {
 		podSpecs = newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
 		assert.Equal(t, testName, podSpecs.ServiceAccountName)
 	})
+}
+
+func TestOneAgent_Validate(t *testing.T) {
+	dk := newDynaKube()
+	assert.Error(t, validate(dk))
+	dk.Spec.APIURL = "https://f.q.d.n/api"
+	assert.NoError(t, validate(dk))
+}
+
+func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
+	dkKey := metav1.ObjectMeta{Name: "my-dynakube", Namespace: "my-namespace"}
+
+	ds1 := &appsv1.DaemonSet{ObjectMeta: dkKey}
+
+	ds2, err := newDaemonSetForCR(consoleLogger, &dynatracev1alpha1.DynaKube{ObjectMeta: dkKey}, &dynatracev1alpha1.FullStackSpec{}, "classic", "cluster1")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, ds2.Annotations[kubeobjects.AnnotationHash])
+
+	assert.True(t, kubeobjects.HasChanged(ds1, ds2))
+}
+
+func TestHasSpecChanged(t *testing.T) {
+	runTest := func(msg string, exp bool, mod func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube)) {
+		t.Run(msg, func(t *testing.T) {
+			key := metav1.ObjectMeta{Name: "my-oneagent", Namespace: "my-namespace"}
+			oldInstance := dynatracev1alpha1.DynaKube{ObjectMeta: key}
+			newInstance := dynatracev1alpha1.DynaKube{ObjectMeta: key}
+
+			mod(&oldInstance, &newInstance)
+
+			ds1, err := newDaemonSetForCR(consoleLogger, &oldInstance, &oldInstance.Spec.ClassicFullStack, "classic", "cluster1")
+			assert.NoError(t, err)
+
+			ds2, err := newDaemonSetForCR(consoleLogger, &newInstance, &newInstance.Spec.ClassicFullStack, "classic", "cluster1")
+			assert.NoError(t, err)
+
+			assert.NotEmpty(t, ds1.Annotations[kubeobjects.AnnotationHash])
+			assert.NotEmpty(t, ds2.Annotations[kubeobjects.AnnotationHash])
+
+			assert.Equal(t, exp, kubeobjects.HasChanged(ds1, ds2))
+		})
+	}
+
+	runTest("no changes", false, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {})
+
+	runTest("image added", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		new.Spec.OneAgent.Image = "docker.io/dynatrace/oneagent"
+	})
+
+	runTest("image set but no change", false, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		old.Spec.OneAgent.Image = "docker.io/dynatrace/oneagent"
+		new.Spec.OneAgent.Image = "docker.io/dynatrace/oneagent"
+	})
+
+	runTest("image removed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		old.Spec.OneAgent.Image = "docker.io/dynatrace/oneagent"
+	})
+
+	runTest("image changed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		old.Spec.OneAgent.Image = "registry.access.redhat.com/dynatrace/oneagent"
+		new.Spec.OneAgent.Image = "docker.io/dynatrace/oneagent"
+	})
+
+	runTest("argument removed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		old.Spec.ClassicFullStack.Args = []string{"INFRA_ONLY=1", "--set-host-property=OperatorVersion=snapshot"}
+		new.Spec.ClassicFullStack.Args = []string{"INFRA_ONLY=1"}
+	})
+
+	runTest("argument changed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		old.Spec.ClassicFullStack.Args = []string{"INFRA_ONLY=1"}
+		new.Spec.ClassicFullStack.Args = []string{"INFRA_ONLY=0"}
+	})
+
+	runTest("all arguments removed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		old.Spec.ClassicFullStack.Args = []string{"INFRA_ONLY=1"}
+	})
+
+	runTest("resources added", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		new.Spec.ClassicFullStack.Resources = newResourceRequirements()
+	})
+
+	runTest("resources removed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		old.Spec.ClassicFullStack.Resources = newResourceRequirements()
+	})
+
+	runTest("resources removed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		old.Spec.ClassicFullStack.Resources = newResourceRequirements()
+	})
+
+	runTest("priority class added", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		new.Spec.ClassicFullStack.PriorityClassName = "class"
+	})
+
+	runTest("priority class removed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		old.Spec.ClassicFullStack.PriorityClassName = "class"
+	})
+
+	runTest("priority class set but no change", false, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		old.Spec.ClassicFullStack.PriorityClassName = "class"
+		new.Spec.ClassicFullStack.PriorityClassName = "class"
+	})
+
+	runTest("priority class changed", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		old.Spec.ClassicFullStack.PriorityClassName = "some class"
+		new.Spec.ClassicFullStack.PriorityClassName = "other class"
+	})
+
+	runTest("dns policy added", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
+		new.Spec.ClassicFullStack.DNSPolicy = corev1.DNSClusterFirst
+	})
+}
+
+func newResourceRequirements() corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			"cpu":    parseQuantity("10m"),
+			"memory": parseQuantity("100Mi"),
+		},
+		Requests: corev1.ResourceList{
+			"cpu":    parseQuantity("20m"),
+			"memory": parseQuantity("200Mi"),
+		},
+	}
+}
+
+func parseQuantity(s string) resource.Quantity {
+	q, _ := resource.ParseQuantity(s)
+	return q
+}
+
+func newDynaKube() *dynatracev1alpha1.DynaKube {
+	return &dynatracev1alpha1.DynaKube{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "DynaKube",
+			APIVersion: "dynatrace.com/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-oneagent",
+			Namespace: "my-namespace",
+			UID:       "69e98f18-805a-42de-84b5-3eae66534f75",
+		},
+	}
 }

@@ -12,8 +12,8 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
@@ -75,7 +75,7 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 	// not be ready at this point, and queries for Kubernetes objects may fail. mgr.GetAPIReader() doesn't depend on the
 	// cache and is safe to use.
 
-	apmExists, err := utils.CheckIfOneAgentAPMExists(mgr.GetConfig())
+	apmExists, err := kubeobjects.CheckIfOneAgentAPMExists(mgr.GetConfig())
 	if err != nil {
 		return err
 	}
@@ -143,13 +143,13 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
-	inject := utils.GetField(ns.Annotations, dtwebhook.AnnotationInject, "true")
-	inject = utils.GetField(pod.Annotations, dtwebhook.AnnotationInject, inject)
+	inject := kubeobjects.GetField(ns.Annotations, dtwebhook.AnnotationInject, "true")
+	inject = kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInject, inject)
 	if inject == "false" {
 		return admission.Patched("")
 	}
 
-	oaName := utils.GetField(ns.Labels, dtwebhook.LabelInstance, "")
+	oaName := kubeobjects.GetField(ns.Labels, dtwebhook.LabelInstance, "")
 	if oaName == "" {
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("no DynaKube instance set for namespace: %s", req.Namespace))
 	}
@@ -229,10 +229,10 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 	pod.Annotations[dtwebhook.AnnotationInjected] = "true"
 
-	technologies := url.QueryEscape(utils.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
-	installPath := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
-	installerURL := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, "")
-	failurePolicy := utils.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")
+	technologies := url.QueryEscape(kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
+	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
+	installerURL := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, "")
+	failurePolicy := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")
 	image := m.image
 
 	dkVol := oa.Spec.CodeModules.Volume
@@ -356,7 +356,7 @@ func updateContainer(c *corev1.Container, oa *dynatracev1alpha1.DynaKube,
 	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
 
 	logger.Info("updating container with missing preload variables", "containerName", c.Name)
-	installPath := utils.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
+	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 
 	c.VolumeMounts = append(c.VolumeMounts,
 		corev1.VolumeMount{

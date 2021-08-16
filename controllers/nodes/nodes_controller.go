@@ -7,7 +7,7 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -237,7 +237,7 @@ func (r *ReconcileNodes) getCache() (*Cache, error) {
 		}
 
 		if !r.local { // If running locally, don't set the controller.
-			deploy, err := utils.GetDeployment(r.client, r.namespace)
+			deploy, err := kubeobjects.GetDeployment(r.client, r.namespace)
 			if err != nil {
 				return nil, err
 			}
@@ -331,7 +331,7 @@ func (r *ReconcileNodes) sendMarkedForTermination(dk *dynatracev1alpha1.DynaKube
 		r.logger.Info("failed to send mark for termination event",
 			"reason", "failed to determine entity id", "dynakube", dk.Name, "nodeIP", nodeIP, "cause", err)
 
-		return nil
+		return err
 	}
 
 	ts := uint64(lastSeen.Add(-10*time.Minute).UnixNano()) / uint64(time.Millisecond)

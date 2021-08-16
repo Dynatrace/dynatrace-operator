@@ -18,24 +18,24 @@ package dtcsi
 
 import (
 	"path/filepath"
-	"time"
 )
 
 const (
-	DataPath             = "/data"
-	DriverName           = "csi.oneagent.dynatrace.com"
-	AgentBinaryDir       = "bin"
-	AgentRunDir          = "run"
-	OverlayMappedDirPath = "mapped"
-	OverlayVarDirPath    = "var"
-	OverlayWorkDirPath   = "work"
+	DataPath                  = "/data"
+	DriverName                = "csi.oneagent.dynatrace.com"
+	AgentBinaryDir            = "bin"
+	AgentRunDir               = "run"
+	OverlayMappedDirPath      = "mapped"
+	OverlayVarDirPath         = "var"
+	OverlayWorkDirPath        = "work"
+	DaemonSetName             = "dynatrace-oneagent-csi-driver"
+	DefaultServiceAccountName = "dynatrace-oneagent-csi-driver"
 )
 
 var MetadataAccessPath = filepath.Join(DataPath, "csi.db")
 
 type CSIOptions struct {
-	NodeID     string
-	Endpoint   string
-	RootDir    string
-	GCInterval time.Duration
+	NodeID   string
+	Endpoint string
+	RootDir  string
 }

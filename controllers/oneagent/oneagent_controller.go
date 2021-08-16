@@ -2,17 +2,19 @@ package oneagent
 
 import (
 	"context"
-	"encoding/json"
-	"hash/fnv"
+	"errors"
+	"fmt"
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -27,15 +29,16 @@ import (
 )
 
 const (
-	// time between consecutive queries for a new pod to get ready
-	splayTimeSeconds                      = uint16(10)
 	defaultUpdateInterval                 = 15 * time.Minute
 	updateEnvVar                          = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
+	relatedImageEnvVar                    = "RELATED_IMAGE_DYNATRACE_ONEAGENT"
 	ClassicFeature                        = "classic"
 	InframonFeature                       = "inframon"
 	defaultOneAgentImage                  = "docker.io/dynatrace/oneagent:latest"
 	defaultServiceAccountName             = "dynatrace-dynakube-oneagent"
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
+	unprivilegedAnnotationKey             = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
+	unprivilegedAnnotationValue           = "unconfined"
 )
 
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
@@ -69,15 +72,15 @@ type ReconcileOneAgent struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconciliation) (bool, error) {
+func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.DynakubeState) (bool, error) {
 	r.logger.Info("Reconciling OneAgent")
 	if err := validate(r.instance); err != nil {
 		return false, err
 	}
 
-	rec.Update(utils.SetUseImmutableImageStatus(r.instance, r.fullStack), 5*time.Minute, "UseImmutableImage changed")
+	rec.Update(setUseImmutableImageStatus(r.instance, r.fullStack), 5*time.Minute, "UseImmutableImage changed")
 
-	upd, err := r.reconcileRollout(ctx, rec)
+	upd, err := r.reconcileRollout(rec)
 	if err != nil {
 		return false, err
 	} else if upd {
@@ -106,59 +109,62 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *utils.Reconcilia
 	}
 
 	// Finally we have to determine the correct non error phase
-	_, err = r.determineOneAgentPhase(r.instance)
+	_, err = r.determineDynaKubePhase(r.instance)
 	rec.Error(err)
 
 	return upd, nil
 }
 
-func (r *ReconcileOneAgent) reconcileRollout(ctx context.Context, rec *utils.Reconciliation) (bool, error) {
+// validate sanity checks if essential fields in the custom resource are available
+//
+// Return an error in the following conditions
+// - APIURL empty
+func validate(cr *dynatracev1alpha1.DynaKube) error {
+	var msg []string
+	if cr.Spec.APIURL == "" {
+		msg = append(msg, ".spec.apiUrl is missing")
+	}
+	if len(msg) > 0 {
+		return errors.New(strings.Join(msg, ", "))
+	}
+	return nil
+}
+
+func (r *ReconcileOneAgent) reconcileRollout(dkState *controllers.DynakubeState) (bool, error) {
 	updateCR := false
 
 	// Define a new DaemonSet object
-	dsDesired, err := r.getDesiredDaemonSet(rec)
+	dsDesired, err := r.getDesiredDaemonSet(dkState)
 	if err != nil {
-		rec.Log.Info("Failed to get desired daemonset")
+		dkState.Log.Info("Failed to get desired daemonset")
 		return false, err
 	}
 
 	// Set OneAgent instance as the owner and controller
-	if err := controllerutil.SetControllerReference(rec.Instance, dsDesired, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(dkState.Instance, dsDesired, r.scheme); err != nil {
 		return false, err
 	}
 
-	// Check if this DaemonSet already exists
-	dsActual := &appsv1.DaemonSet{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: dsDesired.Name, Namespace: dsDesired.Namespace}, dsActual)
-	if err != nil && k8serrors.IsNotFound(err) {
-		rec.Log.Info("Creating new daemonset")
-		if err = r.client.Create(ctx, dsDesired); err != nil {
-			return false, err
-		}
-	} else if err != nil {
-		return false, err
-	} else if hasDaemonSetChanged(dsDesired, dsActual) {
-		rec.Log.Info("Updating existing daemonset")
-		if err = r.client.Update(ctx, dsDesired); err != nil {
-			return false, err
-		}
+	updateCR, err = kubeobjects.CreateOrUpdateDaemonSet(r.client, r.logger, dsDesired)
+	if err != nil {
+		return updateCR, err
 	}
 
-	if rec.Instance.Status.Tokens != rec.Instance.Tokens() {
-		rec.Instance.Status.Tokens = rec.Instance.Tokens()
+	if dkState.Instance.Status.Tokens != dkState.Instance.Tokens() {
+		dkState.Instance.Status.Tokens = dkState.Instance.Tokens()
 		updateCR = true
 	}
 
 	return updateCR, nil
 }
 
-func (r *ReconcileOneAgent) getDesiredDaemonSet(rec *utils.Reconciliation) (*appsv1.DaemonSet, error) {
+func (r *ReconcileOneAgent) getDesiredDaemonSet(dkState *controllers.DynakubeState) (*appsv1.DaemonSet, error) {
 	kubeSysUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
 		return nil, err
 	}
 
-	dsDesired, err := newDaemonSetForCR(rec.Log, rec.Instance, r.fullStack, string(kubeSysUID), r.feature)
+	dsDesired, err := newDaemonSetForCR(dkState.Log, dkState.Instance, r.fullStack, string(kubeSysUID), r.feature)
 	if err != nil {
 		return nil, err
 	}
@@ -215,14 +221,14 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 	}
 
 	if unprivileged {
-		ds.Spec.Template.ObjectMeta.Annotations["container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"] = "unconfined"
+		ds.Spec.Template.ObjectMeta.Annotations[unprivilegedAnnotationKey] = unprivilegedAnnotationValue
 	}
 
-	dsHash, err := generateDaemonSetHash(ds)
+	dsHash, err := kubeobjects.GenerateHash(ds)
 	if err != nil {
 		return nil, err
 	}
-	ds.Annotations[statefulset.AnnotationTemplateHash] = dsHash
+	ds.Annotations[kubeobjects.AnnotationHash] = dsHash
 
 	return ds, nil
 }
@@ -230,11 +236,11 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, feature string, unprivileged bool, logger logr.Logger, clusterID string) corev1.PodSpec {
 	p := corev1.PodSpec{}
 
-	sa := "dynatrace-dynakube-oneagent"
+	sa := defaultServiceAccountName
 	if fs.ServiceAccountName != "" {
 		sa = fs.ServiceAccountName
 	} else if unprivileged {
-		sa = "dynatrace-dynakube-oneagent-unprivileged"
+		sa = defaultUnprivilegedServiceAccountName
 	}
 
 	resources := fs.Resources
@@ -339,8 +345,8 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 }
 
 func preparePodSpecInstaller(p *corev1.PodSpec, instance *dynatracev1alpha1.DynaKube) error {
-	img := "docker.io/dynatrace/oneagent:latest"
-	envVarImg := os.Getenv("RELATED_IMAGE_DYNATRACE_ONEAGENT")
+	img := defaultOneAgentImage
+	envVarImg := os.Getenv(relatedImageEnvVar)
 
 	if instance.Spec.OneAgent.Image != "" {
 		img = instance.Spec.OneAgent.Image
@@ -366,32 +372,6 @@ func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *dynatracev1alpha1
 
 	p.Containers[0].Image = instance.ImmutableOneAgentImage()
 	return nil
-}
-
-func hasDaemonSetChanged(a, b *appsv1.DaemonSet) bool {
-	return getTemplateHash(a) != getTemplateHash(b)
-}
-
-func generateDaemonSetHash(ds *appsv1.DaemonSet) (string, error) {
-	data, err := json.Marshal(ds)
-	if err != nil {
-		return "", err
-	}
-
-	hasher := fnv.New32()
-	_, err = hasher.Write(data)
-	if err != nil {
-		return "", err
-	}
-
-	return strconv.FormatUint(uint64(hasher.Sum32()), 10), nil
-}
-
-func getTemplateHash(a metav1.Object) string {
-	if annotations := a.GetAnnotations(); annotations != nil {
-		return annotations[statefulset.AnnotationTemplateHash]
-	}
-	return ""
 }
 
 func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube) (bool, error) {
@@ -426,4 +406,42 @@ func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1alpha1.OneAge
 	}
 
 	return instanceStatuses, nil
+}
+
+// SetUseImmutableImageStatus updates the status' UseImmutableImage field to indicate whether the Operator should use
+// immutable images or not.
+func setUseImmutableImageStatus(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec) bool {
+	if fs.UseImmutableImage == instance.Status.OneAgent.UseImmutableImage {
+		return false
+	}
+
+	instance.Status.OneAgent.UseImmutableImage = fs.UseImmutableImage
+	return true
+}
+
+func (r *ReconcileOneAgent) determineDynaKubePhase(instance *dynatracev1alpha1.DynaKube) (bool, error) {
+	var phaseChanged bool
+	dsActual := &appsv1.DaemonSet{}
+	instanceName := fmt.Sprintf("%s-%s", instance.Name, r.feature)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: instance.Namespace}, dsActual)
+
+	if k8serrors.IsNotFound(err) {
+		return false, nil
+	}
+
+	if err != nil {
+		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Error
+		instance.Status.Phase = dynatracev1alpha1.Error
+		return phaseChanged, err
+	}
+
+	if dsActual.Status.NumberReady == dsActual.Status.CurrentNumberScheduled {
+		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Running
+		instance.Status.Phase = dynatracev1alpha1.Running
+	} else {
+		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Deploying
+		instance.Status.Phase = dynatracev1alpha1.Deploying
+	}
+
+	return phaseChanged, nil
 }

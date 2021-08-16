@@ -1,14 +1,12 @@
 package statefulset
 
 import (
-	"encoding/json"
 	"fmt"
-	"hash/fnv"
-	"strconv"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -29,7 +27,6 @@ const (
 	amd64 = "amd64"
 	linux = "linux"
 
-	AnnotationTemplateHash    = "internal.operator.dynatrace.com/template-hash"
 	AnnotationVersion         = "internal.operator.dynatrace.com/version"
 	AnnotationCustomPropsHash = "internal.operator.dynatrace.com/custom-properties-hash"
 
@@ -41,7 +38,7 @@ const (
 	DTInternalProxy      = "DT_INTERNAL_PROXY"
 	DTDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
 
-	ProxyKey = "ProxyKey"
+	ProxySecretKey = "proxy"
 )
 
 type statefulSetProperties struct {
@@ -108,12 +105,12 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 		onAfterCreateListener(sts)
 	}
 
-	hash, err := generateStatefulSetHash(sts)
+	hash, err := kubeobjects.GenerateHash(sts)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	sts.ObjectMeta.Annotations[AnnotationTemplateHash] = hash
+	sts.ObjectMeta.Annotations[kubeobjects.AnnotationHash] = hash
 	return sts, nil
 }
 
@@ -248,7 +245,7 @@ func buildProxyEnv(proxy *dynatracev1alpha1.DynaKubeProxy) corev1.EnvVar {
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{Name: proxy.ValueFrom},
-					Key:                  ProxyKey,
+					Key:                  ProxySecretKey,
 				},
 			},
 		}
@@ -290,30 +287,4 @@ func isCustomPropertiesNilOrEmpty(customProperties *dynatracev1alpha1.DynaKubeVa
 
 func isProxyNilOrEmpty(proxy *dynatracev1alpha1.DynaKubeProxy) bool {
 	return proxy == nil || (proxy.Value == "" && proxy.ValueFrom == "")
-}
-
-func generateStatefulSetHash(sts *appsv1.StatefulSet) (string, error) {
-	data, err := json.Marshal(sts)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	hasher := fnv.New32()
-	_, err = hasher.Write(data)
-	if err != nil {
-		return "", errors.WithStack(err)
-	}
-
-	return strconv.FormatUint(uint64(hasher.Sum32()), 10), nil
-}
-
-func HasStatefulSetChanged(a *appsv1.StatefulSet, b *appsv1.StatefulSet) bool {
-	return GetTemplateHash(a) != GetTemplateHash(b)
-}
-
-func GetTemplateHash(a metav1.Object) string {
-	if annotations := a.GetAnnotations(); annotations != nil {
-		return annotations[AnnotationTemplateHash]
-	}
-	return ""
 }
