@@ -42,7 +42,7 @@ func addDynakubeOwnerReference(
 
 	csiDaemonSet, err := getCSIDaemonSet(client, dkState.Instance.Namespace)
 	if k8serrors.IsNotFound(err) {
-		err, upd := createCSIDaemonSet(client, scheme, operatorPodName, operatorNamespace, dkState, updateInterval)
+		upd, err := createCSIDaemonSet(client, scheme, operatorPodName, operatorNamespace, dkState, updateInterval)
 		if err != nil || upd {
 			return err
 		}
@@ -55,18 +55,18 @@ func addDynakubeOwnerReference(
 
 func createCSIDaemonSet(
 	client client.Client, scheme *runtime.Scheme, operatorPodName string, operatorNamespace string,
-	dkState *controllers.DynakubeState, updateInterval time.Duration) (error, bool) {
+	dkState *controllers.DynakubeState, updateInterval time.Duration) (bool, error) {
 
 	dkState.Log.Info("enabling csi driver")
 	csiDaemonSetReconciler := NewReconciler(client, scheme, dkState.Log, dkState.Instance, operatorPodName, operatorNamespace)
 	upd, err := csiDaemonSetReconciler.Reconcile()
 	if err != nil {
-		return err, false
+		return false, err
 	}
 	if dkState.Update(upd, updateInterval, "CSI driver reconciled") {
-		return nil, true
+		return true, nil
 	}
-	return nil, false
+	return false, nil
 }
 
 func addToOwnerReference(client client.Client, csiDaemonSet *appsv1.DaemonSet, dkState *controllers.DynakubeState) error {
