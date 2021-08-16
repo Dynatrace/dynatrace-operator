@@ -17,11 +17,13 @@ limitations under the License.
 package main
 
 import (
+	"os"
 	"path/filepath"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
 	csigc "github.com/Dynatrace/dynatrace-operator/controllers/csi/gc"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/controllers/csi/provisioner"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/spf13/afero"
@@ -77,17 +79,21 @@ func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, error) {
 		return nil, err
 	}
 
-	if err := fs.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.GarbageCollectionPath), 0770); err != nil {
-		log.Error(err, "unable to create garbage collector directory for CSI Driver")
-		return nil, err
+	access, err := metadata.NewAccess(dtcsi.MetadataAccessPath)
+	if err != nil {
+		log.Error(err, "failed to setup database storage for CSI Driver")
+		os.Exit(1)
+	}
+	if err := metadata.CorrectMetadata(mgr.GetClient(), access, log); err != nil {
+		log.Error(err, "failed to correct database storage for CSI Driver")
 	}
 
-	if err := csidriver.NewServer(mgr.GetClient(), csiOpts).SetupWithManager(mgr); err != nil {
+	if err := csidriver.NewServer(mgr.GetClient(), csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Driver server")
 		return nil, err
 	}
 
-	if err := csiprovisioner.NewReconciler(mgr, csiOpts).SetupWithManager(mgr); err != nil {
+	if err := csiprovisioner.NewReconciler(mgr, csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Provisioner")
 		return nil, err
 	}
@@ -97,7 +103,7 @@ func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, error) {
 		return nil, err
 	}
 
-	if err := csigc.NewReconciler(mgr.GetClient(), csiOpts).SetupWithManager(mgr); err != nil {
+	if err := csigc.NewReconciler(mgr.GetClient(), csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Garbage Collector")
 		return nil, err
 	}

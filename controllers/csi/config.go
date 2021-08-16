@@ -16,14 +16,23 @@ limitations under the License.
 
 package dtcsi
 
+import (
+	"path/filepath"
+)
+
 const (
 	DataPath                  = "/data"
+	DriverName                = "csi.oneagent.dynatrace.com"
+	AgentBinaryDir            = "bin"
+	AgentRunDir               = "run"
+	OverlayMappedDirPath      = "mapped"
+	OverlayVarDirPath         = "var"
+	OverlayWorkDirPath        = "work"
 	DaemonSetName             = "dynatrace-oneagent-csi-driver"
 	DefaultServiceAccountName = "dynatrace-oneagent-csi-driver"
-	DriverName                = "csi.oneagent.dynatrace.com"
-	GarbageCollectionPath     = "gc"
-	VersionDir                = "version"
 )
+
+var MetadataAccessPath = filepath.Join(DataPath, "csi.db")
 
 type CSIOptions struct {
 	NodeID   string

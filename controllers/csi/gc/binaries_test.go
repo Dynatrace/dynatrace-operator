@@ -1,10 +1,12 @@
 package csigc
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -21,21 +23,22 @@ const (
 )
 
 var (
-	versionReferenceBasePath = filepath.Join(rootDir, tenantUUID, dtcsi.GarbageCollectionPath)
+	binaryDir = filepath.Join(rootDir, tenantUUID, "bin")
 )
 
-func TestBinaryGarbageCollector_versionReferenceGenerationSuccess(t *testing.T) {
+func TestBinaryGarbageCollector_getUsedVersions(t *testing.T) {
 	gc := NewMockGarbageCollector()
-	gc.mockUnusedVersions(version_1, version_2, version_3)
+	gc.mockUsedVersions(version_1, version_2, version_3)
 
-	versionReferences, err := gc.getVersionReferences(tenantUUID)
+	usedVersions, err := gc.db.GetUsedVersions(tenantUUID)
 	assert.NoError(t, err)
 
-	assert.NotNil(t, versionReferences)
+	assert.NotNil(t, usedVersions)
+	assert.Equal(t, len(usedVersions), 3)
 	assert.NoError(t, err)
 }
 
-func TestBinaryGarbageCollector_succeedsWhenVersionReferenceBaseDirectoryNotExists(t *testing.T) {
+func TestBinaryGarbageCollector_succeedsWhenNoVersionPresent(t *testing.T) {
 	resetMetrics()
 	gc := NewMockGarbageCollector()
 
@@ -49,7 +52,7 @@ func TestBinaryGarbageCollector_succeedsWhenVersionReferenceBaseDirectoryNotExis
 func TestBinaryGarbageCollector_succeedsWhenNoVersionsAvailable(t *testing.T) {
 	resetMetrics()
 	gc := NewMockGarbageCollector()
-	_ = gc.fs.MkdirAll(versionReferenceBasePath, 0770)
+	_ = gc.fs.MkdirAll(binaryDir, 0770)
 
 	gc.runBinaryGarbageCollection(tenantUUID, version_1)
 
@@ -104,24 +107,28 @@ func NewMockGarbageCollector() *CSIGarbageCollector {
 		logger: logger.NewDTLogger(),
 		opts:   dtcsi.CSIOptions{RootDir: rootDir},
 		fs:     afero.NewMemMapFs(),
+		db:     metadata.FakeMemoryDB(),
+		path:   metadata.PathResolver{RootDir: rootDir},
 	}
 }
 
 func (gc *CSIGarbageCollector) mockUnusedVersions(versions ...string) {
+	_ = gc.fs.Mkdir(binaryDir, 0770)
 	for _, version := range versions {
-		_ = gc.fs.MkdirAll(filepath.Join(versionReferenceBasePath, version), 0770)
+		_, _ = gc.fs.Create(filepath.Join(binaryDir, version))
 	}
 }
 func (gc *CSIGarbageCollector) mockUsedVersions(versions ...string) {
-	for _, version := range versions {
-		_ = gc.fs.MkdirAll(filepath.Join(versionReferenceBasePath, version), 0770)
-		_, _ = gc.fs.Create(filepath.Join(versionReferenceBasePath, version, "somePodID"))
+	_ = gc.fs.Mkdir(binaryDir, 0770)
+	for i, version := range versions {
+		_, _ = gc.fs.Create(filepath.Join(binaryDir, version))
+		_ = gc.db.InsertVolume(metadata.NewVolume(fmt.Sprintf("pod%b", i), fmt.Sprintf("volume%b", i), version, tenantUUID))
 	}
 }
 
 func (gc *CSIGarbageCollector) assertVersionNotExists(t *testing.T, versions ...string) {
 	for _, version := range versions {
-		exists, err := afero.DirExists(gc.fs, filepath.Join(versionReferenceBasePath, version))
+		exists, err := afero.Exists(gc.fs, filepath.Join(binaryDir, version))
 		assert.False(t, exists)
 		assert.NoError(t, err)
 	}
@@ -129,7 +136,7 @@ func (gc *CSIGarbageCollector) assertVersionNotExists(t *testing.T, versions ...
 
 func (gc *CSIGarbageCollector) assertVersionExists(t *testing.T, versions ...string) {
 	for _, version := range versions {
-		exists, err := afero.DirExists(gc.fs, filepath.Join(versionReferenceBasePath, version))
+		exists, err := afero.Exists(gc.fs, filepath.Join(binaryDir, version))
 		assert.True(t, exists)
 		assert.NoError(t, err)
 	}
