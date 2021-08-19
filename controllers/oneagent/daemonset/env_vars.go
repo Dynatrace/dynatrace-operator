@@ -2,6 +2,7 @@ package daemonset
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -60,9 +61,20 @@ func (dsInfo *InfraMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet
 
 func mapToArray(envVarMap map[string]corev1.EnvVar) []corev1.EnvVar {
 	result := make([]corev1.EnvVar, 0)
-	for _, envVar := range envVarMap {
-		result = append(result, envVar)
+	keys := make([]string, 0)
+
+	for key := range envVarMap {
+		keys = append(keys, key)
 	}
+
+	// Keys have to be sorted, because when the environment variables are not always in the same order the hash differs
+	// In which case the daemonset appears as if it had changed, although it did not
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		result = append(result, envVarMap[key])
+	}
+
 	return result
 }
 

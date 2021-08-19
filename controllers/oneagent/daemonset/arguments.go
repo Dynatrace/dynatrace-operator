@@ -21,14 +21,6 @@ func appendOperatorVersionArg(args []string) []string {
 	return append(args, "--set-host-property=OperatorVersion="+version.Version)
 }
 
-//
-//func appendHostIdSourceArg(feature string, args []string) []string {
-//	if feature == InframonFeature {
-//		return append(args, "--set-host-id-source=k8s-node-name")
-//	}
-//	return append(args, "--set-host-id-source=auto")
-//}
-
 func (dsInfo *builderInfo) appendNetworkZoneArg(args []string) []string {
 	if dsInfo.instance.Spec.NetworkZone != "" {
 		return append(args, fmt.Sprintf("--set-network-zone=%s", dsInfo.instance.Spec.NetworkZone))

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
 	"os"
 	"strings"
 	"testing"
@@ -76,7 +77,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		scheme:    scheme.Scheme,
 		logger:    consoleLogger,
 		instance:  dynakube,
-		feature:   ClassicFeature,
+		feature:   daemonset.ClassicFeature,
 		fullStack: &dynakube.Spec.ClassicFullStack,
 	}
 
@@ -162,7 +163,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		scheme:    scheme.Scheme,
 		logger:    consoleLogger,
 		fullStack: &base.Spec.ClassicFullStack,
-		feature:   ClassicFeature,
+		feature:   daemonset.ClassicFeature,
 		instance:  &base,
 	}
 
@@ -208,7 +209,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 			scheme:    scheme.Scheme,
 			logger:    consoleLogger,
 			instance:  &base,
-			feature:   ClassicFeature,
+			feature:   daemonset.ClassicFeature,
 			fullStack: &base.Spec.ClassicFullStack,
 		}
 
@@ -263,7 +264,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		logger:    consoleLogger,
 		instance:  &base,
 		fullStack: &base.Spec.ClassicFullStack,
-		feature:   ClassicFeature,
+		feature:   daemonset.ClassicFeature,
 	}
 
 	t.Run("reconcileImpl Instances set, if autoUpdate is true", func(t *testing.T) {
@@ -345,7 +346,7 @@ func TestUseImmutableImage(t *testing.T) {
 				ClassicFullStack: dynatracev1alpha1.FullStackSpec{},
 			},
 		}
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
+		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, daemonset.ClassicFeature, true, log, testClusterID)
 		assert.NotNil(t, podSpecs)
 		assert.Equal(t, defaultOneAgentImage, podSpecs.Containers[0].Image)
 	})
@@ -358,7 +359,7 @@ func TestUseImmutableImage(t *testing.T) {
 				ClassicFullStack: dynatracev1alpha1.FullStackSpec{},
 			},
 		}
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
+		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, daemonset.ClassicFeature, true, log, testClusterID)
 		assert.NotNil(t, podSpecs)
 		assert.Equal(t, testImage, podSpecs.Containers[0].Image)
 	})
@@ -373,7 +374,7 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 			},
 		}
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
+		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, daemonset.ClassicFeature, true, log, testClusterID)
 		assert.NotNil(t, podSpecs)
 		assert.Equal(t, testImage, podSpecs.Containers[0].Image)
 	})
@@ -392,12 +393,12 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 			},
 		}
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
+		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, daemonset.ClassicFeature, true, log, testClusterID)
 		assert.NotNil(t, podSpecs)
 		assert.Equal(t, podSpecs.Containers[0].Image, fmt.Sprintf("%s/linux/oneagent:latest", strings.TrimPrefix(testURL, "https://")))
 
 		instance.Spec.OneAgent.Version = testValue
-		podSpecs = newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
+		podSpecs = newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, daemonset.ClassicFeature, true, log, testClusterID)
 		assert.NotNil(t, podSpecs)
 		assert.Equal(t, podSpecs.Containers[0].Image, fmt.Sprintf("%s/linux/oneagent:%s", strings.TrimPrefix(testURL, "https://"), testValue))
 	})
@@ -420,7 +421,7 @@ func TestCustomPullSecret(t *testing.T) {
 			},
 		},
 	}
-	podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
+	podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, daemonset.ClassicFeature, true, log, testClusterID)
 	assert.NotNil(t, podSpecs)
 	assert.NotEmpty(t, podSpecs.ImagePullSecrets)
 	assert.Equal(t, testName, podSpecs.ImagePullSecrets[0].Name)
@@ -443,7 +444,7 @@ func TestResources(t *testing.T) {
 				},
 			},
 		}
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
+		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, daemonset.ClassicFeature, true, log, testClusterID)
 		assert.NotNil(t, podSpecs)
 		assert.NotEmpty(t, podSpecs.Containers)
 
@@ -481,7 +482,7 @@ func TestResources(t *testing.T) {
 			},
 		}
 
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
+		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, daemonset.ClassicFeature, true, log, testClusterID)
 		assert.NotNil(t, podSpecs)
 		assert.NotEmpty(t, podSpecs.Containers)
 		hasCPURequest := cpuRequest.Equal(*podSpecs.Containers[0].Resources.Requests.Cpu())
@@ -514,7 +515,7 @@ func TestServiceAccountName(t *testing.T) {
 			},
 		}
 
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, false, log, testClusterID)
+		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, daemonset.ClassicFeature, false, log, testClusterID)
 		assert.Equal(t, defaultServiceAccountName, podSpecs.ServiceAccountName)
 
 		instance = dynatracev1alpha1.DynaKube{
@@ -531,7 +532,7 @@ func TestServiceAccountName(t *testing.T) {
 				},
 			},
 		}
-		podSpecs = newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
+		podSpecs = newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, daemonset.ClassicFeature, true, log, testClusterID)
 		assert.Equal(t, defaultUnprivilegedServiceAccountName, podSpecs.ServiceAccountName)
 	})
 	t.Run(`uses custom value`, func(t *testing.T) {
@@ -550,7 +551,7 @@ func TestServiceAccountName(t *testing.T) {
 				},
 			},
 		}
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, false, log, testClusterID)
+		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, daemonset.ClassicFeature, false, log, testClusterID)
 		assert.Equal(t, testName, podSpecs.ServiceAccountName)
 
 		instance = dynatracev1alpha1.DynaKube{
@@ -569,7 +570,7 @@ func TestServiceAccountName(t *testing.T) {
 			},
 		}
 
-		podSpecs = newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
+		podSpecs = newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, daemonset.ClassicFeature, true, log, testClusterID)
 		assert.Equal(t, testName, podSpecs.ServiceAccountName)
 	})
 }
@@ -602,10 +603,10 @@ func TestHasSpecChanged(t *testing.T) {
 
 			mod(&oldInstance, &newInstance)
 
-			ds1, err := newDaemonSetForCR(consoleLogger, &oldInstance, &oldInstance.Spec.ClassicFullStack, "classic", "cluster1")
+			ds1, err := newDaemonSetForCR(consoleLogger, &oldInstance, &oldInstance.Spec.ClassicFullStack, "cluster1", "classic")
 			assert.NoError(t, err)
 
-			ds2, err := newDaemonSetForCR(consoleLogger, &newInstance, &newInstance.Spec.ClassicFullStack, "classic", "cluster1")
+			ds2, err := newDaemonSetForCR(consoleLogger, &newInstance, &newInstance.Spec.ClassicFullStack, "cluster1", "classic")
 			assert.NoError(t, err)
 
 			assert.NotEmpty(t, ds1.Annotations[kubeobjects.AnnotationHash])

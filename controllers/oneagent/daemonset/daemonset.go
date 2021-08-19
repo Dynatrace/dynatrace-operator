@@ -7,7 +7,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,6 +37,12 @@ const (
 
 	defaultUserId  = 1001
 	defaultGroupId = 1001
+
+	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
+	classicHostIdSource  = "--set-host-id-source=auto"
+
+	ClassicFeature  = "classic"
+	InframonFeature = "inframon"
 )
 
 type InfraMonitoring struct {
@@ -73,7 +78,7 @@ func NewInfraMonitoring(instance *v1alpha1.DynaKube, logger logr.Logger, cluster
 }
 
 func NewClassicFullStack(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string) Builder {
-	return &InfraMonitoring{
+	return &ClassicFullStack{
 		builderInfo{
 			instance:      instance,
 			fullstackSpec: &instance.Spec.ClassicFullStack,
@@ -90,18 +95,36 @@ func (dsInfo *InfraMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	result.Name = dsInfo.instance.Name + fmt.Sprintf("-%s", oneagent.InframonFeature)
-	result.Labels[labelFeature] = oneagent.InframonFeature
-	result.Spec.Selector.MatchLabels[labelFeature] = oneagent.InframonFeature
-	result.Spec.Template.Labels[labelFeature] = oneagent.InframonFeature
+	result.Name = dsInfo.instance.Name + fmt.Sprintf("-%s", InframonFeature)
+	result.Labels[labelFeature] = InframonFeature
+	result.Spec.Selector.MatchLabels[labelFeature] = InframonFeature
+	result.Spec.Template.Labels[labelFeature] = InframonFeature
 
 	if len(result.Spec.Template.Spec.Containers) > 0 {
-		appendHostIdArgument(result)
+		appendHostIdArgument(result, inframonHostIdSource)
 		dsInfo.setSecurityContextOptions(result)
 		dsInfo.appendInfraMonEnvVars(result)
 		dsInfo.appendReadOnlyVolume(result)
 		dsInfo.appendReadOnlyVolumeMount(result)
 		dsInfo.setRootMountReadability(result)
+	}
+
+	return result, nil
+}
+
+func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
+	result, err := dsInfo.builderInfo.BuildDaemonSet()
+	if err != nil {
+		return nil, err
+	}
+
+	result.Name = dsInfo.instance.Name + fmt.Sprintf("-%s", ClassicFeature)
+	result.Labels[labelFeature] = ClassicFeature
+	result.Spec.Selector.MatchLabels[labelFeature] = ClassicFeature
+	result.Spec.Template.Labels[labelFeature] = ClassicFeature
+
+	if len(result.Spec.Template.Spec.Containers) > 0 {
+		appendHostIdArgument(result, classicHostIdSource)
 	}
 
 	return result, nil
@@ -113,22 +136,8 @@ func (dsInfo *InfraMonitoring) setSecurityContextOptions(daemonset *appsv1.Daemo
 	securityContext.RunAsGroup = pointer.Int64Ptr(defaultGroupId)
 }
 
-func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
-	result, err := dsInfo.builderInfo.BuildDaemonSet()
-	if err != nil {
-		return nil, err
-	}
-
-	result.Name = dsInfo.instance.Name + fmt.Sprintf("-%s", oneagent.ClassicFeature)
-	result.Labels[labelFeature] = oneagent.ClassicFeature
-	result.Spec.Selector.MatchLabels[labelFeature] = oneagent.ClassicFeature
-	result.Spec.Template.Labels[labelFeature] = oneagent.ClassicFeature
-
-	return result, nil
-}
-
-func appendHostIdArgument(result *appsv1.DaemonSet) {
-	result.Spec.Template.Spec.Containers[0].Args = append(result.Spec.Template.Spec.Containers[0].Args, "--set-host-id-source=auto")
+func appendHostIdArgument(result *appsv1.DaemonSet, source string) {
+	result.Spec.Template.Spec.Containers[0].Args = append(result.Spec.Template.Spec.Containers[0].Args, source)
 }
 
 func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
 	"os"
 	"reflect"
 	"strconv"
@@ -12,7 +13,6 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/go-logr/logr"
@@ -20,10 +20,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -32,8 +30,6 @@ const (
 	defaultUpdateInterval                 = 15 * time.Minute
 	updateEnvVar                          = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
 	relatedImageEnvVar                    = "RELATED_IMAGE_DYNATRACE_ONEAGENT"
-	ClassicFeature                        = "classic"
-	InframonFeature                       = "inframon"
 	defaultOneAgentImage                  = "docker.io/dynatrace/oneagent:latest"
 	defaultServiceAccountName             = "dynatrace-dynakube-oneagent"
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
@@ -181,49 +177,58 @@ func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1al
 	return podList.Items, listOps, err
 }
 
-func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, clusterID string, feature string) (*appsv1.DaemonSet, error) {
-	unprivileged := true
-	if ptr := fs.UseUnprivilegedMode; ptr != nil {
-		unprivileged = *ptr
+func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, _ *dynatracev1alpha1.FullStackSpec, clusterID string, feature string) (*appsv1.DaemonSet, error) {
+	var ds *appsv1.DaemonSet
+	var err error
+
+	if feature == daemonset.ClassicFeature {
+		ds, err = daemonset.NewClassicFullStack(instance, logger, clusterID).BuildDaemonSet()
+	} else {
+		ds, err = daemonset.NewInfraMonitoring(instance, logger, clusterID).BuildDaemonSet()
 	}
 
-	name := instance.GetName() + "-" + feature
-	podSpec := newPodSpecForCR(instance, fs, feature, unprivileged, logger, clusterID)
-	selectorLabels := buildLabels(instance.GetName(), feature)
-	mergedLabels := mergeLabels(fs.Labels, selectorLabels)
-
-	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
-
-	ds := &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   instance.GetNamespace(),
-			Labels:      mergedLabels,
-			Annotations: map[string]string{},
-		},
-		Spec: appsv1.DaemonSetSpec{
-			Selector: &metav1.LabelSelector{MatchLabels: selectorLabels},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: mergedLabels,
-					Annotations: map[string]string{
-						statefulset.AnnotationVersion: instance.Status.OneAgent.Version,
-					},
-				},
-				Spec: podSpec,
-			},
-			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
-				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-					MaxUnavailable: &maxUnavailable,
-				},
-			},
-		},
-	}
-
-	if unprivileged {
-		ds.Spec.Template.ObjectMeta.Annotations[unprivilegedAnnotationKey] = unprivilegedAnnotationValue
-	}
-
+	//unprivileged := true
+	//if ptr := fs.UseUnprivilegedMode; ptr != nil {
+	//	unprivileged = *ptr
+	//}
+	//
+	//name := instance.GetName() + "-" + feature
+	//podSpec := newPodSpecForCR(instance, fs, feature, unprivileged, logger, clusterID)
+	//selectorLabels := buildLabels(instance.GetName(), feature)
+	//mergedLabels := mergeLabels(fs.Labels, selectorLabels)
+	//
+	//maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
+	//
+	//ds := &appsv1.DaemonSet{
+	//	ObjectMeta: metav1.ObjectMeta{
+	//		Name:        name,
+	//		Namespace:   instance.GetNamespace(),
+	//		Labels:      mergedLabels,
+	//		Annotations: map[string]string{},
+	//	},
+	//	Spec: appsv1.DaemonSetSpec{
+	//		Selector: &metav1.LabelSelector{MatchLabels: selectorLabels},
+	//		Template: corev1.PodTemplateSpec{
+	//			ObjectMeta: metav1.ObjectMeta{
+	//				Labels: mergedLabels,
+	//				Annotations: map[string]string{
+	//					statefulset.AnnotationVersion: instance.Status.OneAgent.Version,
+	//				},
+	//			},
+	//			Spec: podSpec,
+	//		},
+	//		UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+	//			RollingUpdate: &appsv1.RollingUpdateDaemonSet{
+	//				MaxUnavailable: &maxUnavailable,
+	//			},
+	//		},
+	//	},
+	//}
+	//
+	//if unprivileged {
+	//	ds.Spec.Template.ObjectMeta.Annotations[unprivilegedAnnotationKey] = unprivilegedAnnotationValue
+	//}
+	//
 	dsHash, err := kubeobjects.GenerateHash(ds)
 	if err != nil {
 		return nil, err

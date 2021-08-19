@@ -1,6 +1,7 @@
 package oneagent
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -34,7 +35,7 @@ func TestArguments(t *testing.T) {
 		},
 	}
 
-	podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
+	podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, daemonset.ClassicFeature, true, log, testClusterID)
 	assert.NotNil(t, podSpecs)
 	assert.NotEmpty(t, podSpecs.Containers)
 	assert.Contains(t, podSpecs.Containers[0].Args, testValue)
@@ -56,7 +57,7 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 		}}
 	metadata := deploymentmetadata.NewDeploymentMetadata(testUID)
 	fullStackSpecs := &instance.Spec.ClassicFullStack
-	podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+	podSpecs := newPodSpecForCR(instance, fullStackSpecs, daemonset.ClassicFeature, true, log, testUID)
 	require.NotNil(t, podSpecs)
 	require.NotEmpty(t, podSpecs.Containers)
 
@@ -72,27 +73,27 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 
 	t.Run(`has proxy arg`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
-		podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+		podSpecs := newPodSpecForCR(instance, fullStackSpecs, daemonset.ClassicFeature, true, log, testUID)
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 
 		instance.Spec.Proxy = nil
-		podSpecs = newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+		podSpecs = newPodSpecForCR(instance, fullStackSpecs, daemonset.ClassicFeature, true, log, testUID)
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
 	t.Run(`has network zone arg`, func(t *testing.T) {
 		instance.Spec.NetworkZone = testValue
-		podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+		podSpecs := newPodSpecForCR(instance, fullStackSpecs, daemonset.ClassicFeature, true, log, testUID)
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 
 		instance.Spec.NetworkZone = ""
-		podSpecs = newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+		podSpecs = newPodSpecForCR(instance, fullStackSpecs, daemonset.ClassicFeature, true, log, testUID)
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 	})
 	t.Run(`has webhook injection arg`, func(t *testing.T) {
-		podSpecs = newPodSpecForCR(instance, fullStackSpecs, InframonFeature, true, log, testUID)
+		podSpecs = newPodSpecForCR(instance, fullStackSpecs, daemonset.InframonFeature, true, log, testUID)
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=k8s-node-name")
 
-		podSpecs = newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+		podSpecs = newPodSpecForCR(instance, fullStackSpecs, daemonset.ClassicFeature, true, log, testUID)
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=auto")
 	})
 }

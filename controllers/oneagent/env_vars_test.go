@@ -1,6 +1,7 @@
 package oneagent
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -37,7 +38,7 @@ func TestEnvVars(t *testing.T) {
 		},
 	}
 
-	podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
+	podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, daemonset.ClassicFeature, true, log, testClusterID)
 	assert.NotNil(t, podSpecs)
 	assert.NotEmpty(t, podSpecs.Containers)
 	assert.NotEmpty(t, podSpecs.Containers[0].Env)

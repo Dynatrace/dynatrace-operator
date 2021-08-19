@@ -2,6 +2,7 @@ package oneagent
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
 	"strconv"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -60,7 +61,7 @@ func envVarsToMap(reserved []reservedEnvVar) map[string]*reservedEnvVar {
 func getReservedEnvVars(instance *dynatracev1alpha1.DynaKube, clusterID string, feature string) []reservedEnvVar {
 	reserved := getClusterEnvVars(clusterID)
 
-	if feature == InframonFeature {
+	if feature == daemonset.InframonFeature {
 		reserved = append(reserved, getInfraMonitoringEnvVar())
 
 		if instance.Spec.InfraMonitoring.ReadOnly.Enabled {

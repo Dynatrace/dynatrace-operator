@@ -2,6 +2,7 @@ package oneagent
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
@@ -25,7 +26,7 @@ func appendOperatorVersionArg(args []string) []string {
 }
 
 func appendHostIdSourceArg(feature string, args []string) []string {
-	if feature == InframonFeature {
+	if feature == daemonset.InframonFeature {
 		return append(args, "--set-host-id-source=k8s-node-name")
 	}
 	return append(args, "--set-host-id-source=auto")
