@@ -1,7 +1,6 @@
 package oneagent
 
 import (
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -13,12 +12,9 @@ const (
 
 	oneagentReadOnlyMode = "ONEAGENT_READ_ONLY_MODE"
 	enableVolumeStorage  = "ONEAGENT_ENABLE_VOLUME_STORAGE"
-
-	defaultUserId  = 1001
-	defaultGroupId = 1001
 )
 
-func prepareSecurityContext(unprivileged bool, fs *dynatracev1alpha1.FullStackSpec) *corev1.SecurityContext {
+func prepareSecurityContext(unprivileged bool) *corev1.SecurityContext {
 	var secCtx *corev1.SecurityContext
 
 	if unprivileged {
@@ -27,17 +23,7 @@ func prepareSecurityContext(unprivileged bool, fs *dynatracev1alpha1.FullStackSp
 		secCtx = getPrivilegedSecurityContext()
 	}
 
-	if fs.ReadOnly.Enabled {
-		secCtx = setReadOnlySecurityContextOptions(*secCtx)
-	}
-
 	return secCtx
-}
-
-func setReadOnlySecurityContextOptions(secCtx corev1.SecurityContext) *corev1.SecurityContext {
-	secCtx.RunAsUser = int64Pointer(defaultUserId)
-	secCtx.RunAsGroup = int64Pointer(defaultGroupId)
-	return &secCtx
 }
 
 func getPrivilegedSecurityContext() *corev1.SecurityContext {

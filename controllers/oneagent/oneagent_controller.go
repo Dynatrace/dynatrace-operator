@@ -326,7 +326,7 @@ func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1
 				},
 			},
 		},
-		Volumes: prepareVolumes(instance, fs),
+		Volumes: prepareVolumes(instance),
 	}
 
 	if instance.Status.OneAgent.UseImmutableImage {

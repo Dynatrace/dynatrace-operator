@@ -1,0 +1,132 @@
+package daemonset
+
+import (
+	"testing"
+
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/logger"
+	"github.com/stretchr/testify/assert"
+)
+
+const (
+	testUID                   = "test-uid"
+	testContainerImageVersion = "1.203.0.20200908-220956"
+
+	testKey   = "test-key"
+	testValue = "test-value"
+
+	testClusterID = "test-cluster-id"
+	testURL       = "https://test-url"
+	testName      = "test-name"
+)
+
+func TestArguments(t *testing.T) {
+	log := logger.NewDTLogger()
+	instance := dynatracev1alpha1.DynaKube{
+		Spec: dynatracev1alpha1.DynaKubeSpec{
+			APIURL:   testURL,
+			OneAgent: dynatracev1alpha1.OneAgentSpec{},
+			ClassicFullStack: dynatracev1alpha1.FullStackSpec{
+				UseImmutableImage: true,
+				Args:              []string{testValue},
+			},
+		},
+		Status: dynatracev1alpha1.DynaKubeStatus{
+			OneAgent: dynatracev1alpha1.OneAgentStatus{
+				UseImmutableImage: true,
+			},
+		},
+	}
+	dsInfo := ClassicFullStack{
+		builderInfo{
+			instance:      &instance,
+			fullstackSpec: &instance.Spec.ClassicFullStack,
+			logger:        log,
+			clusterId:     testClusterID,
+			relatedImage:  testValue,
+		},
+	}
+	podSpecs := dsInfo.podSpec()
+	assert.NotNil(t, podSpecs)
+	assert.NotEmpty(t, podSpecs.Containers)
+	assert.Contains(t, podSpecs.Containers[0].Args, testValue)
+}
+
+//
+//func TestNewPodSpecForCR_Arguments(t *testing.T) {
+//	log := logger.NewDTLogger()
+//	instance := &dynatracev1alpha1.DynaKube{
+//		Spec: dynatracev1alpha1.DynaKubeSpec{
+//			ClassicFullStack: dynatracev1alpha1.FullStackSpec{
+//				Args: []string{testKey, testValue, testUID},
+//			}},
+//		Status: dynatracev1alpha1.DynaKubeStatus{
+//			OneAgent: dynatracev1alpha1.OneAgentStatus{
+//				VersionStatus: dynatracev1alpha1.VersionStatus{
+//					Version: testContainerImageVersion,
+//				},
+//			},
+//		}}
+//	metadata := deploymentmetadata.NewDeploymentMetadata(testUID)
+//	fullStackSpecs := &instance.Spec.ClassicFullStack
+//	dsInfo := ClassicFullStack{
+//		builderInfo{
+//			instance:      instance,
+//			fullstackSpec: fullStackSpecs,
+//			logger:        log,
+//			clusterId:     testClusterID,
+//			relatedImage:  testValue,
+//		},
+//	}
+//
+//	podSpecs := dsInfo.podSpec()
+//	require.NotNil(t, podSpecs)
+//	require.NotEmpty(t, podSpecs.Containers)
+//
+//	for _, arg := range fullStackSpecs.Args {
+//		assert.Contains(t, podSpecs.Containers[0].Args, arg)
+//	}
+//	assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-property=OperatorVersion="+version.Version)
+//
+//	metadataArgs := metadata.AsArgs()
+//	for _, metadataArg := range metadataArgs {
+//		assert.Contains(t, podSpecs.Containers[0].Args, metadataArg)
+//	}
+//
+//	t.Run(`has proxy arg`, func(t *testing.T) {
+//		instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
+//		podSpecs = dsInfo.podSpec()
+//		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
+//
+//		instance.Spec.Proxy = nil
+//		podSpecs = dsInfo.podSpec()
+//		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
+//	})
+//	t.Run(`has network zone arg`, func(t *testing.T) {
+//		instance.Spec.NetworkZone = testValue
+//		podSpecs = dsInfo.podSpec()
+//		assert.Contains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
+//
+//		instance.Spec.NetworkZone = ""
+//		podSpecs = dsInfo.podSpec()
+//		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
+//	})
+//	//t.Run(`has webhook injection arg`, func(t *testing.T) {
+//	//	daemonset, _ := dsInfo.BuildDaemonSet()
+//	//	podSpecs = daemonset.Spec.Template.Spec
+//	//	assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=auto")
+//	//
+//	//	dsInfo := InfraMonitoring {
+//	//		builderInfo{
+//	//			instance:      instance,
+//	//			fullstackSpec: fullStackSpecs,
+//	//			logger:        log,
+//	//			clusterId:     testClusterID,
+//	//			relatedImage:  testValue,
+//	//		},
+//	//	}
+//	//	daemonset, _ = dsInfo.BuildDaemonSet()
+//	//	podSpecs := daemonset.Spec.Template.Spec
+//	//	assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=k8s-node-name")
+//	//})
+//}
