@@ -322,7 +322,7 @@ func (dsInfo *builderInfo) volumeMounts() []corev1.VolumeMount {
 }
 
 func (dsInfo *builderInfo) volumes() []corev1.Volume {
-	return prepareVolumes(dsInfo.instance, dsInfo.fullstackSpec)
+	return prepareVolumes(dsInfo.instance)
 }
 
 func (dsInfo *builderInfo) image() string {
