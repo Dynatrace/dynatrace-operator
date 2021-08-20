@@ -24,7 +24,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func newManagerWithCertificates(ns string, cfg *rest.Config) (manager.Manager, error) {
+func newManagerWithCertificates(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
+	cleanUp := func() {}
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Namespace:          ns,
 		Scheme:             scheme.Scheme,
@@ -32,7 +33,7 @@ func newManagerWithCertificates(ns string, cfg *rest.Config) (manager.Manager, e
 		Port:               8443,
 	})
 	if err != nil {
-		return nil, err
+		return nil, cleanUp, err
 	}
 
 	ws := mgr.GetWebhookServer()

@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 type startupInfo struct {
@@ -14,8 +13,6 @@ type startupInfo struct {
 	namespace     string
 	signalHandler context.Context
 }
-
-type subCommand func(string, *rest.Config) (manager.Manager, error)
 
 func startWebhookIfDebugFlagSet(info startupInfo) {
 	if isDebugFlagSet() {
@@ -52,7 +49,8 @@ func getSubcommand(name string) (subCommand, error) {
 }
 
 func startSubCommand(name string, cmd subCommand, startInfo *startupInfo) {
-	mgr, err := cmd(startInfo.namespace, startInfo.cfg)
+	mgr, cleanUp, err := cmd(startInfo.namespace, startInfo.cfg)
+	defer cleanUp()
 	if err != nil {
 		log.Error(err, "")
 		os.Exit(1)
