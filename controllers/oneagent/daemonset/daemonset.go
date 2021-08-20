@@ -191,7 +191,6 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	environmentVariables := dsInfo.environmentVariables()
 	volumeMounts := dsInfo.volumeMounts()
 	volumes := dsInfo.volumes()
-
 	image := dsInfo.image()
 	imagePullSecrets := dsInfo.imagePullSecrets()
 
@@ -288,7 +287,7 @@ func (dsInfo *builderInfo) serviceAccountName() string {
 }
 
 func (dsInfo *builderInfo) unprivileged() bool {
-	return dsInfo.fullstackSpec.UseUnprivilegedMode == nil || *dsInfo.fullstackSpec.UseUnprivilegedMode
+	return dsInfo.fullstackSpec.UseUnprivilegedMode != nil && *dsInfo.fullstackSpec.UseUnprivilegedMode
 }
 
 func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {

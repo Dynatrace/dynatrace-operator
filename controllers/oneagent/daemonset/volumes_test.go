@@ -1,12 +1,13 @@
 package daemonset
 
 import (
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
-	"testing"
 )
 
 func TestPrepareVolumes(t *testing.T) {

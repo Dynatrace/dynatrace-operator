@@ -1,14 +1,14 @@
 package daemonset
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/version"
-	"github.com/stretchr/testify/require"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/logger"
+	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
