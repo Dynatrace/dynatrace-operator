@@ -1,7 +1,0 @@
-resources:
-  - deployment-validation.yaml
-  - validatingwebhookconfiguration.yaml
-  - role-validation.yaml
-  - rolebinding-validation.yaml
-  - service-validation.yaml
-  - serviceaccount-validation.yaml

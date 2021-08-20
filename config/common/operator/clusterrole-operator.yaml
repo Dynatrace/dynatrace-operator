@@ -61,7 +61,7 @@ rules:
     resources:
       - validatingwebhookconfigurations
     resourceNames:
-      - dynatrace-validation
+      - dynatrace-webhook
     verbs:
       - get
       - update

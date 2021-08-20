@@ -50,5 +50,5 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 		return nil, err
 	}
 
-	return mgr, nil
+	return startValidationServer(mgr)
 }

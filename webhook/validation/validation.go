@@ -37,9 +37,6 @@ func AddDynakubeValidationWebhookToManager(manager ctrl.Manager) error {
 	manager.GetWebhookServer().Register("/validate", &webhook.Admission{
 		Handler: newDynakubeValidator(),
 	})
-	manager.GetWebhookServer().Register("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
 	return nil
 }
 

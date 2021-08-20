@@ -1,7 +1,7 @@
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: dynatrace-validation
+  name: dynatrace-webhook
 webhooks:
   - admissionReviewVersions:
       - v1
@@ -9,7 +9,7 @@ webhooks:
       - v1alpha1
     clientConfig:
       service:
-        name: dynatrace-validation
+        name: dynatrace-webhook
         namespace: dynatrace
         path: /validate
     rules:
@@ -22,5 +22,5 @@ webhooks:
           - v1alpha1
         resources:
           - dynakubes
-    name: validation.dynatrace.com
+    name: webhook.dynatrace.com
     sideEffects: None

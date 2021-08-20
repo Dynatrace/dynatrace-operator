@@ -21,7 +21,7 @@ import (
 const (
 	SecretCertsName = "dynatrace-validation-certs"
 
-	validationWebhookName = "dynatrace-validation"
+	validationWebhookName = "dynatrace-webhook"
 )
 
 type webhookReconciler struct {
