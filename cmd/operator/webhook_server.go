@@ -44,7 +44,8 @@ func webhookServerFlags() *pflag.FlagSet {
 	return webhookServerFlags
 }
 
-func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
+func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
+	cleanUp := func() {}
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Namespace:          ns,
 		Scheme:             scheme.Scheme,
@@ -52,7 +53,7 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 		Port:               8443,
 	})
 	if err != nil {
-		return nil, err
+		return nil, cleanUp, err
 	}
 
 	ws := mgr.GetWebhookServer()
@@ -80,10 +81,10 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 	startCertificateWatcher(mgr.GetAPIReader(), fs, ws.CertDir, ns)
 
 	if err := server.AddToManager(mgr, ns); err != nil {
-		return nil, err
+		return nil, cleanUp, err
 	}
 
-	return mgr, nil
+	return mgr, cleanUp, nil
 }
 
 func startCertificateWatcher(apiReader client.Reader, fs afero.Fs, certDir string, ns string) {

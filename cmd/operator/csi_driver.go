@@ -50,9 +50,11 @@ func csiDriverFlags() *pflag.FlagSet {
 	return csiDriverFlags
 }
 
-func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, error) {
+func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
 	defaultUmask := unix.Umask(0000)
-	defer unix.Umask(defaultUmask)
+	cleanUp := func() {
+		unix.Umask(defaultUmask)
+	}
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Namespace:              ns,
@@ -63,7 +65,7 @@ func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, error) {
 	})
 	if err != nil {
 		log.Error(err, "unable to start manager")
-		return nil, err
+		return nil, cleanUp, err
 	}
 
 	csiOpts := dtcsi.CSIOptions{
@@ -76,7 +78,7 @@ func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, error) {
 
 	if err := fs.MkdirAll(filepath.Join(csiOpts.RootDir), 0770); err != nil {
 		log.Error(err, "unable to create data directory for CSI Driver")
-		return nil, err
+		return nil, cleanUp, err
 	}
 
 	access, err := metadata.NewAccess(dtcsi.MetadataAccessPath)
@@ -90,23 +92,23 @@ func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, error) {
 
 	if err := csidriver.NewServer(mgr.GetClient(), csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Driver server")
-		return nil, err
+		return nil, cleanUp, err
 	}
 
 	if err := csiprovisioner.NewReconciler(mgr, csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Provisioner")
-		return nil, err
+		return nil, cleanUp, err
 	}
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		log.Error(err, "unable to set up health check")
-		return nil, err
+		return nil, cleanUp, err
 	}
 
 	if err := csigc.NewReconciler(mgr.GetClient(), csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Garbage Collector")
-		return nil, err
+		return nil, cleanUp, err
 	}
 
-	return mgr, nil
+	return mgr, cleanUp, nil
 }
