@@ -179,6 +179,9 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 	} else {
 		ds, err = daemonset.NewInfraMonitoring(instance, logger, clusterID).BuildDaemonSet()
 	}
+	if err != nil {
+		return nil, err
+	}
 
 	dsHash, err := kubeobjects.GenerateHash(ds)
 	if err != nil {
