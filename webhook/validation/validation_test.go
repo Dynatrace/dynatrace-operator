@@ -23,6 +23,7 @@ import (
 const (
 	testName      = "test-name"
 	testNamespace = "test-namespace"
+	testApiUrl    = "https://f.q.d.n/api"
 )
 
 func setupTestEnvironment(_ *testing.T) *envtest.Environment {
@@ -63,6 +64,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
 		assertAllowedResponse(t, v1alpha1.DynaKube{
 			Spec: v1alpha1.DynaKubeSpec{
+				APIURL: testApiUrl,
 				ClassicFullStack: v1alpha1.FullStackSpec{
 					Enabled: false,
 				},
@@ -74,6 +76,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 
 		assertAllowedResponse(t, v1alpha1.DynaKube{
 			Spec: v1alpha1.DynaKubeSpec{
+				APIURL: testApiUrl,
 				ClassicFullStack: v1alpha1.FullStackSpec{
 					Enabled: true,
 				},
@@ -85,6 +88,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 
 		assertAllowedResponse(t, v1alpha1.DynaKube{
 			Spec: v1alpha1.DynaKubeSpec{
+				APIURL: testApiUrl,
 				ClassicFullStack: v1alpha1.FullStackSpec{
 					Enabled: false,
 				},
@@ -96,6 +100,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 
 		assertAllowedResponse(t, v1alpha1.DynaKube{
 			Spec: v1alpha1.DynaKubeSpec{
+				APIURL: testApiUrl,
 				ClassicFullStack: v1alpha1.FullStackSpec{
 					Enabled: true,
 					NodeSelector: map[string]string{
@@ -113,6 +118,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 
 		assertAllowedResponse(t, v1alpha1.DynaKube{
 			Spec: v1alpha1.DynaKubeSpec{
+				APIURL: testApiUrl,
 				ClassicFullStack: v1alpha1.FullStackSpec{
 					Enabled: true,
 					NodeSelector: map[string]string{
@@ -131,6 +137,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
 		assertDeniedResponse(t, v1alpha1.DynaKube{
 			Spec: v1alpha1.DynaKubeSpec{
+				APIURL: testApiUrl,
 				ClassicFullStack: v1alpha1.FullStackSpec{
 					Enabled: true,
 				},
@@ -142,6 +149,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 
 		assertDeniedResponse(t, v1alpha1.DynaKube{
 			Spec: v1alpha1.DynaKubeSpec{
+				APIURL: testApiUrl,
 				ClassicFullStack: v1alpha1.FullStackSpec{
 					Enabled: true,
 					NodeSelector: map[string]string{
@@ -159,6 +167,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 
 		assertDeniedResponse(t, v1alpha1.DynaKube{
 			Spec: v1alpha1.DynaKubeSpec{
+				APIURL: testApiUrl,
 				ClassicFullStack: v1alpha1.FullStackSpec{
 					Enabled: true,
 					NodeSelector: map[string]string{
@@ -174,6 +183,26 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				},
 			},
 		}, errorConflictingInfraMonitoringAndClassicNodeSelectors)
+	})
+	t.Run(`missing API URL`, func(t *testing.T) {
+		assertDeniedResponse(t, v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				APIURL: "",
+				InfraMonitoring: v1alpha1.FullStackSpec{
+					Enabled: true,
+				},
+			},
+		}, errorNoApiUrl)
+	})
+	t.Run(`invalid API URL`, func(t *testing.T) {
+		assertDeniedResponse(t, v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				APIURL: exampleApiUrl,
+				InfraMonitoring: v1alpha1.FullStackSpec{
+					Enabled: true,
+				},
+			},
+		}, errorNoApiUrl)
 	})
 }
 
@@ -286,6 +315,7 @@ func TestHasConflictingConfiguration(t *testing.T) {
 func buildTestInstance(_ *testing.T) v1alpha1.DynaKube {
 	return v1alpha1.DynaKube{
 		Spec: v1alpha1.DynaKubeSpec{
+			APIURL: testApiUrl,
 			ClassicFullStack: v1alpha1.FullStackSpec{
 				Enabled: true,
 			},
@@ -294,4 +324,12 @@ func buildTestInstance(_ *testing.T) v1alpha1.DynaKube {
 			},
 		},
 	}
+}
+
+func TestHasApiUrl(t *testing.T) {
+	instance := v1alpha1.DynaKube{}
+	assert.False(t, hasApiUrl(instance))
+
+	instance.Spec.APIURL = testApiUrl
+	assert.True(t, hasApiUrl(instance))
 }

@@ -2,18 +2,21 @@ package validation
 
 import (
 	"context"
-	"net/http"
-
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"net/http"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+)
+
+const (
+	exampleApiUrl = "https://ENVIRONMENTID.live.dynatrace.com/api"
 )
 
 const (
@@ -22,6 +25,10 @@ The DynaKubes specifications for infraMonitoring and classicFullStack are confli
 If both are enabled, the nodeSelectors of those specifications must not select the same nodes.
 This is due to the infraMonitoring and classicFullStack functionalities being incompatible.
 In general, it is advised to use infraMonitoring together with codeModules instead of classicFullStack.
+`
+	errorNoApiUrl = `
+The DynaKube custom resource is missing the API URL or still has the example value set. 
+Make sure you correctly specified the URL in your custom resource.
 `
 )
 
@@ -55,6 +62,11 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 		return admission.Errored(http.StatusInternalServerError, errors.WithStack(err))
 	}
 
+	if !hasApiUrl(dynakube) {
+		validator.logger.Info("requested dynakube has no api url", "name", request.Name, "namespace", request.Namespace)
+		return admission.Denied(errorNoApiUrl)
+	}
+
 	if hasConflictingConfiguration(dynakube) {
 		validator.logger.Info("requested dynakube has conflicting configuration", "name", request.Name, "namespace", request.Namespace)
 		return admission.Denied(errorConflictingInfraMonitoringAndClassicNodeSelectors)
@@ -62,6 +74,10 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 
 	validator.logger.Info("requested dynakube is valid", "name", request.Name, "namespace", request.Namespace)
 	return admission.Allowed("")
+}
+
+func hasApiUrl(dynakube v1alpha1.DynaKube) bool {
+	return dynakube.Spec.APIURL != "" && dynakube.Spec.APIURL != exampleApiUrl
 }
 
 func hasConflictingConfiguration(dynakube v1alpha1.DynaKube) bool {

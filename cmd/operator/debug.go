@@ -20,8 +20,7 @@ type subCommand func(string, *rest.Config) (manager.Manager, error)
 func startWebhookIfDebugFlagSet(info startupInfo) {
 	if isDebugFlagSet() {
 		log.Info("debug mode enabled")
-		log.Info("starting webhook and bootstrapper")
-		go startBootstrapperManager(info)
+		log.Info("starting webhook")
 		go startWebhookManager(info)
 	}
 }
@@ -29,10 +28,6 @@ func startWebhookIfDebugFlagSet(info startupInfo) {
 func isDebugFlagSet() bool {
 	debugFlag := os.Getenv("DEBUG_OPERATOR")
 	return debugFlag == "true"
-}
-
-func startBootstrapperManager(info startupInfo) {
-	startComponent("webhook-bootstrapper", info)
 }
 
 func startWebhookManager(info startupInfo) {
