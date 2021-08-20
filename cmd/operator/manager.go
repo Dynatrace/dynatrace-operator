@@ -41,7 +41,7 @@ func newManagerWithCertificates(ns string, cfg *rest.Config) (manager.Manager, f
 	ws.KeyName = keyFile
 	ws.CertName = certFile
 	log.Info("SSL certificates configured", "dir", certsDir, "key", keyFile, "cert", certFile)
-	return mgr, nil
+	return mgr, cleanUp, nil
 }
 
 func waitForCertificates(watcher *certificateWatcher) {

@@ -19,10 +19,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func startValidationServer(mgr manager.Manager) (manager.Manager, error) {
+func startValidationServer(mgr manager.Manager) (manager.Manager, func(), error) {
+	cleanUp := func() {}
 	if err := validationhook.AddDynakubeValidationWebhookToManager(mgr); err != nil {
-		return nil, err
+		return nil, cleanUp, err
 	}
 
-	return mgr, nil
+	return mgr, cleanUp, nil
 }

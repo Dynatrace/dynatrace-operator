@@ -38,16 +38,16 @@ func webhookServerFlags() *pflag.FlagSet {
 	return webhookServerFlagSet
 }
 
-func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
-	mgr, err := newManagerWithCertificates(ns, cfg)
+func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
+	mgr, cleanUp, err := newManagerWithCertificates(ns, cfg)
 	if err != nil {
-		return nil, err
+		return nil, cleanUp, err
 	}
 
 	waitForCertificates(newCertificateWatcher(mgr, ns, webhook.SecretCertsName))
 
 	if err := server.AddToManager(mgr, ns); err != nil {
-		return nil, err
+		return nil, cleanUp, err
 	}
 
 	return startValidationServer(mgr)
