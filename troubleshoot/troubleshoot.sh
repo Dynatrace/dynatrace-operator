@@ -171,6 +171,12 @@ getImage() {
   dynakube_image=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.${type}.image}}")
   if [[ "${dynakube_image}" != "" && "$dynakube_image" != "$missing_value" ]]; then
     image="${dynakube_image}"
+  else
+    # use version if image not set
+    dynakube_version=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.${type}.version}}")
+    if [[ "${dynakube_version}" != "" && "$dynakube_version" != "$missing_value" ]]; then
+      image+=":${dynakube_version}"
+    fi
   fi
 
   echo "${image}"
