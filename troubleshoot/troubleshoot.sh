@@ -213,7 +213,21 @@ checkImagePullable() {
   # split images into registry and image name
   oneagent_registry="${dynakube_oneagent_image%%/*}"
   oneagent_image="${dynakube_oneagent_image##"$oneagent_registry/"}"
-  log_info "image" "using '$oneagent_image' on '$oneagent_registry' as oneagent image"
+  IFS=':'
+  read -ra split_image <<< "$oneagent_image"
+  if [[ ${#split_image[@]} == 1 ]] ; then
+    # no version set, default to latest
+    oneagent_version="latest"
+
+    log_info "image" "using latest image version"
+  else
+    oneagent_image=${split_image[0]}
+    oneagent_version=${split_image[1]}
+
+    log_info "image" "using custom image version"
+  fi
+  IFS=' '
+  log_info "image" "using '$oneagent_image' on '$oneagent_registry' with version '$oneagent_version' as oneagent image"
 
   activegate_registry="${dynakube_activegate_image%%/*}"
   activegate_image="${dynakube_activegate_image##"$activegate_registry/"}"
@@ -240,8 +254,8 @@ checkImagePullable() {
     # check oneagent image
     check_image="$container_cli 'curl -u $username:$password --head \
       https://$registry/v2/$oneagent_image/manifests/latest -s -o /dev/null -w %{http_code}'"
-    check_image_response=$(eval "${check_image}")
-    if [[ "$check_image_response" != "200" ]] ; then
+    image_response_code=$(eval "${check_image}")
+    if [[ "$image_response_code" != "200" ]] ; then
       log_info "image" "image '$oneagent_image' on registry '$registry' unreachable"
     else
       log_info "image" "image '$oneagent_image' exists on registry '$registry'"
@@ -253,8 +267,8 @@ checkImagePullable() {
     # check activegate image
     check_image="$container_cli 'curl -u $username:$password --head \
       https://$registry/v2/$activegate_image/manifests/latest -s -o /dev/null -w %{http_code}'"
-    check_image_response=$(eval "${check_image}")
-    if [[ "$check_image_response" != "200" ]] ; then
+    image_response_code=$(eval "${check_image}")
+    if [[ "$image_response_code" != "200" ]] ; then
       log_info "image" "image '$activegate_image' on registry '$registry' unreachable"
     else
       log_info "image" "image '$activegate_image' exists on registry '$registry'"
@@ -267,7 +281,23 @@ checkImagePullable() {
   if [[ "$oneagent_image_works" == "true" ]] ; then
     log_info "image" "oneagent image '$dynakube_oneagent_image' works"
   else
-    error "oneagent image '$dynakube_oneagent_image' missing"
+    if [[ "$oneagent_registry" == "docker.io" ]] ; then
+      token=$(
+        curl --silent \
+        "https://auth.docker.io/token?service=registry.docker.io&scope=repository:$oneagent_image:pull" \
+        | jq -r '.token'
+      )
+      dockerio_image_request="$container_cli 'curl --head --header \"Authorization: Bearer ${token}\" \
+        https://registry-1.docker.io/v2/$oneagent_image/manifests/$oneagent_version -s -o /dev/null -w %{http_code}'"
+
+      if [[ "$(eval "$dockerio_image_request")" == "200" ]] ; then
+        log_info "image" "$oneagent_image exists on docker.io registry"
+      else
+        error "oneagent image $oneagent_image missing on docker.io registry"
+      fi
+    else
+      error "oneagent image '$dynakube_oneagent_image' missing"
+    fi
   fi
 
   if [[ "$activegate_image_works" == "true" ]] ; then
