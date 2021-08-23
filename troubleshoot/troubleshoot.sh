@@ -6,7 +6,7 @@ cli="kubectl"
 default_oneagent_image="docker.io/dynatrace/oneagent"
 
 missing_value="<no value>"
-selected_dynakube=""
+selected_dynakube="dynakube"
 selected_namespace="dynatrace"
 api_url=""
 paas_token=""
@@ -65,25 +65,12 @@ checkDynakube() {
     error "CRD for Dynakube missing"
   fi
 
-  # check dynakube cr exists
-  if [[ "$selected_dynakube" != "" ]]; then
-    # dynakube set via parameter
-    if ! "${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" >/dev/null 2>&1; then
-      error "Selected Dynakube '${selected_dynakube}' does not exist"
-    fi
-  else
-    # dynakube not set, check for existing
-    names="$("${cli}" get dynakube -n "${selected_namespace}" -o jsonpath={..metadata.name})"
-    if [[ "$names" == "" ]]; then
-      error "No Dynakube exists"
-    fi
-
-    read -ra names_arr <<<"$names"
-    log_info "dynakube" "selecting Dynakube from available: '${names_arr[*]}'"
-    selected_dynakube="${names_arr[0]}"
+  # check selected dynakube exists
+  if ! "${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" >/dev/null 2>&1; then
+    error "Selected Dynakube '${selected_dynakube}' does not exist"
   fi
 
-  log_info "dynakube" "'${selected_dynakube}' selected"
+  log_info "dynakube" "using '${selected_dynakube}'"
 
   checkApiUrl
   checkSecret

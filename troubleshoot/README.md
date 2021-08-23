@@ -10,7 +10,7 @@ Run the following command to run the script.
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/dynatrace/dynatrace-operator/master/troubleshoot/troubleshoot.sh)"
 ```
 
-Make sure to inspect the contents of the troubleshoot script before executing it.
+Make sure to inspect the contents of the troubleshooting script before executing it.
 
 ### Manual Instructions
 
