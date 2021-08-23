@@ -30,8 +30,8 @@ while [ $# -gt 0 ]; do
     shift 1
     ;;
   *)
-    echo "Warning: skipping unsupported option: $1"
-    shift
+    echo "ERROR: unsupported option: '$1'"
+    exit 1
     ;;
   esac
 done
@@ -59,14 +59,14 @@ checkDynakube() {
 
   # check dynakube crd exists
   crd="$("${cli}" get dynakube -n "${selected_namespace}" >/dev/null 2>&1)"
-  if [[ -z "$crd" ]]; then
+  if [[ "$crd" == "" ]]; then
     log_info "dynakube" "CRD for Dynakube exists"
   else
     error "CRD for Dynakube missing"
   fi
 
   # check dynakube cr exists
-  if [[ -n "$selected_dynakube" ]]; then
+  if [[ "$selected_dynakube" != "" ]]; then
     # dynakube set via parameter
     if ! "${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" >/dev/null 2>&1; then
       error "Selected Dynakube '${selected_dynakube}' does not exist"
@@ -74,7 +74,7 @@ checkDynakube() {
   else
     # dynakube not set, check for existing
     names="$("${cli}" get dynakube -n "${selected_namespace}" -o jsonpath={..metadata.name})"
-    if [[ -z "$names" ]]; then
+    if [[ "$names" == "" ]]; then
       error "No Dynakube exists"
     fi
 
@@ -131,7 +131,7 @@ checkSecret() {
       log_info "dynakube" "secret token '${token_name}' exists"
     fi
 
-    if [[ "$token_name" = "paasToken" ]]; then
+    if [[ "$token_name" == "paasToken" ]]; then
       paas_token=$(echo "$token" | base64 -d)
     fi
   done
@@ -150,7 +150,7 @@ checkImmutableImage() {
 checkCustomPullSecret() {
   pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" \
     --template="{{.spec.customPullSecret}}")
-  if [[ -z "${pull_secret_name}" ]] || [[ "${pull_secret_name}" == "${missing_value}" ]]; then
+  if [[ "${pull_secret_name}" == "" ]] || [[ "${pull_secret_name}" == "${missing_value}" ]]; then
     log_info "dynakube" "custom pull secret not used"
 
     # private registry required for immutable image
@@ -182,7 +182,7 @@ getImage() {
   fi
 
   dynakube_image=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.${type}.image}}")
-  if [[ -n "${dynakube_image}" && "$dynakube_image" != "$missing_value" ]]; then
+  if [[ "${dynakube_image}" != "" && "$dynakube_image" != "$missing_value" ]]; then
     image="${dynakube_image}"
   fi
 
@@ -196,7 +196,7 @@ checkImagePullable() {
 
   # load pull secret
   custom_pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.customPullSecret}}")
-  if [[ -n "${custom_pull_secret_name}" && "${custom_pull_secret_name}" != "${missing_value}" ]] ; then
+  if [[ "${custom_pull_secret_name}" != "" && "${custom_pull_secret_name}" != "${missing_value}" ]] ; then
     pull_secret_name="$custom_pull_secret_name"
   else
     pull_secret_name="$selected_dynakube-pull-secret"
@@ -264,13 +264,13 @@ checkImagePullable() {
     fi
   done
 
-  if [[ "$oneagent_image_works" = "true" ]] ; then
+  if [[ "$oneagent_image_works" == "true" ]] ; then
     log_info "image" "oneagent image '$dynakube_oneagent_image' works"
   else
     error "oneagent image '$dynakube_oneagent_image' missing"
   fi
 
-  if [[ "$activegate_image_works" = "true" ]] ; then
+  if [[ "$activegate_image_works" == "true" ]] ; then
     log_info "image" "activegate image '$dynakube_activegate_image' works"
   else
     error "activegate image '$dynakube_activegate_image' missing"
@@ -291,7 +291,7 @@ checkClusterConnection() {
   # proxy
   proxy=""
   proxy_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.proxy.valueFrom}}")
-  if [[ "$proxy_secret_name" != "$missing_value" ]]; then
+  if [[ "$proxy_secret_name" != "" && "$proxy_secret_name" != "$missing_value" ]]; then
     # get proxy from secret
     encoded_proxy=$("${cli}" get secret "${proxy_secret_name}" -n "${selected_namespace}" --template="{{.data.proxy}}")
     proxy=$(echo "$encoded_proxy" | base64 -d)
@@ -320,7 +320,7 @@ checkClusterConnection() {
 
   # trusted ca
   custom_ca_map=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.trustedCAs}}")
-  if [[ "$custom_ca_map" != "$missing_value" ]]; then
+  if [[ "$custom_ca_map" != "" && "$custom_ca_map" != "$missing_value" ]]; then
     # get custom certificate from config map and save to file
     certs=$("${cli}" get configmap "${custom_ca_map}" -n "${selected_namespace}" --template="{{.data.certs}}")
     cert_path="/tmp/ca.pem"
