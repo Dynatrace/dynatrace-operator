@@ -143,8 +143,6 @@ checkCustomPullSecret() {
     # private registry required for immutable image
     checkImmutableImage "classicFullStack"
     checkImmutableImage "infraMonitoring"
-
-    return
   else
     # custom pull secret is set, check secret exists
     if ! "${cli}" get secret "${pull_secret_name}" -n "${selected_namespace}" >/dev/null 2>&1; then
@@ -173,9 +171,14 @@ getImage() {
     image="${dynakube_image}"
   else
     # use version if image not set
+    log_info "image" "no image set, check if version is set ..."
+
     dynakube_version=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.${type}.version}}")
     if [[ "${dynakube_version}" != "" && "$dynakube_version" != "$missing_value" ]]; then
       image+=":${dynakube_version}"
+      log_info "image" "using version '$dynakube_version' defined in dynakube"
+    else
+      log_info "image" "no version defined in dynakube"
     fi
   fi
 
@@ -383,5 +386,8 @@ container_cli="${cli} exec ${operator_pod} -n ${selected_namespace} -- /bin/bash
 
 checkClusterConnection "$container_cli"
 checkImagePullable "$container_cli"
+
+echo
+echo "Operator seems to be configured correctly!"
 
 # todo: look through support channel for common pitfalls
