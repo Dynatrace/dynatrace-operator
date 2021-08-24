@@ -2,11 +2,21 @@
 
 Run this script while connected to the affected cluster.
 
-## Instructions
+## Requirements
+
+The script has the following dependencies:
+- `bash`
+- `kubectl` or `oc`
+- `jq`
+- `curl`
+
+If you are running the script on Windows, make sure `jq` is installed.
+
+## Usage
 
 Run the following command to run the script.
 
-```
+```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/dynatrace/dynatrace-operator/master/troubleshoot/troubleshoot.sh)"
 ```
 

@@ -45,6 +45,13 @@ error() {
   exit 1
 }
 
+checkDependencies() {
+  if ! command -v jq &> /dev/null
+  then
+      error "jq is required to run this script!"
+  fi
+}
+
 checkNs() {
   log_info "namespace" "checking if namespace '${selected_namespace}' exists .."
   if ! "${cli}" get ns "${selected_namespace}" >/dev/null 2>&1; then
@@ -171,14 +178,9 @@ getImage() {
     image="${dynakube_image}"
   else
     # use version if image not set
-    log_info "image" "no image set, check if version is set ..."
-
     dynakube_version=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.${type}.version}}")
     if [[ "${dynakube_version}" != "" && "$dynakube_version" != "$missing_value" ]]; then
       image+=":${dynakube_version}"
-      log_info "image" "using version '$dynakube_version' defined in dynakube"
-    else
-      log_info "image" "no version defined in dynakube"
     fi
   fi
 
@@ -375,6 +377,8 @@ checkClusterConnection() {
 }
 
 ####### MAIN #######
+
+checkDependencies
 
 checkNs
 checkDynakube
