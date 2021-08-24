@@ -1,4 +1,4 @@
-package namespacesmapper
+package namespace2dynakube_mapper
 
 import (
 	"context"

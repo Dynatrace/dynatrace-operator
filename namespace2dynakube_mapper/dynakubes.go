@@ -1,7 +1,8 @@
-package namespacesmapper
+package namespace2dynakube_mapper
 
 import (
 	"context"
+
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -10,7 +11,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func MapFromDynaKube_DI(ctx context.Context, clt client.Client, operatorNs string, dk *dynatracev1alpha1.DynaKube) error {
+// TODO: dispatching between DataIngest and CodeModules should be more generic
+
+func MapFromDynakube_DataIngest(ctx context.Context, clt client.Client, operatorNs string, dk *dynatracev1alpha1.DynaKube) error {
 	nsList := &corev1.NamespaceList{}
 	err := clt.List(ctx, nsList)
 
@@ -18,10 +21,10 @@ func MapFromDynaKube_DI(ctx context.Context, clt client.Client, operatorNs strin
 		return errors.Cause(err)
 	}
 
-	return doMapFromDynaKube(ctx, clt, operatorNs, dataIngestMapName, dk, nsList, dk.Spec.DataIngestSpec.Selector)
+	return doMapNs2Dk(ctx, clt, operatorNs, dataIngestMapName, dk, nsList, dk.Spec.DataIngestSpec.Selector)
 }
 
-func MapFromDynaKube_CM(ctx context.Context, clt client.Client, operatorNs string, dk *dynatracev1alpha1.DynaKube) error {
+func MapFromDynaKube_CodeModules(ctx context.Context, clt client.Client, operatorNs string, dk *dynatracev1alpha1.DynaKube) error {
 	nsList := &corev1.NamespaceList{}
 	err := clt.List(ctx, nsList)
 
@@ -29,17 +32,21 @@ func MapFromDynaKube_CM(ctx context.Context, clt client.Client, operatorNs strin
 		return errors.Cause(err)
 	}
 
-	return doMapFromDynaKube(ctx, clt, operatorNs, codeModulesMapName, dk, nsList, dk.Spec.CodeModules.Selector)
+	return doMapNs2Dk(ctx, clt, operatorNs, codeModulesMapName, dk, nsList, dk.Spec.CodeModules.Selector)
 }
 
-func UnmapFromDynaKube_DI(ctx context.Context, clt client.Client, operatorNs string, dkName string) error {
-	return doUnmapFromDynaKube(ctx, clt, operatorNs, dkName, dataIngestMapName)
-}
-func UnmapFromDynaKube_CM(ctx context.Context, clt client.Client, operatorNs string, dkName string) error {
-	return doUnmapFromDynaKube(ctx, clt, operatorNs, dkName, codeModulesMapName)
+func UnmapFromDynaKube(ctx context.Context, clt client.Client, operatorNs string, dkName string) error {
+	err := doUnmapFromDynaKube(ctx, clt, operatorNs, dkName, dataIngestMapName)
+	if err != nil {
+		return err
+	}
+	err = doUnmapFromDynaKube(ctx, clt, operatorNs, dkName, codeModulesMapName)
+	return err
 }
 
-func updateMapFromDynaKube(dk *dynatracev1alpha1.DynaKube, selector labels.Selector, cfgmap *corev1.ConfigMap, nsList *corev1.NamespaceList) bool {
+// updateMapNs2Dk fills `cfgmap` (namespace: dynakube)
+// with namespaces matching the selector(key) and corresponding dynakube name(value)
+func updateMapNs2Dk(dk *dynatracev1alpha1.DynaKube, selector labels.Selector, cfgmap *corev1.ConfigMap, nsList *corev1.NamespaceList) bool {
 	updated := false
 
 	if cfgmap.Data == nil {
@@ -48,15 +55,15 @@ func updateMapFromDynaKube(dk *dynatracev1alpha1.DynaKube, selector labels.Selec
 
 	for _, namespace := range nsList.Items {
 		matches := selector.Matches(labels.Set(namespace.Labels))
-		mapDkName, ok := cfgmap.Data[namespace.Name]
+		dynakubeName, ok := cfgmap.Data[namespace.Name]
 
 		if matches {
-			if !ok || mapDkName != dk.Name {
+			if !ok || dynakubeName != dk.Name {
 				cfgmap.Data[namespace.Name] = dk.Name
 				updated = true
 			}
 		} else {
-			if ok && mapDkName == dk.Name {
+			if ok && dynakubeName == dk.Name {
 				delete(cfgmap.Data, namespace.Name)
 				updated = true
 			}
@@ -65,7 +72,7 @@ func updateMapFromDynaKube(dk *dynatracev1alpha1.DynaKube, selector labels.Selec
 	return updated
 }
 
-func doMapFromDynaKube(ctx context.Context, clt client.Client, operatorNs string, cfgmapName string, dk *dynatracev1alpha1.DynaKube, nsList *corev1.NamespaceList, ps *metav1.LabelSelector) error {
+func doMapNs2Dk(ctx context.Context, clt client.Client, operatorNs string, cfgmapName string, dk *dynatracev1alpha1.DynaKube, nsList *corev1.NamespaceList, ps *metav1.LabelSelector) error {
 	cfgmap, err := getOrCreateMap(ctx, clt, operatorNs, cfgmapName)
 	if err != nil {
 		return err
@@ -76,7 +83,7 @@ func doMapFromDynaKube(ctx context.Context, clt client.Client, operatorNs string
 		return errors.WithStack(err)
 	}
 
-	if updateMapFromDynaKube(dk, selector, cfgmap, nsList) {
+	if updateMapNs2Dk(dk, selector, cfgmap, nsList) {
 		if err := clt.Update(ctx, cfgmap); err != nil {
 			return errors.WithMessagef(err, "failed to update %s", cfgmapName)
 		}
@@ -84,7 +91,7 @@ func doMapFromDynaKube(ctx context.Context, clt client.Client, operatorNs string
 	return nil
 }
 
-func removeDynaKubeFromMap(cfgmap *corev1.ConfigMap, dkName string) bool {
+func removeDkFromMap(cfgmap *corev1.ConfigMap, dkName string) bool {
 	updated := false
 
 	if cfgmap.Data == nil {
@@ -106,7 +113,7 @@ func doUnmapFromDynaKube(ctx context.Context, clt client.Client, operatorNs stri
 		return err
 	}
 
-	if removeDynaKubeFromMap(nsmap, dkName) {
+	if removeDkFromMap(nsmap, dkName) {
 		if err := clt.Update(ctx, nsmap); err != nil {
 			return errors.WithMessagef(err, "failed to update %s", mapName)
 		}
