@@ -98,7 +98,6 @@ checkApiUrl() {
   else
     log_info "api url correctly ends on '/api'"
   fi
-  # todo: check for valid url?
 
   log_info "api url is valid"
 }
@@ -258,9 +257,9 @@ checkImagePullable() {
       https://$registry/v2/$oneagent_image/manifests/latest -s -o /dev/null -w %{http_code}'"
     image_response_code=$(eval "${check_image}")
     if [[ "$image_response_code" != "200" ]] ; then
-      log_info "image '$oneagent_image' on registry '$registry' unreachable"
+      log_info "image '$oneagent_image' with version '$oneagent_version' not found on registry '$registry'"
     else
-      log_info "image '$oneagent_image' exists on registry '$registry'"
+      log_info "image '$oneagent_image' with version '$oneagent_version' exists on registry '$registry'"
       if [[ "$registry" == "$oneagent_registry" ]] ; then
         oneagent_image_works=true
       fi
@@ -271,7 +270,7 @@ checkImagePullable() {
       https://$registry/v2/$activegate_image/manifests/latest -s -o /dev/null -w %{http_code}'"
     image_response_code=$(eval "${check_image}")
     if [[ "$image_response_code" != "200" ]] ; then
-      log_info "image '$activegate_image' on registry '$registry' unreachable"
+      log_info "image '$activegate_image' not found on registry '$registry'"
     else
       log_info "image '$activegate_image' exists on registry '$registry'"
       if [[ "$registry" == "$activegate_registry" ]] ; then
@@ -281,29 +280,32 @@ checkImagePullable() {
   done
 
   if [[ "$oneagent_image_works" == "true" ]] ; then
-    log_info "oneagent image '$dynakube_oneagent_image' works"
+    log_info "oneagent image '$dynakube_oneagent_image' found"
   else
     if [[ "$oneagent_registry" == "docker.io" ]] ; then
+      # get auth token with pull access for docker hub registry
       token=$(
         curl --silent \
         "https://auth.docker.io/token?service=registry.docker.io&scope=repository:$oneagent_image:pull" \
         | jq -r '.token'
       )
+
+      # check selected image exists on docker hub
       dockerio_image_request="$container_cli 'curl --head --header \"Authorization: Bearer ${token}\" \
         https://registry-1.docker.io/v2/$oneagent_image/manifests/$oneagent_version -s -o /dev/null -w %{http_code}'"
 
       if [[ "$(eval "$dockerio_image_request")" == "200" ]] ; then
-        log_info "$oneagent_image exists on docker.io registry"
+        log_info "'$oneagent_image' with version '$oneagent_version' exists on docker.io registry"
       else
-        error "oneagent image $oneagent_image missing on docker.io registry"
+        error "oneagent image '$oneagent_image' with version '$oneagent_version' not found on docker.io registry"
       fi
     else
-      error "oneagent image '$dynakube_oneagent_image' missing"
+      error "oneagent image '$dynakube_oneagent_image' with version '$oneagent_version' missing."
     fi
   fi
 
   if [[ "$activegate_image_works" == "true" ]] ; then
-    log_info "activegate image '$dynakube_activegate_image' works"
+    log_info "activegate image '$dynakube_activegate_image' found"
   else
     error "activegate image '$dynakube_activegate_image' missing"
   fi
