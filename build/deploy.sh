@@ -8,7 +8,7 @@ go_build_args=(
   "-tags" "containers_image_storage_stub"
 )
 
-go build "${go_build_args[@]}" -o ./build/_output/bin/dynatrace-operator ./cmd/operator/
+CGO_ENABLED=1 go build "${go_build_args[@]}" -o ./build/_output/bin/dynatrace-operator ./cmd/operator/
 
 if [[ "${GCR:-}" == "true" ]]; then
   echo "$GCLOUD_SERVICE_KEY" | base64 -d | docker login -u _json_key --password-stdin https://gcr.io

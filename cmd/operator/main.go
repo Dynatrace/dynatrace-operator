@@ -32,7 +32,9 @@ var (
 	log = logger.NewDTLogger()
 )
 
-var subcmdCallbacks = map[string]func(ns string, cfg *rest.Config) (manager.Manager, error){
+type subCommand func(string, *rest.Config) (mgr manager.Manager, cleanUp func(), err error)
+
+var subcmdCallbacks = map[string]subCommand{
 	"csi-driver":     startCSIDriver,
 	"operator":       startOperator,
 	"webhook-server": startWebhookServer,
@@ -69,7 +71,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	mgr, err := subcmdFn(namespace, cfg)
+	mgr, cleanUp, err := subcmdFn(namespace, cfg)
+	defer cleanUp()
 	if err != nil {
 		log.Error(err, "")
 		os.Exit(1)

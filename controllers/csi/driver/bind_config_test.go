@@ -2,12 +2,12 @@ package csidriver
 
 import (
 	"context"
-	"os"
 	"path/filepath"
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/spf13/afero"
@@ -27,12 +27,13 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		clt := fake.NewClient()
 		srv := &CSIDriverServer{
 			client: clt,
+			db:     metadata.FakeMemoryDB(),
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, afero.Afero{})
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg)
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -42,28 +43,33 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}})
 		srv := &CSIDriverServer{
 			client: clt,
+			db:     metadata.FakeMemoryDB(),
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, afero.Afero{})
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg)
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
 	})
-	t.Run(`failed to extract tenant from file`, func(t *testing.T) {
+	t.Run(`no tenant in storage`, func(t *testing.T) {
 		clt := fake.NewClient(
-			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}})
+			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}},
+			&dynatracev1alpha1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{Name: dkName},
+			},
+		)
 		srv := &CSIDriverServer{
 			client: clt,
-			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
+			db:     metadata.FakeMemoryDB(),
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.fs)
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg)
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -75,14 +81,13 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			client: clt,
 			opts:   dtcsi.CSIOptions{RootDir: "/"},
 			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
+			db:     metadata.FakeMemoryDB(),
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
 		}
 
-		_ = srv.fs.WriteFile(filepath.Join(srv.opts.RootDir, "tenant-"+dkName), []byte(tenantUuid), os.ModePerm)
-
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.fs)
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg)
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -93,12 +98,13 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		srv := &CSIDriverServer{
 			client: clt,
 			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
+			db:     metadata.FakeMemoryDB(),
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
 		}
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.fs)
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg)
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -110,23 +116,25 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: dkName},
 			},
 		)
+		opts := dtcsi.CSIOptions{RootDir: "/"}
 		srv := &CSIDriverServer{
 			client: clt,
-			opts:   dtcsi.CSIOptions{RootDir: "/"},
+			opts:   opts,
 			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
+			db:     metadata.FakeMemoryDB(),
+			path:   metadata.PathResolver{RootDir: opts.RootDir},
 		}
 		volumeCfg := &volumeConfig{
 			namespace: namespace,
 		}
 
-		_ = srv.fs.WriteFile(filepath.Join(srv.opts.RootDir, "tenant-"+dkName), []byte(tenantUuid), os.ModePerm)
-		_ = srv.fs.WriteFile(filepath.Join(srv.opts.RootDir, tenantUuid, "version"), []byte(agentVersion), os.ModePerm)
+		srv.db.InsertTenant(metadata.NewTenant(tenantUuid, agentVersion, dkName))
 
-		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg, srv.fs)
+		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, bindCfg)
-		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid, "bin", agentVersion), bindCfg.agentDir)
-		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid), bindCfg.envDir)
+		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid, "bin", agentVersion), srv.path.AgentBinaryDirForVersion(tenantUuid, agentVersion))
+		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid), srv.path.EnvDir(tenantUuid))
 	})
 }

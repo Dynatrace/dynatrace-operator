@@ -31,8 +31,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func startOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
+func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
 	log.Info(ns)
+	cleanUp := func() {}
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Namespace:                  ns,
 		Scheme:                     scheme.Scheme,
@@ -45,7 +46,7 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 		HealthProbeBindAddress:     "0.0.0.0:10080",
 	})
 	if err != nil {
-		return nil, err
+		return nil, cleanUp, err
 	}
 
 	log.Info("Registering Components.")
@@ -71,9 +72,9 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 
 	for _, f := range funcs {
 		if err := f(mgr, ns); err != nil {
-			return nil, err
+			return nil, cleanUp, err
 		}
 	}
 
-	return mgr, nil
+	return mgr, cleanUp, nil
 }

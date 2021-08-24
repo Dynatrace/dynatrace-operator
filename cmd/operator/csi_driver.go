@@ -17,11 +17,13 @@ limitations under the License.
 package main
 
 import (
+	"os"
 	"path/filepath"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/controllers/csi/driver"
 	csigc "github.com/Dynatrace/dynatrace-operator/controllers/csi/gc"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/controllers/csi/provisioner"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/spf13/afero"
@@ -48,9 +50,11 @@ func csiDriverFlags() *pflag.FlagSet {
 	return csiDriverFlags
 }
 
-func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, error) {
+func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
 	defaultUmask := unix.Umask(0000)
-	defer unix.Umask(defaultUmask)
+	cleanUp := func() {
+		unix.Umask(defaultUmask)
+	}
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Namespace:              ns,
@@ -61,7 +65,7 @@ func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, error) {
 	})
 	if err != nil {
 		log.Error(err, "unable to start manager")
-		return nil, err
+		return nil, cleanUp, err
 	}
 
 	csiOpts := dtcsi.CSIOptions{
@@ -74,33 +78,37 @@ func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, error) {
 
 	if err := fs.MkdirAll(filepath.Join(csiOpts.RootDir), 0770); err != nil {
 		log.Error(err, "unable to create data directory for CSI Driver")
-		return nil, err
+		return nil, cleanUp, err
 	}
 
-	if err := fs.MkdirAll(filepath.Join(csiOpts.RootDir, dtcsi.GarbageCollectionPath), 0770); err != nil {
-		log.Error(err, "unable to create garbage collector directory for CSI Driver")
-		return nil, err
+	access, err := metadata.NewAccess(dtcsi.MetadataAccessPath)
+	if err != nil {
+		log.Error(err, "failed to setup database storage for CSI Driver")
+		os.Exit(1)
+	}
+	if err := metadata.CorrectMetadata(mgr.GetClient(), access, log); err != nil {
+		log.Error(err, "failed to correct database storage for CSI Driver")
 	}
 
-	if err := csidriver.NewServer(mgr.GetClient(), csiOpts).SetupWithManager(mgr); err != nil {
+	if err := csidriver.NewServer(mgr.GetClient(), csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Driver server")
-		return nil, err
+		return nil, cleanUp, err
 	}
 
-	if err := csiprovisioner.NewReconciler(mgr, csiOpts).SetupWithManager(mgr); err != nil {
+	if err := csiprovisioner.NewReconciler(mgr, csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Provisioner")
-		return nil, err
+		return nil, cleanUp, err
 	}
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		log.Error(err, "unable to set up health check")
-		return nil, err
+		return nil, cleanUp, err
 	}
 
-	if err := csigc.NewReconciler(mgr.GetClient(), csiOpts).SetupWithManager(mgr); err != nil {
+	if err := csigc.NewReconciler(mgr.GetClient(), csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Garbage Collector")
-		return nil, err
+		return nil, cleanUp, err
 	}
 
-	return mgr, nil
+	return mgr, cleanUp, nil
 }
