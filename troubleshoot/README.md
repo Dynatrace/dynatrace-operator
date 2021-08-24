@@ -10,8 +10,6 @@ The script has the following dependencies:
 - `jq`
 - `curl`
 
-If you are running the script on Windows, make sure `jq` is installed.
-
 ## Usage
 
 Run the following command to run the script.

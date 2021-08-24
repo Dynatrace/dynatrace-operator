@@ -399,4 +399,4 @@ checkConnection "$container_cli"
 checkImagePullable "$container_cli"
 
 echo
-echo "Operator seems to be configured correctly!"
+echo "No known issues found with the dynatrace-operator installation!"
