@@ -41,7 +41,7 @@ k8s_cluster_id ${cluster_id}
 
 conf_host='"
 [host]
-tenant ${host_tenant}">>${container_conf_file}
+tenant ${host_tenant}"
 "'
 ###############################################
 
@@ -94,7 +94,7 @@ downloadOneAgentIfNecessary() {
 			exit "${fail_code}"
 		fi
 	else
-		printf "\Downloading OneAgent is not necessary, not in installer mode\n"
+		printf "\nDownloading OneAgent is not necessary, not in installer mode\n"
 	fi
 }
 
