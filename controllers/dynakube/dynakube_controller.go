@@ -105,7 +105,10 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			if err := mapper.UnmapFromDynaKube(ctx, r.client, request.NamespacedName.Namespace, request.NamespacedName.Name); err != nil {
+			if err := mapper.UnmapFromDynaKube_DI(ctx, r.client, request.NamespacedName.Namespace, request.NamespacedName.Name); err != nil {
+				return reconcile.Result{}, err
+			}
+			if err := mapper.UnmapFromDynaKube_CM(ctx, r.client, request.NamespacedName.Namespace, request.NamespacedName.Name); err != nil {
 				return reconcile.Result{}, err
 			}
 			// Request object not found, could have been deleted after reconcile request.
@@ -228,8 +231,15 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 		}
 	}
 
-	if rec.Instance.Spec.CodeModules.Enabled || rec.Instance.Spec.DataIngestSpec.Enabled {
-		if err := mapper.MapFromDynaKube(ctx, r.client, rec.Instance.Namespace, rec.Instance); err != nil {
+	if rec.Instance.Spec.CodeModules.Enabled {
+		if err := mapper.MapFromDynaKube_CM(ctx, r.client, rec.Instance.Namespace, rec.Instance); err != nil {
+			rec.Log.Error(err, "update of a map of namespaces failed")
+			return
+		}
+	}
+
+	if rec.Instance.Spec.DataIngestSpec.Enabled {
+		if err := mapper.MapFromDynaKube_DI(ctx, r.client, rec.Instance.Namespace, rec.Instance); err != nil {
 			rec.Log.Error(err, "update of a map of namespaces failed")
 			return
 		}

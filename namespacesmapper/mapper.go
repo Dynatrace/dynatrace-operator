@@ -19,25 +19,26 @@ const (
 type dynaKubeFunc func(dk dynatracev1alpha1.DynaKube) bool
 type selectorFunc func(dk dynatracev1alpha1.DynaKube) *metav1.LabelSelector
 
-func getOrCreateMap(ctx context.Context, clt client.Client, opns string, cfgmapname string) (*corev1.ConfigMap, error) {
+// getOrCreateMap returns ConfigMap in operator's namespace
+func getOrCreateMap(ctx context.Context, clt client.Client, operatorNs string, cfgmapName string) (*corev1.ConfigMap, error) {
 	var cfgmap corev1.ConfigMap
-	if err := clt.Get(ctx, client.ObjectKey{Name: cfgmapname, Namespace: opns}, &cfgmap); err != nil {
+	if err := clt.Get(ctx, client.ObjectKey{Name: cfgmapName, Namespace: operatorNs}, &cfgmap); err != nil {
 		if k8serrors.IsNotFound(err) {
 			nsmap := corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{Name: cfgmapname, Namespace: opns},
+				ObjectMeta: metav1.ObjectMeta{Name: cfgmapName, Namespace: operatorNs},
 			}
 
 			if err := clt.Create(ctx, &nsmap); err != nil {
 				if !k8serrors.IsAlreadyExists(err) {
-					return nil, errors.WithMessagef(err, "failed to create ConfigMap %s", cfgmapname)
+					return nil, errors.WithMessagef(err, "failed to create ConfigMap %s", cfgmapName)
 				}
 			}
 
-			if err := clt.Get(ctx, client.ObjectKey{Name: cfgmapname, Namespace: opns}, &cfgmap); err != nil {
-				return nil, errors.WithMessagef(err, "ConfigMap %s created. Failed to query the map", cfgmapname)
+			if err := clt.Get(ctx, client.ObjectKey{Name: cfgmapName, Namespace: operatorNs}, &cfgmap); err != nil {
+				return nil, errors.WithMessagef(err, "ConfigMap %s created. Failed to query the map", cfgmapName)
 			}
 		} else {
-			return nil, errors.WithMessagef(err, "failed to query ConfigMap %s", cfgmapname)
+			return nil, errors.WithMessagef(err, "failed to query ConfigMap %s", cfgmapName)
 		}
 	}
 	return &cfgmap, nil
