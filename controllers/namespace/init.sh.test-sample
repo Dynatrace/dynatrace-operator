@@ -121,13 +121,13 @@ createConfigurationFiles() {
 
 		echo "Writing ${container_conf_file} file..."
 
-		writeToConfFile ${conf_base} ${container_conf_file}
+		writeToConfFile "${conf_base}" ${container_conf_file}
 
 		if [[ "${host_tenant}" != "" ]]; then
 			if [[ "abc12345" == "${host_tenant}" ]]; then
-				writeToConfFile ${conf_k8} ${container_conf_file}
+				writeToConfFile "${conf_k8}" ${container_conf_file}
 			fi
-			writeToConfFile ${conf_host} ${container_conf_file}
+			writeToConfFile "${conf_host}" ${container_conf_file}
 		fi
 	done
 }
