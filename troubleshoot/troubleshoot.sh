@@ -208,7 +208,7 @@ function getImage {
 }
 
 function checkImagePullable {
-  container_cli="$1"
+  run_container_command="$1"
 
   log_section="image"
   log "checking if images are pullable ..."
@@ -233,7 +233,7 @@ function checkImagePullable {
   dynakube_oneagent_image=$(getImage "oneAgent")
   dynakube_activegate_image=$(getImage "activeGate")
 
-  # split images into registry and image name
+  # split oneagent image into registry and image name
   oneagent_registry="${dynakube_oneagent_image%%/*}"
   oneagent_image="${dynakube_oneagent_image##"$oneagent_registry/"}"
 
@@ -252,6 +252,7 @@ function checkImagePullable {
   fi
   log "using '$oneagent_image' on '$oneagent_registry' with version '$oneagent_version' as oneagent image"
 
+  # split activegate image into registry and image name
   activegate_registry="${dynakube_activegate_image%%/*}"
   activegate_image="${dynakube_activegate_image##"$activegate_registry/"}"
   log "using '$activegate_image' on '$activegate_registry' as activegate image"
@@ -265,9 +266,10 @@ function checkImagePullable {
     username=$(echo "$entry" | jq --raw-output '.value.username')
     password=$(echo "$entry" | jq --raw-output '.value.password')
 
-    check_registry="$container_cli 'curl --user $username:$password --head \
+    check_registry="$run_container_command 'curl --user $username:$password --head \
       https://$registry/v2/ \
-      --silent --fail --output /dev/null'"
+      --fail \
+      --silent --output /dev/null'"
     if ! eval "${check_registry}" ; then
       error "registry '$registry' unreachable"
     else
@@ -277,31 +279,31 @@ function checkImagePullable {
     log "checking images for registry '$registry'"
 
     # check oneagent image
-    check_image="$container_cli 'curl --user $username:$password --head \
+    check_image="$run_container_command 'curl --user $username:$password --head \
       https://$registry/v2/$oneagent_image/manifests/$oneagent_version \
       --silent --output /dev/null --write-out %{http_code}'"
     image_response_code=$(eval "${check_image}")
-    if [[ "$image_response_code" != "200" ]] ; then
-      log "image '$oneagent_image' with version '$oneagent_version' not found on registry '$registry'"
-    else
+    if [[ "$image_response_code" == "200" ]] ; then
       log "image '$oneagent_image' with version '$oneagent_version' exists on registry '$registry'"
       if [[ "$registry" == "$oneagent_registry" ]] ; then
         oneagent_image_works=true
       fi
+    else
+      log "image '$oneagent_image' with version '$oneagent_version' not found on registry '$registry'"
     fi
 
     # check activegate image
-    check_image="$container_cli 'curl --user $username:$password --head \
+    check_image="$run_container_command 'curl --user $username:$password --head \
       https://$registry/v2/$activegate_image/manifests/latest \
       --silent --output /dev/null --write-out %{http_code}'"
     image_response_code=$(eval "${check_image}")
-    if [[ "$image_response_code" != "200" ]] ; then
-      log "image '$activegate_image' not found on registry '$registry'"
-    else
+    if [[ "$image_response_code" == "200" ]] ; then
       log "image '$activegate_image' exists on registry '$registry'"
       if [[ "$registry" == "$activegate_registry" ]] ; then
         activegate_image_works=true
       fi
+    else
+      log "image '$activegate_image' not found on registry '$registry'"
     fi
   done
 
@@ -317,13 +319,13 @@ function checkImagePullable {
       )
 
       # check selected image exists on docker hub
-      dockerio_image_request="$container_cli 'curl --head \
+      dockerio_image_request="$run_container_command 'curl --head \
         --header \"Authorization: Bearer ${token}\" \
         https://registry-1.docker.io/v2/$oneagent_image/manifests/$oneagent_version \
         --silent --output /dev/null --write-out %{http_code}'"
 
       if [[ "$(eval "$dockerio_image_request")" == "200" ]] ; then
-        log "'oneagent image $oneagent_image' with version '$oneagent_version' exists on docker.io registry"
+        log "oneagent image '$oneagent_image' with version '$oneagent_version' exists on docker.io registry"
       else
         error "oneagent image '$oneagent_image' with version '$oneagent_version' not found on docker.io registry"
       fi
@@ -340,7 +342,7 @@ function checkImagePullable {
 }
 
 checkDTClusterConnection() {
-  container_cli="$1"
+  run_container_command="$1"
 
   log_section="connection"
   log "checking if connection to cluster is valid ..."
@@ -401,7 +403,7 @@ checkDTClusterConnection() {
     cert_path="/tmp/ca.pem"
 
     log "copying certificate to container ..."
-    ca_cmd="$container_cli \"echo '$certs' > $cert_path\""
+    ca_cmd="$run_container_command \"echo '$certs' > $cert_path\""
     if ! eval "$ca_cmd"; then
       error "unable to write custom certificate to container"
     else
@@ -415,7 +417,7 @@ checkDTClusterConnection() {
   fi
 
   log "trying to access tenant '$api_url' ..."
-  connection_cmd="$container_cli \"curl ${curl_params[*]}\""
+  connection_cmd="$run_container_command \"curl ${curl_params[*]}\""
   if ! eval "${connection_cmd}"; then
     error "unable to connect to tenant"
   else
@@ -435,10 +437,10 @@ operator_pod=$("${cli}" get pods \
   --namespace "${selected_namespace}" --no-headers \
   --output custom-columns=":metadata.name" | grep dynatrace-operator)
 log "using pod '$operator_pod'"
-container_cli="${cli} exec ${operator_pod} --namespace ${selected_namespace} -- /bin/bash -c"
+run_container_command="${cli} exec ${operator_pod} --namespace ${selected_namespace} -- /bin/bash -c"
 
-checkDTClusterConnection "$container_cli"
-checkImagePullable "$container_cli"
+checkDTClusterConnection "$run_container_command"
+checkImagePullable "$run_container_command"
 
 echo
 echo "No known issues found with the dynatrace-operator installation!"
