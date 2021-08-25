@@ -47,10 +47,19 @@ function error {
 }
 
 function checkDependencies {
-  if ! command -v jq &> /dev/null
-  then
-      error "jq is required to run this script!"
+  dependencies=("jq" "curl")
+  if [[ "${cli}" == "oc" ]] ; then
+    dependencies+=("oc")
+  else
+    dependencies+=("kubectl")
   fi
+
+  for dependency in "${dependencies[@]}"; do
+    if ! command -v "${dependency}" &> /dev/null
+    then
+      error "${dependency} is required to run this script!"
+    fi
+  done
 }
 
 function checkNamespace() {
