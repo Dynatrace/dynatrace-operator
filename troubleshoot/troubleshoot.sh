@@ -53,7 +53,7 @@ function checkDependencies {
   fi
 }
 
-checkNs() {
+checkNamespace() {
   log_section="namespace"
   log_info "checking if namespace '${selected_namespace}' exists .."
   if ! "${cli}" get ns "${selected_namespace}" >/dev/null 2>&1; then
