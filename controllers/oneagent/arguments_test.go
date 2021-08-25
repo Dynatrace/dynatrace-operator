@@ -54,7 +54,7 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 				},
 			},
 		}}
-	metadata := deploymentmetadata.NewDeploymentMetadata(testUID)
+	metadata := deploymentmetadata.NewDeploymentMetadata(testUID, deploymentmetadata.DeploymentTypeFS)
 	fullStackSpecs := &instance.Spec.ClassicFullStack
 	podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
 	require.NotNil(t, podSpecs)
