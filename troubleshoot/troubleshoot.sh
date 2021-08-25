@@ -82,71 +82,54 @@ function checkDynakube {
 
   log "using '${selected_dynakube}'"
 
-  checkApiUrl
-  checkSecret
-  checkCustomPullSecret
-
-  log "'${selected_dynakube}' is valid"
-}
-
-function checkApiUrl {
+  # check api url
   log "checking if api url is valid..."
-
   api_url=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.apiUrl}}")
   if [[ "${api_url##*/}" != "api" ]]; then
     error "api url has to end on '/api'"
   else
     log "api url correctly ends on '/api'"
   fi
-
   log "api url is valid"
-}
 
-function checkSecret {
+  # check secret
   log "checking if secret is valid ..."
-
   # use dynakube name or tokens value if set
   secret_name="$selected_dynakube"
   tokens=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.tokens}}")
-  if [[ "$tokens" != "$missing_value" ]]; then
+  if [[ "$tokens" != "" && "$tokens" != "$missing_value" ]]; then
+    # use different secret name than dynakube name
     secret_name=$tokens
   fi
 
+  # check if secret with the given name exists
   if ! "${cli}" get secret "$secret_name" -n "${selected_namespace}" &>/dev/null; then
     error "secret with the name '${secret_name}' is missing"
   else
     log "secret '${secret_name}' exists"
   fi
 
+  # check secret has required tokens
   token_names=("apiToken" "paasToken")
   for token_name in "${token_names[@]}"; do
+    # check token exists in secret
     token=$("${cli}" get secret "$secret_name" -n "${selected_namespace}" --template="{{.data.${token_name}}}")
-    if [[ "$token" == "$missing_value" ]]; then
+    if [[ "$token" == "" || "$token" == "$missing_value" ]]; then
       error "token '${token_name}' does not exist in secret '${secret_name}'"
     else
       log "secret token '${token_name}' exists"
     fi
 
+    # save paas token for api check
     if [[ "$token_name" == "paasToken" ]]; then
       paas_token=$(echo "$token" | base64 -d)
     fi
   done
-}
 
-function checkImmutableImage {
-  type="$1"
-
-  use_immutable_image=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" \
-    --template="{{.spec.${type}.useImmutableImage}}")
-  if [[ "$use_immutable_image" == "true" ]] ; then
-    error "unable to use immutable image on ${type} without a private registry (custom pull secret)"
-  fi
-}
-
-function checkCustomPullSecret {
+  # check custom pull secret
   pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" \
-    --template="{{.spec.customPullSecret}}")
-  if [[ "${pull_secret_name}" == "" ]] || [[ "${pull_secret_name}" == "${missing_value}" ]]; then
+      --template="{{.spec.customPullSecret}}")
+  if [[ "${pull_secret_name}" == "" || "${pull_secret_name}" == "${missing_value}" ]]; then
     log "custom pull secret not used"
 
     # private registry required for immutable image
@@ -159,6 +142,18 @@ function checkCustomPullSecret {
     else
       log "pull secret '${pull_secret_name}' exists"
     fi
+  fi
+
+  log "'${selected_dynakube}' is valid"
+}
+
+function checkImmutableImage {
+  type="$1"
+
+  use_immutable_image=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" \
+    --template="{{.spec.${type}.useImmutableImage}}")
+  if [[ "$use_immutable_image" == "true" ]] ; then
+    error "unable to use immutable image on ${type} without a private registry (custom pull secret)"
   fi
 }
 
