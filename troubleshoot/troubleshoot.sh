@@ -143,7 +143,7 @@ function checkImmutableImage {
   fi
 }
 
-checkCustomPullSecret() {
+function checkCustomPullSecret {
   pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" \
     --template="{{.spec.customPullSecret}}")
   if [[ "${pull_secret_name}" == "" ]] || [[ "${pull_secret_name}" == "${missing_value}" ]]; then
