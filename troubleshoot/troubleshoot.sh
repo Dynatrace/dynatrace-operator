@@ -89,7 +89,7 @@ function checkDynakube {
   log_info "'${selected_dynakube}' is valid"
 }
 
-checkApiUrl() {
+function checkApiUrl {
   log_info "checking if api url is valid..."
 
   api_url=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.apiUrl}}")
