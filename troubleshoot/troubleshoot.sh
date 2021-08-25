@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eu
 
 selected_dynakube="dynakube"
 selected_namespace="dynatrace"
