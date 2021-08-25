@@ -12,28 +12,49 @@ api_url=""
 paas_token=""
 log_section=""
 
-while [ $# -gt 0 ]; do
-  case "$1" in
-  --dynakube)
-    selected_dynakube="$2"
-    shift 2
-    ;;
-  --namespace)
-    selected_namespace="$2"
-    shift 2
-    ;;
-  --oc)
-    cli="oc"
-    shift 1
-    ;;
-  --openshift)
-    default_oneagent_image="registry.connect.redhat.com/dynatrace/oneagent"
-    shift 1
-    ;;
-  *)
-    echo "ERROR: unsupported option: '$1'"
-    exit 1
-    ;;
+function usage {
+  echo "Usage: $(basename "${0}") [options]" 2>&1
+  echo "   [ -d | --dynakube DYNAKUBE ]    Specify a different Dynakube name, Default: 'dynakube'."
+  echo "   [ -n | --namespace NAMESPACE ]  Specify a different Namespace, Default: 'dynatrace'."
+  echo "   [ -c | --oc ]                   Use 'oc' instead of 'kubectl' to access cluster."
+  echo "   [ -r | --openshift ]            Check the OneAgent image in the RedHat registry."
+  echo "   [ -h | --help ]                 Display usage information."
+  exit 1
+}
+
+options="hd:n:cr"
+long_options="help,dynakube:,namespace:,oc,openshift"
+eval set -- "$(getopt --options="$options" --longoptions="$long_options" --name "$0" -- "$@")"
+
+while true; do
+  case "${1}" in
+    -h | --help)
+      usage
+      ;;
+    -d | --dynakube)
+      selected_dynakube="${2}"
+      shift 2
+      ;;
+    -n | --namespace)
+      selected_namespace="${2}"
+      shift 2
+      ;;
+    -c | --oc)
+      cli="oc"
+      shift
+      ;;
+    -r | --openshift)
+      default_oneagent_image="registry.connect.redhat.com/dynatrace/oneagent"
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      echo "Internal error!"
+      exit 1
+      ;;
   esac
 done
 
@@ -341,7 +362,7 @@ function checkImagePullable {
   fi
 }
 
-checkDTClusterConnection() {
+function checkDTClusterConnection {
   run_container_command="$1"
 
   log_section="connection"
@@ -426,7 +447,6 @@ checkDTClusterConnection() {
 }
 
 ####### MAIN #######
-
 checkDependencies
 
 checkNamespace
