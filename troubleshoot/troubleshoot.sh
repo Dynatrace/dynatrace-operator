@@ -287,7 +287,7 @@ checkImagePullable() {
       token=$(
         curl --silent \
         "https://auth.docker.io/token?service=registry.docker.io&scope=repository:$oneagent_image:pull" \
-        | jq -r '.token'
+        | jq --raw '.token'
       )
 
       # check selected image exists on docker hub
