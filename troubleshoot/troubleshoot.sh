@@ -37,7 +37,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-log_info() {
+function log_info {
   printf "[%10s] %s\n" "$log_section" "$1"
 }
 
