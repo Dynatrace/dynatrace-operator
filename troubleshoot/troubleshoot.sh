@@ -46,7 +46,7 @@ function error {
   exit 1
 }
 
-checkDependencies() {
+function checkDependencies {
   if ! command -v jq &> /dev/null
   then
       error "jq is required to run this script!"
