@@ -37,7 +37,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-function log_info {
+function log {
   printf "[%10s] %s\n" "$log_section" "$1"
 }
 
@@ -53,24 +53,24 @@ function checkDependencies {
   fi
 }
 
-checkNamespace() {
+function checkNamespace() {
   log_section="namespace"
-  log_info "checking if namespace '${selected_namespace}' exists .."
+  log "checking if namespace '${selected_namespace}' exists .."
   if ! "${cli}" get ns "${selected_namespace}" >/dev/null 2>&1; then
     error "missing namespace '${selected_namespace}'"
   else
-    log_info "using namespace '${selected_namespace}'"
+    log "using namespace '${selected_namespace}'"
   fi
 }
 
 function checkDynakube {
   log_section="dynakube"
-  log_info "checking if Dynakube is configured correctly ..."
+  log "checking if Dynakube is configured correctly ..."
 
   # check dynakube crd exists
   crd="$("${cli}" get dynakube -n "${selected_namespace}" >/dev/null 2>&1)"
   if [[ "$crd" == "" ]]; then
-    log_info "CRD for Dynakube exists"
+    log "CRD for Dynakube exists"
   else
     error "CRD for Dynakube missing"
   fi
@@ -80,30 +80,30 @@ function checkDynakube {
     error "Selected Dynakube '${selected_dynakube}' does not exist"
   fi
 
-  log_info "using '${selected_dynakube}'"
+  log "using '${selected_dynakube}'"
 
   checkApiUrl
   checkSecret
   checkCustomPullSecret
 
-  log_info "'${selected_dynakube}' is valid"
+  log "'${selected_dynakube}' is valid"
 }
 
 function checkApiUrl {
-  log_info "checking if api url is valid..."
+  log "checking if api url is valid..."
 
   api_url=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.apiUrl}}")
   if [[ "${api_url##*/}" != "api" ]]; then
     error "api url has to end on '/api'"
   else
-    log_info "api url correctly ends on '/api'"
+    log "api url correctly ends on '/api'"
   fi
 
-  log_info "api url is valid"
+  log "api url is valid"
 }
 
 function checkSecret {
-  log_info "checking if secret is valid ..."
+  log "checking if secret is valid ..."
 
   # use dynakube name or tokens value if set
   secret_name="$selected_dynakube"
@@ -115,7 +115,7 @@ function checkSecret {
   if ! "${cli}" get secret "$secret_name" -n "${selected_namespace}" &>/dev/null; then
     error "secret with the name '${secret_name}' is missing"
   else
-    log_info "secret '${secret_name}' exists"
+    log "secret '${secret_name}' exists"
   fi
 
   token_names=("apiToken" "paasToken")
@@ -124,7 +124,7 @@ function checkSecret {
     if [[ "$token" == "$missing_value" ]]; then
       error "token '${token_name}' does not exist in secret '${secret_name}'"
     else
-      log_info "secret token '${token_name}' exists"
+      log "secret token '${token_name}' exists"
     fi
 
     if [[ "$token_name" == "paasToken" ]]; then
@@ -147,7 +147,7 @@ function checkCustomPullSecret {
   pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" \
     --template="{{.spec.customPullSecret}}")
   if [[ "${pull_secret_name}" == "" ]] || [[ "${pull_secret_name}" == "${missing_value}" ]]; then
-    log_info "custom pull secret not used"
+    log "custom pull secret not used"
 
     # private registry required for immutable image
     checkImmutableImage "classicFullStack"
@@ -157,7 +157,7 @@ function checkCustomPullSecret {
     if ! "${cli}" get secret "${pull_secret_name}" -n "${selected_namespace}" >/dev/null 2>&1; then
       error "secret '${pull_secret_name}' used for pull secret is missing"
     else
-      log_info "pull secret '${pull_secret_name}' exists"
+      log "pull secret '${pull_secret_name}' exists"
     fi
   fi
 }
@@ -193,7 +193,7 @@ function checkImagePullable {
   container_cli="$1"
 
   log_section="image"
-  log_info "checking if images are pullable ..."
+  log "checking if images are pullable ..."
 
   # load pull secret
   custom_pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.customPullSecret}}")
@@ -202,7 +202,7 @@ function checkImagePullable {
   else
     pull_secret_name="$selected_dynakube-pull-secret"
   fi
-  log_info "using pull secret '$pull_secret_name'"
+  log "using pull secret '$pull_secret_name'"
 
   pull_secret_encoded=$("${cli}" get secret "${pull_secret_name}" -n "${selected_namespace}" -o "jsonpath={.data['\.dockerconfigjson']}")
   pull_secret="$(echo "${pull_secret_encoded}" | base64 -d)"
@@ -221,45 +221,45 @@ function checkImagePullable {
     # no version set, default to latest
     oneagent_version="latest"
 
-    log_info "using latest image version"
+    log "using latest image version"
   else
     oneagent_image="$(cut -d':' -f1 <<< "${oneagent_image}")"
     oneagent_version="$image_version"
 
-    log_info "using custom image version"
+    log "using custom image version"
   fi
-  log_info "using '$oneagent_image' on '$oneagent_registry' with version '$oneagent_version' as oneagent image"
+  log "using '$oneagent_image' on '$oneagent_registry' with version '$oneagent_version' as oneagent image"
 
   activegate_registry="${dynakube_activegate_image%%/*}"
   activegate_image="${dynakube_activegate_image##"$activegate_registry/"}"
-  log_info "using '$activegate_image' on '$activegate_registry' as activegate image"
+  log "using '$activegate_image' on '$activegate_registry' as activegate image"
 
   # parse docker config
   oneagent_image_works=false
   activegate_image_works=false
   entries=$(echo "$pull_secret" | jq --compact-output '.auths | to_entries[]')
   for entry in $entries ; do
-    registry=$(echo "$entry" | jq --raw '.key')
-    username=$(echo "$entry" | jq -r '.value.username')
-    password=$(echo "$entry" | jq -r '.value.password')
+    registry=$(echo "$entry" | jq --raw-output '.key')
+    username=$(echo "$entry" | jq --raw-output '.value.username')
+    password=$(echo "$entry" | jq --raw-output '.value.password')
 
     check_registry="$container_cli 'curl -u $username:$password --head https://$registry/v2/ -s -o /dev/null'"
     if ! eval "${check_registry}" ; then
       error "registry '$registry' unreachable"
     else
-      log_info "registry '$registry' is accessible"
+      log "registry '$registry' is accessible"
     fi
 
-    log_info "checking images for registry '$registry'"
+    log "checking images for registry '$registry'"
 
     # check oneagent image
     check_image="$container_cli 'curl -u $username:$password --head \
       https://$registry/v2/$oneagent_image/manifests/latest -s -o /dev/null -w %{http_code}'"
     image_response_code=$(eval "${check_image}")
     if [[ "$image_response_code" != "200" ]] ; then
-      log_info "image '$oneagent_image' with version '$oneagent_version' not found on registry '$registry'"
+      log "image '$oneagent_image' with version '$oneagent_version' not found on registry '$registry'"
     else
-      log_info "image '$oneagent_image' with version '$oneagent_version' exists on registry '$registry'"
+      log "image '$oneagent_image' with version '$oneagent_version' exists on registry '$registry'"
       if [[ "$registry" == "$oneagent_registry" ]] ; then
         oneagent_image_works=true
       fi
@@ -270,9 +270,9 @@ function checkImagePullable {
       https://$registry/v2/$activegate_image/manifests/latest -s -o /dev/null -w %{http_code}'"
     image_response_code=$(eval "${check_image}")
     if [[ "$image_response_code" != "200" ]] ; then
-      log_info "image '$activegate_image' not found on registry '$registry'"
+      log "image '$activegate_image' not found on registry '$registry'"
     else
-      log_info "image '$activegate_image' exists on registry '$registry'"
+      log "image '$activegate_image' exists on registry '$registry'"
       if [[ "$registry" == "$activegate_registry" ]] ; then
         activegate_image_works=true
       fi
@@ -280,14 +280,14 @@ function checkImagePullable {
   done
 
   if [[ "$oneagent_image_works" == "true" ]] ; then
-    log_info "oneagent image '$dynakube_oneagent_image' found"
+    log "oneagent image '$dynakube_oneagent_image' found"
   else
     if [[ "$oneagent_registry" == "docker.io" ]] ; then
       # get auth token with pull access for docker hub registry
       token=$(
         curl --silent \
         "https://auth.docker.io/token?service=registry.docker.io&scope=repository:$oneagent_image:pull" \
-        | jq --raw '.token'
+        | jq --raw-output '.token'
       )
 
       # check selected image exists on docker hub
@@ -295,7 +295,7 @@ function checkImagePullable {
         https://registry-1.docker.io/v2/$oneagent_image/manifests/$oneagent_version -s -o /dev/null -w %{http_code}'"
 
       if [[ "$(eval "$dockerio_image_request")" == "200" ]] ; then
-        log_info "'$oneagent_image' with version '$oneagent_version' exists on docker.io registry"
+        log "'oneagent image $oneagent_image' with version '$oneagent_version' exists on docker.io registry"
       else
         error "oneagent image '$oneagent_image' with version '$oneagent_version' not found on docker.io registry"
       fi
@@ -305,7 +305,7 @@ function checkImagePullable {
   fi
 
   if [[ "$activegate_image_works" == "true" ]] ; then
-    log_info "activegate image '$dynakube_activegate_image' found"
+    log "activegate image '$dynakube_activegate_image' found"
   else
     error "activegate image '$dynakube_activegate_image' missing"
   fi
@@ -315,7 +315,7 @@ checkDTClusterConnection() {
   container_cli="$1"
 
   log_section="connection"
-  log_info "checking if connection to cluster is valid ..."
+  log "checking if connection to cluster is valid ..."
   curl_params=(
     -sI
     -o "/dev/null"
@@ -330,7 +330,7 @@ checkDTClusterConnection() {
     # get proxy from secret
     encoded_proxy=$("${cli}" get secret "${proxy_secret_name}" -n "${selected_namespace}" --template="{{.data.proxy}}")
     proxy=$(echo "$encoded_proxy" | base64 -d)
-    log_info "loading proxy from secret '$proxy_secret_name'"
+    log "loading proxy from secret '$proxy_secret_name'"
   else
     # try get proxy from dynakube
     proxyValue=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.proxy.value}}")
@@ -340,16 +340,16 @@ checkDTClusterConnection() {
   fi
 
   if [[ "$proxy" != "" ]]; then
-    log_info "using proxy: $proxy"
+    log "using proxy: $proxy"
     curl_params+=("--proxy" "${proxy}")
   else
-    log_info "proxy is not used"
+    log "proxy is not used"
   fi
 
   # skip cert check
   skip_cert_check=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" --template="{{.spec.skipCertCheck}}")
   if [[ "$skip_cert_check" == "true" ]]; then
-    log_info "skipping cert check"
+    log "skipping cert check"
     curl_params+=("--insecure")
   fi
 
@@ -360,26 +360,26 @@ checkDTClusterConnection() {
     certs=$("${cli}" get configmap "${custom_ca_map}" -n "${selected_namespace}" --template="{{.data.certs}}")
     cert_path="/tmp/ca.pem"
 
-    log_info "copying certificate to container ..."
+    log "copying certificate to container ..."
     ca_cmd="$container_cli \"echo '$certs' > $cert_path\""
     if ! eval "$ca_cmd"; then
       error "unable to write custom certificate to container"
     else
-      log_info "custom certificate successfully written to container!"
+      log "custom certificate successfully written to container!"
     fi
 
-    log_info "using custom certificate in '$cert_path'"
+    log "using custom certificate in '$cert_path'"
     curl_params+=("--cacert" "$cert_path")
   else
-    log_info "custom certificate is not used"
+    log "custom certificate is not used"
   fi
 
-  log_info "trying to access tenant '$api_url' ..."
+  log "trying to access tenant '$api_url' ..."
   connection_cmd="$container_cli \"curl ${curl_params[*]}\""
   if ! eval "${connection_cmd}"; then
     error "unable to connect to tenant"
   else
-    log_info "tenant is accessible"
+    log "tenant is accessible"
   fi
 }
 
@@ -387,15 +387,15 @@ checkDTClusterConnection() {
 
 checkDependencies
 
-checkNs
+checkNamespace
 checkDynakube
 
 # choose operator pod to check connection/images
 operator_pod=$("${cli}" get pods -n "${selected_namespace}" --no-headers -o custom-columns=":metadata.name" | grep dynatrace-operator)
-log_info "using pod '$operator_pod'"
+log "using pod '$operator_pod'"
 container_cli="${cli} exec ${operator_pod} -n ${selected_namespace} -- /bin/bash -c"
 
-checkConnection "$container_cli"
+checkDTClusterConnection "$container_cli"
 checkImagePullable "$container_cli"
 
 echo
