@@ -41,7 +41,7 @@ function log_info {
   printf "[%10s] %s\n" "$log_section" "$1"
 }
 
-error() {
+function error {
   printf "ERROR: %s\n" "$1"
   exit 1
 }
