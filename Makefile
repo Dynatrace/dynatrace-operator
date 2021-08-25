@@ -55,7 +55,7 @@ WEBHOOK_NS=dynatrace
 
 debug-webhook-setup:
 	@echo Preparing webhook deployment for debugging
-	kubectl -n $(WEBHOOK_NS) patch deploy dynatrace-webhook -p '{"spec":{"template":{"spec":{"containers":[{"name":"webhook", "image":"quay.io/gkrenn/testoperator:operatorwithtar","command":["/bin/bash", "-c", "sleep 999999999"]}]}}}}'
+	kubectl -n $(WEBHOOK_NS) patch deploy dynatrace-webhook -p '{"spec":{"template":{"spec":{"containers":[{"name":"webhook", "image":"quay.io/dynatrace/dynatrace-operator:operatorwithtar","command":["/bin/bash", "-c", "sleep 999999999"]}]}}}}'
 	kubectl -n $(WEBHOOK_NS) patch deploy dynatrace-webhook --type json -p '[{"op": "remove", "path": "/spec/template/spec/containers/0/readinessProbe"}]'
 	@echo
 	@echo Please wait till the webhook is running again
@@ -67,7 +67,8 @@ debug-webhook: manager-amd64
 	kubectl -n $(WEBHOOK_NS) exec -it $(WEBHOOK_POD)  -- chmod +x /tmp/manager-amd64 && kubectl -n $(WEBHOOK_NS) exec -it $(WEBHOOK_POD) -- /tmp/manager-amd64 webhook-server
 
 debug-webhook-reset:
-	kubectl -n $(WEBHOOK_NS) delete deploy dynatrace-webhook && kubectl -n $(WEBHOOK_NS) apply -f config/common/webhook/deployment-webhook.yaml
+	-kubectl -n $(WEBHOOK_NS) delete deploy dynatrace-webhook
+	kubectl -n $(WEBHOOK_NS) apply -f config/common/webhook/deployment-webhook.yaml
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: export RUN_LOCAL=true
