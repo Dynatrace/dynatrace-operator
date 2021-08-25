@@ -1,4 +1,4 @@
-package namespace2dynakube_mapper
+package namespacemapper
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -58,7 +58,7 @@ func TestMatchForNamespace(t *testing.T) {
 	}
 
 	t.Run(`Match nothing to unlabeled namespace`, func(t *testing.T) {
-		namespace := &v1.Namespace{
+		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-namespace",
 			},
@@ -72,7 +72,7 @@ func TestMatchForNamespace(t *testing.T) {
 	})
 
 	t.Run(`Match namespace with labels`, func(t *testing.T) {
-		namespace := &v1.Namespace{
+		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-namespace",
 				Labels: map[string]string{
@@ -89,7 +89,7 @@ func TestMatchForNamespace(t *testing.T) {
 	})
 
 	t.Run(`Match namespace with expressions`, func(t *testing.T) {
-		namespace := &v1.Namespace{
+		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-namespace",
 				Labels: map[string]string{
@@ -106,7 +106,7 @@ func TestMatchForNamespace(t *testing.T) {
 	})
 
 	t.Run(`Error on multiple Dynakube matches`, func(t *testing.T) {
-		namespace := &v1.Namespace{
+		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-namespace",
 				Labels: map[string]string{
@@ -147,7 +147,7 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 	}
 
 	t.Run(`Match to unlabeled namespace`, func(t *testing.T) {
-		namespace := &v1.Namespace{
+		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-namespace",
 			},

@@ -17,7 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	mapper "github.com/Dynatrace/dynatrace-operator/namespace2dynakube_mapper"
+	mapper "github.com/Dynatrace/dynatrace-operator/namespacemapper"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -229,14 +229,14 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	}
 
 	if rec.Instance.Spec.CodeModules.Enabled {
-		if err := mapper.MapFromDynaKube_CodeModules(ctx, r.client, rec.Instance.Namespace, rec.Instance); err != nil {
+		if err := mapper.MapFromDynaKubeCodeModules(ctx, r.client, rec.Instance.Namespace, rec.Instance); err != nil {
 			rec.Log.Error(err, "update of a map of namespaces failed")
 			return
 		}
 	}
 
 	if rec.Instance.Spec.DataIngestSpec.Enabled {
-		if err := mapper.MapFromDynakube_DataIngest(ctx, r.client, rec.Instance.Namespace, rec.Instance); err != nil {
+		if err := mapper.MapFromDynakubeDataIngest(ctx, r.client, rec.Instance.Namespace, rec.Instance); err != nil {
 			rec.Log.Error(err, "update of a map of namespaces failed")
 			return
 		}

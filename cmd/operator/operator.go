@@ -21,7 +21,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/namespace"
-	"github.com/Dynatrace/dynatrace-operator/controllers/namespace_mapping"
+	"github.com/Dynatrace/dynatrace-operator/controllers/namespace_init"
 	"github.com/Dynatrace/dynatrace-operator/controllers/nodes"
 	"github.com/Dynatrace/dynatrace-operator/controllers/webhookcerts"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -63,7 +63,7 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 		dynakube.Add,
 		namespace.Add,
 		nodes.Add,
-		namespace_mapping.Add,
+		namespace_init.Add,
 	}
 
 	disableWebhook := os.Getenv("DISABLE_WEBHOOK")

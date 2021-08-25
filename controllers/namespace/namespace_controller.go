@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	mapper "github.com/Dynatrace/dynatrace-operator/namespace2dynakube_mapper"
+	mapper "github.com/Dynatrace/dynatrace-operator/namespacemapper"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
