@@ -63,7 +63,7 @@ checkNamespace() {
   fi
 }
 
-checkDynakube() {
+function checkDynakube {
   log_section="dynakube"
   log_info "checking if Dynakube is configured correctly ..."
 
