@@ -214,20 +214,20 @@ function checkImagePullable {
   # split images into registry and image name
   oneagent_registry="${dynakube_oneagent_image%%/*}"
   oneagent_image="${dynakube_oneagent_image##"$oneagent_registry/"}"
-  IFS=':'
-  read -ra split_image <<< "$oneagent_image"
-  if [[ ${#split_image[@]} == 1 ]] ; then
+
+  # check if image has version set
+  image_version="$(cut -d':' -s -f2 <<< "${oneagent_image}")"
+  if [[ "$image_version" == "" ]] ; then
     # no version set, default to latest
     oneagent_version="latest"
 
     log_info "using latest image version"
   else
-    oneagent_image=${split_image[0]}
-    oneagent_version=${split_image[1]}
+    oneagent_image="$(cut -d':' -f1 <<< "${oneagent_image}")"
+    oneagent_version="$image_version"
 
     log_info "using custom image version"
   fi
-  IFS=' '
   log_info "using '$oneagent_image' on '$oneagent_registry' with version '$oneagent_version' as oneagent image"
 
   activegate_registry="${dynakube_activegate_image%%/*}"
