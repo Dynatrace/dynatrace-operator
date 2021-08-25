@@ -94,8 +94,8 @@ func TestReconcile_CreateDaemonSet(t *testing.T) {
 		assert.NotNil(t, driver.Resources)
 		assert.NotNil(t, driver.Resources.Requests)
 		assert.Len(t, driver.Resources.Requests, 2)
-		testQuantity(t, driver.Resources.Requests, corev1.ResourceCPU, "200m")
-		testQuantity(t, driver.Resources.Requests, corev1.ResourceMemory, "100M")
+		testQuantity(t, driver.Resources.Requests, corev1.ResourceCPU, "50m")
+		testQuantity(t, driver.Resources.Requests, corev1.ResourceMemory, "50M")
 
 		assert.NotNil(t, driver.Resources.Limits)
 		assert.Len(t, driver.Resources.Limits, 2)
