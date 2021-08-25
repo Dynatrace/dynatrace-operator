@@ -30,18 +30,18 @@ Make sure to inspect the contents of the troubleshooting script before executing
 
 Specify options by appending them to the command, e.g: `./troubleshoot.sh --dynakube dynakube`
 
-`--dynakube <dynakube>`
+`-d DYNAKUKBE` or `--dynakube DYNAKUBE`
 - allows checking a different dynakube object, by specifying its name
 - default: `dynakube`
 
-`--namespace <namespace>`
+`-n NAMESPACE` or `--namespace NAMESPACE`
 - allows specifying a different namespace
 - default: `dynatrace`
 
-`--oc`
+`-c` or`--oc`
 - changes CLI to `oc`
 - default: `kubectl`
 
-`--openshift`
+`-r` or`--openshift`
 - changes the default image to `registry.connect.redhat.com/dynatrace/oneagent`
 - default: `docker.io/dynatrace/oneagent`
