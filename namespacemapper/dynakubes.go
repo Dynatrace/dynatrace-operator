@@ -105,15 +105,15 @@ func removeDynaKubeFromMap(cfgMap *corev1.ConfigMap, dkName string) bool {
 	return updated
 }
 
-func unmapFromDynaKube(ctx context.Context, clt client.Client, operatorNs string, dkName string, mapName string) error {
-	cfgMap, err := getOrCreateMap(ctx, clt, operatorNs, mapName)
+func unmapFromDynaKube(ctx context.Context, clt client.Client, operatorNs string, dkName string, cfgMapName string) error {
+	cfgMap, err := getOrCreateMap(ctx, clt, operatorNs, cfgMapName)
 	if err != nil {
 		return err
 	}
 
 	if removeDynaKubeFromMap(cfgMap, dkName) {
 		if err := clt.Update(ctx, cfgMap); err != nil {
-			return errors.WithMessagef(err, "failed to update %s", mapName)
+			return errors.WithMessagef(err, "failed to update %s", cfgMapName)
 		}
 	}
 	return nil

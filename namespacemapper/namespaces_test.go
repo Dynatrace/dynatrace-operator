@@ -327,7 +327,7 @@ func TestMapFromNamespaceCodeModules(t *testing.T) {
 func TestMapFromNamespaceDataIngest(t *testing.T) {
 	labels := map[string]string{"test": "selector"}
 	dk := &dynatracev1alpha1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "codeModules-1", Namespace: "dynatrace"},
+		ObjectMeta: metav1.ObjectMeta{Name: "dataIngest-1", Namespace: "dynatrace"},
 		Spec: dynatracev1alpha1.DynaKubeSpec{
 			DataIngestSpec: dynatracev1alpha1.DataIngestSpec{
 				CapabilityProperties: dynatracev1alpha1.CapabilityProperties{
@@ -356,7 +356,7 @@ func TestMapFromNamespaceDataIngest(t *testing.T) {
 
 	t.Run("Error, 2 dynakube point to same namespace", func(t *testing.T) {
 		dk2 := &dynatracev1alpha1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{Name: "codeModules-2", Namespace: "dynatrace"},
+			ObjectMeta: metav1.ObjectMeta{Name: "dataIngest-2", Namespace: "dynatrace"},
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				DataIngestSpec: dynatracev1alpha1.DataIngestSpec{
 					CapabilityProperties: dynatracev1alpha1.CapabilityProperties{
