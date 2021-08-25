@@ -162,7 +162,7 @@ function checkCustomPullSecret {
   fi
 }
 
-getImage() {
+function getImage {
   type="$1"
 
   if [[ "${type}" == "oneAgent" ]] ; then
@@ -189,7 +189,7 @@ getImage() {
   echo "${image}"
 }
 
-checkImagePullable() {
+function checkImagePullable {
   container_cli="$1"
 
   log_section="image"
@@ -237,9 +237,9 @@ checkImagePullable() {
   # parse docker config
   oneagent_image_works=false
   activegate_image_works=false
-  entries=$(echo "$pull_secret" | jq -c '.auths | to_entries[]')
+  entries=$(echo "$pull_secret" | jq --compact-output '.auths | to_entries[]')
   for entry in $entries ; do
-    registry=$(echo "$entry" | jq -r '.key')
+    registry=$(echo "$entry" | jq --raw '.key')
     username=$(echo "$entry" | jq -r '.value.username')
     password=$(echo "$entry" | jq -r '.value.password')
 
@@ -311,7 +311,7 @@ checkImagePullable() {
   fi
 }
 
-checkConnection() {
+checkDTClusterConnection() {
   container_cli="$1"
 
   log_section="connection"
