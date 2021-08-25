@@ -133,7 +133,7 @@ function checkSecret {
   done
 }
 
-checkImmutableImage() {
+function checkImmutableImage {
   type="$1"
 
   use_immutable_image=$("${cli}" get dynakube "${selected_dynakube}" -n "${selected_namespace}" \
