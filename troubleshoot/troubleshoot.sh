@@ -102,7 +102,7 @@ function checkApiUrl {
   log_info "api url is valid"
 }
 
-checkSecret() {
+function checkSecret {
   log_info "checking if secret is valid ..."
 
   # use dynakube name or tokens value if set
