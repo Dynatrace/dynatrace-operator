@@ -17,7 +17,7 @@ func prepareArgs(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.Ful
 
 	dt := deploymentmetadata.DeploymentTypeFS
 	if feature == InframonFeature {
-		dt = deploymentmetadata.DeploymentTypeIS
+		dt = deploymentmetadata.DeploymentTypeHM
 	}
 
 	metadata := deploymentmetadata.NewDeploymentMetadata(clusterID, dt)

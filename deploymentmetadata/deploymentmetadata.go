@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	orchestrationTech = "operator"
+	orchestrationTech = "Operator"
 	argumentPrefix    = `--set-deployment-metadata=`
 
 	keyOperatorScriptVersion = "script_version"
@@ -16,8 +16,8 @@ const (
 	keyOrchestrationTech     = "orchestration_tech"
 
 	DeploymentTypeCodeModules = "code_modules"
-	DeploymentTypeFS          = "classic_full_stack"
-	DeploymentTypeIS          = "infrastructure"
+	DeploymentTypeFS          = "classic_fullstack"
+	DeploymentTypeHM          = "host_monitoring"
 	DeploymentTypeAG          = "active_gate"
 )
 
@@ -32,7 +32,7 @@ func NewDeploymentMetadata(orchestratorID string, dt string) *DeploymentMetadata
 
 func (metadata *DeploymentMetadata) AsArgs() []string {
 	return []string{
-		formatMetadataArgument(keyOrchestrationTech, fmt.Sprintf("%s-%s", orchestrationTech, metadata.DeploymentType)),
+		formatMetadataArgument(keyOrchestrationTech, metadata.OrchestrationTech()),
 		formatMetadataArgument(keyOperatorScriptVersion, version.Version),
 		formatMetadataArgument(keyOrchestratorID, metadata.OrchestratorID),
 	}
@@ -40,12 +40,16 @@ func (metadata *DeploymentMetadata) AsArgs() []string {
 
 func (metadata *DeploymentMetadata) AsString() string {
 	res := []string{
-		formatKeyValue(keyOrchestrationTech, fmt.Sprintf("%s-%s", orchestrationTech, metadata.DeploymentType)),
+		formatKeyValue(keyOrchestrationTech, metadata.OrchestrationTech()),
 		formatKeyValue(keyOperatorScriptVersion, version.Version),
 		formatKeyValue(keyOrchestratorID, metadata.OrchestratorID),
 	}
 
 	return strings.Join(res, ";")
+}
+
+func (metadata *DeploymentMetadata) OrchestrationTech() string {
+	return fmt.Sprintf("%s-%s", orchestrationTech, metadata.DeploymentType)
 }
 
 func formatKeyValue(key string, value string) string {

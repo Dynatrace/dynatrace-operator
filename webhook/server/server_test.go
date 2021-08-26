@@ -1031,7 +1031,7 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 				Image: "alpine",
 				Env: []corev1.EnvVar{
 					{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
-					{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=operator-code_modules;script_version=snapshot;orchestrator_id="},
+					{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator-code_modules;script_version=snapshot;orchestrator_id="},
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
