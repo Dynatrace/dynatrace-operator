@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export CGO_ENABLED=0
+export CGO_ENABLED=1
 export GOOS=linux
 export GOARCH=amd64
 
