@@ -1,4 +1,4 @@
-package namespace_mapping
+package namespace_init
 
 import (
 	"bytes"
@@ -32,7 +32,7 @@ var (
 
 const namespaceMappingConfigMap = "dynatrace-codemodules-namespace-mapping"
 
-type ReconcileNamespaceMapping struct {
+type ReconcileNamespaceInit struct {
 	client    client.Client
 	apiReader client.Reader
 	logger    logr.Logger
@@ -73,23 +73,23 @@ func Add(mgr manager.Manager, ns string) error {
 	return NewReconciler(mgr, ns).SetupWithManager(mgr, ns)
 }
 
-// NewReconciler returns a new ReconcileActiveGate
-func NewReconciler(mgr manager.Manager, ns string) *ReconcileNamespaceMapping {
-	return &ReconcileNamespaceMapping{
+// NewReconciler returns a new ReconcileNamespaceInit
+func NewReconciler(mgr manager.Manager, ns string) *ReconcileNamespaceInit {
+	return &ReconcileNamespaceInit{
 		client:    mgr.GetClient(),
 		apiReader: mgr.GetAPIReader(),
 		namespace: ns,
 	}
 }
 
-func (r *ReconcileNamespaceMapping) SetupWithManager(mgr ctrl.Manager, ns string) error {
+func (r *ReconcileNamespaceInit) SetupWithManager(mgr ctrl.Manager, ns string) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.ConfigMap{}).
 		WithEventFilter(applyForConfigMapName(ns)).
 		Complete(r)
 }
 
-func (r *ReconcileNamespaceMapping) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileNamespaceInit) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	r.logger.Info("Reconciling namespace map")
 
 	mappingConfigMap := &corev1.ConfigMap{}
@@ -120,7 +120,7 @@ func (r *ReconcileNamespaceMapping) Reconcile(ctx context.Context, request recon
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileNamespaceMapping) replicateInitScriptAsSecret(namespaceMap []namespaceMapping, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) error {
+func (r *ReconcileNamespaceInit) replicateInitScriptAsSecret(namespaceMap []namespaceMapping, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) error {
 	for _, mapping := range namespaceMap {
 		scriptData, err := r.prepareScriptForDynaKube(mapping.dynakube, kubeSystemUID, infraMonitoringNodes)
 		if err != nil {
@@ -140,7 +140,7 @@ func (r *ReconcileNamespaceMapping) replicateInitScriptAsSecret(namespaceMap []n
 	return nil
 }
 
-func (r *ReconcileNamespaceMapping) prepareScriptForDynaKube(dk string, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) (*script, error) {
+func (r *ReconcileNamespaceInit) prepareScriptForDynaKube(dk string, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) (*script, error) {
 	var dynaKube dynatracev1alpha1.DynaKube
 	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: dk, Namespace: r.namespace}, &dynaKube); err != nil {
 		return nil, err
@@ -185,7 +185,7 @@ func (r *ReconcileNamespaceMapping) prepareScriptForDynaKube(dk string, kubeSyst
 	}, nil
 }
 
-func (r *ReconcileNamespaceMapping) getInfraMonitoringNodes() (map[string]string, error) {
+func (r *ReconcileNamespaceInit) getInfraMonitoringNodes() (map[string]string, error) {
 	var ims dynatracev1alpha1.DynaKubeList
 	if err := r.client.List(context.TODO(), &ims, client.InNamespace(r.namespace)); err != nil {
 		return nil, errors.WithMessage(err, "failed to query DynaKubeList")

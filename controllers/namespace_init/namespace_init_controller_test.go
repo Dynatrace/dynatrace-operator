@@ -1,4 +1,4 @@
-package namespace_mapping
+package namespace_init
 
 import (
 	"context"
@@ -88,7 +88,7 @@ var (
 
 func TestReconcileNamespaceMapping_EmptyConfigMap(t *testing.T) {
 	c := fake.NewClient()
-	r := &ReconcileNamespaceMapping{
+	r := &ReconcileNamespaceInit{
 		client:    c,
 		apiReader: c,
 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
@@ -119,7 +119,7 @@ func TestReconcileNamespaceMapping_TwoDynakubes(t *testing.T) {
 		testSecretDk2,
 	)
 
-	r := &ReconcileNamespaceMapping{
+	r := &ReconcileNamespaceInit{
 		client:    c,
 		apiReader: c,
 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
@@ -198,7 +198,7 @@ func TestCodeModulesNamespaceMapping_JustNamespace(t *testing.T) {
 
 func TestGetInfraMonitoringHostNodes_NoNodes(t *testing.T) {
 	c := fake.NewClient()
-	r := &ReconcileNamespaceMapping{
+	r := &ReconcileNamespaceInit{
 		client:    c,
 		apiReader: c,
 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
@@ -214,7 +214,7 @@ func TestGetInfraMonitoringHostNodes_NoNodes(t *testing.T) {
 func TestGetInfraMonitoringHostNodes_WithNodes(t *testing.T) {
 	c := fake.NewClient(testdk1)
 
-	r := &ReconcileNamespaceMapping{
+	r := &ReconcileNamespaceInit{
 		client:    c,
 		apiReader: c,
 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
@@ -231,7 +231,7 @@ func TestGetInfraMonitoringHostNodes_WithNodes(t *testing.T) {
 
 func TestPrepareScriptForDynaKube_NoDynakube(t *testing.T) {
 	c := fake.NewClient()
-	r := &ReconcileNamespaceMapping{
+	r := &ReconcileNamespaceInit{
 		client:    c,
 		apiReader: c,
 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
@@ -248,7 +248,7 @@ func TestPrepareScriptForDynaKube_NoDynakube(t *testing.T) {
 
 func TestPrepareScriptForDynaKube_FullData(t *testing.T) {
 	c := fake.NewClient(testdk1, testSecretDk1)
-	r := &ReconcileNamespaceMapping{
+	r := &ReconcileNamespaceInit{
 		client:    c,
 		apiReader: c,
 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
@@ -307,7 +307,7 @@ func TestPrepareScriptForDynaKube_FullData_WithProxyAndCerts(t *testing.T) {
 		},
 		testSecretDk1)
 
-	r := &ReconcileNamespaceMapping{
+	r := &ReconcileNamespaceInit{
 		client:    c,
 		apiReader: c,
 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
@@ -353,7 +353,7 @@ func TestReplicateInitScriptAsSecret(t *testing.T) {
 		testSecretDk1,
 		testSecretDk2)
 
-	r := &ReconcileNamespaceMapping{
+	r := &ReconcileNamespaceInit{
 		client:    c,
 		apiReader: c,
 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),

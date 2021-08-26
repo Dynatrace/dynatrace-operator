@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	mapper "github.com/Dynatrace/dynatrace-operator/namespacemapper"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -104,6 +105,9 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
+			if err := mapper.UnmapFromDynaKube(ctx, r.client, request.NamespacedName.Namespace, request.NamespacedName.Name); err != nil {
+				return reconcile.Result{}, err
+			}
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -220,6 +224,20 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Re
 	} else {
 		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: rec.Instance.Name + "-classic", Namespace: rec.Instance.Namespace}}
 		if err := r.ensureDeleted(&ds); rec.Error(err) {
+			return
+		}
+	}
+
+	if rec.Instance.Spec.CodeModules.Enabled {
+		if err := mapper.MapFromDynaKubeCodeModules(ctx, r.client, rec.Instance.Namespace, rec.Instance); err != nil {
+			rec.Log.Error(err, "update of a map of namespaces failed")
+			return
+		}
+	}
+
+	if rec.Instance.Spec.DataIngestSpec.Enabled {
+		if err := mapper.MapFromDynakubeDataIngest(ctx, r.client, rec.Instance.Namespace, rec.Instance); err != nil {
+			rec.Log.Error(err, "update of a map of namespaces failed")
 			return
 		}
 	}
