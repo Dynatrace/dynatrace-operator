@@ -189,7 +189,7 @@ type FullStackSpec struct {
 type DataIngestSpec struct {
 	CapabilityProperties `json:",inline"`
 
-	// Optional: set selector for DynaKube to know in which namespaces to inject into
+	// Optional: set selector for Operator to know in which namespaces to inject into
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Selector",order=16,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:selector"}
 	Selector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 }
