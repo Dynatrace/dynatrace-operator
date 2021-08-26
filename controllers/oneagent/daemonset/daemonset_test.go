@@ -234,7 +234,7 @@ func TestServiceAccountName(t *testing.T) {
 		require.NoError(t, err)
 
 		podSpecs := ds.Spec.Template.Spec
-		assert.Equal(t, defaultServiceAccountName, podSpecs.ServiceAccountName)
+		assert.Equal(t, defaultUnprivilegedServiceAccountName, podSpecs.ServiceAccountName)
 
 		instance = dynatracev1alpha1.DynaKube{
 			Spec: dynatracev1alpha1.DynaKubeSpec{
@@ -257,6 +257,28 @@ func TestServiceAccountName(t *testing.T) {
 
 		podSpecs = ds.Spec.Template.Spec
 		assert.Equal(t, defaultUnprivilegedServiceAccountName, podSpecs.ServiceAccountName)
+
+		instance = dynatracev1alpha1.DynaKube{
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				APIURL:   testURL,
+				OneAgent: dynatracev1alpha1.OneAgentSpec{},
+				ClassicFullStack: dynatracev1alpha1.FullStackSpec{
+					UseImmutableImage:   true,
+					UseUnprivilegedMode: pointer.BoolPtr(false),
+				},
+			},
+			Status: dynatracev1alpha1.DynaKubeStatus{
+				OneAgent: dynatracev1alpha1.OneAgentStatus{
+					UseImmutableImage: true,
+				},
+			},
+		}
+		dsInfo = NewClassicFullStack(&instance, log, testClusterID)
+		ds, err = dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		podSpecs = ds.Spec.Template.Spec
+		assert.Equal(t, defaultServiceAccountName, podSpecs.ServiceAccountName)
 	})
 	t.Run(`uses custom value`, func(t *testing.T) {
 		instance := dynatracev1alpha1.DynaKube{

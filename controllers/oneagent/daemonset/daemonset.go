@@ -287,7 +287,7 @@ func (dsInfo *builderInfo) serviceAccountName() string {
 }
 
 func (dsInfo *builderInfo) unprivileged() bool {
-	return dsInfo.fullstackSpec.UseUnprivilegedMode != nil && *dsInfo.fullstackSpec.UseUnprivilegedMode
+	return dsInfo.fullstackSpec.UseUnprivilegedMode == nil || (dsInfo.fullstackSpec.UseUnprivilegedMode != nil && *dsInfo.fullstackSpec.UseUnprivilegedMode)
 }
 
 func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {
