@@ -166,19 +166,19 @@ function checkDynakube {
   pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" \
     --namespace "${selected_namespace}" \
     --template="{{.spec.customPullSecret}}")
-  if [[ "${pull_secret_name}" == "" || "${pull_secret_name}" == "${missing_value}" ]]; then
-    log "custom pull secret not used"
-
-    # private registry required for immutable image
-    checkImmutableImage "classicFullStack"
-    checkImmutableImage "infraMonitoring"
-  else
+  if [[ "${pull_secret_name}" != "" && "${pull_secret_name}" != "${missing_value}" ]]; then
     # custom pull secret is set, check secret exists
     if ! "${cli}" get secret "${pull_secret_name}" --namespace "${selected_namespace}" >/dev/null 2>&1; then
       error "secret '${pull_secret_name}' used for pull secret is missing"
     else
       log "pull secret '${pull_secret_name}' exists"
     fi
+
+    # private registry required for immutable image
+    checkImmutableImage "classicFullStack"
+    checkImmutableImage "infraMonitoring"
+  else
+    log "custom pull secret not used"
   fi
 
   log "'${selected_dynakube}' is valid"
@@ -190,7 +190,7 @@ function checkImmutableImage {
   use_immutable_image=$("${cli}" get dynakube "${selected_dynakube}" \
     --namespace "${selected_namespace}" \
     --template="{{.spec.${type}.useImmutableImage}}")
-  if [[ "$use_immutable_image" == "true" ]] ; then
+  if [[ "$use_immutable_image" != "true" ]] ; then
     error "unable to use immutable image on ${type} without a private registry (custom pull secret)"
   fi
 }
