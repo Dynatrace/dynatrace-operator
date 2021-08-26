@@ -2,8 +2,6 @@ package webhook
 
 import (
 	"context"
-	"time"
-
 	"github.com/Dynatrace/dynatrace-operator/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/eventfilter"
 	"github.com/go-logr/logr"
@@ -49,7 +47,7 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 	err := r.client.Get(ctx, client.ObjectKey{Name: webhookName}, &mutatingWebhook)
 	if k8serrors.IsNotFound(err) {
 		r.logger.Info("unable to find mutating webhook configuration", "namespace", request.Namespace, "name", request.Name)
-		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+		return reconcile.Result{RequeueAfter: certificates.FiveMinutes}, nil
 	} else if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
@@ -61,7 +59,7 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 	err = certificates.NewCertificateReconciler(ctx, r.client, webhookName, request.Namespace, r.logger).
 		ReconcileCertificateSecretForWebhook(&mutatingWebhook.Webhooks[0].ClientConfig)
 	if k8serrors.IsNotFound(errors.Cause(err)) {
-		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+		return reconcile.Result{RequeueAfter: certificates.Tens}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -70,5 +68,5 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	return reconcile.Result{RequeueAfter: 3 * time.Hour}, nil
+	return reconcile.Result{RequeueAfter: certificates.ThreeHours}, nil
 }

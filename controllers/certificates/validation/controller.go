@@ -2,8 +2,6 @@ package validation
 
 import (
 	"context"
-	"time"
-
 	"github.com/Dynatrace/dynatrace-operator/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/eventfilter"
 	"github.com/Dynatrace/dynatrace-operator/logger"
@@ -50,7 +48,7 @@ func (r *webhookReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	err := r.clt.Get(ctx, client.ObjectKey{Name: validationWebhookName}, &validationWebhook)
 	if k8serrors.IsNotFound(err) {
 		r.logger.Info("unable to find validation webhook configuration", "namespace", request.Namespace, "name", request.Name)
-		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+		return reconcile.Result{RequeueAfter: certificates.FiveMinutes}, nil
 	} else if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
@@ -62,7 +60,7 @@ func (r *webhookReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	err = certificates.NewCertificateReconciler(ctx, r.clt, validationWebhookName, request.Namespace, r.logger).
 		ReconcileCertificateSecretForWebhook(&validationWebhook.Webhooks[0].ClientConfig)
 	if k8serrors.IsNotFound(errors.Cause(err)) {
-		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+		return reconcile.Result{RequeueAfter: certificates.Tens}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -71,5 +69,5 @@ func (r *webhookReconciler) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	return reconcile.Result{RequeueAfter: 3 * time.Hour}, nil
+	return reconcile.Result{RequeueAfter: certificates.ThreeHours}, nil
 }
