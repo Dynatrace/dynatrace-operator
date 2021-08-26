@@ -46,6 +46,30 @@ test: generate fmt vet manifests
 manager: generate fmt vet
 	go build -o bin/manager ./cmd/operator/
 
+manager-amd64: export GOOS=linux
+manager-amd64: export GOARCH=amd64
+manager-amd64: generate fmt vet
+	go build -o bin/manager-amd64 ./cmd/operator/
+
+WEBHOOK_NS=dynatrace
+
+debug-webhook-setup:
+	@echo Preparing webhook deployment for debugging
+	kubectl -n $(WEBHOOK_NS) patch deploy dynatrace-webhook -p '{"spec":{"template":{"spec":{"containers":[{"name":"webhook", "image":"quay.io/dynatrace/dynatrace-operator:operatorwithtar","command":["/bin/bash", "-c", "sleep infinity"]}]}}}}'
+	kubectl -n $(WEBHOOK_NS) patch deploy dynatrace-webhook --type json -p '[{"op": "remove", "path": "/spec/template/spec/containers/0/readinessProbe"}]'
+	kubectl -n $(WEBHOOK_NS) patch deploy dynatrace-webhook --type json -p '[{"op": "add", "path": "/spec/template/metadata/labels/webhookwithtar", "value": "provided"}]'
+	kubectl -n $(WEBHOOK_NS) wait --for=condition=ready pod -l webhookwithtar=provided
+
+debug-webhook: export WEBHOOK_POD=$(shell (kubectl -n $(WEBHOOK_NS) get pods | awk '/webhook/ && /Running/' | cut -d" " -f1))
+debug-webhook: manager-amd64
+	@echo Copying webhook to container $(WEBHOOK_POD) and run it there
+	kubectl -n $(WEBHOOK_NS) exec -it $(WEBHOOK_POD)  -- rm -f /tmp/manager-amd64 && kubectl -n $(WEBHOOK_NS) cp bin/manager-amd64 $(WEBHOOK_POD):/tmp/manager-amd64
+	kubectl -n $(WEBHOOK_NS) exec -it $(WEBHOOK_POD)  -- chmod +x /tmp/manager-amd64 && kubectl -n $(WEBHOOK_NS) exec -it $(WEBHOOK_POD) -- /tmp/manager-amd64 webhook-server
+
+debug-webhook-reset:
+	-kubectl -n $(WEBHOOK_NS) delete deploy dynatrace-webhook
+	kubectl -n $(WEBHOOK_NS) apply -f config/common/webhook/deployment-webhook.yaml
+
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: export RUN_LOCAL=true
 run: export POD_NAMESPACE=dynatrace

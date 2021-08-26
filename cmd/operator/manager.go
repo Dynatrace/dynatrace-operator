@@ -1,6 +1,4 @@
 /*
-Copyright 2020 Dynatrace LLC.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -20,31 +18,13 @@ import (
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/scheme"
-	"github.com/Dynatrace/dynatrace-operator/webhook/server"
-	"github.com/spf13/afero"
-	"github.com/spf13/pflag"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-var (
-	certsDir string
-	certFile string
-	keyFile  string
-)
-
-func webhookServerFlags() *pflag.FlagSet {
-	webhookServerFlags := pflag.NewFlagSet("webhook-server", pflag.ExitOnError)
-	webhookServerFlags.StringVar(&certsDir, "certs-dir", "/tmp/webhook/certs", "Directory to look certificates for.")
-	webhookServerFlags.StringVar(&certFile, "cert", "tls.crt", "File name for the public certificate.")
-	webhookServerFlags.StringVar(&keyFile, "cert-key", "tls.key", "File name for the private key.")
-	return webhookServerFlags
-}
-
-func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
+func newManagerWithCertificates(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
 	cleanUp := func() {}
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Namespace:          ns,
@@ -61,10 +41,12 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, func(), e
 	ws.KeyName = keyFile
 	ws.CertName = certFile
 	log.Info("SSL certificates configured", "dir", certsDir, "key", keyFile, "cert", certFile)
-	fs := afero.NewOsFs()
+	return mgr, cleanUp, nil
+}
 
+func waitForCertificates(watcher *certificateWatcher) {
 	for threshold := time.Now().Add(5 * time.Minute); time.Now().Before(threshold); {
-		_, err := server.UpdateCertificate(mgr.GetAPIReader(), fs, ws.CertDir, ns)
+		_, err := watcher.updateCertificatesFromSecret()
 
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
@@ -75,29 +57,7 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, func(), e
 			time.Sleep(10 * time.Second)
 			continue
 		}
-
 		break
 	}
-	startCertificateWatcher(mgr.GetAPIReader(), fs, ws.CertDir, ns)
-
-	if err := server.AddToManager(mgr, ns); err != nil {
-		return nil, cleanUp, err
-	}
-
-	return mgr, cleanUp, nil
-}
-
-func startCertificateWatcher(apiReader client.Reader, fs afero.Fs, certDir string, ns string) {
-	go func() {
-		for {
-			<-time.After(6 * time.Hour)
-			log.Info("checking for new certificates")
-			if updated, err := server.UpdateCertificate(apiReader, fs, certDir, ns); err != nil {
-				log.Info("failed to update certificates", "error", err)
-			} else if updated {
-				log.Info("updated certificate successfully")
-			}
-		}
-	}()
-
+	go watcher.watchForCertificatesSecret()
 }

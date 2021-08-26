@@ -12,33 +12,22 @@ import (
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
-	defaultUpdateInterval                 = 15 * time.Minute
-	updateEnvVar                          = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
-	relatedImageEnvVar                    = "RELATED_IMAGE_DYNATRACE_ONEAGENT"
-	ClassicFeature                        = "classic"
-	InframonFeature                       = "inframon"
-	defaultOneAgentImage                  = "docker.io/dynatrace/oneagent:latest"
-	defaultServiceAccountName             = "dynatrace-dynakube-oneagent"
-	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
-	unprivilegedAnnotationKey             = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
-	unprivilegedAnnotationValue           = "unconfined"
+	defaultUpdateInterval = 15 * time.Minute
+	updateEnvVar          = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
 )
 
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
@@ -74,10 +63,6 @@ type ReconcileOneAgent struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.DynakubeState) (bool, error) {
 	r.logger.Info("Reconciling OneAgent")
-	if err := validate(r.instance); err != nil {
-		return false, err
-	}
-
 	rec.Update(setUseImmutableImageStatus(r.instance, r.fullStack), 5*time.Minute, "UseImmutableImage changed")
 
 	upd, err := r.reconcileRollout(rec)
@@ -181,47 +166,17 @@ func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1al
 	return podList.Items, listOps, err
 }
 
-func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, clusterID string, feature string) (*appsv1.DaemonSet, error) {
-	unprivileged := true
-	if ptr := fs.UseUnprivilegedMode; ptr != nil {
-		unprivileged = *ptr
+func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, _ *dynatracev1alpha1.FullStackSpec, clusterID string, feature string) (*appsv1.DaemonSet, error) {
+	var ds *appsv1.DaemonSet
+	var err error
+
+	if feature == daemonset.ClassicFeature {
+		ds, err = daemonset.NewClassicFullStack(instance, logger, clusterID).BuildDaemonSet()
+	} else {
+		ds, err = daemonset.NewInfraMonitoring(instance, logger, clusterID).BuildDaemonSet()
 	}
-
-	name := instance.GetName() + "-" + feature
-	podSpec := newPodSpecForCR(instance, fs, feature, unprivileged, logger, clusterID)
-	selectorLabels := buildLabels(instance.GetName(), feature)
-	mergedLabels := mergeLabels(fs.Labels, selectorLabels)
-
-	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
-
-	ds := &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   instance.GetNamespace(),
-			Labels:      mergedLabels,
-			Annotations: map[string]string{},
-		},
-		Spec: appsv1.DaemonSetSpec{
-			Selector: &metav1.LabelSelector{MatchLabels: selectorLabels},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: mergedLabels,
-					Annotations: map[string]string{
-						statefulset.AnnotationVersion: instance.Status.OneAgent.Version,
-					},
-				},
-				Spec: podSpec,
-			},
-			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
-				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-					MaxUnavailable: &maxUnavailable,
-				},
-			},
-		},
-	}
-
-	if unprivileged {
-		ds.Spec.Template.ObjectMeta.Annotations[unprivilegedAnnotationKey] = unprivilegedAnnotationValue
+	if err != nil {
+		return nil, err
 	}
 
 	dsHash, err := kubeobjects.GenerateHash(ds)
@@ -231,147 +186,6 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 	ds.Annotations[kubeobjects.AnnotationHash] = dsHash
 
 	return ds, nil
-}
-
-func newPodSpecForCR(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, feature string, unprivileged bool, logger logr.Logger, clusterID string) corev1.PodSpec {
-	p := corev1.PodSpec{}
-
-	sa := defaultServiceAccountName
-	if fs.ServiceAccountName != "" {
-		sa = fs.ServiceAccountName
-	} else if unprivileged {
-		sa = defaultUnprivilegedServiceAccountName
-	}
-
-	resources := fs.Resources
-	if resources.Requests == nil {
-		resources.Requests = corev1.ResourceList{}
-	}
-	if _, hasCPUResource := resources.Requests[corev1.ResourceCPU]; !hasCPUResource {
-		// Set CPU resource to 1 * 10**(-1) Cores, e.g. 100mC
-		resources.Requests[corev1.ResourceCPU] = *resource.NewScaledQuantity(1, -1)
-	}
-
-	dnsPolicy := fs.DNSPolicy
-	if dnsPolicy == "" {
-		dnsPolicy = corev1.DNSClusterFirstWithHostNet
-	}
-
-	secCtx := prepareSecurityContext(unprivileged, fs)
-
-	p = corev1.PodSpec{
-		Containers: []corev1.Container{{
-			Args:            prepareArgs(instance, fs, feature, clusterID),
-			Env:             prepareEnvVars(instance, fs, feature, clusterID),
-			Image:           "",
-			ImagePullPolicy: corev1.PullAlways,
-			Name:            "dynatrace-oneagent",
-			ReadinessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
-					Exec: &corev1.ExecAction{
-						Command: []string{
-							"/bin/sh", "-c", "grep -q oneagentwatchdo /proc/[0-9]*/stat",
-						},
-					},
-				},
-				InitialDelaySeconds: 30,
-				PeriodSeconds:       30,
-				TimeoutSeconds:      1,
-			},
-			Resources:       resources,
-			SecurityContext: secCtx,
-			VolumeMounts:    prepareVolumeMounts(instance, fs),
-		}},
-		HostNetwork:        true,
-		HostPID:            true,
-		HostIPC:            false,
-		NodeSelector:       fs.NodeSelector,
-		PriorityClassName:  fs.PriorityClassName,
-		ServiceAccountName: sa,
-		Tolerations:        fs.Tolerations,
-		DNSPolicy:          dnsPolicy,
-		Affinity: &corev1.Affinity{
-			NodeAffinity: &corev1.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{
-						{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      "beta.kubernetes.io/arch",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"amd64", "arm64"},
-								},
-								{
-									Key:      "beta.kubernetes.io/os",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"linux"},
-								},
-							},
-						},
-						{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      "kubernetes.io/arch",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"amd64", "arm64"},
-								},
-								{
-									Key:      "kubernetes.io/os",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"linux"},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Volumes: prepareVolumes(instance, fs),
-	}
-
-	if instance.Status.OneAgent.UseImmutableImage {
-		err := preparePodSpecImmutableImage(&p, instance)
-		if err != nil {
-			logger.Error(err, "failed to prepare pod spec v2")
-		}
-	} else {
-		err := preparePodSpecInstaller(&p, instance)
-		if err != nil {
-			logger.Error(err, "failed to prepare pod spec v1")
-		}
-	}
-
-	return p
-}
-
-func preparePodSpecInstaller(p *corev1.PodSpec, instance *dynatracev1alpha1.DynaKube) error {
-	img := defaultOneAgentImage
-	envVarImg := os.Getenv(relatedImageEnvVar)
-
-	if instance.Spec.OneAgent.Image != "" {
-		img = instance.Spec.OneAgent.Image
-	} else if envVarImg != "" {
-		img = envVarImg
-	}
-
-	p.Containers[0].Image = img
-	return nil
-}
-
-func preparePodSpecImmutableImage(p *corev1.PodSpec, instance *dynatracev1alpha1.DynaKube) error {
-	pullSecretName := instance.PullSecret()
-
-	p.ImagePullSecrets = append(p.ImagePullSecrets, corev1.LocalObjectReference{
-		Name: pullSecretName,
-	})
-
-	if instance.Spec.OneAgent.Image != "" {
-		p.Containers[0].Image = instance.Spec.OneAgent.Image
-		return nil
-	}
-
-	p.Containers[0].Image = instance.ImmutableOneAgentImage()
-	return nil
 }
 
 func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube) (bool, error) {
