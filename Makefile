@@ -55,10 +55,10 @@ WEBHOOK_NS=dynatrace
 
 debug-webhook-setup:
 	@echo Preparing webhook deployment for debugging
-	kubectl -n $(WEBHOOK_NS) patch deploy dynatrace-webhook -p '{"spec":{"template":{"spec":{"containers":[{"name":"webhook", "image":"quay.io/dynatrace/dynatrace-operator:operatorwithtar","command":["/bin/bash", "-c", "sleep 999999999"]}]}}}}'
+	kubectl -n $(WEBHOOK_NS) patch deploy dynatrace-webhook -p '{"spec":{"template":{"spec":{"containers":[{"name":"webhook", "image":"quay.io/dynatrace/dynatrace-operator:operatorwithtar","command":["/bin/bash", "-c", "sleep infinity"]}]}}}}'
 	kubectl -n $(WEBHOOK_NS) patch deploy dynatrace-webhook --type json -p '[{"op": "remove", "path": "/spec/template/spec/containers/0/readinessProbe"}]'
-	@echo
-	@echo Please wait till the webhook is running again
+	kubectl -n $(WEBHOOK_NS) patch deploy dynatrace-webhook --type json -p '[{"op": "add", "path": "/spec/template/metadata/labels/webhookwithtar", "value": "provided"}]'
+	kubectl -n $(WEBHOOK_NS) wait --for=condition=ready pod -l webhookwithtar=provided
 
 debug-webhook: export WEBHOOK_POD=$(shell (kubectl -n $(WEBHOOK_NS) get pods | awk '/webhook/ && /Running/' | cut -d" " -f1))
 debug-webhook: manager-amd64
