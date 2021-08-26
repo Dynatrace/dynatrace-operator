@@ -42,7 +42,24 @@ rules:
   - apiGroups:
       - admissionregistration.k8s.io
     resources:
+      - validatingwebhookconfigurations
+    verbs:
+      - list
+      - create
+      - watch
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
       - mutatingwebhookconfigurations
+    resourceNames:
+      - dynatrace-webhook
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
     resourceNames:
       - dynatrace-webhook
     verbs:

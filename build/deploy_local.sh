@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [[ ! "${TAG}" ]]; then
+  echo "TAG variable not set"
+  echo "usage: 'make deploy-local TAG=\"<your-image-tag>\"'"
+  exit 5
+fi
+
 export CGO_ENABLED=1
 export GOOS=linux
 export GOARCH=amd64

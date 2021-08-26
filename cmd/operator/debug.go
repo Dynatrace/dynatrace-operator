@@ -1,3 +1,17 @@
+/*
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package main
 
 import (
@@ -14,11 +28,10 @@ type startupInfo struct {
 	signalHandler context.Context
 }
 
-func startWebhookAndBootstrapperIfDebugFlagSet(info startupInfo) {
+func startWebhookIfDebugFlagSet(info startupInfo) {
 	if isDebugFlagSet() {
 		log.Info("debug mode enabled")
-		log.Info("starting webhook and bootstrapper")
-		go startBootstrapperManager(info)
+		log.Info("starting webhook")
 		go startWebhookManager(info)
 	}
 }
@@ -26,10 +39,6 @@ func startWebhookAndBootstrapperIfDebugFlagSet(info startupInfo) {
 func isDebugFlagSet() bool {
 	debugFlag := os.Getenv("DEBUG_OPERATOR")
 	return debugFlag == "true"
-}
-
-func startBootstrapperManager(info startupInfo) {
-	startComponent("webhook-bootstrapper", info)
 }
 
 func startWebhookManager(info startupInfo) {
