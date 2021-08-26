@@ -327,3 +327,61 @@ func TestServiceAccountName(t *testing.T) {
 		assert.Equal(t, testName, podSpecs.ServiceAccountName)
 	})
 }
+
+func TestInfraMon_SecurityContext(t *testing.T) {
+	log := logger.NewDTLogger()
+	t.Run(`No user and group id when not in read only mode`, func(t *testing.T) {
+		instance := dynatracev1alpha1.DynaKube{
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				OneAgent: dynatracev1alpha1.OneAgentSpec{},
+				InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
+					FullStackSpec: dynatracev1alpha1.FullStackSpec{
+						Enabled: true,
+					},
+					ReadOnly: dynatracev1alpha1.ReadOnlySpec{},
+				},
+			},
+		}
+		dsInfo := NewInfraMonitoring(&instance, log, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
+
+		securityContextConstraints := ds.Spec.Template.Spec.Containers[0].SecurityContext
+
+		assert.NotNil(t, securityContextConstraints)
+		assert.Nil(t, securityContextConstraints.RunAsUser)
+		assert.Nil(t, securityContextConstraints.RunAsGroup)
+		assert.Nil(t, securityContextConstraints.RunAsNonRoot)
+	})
+	t.Run(`User and group id set when read only mode is enabled`, func(t *testing.T) {
+		instance := dynatracev1alpha1.DynaKube{
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				OneAgent: dynatracev1alpha1.OneAgentSpec{},
+				InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
+					FullStackSpec: dynatracev1alpha1.FullStackSpec{
+						Enabled: true,
+					},
+					ReadOnly: dynatracev1alpha1.ReadOnlySpec{
+						Enabled: true,
+					},
+				},
+			},
+		}
+		dsInfo := NewInfraMonitoring(&instance, log, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
+
+		securityContextConstraints := ds.Spec.Template.Spec.Containers[0].SecurityContext
+
+		assert.NotNil(t, securityContextConstraints)
+		assert.Nil(t, securityContextConstraints.RunAsNonRoot)
+		assert.NotNil(t, securityContextConstraints.RunAsUser)
+		assert.NotNil(t, securityContextConstraints.RunAsGroup)
+		assert.Equal(t, int64(1001), *securityContextConstraints.RunAsUser)
+		assert.Equal(t, int64(1001), *securityContextConstraints.RunAsGroup)
+	})
+}

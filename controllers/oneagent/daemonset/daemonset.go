@@ -132,8 +132,11 @@ func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 
 func (dsInfo *InfraMonitoring) setSecurityContextOptions(daemonset *appsv1.DaemonSet) {
 	securityContext := daemonset.Spec.Template.Spec.Containers[0].SecurityContext
-	securityContext.RunAsUser = pointer.Int64Ptr(defaultUserId)
-	securityContext.RunAsGroup = pointer.Int64Ptr(defaultGroupId)
+
+	if dsInfo.instance.Spec.InfraMonitoring.ReadOnly.Enabled {
+		securityContext.RunAsUser = pointer.Int64Ptr(defaultUserId)
+		securityContext.RunAsGroup = pointer.Int64Ptr(defaultGroupId)
+	}
 }
 
 func appendHostIdArgument(result *appsv1.DaemonSet, source string) {
