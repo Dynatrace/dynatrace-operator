@@ -83,7 +83,7 @@ function checkDependencies {
   done
 }
 
-function checkNamespace() {
+function checkNamespace {
   log_section="namespace"
   log "checking if namespace '${selected_namespace}' exists .."
   if ! "${cli}" get namespace "${selected_namespace}" >/dev/null 2>&1; then

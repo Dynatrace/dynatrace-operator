@@ -41,8 +41,8 @@ Make sure to inspect the contents of the troubleshooting script before executing
 
 ### Manual Instructions
 
-1. Download `troubleshoot.sh` to host with access to affected cluster.
-1. Make sure file is executable: `chmod +x troubleshoot.sh`
+1. Download `troubleshoot.sh` to the host with access to the affected cluster.
+1. Make sure the file is executable: `chmod +x troubleshoot.sh`
 1. Run script: `./troubleshoot.sh`
 
 ## Options
