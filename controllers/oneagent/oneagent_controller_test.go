@@ -530,11 +530,11 @@ func TestInstanceStatus(t *testing.T) {
 		fullStack: &dynakube.Spec.InfraMonitoring.FullStackSpec,
 	}
 
-	upd, err := reconciler.reconcileInstanceStatuses(context.Background())
+	upd, err := reconciler.reconcileInstanceStatuses(context.Background(), reconciler.logger, reconciler.instance)
 	assert.NoError(t, err)
 	assert.True(t, upd)
 
-	upd, err = reconciler.reconcileInstanceStatuses(context.Background())
+	upd, err = reconciler.reconcileInstanceStatuses(context.Background(), reconciler.logger, reconciler.instance)
 	assert.NoError(t, err)
 	assert.False(t, upd)
 }

@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -74,10 +76,25 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.Dyna
 		r.logger.Info("Rollout reconciled")
 	}
 
-	upd, err = r.reconcileInstanceStatuses(ctx)
-	rec.Update(upd, 5*time.Minute, "Instance statuses reconciled")
-	if rec.Error(err) {
-		return false, err
+	updInterval := defaultUpdateInterval
+	if val := os.Getenv(updateEnvVar); val != "" {
+		x, err := strconv.Atoi(val)
+		if err != nil {
+			r.logger.Info("Conversion of ONEAGENT_OPERATOR_UPDATE_INTERVAL failed")
+		} else {
+			updInterval = time.Duration(x) * time.Minute
+		}
+	}
+
+	if rec.IsOutdated(r.instance.Status.OneAgent.LastHostsRequestTimestamp, updInterval) {
+		r.instance.Status.OneAgent.LastHostsRequestTimestamp = rec.Now.DeepCopy()
+		rec.Update(true, 5*time.Minute, "updated last host request time stamp")
+
+		upd, err = r.reconcileInstanceStatuses(ctx, r.logger, r.instance)
+		rec.Update(upd, 5*time.Minute, "Instance statuses reconciled")
+		if rec.Error(err) {
+			return false, err
+		}
 	}
 
 	// Finally we have to determine the correct non error phase
@@ -143,11 +160,11 @@ func (r *ReconcileOneAgent) getDesiredDaemonSet(dkState *controllers.DynakubeSta
 	return dsDesired, nil
 }
 
-func (r *ReconcileOneAgent) getPods(ctx context.Context) ([]corev1.Pod, []client.ListOption, error) {
+func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1alpha1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
-		client.InNamespace((r.instance).GetNamespace()),
-		client.MatchingLabels(buildLabels(r.instance.Name, r.feature)),
+		client.InNamespace((*instance).GetNamespace()),
+		client.MatchingLabels(buildLabels(instance.Name, feature)),
 	}
 	err := r.client.List(ctx, podList, listOps...)
 	return podList.Items, listOps, err
@@ -175,10 +192,10 @@ func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube,
 	return ds, nil
 }
 
-func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context) (bool, error) {
-	pods, listOpts, err := r.getPods(ctx)
+func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube) (bool, error) {
+	pods, listOpts, err := r.getPods(ctx, instance, r.feature)
 	if err != nil {
-		handlePodListError(r.logger, err, listOpts)
+		handlePodListError(logger, err, listOpts)
 	}
 
 	instanceStatuses, err := getInstanceStatuses(pods)
@@ -188,14 +205,13 @@ func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context) (bool
 		}
 	}
 
-	if r.instance.Status.OneAgent.Instances == nil || !reflect.DeepEqual(r.instance.Status.OneAgent.Instances, instanceStatuses) {
-		r.instance.Status.OneAgent.Instances = instanceStatuses
+	if instance.Status.OneAgent.Instances == nil || !reflect.DeepEqual(instance.Status.OneAgent.Instances, instanceStatuses) {
+		instance.Status.OneAgent.Instances = instanceStatuses
 		return true, err
 	}
 
 	return false, err
 }
-
 func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1alpha1.OneAgentInstance, error) {
 	instanceStatuses := make(map[string]dynatracev1alpha1.OneAgentInstance)
 
