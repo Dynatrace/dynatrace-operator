@@ -7,6 +7,6 @@ images:
   - name: docker.io/dynatrace/dynatrace-operator:snapshot
     newName: docker.io/dynatrace/dynatrace-operator
     newTag: v0.2.1
-  - name: quay.io/dynatrace/dynatrace-operator:snapshot
+  - name: docker.io/dynatrace/dynatrace-operator:snapshot
     newName: docker.io/dynatrace/dynatrace-operator
-    newTag: v0.2.1
+    newTag: v0.2.2

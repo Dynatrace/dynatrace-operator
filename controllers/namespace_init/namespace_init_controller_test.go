@@ -7,7 +7,9 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	mapper "github.com/Dynatrace/dynatrace-operator/namespacemapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -38,8 +40,8 @@ var (
 		ObjectMeta: metav1.ObjectMeta{Name: testDynaKubeName1},
 		Spec: dynatracev1alpha1.DynaKubeSpec{
 			APIURL: testApiUrl,
-			InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-				Enabled: true,
+			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
+				FullStackSpec: dynatracev1alpha1.FullStackSpec{Enabled: true},
 			},
 		},
 		Status: dynatracev1alpha1.DynaKubeStatus{
@@ -59,8 +61,8 @@ var (
 		Spec: dynatracev1alpha1.DynaKubeSpec{
 			APIURL: testApiUrl,
 			Tokens: "secret2",
-			InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-				Enabled: true,
+			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
+				FullStackSpec: dynatracev1alpha1.FullStackSpec{Enabled: true},
 			},
 		},
 		Status: dynatracev1alpha1.DynaKubeStatus{
@@ -107,7 +109,7 @@ func TestReconcileNamespaceMapping_TwoDynakubes(t *testing.T) {
 			},
 		},
 		&corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: namespaceMappingConfigMap},
+			ObjectMeta: metav1.ObjectMeta{Name: mapper.CodeModulesMapName, Namespace: "test"},
 			Data: map[string]string{
 				testNamespace1: testDynaKubeName1,
 				testNamespace2: testDynaKubeName2,
@@ -125,12 +127,12 @@ func TestReconcileNamespaceMapping_TwoDynakubes(t *testing.T) {
 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
 	}
 
-	_, err := r.Reconcile(context.TODO(), reconcile.Request{})
+	_, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: mapper.CodeModulesMapName, Namespace: "test"}})
 	assert.NoError(t, err)
 
 	var initSecret1 corev1.Secret
 	require.NoError(t, c.Get(context.TODO(), client.ObjectKey{
-		Name:      "dynatrace-dynakube-config",
+		Name:      webhook.SecretConfigName,
 		Namespace: testNamespace1,
 	}, &initSecret1))
 
@@ -141,7 +143,7 @@ func TestReconcileNamespaceMapping_TwoDynakubes(t *testing.T) {
 
 	var initSecret2 corev1.Secret
 	require.NoError(t, c.Get(context.TODO(), client.ObjectKey{
-		Name:      "dynatrace-dynakube-config",
+		Name:      webhook.SecretConfigName,
 		Namespace: testNamespace2,
 	}, &initSecret2))
 
@@ -163,7 +165,7 @@ func TestCodeModulesNamespaceMapping_SingleData(t *testing.T) {
 		},
 	}
 
-	mapping := getCodeModulesNamespaceMapping(testdata)
+	mapping := getNamespaceMapping(testdata)
 	assert.Equal(t, expectedMap, mapping)
 }
 
@@ -175,7 +177,7 @@ func TestCodeModulesNamespaceMapping_NoData(t *testing.T) {
 		},
 	}
 
-	mapping := getCodeModulesNamespaceMapping(nil)
+	mapping := getNamespaceMapping(nil)
 	assert.Nil(t, mapping)
 	assert.NotEqual(t, expectedMap, mapping)
 }
@@ -192,7 +194,7 @@ func TestCodeModulesNamespaceMapping_JustNamespace(t *testing.T) {
 		},
 	}
 
-	mapping := getCodeModulesNamespaceMapping(testdata)
+	mapping := getNamespaceMapping(testdata)
 	assert.Equal(t, expectedMap, mapping)
 }
 
@@ -290,8 +292,8 @@ func TestPrepareScriptForDynaKube_FullData_WithProxyAndCerts(t *testing.T) {
 					Value: testProxy,
 				},
 				TrustedCAs: testtrustCAsCM,
-				InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-					Enabled: true,
+				InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
+					FullStackSpec: dynatracev1alpha1.FullStackSpec{Enabled: true},
 				},
 			},
 			Status: dynatracev1alpha1.DynaKubeStatus{
@@ -342,7 +344,7 @@ func TestReplicateInitScriptAsSecret(t *testing.T) {
 			},
 		},
 		&corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: namespaceMappingConfigMap},
+			ObjectMeta: metav1.ObjectMeta{Name: mapper.CodeModulesMapName, Namespace: "test"},
 			Data: map[string]string{
 				testNamespace1: testDynaKubeName1,
 				testNamespace2: testDynaKubeName2,
@@ -380,7 +382,7 @@ func TestReplicateInitScriptAsSecret(t *testing.T) {
 
 	var initSecret1 corev1.Secret
 	require.NoError(t, c.Get(context.TODO(), client.ObjectKey{
-		Name:      "dynatrace-dynakube-config",
+		Name:      webhook.SecretConfigName,
 		Namespace: testNamespace1,
 	}, &initSecret1))
 
@@ -391,7 +393,7 @@ func TestReplicateInitScriptAsSecret(t *testing.T) {
 
 	var initSecret2 corev1.Secret
 	require.NoError(t, c.Get(context.TODO(), client.ObjectKey{
-		Name:      "dynatrace-dynakube-config",
+		Name:      webhook.SecretConfigName,
 		Namespace: testNamespace2,
 	}, &initSecret2))
 

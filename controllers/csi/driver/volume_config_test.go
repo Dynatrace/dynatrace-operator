@@ -11,6 +11,7 @@ const (
 	volumeId   = "a-volume-id"
 	namespace  = "a-namespace"
 	targetPath = "a-target-path"
+	podUID     = "a-pod-uid"
 )
 
 func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
@@ -96,7 +97,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = No namespace included with request")
 		assert.Nil(t, volumeCfg)
 	})
-	t.Run(`Pod uid missing from requests volume context`, func(t *testing.T) {
+	t.Run(`Pod name missing from requests volume context`, func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{
 				AccessType: &csi.VolumeCapability_Mount{
@@ -111,8 +112,8 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		}
 		volumeCfg, err := parsePublishVolumeRequest(request)
 
-		assert.NoError(t, err)
-		assert.NotNil(t, volumeCfg)
+		assert.Error(t, err)
+		assert.Nil(t, volumeCfg)
 	})
 	t.Run(`request is parsed correctly`, func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
@@ -125,6 +126,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			TargetPath: targetPath,
 			VolumeContext: map[string]string{
 				podNamespaceContextKey: namespace,
+				podNameContextKey:      podUID,
 			},
 		}
 		volumeCfg, err := parsePublishVolumeRequest(request)
@@ -134,5 +136,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		assert.Equal(t, namespace, volumeCfg.namespace)
 		assert.Equal(t, volumeId, volumeCfg.volumeId)
 		assert.Equal(t, targetPath, volumeCfg.targetPath)
+		assert.Equal(t, podUID, volumeCfg.podName)
 	})
 }

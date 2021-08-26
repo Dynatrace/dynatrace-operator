@@ -58,7 +58,7 @@ type DynaKubeSpec struct {
 	CodeModules CodeModulesSpec `json:"codeModules,omitempty"`
 
 	// Configuration for Infra Monitoring
-	InfraMonitoring FullStackSpec `json:"infraMonitoring,omitempty"`
+	InfraMonitoring InfraMonitoringSpec `json:"infraMonitoring,omitempty"`
 
 	// Configuration for ClassicFullStack Monitoring
 	ClassicFullStack FullStackSpec `json:"classicFullStack,omitempty"`
@@ -87,12 +87,6 @@ type ActiveGateSpec struct {
 	// implementation from the Dynatrace environment set as API URL.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Image string `json:"image,omitempty"`
-
-	// Disable automatic restarts of OneAgent pods in case a new version is available
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Automatically update Agent"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
-	AutoUpdate *bool `json:"autoUpdate,omitempty"`
 }
 
 type OneAgentSpec struct {
@@ -112,6 +106,19 @@ type OneAgentSpec struct {
 	AutoUpdate *bool `json:"autoUpdate,omitempty"`
 }
 
+type ReadOnlySpec struct {
+	// Optional: Enable support for read only host-filesystems.
+	// Defaults to false
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable support for read-only host-filesystem",order=29,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	Enabled bool `json:"enabled,omitempty"`
+
+	// Used if read-only filesystem support is enabled.
+	// Determines the volume to which the installation files are stored during installation of the OneAgent
+	// Defaults to an empty-dir
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Installation volume",order=30,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Volume"}
+	InstallationVolume *corev1.VolumeSource `json:"installationVolume,omitempty"`
+}
+
 type CodeModulesSpec struct {
 	// Enables code modules monitoring
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CodeModules Monitoring",order=14,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
@@ -127,6 +134,10 @@ type CodeModulesSpec struct {
 	// Optional: set selector for Operator to know in which namespaces to inject into
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Selector",order=16,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:selector"}
 	Selector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+
+	// Optional: name of the ServiceAccount to assign to the CSIDriver Pods
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Service Account name for CSI Driver",order=25,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ServiceAccount"}
+	ServiceAccountNameCSIDriver string `json:"serviceAccountNameCSIDriver,omitempty"`
 }
 
 type FullStackSpec struct {
@@ -141,11 +152,6 @@ type FullStackSpec struct {
 	// Optional: set tolerations for the OneAgent pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tolerations",order=18,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
-
-	// Optional: Defines the time to wait until OneAgent pod is ready after update - default 300 sec
-	// +kubebuilder:validation:Minimum=0
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Wait seconds until ready",order=19,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:number"}
-	WaitReadySeconds *uint16 `json:"waitReadySeconds,omitempty"`
 
 	// Optional: define resources requests and limits for single pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=20,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
@@ -184,6 +190,13 @@ type FullStackSpec struct {
 	// Defines if you want to use the immutable image or the installer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Use immutable image",order=28,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
+}
+
+type InfraMonitoringSpec struct {
+	FullStackSpec `json:",inline"`
+
+	// Offers options to enable read-only filesystem support and configuration options for it
+	ReadOnly ReadOnlySpec `json:"readOnly,omitempty"`
 }
 
 type DataIngestSpec struct {

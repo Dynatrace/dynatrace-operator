@@ -272,7 +272,7 @@ func TestMapFromNamespaceCodeModules(t *testing.T) {
 		err := mapFromNamespaceCodeModules(context.TODO(), clt, "dynatrace", *namespace)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: codeModulesMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: CodeModulesMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(cfg.Data))
 	})
@@ -295,7 +295,7 @@ func TestMapFromNamespaceCodeModules(t *testing.T) {
 
 	t.Run("Add to existing config map", func(t *testing.T) {
 		oldCfg := corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: codeModulesMapName, Namespace: "dynatrace"},
+			ObjectMeta: metav1.ObjectMeta{Name: CodeModulesMapName, Namespace: "dynatrace"},
 			Data:       map[string]string{"other-ns": "other-dk"},
 		}
 		clt := fake.NewClient(dk, &oldCfg, namespace)
@@ -303,14 +303,14 @@ func TestMapFromNamespaceCodeModules(t *testing.T) {
 		err := mapFromNamespaceCodeModules(context.TODO(), clt, "dynatrace", *namespace)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: codeModulesMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: CodeModulesMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(cfg.Data))
 	})
 
 	t.Run("Remove stale namespace entry", func(t *testing.T) {
 		oldCfg := corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: codeModulesMapName, Namespace: "dynatrace"},
+			ObjectMeta: metav1.ObjectMeta{Name: CodeModulesMapName, Namespace: "dynatrace"},
 			Data:       map[string]string{namespace.Name: "deleted-dk"},
 		}
 		clt := fake.NewClient(&oldCfg, namespace)
@@ -318,7 +318,7 @@ func TestMapFromNamespaceCodeModules(t *testing.T) {
 		err := mapFromNamespaceCodeModules(context.TODO(), clt, "dynatrace", *namespace)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: codeModulesMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: CodeModulesMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(cfg.Data))
 	})
@@ -349,7 +349,7 @@ func TestMapFromNamespaceDataIngest(t *testing.T) {
 		err := mapFromNamespaceDataIngest(context.TODO(), clt, "dynatrace", *namespace)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: dataIngestMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: DataIngestMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(cfg.Data))
 	})
@@ -374,7 +374,7 @@ func TestMapFromNamespaceDataIngest(t *testing.T) {
 
 	t.Run("Add to existing config map", func(t *testing.T) {
 		oldCfg := corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: dataIngestMapName, Namespace: "dynatrace"},
+			ObjectMeta: metav1.ObjectMeta{Name: DataIngestMapName, Namespace: "dynatrace"},
 			Data:       map[string]string{"other-ns": "other-dk"},
 		}
 		clt := fake.NewClient(dk, &oldCfg, namespace)
@@ -382,14 +382,14 @@ func TestMapFromNamespaceDataIngest(t *testing.T) {
 		err := mapFromNamespaceDataIngest(context.TODO(), clt, "dynatrace", *namespace)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: dataIngestMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: DataIngestMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(cfg.Data))
 	})
 
 	t.Run("Remove stale namespace entry", func(t *testing.T) {
 		oldCfg := corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: dataIngestMapName, Namespace: "dynatrace"},
+			ObjectMeta: metav1.ObjectMeta{Name: DataIngestMapName, Namespace: "dynatrace"},
 			Data:       map[string]string{namespace.Name: "deleted-dk"},
 		}
 		clt := fake.NewClient(&oldCfg, namespace)
@@ -397,7 +397,7 @@ func TestMapFromNamespaceDataIngest(t *testing.T) {
 		err := mapFromNamespaceDataIngest(context.TODO(), clt, "dynatrace", *namespace)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: dataIngestMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: DataIngestMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(cfg.Data))
 	})
@@ -410,11 +410,11 @@ func TestUnmapFromNamespace(t *testing.T) {
 		},
 	}
 	cfgDI := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: dataIngestMapName, Namespace: "dynatrace"},
+		ObjectMeta: metav1.ObjectMeta{Name: DataIngestMapName, Namespace: "dynatrace"},
 		Data:       map[string]string{namespace.Name: "dk", "other-ns": "other-dk"},
 	}
 	cfgCM := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: codeModulesMapName, Namespace: "dynatrace"},
+		ObjectMeta: metav1.ObjectMeta{Name: CodeModulesMapName, Namespace: "dynatrace"},
 		Data:       map[string]string{namespace.Name: "dk", "other-ns": "other-dk"},
 	}
 	clt := fake.NewClient(&cfgDI, &cfgCM, namespace)
@@ -422,10 +422,10 @@ func TestUnmapFromNamespace(t *testing.T) {
 		err := UnmapFromNamespace(context.TODO(), clt, "dynatrace", namespace.Name)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: dataIngestMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: DataIngestMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(cfg.Data))
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: codeModulesMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: CodeModulesMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(cfg.Data))
 	})

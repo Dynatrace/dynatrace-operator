@@ -20,15 +20,15 @@ func MapFromNamespace(ctx context.Context, clt client.Client, operatorNs string,
 }
 
 func UnmapFromNamespace(ctx context.Context, clt client.Client, operatorNs string, namespace string) error {
-	err := unmapFromNamespace(ctx, clt, operatorNs, namespace, dataIngestMapName)
+	err := unmapFromNamespace(ctx, clt, operatorNs, namespace, DataIngestMapName)
 	if err != nil {
 		return err
 	}
-	return unmapFromNamespace(ctx, clt, operatorNs, namespace, codeModulesMapName)
+	return unmapFromNamespace(ctx, clt, operatorNs, namespace, CodeModulesMapName)
 }
 
 func mapFromNamespaceDataIngest(ctx context.Context, clt client.Client, operatorNs string, ns corev1.Namespace) error {
-	return mapFromNamespace(ctx, clt, operatorNs, ns, dataIngestMapName,
+	return mapFromNamespace(ctx, clt, operatorNs, ns, DataIngestMapName,
 		func(dk dynatracev1alpha1.DynaKube) bool {
 			return dk.Spec.DataIngestSpec.Enabled
 		},
@@ -38,7 +38,7 @@ func mapFromNamespaceDataIngest(ctx context.Context, clt client.Client, operator
 }
 
 func mapFromNamespaceCodeModules(ctx context.Context, clt client.Client, operatorNs string, ns corev1.Namespace) error {
-	return mapFromNamespace(ctx, clt, operatorNs, ns, codeModulesMapName,
+	return mapFromNamespace(ctx, clt, operatorNs, ns, CodeModulesMapName,
 		func(dk dynatracev1alpha1.DynaKube) bool {
 			return dk.Spec.CodeModules.Enabled
 		},

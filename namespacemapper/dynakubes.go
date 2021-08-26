@@ -19,7 +19,7 @@ func MapFromDynakubeDataIngest(ctx context.Context, clt client.Client, operatorN
 		return errors.Cause(err)
 	}
 
-	return createMapping(ctx, clt, operatorNs, dataIngestMapName, dk, nsList, dk.Spec.DataIngestSpec.Selector)
+	return createMapping(ctx, clt, operatorNs, DataIngestMapName, dk, nsList, dk.Spec.DataIngestSpec.Selector)
 }
 
 func MapFromDynaKubeCodeModules(ctx context.Context, clt client.Client, operatorNs string, dk *dynatracev1alpha1.DynaKube) error {
@@ -30,15 +30,15 @@ func MapFromDynaKubeCodeModules(ctx context.Context, clt client.Client, operator
 		return errors.Cause(err)
 	}
 
-	return createMapping(ctx, clt, operatorNs, codeModulesMapName, dk, nsList, dk.Spec.CodeModules.Selector)
+	return createMapping(ctx, clt, operatorNs, CodeModulesMapName, dk, nsList, dk.Spec.CodeModules.Selector)
 }
 
 func UnmapFromDynaKube(ctx context.Context, clt client.Client, operatorNs string, dkName string) error {
-	err := unmapFromDynaKube(ctx, clt, operatorNs, dkName, dataIngestMapName)
+	err := unmapFromDynaKube(ctx, clt, operatorNs, dkName, DataIngestMapName)
 	if err != nil {
 		return err
 	}
-	err = unmapFromDynaKube(ctx, clt, operatorNs, dkName, codeModulesMapName)
+	err = unmapFromDynaKube(ctx, clt, operatorNs, dkName, CodeModulesMapName)
 	return err
 }
 

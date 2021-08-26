@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	codeModulesMapName = "code-modules-map"
-	dataIngestMapName  = "data-ingest-map"
+	CodeModulesMapName = "code-modules-map"
+	DataIngestMapName  = "data-ingest-map"
 )
 
 type dynaKubeFilterFunc func(dk dynatracev1alpha1.DynaKube) bool

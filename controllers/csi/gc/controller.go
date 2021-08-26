@@ -2,9 +2,11 @@ package csigc
 
 import (
 	"context"
+	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
@@ -24,16 +26,20 @@ type CSIGarbageCollector struct {
 	opts         dtcsi.CSIOptions
 	dtcBuildFunc dynakube.DynatraceClientFunc
 	fs           afero.Fs
+	db           metadata.Access
+	path         metadata.PathResolver
 }
 
 // NewReconciler returns a new CSIGarbageCollector
-func NewReconciler(client client.Client, opts dtcsi.CSIOptions) *CSIGarbageCollector {
+func NewReconciler(client client.Client, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		client:       client,
 		logger:       log.Log.WithName("csi.gc.controller"),
 		opts:         opts,
 		dtcBuildFunc: dynakube.BuildDynatraceClient,
 		fs:           afero.NewOsFs(),
+		db:           db,
+		path:         metadata.PathResolver{RootDir: opts.RootDir},
 	}
 }
 
@@ -47,7 +53,7 @@ var _ reconcile.Reconciler = &CSIGarbageCollector{}
 
 func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	gc.logger.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
-	reconcileResult := reconcile.Result{RequeueAfter: gc.opts.GCInterval}
+	reconcileResult := reconcile.Result{RequeueAfter: 60 * time.Minute}
 
 	var dk dynatracev1alpha1.DynaKube
 	if err := gc.client.Get(ctx, request.NamespacedName, &dk); err != nil {

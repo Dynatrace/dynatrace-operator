@@ -22,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/webhook/server"
 	"github.com/spf13/afero"
+	"github.com/spf13/pflag"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -29,7 +30,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
+var (
+	certsDir string
+	certFile string
+	keyFile  string
+)
+
+func webhookServerFlags() *pflag.FlagSet {
+	webhookServerFlags := pflag.NewFlagSet("webhook-server", pflag.ExitOnError)
+	webhookServerFlags.StringVar(&certsDir, "certs-dir", "/tmp/webhook/certs", "Directory to look certificates for.")
+	webhookServerFlags.StringVar(&certFile, "cert", "tls.crt", "File name for the public certificate.")
+	webhookServerFlags.StringVar(&keyFile, "cert-key", "tls.key", "File name for the private key.")
+	return webhookServerFlags
+}
+
+func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
+	cleanUp := func() {}
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Namespace:          ns,
 		Scheme:             scheme.Scheme,
@@ -37,7 +53,7 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 		Port:               8443,
 	})
 	if err != nil {
-		return nil, err
+		return nil, cleanUp, err
 	}
 
 	ws := mgr.GetWebhookServer()
@@ -65,10 +81,10 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, error) {
 	startCertificateWatcher(mgr.GetAPIReader(), fs, ws.CertDir, ns)
 
 	if err := server.AddToManager(mgr, ns); err != nil {
-		return nil, err
+		return nil, cleanUp, err
 	}
 
-	return mgr, nil
+	return mgr, cleanUp, nil
 }
 
 func startCertificateWatcher(apiReader client.Reader, fs afero.Fs, certDir string, ns string) {

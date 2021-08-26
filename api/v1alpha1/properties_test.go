@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -81,4 +82,24 @@ func TestTokens(t *testing.T) {
 		dk := DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testName}}
 		assert.Equal(t, dk.Tokens(), testName)
 	})
+}
+
+func TestReadOnlySpec_GetInstallationVolume(t *testing.T) {
+	const testPath = "my/test/path"
+
+	readOnlySpec := ReadOnlySpec{}
+	assert.Equal(t, v1.VolumeSource{
+		EmptyDir: &v1.EmptyDirVolumeSource{},
+	}, readOnlySpec.GetInstallationVolume())
+
+	readOnlySpec.InstallationVolume = &v1.VolumeSource{
+		HostPath: &v1.HostPathVolumeSource{
+			Path: testPath,
+		},
+	}
+	assert.Equal(t, v1.VolumeSource{
+		HostPath: &v1.HostPathVolumeSource{
+			Path: testPath,
+		},
+	}, readOnlySpec.GetInstallationVolume())
 }

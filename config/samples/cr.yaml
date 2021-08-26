@@ -86,6 +86,10 @@ spec:
     #   name: my-custom-volume
     #   emptyDir: { }
 
+    # Optional: name of the ServiceAccount to assign to the CSIDriver Pods.
+    # Defaults to "dynatrace-oneagent-csi-driver"
+    #
+    # serviceAccountNameCSIDriver: service-account-name
 
   # To be released
   #
@@ -154,6 +158,22 @@ spec:
     # registry, otherwise an installer image is used. Disabled by default.
     #
     # useImmutableImage: false
+
+    # To be released
+    #
+    # Optional: Enables and configures support for a read-only host filesystem
+    #
+    # readOnly:
+
+    #   Enable support for read-only host filesystems
+    #
+    #   enabled: false
+
+    #   Define which volume to use to store oneagent installation files
+    #   Defaults to an empty-dir
+    #
+    #   installationVolume:
+    #     emptyDir: {}
 
   classicFullStack:
     # Enable classic oneagent monitoring

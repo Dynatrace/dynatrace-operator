@@ -8,8 +8,10 @@ import (
 	"text/template"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	mapper "github.com/Dynatrace/dynatrace-operator/namespacemapper"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -19,6 +21,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -29,8 +32,6 @@ var (
 	scriptContent string
 	scriptTmpl    = template.Must(template.New("initScript").Parse(scriptContent))
 )
-
-const namespaceMappingConfigMap = "dynatrace-codemodules-namespace-mapping"
 
 type ReconcileNamespaceInit struct {
 	client    client.Client
@@ -58,27 +59,40 @@ type script struct {
 func applyForConfigMapName(ns string) predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(event event.CreateEvent) bool {
-			return event.Object.GetName() == namespaceMappingConfigMap && event.Object.GetNamespace() == ns
+			return (event.Object.GetName() == mapper.CodeModulesMapName || event.Object.GetName() == mapper.DataIngestMapName) &&
+				event.Object.GetNamespace() == ns
 		},
 		UpdateFunc: func(event event.UpdateEvent) bool {
-			return event.ObjectNew.GetName() == namespaceMappingConfigMap && event.ObjectNew.GetNamespace() == ns
+			return (event.ObjectNew.GetName() == mapper.CodeModulesMapName || event.ObjectNew.GetName() == mapper.DataIngestMapName) &&
+				event.ObjectNew.GetNamespace() == ns
 		},
 		DeleteFunc: func(event event.DeleteEvent) bool {
-			return event.Object.GetName() == namespaceMappingConfigMap && event.Object.GetNamespace() == ns
+			return (event.Object.GetName() == mapper.CodeModulesMapName || event.Object.GetName() == mapper.DataIngestMapName) &&
+				event.Object.GetNamespace() == ns
 		},
 	}
 }
 
 func Add(mgr manager.Manager, ns string) error {
-	return NewReconciler(mgr, ns).SetupWithManager(mgr, ns)
+	logger := log.Log.WithName("namespaces.controller")
+	apmExists, err := kubeobjects.CheckIfOneAgentAPMExists(mgr.GetConfig())
+	if err != nil {
+		return err
+	}
+	if apmExists {
+		logger.Info("OneAgentAPM object detected - Namespace reconciler disabled until the OneAgent Operator has been uninstalled")
+		return nil
+	}
+	return NewReconciler(mgr, ns, logger).SetupWithManager(mgr, ns)
 }
 
 // NewReconciler returns a new ReconcileNamespaceInit
-func NewReconciler(mgr manager.Manager, ns string) *ReconcileNamespaceInit {
+func NewReconciler(mgr manager.Manager, ns string, logger logr.Logger) *ReconcileNamespaceInit {
 	return &ReconcileNamespaceInit{
 		client:    mgr.GetClient(),
 		apiReader: mgr.GetAPIReader(),
 		namespace: ns,
+		logger:    logger,
 	}
 }
 
@@ -93,7 +107,7 @@ func (r *ReconcileNamespaceInit) Reconcile(ctx context.Context, request reconcil
 	r.logger.Info("Reconciling namespace map")
 
 	mappingConfigMap := &corev1.ConfigMap{}
-	err := r.client.Get(ctx, client.ObjectKey{Name: namespaceMappingConfigMap, Namespace: r.namespace}, mappingConfigMap)
+	err := r.client.Get(ctx, client.ObjectKey{Name: request.Name, Namespace: request.Namespace}, mappingConfigMap)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
@@ -101,7 +115,7 @@ func (r *ReconcileNamespaceInit) Reconcile(ctx context.Context, request reconcil
 		return reconcile.Result{}, err
 	}
 
-	codeModulesMapping := getCodeModulesNamespaceMapping(mappingConfigMap.Data)
+	namespaceMap := getNamespaceMapping(mappingConfigMap.Data)
 
 	kubeSystemUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
@@ -113,7 +127,7 @@ func (r *ReconcileNamespaceInit) Reconcile(ctx context.Context, request reconcil
 		return reconcile.Result{}, err
 	}
 
-	if err = r.replicateInitScriptAsSecret(codeModulesMapping, kubeSystemUID, infraMonitoringNodes); err != nil {
+	if err = r.replicateInitScriptAsSecret(namespaceMap, kubeSystemUID, infraMonitoringNodes); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -132,7 +146,7 @@ func (r *ReconcileNamespaceInit) replicateInitScriptAsSecret(namespaceMap []name
 			return err
 		}
 
-		if err = utils.CreateOrUpdateSecretIfNotExists(r.client, r.apiReader, webhook.SecretConfigName, mapping.namespace, data, corev1.SecretTypeOpaque, r.logger); err != nil {
+		if err = kubeobjects.CreateOrUpdateSecretIfNotExists(r.client, r.apiReader, webhook.SecretConfigName, mapping.namespace, data, corev1.SecretTypeOpaque, r.logger); err != nil {
 			return err
 		}
 	}
@@ -176,7 +190,7 @@ func (r *ReconcileNamespaceInit) prepareScriptForDynaKube(dk string, kubeSystemU
 	return &script{
 		ApiUrl:        dynaKube.Spec.APIURL,
 		SkipCertCheck: dynaKube.Spec.SkipCertCheck,
-		PaaSToken:     string(tokens.Data[utils.DynatracePaasToken]),
+		PaaSToken:     string(tokens.Data[dtclient.DynatracePaasToken]),
 		Proxy:         proxy,
 		TrustedCAs:    trustedCAs,
 		ClusterID:     string(kubeSystemUID),
@@ -205,7 +219,7 @@ func (r *ReconcileNamespaceInit) getInfraMonitoringNodes() (map[string]string, e
 	return imNodes, nil
 }
 
-func getCodeModulesNamespaceMapping(configMapData map[string]string) []namespaceMapping {
+func getNamespaceMapping(configMapData map[string]string) []namespaceMapping {
 	var mapping []namespaceMapping
 	for ns, dk := range configMapData {
 		mapping = append(mapping, namespaceMapping{

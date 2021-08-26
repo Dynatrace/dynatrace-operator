@@ -7,3 +7,6 @@ images:
 - name: docker.io/dynatrace/dynatrace-operator:snapshot
   newName: registry.connect.redhat.com/dynatrace/dynatrace-operator
   newTag: v0.2.1
+- name: quay.io/dynatrace/dynatrace-operator:snapshot
+  newName: registry.connect.redhat.com/dynatrace/dynatrace-operator
+  newTag: v0.2.2

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export CGO_ENABLED=0
+export CGO_ENABLED=1
 export GOOS=linux
 export GOARCH=amd64
 
@@ -14,12 +14,11 @@ base_image="dynatrace-operator"
 out_image="quay.io/dynatrace/dynatrace-operator:${TAG}"
 
 go build "${go_build_args[@]}" -o ./build/_output/bin/dynatrace-operator ./cmd/operator/
-go build "${go_build_args[@]}" -o ./build/_output/bin/csi-driver ./cmd/csidriver
 
 go get github.com/google/go-licenses
 go-licenses save ./... --save_path third_party_licenses --force
 
-docker build . -f ./Dockerfile -t "${base_image}" --label "quay.expires-after=14d"
+docker build . -f ./Dockerfile -t "${base_image}" --label "quay.expires-after=14d" --no-cache
 docker tag "${base_image}" "${out_image}"
 docker push "${out_image}"
 

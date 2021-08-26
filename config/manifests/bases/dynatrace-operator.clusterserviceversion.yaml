@@ -151,20 +151,6 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: 'Optional: Defines the time to wait until OneAgent pod is ready
-          after update - default 300 sec'
-        displayName: Wait seconds until ready
-        path: classicFullStack.waitReadySeconds
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:number
-      - description: 'Optional: Defines the time to wait until OneAgent pod is ready
-          after update - default 300 sec'
-        displayName: Wait seconds until ready
-        path: infraMonitoring.waitReadySeconds
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-        - urn:alm:descriptor:com.tectonic.ui:number
       - description: 'Optional: define resources requests and limits for single pods'
         displayName: Resource Requirements
         path: classicFullStack.resources

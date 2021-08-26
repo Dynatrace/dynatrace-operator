@@ -4,18 +4,21 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/updates"
 	"github.com/Dynatrace/dynatrace-operator/controllers/istio"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
-	"github.com/Dynatrace/dynatrace-operator/controllers/utils"
+	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	mapper "github.com/Dynatrace/dynatrace-operator/namespacemapper"
 	"github.com/go-logr/logr"
@@ -43,14 +46,16 @@ func Add(mgr manager.Manager, _ string) error {
 	return NewReconciler(mgr).SetupWithManager(mgr)
 }
 
-// NewReconciler returns a new ReconcileActiveGate
+// NewReconciler returns a new ReconcileDynaKube
 func NewReconciler(mgr manager.Manager) *ReconcileDynaKube {
 	return &ReconcileDynaKube{
-		client:       mgr.GetClient(),
-		apiReader:    mgr.GetAPIReader(),
-		scheme:       mgr.GetScheme(),
-		dtcBuildFunc: BuildDynatraceClient,
-		config:       mgr.GetConfig(),
+		client:            mgr.GetClient(),
+		apiReader:         mgr.GetAPIReader(),
+		scheme:            mgr.GetScheme(),
+		dtcBuildFunc:      BuildDynatraceClient,
+		config:            mgr.GetConfig(),
+		operatorPodName:   os.Getenv("POD_NAME"),
+		operatorNamespace: os.Getenv("POD_NAMESPACE"),
 	}
 }
 
@@ -64,28 +69,32 @@ func (r *ReconcileDynaKube) SetupWithManager(mgr ctrl.Manager) error {
 
 func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, logger logr.Logger, config *rest.Config) *ReconcileDynaKube {
 	return &ReconcileDynaKube{
-		client:       c,
-		apiReader:    apiReader,
-		scheme:       scheme,
-		dtcBuildFunc: dtcBuildFunc,
-		logger:       logger,
-		config:       config,
+		client:            c,
+		apiReader:         apiReader,
+		scheme:            scheme,
+		dtcBuildFunc:      dtcBuildFunc,
+		logger:            logger,
+		config:            config,
+		operatorPodName:   os.Getenv("POD_NAME"),
+		operatorNamespace: os.Getenv("POD_NAMESPACE"),
 	}
 }
 
-// blank assignment to verify that ReconcileActiveGate implements reconcile.Reconciler
+// blank assignment to verify that ReconcileDynaKube implements reconcile.Reconciler
 var _ reconcile.Reconciler = &ReconcileDynaKube{}
 
-// ReconcileActiveGate reconciles a DynaKube object
+// ReconcileDynaKube reconciles a DynaKube object
 type ReconcileDynaKube struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client       client.Client
-	apiReader    client.Reader
-	scheme       *runtime.Scheme
-	dtcBuildFunc DynatraceClientFunc
-	logger       logr.Logger
-	config       *rest.Config
+	client            client.Client
+	apiReader         client.Reader
+	scheme            *runtime.Scheme
+	dtcBuildFunc      DynatraceClientFunc
+	logger            logr.Logger
+	config            *rest.Config
+	operatorPodName   string
+	operatorNamespace string
 }
 
 type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
@@ -117,127 +126,135 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, err
 	}
 
-	rec := utils.NewReconciliation(reqLogger, instance)
-	r.reconcileDynaKube(ctx, rec)
+	dkState := controllers.NewDynakubeState(reqLogger, instance)
+	r.reconcileDynaKube(ctx, dkState)
 
-	if rec.Err != nil {
-		if rec.Updated || instance.Status.SetPhaseOnError(rec.Err) {
+	if dkState.Err != nil {
+		if dkState.Updated || instance.Status.SetPhaseOnError(dkState.Err) {
 			if errClient := r.updateCR(ctx, reqLogger, instance); errClient != nil {
-				return reconcile.Result{}, fmt.Errorf("failed to update CR after failure, original, %s, then: %w", rec.Err, errClient)
+				return reconcile.Result{}, fmt.Errorf("failed to update CR after failure, original, %s, then: %w", dkState.Err, errClient)
 			}
 		}
 
 		var serr dtclient.ServerError
-		if ok := errors.As(rec.Err, &serr); ok && serr.Code == http.StatusTooManyRequests {
-			rec.Log.Info("Request limit for Dynatrace API reached! Next reconcile in one minute")
+		if ok := errors.As(dkState.Err, &serr); ok && serr.Code == http.StatusTooManyRequests {
+			dkState.Log.Info("Request limit for Dynatrace API reached! Next reconcile in one minute")
 			return reconcile.Result{RequeueAfter: 1 * time.Minute}, nil
 		}
 
-		return reconcile.Result{}, rec.Err
+		return reconcile.Result{}, dkState.Err
 	}
 
-	if rec.Updated {
+	if dkState.Updated {
 		if err := r.updateCR(ctx, reqLogger, instance); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
 
-	return reconcile.Result{RequeueAfter: rec.RequeueAfter}, nil
+	return reconcile.Result{RequeueAfter: dkState.RequeueAfter}, nil
 }
 
-func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, rec *utils.Reconciliation) {
+func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *controllers.DynakubeState) {
 	dtcReconciler := DynatraceClientReconciler{
 		Client:              r.client,
 		DynatraceClientFunc: r.dtcBuildFunc,
 		UpdateAPIToken:      true,
 		UpdatePaaSToken:     true,
 	}
-	dtc, upd, err := dtcReconciler.Reconcile(ctx, rec.Instance)
+	dtc, upd, err := dtcReconciler.Reconcile(ctx, dkState.Instance)
 
-	rec.Update(upd, defaultUpdateInterval, "Token conditions updated")
-	if rec.Error(err) {
+	dkState.Update(upd, defaultUpdateInterval, "Token conditions updated")
+	if dkState.Error(err) {
 		return
 	}
 
-	err = status.SetDynakubeStatus(rec.Instance, status.Options{
+	err = status.SetDynakubeStatus(dkState.Instance, status.Options{
 		Dtc:       dtc,
 		ApiClient: r.apiReader,
 	})
-	if rec.Error(err) {
-		rec.Log.Error(err, "could not set Dynakube status")
+	if dkState.Error(err) {
+		dkState.Log.Error(err, "could not set Dynakube status")
 		return
 	}
 
 	// Fetch api token secret
-	secret, err := r.getTokenSecret(ctx, rec.Instance)
+	secret, err := r.getTokenSecret(ctx, dkState.Instance)
 	if err != nil {
-		rec.Log.Error(err, "could not find token secret")
+		dkState.Log.Error(err, "could not find token secret")
 		return
 	}
 
-	if rec.Instance.Spec.EnableIstio {
-		if upd, err = istio.NewController(r.config, r.scheme).ReconcileIstio(rec.Instance); err != nil {
+	if dkState.Instance.Spec.EnableIstio {
+		if upd, err = istio.NewController(r.config, r.scheme).ReconcileIstio(dkState.Instance); err != nil {
 			// If there are errors log them, but move on.
-			rec.Log.Info("Istio: failed to reconcile objects", "error", err)
+			dkState.Log.Info("Istio: failed to reconcile objects", "error", err)
 		} else if upd {
-			rec.Update(true, 30*time.Second, "Istio: objects updated")
+			dkState.Update(true, 30*time.Second, "Istio: objects updated")
 		}
 	}
 
 	err = dtpullsecret.
-		NewReconciler(r.client, r.apiReader, r.scheme, rec.Instance, rec.Log, secret).
+		NewReconciler(r.client, r.apiReader, r.scheme, dkState.Instance, dkState.Log, secret).
 		Reconcile()
-	if rec.Error(err) {
-		rec.Log.Error(err, "could not reconcile Dynatrace pull secret")
+	if dkState.Error(err) {
+		dkState.Log.Error(err, "could not reconcile Dynatrace pull secret")
 		return
 	}
 
-	upd, err = updates.ReconcileVersions(ctx, rec, r.client, dtversion.GetImageVersion)
-	rec.Update(upd, defaultUpdateInterval, "Found updates")
-	rec.Error(err)
+	upd, err = updates.ReconcileVersions(ctx, dkState, r.client, dtversion.GetImageVersion)
+	dkState.Update(upd, defaultUpdateInterval, "Found updates")
+	dkState.Error(err)
 
-	if !r.reconcileActiveGateCapabilities(rec) {
+	if !r.reconcileActiveGateCapabilities(dkState) {
 		return
 	}
 
-	if rec.Instance.Spec.InfraMonitoring.Enabled {
+	// Check Code Modules if CSI driver is needed
+	err = dtcsi.ConfigureCSIDriver(
+		r.client, r.scheme, r.operatorPodName, r.operatorNamespace, dkState, defaultUpdateInterval)
+	if err != nil {
+		dkState.Log.Error(err, "could not check code modules")
+		return
+	}
+
+	if dkState.Instance.Spec.InfraMonitoring.Enabled {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.InfraMonitoring, oneagent.InframonFeature,
-		).Reconcile(ctx, rec)
-		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
+			r.client, r.apiReader, r.scheme, dkState.Log, dkState.Instance, &dkState.Instance.Spec.InfraMonitoring.FullStackSpec, daemonset.InframonFeature,
+		).Reconcile(ctx, dkState)
+		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
 			return
 		}
 	} else {
-		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: rec.Instance.Name + "-inframon", Namespace: rec.Instance.Namespace}}
-		if err := r.ensureDeleted(&ds); rec.Error(err) {
+		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-inframon", Namespace: dkState.Instance.Namespace}}
+		if err := r.ensureDeleted(&ds); dkState.Error(err) {
 			return
 		}
 	}
 
-	if rec.Instance.Spec.ClassicFullStack.Enabled {
+	if dkState.Instance.Spec.ClassicFullStack.Enabled {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, &rec.Instance.Spec.ClassicFullStack, oneagent.ClassicFeature,
-		).Reconcile(ctx, rec)
-		if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, "classic fullstack reconciled") {
+			r.client, r.apiReader, r.scheme, dkState.Log, dkState.Instance, &dkState.Instance.Spec.ClassicFullStack, daemonset.ClassicFeature,
+		).Reconcile(ctx, dkState)
+		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "classic fullstack reconciled") {
 			return
 		}
 	} else {
-		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: rec.Instance.Name + "-classic", Namespace: rec.Instance.Namespace}}
-		if err := r.ensureDeleted(&ds); rec.Error(err) {
+		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-classic", Namespace: dkState.Instance.Namespace}}
+		if err := r.ensureDeleted(&ds); dkState.Error(err) {
 			return
 		}
 	}
 
-	if rec.Instance.Spec.CodeModules.Enabled {
-		if err := mapper.MapFromDynaKubeCodeModules(ctx, r.client, rec.Instance.Namespace, rec.Instance); err != nil {
-			rec.Log.Error(err, "update of a map of namespaces failed")
+	if dkState.Instance.Spec.CodeModules.Enabled {
+		if err := mapper.MapFromDynaKubeCodeModules(ctx, r.client, dkState.Instance.Namespace, dkState.Instance); err != nil {
+			dkState.Log.Error(err, "update of a map of namespaces failed")
 			return
 		}
 	}
 
-	if rec.Instance.Spec.DataIngestSpec.Enabled {
-		if err := mapper.MapFromDynakubeDataIngest(ctx, r.client, rec.Instance.Namespace, rec.Instance); err != nil {
-			rec.Log.Error(err, "update of a map of namespaces failed")
+	if dkState.Instance.Spec.DataIngestSpec.Enabled {
+		if err := mapper.MapFromDynakubeDataIngest(ctx, r.client, dkState.Instance.Namespace, dkState.Instance); err != nil {
+			dkState.Log.Error(err, "update of a map of namespaces failed")
 			return
 		}
 	}
@@ -250,40 +267,40 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 	return nil
 }
 
-func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(rec *utils.Reconciliation) bool {
+func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers.DynakubeState) bool {
 	var caps = []capability.Capability{
-		capability.NewKubeMonCapability(&rec.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
-		capability.NewRoutingCapability(&rec.Instance.Spec.RoutingSpec.CapabilityProperties),
-		capability.NewDataIngestCapability(&rec.Instance.Spec.DataIngestSpec.CapabilityProperties),
+		capability.NewKubeMonCapability(&dkState.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties),
+		capability.NewRoutingCapability(&dkState.Instance.Spec.RoutingSpec.CapabilityProperties),
+		capability.NewDataIngestCapability(&dkState.Instance.Spec.DataIngestSpec.CapabilityProperties),
 	}
 
 	for _, c := range caps {
 		if c.GetProperties().Enabled {
 			upd, err := rcap.NewReconciler(
-				c, r.client, r.apiReader, r.scheme, rec.Log, rec.Instance, dtversion.GetImageVersion,
+				c, r.client, r.apiReader, r.scheme, dkState.Log, dkState.Instance, dtversion.GetImageVersion,
 			).Reconcile()
-			if rec.Error(err) || rec.Update(upd, defaultUpdateInterval, c.GetModuleName()+" reconciled") {
+			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, c.GetModuleName()+" reconciled") {
 				return false
 			}
 		} else {
 			sts := appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      capability.CalculateStatefulSetName(c, rec.Instance.Name),
-					Namespace: rec.Instance.Namespace,
+					Name:      capability.CalculateStatefulSetName(c, dkState.Instance.Name),
+					Namespace: dkState.Instance.Namespace,
 				},
 			}
-			if err := r.ensureDeleted(&sts); rec.Error(err) {
+			if err := r.ensureDeleted(&sts); dkState.Error(err) {
 				return false
 			}
 
 			if c.GetConfiguration().CreateService {
 				svc := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      rcap.BuildServiceName(rec.Instance.Name, c.GetModuleName()),
-						Namespace: rec.Instance.Namespace,
+						Name:      rcap.BuildServiceName(dkState.Instance.Name, c.GetModuleName()),
+						Namespace: dkState.Instance.Namespace,
 					},
 				}
-				if err := r.ensureDeleted(&svc); rec.Error(err) {
+				if err := r.ensureDeleted(&svc); dkState.Error(err) {
 					return false
 				}
 			}

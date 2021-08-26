@@ -32,26 +32,20 @@ var (
 	log = logger.NewDTLogger()
 )
 
-var subcmdCallbacks = map[string]func(ns string, cfg *rest.Config) (manager.Manager, error){
+type subCommand func(string, *rest.Config) (mgr manager.Manager, cleanUp func(), err error)
+
+var subcmdCallbacks = map[string]subCommand{
+	"csi-driver":     startCSIDriver,
 	"operator":       startOperator,
 	"webhook-server": startWebhookServer,
 }
 
 var errBadSubcmd = errors.New("subcommand must be operator, or webhook-server")
 
-var (
-	certsDir string
-	certFile string
-	keyFile  string
-)
-
 func main() {
-	webhookServerFlags := pflag.NewFlagSet("webhook-server", pflag.ExitOnError)
-	webhookServerFlags.StringVar(&certsDir, "certs-dir", "/tmp/webhook/certs", "Directory to look certificates for.")
-	webhookServerFlags.StringVar(&certFile, "cert", "tls.crt", "File name for the public certificate.")
-	webhookServerFlags.StringVar(&keyFile, "cert-key", "tls.key", "File name for the private key.")
 
-	pflag.CommandLine.AddFlagSet(webhookServerFlags)
+	pflag.CommandLine.AddFlagSet(webhookServerFlags())
+	pflag.CommandLine.AddFlagSet(csiDriverFlags())
 	pflag.Parse()
 
 	ctrl.SetLogger(logger.NewDTLogger())
@@ -77,7 +71,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	mgr, err := subcmdFn(namespace, cfg)
+	mgr, cleanUp, err := subcmdFn(namespace, cfg)
+	defer cleanUp()
 	if err != nil {
 		log.Error(err, "")
 		os.Exit(1)

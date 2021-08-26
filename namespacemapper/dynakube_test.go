@@ -35,13 +35,13 @@ func TestMapFromDynaKubeCodeModules(t *testing.T) {
 		err := MapFromDynaKubeCodeModules(context.TODO(), clt, "dynatrace", dk)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: codeModulesMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: CodeModulesMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(cfg.Data))
 	})
 	t.Run("Add to existing config map", func(t *testing.T) {
 		oldCfg := corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: codeModulesMapName, Namespace: "dynatrace"},
+			ObjectMeta: metav1.ObjectMeta{Name: CodeModulesMapName, Namespace: "dynatrace"},
 			Data:       map[string]string{"other-ns": "other-dk"},
 		}
 		clt := fake.NewClient(dk, &oldCfg, namespace)
@@ -49,13 +49,13 @@ func TestMapFromDynaKubeCodeModules(t *testing.T) {
 		err := MapFromDynaKubeCodeModules(context.TODO(), clt, "dynatrace", dk)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: codeModulesMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: CodeModulesMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(cfg.Data))
 	})
 	t.Run("Overwrite stale entry in config map", func(t *testing.T) {
 		oldCfg := corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: codeModulesMapName, Namespace: "dynatrace"},
+			ObjectMeta: metav1.ObjectMeta{Name: CodeModulesMapName, Namespace: "dynatrace"},
 			Data:       map[string]string{namespace.Name: "other-dk"},
 		}
 		clt := fake.NewClient(dk, &oldCfg, namespace)
@@ -63,7 +63,7 @@ func TestMapFromDynaKubeCodeModules(t *testing.T) {
 		err := MapFromDynaKubeCodeModules(context.TODO(), clt, "dynatrace", dk)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: codeModulesMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: CodeModulesMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(cfg.Data))
 	})
@@ -77,7 +77,7 @@ func TestMapFromDynaKubeCodeModules(t *testing.T) {
 			},
 		}
 		oldCfg := corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: codeModulesMapName, Namespace: "dynatrace"},
+			ObjectMeta: metav1.ObjectMeta{Name: CodeModulesMapName, Namespace: "dynatrace"},
 			Data:       map[string]string{namespace.Name: movedDk.Name},
 		}
 		clt := fake.NewClient(&oldCfg, movedDk, namespace)
@@ -85,7 +85,7 @@ func TestMapFromDynaKubeCodeModules(t *testing.T) {
 		err := MapFromDynaKubeCodeModules(context.TODO(), clt, "dynatrace", movedDk)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: codeModulesMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: CodeModulesMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(cfg.Data))
 	})
@@ -116,13 +116,13 @@ func TestMapFromDynaKubeDataIngest(t *testing.T) {
 		err := MapFromDynakubeDataIngest(context.TODO(), clt, "dynatrace", dk)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: dataIngestMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: DataIngestMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(cfg.Data))
 	})
 	t.Run("Add to existing config map", func(t *testing.T) {
 		oldCfg := corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: dataIngestMapName, Namespace: "dynatrace"},
+			ObjectMeta: metav1.ObjectMeta{Name: DataIngestMapName, Namespace: "dynatrace"},
 			Data:       map[string]string{"other-ns": "other-dk"},
 		}
 		clt := fake.NewClient(dk, &oldCfg, namespace)
@@ -130,13 +130,13 @@ func TestMapFromDynaKubeDataIngest(t *testing.T) {
 		err := MapFromDynakubeDataIngest(context.TODO(), clt, "dynatrace", dk)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: dataIngestMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: DataIngestMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(cfg.Data))
 	})
 	t.Run("Overwrite stale entry in config map", func(t *testing.T) {
 		oldCfg := corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: dataIngestMapName, Namespace: "dynatrace"},
+			ObjectMeta: metav1.ObjectMeta{Name: DataIngestMapName, Namespace: "dynatrace"},
 			Data:       map[string]string{namespace.Name: "other-dk"},
 		}
 		clt := fake.NewClient(dk, &oldCfg, namespace)
@@ -144,7 +144,7 @@ func TestMapFromDynaKubeDataIngest(t *testing.T) {
 		err := MapFromDynakubeDataIngest(context.TODO(), clt, "dynatrace", dk)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: dataIngestMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: DataIngestMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(cfg.Data))
 	})
@@ -160,7 +160,7 @@ func TestMapFromDynaKubeDataIngest(t *testing.T) {
 			},
 		}
 		oldCfg := corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: dataIngestMapName, Namespace: "dynatrace"},
+			ObjectMeta: metav1.ObjectMeta{Name: DataIngestMapName, Namespace: "dynatrace"},
 			Data:       map[string]string{namespace.Name: movedDk.Name},
 		}
 		clt := fake.NewClient(&oldCfg, movedDk, namespace)
@@ -168,7 +168,7 @@ func TestMapFromDynaKubeDataIngest(t *testing.T) {
 		err := MapFromDynakubeDataIngest(context.TODO(), clt, "dynatrace", movedDk)
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: dataIngestMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: DataIngestMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(cfg.Data))
 	})
@@ -176,11 +176,11 @@ func TestMapFromDynaKubeDataIngest(t *testing.T) {
 
 func TestUnmapFromDynaKube(t *testing.T) {
 	cfgDI := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: dataIngestMapName, Namespace: "dynatrace"},
+		ObjectMeta: metav1.ObjectMeta{Name: DataIngestMapName, Namespace: "dynatrace"},
 		Data:       map[string]string{"ns1": "dk", "ns2": "dk", "ns3": "other-dk"},
 	}
 	cfgCM := corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: codeModulesMapName, Namespace: "dynatrace"},
+		ObjectMeta: metav1.ObjectMeta{Name: CodeModulesMapName, Namespace: "dynatrace"},
 		Data:       map[string]string{"ns1": "dk", "ns3": "other-dk"},
 	}
 	t.Run("Remove from empty => no error", func(t *testing.T) {
@@ -193,10 +193,10 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		err := UnmapFromDynaKube(context.TODO(), clt, "dynatrace", "dk")
 		assert.NoError(t, err)
 		var cfg corev1.ConfigMap
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: dataIngestMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: DataIngestMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(cfg.Data))
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: codeModulesMapName, Namespace: "dynatrace"}, &cfg)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: CodeModulesMapName, Namespace: "dynatrace"}, &cfg)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(cfg.Data))
 	})
