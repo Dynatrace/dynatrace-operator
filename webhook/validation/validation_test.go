@@ -68,49 +68,37 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				ClassicFullStack: v1alpha1.FullStackSpec{
 					Enabled: false,
 				},
-				InfraMonitoring: v1alpha1.FullStackSpec{
-					Enabled: false,
-				},
-			},
-		})
-
-		assertAllowedResponse(t, v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				APIURL: testApiUrl,
-				ClassicFullStack: v1alpha1.FullStackSpec{
-					Enabled: true,
-				},
-				InfraMonitoring: v1alpha1.FullStackSpec{
-					Enabled: false,
-				},
-			},
-		})
-
-		assertAllowedResponse(t, v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				APIURL: testApiUrl,
-				ClassicFullStack: v1alpha1.FullStackSpec{
-					Enabled: false,
-				},
-				InfraMonitoring: v1alpha1.FullStackSpec{
-					Enabled: true,
-				},
-			},
-		})
-
-		assertAllowedResponse(t, v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				APIURL: testApiUrl,
-				ClassicFullStack: v1alpha1.FullStackSpec{
-					Enabled: true,
-					NodeSelector: map[string]string{
-						"label1": "value1",
+				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
+					FullStackSpec: v1alpha1.FullStackSpec{
+						Enabled: false,
 					},
 				},
-				InfraMonitoring: v1alpha1.FullStackSpec{
+			},
+		})
+
+		assertAllowedResponse(t, v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				ClassicFullStack: v1alpha1.FullStackSpec{
 					Enabled: true,
-					NodeSelector: map[string]string{
-						"label2": "value1",
+				},
+				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
+					FullStackSpec: v1alpha1.FullStackSpec{
+						Enabled: false,
+					},
+				},
+			},
+		})
+
+		assertAllowedResponse(t, v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				ClassicFullStack: v1alpha1.FullStackSpec{
+					Enabled: false,
+				},
+				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
+					FullStackSpec: v1alpha1.FullStackSpec{
+						Enabled: true,
 					},
 				},
 			},
@@ -125,10 +113,32 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 						"label1": "value1",
 					},
 				},
-				InfraMonitoring: v1alpha1.FullStackSpec{
+				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
+					FullStackSpec: v1alpha1.FullStackSpec{
+						Enabled: true,
+						NodeSelector: map[string]string{
+							"label2": "value1",
+						},
+					},
+				},
+			},
+		})
+
+		assertAllowedResponse(t, v1alpha1.DynaKube{
+			Spec: v1alpha1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				ClassicFullStack: v1alpha1.FullStackSpec{
 					Enabled: true,
 					NodeSelector: map[string]string{
-						"label1": "value2",
+						"label1": "value1",
+					},
+				},
+				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
+					FullStackSpec: v1alpha1.FullStackSpec{
+						Enabled: true,
+						NodeSelector: map[string]string{
+							"label1": "value2",
+						},
 					},
 				},
 			},
@@ -141,8 +151,10 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				ClassicFullStack: v1alpha1.FullStackSpec{
 					Enabled: true,
 				},
-				InfraMonitoring: v1alpha1.FullStackSpec{
-					Enabled: true,
+				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
+					FullStackSpec: v1alpha1.FullStackSpec{
+						Enabled: true,
+					},
 				},
 			},
 		}, errorConflictingInfraMonitoringAndClassicNodeSelectors)
@@ -156,10 +168,12 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 						"label1": "value1",
 					},
 				},
-				InfraMonitoring: v1alpha1.FullStackSpec{
-					Enabled: true,
-					NodeSelector: map[string]string{
-						"label1": "value1",
+				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
+					FullStackSpec: v1alpha1.FullStackSpec{
+						Enabled: true,
+						NodeSelector: map[string]string{
+							"label1": "value1",
+						},
 					},
 				},
 			},
@@ -175,10 +189,12 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 						"label2": "value2",
 					},
 				},
-				InfraMonitoring: v1alpha1.FullStackSpec{
-					Enabled: true,
-					NodeSelector: map[string]string{
-						"label1": "value1",
+				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
+					FullStackSpec: v1alpha1.FullStackSpec{
+						Enabled: true,
+						NodeSelector: map[string]string{
+							"label1": "value1",
+						},
 					},
 				},
 			},
@@ -188,8 +204,10 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 		assertDeniedResponse(t, v1alpha1.DynaKube{
 			Spec: v1alpha1.DynaKubeSpec{
 				APIURL: "",
-				InfraMonitoring: v1alpha1.FullStackSpec{
-					Enabled: true,
+				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
+					FullStackSpec: v1alpha1.FullStackSpec{
+						Enabled: true,
+					},
 				},
 			},
 		}, errorNoApiUrl)
@@ -198,8 +216,10 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 		assertDeniedResponse(t, v1alpha1.DynaKube{
 			Spec: v1alpha1.DynaKubeSpec{
 				APIURL: exampleApiUrl,
-				InfraMonitoring: v1alpha1.FullStackSpec{
-					Enabled: true,
+				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
+					FullStackSpec: v1alpha1.FullStackSpec{
+						Enabled: true,
+					},
 				},
 			},
 		}, errorNoApiUrl)
@@ -319,8 +339,10 @@ func buildTestInstance(_ *testing.T) v1alpha1.DynaKube {
 			ClassicFullStack: v1alpha1.FullStackSpec{
 				Enabled: true,
 			},
-			InfraMonitoring: v1alpha1.FullStackSpec{
-				Enabled: true,
+			InfraMonitoring: v1alpha1.InfraMonitoringSpec{
+				FullStackSpec: v1alpha1.FullStackSpec{
+					Enabled: true,
+				},
 			},
 		},
 	}
