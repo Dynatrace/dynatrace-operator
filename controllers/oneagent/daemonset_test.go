@@ -48,15 +48,15 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 		assert.Contains(t, podSpecs.Containers[0].Args, metadataArg)
 	}
 
-	t.Run(`has proxy arg`, func(t *testing.T) {
-		instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
-		podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
-		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
-
-		instance.Spec.Proxy = nil
-		podSpecs = newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
-		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
-	})
+	//t.Run(`has proxy arg`, func(t *testing.T) {
+	//	instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
+	//	podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+	//	assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
+	//
+	//	instance.Spec.Proxy = nil
+	//	podSpecs = newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+	//	assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
+	//})
 	t.Run(`has network zone arg`, func(t *testing.T) {
 		instance.Spec.NetworkZone = testValue
 		podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
