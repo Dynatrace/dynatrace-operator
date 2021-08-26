@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/eventfilter"
 	"github.com/Dynatrace/dynatrace-operator/logger"
