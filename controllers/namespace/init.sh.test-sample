@@ -22,27 +22,6 @@ declare -A im_nodes
 im_nodes=(
 	["node1"]="abc12345"
 )
-######CONTAINER CONFIGURATION FILE SECTIONS######
-conf_base='"
-[container]
-containerName ${container_name}
-imageName ${container_image}
-k8s_fullpodname ${K8S_PODNAME}
-k8s_poduid ${K8S_PODUID}
-k8s_containername ${container_name}
-k8s_basepodname ${K8S_BASEPODNAME}
-k8s_namespace ${K8S_NAMESPACE}
-"'
-
-conf_k8='"
-k8s_node_name ${K8S_NODE_NAME}
-k8s_cluster_id ${cluster_id}
-"'
-
-conf_host='"
-[host]
-tenant ${host_tenant}"
-"'
 ###############################################
 
 setFailCode(){
@@ -98,8 +77,25 @@ downloadOneAgentIfNecessary() {
 	fi
 }
 
-writeToConfFile() {
-	eval "echo ${1}" >> ${2}
+writeConfBaseTo() {
+	echo "[container]
+containerName ${container_name}
+imageName ${container_image}
+k8s_fullpodname ${K8S_PODNAME}
+k8s_poduid ${K8S_PODUID}
+k8s_containername ${container_name}
+k8s_basepodname ${K8S_BASEPODNAME}
+k8s_namespace ${K8S_NAMESPACE}" >> ${1}
+}
+
+writeConfK8To() {
+	echo "k8s_node_name ${K8S_NODE_NAME}
+k8s_cluster_id ${cluster_id}" >> ${1}
+}
+
+writeConfHostTo() {
+	echo "[host]
+tenant ${host_tenant}" >> ${1}
 }
 
 createConfigurationFiles() {
@@ -121,13 +117,13 @@ createConfigurationFiles() {
 
 		echo "Writing ${container_conf_file} file..."
 
-		writeToConfFile "${conf_base}" ${container_conf_file}
+		writeConfBaseTo ${container_conf_file}
 
 		if [[ "${host_tenant}" != "" ]]; then
 			if [[ "abc12345" == "${host_tenant}" ]]; then
-				writeToConfFile "${conf_k8}" ${container_conf_file}
+				writeConfK8To ${container_conf_file}
 			fi
-			writeToConfFile "${conf_host}" ${container_conf_file}
+			writeConfHostTo ${container_conf_file}
 		fi
 	done
 }
