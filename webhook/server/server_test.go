@@ -77,9 +77,11 @@ func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, 
 		ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
 		Spec: dynatracev1alpha1.DynaKubeSpec{
 			APIURL: "https://test-api-url.com/api",
-			InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-				Enabled:           true,
-				UseImmutableImage: true,
+			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
+				FullStackSpec: dynatracev1alpha1.FullStackSpec{
+					Enabled:           true,
+					UseImmutableImage: true,
+				},
 			},
 			CodeModules: dynatracev1alpha1.CodeModulesSpec{
 				Enabled: true,
@@ -282,9 +284,11 @@ func createDynakubeInstance(_ *testing.T) *dynatracev1alpha1.DynaKube {
 	instance := &dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
 		Spec: dynatracev1alpha1.DynaKubeSpec{
-			InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-				Enabled:           true,
-				UseImmutableImage: true,
+			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
+				FullStackSpec: dynatracev1alpha1.FullStackSpec{
+					Enabled:           true,
+					UseImmutableImage: true,
+				},
 			},
 			CodeModules: dynatracev1alpha1.CodeModulesSpec{
 				Enabled: true,

@@ -1,4 +1,4 @@
-package oneagent
+package daemonset
 
 import (
 	"testing"
@@ -14,6 +14,13 @@ import (
 const (
 	testUID                   = "test-uid"
 	testContainerImageVersion = "1.203.0.20200908-220956"
+
+	testKey   = "test-key"
+	testValue = "test-value"
+
+	testClusterID = "test-cluster-id"
+	testURL       = "https://test-url"
+	testName      = "test-name"
 )
 
 func TestArguments(t *testing.T) {
@@ -33,14 +40,22 @@ func TestArguments(t *testing.T) {
 			},
 		},
 	}
-
-	podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
+	dsInfo := ClassicFullStack{
+		builderInfo{
+			instance:      &instance,
+			fullstackSpec: &instance.Spec.ClassicFullStack,
+			logger:        log,
+			clusterId:     testClusterID,
+			relatedImage:  testValue,
+		},
+	}
+	podSpecs := dsInfo.podSpec()
 	assert.NotNil(t, podSpecs)
 	assert.NotEmpty(t, podSpecs.Containers)
 	assert.Contains(t, podSpecs.Containers[0].Args, testValue)
 }
 
-func TestNewPodSpecForCR_Arguments(t *testing.T) {
+func TestPodSpec_Arguments(t *testing.T) {
 	log := logger.NewDTLogger()
 	instance := &dynatracev1alpha1.DynaKube{
 		Spec: dynatracev1alpha1.DynaKubeSpec{
@@ -54,9 +69,19 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 				},
 			},
 		}}
-	metadata := deploymentmetadata.NewDeploymentMetadata(testUID)
+	metadata := deploymentmetadata.NewDeploymentMetadata(testClusterID)
 	fullStackSpecs := &instance.Spec.ClassicFullStack
-	podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+	dsInfo := ClassicFullStack{
+		builderInfo{
+			instance:      instance,
+			fullstackSpec: fullStackSpecs,
+			logger:        log,
+			clusterId:     testClusterID,
+			relatedImage:  testValue,
+		},
+	}
+
+	podSpecs := dsInfo.podSpec()
 	require.NotNil(t, podSpecs)
 	require.NotEmpty(t, podSpecs.Containers)
 
@@ -72,27 +97,38 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 
 	t.Run(`has proxy arg`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
-		podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+		podSpecs = dsInfo.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 
 		instance.Spec.Proxy = nil
-		podSpecs = newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+		podSpecs = dsInfo.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
 	t.Run(`has network zone arg`, func(t *testing.T) {
 		instance.Spec.NetworkZone = testValue
-		podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+		podSpecs = dsInfo.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 
 		instance.Spec.NetworkZone = ""
-		podSpecs = newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+		podSpecs = dsInfo.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-network-zone="+testValue)
 	})
 	t.Run(`has webhook injection arg`, func(t *testing.T) {
-		podSpecs = newPodSpecForCR(instance, fullStackSpecs, InframonFeature, true, log, testUID)
-		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=k8s-node-name")
-
-		podSpecs = newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+		daemonset, _ := dsInfo.BuildDaemonSet()
+		podSpecs = daemonset.Spec.Template.Spec
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=auto")
+
+		dsInfo := InfraMonitoring{
+			builderInfo{
+				instance:      instance,
+				fullstackSpec: fullStackSpecs,
+				logger:        log,
+				clusterId:     testClusterID,
+				relatedImage:  testValue,
+			},
+		}
+		daemonset, _ = dsInfo.BuildDaemonSet()
+		podSpecs := daemonset.Spec.Template.Spec
+		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=k8s-node-name")
 	})
 }

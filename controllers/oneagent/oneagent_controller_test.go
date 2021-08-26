@@ -2,22 +2,21 @@ package oneagent
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -29,9 +28,6 @@ import (
 
 const (
 	testClusterID = "test-cluster-id"
-	testImage     = "test-image"
-	testURL       = "https://test-url"
-	testName      = "test-name"
 )
 
 var consoleLogger = zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout))
@@ -76,7 +72,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		scheme:    scheme.Scheme,
 		logger:    consoleLogger,
 		instance:  dynakube,
-		feature:   ClassicFeature,
+		feature:   daemonset.ClassicFeature,
 		fullStack: &dynakube.Spec.ClassicFullStack,
 	}
 
@@ -162,7 +158,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		scheme:    scheme.Scheme,
 		logger:    consoleLogger,
 		fullStack: &base.Spec.ClassicFullStack,
-		feature:   ClassicFeature,
+		feature:   daemonset.ClassicFeature,
 		instance:  &base,
 	}
 
@@ -208,7 +204,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 			scheme:    scheme.Scheme,
 			logger:    consoleLogger,
 			instance:  &base,
-			feature:   ClassicFeature,
+			feature:   daemonset.ClassicFeature,
 			fullStack: &base.Spec.ClassicFullStack,
 		}
 
@@ -231,22 +227,22 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 }
 
 func TestReconcile_InstancesSet(t *testing.T) {
-	namespace := "dynatrace"
-	dkName := "dynakube"
+	const (
+		namespace = "dynatrace"
+		name      = "dynakube"
+	)
 	base := dynatracev1alpha1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
+		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: dynatracev1alpha1.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
-			Tokens: dkName,
+			Tokens: name,
 			ClassicFullStack: dynatracev1alpha1.FullStackSpec{
 				Enabled: true,
 			},
 		},
 	}
-
-	// arrange
 	c := fake.NewClient(
-		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		NewSecret(name, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 	dtcMock := &dtclient.MockDynatraceClient{}
 	version := "1.187"
@@ -263,12 +259,16 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		logger:    consoleLogger,
 		instance:  &base,
 		fullStack: &base.Spec.ClassicFullStack,
-		feature:   ClassicFeature,
+		feature:   daemonset.ClassicFeature,
 	}
 
-	t.Run("reconcileImpl Instances set, if autoUpdate is true", func(t *testing.T) {
+	t.Run(`reconileImp Instances set, if autoUpdate is true`, func(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Status.OneAgent.Version = oldVersion
+		dsInfo := daemonset.NewClassicFullStack(dk, consoleLogger, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
 		pod := &corev1.Pod{
 			Status: corev1.PodStatus{
 				ContainerStatuses: []corev1.ContainerStatus{},
@@ -276,13 +276,12 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		}
 		pod.Name = "oneagent-update-enabled"
 		pod.Namespace = namespace
-		pod.Labels = buildLabels(dkName, reconciler.feature)
-		pod.Spec = newPodSpecForCR(dk, &dynatracev1alpha1.FullStackSpec{}, reconciler.feature, false, consoleLogger, "cluster1")
+		pod.Labels = buildLabels(name, reconciler.feature)
+		pod.Spec = ds.Spec.Template.Spec
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
-
 		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
-		err := reconciler.client.Create(context.TODO(), pod)
+		err = reconciler.client.Create(context.TODO(), pod)
 
 		assert.NoError(t, err)
 
@@ -300,6 +299,10 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		autoUpdate := false
 		dk.Spec.OneAgent.AutoUpdate = &autoUpdate
 		dk.Status.OneAgent.Version = oldVersion
+		dsInfo := daemonset.NewClassicFullStack(dk, consoleLogger, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
 		pod := &corev1.Pod{
 			Status: corev1.PodStatus{
 				ContainerStatuses: []corev1.ContainerStatus{},
@@ -307,13 +310,13 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		}
 		pod.Name = "oneagent-update-disabled"
 		pod.Namespace = namespace
-		pod.Labels = buildLabels(dkName, reconciler.feature)
-		pod.Spec = newPodSpecForCR(dk, &dynatracev1alpha1.FullStackSpec{}, reconciler.feature, false, consoleLogger, "cluster1")
+		pod.Labels = buildLabels(name, reconciler.feature)
+		pod.Spec = ds.Spec.Template.Spec
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
 
 		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
-		err := reconciler.client.Create(context.TODO(), pod)
+		err = reconciler.client.Create(context.TODO(), pod)
 
 		assert.NoError(t, err)
 
@@ -334,244 +337,6 @@ func NewSecret(name, namespace string, kv map[string]string) *corev1.Secret {
 		data[k] = []byte(v)
 	}
 	return &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}, Data: data}
-}
-
-func TestUseImmutableImage(t *testing.T) {
-	log := logger.NewDTLogger()
-	t.Run(`if image is unset and useImmutableImage is false, default image is used`, func(t *testing.T) {
-		instance := dynatracev1alpha1.DynaKube{
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				OneAgent:         dynatracev1alpha1.OneAgentSpec{},
-				ClassicFullStack: dynatracev1alpha1.FullStackSpec{},
-			},
-		}
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
-		assert.NotNil(t, podSpecs)
-		assert.Equal(t, defaultOneAgentImage, podSpecs.Containers[0].Image)
-	})
-	t.Run(`if image is set and useImmutableImage is false, set image is used`, func(t *testing.T) {
-		instance := dynatracev1alpha1.DynaKube{
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				OneAgent: dynatracev1alpha1.OneAgentSpec{
-					Image: testImage,
-				},
-				ClassicFullStack: dynatracev1alpha1.FullStackSpec{},
-			},
-		}
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
-		assert.NotNil(t, podSpecs)
-		assert.Equal(t, testImage, podSpecs.Containers[0].Image)
-	})
-	t.Run(`if image is set and useImmutableImage is true, set image is used`, func(t *testing.T) {
-		instance := dynatracev1alpha1.DynaKube{
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				OneAgent: dynatracev1alpha1.OneAgentSpec{
-					Image: testImage,
-				},
-				ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-					UseImmutableImage: true,
-				},
-			},
-		}
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
-		assert.NotNil(t, podSpecs)
-		assert.Equal(t, testImage, podSpecs.Containers[0].Image)
-	})
-	t.Run(`if image is unset and useImmutableImage is true, image is based on api url`, func(t *testing.T) {
-		instance := dynatracev1alpha1.DynaKube{
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				APIURL:   testURL,
-				OneAgent: dynatracev1alpha1.OneAgentSpec{},
-				ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-					UseImmutableImage: true,
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
-				},
-			},
-		}
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
-		assert.NotNil(t, podSpecs)
-		assert.Equal(t, podSpecs.Containers[0].Image, fmt.Sprintf("%s/linux/oneagent:latest", strings.TrimPrefix(testURL, "https://")))
-
-		instance.Spec.OneAgent.Version = testValue
-		podSpecs = newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
-		assert.NotNil(t, podSpecs)
-		assert.Equal(t, podSpecs.Containers[0].Image, fmt.Sprintf("%s/linux/oneagent:%s", strings.TrimPrefix(testURL, "https://"), testValue))
-	})
-}
-
-func TestCustomPullSecret(t *testing.T) {
-	log := logger.NewDTLogger()
-	instance := dynatracev1alpha1.DynaKube{
-		Spec: dynatracev1alpha1.DynaKubeSpec{
-			APIURL:   testURL,
-			OneAgent: dynatracev1alpha1.OneAgentSpec{},
-			ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-				UseImmutableImage: true,
-			},
-			CustomPullSecret: testName,
-		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			OneAgent: dynatracev1alpha1.OneAgentStatus{
-				UseImmutableImage: true,
-			},
-		},
-	}
-	podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
-	assert.NotNil(t, podSpecs)
-	assert.NotEmpty(t, podSpecs.ImagePullSecrets)
-	assert.Equal(t, testName, podSpecs.ImagePullSecrets[0].Name)
-}
-
-func TestResources(t *testing.T) {
-	log := logger.NewDTLogger()
-	t.Run(`minimal cpu request of 100mC is set if no resources specified`, func(t *testing.T) {
-		instance := dynatracev1alpha1.DynaKube{
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				APIURL:   testURL,
-				OneAgent: dynatracev1alpha1.OneAgentSpec{},
-				ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-					UseImmutableImage: true,
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
-				},
-			},
-		}
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
-		assert.NotNil(t, podSpecs)
-		assert.NotEmpty(t, podSpecs.Containers)
-
-		hasMinimumCPURequest := resource.NewScaledQuantity(1, -1).Equal(*podSpecs.Containers[0].Resources.Requests.Cpu())
-		assert.True(t, hasMinimumCPURequest)
-	})
-	t.Run(`resource requests and limits set`, func(t *testing.T) {
-		cpuRequest := resource.NewScaledQuantity(2, -1)
-		cpuLimit := resource.NewScaledQuantity(3, -1)
-		memoryRequest := resource.NewScaledQuantity(1, 3)
-		memoryLimit := resource.NewScaledQuantity(2, 3)
-
-		instance := dynatracev1alpha1.DynaKube{
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				APIURL:   testURL,
-				OneAgent: dynatracev1alpha1.OneAgentSpec{},
-				ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-					UseImmutableImage: true,
-					Resources: corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{
-							corev1.ResourceCPU:    *cpuRequest,
-							corev1.ResourceMemory: *memoryRequest,
-						},
-						Limits: corev1.ResourceList{
-							corev1.ResourceCPU:    *cpuLimit,
-							corev1.ResourceMemory: *memoryLimit,
-						},
-					},
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
-				},
-			},
-		}
-
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
-		assert.NotNil(t, podSpecs)
-		assert.NotEmpty(t, podSpecs.Containers)
-		hasCPURequest := cpuRequest.Equal(*podSpecs.Containers[0].Resources.Requests.Cpu())
-		hasCPULimit := cpuLimit.Equal(*podSpecs.Containers[0].Resources.Limits.Cpu())
-		hasMemoryRequest := memoryRequest.Equal(*podSpecs.Containers[0].Resources.Requests.Memory())
-		hasMemoryLimit := memoryLimit.Equal(*podSpecs.Containers[0].Resources.Limits.Memory())
-
-		assert.True(t, hasCPURequest)
-		assert.True(t, hasCPULimit)
-		assert.True(t, hasMemoryRequest)
-		assert.True(t, hasMemoryLimit)
-	})
-}
-
-func TestServiceAccountName(t *testing.T) {
-	log := logger.NewDTLogger()
-	t.Run(`has default values`, func(t *testing.T) {
-		instance := dynatracev1alpha1.DynaKube{
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				APIURL:   testURL,
-				OneAgent: dynatracev1alpha1.OneAgentSpec{},
-				ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-					UseImmutableImage: true,
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
-				},
-			},
-		}
-
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, false, log, testClusterID)
-		assert.Equal(t, defaultServiceAccountName, podSpecs.ServiceAccountName)
-
-		instance = dynatracev1alpha1.DynaKube{
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				APIURL:   testURL,
-				OneAgent: dynatracev1alpha1.OneAgentSpec{},
-				ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-					UseImmutableImage: true,
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
-				},
-			},
-		}
-		podSpecs = newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
-		assert.Equal(t, defaultUnprivilegedServiceAccountName, podSpecs.ServiceAccountName)
-	})
-	t.Run(`uses custom value`, func(t *testing.T) {
-		instance := dynatracev1alpha1.DynaKube{
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				APIURL:   testURL,
-				OneAgent: dynatracev1alpha1.OneAgentSpec{},
-				ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-					UseImmutableImage:  true,
-					ServiceAccountName: testName,
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
-				},
-			},
-		}
-		podSpecs := newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, false, log, testClusterID)
-		assert.Equal(t, testName, podSpecs.ServiceAccountName)
-
-		instance = dynatracev1alpha1.DynaKube{
-			Spec: dynatracev1alpha1.DynaKubeSpec{
-				APIURL:   testURL,
-				OneAgent: dynatracev1alpha1.OneAgentSpec{},
-				ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-					UseImmutableImage:  true,
-					ServiceAccountName: testName,
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
-				},
-			},
-		}
-
-		podSpecs = newPodSpecForCR(&instance, &instance.Spec.ClassicFullStack, ClassicFeature, true, log, testClusterID)
-		assert.Equal(t, testName, podSpecs.ServiceAccountName)
-	})
 }
 
 func TestOneAgent_Validate(t *testing.T) {
@@ -602,10 +367,10 @@ func TestHasSpecChanged(t *testing.T) {
 
 			mod(&oldInstance, &newInstance)
 
-			ds1, err := newDaemonSetForCR(consoleLogger, &oldInstance, &oldInstance.Spec.ClassicFullStack, "classic", "cluster1")
+			ds1, err := newDaemonSetForCR(consoleLogger, &oldInstance, &oldInstance.Spec.ClassicFullStack, "cluster1", "classic")
 			assert.NoError(t, err)
 
-			ds2, err := newDaemonSetForCR(consoleLogger, &newInstance, &newInstance.Spec.ClassicFullStack, "classic", "cluster1")
+			ds2, err := newDaemonSetForCR(consoleLogger, &newInstance, &newInstance.Spec.ClassicFullStack, "cluster1", "classic")
 			assert.NoError(t, err)
 
 			assert.NotEmpty(t, ds1.Annotations[kubeobjects.AnnotationHash])

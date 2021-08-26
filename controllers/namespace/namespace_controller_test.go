@@ -30,8 +30,10 @@ func TestReconcileNamespace(t *testing.T) {
 				CodeModules: dynatracev1alpha1.CodeModulesSpec{
 					Enabled: true,
 				},
-				InfraMonitoring: dynatracev1alpha1.FullStackSpec{
-					Enabled: true,
+				InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
+					FullStackSpec: dynatracev1alpha1.FullStackSpec{
+						Enabled: true,
+					},
 				},
 			},
 			Status: dynatracev1alpha1.DynaKubeStatus{
