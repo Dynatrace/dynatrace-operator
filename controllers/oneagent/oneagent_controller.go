@@ -554,7 +554,9 @@ func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.
 	}
 
 	if p := instance.Spec.Proxy; p != nil && (p.Value != "" || p.ValueFrom != "") {
-		proxyEnvVar := &corev1.EnvVar{}
+		proxyEnvVar := &corev1.EnvVar{
+			Name: DTProxy,
+		}
 		if p.ValueFrom != "" {
 			proxyEnvVar.ValueFrom = &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
