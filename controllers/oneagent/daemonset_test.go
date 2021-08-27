@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -48,15 +49,16 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 		assert.Contains(t, podSpecs.Containers[0].Args, metadataArg)
 	}
 
-	//t.Run(`has proxy arg`, func(t *testing.T) {
-	//	instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
-	//	podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
-	//	assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
-	//
-	//	instance.Spec.Proxy = nil
-	//	podSpecs = newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
-	//	assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
-	//})
+	t.Run(`has proxy arg`, func(t *testing.T) {
+		instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
+		podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(ONEAGENT_PROXY)")
+		assert.Contains(t, podSpecs.Containers[0].Env, corev1.EnvVar{Name: EnvProxy, Value: testValue})
+
+		instance.Spec.Proxy = nil
+		podSpecs = newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
+		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(ONEAGENT_PROXY)")
+	})
 	t.Run(`has network zone arg`, func(t *testing.T) {
 		instance.Spec.NetworkZone = testValue
 		podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)

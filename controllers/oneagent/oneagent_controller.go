@@ -39,7 +39,8 @@ const (
 	defaultServiceAccountName             = "dynatrace-dynakube-oneagent"
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
 
-	EnvProxy = "ONEAGENT_PROXY"
+	EnvProxy       = "ONEAGENT_PROXY"
+	ProxySecretKey = "proxy"
 )
 
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
@@ -560,12 +561,12 @@ func prepareEnvVars(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.
 				if p.ValueFrom != "" {
 					ev.ValueFrom = &corev1.EnvVarSource{
 						SecretKeyRef: &corev1.SecretKeySelector{
-							LocalObjectReference: corev1.LocalObjectReference{Name: instance.Spec.Proxy.ValueFrom},
-							Key:                  "proxy",
+							LocalObjectReference: corev1.LocalObjectReference{Name: p.ValueFrom},
+							Key:                  ProxySecretKey,
 						},
 					}
 				} else {
-					ev.Value = instance.Spec.Proxy.Value
+					ev.Value = p.Value
 				}
 			},
 		})
