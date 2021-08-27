@@ -11,7 +11,7 @@ import (
 func prepareArgs(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec, feature string, clusterID string) []string {
 	args := fs.Args
 	if p := instance.Spec.Proxy; p != nil && (p.ValueFrom != "" || p.Value != "") {
-		args = append(args, fmt.Sprintf("--set-proxy=$(%s)", DTProxy))
+		args = append(args, fmt.Sprintf("--set-proxy=${%s}", DTProxy))
 	}
 
 	if instance.Spec.NetworkZone != "" {
