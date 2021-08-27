@@ -3,6 +3,7 @@ package daemonset
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
@@ -44,6 +45,8 @@ const (
 
 	ClassicFeature  = "classic"
 	InframonFeature = "inframon"
+
+	float64BitSize = 64
 )
 
 type InfraMonitoring struct {
@@ -55,12 +58,14 @@ type ClassicFullStack struct {
 }
 
 type builderInfo struct {
-	instance       *v1alpha1.DynaKube
-	fullstackSpec  *v1alpha1.FullStackSpec
-	logger         logr.Logger
-	clusterId      string
-	relatedImage   string
-	deploymentType string
+	instance               *v1alpha1.DynaKube
+	fullstackSpec          *v1alpha1.FullStackSpec
+	logger                 logr.Logger
+	clusterId              string
+	relatedImage           string
+	deploymentType         string
+	majorKubernetesVersion string
+	minorKubernetesVersion string
 }
 
 type Builder interface {
@@ -68,27 +73,39 @@ type Builder interface {
 }
 
 func NewInfraMonitoring(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string) Builder {
+	return NewInfraMonitoringWithVersion(instance, logger, clusterId, "", "")
+}
+
+func NewInfraMonitoringWithVersion(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
 	return &InfraMonitoring{
 		builderInfo{
-			instance:       instance,
-			fullstackSpec:  &instance.Spec.InfraMonitoring.FullStackSpec,
-			logger:         logger,
-			clusterId:      clusterId,
-			relatedImage:   os.Getenv(relatedImageEnvVar),
-			deploymentType: deploymentmetadata.DeploymentTypeHM,
+			instance:               instance,
+			fullstackSpec:          &instance.Spec.InfraMonitoring.FullStackSpec,
+			logger:                 logger,
+			clusterId:              clusterId,
+			relatedImage:           os.Getenv(relatedImageEnvVar),
+			deploymentType:         deploymentmetadata.DeploymentTypeHM,
+			majorKubernetesVersion: majorKubernetesVersion,
+			minorKubernetesVersion: minorKubernetesVersion,
 		},
 	}
 }
 
 func NewClassicFullStack(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string) Builder {
+	return NewClassicFullStackWithVersion(instance, logger, clusterId, "", "")
+}
+
+func NewClassicFullStackWithVersion(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
 	return &ClassicFullStack{
 		builderInfo{
-			instance:       instance,
-			fullstackSpec:  &instance.Spec.ClassicFullStack,
-			logger:         logger,
-			clusterId:      clusterId,
-			relatedImage:   os.Getenv(relatedImageEnvVar),
-			deploymentType: deploymentmetadata.DeploymentTypeFS,
+			instance:               instance,
+			fullstackSpec:          &instance.Spec.ClassicFullStack,
+			logger:                 logger,
+			clusterId:              clusterId,
+			relatedImage:           os.Getenv(relatedImageEnvVar),
+			deploymentType:         deploymentmetadata.DeploymentTypeFS,
+			majorKubernetesVersion: majorKubernetesVersion,
+			minorKubernetesVersion: minorKubernetesVersion,
 		},
 	}
 }
@@ -357,6 +374,15 @@ func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
 		Name: pullSecretName,
 	})
 	return pullSecrets
+}
+
+func (dsInfo *builderInfo) kubernetesVersion() float64 {
+	versionString := fmt.Sprintf("%d.%d", dsInfo.majorKubernetesVersion, dsInfo.minorKubernetesVersion)
+	version, err := strconv.ParseFloat(versionString, float64BitSize)
+	if err != nil {
+		return 0
+	}
+	return version
 }
 
 func privilegedSecurityContext() *corev1.SecurityContext {

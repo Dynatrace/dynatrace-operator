@@ -2,6 +2,8 @@ package daemonset
 
 import (
 	"fmt"
+	fakediscovery "k8s.io/client-go/discovery/fake"
+	"k8s.io/client-go/rest"
 	"strings"
 	"testing"
 
@@ -384,4 +386,14 @@ func TestInfraMon_SecurityContext(t *testing.T) {
 		assert.Equal(t, int64(1001), *securityContextConstraints.RunAsUser)
 		assert.Equal(t, int64(1001), *securityContextConstraints.RunAsGroup)
 	})
+}
+
+func TestAffinity(t *testing.T) {
+	_, _ = rest.InClusterConfig()
+	discoveryClient := fakediscovery.FakeDiscovery{}
+	versionInfo, err := discoveryClient.ServerVersion()
+	require.NoError(t, err)
+	require.NotNil(t, versionInfo)
+	require.NotEmpty(t, versionInfo.Major)
+	require.NotEmpty(t, versionInfo.Minor)
 }
