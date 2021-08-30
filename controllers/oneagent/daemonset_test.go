@@ -52,7 +52,7 @@ func TestNewPodSpecForCR_Arguments(t *testing.T) {
 	t.Run(`has proxy arg`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
 		podSpecs := newPodSpecForCR(instance, fullStackSpecs, ClassicFeature, true, log, testUID)
-		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(ONEAGENT_PROXY)")
+		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 		assert.Contains(t, podSpecs.Containers[0].Env, corev1.EnvVar{Name: EnvProxy, Value: testValue})
 
 		instance.Spec.Proxy = nil

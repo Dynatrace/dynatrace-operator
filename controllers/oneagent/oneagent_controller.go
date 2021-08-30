@@ -39,7 +39,7 @@ const (
 	defaultServiceAccountName             = "dynatrace-dynakube-oneagent"
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
 
-	EnvProxy       = "ONEAGENT_PROXY"
+	EnvProxy       = "https_proxy"
 	ProxySecretKey = "proxy"
 )
 
