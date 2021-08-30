@@ -43,7 +43,6 @@ var subcmdCallbacks = map[string]subCommand{
 var errBadSubcmd = errors.New("subcommand must be operator, or webhook-server")
 
 func main() {
-
 	pflag.CommandLine.AddFlagSet(webhookServerFlags())
 	pflag.CommandLine.AddFlagSet(csiDriverFlags())
 	pflag.Parse()
@@ -80,7 +79,7 @@ func main() {
 
 	signalHandler := ctrl.SetupSignalHandler()
 
-	startWebhookAndBootstrapperIfDebugFlagSet(startupInfo{
+	startWebhookIfDebugFlagSet(startupInfo{
 		cfg:           cfg,
 		namespace:     namespace,
 		signalHandler: signalHandler,

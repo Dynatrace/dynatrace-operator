@@ -7,6 +7,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -54,11 +55,12 @@ type ClassicFullStack struct {
 }
 
 type builderInfo struct {
-	instance      *v1alpha1.DynaKube
-	fullstackSpec *v1alpha1.FullStackSpec
-	logger        logr.Logger
-	clusterId     string
-	relatedImage  string
+	instance       *v1alpha1.DynaKube
+	fullstackSpec  *v1alpha1.FullStackSpec
+	logger         logr.Logger
+	clusterId      string
+	relatedImage   string
+	deploymentType string
 }
 
 type Builder interface {
@@ -68,11 +70,12 @@ type Builder interface {
 func NewInfraMonitoring(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string) Builder {
 	return &InfraMonitoring{
 		builderInfo{
-			instance:      instance,
-			fullstackSpec: &instance.Spec.InfraMonitoring.FullStackSpec,
-			logger:        logger,
-			clusterId:     clusterId,
-			relatedImage:  os.Getenv(relatedImageEnvVar),
+			instance:       instance,
+			fullstackSpec:  &instance.Spec.InfraMonitoring.FullStackSpec,
+			logger:         logger,
+			clusterId:      clusterId,
+			relatedImage:   os.Getenv(relatedImageEnvVar),
+			deploymentType: deploymentmetadata.DeploymentTypeHM,
 		},
 	}
 }
@@ -80,11 +83,12 @@ func NewInfraMonitoring(instance *v1alpha1.DynaKube, logger logr.Logger, cluster
 func NewClassicFullStack(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string) Builder {
 	return &ClassicFullStack{
 		builderInfo{
-			instance:      instance,
-			fullstackSpec: &instance.Spec.ClassicFullStack,
-			logger:        logger,
-			clusterId:     clusterId,
-			relatedImage:  os.Getenv(relatedImageEnvVar),
+			instance:       instance,
+			fullstackSpec:  &instance.Spec.ClassicFullStack,
+			logger:         logger,
+			clusterId:      clusterId,
+			relatedImage:   os.Getenv(relatedImageEnvVar),
+			deploymentType: deploymentmetadata.DeploymentTypeFS,
 		},
 	}
 }

@@ -69,15 +69,16 @@ func TestPodSpec_Arguments(t *testing.T) {
 				},
 			},
 		}}
-	metadata := deploymentmetadata.NewDeploymentMetadata(testClusterID)
+	metadata := deploymentmetadata.NewDeploymentMetadata(testClusterID, deploymentmetadata.DeploymentTypeFS)
 	fullStackSpecs := &instance.Spec.ClassicFullStack
 	dsInfo := ClassicFullStack{
 		builderInfo{
-			instance:      instance,
-			fullstackSpec: fullStackSpecs,
-			logger:        log,
-			clusterId:     testClusterID,
-			relatedImage:  testValue,
+			instance:       instance,
+			fullstackSpec:  fullStackSpecs,
+			logger:         log,
+			clusterId:      testClusterID,
+			relatedImage:   testValue,
+			deploymentType: deploymentmetadata.DeploymentTypeFS,
 		},
 	}
 

@@ -19,11 +19,12 @@ package main
 import (
 	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/controllers/certificates/validation"
+	"github.com/Dynatrace/dynatrace-operator/controllers/certificates/webhook"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/namespace"
 	"github.com/Dynatrace/dynatrace-operator/controllers/namespace_init"
 	"github.com/Dynatrace/dynatrace-operator/controllers/nodes"
-	"github.com/Dynatrace/dynatrace-operator/controllers/webhookcerts"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
@@ -65,11 +66,12 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error)
 		namespace.Add,
 		nodes.Add,
 		namespace_init.Add,
+		validation.Add,
 	}
 
 	disableWebhook := os.Getenv("DISABLE_WEBHOOK")
 	if disableWebhook == "" || disableWebhook == "false" {
-		funcs = append(funcs, webhookcerts.Add)
+		funcs = append(funcs, webhook.Add)
 	}
 
 	for _, f := range funcs {

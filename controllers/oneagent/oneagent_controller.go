@@ -63,10 +63,6 @@ type ReconcileOneAgent struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.DynakubeState) (bool, error) {
 	r.logger.Info("Reconciling OneAgent")
-	if err := validate(r.instance); err != nil {
-		return false, err
-	}
-
 	rec.Update(setUseImmutableImageStatus(r.instance, r.fullStack), 5*time.Minute, "UseImmutableImage changed")
 
 	upd, err := r.reconcileRollout(rec)
