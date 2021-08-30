@@ -43,7 +43,7 @@ func mapFromNamespaceCodeModules(ctx context.Context, clt client.Client, operato
 			return dk.Spec.CodeModules.Enabled
 		},
 		func(dk dynatracev1alpha1.DynaKube) *metav1.LabelSelector {
-			return dk.Spec.CodeModules.Selector
+			return dk.Spec.CodeModules.NamespaceSelector
 		})
 }
 

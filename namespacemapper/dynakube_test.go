@@ -18,8 +18,8 @@ func TestMapFromDynaKubeCodeModules(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "codeModules-1", Namespace: "dynatrace"},
 		Spec: dynatracev1alpha1.DynaKubeSpec{
 			CodeModules: dynatracev1alpha1.CodeModulesSpec{
-				Enabled:  true,
-				Selector: &metav1.LabelSelector{MatchLabels: labels},
+				Enabled:           true,
+				NamespaceSelector: &metav1.LabelSelector{MatchLabels: labels},
 			},
 		},
 	}

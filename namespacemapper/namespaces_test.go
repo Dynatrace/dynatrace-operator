@@ -19,7 +19,7 @@ func TestMatchForNamespace(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				CodeModules: dynatracev1alpha1.CodeModulesSpec{
 					Enabled: true,
-					Selector: &metav1.LabelSelector{
+					NamespaceSelector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"inject": "true",
 						},
@@ -32,7 +32,7 @@ func TestMatchForNamespace(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				CodeModules: dynatracev1alpha1.CodeModulesSpec{
 					Enabled: true,
-					Selector: &metav1.LabelSelector{
+					NamespaceSelector: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{
 							{Key: "type", Operator: metav1.LabelSelectorOpIn, Values: []string{"server", "app"}},
 						},
@@ -45,7 +45,7 @@ func TestMatchForNamespace(t *testing.T) {
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				CodeModules: dynatracev1alpha1.CodeModulesSpec{
 					Enabled: false,
-					Selector: &metav1.LabelSelector{
+					NamespaceSelector: &metav1.LabelSelector{
 						MatchLabels: map[string]string{
 							"inject": "true",
 						},
@@ -66,7 +66,7 @@ func TestMatchForNamespace(t *testing.T) {
 		}
 
 		dynakube, err := matchForNamespace(dynakubes, namespace, func(dk dynatracev1alpha1.DynaKube) *metav1.LabelSelector {
-			return dk.Spec.CodeModules.Selector
+			return dk.Spec.CodeModules.NamespaceSelector
 		})
 		assert.NoError(t, err)
 		assert.Nil(t, dynakube)
@@ -83,7 +83,7 @@ func TestMatchForNamespace(t *testing.T) {
 		}
 
 		dynakube, err := matchForNamespace(dynakubes, namespace, func(dk dynatracev1alpha1.DynaKube) *metav1.LabelSelector {
-			return dk.Spec.CodeModules.Selector
+			return dk.Spec.CodeModules.NamespaceSelector
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, dynakube)
@@ -100,7 +100,7 @@ func TestMatchForNamespace(t *testing.T) {
 		}
 
 		dynakube, err := matchForNamespace(dynakubes, namespace, func(dk dynatracev1alpha1.DynaKube) *metav1.LabelSelector {
-			return dk.Spec.CodeModules.Selector
+			return dk.Spec.CodeModules.NamespaceSelector
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, dynakube)
@@ -118,7 +118,7 @@ func TestMatchForNamespace(t *testing.T) {
 		}
 
 		dynakube, err := matchForNamespace(dynakubes, namespace, func(dk dynatracev1alpha1.DynaKube) *metav1.LabelSelector {
-			return dk.Spec.CodeModules.Selector
+			return dk.Spec.CodeModules.NamespaceSelector
 		})
 		assert.Error(t, err)
 		assert.Nil(t, dynakube)
@@ -140,8 +140,8 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: "codeModules-2", Namespace: "dynatrace"},
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-					Enabled:  true,
-					Selector: &metav1.LabelSelector{}, // empty 'Selector:' field means match everything
+					Enabled:           true,
+					NamespaceSelector: &metav1.LabelSelector{}, // empty 'Selector:' field means match everything
 				},
 			},
 		},
@@ -155,7 +155,7 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 		}
 
 		dynakube, err := matchForNamespace(dynakubes, namespace, func(dk dynatracev1alpha1.DynaKube) *metav1.LabelSelector {
-			return dk.Spec.CodeModules.Selector
+			return dk.Spec.CodeModules.NamespaceSelector
 		})
 		assert.NoError(t, err)
 		assert.NotNil(t, dynakube)
@@ -255,8 +255,8 @@ func TestMapFromNamespaceCodeModules(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{Name: "codeModules-1", Namespace: "dynatrace"},
 		Spec: dynatracev1alpha1.DynaKubeSpec{
 			CodeModules: dynatracev1alpha1.CodeModulesSpec{
-				Enabled:  true,
-				Selector: &metav1.LabelSelector{MatchLabels: labels},
+				Enabled:           true,
+				NamespaceSelector: &metav1.LabelSelector{MatchLabels: labels},
 			},
 		},
 	}
@@ -282,8 +282,8 @@ func TestMapFromNamespaceCodeModules(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: "codeModules-2", Namespace: "dynatrace"},
 			Spec: dynatracev1alpha1.DynaKubeSpec{
 				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-					Enabled:  true,
-					Selector: &metav1.LabelSelector{MatchLabels: labels},
+					Enabled:           true,
+					NamespaceSelector: &metav1.LabelSelector{MatchLabels: labels},
 				},
 			},
 		}

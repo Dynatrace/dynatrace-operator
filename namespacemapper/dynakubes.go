@@ -30,7 +30,7 @@ func MapFromDynaKubeCodeModules(ctx context.Context, clt client.Client, operator
 		return errors.Cause(err)
 	}
 
-	return createMapping(ctx, clt, operatorNs, CodeModulesMapName, dk, nsList, dk.Spec.CodeModules.Selector)
+	return createMapping(ctx, clt, operatorNs, CodeModulesMapName, dk, nsList, dk.Spec.CodeModules.NamespaceSelector)
 }
 
 func UnmapFromDynaKube(ctx context.Context, clt client.Client, operatorNs string, dkName string) error {

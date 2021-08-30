@@ -133,7 +133,7 @@ type CodeModulesSpec struct {
 
 	// Optional: set selector for Operator to know in which namespaces to inject into
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Selector",order=16,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:selector"}
-	Selector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
+	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
 	// Optional: name of the ServiceAccount to assign to the CSIDriver Pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Service Account name for CSI Driver",order=25,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ServiceAccount"}
