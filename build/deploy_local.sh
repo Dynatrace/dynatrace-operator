@@ -17,9 +17,23 @@ go_build_args=(
 base_image="dynatrace-operator"
 out_image="quay.io/dynatrace/dynatrace-operator:${TAG}"
 
-args=${go_build_args[@]}
-docker build . -f ./Dockerfile -t "${base_image}" --build-arg "GO_BUILD_ARGS=$args" --label "quay.expires-after=14d" --no-cache
+args="${go_build_args[@]}"
+if [[ "${LOCALBUILD}" ]]; then
+  export CGO_ENABLED=1
+  export GOOS=linux
+  export GOARCH=amd64
+
+  go build "$args" -o ./build/_output/bin/dynatrace-operator ./cmd/operator/
+
+  go get github.com/google/go-licenses
+  go-licenses save ./... --save_path third_party_licenses --force
+
+  docker build . -f ./Dockerfile-localbuild -t "${base_image}" --label "quay.expires-after=14d" --no-cache
+
+  rm -rf ./third_party_licenses
+else
+  docker build . -f ./Dockerfile -t "${base_image}" --build-arg "GO_BUILD_ARGS=$args" --label "quay.expires-after=14d" --no-cache
+fi
+
 docker tag "${base_image}" "${out_image}"
 docker push "${out_image}"
-
-rm -rf ./third_party_licenses
