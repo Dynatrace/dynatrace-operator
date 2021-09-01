@@ -144,7 +144,7 @@ function checkDynakube {
   fi
 
   # check secret has required tokens
-  token_names=("apiToken" "paasToken")
+  token_names="apiToken paasToken"
   for token_name in "${token_names[@]}"; do
     # check token exists in secret
     token=$("${cli}" get secret "$secret_name" \
@@ -166,7 +166,7 @@ function checkDynakube {
   pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" \
     --namespace "${selected_namespace}" \
     --template="{{.spec.customPullSecret}}")
-  if [[ "${pull_secret_name}" != "" && "${pull_secret_name}" != "${missing_value}" ]]; then
+  if [[  -n "${pull_secret_name}" && "${pull_secret_name}" != "${missing_value}" ]]; then
     # custom pull secret is set, check secret exists
     if ! "${cli}" get secret "${pull_secret_name}" --namespace "${selected_namespace}" >/dev/null 2>&1; then
       error "secret '${pull_secret_name}' used for pull secret is missing"
@@ -238,7 +238,7 @@ function checkImagePullable {
   custom_pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" \
     --namespace "${selected_namespace}" \
     --template="{{.spec.customPullSecret}}")
-  if [[ "${custom_pull_secret_name}" != "" && "${custom_pull_secret_name}" != "${missing_value}" ]] ; then
+  if [[ -n "${custom_pull_secret_name}" && "${custom_pull_secret_name}" != "${missing_value}" ]] ; then
     pull_secret_name="$custom_pull_secret_name"
   else
     pull_secret_name="$selected_dynakube-pull-secret"
@@ -260,7 +260,7 @@ function checkImagePullable {
 
   # check if image has version set
   image_version="$(cut --delimiter ':' --only-delimited --fields=2 <<< "${oneagent_image}")"
-  if [[ "$image_version" == "" ]] ; then
+  if [[ -z "$image_version"  ]] ; then
     # no version set, default to latest
     oneagent_version="latest"
 
@@ -380,7 +380,7 @@ function checkDTClusterConnection {
   proxy_secret_name=$("${cli}" get dynakube "${selected_dynakube}" \
     --namespace "${selected_namespace}" \
     --template="{{.spec.proxy.valueFrom}}")
-  if [[ "$proxy_secret_name" != "" && "$proxy_secret_name" != "$missing_value" ]]; then
+  if [[ -n "$proxy_secret_name" && "$proxy_secret_name" != "$missing_value" ]]; then
     # get proxy from secret
     encoded_proxy=$("${cli}" get secret "${proxy_secret_name}" \
       --namespace "${selected_namespace}" \
@@ -397,7 +397,7 @@ function checkDTClusterConnection {
     fi
   fi
 
-  if [[ "$proxy" != "" ]]; then
+  if [[ -n "$proxy"  ]]; then
     log "using proxy: $proxy"
     curl_params+=("--proxy" "${proxy}")
   else
@@ -416,7 +416,7 @@ function checkDTClusterConnection {
   # trusted ca
   custom_ca_map=$("${cli}" get dynakube "${selected_dynakube}" --namespace "${selected_namespace}" \
     --template="{{.spec.trustedCAs}}")
-  if [[ "$custom_ca_map" != "" && "$custom_ca_map" != "$missing_value" ]]; then
+  if [[ -n "$custom_ca_map"  && "$custom_ca_map" != "$missing_value" ]]; then
     # get custom certificate from config map and save to file
     certs=$("${cli}" get configmap "${custom_ca_map}" \
       --namespace "${selected_namespace}" \
@@ -463,4 +463,4 @@ checkDTClusterConnection "$run_container_command"
 checkImagePullable "$run_container_command"
 
 echo
-echo "No known issues found with the dynatrace-operator installation!"
+printf "\nNo known issues found with the dynatrace-operator installation!\n"
