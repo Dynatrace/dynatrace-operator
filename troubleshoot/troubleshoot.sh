@@ -333,11 +333,11 @@ function checkImagePullable {
   else
     if [[ "$oneagent_registry" == "docker.io" ]] ; then
       # get auth token with pull access for docker hub registry
-      token=$(
+      token="$(
         curl --silent \
         "https://auth.docker.io/token?service=registry.docker.io&scope=repository:$oneagent_image:pull" \
         | jq --raw-output '.token'
-      )
+      )"
 
       # check selected image exists on docker hub
       dockerio_image_request="$run_container_command 'curl --head \
@@ -416,7 +416,7 @@ function checkDTClusterConnection {
   # trusted ca
   custom_ca_map=$("${cli}" get dynakube "${selected_dynakube}" --namespace "${selected_namespace}" \
     --template="{{.spec.trustedCAs}}")
-  if [[ -n "$custom_ca_map"  && "$custom_ca_map" != "$missing_value" ]]; then
+  if [[ -n "$custom_ca_map" && "$custom_ca_map" != "$missing_value" ]]; then
     # get custom certificate from config map and save to file
     certs=$("${cli}" get configmap "${custom_ca_map}" \
       --namespace "${selected_namespace}" \
@@ -462,5 +462,4 @@ run_container_command="${cli} exec ${operator_pod} --namespace ${selected_namesp
 checkDTClusterConnection "$run_container_command"
 checkImagePullable "$run_container_command"
 
-echo
 printf "\nNo known issues found with the dynatrace-operator installation!\n"
