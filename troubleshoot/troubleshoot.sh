@@ -145,7 +145,7 @@ function checkDynakube {
 
   # check secret has required tokens
   token_names="apiToken paasToken"
-  for token_name in "${token_names[@]}"; do
+  for token_name in $token_names; do
     # check token exists in secret
     token=$("${cli}" get secret "$secret_name" \
       --namespace "${selected_namespace}" \
