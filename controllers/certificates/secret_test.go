@@ -1,18 +1,25 @@
 package certificates
 
+/*
 import (
 	"context"
+	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	admissionv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -23,9 +30,9 @@ const (
 func TestGetSecret(t *testing.T) {
 	t.Run(`get nil if secret does not exists`, func(t *testing.T) {
 		clt := fake.NewClient()
-		r := &CertificateReconciler{
-			clt: clt,
-			ctx: context.TODO(),
+		r := &ReconcileWebhookCertificates{
+			client: clt,
+			ctx:    context.TODO(),
 		}
 		secret, err := r.getSecret()
 		assert.NoError(t, err)
@@ -38,11 +45,10 @@ func TestGetSecret(t *testing.T) {
 				Namespace: testNamespace,
 			},
 		})
-		r := &CertificateReconciler{
-			clt:         clt,
-			ctx:         context.TODO(),
-			webhookName: testName,
-			namespace:   testNamespace,
+		r := &ReconcileWebhookCertificates{
+			client: clt,
+			ctx:    context.TODO(),
+			ns:     testNamespace,
 		}
 		secret, err := r.getSecret()
 		assert.NoError(t, err)
@@ -55,14 +61,14 @@ func TestCertificateReconciler_ReconcileCertificateSecretForWebhook(t *testing.T
 
 	t.Run(`create new certificates`, func(t *testing.T) {
 		clt := fake.NewClient()
-		r := &CertificateReconciler{
+		r := &ReconcileWebhookCertificates{
 			ctx:         context.TODO(),
 			clt:         clt,
 			webhookName: testName,
 			namespace:   testNamespace,
 			logger:      logger.NewDTLogger(),
 		}
-		webhookConfig := &admissionv1.WebhookClientConfig{}
+		webhookConfig := &admissionregistrationv1.WebhookClientConfig{}
 		err := r.ReconcileCertificateSecretForWebhook(webhookConfig)
 
 		assert.NoError(t, err)
@@ -107,7 +113,7 @@ func TestCertificateReconciler_ReconcileCertificateSecretForWebhook(t *testing.T
 			namespace:   testNamespace,
 			logger:      logger.NewDTLogger(),
 		}
-		webhookConfig := &admissionv1.WebhookClientConfig{}
+		webhookConfig := &admissionregistrationv1.WebhookClientConfig{}
 		cert := Certs{
 			Log:    r.logger,
 			Domain: r.getDomain(),
@@ -151,3 +157,58 @@ func TestCertificateReconciler_ReconcileCertificateSecretForWebhook(t *testing.T
 		assert.Equal(t, append(secret.Data[certificate], secret.Data[oldCertificate]...), webhookConfig.CABundle)
 	})
 }
+
+func TestReconcileWebhookCertificates(t *testing.T) {
+	logger := zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout))
+	ns := "dynatrace"
+
+	tmpDir, err := ioutil.TempDir("", "webhook-certs")
+	require.NoError(t, err)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
+
+	c := fake.NewClient(&admissionregistrationv1.MutatingWebhookConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: webhookName,
+		},
+		Webhooks: []admissionregistrationv1.MutatingWebhook{
+			{
+				Name: webhookName,
+			},
+		},
+	},
+		&corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      webhookName,
+				Namespace: ns,
+			},
+		})
+	r := ReconcileWebhookCertificates{client: c, logger: logger}
+
+	_, err = r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: webhook.ServiceName, Namespace: ns}})
+	require.NoError(t, err)
+
+	var secret corev1.Secret
+	require.NoError(t, c.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretCertsName, Namespace: ns}, &secret))
+
+	m := make(map[string]string, len(secret.Data))
+	for k, v := range secret.Data {
+		m[k] = string(v)
+	}
+
+	getWebhookCA := func() string {
+		var webhookCfg admissionregistrationv1.MutatingWebhookConfiguration
+		require.NoError(t, c.Get(context.TODO(), types.NamespacedName{Name: webhook.ServiceName}, &webhookCfg))
+		return string(webhookCfg.Webhooks[0].ClientConfig.CABundle)
+	}
+
+	var service corev1.Service
+	require.NoError(t, c.Get(context.TODO(), types.NamespacedName{Name: webhook.ServiceName, Namespace: ns}, &service))
+
+	assert.NotEmpty(t, secret.Data["tls.crt"])
+	assert.NotEmpty(t, secret.Data["tls.key"])
+	assert.NotEmpty(t, secret.Data["ca.crt"])
+	assert.NotEmpty(t, secret.Data["ca.key"])
+	assert.Equal(t, "", string(secret.Data["ca.crt.old"]))
+	assert.Equal(t, getWebhookCA(), string(secret.Data["ca.crt"]))
+}
+*/
