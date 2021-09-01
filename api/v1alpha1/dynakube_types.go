@@ -189,7 +189,7 @@ type FullStackSpec struct {
 }
 
 type InfraMonitoringSpec struct {
-	FullStackSpec
+	FullStackSpec `json:",inline"`
 
 	// Offers options to enable read-only filesystem support and configuration options for it
 	ReadOnly ReadOnlySpec `json:"readOnly,omitempty"`
