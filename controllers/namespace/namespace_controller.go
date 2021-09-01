@@ -104,17 +104,22 @@ func (r *ReconcileNamespaces) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 	}
 
-	var ims dynatracev1alpha1.DynaKubeList
-	if err := r.client.List(ctx, &ims, client.InNamespace(r.namespace)); err != nil {
+	var dks dynatracev1alpha1.DynaKubeList
+	if err := r.client.List(ctx, &dks, client.InNamespace(r.namespace)); err != nil {
 		return reconcile.Result{}, errors.WithMessage(err, "failed to query DynaKubeList")
 	}
 
 	imNodes := map[string]string{}
-	for i := range ims.Items {
-		if s := &ims.Items[i].Status; s.ConnectionInfo.TenantUUID != "" && ims.Items[i].Spec.InfraMonitoring.Enabled {
-			for key := range s.OneAgent.Instances {
+	for i := range dks.Items {
+		status := &dks.Items[i].Status
+		if dks.Items[i].Spec.InfraMonitoring.Enabled {
+			tenantUUID := "-"
+			if status.ConnectionInfo.TenantUUID != "" {
+				tenantUUID = status.ConnectionInfo.TenantUUID
+			}
+			for key := range status.OneAgent.Instances {
 				if key != "" {
-					imNodes[key] = s.ConnectionInfo.TenantUUID
+					imNodes[key] = tenantUUID
 				}
 			}
 		}
