@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -42,26 +41,41 @@ func NewCertificateReconciler(ctx context.Context, clt client.Client, webhookNam
 	}
 }
 
-func (r *CertificateReconciler) ReconcileCertificateSecretForWebhook(webhookConfiguration *admissionv1.WebhookClientConfig) error {
+func (r *CertificateReconciler) ReconcileCertificateSecretForWebhook(webhookConfiguration []*admissionv1.WebhookClientConfig) error {
 	r.logger.Info("reconciling certificates", "webhook", r.webhookName)
 
-	if err := r.createOrUpdateSecret(); err != nil {
+	secret, createSecret, err := r.validateAndBuildDesiredSecret()
+	if err != nil {
 		return errors.WithStack(err)
+	}
+	if secret == nil {
+		r.logger.Info("secret for certificates up to date, skipping update", "webhook", r.webhookName, "namespace", r.namespace)
+		return nil
 	}
 
-	if err := r.updateConfiguration(webhookConfiguration); err != nil {
-		return errors.WithStack(err)
+	for _, conf := range webhookConfiguration {
+		r.logger.Info("save CA into admission webhook configuration", "webhook", r.webhookName, "namespace", r.namespace)
+		if err := r.updateConfiguration(conf, *secret); err != nil {
+			return errors.WithStack(err)
+		}
 	}
-	return nil
+
+	r.logger.Info("create secret", "webhook", r.webhookName, "namespace", r.namespace)
+	if createSecret {
+		err = r.clt.Create(r.ctx, secret)
+	} else {
+		err = r.clt.Update(r.ctx, secret)
+	}
+	return err
 }
 
-func (r *CertificateReconciler) createOrUpdateSecret() error {
+func (r *CertificateReconciler) validateAndBuildDesiredSecret() (*corev1.Secret, bool, error) {
 	var data map[string][]byte
 	create := true
 
 	oldSecret, err := r.getSecret()
 	if err != nil {
-		return nil
+		return nil, false, nil
 	}
 
 	if oldSecret != nil {
@@ -76,15 +90,17 @@ func (r *CertificateReconciler) createOrUpdateSecret() error {
 		Now:     time.Now(),
 	}
 	if err = certs.ValidateCerts(); err != nil {
-		return errors.WithStack(err)
+		return nil, false, errors.WithStack(err)
 	}
 
 	if create {
-		err = r.createSecret(certs)
-	} else {
-		err = r.updateSecret(certs, oldSecret)
+		return r.buildDesiredSecret(certs), create, nil
 	}
-	return errors.WithStack(err)
+
+	if !reflect.DeepEqual(certs.Data, oldSecret.Data) {
+		return r.buildDesiredSecret(certs), create, nil
+	}
+	return nil, false, nil
 }
 
 func (r *CertificateReconciler) getSecret() (*corev1.Secret, error) {
@@ -104,20 +120,6 @@ func (r *CertificateReconciler) getDomain() string {
 	return fmt.Sprintf("%s.%s.svc", r.webhookName, r.namespace)
 }
 
-func (r *CertificateReconciler) createSecret(certs Certs) error {
-	r.logger.Info("creating secret for certificates", "webhook", r.webhookName, "namespace", r.namespace)
-	return r.clt.Create(r.ctx, r.buildDesiredSecret(certs))
-}
-
-func (r *CertificateReconciler) updateSecret(certs Certs, oldSecret *corev1.Secret) error {
-	if !reflect.DeepEqual(certs.Data, oldSecret.Data) {
-		r.logger.Info("updating secret for certificates", "webhook", r.webhookName, "namespace", r.namespace)
-		return r.clt.Update(r.ctx, r.buildDesiredSecret(certs))
-	}
-	r.logger.Info("secret for certificates up to date, skipping update", "webhook", r.webhookName, "namespace", r.namespace)
-	return nil
-}
-
 func (r *CertificateReconciler) buildDesiredSecret(certs Certs) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -128,23 +130,10 @@ func (r *CertificateReconciler) buildDesiredSecret(certs Certs) *corev1.Secret {
 	}
 }
 
-func (r *CertificateReconciler) updateConfiguration(webhookConfiguration *admissionv1.WebhookClientConfig) error {
-	secret, err := r.getSecret()
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	if secret == nil {
-		// Sometimes the secret cannot be found immediately after creating it
-		// In that case, return "not found" and try again
-		return k8serrors.NewNotFound(schema.GroupResource{
-			Group:    (&corev1.Secret{}).GroupVersionKind().Group,
-			Resource: (&corev1.Secret{}).TypeMeta.Kind,
-		}, r.buildSecretName())
-	}
-
+func (r *CertificateReconciler) updateConfiguration(webhookConfiguration *admissionv1.WebhookClientConfig, secret corev1.Secret) error {
 	data, hasData := secret.Data[certificate]
 	if !hasData {
-		err = errors.New(errorCertificatesSecretEmpty)
+		err := errors.New(errorCertificatesSecretEmpty)
 		r.logger.Error(err, errorCertificatesSecretEmpty)
 		return errors.WithStack(err)
 	}

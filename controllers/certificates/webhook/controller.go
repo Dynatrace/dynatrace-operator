@@ -18,7 +18,8 @@ import (
 )
 
 const (
-	webhookName = "dynatrace-webhook"
+	webhookName           = "dynatrace-webhook"
+	validationWebhookName = "dynatrace-webhook"
 )
 
 func Add(mgr manager.Manager, ns string) error {
@@ -57,8 +58,21 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		return reconcile.Result{}, errors.New("mutating webhook configuration has no registered webhooks")
 	}
 
+	var validationWebhook admissionregistrationv1.ValidatingWebhookConfiguration
+	err = r.client.Get(ctx, client.ObjectKey{Name: validationWebhookName}, &validationWebhook)
+	if k8serrors.IsNotFound(err) {
+		r.logger.Info("unable to find validation webhook configuration", "namespace", request.Namespace, "name", request.Name)
+		return reconcile.Result{RequeueAfter: certificates.FiveMinutes}, nil
+	} else if err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
+	}
+
+	if len(validationWebhook.Webhooks) <= 0 {
+		return reconcile.Result{}, errors.New("validation webhook configuration has no registered webhooks")
+	}
+
 	err = certificates.NewCertificateReconciler(ctx, r.client, webhookName, request.Namespace, r.logger).
-		ReconcileCertificateSecretForWebhook(&mutatingWebhook.Webhooks[0].ClientConfig)
+		ReconcileCertificateSecretForWebhook([]*admissionregistrationv1.WebhookClientConfig{&mutatingWebhook.Webhooks[0].ClientConfig, &validationWebhook.Webhooks[0].ClientConfig})
 	if k8serrors.IsNotFound(errors.Cause(err)) {
 		return reconcile.Result{RequeueAfter: certificates.Tens}, nil
 	} else if err != nil {
@@ -66,6 +80,9 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 	}
 
 	if err = r.client.Update(ctx, &mutatingWebhook); err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
+	}
+	if err = r.client.Update(ctx, &validationWebhook); err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
