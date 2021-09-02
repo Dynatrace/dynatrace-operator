@@ -2,8 +2,6 @@ package daemonset
 
 import (
 	"fmt"
-	fakediscovery "k8s.io/client-go/discovery/fake"
-	"k8s.io/client-go/rest"
 	"strings"
 	"testing"
 
@@ -388,12 +386,56 @@ func TestInfraMon_SecurityContext(t *testing.T) {
 	})
 }
 
-func TestAffinity(t *testing.T) {
-	_, _ = rest.InClusterConfig()
-	discoveryClient := fakediscovery.FakeDiscovery{}
-	versionInfo, err := discoveryClient.ServerVersion()
-	require.NoError(t, err)
-	require.NotNil(t, versionInfo)
-	require.NotEmpty(t, versionInfo.Major)
-	require.NotEmpty(t, versionInfo.Minor)
+func TestKubernetesVersion(t *testing.T) {
+	const zeroFloat = float64(0)
+
+	assert.Equal(t, 1.14, (&builderInfo{
+		majorKubernetesVersion: "1",
+		minorKubernetesVersion: "14",
+	}).kubernetesVersion())
+
+	assert.Equal(t, 0.14, (&builderInfo{
+		majorKubernetesVersion: "0",
+		minorKubernetesVersion: "14",
+	}).kubernetesVersion())
+
+	assert.Equal(t, 123.2345, (&builderInfo{
+		majorKubernetesVersion: "123",
+		minorKubernetesVersion: "2345",
+	}).kubernetesVersion())
+
+	assert.Equal(t, float64(1), (&builderInfo{
+		majorKubernetesVersion: "1",
+		minorKubernetesVersion: "",
+	}).kubernetesVersion())
+
+	assert.Equal(t, 0.1, (&builderInfo{
+		majorKubernetesVersion: "",
+		minorKubernetesVersion: "1",
+	}).kubernetesVersion())
+
+	assert.Equal(t, zeroFloat, (&builderInfo{
+		majorKubernetesVersion: "-1",
+		minorKubernetesVersion: "-14",
+	}).kubernetesVersion())
+
+	assert.Equal(t, zeroFloat, (&builderInfo{
+		majorKubernetesVersion: "-1",
+		minorKubernetesVersion: "14",
+	}).kubernetesVersion())
+
+	assert.Equal(t, zeroFloat, (&builderInfo{
+		majorKubernetesVersion: "1",
+		minorKubernetesVersion: "-14",
+	}).kubernetesVersion())
+
+	assert.Equal(t, zeroFloat, (&builderInfo{
+		majorKubernetesVersion: "",
+		minorKubernetesVersion: "-14",
+	}).kubernetesVersion())
+
+	assert.Equal(t, zeroFloat, (&builderInfo{
+		majorKubernetesVersion: "",
+		minorKubernetesVersion: "",
+	}).kubernetesVersion())
 }

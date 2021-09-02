@@ -2,8 +2,9 @@ package oneagent
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
+	"k8s.io/client-go/rest"
 	"os"
 	"reflect"
 	"strconv"
@@ -31,29 +32,40 @@ const (
 )
 
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
-func NewOneAgentReconciler(client client.Client, apiReader client.Reader, scheme *runtime.Scheme, logger logr.Logger, instance *dynatracev1alpha1.DynaKube, fullStack *dynatracev1alpha1.FullStackSpec, feature string) *ReconcileOneAgent {
+func NewOneAgentReconciler(
+	client client.Client,
+	apiReader client.Reader,
+	scheme *runtime.Scheme,
+	config *rest.Config,
+	logger logr.Logger,
+	instance *dynatracev1alpha1.DynaKube,
+	fullStack *dynatracev1alpha1.FullStackSpec,
+	feature string) *ReconcileOneAgent {
 	return &ReconcileOneAgent{
-		client:    client,
-		apiReader: apiReader,
-		scheme:    scheme,
-		logger:    logger,
-		instance:  instance,
-		fullStack: fullStack,
-		feature:   feature,
+		client:          client,
+		apiReader:       apiReader,
+		scheme:          scheme,
+		config:          config,
+		logger:          logger,
+		instance:        instance,
+		fullStack:       fullStack,
+		feature:         feature,
+		versionProvider: kubesystem.NewVersionProvider(config),
 	}
 }
 
-// ReconcileOneAgent reconciles a OneAgent object
 type ReconcileOneAgent struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client    client.Client
-	apiReader client.Reader
-	scheme    *runtime.Scheme
-	logger    logr.Logger
-	instance  *dynatracev1alpha1.DynaKube
-	fullStack *dynatracev1alpha1.FullStackSpec
-	feature   string
+	client          client.Client
+	apiReader       client.Reader
+	scheme          *runtime.Scheme
+	config          *rest.Config
+	logger          logr.Logger
+	instance        *dynatracev1alpha1.DynaKube
+	fullStack       *dynatracev1alpha1.FullStackSpec
+	versionProvider kubesystem.KubernetesVersionProvider
+	feature         string
 }
 
 // Reconcile reads that state of the cluster for a OneAgent object and makes changes based on the state read
@@ -149,7 +161,7 @@ func (r *ReconcileOneAgent) getDesiredDaemonSet(dkState *controllers.DynakubeSta
 		return nil, err
 	}
 
-	dsDesired, err := newDaemonSetForCR(dkState.Log, dkState.Instance, r.fullStack, string(kubeSysUID), r.feature)
+	dsDesired, err := r.newDaemonSetForCR(dkState, string(kubeSysUID))
 	if err != nil {
 		return nil, err
 	}
@@ -166,14 +178,28 @@ func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1al
 	return podList.Items, listOps, err
 }
 
-func newDaemonSetForCR(logger logr.Logger, instance *dynatracev1alpha1.DynaKube, _ *dynatracev1alpha1.FullStackSpec, clusterID string, feature string) (*appsv1.DaemonSet, error) {
+func (r *ReconcileOneAgent) newDaemonSetForCR(dkState *controllers.DynakubeState, clusterID string) (*appsv1.DaemonSet, error) {
 	var ds *appsv1.DaemonSet
 	var err error
+	major := ""
+	minor := ""
 
-	if feature == daemonset.ClassicFeature {
-		ds, err = daemonset.NewClassicFullStack(instance, logger, clusterID).BuildDaemonSet()
+	if r.versionProvider != nil {
+		major, err = r.versionProvider.Major()
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		minor, err = r.versionProvider.Major()
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
+	if r.feature == daemonset.ClassicFeature {
+		ds, err = daemonset.NewClassicFullStackWithVersion(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
 	} else {
-		ds, err = daemonset.NewInfraMonitoring(instance, logger, clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewInfraMonitoringWithVersion(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
 	}
 	if err != nil {
 		return nil, err

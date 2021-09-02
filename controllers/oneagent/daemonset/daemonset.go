@@ -217,6 +217,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	volumes := dsInfo.volumes()
 	image := dsInfo.image()
 	imagePullSecrets := dsInfo.imagePullSecrets()
+	affinity := dsInfo.affinity()
 
 	return corev1.PodSpec{
 		Containers: []corev1.Container{{
@@ -251,42 +252,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		Tolerations:        dsInfo.fullstackSpec.Tolerations,
 		DNSPolicy:          dnsPolicy,
 		Volumes:            volumes,
-		Affinity: &corev1.Affinity{
-			NodeAffinity: &corev1.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{
-						{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      "beta.kubernetes.io/arch",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"amd64", "arm64"},
-								},
-								{
-									Key:      "beta.kubernetes.io/os",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"linux"},
-								},
-							},
-						},
-						{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      "kubernetes.io/arch",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"amd64", "arm64"},
-								},
-								{
-									Key:      "kubernetes.io/os",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"linux"},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+		Affinity:           affinity,
 	}
 }
 
@@ -377,12 +343,23 @@ func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
 }
 
 func (dsInfo *builderInfo) kubernetesVersion() float64 {
-	versionString := fmt.Sprintf("%d.%d", dsInfo.majorKubernetesVersion, dsInfo.minorKubernetesVersion)
+	versionString := dsInfo.combinedKubernetesVersion()
+	return parseVersionString(versionString)
+}
+
+func parseVersionString(versionString string) float64 {
 	version, err := strconv.ParseFloat(versionString, float64BitSize)
 	if err != nil {
 		return 0
 	}
+	if version < 0 {
+		return 0
+	}
 	return version
+}
+
+func (dsInfo *builderInfo) combinedKubernetesVersion() string {
+	return fmt.Sprintf("%s.%s", dsInfo.majorKubernetesVersion, dsInfo.minorKubernetesVersion)
 }
 
 func privilegedSecurityContext() *corev1.SecurityContext {
