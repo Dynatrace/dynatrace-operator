@@ -71,7 +71,7 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 
 	secret, createSecret, err := r.validateAndGenerateSecretAndWebhookCA([]*admissionregistrationv1.WebhookClientConfig{&mutatingWebhook.Webhooks[0].ClientConfig, &validationWebhook.Webhooks[0].ClientConfig})
 	if k8serrors.IsNotFound(errors.Cause(err)) {
-		return reconcile.Result{RequeueAfter: Tens}, nil
+		return reconcile.Result{RequeueAfter: SecretMissingDuration}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -96,13 +96,13 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		err = r.client.Update(ctx, secret)
 	}
 
-	return reconcile.Result{RequeueAfter: ThreeHours}, nil
+	return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 }
 
 func (r *ReconcileWebhookCertificates) handleNotFoundErr(err error) (reconcile.Result, error) {
 	if k8serrors.IsNotFound(err) {
 		r.logger.Info("unable to find webhook configuration", "namespace", r.ns)
-		return reconcile.Result{RequeueAfter: FiveMinutes}, nil
+		return reconcile.Result{RequeueAfter: WebhookMissingDuration}, nil
 	} else if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}

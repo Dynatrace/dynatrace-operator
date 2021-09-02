@@ -16,11 +16,9 @@ import (
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), 128)
 
 const (
-	// Tens called "tens" because if it is called "tenSeconds" the go-linter complains that it ends in a
-	// "Unit-specific suffix". However, it does not complain about the latter names.
-	Tens        = 10 * time.Second
-	FiveMinutes = 5 * time.Minute
-	ThreeHours  = 3 * time.Hour
+	SecretMissingDuration  = 10 * time.Second
+	WebhookMissingDuration = 5 * time.Minute
+	SuccessDuration        = 3 * time.Hour
 
 	renewalThreshold = 12 * time.Hour
 )
