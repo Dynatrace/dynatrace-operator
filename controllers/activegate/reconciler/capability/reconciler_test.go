@@ -33,6 +33,7 @@ var metricsCapability = capability.NewDataIngestCapability(
 	&v1alpha1.CapabilityProperties{
 		Enabled: true,
 	},
+	nil,
 )
 
 func TestNewReconiler(t *testing.T) {
