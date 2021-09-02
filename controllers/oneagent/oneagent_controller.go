@@ -197,9 +197,9 @@ func (r *ReconcileOneAgent) newDaemonSetForCR(dkState *controllers.DynakubeState
 	}
 
 	if r.feature == daemonset.ClassicFeature {
-		ds, err = daemonset.NewClassicFullStackWithVersion(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
+		ds, err = daemonset.NewClassicFullStack(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
 	} else {
-		ds, err = daemonset.NewInfraMonitoringWithVersion(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
+		ds, err = daemonset.NewInfraMonitoring(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
 	}
 	if err != nil {
 		return nil, err

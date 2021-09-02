@@ -73,11 +73,7 @@ type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewInfraMonitoring(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string) Builder {
-	return NewInfraMonitoringWithVersion(instance, logger, clusterId, "", "")
-}
-
-func NewInfraMonitoringWithVersion(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
+func NewInfraMonitoring(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
 	return &InfraMonitoring{
 		builderInfo{
 			instance:               instance,
@@ -92,11 +88,7 @@ func NewInfraMonitoringWithVersion(instance *v1alpha1.DynaKube, logger logr.Logg
 	}
 }
 
-func NewClassicFullStack(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string) Builder {
-	return NewClassicFullStackWithVersion(instance, logger, clusterId, "", "")
-}
-
-func NewClassicFullStackWithVersion(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
+func NewClassicFullStack(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
 	return &ClassicFullStack{
 		builderInfo{
 			instance:               instance,

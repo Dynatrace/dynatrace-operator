@@ -27,7 +27,7 @@ func TestUseImmutableImage(t *testing.T) {
 				ClassicFullStack: dynatracev1alpha1.FullStackSpec{},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -44,7 +44,7 @@ func TestUseImmutableImage(t *testing.T) {
 				ClassicFullStack: dynatracev1alpha1.FullStackSpec{},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -63,7 +63,7 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -86,7 +86,7 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -95,7 +95,7 @@ func TestUseImmutableImage(t *testing.T) {
 		assert.Equal(t, podSpecs.Containers[0].Image, fmt.Sprintf("%s/linux/oneagent:latest", strings.TrimPrefix(testURL, "https://")))
 
 		instance.Spec.OneAgent.Version = testValue
-		dsInfo = NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo = NewClassicFullStack(&instance, log, testClusterID, "", "")
 		ds, err = dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -122,7 +122,7 @@ func TestCustomPullSecret(t *testing.T) {
 			},
 		},
 	}
-	dsInfo := NewClassicFullStack(&instance, log, testClusterID)
+	dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
 	ds, err := dsInfo.BuildDaemonSet()
 	require.NoError(t, err)
 
@@ -149,7 +149,7 @@ func TestResources(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -191,7 +191,7 @@ func TestResources(t *testing.T) {
 			},
 		}
 
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -229,7 +229,7 @@ func TestServiceAccountName(t *testing.T) {
 			},
 		}
 
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -251,7 +251,7 @@ func TestServiceAccountName(t *testing.T) {
 				},
 			},
 		}
-		dsInfo = NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo = NewClassicFullStack(&instance, log, testClusterID, "", "")
 		ds, err = dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -273,7 +273,7 @@ func TestServiceAccountName(t *testing.T) {
 				},
 			},
 		}
-		dsInfo = NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo = NewClassicFullStack(&instance, log, testClusterID, "", "")
 		ds, err = dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -296,7 +296,7 @@ func TestServiceAccountName(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -319,7 +319,7 @@ func TestServiceAccountName(t *testing.T) {
 			},
 		}
 
-		dsInfo = NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo = NewClassicFullStack(&instance, log, testClusterID, "", "")
 		ds, err = dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -342,7 +342,7 @@ func TestInfraMon_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewInfraMonitoring(&instance, log, testClusterID)
+		dsInfo := NewInfraMonitoring(&instance, log, testClusterID, "", "")
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -369,7 +369,7 @@ func TestInfraMon_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewInfraMonitoring(&instance, log, testClusterID)
+		dsInfo := NewInfraMonitoring(&instance, log, testClusterID, "", "")
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
