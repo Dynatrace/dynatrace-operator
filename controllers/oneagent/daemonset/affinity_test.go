@@ -27,6 +27,26 @@ func TestAffinity(t *testing.T) {
 			},
 		},
 	})
+
+	dsInfo = builderInfo{
+		majorKubernetesVersion: "1",
+		minorKubernetesVersion: "20+",
+	}
+	affinity = dsInfo.affinity()
+	assert.NotContains(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, corev1.NodeSelectorTerm{
+		MatchExpressions: []corev1.NodeSelectorRequirement{
+			{
+				Key:      "beta.kubernetes.io/arch",
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"amd64", "arm64"},
+			},
+			{
+				Key:      "beta.kubernetes.io/os",
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"linux"},
+			},
+		},
+	})
 	assert.Contains(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, corev1.NodeSelectorTerm{
 		MatchExpressions: []corev1.NodeSelectorRequirement{
 			{

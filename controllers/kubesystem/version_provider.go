@@ -7,6 +7,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+const errorConfigIsNil = "rest config for Kubernetes version provider is nil"
+
 type KubernetesVersionProvider interface {
 	Major() (string, error)
 	Minor() (string, error)
@@ -42,6 +44,10 @@ func (versionProvider *discoveryVersionProvider) Minor() (string, error) {
 func (versionProvider *discoveryVersionProvider) getVersionInfo() (*version.Info, error) {
 	if versionProvider.versionInfo != nil {
 		return versionProvider.versionInfo, nil
+	}
+
+	if versionProvider.config == nil {
+		return nil, errors.New(errorConfigIsNil)
 	}
 
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(versionProvider.config)

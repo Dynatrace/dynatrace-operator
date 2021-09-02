@@ -3,6 +3,7 @@ package daemonset
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -359,7 +360,9 @@ func parseVersionString(versionString string) float64 {
 }
 
 func (dsInfo *builderInfo) combinedKubernetesVersion() string {
-	return fmt.Sprintf("%s.%s", dsInfo.majorKubernetesVersion, dsInfo.minorKubernetesVersion)
+	version := fmt.Sprintf("%s.%s", dsInfo.majorKubernetesVersion, dsInfo.minorKubernetesVersion)
+	neitherNumberNorDot := regexp.MustCompile("[^0-9.]")
+	return neitherNumberNorDot.ReplaceAllString(version, "")
 }
 
 func privilegedSecurityContext() *corev1.SecurityContext {

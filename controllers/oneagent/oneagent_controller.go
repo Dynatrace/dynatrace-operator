@@ -190,7 +190,7 @@ func (r *ReconcileOneAgent) newDaemonSetForCR(dkState *controllers.DynakubeState
 			return nil, errors.WithStack(err)
 		}
 
-		minor, err = r.versionProvider.Major()
+		minor, err = r.versionProvider.Minor()
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}

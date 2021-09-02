@@ -404,6 +404,21 @@ func TestKubernetesVersion(t *testing.T) {
 		minorKubernetesVersion: "2345",
 	}).kubernetesVersion())
 
+	assert.Equal(t, 1.20, (&builderInfo{
+		majorKubernetesVersion: "1",
+		minorKubernetesVersion: "20+",
+	}).kubernetesVersion())
+
+	assert.Equal(t, 1.20, (&builderInfo{
+		majorKubernetesVersion: "1+",
+		minorKubernetesVersion: "20+",
+	}).kubernetesVersion())
+
+	assert.Equal(t, 1.20, (&builderInfo{
+		majorKubernetesVersion: "1+",
+		minorKubernetesVersion: "20",
+	}).kubernetesVersion())
+
 	assert.Equal(t, float64(1), (&builderInfo{
 		majorKubernetesVersion: "1",
 		minorKubernetesVersion: "",
@@ -414,22 +429,22 @@ func TestKubernetesVersion(t *testing.T) {
 		minorKubernetesVersion: "1",
 	}).kubernetesVersion())
 
-	assert.Equal(t, zeroFloat, (&builderInfo{
+	assert.Equal(t, 1.14, (&builderInfo{
 		majorKubernetesVersion: "-1",
 		minorKubernetesVersion: "-14",
 	}).kubernetesVersion())
 
-	assert.Equal(t, zeroFloat, (&builderInfo{
+	assert.Equal(t, 1.14, (&builderInfo{
 		majorKubernetesVersion: "-1",
 		minorKubernetesVersion: "14",
 	}).kubernetesVersion())
 
-	assert.Equal(t, zeroFloat, (&builderInfo{
+	assert.Equal(t, 1.14, (&builderInfo{
 		majorKubernetesVersion: "1",
 		minorKubernetesVersion: "-14",
 	}).kubernetesVersion())
 
-	assert.Equal(t, zeroFloat, (&builderInfo{
+	assert.Equal(t, 0.14, (&builderInfo{
 		majorKubernetesVersion: "",
 		minorKubernetesVersion: "-14",
 	}).kubernetesVersion())
