@@ -102,9 +102,8 @@ tenant ${host_tenant}" >> ${1}
 createConfigurationFiles() {
 	echo -n "${INSTALLPATH}/agent/lib64/liboneagentproc.so" >> "${share_dir}/ld.so.preload"
 
-	set +u # allow variable to be empty
+	# Script fails if empty
 	host_tenant="${im_nodes[${K8S_NODE_NAME}]}"
-	set -u
 
 	for i in $(seq 1 $CONTAINERS_COUNT)
 	do
@@ -120,7 +119,7 @@ createConfigurationFiles() {
 
 		writeConfBaseTo ${container_conf_file}
 
-		if [[ "${host_tenant}" != "" ]]; then
+		if [[ "${host_tenant}" != "-" ]]; then
 			if [[ "abc12345" == "${host_tenant}" ]]; then
 				writeConfK8To ${container_conf_file}
 			fi

@@ -27,6 +27,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const notMappedIM = "-"
+
 var (
 	//go:embed init.sh.tmpl
 	scriptContent string
@@ -200,17 +202,22 @@ func (r *ReconcileNamespaceInit) prepareScriptForDynaKube(dk string, kubeSystemU
 }
 
 func (r *ReconcileNamespaceInit) getInfraMonitoringNodes() (map[string]string, error) {
-	var ims dynatracev1alpha1.DynaKubeList
-	if err := r.client.List(context.TODO(), &ims, client.InNamespace(r.namespace)); err != nil {
+	var dks dynatracev1alpha1.DynaKubeList
+	if err := r.client.List(context.TODO(), &dks, client.InNamespace(r.namespace)); err != nil {
 		return nil, errors.WithMessage(err, "failed to query DynaKubeList")
 	}
 
 	imNodes := map[string]string{}
-	for i := range ims.Items {
-		if s := &ims.Items[i].Status; s.ConnectionInfo.TenantUUID != "" && ims.Items[i].Spec.InfraMonitoring.Enabled {
-			for key := range s.OneAgent.Instances {
+	for i := range dks.Items {
+		status := &dks.Items[i].Status
+		if dks.Items[i].Spec.InfraMonitoring.Enabled {
+			tenantUUID := notMappedIM
+			if status.ConnectionInfo.TenantUUID != "" {
+				tenantUUID = status.ConnectionInfo.TenantUUID
+			}
+			for key := range status.OneAgent.Instances {
 				if key != "" {
-					imNodes[key] = s.ConnectionInfo.TenantUUID
+					imNodes[key] = tenantUUID
 				}
 			}
 		}
