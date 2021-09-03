@@ -69,8 +69,10 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		return reconcileRes, err
 	}
 
-	secret, createSecret, err := r.validateAndGenerateSecretAndWebhookCA([]*admissionregistrationv1.WebhookClientConfig{&mutatingWebhook.Webhooks[0].ClientConfig, &validationWebhook.Webhooks[0].ClientConfig})
-	if k8serrors.IsNotFound(errors.Cause(err)) {
+	secret, createSecret, err := r.validateAndGenerateSecretAndWebhookCA(
+		&mutatingWebhook.Webhooks[0].ClientConfig,
+		&validationWebhook.Webhooks[0].ClientConfig)
+	if k8serrors.IsNotFound(err) {
 		return reconcile.Result{RequeueAfter: SecretMissingDuration}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
@@ -148,7 +150,8 @@ func (r *ReconcileWebhookCertificates) getValidationWebhookConfiguration(ctx con
 	return &mutatingWebhook, nil
 }
 
-func (r *ReconcileWebhookCertificates) validateAndGenerateSecretAndWebhookCA(webhookConfiguration []*admissionregistrationv1.WebhookClientConfig) (*corev1.Secret, bool, error) {
+func (r *ReconcileWebhookCertificates) validateAndGenerateSecretAndWebhookCA(
+	webhookConfiguration ...*admissionregistrationv1.WebhookClientConfig) (*corev1.Secret, bool, error) {
 	r.logger.Info("reconciling certificates")
 
 	secret, createSecret, err := r.validateAndBuildDesiredSecret()
