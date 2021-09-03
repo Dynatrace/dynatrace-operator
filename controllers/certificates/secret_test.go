@@ -57,8 +57,7 @@ func TestCertificateReconciler_ReconcileCertificateSecretForWebhook(t *testing.T
 		clt := fake.NewClient(
 			&admissionregistrationv1.MutatingWebhookConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      webhookDeploymentName,
-					Namespace: testNamespace,
+					Name: webhookDeploymentName,
 				},
 				Webhooks: []admissionregistrationv1.MutatingWebhook{
 					{
@@ -68,8 +67,7 @@ func TestCertificateReconciler_ReconcileCertificateSecretForWebhook(t *testing.T
 			},
 			&admissionregistrationv1.ValidatingWebhookConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      webhookDeploymentName,
-					Namespace: testNamespace,
+					Name: webhookDeploymentName,
 				},
 				Webhooks: []admissionregistrationv1.ValidatingWebhook{
 					{
@@ -123,8 +121,7 @@ func TestCertificateReconciler_ReconcileCertificateSecretForWebhook(t *testing.T
 
 		mutatingWebhookConfig := &admissionregistrationv1.MutatingWebhookConfiguration{}
 		err = clt.Get(context.TODO(), client.ObjectKey{
-			Name:      webhookDeploymentName,
-			Namespace: testNamespace,
+			Name: webhookDeploymentName,
 		}, mutatingWebhookConfig)
 		require.NoError(t, err)
 		assert.Len(t, mutatingWebhookConfig.Webhooks, 1)
@@ -132,8 +129,7 @@ func TestCertificateReconciler_ReconcileCertificateSecretForWebhook(t *testing.T
 
 		validationWebhookConfig := &admissionregistrationv1.ValidatingWebhookConfiguration{}
 		err = clt.Get(context.TODO(), client.ObjectKey{
-			Name:      webhookDeploymentName,
-			Namespace: testNamespace,
+			Name: webhookDeploymentName,
 		}, validationWebhookConfig)
 		require.NoError(t, err)
 		testWebhookClientConfig(t, validationWebhookConfig.Webhooks[0].ClientConfig, secret.Data)

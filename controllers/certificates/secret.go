@@ -60,19 +60,13 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 	r.logger.Info("reconciling mutating webhook certificates", "namespace", r.namespace, "name", request.Name)
 
 	mutatingWebhook, err := r.getMutatingWebhookConfiguration(ctx)
-	if k8serrors.IsNotFound(err) {
-		r.logger.Info("unable to find mutating webhook configuration", "namespace", r.namespace)
-		return reconcile.Result{RequeueAfter: WebhookMissingDuration}, nil
-	} else if err != nil {
-		return reconcile.Result{}, err
+	if reconcileRes, err := r.handleNotFoundErr(err); err != nil {
+		return reconcileRes, err
 	}
 
 	validationWebhook, err := r.getValidationWebhookConfiguration(ctx)
-	if k8serrors.IsNotFound(err) {
-		r.logger.Info("unable to find validation webhook configuration", "namespace", r.namespace)
-		return reconcile.Result{RequeueAfter: WebhookMissingDuration}, nil
-	} else if err != nil {
-		return reconcile.Result{}, err
+	if reconcileRes, err := r.handleNotFoundErr(err); err != nil {
+		return reconcileRes, err
 	}
 
 	secret, createSecret, err := r.validateAndGenerateSecretAndWebhookCA(
@@ -114,11 +108,20 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 	return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 }
 
+func (r *ReconcileWebhookCertificates) handleNotFoundErr(err error) (reconcile.Result, error) {
+	if k8serrors.IsNotFound(err) {
+		r.logger.Info("unable to find webhook configuration", "namespace", r.namespace)
+		return reconcile.Result{RequeueAfter: WebhookMissingDuration}, nil
+	} else if err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
+	}
+	return reconcile.Result{}, nil
+}
+
 func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx context.Context) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 	var mutatingWebhook admissionregistrationv1.MutatingWebhookConfiguration
 	err := r.client.Get(ctx, client.ObjectKey{
-		Name:      webhookDeploymentName,
-		Namespace: r.namespace,
+		Name: webhookDeploymentName,
 	}, &mutatingWebhook)
 	if err != nil {
 		return nil, err
@@ -133,8 +136,7 @@ func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx conte
 func (r *ReconcileWebhookCertificates) getValidationWebhookConfiguration(ctx context.Context) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 	var mutatingWebhook admissionregistrationv1.ValidatingWebhookConfiguration
 	err := r.client.Get(ctx, client.ObjectKey{
-		Name:      webhookDeploymentName,
-		Namespace: r.namespace,
+		Name: webhookDeploymentName,
 	}, &mutatingWebhook)
 	if err != nil {
 		return nil, err
