@@ -21,7 +21,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -36,36 +35,31 @@ func NewOneAgentReconciler(
 	client client.Client,
 	apiReader client.Reader,
 	scheme *runtime.Scheme,
-	config *rest.Config,
 	logger logr.Logger,
 	instance *dynatracev1alpha1.DynaKube,
 	fullStack *dynatracev1alpha1.FullStackSpec,
 	feature string) *ReconcileOneAgent {
 	return &ReconcileOneAgent{
-		client:          client,
-		apiReader:       apiReader,
-		scheme:          scheme,
-		config:          config,
-		logger:          logger,
-		instance:        instance,
-		fullStack:       fullStack,
-		feature:         feature,
-		versionProvider: kubesystem.NewVersionProvider(config),
+		client:    client,
+		apiReader: apiReader,
+		scheme:    scheme,
+		logger:    logger,
+		instance:  instance,
+		fullStack: fullStack,
+		feature:   feature,
 	}
 }
 
 type ReconcileOneAgent struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client          client.Client
-	apiReader       client.Reader
-	scheme          *runtime.Scheme
-	config          *rest.Config
-	logger          logr.Logger
-	instance        *dynatracev1alpha1.DynaKube
-	fullStack       *dynatracev1alpha1.FullStackSpec
-	versionProvider kubesystem.KubernetesVersionProvider
-	feature         string
+	client    client.Client
+	apiReader client.Reader
+	scheme    *runtime.Scheme
+	logger    logr.Logger
+	instance  *dynatracev1alpha1.DynaKube
+	fullStack *dynatracev1alpha1.FullStackSpec
+	feature   string
 }
 
 // Reconcile reads that state of the cluster for a OneAgent object and makes changes based on the state read
@@ -181,25 +175,11 @@ func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1al
 func (r *ReconcileOneAgent) newDaemonSetForCR(dkState *controllers.DynakubeState, clusterID string) (*appsv1.DaemonSet, error) {
 	var ds *appsv1.DaemonSet
 	var err error
-	major := ""
-	minor := ""
-
-	if r.versionProvider != nil {
-		major, err = r.versionProvider.Major()
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		minor, err = r.versionProvider.Minor()
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-	}
 
 	if r.feature == daemonset.ClassicFeature {
-		ds, err = daemonset.NewClassicFullStack(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
+		ds, err = daemonset.NewClassicFullStack(dkState.Instance, dkState.Log, clusterID).BuildDaemonSet()
 	} else {
-		ds, err = daemonset.NewInfraMonitoring(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
+		ds, err = daemonset.NewInfraMonitoring(dkState.Instance, dkState.Log, clusterID).BuildDaemonSet()
 	}
 	if err != nil {
 		return nil, err
