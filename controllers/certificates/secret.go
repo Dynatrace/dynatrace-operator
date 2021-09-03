@@ -89,11 +89,18 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	r.logger.Info("update secret", "namespace", r.namespace)
 	if createSecret {
+		r.logger.Info("creating secret", "namespace", r.namespace)
 		err = r.client.Create(ctx, secret)
+		if err != nil {
+			return reconcile.Result{}, errors.WithStack(err)
+		}
 	} else {
+		r.logger.Info("updating secret", "namespace", r.namespace)
 		err = r.client.Update(ctx, secret)
+		if err != nil {
+			return reconcile.Result{}, errors.WithStack(err)
+		}
 	}
 
 	return reconcile.Result{RequeueAfter: SuccessDuration}, nil
