@@ -18,7 +18,6 @@ import (
 )
 
 const (
-	testName      = "test-name"
 	testNamespace = "test-namespace"
 )
 
