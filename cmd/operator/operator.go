@@ -17,10 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"os"
-
-	"github.com/Dynatrace/dynatrace-operator/controllers/certificates/validation"
-	"github.com/Dynatrace/dynatrace-operator/controllers/certificates/webhook"
+	"github.com/Dynatrace/dynatrace-operator/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/namespace"
 	"github.com/Dynatrace/dynatrace-operator/controllers/namespace_init"
@@ -66,12 +63,7 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error)
 		namespace.Add,
 		nodes.Add,
 		namespace_init.Add,
-		validation.Add,
-	}
-
-	disableWebhook := os.Getenv("DISABLE_WEBHOOK")
-	if disableWebhook == "" || disableWebhook == "false" {
-		funcs = append(funcs, webhook.Add)
+		certificates.Add,
 	}
 
 	for _, f := range funcs {

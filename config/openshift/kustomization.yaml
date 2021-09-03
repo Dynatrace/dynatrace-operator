@@ -16,7 +16,6 @@ bases:
   - ../common/routing
   - ../common/csi
   - ../common/webhook
-  - ../common/validation
   - ../crd/default
 patchesJson6902:
   - target:

@@ -16,11 +16,9 @@ import (
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), 128)
 
 const (
-	// Tens called "tens" because if it is called "tenSeconds" the go-linter complains that it ends in a
-	// "Unit-specific suffix". However, it does not complain about the latter names.
-	Tens        = 10 * time.Second
-	FiveMinutes = 5 * time.Minute
-	ThreeHours  = 3 * time.Hour
+	SecretMissingDuration  = 10 * time.Second
+	WebhookMissingDuration = 5 * time.Minute
+	SuccessDuration        = 3 * time.Hour
 
 	renewalThreshold = 12 * time.Hour
 )
@@ -128,13 +126,15 @@ func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 
 	// Generate CA root keys
 
+	cs.Log.Info("starting root key gen")
 	if cs.rootPrivateKey, err = rsa.GenerateKey(rand.Reader, 4096); err != nil {
 		return fmt.Errorf("failed to generate root private key: %w", err)
 	}
-
+	cs.Log.Info("starting validate")
 	if err = cs.rootPrivateKey.Validate(); err != nil {
 		return fmt.Errorf("validation for root private key failed: %w", err)
 	}
+	cs.Log.Info("creating root certificate")
 
 	cs.Data["ca.key"] = pem.EncodeToMemory(&pem.Block{
 		Type:  "RSA PRIVATE KEY",
@@ -180,21 +180,26 @@ func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 
 	cs.Data["ca.crt.old"] = cs.Data["ca.crt"]
 	cs.Data["ca.crt"] = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: rootPublicCertDER})
+
+	cs.Log.Info("root cert generated")
 	return nil
 }
 
 func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 	// Generate server keys
 
+	cs.Log.Info("start gen server key")
 	privKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
 		return fmt.Errorf("failed to generate server private key: %w", err)
 	}
 
+	cs.Log.Info("val key")
 	if err = privKey.Validate(); err != nil {
 		return fmt.Errorf("validation for server private key failed: %w", err)
 	}
 
+	cs.Log.Info("genserver cert")
 	cs.Data["tls.key"] = pem.EncodeToMemory(&pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(privKey),
@@ -234,5 +239,6 @@ func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 	}
 
 	cs.Data["tls.crt"] = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverPublicCertDER})
+	cs.Log.Info("finished gen server cert")
 	return nil
 }

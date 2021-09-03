@@ -6,14 +6,19 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/eventfilter"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	admissionv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -24,44 +29,152 @@ const (
 	errorCertificatesSecretEmpty = "certificates secret is empty"
 )
 
-type CertificateReconciler struct {
-	ctx         context.Context
-	clt         client.Client
-	webhookName string
-	namespace   string
-	logger      logr.Logger
+const (
+	webhookDeploymentName = "dynatrace-webhook"
+)
+
+func Add(mgr manager.Manager, ns string) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&v1.Deployment{}).
+		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhookDeploymentName, ns)).
+		Complete(newWebhookReconciler(mgr))
 }
 
-func NewCertificateReconciler(ctx context.Context, clt client.Client, webhookName string, namespace string, logger logr.Logger) *CertificateReconciler {
-	return &CertificateReconciler{
-		ctx:         ctx,
-		clt:         clt,
-		webhookName: webhookName,
-		namespace:   namespace,
-		logger:      logger,
+func newWebhookReconciler(mgr manager.Manager) *ReconcileWebhookCertificates {
+	return &ReconcileWebhookCertificates{
+		client: mgr.GetClient(),
+		logger: log.Log.WithName("operator.webhook-certificates"),
 	}
 }
 
-func (r *CertificateReconciler) ReconcileCertificateSecretForWebhook(webhookConfiguration *admissionv1.WebhookClientConfig) error {
-	r.logger.Info("reconciling certificates", "webhook", r.webhookName)
-
-	if err := r.createOrUpdateSecret(); err != nil {
-		return errors.WithStack(err)
-	}
-
-	if err := r.updateConfiguration(webhookConfiguration); err != nil {
-		return errors.WithStack(err)
-	}
-	return nil
+type ReconcileWebhookCertificates struct {
+	ctx       context.Context
+	client    client.Client
+	namespace string
+	logger    logr.Logger
 }
 
-func (r *CertificateReconciler) createOrUpdateSecret() error {
+func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	r.namespace = request.Namespace
+	r.ctx = ctx
+	r.logger.Info("reconciling mutating webhook certificates", "namespace", r.namespace, "name", request.Name)
+
+	mutatingWebhook, err := r.getMutatingWebhookConfiguration(ctx)
+	if k8serrors.IsNotFound(err) {
+		r.logger.Info("unable to find mutating webhook configuration", "namespace", r.namespace)
+		return reconcile.Result{RequeueAfter: WebhookMissingDuration}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	validationWebhook, err := r.getValidationWebhookConfiguration(ctx)
+	if k8serrors.IsNotFound(err) {
+		r.logger.Info("unable to find validation webhook configuration", "namespace", r.namespace)
+		return reconcile.Result{RequeueAfter: WebhookMissingDuration}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	secret, createSecret, err := r.validateAndGenerateSecretAndWebhookCA(
+		&mutatingWebhook.Webhooks[0].ClientConfig,
+		&validationWebhook.Webhooks[0].ClientConfig)
+	if k8serrors.IsNotFound(err) {
+		return reconcile.Result{RequeueAfter: SecretMissingDuration}, nil
+	} else if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if secret == nil {
+		r.logger.Info("secret for certificates up to date, skipping update", "namespace", r.namespace)
+		return reconcile.Result{}, nil
+	}
+
+	r.logger.Info("update mutating webhook configuration", "namespace", r.namespace)
+	if err = r.client.Update(ctx, mutatingWebhook); err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
+	}
+	if err = r.client.Update(ctx, validationWebhook); err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
+	}
+
+	if createSecret {
+		r.logger.Info("creating secret", "namespace", r.namespace)
+		err = r.client.Create(ctx, secret)
+		if err != nil {
+			return reconcile.Result{}, errors.WithStack(err)
+		}
+	} else {
+		r.logger.Info("updating secret", "namespace", r.namespace)
+		err = r.client.Update(ctx, secret)
+		if err != nil {
+			return reconcile.Result{}, errors.WithStack(err)
+		}
+	}
+
+	return reconcile.Result{RequeueAfter: SuccessDuration}, nil
+}
+
+func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx context.Context) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
+	var mutatingWebhook admissionregistrationv1.MutatingWebhookConfiguration
+	err := r.client.Get(ctx, client.ObjectKey{
+		Name:      webhookDeploymentName,
+		Namespace: r.namespace,
+	}, &mutatingWebhook)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(mutatingWebhook.Webhooks) <= 0 {
+		return nil, errors.New("mutating admission webhook configuration has no registered webhooks")
+	}
+	return &mutatingWebhook, nil
+}
+
+func (r *ReconcileWebhookCertificates) getValidationWebhookConfiguration(ctx context.Context) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+	var mutatingWebhook admissionregistrationv1.ValidatingWebhookConfiguration
+	err := r.client.Get(ctx, client.ObjectKey{
+		Name:      webhookDeploymentName,
+		Namespace: r.namespace,
+	}, &mutatingWebhook)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(mutatingWebhook.Webhooks) <= 0 {
+		return nil, errors.New("mutating validation webhook configuration has no registered webhooks")
+	}
+	return &mutatingWebhook, nil
+}
+
+func (r *ReconcileWebhookCertificates) validateAndGenerateSecretAndWebhookCA(
+	webhookConfiguration ...*admissionregistrationv1.WebhookClientConfig) (*corev1.Secret, bool, error) {
+	r.logger.Info("reconciling certificates")
+
+	secret, createSecret, err := r.validateAndBuildDesiredSecret()
+	if err != nil {
+		return nil, false, errors.WithStack(err)
+	}
+	if secret == nil {
+		return nil, false, nil
+	}
+
+	for _, conf := range webhookConfiguration {
+		r.logger.Info("save CA into admission webhook configuration", "namespace", r.namespace)
+		if err := r.updateConfiguration(conf, *secret); err != nil {
+			return nil, false, errors.WithStack(err)
+		}
+	}
+
+	return secret, createSecret, nil
+}
+
+func (r *ReconcileWebhookCertificates) validateAndBuildDesiredSecret() (*corev1.Secret, bool, error) {
 	var data map[string][]byte
 	create := true
 
 	oldSecret, err := r.getSecret()
 	if err != nil {
-		return nil
+		return nil, false, nil
 	}
 
 	if oldSecret != nil {
@@ -76,49 +189,37 @@ func (r *CertificateReconciler) createOrUpdateSecret() error {
 		Now:     time.Now(),
 	}
 	if err = certs.ValidateCerts(); err != nil {
-		return errors.WithStack(err)
+		return nil, false, errors.WithStack(err)
 	}
 
 	if create {
-		err = r.createSecret(certs)
-	} else {
-		err = r.updateSecret(certs, oldSecret)
+		return r.buildDesiredSecret(certs), create, nil
 	}
-	return errors.WithStack(err)
+
+	if !reflect.DeepEqual(certs.Data, oldSecret.Data) {
+		return r.buildDesiredSecret(certs), create, nil
+	}
+	return nil, false, nil
 }
 
-func (r *CertificateReconciler) getSecret() (*corev1.Secret, error) {
+func (r *ReconcileWebhookCertificates) getSecret() (*corev1.Secret, error) {
 	var oldSecret corev1.Secret
-	err := r.clt.Get(r.ctx, client.ObjectKey{Name: r.buildSecretName(), Namespace: r.namespace}, &oldSecret)
+	err := r.client.Get(r.ctx, client.ObjectKey{Name: r.buildSecretName(), Namespace: r.namespace}, &oldSecret)
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	}
 	return &oldSecret, errors.WithStack(err)
 }
 
-func (r *CertificateReconciler) buildSecretName() string {
-	return fmt.Sprintf("%s%s", r.webhookName, secretPostfix)
+func (r *ReconcileWebhookCertificates) buildSecretName() string {
+	return fmt.Sprintf("%s%s", webhookDeploymentName, secretPostfix)
 }
 
-func (r *CertificateReconciler) getDomain() string {
-	return fmt.Sprintf("%s.%s.svc", r.webhookName, r.namespace)
+func (r *ReconcileWebhookCertificates) getDomain() string {
+	return fmt.Sprintf("%s.%s.svc", webhookDeploymentName, r.namespace)
 }
 
-func (r *CertificateReconciler) createSecret(certs Certs) error {
-	r.logger.Info("creating secret for certificates", "webhook", r.webhookName, "namespace", r.namespace)
-	return r.clt.Create(r.ctx, r.buildDesiredSecret(certs))
-}
-
-func (r *CertificateReconciler) updateSecret(certs Certs, oldSecret *corev1.Secret) error {
-	if !reflect.DeepEqual(certs.Data, oldSecret.Data) {
-		r.logger.Info("updating secret for certificates", "webhook", r.webhookName, "namespace", r.namespace)
-		return r.clt.Update(r.ctx, r.buildDesiredSecret(certs))
-	}
-	r.logger.Info("secret for certificates up to date, skipping update", "webhook", r.webhookName, "namespace", r.namespace)
-	return nil
-}
-
-func (r *CertificateReconciler) buildDesiredSecret(certs Certs) *corev1.Secret {
+func (r *ReconcileWebhookCertificates) buildDesiredSecret(certs Certs) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      r.buildSecretName(),
@@ -128,23 +229,10 @@ func (r *CertificateReconciler) buildDesiredSecret(certs Certs) *corev1.Secret {
 	}
 }
 
-func (r *CertificateReconciler) updateConfiguration(webhookConfiguration *admissionv1.WebhookClientConfig) error {
-	secret, err := r.getSecret()
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	if secret == nil {
-		// Sometimes the secret cannot be found immediately after creating it
-		// In that case, return "not found" and try again
-		return k8serrors.NewNotFound(schema.GroupResource{
-			Group:    (&corev1.Secret{}).GroupVersionKind().Group,
-			Resource: (&corev1.Secret{}).TypeMeta.Kind,
-		}, r.buildSecretName())
-	}
-
+func (r *ReconcileWebhookCertificates) updateConfiguration(webhookConfiguration *admissionregistrationv1.WebhookClientConfig, secret corev1.Secret) error {
 	data, hasData := secret.Data[certificate]
 	if !hasData {
-		err = errors.New(errorCertificatesSecretEmpty)
+		err := errors.New(errorCertificatesSecretEmpty)
 		r.logger.Error(err, errorCertificatesSecretEmpty)
 		return errors.WithStack(err)
 	}
