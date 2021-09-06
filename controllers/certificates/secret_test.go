@@ -7,6 +7,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -19,6 +20,8 @@ import (
 
 const (
 	testNamespace = "test-namespace"
+
+	expectedSecretName = webhook.DeploymentName + secretPostfix
 )
 
 func TestGetSecret(t *testing.T) {
@@ -35,7 +38,7 @@ func TestGetSecret(t *testing.T) {
 	t.Run(`get secret`, func(t *testing.T) {
 		clt := fake.NewClient(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      webhookDeploymentName + "-certs",
+				Name:      expectedSecretName,
 				Namespace: testNamespace,
 			},
 		})
@@ -50,205 +53,145 @@ func TestGetSecret(t *testing.T) {
 	})
 }
 
-func TestCertificateReconciler_ReconcileCertificateSecretForWebhook(t *testing.T) {
-	const expectedSecretName = webhookDeploymentName + "-certs"
+func TestReconcileCertificate_Create(t *testing.T) {
+	clt := prepareFakeClient(false)
+	rec, request := prepareReconcile(clt)
 
-	t.Run(`create new certificates`, func(t *testing.T) {
-		clt := fake.NewClient(
-			&admissionregistrationv1.MutatingWebhookConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: webhookDeploymentName,
-				},
-				Webhooks: []admissionregistrationv1.MutatingWebhook{
-					{
-						ClientConfig: admissionregistrationv1.WebhookClientConfig{},
-					},
-				},
-			},
-			&admissionregistrationv1.ValidatingWebhookConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: webhookDeploymentName,
-				},
-				Webhooks: []admissionregistrationv1.ValidatingWebhook{
-					{
-						ClientConfig: admissionregistrationv1.WebhookClientConfig{},
-					},
-				},
-			},
-		)
-		r := &ReconcileWebhookCertificates{
-			ctx:       context.TODO(),
-			client:    clt,
-			namespace: testNamespace,
-			logger:    logger.NewDTLogger(),
-		}
+	res, err := rec.Reconcile(context.TODO(), request)
+	require.NoError(t, err)
+	assert.NotNil(t, res)
+	assert.Equal(t, SuccessDuration, res.RequeueAfter)
 
-		request := reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      webhookDeploymentName,
-				Namespace: testNamespace,
-			},
-		}
+	secret := &corev1.Secret{}
+	err = clt.Get(context.TODO(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
+	require.NoError(t, err)
 
-		res, err := r.Reconcile(context.TODO(), request)
-		require.NoError(t, err)
-		assert.NotNil(t, res)
-		assert.Equal(t, SuccessDuration, res.RequeueAfter)
+	assert.NotNil(t, secret.Data)
+	assert.NotEmpty(t, secret.Data)
+	assert.Contains(t, secret.Data, RootCert)
+	assert.Contains(t, secret.Data, RootCertOld)
+	assert.NotNil(t, secret.Data[RootCert])
+	assert.NotEmpty(t, secret.Data[RootCert])
+	assert.Empty(t, secret.Data[RootCertOld])
 
-		var secret corev1.Secret
-		err = clt.Get(context.TODO(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, &secret)
+	cert := Certs{
+		Log:     rec.logger,
+		Domain:  rec.getDomain(),
+		Data:    secret.Data,
+		SrcData: secret.Data,
+		Now:     time.Now(),
+	}
 
-		assert.NoError(t, err)
-		assert.NotNil(t, secret.Data)
-		assert.NotEmpty(t, secret.Data)
-		assert.Contains(t, secret.Data, certificate)
-		assert.Contains(t, secret.Data, oldCertificate)
-		assert.NotNil(t, secret.Data[certificate])
-		assert.NotEmpty(t, secret.Data[certificate])
-		assert.Empty(t, secret.Data[oldCertificate])
+	// validateRootCerts and validateServerCerts return false if the certificates are valid
+	assert.False(t, cert.validateRootCerts(time.Now()))
+	assert.False(t, cert.validateServerCerts(time.Now()))
 
-		cert := Certs{
-			Log:     r.logger,
-			Domain:  r.getDomain(),
-			Data:    secret.Data,
-			SrcData: secret.Data,
-			Now:     time.Now(),
-		}
+	mutatingWebhookConfig := &admissionregistrationv1.MutatingWebhookConfiguration{}
+	err = clt.Get(context.TODO(), client.ObjectKey{
+		Name: webhook.DeploymentName,
+	}, mutatingWebhookConfig)
+	require.NoError(t, err)
+	assert.Len(t, mutatingWebhookConfig.Webhooks, 1)
+	testWebhookClientConfig(t, mutatingWebhookConfig.Webhooks[0].ClientConfig, secret.Data)
 
-		// validateRootCerts and validateServerCerts return false if the certificates are valid
-		assert.False(t, cert.validateRootCerts(time.Now()))
-		assert.False(t, cert.validateServerCerts(time.Now()))
-
-		mutatingWebhookConfig := &admissionregistrationv1.MutatingWebhookConfiguration{}
-		err = clt.Get(context.TODO(), client.ObjectKey{
-			Name: webhookDeploymentName,
-		}, mutatingWebhookConfig)
-		require.NoError(t, err)
-		assert.Len(t, mutatingWebhookConfig.Webhooks, 1)
-		testWebhookClientConfig(t, mutatingWebhookConfig.Webhooks[0].ClientConfig, secret.Data)
-
-		validationWebhookConfig := &admissionregistrationv1.ValidatingWebhookConfiguration{}
-		err = clt.Get(context.TODO(), client.ObjectKey{
-			Name: webhookDeploymentName,
-		}, validationWebhookConfig)
-		require.NoError(t, err)
-		testWebhookClientConfig(t, validationWebhookConfig.Webhooks[0].ClientConfig, secret.Data)
-	})
-	//	t.Run(`update certificates`, func(t *testing.T) {
-	//		oldTime, err := time.Parse(time.RFC3339, "2011-01-01T00:00:00Z")
-	//		require.NoError(t, err)
-	//
-	//		clt := fake.NewClient()
-	//		r := &CertificateReconciler{
-	//			ctx:         context.TODO(),
-	//			clt:         clt,
-	//			webhookName: testName,
-	//			namespace:   testNamespace,
-	//			logger:      logger.NewDTLogger(),
-	//		}
-	//		webhookConfig := &admissionregistrationv1.WebhookClientConfig{}
-	//		cert := Certs{
-	//			Log:    r.logger,
-	//			Domain: r.getDomain(),
-	//			Now:    oldTime,
-	//			Data:   make(map[string][]byte),
-	//		}
-	//
-	//		err = cert.generateRootCerts(r.getDomain(), oldTime)
-	//		require.NoError(t, err)
-	//		err = cert.generateServerCerts(r.getDomain(), oldTime)
-	//		require.NoError(t, err)
-	//
-	//		secret := &v1.Secret{
-	//			ObjectMeta: metav1.ObjectMeta{
-	//				Name:      expectedSecretName,
-	//				Namespace: testNamespace,
-	//			},
-	//			Data: cert.Data,
-	//		}
-	//		err = clt.Create(context.TODO(), secret)
-	//		require.NoError(t, err)
-	//
-	//		err = r.ReconcileCertificateSecretForWebhook(webhookConfig)
-	//
-	//		assert.NoError(t, err)
-	//
-	//		err = clt.Get(context.TODO(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
-	//
-	//		assert.NoError(t, err)
-	//		assert.NoError(t, err)
-	//		assert.NotNil(t, secret.Data)
-	//		assert.NotEmpty(t, secret.Data)
-	//		assert.Contains(t, secret.Data, certificate)
-	//		assert.Contains(t, secret.Data, oldCertificate)
-	//		assert.NotNil(t, secret.Data[certificate])
-	//		assert.NotNil(t, secret.Data[oldCertificate])
-	//		assert.NotEmpty(t, secret.Data[certificate])
-	//		assert.NotEmpty(t, secret.Data[oldCertificate])
-	//		assert.NotNil(t, webhookConfig.CABundle)
-	//		assert.NotEmpty(t, webhookConfig.CABundle)
-	//		assert.Equal(t, append(secret.Data[certificate], secret.Data[oldCertificate]...), webhookConfig.CABundle)
-	//	})
+	validationWebhookConfig := &admissionregistrationv1.ValidatingWebhookConfiguration{}
+	err = clt.Get(context.TODO(), client.ObjectKey{
+		Name: webhook.DeploymentName,
+	}, validationWebhookConfig)
+	require.NoError(t, err)
+	testWebhookClientConfig(t, validationWebhookConfig.Webhooks[0].ClientConfig, secret.Data)
 }
 
-//
-//func TestReconcileWebhookCertificates(t *testing.T) {
-//	logger := zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout))
-//	ns := "dynatrace"
-//
-//	tmpDir, err := ioutil.TempDir("", "webhook-certs")
-//	require.NoError(t, err)
-//	defer func() { _ = os.RemoveAll(tmpDir) }()
-//
-//	c := fake.NewClient(&admissionregistrationv1.MutatingWebhookConfiguration{
-//		ObjectMeta: metav1.ObjectMeta{
-//			Name: webhookName,
-//		},
-//		Webhooks: []admissionregistrationv1.MutatingWebhook{
-//			{
-//				Name: webhookName,
-//			},
-//		},
-//	},
-//		&corev1.Service{
-//			ObjectMeta: metav1.ObjectMeta{
-//				Name:      webhookName,
-//				Namespace: ns,
-//			},
-//		})
-//	r := ReconcileWebhookCertificates{client: c, logger: logger}
-//
-//	_, err = r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: webhook.ServiceName, Namespace: ns}})
-//	require.NoError(t, err)
-//
-//	var secret corev1.Secret
-//	require.NoError(t, c.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretCertsName, Namespace: ns}, &secret))
-//
-//	m := make(map[string]string, len(secret.Data))
-//	for k, v := range secret.Data {
-//		m[k] = string(v)
-//	}
-//
-//	getWebhookCA := func() string {
-//		var webhookCfg admissionregistrationv1.MutatingWebhookConfiguration
-//		require.NoError(t, c.Get(context.TODO(), types.NamespacedName{Name: webhook.ServiceName}, &webhookCfg))
-//		return string(webhookCfg.Webhooks[0].ClientConfig.CABundle)
-//	}
-//
-//	var service corev1.Service
-//	require.NoError(t, c.Get(context.TODO(), types.NamespacedName{Name: webhook.ServiceName, Namespace: ns}, &service))
-//
-//	assert.NotEmpty(t, secret.Data["tls.crt"])
-//	assert.NotEmpty(t, secret.Data["tls.key"])
-//	assert.NotEmpty(t, secret.Data["ca.crt"])
-//	assert.NotEmpty(t, secret.Data["ca.key"])
-//	assert.Equal(t, "", string(secret.Data["ca.crt.old"]))
-//	assert.Equal(t, getWebhookCA(), string(secret.Data["ca.crt"]))
-//}
+func TestReconcileCertificate_Update(t *testing.T) {
+	clt := prepareFakeClient(true)
+	rec, request := prepareReconcile(clt)
+
+	res, err := rec.Reconcile(context.TODO(), request)
+	require.NoError(t, err)
+	assert.NotNil(t, res)
+	assert.Equal(t, SuccessDuration, res.RequeueAfter)
+
+	secret := &corev1.Secret{}
+	err = clt.Get(context.TODO(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
+	require.NoError(t, err)
+
+	assert.NotNil(t, secret.Data)
+	assert.NotEmpty(t, secret.Data)
+	assert.Contains(t, secret.Data, RootKey)
+	assert.Contains(t, secret.Data, RootCert)
+	assert.Contains(t, secret.Data, RootCertOld)
+	assert.Contains(t, secret.Data, ServerKey)
+	assert.Contains(t, secret.Data, ServerCert)
+	assert.NotNil(t, secret.Data[RootCert])
+	assert.NotEmpty(t, secret.Data[RootCert])
+	assert.Equal(t, []byte{123}, secret.Data[RootCertOld])
+}
 
 func testWebhookClientConfig(t *testing.T, webhookClientConfig admissionregistrationv1.WebhookClientConfig, secretData map[string][]byte) {
 	assert.NotNil(t, webhookClientConfig)
 	assert.NotNil(t, webhookClientConfig.CABundle)
 	assert.NotEmpty(t, webhookClientConfig.CABundle)
-	assert.Equal(t, secretData[certificate], webhookClientConfig.CABundle)
+	assert.Equal(t, secretData[RootCert], webhookClientConfig.CABundle)
+}
+
+func prepareFakeClient(withSecret bool) client.Client {
+	objs := []client.Object{
+		&admissionregistrationv1.MutatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhook.DeploymentName,
+			},
+			Webhooks: []admissionregistrationv1.MutatingWebhook{
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+			},
+		},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhook.DeploymentName,
+			},
+			Webhooks: []admissionregistrationv1.ValidatingWebhook{
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+			},
+		},
+	}
+
+	if withSecret {
+		objs = append(objs,
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: testNamespace,
+					Name:      expectedSecretName,
+				},
+				Data: map[string][]byte{
+					"ca.key":  {123},
+					"ca.crt":  {123},
+					"tls.key": {123},
+					"tls.crt": {123},
+				},
+			},
+		)
+	}
+
+	return fake.NewClient(objs...)
+}
+
+func prepareReconcile(clt client.Client) (*ReconcileWebhookCertificates, reconcile.Request) {
+	rec := &ReconcileWebhookCertificates{
+		ctx:       context.TODO(),
+		client:    clt,
+		namespace: testNamespace,
+		logger:    logger.NewDTLogger(),
+	}
+
+	request := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      webhook.DeploymentName,
+			Namespace: testNamespace,
+		},
+	}
+
+	return rec, request
 }

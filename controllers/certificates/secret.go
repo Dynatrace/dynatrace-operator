@@ -6,7 +6,9 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/eventfilter"
+	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -22,21 +24,16 @@ import (
 )
 
 const (
-	secretPostfix  = "-certs"
-	certificate    = "ca.crt"
-	oldCertificate = "ca.crt.old"
+	SuccessDuration = 3 * time.Hour
 
+	secretPostfix                = "-certs"
 	errorCertificatesSecretEmpty = "certificates secret is empty"
-)
-
-const (
-	webhookDeploymentName = "dynatrace-webhook"
 )
 
 func Add(mgr manager.Manager, ns string) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Deployment{}).
-		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhookDeploymentName, ns)).
+		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, ns)).
 		Complete(newWebhookReconciler(mgr))
 }
 
@@ -55,7 +52,7 @@ type ReconcileWebhookCertificates struct {
 }
 
 func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	r.logger.Info("reconciling mutating webhook certificates",
+	r.logger.Info("reconciling webhook certificates",
 		"namespace", request.Namespace, "name", request.Name)
 	r.namespace = request.Namespace
 	r.ctx = ctx
@@ -77,7 +74,6 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		}
 	}
 
-	// todo: validate certs if secret exists (split certs logic) -> skip update if still valid
 	certs := Certs{
 		Log:     r.logger,
 		Domain:  r.getDomain(),
@@ -89,7 +85,7 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 	}
 
 	if !reflect.DeepEqual(certs.Data, secret.Data) {
-		// use generated certificate
+		// certificate needs to be updated
 		secret.Data = certs.Data
 	} else {
 		r.logger.Info("secret for certificates up to date, skipping update")
@@ -111,41 +107,39 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 	}
 
 	// load webhook configurations that need certificates
-	mutatingWebhook, err := r.getMutatingWebhookConfiguration(ctx)
+	mutatingWebhookConfiguration, err := r.getMutatingWebhookConfiguration(ctx)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	validationWebhook, err := r.getValidationWebhookConfiguration(ctx)
+	validatingWebhookConfiguration, err := r.getValidatingWebhookConfiguration(ctx)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	// update certificates for webhook configurations
 	r.logger.Info("save certificates into webhook configurations")
-	webhookConfigurations := []*admissionregistrationv1.WebhookClientConfig{
-		&mutatingWebhook.Webhooks[0].ClientConfig,
-		&validationWebhook.Webhooks[0].ClientConfig,
-	}
+	webhookConfigurations := kubeobjects.GetWebhookClientConfigs(mutatingWebhookConfiguration, validatingWebhookConfiguration)
 	for _, conf := range webhookConfigurations {
 		if err := r.updateConfiguration(conf, secret); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
 
-	if err = r.client.Update(ctx, mutatingWebhook); err != nil {
-		return reconcile.Result{}, errors.WithStack(err)
+	if err = r.client.Update(ctx, mutatingWebhookConfiguration); err != nil {
+		return reconcile.Result{}, err
 	}
-	if err = r.client.Update(ctx, validationWebhook); err != nil {
-		return reconcile.Result{}, errors.WithStack(err)
+	if err = r.client.Update(ctx, validatingWebhookConfiguration); err != nil {
+		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 }
 
-func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx context.Context) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
+func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx context.Context) (
+	*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 	var mutatingWebhook admissionregistrationv1.MutatingWebhookConfiguration
 	err := r.client.Get(ctx, client.ObjectKey{
-		Name: webhookDeploymentName,
+		Name: webhook.DeploymentName,
 	}, &mutatingWebhook)
 	if err != nil {
 		return nil, err
@@ -157,10 +151,11 @@ func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx conte
 	return &mutatingWebhook, nil
 }
 
-func (r *ReconcileWebhookCertificates) getValidationWebhookConfiguration(ctx context.Context) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+func (r *ReconcileWebhookCertificates) getValidatingWebhookConfiguration(ctx context.Context) (
+	*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 	var mutatingWebhook admissionregistrationv1.ValidatingWebhookConfiguration
 	err := r.client.Get(ctx, client.ObjectKey{
-		Name: webhookDeploymentName,
+		Name: webhook.DeploymentName,
 	}, &mutatingWebhook)
 	if err != nil {
 		return nil, err
@@ -182,23 +177,23 @@ func (r *ReconcileWebhookCertificates) getSecret() (*corev1.Secret, error) {
 }
 
 func (r *ReconcileWebhookCertificates) buildSecretName() string {
-	return fmt.Sprintf("%s%s", webhookDeploymentName, secretPostfix)
+	return fmt.Sprintf("%s%s", webhook.DeploymentName, secretPostfix)
 }
 
 func (r *ReconcileWebhookCertificates) getDomain() string {
-	return fmt.Sprintf("%s.%s.svc", webhookDeploymentName, r.namespace)
+	return fmt.Sprintf("%s.%s.svc", webhook.DeploymentName, r.namespace)
 }
 
 func (r *ReconcileWebhookCertificates) updateConfiguration(
 	webhookConfiguration *admissionregistrationv1.WebhookClientConfig, secret *corev1.Secret) error {
-	data, hasData := secret.Data[certificate]
+	data, hasData := secret.Data[RootCert]
 	if !hasData {
 		err := errors.New(errorCertificatesSecretEmpty)
 		r.logger.Error(err, errorCertificatesSecretEmpty)
 		return errors.WithStack(err)
 	}
 
-	if oldData, hasOldData := secret.Data[oldCertificate]; hasOldData {
+	if oldData, hasOldData := secret.Data[RootCertOld]; hasOldData {
 		data = append(data, oldData...)
 	}
 
