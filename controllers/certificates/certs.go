@@ -125,24 +125,13 @@ func (cs *Certs) validateServerCerts(now time.Time) bool {
 }
 
 func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
-	var err error
-
 	// Generate CA root keys
 	cs.Log.Info("generating root certificate")
-	privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		return fmt.Errorf("failed to generate server private key: %w", err)
-	}
-	cs.rootPrivateKey = privKey
-
-	x509Encoded, err := x509.MarshalECPrivateKey(cs.rootPrivateKey)
+	privateKey, err := cs.generatePrivateKey(RootKey)
 	if err != nil {
 		return err
 	}
-	cs.Data[RootKey] = pem.EncodeToMemory(&pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: x509Encoded,
-	})
+	cs.rootPrivateKey = privateKey
 
 	// Generate CA root certificate
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
@@ -190,19 +179,10 @@ func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 	// Generate server keys
 	cs.Log.Info("generating server certificate")
-	privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		return fmt.Errorf("failed to generate server private key: %w", err)
-	}
-
-	x509Encoded, err := x509.MarshalECPrivateKey(privKey)
+	privateKey, err := cs.generatePrivateKey(ServerKey)
 	if err != nil {
 		return err
 	}
-	cs.Data[ServerKey] = pem.EncodeToMemory(&pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: x509Encoded,
-	})
 
 	// Generate server certificate
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
@@ -231,7 +211,7 @@ func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 		BasicConstraintsValid: true,
 	}
 
-	serverPublicCertDER, err := x509.CreateCertificate(rand.Reader, tpl, cs.rootPublicCert, privKey.Public(), cs.rootPrivateKey)
+	serverPublicCertDER, err := x509.CreateCertificate(rand.Reader, tpl, cs.rootPublicCert, privateKey.Public(), cs.rootPrivateKey)
 	if err != nil {
 		return fmt.Errorf("failed to generate server certificate: %w", err)
 	}
@@ -239,4 +219,21 @@ func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 	cs.Data[ServerCert] = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverPublicCertDER})
 	cs.Log.Info("server certificate generated")
 	return nil
+}
+
+func (cs *Certs) generatePrivateKey(dataKey string) (*ecdsa.PrivateKey, error) {
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate server private key: %w", err)
+	}
+
+	x509Encoded, err := x509.MarshalECPrivateKey(privateKey)
+	if err != nil {
+		return nil, err
+	}
+	cs.Data[dataKey] = pem.EncodeToMemory(&pem.Block{
+		Type:  "PRIVATE KEY",
+		Bytes: x509Encoded,
+	})
+	return privateKey, nil
 }
