@@ -91,30 +91,47 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 	}
 
+	err = r.createOrUpdateSecret(ctx, secret, createSecret)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	err = r.updateWebhookConfigurations(ctx, secret)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{RequeueAfter: SuccessDuration}, nil
+}
+
+func (r *ReconcileWebhookCertificates) createOrUpdateSecret(ctx context.Context, secret *corev1.Secret, createSecret bool) error {
 	if createSecret {
 		r.logger.Info("creating certificates secret")
-		err = r.client.Create(ctx, secret)
+		err := r.client.Create(ctx, secret)
 		if err != nil {
-			return reconcile.Result{}, err
+			return err
 		}
 		r.logger.Info("created certificates secret")
 	} else {
 		r.logger.Info("updating certificates secret")
-		err = r.client.Update(ctx, secret)
+		err := r.client.Update(ctx, secret)
 		if err != nil {
-			return reconcile.Result{}, err
+			return err
 		}
 		r.logger.Info("updated certificates secret")
 	}
+	return nil
+}
 
+func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.Context, secret *corev1.Secret) error {
 	// load webhook configurations that need certificates
 	mutatingWebhookConfiguration, err := r.getMutatingWebhookConfiguration(ctx)
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 	validatingWebhookConfiguration, err := r.getValidatingWebhookConfiguration(ctx)
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
 	// update certificates for webhook configurations
@@ -125,19 +142,19 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 	}
 	for _, conf := range webhookConfigurations {
 		if err := r.updateConfiguration(conf, secret); err != nil {
-			return reconcile.Result{}, err
+			return err
 		}
 	}
 
+	// update webhook configurations
 	if err = r.client.Update(ctx, mutatingWebhookConfiguration); err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 	if err = r.client.Update(ctx, validatingWebhookConfiguration); err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 	r.logger.Info("saved certificates into webhook configurations")
-
-	return reconcile.Result{RequeueAfter: SuccessDuration}, nil
+	return nil
 }
 
 func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx context.Context) (

@@ -22,6 +22,8 @@ const (
 	testNamespace = "test-namespace"
 
 	expectedSecretName = webhook.DeploymentName + secretPostfix
+
+	testBytes = 123
 )
 
 func TestGetSecret(t *testing.T) {
@@ -102,7 +104,7 @@ func TestReconcileCertificate_Update(t *testing.T) {
 	assert.Contains(t, secret.Data, ServerCert)
 	assert.NotNil(t, secret.Data[RootCert])
 	assert.NotEmpty(t, secret.Data[RootCert])
-	assert.Equal(t, []byte{123}, secret.Data[RootCertOld])
+	assert.Equal(t, []byte{testBytes}, secret.Data[RootCertOld])
 
 	verifyCertificates(t, rec, secret, clt, true)
 }
@@ -139,10 +141,10 @@ func prepareFakeClient(withSecret bool) client.Client {
 					Name:      expectedSecretName,
 				},
 				Data: map[string][]byte{
-					RootKey:    {123},
-					RootCert:   {123},
-					ServerKey:  {123},
-					ServerCert: {123},
+					RootKey:    {testBytes},
+					RootCert:   {testBytes},
+					ServerKey:  {testBytes},
+					ServerCert: {testBytes},
 				},
 			},
 		)
