@@ -97,7 +97,8 @@ k8s_cluster_id ${cluster_id}" >> ${1}
 
 writeConfHostTo() {
 	echo "[host]
-tenant ${host_tenant}" >> ${1}
+tenant ${host_tenant}
+isCloudNativeFullStack true" >> ${1}
 }
 
 createConfigurationFiles() {
