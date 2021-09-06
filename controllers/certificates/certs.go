@@ -1,8 +1,9 @@
 package certificates
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -34,7 +35,7 @@ type Certs struct {
 
 	Now time.Time
 
-	rootPrivateKey *rsa.PrivateKey
+	rootPrivateKey *ecdsa.PrivateKey
 	rootPublicCert *x509.Certificate
 }
 
@@ -75,7 +76,7 @@ func (cs *Certs) validateRootCerts(now time.Time) bool {
 
 	var err error
 
-	if block, _ := pem.Decode(cs.Data["ca.crt"]); block == nil {
+	if block, _ := pem.Decode(cs.Data[RootCert]); block == nil {
 		cs.Log.Info("Failed to parse root certificates, renewing", "error", "can't decode PEM file")
 		return true
 	} else if cs.rootPublicCert, err = x509.ParseCertificate(block.Bytes); err != nil {
@@ -89,7 +90,7 @@ func (cs *Certs) validateRootCerts(now time.Time) bool {
 	if block, _ := pem.Decode(cs.Data[RootKey]); block == nil {
 		cs.Log.Info("Failed to parse root key, renewing", "error", "can't decode PEM file")
 		return true
-	} else if cs.rootPrivateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
+	} else if cs.rootPrivateKey, err = x509.ParseECPrivateKey(block.Bytes); err != nil {
 		cs.Log.Info("Failed to parse root key, renewing", "error", err)
 		return true
 	}
@@ -128,20 +129,22 @@ func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 
 	// Generate CA root keys
 	cs.Log.Info("generating root certificate")
-	if cs.rootPrivateKey, err = rsa.GenerateKey(rand.Reader, 4096); err != nil {
-		return fmt.Errorf("failed to generate root private key: %w", err)
+	privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return fmt.Errorf("failed to generate server private key: %w", err)
 	}
-	if err = cs.rootPrivateKey.Validate(); err != nil {
-		return fmt.Errorf("validation for root private key failed: %w", err)
-	}
+	cs.rootPrivateKey = privKey
 
+	x509Encoded, err := x509.MarshalECPrivateKey(cs.rootPrivateKey)
+	if err != nil {
+		return err
+	}
 	cs.Data[RootKey] = pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(cs.rootPrivateKey),
+		Type:  "PRIVATE KEY",
+		Bytes: x509Encoded,
 	})
 
 	// Generate CA root certificate
-
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
 		return fmt.Errorf("failed to generate serial number for root certificate: %w", err)
@@ -186,24 +189,22 @@ func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 
 func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 	// Generate server keys
-
 	cs.Log.Info("generating server certificate")
-	privKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return fmt.Errorf("failed to generate server private key: %w", err)
 	}
 
-	if err = privKey.Validate(); err != nil {
-		return fmt.Errorf("validation for server private key failed: %w", err)
+	x509Encoded, err := x509.MarshalECPrivateKey(privKey)
+	if err != nil {
+		return err
 	}
-
 	cs.Data[ServerKey] = pem.EncodeToMemory(&pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(privKey),
+		Type:  "PRIVATE KEY",
+		Bytes: x509Encoded,
 	})
 
 	// Generate server certificate
-
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
 		return fmt.Errorf("failed to generate serial number for server certificate: %w", err)
