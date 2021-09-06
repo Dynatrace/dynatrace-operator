@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/eventfilter"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"
@@ -98,12 +97,14 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		if err != nil {
 			return reconcile.Result{}, err
 		}
+		r.logger.Info("created certificates secret")
 	} else {
 		r.logger.Info("updating certificates secret")
 		err = r.client.Update(ctx, secret)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
+		r.logger.Info("updated certificates secret")
 	}
 
 	// load webhook configurations that need certificates
@@ -118,7 +119,10 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 
 	// update certificates for webhook configurations
 	r.logger.Info("save certificates into webhook configurations")
-	webhookConfigurations := kubeobjects.GetWebhookClientConfigs(mutatingWebhookConfiguration, validatingWebhookConfiguration)
+	webhookConfigurations := []*admissionregistrationv1.WebhookClientConfig{
+		&mutatingWebhookConfiguration.Webhooks[0].ClientConfig,
+		&validatingWebhookConfiguration.Webhooks[0].ClientConfig,
+	}
 	for _, conf := range webhookConfigurations {
 		if err := r.updateConfiguration(conf, secret); err != nil {
 			return reconcile.Result{}, err
@@ -131,6 +135,7 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 	if err = r.client.Update(ctx, validatingWebhookConfiguration); err != nil {
 		return reconcile.Result{}, err
 	}
+	r.logger.Info("saved certificates into webhook configurations")
 
 	return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 }

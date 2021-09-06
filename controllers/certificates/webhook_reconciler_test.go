@@ -68,38 +68,16 @@ func TestReconcileCertificate_Create(t *testing.T) {
 
 	assert.NotNil(t, secret.Data)
 	assert.NotEmpty(t, secret.Data)
+	assert.Contains(t, secret.Data, RootKey)
 	assert.Contains(t, secret.Data, RootCert)
 	assert.Contains(t, secret.Data, RootCertOld)
+	assert.Contains(t, secret.Data, ServerKey)
+	assert.Contains(t, secret.Data, ServerCert)
 	assert.NotNil(t, secret.Data[RootCert])
 	assert.NotEmpty(t, secret.Data[RootCert])
 	assert.Empty(t, secret.Data[RootCertOld])
 
-	cert := Certs{
-		Log:     rec.logger,
-		Domain:  rec.getDomain(),
-		Data:    secret.Data,
-		SrcData: secret.Data,
-		Now:     time.Now(),
-	}
-
-	// validateRootCerts and validateServerCerts return false if the certificates are valid
-	assert.False(t, cert.validateRootCerts(time.Now()))
-	assert.False(t, cert.validateServerCerts(time.Now()))
-
-	mutatingWebhookConfig := &admissionregistrationv1.MutatingWebhookConfiguration{}
-	err = clt.Get(context.TODO(), client.ObjectKey{
-		Name: webhook.DeploymentName,
-	}, mutatingWebhookConfig)
-	require.NoError(t, err)
-	assert.Len(t, mutatingWebhookConfig.Webhooks, 1)
-	testWebhookClientConfig(t, mutatingWebhookConfig.Webhooks[0].ClientConfig, secret.Data)
-
-	validationWebhookConfig := &admissionregistrationv1.ValidatingWebhookConfiguration{}
-	err = clt.Get(context.TODO(), client.ObjectKey{
-		Name: webhook.DeploymentName,
-	}, validationWebhookConfig)
-	require.NoError(t, err)
-	testWebhookClientConfig(t, validationWebhookConfig.Webhooks[0].ClientConfig, secret.Data)
+	verifyCertificates(t, rec, secret, clt, false)
 }
 
 func TestReconcileCertificate_Update(t *testing.T) {
@@ -125,13 +103,8 @@ func TestReconcileCertificate_Update(t *testing.T) {
 	assert.NotNil(t, secret.Data[RootCert])
 	assert.NotEmpty(t, secret.Data[RootCert])
 	assert.Equal(t, []byte{123}, secret.Data[RootCertOld])
-}
 
-func testWebhookClientConfig(t *testing.T, webhookClientConfig admissionregistrationv1.WebhookClientConfig, secretData map[string][]byte) {
-	assert.NotNil(t, webhookClientConfig)
-	assert.NotNil(t, webhookClientConfig.CABundle)
-	assert.NotEmpty(t, webhookClientConfig.CABundle)
-	assert.Equal(t, secretData[RootCert], webhookClientConfig.CABundle)
+	verifyCertificates(t, rec, secret, clt, true)
 }
 
 func prepareFakeClient(withSecret bool) client.Client {
@@ -166,10 +139,10 @@ func prepareFakeClient(withSecret bool) client.Client {
 					Name:      expectedSecretName,
 				},
 				Data: map[string][]byte{
-					"ca.key":  {123},
-					"ca.crt":  {123},
-					"tls.key": {123},
-					"tls.crt": {123},
+					RootKey:    {123},
+					RootCert:   {123},
+					ServerKey:  {123},
+					ServerCert: {123},
 				},
 			},
 		)
@@ -194,4 +167,48 @@ func prepareReconcile(clt client.Client) (*ReconcileWebhookCertificates, reconci
 	}
 
 	return rec, request
+}
+
+func testWebhookClientConfig(
+	t *testing.T, webhookClientConfig *admissionregistrationv1.WebhookClientConfig,
+	secretData map[string][]byte, isUpdate bool) {
+	assert.NotNil(t, webhookClientConfig)
+	assert.NotNil(t, webhookClientConfig.CABundle)
+	assert.NotEmpty(t, webhookClientConfig.CABundle)
+
+	expectedCert := secretData[RootCert]
+	if isUpdate {
+		expectedCert = append(expectedCert, []byte{123}...)
+	}
+	assert.Equal(t, expectedCert, webhookClientConfig.CABundle)
+}
+
+func verifyCertificates(t *testing.T, rec *ReconcileWebhookCertificates, secret *corev1.Secret, clt client.Client, isUpdate bool) {
+	cert := Certs{
+		Log:     rec.logger,
+		Domain:  rec.getDomain(),
+		Data:    secret.Data,
+		SrcData: secret.Data,
+		Now:     time.Now(),
+	}
+
+	// validateRootCerts and validateServerCerts return false if the certificates are valid
+	assert.False(t, cert.validateRootCerts(time.Now()))
+	assert.False(t, cert.validateServerCerts(time.Now()))
+
+	mutatingWebhookConfig := &admissionregistrationv1.MutatingWebhookConfiguration{}
+	err := clt.Get(context.TODO(), client.ObjectKey{
+		Name: webhook.DeploymentName,
+	}, mutatingWebhookConfig)
+	require.NoError(t, err)
+	assert.Len(t, mutatingWebhookConfig.Webhooks, 1)
+	testWebhookClientConfig(t, &mutatingWebhookConfig.Webhooks[0].ClientConfig, secret.Data, isUpdate)
+
+	validatingWebhookConfig := &admissionregistrationv1.ValidatingWebhookConfiguration{}
+	err = clt.Get(context.TODO(), client.ObjectKey{
+		Name: webhook.DeploymentName,
+	}, validatingWebhookConfig)
+	require.NoError(t, err)
+	assert.Len(t, validatingWebhookConfig.Webhooks, 1)
+	testWebhookClientConfig(t, &validatingWebhookConfig.Webhooks[0].ClientConfig, secret.Data, isUpdate)
 }
