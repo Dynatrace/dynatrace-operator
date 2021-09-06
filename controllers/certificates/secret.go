@@ -77,6 +77,7 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 
 	secret, createSecret, err := r.validateAndGenerateSecretAndWebhookCA(
 		&mutatingWebhook.Webhooks[0].ClientConfig,
+		&mutatingWebhook.Webhooks[1].ClientConfig,
 		&validationWebhook.Webhooks[0].ClientConfig)
 	if k8serrors.IsNotFound(err) {
 		return reconcile.Result{RequeueAfter: SecretMissingDuration}, nil
@@ -117,8 +118,7 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx context.Context) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 	var mutatingWebhook admissionregistrationv1.MutatingWebhookConfiguration
 	err := r.client.Get(ctx, client.ObjectKey{
-		Name:      webhookDeploymentName,
-		Namespace: r.namespace,
+		Name: webhookDeploymentName,
 	}, &mutatingWebhook)
 	if err != nil {
 		return nil, err
@@ -133,8 +133,7 @@ func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx conte
 func (r *ReconcileWebhookCertificates) getValidationWebhookConfiguration(ctx context.Context) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 	var mutatingWebhook admissionregistrationv1.ValidatingWebhookConfiguration
 	err := r.client.Get(ctx, client.ObjectKey{
-		Name:      webhookDeploymentName,
-		Namespace: r.namespace,
+		Name: webhookDeploymentName,
 	}, &mutatingWebhook)
 	if err != nil {
 		return nil, err

@@ -1,4 +1,4 @@
-package namespacemapper
+package mapper
 
 import (
 	"context"
@@ -14,15 +14,16 @@ import (
 const (
 	CodeModulesMapName = "code-modules-map"
 	DataIngestMapName  = "data-ingest-map"
+	ReadyLabelKey      = "dynatrace.com/ns"
 )
 
 type dynaKubeFilterFunc func(dk dynatracev1alpha1.DynaKube) bool
 type namespaceSelectorFunc func(dk dynatracev1alpha1.DynaKube) *metav1.LabelSelector
 
 // getOrCreateMap returns ConfigMap in operator's namespace
-func getOrCreateMap(ctx context.Context, clt client.Client, operatorNs string, cfgMapName string) (*corev1.ConfigMap, error) {
+func getOrCreateMap(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, cfgMapName string) (*corev1.ConfigMap, error) {
 	var cfgMap corev1.ConfigMap
-	if err := clt.Get(ctx, client.ObjectKey{Name: cfgMapName, Namespace: operatorNs}, &cfgMap); err != nil {
+	if err := apiReader.Get(ctx, client.ObjectKey{Name: cfgMapName, Namespace: operatorNs}, &cfgMap); err != nil {
 		if k8serrors.IsNotFound(err) {
 			cfgMap = corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{Name: cfgMapName, Namespace: operatorNs},
@@ -34,7 +35,7 @@ func getOrCreateMap(ctx context.Context, clt client.Client, operatorNs string, c
 				}
 			}
 
-			if err := clt.Get(ctx, client.ObjectKey{Name: cfgMapName, Namespace: operatorNs}, &cfgMap); err != nil {
+			if err := apiReader.Get(ctx, client.ObjectKey{Name: cfgMapName, Namespace: operatorNs}, &cfgMap); err != nil {
 				return nil, errors.WithMessagef(err, "ConfigMap %s created. Failed to query the map", cfgMapName)
 			}
 		} else {
@@ -42,4 +43,24 @@ func getOrCreateMap(ctx context.Context, clt client.Client, operatorNs string, c
 		}
 	}
 	return &cfgMap, nil
+}
+
+func updateNamespaceLabel(ctx context.Context, clt client.Client, operatorNs string, ns *corev1.Namespace, dk *dynatracev1alpha1.DynaKube) {
+	if operatorNs == ns.Name {
+		return
+	}
+	if dkName, ok := ns.Labels[ReadyLabelKey]; ok && dkName == dk.Name {
+		return
+	}
+	if ns.Labels == nil {
+		ns.Labels = make(map[string]string)
+	}
+	ns.Labels[ReadyLabelKey] = dk.Name
+}
+
+func removeNamespaceLabel(ctx context.Context, clt client.Client, ns *corev1.Namespace) {
+	if _, ok := ns.Labels[ReadyLabelKey]; !ok {
+		return
+	}
+	delete(ns.Labels, ReadyLabelKey)
 }

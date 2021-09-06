@@ -18,6 +18,7 @@ package main
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/webhook"
+	"github.com/Dynatrace/dynatrace-operator/webhook/namespace"
 	"github.com/Dynatrace/dynatrace-operator/webhook/server"
 	"github.com/spf13/pflag"
 	"k8s.io/client-go/rest"
@@ -45,6 +46,10 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, func(), e
 	}
 
 	waitForCertificates(newCertificateWatcher(mgr, ns, webhook.SecretCertsName))
+
+	if err := namespace.AddNamespaceWebhookToManager(mgr, ns); err != nil {
+		return nil, cleanUp, err
+	}
 
 	if err := server.AddToManager(mgr, ns); err != nil {
 		return nil, cleanUp, err

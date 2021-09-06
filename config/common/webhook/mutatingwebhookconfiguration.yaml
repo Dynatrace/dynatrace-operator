@@ -6,7 +6,7 @@ metadata:
     dynatrace.com/operator: dynakube
     internal.dynatrace.com/component: webhook
 webhooks:
-  - name: webhook.dynatrace.com
+  - name: webhook.pod.dynatrace.com
     reinvocationPolicy: IfNeeded
     rules:
       - apiGroups: [ "" ]
@@ -16,12 +16,27 @@ webhooks:
         scope: Namespaced
     namespaceSelector:
       matchExpressions:
-        - key: oneagent.dynatrace.com/instance
+        - key: dynatrace.com/ns
           operator: Exists
     clientConfig:
       service:
         name: dynatrace-webhook
         namespace: dynatrace
         path: /inject
+    admissionReviewVersions: [ "v1beta1", "v1" ]
+    sideEffects: None
+  - name: webhook.ns.dynatrace.com
+    reinvocationPolicy: IfNeeded
+    rules:
+      - apiGroups: [ "" ]
+        apiVersions: [ "v1" ]
+        operations: [ "CREATE", "UPDATE", "DELETE"]
+        resources: [ "namespaces" ]
+        scope: Cluster
+    clientConfig:
+      service:
+        name: dynatrace-webhook
+        namespace: dynatrace
+        path: /label-ns
     admissionReviewVersions: [ "v1beta1", "v1" ]
     sideEffects: None

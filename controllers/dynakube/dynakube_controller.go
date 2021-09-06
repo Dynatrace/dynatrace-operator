@@ -20,7 +20,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	mapper "github.com/Dynatrace/dynatrace-operator/namespacemapper"
+	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -110,11 +110,12 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	reqLogger.Info("Reconciling DynaKube")
 
 	// Fetch the DynaKube instance
-	instance := &dynatracev1alpha1.DynaKube{}
+	instance := &dynatracev1alpha1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: request.NamespacedName.Name}}
+	dkMapper := mapper.NewDynakubeMapper(ctx, r.client, r.apiReader, r.operatorNamespace, instance)
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			if err := mapper.UnmapFromDynaKube(ctx, r.client, request.NamespacedName.Namespace, request.NamespacedName.Name); err != nil {
+			if err := dkMapper.UnmapFromDynaKube(); err != nil {
 				return reconcile.Result{}, err
 			}
 			// Request object not found, could have been deleted after reconcile request.
@@ -125,9 +126,8 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-
 	dkState := controllers.NewDynakubeState(reqLogger, instance)
-	r.reconcileDynaKube(ctx, dkState)
+	r.reconcileDynaKube(ctx, dkState, &dkMapper)
 
 	if dkState.Err != nil {
 		if dkState.Updated || instance.Status.SetPhaseOnError(dkState.Err) {
@@ -154,7 +154,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	return reconcile.Result{RequeueAfter: dkState.RequeueAfter}, nil
 }
 
-func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *controllers.DynakubeState) {
+func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *controllers.DynakubeState, dkMapper *mapper.DynakubeMapper) {
 	dtcReconciler := DynatraceClientReconciler{
 		Client:              r.client,
 		DynatraceClientFunc: r.dtcBuildFunc,
@@ -217,6 +217,20 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 		return
 	}
 
+	if dkState.Instance.Spec.CodeModules.Enabled {
+		if err := dkMapper.MapFromDynaKubeCodeModules(); err != nil {
+			dkState.Log.Error(err, "update of a map of namespaces failed")
+			return
+		}
+	}
+
+	if dkState.Instance.Spec.DataIngestSpec.Enabled {
+		if err := dkMapper.MapFromDynakubeDataIngest(); err != nil {
+			dkState.Log.Error(err, "update of a map of namespaces failed")
+			return
+		}
+	}
+
 	if dkState.Instance.Spec.InfraMonitoring.Enabled {
 		upd, err = oneagent.NewOneAgentReconciler(
 			r.client, r.apiReader, r.scheme, dkState.Log, dkState.Instance, &dkState.Instance.Spec.InfraMonitoring.FullStackSpec, daemonset.InframonFeature,
@@ -241,20 +255,6 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 	} else {
 		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-classic", Namespace: dkState.Instance.Namespace}}
 		if err := r.ensureDeleted(&ds); dkState.Error(err) {
-			return
-		}
-	}
-
-	if dkState.Instance.Spec.CodeModules.Enabled {
-		if err := mapper.MapFromDynaKubeCodeModules(ctx, r.client, dkState.Instance.Namespace, dkState.Instance); err != nil {
-			dkState.Log.Error(err, "update of a map of namespaces failed")
-			return
-		}
-	}
-
-	if dkState.Instance.Spec.DataIngestSpec.Enabled {
-		if err := mapper.MapFromDynakubeDataIngest(ctx, r.client, dkState.Instance.Namespace, dkState.Instance); err != nil {
-			dkState.Log.Error(err, "update of a map of namespaces failed")
 			return
 		}
 	}

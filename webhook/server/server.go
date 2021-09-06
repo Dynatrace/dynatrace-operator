@@ -16,7 +16,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	mapper "github.com/Dynatrace/dynatrace-operator/namespacemapper"
+	"github.com/Dynatrace/dynatrace-operator/initgeneration"
+	"github.com/Dynatrace/dynatrace-operator/mapper"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -98,6 +99,7 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 	}
 
 	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podInjector{
+		apiReader: mgr.GetAPIReader(),
 		namespace: ns,
 		image:     pod.Spec.Containers[0].Image,
 		apmExists: apmExists,
@@ -116,6 +118,7 @@ func registerHealthzEndpoint(mgr manager.Manager) {
 // podAnnotator injects the OneAgent into Pods
 type podInjector struct {
 	client    client.Client
+	apiReader client.Reader
 	decoder   *admission.Decoder
 	image     string
 	namespace string
@@ -133,19 +136,25 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	pod := &corev1.Pod{}
 	err := m.decoder.Decode(req, pod)
 	if err != nil {
+		logger.Error(err, "Failed to decode the request for pod injection")
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 	var ns corev1.Namespace
 	if err := m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
+		logger.Error(err, "Failed to query the namespace before pod injection")
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
-	var cfg corev1.ConfigMap
-	if err := m.client.Get(ctx, client.ObjectKey{Name: mapper.CodeModulesMapName, Namespace: m.namespace}, &cfg); err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
+
+	dkName := kubeobjects.GetField(ns.Labels, mapper.ReadyLabelKey, "")
+	if dkName == "" {
+		return admission.Errored(http.StatusBadRequest, fmt.Errorf("no DynaKube instance set for namespace: %s", req.Namespace))
 	}
-	dkName, ok := cfg.Data[ns.Name]
-	if !ok {
-		return admission.Patched("")
+	var initSecret corev1.Secret
+	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtwebhook.SecretConfigName, Namespace: ns.Name}, &initSecret); k8serrors.IsNotFound(err) {
+		if err := initgeneration.NewInitGenerator(m.client, m.apiReader, m.namespace, logger).GenerateForNamespace(ctx, dkName, ns.Name); err != nil {
+			logger.Error(err, "Failed to create the init secret before pod injection")
+			return admission.Errored(http.StatusBadRequest, err)
+		}
 	}
 	logger.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 

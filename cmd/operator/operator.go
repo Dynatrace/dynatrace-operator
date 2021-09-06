@@ -19,8 +19,6 @@ package main
 import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
-	"github.com/Dynatrace/dynatrace-operator/controllers/namespace"
-	"github.com/Dynatrace/dynatrace-operator/controllers/namespace_init"
 	"github.com/Dynatrace/dynatrace-operator/controllers/nodes"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -60,9 +58,7 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error)
 
 	funcs := []func(manager.Manager, string) error{
 		dynakube.Add,
-		namespace.Add,
 		nodes.Add,
-		namespace_init.Add,
 		certificates.Add,
 	}
 

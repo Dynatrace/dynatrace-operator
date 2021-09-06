@@ -19,6 +19,7 @@ package scheme
 import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
+	corev1 "k8s.io/api/core/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -31,5 +32,6 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(Scheme))
 	utilruntime.Must(dynatracev1alpha1.AddToScheme(Scheme))
 	utilruntime.Must(istiov1alpha3.AddToScheme(Scheme))
+	utilruntime.Must(corev1.AddToScheme(Scheme))
 	// +kubebuilder:scaffold:scheme
 }

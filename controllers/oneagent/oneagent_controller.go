@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/initgeneration"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -203,6 +204,9 @@ func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logge
 
 	if instance.Status.OneAgent.Instances == nil || !reflect.DeepEqual(instance.Status.OneAgent.Instances, instanceStatuses) {
 		instance.Status.OneAgent.Instances = instanceStatuses
+		if instance.Spec.InfraMonitoring.Enabled {
+			initgeneration.NewInitGenerator(r.client, r.apiReader, instance.Namespace, r.logger).GenerateForDynakube(ctx, instance)
+		}
 		return true, err
 	}
 
