@@ -14,7 +14,7 @@ import (
 const (
 	CodeModulesMapName = "code-modules-map"
 	DataIngestMapName  = "data-ingest-map"
-	ReadyLabelKey      = "dynatrace.com/ns"
+	ReadyLabelKey      = "dynatrace.com/dynakube"
 )
 
 type dynaKubeFilterFunc func(dk dynatracev1alpha1.DynaKube) bool
