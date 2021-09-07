@@ -35,16 +35,6 @@ func GetNamespaceForDynakube(ctx context.Context, annotationKey string, clt clie
 	return nsList, err
 }
 
-func getAnnotationKeysForDynakube(dk *dynatracev1alpha1.DynaKube) []string {
-	keys := []string{}
-	for key, filter := range options {
-		if filter(dk) {
-			keys = append(keys, key)
-		}
-	}
-	return keys
-}
-
 func getAnnotationKeys() []string {
 	keys := []string{}
 	for key := range options {
@@ -53,26 +43,10 @@ func getAnnotationKeys() []string {
 	return keys
 }
 
-func updateNamespaceAnnotation(ctx context.Context, annotationKeys []string, clt client.Client, operatorNs string, ns *corev1.Namespace, dk *dynatracev1alpha1.DynaKube) error {
-	if operatorNs == ns.Name {
+func removeNamespaceAnnotation(ctx context.Context, annotationKeys []string, clt client.Client, ns *corev1.Namespace) error {
+	if ns.Annotations == nil {
 		return nil
 	}
-	for _, key := range annotationKeys {
-		if dkName, ok := ns.Annotations[key]; ok && dkName == dk.Name {
-			return nil
-		}
-		if ns.Annotations == nil {
-			ns.Annotations = make(map[string]string)
-		}
-		ns.Annotations[key] = dk.Name
-	}
-	if err := clt.Update(ctx, ns); err != nil {
-		return errors.WithMessagef(err, "failed to update namespace %s with annotations %s", ns.Name, annotationKeys)
-	}
-	return nil
-}
-
-func removeNamespaceAnnotation(ctx context.Context, annotationKeys []string, clt client.Client, ns *corev1.Namespace) error {
 	for _, key := range annotationKeys {
 		if _, ok := ns.Annotations[key]; !ok {
 			return nil

@@ -61,6 +61,12 @@ func (dm DynakubeMapper) updateAnnotations(selector labels.Selector, nsList *cor
 	var updated bool
 	var modifiedNs []corev1.Namespace
 	for _, namespace := range nsList.Items {
+		if dm.operatorNs == namespace.Name {
+			continue
+		}
+		if namespace.Annotations == nil {
+			namespace.Annotations = make(map[string]string)
+		}
 		matches := selector.Matches(labels.Set(namespace.Labels))
 		for key, filter := range options {
 			dynakubeName, ok := namespace.Annotations[key]

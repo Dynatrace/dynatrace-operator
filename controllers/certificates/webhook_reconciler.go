@@ -138,6 +138,7 @@ func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.C
 	r.logger.Info("save certificates into webhook configurations")
 	webhookConfigurations := []*admissionregistrationv1.WebhookClientConfig{
 		&mutatingWebhookConfiguration.Webhooks[0].ClientConfig,
+		&mutatingWebhookConfiguration.Webhooks[1].ClientConfig,
 		&validatingWebhookConfiguration.Webhooks[0].ClientConfig,
 	}
 	for _, conf := range webhookConfigurations {
@@ -145,6 +146,8 @@ func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.C
 			return err
 		}
 	}
+
+	mutatingWebhookConfiguration.Webhooks[0].NamespaceSelector = nil
 
 	// update webhook configurations
 	if err = r.client.Update(ctx, mutatingWebhookConfiguration); err != nil {

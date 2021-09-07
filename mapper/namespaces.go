@@ -26,6 +26,9 @@ func NewNamespaceMapper(ctx context.Context, clt client.Client, apiReader client
 }
 
 func (nm NamespaceMapper) MapFromNamespace() error {
+	if nm.operatorNs == nm.targetNs.Name {
+		return nil
+	}
 	dynakube, err := nm.findDynakubeForNamespace()
 	if err != nil {
 		return err
@@ -71,20 +74,15 @@ func (nm NamespaceMapper) findDynakubeForNamespace() (*dynatracev1alpha1.DynaKub
 }
 
 func (nm NamespaceMapper) updateAnnotations(dk *dynatracev1alpha1.DynaKube) error {
-	var updated bool
+	if nm.targetNs.Annotations == nil {
+		nm.targetNs.Annotations = make(map[string]string)
+	}
 	for key, filter := range options {
 		dkName, ok := nm.targetNs.Annotations[key]
 		if filter(dk) && dkName != dk.Name {
-			updated = true
 			nm.targetNs.Annotations[key] = dk.Name
 		} else if !filter(dk) && ok {
-			updated = true
 			delete(nm.targetNs.Annotations, key)
-		}
-	}
-	if updated {
-		if err := nm.client.Update(nm.ctx, nm.targetNs); err != nil {
-			return err
 		}
 	}
 	return nil
