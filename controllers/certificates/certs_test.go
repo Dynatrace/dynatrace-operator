@@ -3,69 +3,71 @@ package certificates
 import (
 	"crypto/x509"
 	"encoding/pem"
-	"os"
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 func TestCertsValidation(t *testing.T) {
-	logger := zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout))
-
+	log := logger.NewDTLogger()
 	now, _ := time.Parse(time.RFC3339, "2018-01-10T00:00:00Z")
 	domain := "dynatrace-oneagent-webhook.webhook.svc"
-	firstCerts := Certs{Log: logger, Domain: domain, Now: now}
+	firstCerts := Certs{
+		Log:    log,
+		Domain: domain,
+		Now:    now,
+	}
 
 	require.NoError(t, firstCerts.ValidateCerts())
 	require.Equal(t, len(firstCerts.Data), 5)
-	requireValidCerts(t, domain, now.Add(5*time.Minute), firstCerts.Data["ca.crt"], firstCerts.Data["tls.crt"])
+	requireValidCerts(t, domain, now.Add(5*time.Minute), firstCerts.Data[RootCert], firstCerts.Data[ServerCert])
 
 	t.Run("up-to-date certs", func(t *testing.T) {
 		newTime := now.Add(5 * time.Minute)
 
-		newCerts := Certs{Log: logger, Domain: domain, SrcData: firstCerts.Data, Now: newTime}
+		newCerts := Certs{Log: log, Domain: domain, SrcData: firstCerts.Data, Now: newTime}
 		require.NoError(t, newCerts.ValidateCerts())
-		requireValidCerts(t, domain, newTime, newCerts.Data["ca.crt"], newCerts.Data["tls.crt"])
+		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 
 		// No changes should have been applied.
-		assert.Equal(t, string(firstCerts.Data["ca.crt"]), string(newCerts.Data["ca.crt"]))
-		assert.Equal(t, string(firstCerts.Data["ca.crt.old"]), "")
-		assert.Equal(t, string(firstCerts.Data["ca.key"]), string(newCerts.Data["ca.key"]))
-		assert.Equal(t, string(firstCerts.Data["tls.crt"]), string(newCerts.Data["tls.crt"]))
-		assert.Equal(t, string(firstCerts.Data["tls.key"]), string(newCerts.Data["tls.key"]))
+		assert.Equal(t, string(firstCerts.Data[RootCert]), string(newCerts.Data[RootCert]))
+		assert.Equal(t, string(firstCerts.Data[RootCertOld]), "")
+		assert.Equal(t, string(firstCerts.Data[RootKey]), string(newCerts.Data[RootKey]))
+		assert.Equal(t, string(firstCerts.Data[ServerCert]), string(newCerts.Data[ServerCert]))
+		assert.Equal(t, string(firstCerts.Data[ServerKey]), string(newCerts.Data[ServerKey]))
 	})
 
 	t.Run("outdated server certs", func(t *testing.T) {
 		newTime := now.Add((6*24 + 22) * time.Hour) // 6d22h
 
-		newCerts := Certs{Log: logger, Domain: domain, SrcData: firstCerts.Data, Now: newTime}
+		newCerts := Certs{Log: log, Domain: domain, SrcData: firstCerts.Data, Now: newTime}
 		require.NoError(t, newCerts.ValidateCerts())
-		requireValidCerts(t, domain, newTime, newCerts.Data["ca.crt"], newCerts.Data["tls.crt"])
+		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 
 		// Server certificates should have been updated.
-		assert.Equal(t, string(firstCerts.Data["ca.crt"]), string(newCerts.Data["ca.crt"]))
-		assert.Equal(t, string(firstCerts.Data["ca.crt.old"]), "")
-		assert.Equal(t, string(firstCerts.Data["ca.key"]), string(newCerts.Data["ca.key"]))
-		assert.NotEqual(t, string(firstCerts.Data["tls.crt"]), string(newCerts.Data["tls.crt"]))
-		assert.NotEqual(t, string(firstCerts.Data["tls.key"]), string(newCerts.Data["tls.key"]))
+		assert.Equal(t, string(firstCerts.Data[RootCert]), string(newCerts.Data[RootCert]))
+		assert.Equal(t, string(firstCerts.Data[RootCertOld]), "")
+		assert.Equal(t, string(firstCerts.Data[RootKey]), string(newCerts.Data[RootKey]))
+		assert.NotEqual(t, string(firstCerts.Data[ServerCert]), string(newCerts.Data[ServerCert]))
+		assert.NotEqual(t, string(firstCerts.Data[ServerKey]), string(newCerts.Data[ServerKey]))
 	})
 
 	t.Run("outdated root certs", func(t *testing.T) {
 		newTime := now.Add((364*24 + 22) * time.Hour) // 364d22h
 
-		newCerts := Certs{Log: logger, Domain: domain, SrcData: firstCerts.Data, Now: newTime}
+		newCerts := Certs{Log: log, Domain: domain, SrcData: firstCerts.Data, Now: newTime}
 		require.NoError(t, newCerts.ValidateCerts())
-		requireValidCerts(t, domain, newTime, newCerts.Data["ca.crt"], newCerts.Data["tls.crt"])
+		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 
 		// Server certificates should have been updated.
-		assert.Equal(t, string(firstCerts.Data["ca.crt"]), string(newCerts.Data["ca.crt.old"]))
-		assert.NotEqual(t, string(firstCerts.Data["ca.crt"]), string(newCerts.Data["ca.crt"]))
-		assert.NotEqual(t, string(firstCerts.Data["ca.key"]), string(newCerts.Data["ca.key"]))
-		assert.NotEqual(t, string(firstCerts.Data["tls.crt"]), string(newCerts.Data["tls.crt"]))
-		assert.NotEqual(t, string(firstCerts.Data["tls.key"]), string(newCerts.Data["tls.key"]))
+		assert.Equal(t, string(firstCerts.Data[RootCert]), string(newCerts.Data[RootCertOld]))
+		assert.NotEqual(t, string(firstCerts.Data[RootCert]), string(newCerts.Data[RootCert]))
+		assert.NotEqual(t, string(firstCerts.Data[RootKey]), string(newCerts.Data[RootKey]))
+		assert.NotEqual(t, string(firstCerts.Data[ServerCert]), string(newCerts.Data[ServerCert]))
+		assert.NotEqual(t, string(firstCerts.Data[ServerKey]), string(newCerts.Data[ServerKey]))
 	})
 }
 
