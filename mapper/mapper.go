@@ -2,7 +2,6 @@ package mapper
 
 import (
 	"context"
-	"fmt"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/pkg/errors"
@@ -26,13 +25,19 @@ var options = map[string]dynaKubeFilterFunc{
 	},
 }
 
-func GetNamespaceForDynakube(ctx context.Context, annotationKey string, clt client.Reader, dkName string) (*corev1.NamespaceList, error) {
+func GetNamespacesForDynakube(ctx context.Context, annotationKey string, clt client.Reader, dkName string) ([]*corev1.Namespace, error) {
 	nsList := &corev1.NamespaceList{}
-	listOps := []client.ListOption{
-		client.MatchingFields(map[string]string{fmt.Sprintf("metadata.annotations.%s", annotationKey): dkName}), // TODO
+	filteredNamespaces := []*corev1.Namespace{}
+	err := clt.List(ctx, nsList)
+	if err != nil {
+		return nil, err
 	}
-	err := clt.List(ctx, nsList, listOps...)
-	return nsList, err
+	for i := range nsList.Items {
+		if name := nsList.Items[i].Annotations[annotationKey]; dkName == name {
+			filteredNamespaces = append(filteredNamespaces, &nsList.Items[i])
+		}
+	}
+	return filteredNamespaces, err
 }
 
 func getAnnotationKeys() []string {

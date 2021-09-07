@@ -73,8 +73,11 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 	if err != nil {
 		return err
 	}
-	nsList, err := mapper.GetNamespaceForDynakube(ctx, mapper.CodeModulesAnnotation, g.apiReader, dk.Name)
-	for _, targetNs := range nsList.Items {
+	nsList, err := mapper.GetNamespacesForDynakube(ctx, mapper.CodeModulesAnnotation, g.apiReader, dk.Name)
+	if err != nil {
+		return err
+	}
+	for _, targetNs := range nsList {
 		g.logger.Info("Updating init secret from dynakube for", "namespace", targetNs)
 		if err = kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs.Name, data, corev1.SecretTypeOpaque, g.logger); err != nil {
 			return err

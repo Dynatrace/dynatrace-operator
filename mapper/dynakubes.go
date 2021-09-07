@@ -41,11 +41,11 @@ func (dm DynakubeMapper) UnmapFromDynaKube() error {
 	keys := getAnnotationKeys()
 	var nsList corev1.NamespaceList
 	for _, key := range keys {
-		nsList, err := GetNamespaceForDynakube(dm.ctx, key, dm.apiReader, dm.dk.Name)
+		nsList, err := GetNamespacesForDynakube(dm.ctx, key, dm.apiReader, dm.dk.Name)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to list namespaces for dynakube %s", dm.dk.Name)
 		}
-		if len(nsList.Items) != 0 {
+		if len(nsList) != 0 {
 			break
 		}
 	}

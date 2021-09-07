@@ -37,7 +37,7 @@ import (
 )
 
 const (
-	defaultUpdateInterval = 5 * time.Minute
+	defaultUpdateInterval = 3 * time.Minute
 )
 
 var log = logf.Log.WithName("controller_dynakube")
