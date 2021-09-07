@@ -69,17 +69,14 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dkName, target
 
 func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1alpha1.DynaKube) error {
 	g.logger.Info("Reconciling namespace init secret for", "dynakube", dk.Name)
-	cfg := &corev1.ConfigMap{}
-	if err := g.client.Get(ctx, types.NamespacedName{Name: mapper.CodeModulesMapName, Namespace: g.namespace}, cfg); err != nil {
-		return err
-	}
 	data, err := g.generate(ctx, dk)
 	if err != nil {
 		return err
 	}
-	for targetNs := range cfg.Data {
+	nsList, err := mapper.GetNamespaceForDynakube(ctx, mapper.CodeModulesAnnotation, g.apiReader, dk.Name)
+	for _, targetNs := range nsList.Items {
 		g.logger.Info("Updating init secret from dynakube for", "namespace", targetNs)
-		if err = kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs, data, corev1.SecretTypeOpaque, g.logger); err != nil {
+		if err = kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs.Name, data, corev1.SecretTypeOpaque, g.logger); err != nil {
 			return err
 		}
 	}
@@ -111,26 +108,6 @@ func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1alpha1.Dyna
 
 	return data, nil
 }
-
-//func (r *InitGenerator) replicateInitScriptAsSecret(namespaces []string, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) error {
-//	for _, mapping := range namespaces {
-//		scriptData, err := r.prepareScriptForDynaKube(mapping.dynakube, kubeSystemUID, infraMonitoringNodes)
-//		if err != nil {
-//			return err
-//		}
-//
-//		data, err := scriptData.generate()
-//		if err != nil {
-//			return err
-//		}
-//
-//		if err = kubeobjects.CreateOrUpdateSecretIfNotExists(r.client, r.apiReader, webhook.SecretConfigName, mapping.namespace, data, corev1.SecretTypeOpaque, r.logger); err != nil {
-//			return err
-//		}
-//	}
-//
-//	return nil
-//}
 
 func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1alpha1.DynaKube, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) (*script, error) {
 	var tokens corev1.Secret

@@ -14,10 +14,6 @@ webhooks:
         operations: [ "CREATE" ]
         resources: [ "pods" ]
         scope: Namespaced
-    namespaceSelector:
-      matchExpressions:
-        - key: dynatrace.com/dynakube
-          operator: Exists
     clientConfig:
       service:
         name: dynatrace-webhook
@@ -30,7 +26,7 @@ webhooks:
     rules:
       - apiGroups: [ "" ]
         apiVersions: [ "v1" ]
-        operations: [ "CREATE", "UPDATE", "DELETE"]
+        operations: [ "CREATE", "UPDATE"]
         resources: [ "namespaces" ]
         scope: Cluster
     clientConfig:

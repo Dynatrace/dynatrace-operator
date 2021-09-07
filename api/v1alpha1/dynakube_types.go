@@ -48,6 +48,10 @@ type DynaKubeSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Istio automatic management",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	EnableIstio bool `json:"enableIstio,omitempty"`
 
+	// Optional: set selector for Operator to know in which namespaces to inject into
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="MonitoredNamespaces",order=16,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:selector"}
+	MonitoredNamespaces *metav1.LabelSelector `json:"monitoredNamespaces,omitempty"`
+
 	// General configuration about ActiveGate instances
 	ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
 
@@ -131,10 +135,6 @@ type CodeModulesSpec struct {
 	// Optional: use OneAgent binaries from volume
 	Volume corev1.VolumeSource `json:"volume,omitempty"`
 
-	// Optional: set selector for Operator to know in which namespaces to inject into
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Selector",order=16,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:selector"}
-	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
-
 	// Optional: name of the ServiceAccount to assign to the CSIDriver Pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Service Account name for CSI Driver",order=25,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ServiceAccount"}
 	ServiceAccountNameCSIDriver string `json:"serviceAccountNameCSIDriver,omitempty"`
@@ -201,10 +201,6 @@ type InfraMonitoringSpec struct {
 
 type DataIngestSpec struct {
 	CapabilityProperties `json:",inline"`
-
-	// Optional: set selector for Operator to know in which namespaces to inject into
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Selector",order=16,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:selector"}
-	Selector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 }
 
 type RoutingSpec struct {

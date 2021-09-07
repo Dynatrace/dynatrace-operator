@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -46,12 +45,6 @@ func (ni *namespaceInjector) Handle(ctx context.Context, request admission.Reque
 	ni.logger.Info("namespace request", "name", request.Name, "namespace", request.Namespace, "operation", request.Operation)
 	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: request.Namespace}}
 	nsMapper := mapper.NewNamespaceMapper(ctx, ni.clt, ni.apiReader, ni.namespace, &ns, ni.logger)
-	if request.Operation == admissionv1.Delete {
-		if err := nsMapper.UnmapFromNamespace(); err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-		return admission.Patched("")
-	}
 	if err := decodeRequestToNamespace(request, &ns); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}

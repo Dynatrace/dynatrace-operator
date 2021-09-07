@@ -2,65 +2,85 @@ package mapper
 
 import (
 	"context"
+	"fmt"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type dynaKubeFilterFunc func(dk *dynatracev1alpha1.DynaKube) bool
+
 const (
-	CodeModulesMapName = "code-modules-map"
-	DataIngestMapName  = "data-ingest-map"
-	ReadyLabelKey      = "dynatrace.com/dynakube"
+	CodeModulesAnnotation = "dynatrace.com/dynakube-cm"
+	DataIngestAnnotation  = "dynatrace.com/dynakube-di"
 )
 
-type dynaKubeFilterFunc func(dk dynatracev1alpha1.DynaKube) bool
-type namespaceSelectorFunc func(dk dynatracev1alpha1.DynaKube) *metav1.LabelSelector
+var options = map[string]dynaKubeFilterFunc{
+	DataIngestAnnotation: func(dk *dynatracev1alpha1.DynaKube) bool {
+		return dk.Spec.DataIngestSpec.Enabled
+	},
+	CodeModulesAnnotation: func(dk *dynatracev1alpha1.DynaKube) bool {
+		return dk.Spec.CodeModules.Enabled
+	},
+}
 
-// getOrCreateMap returns ConfigMap in operator's namespace
-func getOrCreateMap(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, cfgMapName string) (*corev1.ConfigMap, error) {
-	var cfgMap corev1.ConfigMap
-	if err := apiReader.Get(ctx, client.ObjectKey{Name: cfgMapName, Namespace: operatorNs}, &cfgMap); err != nil {
-		if k8serrors.IsNotFound(err) {
-			cfgMap = corev1.ConfigMap{
-				ObjectMeta: metav1.ObjectMeta{Name: cfgMapName, Namespace: operatorNs},
-			}
+func GetNamespaceForDynakube(ctx context.Context, annotationKey string, clt client.Reader, dkName string) (*corev1.NamespaceList, error) {
+	nsList := &corev1.NamespaceList{}
+	listOps := []client.ListOption{
+		client.MatchingFields(map[string]string{fmt.Sprintf("metadata.annotations.%s", annotationKey): dkName}), // TODO
+	}
+	err := clt.List(ctx, nsList, listOps...)
+	return nsList, err
+}
 
-			if err := clt.Create(ctx, &cfgMap); err != nil {
-				if !k8serrors.IsAlreadyExists(err) {
-					return nil, errors.WithMessagef(err, "failed to create ConfigMap %s", cfgMapName)
-				}
-			}
-
-			if err := apiReader.Get(ctx, client.ObjectKey{Name: cfgMapName, Namespace: operatorNs}, &cfgMap); err != nil {
-				return nil, errors.WithMessagef(err, "ConfigMap %s created. Failed to query the map", cfgMapName)
-			}
-		} else {
-			return nil, errors.WithMessagef(err, "failed to query ConfigMap %s", cfgMapName)
+func getAnnotationKeysForDynakube(dk *dynatracev1alpha1.DynaKube) []string {
+	keys := []string{}
+	for key, filter := range options {
+		if filter(dk) {
+			keys = append(keys, key)
 		}
 	}
-	return &cfgMap, nil
+	return keys
 }
 
-func updateNamespaceLabel(ctx context.Context, clt client.Client, operatorNs string, ns *corev1.Namespace, dk *dynatracev1alpha1.DynaKube) {
+func getAnnotationKeys() []string {
+	keys := []string{}
+	for key := range options {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+func updateNamespaceAnnotation(ctx context.Context, annotationKeys []string, clt client.Client, operatorNs string, ns *corev1.Namespace, dk *dynatracev1alpha1.DynaKube) error {
 	if operatorNs == ns.Name {
-		return
+		return nil
 	}
-	if dkName, ok := ns.Labels[ReadyLabelKey]; ok && dkName == dk.Name {
-		return
+	for _, key := range annotationKeys {
+		if dkName, ok := ns.Annotations[key]; ok && dkName == dk.Name {
+			return nil
+		}
+		if ns.Annotations == nil {
+			ns.Annotations = make(map[string]string)
+		}
+		ns.Annotations[key] = dk.Name
 	}
-	if ns.Labels == nil {
-		ns.Labels = make(map[string]string)
+	if err := clt.Update(ctx, ns); err != nil {
+		return errors.WithMessagef(err, "failed to update namespace %s with annotations %s", ns.Name, annotationKeys)
 	}
-	ns.Labels[ReadyLabelKey] = dk.Name
+	return nil
 }
 
-func removeNamespaceLabel(ctx context.Context, clt client.Client, ns *corev1.Namespace) {
-	if _, ok := ns.Labels[ReadyLabelKey]; !ok {
-		return
+func removeNamespaceAnnotation(ctx context.Context, annotationKeys []string, clt client.Client, ns *corev1.Namespace) error {
+	for _, key := range annotationKeys {
+		if _, ok := ns.Annotations[key]; !ok {
+			return nil
+		}
+		delete(ns.Annotations, key)
 	}
-	delete(ns.Labels, ReadyLabelKey)
+	if err := clt.Update(ctx, ns); err != nil {
+		return errors.WithMessagef(err, "failed to remove annotation from namespace %s", annotationKeys, ns.Name)
+	}
+	return nil
 }

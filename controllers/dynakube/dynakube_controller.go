@@ -217,15 +217,8 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 		return
 	}
 
-	if dkState.Instance.Spec.CodeModules.Enabled {
-		if err := dkMapper.MapFromDynaKubeCodeModules(); err != nil {
-			dkState.Log.Error(err, "update of a map of namespaces failed")
-			return
-		}
-	}
-
-	if dkState.Instance.Spec.DataIngestSpec.Enabled {
-		if err := dkMapper.MapFromDynakubeDataIngest(); err != nil {
+	if dkState.Instance.Spec.CodeModules.Enabled || dkState.Instance.Spec.DataIngestSpec.Enabled {
+		if err := dkMapper.MapFromDynakube(); err != nil {
 			dkState.Log.Error(err, "update of a map of namespaces failed")
 			return
 		}
