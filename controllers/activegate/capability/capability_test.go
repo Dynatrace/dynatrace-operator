@@ -245,7 +245,7 @@ func TestNewRoutingCapability(t *testing.T) {
 
 	type args struct {
 		crProperties *dynatracev1alpha1.CapabilityProperties
-		agSpec *dynatracev1alpha1.ActiveGateSpec
+		agSpec       *dynatracev1alpha1.ActiveGateSpec
 	}
 	tests := []struct {
 		name string
@@ -256,7 +256,7 @@ func TestNewRoutingCapability(t *testing.T) {
 			name: "default",
 			args: args{
 				crProperties: props,
-				agSpec: nil,
+				agSpec:       nil,
 			},
 			want: &RoutingCapability{
 				capabilityBase: capabilityBase{
