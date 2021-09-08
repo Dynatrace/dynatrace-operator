@@ -119,6 +119,9 @@ func prepareFakeClient(withSecret bool) client.Client {
 				{
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
 				},
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
 			},
 		},
 		&admissionregistrationv1.ValidatingWebhookConfiguration{
@@ -203,7 +206,7 @@ func verifyCertificates(t *testing.T, rec *ReconcileWebhookCertificates, secret 
 		Name: webhook.DeploymentName,
 	}, mutatingWebhookConfig)
 	require.NoError(t, err)
-	assert.Len(t, mutatingWebhookConfig.Webhooks, 1)
+	assert.Len(t, mutatingWebhookConfig.Webhooks, 2)
 	testWebhookClientConfig(t, &mutatingWebhookConfig.Webhooks[0].ClientConfig, secret.Data, isUpdate)
 
 	validatingWebhookConfig := &admissionregistrationv1.ValidatingWebhookConfiguration{}

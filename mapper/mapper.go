@@ -4,7 +4,6 @@ import (
 	"context"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -47,19 +46,14 @@ func getAnnotationKeys() []string {
 	}
 	return keys
 }
-
-func removeNamespaceAnnotation(ctx context.Context, annotationKeys []string, clt client.Client, ns *corev1.Namespace) error {
+func removeNamespaceAnnotation(ctx context.Context, annotationKeys []string, clt client.Client, ns *corev1.Namespace) {
 	if ns.Annotations == nil {
-		return nil
+		return
 	}
 	for _, key := range annotationKeys {
 		if _, ok := ns.Annotations[key]; !ok {
-			return nil
+			return
 		}
 		delete(ns.Annotations, key)
 	}
-	if err := clt.Update(ctx, ns); err != nil {
-		return errors.WithMessagef(err, "failed to remove annotation %s from namespace %s", annotationKeys, ns.Name)
-	}
-	return nil
 }

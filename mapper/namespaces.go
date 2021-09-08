@@ -36,9 +36,11 @@ func (nm NamespaceMapper) MapFromNamespace() error {
 
 	if dynakube == nil {
 		keys := getAnnotationKeys()
-		return removeNamespaceAnnotation(nm.ctx, keys, nm.client, nm.targetNs)
+		removeNamespaceAnnotation(nm.ctx, keys, nm.client, nm.targetNs)
+		return nil
 	}
-	return nm.updateAnnotations(dynakube)
+	nm.updateAnnotations(dynakube)
+	return nil
 }
 
 func (nm NamespaceMapper) findDynakubeForNamespace() (*dynatracev1alpha1.DynaKube, error) {
@@ -73,7 +75,7 @@ func (nm NamespaceMapper) findDynakubeForNamespace() (*dynatracev1alpha1.DynaKub
 	return &matchingDynakubes[0], nil
 }
 
-func (nm NamespaceMapper) updateAnnotations(dk *dynatracev1alpha1.DynaKube) error {
+func (nm NamespaceMapper) updateAnnotations(dk *dynatracev1alpha1.DynaKube) {
 	if nm.targetNs.Annotations == nil {
 		nm.targetNs.Annotations = make(map[string]string)
 	}
@@ -85,5 +87,4 @@ func (nm NamespaceMapper) updateAnnotations(dk *dynatracev1alpha1.DynaKube) erro
 			delete(nm.targetNs.Annotations, key)
 		}
 	}
-	return nil
 }

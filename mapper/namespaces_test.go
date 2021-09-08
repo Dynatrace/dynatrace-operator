@@ -163,7 +163,7 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 	})
 }
 
-func TestMapFromNamespaceCodeModules(t *testing.T) {
+func TestMapFromNamespace(t *testing.T) {
 	labels := map[string]string{"test": "selector"}
 	dk := &dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: "codeModules-1", Namespace: "dynatrace"},
@@ -198,9 +198,9 @@ func TestMapFromNamespaceCodeModules(t *testing.T) {
 		dk2 := &dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "codeModules-2", Namespace: "dynatrace"},
 			Spec: dynatracev1alpha1.DynaKubeSpec{
-				MonitoredNamespaces:  &metav1.LabelSelector{MatchLabels: labels},
+				MonitoredNamespaces: &metav1.LabelSelector{MatchLabels: labels},
 				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-					Enabled:           true,
+					Enabled: true,
 				},
 			},
 		}
@@ -215,8 +215,8 @@ func TestMapFromNamespaceCodeModules(t *testing.T) {
 	t.Run("Add to existing config map", func(t *testing.T) {
 		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   "test-namespace",
-				Labels: labels,
+				Name:        "test-namespace",
+				Labels:      labels,
 				Annotations: map[string]string{"test": "this"},
 			},
 		}
@@ -231,10 +231,10 @@ func TestMapFromNamespaceCodeModules(t *testing.T) {
 	t.Run("Remove stale namespace entry", func(t *testing.T) {
 		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   "test-namespace",
+				Name: "test-namespace",
 				Annotations: map[string]string{
 					CodeModulesAnnotation: dk.Name,
-					DataIngestAnnotation: dk.Name,
+					DataIngestAnnotation:  dk.Name,
 				},
 			},
 		}

@@ -51,8 +51,9 @@ func (dm DynakubeMapper) UnmapFromDynaKube() error {
 		}
 	}
 	for _, ns := range nsList {
-		if err := removeNamespaceAnnotation(dm.ctx, keys, dm.client, ns); err != nil {
-			return err
+		removeNamespaceAnnotation(dm.ctx, keys, dm.client, ns)
+		if err := dm.client.Update(dm.ctx, ns); err != nil {
+			return errors.WithMessagef(err, "failed to remove annotation %s from namespace %s", keys, ns.Name)
 		}
 	}
 	return nil
