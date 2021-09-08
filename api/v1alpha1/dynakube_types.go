@@ -92,7 +92,7 @@ type ActiveGateSpec struct {
 	// server.p12: certificate+key pair in pkcs12 format
 	// password: passphrase to read server.p12
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TlsSecretName",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	TlsSecretName string `json:"TlsSecretName,omitempty"`
+	TlsSecretName string `json:"tlsSecretName,omitempty"`
 }
 
 type OneAgentSpec struct {

@@ -1,6 +1,7 @@
 package capability
 
 import (
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -139,7 +140,7 @@ func Test_capabilityBase_GetCapabilityName(t *testing.T) {
 }
 
 func TestCalculateStatefulSetName(t *testing.T) {
-	cap := NewKubeMonCapability(nil, nil)
+	c := NewKubeMonCapability(nil, nil)
 	const instanceName = "testinstance"
 
 	type args struct {
@@ -154,10 +155,10 @@ func TestCalculateStatefulSetName(t *testing.T) {
 		{
 			name: "",
 			args: args{
-				capability:   cap,
+				capability:   c,
 				instanceName: instanceName,
 			},
-			want: instanceName + "-" + cap.GetModuleName(),
+			want: instanceName + "-" + c.GetModuleName(),
 		},
 	}
 	for _, tt := range tests {
@@ -235,10 +236,16 @@ func TestNewKubeMonCapability(t *testing.T) {
 }
 
 func TestNewRoutingCapability(t *testing.T) {
+	const tlsSecretName = "tls-secret"
+	agSpecWithTls := &dynatracev1alpha1.ActiveGateSpec{
+		TlsSecretName: tlsSecretName,
+	}
+
 	props := &dynatracev1alpha1.CapabilityProperties{}
 
 	type args struct {
 		crProperties *dynatracev1alpha1.CapabilityProperties
+		agSpec *dynatracev1alpha1.ActiveGateSpec
 	}
 	tests := []struct {
 		name string
@@ -246,9 +253,10 @@ func TestNewRoutingCapability(t *testing.T) {
 		want *RoutingCapability
 	}{
 		{
-			name: "",
+			name: "default",
 			args: args{
 				crProperties: props,
+				agSpec: nil,
 			},
 			want: &RoutingCapability{
 				capabilityBase: capabilityBase{
@@ -265,10 +273,44 @@ func TestNewRoutingCapability(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "with-tls-secert-set",
+			args: args{
+				crProperties: props,
+				agSpec:       agSpecWithTls,
+			},
+			want: &RoutingCapability{
+				capabilityBase: capabilityBase{
+					moduleName:     "routing",
+					capabilityName: "MSGrouter",
+					properties:     props,
+					volumes: []v1.Volume{{
+						Name: jettyCerts,
+						VolumeSource: v1.VolumeSource{
+							Secret: &v1.SecretVolumeSource{
+								SecretName: agSpecWithTls.TlsSecretName,
+							},
+						},
+					}},
+					containerVolumeMounts: []v1.VolumeMount{{
+						ReadOnly:  true,
+						Name:      jettyCerts,
+						MountPath: filepath.Join(secretsRootDir, "tls"),
+					}},
+					Configuration: Configuration{
+						SetDnsEntryPoint:     true,
+						SetReadinessPort:     true,
+						SetCommunicationPort: true,
+						CreateService:        true,
+						ServiceAccountOwner:  "",
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewRoutingCapability(tt.args.crProperties, nil); !reflect.DeepEqual(got, tt.want) {
+			if got := NewRoutingCapability(tt.args.crProperties, tt.args.agSpec); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewRoutingCapability() = %v, want %v", got, tt.want)
 			}
 		})

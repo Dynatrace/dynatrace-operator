@@ -51,7 +51,7 @@ spec:
               activeGate:
                 description: General configuration about ActiveGate instances
                 properties:
-                  TlsSecretName:
+                  tlsSecretName:
                     description: 'name of a secret containing server cert+key and password for ActiveGate. If not set, self-signed certificate is used.
                       server.p12: certificate+key pair in pkcs12 format
                       password: passphrase to read server.p12'
