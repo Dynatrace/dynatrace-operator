@@ -27,14 +27,14 @@ func AddNamespaceWebhookToManager(manager ctrl.Manager, ns string) error {
 
 type namespaceInjector struct {
 	logger    logr.Logger
-	clt       client.Client
+	client    client.Client
 	apiReader client.Reader
 	namespace string
 }
 
 // InjectClient implements the inject.Client interface which allows the manager to inject a kubernetes client into this handler
 func (ni *namespaceInjector) InjectClient(clt client.Client) error {
-	ni.clt = clt
+	ni.client = clt
 	return nil
 }
 
@@ -44,7 +44,7 @@ func (ni *namespaceInjector) Handle(ctx context.Context, request admission.Reque
 	}
 	ni.logger.Info("namespace request", "name", request.Name, "namespace", request.Namespace, "operation", request.Operation)
 	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: request.Namespace}}
-	nsMapper := mapper.NewNamespaceMapper(ctx, ni.clt, ni.apiReader, ni.namespace, &ns, ni.logger)
+	nsMapper := mapper.NewNamespaceMapper(ctx, ni.client, ni.apiReader, ni.namespace, &ns, ni.logger)
 	if err := decodeRequestToNamespace(request, &ns); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
