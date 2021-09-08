@@ -59,7 +59,7 @@ func removeNamespaceAnnotation(ctx context.Context, annotationKeys []string, clt
 		delete(ns.Annotations, key)
 	}
 	if err := clt.Update(ctx, ns); err != nil {
-		return errors.WithMessagef(err, "failed to remove annotation from namespace %s", annotationKeys, ns.Name)
+		return errors.WithMessagef(err, "failed to remove annotation %s from namespace %s", annotationKeys, ns.Name)
 	}
 	return nil
 }

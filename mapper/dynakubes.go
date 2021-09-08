@@ -39,9 +39,10 @@ func (dm DynakubeMapper) MapFromDynakube() error {
 
 func (dm DynakubeMapper) UnmapFromDynaKube() error {
 	keys := getAnnotationKeys()
-	var nsList corev1.NamespaceList
+	var nsList []*corev1.Namespace
+	var err error
 	for _, key := range keys {
-		nsList, err := GetNamespacesForDynakube(dm.ctx, key, dm.apiReader, dm.dk.Name)
+		nsList, err = GetNamespacesForDynakube(dm.ctx, key, dm.apiReader, dm.dk.Name)
 		if err != nil {
 			return errors.WithMessagef(err, "failed to list namespaces for dynakube %s", dm.dk.Name)
 		}
@@ -49,8 +50,8 @@ func (dm DynakubeMapper) UnmapFromDynaKube() error {
 			break
 		}
 	}
-	for _, ns := range nsList.Items {
-		if err := removeNamespaceAnnotation(dm.ctx, keys, dm.client, &ns); err != nil {
+	for _, ns := range nsList {
+		if err := removeNamespaceAnnotation(dm.ctx, keys, dm.client, ns); err != nil {
 			return err
 		}
 	}

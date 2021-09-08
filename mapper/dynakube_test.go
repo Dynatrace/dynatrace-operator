@@ -1,203 +1,160 @@
 package mapper
 
-// import (
-// 	"context"
-// 	"testing"
+import (
+	"context"
+	"testing"
 
-// 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-// 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
-// 	"github.com/stretchr/testify/assert"
-// 	corev1 "k8s.io/api/core/v1"
-// 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-// 	"k8s.io/apimachinery/pkg/types"
-// )
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+)
 
-// func TestMapFromDynaKubeCodeModules(t *testing.T) {
-// 	labels := map[string]string{"test": "selector"}
-// 	dk := &dynatracev1alpha1.DynaKube{
-// 		ObjectMeta: metav1.ObjectMeta{Name: "codeModules-1", Namespace: "dynatrace"},
-// 		Spec: dynatracev1alpha1.DynaKubeSpec{
-// 			CodeModules: dynatracev1alpha1.CodeModulesSpec{
-// 				Enabled:           true,
-// 				NamespaceSelector: &metav1.LabelSelector{MatchLabels: labels},
-// 			},
-// 		},
-// 	}
-// 	namespace := &corev1.Namespace{
-// 		ObjectMeta: metav1.ObjectMeta{
-// 			Name:   "test-namespace",
-// 			Labels: labels,
-// 		},
-// 	}
-// 	t.Run("Add to new config map", func(t *testing.T) {
-// 		clt := fake.NewClient(dk, namespace)
+func TestMapFromDynakube(t *testing.T) {
+	labels := map[string]string{"test": "selector"}
+	dk := &dynatracev1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: "dk-test", Namespace: "dynatrace"},
+		Spec: dynatracev1alpha1.DynaKubeSpec{
+			MonitoredNamespaces: &metav1.LabelSelector{MatchLabels: labels},
+			CodeModules: dynatracev1alpha1.CodeModulesSpec{
+				Enabled: true,
+			},
+			DataIngestSpec: dynatracev1alpha1.DataIngestSpec{
+				CapabilityProperties: dynatracev1alpha1.CapabilityProperties{
+					Enabled: true,
+				},
+			},
+		},
+	}
+	namespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "test-namespace",
+			Labels: labels,
+		},
+	}
+	t.Run("Add to new namespace (namespace with 0 annotations)", func(t *testing.T) {
+		clt := fake.NewClient(dk, namespace)
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
+		err := dm.MapFromDynakube()
+		assert.NoError(t, err)
+		var ns corev1.Namespace
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(ns.Annotations))
+	})
+	t.Run("Add to namespace with annotations", func(t *testing.T) {
+		namespace := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "test-namespace",
+				Annotations: map[string]string{"test": "this"},
+				Labels:      labels,
+			},
+		}
+		clt := fake.NewClient(dk, namespace)
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
+		err := dm.MapFromDynakube()
+		assert.NoError(t, err)
+		var ns corev1.Namespace
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
+		assert.NoError(t, err)
+		assert.Equal(t, 3, len(ns.Annotations))
+	})
+	t.Run("Overwrite stale entry in annotations", func(t *testing.T) {
+		namespace := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-namespace",
+				Annotations: map[string]string{
+					CodeModulesAnnotation: "old-dk",
+					DataIngestAnnotation:  "old-dk",
+				},
+				Labels: labels,
+			},
+		}
+		clt := fake.NewClient(dk, namespace)
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
+		err := dm.MapFromDynakube()
+		assert.NoError(t, err)
+		var ns corev1.Namespace
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(ns.Annotations))
+	})
+	t.Run("Remove stale dynakube entry for no longer matching ns", func(t *testing.T) {
+		movedDk := &dynatracev1alpha1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: "moved-dk", Namespace: "dynatrace"},
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				CodeModules: dynatracev1alpha1.CodeModulesSpec{
+					Enabled: true,
+				},
+				DataIngestSpec: dynatracev1alpha1.DataIngestSpec{
+					CapabilityProperties: dynatracev1alpha1.CapabilityProperties{
+						Enabled: true,
+					},
+				},
+			},
+		}
+		namespace := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "test-namespace",
+				Annotations: map[string]string{
+					CodeModulesAnnotation: movedDk.Name,
+					DataIngestAnnotation:  movedDk.Name,
+				},
+				Labels: labels,
+			},
+		}
+		clt := fake.NewClient(movedDk, namespace)
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", movedDk)
+		err := dm.MapFromDynakube()
+		assert.NoError(t, err)
+		var ns corev1.Namespace
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(ns.Annotations))
+	})
+}
 
-// 		err := MapFromDynaKubeCodeModules(context.TODO(), clt, "dynatrace", dk)
-// 		assert.NoError(t, err)
-// 		var cfg corev1.ConfigMap
-// 		err = clt.Get(context.TODO(), types.NamespacedName{Name: CodeModulesMapName, Namespace: "dynatrace"}, &cfg)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, 1, len(cfg.Data))
-// 	})
-// 	t.Run("Add to existing config map", func(t *testing.T) {
-// 		oldCfg := corev1.ConfigMap{
-// 			ObjectMeta: metav1.ObjectMeta{Name: CodeModulesMapName, Namespace: "dynatrace"},
-// 			Data:       map[string]string{"other-ns": "other-dk"},
-// 		}
-// 		clt := fake.NewClient(dk, &oldCfg, namespace)
-
-// 		err := MapFromDynaKubeCodeModules(context.TODO(), clt, "dynatrace", dk)
-// 		assert.NoError(t, err)
-// 		var cfg corev1.ConfigMap
-// 		err = clt.Get(context.TODO(), types.NamespacedName{Name: CodeModulesMapName, Namespace: "dynatrace"}, &cfg)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, 2, len(cfg.Data))
-// 	})
-// 	t.Run("Overwrite stale entry in config map", func(t *testing.T) {
-// 		oldCfg := corev1.ConfigMap{
-// 			ObjectMeta: metav1.ObjectMeta{Name: CodeModulesMapName, Namespace: "dynatrace"},
-// 			Data:       map[string]string{namespace.Name: "other-dk"},
-// 		}
-// 		clt := fake.NewClient(dk, &oldCfg, namespace)
-
-// 		err := MapFromDynaKubeCodeModules(context.TODO(), clt, "dynatrace", dk)
-// 		assert.NoError(t, err)
-// 		var cfg corev1.ConfigMap
-// 		err = clt.Get(context.TODO(), types.NamespacedName{Name: CodeModulesMapName, Namespace: "dynatrace"}, &cfg)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, 1, len(cfg.Data))
-// 	})
-// 	t.Run("Remove stale dynakube entry", func(t *testing.T) {
-// 		movedDk := &dynatracev1alpha1.DynaKube{
-// 			ObjectMeta: metav1.ObjectMeta{Name: "codeModules-1", Namespace: "dynatrace"},
-// 			Spec: dynatracev1alpha1.DynaKubeSpec{
-// 				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-// 					Enabled: true,
-// 				},
-// 			},
-// 		}
-// 		oldCfg := corev1.ConfigMap{
-// 			ObjectMeta: metav1.ObjectMeta{Name: CodeModulesMapName, Namespace: "dynatrace"},
-// 			Data:       map[string]string{namespace.Name: movedDk.Name},
-// 		}
-// 		clt := fake.NewClient(&oldCfg, movedDk, namespace)
-
-// 		err := MapFromDynaKubeCodeModules(context.TODO(), clt, "dynatrace", movedDk)
-// 		assert.NoError(t, err)
-// 		var cfg corev1.ConfigMap
-// 		err = clt.Get(context.TODO(), types.NamespacedName{Name: CodeModulesMapName, Namespace: "dynatrace"}, &cfg)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, 0, len(cfg.Data))
-// 	})
-// }
-
-// func TestMapFromDynaKubeDataIngest(t *testing.T) {
-// 	labels := map[string]string{"test": "selector"}
-// 	dk := &dynatracev1alpha1.DynaKube{
-// 		ObjectMeta: metav1.ObjectMeta{Name: "dataIngest-1", Namespace: "dynatrace"},
-// 		Spec: dynatracev1alpha1.DynaKubeSpec{
-// 			DataIngestSpec: dynatracev1alpha1.DataIngestSpec{
-// 				CapabilityProperties: dynatracev1alpha1.CapabilityProperties{
-// 					Enabled: true,
-// 				},
-// 				Selector: &metav1.LabelSelector{MatchLabels: labels},
-// 			},
-// 		},
-// 	}
-// 	namespace := &corev1.Namespace{
-// 		ObjectMeta: metav1.ObjectMeta{
-// 			Name:   "test-namespace",
-// 			Labels: labels,
-// 		},
-// 	}
-// 	t.Run("Add to new config map", func(t *testing.T) {
-// 		clt := fake.NewClient(dk, namespace)
-
-// 		err := MapFromDynakubeDataIngest(context.TODO(), clt, "dynatrace", dk)
-// 		assert.NoError(t, err)
-// 		var cfg corev1.ConfigMap
-// 		err = clt.Get(context.TODO(), types.NamespacedName{Name: DataIngestMapName, Namespace: "dynatrace"}, &cfg)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, 1, len(cfg.Data))
-// 	})
-// 	t.Run("Add to existing config map", func(t *testing.T) {
-// 		oldCfg := corev1.ConfigMap{
-// 			ObjectMeta: metav1.ObjectMeta{Name: DataIngestMapName, Namespace: "dynatrace"},
-// 			Data:       map[string]string{"other-ns": "other-dk"},
-// 		}
-// 		clt := fake.NewClient(dk, &oldCfg, namespace)
-
-// 		err := MapFromDynakubeDataIngest(context.TODO(), clt, "dynatrace", dk)
-// 		assert.NoError(t, err)
-// 		var cfg corev1.ConfigMap
-// 		err = clt.Get(context.TODO(), types.NamespacedName{Name: DataIngestMapName, Namespace: "dynatrace"}, &cfg)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, 2, len(cfg.Data))
-// 	})
-// 	t.Run("Overwrite stale entry in config map", func(t *testing.T) {
-// 		oldCfg := corev1.ConfigMap{
-// 			ObjectMeta: metav1.ObjectMeta{Name: DataIngestMapName, Namespace: "dynatrace"},
-// 			Data:       map[string]string{namespace.Name: "other-dk"},
-// 		}
-// 		clt := fake.NewClient(dk, &oldCfg, namespace)
-
-// 		err := MapFromDynakubeDataIngest(context.TODO(), clt, "dynatrace", dk)
-// 		assert.NoError(t, err)
-// 		var cfg corev1.ConfigMap
-// 		err = clt.Get(context.TODO(), types.NamespacedName{Name: DataIngestMapName, Namespace: "dynatrace"}, &cfg)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, 1, len(cfg.Data))
-// 	})
-// 	t.Run("Remove stale dynakube entry", func(t *testing.T) {
-// 		movedDk := &dynatracev1alpha1.DynaKube{
-// 			ObjectMeta: metav1.ObjectMeta{Name: "dataIngest-1", Namespace: "dynatrace"},
-// 			Spec: dynatracev1alpha1.DynaKubeSpec{
-// 				DataIngestSpec: dynatracev1alpha1.DataIngestSpec{
-// 					CapabilityProperties: dynatracev1alpha1.CapabilityProperties{
-// 						Enabled: true,
-// 					},
-// 				},
-// 			},
-// 		}
-// 		oldCfg := corev1.ConfigMap{
-// 			ObjectMeta: metav1.ObjectMeta{Name: DataIngestMapName, Namespace: "dynatrace"},
-// 			Data:       map[string]string{namespace.Name: movedDk.Name},
-// 		}
-// 		clt := fake.NewClient(&oldCfg, movedDk, namespace)
-
-// 		err := MapFromDynakubeDataIngest(context.TODO(), clt, "dynatrace", movedDk)
-// 		assert.NoError(t, err)
-// 		var cfg corev1.ConfigMap
-// 		err = clt.Get(context.TODO(), types.NamespacedName{Name: DataIngestMapName, Namespace: "dynatrace"}, &cfg)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, 0, len(cfg.Data))
-// 	})
-// }
-
-// func TestUnmapFromDynaKube(t *testing.T) {
-// 	cfgDI := corev1.ConfigMap{
-// 		ObjectMeta: metav1.ObjectMeta{Name: DataIngestMapName, Namespace: "dynatrace"},
-// 		Data:       map[string]string{"ns1": "dk", "ns2": "dk", "ns3": "other-dk"},
-// 	}
-// 	cfgCM := corev1.ConfigMap{
-// 		ObjectMeta: metav1.ObjectMeta{Name: CodeModulesMapName, Namespace: "dynatrace"},
-// 		Data:       map[string]string{"ns1": "dk", "ns3": "other-dk"},
-// 	}
-// 	t.Run("Remove from empty => no error", func(t *testing.T) {
-// 		clt := fake.NewClient()
-// 		err := UnmapFromDynaKube(context.TODO(), clt, "dynatrace", "dk")
-// 		assert.NoError(t, err)
-// 	})
-// 	t.Run("Remove from everywhere, multiple entries", func(t *testing.T) {
-// 		clt := fake.NewClient(&cfgDI, &cfgCM)
-// 		err := UnmapFromDynaKube(context.TODO(), clt, "dynatrace", "dk")
-// 		assert.NoError(t, err)
-// 		var cfg corev1.ConfigMap
-// 		err = clt.Get(context.TODO(), types.NamespacedName{Name: DataIngestMapName, Namespace: "dynatrace"}, &cfg)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, 1, len(cfg.Data))
-// 		err = clt.Get(context.TODO(), types.NamespacedName{Name: CodeModulesMapName, Namespace: "dynatrace"}, &cfg)
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, 1, len(cfg.Data))
-// 	})
-// }
+func TestUnmapFromDynaKube(t *testing.T) {
+	dk := dynatracev1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: "dk"},
+	}
+	namespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-namespace",
+			Annotations: map[string]string{
+				CodeModulesAnnotation: dk.Name,
+				DataIngestAnnotation:  dk.Name,
+			},
+		},
+	}
+	namespace2 := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-namespace2",
+			Annotations: map[string]string{
+				CodeModulesAnnotation: dk.Name,
+				DataIngestAnnotation:  dk.Name,
+			},
+		},
+	}
+	t.Run("Remove from no ns => no error", func(t *testing.T) {
+		clt := fake.NewClient()
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", &dk)
+		err := dm.UnmapFromDynaKube()
+		assert.NoError(t, err)
+	})
+	t.Run("Remove from everywhere, multiple entries", func(t *testing.T) {
+		clt := fake.NewClient(namespace, namespace2)
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", &dk)
+		err := dm.UnmapFromDynaKube()
+		assert.NoError(t, err)
+		var ns corev1.Namespace
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(ns.Annotations))
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace2.Name}, &ns)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, len(ns.Annotations))
+	})
+}
