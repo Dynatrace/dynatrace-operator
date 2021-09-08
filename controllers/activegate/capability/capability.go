@@ -97,6 +97,30 @@ type DataIngestCapability struct {
 	capabilityBase
 }
 
+func (c *capabilityBase) setTlsConfig(agSpec *dynatracev1alpha1.ActiveGateSpec) {
+	if agSpec == nil {
+		return
+	}
+
+	if agSpec.TlsSecretName != "" {
+		c.volumes = append(c.volumes,
+			v1.Volume{
+				Name: jettyCerts,
+				VolumeSource: v1.VolumeSource{
+					Secret: &v1.SecretVolumeSource{
+						SecretName: agSpec.TlsSecretName,
+					},
+				},
+			})
+		c.containerVolumeMounts = append(c.containerVolumeMounts,
+			v1.VolumeMount{
+				ReadOnly:  true,
+				Name:      jettyCerts,
+				MountPath: filepath.Join(secretsRootDir, "tls"),
+			})
+	}
+}
+
 func NewKubeMonCapability(crProperties *dynatracev1alpha1.CapabilityProperties, agSpec *dynatracev1alpha1.ActiveGateSpec) *KubeMonCapability {
 	c := &KubeMonCapability{
 		capabilityBase{
@@ -137,43 +161,9 @@ func NewKubeMonCapability(crProperties *dynatracev1alpha1.CapabilityProperties, 
 		},
 	}
 
-	setTlsConfig(agSpec, &c.capabilityBase)
+	c.capabilityBase.setTlsConfig(agSpec)
 
 	return c
-}
-
-func setTlsConfig(agSpec *dynatracev1alpha1.ActiveGateSpec, c *capabilityBase) {
-	if agSpec == nil {
-		return
-	}
-
-	if agSpec.TlsSecretName != "" {
-		c.volumes = append(c.volumes,
-			v1.Volume{
-				Name: jettyCerts,
-				VolumeSource: v1.VolumeSource{
-					Secret: &v1.SecretVolumeSource{
-						SecretName: agSpec.TlsSecretName,
-						Items: []v1.KeyToPath{
-							{
-								Key:  "server.p12",
-								Path: "cert.p12",
-							},
-							{
-								Key:  "password",
-								Path: "cert-pass",
-							},
-						},
-					},
-				},
-			})
-		c.containerVolumeMounts = append(c.containerVolumeMounts,
-			v1.VolumeMount{
-				ReadOnly:  true,
-				Name:      jettyCerts,
-				MountPath: filepath.Join(secretsRootDir, "tls"),
-			})
-	}
 }
 
 func NewRoutingCapability(crProperties *dynatracev1alpha1.CapabilityProperties, agSpec *dynatracev1alpha1.ActiveGateSpec) *RoutingCapability {
@@ -191,7 +181,7 @@ func NewRoutingCapability(crProperties *dynatracev1alpha1.CapabilityProperties, 
 		},
 	}
 
-	setTlsConfig(agSpec, &c.capabilityBase)
+	c.capabilityBase.setTlsConfig(agSpec)
 
 	return c
 }
@@ -211,7 +201,7 @@ func NewDataIngestCapability(crProperties *dynatracev1alpha1.CapabilityPropertie
 		},
 	}
 
-	setTlsConfig(agSpec, &c.capabilityBase)
+	c.capabilityBase.setTlsConfig(agSpec)
 
 	return c
 }
