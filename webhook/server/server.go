@@ -172,11 +172,6 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
-	if !dk.Spec.CodeModules.Enabled {
-		logger.Info("injection disabled")
-		return admission.Patched("")
-	}
-
 	if pod.Annotations == nil {
 		pod.Annotations = map[string]string{}
 	}

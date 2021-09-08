@@ -7,6 +7,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	t_utils "github.com/Dynatrace/dynatrace-operator/testing"
@@ -38,9 +39,17 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "dynakube"},
+					Annotations: map[string]string{mapper.CodeModulesAnnotation: "dynakube"},
 				},
 			}),
+		apiReader: fake.NewClient(
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: dtwebhook.SecretConfigName,
+					Namespace: "test-namespace",
+				},
+			},
+		),
 		decoder:   decoder,
 		image:     "operator-image",
 		namespace: "dynatrace",
@@ -74,7 +83,7 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 
 func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, *dynatracev1alpha1.DynaKube) {
 	dynakube := &dynatracev1alpha1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
+		ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: "dynatrace"},
 		Spec: dynatracev1alpha1.DynaKubeSpec{
 			APIURL: "https://test-api-url.com/api",
 			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
@@ -110,7 +119,15 @@ func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, 
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+					Annotations: map[string]string{mapper.CodeModulesAnnotation: "dynakube"},
+				},
+			},
+		),
+		apiReader: fake.NewClient(
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: dtwebhook.SecretConfigName,
+					Namespace: "test-namespace",
 				},
 			},
 		),
@@ -282,7 +299,7 @@ func TestPodInjectionWithCSI(t *testing.T) {
 
 func createDynakubeInstance(_ *testing.T) *dynatracev1alpha1.DynaKube {
 	instance := &dynatracev1alpha1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
+		ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: "dynatrace"},
 		Spec: dynatracev1alpha1.DynaKubeSpec{
 			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
 				FullStackSpec: dynatracev1alpha1.FullStackSpec{
@@ -330,7 +347,15 @@ func TestUseImmutableImage(t *testing.T) {
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Annotations: map[string]string{mapper.CodeModulesAnnotation: "dynakube"},
+					},
+				},
+			),
+			apiReader: fake.NewClient(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dtwebhook.SecretConfigName,
+						Namespace: "test-namespace",
 					},
 				},
 			),
@@ -419,7 +444,15 @@ func TestUseImmutableImage(t *testing.T) {
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Annotations: map[string]string{mapper.CodeModulesAnnotation: "dynakube"},
+					},
+				},
+			),
+			apiReader: fake.NewClient(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dtwebhook.SecretConfigName,
+						Namespace: "test-namespace",
 					},
 				},
 			),
@@ -509,7 +542,15 @@ func TestUseImmutableImage(t *testing.T) {
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Annotations: map[string]string{mapper.CodeModulesAnnotation: "dynakube"},
+					},
+				},
+			),
+			apiReader: fake.NewClient(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dtwebhook.SecretConfigName,
+						Namespace: "test-namespace",
 					},
 				},
 			),
@@ -596,7 +637,15 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Annotations: map[string]string{mapper.CodeModulesAnnotation: instance.Name},
+					},
+				},
+			),
+			apiReader: fake.NewClient(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dtwebhook.SecretConfigName,
+						Namespace: "test-namespace",
 					},
 				},
 			),
@@ -677,7 +726,15 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Annotations: map[string]string{mapper.CodeModulesAnnotation: instance.Name},
+					},
+				},
+			),
+			apiReader: fake.NewClient(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dtwebhook.SecretConfigName,
+						Namespace: "test-namespace",
 					},
 				},
 			),
@@ -759,7 +816,15 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Annotations: map[string]string{mapper.CodeModulesAnnotation: instance.Name},
+					},
+				},
+			),
+			apiReader: fake.NewClient(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: dtwebhook.SecretConfigName,
+						Namespace: "test-namespace",
 					},
 				},
 			),
@@ -840,7 +905,15 @@ func TestAgentVersion(t *testing.T) {
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+					Annotations: map[string]string{mapper.CodeModulesAnnotation: instance.Name},
+				},
+			},
+		),
+		apiReader: fake.NewClient(
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: dtwebhook.SecretConfigName,
+					Namespace: "test-namespace",
 				},
 			},
 		),
@@ -926,7 +999,15 @@ func TestAgentVersionWithCSI(t *testing.T) {
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+					Annotations: map[string]string{mapper.CodeModulesAnnotation: instance.Name},
+				},
+			},
+		),
+		apiReader: fake.NewClient(
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: dtwebhook.SecretConfigName,
+					Namespace: "test-namespace",
 				},
 			},
 		),
