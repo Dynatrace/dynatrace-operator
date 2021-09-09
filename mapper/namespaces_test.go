@@ -66,7 +66,7 @@ func TestFindDynakubeForNamespace(t *testing.T) {
 		}
 		clt := fake.NewClient(dynakubes[0], dynakubes[1], dynakubes[2])
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
-		dynakube, err := nm.findDynakubeForNamespace()
+		dynakube, err := nm.findDynakubesForNamespace()
 		assert.NoError(t, err)
 		assert.Nil(t, dynakube)
 	})
@@ -83,7 +83,7 @@ func TestFindDynakubeForNamespace(t *testing.T) {
 
 		clt := fake.NewClient(dynakubes[0], dynakubes[1], dynakubes[2])
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
-		dynakube, err := nm.findDynakubeForNamespace()
+		dynakube, err := nm.findDynakubesForNamespace()
 		assert.NoError(t, err)
 		assert.NotNil(t, dynakube)
 	})
@@ -100,7 +100,7 @@ func TestFindDynakubeForNamespace(t *testing.T) {
 
 		clt := fake.NewClient(dynakubes[0], dynakubes[1], dynakubes[2])
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
-		dynakube, err := nm.findDynakubeForNamespace()
+		dynakube, err := nm.findDynakubesForNamespace()
 		assert.NoError(t, err)
 		assert.NotNil(t, dynakube)
 	})
@@ -118,7 +118,7 @@ func TestFindDynakubeForNamespace(t *testing.T) {
 
 		clt := fake.NewClient(dynakubes[0], dynakubes[1], dynakubes[2])
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
-		dynakube, err := nm.findDynakubeForNamespace()
+		dynakube, err := nm.findDynakubesForNamespace()
 		assert.Error(t, err)
 		assert.Nil(t, dynakube)
 	})
@@ -156,10 +156,10 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 
 		clt := fake.NewClient(dynakubes[0], dynakubes[1])
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
-		dynakube, err := nm.findDynakubeForNamespace()
+		dynakube, err := nm.findDynakubesForNamespace()
 		assert.NoError(t, err)
 		assert.NotNil(t, dynakube)
-		assert.Equal(t, dynakube.Name, "codeModules-2")
+		assert.Equal(t, dynakube[0].Name, "codeModules-2")
 	})
 }
 
