@@ -200,6 +200,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	volumes := dsInfo.volumes()
 	image := dsInfo.image()
 	imagePullSecrets := dsInfo.imagePullSecrets()
+	affinity := dsInfo.affinity()
 
 	return corev1.PodSpec{
 		Containers: []corev1.Container{{
@@ -234,42 +235,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		Tolerations:        dsInfo.fullstackSpec.Tolerations,
 		DNSPolicy:          dnsPolicy,
 		Volumes:            volumes,
-		Affinity: &corev1.Affinity{
-			NodeAffinity: &corev1.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{
-						{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      "beta.kubernetes.io/arch",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"amd64", "arm64"},
-								},
-								{
-									Key:      "beta.kubernetes.io/os",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"linux"},
-								},
-							},
-						},
-						{
-							MatchExpressions: []corev1.NodeSelectorRequirement{
-								{
-									Key:      "kubernetes.io/arch",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"amd64", "arm64"},
-								},
-								{
-									Key:      "kubernetes.io/os",
-									Operator: corev1.NodeSelectorOpIn,
-									Values:   []string{"linux"},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+		Affinity:           affinity,
 	}
 }
 

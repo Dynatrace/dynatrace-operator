@@ -94,33 +94,9 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 	assert.NotEmpty(t, templateSpec.Affinity.NodeAffinity)
 	assert.NotEmpty(t, templateSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
 	assert.NotEmpty(t, templateSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
+	assert.Contains(t, templateSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms,
+		corev1.NodeSelectorTerm{MatchExpressions: kubeobjects.AffinityNodeRequirement()})
 
-	assert.Contains(t, templateSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms,
-		corev1.NodeSelectorTerm{MatchExpressions: []corev1.NodeSelectorRequirement{
-			{
-				Key:      kubernetesBetaArch,
-				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{amd64},
-			},
-			{
-				Key:      kubernetesBetaOS,
-				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{linux},
-			},
-		}})
-	assert.Contains(t, templateSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms,
-		corev1.NodeSelectorTerm{MatchExpressions: []corev1.NodeSelectorRequirement{
-			{
-				Key:      kubernetesArch,
-				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{amd64},
-			},
-			{
-				Key:      kubernetesOS,
-				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{linux},
-			},
-		}})
 	assert.Equal(t, capabilityProperties.Tolerations, templateSpec.Tolerations)
 	assert.Empty(t, templateSpec.Volumes)
 	assert.NotEmpty(t, templateSpec.ImagePullSecrets)
