@@ -36,8 +36,8 @@ const (
 	// SecretCertsName is the name of the secret where the webhook certificates are stored.
 	SecretCertsName = "dynatrace-webhook-certs"
 
-	// ServiceName is the name used for the webhook's corresponding Service and MutatingWebhookConfiguration objects.
-	ServiceName = "dynatrace-webhook"
+	// DeploymentName is the name used for the Deployment of any webhooks and WebhookConfiguration objects.
+	DeploymentName = "dynatrace-webhook"
 
 	// InstallContainerName is the name used for the install container
 	InstallContainerName = "install-oneagent"
