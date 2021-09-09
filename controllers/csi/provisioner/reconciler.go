@@ -114,23 +114,28 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
+
 	// Incase of a new tenant
 	if tenant == nil {
 		tenant = &metadata.Tenant{TenantUUID: dk.ConnectionInfo().TenantUUID}
 	}
+	rlog.Info("checking tenant", "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
 	oldTenant := *tenant
 
 	if err = r.createCSIDirectories(r.path.EnvDir(tenant.TenantUUID)); err != nil {
+		rlog.Error(err, "error when creating csi directories", "path", r.path.EnvDir(tenant.TenantUUID))
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
+	rlog.Info("csi directories exist", "path", r.path.EnvDir(tenant.TenantUUID))
 	tenant.Dynakube = dk.Name
 
 	if err = r.updateAgent(dk, tenant, dtc, rlog); err != nil {
+		rlog.Error(err, "error when updating agent")
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 	if hasTenantChanged(oldTenant, *tenant) {
-		var err error
+		rlog.Info("tenant has changed", "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
 		// New tenants doesn't have these fields set in the beginning
 		if oldTenant.Dynakube == "" && oldTenant.LatestVersion == "" {
 			log.Info("Adding tenant:", "uuid", tenant.TenantUUID, "version", tenant.LatestVersion, "dynakube", tenant.Dynakube)
@@ -140,6 +145,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 			err = r.db.UpdateTenant(tenant)
 		}
 		if err != nil {
+			rlog.Error(err, "error when updating tenant")
 			return reconcile.Result{}, errors.WithStack(err)
 		}
 	}
@@ -175,8 +181,14 @@ func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.Namesp
 func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, tenant *metadata.Tenant, dtc dtclient.Client, logger logr.Logger) error {
 	currentVersion := getOneAgentVersionFromInstance(dk)
 
-	if currentVersion != tenant.LatestVersion {
+	log.Info("got version", "version", currentVersion, "tenant version", tenant.LatestVersion)
+
+	targetDir := r.path.AgentBinaryDirForVersion(tenant.TenantUUID, currentVersion)
+
+	if _, err := os.Stat(targetDir); currentVersion != tenant.LatestVersion || os.IsNotExist(err) {
+		log.Info("updating agent", "version", currentVersion, "previous version", tenant.LatestVersion)
 		tenant.LatestVersion = currentVersion
+
 		if err := r.installAgentVersion(currentVersion, tenant.TenantUUID, dtc, logger); err != nil {
 			r.recorder.Eventf(dk,
 				corev1.EventTypeWarning,
@@ -207,8 +219,10 @@ func (r *OneAgentProvisioner) installAgentVersion(version string, tenantUUID str
 	}
 
 	targetDir := r.path.AgentBinaryDirForVersion(tenantUUID, version)
+	logger.Info("installing agent", "target dir", targetDir)
 
 	if _, err := r.fs.Stat(targetDir); os.IsNotExist(err) {
+		logger.Info("directory does not exist, creating", "target dir", targetDir)
 		installAgentCfg := newInstallAgentConfig(logger, dtc, arch, targetDir, version)
 
 		if err := installAgentCfg.installAgent(); err != nil {
