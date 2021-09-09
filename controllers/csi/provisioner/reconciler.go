@@ -19,6 +19,7 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"runtime"
 	"time"
@@ -111,7 +112,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 
 	tenant, err := r.db.GetTenant(dk.ConnectionInfo().TenantUUID)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, errors.WithStack(err)
 	}
 	// Incase of a new tenant
 	if tenant == nil {
@@ -120,13 +121,13 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	oldTenant := *tenant
 
 	if err = r.createCSIDirectories(r.path.EnvDir(tenant.TenantUUID)); err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, errors.WithStack(err)
 	}
 
 	tenant.Dynakube = dk.Name
 
 	if err = r.updateAgent(dk, tenant, dtc, rlog); err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, errors.WithStack(err)
 	}
 	if hasTenantChanged(oldTenant, *tenant) {
 		var err error
@@ -139,7 +140,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 			err = r.db.UpdateTenant(tenant)
 		}
 		if err != nil {
-			return reconcile.Result{}, err
+			return reconcile.Result{}, errors.WithStack(err)
 		}
 	}
 
