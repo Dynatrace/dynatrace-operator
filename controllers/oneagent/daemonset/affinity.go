@@ -1,6 +1,9 @@
 package daemonset
 
-import corev1 "k8s.io/api/core/v1"
+import (
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
+	corev1 "k8s.io/api/core/v1"
+)
 
 func (dsInfo *builderInfo) affinity() *corev1.Affinity {
 	return &corev1.Affinity{
@@ -20,17 +23,6 @@ func (dsInfo *builderInfo) affinityNodeSelectorTerms() []corev1.NodeSelectorTerm
 
 func kubernetesArchOsSelectorTerm() corev1.NodeSelectorTerm {
 	return corev1.NodeSelectorTerm{
-		MatchExpressions: []corev1.NodeSelectorRequirement{
-			{
-				Key:      "kubernetes.io/arch",
-				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{"amd64", "arm64"},
-			},
-			{
-				Key:      "kubernetes.io/os",
-				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{"linux"},
-			},
-		},
+		MatchExpressions: kubeobjects.AffinityNodeRequirementWithARM64(),
 	}
 }

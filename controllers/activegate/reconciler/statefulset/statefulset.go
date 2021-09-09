@@ -19,14 +19,6 @@ import (
 const (
 	serviceAccountPrefix = "dynatrace-"
 
-	kubernetesArch     = "kubernetes.io/arch"
-	kubernetesOS       = "kubernetes.io/os"
-	kubernetesBetaArch = "beta.kubernetes.io/arch"
-	kubernetesBetaOS   = "beta.kubernetes.io/os"
-
-	amd64 = "amd64"
-	linux = "linux"
-
 	AnnotationVersion         = "internal.operator.dynatrace.com/version"
 	AnnotationCustomPropsHash = "internal.operator.dynatrace.com/custom-properties-hash"
 
@@ -124,8 +116,7 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 			NodeAffinity: &corev1.NodeAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 					NodeSelectorTerms: []corev1.NodeSelectorTerm{
-						{MatchExpressions: buildKubernetesExpression(kubernetesBetaArch, kubernetesBetaOS)},
-						{MatchExpressions: buildKubernetesExpression(kubernetesArch, kubernetesOS)},
+						{MatchExpressions: kubeobjects.AffinityNodeRequirement()},
 					}}}},
 		Tolerations: stsProperties.Tolerations,
 		Volumes:     buildVolumes(stsProperties),
@@ -262,21 +253,6 @@ func determineServiceAccountName(stsProperties *statefulSetProperties) string {
 		return serviceAccountPrefix + stsProperties.serviceAccountOwner
 	}
 	return stsProperties.ServiceAccountName
-}
-
-func buildKubernetesExpression(archKey string, osKey string) []corev1.NodeSelectorRequirement {
-	return []corev1.NodeSelectorRequirement{
-		{
-			Key:      archKey,
-			Operator: corev1.NodeSelectorOpIn,
-			Values:   []string{amd64},
-		},
-		{
-			Key:      osKey,
-			Operator: corev1.NodeSelectorOpIn,
-			Values:   []string{linux},
-		},
-	}
 }
 
 func isCustomPropertiesNilOrEmpty(customProperties *dynatracev1alpha1.DynaKubeValueSource) bool {
