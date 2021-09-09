@@ -40,15 +40,15 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			fs: fs,
 		}
 
-		err := installAgent(installAgentCfg)
+		err := installAgentCfg.installAgent()
 		assert.EqualError(t, err, "failed to create temporary file for download: "+errorMsg)
 	})
 	t.Run(`error when downloading latest agent`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetLatestAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
-				mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
 			Return(fmt.Errorf(errorMsg))
 		installAgentCfg := &installAgentConfig{
 			fs:     fs,
@@ -56,7 +56,7 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			logger: log,
 		}
 
-		err := installAgent(installAgentCfg)
+		err := installAgentCfg.installAgent()
 		assert.EqualError(t, err, "failed to fetch latest OneAgent version: "+errorMsg)
 	})
 	t.Run(`error unzipping file`, func(t *testing.T) {
@@ -64,10 +64,10 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetLatestAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
-				mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
-				writer := args.Get(4).(io.Writer)
+				writer := args.Get(5).(io.Writer)
 
 				zipFile := setupTestZip(t, fs)
 				defer func() { _ = zipFile.Close() }()
@@ -82,7 +82,7 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			logger: log,
 		}
 
-		err := installAgent(installAgentCfg)
+		err := installAgentCfg.installAgent()
 		assert.Error(t, err)
 	})
 	t.Run(`downloading and unzipping agent`, func(t *testing.T) {
@@ -90,10 +90,10 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetLatestAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
-				mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
-				writer := args.Get(4).(io.Writer)
+				writer := args.Get(5).(io.Writer)
 
 				zipFile := setupTestZip(t, fs)
 				defer func() { _ = zipFile.Close() }()
@@ -109,7 +109,7 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			targetDir: testDir,
 		}
 
-		err := installAgent(installAgentCfg)
+		err := installAgentCfg.installAgent()
 		require.NoError(t, err)
 
 		info, err := fs.Stat(filepath.Join(testDir, testFilename))

@@ -89,7 +89,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		if k8serrors.IsNotFound(err) {
 			tenant, _ := r.db.GetTenantViaDynakube(request.NamespacedName.Name)
 			if tenant != nil {
-				r.db.DeleteTenant(tenant.TenantUUID)
+				return reconcile.Result{}, r.db.DeleteTenant(tenant.TenantUUID)
 			}
 			return reconcile.Result{}, nil
 		}
@@ -172,7 +172,7 @@ func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.Namesp
 }
 
 func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, tenant *metadata.Tenant, dtc dtclient.Client, logger logr.Logger) error {
-	currentVersion := dk.Status.LatestAgentVersionUnixPaas
+	currentVersion := getOneAgentVersionFromInstance(dk)
 
 	if currentVersion != tenant.LatestVersion {
 		tenant.LatestVersion = currentVersion
@@ -191,6 +191,14 @@ func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, tenant
 	return nil
 }
 
+func getOneAgentVersionFromInstance(dk *dynatracev1alpha1.DynaKube) string {
+	currentVersion := dk.Status.LatestAgentVersionUnixPaas
+	if dk.Spec.OneAgent.Version != "" {
+		currentVersion = dk.Spec.OneAgent.Version
+	}
+	return currentVersion
+}
+
 func (r *OneAgentProvisioner) installAgentVersion(version string, tenantUUID string, dtc dtclient.Client, logger logr.Logger) error {
 	arch := dtclient.ArchX86
 	if runtime.GOARCH == "arm64" {
@@ -200,9 +208,9 @@ func (r *OneAgentProvisioner) installAgentVersion(version string, tenantUUID str
 	targetDir := r.path.AgentBinaryDirForVersion(tenantUUID, version)
 
 	if _, err := r.fs.Stat(targetDir); os.IsNotExist(err) {
-		installAgentCfg := newInstallAgentConfig(logger, dtc, arch, targetDir)
+		installAgentCfg := newInstallAgentConfig(logger, dtc, arch, targetDir, version)
 
-		if err := installAgent(installAgentCfg); err != nil {
+		if err := installAgentCfg.installAgent(); err != nil {
 			_ = r.fs.RemoveAll(targetDir)
 
 			return fmt.Errorf("failed to install agent: %w", err)

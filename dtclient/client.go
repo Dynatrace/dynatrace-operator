@@ -32,10 +32,13 @@ type Client interface {
 	// GetLatestAgent returns a reader with the contents of the download. Must be closed by caller.
 	GetLatestAgent(os, installerType, flavor, arch string, writer io.Writer) error
 
-	// GetCommunicationHosts returns, on success, the list of communication hosts used for available
-	// communication endpoints that the Dynatrace OneAgent can use to connect to.
-	//
-	// Returns an error if there was also an error response from the server.
+	// GetAgent downloads a specific agent version and writes it to the given io.Writer
+	GetAgent(os, installerType, flavor, arch, version string, writer io.Writer) error
+
+	// GetAgentVersions on success returns an array of versions that can be used with GetAgent to
+	// download a specific agent version
+	GetAgentVersions(os, installerType, flavor, arch string) ([]string, error)
+
 	GetConnectionInfo() (ConnectionInfo, error)
 
 	// GetCommunicationHostForClient returns a CommunicationHost for the client's API URL. Or error, if failed to be parsed.
@@ -76,8 +79,6 @@ const (
 
 // Known flavors.
 const (
-	FlavorDefault     = "default"
-	FlavorMUSL        = "musl"
 	FlavorMultidistro = "multidistro"
 )
 

@@ -21,23 +21,26 @@ type installAgentConfig struct {
 	arch      string
 	targetDir string
 	fs        afero.Fs
+	version   string
 }
 
-func newInstallAgentConfig(logger logr.Logger, dtc dtclient.Client, arch, targetDir string) *installAgentConfig {
+func newInstallAgentConfig(logger logr.Logger, dtc dtclient.Client, arch, targetDir, version string) *installAgentConfig {
 	return &installAgentConfig{
 		logger:    logger,
 		dtc:       dtc,
 		arch:      arch,
 		targetDir: targetDir,
 		fs:        afero.NewOsFs(),
+		version:   version,
 	}
 }
 
-func installAgent(installAgentCfg *installAgentConfig) error {
+func (installAgentCfg *installAgentConfig) installAgent() error {
 	logger := installAgentCfg.logger
 	dtc := installAgentCfg.dtc
 	arch := installAgentCfg.arch
 	fs := installAgentCfg.fs
+	version := installAgentCfg.version
 
 	tmpFile, err := afero.TempFile(fs, "", "download")
 	if err != nil {
@@ -51,7 +54,8 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	}()
 
 	logger.Info("Downloading OneAgent package", "architecture", arch)
-	err = dtc.GetLatestAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch, tmpFile)
+	err = dtc.GetAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch, version, tmpFile)
+
 	if err != nil {
 		return fmt.Errorf("failed to fetch latest OneAgent version: %w", err)
 	}

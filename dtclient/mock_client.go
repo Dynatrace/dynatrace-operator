@@ -26,6 +26,16 @@ func (o *MockDynatraceClient) GetLatestAgent(os, installerType, flavor, arch str
 	return args.Error(0)
 }
 
+func (o *MockDynatraceClient) GetAgent(os, installerType, flavor, arch, version string, writer io.Writer) error {
+	args := o.Called(os, installerType, flavor, arch, version, writer)
+	return args.Error(0)
+}
+
+func (o *MockDynatraceClient) GetAgentVersions(os, installerType, flavor, arch string) ([]string, error) {
+	args := o.Called(os, installerType, flavor, arch)
+	return args.Get(0).([]string), args.Error(1)
+}
+
 func (o *MockDynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
 	args := o.Called()
 	return args.Get(0).(ConnectionInfo), args.Error(1)

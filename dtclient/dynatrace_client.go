@@ -3,6 +3,7 @@ package dtclient
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -84,6 +85,41 @@ func (dtc *dynatraceClient) getServerResponseData(response *http.Response) ([]by
 	}
 
 	return responseData, nil
+}
+
+func (dtc *dynatraceClient) makeRequestAndUnmarshal(url string, token tokenType, response interface{}) error {
+	resp, err := dtc.makeRequest(url, token)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	responseData, err := dtc.getServerResponseData(resp)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(responseData, &response)
+}
+
+func (dtc *dynatraceClient) makeRequestForBinary(url string, token tokenType, writer io.Writer) error {
+	resp, err := dtc.makeRequest(url, token)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		var errorResponse serverErrorResponse
+		err = json.NewDecoder(resp.Body).Decode(&errorResponse)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("http code %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
+	}
+
+	_, err = io.Copy(writer, resp.Body)
+	return err
 }
 
 func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCode int) error {
