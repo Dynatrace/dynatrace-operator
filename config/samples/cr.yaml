@@ -91,6 +91,12 @@ spec:
     #
     # serviceAccountNameCSIDriver: service-account-name
 
+    # Optional: specify which agent version should be injected into pods
+    # Must be the exact version in the form of "major.minor.patch.build", for example " 1.227.0.20210909-223330"
+    # The CSI-drivers log output will print available versions if an invalid one is provided
+    #
+    oneAgentVersion: "1.227.0.20210909-223330"
+
   # To be released
   #
   # Configure infrastructure monitoring

@@ -63,7 +63,7 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 		}
 
 		err := installAgentCfg.installAgent()
-		assert.EqualError(t, err, "failed to fetch latest OneAgent version: "+errorMsg)
+		assert.EqualError(t, err, "failed to fetch OneAgent version: "+errorMsg)
 	})
 	t.Run(`error unzipping file`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()

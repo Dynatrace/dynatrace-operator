@@ -79,8 +79,8 @@ func (installAgentCfg *installAgentConfig) updateAgent() error {
 func (installAgentCfg *installAgentConfig) getOneAgentVersionFromInstance() string {
 	dk := installAgentCfg.dk
 	currentVersion := dk.Status.LatestAgentVersionUnixPaas
-	if dk.Spec.OneAgent.Version != "" {
-		currentVersion = dk.Spec.OneAgent.Version
+	if dk.Spec.CodeModules.OneAgentVersion != "" {
+		currentVersion = dk.Spec.CodeModules.OneAgentVersion
 	}
 	return currentVersion
 }
@@ -129,9 +129,9 @@ func (installAgentCfg *installAgentConfig) installAgent() error {
 	if err != nil {
 		availableVersions, getVersionsError := dtc.GetAgentVersions(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch)
 		if getVersionsError != nil {
-			return fmt.Errorf("failed to fetch latest OneAgent version: %w", err)
+			return fmt.Errorf("failed to fetch OneAgent version: %w", err)
 		}
-		return fmt.Errorf("failed to fetch latest OneAgent version: %w, available versions are: %s", err, "\n[ "+strings.Join(availableVersions, ",\n")+" ]\n")
+		return fmt.Errorf("failed to fetch OneAgent version: %w, available versions are: %s", err, "\n[ "+strings.Join(availableVersions, ",\n")+" ]\n")
 	}
 	logger.Info("Saved OneAgent package", "dest", tmpFile.Name())
 

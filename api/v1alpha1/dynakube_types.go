@@ -134,6 +134,12 @@ type CodeModulesSpec struct {
 	// Optional: name of the ServiceAccount to assign to the CSIDriver Pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Service Account name for CSI Driver",order=25,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ServiceAccount"}
 	ServiceAccountNameCSIDriver string `json:"serviceAccountNameCSIDriver,omitempty"`
+
+	// Optional: specify which agent version should be injected into pods
+	// Must be the exact version in the form of "major.minor.patch.build", for example " 1.227.0.20210909-223330"
+	// The CSI-drivers log output will print available versions if an invalid one is provided
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=26,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	OneAgentVersion string `json:"oneAgentVersion,omitempty"`
 }
 
 type FullStackSpec struct {
