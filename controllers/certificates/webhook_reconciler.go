@@ -83,20 +83,36 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		return reconcile.Result{}, err
 	}
 
-	if !reflect.DeepEqual(certs.Data, secret.Data) {
-		// certificate needs to be updated
-		secret.Data = certs.Data
-	} else {
-		r.logger.Info("secret for certificates up to date, skipping update")
-		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
+	mutatingWebhookConfiguration, err := r.getMutatingWebhookConfiguration(ctx)
+	if err != nil {
+		return reconcile.Result{}, err
 	}
-
-	err = r.createOrUpdateSecret(ctx, secret, createSecret)
+	validatingWebhookConfiguration, err := r.getValidatingWebhookConfiguration(ctx)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	err = r.updateWebhookConfigurations(ctx, secret)
+	hasMissingCertificate := r.checkMutatingWebhookConfigurations(
+		mutatingWebhookConfiguration, validatingWebhookConfiguration)
+
+	secretNeedsUpdate := false
+	if !reflect.DeepEqual(certs.Data, secret.Data) {
+		// certificate needs to be updated
+		secret.Data = certs.Data
+		secretNeedsUpdate = true
+	} else if !hasMissingCertificate {
+		r.logger.Info("secret for certificates up to date, skipping update")
+		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
+	}
+
+	if secretNeedsUpdate {
+		err = r.createOrUpdateSecret(ctx, secret, createSecret)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
+	err = r.updateWebhookConfigurations(ctx, secret, mutatingWebhookConfiguration, validatingWebhookConfiguration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -123,34 +139,28 @@ func (r *ReconcileWebhookCertificates) createOrUpdateSecret(ctx context.Context,
 	return nil
 }
 
-func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.Context, secret *corev1.Secret) error {
-	// load webhook configurations that need certificates
-	mutatingWebhookConfiguration, err := r.getMutatingWebhookConfiguration(ctx)
-	if err != nil {
-		return err
-	}
-	validatingWebhookConfiguration, err := r.getValidatingWebhookConfiguration(ctx)
-	if err != nil {
-		return err
-	}
+func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.Context, secret *corev1.Secret,
+	mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration,
+	validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) error {
 
 	// update certificates for webhook configurations
 	r.logger.Info("save certificates into webhook configurations")
-	webhookConfigurations := []*admissionregistrationv1.WebhookClientConfig{
-		&mutatingWebhookConfiguration.Webhooks[0].ClientConfig,
-		&validatingWebhookConfiguration.Webhooks[0].ClientConfig,
+	for i, _ := range mutatingWebhookConfiguration.Webhooks {
+		if err := r.updateConfiguration(&mutatingWebhookConfiguration.Webhooks[i].ClientConfig, secret); err != nil {
+			return err
+		}
 	}
-	for _, conf := range webhookConfigurations {
-		if err := r.updateConfiguration(conf, secret); err != nil {
+	for i, _ := range validatingWebhookConfiguration.Webhooks {
+		if err := r.updateConfiguration(&validatingWebhookConfiguration.Webhooks[i].ClientConfig, secret); err != nil {
 			return err
 		}
 	}
 
 	// update webhook configurations
-	if err = r.client.Update(ctx, mutatingWebhookConfiguration); err != nil {
+	if err := r.client.Update(ctx, mutatingWebhookConfiguration); err != nil {
 		return err
 	}
-	if err = r.client.Update(ctx, validatingWebhookConfiguration); err != nil {
+	if err := r.client.Update(ctx, validatingWebhookConfiguration); err != nil {
 		return err
 	}
 	r.logger.Info("saved certificates into webhook configurations")
@@ -204,6 +214,27 @@ func (r *ReconcileWebhookCertificates) buildSecretName() string {
 
 func (r *ReconcileWebhookCertificates) getDomain() string {
 	return fmt.Sprintf("%s.%s.svc", webhook.DeploymentName, r.namespace)
+}
+
+// checkMutatingWebhookConfigurations loads webhook configurations and checks certificates exist
+func (r *ReconcileWebhookCertificates) checkMutatingWebhookConfigurations(
+	mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration,
+	validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) bool {
+
+	for _, mutatingWebhook := range mutatingWebhookConfiguration.Webhooks {
+		cert := mutatingWebhook.ClientConfig.CABundle
+		if cert == nil || len(cert) == 0 {
+			return true
+		}
+	}
+
+	for _, validatingWebhook := range validatingWebhookConfiguration.Webhooks {
+		cert := validatingWebhook.ClientConfig.CABundle
+		if cert == nil || len(cert) == 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *ReconcileWebhookCertificates) updateConfiguration(
