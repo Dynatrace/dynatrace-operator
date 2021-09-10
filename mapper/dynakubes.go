@@ -30,7 +30,7 @@ func (dm DynakubeMapper) MapFromDynakube() error {
 	}
 
 	dkList := &dynatracev1alpha1.DynaKubeList{}
-	if err := dm.apiReader.List(dm.ctx, dkList); err != nil {
+	if err := dm.apiReader.List(dm.ctx, dkList, &client.ListOptions{Namespace: dm.operatorNs}); err != nil {
 		return errors.Cause(err)
 	}
 
