@@ -87,6 +87,12 @@ type ActiveGateSpec struct {
 	// implementation from the Dynatrace environment set as API URL.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Image string `json:"image,omitempty"`
+
+	// Optional: the name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
+	// server.p12: certificate+key pair in pkcs12 format
+	// password: passphrase to read server.p12
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TlsSecretName",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	TlsSecretName string `json:"tlsSecretName,omitempty"`
 }
 
 type OneAgentSpec struct {
