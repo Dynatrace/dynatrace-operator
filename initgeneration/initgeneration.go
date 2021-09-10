@@ -3,6 +3,7 @@ package initgeneration
 import (
 	"bytes"
 	"context"
+	"crypto/sha1"
 	_ "embed"
 	"fmt"
 	"text/template"
@@ -20,7 +21,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const notMappedIM = "-"
+const (
+	notMappedIM = "-"
+)
 
 var (
 	//go:embed init.sh.tmpl
@@ -67,25 +70,34 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dkName, target
 	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs, data, corev1.SecretTypeOpaque, g.logger)
 }
 
-func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1alpha1.DynaKube) error {
+func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1alpha1.DynaKube) (bool, error) {
 	g.logger.Info("Reconciling namespace init secret for", "dynakube", dk.Name)
 	data, err := g.generate(ctx, dk)
 	if err != nil {
-		return err
+		return false, err
 	}
+	hash, err := createHashForInitSecret(data)
+	if err != nil {
+		return false, err
+	}
+	if dk.Status.LastInitSecretHash == hash {
+		g.logger.Info("No change in the init secret, no need to update", "dynakube", dk.Name)
+		return false, nil
+	}
+
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, mapper.CodeModulesAnnotation, g.apiReader, dk.Name)
 	if err != nil {
-		return err
+		return false, err
 	}
 	for _, targetNs := range nsList {
 		g.logger.Info("Updating init secret from dynakube for", "namespace", targetNs)
 		if err = kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs.Name, data, corev1.SecretTypeOpaque, g.logger); err != nil {
-			return err
+			return false, err
 		}
 	}
 	g.logger.Info("Done updating init secrets")
-
-	return nil
+	dk.Status.LastInitSecretHash = hash
+	return true, nil
 }
 
 func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1alpha1.DynaKube) (map[string][]byte, error) {
@@ -200,4 +212,18 @@ func (s *script) generate() (map[string][]byte, error) {
 	}
 
 	return data, nil
+}
+
+func createHashForInitSecret(initSecret map[string][]byte) (string, error) {
+	bytes := []byte{}
+	for _, part := range initSecret {
+		bytes = append(bytes, part...)
+	}
+	h := sha1.New()
+	if _, err := h.Write(bytes); err != nil {
+		return "", err
+	}
+	bs := h.Sum(nil)
+
+	return fmt.Sprintf("%x", bs), nil
 }

@@ -15,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
-	"github.com/Dynatrace/dynatrace-operator/initgeneration"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -27,7 +26,7 @@ import (
 )
 
 const (
-	defaultUpdateInterval = 15 * time.Minute
+	defaultUpdateInterval = 5 * time.Minute
 	updateEnvVar          = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
 )
 
@@ -83,7 +82,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.Dyna
 		}
 	}
 
-	if rec.IsOutdated(r.instance.Status.OneAgent.LastHostsRequestTimestamp, updInterval) {
+	if rec.IsOutdated(r.instance.Status.OneAgent.LastHostsRequestTimestamp, updInterval) || oneAgentsSpinningUp(r.instance) {
 		r.instance.Status.OneAgent.LastHostsRequestTimestamp = rec.Now.DeepCopy()
 		rec.Update(true, 5*time.Minute, "updated last host request time stamp")
 
@@ -99,6 +98,10 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.Dyna
 	rec.Error(err)
 
 	return upd, nil
+}
+
+func oneAgentsSpinningUp(dk *dynatracev1alpha1.DynaKube) bool {
+	return dk.Status.OneAgent.Instances == nil && dk.Spec.InfraMonitoring.Enabled
 }
 
 // validate sanity checks if essential fields in the custom resource are available
@@ -204,9 +207,6 @@ func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logge
 
 	if instance.Status.OneAgent.Instances == nil || !reflect.DeepEqual(instance.Status.OneAgent.Instances, instanceStatuses) {
 		instance.Status.OneAgent.Instances = instanceStatuses
-		if instance.Spec.InfraMonitoring.Enabled {
-			initgeneration.NewInitGenerator(r.client, r.apiReader, instance.Namespace, r.logger).GenerateForDynakube(ctx, instance)
-		}
 		return true, err
 	}
 

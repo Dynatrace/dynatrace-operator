@@ -20,6 +20,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/initgeneration"
+	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -37,7 +39,7 @@ import (
 )
 
 const (
-	defaultUpdateInterval = 3 * time.Minute
+	defaultUpdateInterval = 5 * time.Minute
 )
 
 var log = logf.Log.WithName("controller_dynakube")
@@ -56,6 +58,7 @@ func NewReconciler(mgr manager.Manager) *ReconcileDynaKube {
 		config:            mgr.GetConfig(),
 		operatorPodName:   os.Getenv("POD_NAME"),
 		operatorNamespace: os.Getenv("POD_NAMESPACE"),
+		logger:            logger.NewDTLogger(),
 	}
 }
 
@@ -217,18 +220,16 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 		return
 	}
 
-	if dkState.Instance.Spec.CodeModules.Enabled || dkState.Instance.Spec.DataIngestSpec.Enabled {
-		if err := dkMapper.MapFromDynakube(); err != nil {
-			dkState.Log.Error(err, "update of a map of namespaces failed")
-			return
-		}
-	}
-
 	if dkState.Instance.Spec.InfraMonitoring.Enabled {
 		upd, err = oneagent.NewOneAgentReconciler(
 			r.client, r.apiReader, r.scheme, dkState.Log, dkState.Instance, &dkState.Instance.Spec.InfraMonitoring.FullStackSpec, daemonset.InframonFeature,
 		).Reconcile(ctx, dkState)
-		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
+		if dkState.Instance.Status.OneAgent.Instances == nil {
+			dkState.Update(true, 10*time.Second, "waiting for oneagent instances to be present")
+			return
+		}
+		dkState.Update(upd, defaultUpdateInterval, "infra monitoring reconciled")
+		if dkState.Error(err) {
 			return
 		}
 	} else {
@@ -249,6 +250,20 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-classic", Namespace: dkState.Instance.Namespace}}
 		if err := r.ensureDeleted(&ds); dkState.Error(err) {
 			return
+		}
+	}
+
+	if dkState.Instance.Spec.CodeModules.Enabled || dkState.Instance.Spec.DataIngestSpec.Enabled {
+		if err := dkMapper.MapFromDynakube(); err != nil {
+			dkState.Log.Error(err, "update of a map of namespaces failed")
+			return
+		}
+		if dkState.Instance.Spec.InfraMonitoring.Enabled {
+			upd, err := initgeneration.NewInitGenerator(r.client, r.apiReader, dkState.Instance.Namespace, r.logger).GenerateForDynakube(ctx, dkState.Instance)
+			dkState.Update(upd, defaultUpdateInterval, "new init script created")
+			if dkState.Error(err) {
+				return
+			}
 		}
 	}
 }
