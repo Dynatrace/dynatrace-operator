@@ -4,15 +4,28 @@ import (
 	"context"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type dynaKubeFilterFunc func(dk *dynatracev1alpha1.DynaKube) bool
 
+type conflictChecker map[string]int
+
+func (f conflictChecker) Inc(key string) error {
+	f[key] += 1
+	if f[key] > 1 {
+		return errors.New("namespace matches two or more DynaKubes which is unsupported. " +
+			"refine the labels on your namespace metadata or DynaKube/CodeModules specification")
+	}
+	return nil
+}
+
 const (
 	CodeModulesAnnotation = "dynatrace.com/dynakube-cm"
 	DataIngestAnnotation  = "dynatrace.com/dynakube-di"
+	UpdatedByDynakube     = "dynatrace.com/dynakube-upd"
 )
 
 var options = map[string]dynaKubeFilterFunc{

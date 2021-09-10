@@ -39,9 +39,7 @@ func (nm NamespaceMapper) MapFromNamespace() error {
 		removeNamespaceAnnotation(nm.ctx, keys, nm.client, nm.targetNs)
 		return nil
 	}
-	for i := range dynakubes {
-		nm.updateAnnotations(&dynakubes[i])
-	}
+	nm.updateAnnotations(dynakubes)
 	return nil
 }
 
@@ -54,27 +52,18 @@ func (nm NamespaceMapper) findDynakubesForNamespace() ([]dynatracev1alpha1.DynaK
 	}
 
 	var matchingDynakubes []dynatracev1alpha1.DynaKube
-	filterCheck := map[string]int{}
+	filterCheck := conflictChecker{}
 
 	for _, dk := range dynakubes.Items {
-		selector, err := metav1.LabelSelectorAsSelector(dk.Spec.MonitoredNamespaces)
+		matches, err := nm.matchForDynakube(dk, filterCheck)
 		if err != nil {
-			return nil, errors.WithStack(err)
+			return nil, err
 		}
-		if selector.Matches(labels.Set(nm.targetNs.Labels)) {
-			for key, filter := range options {
-				if filter(&dk) {
-					filterCheck[key] += 1
-				}
-			}
+		if matches {
 			matchingDynakubes = append(matchingDynakubes, dk)
 		}
 	}
 
-	if len(matchingDynakubes) > 1 && hasDynakubeConflicts(filterCheck) {
-		return nil, errors.New("namespace matches two or more DynaKubes which is unsupported. " +
-			"refine the labels on your namespace metadata or DynaKube/CodeModules specification")
-	}
 	if len(matchingDynakubes) == 0 {
 		nm.logger.Info("No matching dk found")
 		return nil, nil
@@ -83,25 +72,39 @@ func (nm NamespaceMapper) findDynakubesForNamespace() ([]dynatracev1alpha1.DynaK
 	return matchingDynakubes, nil
 }
 
-func (nm NamespaceMapper) updateAnnotations(dk *dynatracev1alpha1.DynaKube) {
+func (nm NamespaceMapper) updateAnnotations(dynakubes []dynatracev1alpha1.DynaKube) {
 	if nm.targetNs.Annotations == nil {
 		nm.targetNs.Annotations = make(map[string]string)
 	}
-	for key, filter := range options {
-		dkName, ok := nm.targetNs.Annotations[key]
-		if filter(dk) && dkName != dk.Name {
-			nm.targetNs.Annotations[key] = dk.Name
-		} else if !filter(dk) && ok {
-			delete(nm.targetNs.Annotations, key)
+	processedDks := map[string]bool{}
+	for i := range dynakubes {
+		dk := &dynakubes[i]
+		for key, filter := range options {
+			oldDkName, ok := nm.targetNs.Annotations[key]
+			if filter(dk) && oldDkName != dk.Name {
+				processedDks[dk.Name] = true
+				nm.targetNs.Annotations[key] = dk.Name
+			} else if !filter(dk) && ok && !processedDks[oldDkName] {
+				delete(nm.targetNs.Annotations, key)
+			}
 		}
 	}
 }
 
-func hasDynakubeConflicts(filterChecks map[string]int) bool {
-	for _, amount := range filterChecks {
-		if amount > 1 {
-			return true
+func (nm NamespaceMapper) matchForDynakube(dk dynatracev1alpha1.DynaKube, filterCheck conflictChecker) (bool, error) {
+	selector, err := metav1.LabelSelectorAsSelector(dk.Spec.MonitoredNamespaces)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+	matches := selector.Matches(labels.Set(nm.targetNs.Labels))
+	if matches {
+		for key, filter := range options {
+			if filter(&dk) {
+				if err := filterCheck.Inc(key); err != nil {
+					return matches, err
+				}
+			}
 		}
 	}
-	return false
+	return matches, nil
 }

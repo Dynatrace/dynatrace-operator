@@ -48,6 +48,12 @@ func (ni *namespaceInjector) Handle(ctx context.Context, request admission.Reque
 	if err := decodeRequestToNamespace(request, &ns); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
+	if _, ok := ns.Annotations[mapper.UpdatedByDynakube]; ok {
+		ni.logger.Info("Updating namespace annotations for not necessary", "name", request.Name)
+		delete(ns.Annotations, mapper.UpdatedByDynakube)
+		return getResponse(&ns, &request)
+	}
+	ni.logger.Info("Updating namespace annotations for", "name", request.Name)
 	if err := nsMapper.MapFromNamespace(); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}

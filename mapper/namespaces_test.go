@@ -245,4 +245,39 @@ func TestMapFromNamespace(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(nm.targetNs.Annotations))
 	})
+	t.Run("Allow multiple dynakubes with different features", func(t *testing.T) {
+		labels := map[string]string{"test": "selector"}
+		differentDk1 := &dynatracev1alpha1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: "dk1", Namespace: "dynatrace"},
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				MonitoredNamespaces: &metav1.LabelSelector{MatchLabels: labels},
+				DataIngestSpec: dynatracev1alpha1.DataIngestSpec{
+					CapabilityProperties: dynatracev1alpha1.CapabilityProperties{
+						Enabled: true,
+					},
+				},
+			},
+		}
+		differentDk2 := &dynatracev1alpha1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{Name: "dk2", Namespace: "dynatrace"},
+			Spec: dynatracev1alpha1.DynaKubeSpec{
+				MonitoredNamespaces: &metav1.LabelSelector{MatchLabels: labels},
+				CodeModules: dynatracev1alpha1.CodeModulesSpec{
+					Enabled: true,
+				},
+			},
+		}
+		namespace := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   "test-namespace",
+				Labels: labels,
+			},
+		}
+		clt := fake.NewClient(differentDk1, differentDk2)
+		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
+
+		err := nm.MapFromNamespace()
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(nm.targetNs.Annotations))
+	})
 }
