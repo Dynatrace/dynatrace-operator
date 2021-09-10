@@ -245,3 +245,15 @@ func createTestDynatraceClient(t *testing.T, handler http.Handler) (*httptest.Se
 
 	return faultyDynatraceServer, faultyDynatraceClient
 }
+
+func createTestDynatraceClientWithFunc(t *testing.T, handler http.HandlerFunc) (*httptest.Server, Client) {
+	faultyDynatraceServer := httptest.NewServer(handler)
+
+	skipCert := SkipCertificateValidation(true)
+	faultyDynatraceClient, err := NewClient(faultyDynatraceServer.URL, apiToken, paasToken, skipCert)
+
+	require.NoError(t, err)
+	require.NotNil(t, faultyDynatraceClient)
+
+	return faultyDynatraceServer, faultyDynatraceClient
+}

@@ -115,7 +115,7 @@ func (dtc *dynatraceClient) makeRequestForBinary(url string, token tokenType, wr
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("http code %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
+		return fmt.Errorf("dynatrace server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
 	}
 
 	_, err = io.Copy(writer, resp.Body)

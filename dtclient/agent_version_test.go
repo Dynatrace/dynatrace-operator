@@ -17,6 +17,8 @@ import (
 const (
 	apiToken  = "some-API-token"
 	paasToken = "some-PaaS-token"
+
+	testErrorMessage = `{ "error": { "message" : "test-error", "code": 400 } }`
 )
 
 const (
@@ -45,7 +47,9 @@ const (
   }
 ]`
 
-	agentResponse = `zip-content`
+	agentResponse          = `zip-content`
+	versionedAgentResponse = `zip-content-1.2.3`
+	versionsResponse       = `{ "availableVersions": [ "1.123.1", "1.123.2", "1.123.3", "1.123.4" ] }`
 )
 
 func TestResponseForLatestVersion(t *testing.T) {
@@ -202,6 +206,114 @@ func TestGetLatestAgent(t *testing.T) {
 		err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, FlavorMultidistro, "invalid", file)
 		require.Error(t, err)
 	})
+}
+
+func TestDynatraceClient_GetAgent(t *testing.T) {
+	t.Run(`handle response correctly`, func(t *testing.T) {
+		dynatraceServer, _ := createTestDynatraceClientWithFunc(t, agentRequestHandler)
+		defer dynatraceServer.Close()
+
+		dtc := dynatraceClient{
+			logger:     log.Log.WithName("dtc"),
+			httpClient: dynatraceServer.Client(),
+			url:        dynatraceServer.URL,
+			paasToken:  paasToken,
+		}
+		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
+		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", readWriter)
+
+		assert.NoError(t, err)
+		assert.Equal(t, versionedAgentResponse, string(readWriter.data))
+	})
+	t.Run(`handle server error`, func(t *testing.T) {
+		dynatraceServer, _ := createTestDynatraceClientWithFunc(t, errorHandler)
+		defer dynatraceServer.Close()
+
+		dtc := dynatraceClient{
+			logger:     log.Log.WithName("dtc"),
+			httpClient: dynatraceServer.Client(),
+			url:        dynatraceServer.URL,
+			paasToken:  paasToken,
+		}
+		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
+		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", readWriter)
+
+		assert.EqualError(t, err, "dynatrace server error 400: test-error")
+	})
+}
+
+func TestDynatraceClient_GetAgentVersions(t *testing.T) {
+	t.Run(`handle response correctly`, func(t *testing.T) {
+		dynatraceServer, _ := createTestDynatraceClientWithFunc(t, versionsRequestHandler)
+		defer dynatraceServer.Close()
+
+		dtc := dynatraceClient{
+			logger:     log.Log.WithName("dtc"),
+			httpClient: dynatraceServer.Client(),
+			url:        dynatraceServer.URL,
+			paasToken:  paasToken,
+		}
+		availableVersions, err := dtc.GetAgentVersions(OsUnix, InstallerTypePaaS, "", "")
+
+		assert.NoError(t, err)
+		assert.Equal(t, 4, len(availableVersions))
+		assert.Contains(t, availableVersions, "1.123.1")
+		assert.Contains(t, availableVersions, "1.123.2")
+		assert.Contains(t, availableVersions, "1.123.3")
+		assert.Contains(t, availableVersions, "1.123.4")
+	})
+	t.Run(`handle server error`, func(t *testing.T) {
+		dynatraceServer, _ := createTestDynatraceClientWithFunc(t, errorHandler)
+		defer dynatraceServer.Close()
+
+		dtc := dynatraceClient{
+			logger:     log.Log.WithName("dtc"),
+			httpClient: dynatraceServer.Client(),
+			url:        dynatraceServer.URL,
+			paasToken:  paasToken,
+		}
+		availableVersions, err := dtc.GetAgentVersions(OsUnix, InstallerTypePaaS, "", "")
+
+		assert.EqualError(t, err, "dynatrace server error 400: test-error")
+		assert.Equal(t, 0, len(availableVersions))
+	})
+}
+
+func versionsRequestHandler(response http.ResponseWriter, request *http.Request) {
+	if request.Method == http.MethodGet {
+		response.WriteHeader(http.StatusOK)
+		_, _ = response.Write([]byte(versionsResponse))
+	} else {
+		response.WriteHeader(http.StatusBadRequest)
+		_, _ = response.Write([]byte{})
+	}
+}
+
+func agentRequestHandler(response http.ResponseWriter, request *http.Request) {
+	if request.Method == http.MethodGet {
+		response.WriteHeader(http.StatusOK)
+		_, _ = response.Write([]byte(versionedAgentResponse))
+	} else {
+		response.WriteHeader(http.StatusBadRequest)
+		_, _ = response.Write([]byte{})
+	}
+}
+
+func errorHandler(response http.ResponseWriter, _ *http.Request) {
+	response.WriteHeader(http.StatusBadRequest)
+	_, _ = response.Write([]byte(testErrorMessage))
+}
+
+type memoryReadWriter struct {
+	data []byte
+}
+
+func (m *memoryReadWriter) Read(p []byte) (n int, err error) {
+	return copy(p, m.data), nil
+}
+
+func (m *memoryReadWriter) Write(p []byte) (n int, err error) {
+	return copy(m.data, p), nil
 }
 
 type ipHandler struct {
