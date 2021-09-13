@@ -34,7 +34,7 @@ The script has the following dependencies:
 Run the following command to run the script.
 
 ```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/dynatrace/dynatrace-operator/master/troubleshoot/troubleshoot.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/dynatrace/dynatrace-operator/master/troubleshoot/troubleshoot.sh)"
 ```
 
 Make sure to inspect the contents of the troubleshooting script before executing it.
