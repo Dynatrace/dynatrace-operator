@@ -38,23 +38,17 @@ func (dm DynakubeMapper) MapFromDynakube() error {
 }
 
 func (dm DynakubeMapper) UnmapFromDynaKube() error {
-	keys := getAnnotationKeys()
-	var nsList []*corev1.Namespace
+	var nsList []corev1.Namespace
 	var err error
-	for _, key := range keys {
-		nsList, err = GetNamespacesForDynakube(dm.ctx, key, dm.apiReader, dm.dk.Name)
-		if err != nil {
-			return errors.WithMessagef(err, "failed to list namespaces for dynakube %s", dm.dk.Name)
-		}
-		if len(nsList) != 0 {
-			break
-		}
+	nsList, err = GetNamespacesForDynakube(dm.ctx, dm.apiReader, dm.dk.Name)
+	if err != nil {
+		return errors.WithMessagef(err, "failed to list namespaces for dynakube %s", dm.dk.Name)
 	}
 	for _, ns := range nsList {
-		removeNamespaceAnnotation(dm.ctx, keys, dm.client, ns)
-		ns.Annotations[UpdatedByDynakube] = "true"
-		if err := dm.client.Update(dm.ctx, ns); err != nil {
-			return errors.WithMessagef(err, "failed to remove annotation %s from namespace %s", keys, ns.Name)
+		removeNamespaceInjectLabel(&ns)
+		setUpdatedByDynakubeAnnotation(&ns)
+		if err := dm.client.Update(dm.ctx, &ns); err != nil {
+			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", InstanceLabel, ns.Name)
 		}
 	}
 	return nil
@@ -65,23 +59,26 @@ func (dm DynakubeMapper) checkDynakubes(nsList *corev1.NamespaceList, dkList *dy
 	var err error
 	var modifiedNs []corev1.Namespace
 	for _, namespace := range nsList.Items {
-		filterCheck := conflictChecker{}
 		if dm.operatorNs == namespace.Name {
 			continue
 		}
-		if namespace.Annotations == nil {
-			namespace.Annotations = make(map[string]string)
+		if namespace.Labels == nil {
+			namespace.Labels = make(map[string]string)
 		}
 		processedDks := map[string]bool{}
+		conflictCounter := ConflictCounter{}
 		for _, dk := range dkList.Items {
 			if dk.Name == dm.dk.Name {
 				dk = *dm.dk
 			}
-			updated, namespace, err = dm.updateAnnotations(dk, namespace, filterCheck, processedDks)
+			updated, namespace, err = dm.updateLabels(dk, namespace, processedDks)
 			if err != nil {
 				return err
 			}
 			if updated {
+				if err := conflictCounter.Inc(&dk); err != nil {
+					return err
+				}
 				modifiedNs = append(modifiedNs, namespace)
 			}
 		}
@@ -89,7 +86,7 @@ func (dm DynakubeMapper) checkDynakubes(nsList *corev1.NamespaceList, dkList *dy
 	}
 	if updated {
 		for _, ns := range modifiedNs {
-			ns.Annotations[UpdatedByDynakube] = "true"
+			setUpdatedByDynakubeAnnotation(&ns)
 			if err := dm.client.Update(dm.ctx, &ns); err != nil {
 				return err
 			}
@@ -98,31 +95,26 @@ func (dm DynakubeMapper) checkDynakubes(nsList *corev1.NamespaceList, dkList *dy
 	return err
 }
 
-func (dm DynakubeMapper) updateAnnotations(dk dynatracev1alpha1.DynaKube, namespace corev1.Namespace, filterCheck conflictChecker, processedDks map[string]bool) (bool, corev1.Namespace, error) {
+func (dm DynakubeMapper) updateLabels(dk dynatracev1alpha1.DynaKube, namespace corev1.Namespace, processedDks map[string]bool) (bool, corev1.Namespace, error) {
 	updated := false
 	selector, err := metav1.LabelSelectorAsSelector(dk.Spec.MonitoredNamespaces)
 	if err != nil {
 		return false, corev1.Namespace{}, errors.WithStack(err)
 	}
 	matches := selector.Matches(labels.Set(namespace.Labels))
-	for key, filter := range options {
-		oldDkName, ok := namespace.Annotations[key]
-		if matches {
-			if filter(&dk) && (!ok || oldDkName != dk.Name) {
-				if err := filterCheck.Inc(key); err != nil {
-					return updated, namespace, err
-				}
-				updated = true
-				namespace.Annotations[key] = dk.Name
-				processedDks[dk.Name] = true
-			} else if !filter(&dk) && ok && !processedDks[oldDkName] {
-				updated = true
-				delete(namespace.Annotations, key)
-			}
-		} else if ok && oldDkName == dk.Name {
+	oldDkName, ok := namespace.Labels[InstanceLabel]
+	if matches {
+		if !ok || oldDkName != dk.Name {
 			updated = true
-			delete(namespace.Annotations, key)
+			addNamespaceInjectLabel(dk.Name, &namespace)
+			processedDks[dk.Name] = true
+		} else if ok && !processedDks[oldDkName] {
+			updated = true
+			removeNamespaceInjectLabel(&namespace)
 		}
+	} else if ok && oldDkName == dk.Name {
+		updated = true
+		removeNamespaceInjectLabel(&namespace)
 	}
 	return updated, namespace, nil
 }

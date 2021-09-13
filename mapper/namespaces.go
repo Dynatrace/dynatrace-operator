@@ -35,8 +35,7 @@ func (nm NamespaceMapper) MapFromNamespace() error {
 	}
 
 	if dynakubes == nil {
-		keys := getAnnotationKeys()
-		removeNamespaceAnnotation(nm.ctx, keys, nm.client, nm.targetNs)
+		removeNamespaceInjectLabel(nm.targetNs)
 		return nil
 	}
 	nm.updateAnnotations(dynakubes)
@@ -52,14 +51,17 @@ func (nm NamespaceMapper) findDynakubesForNamespace() ([]dynatracev1alpha1.DynaK
 	}
 
 	var matchingDynakubes []dynatracev1alpha1.DynaKube
-	filterCheck := conflictChecker{}
 
+	conflictCounter := ConflictCounter{}
 	for _, dk := range dynakubes.Items {
-		matches, err := nm.matchForDynakube(dk, filterCheck)
+		matches, err := nm.matchForDynakube(dk)
 		if err != nil {
 			return nil, err
 		}
 		if matches {
+			if err := conflictCounter.Inc(&dk); err != nil {
+				return nil, err
+			}
 			matchingDynakubes = append(matchingDynakubes, dk)
 		}
 	}
@@ -68,43 +70,36 @@ func (nm NamespaceMapper) findDynakubesForNamespace() ([]dynatracev1alpha1.DynaK
 		nm.logger.Info("No matching dk found")
 		return nil, nil
 	}
-	nm.logger.Info("Matching dk found", "dkName", matchingDynakubes[0].Name)
+	nm.logger.Info("Matching dk found", "dynakubes", matchingDynakubes)
 	return matchingDynakubes, nil
 }
 
 func (nm NamespaceMapper) updateAnnotations(dynakubes []dynatracev1alpha1.DynaKube) {
-	if nm.targetNs.Annotations == nil {
-		nm.targetNs.Annotations = make(map[string]string)
+	if nm.targetNs.Labels == nil {
+		nm.targetNs.Labels = make(map[string]string)
 	}
 	processedDks := map[string]bool{}
 	for i := range dynakubes {
 		dk := &dynakubes[i]
-		for key, filter := range options {
-			oldDkName, ok := nm.targetNs.Annotations[key]
-			if filter(dk) && oldDkName != dk.Name {
-				processedDks[dk.Name] = true
-				nm.targetNs.Annotations[key] = dk.Name
-			} else if !filter(dk) && ok && !processedDks[oldDkName] {
-				delete(nm.targetNs.Annotations, key)
-			}
+		oldDkName, ok := nm.targetNs.Labels[InstanceLabel]
+		if oldDkName != dk.Name {
+			processedDks[dk.Name] = true
+			addNamespaceInjectLabel(dk.Name, nm.targetNs)
+		} else if ok && !processedDks[oldDkName] {
+			removeNamespaceInjectLabel(nm.targetNs)
 		}
+
 	}
 }
 
-func (nm NamespaceMapper) matchForDynakube(dk dynatracev1alpha1.DynaKube, filterCheck conflictChecker) (bool, error) {
+func (nm NamespaceMapper) matchForDynakube(dk dynatracev1alpha1.DynaKube) (bool, error) {
 	selector, err := metav1.LabelSelectorAsSelector(dk.Spec.MonitoredNamespaces)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
 	matches := selector.Matches(labels.Set(nm.targetNs.Labels))
 	if matches {
-		for key, filter := range options {
-			if filter(&dk) {
-				if err := filterCheck.Inc(key); err != nil {
-					return matches, err
-				}
-			}
-		}
+		return matches, err
 	}
 	return matches, nil
 }

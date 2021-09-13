@@ -85,7 +85,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 		return false, nil
 	}
 
-	nsList, err := mapper.GetNamespacesForDynakube(ctx, mapper.CodeModulesAnnotation, g.apiReader, dk.Name)
+	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
 	if err != nil {
 		return false, err
 	}

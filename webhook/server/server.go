@@ -145,9 +145,9 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
-	dkName, ok := ns.Annotations[mapper.CodeModulesAnnotation]
+	dkName, ok := ns.Labels[mapper.InstanceLabel]
 	if !ok {
-		return admission.Patched("")
+		return admission.Errored(http.StatusBadRequest, fmt.Errorf("no DynaKube instance set for namespace: %s", req.Namespace))
 	}
 	var initSecret corev1.Secret
 	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtwebhook.SecretConfigName, Namespace: ns.Name}, &initSecret); k8serrors.IsNotFound(err) {

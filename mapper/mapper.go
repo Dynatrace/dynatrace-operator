@@ -9,13 +9,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type dynaKubeFilterFunc func(dk *dynatracev1alpha1.DynaKube) bool
+type ConflictCounter struct {
+	i int
+}
 
-type conflictChecker map[string]int
-
-func (f conflictChecker) Inc(key string) error {
-	f[key] += 1
-	if f[key] > 1 {
+func (c *ConflictCounter) Inc(dk *dynatracev1alpha1.DynaKube) error {
+	if !dk.Spec.CodeModules.Enabled {
+		return nil
+	}
+	c.i += 1
+	if c.i > 1 {
 		return errors.New("namespace matches two or more DynaKubes which is unsupported. " +
 			"refine the labels on your namespace metadata or DynaKube/CodeModules specification")
 	}
@@ -23,50 +26,39 @@ func (f conflictChecker) Inc(key string) error {
 }
 
 const (
-	CodeModulesAnnotation = "dynatrace.com/dynakube-cm"
-	DataIngestAnnotation  = "dynatrace.com/dynakube-di"
-	UpdatedByDynakube     = "dynatrace.com/dynakube-upd"
+	InstanceLabel               = "dynakube.dynatrace.com/instance"
+	UpdatedByDynakubeAnnotation = "dynatrace.com/updated-via-operator"
 )
 
-var options = map[string]dynaKubeFilterFunc{
-	DataIngestAnnotation: func(dk *dynatracev1alpha1.DynaKube) bool {
-		return dk.Spec.DataIngestSpec.Enabled
-	},
-	CodeModulesAnnotation: func(dk *dynatracev1alpha1.DynaKube) bool {
-		return dk.Spec.CodeModules.Enabled
-	},
-}
-
-func GetNamespacesForDynakube(ctx context.Context, annotationKey string, clt client.Reader, dkName string) ([]*corev1.Namespace, error) {
+func GetNamespacesForDynakube(ctx context.Context, clt client.Reader, dkName string) ([]corev1.Namespace, error) {
 	nsList := &corev1.NamespaceList{}
-	filteredNamespaces := []*corev1.Namespace{}
-	err := clt.List(ctx, nsList)
+	listOps := []client.ListOption{
+		client.MatchingLabels(map[string]string{InstanceLabel: dkName}),
+	}
+	err := clt.List(ctx, nsList, listOps...)
 	if err != nil {
 		return nil, err
 	}
-	for i := range nsList.Items {
-		if name := nsList.Items[i].Annotations[annotationKey]; dkName == name {
-			filteredNamespaces = append(filteredNamespaces, &nsList.Items[i])
-		}
-	}
-	return filteredNamespaces, err
+	return nsList.Items, err
 }
 
-func getAnnotationKeys() []string {
-	keys := []string{}
-	for key := range options {
-		keys = append(keys, key)
-	}
-	return keys
-}
-func removeNamespaceAnnotation(ctx context.Context, annotationKeys []string, clt client.Client, ns *corev1.Namespace) {
-	if ns.Annotations == nil {
+func removeNamespaceInjectLabel(ns *corev1.Namespace) {
+	if ns.Labels == nil {
 		return
 	}
-	for _, key := range annotationKeys {
-		if _, ok := ns.Annotations[key]; !ok {
-			return
-		}
-		delete(ns.Annotations, key)
+	delete(ns.Labels, InstanceLabel)
+}
+
+func addNamespaceInjectLabel(dkName string, ns *corev1.Namespace) {
+	if ns.Labels == nil {
+		ns.Labels = make(map[string]string)
 	}
+	ns.Labels[InstanceLabel] = dkName
+}
+
+func setUpdatedByDynakubeAnnotation(ns *corev1.Namespace) {
+	if ns.Annotations == nil {
+		ns.Annotations = make(map[string]string)
+	}
+	ns.Annotations[UpdatedByDynakubeAnnotation] = "true"
 }

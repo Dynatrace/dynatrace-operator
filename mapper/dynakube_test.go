@@ -34,7 +34,7 @@ func TestMapFromDynakube(t *testing.T) {
 			Labels: labels,
 		},
 	}
-	t.Run("Add to new namespace (namespace with 0 annotations)", func(t *testing.T) {
+	t.Run("Add to namespace", func(t *testing.T) {
 		clt := fake.NewClient(dk, namespace)
 		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 		err := dm.MapFromDynakube()
@@ -42,34 +42,17 @@ func TestMapFromDynakube(t *testing.T) {
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
 		assert.NoError(t, err)
-		assert.Equal(t, 3, len(ns.Annotations))
-	})
-	t.Run("Add to namespace with annotations", func(t *testing.T) {
-		namespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        "test-namespace",
-				Annotations: map[string]string{"test": "this"},
-				Labels:      labels,
-			},
-		}
-		clt := fake.NewClient(dk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
-		err := dm.MapFromDynakube()
-		assert.NoError(t, err)
-		var ns corev1.Namespace
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
-		assert.NoError(t, err)
-		assert.Equal(t, 4, len(ns.Annotations))
+		assert.Equal(t, 2, len(ns.Labels))
+		assert.Equal(t, 1, len(ns.Annotations))
 	})
 	t.Run("Overwrite stale entry in annotations", func(t *testing.T) {
 		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-namespace",
-				Annotations: map[string]string{
-					CodeModulesAnnotation: "old-dk",
-					DataIngestAnnotation:  "old-dk",
+				Labels: map[string]string{
+					InstanceLabel: "old-dk",
+					"test":        "selector",
 				},
-				Labels: labels,
 			},
 		}
 		clt := fake.NewClient(dk, namespace)
@@ -79,7 +62,8 @@ func TestMapFromDynakube(t *testing.T) {
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
 		assert.NoError(t, err)
-		assert.Equal(t, 3, len(ns.Annotations))
+		assert.Equal(t, 2, len(ns.Labels))
+		assert.Equal(t, 1, len(ns.Annotations))
 	})
 	t.Run("Remove stale dynakube entry for no longer matching ns", func(t *testing.T) {
 		movedDk := &dynatracev1alpha1.DynaKube{
@@ -98,11 +82,9 @@ func TestMapFromDynakube(t *testing.T) {
 		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-namespace",
-				Annotations: map[string]string{
-					CodeModulesAnnotation: movedDk.Name,
-					DataIngestAnnotation:  movedDk.Name,
+				Labels: map[string]string{
+					InstanceLabel: movedDk.Name,
 				},
-				Labels: labels,
 			},
 		}
 		clt := fake.NewClient(movedDk, namespace)
@@ -132,11 +114,10 @@ func TestMapFromDynakube(t *testing.T) {
 		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-namespace",
-				Annotations: map[string]string{
-					CodeModulesAnnotation: dk.Name,
-					DataIngestAnnotation:  dk.Name,
+				Labels: map[string]string{
+					InstanceLabel: dk.Name,
+					"test":        "selector",
 				},
-				Labels: labels,
 			},
 		}
 		clt := fake.NewClient(dk, conflictingDk, namespace)
@@ -168,10 +149,10 @@ func TestMapFromDynakube(t *testing.T) {
 		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-namespace",
-				Annotations: map[string]string{
-					CodeModulesAnnotation: dk.Name,
+				Labels: map[string]string{
+					InstanceLabel: dk.Name,
+					"test":        "selector",
 				},
-				Labels: labels,
 			},
 		}
 		clt := fake.NewClient(differentDk1, differentDk2, namespace)
@@ -181,7 +162,8 @@ func TestMapFromDynakube(t *testing.T) {
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
 		assert.NoError(t, err)
-		assert.Equal(t, 3, len(ns.Annotations))
+		assert.Equal(t, 2, len(ns.Labels))
+		assert.Equal(t, 1, len(ns.Annotations))
 	})
 }
 
@@ -192,18 +174,16 @@ func TestUnmapFromDynaKube(t *testing.T) {
 	namespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-namespace",
-			Annotations: map[string]string{
-				CodeModulesAnnotation: dk.Name,
-				DataIngestAnnotation:  dk.Name,
+			Labels: map[string]string{
+				InstanceLabel: dk.Name,
 			},
 		},
 	}
 	namespace2 := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-namespace2",
-			Annotations: map[string]string{
-				CodeModulesAnnotation: dk.Name,
-				DataIngestAnnotation:  dk.Name,
+			Labels: map[string]string{
+				InstanceLabel: dk.Name,
 			},
 		},
 	}
@@ -221,9 +201,11 @@ func TestUnmapFromDynaKube(t *testing.T) {
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
 		assert.NoError(t, err)
+		assert.Equal(t, 0, len(ns.Labels))
 		assert.Equal(t, 1, len(ns.Annotations))
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace2.Name}, &ns)
 		assert.NoError(t, err)
+		assert.Equal(t, 0, len(ns.Labels))
 		assert.Equal(t, 1, len(ns.Annotations))
 	})
 }

@@ -185,13 +185,13 @@ func TestMapFromNamespace(t *testing.T) {
 			Labels: labels,
 		},
 	}
-	t.Run("Add to new namespace (no annotations)", func(t *testing.T) {
+	t.Run("Add to namespace", func(t *testing.T) {
 		clt := fake.NewClient(dk)
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
 
 		err := nm.MapFromNamespace()
 		assert.NoError(t, err)
-		assert.Equal(t, 2, len(nm.targetNs.Annotations))
+		assert.Equal(t, 2, len(nm.targetNs.Labels))
 	})
 
 	t.Run("Error, 2 dynakube point to same namespace", func(t *testing.T) {
@@ -212,29 +212,12 @@ func TestMapFromNamespace(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("Add to existing config map", func(t *testing.T) {
-		namespace := &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:        "test-namespace",
-				Labels:      labels,
-				Annotations: map[string]string{"test": "this"},
-			},
-		}
-		clt := fake.NewClient(dk)
-		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
-
-		err := nm.MapFromNamespace()
-		assert.NoError(t, err)
-		assert.Equal(t, 3, len(nm.targetNs.Annotations))
-	})
-
 	t.Run("Remove stale namespace entry", func(t *testing.T) {
 		namespace := &corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-namespace",
-				Annotations: map[string]string{
-					CodeModulesAnnotation: dk.Name,
-					DataIngestAnnotation:  dk.Name,
+				Labels: map[string]string{
+					InstanceLabel: dk.Name,
 				},
 			},
 		}
@@ -243,7 +226,7 @@ func TestMapFromNamespace(t *testing.T) {
 
 		err := nm.MapFromNamespace()
 		assert.NoError(t, err)
-		assert.Equal(t, 0, len(nm.targetNs.Annotations))
+		assert.Equal(t, 0, len(nm.targetNs.Labels))
 	})
 	t.Run("Allow multiple dynakubes with different features", func(t *testing.T) {
 		labels := map[string]string{"test": "selector"}
@@ -278,6 +261,6 @@ func TestMapFromNamespace(t *testing.T) {
 
 		err := nm.MapFromNamespace()
 		assert.NoError(t, err)
-		assert.Equal(t, 2, len(nm.targetNs.Annotations))
+		assert.Equal(t, 2, len(nm.targetNs.Labels))
 	})
 }

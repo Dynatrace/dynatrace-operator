@@ -147,8 +147,6 @@ func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.C
 		}
 	}
 
-	mutatingWebhookConfiguration.Webhooks[0].NamespaceSelector = nil
-
 	// update webhook configurations
 	if err = r.client.Update(ctx, mutatingWebhookConfiguration); err != nil {
 		return err

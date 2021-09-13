@@ -126,7 +126,7 @@ func TestInjection(t *testing.T) {
 		var updNs corev1.Namespace
 		assert.NoError(t, json.Unmarshal(updNsBytes, &updNs))
 
-		dkName, ok := updNs.Annotations[mapper.CodeModulesAnnotation]
+		dkName, ok := updNs.Labels[mapper.InstanceLabel]
 		assert.True(t, ok)
 		assert.Equal(t, dk.Name, dkName)
 	})
@@ -138,9 +138,6 @@ func TestInjection(t *testing.T) {
 				Labels: map[string]string{
 					"inject": "true",
 				},
-				Annotations: map[string]string{
-					"test": "this",
-				},
 			},
 		}
 		baseNsBytes, err := json.Marshal(&baseNs)
@@ -167,10 +164,10 @@ func TestInjection(t *testing.T) {
 		var updNs corev1.Namespace
 		assert.NoError(t, json.Unmarshal(updNsBytes, &updNs))
 
-		dkName, ok := updNs.Annotations[mapper.CodeModulesAnnotation]
+		dkName, ok := updNs.Labels[mapper.InstanceLabel]
 		assert.True(t, ok)
 		assert.Equal(t, dk.Name, dkName)
-		assert.Equal(t, 2, len(updNs.Annotations))
+		assert.Equal(t, 2, len(updNs.Labels))
 	})
 
 	t.Run("Remove stale", func(t *testing.T) {
@@ -178,10 +175,8 @@ func TestInjection(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-namespace",
 				Labels: map[string]string{
-					"inject": "true",
-				},
-				Annotations: map[string]string{
-					mapper.CodeModulesAnnotation: "stale",
+					"inject":             "true",
+					mapper.InstanceLabel: "stale",
 				},
 			},
 		}
@@ -209,9 +204,9 @@ func TestInjection(t *testing.T) {
 		var updNs corev1.Namespace
 		assert.NoError(t, json.Unmarshal(updNsBytes, &updNs))
 
-		dkName, ok := updNs.Annotations[mapper.CodeModulesAnnotation]
+		dkName, ok := updNs.Labels[mapper.InstanceLabel]
 		assert.True(t, ok)
 		assert.Equal(t, dk.Name, dkName)
-		assert.Equal(t, 1, len(updNs.Annotations))
+		assert.Equal(t, 2, len(updNs.Labels))
 	})
 }

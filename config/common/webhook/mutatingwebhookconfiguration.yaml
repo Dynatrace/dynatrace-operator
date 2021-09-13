@@ -16,7 +16,7 @@ webhooks:
         scope: Namespaced
     namespaceSelector:
       matchExpressions:
-        - key: placeholder-dynatrace
+        - key: dynakube.dynatrace.com/instance
           operator: Exists
     clientConfig:
       service:

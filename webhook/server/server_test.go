@@ -38,8 +38,8 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 		client: fake.NewClient(
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        "test-namespace",
-					Annotations: map[string]string{mapper.CodeModulesAnnotation: "dynakube"},
+					Name:   "test-namespace",
+					Labels: map[string]string{mapper.InstanceLabel: "dynakube"},
 				},
 			}),
 		apiReader: fake.NewClient(
@@ -118,8 +118,8 @@ func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, 
 			dynakube,
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        "test-namespace",
-					Annotations: map[string]string{mapper.CodeModulesAnnotation: "dynakube"},
+					Name:   "test-namespace",
+					Labels: map[string]string{mapper.InstanceLabel: "dynakube"},
 				},
 			},
 		),
@@ -346,8 +346,8 @@ func TestUseImmutableImage(t *testing.T) {
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        "test-namespace",
-						Annotations: map[string]string{mapper.CodeModulesAnnotation: "dynakube"},
+						Name:   "test-namespace",
+						Labels: map[string]string{mapper.InstanceLabel: "dynakube"},
 					},
 				},
 			),
@@ -443,8 +443,8 @@ func TestUseImmutableImage(t *testing.T) {
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        "test-namespace",
-						Annotations: map[string]string{mapper.CodeModulesAnnotation: "dynakube"},
+						Name:   "test-namespace",
+						Labels: map[string]string{mapper.InstanceLabel: "dynakube"},
 					},
 				},
 			),
@@ -541,8 +541,8 @@ func TestUseImmutableImage(t *testing.T) {
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        "test-namespace",
-						Annotations: map[string]string{mapper.CodeModulesAnnotation: "dynakube"},
+						Name:   "test-namespace",
+						Labels: map[string]string{mapper.InstanceLabel: "dynakube"},
 					},
 				},
 			),
@@ -636,8 +636,8 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        "test-namespace",
-						Annotations: map[string]string{mapper.CodeModulesAnnotation: instance.Name},
+						Name:   "test-namespace",
+						Labels: map[string]string{mapper.InstanceLabel: instance.Name},
 					},
 				},
 			),
@@ -725,8 +725,8 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        "test-namespace",
-						Annotations: map[string]string{mapper.CodeModulesAnnotation: instance.Name},
+						Name:   "test-namespace",
+						Labels: map[string]string{mapper.InstanceLabel: instance.Name},
 					},
 				},
 			),
@@ -815,8 +815,8 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        "test-namespace",
-						Annotations: map[string]string{mapper.CodeModulesAnnotation: instance.Name},
+						Name:   "test-namespace",
+						Labels: map[string]string{mapper.InstanceLabel: instance.Name},
 					},
 				},
 			),
@@ -904,8 +904,8 @@ func TestAgentVersion(t *testing.T) {
 			instance,
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        "test-namespace",
-					Annotations: map[string]string{mapper.CodeModulesAnnotation: instance.Name},
+					Name:   "test-namespace",
+					Labels: map[string]string{mapper.InstanceLabel: instance.Name},
 				},
 			},
 		),
@@ -998,8 +998,8 @@ func TestAgentVersionWithCSI(t *testing.T) {
 			instance,
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        "test-namespace",
-					Annotations: map[string]string{mapper.CodeModulesAnnotation: instance.Name},
+					Name:   "test-namespace",
+					Labels: map[string]string{mapper.InstanceLabel: instance.Name},
 				},
 			},
 		),
