@@ -24,8 +24,8 @@ const (
 	MountpointDirPath   = "/var/lib/kubelet/pods"
 	OneAgentDataDirPath = "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data"
 
-	MinCPU    = 50
-	MinMemory = 50
+	MinCPU    = 200
+	MinMemory = 100
 	MaxCPU    = 200
 	MaxMemory = 100
 )
