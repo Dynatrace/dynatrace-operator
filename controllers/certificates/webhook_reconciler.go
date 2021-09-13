@@ -144,13 +144,13 @@ func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.C
 	validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) error {
 
 	// update certificates for webhook configurations
-	r.logger.Info("save certificates into webhook configurations")
-	for i, _ := range mutatingWebhookConfiguration.Webhooks {
+	r.logger.Info("saving certificates into webhook configurations")
+	for i := range mutatingWebhookConfiguration.Webhooks {
 		if err := r.updateConfiguration(&mutatingWebhookConfiguration.Webhooks[i].ClientConfig, secret); err != nil {
 			return err
 		}
 	}
-	for i, _ := range validatingWebhookConfiguration.Webhooks {
+	for i := range validatingWebhookConfiguration.Webhooks {
 		if err := r.updateConfiguration(&validatingWebhookConfiguration.Webhooks[i].ClientConfig, secret); err != nil {
 			return err
 		}
@@ -178,7 +178,7 @@ func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx conte
 	}
 
 	if len(mutatingWebhook.Webhooks) <= 0 {
-		return nil, errors.New("mutating admission webhook configuration has no registered webhooks")
+		return nil, errors.New("mutating webhook configuration has no registered webhooks")
 	}
 	return &mutatingWebhook, nil
 }
@@ -194,7 +194,7 @@ func (r *ReconcileWebhookCertificates) getValidatingWebhookConfiguration(ctx con
 	}
 
 	if len(mutatingWebhook.Webhooks) <= 0 {
-		return nil, errors.New("mutating validation webhook configuration has no registered webhooks")
+		return nil, errors.New("validating webhook configuration has no registered webhooks")
 	}
 	return &mutatingWebhook, nil
 }
@@ -223,14 +223,14 @@ func (r *ReconcileWebhookCertificates) checkMutatingWebhookConfigurations(
 
 	for _, mutatingWebhook := range mutatingWebhookConfiguration.Webhooks {
 		cert := mutatingWebhook.ClientConfig.CABundle
-		if cert == nil || len(cert) == 0 {
+		if len(cert) == 0 {
 			return true
 		}
 	}
 
 	for _, validatingWebhook := range validatingWebhookConfiguration.Webhooks {
 		cert := validatingWebhook.ClientConfig.CABundle
-		if cert == nil || len(cert) == 0 {
+		if len(cert) == 0 {
 			return true
 		}
 	}
@@ -241,9 +241,7 @@ func (r *ReconcileWebhookCertificates) updateConfiguration(
 	webhookConfiguration *admissionregistrationv1.WebhookClientConfig, secret *corev1.Secret) error {
 	data, hasData := secret.Data[RootCert]
 	if !hasData {
-		err := errors.New(errorCertificatesSecretEmpty)
-		r.logger.Error(err, errorCertificatesSecretEmpty)
-		return errors.WithStack(err)
+		return errors.New(errorCertificatesSecretEmpty)
 	}
 
 	if oldData, hasOldData := secret.Data[RootCertOld]; hasOldData {
