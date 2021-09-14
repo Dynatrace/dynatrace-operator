@@ -1,404 +1,331 @@
 package initgeneration
 
-// import (
-// 	"context"
-// 	_ "embed"
-// 	"os"
-// 	"testing"
+import (
+	"context"
+	_ "embed"
+	"testing"
 
-// 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-// 	"github.com/Dynatrace/dynatrace-operator/mapper"
-// 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
-// 	"github.com/Dynatrace/dynatrace-operator/webhook"
-// 	"github.com/stretchr/testify/assert"
-// 	"github.com/stretchr/testify/require"
-// 	corev1 "k8s.io/api/core/v1"
-// 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-// 	"k8s.io/apimachinery/pkg/types"
-// 	"sigs.k8s.io/controller-runtime/pkg/client"
-// 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-// 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-// )
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/logger"
+	"github.com/Dynatrace/dynatrace-operator/mapper"
+	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/webhook"
+	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+)
 
-// //go:embed init.sh.test-sample
-// var scriptSample string
+//go:embed init.sh.test-sample
+var scriptSample string
 
-// var (
-// 	testNamespace1      = "namespace1"
-// 	testNamespace2      = "namespace2"
-// 	testDynaKubeName1   = "dynakube1"
-// 	testDynaKubeName2   = "dynakube2"
-// 	testApiUrl          = "https://test-url/api"
-// 	testProxy           = "testproxy.com"
-// 	testtrustCAsCM      = "testtrustedCAsConfigMap"
-// 	testCAValue         = "somecertificate"
-// 	testTenantUUID      = "abc12345"
-// 	kubesystemNamespace = "kube-system"
-// 	kubesystemUID       = types.UID("42")
+var (
+	operatorNamespace        = "dynatrace"
+	testNamespaceName        = "namespace"
+	testOtherNamespaceName   = "other-namespace"
+	testDynakubeComplexName  = "dynakubeComplex"
+	testDynakubeSimpleName   = "dynakubeSimple"
+	testTokensName           = "kitchen-sink"
+	testApiUrl               = "https://test-url/api"
+	testProxy                = "testproxy.com"
+	testtrustCAsCM           = "testtrustedCAsConfigMap"
+	testCAValue              = "somecertificate"
+	testTenantUUID           = "abc12345"
+	kubesystemNamespace      = "kube-system"
+	kubesystemUID            = types.UID("42")
+	testNode1Name            = "node1"
+	testNode2Name            = "node2"
+	testNodeWithSelectorName = "nodeWselector"
+	testSelectorLabels       = map[string]string{"test": "label"}
 
-// 	testdk1 = &dynatracev1alpha1.DynaKube{
-// 		ObjectMeta: metav1.ObjectMeta{Name: testDynaKubeName1},
-// 		Spec: dynatracev1alpha1.DynaKubeSpec{
-// 			APIURL: testApiUrl,
-// 			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
-// 				FullStackSpec: dynatracev1alpha1.FullStackSpec{Enabled: true},
-// 			},
-// 		},
-// 		Status: dynatracev1alpha1.DynaKubeStatus{
-// 			ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
-// 				TenantUUID: testTenantUUID,
-// 			},
-// 			OneAgent: dynatracev1alpha1.OneAgentStatus{
-// 				Instances: map[string]dynatracev1alpha1.OneAgentInstance{
-// 					"node1": {},
-// 				},
-// 			},
-// 		},
-// 	}
+	testDynakubeComplex = &dynatracev1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeComplexName, Namespace: operatorNamespace},
+		Spec: dynatracev1alpha1.DynaKubeSpec{
+			APIURL:     testApiUrl,
+			Proxy:      &dynatracev1alpha1.DynaKubeProxy{Value: testProxy},
+			TrustedCAs: testtrustCAsCM,
+			Tokens:     testTokensName,
+			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
+				FullStackSpec: dynatracev1alpha1.FullStackSpec{Enabled: true},
+			},
+		},
+		Status: dynatracev1alpha1.DynaKubeStatus{
+			ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
+				TenantUUID: testTenantUUID,
+			},
+			OneAgent: dynatracev1alpha1.OneAgentStatus{
+				Instances: map[string]dynatracev1alpha1.OneAgentInstance{
+					testNode1Name: {},
+				},
+			},
+		},
+	}
 
-// 	testdk2 = &dynatracev1alpha1.DynaKube{
-// 		ObjectMeta: metav1.ObjectMeta{Name: testDynaKubeName2},
-// 		Spec: dynatracev1alpha1.DynaKubeSpec{
-// 			APIURL: testApiUrl,
-// 			Tokens: "secret2",
-// 			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
-// 				FullStackSpec: dynatracev1alpha1.FullStackSpec{Enabled: true},
-// 			},
-// 		},
-// 		Status: dynatracev1alpha1.DynaKubeStatus{
-// 			ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
-// 				TenantUUID: testTenantUUID,
-// 			},
-// 			OneAgent: dynatracev1alpha1.OneAgentStatus{
-// 				Instances: map[string]dynatracev1alpha1.OneAgentInstance{
-// 					"node2": {},
-// 				},
-// 			},
-// 		},
-// 	}
+	testDynakubeSimple = &dynatracev1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
+		Spec: dynatracev1alpha1.DynaKubeSpec{
+			APIURL: testApiUrl,
+			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
+				FullStackSpec: dynatracev1alpha1.FullStackSpec{Enabled: true},
+			},
+		},
+		Status: dynatracev1alpha1.DynaKubeStatus{
+			ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
+				TenantUUID: testTenantUUID,
+			},
+			OneAgent: dynatracev1alpha1.OneAgentStatus{
+				Instances: map[string]dynatracev1alpha1.OneAgentInstance{
+					testNode2Name: {},
+				},
+			},
+		},
+	}
 
-// 	testSecretDk1 = &corev1.Secret{
-// 		ObjectMeta: metav1.ObjectMeta{Name: testDynaKubeName1},
-// 		Data:       map[string][]byte{"paasToken": []byte("42"), "apiToken": []byte("84")},
-// 	}
+	testDynakubeWithSelector = &dynatracev1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
+		Spec: dynatracev1alpha1.DynaKubeSpec{
+			APIURL: testApiUrl,
+			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
+				FullStackSpec: dynatracev1alpha1.FullStackSpec{Enabled: true, NodeSelector: testSelectorLabels},
+			},
+		},
+		Status: dynatracev1alpha1.DynaKubeStatus{
+			ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
+				TenantUUID: testTenantUUID,
+			},
+		},
+	}
 
-// 	testSecretDk2 = &corev1.Secret{
-// 		ObjectMeta: metav1.ObjectMeta{Name: "secret2"},
-// 		Data:       map[string][]byte{"paasToken": []byte("42"), "apiToken": []byte("84")},
-// 	}
-// )
+	caConfigMap = &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: testtrustCAsCM, Namespace: operatorNamespace},
+		Data: map[string]string{
+			"certs": testCAValue,
+		},
+	}
 
-// func TestReconcileNamespaceMapping_EmptyConfigMap(t *testing.T) {
-// 	c := fake.NewClient()
-// 	r := &InitGenerator{
-// 		client:    c,
-// 		apiReader: c,
-// 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
-// 	}
+	testSecretDynakubeComplex = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: testTokensName, Namespace: operatorNamespace},
+		Data:       map[string][]byte{"paasToken": []byte("42"), "apiToken": []byte("84")},
+	}
 
-// 	_, err := r.Reconcile(context.TODO(), reconcile.Request{})
-// 	assert.NoError(t, err)
-// }
+	testSecretDynakubeSimple = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
+		Data:       map[string][]byte{"paasToken": []byte("42"), "apiToken": []byte("84")},
+	}
 
-// func TestReconcileNamespaceMapping_TwoDynakubes(t *testing.T) {
-// 	c := fake.NewClient(
-// 		&corev1.Namespace{
-// 			ObjectMeta: metav1.ObjectMeta{
-// 				Name: kubesystemNamespace,
-// 				UID:  kubesystemUID,
-// 			},
-// 		},
-// 		&corev1.ConfigMap{
-// 			ObjectMeta: metav1.ObjectMeta{Name: mapper.CodeModulesMapName, Namespace: "test"},
-// 			Data: map[string]string{
-// 				testNamespace1: testDynaKubeName1,
-// 				testNamespace2: testDynaKubeName2,
-// 			},
-// 		},
-// 		testdk1,
-// 		testdk2,
-// 		testSecretDk1,
-// 		testSecretDk2,
-// 	)
+	kubeNamespace = &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{Name: kubesystemNamespace, UID: kubesystemUID},
+	}
 
-// 	r := &InitGenerator{
-// 		client:    c,
-// 		apiReader: c,
-// 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
-// 	}
+	testNode1 = &corev1.Node{
+		ObjectMeta: metav1.ObjectMeta{Name: testNode1Name},
+	}
 
-// 	_, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: mapper.CodeModulesMapName, Namespace: "test"}})
-// 	assert.NoError(t, err)
+	testNode2 = &corev1.Node{
+		ObjectMeta: metav1.ObjectMeta{Name: testNode2Name},
+	}
 
-// 	var initSecret1 corev1.Secret
-// 	require.NoError(t, c.Get(context.TODO(), client.ObjectKey{
-// 		Name:      webhook.SecretConfigName,
-// 		Namespace: testNamespace1,
-// 	}, &initSecret1))
+	testNodeWithLabels = &corev1.Node{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   testNodeWithSelectorName,
+			Labels: testSelectorLabels,
+		},
+	}
+)
 
-// 	require.Len(t, initSecret1.Data, 1)
-// 	require.Contains(t, initSecret1.Data, "init.sh")
-// 	require.NotEmpty(t, scriptSample) // sanity check to confirm that the sample script has been embedded
-// 	require.Equal(t, scriptSample, string(initSecret1.Data["init.sh"]))
+func TestGenerateForNamespace(t *testing.T) {
+	t.Run("Add secret for namespace (dynakube with all the fields)", func(t *testing.T) {
+		testNamespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   testNamespaceName,
+				Labels: map[string]string{mapper.InstanceLabel: testDynakubeComplex.Name},
+			},
+		}
+		clt := fake.NewClient(testDynakubeComplex, &testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testNode1, testNode2)
+		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
 
-// 	var initSecret2 corev1.Secret
-// 	require.NoError(t, c.Get(context.TODO(), client.ObjectKey{
-// 		Name:      webhook.SecretConfigName,
-// 		Namespace: testNamespace2,
-// 	}, &initSecret2))
+		err := ig.GenerateForNamespace(context.TODO(), testDynakubeComplex.Name, testNamespace.Name)
+		assert.NoError(t, err)
 
-// 	require.Len(t, initSecret2.Data, 1)
-// 	require.Contains(t, initSecret2.Data, "init.sh")
-// 	require.NotEmpty(t, scriptSample) // sanity check to confirm that the sample script has been embedded
-// 	require.Equal(t, scriptSample, string(initSecret2.Data["init.sh"]))
-// }
+		var initSecret corev1.Secret
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
+		assert.NoError(t, err)
+		assert.Equal(t, 3, len(initSecret.Data))
+		initSh, ok := initSecret.Data["init.sh"]
+		assert.True(t, ok)
+		assert.NotNil(t, initSh)
+		proxy, ok := initSecret.Data["proxy"]
+		assert.True(t, ok)
+		assert.Equal(t, testProxy, string(proxy))
+		ca, ok := initSecret.Data["ca.pem"]
+		assert.True(t, ok)
+		assert.Equal(t, testCAValue, string(ca))
+	})
+	t.Run("Add secret for namespace (simple dynakube)", func(t *testing.T) {
+		testNamespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   testNamespaceName,
+				Labels: map[string]string{mapper.InstanceLabel: testDynakubeSimple.Name},
+			},
+		}
+		clt := fake.NewClient(testDynakubeSimple, &testNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
+		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
 
-// func TestCodeModulesNamespaceMapping_SingleData(t *testing.T) {
-// 	testdata := map[string]string{
-// 		testNamespace1: testDynaKubeName1,
-// 	}
+		err := ig.GenerateForNamespace(context.TODO(), testDynakubeSimple.Name, testNamespace.Name)
+		assert.NoError(t, err)
 
-// 	expectedMap := []namespaceMapping{
-// 		{
-// 			namespace: testNamespace1,
-// 			dynakube:  testDynaKubeName1,
-// 		},
-// 	}
+		var initSecret corev1.Secret
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(initSecret.Data))
+		initSh, ok := initSecret.Data["init.sh"]
+		assert.True(t, ok)
+		assert.NotNil(t, initSh)
+	})
+}
 
-// 	mapping := getNamespaceMapping(testdata)
-// 	assert.Equal(t, expectedMap, mapping)
-// }
+func TestGenerateForDynakube(t *testing.T) {
+	t.Run("Add secret for namespace (dynakube with all the fields)", func(t *testing.T) {
+		dk := testDynakubeComplex.DeepCopy()
+		testNamespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   testNamespaceName,
+				Labels: map[string]string{mapper.InstanceLabel: testDynakubeComplex.Name},
+			},
+		}
+		clt := fake.NewClient(&testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testNode1, testNode2)
+		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
 
-// func TestCodeModulesNamespaceMapping_NoData(t *testing.T) {
-// 	expectedMap := []namespaceMapping{
-// 		{
-// 			namespace: testNamespace1,
-// 			dynakube:  testDynaKubeName1,
-// 		},
-// 	}
+		updated, err := ig.GenerateForDynakube(context.TODO(), dk)
+		assert.NoError(t, err)
+		assert.True(t, updated)
 
-// 	mapping := getNamespaceMapping(nil)
-// 	assert.Nil(t, mapping)
-// 	assert.NotEqual(t, expectedMap, mapping)
-// }
+		var initSecret corev1.Secret
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
+		assert.NoError(t, err)
+		assert.Equal(t, 3, len(initSecret.Data))
+		initSh, ok := initSecret.Data["init.sh"]
+		assert.True(t, ok)
+		assert.NotNil(t, initSh)
+		proxy, ok := initSecret.Data["proxy"]
+		assert.True(t, ok)
+		assert.Equal(t, testProxy, string(proxy))
+		ca, ok := initSecret.Data["ca.pem"]
+		assert.True(t, ok)
+		assert.Equal(t, testCAValue, string(ca))
+		assert.NotNil(t, dk.Status.LastInitSecretHash)
+	})
+	t.Run("Add secret for namespace (simple dynakube)", func(t *testing.T) {
+		dk := testDynakubeSimple.DeepCopy()
+		testNamespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   testNamespaceName,
+				Labels: map[string]string{mapper.InstanceLabel: testDynakubeSimple.Name},
+			},
+		}
+		clt := fake.NewClient(&testNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
+		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
 
-// func TestCodeModulesNamespaceMapping_JustNamespace(t *testing.T) {
-// 	testdata := map[string]string{
-// 		testNamespace1: "",
-// 	}
+		updated, err := ig.GenerateForDynakube(context.TODO(), dk)
+		assert.NoError(t, err)
+		assert.True(t, updated)
 
-// 	expectedMap := []namespaceMapping{
-// 		{
-// 			namespace: testNamespace1,
-// 			dynakube:  "",
-// 		},
-// 	}
+		var initSecret corev1.Secret
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(initSecret.Data))
+		initSh, ok := initSecret.Data["init.sh"]
+		assert.True(t, ok)
+		assert.NotNil(t, initSh)
+		assert.NotNil(t, dk.Status.LastInitSecretHash)
+	})
+	t.Run("Add secret to multiple namespaces (simple dynakube)", func(t *testing.T) {
+		dk := testDynakubeSimple.DeepCopy()
+		testNamespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   testNamespaceName,
+				Labels: map[string]string{mapper.InstanceLabel: testDynakubeSimple.Name},
+			},
+		}
+		testOtherNamespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   testOtherNamespaceName,
+				Labels: map[string]string{mapper.InstanceLabel: testDynakubeSimple.Name},
+			},
+		}
+		clt := fake.NewClient(&testNamespace, &testOtherNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
+		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
 
-// 	mapping := getNamespaceMapping(testdata)
-// 	assert.Equal(t, expectedMap, mapping)
-// }
+		updated, err := ig.GenerateForDynakube(context.TODO(), dk)
+		assert.NoError(t, err)
+		assert.True(t, updated)
 
-// func TestGetInfraMonitoringHostNodes_NoNodes(t *testing.T) {
-// 	c := fake.NewClient()
-// 	r := &InitGenerator{
-// 		client:    c,
-// 		apiReader: c,
-// 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
-// 	}
+		var initSecret corev1.Secret
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(initSecret.Data))
+		initSh, ok := initSecret.Data["init.sh"]
+		assert.True(t, ok)
+		assert.NotNil(t, initSh)
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testOtherNamespace.Name}, &initSecret)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(initSecret.Data))
+		initSh, ok = initSecret.Data["init.sh"]
+		assert.True(t, ok)
+		assert.NotNil(t, initSh)
+		assert.NotNil(t, dk.Status.LastInitSecretHash)
+	})
+}
 
-// 	expectedNodes := map[string]string{}
+func TestGetInfraMonitoringNodes(t *testing.T) {
+	t.Run("Get IMNodes from multiple dynakubes", func(t *testing.T) {
+		clt := fake.NewClient(testDynakubeComplex, testDynakubeSimple, testNode1, testNode2)
+		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		imNodes, err := ig.getInfraMonitoringNodes(testDynakubeSimple)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(imNodes))
+		assert.Equal(t, testTenantUUID, imNodes[testNode1Name])
+		assert.Equal(t, testTenantUUID, imNodes[testNode2Name])
+	})
+	t.Run("Get IMNodes from dynakubes with nodeSelector", func(t *testing.T) {
+		clt := fake.NewClient(testNodeWithLabels, testDynakubeWithSelector, testNode1, testNode2)
+		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		imNodes, err := ig.getInfraMonitoringNodes(testDynakubeWithSelector)
+		assert.NoError(t, err)
+		assert.Equal(t, 3, len(imNodes))
+		assert.Equal(t, notMappedIM, imNodes[testNode1Name])
+		assert.Equal(t, notMappedIM, imNodes[testNode2Name])
+	})
+}
 
-// 	imNodes, err := r.getInfraMonitoringNodes()
-// 	assert.Equal(t, expectedNodes, imNodes)
-// 	assert.NoError(t, err)
-// }
+func TestPrepareScriptForDynaKube(t *testing.T) {
+	t.Run("Create init.sh with correct content", func(t *testing.T) {
+		dk := testDynakubeComplex.DeepCopy()
+		testNamespace := corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   testNamespaceName,
+				Labels: map[string]string{mapper.InstanceLabel: testDynakubeComplex.Name},
+			},
+		}
+		clt := fake.NewClient(&testNamespace, testSecretDynakubeComplex, caConfigMap)
+		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		imNodes := map[string]string{testNode1Name: testTenantUUID, testNode2Name: testTenantUUID}
+		sc, err := ig.prepareScriptForDynaKube(dk, kubesystemUID, imNodes)
+		assert.NoError(t, err)
+		expectedScript := script{
+			ApiUrl:        dk.Spec.APIURL,
+			SkipCertCheck: dk.Spec.SkipCertCheck,
+			PaaSToken:     "42",
+			Proxy:         testProxy,
+			TrustedCAs:    []byte(testCAValue),
+			ClusterID:     string(kubesystemUID),
+			TenantUUID:    dk.Status.ConnectionInfo.TenantUUID,
+			IMNodes:       imNodes,
+		}
+		assert.Equal(t, &expectedScript, sc)
 
-// func TestGetInfraMonitoringHostNodes_WithNodes(t *testing.T) {
-// 	c := fake.NewClient(testdk1)
-
-// 	r := &InitGenerator{
-// 		client:    c,
-// 		apiReader: c,
-// 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
-// 	}
-
-// 	expectedNodes := map[string]string{
-// 		"node1": testTenantUUID,
-// 	}
-
-// 	imNodes, err := r.getInfraMonitoringNodes()
-// 	assert.Equal(t, expectedNodes, imNodes)
-// 	assert.NoError(t, err)
-// }
-
-// func TestPrepareScriptForDynaKube_NoDynakube(t *testing.T) {
-// 	c := fake.NewClient()
-// 	r := &InitGenerator{
-// 		client:    c,
-// 		apiReader: c,
-// 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
-// 	}
-
-// 	imNodes := map[string]string{
-// 		"node1": testTenantUUID,
-// 	}
-
-// 	s, err := r.prepareScriptForDynaKube("", kubesystemUID, imNodes)
-// 	assert.Error(t, err, "dynakubes.dynatrace.com \"\" not found")
-// 	assert.Nil(t, s)
-// }
-
-// func TestPrepareScriptForDynaKube_FullData(t *testing.T) {
-// 	c := fake.NewClient(testdk1, testSecretDk1)
-// 	r := &InitGenerator{
-// 		client:    c,
-// 		apiReader: c,
-// 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
-// 	}
-
-// 	imNodes := map[string]string{
-// 		"node1": testTenantUUID,
-// 	}
-
-// 	expectedScript := &script{
-// 		ApiUrl:        testApiUrl,
-// 		SkipCertCheck: false,
-// 		PaaSToken:     "42",
-// 		Proxy:         "",
-// 		TrustedCAs:    nil,
-// 		ClusterID:     string(kubesystemUID),
-// 		TenantUUID:    testTenantUUID,
-// 		IMNodes:       imNodes,
-// 	}
-
-// 	s, err := r.prepareScriptForDynaKube(testDynaKubeName1, kubesystemUID, imNodes)
-// 	assert.NoError(t, err)
-// 	assert.Equal(t, expectedScript, s)
-// }
-
-// func TestPrepareScriptForDynaKube_FullData_WithProxyAndCerts(t *testing.T) {
-// 	c := fake.NewClient(
-// 		&corev1.ConfigMap{
-// 			ObjectMeta: metav1.ObjectMeta{Name: testtrustCAsCM},
-// 			Data: map[string]string{
-// 				"certs": testCAValue,
-// 			},
-// 		},
-// 		&dynatracev1alpha1.DynaKube{
-// 			ObjectMeta: metav1.ObjectMeta{Name: testDynaKubeName1},
-// 			Spec: dynatracev1alpha1.DynaKubeSpec{
-// 				APIURL: testApiUrl,
-// 				Proxy: &dynatracev1alpha1.DynaKubeProxy{
-// 					Value: testProxy,
-// 				},
-// 				TrustedCAs: testtrustCAsCM,
-// 				InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
-// 					FullStackSpec: dynatracev1alpha1.FullStackSpec{Enabled: true},
-// 				},
-// 			},
-// 			Status: dynatracev1alpha1.DynaKubeStatus{
-// 				ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
-// 					TenantUUID: testTenantUUID,
-// 				},
-// 				OneAgent: dynatracev1alpha1.OneAgentStatus{
-// 					Instances: map[string]dynatracev1alpha1.OneAgentInstance{
-// 						"node1": {},
-// 					},
-// 				},
-// 			},
-// 		},
-// 		testSecretDk1)
-
-// 	r := &InitGenerator{
-// 		client:    c,
-// 		apiReader: c,
-// 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
-// 	}
-
-// 	imNodes := map[string]string{
-// 		"node1": testTenantUUID,
-// 	}
-
-// 	expectedScript := &script{
-// 		ApiUrl:        testApiUrl,
-// 		SkipCertCheck: false,
-// 		PaaSToken:     "42",
-// 		Proxy:         testProxy,
-// 		TrustedCAs:    []byte(testCAValue),
-// 		ClusterID:     string(kubesystemUID),
-// 		TenantUUID:    testTenantUUID,
-// 		IMNodes:       imNodes,
-// 	}
-
-// 	s, err := r.prepareScriptForDynaKube(testDynaKubeName1, kubesystemUID, imNodes)
-// 	assert.NoError(t, err)
-// 	assert.Equal(t, expectedScript, s)
-// }
-
-// func TestReplicateInitScriptAsSecret(t *testing.T) {
-// 	c := fake.NewClient(
-// 		&corev1.Namespace{
-// 			ObjectMeta: metav1.ObjectMeta{
-// 				Name: kubesystemNamespace,
-// 				UID:  kubesystemUID,
-// 			},
-// 		},
-// 		&corev1.ConfigMap{
-// 			ObjectMeta: metav1.ObjectMeta{Name: mapper.CodeModulesMapName, Namespace: "test"},
-// 			Data: map[string]string{
-// 				testNamespace1: testDynaKubeName1,
-// 				testNamespace2: testDynaKubeName2,
-// 			},
-// 		},
-// 		testdk1,
-// 		testdk2,
-// 		testSecretDk1,
-// 		testSecretDk2)
-
-// 	r := &InitGenerator{
-// 		client:    c,
-// 		apiReader: c,
-// 		logger:    zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)),
-// 	}
-
-// 	mapping := []namespaceMapping{
-// 		{
-// 			namespace: testNamespace1,
-// 			dynakube:  testDynaKubeName1,
-// 		},
-// 		{
-// 			namespace: testNamespace2,
-// 			dynakube:  testDynaKubeName2,
-// 		},
-// 	}
-
-// 	imNodes := map[string]string{
-// 		"node1": testTenantUUID,
-// 		"node2": testTenantUUID,
-// 	}
-
-// 	err := r.replicateInitScriptAsSecret(mapping, kubesystemUID, imNodes)
-// 	assert.NoError(t, err)
-
-// 	var initSecret1 corev1.Secret
-// 	require.NoError(t, c.Get(context.TODO(), client.ObjectKey{
-// 		Name:      webhook.SecretConfigName,
-// 		Namespace: testNamespace1,
-// 	}, &initSecret1))
-
-// 	require.Len(t, initSecret1.Data, 1)
-// 	require.Contains(t, initSecret1.Data, "init.sh")
-// 	require.NotEmpty(t, scriptSample) // sanity check to confirm that the sample script has been embedded
-// 	require.Equal(t, scriptSample, string(initSecret1.Data["init.sh"]))
-
-// 	var initSecret2 corev1.Secret
-// 	require.NoError(t, c.Get(context.TODO(), client.ObjectKey{
-// 		Name:      webhook.SecretConfigName,
-// 		Namespace: testNamespace2,
-// 	}, &initSecret2))
-
-// 	require.Len(t, initSecret2.Data, 1)
-// 	require.Contains(t, initSecret2.Data, "init.sh")
-// 	require.NotEmpty(t, scriptSample) // sanity check to confirm that the sample script has been embedded
-// 	require.Equal(t, scriptSample, string(initSecret2.Data["init.sh"]))
-// }
+		initSh, err := sc.generate()
+		assert.NoError(t, err)
+		assert.Equal(t, scriptSample, string(initSh["init.sh"]))
+	})
+}

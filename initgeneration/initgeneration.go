@@ -17,6 +17,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -90,7 +91,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 		return false, err
 	}
 	for _, targetNs := range nsList {
-		g.logger.Info("Updating init secret from dynakube for", "namespace", targetNs)
+		g.logger.Info("Updating init secret from dynakube for", "namespace", targetNs.Name)
 		if err = kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs.Name, data, corev1.SecretTypeOpaque, g.logger); err != nil {
 			return false, err
 		}
@@ -170,26 +171,48 @@ func (g *InitGenerator) getInfraMonitoringNodes(dk *dynatracev1alpha1.DynaKube) 
 		return nil, errors.WithMessage(err, "failed to query DynaKubeList")
 	}
 
-	imNodes := map[string]string{}
+	nodes, imNodes, err := g.initIMNodes()
+	if err != nil {
+		return nil, err
+	}
+
 	for i := range dks.Items {
 		status := &dks.Items[i].Status
 		if dk != nil && dk.Name == dks.Items[i].Name {
 			status = &dk.Status
 		}
 		if dks.Items[i].Spec.InfraMonitoring.Enabled {
-			tenantUUID := notMappedIM
+			tenantUUID := ""
 			if status.ConnectionInfo.TenantUUID != "" {
 				tenantUUID = status.ConnectionInfo.TenantUUID
 			}
-			for key := range status.OneAgent.Instances {
-				if key != "" {
-					imNodes[key] = tenantUUID
+			nodeSelector := labels.SelectorFromSet(dks.Items[i].Spec.InfraMonitoring.NodeSelector)
+			for _, node := range nodes {
+				nodeLabels := labels.Set(node.Labels)
+				if nodeSelector.Matches(nodeLabels) {
+					if tenantUUID != "" {
+						imNodes[node.Name] = tenantUUID
+					} else {
+						delete(imNodes, node.Name)
+					}
 				}
 			}
 		}
 	}
 
 	return imNodes, nil
+}
+
+func (g *InitGenerator) initIMNodes() ([]corev1.Node, map[string]string, error) {
+	var nodeList corev1.NodeList
+	if err := g.client.List(context.TODO(), &nodeList); err != nil {
+		return nil, nil, err
+	}
+	imNodes := map[string]string{}
+	for _, node := range nodeList.Items {
+		imNodes[node.Name] = notMappedIM
+	}
+	return nodeList.Items, imNodes, nil
 }
 
 func (s *script) generate() (map[string][]byte, error) {

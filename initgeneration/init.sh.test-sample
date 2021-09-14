@@ -12,9 +12,9 @@ bin_dir="/mnt/bin"
 config_dir="/mnt/config"
 share_dir="/mnt/share"
 paas_token="42"
-proxy=""
+proxy="testproxy.com"
 skip_cert_checks="false"
-custom_ca="false"
+custom_ca="true"
 fail_code=0
 cluster_id="42"
 
