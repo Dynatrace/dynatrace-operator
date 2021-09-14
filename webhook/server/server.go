@@ -17,6 +17,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/initgeneration"
+	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	corev1 "k8s.io/api/core/v1"
@@ -25,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -37,14 +37,14 @@ const (
 	missingDynakubeEvent = "MissingDynakube"
 )
 
-var logger = log.Log.WithName("oneagent.webhook")
+var log = logger.NewDTLogger()
 var debug = os.Getenv("DEBUG_OPERATOR")
 
 // AddToManager adds the Webhook server to the Manager
 func AddToManager(mgr manager.Manager, ns string) error {
 	podName := os.Getenv("POD_NAME")
 	if podName == "" {
-		logger.Info("No Pod name set for webhook container")
+		log.Info("No Pod name set for webhook container")
 	}
 
 	if podName == "" && debug == "true" {
@@ -82,7 +82,7 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 		return err
 	}
 	if apmExists {
-		logger.Info("OneAgentAPM object detected - DynaKube webhook won't inject until the OneAgent Operator has been uninstalled")
+		log.Info("OneAgentAPM object detected - DynaKube webhook won't inject until the OneAgent Operator has been uninstalled")
 	}
 
 	var pod corev1.Pod
@@ -136,12 +136,12 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	pod := &corev1.Pod{}
 	err := m.decoder.Decode(req, pod)
 	if err != nil {
-		logger.Error(err, "Failed to decode the request for pod injection")
+		log.Error(err, "Failed to decode the request for pod injection")
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 	var ns corev1.Namespace
 	if err := m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
-		logger.Error(err, "Failed to query the namespace before pod injection")
+		log.Error(err, "Failed to query the namespace before pod injection")
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
@@ -151,12 +151,12 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 	}
 	var initSecret corev1.Secret
 	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtwebhook.SecretConfigName, Namespace: ns.Name}, &initSecret); k8serrors.IsNotFound(err) {
-		if err := initgeneration.NewInitGenerator(m.client, m.apiReader, m.namespace, logger).GenerateForNamespace(ctx, dkName, ns.Name); err != nil {
-			logger.Error(err, "Failed to create the init secret before pod injection")
+		if err := initgeneration.NewInitGenerator(m.client, m.apiReader, m.namespace, log).GenerateForNamespace(ctx, dkName, ns.Name); err != nil {
+			log.Error(err, "Failed to create the init secret before pod injection")
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 	}
-	logger.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
+	log.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
 	var dk dynatracev1alpha1.DynaKube
 	if err := m.client.Get(ctx, client.ObjectKey{Name: dkName, Namespace: m.namespace}, &dk); k8serrors.IsNotFound(err) {
@@ -193,7 +193,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 
 				if !preloaded {
 					// container does not have LD_PRELOAD set
-					logger.Info("instrumenting missing container", "name", c.Name)
+					log.Info("instrumenting missing container", "name", c.Name)
 
 					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeCodeModules)
 					updateContainer(c, &dk, pod, deploymentMetadata)
@@ -215,7 +215,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 			}
 
 			if needsUpdate {
-				logger.Info("updating pod with missing containers")
+				log.Info("updating pod with missing containers")
 				m.recorder.Eventf(&dk,
 					corev1.EventTypeNormal,
 					updatePodEvent,
@@ -344,7 +344,7 @@ func (m *podInjector) InjectDecoder(d *admission.Decoder) error {
 
 // updateInstallContainer adds Container to list of Containers of Install Container
 func updateInstallContainer(ic *corev1.Container, number int, name string, image string) {
-	logger.Info("updating install container with new container", "containerName", name, "containerImage", image)
+	log.Info("updating install container with new container", "containerName", name, "containerImage", image)
 	ic.Env = append(ic.Env,
 		corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_NAME", number), Value: name},
 		corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_IMAGE", number), Value: image})
@@ -354,7 +354,7 @@ func updateInstallContainer(ic *corev1.Container, number int, name string, image
 func updateContainer(c *corev1.Container, oa *dynatracev1alpha1.DynaKube,
 	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
 
-	logger.Info("updating container with missing preload variables", "containerName", c.Name)
+	log.Info("updating container with missing preload variables", "containerName", c.Name)
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 
 	c.VolumeMounts = append(c.VolumeMounts,

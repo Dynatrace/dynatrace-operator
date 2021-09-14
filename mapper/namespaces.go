@@ -35,10 +35,10 @@ func (nm NamespaceMapper) MapFromNamespace() error {
 	}
 
 	if dynakubes == nil {
-		removeNamespaceInjectLabel(nm.targetNs)
+		delete(nm.targetNs.Labels, InstanceLabel)
 		return nil
 	}
-	nm.updateAnnotations(dynakubes)
+	nm.updateLabels(dynakubes)
 	return nil
 }
 
@@ -65,30 +65,26 @@ func (nm NamespaceMapper) findDynakubesForNamespace() ([]dynatracev1alpha1.DynaK
 			matchingDynakubes = append(matchingDynakubes, dk)
 		}
 	}
-
-	if len(matchingDynakubes) == 0 {
-		nm.logger.Info("No matching dk found")
-		return nil, nil
-	}
-	nm.logger.Info("Matching dk found", "dynakubes", matchingDynakubes)
+	nm.logger.Info("Matching dk found", "len(dynakubes)", len(matchingDynakubes))
 	return matchingDynakubes, nil
 }
 
-func (nm NamespaceMapper) updateAnnotations(dynakubes []dynatracev1alpha1.DynaKube) {
+func (nm NamespaceMapper) updateLabels(dynakubes []dynatracev1alpha1.DynaKube) {
 	if nm.targetNs.Labels == nil {
 		nm.targetNs.Labels = make(map[string]string)
+	}
+	if len(dynakubes) == 0 {
+		nm.logger.Info("No matching dk found")
+		delete(nm.targetNs.Labels, InstanceLabel)
 	}
 	processedDks := map[string]bool{}
 	for i := range dynakubes {
 		dk := &dynakubes[i]
 		oldDkName, ok := nm.targetNs.Labels[InstanceLabel]
-		if oldDkName != dk.Name {
+		if !ok || oldDkName != dk.Name {
 			processedDks[dk.Name] = true
 			addNamespaceInjectLabel(dk.Name, nm.targetNs)
-		} else if ok && !processedDks[oldDkName] {
-			removeNamespaceInjectLabel(nm.targetNs)
 		}
-
 	}
 }
 

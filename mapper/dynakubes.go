@@ -45,7 +45,7 @@ func (dm DynakubeMapper) UnmapFromDynaKube() error {
 		return errors.WithMessagef(err, "failed to list namespaces for dynakube %s", dm.dk.Name)
 	}
 	for _, ns := range nsList {
-		removeNamespaceInjectLabel(&ns)
+		delete(ns.Labels, InstanceLabel)
 		setUpdatedByDynakubeAnnotation(&ns)
 		if err := dm.client.Update(dm.ctx, &ns); err != nil {
 			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", InstanceLabel, ns.Name)
@@ -108,13 +108,10 @@ func (dm DynakubeMapper) updateLabels(dk dynatracev1alpha1.DynaKube, namespace c
 			updated = true
 			addNamespaceInjectLabel(dk.Name, &namespace)
 			processedDks[dk.Name] = true
-		} else if ok && !processedDks[oldDkName] {
-			updated = true
-			removeNamespaceInjectLabel(&namespace)
 		}
 	} else if ok && oldDkName == dk.Name {
 		updated = true
-		removeNamespaceInjectLabel(&namespace)
+		delete(namespace.Labels, InstanceLabel)
 	}
 	return updated, namespace, nil
 }

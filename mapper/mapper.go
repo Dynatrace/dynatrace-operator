@@ -42,13 +42,6 @@ func GetNamespacesForDynakube(ctx context.Context, clt client.Reader, dkName str
 	return nsList.Items, err
 }
 
-func removeNamespaceInjectLabel(ns *corev1.Namespace) {
-	if ns.Labels == nil {
-		return
-	}
-	delete(ns.Labels, InstanceLabel)
-}
-
 func addNamespaceInjectLabel(dkName string, ns *corev1.Namespace) {
 	if ns.Labels == nil {
 		ns.Labels = make(map[string]string)

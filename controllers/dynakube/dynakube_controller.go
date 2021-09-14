@@ -253,7 +253,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 		}
 	}
 
-	if dkState.Instance.Spec.CodeModules.Enabled || dkState.Instance.Spec.DataIngestSpec.Enabled {
+	if dkState.Instance.Spec.CodeModules.Enabled {
 		if err := dkMapper.MapFromDynakube(); err != nil {
 			dkState.Log.Error(err, "update of a map of namespaces failed")
 			return
