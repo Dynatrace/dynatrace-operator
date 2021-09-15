@@ -3,7 +3,6 @@ package initgeneration
 import (
 	"bytes"
 	"context"
-	"crypto/sha1"
 	_ "embed"
 	"fmt"
 	"text/template"
@@ -77,14 +76,6 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 	if err != nil {
 		return false, err
 	}
-	hash, err := createHashForInitSecret(data)
-	if err != nil {
-		return false, err
-	}
-	if dk.Status.LastInitSecretHash == hash {
-		g.logger.Info("No change in the init secret, no need to update", "dynakube", dk.Name)
-		return false, nil
-	}
 
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
 	if err != nil {
@@ -97,7 +88,6 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 		}
 	}
 	g.logger.Info("Done updating init secrets")
-	dk.Status.LastInitSecretHash = hash
 	return true, nil
 }
 
@@ -235,18 +225,4 @@ func (s *script) generate() (map[string][]byte, error) {
 	}
 
 	return data, nil
-}
-
-func createHashForInitSecret(initSecret map[string][]byte) (string, error) {
-	bytes := []byte{}
-	for _, part := range initSecret {
-		bytes = append(bytes, part...)
-	}
-	h := sha1.New()
-	if _, err := h.Write(bytes); err != nil {
-		return "", err
-	}
-	bs := h.Sum(nil)
-
-	return fmt.Sprintf("%x", bs), nil
 }

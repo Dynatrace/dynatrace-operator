@@ -294,9 +294,6 @@ type DynaKubeStatus struct {
 	// LastPaaSTokenProbeTimestamp tracks when the last request for the PaaS token validity was sent
 	LastPaaSTokenProbeTimestamp *metav1.Time `json:"lastPaaSTokenProbeTimestamp,omitempty"`
 
-	// LastPaaSTokenProbeTimestamp tracks when the last request for the PaaS token validity was sent
-	LastInitSecretHash string `json:"lastInitSecretHash,omitempty"`
-
 	// Credentials used to connect back to Dynatrace.
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="API and PaaS Tokens"

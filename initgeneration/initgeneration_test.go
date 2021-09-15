@@ -213,7 +213,6 @@ func TestGenerateForDynakube(t *testing.T) {
 		ca, ok := initSecret.Data["ca.pem"]
 		assert.True(t, ok)
 		assert.Equal(t, testCAValue, string(ca))
-		assert.NotNil(t, dk.Status.LastInitSecretHash)
 	})
 	t.Run("Add secret for namespace (simple dynakube)", func(t *testing.T) {
 		dk := testDynakubeSimple.DeepCopy()
@@ -237,7 +236,6 @@ func TestGenerateForDynakube(t *testing.T) {
 		initSh, ok := initSecret.Data["init.sh"]
 		assert.True(t, ok)
 		assert.NotNil(t, initSh)
-		assert.NotNil(t, dk.Status.LastInitSecretHash)
 	})
 	t.Run("Add secret to multiple namespaces (simple dynakube)", func(t *testing.T) {
 		dk := testDynakubeSimple.DeepCopy()
@@ -273,7 +271,6 @@ func TestGenerateForDynakube(t *testing.T) {
 		initSh, ok = initSecret.Data["init.sh"]
 		assert.True(t, ok)
 		assert.NotNil(t, initSh)
-		assert.NotNil(t, dk.Status.LastInitSecretHash)
 	})
 }
 
