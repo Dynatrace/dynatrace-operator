@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// DynakubeMapper manages the mapping creation from the dynakube's side
 type DynakubeMapper struct {
 	ctx        context.Context
 	client     client.Client
@@ -23,6 +24,9 @@ func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.
 	return DynakubeMapper{ctx, clt, apiReader, operatorNs, dk}
 }
 
+// MapFromDynakube checks all the namespaces to all the dynakubes
+// updates the labels on the namespaces if necessary,
+// finds confliction dynakubes (2 dynakube with codeModules on the same namespace)
 func (dm DynakubeMapper) MapFromDynakube() error {
 	nsList := &corev1.NamespaceList{}
 	if err := dm.apiReader.List(dm.ctx, nsList); err != nil {
@@ -65,13 +69,12 @@ func (dm DynakubeMapper) checkDynakubes(nsList *corev1.NamespaceList, dkList *dy
 		if namespace.Labels == nil {
 			namespace.Labels = make(map[string]string)
 		}
-		processedDks := map[string]bool{}
 		conflictCounter := ConflictCounter{}
 		for _, dk := range dkList.Items {
 			if dk.Name == dm.dk.Name {
 				dk = *dm.dk
 			}
-			updated, namespace, err = dm.updateLabels(dk, namespace, processedDks)
+			updated, namespace, err = dm.updateLabels(dk, namespace)
 			if err != nil {
 				return err
 			}
@@ -84,22 +87,20 @@ func (dm DynakubeMapper) checkDynakubes(nsList *corev1.NamespaceList, dkList *dy
 		}
 
 	}
-	if updated {
-		for _, ns := range modifiedNs {
-			setUpdatedByDynakubeAnnotation(&ns)
-			if err := dm.client.Update(dm.ctx, &ns); err != nil {
-				return err
-			}
+	for _, ns := range modifiedNs {
+		setUpdatedByDynakubeAnnotation(&ns)
+		if err := dm.client.Update(dm.ctx, &ns); err != nil {
+			return err
 		}
 	}
 	return err
 }
 
-func (dm DynakubeMapper) updateLabels(dk dynatracev1alpha1.DynaKube, namespace corev1.Namespace, processedDks map[string]bool) (bool, corev1.Namespace, error) {
+func (dm DynakubeMapper) updateLabels(dk dynatracev1alpha1.DynaKube, namespace corev1.Namespace) (bool, corev1.Namespace, error) {
 	updated := false
 	selector, err := metav1.LabelSelectorAsSelector(dk.Spec.MonitoredNamespaces)
 	if err != nil {
-		return false, corev1.Namespace{}, errors.WithStack(err)
+		return updated, corev1.Namespace{}, errors.WithStack(err)
 	}
 	matches := selector.Matches(labels.Set(namespace.Labels))
 	oldDkName, ok := namespace.Labels[InstanceLabel]
@@ -107,7 +108,6 @@ func (dm DynakubeMapper) updateLabels(dk dynatracev1alpha1.DynaKube, namespace c
 		if !ok || oldDkName != dk.Name {
 			updated = true
 			addNamespaceInjectLabel(dk.Name, &namespace)
-			processedDks[dk.Name] = true
 		}
 	} else if ok && oldDkName == dk.Name {
 		updated = true

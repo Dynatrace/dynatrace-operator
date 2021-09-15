@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// NamespaceMapper manages the mapping creation from the namespace's side
 type NamespaceMapper struct {
 	ctx        context.Context
 	client     client.Client
@@ -25,24 +26,27 @@ func NewNamespaceMapper(ctx context.Context, clt client.Client, apiReader client
 	return NamespaceMapper{ctx, clt, apiReader, operatorNs, targetNs, logger}
 }
 
+// MapFromNamespace adds the labels to the targetNs if there is a matching Dynakube
 func (nm NamespaceMapper) MapFromNamespace() error {
 	if nm.operatorNs == nm.targetNs.Name {
 		return nil
 	}
-	dynakubes, err := nm.findDynakubesForNamespace()
+	dynakube, err := nm.findDynakubesForNamespace()
 	if err != nil {
 		return err
 	}
 
-	if dynakubes == nil {
+	if dynakube == nil {
 		delete(nm.targetNs.Labels, InstanceLabel)
 		return nil
 	}
-	nm.updateLabels(dynakubes)
+	nm.updateLabels(dynakube)
 	return nil
 }
 
-func (nm NamespaceMapper) findDynakubesForNamespace() ([]dynatracev1alpha1.DynaKube, error) {
+// findDynakubesForNamespace tries to match the namespace to every dynakube with codeModules
+// finds conflicting dynakubes(2 dynakube with codeModules on the same namespace)
+func (nm NamespaceMapper) findDynakubesForNamespace() (*dynatracev1alpha1.DynaKube, error) {
 	dynakubes := &dynatracev1alpha1.DynaKubeList{}
 	err := nm.client.List(nm.ctx, dynakubes)
 
@@ -65,26 +69,23 @@ func (nm NamespaceMapper) findDynakubesForNamespace() ([]dynatracev1alpha1.DynaK
 			matchingDynakubes = append(matchingDynakubes, dk)
 		}
 	}
-	nm.logger.Info("Matching dk found", "len(dynakubes)", len(matchingDynakubes))
-	return matchingDynakubes, nil
+	if len(matchingDynakubes) == 0 {
+		nm.logger.Info("No matching dk found")
+		return nil, nil
+	}
+	nm.logger.Info("Matching dk found", "dynakubes", matchingDynakubes[0].Name)
+	return &matchingDynakubes[0], nil
 }
 
-func (nm NamespaceMapper) updateLabels(dynakubes []dynatracev1alpha1.DynaKube) {
+func (nm NamespaceMapper) updateLabels(dynakube *dynatracev1alpha1.DynaKube) {
 	if nm.targetNs.Labels == nil {
 		nm.targetNs.Labels = make(map[string]string)
 	}
-	if len(dynakubes) == 0 {
-		nm.logger.Info("No matching dk found")
-		delete(nm.targetNs.Labels, InstanceLabel)
-	}
 	processedDks := map[string]bool{}
-	for i := range dynakubes {
-		dk := &dynakubes[i]
-		oldDkName, ok := nm.targetNs.Labels[InstanceLabel]
-		if !ok || oldDkName != dk.Name {
-			processedDks[dk.Name] = true
-			addNamespaceInjectLabel(dk.Name, nm.targetNs)
-		}
+	oldDkName, ok := nm.targetNs.Labels[InstanceLabel]
+	if !ok || oldDkName != dynakube.Name {
+		processedDks[dynakube.Name] = true
+		addNamespaceInjectLabel(dynakube.Name, nm.targetNs)
 	}
 }
 
@@ -94,8 +95,8 @@ func (nm NamespaceMapper) matchForDynakube(dk dynatracev1alpha1.DynaKube) (bool,
 		return false, errors.WithStack(err)
 	}
 	matches := selector.Matches(labels.Set(nm.targetNs.Labels))
-	if matches {
+	if matches && dk.Spec.CodeModules.Enabled {
 		return matches, err
 	}
-	return matches, nil
+	return false, nil
 }

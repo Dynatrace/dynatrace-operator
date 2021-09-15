@@ -9,6 +9,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	InstanceLabel               = "dynakube.dynatrace.com/instance"
+	UpdatedByDynakubeAnnotation = "dynatrace.com/updated-via-operator"
+)
+
 type ConflictCounter struct {
 	i int
 }
@@ -24,11 +29,6 @@ func (c *ConflictCounter) Inc(dk *dynatracev1alpha1.DynaKube) error {
 	}
 	return nil
 }
-
-const (
-	InstanceLabel               = "dynakube.dynatrace.com/instance"
-	UpdatedByDynakubeAnnotation = "dynatrace.com/updated-via-operator"
-)
 
 func GetNamespacesForDynakube(ctx context.Context, clt client.Reader, dkName string) ([]corev1.Namespace, error) {
 	nsList := &corev1.NamespaceList{}

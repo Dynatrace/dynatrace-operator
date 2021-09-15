@@ -31,6 +31,7 @@ var (
 	scriptTmpl    = template.Must(template.New("initScript").Parse(scriptContent))
 )
 
+// InitGenerator manages the init secret generation for the user namespaces.
 type InitGenerator struct {
 	client    client.Client
 	apiReader client.Reader
@@ -38,6 +39,7 @@ type InitGenerator struct {
 	namespace string
 }
 
+// script holds all the values to be passed to the init script template.
 type script struct {
 	ApiUrl        string
 	SkipCertCheck bool
@@ -57,6 +59,9 @@ func NewInitGenerator(client client.Client, apiReader client.Reader, ns string, 
 		logger:    logger,
 	}
 }
+
+// GenerateForNamespace creates the init secret for namespace while only having the name of the corresponding dynakube
+// Used by the podInjection webhook in case the namespace lacks the init secret.
 func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dkName, targetNs string) error {
 	g.logger.Info("Reconciling namespace init secret for", "namespace", targetNs)
 	var dk dynatracev1alpha1.DynaKube
@@ -70,6 +75,8 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dkName, target
 	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs, data, corev1.SecretTypeOpaque, g.logger)
 }
 
+// GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
+// Used by the dynakube controller during reconcile.
 func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1alpha1.DynaKube) (bool, error) {
 	g.logger.Info("Reconciling namespace init secret for", "dynakube", dk.Name)
 	data, err := g.generate(ctx, dk)
@@ -91,6 +98,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 	return true, nil
 }
 
+// generate gets the necessary info the create the init secret data
 func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1alpha1.DynaKube) (map[string][]byte, error) {
 	kubeSystemUID, err := kubesystem.GetUID(g.apiReader)
 	if err != nil {
@@ -155,6 +163,13 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1alpha1.DynaKube,
 	}, nil
 }
 
+// getInfraMonitoringNodes creates a mapping between all the nodes and the tenantUID for the infra-monitoring dynakube on that node.
+// Possible mappings:
+// - mapped: there is a infra-monitoring agent on the node, and the dynakube has the tenantUID set => user processes will be grouped to the hosts  (["node.Name"] = "dynakube.tenantUID")
+// - not-mapped: there is NO infra-monitoring agent on the node => user processes will show up as individual 'fake' hosts (["node.Name"] = "-")
+// - unknown: there SHOULD be a infra-monitoring agent on the node, but dynakube has the NO tenantUID set => user processes will restart until this is fixed (node.Name not present in the map)
+//
+// Checks all the dynakubes with infra-monitoring against all the nodes (using the nodeSelector), creating the above mentioned mapping.
 func (g *InitGenerator) getInfraMonitoringNodes(dk *dynatracev1alpha1.DynaKube) (map[string]string, error) {
 	var dks dynatracev1alpha1.DynaKubeList
 	if err := g.client.List(context.TODO(), &dks, client.InNamespace(g.namespace)); err != nil {

@@ -159,7 +159,7 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 		dynakube, err := nm.findDynakubesForNamespace()
 		assert.NoError(t, err)
 		assert.NotNil(t, dynakube)
-		assert.Equal(t, dynakube[0].Name, "codeModules-2")
+		assert.Equal(t, dynakube.Name, "codeModules-2")
 	})
 }
 

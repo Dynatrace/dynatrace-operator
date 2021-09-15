@@ -115,7 +115,7 @@ func registerHealthzEndpoint(mgr manager.Manager) {
 	}))
 }
 
-// podAnnotator injects the OneAgent into Pods
+// podInjector injects the OneAgent into Pods
 type podInjector struct {
 	client    client.Client
 	apiReader client.Reader
@@ -127,7 +127,7 @@ type podInjector struct {
 	recorder  record.EventRecorder
 }
 
-// podAnnotator adds an annotation to every incoming pods
+// podInjector adds an annotation to every incoming pods
 func (m *podInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
 	if m.apmExists {
 		return admission.Patched("")

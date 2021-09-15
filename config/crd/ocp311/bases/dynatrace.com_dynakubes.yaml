@@ -4352,10 +4352,6 @@ spec:
                 version was last checked
               format: date-time
               type: string
-            lastInitSecretHash:
-              description: LastPaaSTokenProbeTimestamp tracks when the last request
-                for the PaaS token validity was sent
-              type: string
             lastPaaSTokenProbeTimestamp:
               description: LastPaaSTokenProbeTimestamp tracks when the last request
                 for the PaaS token validity was sent
