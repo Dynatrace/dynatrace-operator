@@ -348,10 +348,16 @@ func TestOneAgent_Validate(t *testing.T) {
 
 func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 	dkKey := metav1.ObjectMeta{Name: "my-dynakube", Namespace: "my-namespace"}
-
 	ds1 := &appsv1.DaemonSet{ObjectMeta: dkKey}
+	r := ReconcileOneAgent{
+		feature: "classic",
+	}
+	dkState := &controllers.DynakubeState{
+		Log:      consoleLogger,
+		Instance: &dynatracev1alpha1.DynaKube{ObjectMeta: dkKey},
+	}
 
-	ds2, err := newDaemonSetForCR(consoleLogger, &dynatracev1alpha1.DynaKube{ObjectMeta: dkKey}, &dynatracev1alpha1.FullStackSpec{}, "classic", "cluster1")
+	ds2, err := r.newDaemonSetForCR(dkState, "cluster1")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, ds2.Annotations[kubeobjects.AnnotationHash])
 
@@ -361,16 +367,23 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 func TestHasSpecChanged(t *testing.T) {
 	runTest := func(msg string, exp bool, mod func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube)) {
 		t.Run(msg, func(t *testing.T) {
+			r := ReconcileOneAgent{
+				feature: "classic",
+			}
 			key := metav1.ObjectMeta{Name: "my-oneagent", Namespace: "my-namespace"}
 			oldInstance := dynatracev1alpha1.DynaKube{ObjectMeta: key}
 			newInstance := dynatracev1alpha1.DynaKube{ObjectMeta: key}
-
 			mod(&oldInstance, &newInstance)
 
-			ds1, err := newDaemonSetForCR(consoleLogger, &oldInstance, &oldInstance.Spec.ClassicFullStack, "cluster1", "classic")
+			dkState := &controllers.DynakubeState{
+				Log:      consoleLogger,
+				Instance: &oldInstance,
+			}
+			ds1, err := r.newDaemonSetForCR(dkState, "cluster1")
 			assert.NoError(t, err)
 
-			ds2, err := newDaemonSetForCR(consoleLogger, &newInstance, &newInstance.Spec.ClassicFullStack, "cluster1", "classic")
+			dkState.Instance = &newInstance
+			ds2, err := r.newDaemonSetForCR(dkState, "cluster1")
 			assert.NoError(t, err)
 
 			assert.NotEmpty(t, ds1.Annotations[kubeobjects.AnnotationHash])
@@ -446,6 +459,53 @@ func TestHasSpecChanged(t *testing.T) {
 
 	runTest("dns policy added", true, func(old *dynatracev1alpha1.DynaKube, new *dynatracev1alpha1.DynaKube) {
 		new.Spec.ClassicFullStack.DNSPolicy = corev1.DNSClusterFirst
+	})
+}
+
+func TestNewDaemonset_Affinity(t *testing.T) {
+	t.Run(`adds correct affinities`, func(t *testing.T) {
+		r := ReconcileOneAgent{
+			feature: daemonset.InframonFeature,
+		}
+		dkState := &controllers.DynakubeState{
+			Instance: newDynaKube(),
+			Log:      consoleLogger,
+		}
+		ds, err := r.newDaemonSetForCR(dkState, "cluster1")
+
+		assert.NoError(t, err)
+		assert.NotNil(t, ds)
+
+		affinity := ds.Spec.Template.Spec.Affinity
+
+		assert.NotContains(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, corev1.NodeSelectorTerm{
+			MatchExpressions: []corev1.NodeSelectorRequirement{
+				{
+					Key:      "beta.kubernetes.io/arch",
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{"amd64", "arm64"},
+				},
+				{
+					Key:      "beta.kubernetes.io/os",
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{"linux"},
+				},
+			},
+		})
+		assert.Contains(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, corev1.NodeSelectorTerm{
+			MatchExpressions: []corev1.NodeSelectorRequirement{
+				{
+					Key:      "kubernetes.io/arch",
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{"amd64", "arm64"},
+				},
+				{
+					Key:      "kubernetes.io/os",
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{"linux"},
+				},
+			},
+		})
 	})
 }
 

@@ -192,7 +192,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 
 		var statefulSet appsv1.StatefulSet
 
-		kubeMonCapability := capability.NewKubeMonCapability(&instance.Spec.KubernetesMonitoringSpec.CapabilityProperties)
+		kubeMonCapability := capability.NewKubeMonCapability(&instance.Spec.KubernetesMonitoringSpec.CapabilityProperties, nil)
 		name := capability.CalculateStatefulSetName(kubeMonCapability, instance.Name)
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &statefulSet)
 
@@ -273,7 +273,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	_, err = r.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
-	routingCapability := capability.NewRoutingCapability(&instance.Spec.RoutingSpec.CapabilityProperties)
+	routingCapability := capability.NewRoutingCapability(&instance.Spec.RoutingSpec.CapabilityProperties, nil)
 	stsName := capability.CalculateStatefulSetName(routingCapability, testName)
 
 	routingSts := &appsv1.StatefulSet{}

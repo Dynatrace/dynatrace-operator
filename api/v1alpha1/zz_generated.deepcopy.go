@@ -20,7 +20,7 @@ package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -266,7 +266,7 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	}
 	if in.MonitoredNamespaces != nil {
 		in, out := &in.MonitoredNamespaces, &out.MonitoredNamespaces
-		*out = new(v1.LabelSelector)
+		*out = new(metav1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
 	out.ActiveGate = in.ActiveGate
@@ -309,7 +309,7 @@ func (in *DynaKubeStatus) DeepCopyInto(out *DynaKubeStatus) {
 	out.CommunicationHostForClient = in.CommunicationHostForClient
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
-		*out = make([]v1.Condition, len(*in))
+		*out = make([]metav1.Condition, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
