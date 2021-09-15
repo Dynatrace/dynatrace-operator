@@ -1,6 +1,7 @@
 package certificates
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"reflect"
@@ -92,20 +93,20 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		return reconcile.Result{}, err
 	}
 
-	hasMissingCertificate := r.checkMutatingWebhookConfigurations(
-		mutatingWebhookConfiguration, validatingWebhookConfiguration)
+	isWebhookCertificateValid := r.checkMutatingWebhookConfigurations(
+		mutatingWebhookConfiguration, validatingWebhookConfiguration, certs.Data[ServerCert])
 
-	secretNeedsUpdate := false
+	isSecretOutdated := false
 	if !reflect.DeepEqual(certs.Data, secret.Data) {
 		// certificate needs to be updated
 		secret.Data = certs.Data
-		secretNeedsUpdate = true
-	} else if !hasMissingCertificate {
+		isSecretOutdated = true
+	} else if isWebhookCertificateValid {
 		r.logger.Info("secret for certificates up to date, skipping update")
 		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 	}
 
-	if secretNeedsUpdate {
+	if isSecretOutdated {
 		err = r.createOrUpdateSecret(ctx, secret, createSecret)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -216,25 +217,25 @@ func (r *ReconcileWebhookCertificates) getDomain() string {
 	return fmt.Sprintf("%s.%s.svc", webhook.DeploymentName, r.namespace)
 }
 
-// checkMutatingWebhookConfigurations loads webhook configurations and checks certificates exist
+// checkMutatingWebhookConfigurations loads webhook configurations and checks certificates exist and are valid
 func (r *ReconcileWebhookCertificates) checkMutatingWebhookConfigurations(
 	mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration,
-	validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) bool {
+	validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration, expectedCert []byte) bool {
 
 	for _, mutatingWebhook := range mutatingWebhookConfiguration.Webhooks {
-		cert := mutatingWebhook.ClientConfig.CABundle
-		if len(cert) == 0 {
-			return true
+		webhookCert := mutatingWebhook.ClientConfig.CABundle
+		if len(webhookCert) == 0 || !bytes.Equal(webhookCert, expectedCert) {
+			return false
 		}
 	}
 
 	for _, validatingWebhook := range validatingWebhookConfiguration.Webhooks {
-		cert := validatingWebhook.ClientConfig.CABundle
-		if len(cert) == 0 {
-			return true
+		webhookCert := validatingWebhook.ClientConfig.CABundle
+		if len(webhookCert) == 0 || !bytes.Equal(webhookCert, expectedCert) {
+			return false
 		}
 	}
-	return false
+	return true
 }
 
 func (r *ReconcileWebhookCertificates) updateConfiguration(
