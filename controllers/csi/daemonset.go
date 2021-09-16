@@ -2,6 +2,8 @@ package dtcsi
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
@@ -28,6 +30,8 @@ const (
 	MinMemory = 100
 	MaxCPU    = 200
 	MaxMemory = 100
+
+	CSIResourcesIdentifier = "dynatrace.com/csi-resources"
 )
 
 type Reconciler struct {
@@ -60,8 +64,10 @@ func (r *Reconciler) Reconcile() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
+	driverContainerResources := prepareResources(r.client, r.operatorNamespace, r.logger)
+
 	ds, err := buildDesiredCSIDaemonSet(
-		operatorImage, r.operatorNamespace, r.instance)
+		operatorImage, r.operatorNamespace, r.instance, driverContainerResources)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
@@ -87,8 +93,9 @@ func (r *Reconciler) getOperatorImage() (string, error) {
 	return operatorPod.Spec.Containers[0].Image, nil
 }
 
-func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube *v1alpha1.DynaKube) (*appsv1.DaemonSet, error) {
-	ds := prepareDaemonSet(operatorImage, operatorNamespace, dynakube)
+func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube *v1alpha1.DynaKube,
+	driverContainerResources corev1.ResourceRequirements) (*appsv1.DaemonSet, error) {
+	ds := prepareDaemonSet(operatorImage, operatorNamespace, dynakube, driverContainerResources)
 
 	dsHash, err := kubeobjects.GenerateHash(ds)
 	if err != nil {
@@ -99,7 +106,8 @@ func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube 
 	return ds, nil
 }
 
-func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *v1alpha1.DynaKube) *appsv1.DaemonSet {
+func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *v1alpha1.DynaKube,
+	driverContainerResources corev1.ResourceRequirements) *appsv1.DaemonSet {
 	labels := prepareDaemonSetLabels()
 
 	return &appsv1.DaemonSet{
@@ -117,7 +125,7 @@ func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *v1alpha
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						prepareDriverContainer(operatorImage),
+						prepareDriverContainer(operatorImage, driverContainerResources),
 						prepareRegistrarContainer(operatorImage),
 						preparelivenessProbeContainer(operatorImage),
 					},
@@ -157,7 +165,7 @@ func prepareMetadata(namespace string, dynakube *v1alpha1.DynaKube) metav1.Objec
 	}
 }
 
-func prepareDriverContainer(operatorImage string) corev1.Container {
+func prepareDriverContainer(operatorImage string, resources corev1.ResourceRequirements) corev1.Container {
 	return corev1.Container{
 		Name:  "driver",
 		Image: operatorImage,
@@ -176,7 +184,7 @@ func prepareDriverContainer(operatorImage string) corev1.Container {
 				ContainerPort: 10080,
 			},
 		},
-		Resources:       prepareResources(),
+		Resources:       resources,
 		LivenessProbe:   prepareDriverLivenessProbe(),
 		SecurityContext: prepareSecurityContext(),
 		VolumeMounts:    prepareDriverVolumeMounts(),
@@ -205,7 +213,22 @@ func prepareDriverEnvVars() []corev1.EnvVar {
 	}
 }
 
-func prepareResources() corev1.ResourceRequirements {
+func prepareResources(client client.Client, operatorNS string, logger logr.Logger) corev1.ResourceRequirements {
+	deployment, err := kubeobjects.GetDeployment(client, operatorNS)
+	if err != nil {
+		logger.Info(fmt.Sprintf("failed to get deployment for reading '%s' label", CSIResourcesIdentifier), "err", err)
+	} else {
+		var res corev1.ResourceRequirements
+
+		if label, ok := deployment.Annotations[CSIResourcesIdentifier]; ok {
+			if err = json.Unmarshal([]byte(label), &res); err != nil {
+				logger.Info(fmt.Sprintf("failed to unmarshal '%s' label json", CSIResourcesIdentifier), "err", err)
+			} else {
+				return res
+			}
+		}
+	}
+
 	return corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			corev1.ResourceCPU:    getQuantity(MinCPU, resource.Milli),
