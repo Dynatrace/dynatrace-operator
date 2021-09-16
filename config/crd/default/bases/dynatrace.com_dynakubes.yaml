@@ -51,15 +51,16 @@ spec:
               activeGate:
                 description: General configuration about ActiveGate instances
                 properties:
-                  tlsSecretName:
-                    description: 'name of a secret containing server cert+key and password for ActiveGate. If not set, self-signed certificate is used.
-                      server.p12: certificate+key pair in pkcs12 format
-                      password: passphrase to read server.p12'
-                    type: string
                   image:
                     description: 'Optional: the ActiveGate container image. Defaults
                       to the latest ActiveGate image provided by the Docker Registry
                       implementation from the Dynatrace environment set as API URL.'
+                    type: string
+                  tlsSecretName:
+                    description: 'Optional: the name of a secret containing ActiveGate
+                      TLS cert+key and password. If not set, self-signed certificate
+                      is used. server.p12: certificate+key pair in pkcs12 format password:
+                      passphrase to read server.p12'
                     type: string
                 type: object
               apiUrl:
