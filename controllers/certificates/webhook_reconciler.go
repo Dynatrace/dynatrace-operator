@@ -217,7 +217,7 @@ func (r *ReconcileWebhookCertificates) getDomain() string {
 	return fmt.Sprintf("%s.%s.svc", webhook.DeploymentName, r.namespace)
 }
 
-// checkMutatingWebhookConfigurations loads webhook configurations and checks certificates exist and are valid
+// checkMutatingWebhookConfigurations checks certificates exist and are valid
 func (r *ReconcileWebhookCertificates) checkMutatingWebhookConfigurations(
 	mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration,
 	validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration, expectedCert []byte) bool {
