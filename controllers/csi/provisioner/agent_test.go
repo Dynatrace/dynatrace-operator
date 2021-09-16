@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/spf13/afero"
@@ -37,37 +38,71 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			Fs: afero.NewMemMapFs(),
 		}
 		installAgentCfg := &installAgentConfig{
-			fs: fs,
+			fs:     fs,
+			tenant: &metadata.Tenant{LatestVersion: ""},
 		}
 
-		err := installAgent(installAgentCfg)
+		err := installAgentCfg.installAgent()
 		assert.EqualError(t, err, "failed to create temporary file for download: "+errorMsg)
 	})
 	t.Run(`error when downloading latest agent`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetLatestAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
-				mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
 			Return(fmt.Errorf(errorMsg))
+		dtc.
+			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, mock.AnythingOfType("string")).
+			Return([]string{}, fmt.Errorf(errorMsg))
 		installAgentCfg := &installAgentConfig{
 			fs:     fs,
 			dtc:    dtc,
 			logger: log,
+			tenant: &metadata.Tenant{LatestVersion: ""},
 		}
 
-		err := installAgent(installAgentCfg)
-		assert.EqualError(t, err, "failed to fetch latest OneAgent version: "+errorMsg)
+		err := installAgentCfg.installAgent()
+		assert.EqualError(t, err, "failed to fetch OneAgent version: "+errorMsg)
 	})
 	t.Run(`error unzipping file`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetLatestAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
-				mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
-				writer := args.Get(4).(io.Writer)
+				writer := args.Get(5).(io.Writer)
+
+				zipFile := setupInavlidTestZip(t, fs)
+				defer func() { _ = zipFile.Close() }()
+
+				_, err := io.Copy(writer, zipFile)
+				require.NoError(t, err)
+			}).
+			Return(nil)
+		installAgentCfg := &installAgentConfig{
+			fs:     fs,
+			dtc:    dtc,
+			logger: log,
+			tenant: &metadata.Tenant{LatestVersion: ""},
+		}
+
+		err := installAgentCfg.installAgent()
+		assert.Error(t, err)
+	})
+	t.Run(`downloading and unzipping agent`, func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		pathResolver := metadata.PathResolver{
+			RootDir: testDir,
+		}
+		dtc := &dtclient.MockDynatraceClient{}
+		dtc.
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
+			Run(func(args mock.Arguments) {
+				writer := args.Get(5).(io.Writer)
 
 				zipFile := setupTestZip(t, fs)
 				defer func() { _ = zipFile.Close() }()
@@ -80,39 +115,14 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			fs:     fs,
 			dtc:    dtc,
 			logger: log,
+			path:   pathResolver,
+			tenant: &metadata.Tenant{LatestVersion: ""},
 		}
 
-		err := installAgent(installAgentCfg)
-		assert.Error(t, err)
-	})
-	t.Run(`downloading and unzipping agent`, func(t *testing.T) {
-		fs := afero.NewMemMapFs()
-
-		dtc := &dtclient.MockDynatraceClient{}
-		dtc.
-			On("GetLatestAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
-				mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
-			Run(func(args mock.Arguments) {
-				writer := args.Get(4).(io.Writer)
-
-				zipFile := setupTestZip(t, fs)
-				defer func() { _ = zipFile.Close() }()
-
-				_, err := io.Copy(writer, zipFile)
-				require.NoError(t, err)
-			}).
-			Return(nil)
-		installAgentCfg := &installAgentConfig{
-			fs:        fs,
-			dtc:       dtc,
-			logger:    log,
-			targetDir: testDir,
-		}
-
-		err := installAgent(installAgentCfg)
+		err := installAgentCfg.installAgent()
 		require.NoError(t, err)
 
-		info, err := fs.Stat(filepath.Join(testDir, testFilename))
+		info, err := fs.Stat(filepath.Join(pathResolver.AgentBinaryDir(""), testFilename))
 		require.NoError(t, err)
 		assert.NotNil(t, info)
 		assert.False(t, info.IsDir())
@@ -124,73 +134,64 @@ func TestOneAgentProvisioner_Unzip(t *testing.T) {
 	t.Run(`file nil`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		installAgentCfg := &installAgentConfig{
-			targetDir: testDir,
-			fs:        fs,
+			path:   metadata.PathResolver{RootDir: testDir},
+			fs:     fs,
+			tenant: &metadata.Tenant{},
 		}
-		err := unzip(nil, installAgentCfg)
+		err := installAgentCfg.unzip(nil)
 		require.EqualError(t, err, "file is nil")
-	})
-	t.Run(`illegal file path`, func(t *testing.T) {
-		fs := afero.NewMemMapFs()
-		installAgentCfg := &installAgentConfig{
-			targetDir: "/",
-			logger:    log,
-			fs:        fs,
-		}
-		zipFile := setupTestZip(t, fs)
-		defer func() { _ = zipFile.Close() }()
-
-		err := unzip(zipFile, installAgentCfg)
-		require.EqualError(t, err, "illegal file path: /test.txt")
 	})
 	t.Run(`unzip test zip file`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
+		pathResolver := metadata.PathResolver{RootDir: testDir}
 		installAgentCfg := &installAgentConfig{
-			targetDir: testDir,
-			logger:    log,
-			fs:        fs,
+			path:   pathResolver,
+			logger: log,
+			fs:     fs,
+			tenant: &metadata.Tenant{},
 		}
 		zipFile := setupTestZip(t, fs)
 		defer func() { _ = zipFile.Close() }()
 
-		err := unzip(zipFile, installAgentCfg)
+		err := installAgentCfg.unzip(zipFile)
 		require.NoError(t, err)
 
-		exists, err := afero.Exists(fs, filepath.Join(testDir, testFilename))
-		require.NoError(t, err)
-		assert.True(t, exists)
-
-		exists, err = afero.Exists(fs, filepath.Join(testDir, testDir, testFilename))
+		binaryDir := pathResolver.AgentBinaryDir("")
+		exists, err := afero.Exists(fs, filepath.Join(binaryDir, testFilename))
 		require.NoError(t, err)
 		assert.True(t, exists)
 
-		exists, err = afero.Exists(fs, filepath.Join(testDir, testDir, testDir, testFilename))
+		exists, err = afero.Exists(fs, filepath.Join(binaryDir, testDir, testFilename))
 		require.NoError(t, err)
 		assert.True(t, exists)
 
-		exists, err = afero.Exists(fs, filepath.Join(testDir, agentConfPath, testFilename))
+		exists, err = afero.Exists(fs, filepath.Join(binaryDir, testDir, testDir, testFilename))
 		require.NoError(t, err)
 		assert.True(t, exists)
 
-		info, err := fs.Stat(filepath.Join(testDir, testFilename))
+		exists, err = afero.Exists(fs, filepath.Join(binaryDir, agentConfPath, testFilename))
+		require.NoError(t, err)
+		assert.True(t, exists)
+
+		info, err := fs.Stat(filepath.Join(binaryDir, testFilename))
 		require.NoError(t, err)
 		require.NotNil(t, info)
 		assert.False(t, info.IsDir())
 		assert.Equal(t, int64(25), info.Size())
 
-		info, err = fs.Stat(filepath.Join(testDir, testDir, testFilename))
+		info, err = fs.Stat(filepath.Join(binaryDir, testDir, testFilename))
 		require.NoError(t, err)
 		require.NotNil(t, info)
 		assert.False(t, info.IsDir())
 		assert.Equal(t, int64(25), info.Size())
 
-		info, err = fs.Stat(filepath.Join(testDir, testDir, testDir, testFilename))
+		info, err = fs.Stat(filepath.Join(binaryDir, testDir, testDir, testFilename))
 		require.NoError(t, err)
 		require.NotNil(t, info)
 		assert.False(t, info.IsDir())
 		assert.Equal(t, int64(25), info.Size())
 
-		info, err = fs.Stat(filepath.Join(testDir, agentConfPath, testFilename))
+		info, err = fs.Stat(filepath.Join(binaryDir, agentConfPath, testFilename))
 		require.NoError(t, err)
 		require.NotNil(t, info)
 		assert.False(t, info.IsDir())
@@ -216,6 +217,15 @@ func setupTestZip(t *testing.T, fs afero.Fs) afero.File {
 	require.NoError(t, err)
 
 	_, err = zipFile.Seek(0, io.SeekStart)
+	require.NoError(t, err)
+
+	return zipFile
+}
+
+func setupInavlidTestZip(t *testing.T, fs afero.Fs) afero.File {
+	zipFile := setupTestZip(t, fs)
+
+	_, err := zipFile.Seek(8, io.SeekStart)
 	require.NoError(t, err)
 
 	return zipFile

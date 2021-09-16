@@ -219,7 +219,7 @@ func (a *SqliteAccess) DeleteVolume(volumeID string) error {
 	return err
 }
 
-// Gets all UNIQUE versions present in the `volumes` database in map.
+// GetUsedVersions gets all UNIQUE versions present in the `volumes` database in map.
 // Map is used to make sure we don't return the same version multiple time,
 // it's also easier to check if a version is in it or not. (a Set in style of Golang)
 func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, error) {
@@ -228,7 +228,7 @@ func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, erro
 		return nil, fmt.Errorf("couldn't get used version info for tenantUUID %s, err: %s", tenantUUID, err)
 	}
 	versions := map[string]bool{}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var version string
 		err := rows.Scan(&version)
@@ -249,7 +249,7 @@ func (a *SqliteAccess) GetPodNames() (map[string]string, error) {
 		return nil, fmt.Errorf("couldn't get PodNames for, err: %s", err)
 	}
 	podNames := map[string]string{}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var podName string
 		var volumeID string
@@ -269,7 +269,7 @@ func (a *SqliteAccess) GetDynakubes() (map[string]string, error) {
 		return nil, fmt.Errorf("couldn't get Dynakubes for, err: %s", err)
 	}
 	dynakubes := map[string]string{}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var uuid string
 		var dynakube string
