@@ -29,7 +29,6 @@ type Reconciler struct {
 	Instance                         *v1alpha1.DynaKube
 	apiReader                        client.Reader
 	scheme                           *runtime.Scheme
-	config                           *rest.Config
 	log                              logr.Logger
 	imageVersionProvider             dtversion.ImageVersionProvider
 	feature                          string
@@ -134,12 +133,12 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 
 	major, err := r.versionProvider.Major()
 	if err != nil {
-		r.log.Error(err, "could not get major kubernetes version")
+		r.log.Info("could not get major kubernetes version", "error", err)
 	}
 
 	minor, err := r.versionProvider.Minor()
 	if err != nil {
-		r.log.Error(err, "could not get minor kubernetes version")
+		r.log.Info("could not get minor kubernetes version", "error", err)
 	}
 
 	stsProperties := NewStatefulSetProperties(
