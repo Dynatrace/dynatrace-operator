@@ -21,15 +21,16 @@ import (
 )
 
 const (
-	DataPath                  = "/data"
-	DriverName                = "csi.oneagent.dynatrace.com"
-	AgentBinaryDir            = "bin"
-	AgentRunDir               = "run"
-	OverlayMappedDirPath      = "mapped"
-	OverlayVarDirPath         = "var"
-	OverlayWorkDirPath        = "work"
-	DaemonSetName             = "dynatrace-oneagent-csi-driver"
-	DefaultServiceAccountName = "dynatrace-oneagent-csi-driver"
+	DataPath                         = "/data"
+	DriverName                       = "csi.oneagent.dynatrace.com"
+	AgentBinaryDir                   = "bin"
+	AgentRunDir                      = "run"
+	OverlayMappedDirPath             = "mapped"
+	OverlayVarDirPath                = "var"
+	OverlayWorkDirPath               = "work"
+	DaemonSetName                    = "dynatrace-oneagent-csi-driver"
+	DefaultServiceAccountName        = "dynatrace-oneagent-csi-driver"
+	AnnotationCSIResourcesIdentifier = "dynatrace.com/csi-resources"
 )
 
 var MetadataAccessPath = filepath.Join(DataPath, "csi.db")
