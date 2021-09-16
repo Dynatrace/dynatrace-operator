@@ -135,9 +135,9 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 
 	installAgentCfg := newInstallAgentConfig(rlog, dtc, r.path, r.fs, r.recorder, tenant, dk)
 	if err = installAgentCfg.updateAgent(); err != nil {
-		rlog.Error(err, "error when updating agent")
+		rlog.Info("error when updating agent")
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
-		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 	}
 	if hasTenantChanged(oldTenant, *tenant) {
 		rlog.Info("tenant has changed", "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
