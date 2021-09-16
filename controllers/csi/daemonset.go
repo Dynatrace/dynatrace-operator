@@ -30,8 +30,6 @@ const (
 	MinMemory = 100
 	MaxCPU    = 200
 	MaxMemory = 100
-
-	CSIResourcesIdentifier = "dynatrace.com/csi-resources"
 )
 
 type Reconciler struct {
@@ -216,13 +214,13 @@ func prepareDriverEnvVars() []corev1.EnvVar {
 func prepareResources(client client.Client, operatorNS string, logger logr.Logger) corev1.ResourceRequirements {
 	deployment, err := kubeobjects.GetDeployment(client, operatorNS)
 	if err != nil {
-		logger.Info(fmt.Sprintf("failed to get deployment for reading '%s' annotation", CSIResourcesIdentifier), "err", err)
+		logger.Info(fmt.Sprintf("failed to get deployment for reading '%s' label", AnnotationCSIResourcesIdentifier), "err", err)
 	} else {
 		var res corev1.ResourceRequirements
 
-		if label, ok := deployment.Annotations[CSIResourcesIdentifier]; ok {
+		if label, ok := deployment.Annotations[AnnotationCSIResourcesIdentifier]; ok {
 			if err = json.Unmarshal([]byte(label), &res); err != nil {
-				logger.Info(fmt.Sprintf("failed to unmarshal '%s' annotation json", CSIResourcesIdentifier), "err", err)
+				logger.Info(fmt.Sprintf("failed to unmarshal '%s' label json", AnnotationCSIResourcesIdentifier), "err", err)
 			} else {
 				return res
 			}
