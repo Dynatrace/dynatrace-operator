@@ -44,6 +44,12 @@ const (
 	installAgentVersionEvent       = "InstallAgentVersion"
 )
 
+const (
+	defaultRequeueDuration = 5 * time.Minute
+	longRequeueDuration    = 30 * time.Minute
+	shortRequeueDuration   = 15 * time.Second
+)
+
 var log = logger.NewDTLogger().WithName("provisioner")
 
 // OneAgentProvisioner reconciles a DynaKube object
@@ -95,12 +101,12 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 	if !hasCodeModulesWithCSIVolumeEnabled(dk) {
 		rlog.Info("Code modules or csi driver disabled")
-		return reconcile.Result{RequeueAfter: 30 * time.Minute}, nil
+		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
 	if dk.ConnectionInfo().TenantUUID == "" {
 		rlog.Info("DynaKube instance has not been reconciled yet and some values usually cached are missing, retrying in a few seconds")
-		return reconcile.Result{RequeueAfter: 15 * time.Second}, nil
+		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
 	dtc, err := buildDtc(r, ctx, dk)
 	if err != nil {
@@ -144,12 +150,11 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 			err = r.db.UpdateTenant(tenant)
 		}
 		if err != nil {
-			rlog.Error(err, "error when updating tenant")
 			return reconcile.Result{}, errors.WithStack(err)
 		}
 	}
 
-	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 }
 
 func hasTenantChanged(old, new metadata.Tenant) bool {

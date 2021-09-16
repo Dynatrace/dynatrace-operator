@@ -65,7 +65,7 @@ func (installAgentCfg *installAgentConfig) updateAgent() error {
 			installAgentCfg.recorder.Eventf(dk,
 				corev1.EventTypeWarning,
 				failedInstallAgentVersionEvent,
-				"Failed to installed agent version: %s to tenant: %s, err: %s", tenant.LatestVersion, tenant.TenantUUID, err)
+				"Failed to install agent version: %s to tenant: %s, err: %s", tenant.LatestVersion, tenant.TenantUUID, err)
 			return err
 		}
 		installAgentCfg.recorder.Eventf(dk,
