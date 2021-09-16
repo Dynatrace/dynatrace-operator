@@ -20,6 +20,7 @@ import (
 
 const (
 	testNamespace = "test-namespace"
+	testDomain    = webhook.DeploymentName + "." + testNamespace + ".svc"
 
 	expectedSecretName = webhook.DeploymentName + secretPostfix
 
@@ -56,7 +57,7 @@ func TestGetSecret(t *testing.T) {
 }
 
 func TestReconcileCertificate_Create(t *testing.T) {
-	clt := prepareFakeClient(false)
+	clt := prepareFakeClient(false, false)
 	rec, request := prepareReconcile(clt)
 
 	res, err := rec.Reconcile(context.TODO(), request)
@@ -83,7 +84,7 @@ func TestReconcileCertificate_Create(t *testing.T) {
 }
 
 func TestReconcileCertificate_Update(t *testing.T) {
-	clt := prepareFakeClient(true)
+	clt := prepareFakeClient(true, false)
 	rec, request := prepareReconcile(clt)
 
 	res, err := rec.Reconcile(context.TODO(), request)
@@ -109,7 +110,23 @@ func TestReconcileCertificate_Update(t *testing.T) {
 	verifyCertificates(t, rec, secret, clt, true)
 }
 
-func prepareFakeClient(withSecret bool) client.Client {
+func TestReconcileCertificate_ExistingSecretWithValidCertificate(t *testing.T) {
+	clt := prepareFakeClient(true, true)
+	rec, request := prepareReconcile(clt)
+
+	res, err := rec.Reconcile(context.TODO(), request)
+	require.NoError(t, err)
+	assert.NotNil(t, res)
+	assert.Equal(t, SuccessDuration, res.RequeueAfter)
+
+	secret := &corev1.Secret{}
+	err = clt.Get(context.TODO(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
+	require.NoError(t, err)
+
+	verifyCertificates(t, rec, secret, clt, false)
+}
+
+func prepareFakeClient(withSecret bool, generateValidSecret bool) client.Client {
 	objs := []client.Object{
 		&admissionregistrationv1.MutatingWebhookConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
@@ -135,20 +152,31 @@ func prepareFakeClient(withSecret bool) client.Client {
 			},
 		},
 	}
-
 	if withSecret {
+		certData := map[string][]byte{
+			RootKey:    {testBytes},
+			RootCert:   {testBytes},
+			ServerKey:  {testBytes},
+			ServerCert: {testBytes},
+		}
+		if generateValidSecret {
+			cert := Certs{
+				Log:    logger.NewDTLogger(),
+				Domain: testDomain,
+				Now:    time.Now(),
+			}
+			_ = cert.ValidateCerts()
+
+			certData = cert.Data
+		}
+
 		objs = append(objs,
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: testNamespace,
 					Name:      expectedSecretName,
 				},
-				Data: map[string][]byte{
-					RootKey:    {testBytes},
-					RootCert:   {testBytes},
-					ServerKey:  {testBytes},
-					ServerCert: {testBytes},
-				},
+				Data: certData,
 			},
 		)
 	}
@@ -177,9 +205,8 @@ func prepareReconcile(clt client.Client) (*ReconcileWebhookCertificates, reconci
 func testWebhookClientConfig(
 	t *testing.T, webhookClientConfig *admissionregistrationv1.WebhookClientConfig,
 	secretData map[string][]byte, isUpdate bool) {
-	assert.NotNil(t, webhookClientConfig)
-	assert.NotNil(t, webhookClientConfig.CABundle)
-	assert.NotEmpty(t, webhookClientConfig.CABundle)
+	require.NotNil(t, webhookClientConfig)
+	require.NotEmpty(t, webhookClientConfig.CABundle)
 
 	expectedCert := secretData[RootCert]
 	if isUpdate {

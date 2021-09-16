@@ -1,6 +1,7 @@
 package certificates
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"reflect"
@@ -83,20 +84,36 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		return reconcile.Result{}, err
 	}
 
-	if !reflect.DeepEqual(certs.Data, secret.Data) {
-		// certificate needs to be updated
-		secret.Data = certs.Data
-	} else {
-		r.logger.Info("secret for certificates up to date, skipping update")
-		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
+	mutatingWebhookConfiguration, err := r.getMutatingWebhookConfiguration(ctx)
+	if err != nil {
+		return reconcile.Result{}, err
 	}
-
-	err = r.createOrUpdateSecret(ctx, secret, createSecret)
+	validatingWebhookConfiguration, err := r.getValidatingWebhookConfiguration(ctx)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	err = r.updateWebhookConfigurations(ctx, secret)
+	isWebhookCertificateValid := r.checkMutatingWebhookConfigurations(
+		mutatingWebhookConfiguration, validatingWebhookConfiguration, certs.Data[ServerCert])
+
+	isSecretOutdated := false
+	if !reflect.DeepEqual(certs.Data, secret.Data) {
+		// certificate needs to be updated
+		secret.Data = certs.Data
+		isSecretOutdated = true
+	} else if isWebhookCertificateValid {
+		r.logger.Info("secret for certificates up to date, skipping update")
+		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
+	}
+
+	if isSecretOutdated {
+		err = r.createOrUpdateSecret(ctx, secret, createSecret)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+	}
+
+	err = r.updateWebhookConfigurations(ctx, secret, mutatingWebhookConfiguration, validatingWebhookConfiguration)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -123,35 +140,28 @@ func (r *ReconcileWebhookCertificates) createOrUpdateSecret(ctx context.Context,
 	return nil
 }
 
-func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.Context, secret *corev1.Secret) error {
-	// load webhook configurations that need certificates
-	mutatingWebhookConfiguration, err := r.getMutatingWebhookConfiguration(ctx)
-	if err != nil {
-		return err
-	}
-	validatingWebhookConfiguration, err := r.getValidatingWebhookConfiguration(ctx)
-	if err != nil {
-		return err
-	}
+func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.Context, secret *corev1.Secret,
+	mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration,
+	validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) error {
 
 	// update certificates for webhook configurations
-	r.logger.Info("save certificates into webhook configurations")
-	webhookConfigurations := []*admissionregistrationv1.WebhookClientConfig{
-		&mutatingWebhookConfiguration.Webhooks[0].ClientConfig,
-		&mutatingWebhookConfiguration.Webhooks[1].ClientConfig,
-		&validatingWebhookConfiguration.Webhooks[0].ClientConfig,
+	r.logger.Info("saving certificates into webhook configurations")
+	for i := range mutatingWebhookConfiguration.Webhooks {
+		if err := r.updateConfiguration(&mutatingWebhookConfiguration.Webhooks[i].ClientConfig, secret); err != nil {
+			return err
+		}
 	}
-	for _, conf := range webhookConfigurations {
-		if err := r.updateConfiguration(conf, secret); err != nil {
+	for i := range validatingWebhookConfiguration.Webhooks {
+		if err := r.updateConfiguration(&validatingWebhookConfiguration.Webhooks[i].ClientConfig, secret); err != nil {
 			return err
 		}
 	}
 
 	// update webhook configurations
-	if err = r.client.Update(ctx, mutatingWebhookConfiguration); err != nil {
+	if err := r.client.Update(ctx, mutatingWebhookConfiguration); err != nil {
 		return err
 	}
-	if err = r.client.Update(ctx, validatingWebhookConfiguration); err != nil {
+	if err := r.client.Update(ctx, validatingWebhookConfiguration); err != nil {
 		return err
 	}
 	r.logger.Info("saved certificates into webhook configurations")
@@ -169,7 +179,7 @@ func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx conte
 	}
 
 	if len(mutatingWebhook.Webhooks) <= 0 {
-		return nil, errors.New("mutating admission webhook configuration has no registered webhooks")
+		return nil, errors.New("mutating webhook configuration has no registered webhooks")
 	}
 	return &mutatingWebhook, nil
 }
@@ -185,7 +195,7 @@ func (r *ReconcileWebhookCertificates) getValidatingWebhookConfiguration(ctx con
 	}
 
 	if len(mutatingWebhook.Webhooks) <= 0 {
-		return nil, errors.New("mutating validation webhook configuration has no registered webhooks")
+		return nil, errors.New("validating webhook configuration has no registered webhooks")
 	}
 	return &mutatingWebhook, nil
 }
@@ -207,13 +217,32 @@ func (r *ReconcileWebhookCertificates) getDomain() string {
 	return fmt.Sprintf("%s.%s.svc", webhook.DeploymentName, r.namespace)
 }
 
+// checkMutatingWebhookConfigurations checks certificates exist and are valid
+func (r *ReconcileWebhookCertificates) checkMutatingWebhookConfigurations(
+	mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration,
+	validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration, expectedCert []byte) bool {
+
+	for _, mutatingWebhook := range mutatingWebhookConfiguration.Webhooks {
+		webhookCert := mutatingWebhook.ClientConfig.CABundle
+		if len(webhookCert) == 0 || !bytes.Equal(webhookCert, expectedCert) {
+			return false
+		}
+	}
+
+	for _, validatingWebhook := range validatingWebhookConfiguration.Webhooks {
+		webhookCert := validatingWebhook.ClientConfig.CABundle
+		if len(webhookCert) == 0 || !bytes.Equal(webhookCert, expectedCert) {
+			return false
+		}
+	}
+	return true
+}
+
 func (r *ReconcileWebhookCertificates) updateConfiguration(
 	webhookConfiguration *admissionregistrationv1.WebhookClientConfig, secret *corev1.Secret) error {
 	data, hasData := secret.Data[RootCert]
 	if !hasData {
-		err := errors.New(errorCertificatesSecretEmpty)
-		r.logger.Error(err, errorCertificatesSecretEmpty)
-		return errors.WithStack(err)
+		return errors.New(errorCertificatesSecretEmpty)
 	}
 
 	if oldData, hasOldData := secret.Data[RootCertOld]; hasOldData {
