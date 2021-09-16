@@ -1,4 +1,4 @@
-package server
+package mutation
 
 import (
 	"context"
@@ -40,8 +40,8 @@ const (
 var log = logger.NewDTLogger()
 var debug = os.Getenv("DEBUG_OPERATOR")
 
-// AddToManager adds the Webhook server to the Manager
-func AddToManager(mgr manager.Manager, ns string) error {
+// AddPodMutationWebhookToManager adds the Webhook server to the Manager
+func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 	podName := os.Getenv("POD_NAME")
 	if podName == "" {
 		log.Info("No Pod name set for webhook container")
@@ -67,7 +67,7 @@ func AddToManager(mgr manager.Manager, ns string) error {
 //
 // This behavior must only occur if the DEBUG_OPERATOR flag is set to true
 func registerDebugInjectEndpoint(mgr manager.Manager, ns string) {
-	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podInjector{
+	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podMutator{
 		namespace: ns,
 	}})
 }
@@ -98,7 +98,7 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 		return err
 	}
 
-	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podInjector{
+	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podMutator{
 		apiReader: mgr.GetAPIReader(),
 		namespace: ns,
 		image:     pod.Spec.Containers[0].Image,
@@ -115,8 +115,8 @@ func registerHealthzEndpoint(mgr manager.Manager) {
 	}))
 }
 
-// podInjector injects the OneAgent into Pods
-type podInjector struct {
+// podMutator injects the OneAgent into Pods
+type podMutator struct {
 	client    client.Client
 	apiReader client.Reader
 	decoder   *admission.Decoder
@@ -127,8 +127,8 @@ type podInjector struct {
 	recorder  record.EventRecorder
 }
 
-// podInjector adds an annotation to every incoming pods
-func (m *podInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
+// podMutator adds an annotation to every incoming pods
+func (m *podMutator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	if m.apmExists {
 		return admission.Patched("")
 	}
@@ -220,7 +220,7 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 					corev1.EventTypeNormal,
 					updatePodEvent,
 					"Updating pod %s in namespace %s with missing containers", pod.GenerateName, pod.Namespace)
-				return getResponse(pod, &req)
+				return getResponseForPod(pod, &req)
 			}
 		}
 
@@ -327,17 +327,17 @@ func (m *podInjector) Handle(ctx context.Context, req admission.Request) admissi
 		corev1.EventTypeNormal,
 		injectEvent,
 		"Injecting the necessary info into pod %s in namespace %s", basePodName, ns.Name)
-	return getResponse(pod, &req)
+	return getResponseForPod(pod, &req)
 }
 
 // InjectClient injects the client
-func (m *podInjector) InjectClient(c client.Client) error {
+func (m *podMutator) InjectClient(c client.Client) error {
 	m.client = c
 	return nil
 }
 
 // InjectDecoder injects the decoder
-func (m *podInjector) InjectDecoder(d *admission.Decoder) error {
+func (m *podMutator) InjectDecoder(d *admission.Decoder) error {
 	m.decoder = d
 	return nil
 }
@@ -403,8 +403,8 @@ func updateContainer(c *corev1.Container, oa *dynatracev1alpha1.DynaKube,
 	}
 }
 
-// getResponse tries to format pod as json
-func getResponse(pod *corev1.Pod, req *admission.Request) admission.Response {
+// getResponseForPod tries to format pod as json
+func getResponseForPod(pod *corev1.Pod, req *admission.Request) admission.Response {
 	marshaledPod, err := json.MarshalIndent(pod, "", "  ")
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)

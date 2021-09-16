@@ -99,7 +99,7 @@ var (
 	caConfigMap = &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: testtrustCAsCM, Namespace: operatorNamespace},
 		Data: map[string]string{
-			"certs": testCAValue,
+			trustedCASecretField: testCAValue,
 		},
 	}
 
@@ -151,13 +151,13 @@ func TestGenerateForNamespace(t *testing.T) {
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 3, len(initSecret.Data))
-		initSh, ok := initSecret.Data["init.sh"]
+		initSh, ok := initSecret.Data[initScriptSecretField]
 		assert.True(t, ok)
 		assert.NotNil(t, initSh)
-		proxy, ok := initSecret.Data["proxy"]
+		proxy, ok := initSecret.Data[proxyInitSecretField]
 		assert.True(t, ok)
 		assert.Equal(t, testProxy, string(proxy))
-		ca, ok := initSecret.Data["ca.pem"]
+		ca, ok := initSecret.Data[trustedCAInitSecretField]
 		assert.True(t, ok)
 		assert.Equal(t, testCAValue, string(ca))
 	})
@@ -178,7 +178,7 @@ func TestGenerateForNamespace(t *testing.T) {
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(initSecret.Data))
-		initSh, ok := initSecret.Data["init.sh"]
+		initSh, ok := initSecret.Data[initScriptSecretField]
 		assert.True(t, ok)
 		assert.NotNil(t, initSh)
 	})
@@ -204,13 +204,13 @@ func TestGenerateForDynakube(t *testing.T) {
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 3, len(initSecret.Data))
-		initSh, ok := initSecret.Data["init.sh"]
+		initSh, ok := initSecret.Data[initScriptSecretField]
 		assert.True(t, ok)
 		assert.NotNil(t, initSh)
-		proxy, ok := initSecret.Data["proxy"]
+		proxy, ok := initSecret.Data[proxyInitSecretField]
 		assert.True(t, ok)
 		assert.Equal(t, testProxy, string(proxy))
-		ca, ok := initSecret.Data["ca.pem"]
+		ca, ok := initSecret.Data[trustedCAInitSecretField]
 		assert.True(t, ok)
 		assert.Equal(t, testCAValue, string(ca))
 	})
@@ -233,7 +233,7 @@ func TestGenerateForDynakube(t *testing.T) {
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(initSecret.Data))
-		initSh, ok := initSecret.Data["init.sh"]
+		initSh, ok := initSecret.Data[initScriptSecretField]
 		assert.True(t, ok)
 		assert.NotNil(t, initSh)
 	})
@@ -262,13 +262,13 @@ func TestGenerateForDynakube(t *testing.T) {
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(initSecret.Data))
-		initSh, ok := initSecret.Data["init.sh"]
+		initSh, ok := initSecret.Data[initScriptSecretField]
 		assert.True(t, ok)
 		assert.NotNil(t, initSh)
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testOtherNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(initSecret.Data))
-		initSh, ok = initSecret.Data["init.sh"]
+		initSh, ok = initSecret.Data[initScriptSecretField]
 		assert.True(t, ok)
 		assert.NotNil(t, initSh)
 	})
@@ -323,6 +323,6 @@ func TestPrepareScriptForDynaKube(t *testing.T) {
 
 		initSh, err := sc.generate()
 		assert.NoError(t, err)
-		assert.Equal(t, scriptSample, string(initSh["init.sh"]))
+		assert.Equal(t, scriptSample, string(initSh[initScriptSecretField]))
 	})
 }

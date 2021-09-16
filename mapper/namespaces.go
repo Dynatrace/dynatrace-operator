@@ -56,14 +56,14 @@ func (nm NamespaceMapper) findDynakubesForNamespace() (*dynatracev1alpha1.DynaKu
 
 	var matchingDynakubes []dynatracev1alpha1.DynaKube
 
-	conflictCounter := ConflictCounter{}
+	conflict := ConflictChecker{}
 	for _, dk := range dynakubes.Items {
 		matches, err := nm.matchForDynakube(dk)
 		if err != nil {
 			return nil, err
 		}
 		if matches {
-			if err := conflictCounter.Inc(&dk); err != nil {
+			if err := conflict.check(&dk); err != nil {
 				return nil, err
 			}
 			matchingDynakubes = append(matchingDynakubes, dk)

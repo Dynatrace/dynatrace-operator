@@ -88,7 +88,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.Dyna
 		}
 	}
 
-	if rec.IsOutdated(r.instance.Status.OneAgent.LastHostsRequestTimestamp, updInterval) || r.oneAgentsSpinningUp() {
+	if rec.IsOutdated(r.instance.Status.OneAgent.LastHostsRequestTimestamp, updInterval) {
 		r.instance.Status.OneAgent.LastHostsRequestTimestamp = rec.Now.DeepCopy()
 		rec.Update(true, 5*time.Minute, "updated last host request time stamp")
 
@@ -104,22 +104,6 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.Dyna
 	rec.Error(err)
 
 	return upd, nil
-}
-
-func (r *ReconcileOneAgent) oneAgentsSpinningUp() bool {
-	if !r.instance.Spec.InfraMonitoring.Enabled {
-		return false
-	}
-	if r.instance.Status.OneAgent.Instances == nil {
-		return true
-	}
-	pods, _, err := r.getPods(context.TODO(), r.instance, r.feature)
-	if err != nil {
-		r.logger.Error(err, "error while checking if onaAgent pods are spinning up")
-	} else if len(pods) > len(r.instance.Status.OneAgent.Instances) {
-		return true
-	}
-	return false
 }
 
 // validate sanity checks if essential fields in the custom resource are available

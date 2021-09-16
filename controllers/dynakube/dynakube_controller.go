@@ -224,12 +224,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 		upd, err = oneagent.NewOneAgentReconciler(
 			r.client, r.apiReader, r.scheme, dkState.Log, dkState.Instance, &dkState.Instance.Spec.InfraMonitoring.FullStackSpec, daemonset.InframonFeature,
 		).Reconcile(ctx, dkState)
-		if dkState.Instance.Status.OneAgent.Instances == nil {
-			dkState.Update(true, 10*time.Second, "waiting for oneagent instances to be present")
-			return
-		}
-		dkState.Update(upd, defaultUpdateInterval, "infra monitoring reconciled")
-		if dkState.Error(err) {
+		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
 			return
 		}
 	} else {

@@ -69,7 +69,7 @@ func (dm DynakubeMapper) checkDynakubes(nsList *corev1.NamespaceList, dkList *dy
 		if namespace.Labels == nil {
 			namespace.Labels = make(map[string]string)
 		}
-		conflictCounter := ConflictCounter{}
+		conflict := ConflictChecker{}
 		for _, dk := range dkList.Items {
 			if dk.Name == dm.dk.Name {
 				dk = *dm.dk
@@ -79,7 +79,7 @@ func (dm DynakubeMapper) checkDynakubes(nsList *corev1.NamespaceList, dkList *dy
 				return err
 			}
 			if updated {
-				if err := conflictCounter.Inc(&dk); err != nil {
+				if err := conflict.check(&dk); err != nil {
 					return err
 				}
 				modifiedNs = append(modifiedNs, namespace)

@@ -1,4 +1,4 @@
-package namespace
+package mutation
 
 import (
 	"context"
@@ -42,7 +42,7 @@ func TestInjection(t *testing.T) {
 		},
 	}
 	clt := fake.NewClient(dk)
-	inj := &namespaceInjector{
+	inj := &namespaceMutator{
 		client:    clt,
 		apiReader: clt,
 		namespace: "dynatrace",

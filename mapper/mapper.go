@@ -10,23 +10,23 @@ import (
 )
 
 const (
-	InstanceLabel               = "dynakube.dynatrace.com/instance"
-	UpdatedByDynakubeAnnotation = "dynatrace.com/updated-via-operator"
+	InstanceLabel                = "dynakube.dynatrace.com/instance"
+	UpdatedViaDynakubeAnnotation = "dynatrace.com/updated-via-operator"
 )
 
-type ConflictCounter struct {
-	i int
+type ConflictChecker struct {
+	alreadyUsed bool
 }
 
-func (c *ConflictCounter) Inc(dk *dynatracev1alpha1.DynaKube) error {
+func (c *ConflictChecker) check(dk *dynatracev1alpha1.DynaKube) error {
 	if !dk.Spec.CodeModules.Enabled {
 		return nil
 	}
-	c.i += 1
-	if c.i > 1 {
+	if c.alreadyUsed {
 		return errors.New("namespace matches two or more DynaKubes which is unsupported. " +
 			"refine the labels on your namespace metadata or DynaKube/CodeModules specification")
 	}
+	c.alreadyUsed = true
 	return nil
 }
 
@@ -53,5 +53,5 @@ func setUpdatedByDynakubeAnnotation(ns *corev1.Namespace) {
 	if ns.Annotations == nil {
 		ns.Annotations = make(map[string]string)
 	}
-	ns.Annotations[UpdatedByDynakubeAnnotation] = "true"
+	ns.Annotations[UpdatedViaDynakubeAnnotation] = "true"
 }

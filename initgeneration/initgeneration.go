@@ -22,7 +22,11 @@ import (
 )
 
 const (
-	notMappedIM = "-"
+	notMappedIM              = "-"
+	trustedCASecretField     = "certs"
+	proxyInitSecretField     = "proxy"
+	trustedCAInitSecretField = "ca.pem"
+	initScriptSecretField    = "init.sh"
 )
 
 var (
@@ -136,7 +140,7 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1alpha1.DynaKube,
 			if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Spec.Proxy.ValueFrom, Namespace: g.namespace}, &ps); err != nil {
 				return nil, fmt.Errorf("failed to query proxy: %w", err)
 			}
-			proxy = string(ps.Data["proxy"])
+			proxy = string(ps.Data[proxyInitSecretField])
 		} else if dk.Spec.Proxy.Value != "" {
 			proxy = dk.Spec.Proxy.Value
 		}
@@ -148,7 +152,7 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1alpha1.DynaKube,
 		if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Spec.TrustedCAs, Namespace: g.namespace}, &cam); err != nil {
 			return nil, fmt.Errorf("failed to query ca: %w", err)
 		}
-		trustedCAs = []byte(cam.Data["certs"])
+		trustedCAs = []byte(cam.Data[trustedCASecretField])
 	}
 
 	return &script{
@@ -228,15 +232,15 @@ func (s *script) generate() (map[string][]byte, error) {
 	}
 
 	data := map[string][]byte{
-		"init.sh": buf.Bytes(),
+		initScriptSecretField: buf.Bytes(),
 	}
 
 	if s.TrustedCAs != nil {
-		data["ca.pem"] = s.TrustedCAs
+		data[trustedCAInitSecretField] = s.TrustedCAs
 	}
 
 	if s.Proxy != "" {
-		data["proxy"] = []byte(s.Proxy)
+		data[proxyInitSecretField] = []byte(s.Proxy)
 	}
 
 	return data, nil

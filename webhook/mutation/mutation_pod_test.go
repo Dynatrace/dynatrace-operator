@@ -1,4 +1,4 @@
-package server
+package mutation
 
 import (
 	"context"
@@ -34,7 +34,7 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	require.NoError(t, err)
 
-	inj := &podInjector{
+	inj := &podMutator{
 		client: fake.NewClient(
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
@@ -81,7 +81,7 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	)
 }
 
-func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, *dynatracev1alpha1.DynaKube) {
+func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podMutator, *dynatracev1alpha1.DynaKube) {
 	dynakube := &dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: "dynatrace"},
 		Spec: dynatracev1alpha1.DynaKubeSpec{
@@ -113,7 +113,7 @@ func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, 
 		},
 	}
 
-	return &podInjector{
+	return &podMutator{
 		client: fake.NewClient(
 			dynakube,
 			&corev1.Namespace{
@@ -341,7 +341,7 @@ func TestUseImmutableImage(t *testing.T) {
 		instance := createDynakubeInstance(t)
 		withoutCSIDriver(t, instance)
 
-		inj := &podInjector{
+		inj := &podMutator{
 			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
@@ -438,7 +438,7 @@ func TestUseImmutableImage(t *testing.T) {
 		instance := createDynakubeInstance(t)
 		withoutCSIDriver(t, instance)
 
-		inj := &podInjector{
+		inj := &podMutator{
 			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
@@ -536,7 +536,7 @@ func TestUseImmutableImage(t *testing.T) {
 		instance := createDynakubeInstance(t)
 		withoutCSIDriver(t, instance)
 
-		inj := &podInjector{
+		inj := &podMutator{
 			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
@@ -631,7 +631,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 
 		instance := createDynakubeInstance(t)
 
-		inj := &podInjector{
+		inj := &podMutator{
 			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
@@ -720,7 +720,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 
 		instance := createDynakubeInstance(t)
 
-		inj := &podInjector{
+		inj := &podMutator{
 			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
@@ -810,7 +810,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 
 		instance := createDynakubeInstance(t)
 
-		inj := &podInjector{
+		inj := &podMutator{
 			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
@@ -899,7 +899,7 @@ func TestAgentVersion(t *testing.T) {
 	withoutCSIDriver(t, instance)
 	withAgentVersion(t, instance, testVersion)
 
-	inj := &podInjector{
+	inj := &podMutator{
 		client: fake.NewClient(
 			instance,
 			&corev1.Namespace{
@@ -993,7 +993,7 @@ func TestAgentVersionWithCSI(t *testing.T) {
 	instance := createDynakubeInstance(t)
 	withAgentVersion(t, instance, testVersion)
 
-	inj := &podInjector{
+	inj := &podMutator{
 		client: fake.NewClient(
 			instance,
 			&corev1.Namespace{

@@ -1,4 +1,4 @@
-package namespace
+package mutation
 
 import (
 	"context"
@@ -18,15 +18,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-func AddNamespaceWebhookToManager(manager ctrl.Manager, ns string) error {
+func AddNamespaceMutationWebhookToManager(manager ctrl.Manager, ns string) error {
 	manager.GetWebhookServer().Register("/label-ns", &webhook.Admission{
-		Handler: newNamespaceInjector(ns, manager.GetAPIReader()),
+		Handler: newNamespaceMutator(ns, manager.GetAPIReader()),
 	})
 	return nil
 }
 
-// namespaceInjector adds the necessary label to namespaces that match a dynakubes namespace selector
-type namespaceInjector struct {
+// namespaceMutator adds the necessary label to namespaces that match a dynakubes namespace selector
+type namespaceMutator struct {
 	logger    logr.Logger
 	client    client.Client
 	apiReader client.Reader
@@ -34,7 +34,7 @@ type namespaceInjector struct {
 }
 
 // InjectClient implements the inject.Client interface which allows the manager to inject a kubernetes client into this handler
-func (ni *namespaceInjector) InjectClient(clt client.Client) error {
+func (ni *namespaceMutator) InjectClient(clt client.Client) error {
 	ni.client = clt
 	return nil
 }
@@ -45,7 +45,7 @@ func (ni *namespaceInjector) InjectClient(clt client.Client) error {
 //    we would tag our own namespace which would cause the podInjector webhook to inject into our pods which can cause issues. (infra-monitoring pod injected into == bad)
 // 2. if the namespace was updated by the operator => don't do the mapping: we detect this using an annotation, we do this because the operator also does the mapping
 //    but from the dynakube's side (during dynakube reconcile) and we don't want to repeat ourselfs. So we just remove the annotation.
-func (ni *namespaceInjector) Handle(ctx context.Context, request admission.Request) admission.Response {
+func (ni *namespaceMutator) Handle(ctx context.Context, request admission.Request) admission.Response {
 	if ni.namespace == request.Namespace {
 		return admission.Patched("")
 	}
@@ -57,10 +57,10 @@ func (ni *namespaceInjector) Handle(ctx context.Context, request admission.Reque
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if _, ok := ns.Annotations[mapper.UpdatedByDynakubeAnnotation]; ok {
+	if _, ok := ns.Annotations[mapper.UpdatedViaDynakubeAnnotation]; ok {
 		ni.logger.Info("Checking namespace labels not necessary", "namespace", request.Name)
-		delete(ns.Annotations, mapper.UpdatedByDynakubeAnnotation)
-		return getResponse(&ns, &request)
+		delete(ns.Annotations, mapper.UpdatedViaDynakubeAnnotation)
+		return getResponseForNamespace(&ns, &request)
 	}
 
 	ni.logger.Info("Checking namespace labels", "namespace", request.Name)
@@ -68,7 +68,7 @@ func (ni *namespaceInjector) Handle(ctx context.Context, request admission.Reque
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 	ni.logger.Info("Namespace", "labels", ns.Labels)
-	return getResponse(&ns, &request)
+	return getResponseForNamespace(&ns, &request)
 }
 
 func decodeRequestToNamespace(request admission.Request, namespace *corev1.Namespace) error {
@@ -84,15 +84,15 @@ func decodeRequestToNamespace(request admission.Request, namespace *corev1.Names
 	return nil
 }
 
-func newNamespaceInjector(ns string, apiReader client.Reader) admission.Handler {
-	return &namespaceInjector{
+func newNamespaceMutator(ns string, apiReader client.Reader) admission.Handler {
+	return &namespaceMutator{
 		apiReader: apiReader,
 		logger:    logger.NewDTLogger(),
 		namespace: ns,
 	}
 }
 
-func getResponse(ns *corev1.Namespace, req *admission.Request) admission.Response {
+func getResponseForNamespace(ns *corev1.Namespace, req *admission.Request) admission.Response {
 	marshaledNamespace, err := json.MarshalIndent(ns, "", "  ")
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
