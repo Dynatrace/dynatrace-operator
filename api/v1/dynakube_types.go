@@ -21,8 +21,82 @@ type DynaKube struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   v1alpha1.DynaKubeSpec   `json:"spec,omitempty"`
+	Spec   DynaKubeSpec            `json:"spec,omitempty"`
 	Status v1alpha1.DynaKubeStatus `json:"status,omitempty"`
+}
+
+// DynaKubeSpec defines the desired state of DynaKube
+// +k8s:openapi-gen=true
+type DynaKubeSpec struct {
+	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+
+	// Location of the Dynatrace API to connect to, including your specific environment ID
+	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="API URL",order=1,xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	APIURL string `json:"apiUrl"`
+
+	// Credentials for the DynaKube to connect back to Dynatrace.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="API and PaaS Tokens",order=2,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
+	Tokens string `json:"tokens,omitempty"`
+
+	// Optional: Pull secret for your private registry
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom PullSecret",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
+	CustomPullSecret string `json:"customPullSecret,omitempty"`
+
+	// Disable certificate validation checks for installer download and API communication
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Skip Certificate Check",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	SkipCertCheck bool `json:"skipCertCheck,omitempty"`
+
+	// Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
+	Proxy *v1alpha1.DynaKubeProxy `json:"proxy,omitempty"`
+
+	// Optional: Adds custom RootCAs from a configmap
+	// This property only affects certificates used to communicate with the Dynatrace API.
+	// The property is not applied to the ActiveGate
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Trusted CAs",order=6,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ConfigMap"}
+	TrustedCAs string `json:"trustedCAs,omitempty"`
+
+	// Optional: Sets Network Zone for OneAgent and ActiveGate pods
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Network Zone",order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	NetworkZone string `json:"networkZone,omitempty"`
+
+	// If enabled, Istio on the cluster will be configured automatically to allow access to the Dynatrace environment
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Istio automatic management",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	EnableIstio bool `json:"enableIstio,omitempty"`
+
+	// General configuration about ActiveGate instances
+	ActiveGate v1alpha1.ActiveGateSpec `json:"activeGate,omitempty"`
+
+	// General configuration about OneAgent instances
+	// +kubebuilder:validation:MaxProperties=1
+	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
+
+	// Configuration for CodeModules Monitoring
+	CodeModules v1alpha1.CodeModulesSpec `json:"codeModules,omitempty"`
+
+	// Configuration for Infra Monitoring
+	InfraMonitoring v1alpha1.InfraMonitoringSpec `json:"infraMonitoring,omitempty"`
+
+	// Configuration for ClassicFullStack Monitoring
+	ClassicFullStack v1alpha1.FullStackSpec `json:"classicFullStack,omitempty"`
+
+	//  Configuration for Routing
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Routing"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	RoutingSpec v1alpha1.RoutingSpec `json:"routing,omitempty"`
+
+	//  Configuration for Data Ingest
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Data Ingest"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	DataIngestSpec v1alpha1.DataIngestSpec `json:"dataIngest,omitempty"`
+
+	//  Configuration for Kubernetes Monitoring
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	KubernetesMonitoringSpec v1alpha1.KubernetesMonitoringSpec `json:"kubernetesMonitoring,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
