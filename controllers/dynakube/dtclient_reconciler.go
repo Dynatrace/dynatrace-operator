@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"net/http"
 	"strings"
 	"time"
@@ -31,7 +32,7 @@ type tokenConfig struct {
 	Timestamp         **metav1.Time
 }
 
-func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dynatracev1alpha1.DynaKube) (dtclient.Client, bool, error) {
+func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dynatracev1.DynaKube) (dtclient.Client, bool, error) {
 	now := r.Now
 	if now.IsZero() {
 		now = metav1.Now()
@@ -115,7 +116,17 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 		return nil, updateCR, fmt.Errorf("issues found with tokens, see status")
 	}
 
-	dtc, err := dtf(r.Client, instance, secret)
+	dtc, err := dtf(DynatraceClientProperties{
+		Client:              r.Client,
+		Secret:              secret,
+		Proxy:               convertProxy(instance.Spec.Proxy),
+		ApiUrl:              instance.Spec.APIURL,
+		Namespace:           ns,
+		NetworkZone:         instance.Spec.NetworkZone,
+		TrustedCerts:        instance.Spec.TrustedCAs,
+		SkipCertCheck:       instance.Spec.SkipCertCheck,
+		DisableHostRequests: instance.FeatureDisableHostsRequests(),
+	})
 	if err != nil {
 		message := fmt.Sprintf("Failed to create Dynatrace API Client: %s", err)
 
@@ -203,4 +214,14 @@ func setCondition(conditions *[]metav1.Condition, condition metav1.Condition) bo
 
 	meta.SetStatusCondition(conditions, condition)
 	return true
+}
+
+func convertProxy(proxy *dynatracev1alpha1.DynaKubeProxy) *DynatraceClientProxy {
+	if proxy == nil {
+		return nil
+	}
+	return &DynatraceClientProxy{
+		Value:     proxy.Value,
+		ValueFrom: proxy.ValueFrom,
+	}
 }

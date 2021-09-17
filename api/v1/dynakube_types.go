@@ -71,15 +71,6 @@ type DynaKubeSpec struct {
 	// +kubebuilder:validation:MaxProperties=1
 	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
 
-	// Configuration for CodeModules Monitoring
-	CodeModules v1alpha1.CodeModulesSpec `json:"codeModules,omitempty"`
-
-	// Configuration for Infra Monitoring
-	InfraMonitoring v1alpha1.InfraMonitoringSpec `json:"infraMonitoring,omitempty"`
-
-	// Configuration for ClassicFullStack Monitoring
-	ClassicFullStack v1alpha1.FullStackSpec `json:"classicFullStack,omitempty"`
-
 	//  Configuration for Routing
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Routing"

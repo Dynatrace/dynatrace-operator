@@ -1,20 +1,10 @@
 package dynakube
 
-/**
-The following functions have been copied from dynatrace-oneagent-operator
-and are candidates to be made into a library:
-
-* BuildDynatraceClient
-* verifySecret
-* getTokensName
-
-*/
-
 import (
 	"context"
 	"fmt"
-
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/pkg/errors"
@@ -26,34 +16,50 @@ type options struct {
 	Opts []dtclient.Option
 }
 
+type DynatraceClientProperties struct {
+	Client              client.Client
+	Secret              *corev1.Secret
+	Proxy               *DynatraceClientProxy
+	ApiUrl              string
+	Namespace           string
+	NetworkZone         string
+	TrustedCerts        string
+	SkipCertCheck       bool
+	DisableHostRequests bool
+}
+
+type DynatraceClientProxy struct {
+	Value     string
+	ValueFrom string
+}
+
 // BuildDynatraceClient creates a new Dynatrace client using the settings configured on the given instance.
-func BuildDynatraceClient(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error) {
-	if instance == nil {
-		return nil, fmt.Errorf("could not build dynatrace client: instance is nil")
-	}
-	namespace := instance.GetNamespace()
-	spec := instance.Spec
+func BuildDynatraceClient(properties DynatraceClientProperties) (dtclient.Client, error) {
+	namespace := properties.Namespace
+	secret := properties.Secret
+	clt := properties.Client
+
 	tokens, err := kubeobjects.NewTokens(secret)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	opts := newOptions()
-	opts.appendCertCheck(&spec)
-	opts.appendNetworkZone(&spec)
-	opts.appendDisableHostsRequests(instance.FeatureDisableHostsRequests())
+	opts.appendCertCheck(properties.SkipCertCheck)
+	opts.appendNetworkZone(properties.NetworkZone)
+	opts.appendDisableHostsRequests(properties.DisableHostRequests)
 
-	err = opts.appendProxySettings(rtc, &spec, namespace)
+	err = opts.appendProxySettings(clt, properties.Proxy, namespace)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	err = opts.appendTrustedCerts(rtc, &spec, namespace)
+	err = opts.appendTrustedCerts(clt, properties.TrustedCerts, namespace)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return dtclient.NewClient(spec.APIURL, tokens.ApiToken, tokens.PaasToken, opts.Opts...)
+	return dtclient.NewClient(properties.ApiUrl, tokens.ApiToken, tokens.PaasToken, opts.Opts...)
 }
 
 func newOptions() *options {
@@ -64,27 +70,27 @@ func newOptions() *options {
 
 // StaticDynatraceClient creates a DynatraceClientFunc always returning c.
 func StaticDynatraceClient(c dtclient.Client) DynatraceClientFunc {
-	return func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error) {
+	return func(properties DynatraceClientProperties) (dtclient.Client, error) {
 		return c, nil
 	}
 }
 
-func (opts *options) appendNetworkZone(spec *dynatracev1alpha1.DynaKubeSpec) {
-	if spec.NetworkZone != "" {
-		opts.Opts = append(opts.Opts, dtclient.NetworkZone(spec.NetworkZone))
+func (opts *options) appendNetworkZone(networkZone string) {
+	if networkZone != "" {
+		opts.Opts = append(opts.Opts, dtclient.NetworkZone(networkZone))
 	}
 }
 
-func (opts *options) appendCertCheck(spec *dynatracev1alpha1.DynaKubeSpec) {
-	opts.Opts = append(opts.Opts, dtclient.SkipCertificateValidation(spec.SkipCertCheck))
+func (opts *options) appendCertCheck(skipCertCheck bool) {
+	opts.Opts = append(opts.Opts, dtclient.SkipCertificateValidation(skipCertCheck))
 }
 
 func (opts *options) appendDisableHostsRequests(disableHostsRequests bool) {
 	opts.Opts = append(opts.Opts, dtclient.DisableHostsRequests(disableHostsRequests))
 }
 
-func (opts *options) appendProxySettings(rtc client.Client, spec *dynatracev1alpha1.DynaKubeSpec, namespace string) error {
-	if p := spec.Proxy; p != nil {
+func (opts *options) appendProxySettings(rtc client.Client, proxy *DynatraceClientProxy, namespace string) error {
+	if p := proxy; p != nil {
 		if p.ValueFrom != "" {
 			proxySecret := &corev1.Secret{}
 			err := rtc.Get(context.TODO(), client.ObjectKey{Name: p.ValueFrom, Namespace: namespace}, proxySecret)
@@ -104,10 +110,10 @@ func (opts *options) appendProxySettings(rtc client.Client, spec *dynatracev1alp
 	return nil
 }
 
-func (opts *options) appendTrustedCerts(rtc client.Client, spec *dynatracev1alpha1.DynaKubeSpec, namespace string) error {
-	if spec.TrustedCAs != "" {
+func (opts *options) appendTrustedCerts(rtc client.Client, trustedCerts string, namespace string) error {
+	if trustedCerts != "" {
 		certs := &corev1.ConfigMap{}
-		if err := rtc.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: spec.TrustedCAs}, certs); err != nil {
+		if err := rtc.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
 			return fmt.Errorf("failed to get certificate configmap: %w", err)
 		}
 		if certs.Data[Certificates] == "" {

@@ -183,9 +183,6 @@ func (in *DynaKubeSpec) DeepCopyInto(out *DynaKubeSpec) {
 	}
 	out.ActiveGate = in.ActiveGate
 	in.OneAgent.DeepCopyInto(&out.OneAgent)
-	in.CodeModules.DeepCopyInto(&out.CodeModules)
-	in.InfraMonitoring.DeepCopyInto(&out.InfraMonitoring)
-	in.ClassicFullStack.DeepCopyInto(&out.ClassicFullStack)
 	in.RoutingSpec.DeepCopyInto(&out.RoutingSpec)
 	in.DataIngestSpec.DeepCopyInto(&out.DataIngestSpec)
 	in.KubernetesMonitoringSpec.DeepCopyInto(&out.KubernetesMonitoringSpec)

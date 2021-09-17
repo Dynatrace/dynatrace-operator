@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
@@ -60,7 +60,7 @@ func NewReconciler(mgr manager.Manager) *ReconcileDynaKube {
 
 func (r *ReconcileDynaKube) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1alpha1.DynaKube{}).
+		For(&dynatracev1.DynaKube{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.DaemonSet{}).
 		Complete(r)
@@ -96,7 +96,7 @@ type ReconcileDynaKube struct {
 	operatorNamespace string
 }
 
-type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
+type DynatraceClientFunc func(properties DynatraceClientProperties) (dtclient.Client, error)
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
 // and what is in the DynaKube.Spec
@@ -109,7 +109,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	reqLogger.Info("Reconciling DynaKube")
 
 	// Fetch the DynaKube instance
-	instance := &dynatracev1alpha1.DynaKube{}
+	instance := &dynatracev1.DynaKube{}
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -292,13 +292,13 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers
 	return true
 }
 
-func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {
+func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatracev1.DynaKube) (*corev1.Secret, error) {
 	var secret corev1.Secret
 	err := r.client.Get(ctx, client.ObjectKey{Name: instance.Tokens(), Namespace: instance.Namespace}, &secret)
 	return &secret, errors.WithStack(err)
 }
 
-func (r *ReconcileDynaKube) updateCR(ctx context.Context, log logr.Logger, instance *dynatracev1alpha1.DynaKube) error {
+func (r *ReconcileDynaKube) updateCR(ctx context.Context, log logr.Logger, instance *dynatracev1.DynaKube) error {
 	instance.Status.UpdatedTimestamp = metav1.Now()
 	err := r.client.Status().Update(ctx, instance)
 	if err != nil && k8serrors.IsConflict(err) {
