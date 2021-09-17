@@ -73,7 +73,7 @@ func (dm DynakubeMapper) checkDynakubes(nsList *corev1.NamespaceList, dkList *dy
 		if dm.operatorNs == namespace.Name {
 			continue
 		}
-		updated, err = checkDynakubes(namespace, dkList)
+		updated, err = updateNamespace(namespace, dkList)
 		if updated {
 			modifiedNs = append(modifiedNs, namespace)
 		}

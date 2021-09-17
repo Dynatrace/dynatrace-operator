@@ -72,14 +72,14 @@ func match(dk *dynatracev1alpha1.DynaKube, namespace *corev1.Namespace) (bool, e
 	return matches, nil
 }
 
-func checkDynakubes(namespace *corev1.Namespace, dkList *dynatracev1alpha1.DynaKubeList) (bool, error) {
+// updateNamespace tries to match the namespace to every dynakube with codeModules
+// finds conflicting dynakubes(2 dynakube with codeModules on the same namespace)
+func updateNamespace(namespace *corev1.Namespace, dkList *dynatracev1alpha1.DynaKubeList) (bool, error) {
 	var updated bool
-	var matches bool
-	var err error
 	conflict := ConflictChecker{}
 	for i := range dkList.Items {
 		dynakube := &dkList.Items[i]
-		matches, err = match(dynakube, namespace)
+		matches, err := match(dynakube, namespace)
 		if err != nil {
 			return updated, err
 		}
@@ -88,9 +88,15 @@ func checkDynakubes(namespace *corev1.Namespace, dkList *dynatracev1alpha1.DynaK
 				return updated, err
 			}
 		}
-		updated, err = updateLabels(matches, dynakube, namespace)
+		upd, err := updateLabels(matches, dynakube, namespace)
+		if err != nil {
+			return updated, err
+		}
+		if upd {
+			updated = true
+		}
 	}
-	return updated, err
+	return updated, nil
 }
 
 func updateLabels(matches bool, dynakube *dynatracev1alpha1.DynaKube, namespace *corev1.Namespace) (bool, error) {

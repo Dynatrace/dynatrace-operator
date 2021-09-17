@@ -66,7 +66,7 @@ func TestFindDynakubeForNamespace(t *testing.T) {
 		}
 		clt := fake.NewClient(dynakubes[0], dynakubes[1], dynakubes[2])
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
-		updated, err := nm.findDynakubesForNamespace()
+		updated, err := nm.updateNamespace()
 		assert.NoError(t, err)
 		assert.False(t, updated)
 	})
@@ -83,9 +83,9 @@ func TestFindDynakubeForNamespace(t *testing.T) {
 
 		clt := fake.NewClient(dynakubes[0], dynakubes[1], dynakubes[2])
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
-		dynakube, err := nm.findDynakubesForNamespace()
+		updated, err := nm.updateNamespace()
 		assert.NoError(t, err)
-		assert.NotNil(t, dynakube)
+		assert.True(t, updated)
 	})
 
 	t.Run(`Match namespace with expressions`, func(t *testing.T) {
@@ -100,9 +100,9 @@ func TestFindDynakubeForNamespace(t *testing.T) {
 
 		clt := fake.NewClient(dynakubes[0], dynakubes[1], dynakubes[2])
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
-		dynakube, err := nm.findDynakubesForNamespace()
+		updated, err := nm.updateNamespace()
 		assert.NoError(t, err)
-		assert.NotNil(t, dynakube)
+		assert.True(t, updated)
 	})
 
 	t.Run(`Error on multiple Dynakube matches`, func(t *testing.T) {
@@ -118,7 +118,7 @@ func TestFindDynakubeForNamespace(t *testing.T) {
 
 		clt := fake.NewClient(dynakubes[0], dynakubes[1], dynakubes[2])
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
-		_, err := nm.findDynakubesForNamespace()
+		_, err := nm.updateNamespace()
 		assert.Error(t, err)
 	})
 }
@@ -158,7 +158,7 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 
 		clt := fake.NewClient(dynakubes[0], dynakubes[1])
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
-		dynakube, err := nm.findDynakubesForNamespace()
+		dynakube, err := nm.updateNamespace()
 		assert.NoError(t, err)
 		assert.NotNil(t, dynakube)
 		//assert.Equal(t, dynakube.Name, "codeModules-1")
@@ -191,8 +191,9 @@ func TestMapFromNamespace(t *testing.T) {
 		clt := fake.NewClient(dk)
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
 
-		err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace()
 		assert.NoError(t, err)
+		assert.True(t, updated)
 		assert.Equal(t, 2, len(nm.targetNs.Labels))
 	})
 
@@ -210,8 +211,9 @@ func TestMapFromNamespace(t *testing.T) {
 
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
 
-		err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace()
 		assert.Error(t, err)
+		assert.False(t, updated)
 	})
 
 	t.Run("Remove stale namespace entry", func(t *testing.T) {
@@ -226,8 +228,9 @@ func TestMapFromNamespace(t *testing.T) {
 		clt := fake.NewClient(dk)
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
 
-		err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace()
 		assert.NoError(t, err)
+		assert.True(t, updated)
 		assert.Equal(t, 0, len(nm.targetNs.Labels))
 	})
 	t.Run("Allow multiple dynakubes with different features", func(t *testing.T) {
@@ -261,8 +264,9 @@ func TestMapFromNamespace(t *testing.T) {
 		clt := fake.NewClient(differentDk1, differentDk2)
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
 
-		err := nm.MapFromNamespace()
+		updated, err := nm.MapFromNamespace()
 		assert.NoError(t, err)
+		assert.True(t, updated)
 		assert.Equal(t, 2, len(nm.targetNs.Labels))
 	})
 }

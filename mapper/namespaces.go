@@ -25,20 +25,18 @@ func NewNamespaceMapper(ctx context.Context, clt client.Client, apiReader client
 }
 
 // MapFromNamespace adds the labels to the targetNs if there is a matching Dynakube
-func (nm NamespaceMapper) MapFromNamespace() error {
+func (nm NamespaceMapper) MapFromNamespace() (bool, error) {
 	if nm.operatorNs == nm.targetNs.Name {
-		return nil
+		return false, nil
 	}
-	_, err := nm.findDynakubesForNamespace()
+	updated, err := nm.updateNamespace()
 	if err != nil {
-		return err
+		return false, err
 	}
-	return nil
+	return updated, nil
 }
 
-// findDynakubesForNamespace tries to match the namespace to every dynakube with codeModules
-// finds conflicting dynakubes(2 dynakube with codeModules on the same namespace)
-func (nm NamespaceMapper) findDynakubesForNamespace() (bool, error) {
+func (nm NamespaceMapper) updateNamespace() (bool, error) {
 	dkList := &dynatracev1alpha1.DynaKubeList{}
 	err := nm.client.List(nm.ctx, dkList)
 
@@ -46,5 +44,5 @@ func (nm NamespaceMapper) findDynakubesForNamespace() (bool, error) {
 		return false, errors.Cause(err)
 	}
 
-	return checkDynakubes(nm.targetNs, dkList)
+	return updateNamespace(nm.targetNs, dkList)
 }

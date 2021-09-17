@@ -64,8 +64,12 @@ func (ni *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 	}
 
 	ni.logger.Info("Checking namespace labels", "namespace", request.Name)
-	if err := nsMapper.MapFromNamespace(); err != nil {
+	updated, err := nsMapper.MapFromNamespace()
+	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
+	}
+	if !updated {
+		return admission.Patched("")
 	}
 	ni.logger.Info("Namespace", "labels", ns.Labels)
 	return getResponseForNamespace(&ns, &request)
