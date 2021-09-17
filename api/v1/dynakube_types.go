@@ -7,7 +7,6 @@ import (
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 //+kubebuilder:storageversion
-//+kubebuilder:conversion:strategy="None"
 
 // DynaKube is the Schema for the DynaKube API
 // +k8s:openapi-gen=true
