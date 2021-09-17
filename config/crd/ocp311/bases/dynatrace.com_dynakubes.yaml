@@ -3917,8 +3917,8 @@ spec:
                   type: array
               type: object
             monitoredNamespaces:
-              description: 'Optional: set selector for Operator to know in which namespaces
-                to inject into'
+              description: Namespace selector for Operator to know in which namespaces
+                should it monitor applications
               properties:
                 matchExpressions:
                   description: matchExpressions is a list of label selector requirements.

@@ -6,6 +6,8 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -54,4 +56,57 @@ func setUpdatedByDynakubeAnnotation(ns *corev1.Namespace) {
 		ns.Annotations = make(map[string]string)
 	}
 	ns.Annotations[UpdatedViaDynakubeAnnotation] = "true"
+}
+
+func match(dk *dynatracev1alpha1.DynaKube, namespace *corev1.Namespace) (bool, error) {
+	matches := false
+	if dk.Spec.MonitoredNamespaces == nil {
+		matches = true
+	} else {
+		selector, err := metav1.LabelSelectorAsSelector(dk.Spec.MonitoredNamespaces)
+		if err != nil {
+			return matches, errors.WithStack(err)
+		}
+		matches = selector.Matches(labels.Set(namespace.Labels))
+	}
+	return matches, nil
+}
+
+func checkDynakubes(namespace *corev1.Namespace, dkList *dynatracev1alpha1.DynaKubeList) (bool, error) {
+	var updated bool
+	var matches bool
+	var err error
+	conflict := ConflictChecker{}
+	for i := range dkList.Items {
+		dynakube := &dkList.Items[i]
+		matches, err = match(dynakube, namespace)
+		if err != nil {
+			return updated, err
+		}
+		if matches {
+			if err := conflict.check(dynakube); err != nil {
+				return updated, err
+			}
+		}
+		updated, err = updateLabels(matches, dynakube, namespace)
+	}
+	return updated, err
+}
+
+func updateLabels(matches bool, dynakube *dynatracev1alpha1.DynaKube, namespace *corev1.Namespace) (bool, error) {
+	updated := false
+	if namespace.Labels == nil {
+		namespace.Labels = make(map[string]string)
+	}
+	oldDkName, ok := namespace.Labels[InstanceLabel]
+	if matches && dynakube.Spec.CodeModules.Enabled {
+		if !ok || oldDkName != dynakube.Name {
+			updated = true
+			addNamespaceInjectLabel(dynakube.Name, namespace)
+		}
+	} else if ok && oldDkName == dynakube.Name {
+		updated = true
+		delete(namespace.Labels, InstanceLabel)
+	}
+	return updated, nil
 }

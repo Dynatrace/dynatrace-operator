@@ -6,8 +6,6 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -61,57 +59,31 @@ func (dm DynakubeMapper) UnmapFromDynaKube() error {
 func (dm DynakubeMapper) checkDynakubes(nsList *corev1.NamespaceList, dkList *dynatracev1alpha1.DynaKubeList) error {
 	var updated bool
 	var err error
-	var modifiedNs []corev1.Namespace
-	for _, namespace := range nsList.Items {
+	var modifiedNs []*corev1.Namespace
+
+	for i := range dkList.Items {
+		if dkList.Items[i].Name == dm.dk.Name {
+			dkList.Items[i] = *dm.dk
+			break
+		}
+	}
+
+	for i := range nsList.Items {
+		namespace := &nsList.Items[i]
 		if dm.operatorNs == namespace.Name {
 			continue
 		}
-		if namespace.Labels == nil {
-			namespace.Labels = make(map[string]string)
-		}
-		conflict := ConflictChecker{}
-		for _, dk := range dkList.Items {
-			if dk.Name == dm.dk.Name {
-				dk = *dm.dk
-			}
-			updated, namespace, err = dm.updateLabels(dk, namespace)
-			if err != nil {
-				return err
-			}
-			if updated {
-				if err := conflict.check(&dk); err != nil {
-					return err
-				}
-				modifiedNs = append(modifiedNs, namespace)
-			}
+		updated, err = checkDynakubes(namespace, dkList)
+		if updated {
+			modifiedNs = append(modifiedNs, namespace)
 		}
 
 	}
 	for _, ns := range modifiedNs {
-		setUpdatedByDynakubeAnnotation(&ns)
-		if err := dm.client.Update(dm.ctx, &ns); err != nil {
+		setUpdatedByDynakubeAnnotation(ns)
+		if err := dm.client.Update(dm.ctx, ns); err != nil {
 			return err
 		}
 	}
 	return err
-}
-
-func (dm DynakubeMapper) updateLabels(dk dynatracev1alpha1.DynaKube, namespace corev1.Namespace) (bool, corev1.Namespace, error) {
-	updated := false
-	selector, err := metav1.LabelSelectorAsSelector(dk.Spec.MonitoredNamespaces)
-	if err != nil {
-		return updated, corev1.Namespace{}, errors.WithStack(err)
-	}
-	matches := selector.Matches(labels.Set(namespace.Labels))
-	oldDkName, ok := namespace.Labels[InstanceLabel]
-	if matches {
-		if !ok || oldDkName != dk.Name {
-			updated = true
-			addNamespaceInjectLabel(dk.Name, &namespace)
-		}
-	} else if ok && oldDkName == dk.Name {
-		updated = true
-		delete(namespace.Labels, InstanceLabel)
-	}
-	return updated, namespace, nil
 }

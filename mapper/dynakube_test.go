@@ -69,9 +69,6 @@ func TestMapFromDynakube(t *testing.T) {
 		movedDk := &dynatracev1alpha1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "moved-dk", Namespace: "dynatrace"},
 			Spec: dynatracev1alpha1.DynaKubeSpec{
-				CodeModules: dynatracev1alpha1.CodeModulesSpec{
-					Enabled: true,
-				},
 				DataIngestSpec: dynatracev1alpha1.DataIngestSpec{
 					CapabilityProperties: dynatracev1alpha1.CapabilityProperties{
 						Enabled: true,
@@ -94,6 +91,7 @@ func TestMapFromDynakube(t *testing.T) {
 		var ns corev1.Namespace
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
 		assert.NoError(t, err)
+		assert.Equal(t, 0, len(ns.Labels))
 		assert.Equal(t, 1, len(ns.Annotations))
 	})
 	t.Run("Throw error in case of conflicting Dynakubes", func(t *testing.T) {

@@ -251,12 +251,10 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 	if dkState.Instance.Spec.CodeModules.Enabled {
 		if err := dkMapper.MapFromDynakube(); err != nil {
 			dkState.Log.Error(err, "update of a map of namespaces failed")
-			return
 		}
 		if dkState.Instance.Spec.InfraMonitoring.Enabled {
 			upd, err := initgeneration.NewInitGenerator(r.client, r.apiReader, dkState.Instance.Namespace, r.logger).GenerateForDynakube(ctx, dkState.Instance)
-			dkState.Update(upd, defaultUpdateInterval, "new init script created")
-			if dkState.Error(err) {
+			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "new init script created") {
 				return
 			}
 		}
