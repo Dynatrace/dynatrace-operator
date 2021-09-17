@@ -5,39 +5,112 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/klauspost/compress/zip"
 	"github.com/spf13/afero"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/tools/record"
 )
 
 const agentConfPath = "agent/conf/"
 
 type installAgentConfig struct {
-	logger    logr.Logger
-	dtc       dtclient.Client
-	arch      string
-	targetDir string
-	fs        afero.Fs
+	logger   logr.Logger
+	dtc      dtclient.Client
+	fs       afero.Fs
+	path     metadata.PathResolver
+	dk       *dynatracev1alpha1.DynaKube
+	tenant   *metadata.Tenant
+	recorder record.EventRecorder
 }
 
-func newInstallAgentConfig(logger logr.Logger, dtc dtclient.Client, arch, targetDir string) *installAgentConfig {
+func newInstallAgentConfig(
+	logger logr.Logger,
+	dtc dtclient.Client,
+	path metadata.PathResolver,
+	fs afero.Fs,
+	recorder record.EventRecorder,
+	tenant *metadata.Tenant,
+	dk *dynatracev1alpha1.DynaKube,
+) *installAgentConfig {
 	return &installAgentConfig{
-		logger:    logger,
-		dtc:       dtc,
-		arch:      arch,
-		targetDir: targetDir,
-		fs:        afero.NewOsFs(),
+		logger:   logger,
+		dtc:      dtc,
+		path:     path,
+		fs:       fs,
+		recorder: recorder,
+		tenant:   tenant,
+		dk:       dk,
 	}
 }
 
-func installAgent(installAgentCfg *installAgentConfig) error {
+func (installAgentCfg *installAgentConfig) updateAgent() error {
+	tenant := installAgentCfg.tenant
+	dk := installAgentCfg.dk
+	logger := installAgentCfg.logger
+	currentVersion := installAgentCfg.getOneAgentVersionFromInstance()
+	targetDir := installAgentCfg.path.AgentBinaryDirForVersion(tenant.TenantUUID, currentVersion)
+
+	if _, err := os.Stat(targetDir); currentVersion != tenant.LatestVersion || os.IsNotExist(err) {
+		logger.Info("updating agent", "version", currentVersion, "previous version", tenant.LatestVersion)
+		tenant.LatestVersion = currentVersion
+
+		if err := installAgentCfg.installAgentVersion(); err != nil {
+			installAgentCfg.recorder.Eventf(dk,
+				corev1.EventTypeWarning,
+				failedInstallAgentVersionEvent,
+				"Failed to install agent version: %s to tenant: %s, err: %s", tenant.LatestVersion, tenant.TenantUUID, err)
+			return err
+		}
+		installAgentCfg.recorder.Eventf(dk,
+			corev1.EventTypeNormal,
+			installAgentVersionEvent,
+			"Installed agent version: %s to tenant: %s", currentVersion, tenant.TenantUUID)
+	}
+	return nil
+}
+
+func (installAgentCfg *installAgentConfig) getOneAgentVersionFromInstance() string {
+	dk := installAgentCfg.dk
+	currentVersion := dk.Status.LatestAgentVersionUnixPaas
+	if dk.Spec.CodeModules.OneAgentVersion != "" {
+		currentVersion = dk.Spec.CodeModules.OneAgentVersion
+	}
+	return currentVersion
+}
+
+func (installAgentCfg *installAgentConfig) installAgentVersion() error {
+	tenantUUID := installAgentCfg.tenant.TenantUUID
+	logger := installAgentCfg.logger
+	version := installAgentCfg.tenant.LatestVersion
+	targetDir := installAgentCfg.path.AgentBinaryDirForVersion(tenantUUID, version)
+
+	logger.Info("installing agent", "target dir", targetDir)
+	if err := installAgentCfg.installAgent(); err != nil {
+		_ = installAgentCfg.fs.RemoveAll(targetDir)
+
+		return fmt.Errorf("failed to install agent: %w", err)
+	}
+
+	return nil
+}
+
+func (installAgentCfg *installAgentConfig) installAgent() error {
 	logger := installAgentCfg.logger
 	dtc := installAgentCfg.dtc
-	arch := installAgentCfg.arch
 	fs := installAgentCfg.fs
+	version := installAgentCfg.tenant.LatestVersion
+
+	arch := dtclient.ArchX86
+	if runtime.GOARCH == "arm64" {
+		arch = dtclient.ArchARM
+	}
 
 	tmpFile, err := afero.TempFile(fs, "", "download")
 	if err != nil {
@@ -51,14 +124,19 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	}()
 
 	logger.Info("Downloading OneAgent package", "architecture", arch)
-	err = dtc.GetLatestAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch, tmpFile)
+	err = dtc.GetAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch, version, tmpFile)
+
 	if err != nil {
-		return fmt.Errorf("failed to fetch latest OneAgent version: %w", err)
+		availableVersions, getVersionsError := dtc.GetAgentVersions(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch)
+		if getVersionsError != nil {
+			return fmt.Errorf("failed to fetch OneAgent version: %w", err)
+		}
+		return fmt.Errorf("failed to fetch OneAgent version: %w, available versions are: %s", err, "\n[ "+strings.Join(availableVersions, ",\n")+" ]\n")
 	}
 	logger.Info("Saved OneAgent package", "dest", tmpFile.Name())
 
 	logger.Info("Unzipping OneAgent package")
-	if err := unzip(tmpFile, installAgentCfg); err != nil {
+	if err := installAgentCfg.unzip(tmpFile); err != nil {
 		return fmt.Errorf("failed to unzip file: %w", err)
 	}
 	logger.Info("Unzipped OneAgent package")
@@ -66,8 +144,9 @@ func installAgent(installAgentCfg *installAgentConfig) error {
 	return nil
 }
 
-func unzip(file afero.File, installAgentCfg *installAgentConfig) error {
-	target := installAgentCfg.targetDir
+func (installAgentCfg *installAgentConfig) unzip(file afero.File) error {
+	version := installAgentCfg.tenant.LatestVersion
+	target := installAgentCfg.path.AgentBinaryDirForVersion(installAgentCfg.tenant.TenantUUID, version)
 	fs := installAgentCfg.fs
 
 	if file == nil {

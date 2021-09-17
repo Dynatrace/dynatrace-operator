@@ -19,8 +19,6 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
-	"os"
-	"runtime"
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
@@ -29,7 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
-	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -44,6 +42,12 @@ import (
 const (
 	failedInstallAgentVersionEvent = "FailedInstallAgentVersion"
 	installAgentVersionEvent       = "InstallAgentVersion"
+)
+
+const (
+	defaultRequeueDuration = 5 * time.Minute
+	longRequeueDuration    = 30 * time.Minute
+	shortRequeueDuration   = 15 * time.Second
 )
 
 var log = logger.NewDTLogger().WithName("provisioner")
@@ -89,7 +93,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		if k8serrors.IsNotFound(err) {
 			tenant, _ := r.db.GetTenantViaDynakube(request.NamespacedName.Name)
 			if tenant != nil {
-				r.db.DeleteTenant(tenant.TenantUUID)
+				return reconcile.Result{}, r.db.DeleteTenant(tenant.TenantUUID)
 			}
 			return reconcile.Result{}, nil
 		}
@@ -97,12 +101,12 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 	if !hasCodeModulesWithCSIVolumeEnabled(dk) {
 		rlog.Info("Code modules or csi driver disabled")
-		return reconcile.Result{RequeueAfter: 30 * time.Minute}, nil
+		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
 	if dk.ConnectionInfo().TenantUUID == "" {
 		rlog.Info("DynaKube instance has not been reconciled yet and some values usually cached are missing, retrying in a few seconds")
-		return reconcile.Result{RequeueAfter: 15 * time.Second}, nil
+		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
 	dtc, err := buildDtc(r, ctx, dk)
 	if err != nil {
@@ -111,25 +115,32 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 
 	tenant, err := r.db.GetTenant(dk.ConnectionInfo().TenantUUID)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, errors.WithStack(err)
 	}
+
 	// Incase of a new tenant
 	if tenant == nil {
 		tenant = &metadata.Tenant{TenantUUID: dk.ConnectionInfo().TenantUUID}
 	}
+	rlog.Info("checking tenant", "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
 	oldTenant := *tenant
 
 	if err = r.createCSIDirectories(r.path.EnvDir(tenant.TenantUUID)); err != nil {
-		return reconcile.Result{}, err
+		rlog.Error(err, "error when creating csi directories", "path", r.path.EnvDir(tenant.TenantUUID))
+		return reconcile.Result{}, errors.WithStack(err)
 	}
 
+	rlog.Info("csi directories exist", "path", r.path.EnvDir(tenant.TenantUUID))
 	tenant.Dynakube = dk.Name
 
-	if err = r.updateAgent(dk, tenant, dtc, rlog); err != nil {
-		return reconcile.Result{}, err
+	installAgentCfg := newInstallAgentConfig(rlog, dtc, r.path, r.fs, r.recorder, tenant, dk)
+	if err = installAgentCfg.updateAgent(); err != nil {
+		rlog.Info("error when updating agent")
+		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
+		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 	}
 	if hasTenantChanged(oldTenant, *tenant) {
-		var err error
+		rlog.Info("tenant has changed", "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
 		// New tenants doesn't have these fields set in the beginning
 		if oldTenant.Dynakube == "" && oldTenant.LatestVersion == "" {
 			log.Info("Adding tenant:", "uuid", tenant.TenantUUID, "version", tenant.LatestVersion, "dynakube", tenant.Dynakube)
@@ -139,11 +150,11 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 			err = r.db.UpdateTenant(tenant)
 		}
 		if err != nil {
-			return reconcile.Result{}, err
+			return reconcile.Result{}, errors.WithStack(err)
 		}
 	}
 
-	return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
+	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 }
 
 func hasTenantChanged(old, new metadata.Tenant) bool {
@@ -169,46 +180,6 @@ func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.Namesp
 	err := r.client.Get(ctx, name, &dk)
 
 	return &dk, err
-}
-
-func (r *OneAgentProvisioner) updateAgent(dk *dynatracev1alpha1.DynaKube, tenant *metadata.Tenant, dtc dtclient.Client, logger logr.Logger) error {
-	currentVersion := dk.Status.LatestAgentVersionUnixPaas
-
-	if currentVersion != tenant.LatestVersion {
-		tenant.LatestVersion = currentVersion
-		if err := r.installAgentVersion(currentVersion, tenant.TenantUUID, dtc, logger); err != nil {
-			r.recorder.Eventf(dk,
-				corev1.EventTypeWarning,
-				failedInstallAgentVersionEvent,
-				"Failed to installed agent version: %s to tenant: %s, err: %s", currentVersion, tenant.TenantUUID, err)
-			return err
-		}
-		r.recorder.Eventf(dk,
-			corev1.EventTypeNormal,
-			installAgentVersionEvent,
-			"Installed agent version: %s to tenant: %s", currentVersion, tenant.TenantUUID)
-	}
-	return nil
-}
-
-func (r *OneAgentProvisioner) installAgentVersion(version string, tenantUUID string, dtc dtclient.Client, logger logr.Logger) error {
-	arch := dtclient.ArchX86
-	if runtime.GOARCH == "arm64" {
-		arch = dtclient.ArchARM
-	}
-
-	targetDir := r.path.AgentBinaryDirForVersion(tenantUUID, version)
-
-	if _, err := r.fs.Stat(targetDir); os.IsNotExist(err) {
-		installAgentCfg := newInstallAgentConfig(logger, dtc, arch, targetDir)
-
-		if err := installAgent(installAgentCfg); err != nil {
-			_ = r.fs.RemoveAll(targetDir)
-
-			return fmt.Errorf("failed to install agent: %w", err)
-		}
-	}
-	return nil
 }
 
 func (r *OneAgentProvisioner) createCSIDirectories(envDir string) error {

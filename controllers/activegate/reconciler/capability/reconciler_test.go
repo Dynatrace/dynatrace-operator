@@ -59,7 +59,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		return dtversion.ImageVersion{}, nil
 	}
 
-	r := NewReconciler(metricsCapability, clt, clt, scheme.Scheme, log, instance, imgVerProvider)
+	r := NewReconciler(metricsCapability, clt, clt, scheme.Scheme, nil, log, instance, imgVerProvider)
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.Instance)
@@ -175,7 +175,7 @@ func TestReconcile(t *testing.T) {
 
 func TestSetReadinessProbePort(t *testing.T) {
 	r := createDefaultReconciler(t)
-	stsProps := rsfs.NewStatefulSetProperties(r.Instance, metricsCapability.GetProperties(), "", "", "", "", "", nil, nil, nil)
+	stsProps := rsfs.NewStatefulSetProperties(r.Instance, metricsCapability.GetProperties(), "", "", "", "", "", "", "", nil, nil, nil)
 	sts, err := rsfs.CreateStatefulSet(stsProps)
 
 	assert.NoError(t, err)

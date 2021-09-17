@@ -48,7 +48,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 
 	capability.NewRoutingCapability(&instance.Spec.RoutingSpec.CapabilityProperties, nil)
 
-	r := NewReconciler(clt, clt, scheme.Scheme, log, instance, imgVerProvider,
+	r := NewReconciler(clt, clt, scheme.Scheme, nil, log, instance, imgVerProvider,
 		capability.NewRoutingCapability(&instance.Spec.RoutingSpec.CapabilityProperties, nil))
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)

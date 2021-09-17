@@ -55,40 +55,46 @@ type ClassicFullStack struct {
 }
 
 type builderInfo struct {
-	instance       *v1alpha1.DynaKube
-	fullstackSpec  *v1alpha1.FullStackSpec
-	logger         logr.Logger
-	clusterId      string
-	relatedImage   string
-	deploymentType string
+	instance               *v1alpha1.DynaKube
+	fullstackSpec          *v1alpha1.FullStackSpec
+	logger                 logr.Logger
+	clusterId              string
+	relatedImage           string
+	deploymentType         string
+	minorKubernetesVersion string
+	majorKubernetesVersion string
 }
 
 type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewInfraMonitoring(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string) Builder {
+func NewInfraMonitoring(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
 	return &InfraMonitoring{
 		builderInfo{
-			instance:       instance,
-			fullstackSpec:  &instance.Spec.InfraMonitoring.FullStackSpec,
-			logger:         logger,
-			clusterId:      clusterId,
-			relatedImage:   os.Getenv(relatedImageEnvVar),
-			deploymentType: deploymentmetadata.DeploymentTypeHM,
+			instance:               instance,
+			fullstackSpec:          &instance.Spec.InfraMonitoring.FullStackSpec,
+			logger:                 logger,
+			clusterId:              clusterId,
+			relatedImage:           os.Getenv(relatedImageEnvVar),
+			deploymentType:         deploymentmetadata.DeploymentTypeHM,
+			majorKubernetesVersion: majorKubernetesVersion,
+			minorKubernetesVersion: minorKubernetesVersion,
 		},
 	}
 }
 
-func NewClassicFullStack(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string) Builder {
+func NewClassicFullStack(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
 	return &ClassicFullStack{
 		builderInfo{
-			instance:       instance,
-			fullstackSpec:  &instance.Spec.ClassicFullStack,
-			logger:         logger,
-			clusterId:      clusterId,
-			relatedImage:   os.Getenv(relatedImageEnvVar),
-			deploymentType: deploymentmetadata.DeploymentTypeFS,
+			instance:               instance,
+			fullstackSpec:          &instance.Spec.ClassicFullStack,
+			logger:                 logger,
+			clusterId:              clusterId,
+			relatedImage:           os.Getenv(relatedImageEnvVar),
+			deploymentType:         deploymentmetadata.DeploymentTypeFS,
+			majorKubernetesVersion: majorKubernetesVersion,
+			minorKubernetesVersion: minorKubernetesVersion,
 		},
 	}
 }
