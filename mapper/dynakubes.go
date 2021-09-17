@@ -36,7 +36,7 @@ func (dm DynakubeMapper) MapFromDynakube() error {
 		return errors.Cause(err)
 	}
 
-	return dm.checkDynakubes(nsList, dkList)
+	return dm.mapFromDynakube(nsList, dkList)
 }
 
 func (dm DynakubeMapper) UnmapFromDynaKube() error {
@@ -48,7 +48,7 @@ func (dm DynakubeMapper) UnmapFromDynaKube() error {
 	}
 	for _, ns := range nsList {
 		delete(ns.Labels, InstanceLabel)
-		setUpdatedByDynakubeAnnotation(&ns)
+		setUpdatedViaDynakubeAnnotation(&ns)
 		if err := dm.client.Update(dm.ctx, &ns); err != nil {
 			return errors.WithMessagef(err, "failed to remove label %s from namespace %s", InstanceLabel, ns.Name)
 		}
@@ -56,7 +56,7 @@ func (dm DynakubeMapper) UnmapFromDynaKube() error {
 	return nil
 }
 
-func (dm DynakubeMapper) checkDynakubes(nsList *corev1.NamespaceList, dkList *dynatracev1alpha1.DynaKubeList) error {
+func (dm DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *dynatracev1alpha1.DynaKubeList) error {
 	var updated bool
 	var err error
 	var modifiedNs []*corev1.Namespace
@@ -80,7 +80,7 @@ func (dm DynakubeMapper) checkDynakubes(nsList *corev1.NamespaceList, dkList *dy
 
 	}
 	for _, ns := range modifiedNs {
-		setUpdatedByDynakubeAnnotation(ns)
+		setUpdatedViaDynakubeAnnotation(ns)
 		if err := dm.client.Update(dm.ctx, ns); err != nil {
 			return err
 		}

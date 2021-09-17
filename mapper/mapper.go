@@ -51,13 +51,15 @@ func addNamespaceInjectLabel(dkName string, ns *corev1.Namespace) {
 	ns.Labels[InstanceLabel] = dkName
 }
 
-func setUpdatedByDynakubeAnnotation(ns *corev1.Namespace) {
+func setUpdatedViaDynakubeAnnotation(ns *corev1.Namespace) {
 	if ns.Annotations == nil {
 		ns.Annotations = make(map[string]string)
 	}
 	ns.Annotations[UpdatedViaDynakubeAnnotation] = "true"
 }
 
+// match uses the namespace selector in the dynakube to check if it matches a given namespace
+// if the namspace selector is not set on the dynakube its an automatic match
 func match(dk *dynatracev1alpha1.DynaKube, namespace *corev1.Namespace) (bool, error) {
 	matches := false
 	if dk.Spec.MonitoredNamespaces == nil {
@@ -74,6 +76,7 @@ func match(dk *dynatracev1alpha1.DynaKube, namespace *corev1.Namespace) (bool, e
 
 // updateNamespace tries to match the namespace to every dynakube with codeModules
 // finds conflicting dynakubes(2 dynakube with codeModules on the same namespace)
+// adds/updates/removes labels from the namespace.
 func updateNamespace(namespace *corev1.Namespace, dkList *dynatracev1alpha1.DynaKubeList) (bool, error) {
 	var updated bool
 	conflict := ConflictChecker{}
