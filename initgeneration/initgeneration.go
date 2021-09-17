@@ -171,7 +171,7 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1alpha1.DynaKube,
 // Possible mappings:
 // - mapped: there is a infra-monitoring agent on the node, and the dynakube has the tenantUID set => user processes will be grouped to the hosts  (["node.Name"] = "dynakube.tenantUID")
 // - not-mapped: there is NO infra-monitoring agent on the node => user processes will show up as individual 'fake' hosts (["node.Name"] = "-")
-// - unknown: there SHOULD be a infra-monitoring agent on the node, but dynakube has the NO tenantUID set => user processes will restart until this is fixed (node.Name not present in the map)
+// - unknown: there SHOULD be a infra-monitoring agent on the node, but dynakube has NO tenantUID set => user processes will restart until this is fixed (node.Name not present in the map)
 //
 // Checks all the dynakubes with infra-monitoring against all the nodes (using the nodeSelector), creating the above mentioned mapping.
 func (g *InitGenerator) getInfraMonitoringNodes(dk *dynatracev1alpha1.DynaKube) (map[string]string, error) {
@@ -201,7 +201,7 @@ func (g *InitGenerator) getInfraMonitoringNodes(dk *dynatracev1alpha1.DynaKube) 
 				if nodeSelector.Matches(nodeLabels) {
 					if tenantUUID != "" {
 						imNodes[node.Name] = tenantUUID
-					} else {
+					} else if !dk.FeatureIgnoreUnknownState() {
 						delete(imNodes, node.Name)
 					}
 				}
