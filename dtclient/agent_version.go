@@ -77,7 +77,11 @@ func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch strin
 
 	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest?bitness=64&flavor=%s&arch=%s",
 		dtc.url, os, installerType, flavor, arch)
-	return dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
+	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
+	if err == nil {
+		dtc.logger.Info("Downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "md5", md5)
+	}
+	return err
 }
 
 func (dtc *dynatraceClient) GetAgentVersions(os, installerType, flavor, arch string) ([]string, error) {
@@ -105,7 +109,11 @@ func (dtc *dynatraceClient) GetAgent(os, installerType, flavor, arch, version st
 	}
 
 	url := dtc.getAgentUrl(os, installerType, flavor, arch, version)
-	return dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
+	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
+	if err == nil {
+		dtc.logger.Info("Downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "md5", md5)
+	}
+	return err
 }
 
 func (dtc *dynatraceClient) getAgentUrl(os, installerType, flavor, arch, version string) string {
