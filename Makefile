@@ -23,8 +23,8 @@ endif
 endif
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true, preserveUnknownFields=false, crdVersions=v1"
-CRD_OPTIONS_OCP311 ?= "crd:trivialVersions=true, preserveUnknownFields=false, crdVersions=v1beta1"
+CRD_OPTIONS ?= "crd:preserveUnknownFields=false, crdVersions=v1"
+CRD_OPTIONS_OCP311 ?= "crd:preserveUnknownFields=false, crdVersions=v1beta1"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -98,7 +98,7 @@ deploy: manifests kustomize
 	cd config/deploy && $(KUSTOMIZE) create
 	cd config/deploy && $(KUSTOMIZE) edit add base ../kubernetes
 	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
-	$(KUSTOMIZE) build config/deploy | kubectl apply -f -
+	$(KUSTOMIZE) build config/deploy | kubectl create -f -
 
 # Deploy controller in the configured OpenShift cluster in ~/.kube/config
 deploy-ocp: manifests kustomize

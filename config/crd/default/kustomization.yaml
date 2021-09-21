@@ -1,2 +1,7 @@
 resources:
-  - bases/dynatrace.com_dynakubes.yaml
+- bases/dynatrace.com_dynakubes.yaml
+#+kubebuilder:scaffold:crdkustomizeresource
+
+patchesStrategicMerge:
+- patches/webhook_in_dynakubes.yaml
+#+kubebuilder:scaffold:crdkustomizewebhookpatch
