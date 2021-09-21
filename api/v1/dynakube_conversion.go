@@ -9,27 +9,19 @@ import (
 var log = logf.Log.WithName("dynakube-conversion")
 
 func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
+	log.Info("Convert to called")
 	dst := dstRaw.(*v1alpha1.DynaKube)
 	dst.ObjectMeta = src.ObjectMeta
 	dst.Spec = src.Spec
-	log.Info("Convert to called")
-	if dst.Annotations == nil {
-		dst.Annotations = map[string]string{}
-	}
-	dst.Annotations["CONVERT/TO"] = src.APIVersion
-
+	dst.Status = src.Status
 	return nil
 }
 
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
+	log.Info("Convert from from")
 	src := srcRaw.(*v1alpha1.DynaKube)
 	dst.ObjectMeta = src.ObjectMeta
 	dst.Spec = src.Spec
-	log.Info("Convert from called")
-	if dst.Annotations == nil {
-		dst.Annotations = map[string]string{}
-	}
-	dst.Annotations["CONVERT/FROM"] = src.APIVersion
-
+	dst.Status = src.Status
 	return nil
 }
