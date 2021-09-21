@@ -19,8 +19,14 @@ spec:
       kind: DynaKube
       name: dynakubes.dynatrace.com
       resources:
+      - kind: DaemonSet
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
       - kind: StatefulSet
-        name: apps
+        name: ""
         version: v1
       specDescriptors:
       - description: Location of the Dynatrace API to connect to, including your specific
@@ -41,16 +47,67 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - displayName: Proxy value
-        path: proxy.value
+      - description: 'Optional: Adds custom RootCAs from a configmap This property
+          only affects certificates used to communicate with the Dynatrace API. The
+          property is not applied to the ActiveGate'
+        displayName: Trusted CAs
+        path: trustedCAs
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:ConfigMap
+      - description: 'Optional: Sets Network Zone for OneAgent and ActiveGate pods'
+        displayName: Network Zone
+        path: networkZone
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
-      - displayName: Proxy from secret
-        path: proxy.valueFrom
+      - description: 'Optional: Pull secret for your private registry'
+        displayName: Custom PullSecret
+        path: customPullSecret
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: If enabled, Istio on the cluster will be configured automatically
+          to allow access to the Dynatrace environment
+        displayName: Enable Istio automatic management
+        path: enableIstio
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      version: v1
+    - description: DynaKube is the Schema for the DynaKube API
+      displayName: Dynatrace DynaKube
+      kind: DynaKube
+      name: dynakubes.dynatrace.com
+      resources:
+      - kind: DaemonSet
+        name: ""
+        version: v1
+      - kind: Pod
+        name: ""
+        version: v1
+      - kind: StatefulSet
+        name: ""
+        version: v1
+      specDescriptors:
+      - description: Location of the Dynatrace API to connect to, including your specific
+          environment ID
+        displayName: API URL
+        path: apiUrl
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: Credentials for the DynaKube to connect back to Dynatrace.
+        displayName: API and PaaS Tokens
+        path: tokens
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Disable certificate validation checks for installer download
+          and API communication
+        displayName: Skip Certificate Check
+        path: skipCertCheck
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: 'Optional: Adds custom RootCAs from a configmap This property
           only affects certificates used to communicate with the Dynatrace API. The
           property is not applied to the ActiveGate'
@@ -83,6 +140,14 @@ spec:
           Dynatrace environment set as API URL.'
         displayName: Image
         path: activeGate.image
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: the name of a secret containing ActiveGate TLS cert+key
+          and password. If not set, self-signed certificate is used. server.p12: certificate+key
+          pair in pkcs12 format password: passphrase to read server.p12'
+        displayName: TlsSecretName
+        path: activeGate.tlsSecretName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
@@ -222,6 +287,13 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:ServiceAccount
+      - description: 'Optional: name of the ServiceAccount to assign to the CSIDriver
+          Pods'
+        displayName: Service Account name for CSI Driver
+        path: codeModules.serviceAccountNameCSIDriver
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:ServiceAccount
       - description: 'Optional: set custom Service Account Name used with OneAgent
           pods'
         displayName: Service Account name
@@ -232,6 +304,15 @@ spec:
       - description: 'Optional: Adds additional labels for the OneAgent pods'
         displayName: Labels
         path: classicFullStack.labels
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: specify which agent version should be injected into
+          pods Must be the exact version in the form of "major.minor.patch.build",
+          for example " 1.227.0.20210909-223330" The CSI-drivers log output will print
+          available versions if an invalid one is provided'
+        displayName: OneAgent version
+        path: codeModules.oneAgentVersion
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
@@ -261,19 +342,71 @@ spec:
         path: infraMonitoring.useImmutableImage
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
-      - description: Enables Kubernetes Monitoring
-        displayName: Kubernetes Monitoring
+      - description: Enables Capability
+        displayName: Capability
+        path: dataIngest.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
+      - description: 'Optional: Enable support for read only host-filesystems. Defaults
+          to false'
+        displayName: Enable support for read-only host-filesystem
+        path: infraMonitoring.readOnly.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Enables Capability
+        displayName: Capability
         path: kubernetesMonitoring.enabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
+      - description: Enables Capability
+        displayName: Capability
+        path: routing.enabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch
+      - description: Amount of replicas for your DynaKube
+        displayName: Replicas
+        path: dataIngest.replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: Used if read-only filesystem support is enabled. Determines the
+          volume to which the installation files are stored during installation of
+          the OneAgent Defaults to an empty-dir
+        displayName: Installation volume
+        path: infraMonitoring.readOnly.installationVolume
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:Volume
       - description: Amount of replicas for your DynaKube
         displayName: Replicas
         path: kubernetesMonitoring.replicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: Amount of replicas for your DynaKube
+        displayName: Replicas
+        path: routing.replicas
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: 'Optional: Set activation group for ActiveGate'
+        displayName: Activation group
+        path: dataIngest.group
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
       - description: 'Optional: Set activation group for ActiveGate'
         displayName: Activation group
         path: kubernetesMonitoring.group
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: Set activation group for ActiveGate'
+        displayName: Activation group
+        path: routing.group
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - displayName: Custom properties value
+        path: dataIngest.customProperties.value
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
@@ -282,11 +415,33 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
+      - displayName: Custom properties value
+        path: routing.customProperties.value
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - displayName: Custom properties secret
+        path: dataIngest.customProperties.valueFrom
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:Secret
       - displayName: Custom properties secret
         path: kubernetesMonitoring.customProperties.valueFrom
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:Secret
+      - displayName: Custom properties secret
+        path: routing.customProperties.valueFrom
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:Secret
+      - description: 'Optional: define resources requests and limits for single ActiveGate
+          pods'
+        displayName: Resource Requirements
+        path: dataIngest.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
       - description: 'Optional: define resources requests and limits for single ActiveGate
           pods'
         displayName: Resource Requirements
@@ -294,26 +449,85 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: 'Optional: define resources requests and limits for single ActiveGate
+          pods'
+        displayName: Resource Requirements
+        path: routing.resources
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: 'Optional: Node selector to control the selection of nodes'
+        displayName: Node Selector
+        path: dataIngest.nodeSelector
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:Node
       - description: 'Optional: Node selector to control the selection of nodes'
         displayName: Node Selector
         path: kubernetesMonitoring.nodeSelector
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:selector:Node
+      - description: 'Optional: Node selector to control the selection of nodes'
+        displayName: Node Selector
+        path: routing.nodeSelector
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:selector:Node
+      - description: 'Optional: set tolerations for the ActiveGatePods pods'
+        displayName: Tolerations
+        path: dataIngest.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: 'Optional: set tolerations for the ActiveGatePods pods'
         displayName: Tolerations
         path: kubernetesMonitoring.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: set tolerations for the ActiveGatePods pods'
+        displayName: Tolerations
+        path: routing.tolerations
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: Adds additional labels for the ActiveGate pods'
+        displayName: Labels
+        path: dataIngest.labels
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
       - description: 'Optional: Adds additional labels for the ActiveGate pods'
         displayName: Labels
         path: kubernetesMonitoring.labels
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: Adds additional labels for the ActiveGate pods'
+        displayName: Labels
+        path: routing.labels
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: 'Optional: Adds additional arguments for the ActiveGate instances'
+        displayName: Arguments
+        path: dataIngest.args
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: 'Optional: Adds additional arguments for the ActiveGate instances'
         displayName: Arguments
         path: kubernetesMonitoring.args
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: Adds additional arguments for the ActiveGate instances'
+        displayName: Arguments
+        path: routing.args
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: List of environment variables to set for the ActiveGate'
+        displayName: Environment variables
+        path: dataIngest.env
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
@@ -323,6 +537,19 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: List of environment variables to set for the ActiveGate'
+        displayName: Environment variables
+        path: routing.env
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: 'Optional: set custom Service Account Name used with ActiveGate
+          pods'
+        displayName: Service Account name
+        path: dataIngest.serviceAccountName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:ServiceAccount
       - description: 'Optional: set custom Service Account Name used with ActiveGate
           pods'
         displayName: Service Account name
@@ -330,17 +557,13 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:io.kubernetes:ServiceAccount
-      statusDescriptors:
-      - description: Dynatrace version being used.
-        displayName: Version
-        path: oneAgent.version
+      - description: 'Optional: set custom Service Account Name used with ActiveGate
+          pods'
+        displayName: Service Account name
+        path: routing.serviceAccountName
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: UpdatedTimestamp indicates when the instance was last updated
-        displayName: Last Updated
-        path: updatedTimestamp
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+        - urn:alm:descriptor:io.kubernetes:ServiceAccount
       version: v1alpha1
   description: |
     The Dynatrace Operator supports rollout and lifecycle of various Dynatrace components in Kubernetes and OpenShift.
