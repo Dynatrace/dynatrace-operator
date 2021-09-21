@@ -2,10 +2,10 @@ package dtclient
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
-	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 // GetLatestAgentVersion gets the latest agent version for the given OS and installer type.
@@ -77,22 +77,46 @@ func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch strin
 
 	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest?bitness=64&flavor=%s&arch=%s",
 		dtc.url, os, installerType, flavor, arch)
-
-	resp, err := dtc.makeRequest(url, dynatracePaaSToken)
-	if err != nil {
-		return err
+	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
+	if err == nil {
+		dtc.logger.Info("Downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "md5", md5)
 	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		var errorResponse serverErrorResponse
-		err = json.NewDecoder(resp.Body).Decode(&errorResponse)
-		if err != nil {
-			return err
-		}
-		return fmt.Errorf("http code %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
-	}
-
-	_, err = io.Copy(writer, resp.Body)
 	return err
+}
+
+func (dtc *dynatraceClient) GetAgentVersions(os, installerType, flavor, arch string) ([]string, error) {
+	response := struct {
+		AvailableVersions []string `json:"availableVersions"`
+	}{}
+
+	if len(os) == 0 || len(installerType) == 0 {
+		return nil, errors.New("os or installerType is empty")
+	}
+
+	url := dtc.getAgentVersionsUrl(os, installerType, flavor, arch)
+	err := dtc.makeRequestAndUnmarshal(url, dynatracePaaSToken, &response)
+	return response.AvailableVersions, errors.WithStack(err)
+}
+
+func (dtc *dynatraceClient) getAgentVersionsUrl(os string, installerType string, flavor string, arch string) string {
+	return fmt.Sprintf("%s/v1/deployment/installer/agent/versions/%s/%s?flavor=%s&arch=%s",
+		dtc.url, os, installerType, flavor, arch)
+}
+
+func (dtc *dynatraceClient) GetAgent(os, installerType, flavor, arch, version string, writer io.Writer) error {
+	if len(os) == 0 || len(installerType) == 0 {
+		return errors.New("os or installerType is empty")
+	}
+
+	url := dtc.getAgentUrl(os, installerType, flavor, arch, version)
+	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
+	if err == nil {
+		dtc.logger.Info("Downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "md5", md5)
+	}
+	return err
+}
+
+func (dtc *dynatraceClient) getAgentUrl(os, installerType, flavor, arch, version string) string {
+	return fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/version/%s?flavor=%s&arch=%s&bitness=64",
+		dtc.url, os, installerType, version, flavor, arch)
 }

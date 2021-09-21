@@ -41,6 +41,8 @@ type statefulSetProperties struct {
 	feature                 string
 	capabilityName          string
 	serviceAccountOwner     string
+	majorKubernetesVersion  string
+	minorKubernetesVersion  string
 	OnAfterCreateListener   []events.StatefulSetEvent
 	initContainersTemplates []corev1.Container
 	containerVolumeMounts   []corev1.VolumeMount
@@ -49,7 +51,8 @@ type statefulSetProperties struct {
 
 func NewStatefulSetProperties(instance *dynatracev1alpha1.DynaKube, capabilityProperties *dynatracev1alpha1.CapabilityProperties,
 	kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string,
-	initContainers []corev1.Container, containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume) *statefulSetProperties {
+	majorKubernetesVersion string, minorKubernetesVersion string, initContainers []corev1.Container,
+	containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume) *statefulSetProperties {
 	if serviceAccountOwner == "" {
 		serviceAccountOwner = feature
 	}
@@ -62,6 +65,8 @@ func NewStatefulSetProperties(instance *dynatracev1alpha1.DynaKube, capabilityPr
 		feature:                 feature,
 		capabilityName:          capabilityName,
 		serviceAccountOwner:     serviceAccountOwner,
+		majorKubernetesVersion:  majorKubernetesVersion,
+		minorKubernetesVersion:  minorKubernetesVersion,
 		OnAfterCreateListener:   []events.StatefulSetEvent{},
 		initContainersTemplates: initContainers,
 		containerVolumeMounts:   containerVolumeMounts,
@@ -112,14 +117,9 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 		InitContainers:     buildInitContainers(stsProperties),
 		NodeSelector:       stsProperties.NodeSelector,
 		ServiceAccountName: determineServiceAccountName(stsProperties),
-		Affinity: &corev1.Affinity{
-			NodeAffinity: &corev1.NodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					NodeSelectorTerms: []corev1.NodeSelectorTerm{
-						{MatchExpressions: kubeobjects.AffinityNodeRequirement()},
-					}}}},
-		Tolerations: stsProperties.Tolerations,
-		Volumes:     buildVolumes(stsProperties),
+		Affinity:           affinity(stsProperties),
+		Tolerations:        stsProperties.Tolerations,
+		Volumes:            buildVolumes(stsProperties),
 		ImagePullSecrets: []corev1.LocalObjectReference{
 			{Name: stsProperties.PullSecret()},
 		},

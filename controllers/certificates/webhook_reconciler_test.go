@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -148,6 +149,19 @@ func prepareFakeClient(withSecret bool, generateValidSecret bool) client.Client 
 			Webhooks: []admissionregistrationv1.ValidatingWebhook{
 				{
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+			},
+		},
+		&apiv1.CustomResourceDefinition{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: crdName,
+			},
+			Spec: apiv1.CustomResourceDefinitionSpec{
+				Conversion: &apiv1.CustomResourceConversion{
+					Strategy: "webhook",
+					Webhook: &apiv1.WebhookConversion{
+						ClientConfig: &apiv1.WebhookClientConfig{},
+					},
 				},
 			},
 		},

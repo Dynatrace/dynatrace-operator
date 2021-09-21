@@ -3,6 +3,7 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -16,9 +17,11 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -54,7 +57,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`dynakube deleted`, func(t *testing.T) {
 		db := metadata.FakeMemoryDB()
 		tenant := metadata.Tenant{TenantUUID: tenantUUID, LatestVersion: agentVersion, Dynakube: dkName}
-		db.InsertTenant(&tenant)
+		_ = db.InsertTenant(&tenant)
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(),
 			db:     db,
@@ -239,9 +242,16 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: tenantUUID,
 		}, nil)
-		mockClient.On("GetLatestAgentVersion",
+		mockClient.On("GetAgent",
 			mock.AnythingOfType("string"),
-			mock.AnythingOfType("string")).Return("", fmt.Errorf(errorMsg))
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("*mem.File")).Return(fmt.Errorf(errorMsg))
+		mockClient.
+			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, mock.AnythingOfType("string")).
+			Return(make([]string, 0), fmt.Errorf(errorMsg))
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
 				&v1alpha1.DynaKube{
@@ -266,11 +276,16 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(rtc client.Client, instance *v1alpha1.DynaKube, secret *v1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			fs: memFs,
-			db: metadata.FakeMemoryDB(),
+			fs:       memFs,
+			db:       metadata.FakeMemoryDB(),
+			recorder: &record.FakeRecorder{},
 		}
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
+
+		// "go test" breaks if the output does not end with a newline
+		// making sure one is printed here
+		log.Info("")
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, result)
@@ -326,7 +341,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`correct directories are created`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		memDB := metadata.FakeMemoryDB()
-		memDB.InsertTenant(metadata.NewTenant(tenantUUID, agentVersion, dkName))
+		err := memDB.InsertTenant(metadata.NewTenant(tenantUUID, agentVersion, dkName))
+		require.NoError(t, err)
+
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: tenantUUID,
@@ -334,6 +351,19 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		mockClient.On("GetLatestAgentVersion",
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return(agentVersion, nil)
+		mockClient.
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
+			Run(func(args mock.Arguments) {
+				writer := args.Get(5).(io.Writer)
+
+				zipFile := setupTestZip(t, memFs)
+				defer func() { _ = zipFile.Close() }()
+
+				_, err := io.Copy(writer, zipFile)
+				require.NoError(t, err)
+			}).
+			Return(nil)
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
 				&v1alpha1.DynaKube{
@@ -359,8 +389,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(rtc client.Client, instance *v1alpha1.DynaKube, secret *v1.Secret) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			fs: memFs,
-			db: memDB,
+			fs:       memFs,
+			db:       memDB,
+			recorder: &record.FakeRecorder{},
 		}
 
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})

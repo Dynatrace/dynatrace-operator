@@ -222,7 +222,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 
 	if dkState.Instance.Spec.InfraMonitoring.Enabled {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, dkState.Log, dkState.Instance, &dkState.Instance.Spec.InfraMonitoring.FullStackSpec, daemonset.InframonFeature,
+			r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, &dkState.Instance.Spec.InfraMonitoring.FullStackSpec, daemonset.InframonFeature,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
 			return
@@ -236,7 +236,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 
 	if dkState.Instance.Spec.ClassicFullStack.Enabled {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, dkState.Log, dkState.Instance, &dkState.Instance.Spec.ClassicFullStack, daemonset.ClassicFeature,
+			r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, &dkState.Instance.Spec.ClassicFullStack, daemonset.ClassicFeature,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "classic fullstack reconciled") {
 			return
@@ -278,7 +278,7 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers
 	for _, c := range caps {
 		if c.GetProperties().Enabled {
 			upd, err := rcap.NewReconciler(
-				c, r.client, r.apiReader, r.scheme, dkState.Log, dkState.Instance, dtversion.GetImageVersion,
+				c, r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, dtversion.GetImageVersion,
 			).Reconcile()
 			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, c.GetModuleName()+" reconciled") {
 				return false

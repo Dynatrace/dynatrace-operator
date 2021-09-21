@@ -12,10 +12,12 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -26,13 +28,14 @@ import (
 const (
 	SuccessDuration = 3 * time.Hour
 
+	crdName                      = "dynakubes.dynatrace.com"
 	secretPostfix                = "-certs"
 	errorCertificatesSecretEmpty = "certificates secret is empty"
 )
 
 func Add(mgr manager.Manager, ns string) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.Deployment{}).
+		For(&appsv1.Deployment{}).
 		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, ns)).
 		Complete(newWebhookReconciler(mgr))
 }
@@ -94,7 +97,7 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 	}
 
 	isWebhookCertificateValid := r.checkMutatingWebhookConfigurations(
-		mutatingWebhookConfiguration, validatingWebhookConfiguration, certs.Data[ServerCert])
+		mutatingWebhookConfiguration, validatingWebhookConfiguration, certs.Data[RootCert])
 
 	isSecretOutdated := false
 	if !reflect.DeepEqual(certs.Data, secret.Data) {
@@ -112,7 +115,6 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 			return reconcile.Result{}, err
 		}
 	}
-
 	err = r.updateWebhookConfigurations(ctx, secret, mutatingWebhookConfiguration, validatingWebhookConfiguration)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -157,7 +159,9 @@ func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.C
 		}
 	}
 
-	// update webhook configurations
+	if err := r.updateCRDConfiguration(ctx, secret); err != nil {
+		return err
+	}
 	if err := r.client.Update(ctx, mutatingWebhookConfiguration); err != nil {
 		return err
 	}
@@ -251,6 +255,33 @@ func (r *ReconcileWebhookCertificates) updateConfiguration(
 
 	if webhookConfiguration != nil {
 		webhookConfiguration.CABundle = data
+	}
+	return nil
+}
+
+func (r *ReconcileWebhookCertificates) updateCRDConfiguration(ctx context.Context, secret *corev1.Secret) error {
+
+	var crd apiv1.CustomResourceDefinition
+	if err := r.client.Get(ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
+		return err
+	}
+
+	data, hasData := secret.Data[RootCert]
+	if !hasData {
+		return errors.New(errorCertificatesSecretEmpty)
+	}
+
+	if oldData, hasOldData := secret.Data[RootCertOld]; hasOldData {
+		data = append(data, oldData...)
+	}
+
+	if crd.Spec.Conversion.Webhook.ClientConfig != nil {
+		crd.Spec.Conversion.Webhook.ClientConfig.CABundle = data
+	}
+
+	// update crd
+	if err := r.client.Update(ctx, &crd); err != nil {
+		return err
 	}
 	return nil
 }

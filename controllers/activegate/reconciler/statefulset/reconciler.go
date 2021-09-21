@@ -19,6 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -38,9 +39,10 @@ type Reconciler struct {
 	initContainersTemplates          []corev1.Container
 	containerVolumeMounts            []corev1.VolumeMount
 	volumes                          []corev1.Volume
+	versionProvider                  kubesystem.VersionProvider
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, log logr.Logger,
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, log logr.Logger,
 	instance *v1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, capability capability.Capability) *Reconciler {
 
 	serviceAccountOwner := capability.GetConfiguration().ServiceAccountOwner
@@ -63,6 +65,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		initContainersTemplates:          capability.GetInitContainersTemplates(),
 		containerVolumeMounts:            capability.GetContainerVolumeMounts(),
 		volumes:                          capability.GetVolumes(),
+		versionProvider:                  kubesystem.NewVersionProvider(config),
 	}
 }
 
@@ -128,8 +131,19 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 		return nil, errors.WithStack(err)
 	}
 
+	major, err := r.versionProvider.Major()
+	if err != nil {
+		r.log.Info("could not get major kubernetes version", "error", err)
+	}
+
+	minor, err := r.versionProvider.Minor()
+	if err != nil {
+		r.log.Info("could not get minor kubernetes version", "error", err)
+	}
+
 	stsProperties := NewStatefulSetProperties(
-		r.Instance, r.capability, kubeUID, cpHash, r.feature, r.capabilityName, r.serviceAccountOwner, r.initContainersTemplates, r.containerVolumeMounts, r.volumes)
+		r.Instance, r.capability, kubeUID, cpHash, r.feature, r.capabilityName, r.serviceAccountOwner,
+		major, minor, r.initContainersTemplates, r.containerVolumeMounts, r.volumes)
 	stsProperties.OnAfterCreateListener = r.onAfterStatefulSetCreateListener
 
 	desiredSts, err := CreateStatefulSet(stsProperties)

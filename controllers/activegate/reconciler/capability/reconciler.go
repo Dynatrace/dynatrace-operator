@@ -17,6 +17,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -32,10 +33,10 @@ type Reconciler struct {
 	capability.Capability
 }
 
-func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, log logr.Logger,
+func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, log logr.Logger,
 	instance *dynatracev1alpha1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
 	baseReconciler := sts.NewReconciler(
-		clt, apiReader, scheme, log, instance, imageVersionProvider, capability)
+		clt, apiReader, scheme, config, log, instance, imageVersionProvider, capability)
 
 	if capability.GetConfiguration().SetDnsEntryPoint {
 		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.GetModuleName()))

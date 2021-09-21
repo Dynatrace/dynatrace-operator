@@ -17,6 +17,8 @@ limitations under the License.
 package main
 
 import (
+	v1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/Dynatrace/dynatrace-operator/webhook/mutation"
 	"github.com/spf13/pflag"
@@ -51,6 +53,14 @@ func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, func(), e
 	}
 
 	if err := mutation.AddPodMutationWebhookToManager(mgr, ns); err != nil {
+		return nil, cleanUp, err
+	}
+
+	if err := (&v1alpha1.DynaKube{}).SetupWebhookWithManager(mgr); err != nil {
+		return nil, cleanUp, err
+	}
+
+	if err := (&v1.DynaKube{}).SetupWebhookWithManager(mgr); err != nil {
 		return nil, cleanUp, err
 	}
 

@@ -30,6 +30,20 @@ const (
 	testClusterID = "test-cluster-id"
 )
 
+type fakeVersionProvider struct {
+	mock.Mock
+}
+
+func (f *fakeVersionProvider) Major() (string, error) {
+	args := f.Called()
+	return args.Get(0).(string), args.Error(1)
+}
+
+func (f *fakeVersionProvider) Minor() (string, error) {
+	args := f.Called()
+	return args.Get(0).(string), args.Error(1)
+}
+
 var consoleLogger = zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout))
 
 var sampleKubeSystemNS = &corev1.Namespace{
@@ -265,7 +279,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	t.Run(`reconileImp Instances set, if autoUpdate is true`, func(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Status.OneAgent.Version = oldVersion
-		dsInfo := daemonset.NewClassicFullStack(dk, consoleLogger, testClusterID)
+		dsInfo := daemonset.NewClassicFullStack(dk, consoleLogger, testClusterID, "", "")
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -299,7 +313,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		autoUpdate := false
 		dk.Spec.OneAgent.AutoUpdate = &autoUpdate
 		dk.Status.OneAgent.Version = oldVersion
-		dsInfo := daemonset.NewClassicFullStack(dk, consoleLogger, testClusterID)
+		dsInfo := daemonset.NewClassicFullStack(dk, consoleLogger, testClusterID, "", "")
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -464,13 +478,17 @@ func TestHasSpecChanged(t *testing.T) {
 
 func TestNewDaemonset_Affinity(t *testing.T) {
 	t.Run(`adds correct affinities`, func(t *testing.T) {
+		versionProvider := &fakeVersionProvider{}
 		r := ReconcileOneAgent{
-			feature: daemonset.InframonFeature,
+			versionProvider: versionProvider,
+			feature:         daemonset.InframonFeature,
 		}
 		dkState := &controllers.DynakubeState{
 			Instance: newDynaKube(),
 			Log:      consoleLogger,
 		}
+		versionProvider.On("Major").Return("1", nil)
+		versionProvider.On("Minor").Return("20+", nil)
 		ds, err := r.newDaemonSetForCR(dkState, "cluster1")
 
 		assert.NoError(t, err)
@@ -506,6 +524,72 @@ func TestNewDaemonset_Affinity(t *testing.T) {
 				},
 			},
 		})
+
+		versionProvider = &fakeVersionProvider{}
+		versionProvider.On("Major").Return("1", nil)
+		versionProvider.On("Minor").Return("13", nil)
+		r.versionProvider = versionProvider
+		ds, err = r.newDaemonSetForCR(dkState, "cluster1")
+
+		assert.NoError(t, err)
+		assert.NotNil(t, ds)
+
+		affinity = ds.Spec.Template.Spec.Affinity
+
+		assert.Contains(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, corev1.NodeSelectorTerm{
+			MatchExpressions: []corev1.NodeSelectorRequirement{
+				{
+					Key:      "beta.kubernetes.io/arch",
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{"amd64", "arm64"},
+				},
+				{
+					Key:      "beta.kubernetes.io/os",
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{"linux"},
+				},
+			},
+		})
+		assert.Contains(t, affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, corev1.NodeSelectorTerm{
+			MatchExpressions: []corev1.NodeSelectorRequirement{
+				{
+					Key:      "kubernetes.io/arch",
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{"amd64", "arm64"},
+				},
+				{
+					Key:      "kubernetes.io/os",
+					Operator: corev1.NodeSelectorOpIn,
+					Values:   []string{"linux"},
+				},
+			},
+		})
+	})
+	t.Run(`handle errors`, func(t *testing.T) {
+		versionProvider := &fakeVersionProvider{}
+		r := ReconcileOneAgent{
+			versionProvider: versionProvider,
+			feature:         daemonset.InframonFeature,
+		}
+		dkState := &controllers.DynakubeState{
+			Instance: newDynaKube(),
+			Log:      consoleLogger,
+		}
+		versionProvider.On("Major").Return("", errors.New("test-error"))
+		versionProvider.On("Minor").Return("20+", nil)
+		ds, err := r.newDaemonSetForCR(dkState, "cluster1")
+
+		assert.EqualError(t, err, "test-error")
+		assert.Nil(t, ds)
+
+		versionProvider = &fakeVersionProvider{}
+		versionProvider.On("Major").Return("1", nil)
+		versionProvider.On("Minor").Return("", errors.New("test-error"))
+		r.versionProvider = versionProvider
+		ds, err = r.newDaemonSetForCR(dkState, "cluster1")
+
+		assert.EqualError(t, err, "test-error")
+		assert.Nil(t, ds)
 	})
 }
 
