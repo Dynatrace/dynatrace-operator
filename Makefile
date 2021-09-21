@@ -98,7 +98,7 @@ deploy: manifests kustomize
 	cd config/deploy && $(KUSTOMIZE) create
 	cd config/deploy && $(KUSTOMIZE) edit add base ../kubernetes
 	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
-	$(KUSTOMIZE) build config/deploy | kubectl apply -f -
+	$(KUSTOMIZE) build config/deploy | kubectl create -f -
 
 # Deploy controller in the configured OpenShift cluster in ~/.kube/config
 deploy-ocp: manifests kustomize

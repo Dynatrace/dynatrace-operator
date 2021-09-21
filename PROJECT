@@ -1,11 +1,29 @@
 domain: com
-layout: go.kubebuilder.io/v3
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  go.sdk.operatorframework.io/v3: {}
 projectName: dynatrace-operator
 repo: github.com/Dynatrace/dynatrace-operator
 resources:
-- group: dynatrace
+- api:
+    crdVersion: v1
+    namespaced: true
+  group: dynatrace
   kind: DynaKube
+  path: github.com/Dynatrace/dynatrace-operator/api/v1alpha1
   version: v1alpha1
+  webhooks:
+    conversion: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  group: dynatrace
+  kind: DynaKube
+  path: github.com/Dynatrace/dynatrace-operator/api/v1
+  version: v1
+  webhooks:
+    conversion: true
+    webhookVersion: v1
 version: "3"
-plugins:
-  go.sdk.operatorframework.io/v3: {}
