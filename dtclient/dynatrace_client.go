@@ -1,6 +1,8 @@
 package dtclient
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -102,10 +104,10 @@ func (dtc *dynatraceClient) makeRequestAndUnmarshal(url string, token tokenType,
 	return json.Unmarshal(responseData, &response)
 }
 
-func (dtc *dynatraceClient) makeRequestForBinary(url string, token tokenType, writer io.Writer) error {
+func (dtc *dynatraceClient) makeRequestForBinary(url string, token tokenType, writer io.Writer) (string, error) {
 	resp, err := dtc.makeRequest(url, token)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -113,13 +115,14 @@ func (dtc *dynatraceClient) makeRequestForBinary(url string, token tokenType, wr
 		var errorResponse serverErrorResponse
 		err = json.NewDecoder(resp.Body).Decode(&errorResponse)
 		if err != nil {
-			return err
+			return "", err
 		}
-		return fmt.Errorf("dynatrace server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
+		return "", fmt.Errorf("dynatrace server error %d: %s", errorResponse.ErrorMessage.Code, errorResponse.ErrorMessage.Message)
 	}
 
-	_, err = io.Copy(writer, resp.Body)
-	return err
+	hash := md5.New()
+	_, err = io.Copy(writer, io.TeeReader(resp.Body, hash))
+	return hex.EncodeToString(hash.Sum(nil)), err
 }
 
 func (dtc *dynatraceClient) handleErrorResponseFromAPI(response []byte, statusCode int) error {

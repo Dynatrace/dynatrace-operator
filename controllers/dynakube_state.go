@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"time"
 
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

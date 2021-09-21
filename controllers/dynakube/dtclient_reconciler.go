@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"net/http"
 	"strings"
 	"time"
 
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	corev1 "k8s.io/api/core/v1"

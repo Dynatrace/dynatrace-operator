@@ -133,8 +133,13 @@ func (installAgentCfg *installAgentConfig) installAgent() error {
 		}
 		return fmt.Errorf("failed to fetch OneAgent version: %w, available versions are: %s", err, "\n[ "+strings.Join(availableVersions, ",\n")+" ]\n")
 	}
-	logger.Info("Saved OneAgent package", "dest", tmpFile.Name())
 
+	var fileSize int64
+	if stat, err := tmpFile.Stat(); err == nil {
+		fileSize = stat.Size()
+	}
+
+	logger.Info("Saved OneAgent package", "dest", tmpFile.Name(), "size", fileSize)
 	logger.Info("Unzipping OneAgent package")
 	if err := installAgentCfg.unzip(tmpFile); err != nil {
 		return fmt.Errorf("failed to unzip file: %w", err)
