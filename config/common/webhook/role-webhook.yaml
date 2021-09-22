@@ -51,10 +51,21 @@ rules:
       - update
       - create
   - apiGroups:
-      - apps
+      - ""
     resources:
-      - daemonsets
+      - replicasets
+      - deployments
     verbs:
       - get
       - list
       - watch
+  - apiGroups:
+      - "apps"
+    resources:
+      - replicasets
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+
