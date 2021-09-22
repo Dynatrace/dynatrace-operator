@@ -115,6 +115,25 @@ tenant ${host_tenant}
 isCloudNativeFullStack true" >> ${1}
 }
 
+writeConfMintTo() {
+  mkdir -p "${1}"
+  echo "k8s.pod.uid ${K8S_PODUID}
+k8s.pod.name ${K8S_PODNAME}
+k8s.namespace.name ${K8S_NAMESPACE}
+dt.kubernetes.workload.kind ${DT_WORKLOAD_KIND}
+dt.kubernetes.workload.name ${DT_WORKLOAD_NAME}
+dt.kubernetes.cluster.id ${cluster_id}" >> "${1}/${2}.properties"
+
+  echo "{
+\"k8s.pod.uid\": \"${K8S_PODUID}\",
+\"k8s.pod.name\": \"${K8S_PODNAME}\",
+\"k8s.namespace.name\": \"${K8S_NAMESPACE}\",
+\"dt.kubernetes.workload.kind\": \"${DT_WORKLOAD_KIND}\",
+\"dt.kubernetes.workload.name\": \"${DT_WORKLOAD_NAME}\",
+\"dt.kubernetes.cluster.id\": \"${cluster_id}\"
+}" >> "${1}/${2}.json"
+}
+
 createConfigurationFiles() {
 	echo -n "${INSTALLPATH}/agent/lib64/liboneagentproc.so" >> "${share_dir}/ld.so.preload"
 
@@ -135,6 +154,7 @@ createConfigurationFiles() {
 		if [[ "${host_tenant}" != "-" ]]; then
 			if [[ "abc12345" == "${host_tenant}" ]]; then
 				writeConfK8To ${container_conf_file}
+				writeConfMintTo "/var/lib/dynatrace/enrichment" "dt_metadata"
 			fi
 			writeConfHostTo ${container_conf_file}
 		fi

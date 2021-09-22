@@ -127,6 +127,46 @@ type podMutator struct {
 	recorder  record.EventRecorder
 }
 
+func rootOwnerPod(ctx context.Context, cnt client.Client, pod *corev1.Pod, namespace string) (string, string, error) {
+	obj := &v1.PartialObjectMetadata{
+		TypeMeta: v1.TypeMeta{
+			APIVersion: pod.APIVersion,
+			Kind:       pod.Kind,
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name: pod.ObjectMeta.Name,
+			// pod.ObjectMeta.Namespace is empty yet
+			Namespace:       namespace,
+			OwnerReferences: pod.ObjectMeta.OwnerReferences,
+		},
+	}
+	return rootOwner(ctx, cnt, obj)
+}
+
+func rootOwner(ctx context.Context, cnt client.Client, o *v1.PartialObjectMetadata) (string, string, error) {
+	if len(o.ObjectMeta.OwnerReferences) == 0 {
+		return o.ObjectMeta.Name, o.Kind, nil
+	}
+
+	om := o.ObjectMeta
+	for _, owner := range om.OwnerReferences {
+		if owner.Controller != nil && *owner.Controller {
+			obj := &v1.PartialObjectMetadata{
+				TypeMeta: v1.TypeMeta{
+					APIVersion: owner.APIVersion,
+					Kind:       owner.Kind,
+				},
+			}
+			if err := cnt.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: om.Namespace}, obj); err != nil {
+				log.Error(err, "Failed to query the object", "apiVersion", owner.APIVersion, "kind", owner.Kind, "name", owner.Name, "namespace", om.Namespace)
+				return o.ObjectMeta.Name, o.Kind, err
+			}
+			return rootOwner(ctx, cnt, obj)
+		}
+	}
+	return o.ObjectMeta.Name, o.Kind, nil
+}
+
 // podMutator adds an annotation to every incoming pods
 func (m *podMutator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	if m.apmExists {
@@ -237,6 +277,11 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 	pod.Annotations[dtwebhook.AnnotationInjected] = "true"
 
+	workloadName, workloadKind, workloadErr := rootOwnerPod(ctx, m.client, pod, req.Namespace)
+	if workloadErr != nil {
+		return admission.Errored(http.StatusInternalServerError, workloadErr)
+	}
+
 	technologies := url.QueryEscape(kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 	installerURL := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, "")
@@ -270,7 +315,14 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 					SecretName: dtwebhook.SecretConfigName,
 				},
 			},
-		})
+		},
+		corev1.Volume{
+			Name: "mint-enrichment",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+	)
 
 	var sc *corev1.SecurityContext
 	if pod.Spec.Containers[0].SecurityContext != nil {
@@ -317,12 +369,15 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 			{Name: "K8S_BASEPODNAME", Value: basePodName},
 			{Name: "K8S_NAMESPACE", ValueFrom: fieldEnvVar("metadata.namespace")},
 			{Name: "K8S_NODE_NAME", ValueFrom: fieldEnvVar("spec.nodeName")},
+			{Name: "DT_WORKLOAD_KIND", Value: workloadKind},
+			{Name: "DT_WORKLOAD_NAME", Value: workloadName},
 		},
 		SecurityContext: sc,
 		VolumeMounts: []corev1.VolumeMount{
 			{Name: "oneagent-bin", MountPath: "/mnt/bin"},
 			{Name: "oneagent-share", MountPath: "/mnt/share"},
 			{Name: "oneagent-config", MountPath: "/mnt/config"},
+			{Name: "mint-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
 		},
 		Resources: *dk.InitResources(),
 	}
@@ -385,7 +440,10 @@ func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
 			Name:      "oneagent-share",
 			MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
 			SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
-		})
+		},
+		corev1.VolumeMount{
+			Name:      "mint-enrichment",
+			MountPath: "/var/lib/dynatrace/enrichment"})
 
 	c.Env = append(c.Env,
 		corev1.EnvVar{

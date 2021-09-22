@@ -50,3 +50,22 @@ rules:
       - get
       - update
       - create
+  - apiGroups:
+      - ""
+    resources:
+      - replicasets
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "apps"
+    resources:
+      - replicasets
+      - deployments
+    verbs:
+      - get
+      - list
+      - watch
+
