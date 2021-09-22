@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -23,7 +24,7 @@ const (
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
 		mockDTC := &dtclient.MockDynatraceClient{}
-		instance := &dynatracev1alpha1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
@@ -58,12 +59,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 		assert.NotEmpty(t, pullSecret.Data[".dockerconfigjson"])
 	})
 	t.Run(`Reconcile does not reconcile with custom pull secret`, func(t *testing.T) {
-		instance := &dynatracev1alpha1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				CustomPullSecret: testValue,
 			}}
 		r := NewReconciler(nil, nil, nil, instance, nil, nil)
@@ -73,12 +74,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run(`Reconcile creates correct docker config`, func(t *testing.T) {
 		expectedJSON := `{"auths":{"test-endpoint.com":{"username":"test-name","password":"test-value","auth":"dGVzdC1uYW1lOnRlc3QtdmFsdWU="}}}`
-		instance := &dynatracev1alpha1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			},
 			Status: dynatracev1alpha1.DynaKubeStatus{
@@ -113,12 +114,12 @@ func TestReconciler_Reconcile(t *testing.T) {
 	})
 	t.Run(`Reconcile update secret if data changed`, func(t *testing.T) {
 		expectedJSON := `{"auths":{"test-endpoint.com":{"username":"test-name","password":"test-value","auth":"dGVzdC1uYW1lOnRlc3QtdmFsdWU="}}}`
-		instance := &dynatracev1alpha1.DynaKube{
+		instance := &dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: testNamespace,
 				Name:      testName,
 			},
-			Spec: dynatracev1alpha1.DynaKubeSpec{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			},
 			Status: dynatracev1alpha1.DynaKubeStatus{

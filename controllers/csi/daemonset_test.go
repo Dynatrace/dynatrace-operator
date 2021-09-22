@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -189,8 +189,8 @@ func prepareFakeClient(objs ...client.Object) client.Client {
 	return fake.NewClient(objs...)
 }
 
-func prepareDynakube(name string) *v1alpha1.DynaKube {
-	return &v1alpha1.DynaKube{
+func prepareDynakube(name string) *dynatracev1.DynaKube {
+	return &dynatracev1.DynaKube{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DynaKube",
 			APIVersion: "dynatrace.com/v1alpha1",
@@ -200,9 +200,9 @@ func prepareDynakube(name string) *v1alpha1.DynaKube {
 			Namespace: testNamespace,
 			UID:       types.UID(name),
 		},
-		Spec: v1alpha1.DynaKubeSpec{
-			CodeModules: v1alpha1.CodeModulesSpec{
-				ServiceAccountNameCSIDriver: "test",
+		Spec: dynatracev1.DynaKubeSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
+				ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{},
 			},
 		},
 	}

@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -37,13 +38,13 @@ func TestGetImageRegistryFromAPIURL(t *testing.T) {
 }
 
 func TestReconciler_GenerateData(t *testing.T) {
-	instance := &v1alpha1.DynaKube{
-		Spec: v1alpha1.DynaKubeSpec{
+	instance := &dynatracev1.DynaKube{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testApiUrl,
 		},
-		Status: v1alpha1.DynaKubeStatus{
-			ConnectionInfo: v1alpha1.ConnectionInfoStatus{
-				CommunicationHosts: []v1alpha1.CommunicationHostStatus{
+		Status: dynatracev1alpha1.DynaKubeStatus{
+			ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
+				CommunicationHosts: []dynatracev1alpha1.CommunicationHostStatus{
 					{
 						Protocol: testProtocol,
 						Host:     testHost,
@@ -56,7 +57,7 @@ func TestReconciler_GenerateData(t *testing.T) {
 	}
 	r := &Reconciler{
 		instance: instance,
-		token: &v1.Secret{
+		token: &corev1.Secret{
 			Data: map[string][]byte{
 				dtclient.DynatracePaasToken: []byte(testPaasToken),
 			},

@@ -5,6 +5,40 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// APITokenConditionType identifies the API Token validity condition
+	APITokenConditionType string = "APIToken"
+
+	// PaaSTokenConditionType identifies the PaaS Token validity condition
+	PaaSTokenConditionType string = "PaaSToken"
+)
+
+// Possible reasons for ApiToken and PaaSToken conditions
+const (
+	// ReasonTokenReady is set when a token has passed verifications
+	ReasonTokenReady string = "TokenReady"
+
+	// ReasonTokenSecretNotFound is set when the referenced secret can't be found
+	ReasonTokenSecretNotFound string = "TokenSecretNotFound"
+
+	// ReasonTokenMissing is set when the field is missing on the secret
+	ReasonTokenMissing string = "TokenMissing"
+
+	// ReasonTokenUnauthorized is set when a token is unauthorized to query the Dynatrace API
+	ReasonTokenUnauthorized string = "TokenUnauthorized"
+
+	// ReasonTokenScopeMissing is set when the token is missing the required scope for the Dynatrace API
+	ReasonTokenScopeMissing string = "TokenScopeMissing"
+
+	// ReasonTokenError is set when an unknown error has been found when verifying the token
+	ReasonTokenError string = "TokenError"
+)
+
+type DynaKubeProxy struct {
+	Value     string `json:"value,omitempty"`
+	ValueFrom string `json:"valueFrom,omitempty"`
+}
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 //+kubebuilder:storageversion
 
@@ -48,7 +82,7 @@ type DynaKubeSpec struct {
 	SkipCertCheck bool `json:"skipCertCheck,omitempty"`
 
 	// Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
-	Proxy *v1alpha1.DynaKubeProxy `json:"proxy,omitempty"`
+	Proxy *DynaKubeProxy `json:"proxy,omitempty"`
 
 	// Optional: Adds custom RootCAs from a configmap
 	// This property only affects certificates used to communicate with the Dynatrace API.

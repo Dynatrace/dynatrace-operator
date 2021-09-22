@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -57,7 +57,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 	t.Run(`no tenant in storage`, func(t *testing.T) {
 		clt := fake.NewClient(
 			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}},
-			&dynatracev1alpha1.DynaKube{
+			&dynatracev1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{Name: dkName},
 			},
 		)
@@ -112,7 +112,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 	t.Run(`create correct bind config`, func(t *testing.T) {
 		clt := fake.NewClient(
 			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace, Labels: map[string]string{webhook.LabelInstance: dkName}}},
-			&dynatracev1alpha1.DynaKube{
+			&dynatracev1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{Name: dkName},
 			},
 		)

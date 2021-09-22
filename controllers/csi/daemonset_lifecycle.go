@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -20,7 +20,7 @@ func ConfigureCSIDriver(
 	client client.Client, scheme *runtime.Scheme, operatorPodName, operatorNamespace string,
 	dkState *controllers.DynakubeState, updateInterval time.Duration) error {
 
-	if dkState.Instance.Spec.CodeModules.Enabled {
+	if dkState.Instance.CloudNativeFullstackMode() || dkState.Instance.ApplicationMonitoringMode() {
 		err := addDynakubeOwnerReference(client, scheme, operatorPodName, operatorNamespace, dkState, updateInterval)
 		if err != nil {
 			return err
@@ -127,7 +127,7 @@ func findOwnerReferenceIndex(ownerReferences []metav1.OwnerReference, instanceUI
 	return 0, false
 }
 
-func createOwnerReference(dynakube *v1alpha1.DynaKube) metav1.OwnerReference {
+func createOwnerReference(dynakube *dynatracev1.DynaKube) metav1.OwnerReference {
 	return metav1.OwnerReference{
 		APIVersion:         dynakube.APIVersion,
 		Kind:               dynakube.Kind,

@@ -1,12 +1,12 @@
 package daemonset
 
 import (
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func prepareVolumeMounts(instance *dynatracev1alpha1.DynaKube) []corev1.VolumeMount {
+func prepareVolumeMounts(instance *dynatracev1.DynaKube) []corev1.VolumeMount {
 	rootMount := getRootMount()
 	var volumeMounts []corev1.VolumeMount
 
@@ -19,24 +19,20 @@ func prepareVolumeMounts(instance *dynatracev1alpha1.DynaKube) []corev1.VolumeMo
 }
 
 func (dsInfo *InfraMonitoring) appendReadOnlyVolume(daemonset *appsv1.DaemonSet) {
-	if dsInfo.instance.Spec.InfraMonitoring.ReadOnly.Enabled {
-		daemonset.Spec.Template.Spec.Volumes = append(daemonset.Spec.Template.Spec.Volumes, getInstallationVolume(&dsInfo.instance.Spec.InfraMonitoring.ReadOnly))
-	}
+	daemonset.Spec.Template.Spec.Volumes = append(daemonset.Spec.Template.Spec.Volumes, getInstallationVolume(dsInfo.instance))
 }
 
-func getInstallationVolume(readOnly *dynatracev1alpha1.ReadOnlySpec) corev1.Volume {
+func getInstallationVolume(dk *dynatracev1.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name:         oneagentInstallationMountName,
-		VolumeSource: readOnly.GetInstallationVolume(),
+		VolumeSource: dk.GetInstallationVolume(),
 	}
 }
 
 func (dsInfo *InfraMonitoring) appendReadOnlyVolumeMount(daemonset *appsv1.DaemonSet) {
-	if dsInfo.instance.Spec.InfraMonitoring.ReadOnly.Enabled {
-		daemonset.Spec.Template.Spec.Containers[0].VolumeMounts = append(
-			daemonset.Spec.Template.Spec.Containers[0].VolumeMounts,
-			getInstallationMount())
-	}
+	daemonset.Spec.Template.Spec.Containers[0].VolumeMounts = append(
+		daemonset.Spec.Template.Spec.Containers[0].VolumeMounts,
+		getInstallationMount())
 }
 
 func getInstallationMount() corev1.VolumeMount {
@@ -65,12 +61,12 @@ func (dsInfo *InfraMonitoring) setRootMountReadability(result *appsv1.DaemonSet)
 	for idx, mount := range volumeMounts {
 		if mount.Name == hostRootMount {
 			// using index here since range returns a copy not a reference
-			volumeMounts[idx].ReadOnly = dsInfo.instance.Spec.InfraMonitoring.ReadOnly.Enabled
+			volumeMounts[idx].ReadOnly = true
 		}
 	}
 }
 
-func prepareVolumes(instance *dynatracev1alpha1.DynaKube) []corev1.Volume {
+func prepareVolumes(instance *dynatracev1.DynaKube) []corev1.Volume {
 	volumes := []corev1.Volume{getRootVolume()}
 
 	if instance.Spec.TrustedCAs != "" {
@@ -80,7 +76,7 @@ func prepareVolumes(instance *dynatracev1alpha1.DynaKube) []corev1.Volume {
 	return volumes
 }
 
-func getCertificateVolume(instance *dynatracev1alpha1.DynaKube) corev1.Volume {
+func getCertificateVolume(instance *dynatracev1.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: "certs",
 		VolumeSource: corev1.VolumeSource{

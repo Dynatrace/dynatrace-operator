@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
@@ -25,7 +25,7 @@ type installAgentConfig struct {
 	dtc      dtclient.Client
 	fs       afero.Fs
 	path     metadata.PathResolver
-	dk       *dynatracev1alpha1.DynaKube
+	dk       *dynatracev1.DynaKube
 	tenant   *metadata.Tenant
 	recorder record.EventRecorder
 }
@@ -37,7 +37,7 @@ func newInstallAgentConfig(
 	fs afero.Fs,
 	recorder record.EventRecorder,
 	tenant *metadata.Tenant,
-	dk *dynatracev1alpha1.DynaKube,
+	dk *dynatracev1.DynaKube,
 ) *installAgentConfig {
 	return &installAgentConfig{
 		logger:   logger,
@@ -79,8 +79,8 @@ func (installAgentCfg *installAgentConfig) updateAgent() error {
 func (installAgentCfg *installAgentConfig) getOneAgentVersionFromInstance() string {
 	dk := installAgentCfg.dk
 	currentVersion := dk.Status.LatestAgentVersionUnixPaas
-	if dk.Spec.CodeModules.OneAgentVersion != "" {
-		currentVersion = dk.Spec.CodeModules.OneAgentVersion
+	if dk.Version() != "" {
+		currentVersion = dk.Version()
 	}
 	return currentVersion
 }

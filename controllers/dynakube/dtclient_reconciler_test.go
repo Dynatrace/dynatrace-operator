@@ -7,6 +7,7 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -20,9 +21,9 @@ import (
 func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 	namespace := "dynatrace"
 	dynaKube := "dynakube"
-	base := dynatracev1alpha1.DynaKube{
+	base := dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: dynaKube, Namespace: namespace},
-		Spec: dynatracev1alpha1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dynaKube,
 		},
@@ -46,9 +47,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		assert.True(t, ucr)
 		assert.Error(t, err)
 
-		AssertCondition(t, deepCopy, dynatracev1alpha1.PaaSTokenConditionType, false, dynatracev1alpha1.ReasonTokenSecretNotFound,
+		AssertCondition(t, deepCopy, dynatracev1.PaaSTokenConditionType, false, dynatracev1.ReasonTokenSecretNotFound,
 			"Secret 'dynatrace:dynakube' not found")
-		AssertCondition(t, deepCopy, dynatracev1alpha1.APITokenConditionType, false, dynatracev1alpha1.ReasonTokenSecretNotFound,
+		AssertCondition(t, deepCopy, dynatracev1.APITokenConditionType, false, dynatracev1.ReasonTokenSecretNotFound,
 			"Secret 'dynatrace:dynakube' not found")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
@@ -171,9 +172,9 @@ func TestReconcileDynatraceClient_MigrateConditions(t *testing.T) {
 
 	namespace := "dynatrace"
 	dynaKubeName := "dynakube"
-	dk := dynatracev1alpha1.DynaKube{
+	dk := dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: dynaKubeName, Namespace: namespace},
-		Spec: dynatracev1alpha1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dynaKubeName,
 		},
@@ -224,14 +225,14 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 	now := metav1.Now()
 
 	namespace := "dynatrace"
-	oaName := "dynakube"
-	base := dynatracev1alpha1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: oaName, Namespace: namespace},
-		Spec: dynatracev1alpha1.DynaKubeSpec{
+	dkName := "dynakube"
+	base := dynatracev1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
-			Tokens: oaName,
-			ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-				Enabled: true,
+			Tokens: dkName,
+			OneAgent: dynatracev1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
 			},
 		},
 	}
@@ -248,7 +249,7 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 		Message: "Ready",
 	})
 
-	c := fake.NewClient(NewSecret(oaName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}))
+	c := fake.NewClient(NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}))
 
 	t.Run("No request if last probe was recent", func(t *testing.T) {
 		lastAPIProbe := metav1.NewTime(now.Add(-3 * time.Minute))
@@ -315,14 +316,14 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 	})
 }
 
-func AssertCondition(t *testing.T, oa *dynatracev1alpha1.DynaKube, ct string, status bool, reason string, message string) {
+func AssertCondition(t *testing.T, dk *dynatracev1.DynaKube, ct string, status bool, reason string, message string) {
 	t.Helper()
 	s := metav1.ConditionFalse
 	if status {
 		s = metav1.ConditionTrue
 	}
 
-	cond := meta.FindStatusCondition(oa.Status.Conditions, ct)
+	cond := meta.FindStatusCondition(dk.Status.Conditions, ct)
 	require.NotNil(t, cond)
 	assert.Equal(t, s, cond.Status)
 	assert.Equal(t, reason, cond.Reason)

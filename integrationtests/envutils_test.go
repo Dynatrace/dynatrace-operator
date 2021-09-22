@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -100,8 +100,8 @@ func (e *ControllerTestEnvironment) Stop() error {
 	return e.server.Stop()
 }
 
-func (e *ControllerTestEnvironment) AddOneAgent(n string, s *dynatracev1alpha1.DynaKubeSpec) error {
-	return e.Client.Create(context.TODO(), &dynatracev1alpha1.DynaKube{
+func (e *ControllerTestEnvironment) AddOneAgent(n string, s *dynatracev1.DynaKubeSpec) error {
+	return e.Client.Create(context.TODO(), &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      n,
 			Namespace: DefaultTestNamespace,
@@ -120,7 +120,7 @@ func newReconciliationRequest(oaName string) reconcile.Request {
 }
 
 func mockDynatraceClientFunc(communicationHosts *[]string) dynakube.DynatraceClientFunc {
-	return func(client client.Client, oa *dynatracev1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
+	return func(dynakube.DynatraceClientProperties) (dtclient.Client, error) {
 		commHosts := make([]dtclient.CommunicationHost, len(*communicationHosts))
 		for i, c := range *communicationHosts {
 			commHosts[i] = dtclient.CommunicationHost{Protocol: "https", Host: c, Port: 443}

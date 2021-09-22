@@ -109,7 +109,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 			scheme:    scheme.Scheme,
-			dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
+			dtcBuildFunc: func(DynatraceClientProperties) (dtclient.Client, error) {
 				return mockClient, nil
 			},
 		}
@@ -152,7 +152,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			client:    fakeClient,
 			apiReader: fakeClient,
 			scheme:    scheme.Scheme,
-			dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
+			dtcBuildFunc: func(DynatraceClientProperties) (dtclient.Client, error) {
 				return mockClient, nil
 			},
 		}
@@ -232,7 +232,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 		client:    fakeClient,
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
-		dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
+		dtcBuildFunc: func(DynatraceClientProperties) (dtclient.Client, error) {
 			return mockClient, nil
 		},
 	}
@@ -454,7 +454,7 @@ func buildReconciliation(fakeClient client.Client) *ReconcileDynaKube {
 		client:    fakeClient,
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
-		dtcBuildFunc: func(_ client.Client, _ *v1alpha1.DynaKube, _ *corev1.Secret) (dtclient.Client, error) {
+		dtcBuildFunc: func(DynatraceClientProperties) (dtclient.Client, error) {
 			return buildMockDtClient(), nil
 		},
 		operatorPodName:   testOperatorPodName,

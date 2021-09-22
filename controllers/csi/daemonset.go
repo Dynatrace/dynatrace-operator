@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -36,14 +36,14 @@ type Reconciler struct {
 	client            client.Client
 	scheme            *runtime.Scheme
 	logger            logr.Logger
-	instance          *v1alpha1.DynaKube
+	instance          *dynatracev1.DynaKube
 	operatorPodName   string
 	operatorNamespace string
 }
 
 func NewReconciler(
 	client client.Client, scheme *runtime.Scheme, logger logr.Logger,
-	instance *v1alpha1.DynaKube, operatorPodName, operatorNamespace string) *Reconciler {
+	instance *dynatracev1.DynaKube, operatorPodName, operatorNamespace string) *Reconciler {
 	return &Reconciler{
 		client:            client,
 		scheme:            scheme,
@@ -91,7 +91,7 @@ func (r *Reconciler) getOperatorImage() (string, error) {
 	return operatorPod.Spec.Containers[0].Image, nil
 }
 
-func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube *v1alpha1.DynaKube,
+func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube *dynatracev1.DynaKube,
 	driverContainerResources corev1.ResourceRequirements) (*appsv1.DaemonSet, error) {
 	ds := prepareDaemonSet(operatorImage, operatorNamespace, dynakube, driverContainerResources)
 
@@ -104,7 +104,7 @@ func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube 
 	return ds, nil
 }
 
-func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *v1alpha1.DynaKube,
+func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *dynatracev1.DynaKube,
 	driverContainerResources corev1.ResourceRequirements) *appsv1.DaemonSet {
 	labels := prepareDaemonSetLabels()
 
@@ -127,7 +127,6 @@ func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *v1alpha
 						prepareRegistrarContainer(operatorImage),
 						preparelivenessProbeContainer(operatorImage),
 					},
-					ServiceAccountName: prepareServiceAccount(dynakube.Spec.CodeModules.ServiceAccountNameCSIDriver),
 					Volumes:            prepareVolumes(),
 				},
 			},
@@ -142,7 +141,7 @@ func prepareDaemonSetLabels() map[string]string {
 	}
 }
 
-func prepareMetadata(namespace string, dynakube *v1alpha1.DynaKube) metav1.ObjectMeta {
+func prepareMetadata(namespace string, dynakube *dynatracev1.DynaKube) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:      DaemonSetName,
 		Namespace: namespace,

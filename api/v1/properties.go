@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -31,6 +32,41 @@ const (
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
 func (dk *DynaKube) NeedsActiveGate() bool {
 	return dk.Spec.KubernetesMonitoringSpec.Enabled || dk.Spec.RoutingSpec.Enabled
+}
+
+// ApplicationMonitoringMode returns true when application only section is used.
+func (dk *DynaKube) ApplicationMonitoringMode() bool {
+	return dk.Spec.OneAgent != OneAgentSpec{} && dk.Spec.OneAgent.ApplicationMonitoring != nil
+}
+
+// CloudNativeFullstackMode returns true when cloud native fullstack section is used.
+func (dk *DynaKube) CloudNativeFullstackMode() bool {
+	return dk.Spec.OneAgent != OneAgentSpec{} && dk.Spec.OneAgent.CloudNativeFullStack != nil
+}
+
+// HostMonitoringMode returns true when host monitoring section is used.
+func (dk *DynaKube) HostMonitoringMode() bool {
+	return dk.Spec.OneAgent != OneAgentSpec{} && dk.Spec.OneAgent.HostMonitoring != nil
+}
+
+// HostMonitoringMode returns true when host monitoring section is used.
+func (dk *DynaKube) ClassicFullStackMode() bool {
+	return dk.Spec.OneAgent != OneAgentSpec{} && dk.Spec.OneAgent.ClassicFullStack != nil
+}
+
+// NeedsOneAgent returns true when a feature requires OneAgent instances.
+func (dk *DynaKube) NeedsOneAgent() bool {
+	return dk.ClassicFullStackMode() || dk.CloudNativeFullstackMode()
+}
+
+// ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
+func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
+	if dk.CloudNativeFullstackMode() {
+		return dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate
+	} else if dk.ClassicFullStackMode() {
+		return dk.Spec.OneAgent.ClassicFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.ClassicFullStack.AutoUpdate
+	}
+	return false
 }
 
 // PullSecret returns the name of the pull secret to be used for immutable images.
@@ -55,25 +91,59 @@ func (dk *DynaKube) ActiveGateImage() string {
 	return fmt.Sprintf("%s/linux/activegate:latest", registry)
 }
 
-//
-//// ImmutableOneAgentImage returns the immutable OneAgent image to be used with the dk DynaKube instance.
-//func (dk *DynaKube) ImmutableOneAgentImage() string {
-//	if dk.Spec.OneAgent.Image != "" {
-//		return dk.Spec.OneAgent.Image
-//	}
-//
-//	if dk.Spec.APIURL == "" {
-//		return ""
-//	}
-//
-//	tag := "latest"
-//	if ver := dk.Spec.OneAgent.Version; ver != "" {
-//		tag = ver
-//	}
-//
-//	registry := buildImageRegistry(dk.Spec.APIURL)
-//	return fmt.Sprintf("%s/linux/oneagent:%s", registry, tag)
-//}
+func (dk *DynaKube) ServerlessMode() bool {
+	if dk.CloudNativeFullstackMode() {
+		return dk.Spec.OneAgent.CloudNativeFullStack.ServerlessMode
+	} else if dk.ApplicationMonitoringMode() {
+		return dk.Spec.OneAgent.ApplicationMonitoring.ServerlessMode
+	}
+	return false
+}
+
+func (dk *DynaKube) Image() string {
+	if dk.ClassicFullStackMode() {
+		return dk.Spec.OneAgent.ClassicFullStack.Image
+	} else if dk.HostMonitoringMode() {
+		return dk.Spec.OneAgent.HostMonitoring.Image
+	} else if dk.ApplicationMonitoringMode() {
+		return dk.Spec.OneAgent.ApplicationMonitoring.Image
+	}
+
+	return ""
+}
+
+func (dk *DynaKube) Version() string {
+	if dk.ClassicFullStackMode() {
+		return dk.Spec.OneAgent.ClassicFullStack.Version
+	} else if dk.CloudNativeFullstackMode() {
+		return dk.Spec.OneAgent.CloudNativeFullStack.Version
+	} else if dk.ApplicationMonitoringMode() {
+		return dk.Spec.OneAgent.ApplicationMonitoring.Version
+	} else if dk.HostMonitoringMode() {
+		return dk.Spec.OneAgent.HostMonitoring.Version
+	}
+	return ""
+}
+
+// ImmutableOneAgentImage returns the immutable OneAgent image to be used with the dk DynaKube instance.
+func (dk *DynaKube) ImmutableOneAgentImage() string {
+	oneAgentImage := dk.Image()
+	if oneAgentImage != "" {
+		return oneAgentImage
+	}
+
+	if dk.Spec.APIURL == "" {
+		return ""
+	}
+
+	tag := "latest"
+	if ver := dk.Version(); ver != "" {
+		tag = ver
+	}
+
+	registry := buildImageRegistry(dk.Spec.APIURL)
+	return fmt.Sprintf("%s/linux/oneagent:%s", registry, tag)
+}
 
 func buildImageRegistry(apiURL string) string {
 	registry := strings.TrimPrefix(apiURL, "https://")
@@ -109,12 +179,20 @@ func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
 	return communicationHosts
 }
 
-//
-//func (readOnlySpec *ReadOnlySpec) GetInstallationVolume() v1.VolumeSource {
-//	if readOnlySpec.InstallationVolume == nil {
-//		return v1.VolumeSource{
-//			EmptyDir: &v1.EmptyDirVolumeSource{},
-//		}
-//	}
-//	return *readOnlySpec.InstallationVolume
-//}
+func (dk *DynaKube) GetInstallationVolume() corev1.VolumeSource {
+	if dk.CloudNativeFullstackMode() {
+		return *getInstallationVolume(dk.Spec.OneAgent.CloudNativeFullStack.InstallationVolume)
+	} else if dk.HostMonitoringMode() {
+		return *getInstallationVolume(dk.Spec.OneAgent.HostMonitoring.InstallationVolume)
+	}
+	return corev1.VolumeSource{}
+}
+
+func getInstallationVolume(vs *corev1.VolumeSource) *corev1.VolumeSource {
+	if vs == nil {
+		return &corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		}
+	}
+	return vs
+}

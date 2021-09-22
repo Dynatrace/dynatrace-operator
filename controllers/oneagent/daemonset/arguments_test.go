@@ -3,6 +3,7 @@ package daemonset
 import (
 	"testing"
 
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/logger"
@@ -25,13 +26,15 @@ const (
 
 func TestArguments(t *testing.T) {
 	log := logger.NewDTLogger()
-	instance := dynatracev1alpha1.DynaKube{
-		Spec: dynatracev1alpha1.DynaKubeSpec{
-			APIURL:   testURL,
-			OneAgent: dynatracev1alpha1.OneAgentSpec{},
-			ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-				UseImmutableImage: true,
-				Args:              []string{testValue},
+	instance := dynatracev1.DynaKube{
+		Spec: dynatracev1.DynaKubeSpec{
+			APIURL: testURL,
+			OneAgent: dynatracev1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1.ClassicFullStackSpec{
+					HostInjectSpec: dynatracev1.HostInjectSpec{
+						Args: []string{testValue},
+					},
+				},
 			},
 		},
 		Status: dynatracev1alpha1.DynaKubeStatus{
@@ -43,7 +46,7 @@ func TestArguments(t *testing.T) {
 	dsInfo := ClassicFullStack{
 		builderInfo{
 			instance:      &instance,
-			fullstackSpec: &instance.Spec.ClassicFullStack,
+			fullstackSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
 			logger:        log,
 			clusterId:     testClusterID,
 			relatedImage:  testValue,
@@ -57,20 +60,26 @@ func TestArguments(t *testing.T) {
 
 func TestPodSpec_Arguments(t *testing.T) {
 	log := logger.NewDTLogger()
-	instance := &dynatracev1alpha1.DynaKube{
-		Spec: dynatracev1alpha1.DynaKubeSpec{
-			ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-				Args: []string{testKey, testValue, testUID},
-			}},
+	instance := &dynatracev1.DynaKube{
+		Spec: dynatracev1.DynaKubeSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1.ClassicFullStackSpec{
+					HostInjectSpec: dynatracev1.HostInjectSpec{
+						Args: []string{testKey, testValue, testUID},
+					},
+				},
+			},
+		},
 		Status: dynatracev1alpha1.DynaKubeStatus{
 			OneAgent: dynatracev1alpha1.OneAgentStatus{
 				VersionStatus: dynatracev1alpha1.VersionStatus{
 					Version: testContainerImageVersion,
 				},
 			},
-		}}
+		},
+	}
 	metadata := deploymentmetadata.NewDeploymentMetadata(testClusterID, deploymentmetadata.DeploymentTypeFS)
-	fullStackSpecs := &instance.Spec.ClassicFullStack
+	fullStackSpecs := &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec
 	dsInfo := ClassicFullStack{
 		builderInfo{
 			instance:       instance,
@@ -97,7 +106,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	}
 
 	t.Run(`has proxy arg`, func(t *testing.T) {
-		instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
+		instance.Spec.Proxy = &dynatracev1.DynaKubeProxy{Value: testValue}
 		podSpecs = dsInfo.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 

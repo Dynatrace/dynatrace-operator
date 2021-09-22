@@ -1,6 +1,7 @@
 package status
 
 import (
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -13,7 +14,7 @@ type Options struct {
 	ApiClient client.Reader
 }
 
-func SetDynakubeStatus(instance *dynatracev1alpha1.DynaKube, opts Options) error {
+func SetDynakubeStatus(instance *dynatracev1.DynaKube, opts Options) error {
 	clt := opts.ApiClient
 	dtc := opts.Dtc
 

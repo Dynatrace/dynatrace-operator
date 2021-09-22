@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
@@ -23,7 +23,6 @@ const (
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
 
-	defaultServiceAccountName             = "dynatrace-dynakube-oneagent"
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
 	defaultOneAgentImage                  = "docker.io/dynatrace/oneagent:latest"
 
@@ -32,7 +31,7 @@ const (
 	oneagentInstallationMountName = "oneagent-installation"
 	oneagentInstallationMountPath = "/mnt/volume_storage_mount"
 
-	relatedImageEnvVar = "RELATED_IMAGE_DYNATRACE_ONEAGENT"
+	relatedImageEnvVar = "RELATED_IMAGE_DYNATRACE_ONEAGENT" // DO WE NEED THIS
 
 	podName = "dynatrace-oneagent"
 
@@ -55,8 +54,8 @@ type ClassicFullStack struct {
 }
 
 type builderInfo struct {
-	instance               *v1alpha1.DynaKube
-	fullstackSpec          *v1alpha1.FullStackSpec
+	instance               *dynatracev1.DynaKube
+	fullstackSpec          *dynatracev1.HostInjectSpec
 	logger                 logr.Logger
 	clusterId              string
 	relatedImage           string
@@ -69,11 +68,11 @@ type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewInfraMonitoring(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
+func NewInfraMonitoring(instance *dynatracev1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
 	return &InfraMonitoring{
 		builderInfo{
 			instance:               instance,
-			fullstackSpec:          &instance.Spec.InfraMonitoring.FullStackSpec,
+			fullstackSpec:          &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
 			logger:                 logger,
 			clusterId:              clusterId,
 			relatedImage:           os.Getenv(relatedImageEnvVar),
@@ -84,11 +83,11 @@ func NewInfraMonitoring(instance *v1alpha1.DynaKube, logger logr.Logger, cluster
 	}
 }
 
-func NewClassicFullStack(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
+func NewClassicFullStack(instance *dynatracev1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
 	return &ClassicFullStack{
 		builderInfo{
 			instance:               instance,
-			fullstackSpec:          &instance.Spec.ClassicFullStack,
+			fullstackSpec:          &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
 			logger:                 logger,
 			clusterId:              clusterId,
 			relatedImage:           os.Getenv(relatedImageEnvVar),
@@ -142,11 +141,8 @@ func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 
 func (dsInfo *InfraMonitoring) setSecurityContextOptions(daemonset *appsv1.DaemonSet) {
 	securityContext := daemonset.Spec.Template.Spec.Containers[0].SecurityContext
-
-	if dsInfo.instance.Spec.InfraMonitoring.ReadOnly.Enabled {
-		securityContext.RunAsUser = pointer.Int64Ptr(defaultUserId)
-		securityContext.RunAsGroup = pointer.Int64Ptr(defaultGroupId)
-	}
+	securityContext.RunAsUser = pointer.Int64Ptr(defaultUserId)
+	securityContext.RunAsGroup = pointer.Int64Ptr(defaultGroupId)
 }
 
 func appendHostIdArgument(result *appsv1.DaemonSet, source string) {
@@ -160,10 +156,7 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
 	annotations := map[string]string{
 		statefulset.AnnotationVersion: instance.Status.OneAgent.Version,
-	}
-
-	if dsInfo.unprivileged() {
-		annotations[annotationUnprivileged] = annotationUnprivilegedValue
+		annotationUnprivileged: annotationUnprivilegedValue,
 	}
 
 	result := &appsv1.DaemonSet{
@@ -196,10 +189,8 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 }
 
 func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
-	serviceAccount := dsInfo.serviceAccountName()
 	resources := dsInfo.resources()
 	dnsPolicy := dsInfo.dnsPolicy()
-	securityContext := dsInfo.securityContext()
 	arguments := dsInfo.arguments()
 	environmentVariables := dsInfo.environmentVariables()
 	volumeMounts := dsInfo.volumeMounts()
@@ -228,7 +219,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 				TimeoutSeconds:      1,
 			},
 			Resources:       resources,
-			SecurityContext: securityContext,
+			SecurityContext: unprivilegedSecurityContext(),
 			VolumeMounts:    volumeMounts,
 		}},
 		ImagePullSecrets:   imagePullSecrets,
@@ -237,7 +228,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		HostIPC:            false,
 		NodeSelector:       dsInfo.fullstackSpec.NodeSelector,
 		PriorityClassName:  dsInfo.fullstackSpec.PriorityClassName,
-		ServiceAccountName: serviceAccount,
+		ServiceAccountName: defaultUnprivilegedServiceAccountName,
 		Tolerations:        dsInfo.fullstackSpec.Tolerations,
 		DNSPolicy:          dnsPolicy,
 		Volumes:            volumes,
@@ -254,19 +245,6 @@ func (dsInfo *builderInfo) buildLabels() map[string]string {
 		"dynatrace.com/component":         "operator",
 		"operator.dynatrace.com/instance": dsInfo.instance.Name,
 	}
-}
-
-func (dsInfo *builderInfo) serviceAccountName() string {
-	if dsInfo.fullstackSpec.ServiceAccountName != "" {
-		return dsInfo.fullstackSpec.ServiceAccountName
-	} else if dsInfo.unprivileged() {
-		return defaultUnprivilegedServiceAccountName
-	}
-	return defaultServiceAccountName
-}
-
-func (dsInfo *builderInfo) unprivileged() bool {
-	return dsInfo.fullstackSpec.UseUnprivilegedMode == nil || (dsInfo.fullstackSpec.UseUnprivilegedMode != nil && *dsInfo.fullstackSpec.UseUnprivilegedMode)
 }
 
 func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {
@@ -288,12 +266,6 @@ func (dsInfo *builderInfo) dnsPolicy() corev1.DNSPolicy {
 	return corev1.DNSClusterFirstWithHostNet
 }
 
-func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
-	if dsInfo.unprivileged() {
-		return unprivilegedSecurityContext()
-	}
-	return privilegedSecurityContext()
-}
 
 func (dsInfo *builderInfo) volumeMounts() []corev1.VolumeMount {
 	return prepareVolumeMounts(dsInfo.instance)
@@ -304,17 +276,10 @@ func (dsInfo *builderInfo) volumes() []corev1.Volume {
 }
 
 func (dsInfo *builderInfo) image() string {
-	if dsInfo.instance.Spec.OneAgent.Image != "" {
-		return dsInfo.instance.Spec.OneAgent.Image
+	if dsInfo.instance.Image() != "" {
+		return dsInfo.instance.Image()
 	}
-
-	if dsInfo.useImmutableImage() {
-		return dsInfo.instance.ImmutableOneAgentImage()
-	} else if dsInfo.relatedImage != "" {
-		return dsInfo.relatedImage
-	}
-
-	return defaultOneAgentImage
+	return dsInfo.instance.ImmutableOneAgentImage()
 }
 
 func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {

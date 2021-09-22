@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
@@ -45,7 +45,7 @@ func NewReconciler(client client.Client, opts dtcsi.CSIOptions, db metadata.Acce
 
 func (gc *CSIGarbageCollector) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1alpha1.DynaKube{}).
+		For(&dynatracev1.DynaKube{}).
 		Complete(gc)
 }
 
@@ -55,7 +55,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	gc.logger.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
 	reconcileResult := reconcile.Result{RequeueAfter: 60 * time.Minute}
 
-	var dk dynatracev1alpha1.DynaKube
+	var dk dynatracev1.DynaKube
 	if err := gc.client.Get(ctx, request.NamespacedName, &dk); err != nil {
 		if k8serrors.IsNotFound(err) {
 			gc.logger.Info("given DynaKube object not found")
@@ -72,7 +72,18 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return reconcileResult, nil
 	}
 
-	dtc, err := gc.dtcBuildFunc(gc.client, &dk, &tokens)
+	dtp := dynakube.DynatraceClientProperties{
+		Client: gc.client,
+		Secret: &tokens,
+		ApiUrl: dk.Spec.APIURL,
+		Proxy: (*dynakube.DynatraceClientProxy)(dk.Spec.Proxy),
+		Namespace: dk.Namespace,
+		NetworkZone: dk.Spec.NetworkZone,
+		TrustedCerts: dk.Spec.TrustedCAs,
+		SkipCertCheck: dk.Spec.SkipCertCheck,
+		DisableHostRequests: dk.FeatureDisableHostsRequests(),
+	}
+	dtc, err := gc.dtcBuildFunc(dtp)
 	if err != nil {
 		gc.logger.Error(err, "failed to create Dynatrace client")
 		return reconcileResult, nil

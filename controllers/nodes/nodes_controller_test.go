@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -179,7 +180,7 @@ func createDefaultFakeClient() client.Client {
 	return fake.NewClient(
 		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
 		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
-		&dynatracev1alpha1.DynaKube{
+		&dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
 			Status: dynatracev1alpha1.DynaKubeStatus{
 				OneAgent: dynatracev1alpha1.OneAgentStatus{
@@ -187,7 +188,7 @@ func createDefaultFakeClient() client.Client {
 				},
 			},
 		},
-		&dynatracev1alpha1.DynaKube{
+		&dynatracev1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "oneagent2", Namespace: testNamespace},
 			Status: dynatracev1alpha1.DynaKubeStatus{
 				OneAgent: dynatracev1alpha1.OneAgentStatus{

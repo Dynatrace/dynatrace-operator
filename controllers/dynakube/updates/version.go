@@ -5,6 +5,7 @@ import (
 	"time"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/pkg/errors"
@@ -32,7 +33,7 @@ func ReconcileVersions(
 		dkState.IsOutdated(dk.Status.OneAgent.LastUpdateProbeTimestamp, ProbeThreshold) &&
 		dk.ShouldAutoUpdateOneAgent()
 
-	if needsOneAgentUpdate && !dk.NeedsImmutableOneAgent() {
+	if needsOneAgentUpdate {
 		upd = true
 		if err := updateOneAgentInstallerVersion(dkState, dk); err != nil {
 			dkState.Log.Error(err, "Failed to fetch OneAgent installer version")
@@ -43,7 +44,7 @@ func ReconcileVersions(
 		!dk.FeatureDisableActiveGateUpdates() &&
 		dkState.IsOutdated(dk.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
 
-	needsImmutableOneAgentUpdate := dk.NeedsImmutableOneAgent() && needsOneAgentUpdate
+	needsImmutableOneAgentUpdate := needsOneAgentUpdate
 
 	if !needsActiveGateUpdate && !needsImmutableOneAgentUpdate {
 		return upd, nil
@@ -113,7 +114,7 @@ func updateImageVersion(
 	return nil
 }
 
-func updateOneAgentInstallerVersion(dkState *controllers.DynakubeState, dk *dynatracev1alpha1.DynaKube) error {
+func updateOneAgentInstallerVersion(dkState *controllers.DynakubeState, dk *dynatracev1.DynaKube) error {
 	dk.Status.OneAgent.LastUpdateProbeTimestamp = dkState.Now.DeepCopy()
 	ver := dk.Status.LatestAgentVersionUnixDefault
 

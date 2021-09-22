@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
@@ -69,7 +69,7 @@ func (c *Controller) initializeIstioClient(config *rest.Config) (istioclientset.
 
 // ReconcileIstio - runs the istio's reconcile workflow,
 // creating/deleting VS & SE for external communications
-func (c *Controller) ReconcileIstio(instance *dynatracev1alpha1.DynaKube) (updated bool, err error) {
+func (c *Controller) ReconcileIstio(instance *dynatracev1.DynaKube) (updated bool, err error) {
 
 	enabled, err := CheckIstioEnabled(c.config)
 	if err != nil {
@@ -99,7 +99,7 @@ func (c *Controller) ReconcileIstio(instance *dynatracev1alpha1.DynaKube) (updat
 	return false, nil
 }
 
-func (c *Controller) reconcileIstioConfigurations(instance *dynatracev1alpha1.DynaKube,
+func (c *Controller) reconcileIstioConfigurations(instance *dynatracev1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
 	add, err := c.reconcileIstioCreateConfigurations(instance, comHosts, role)
@@ -114,7 +114,7 @@ func (c *Controller) reconcileIstioConfigurations(instance *dynatracev1alpha1.Dy
 	return add || rem, nil
 }
 
-func (c *Controller) reconcileIstioRemoveConfigurations(instance *dynatracev1alpha1.DynaKube,
+func (c *Controller) reconcileIstioRemoveConfigurations(instance *dynatracev1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
 	labelSelector := labels.SelectorFromSet(buildIstioLabels(instance.GetName(), role)).String()
@@ -193,7 +193,7 @@ func (c *Controller) removeIstioConfigurationForVirtualService(listOps *metav1.L
 	return del, nil
 }
 
-func (c *Controller) reconcileIstioCreateConfigurations(instance *dynatracev1alpha1.DynaKube,
+func (c *Controller) reconcileIstioCreateConfigurations(instance *dynatracev1.DynaKube,
 	communicationHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
 	crdProbe := c.verifyIstioCrdAvailability(instance)
@@ -221,7 +221,7 @@ func (c *Controller) reconcileIstioCreateConfigurations(instance *dynatracev1alp
 	return configurationUpdated, nil
 }
 
-func (c *Controller) verifyIstioCrdAvailability(instance *dynatracev1alpha1.DynaKube) probeResult {
+func (c *Controller) verifyIstioCrdAvailability(instance *dynatracev1.DynaKube) probeResult {
 	var probe probeResult
 
 	probe, _ = c.kubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), "")
@@ -237,7 +237,7 @@ func (c *Controller) verifyIstioCrdAvailability(instance *dynatracev1alpha1.Dyna
 	return probeTypeFound
 }
 
-func (c *Controller) handleIstioConfigurationForVirtualService(instance *dynatracev1alpha1.DynaKube,
+func (c *Controller) handleIstioConfigurationForVirtualService(instance *dynatracev1.DynaKube,
 	name string, communicationHost dtclient.CommunicationHost, role string) (bool, error) {
 
 	probe, err := c.kubernetesObjectProbe(VirtualServiceGVK, instance.GetNamespace(), name)
@@ -265,7 +265,7 @@ func (c *Controller) handleIstioConfigurationForVirtualService(instance *dynatra
 	return true, nil
 }
 
-func (c *Controller) handleIstioConfigurationForServiceEntry(instance *dynatracev1alpha1.DynaKube,
+func (c *Controller) handleIstioConfigurationForServiceEntry(instance *dynatracev1.DynaKube,
 	name string, communicationHost dtclient.CommunicationHost, role string) (bool, error) {
 
 	probe, err := c.kubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), name)
@@ -287,7 +287,7 @@ func (c *Controller) handleIstioConfigurationForServiceEntry(instance *dynatrace
 	return true, nil
 }
 
-func (c *Controller) createIstioConfigurationForServiceEntry(dynaKube *dynatracev1alpha1.DynaKube,
+func (c *Controller) createIstioConfigurationForServiceEntry(dynaKube *dynatracev1.DynaKube,
 	serviceEntry *istiov1alpha3.ServiceEntry, role string) error {
 
 	serviceEntry.Labels = buildIstioLabels(dynaKube.GetName(), role)
@@ -304,7 +304,7 @@ func (c *Controller) createIstioConfigurationForServiceEntry(dynaKube *dynatrace
 	return nil
 }
 
-func (c *Controller) createIstioConfigurationForVirtualService(dynaKube *dynatracev1alpha1.DynaKube,
+func (c *Controller) createIstioConfigurationForVirtualService(dynaKube *dynatracev1.DynaKube,
 	virtualService *istiov1alpha3.VirtualService, role string) error {
 
 	virtualService.Labels = buildIstioLabels(dynaKube.GetName(), role)
