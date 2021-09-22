@@ -135,6 +135,7 @@ dt.kubernetes.cluster.id ${cluster_id}" >> "${1}/${2}.properties"
 }" >> "${1}/${2}.json"
 }
 
+
 createConfigurationFiles() {
 	echo -n "${INSTALLPATH}/agent/lib64/liboneagentproc.so" >> "${share_dir}/ld.so.preload"
 
