@@ -12,15 +12,16 @@ bin_dir="/mnt/bin"
 config_dir="/mnt/config"
 share_dir="/mnt/share"
 paas_token="42"
-proxy=""
+proxy="testproxy.com"
 skip_cert_checks="false"
-custom_ca="false"
+custom_ca="true"
 fail_code=0
 cluster_id="42"
 
 declare -A im_nodes
 im_nodes=(
-	["node1"]="abc12345"
+  ["node1"]="abc12345"
+  ["node2"]="abc12345"
 )
 ###############################################
 
@@ -102,9 +103,8 @@ isCloudNativeFullStack true" >> ${1}
 createConfigurationFiles() {
 	echo -n "${INSTALLPATH}/agent/lib64/liboneagentproc.so" >> "${share_dir}/ld.so.preload"
 
-	set +u # allow variable to be empty
+	# Script fails if empty
 	host_tenant="${im_nodes[${K8S_NODE_NAME}]}"
-	set -u
 
 	for i in $(seq 1 $CONTAINERS_COUNT)
 	do
@@ -120,7 +120,7 @@ createConfigurationFiles() {
 
 		writeConfBaseTo ${container_conf_file}
 
-		if [[ "${host_tenant}" != "" ]]; then
+		if [[ "${host_tenant}" != "-" ]]; then
 			if [[ "abc12345" == "${host_tenant}" ]]; then
 				writeConfK8To ${container_conf_file}
 			fi

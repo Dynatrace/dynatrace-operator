@@ -7,22 +7,22 @@ if [[ -f "/var/lib/dynatrace/oneagent/agent/config/ruxithost.id" ]]; then
 fi
 
 ######VARS GENERATED VIA GOLANG######
-api_url="{{.DynaKube.Spec.APIURL}}"
+api_url="{{.ApiUrl}}"
 bin_dir="/mnt/bin"
 config_dir="/mnt/config"
 share_dir="/mnt/share"
 paas_token="{{.PaaSToken}}"
 proxy="{{.Proxy}}"
-skip_cert_checks="{{if .DynaKube.Spec.SkipCertCheck}}true{{else}}false{{end}}"
+skip_cert_checks="{{if .SkipCertCheck}}true{{else}}false{{end}}"
 custom_ca="{{if .TrustedCAs}}true{{else}}false{{end}}"
 fail_code=0
 cluster_id="{{.ClusterID}}"
 
 declare -A im_nodes
 im_nodes=(
-	{{- range $node, $tenant := .IMNodes}}
-	["{{$node}}"]="{{$tenant}}"
-	{{- end}}
+  {{- range $node, $tenant := .IMNodes}}
+  ["{{$node}}"]="{{$tenant}}"
+  {{- end}}
 )
 ###############################################
 
@@ -104,9 +104,8 @@ isCloudNativeFullStack true" >> ${1}
 createConfigurationFiles() {
 	echo -n "${INSTALLPATH}/agent/lib64/liboneagentproc.so" >> "${share_dir}/ld.so.preload"
 
-	set +u # allow variable to be empty
+	# Script fails if empty
 	host_tenant="${im_nodes[${K8S_NODE_NAME}]}"
-	set -u
 
 	for i in $(seq 1 $CONTAINERS_COUNT)
 	do
@@ -122,8 +121,8 @@ createConfigurationFiles() {
 
 		writeConfBaseTo ${container_conf_file}
 
-		if [[ "${host_tenant}" != "" ]]; then
-			if [[ "{{.DynaKube.Status.ConnectionInfo.TenantUUID}}" == "${host_tenant}" ]]; then
+		if [[ "${host_tenant}" != "-" ]]; then
+			if [[ "{{.TenantUUID}}" == "${host_tenant}" ]]; then
 				writeConfK8To ${container_conf_file}
 			fi
 			writeConfHostTo ${container_conf_file}

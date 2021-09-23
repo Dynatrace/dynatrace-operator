@@ -127,7 +127,7 @@ func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *dynatra
 						prepareRegistrarContainer(operatorImage),
 						preparelivenessProbeContainer(operatorImage),
 					},
-					Volumes:            prepareVolumes(),
+					Volumes: prepareVolumes(),
 				},
 			},
 		},

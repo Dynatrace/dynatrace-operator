@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/pkg/errors"

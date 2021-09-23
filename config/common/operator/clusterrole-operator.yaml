@@ -10,11 +10,19 @@ rules:
       - "" # "" indicates the core API group
     resources:
       - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - "" # "" indicates the core API group
+    resources:
       - namespaces
     verbs:
       - get
       - list
       - watch
+      - update
   - apiGroups:
       - ""
     resources:

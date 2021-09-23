@@ -73,14 +73,14 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	}
 
 	dtp := dynakube.DynatraceClientProperties{
-		Client: gc.client,
-		Secret: &tokens,
-		ApiUrl: dk.Spec.APIURL,
-		Proxy: (*dynakube.DynatraceClientProxy)(dk.Spec.Proxy),
-		Namespace: dk.Namespace,
-		NetworkZone: dk.Spec.NetworkZone,
-		TrustedCerts: dk.Spec.TrustedCAs,
-		SkipCertCheck: dk.Spec.SkipCertCheck,
+		Client:              gc.client,
+		Secret:              &tokens,
+		ApiUrl:              dk.Spec.APIURL,
+		Proxy:               (*dynakube.DynatraceClientProxy)(dk.Spec.Proxy),
+		Namespace:           dk.Namespace,
+		NetworkZone:         dk.Spec.NetworkZone,
+		TrustedCerts:        dk.Spec.TrustedCAs,
+		SkipCertCheck:       dk.Spec.SkipCertCheck,
 		DisableHostRequests: dk.FeatureDisableHostsRequests(),
 	}
 	dtc, err := gc.dtcBuildFunc(dtp)

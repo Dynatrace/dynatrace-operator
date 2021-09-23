@@ -37,7 +37,7 @@ type CloudNativeFullStackSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Version string `json:"version,omitempty"`
 
-	HostInjectSpec `json:",inline"`
+	HostInjectSpec   `json:",inline"`
 	AppInjectionSpec `json:",inline"`
 
 	// Used if read-only filesystem support is enabled.
@@ -62,7 +62,6 @@ type ClassicFullStackSpec struct {
 	HostInjectSpec `json:",inline"`
 }
 
-
 type HostMonitoringSpec struct {
 	// Optional: the Dynatrace installer container image
 	// Defaults to docker.io/dynatrace/oneagent:latest for Kubernetes and to registry.connect.redhat.com/dynatrace/oneagent for OpenShift
@@ -83,7 +82,6 @@ type HostMonitoringSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Installation volume",order=30,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Volume"}
 	InstallationVolume *corev1.VolumeSource `json:"installationVolume,omitempty"`
 }
-
 
 type HostInjectSpec struct {
 
@@ -124,11 +122,9 @@ type HostInjectSpec struct {
 	// Optional: Adds additional labels for the OneAgent pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Labels",order=26,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Labels map[string]string `json:"labels,omitempty"`
-
 }
 
 type ApplicationMonitoringSpec struct {
-
 	AppInjectionSpec `json:",inline"`
 
 	// Optional: the Dynatrace installer container image
@@ -143,13 +139,12 @@ type ApplicationMonitoringSpec struct {
 	Version string `json:"version,omitempty"`
 }
 
-
 type AppInjectionSpec struct {
 	// Optional: set a namespace selector to limit which namespaces are monitored
 	// By default, all namespaces will be monitored
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
 	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
-    // Optional: In case your cluster doesn't have 'nodes' so csi drivers won't work, to make such a usecase work set this to true.
+	// Optional: In case your cluster doesn't have 'nodes' so csi drivers won't work, to make such a usecase work set this to true.
 	ServerlessMode bool `json:"serverlessMode,omitempty"`
 }

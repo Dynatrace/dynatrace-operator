@@ -1,4 +1,4 @@
-package server
+package mutation
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	t_utils "github.com/Dynatrace/dynatrace-operator/testing"
@@ -33,14 +34,22 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	require.NoError(t, err)
 
-	inj := &podInjector{
+	inj := &podMutator{
 		client: fake.NewClient(
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "dynakube"},
+					Labels: map[string]string{mapper.InstanceLabel: "dynakube"},
 				},
 			}),
+		apiReader: fake.NewClient(
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      dtwebhook.SecretConfigName,
+					Namespace: "test-namespace",
+				},
+			},
+		),
 		decoder:   decoder,
 		image:     "operator-image",
 		namespace: "dynatrace",
@@ -72,9 +81,9 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	)
 }
 
-func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, *dynatracev1alpha1.DynaKube) {
+func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podMutator, *dynatracev1alpha1.DynaKube) {
 	dynakube := &dynatracev1alpha1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
+		ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: "dynatrace"},
 		Spec: dynatracev1alpha1.DynaKubeSpec{
 			APIURL: "https://test-api-url.com/api",
 			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
@@ -104,13 +113,21 @@ func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podInjector, 
 		},
 	}
 
-	return &podInjector{
+	return &podMutator{
 		client: fake.NewClient(
 			dynakube,
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+					Labels: map[string]string{mapper.InstanceLabel: "dynakube"},
+				},
+			},
+		),
+		apiReader: fake.NewClient(
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      dtwebhook.SecretConfigName,
+					Namespace: "test-namespace",
 				},
 			},
 		),
@@ -282,7 +299,7 @@ func TestPodInjectionWithCSI(t *testing.T) {
 
 func createDynakubeInstance(_ *testing.T) *dynatracev1alpha1.DynaKube {
 	instance := &dynatracev1alpha1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: "oneagent", Namespace: "dynatrace"},
+		ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: "dynatrace"},
 		Spec: dynatracev1alpha1.DynaKubeSpec{
 			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
 				FullStackSpec: dynatracev1alpha1.FullStackSpec{
@@ -324,13 +341,21 @@ func TestUseImmutableImage(t *testing.T) {
 		instance := createDynakubeInstance(t)
 		withoutCSIDriver(t, instance)
 
-		inj := &podInjector{
+		inj := &podMutator{
 			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Labels: map[string]string{mapper.InstanceLabel: "dynakube"},
+					},
+				},
+			),
+			apiReader: fake.NewClient(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      dtwebhook.SecretConfigName,
+						Namespace: "test-namespace",
 					},
 				},
 			),
@@ -413,13 +438,21 @@ func TestUseImmutableImage(t *testing.T) {
 		instance := createDynakubeInstance(t)
 		withoutCSIDriver(t, instance)
 
-		inj := &podInjector{
+		inj := &podMutator{
 			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Labels: map[string]string{mapper.InstanceLabel: "dynakube"},
+					},
+				},
+			),
+			apiReader: fake.NewClient(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      dtwebhook.SecretConfigName,
+						Namespace: "test-namespace",
 					},
 				},
 			),
@@ -503,13 +536,21 @@ func TestUseImmutableImage(t *testing.T) {
 		instance := createDynakubeInstance(t)
 		withoutCSIDriver(t, instance)
 
-		inj := &podInjector{
+		inj := &podMutator{
 			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Labels: map[string]string{mapper.InstanceLabel: "dynakube"},
+					},
+				},
+			),
+			apiReader: fake.NewClient(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      dtwebhook.SecretConfigName,
+						Namespace: "test-namespace",
 					},
 				},
 			),
@@ -590,13 +631,21 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 
 		instance := createDynakubeInstance(t)
 
-		inj := &podInjector{
+		inj := &podMutator{
 			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Labels: map[string]string{mapper.InstanceLabel: instance.Name},
+					},
+				},
+			),
+			apiReader: fake.NewClient(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      dtwebhook.SecretConfigName,
+						Namespace: "test-namespace",
 					},
 				},
 			),
@@ -671,13 +720,21 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 
 		instance := createDynakubeInstance(t)
 
-		inj := &podInjector{
+		inj := &podMutator{
 			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Labels: map[string]string{mapper.InstanceLabel: instance.Name},
+					},
+				},
+			),
+			apiReader: fake.NewClient(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      dtwebhook.SecretConfigName,
+						Namespace: "test-namespace",
 					},
 				},
 			),
@@ -753,13 +810,21 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 
 		instance := createDynakubeInstance(t)
 
-		inj := &podInjector{
+		inj := &podMutator{
 			client: fake.NewClient(
 				instance,
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:   "test-namespace",
-						Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+						Labels: map[string]string{mapper.InstanceLabel: instance.Name},
+					},
+				},
+			),
+			apiReader: fake.NewClient(
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      dtwebhook.SecretConfigName,
+						Namespace: "test-namespace",
 					},
 				},
 			),
@@ -834,13 +899,21 @@ func TestAgentVersion(t *testing.T) {
 	withoutCSIDriver(t, instance)
 	withAgentVersion(t, instance, testVersion)
 
-	inj := &podInjector{
+	inj := &podMutator{
 		client: fake.NewClient(
 			instance,
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+					Labels: map[string]string{mapper.InstanceLabel: instance.Name},
+				},
+			},
+		),
+		apiReader: fake.NewClient(
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      dtwebhook.SecretConfigName,
+					Namespace: "test-namespace",
 				},
 			},
 		),
@@ -920,13 +993,21 @@ func TestAgentVersionWithCSI(t *testing.T) {
 	instance := createDynakubeInstance(t)
 	withAgentVersion(t, instance, testVersion)
 
-	inj := &podInjector{
+	inj := &podMutator{
 		client: fake.NewClient(
 			instance,
 			&corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:   "test-namespace",
-					Labels: map[string]string{"oneagent.dynatrace.com/instance": "oneagent"},
+					Labels: map[string]string{mapper.InstanceLabel: instance.Name},
+				},
+			},
+		),
+		apiReader: fake.NewClient(
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      dtwebhook.SecretConfigName,
+					Namespace: "test-namespace",
 				},
 			},
 		),

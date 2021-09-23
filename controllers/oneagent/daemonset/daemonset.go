@@ -156,7 +156,7 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
 	annotations := map[string]string{
 		statefulset.AnnotationVersion: instance.Status.OneAgent.Version,
-		annotationUnprivileged: annotationUnprivilegedValue,
+		annotationUnprivileged:        annotationUnprivilegedValue,
 	}
 
 	result := &appsv1.DaemonSet{
@@ -265,7 +265,6 @@ func (dsInfo *builderInfo) dnsPolicy() corev1.DNSPolicy {
 	}
 	return corev1.DNSClusterFirstWithHostNet
 }
-
 
 func (dsInfo *builderInfo) volumeMounts() []corev1.VolumeMount {
 	return prepareVolumeMounts(dsInfo.instance)

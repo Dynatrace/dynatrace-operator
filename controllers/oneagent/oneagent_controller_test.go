@@ -624,3 +624,61 @@ func newDynaKube() *dynatracev1alpha1.DynaKube {
 		},
 	}
 }
+
+func TestInstanceStatus(t *testing.T) {
+	namespace := "dynatrace"
+	dkName := "dynakube"
+
+	dynakube := &dynatracev1alpha1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
+		Spec: dynatracev1alpha1.DynaKubeSpec{
+			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
+			Tokens: dkName,
+			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
+				FullStackSpec: dynatracev1alpha1.FullStackSpec{Enabled: true},
+			},
+		},
+	}
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-pod-1",
+			Namespace: namespace,
+			Labels: map[string]string{
+				"dynatrace.com/component":         "operator",
+				"operator.dynatrace.com/instance": dkName,
+				"operator.dynatrace.com/feature":  daemonset.InframonFeature,
+			},
+		},
+		Spec: corev1.PodSpec{
+			NodeName: "node-1",
+		},
+		Status: corev1.PodStatus{
+			HostIP: "123.123.123.123",
+		},
+	}
+
+	fakeClient := fake.NewClient(
+		dynakube,
+		pod,
+		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		sampleKubeSystemNS)
+
+	reconciler := &ReconcileOneAgent{
+		client:    fakeClient,
+		apiReader: fakeClient,
+		scheme:    scheme.Scheme,
+		logger:    consoleLogger,
+		instance:  dynakube,
+		feature:   daemonset.InframonFeature,
+		fullStack: &dynakube.Spec.InfraMonitoring.FullStackSpec,
+	}
+
+	upd, err := reconciler.reconcileInstanceStatuses(context.Background(), reconciler.logger, reconciler.instance)
+	assert.NoError(t, err)
+	assert.True(t, upd)
+
+	upd, err = reconciler.reconcileInstanceStatuses(context.Background(), reconciler.logger, reconciler.instance)
+	assert.NoError(t, err)
+	assert.False(t, upd)
+}

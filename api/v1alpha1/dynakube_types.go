@@ -23,12 +23,16 @@ type DynaKubeSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="API and PaaS Tokens",order=2,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	Tokens string `json:"tokens,omitempty"`
 
+	// Namespace selector for the Operator to know in which namespaces it should monitor applications
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="NamespaceSelector",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:selector"}
+	NamespaceSelector *metav1.LabelSelector `json:"monitoredNamespaces,omitempty"`
+
 	// Optional: Pull secret for your private registry
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom PullSecret",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
 
 	// Disable certificate validation checks for installer download and API communication
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Skip Certificate Check",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Skip Certificate Check",order=4,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	SkipCertCheck bool `json:"skipCertCheck,omitempty"`
 
 	// Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'

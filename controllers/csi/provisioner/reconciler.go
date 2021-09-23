@@ -168,14 +168,14 @@ func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1.DynaK
 	}
 
 	dtp := dynakube.DynatraceClientProperties{
-		Client: r.client,
-		Secret: &tkns,
-		ApiUrl: dk.Spec.APIURL,
-		Namespace: dk.Namespace,
-		Proxy: (*dynakube.DynatraceClientProxy)(dk.Spec.Proxy),
-		NetworkZone: dk.Spec.NetworkZone,
-		TrustedCerts: dk.Spec.TrustedCAs,
-		SkipCertCheck: dk.Spec.SkipCertCheck,
+		Client:              r.client,
+		Secret:              &tkns,
+		ApiUrl:              dk.Spec.APIURL,
+		Namespace:           dk.Namespace,
+		Proxy:               (*dynakube.DynatraceClientProxy)(dk.Spec.Proxy),
+		NetworkZone:         dk.Spec.NetworkZone,
+		TrustedCerts:        dk.Spec.TrustedCAs,
+		SkipCertCheck:       dk.Spec.SkipCertCheck,
 		DisableHostRequests: dk.FeatureDisableHostsRequests(),
 	}
 	dtc, err := r.dtcBuildFunc(dtp)
@@ -200,4 +200,3 @@ func (r *OneAgentProvisioner) createCSIDirectories(envDir string) error {
 
 	return nil
 }
-

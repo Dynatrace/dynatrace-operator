@@ -322,14 +322,14 @@ func (r *ReconcileNodes) sendMarkedForTermination(dk *dynatracev1.DynaKube, node
 	}
 
 	dtf := dynakube.DynatraceClientProperties{
-		Client: r.client,
-		Secret: &secret,
-		ApiUrl: dk.Spec.APIURL,
-		Proxy: (*dynakube.DynatraceClientProxy)(dk.Spec.Proxy),
-		Namespace: dk.Namespace,
-		NetworkZone: dk.Spec.NetworkZone,
-		TrustedCerts: dk.Spec.TrustedCAs,
-		SkipCertCheck: dk.Spec.SkipCertCheck,
+		Client:              r.client,
+		Secret:              &secret,
+		ApiUrl:              dk.Spec.APIURL,
+		Proxy:               (*dynakube.DynatraceClientProxy)(dk.Spec.Proxy),
+		Namespace:           dk.Namespace,
+		NetworkZone:         dk.Spec.NetworkZone,
+		TrustedCerts:        dk.Spec.TrustedCAs,
+		SkipCertCheck:       dk.Spec.SkipCertCheck,
 		DisableHostRequests: dk.FeatureDisableActiveGateUpdates(),
 	}
 	dtc, err := r.dtClientFunc(dtf)

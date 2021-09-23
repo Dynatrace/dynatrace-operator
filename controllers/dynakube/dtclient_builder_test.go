@@ -37,9 +37,9 @@ func TestBuildDynatraceClient(t *testing.T) {
 			}}
 		fakeClient := fake.NewClient(instance, &secret)
 		dtf := DynatraceClientProperties{
-			Client: fakeClient,
-			Secret: &secret,
-			ApiUrl: instance.Spec.APIURL,
+			Client:    fakeClient,
+			Secret:    &secret,
+			ApiUrl:    instance.Spec.APIURL,
 			Namespace: testNamespace,
 		}
 		dtc, err := BuildDynatraceClient(dtf)
@@ -67,9 +67,9 @@ func TestBuildDynatraceClient(t *testing.T) {
 			}}
 		fakeClient := fake.NewClient(instance, &secret)
 		dtf := DynatraceClientProperties{
-			Client: fakeClient,
-			Secret: &secret,
-			ApiUrl: instance.Spec.APIURL,
+			Client:    fakeClient,
+			Secret:    &secret,
+			ApiUrl:    instance.Spec.APIURL,
 			Namespace: testNamespace,
 		}
 		dtc, err := BuildDynatraceClient(dtf)
@@ -77,8 +77,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 		assert.Error(t, err)
 
 		dtf = DynatraceClientProperties{
-			Client: fakeClient,
-			ApiUrl: instance.Spec.APIURL,
+			Client:    fakeClient,
+			ApiUrl:    instance.Spec.APIURL,
 			Namespace: testNamespace,
 		}
 		dtc, err = BuildDynatraceClient(dtf)
@@ -103,11 +103,11 @@ func TestBuildDynatraceClient(t *testing.T) {
 				}}}
 		fakeClient := fake.NewClient(instance, &secret)
 		dtf := DynatraceClientProperties{
-			Client: fakeClient,
-			Secret: &secret,
-			ApiUrl: instance.Spec.APIURL,
+			Client:    fakeClient,
+			Secret:    &secret,
+			ApiUrl:    instance.Spec.APIURL,
 			Namespace: testNamespace,
-			Proxy: (*DynatraceClientProxy)(instance.Spec.Proxy),
+			Proxy:     (*DynatraceClientProxy)(instance.Spec.Proxy),
 		}
 		dtc, err := BuildDynatraceClient(dtf)
 
@@ -132,10 +132,10 @@ func TestBuildDynatraceClient(t *testing.T) {
 
 		fakeClient := fake.NewClient(instance, &secret)
 		dtf := DynatraceClientProperties{
-			Client: fakeClient,
-			Secret: &secret,
-			ApiUrl: instance.Spec.APIURL,
-			Namespace: testNamespace,
+			Client:       fakeClient,
+			Secret:       &secret,
+			ApiUrl:       instance.Spec.APIURL,
+			Namespace:    testNamespace,
 			TrustedCerts: instance.Spec.TrustedCAs,
 		}
 		dtc, err := BuildDynatraceClient(dtf)

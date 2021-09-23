@@ -55,7 +55,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 				CapabilityProperties: dynatracev1alpha1.CapabilityProperties{Enabled: true},
 			},
 			OneAgent: dynatracev1.OneAgentSpec{
-				 ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
+				ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
 			},
 		},
 	}
