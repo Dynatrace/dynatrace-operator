@@ -14,9 +14,9 @@ spec:
   # tokens: ""
 
   # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements >
-  # if monitoredNamespaces is not set then we inject into every namespace
+  # if namespaceSelector is not set then we inject into every namespace
   #
-  # monitoredNamespaces:
+  # namespaceSelector:
   #     matchLabels:
   #       test: test
 

@@ -3996,7 +3996,7 @@ spec:
                       type: object
                     type: array
                 type: object
-              monitoredNamespaces:
+              namespaceSelector:
                 description: Namespace selector for the Operator to know in which
                   namespaces it should monitor applications
                 properties:
@@ -8487,7 +8487,7 @@ spec:
                       type: object
                     type: array
                 type: object
-              monitoredNamespaces:
+              namespaceSelector:
                 description: Namespace selector for the Operator to know in which
                   namespaces it should monitor applications
                 properties:

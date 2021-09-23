@@ -25,7 +25,7 @@ type DynaKubeSpec struct {
 
 	// Namespace selector for the Operator to know in which namespaces it should monitor applications
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="NamespaceSelector",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:selector"}
-	NamespaceSelector *metav1.LabelSelector `json:"monitoredNamespaces,omitempty"`
+	NamespaceSelector *metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
 	// Optional: Pull secret for your private registry
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom PullSecret",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
