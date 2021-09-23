@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	defaultUpdateInterval = 15 * time.Minute
+	defaultUpdateInterval = 5 * time.Minute
 	updateEnvVar          = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
 )
 

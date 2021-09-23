@@ -13,6 +13,13 @@ spec:
   #
   # tokens: ""
 
+  # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements >
+  # if monitoredNamespaces is not set then we inject into every namespace
+  #
+  # monitoredNamespaces:
+  #     matchLabels:
+  #       test: test
+
   # Optional: Disable certificate validation checks for installer download and API communication
   #
   # skipCertCheck: false
