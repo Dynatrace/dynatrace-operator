@@ -201,9 +201,7 @@ func prepareDynakube(name string) *dynatracev1.DynaKube {
 			UID:       types.UID(name),
 		},
 		Spec: dynatracev1.DynaKubeSpec{
-			OneAgent: dynatracev1.OneAgentSpec{
-				ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{},
-			},
+			OneAgent: dynatracev1.OneAgentSpec{},
 		},
 	}
 }

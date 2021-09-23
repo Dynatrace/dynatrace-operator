@@ -24,7 +24,7 @@ const (
 )
 
 func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
-	environmentVariables := dsInfo.fullstackSpec.Env
+	environmentVariables := dsInfo.hostInjectSpec.Env
 	envVarMap := envVarsToMap(environmentVariables)
 	envVarMap = setDefaultValueSource(envVarMap, dtNodeName, &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}})
 	envVarMap = setDefaultValue(envVarMap, dtClusterId, dsInfo.clusterId)

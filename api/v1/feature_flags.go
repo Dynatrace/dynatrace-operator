@@ -26,6 +26,7 @@ const (
 	annotationFeatureDisableHostsRequests            = annotationFeaturePrefix + "disable-hosts-requests"
 	annotationFeatureOneAgentMaxUnavailable          = annotationFeaturePrefix + "oneagent-max-unavailable"
 	annotationFeatureEnableWebhookReinvocationPolicy = annotationFeaturePrefix + "enable-webhook-reinvocation-policy"
+	annotationFeatureIgnoreUnknownState              = annotationFeaturePrefix + "ignore-unknown-state"
 )
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
@@ -62,4 +63,10 @@ func (dk *DynaKube) FeatureEnableWebhookReinvocationPolicy() bool {
 // GetFeatureEnableWebhookReinvocationPolicy returns the annotation for FeatureEnableWebhookReinvocationPolicy
 func (dk *DynaKube) GetFeatureEnableWebhookReinvocationPolicy() string {
 	return annotationFeatureEnableWebhookReinvocationPolicy
+}
+
+// FeatureIgnoreUnknownState is a feature flag that makes the operator inject into applications even when the dynakube is in an UNKNOWN state,
+// this may cause extra host to appear in the tenant for each process.
+func (dk *DynaKube) FeatureIgnoreUnknownState() bool {
+	return dk.Annotations[annotationFeatureIgnoreUnknownState] == "true"
 }

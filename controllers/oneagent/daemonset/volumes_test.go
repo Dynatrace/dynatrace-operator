@@ -3,51 +3,46 @@ package daemonset
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestPrepareVolumes(t *testing.T) {
 	t.Run(`has root volume`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{}
-		readOnlySpec := &v1alpha1.ReadOnlySpec{}
+		instance := &dynatracev1.DynaKube{}
 		volumes := prepareVolumes(instance)
 
 		assert.Contains(t, volumes, getRootVolume())
 		assert.NotContains(t, volumes, getCertificateVolume(instance))
-		assert.NotContains(t, volumes, getInstallationVolume(readOnlySpec))
+		assert.NotContains(t, volumes, getInstallationVolume(instance))
 	})
 	t.Run(`has certificate volume`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				TrustedCAs: testName,
 			},
 		}
-		readOnlySpec := &v1alpha1.ReadOnlySpec{}
 		volumes := prepareVolumes(instance)
 
 		assert.Contains(t, volumes, getRootVolume())
 		assert.Contains(t, volumes, getCertificateVolume(instance))
-		assert.NotContains(t, volumes, getInstallationVolume(readOnlySpec))
+		assert.NotContains(t, volumes, getInstallationVolume(instance))
 	})
 	t.Run(`has readonly installation volume`, func(t *testing.T) {
-		readOnlySpec := &v1alpha1.ReadOnlySpec{
-			Enabled: true,
-		}
-		instance := &v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-					ReadOnly: *readOnlySpec,
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostMonitoringSpec{},
 				},
 			},
 		}
 		dsInfo := InfraMonitoring{
 			builderInfo{
 				instance:      instance,
-				fullstackSpec: &v1alpha1.FullStackSpec{Enabled: true},
+				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
 				logger:        logger.NewDTLogger(),
 				clusterId:     "",
 				relatedImage:  "",
@@ -60,24 +55,21 @@ func TestPrepareVolumes(t *testing.T) {
 
 		assert.Contains(t, volumes, getRootVolume())
 		assert.NotContains(t, volumes, getCertificateVolume(instance))
-		assert.Contains(t, volumes, getInstallationVolume(readOnlySpec))
+		assert.Contains(t, volumes, getInstallationVolume(instance))
 	})
 	t.Run(`has all volumes`, func(t *testing.T) {
-		readOnlySpec := &v1alpha1.ReadOnlySpec{
-			Enabled: true,
-		}
-		instance := &v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				TrustedCAs: testName,
-				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-					ReadOnly: *readOnlySpec,
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostMonitoringSpec{},
 				},
 			},
 		}
 		dsInfo := InfraMonitoring{
 			builderInfo{
 				instance:      instance,
-				fullstackSpec: &v1alpha1.FullStackSpec{Enabled: true},
+				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
 				logger:        logger.NewDTLogger(),
 				clusterId:     "",
 				relatedImage:  "",
@@ -90,13 +82,13 @@ func TestPrepareVolumes(t *testing.T) {
 
 		assert.Contains(t, volumes, getRootVolume())
 		assert.Contains(t, volumes, getCertificateVolume(instance))
-		assert.Contains(t, volumes, getInstallationVolume(readOnlySpec))
+		assert.Contains(t, volumes, getInstallationVolume(instance))
 	})
 }
 
 func TestPrepareVolumeMounts(t *testing.T) {
 	t.Run(`has root volume mount`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{}
+		instance := &dynatracev1.DynaKube{}
 		volumeMounts := prepareVolumeMounts(instance)
 
 		assert.Contains(t, volumeMounts, getRootMount())
@@ -104,8 +96,8 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.NotContains(t, volumeMounts, getInstallationMount())
 	})
 	t.Run(`has certificate volume mount`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				TrustedCAs: testName,
 			},
 		}
@@ -116,16 +108,12 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.NotContains(t, volumeMounts, getInstallationMount())
 	})
 	t.Run(`has installation volume mount`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-					FullStackSpec: v1alpha1.FullStackSpec{
-						Enabled: true,
-					},
-					ReadOnly: v1alpha1.ReadOnlySpec{
-						Enabled: true,
-						InstallationVolume: &v1.VolumeSource{
-							EmptyDir: &v1.EmptyDirVolumeSource{},
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostMonitoringSpec{
+						InstallationVolume: &corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
 						},
 					},
 				},
@@ -134,7 +122,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		dsInfo := InfraMonitoring{
 			builderInfo{
 				instance:      instance,
-				fullstackSpec: &instance.Spec.InfraMonitoring.FullStackSpec,
+				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
 				logger:        logger.NewDTLogger(),
 				clusterId:     "",
 				relatedImage:  "",
@@ -152,17 +140,13 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		assert.Contains(t, volumeMounts, getInstallationMount())
 	})
 	t.Run(`has all volume mount`, func(t *testing.T) {
-		instance := &v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
+		instance := &dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				TrustedCAs: testName,
-				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-					FullStackSpec: v1alpha1.FullStackSpec{
-						Enabled: true,
-					},
-					ReadOnly: v1alpha1.ReadOnlySpec{
-						Enabled: true,
-						InstallationVolume: &v1.VolumeSource{
-							EmptyDir: &v1.EmptyDirVolumeSource{},
+				OneAgent: dynatracev1.OneAgentSpec{
+					HostMonitoring: &dynatracev1.HostMonitoringSpec{
+						InstallationVolume: &corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
 						},
 					},
 				},
@@ -171,7 +155,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		dsInfo := InfraMonitoring{
 			builderInfo{
 				instance:      instance,
-				fullstackSpec: &instance.Spec.InfraMonitoring.FullStackSpec,
+				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
 				logger:        logger.NewDTLogger(),
 				clusterId:     "",
 				relatedImage:  "",

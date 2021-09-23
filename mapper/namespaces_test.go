@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -15,9 +15,9 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 		"type":   "app",
 		"inject": "true",
 	}
-	dynakubes := []*dynatracev1alpha1.DynaKube{
-		createTestDynakubeWithCodeModules("codeModules-1", nil, nil),
-		createTestDynakubeWithCodeModules("codeModules-2", matchLabels, nil),
+	dynakubes := []*dynatracev1.DynaKube{
+		createTestDynakubeWithAppInject("codeModules-1", nil, nil),
+		createTestDynakubeWithAppInject("codeModules-2", matchLabels, nil),
 	}
 
 	t.Run(`Match to unlabeled namespace`, func(t *testing.T) {
@@ -48,7 +48,7 @@ func TestMapFromNamespace(t *testing.T) {
 	})
 
 	t.Run("Error, 2 dynakube point to same namespace", func(t *testing.T) {
-		dk2 := createTestDynakubeWithCodeModules("codeModules-2", labels, nil)
+		dk2 := createTestDynakubeWithAppInject("codeModules-2", labels, nil)
 		clt := fake.NewClient(dk, dk2)
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
 
@@ -71,19 +71,5 @@ func TestMapFromNamespace(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, updated)
 		assert.Equal(t, 0, len(nm.targetNs.Labels))
-	})
-	t.Run("Allow multiple dynakubes with different features", func(t *testing.T) {
-		labels := map[string]string{"test": "selector"}
-		differentDk1 := createTestDynakubeWithDataIngest("dk1", labels, nil)
-		differentDk2 := createTestDynakubeWithCodeModules("dk2", labels, nil)
-		namespace := createNamespace("test-namespace", labels)
-		clt := fake.NewClient(differentDk1, differentDk2)
-		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
-
-		updated, err := nm.MapFromNamespace()
-
-		assert.NoError(t, err)
-		assert.True(t, updated)
-		assert.Equal(t, 2, len(nm.targetNs.Labels))
 	})
 }

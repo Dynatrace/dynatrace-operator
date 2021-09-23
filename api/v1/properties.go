@@ -22,6 +22,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -100,6 +101,19 @@ func (dk *DynaKube) ServerlessMode() bool {
 	return false
 }
 
+func (dk *DynaKube) NeedsCSI() bool {
+	if dk.ServerlessMode(){
+		return false
+	} else if dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.Image != "" {
+		return false
+	}
+	return dk.CloudNativeFullstackMode() || dk.ApplicationMonitoringMode()
+}
+
+func (dk *DynaKube) NeedAppInjection() bool {
+	return dk.CloudNativeFullstackMode() || dk.ApplicationMonitoringMode()
+}
+
 func (dk *DynaKube) Image() string {
 	if dk.ClassicFullStackMode() {
 		return dk.Spec.OneAgent.ClassicFullStack.Image
@@ -110,6 +124,17 @@ func (dk *DynaKube) Image() string {
 	}
 
 	return ""
+}
+
+func (dk *DynaKube) NodeSelector() map[string]string {
+	if dk.ClassicFullStackMode() {
+		return dk.Spec.OneAgent.ClassicFullStack.NodeSelector
+	} else if dk.HostMonitoringMode() {
+		return dk.Spec.OneAgent.HostMonitoring.NodeSelector
+	} else if dk.CloudNativeFullstackMode() {
+		return dk.Spec.OneAgent.CloudNativeFullStack.NodeSelector
+	}
+	return nil
 }
 
 func (dk *DynaKube) Version() string {
@@ -124,6 +149,16 @@ func (dk *DynaKube) Version() string {
 	}
 	return ""
 }
+
+func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
+	if dk.CloudNativeFullstackMode() {
+		return &dk.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector
+	} else if dk.ApplicationMonitoringMode() {
+		return &dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector
+	}
+	return nil
+}
+
 
 // ImmutableOneAgentImage returns the immutable OneAgent image to be used with the dk DynaKube instance.
 func (dk *DynaKube) ImmutableOneAgentImage() string {

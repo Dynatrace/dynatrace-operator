@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -38,16 +39,14 @@ var (
 	testNodeWithSelectorName = "nodeWselector"
 	testSelectorLabels       = map[string]string{"test": "label"}
 
-	testDynakubeComplex = &dynatracev1alpha1.DynaKube{
+	testDynakubeComplex = &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeComplexName, Namespace: operatorNamespace},
-		Spec: dynatracev1alpha1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL:     testApiUrl,
-			Proxy:      &dynatracev1alpha1.DynaKubeProxy{Value: testProxy},
+			Proxy:      &dynatracev1.DynaKubeProxy{Value: testProxy},
 			TrustedCAs: testtrustCAsCM,
 			Tokens:     testTokensName,
-			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
-				FullStackSpec: dynatracev1alpha1.FullStackSpec{Enabled: true},
-			},
+			OneAgent: dynatracev1.OneAgentSpec{HostMonitoring: &dynatracev1.HostMonitoringSpec{}},
 		},
 		Status: dynatracev1alpha1.DynaKubeStatus{
 			ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
@@ -61,13 +60,11 @@ var (
 		},
 	}
 
-	testDynakubeSimple = &dynatracev1alpha1.DynaKube{
+	testDynakubeSimple = &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
-		Spec: dynatracev1alpha1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testApiUrl,
-			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
-				FullStackSpec: dynatracev1alpha1.FullStackSpec{Enabled: true},
-			},
+			OneAgent: dynatracev1.OneAgentSpec{HostMonitoring: &dynatracev1.HostMonitoringSpec{}},
 		},
 		Status: dynatracev1alpha1.DynaKubeStatus{
 			ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
@@ -81,12 +78,16 @@ var (
 		},
 	}
 
-	testDynakubeWithSelector = &dynatracev1alpha1.DynaKube{
+	testDynakubeWithSelector = &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
-		Spec: dynatracev1alpha1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testApiUrl,
-			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
-				FullStackSpec: dynatracev1alpha1.FullStackSpec{Enabled: true, NodeSelector: testSelectorLabels},
+			OneAgent: dynatracev1.OneAgentSpec{
+				HostMonitoring: &dynatracev1.HostMonitoringSpec{
+					HostInjectSpec: dynatracev1.HostInjectSpec{
+						NodeSelector: testSelectorLabels,
+					},
+				},
 			},
 		},
 		Status: dynatracev1alpha1.DynaKubeStatus{

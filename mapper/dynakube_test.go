@@ -47,7 +47,7 @@ func TestMapFromDynakube(t *testing.T) {
 		assert.Equal(t, 1, len(ns.Annotations))
 	})
 	t.Run("Remove stale dynakube entry for no longer matching ns", func(t *testing.T) {
-		movedDk := createTestBlankDynakube("moved-dk", nil, nil)
+		movedDk := createTestDynakubeWithAppInject("moved-dk", nil, nil)
 		nsLabels := map[string]string{
 			InstanceLabel: movedDk.Name,
 		}
@@ -78,30 +78,10 @@ func TestMapFromDynakube(t *testing.T) {
 
 		assert.Error(t, err)
 	})
-	t.Run("Allow multiple dynakubes with different features", func(t *testing.T) {
-		differentDk1 := createTestDynakubeWithDataIngest("dk1", labels, nil)
-		differentDk2 := createTestDynakubeWithCodeModules("dk2", labels, nil)
-		nsLabels := map[string]string{
-			InstanceLabel: dk.Name,
-			"test":        "selector",
-		}
-		namespace := createNamespace("test-namespace", nsLabels)
-		clt := fake.NewClient(differentDk1, differentDk2, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", differentDk1)
-
-		err := dm.MapFromDynakube()
-
-		assert.NoError(t, err)
-		var ns corev1.Namespace
-		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
-		assert.NoError(t, err)
-		assert.Equal(t, 2, len(ns.Labels))
-		assert.Equal(t, 1, len(ns.Annotations))
-	})
 }
 
 func TestUnmapFromDynaKube(t *testing.T) {
-	dk := createTestBlankDynakube("dk", nil, nil)
+	dk := createTestDynakubeWithAppInject("dk", nil, nil)
 	labels := map[string]string{
 		InstanceLabel: dk.Name,
 	}

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"text/template"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -73,7 +73,7 @@ func NewInitGenerator(client client.Client, apiReader client.Reader, ns string, 
 // Used by the podInjection webhook in case the namespace lacks the init secret.
 func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dkName, targetNs string) error {
 	g.logger.Info("Reconciling namespace init secret for", "namespace", targetNs)
-	var dk dynatracev1alpha1.DynaKube
+	var dk dynatracev1.DynaKube
 	if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dkName, Namespace: g.namespace}, &dk); err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dkName, target
 
 // GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
-func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1alpha1.DynaKube) (bool, error) {
+func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1.DynaKube) (bool, error) {
 	g.logger.Info("Reconciling namespace init secret for", "dynakube", dk.Name)
 	data, err := g.generate(ctx, dk)
 	if err != nil {
@@ -108,7 +108,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 }
 
 // generate gets the necessary info the create the init secret data
-func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1alpha1.DynaKube) (map[string][]byte, error) {
+func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1.DynaKube) (map[string][]byte, error) {
 	kubeSystemUID, err := kubesystem.GetUID(g.apiReader)
 	if err != nil {
 		return nil, err
@@ -132,7 +132,7 @@ func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1alpha1.Dyna
 	return data, nil
 }
 
-func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1alpha1.DynaKube, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) (*script, error) {
+func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1.DynaKube, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) (*script, error) {
 	var tokens corev1.Secret
 	if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
@@ -179,8 +179,8 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1alpha1.DynaKube,
 // - unknown: there SHOULD be a infra-monitoring agent on the node, but dynakube has NO tenantUID set => user processes will restart until this is fixed (node.Name not present in the map)
 //
 // Checks all the dynakubes with infra-monitoring against all the nodes (using the nodeSelector), creating the above mentioned mapping.
-func (g *InitGenerator) getInfraMonitoringNodes(dk *dynatracev1alpha1.DynaKube) (map[string]string, error) {
-	var dks dynatracev1alpha1.DynaKubeList
+func (g *InitGenerator) getInfraMonitoringNodes(dk *dynatracev1.DynaKube) (map[string]string, error) {
+	var dks dynatracev1.DynaKubeList
 	if err := g.client.List(context.TODO(), &dks, client.InNamespace(g.namespace)); err != nil {
 		return nil, errors.WithMessage(err, "failed to query DynaKubeList")
 	}
@@ -195,12 +195,12 @@ func (g *InitGenerator) getInfraMonitoringNodes(dk *dynatracev1alpha1.DynaKube) 
 		if dk != nil && dk.Name == dks.Items[i].Name {
 			status = &dk.Status
 		}
-		if dks.Items[i].Spec.InfraMonitoring.Enabled {
+		if dks.Items[i].NeedsOneAgent() {
 			tenantUUID := ""
 			if status.ConnectionInfo.TenantUUID != "" {
 				tenantUUID = status.ConnectionInfo.TenantUUID
 			}
-			nodeSelector := labels.SelectorFromSet(dks.Items[i].Spec.InfraMonitoring.NodeSelector)
+			nodeSelector := labels.SelectorFromSet(dks.Items[i].NodeSelector())
 			for _, node := range nodeInf.nodes {
 				nodeLabels := labels.Set(node.Labels)
 				if nodeSelector.Matches(nodeLabels) {

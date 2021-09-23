@@ -20,7 +20,7 @@ const (
 	testValue = "test-value"
 
 	testClusterID = "test-cluster-id"
-	testURL       = "https://test-url"
+	testURL       = "https://testing.dev.dynatracelabs.com/api"
 	testName      = "test-name"
 )
 
@@ -46,7 +46,7 @@ func TestArguments(t *testing.T) {
 	dsInfo := ClassicFullStack{
 		builderInfo{
 			instance:      &instance,
-			fullstackSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
+			hostInjectSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
 			logger:        log,
 			clusterId:     testClusterID,
 			relatedImage:  testValue,
@@ -83,7 +83,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	dsInfo := ClassicFullStack{
 		builderInfo{
 			instance:       instance,
-			fullstackSpec:  fullStackSpecs,
+			hostInjectSpec:  fullStackSpecs,
 			logger:         log,
 			clusterId:      testClusterID,
 			relatedImage:   testValue,
@@ -131,7 +131,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 		dsInfo := InfraMonitoring{
 			builderInfo{
 				instance:      instance,
-				fullstackSpec: fullStackSpecs,
+				hostInjectSpec: fullStackSpecs,
 				logger:        log,
 				clusterId:     testClusterID,
 				relatedImage:  testValue,
