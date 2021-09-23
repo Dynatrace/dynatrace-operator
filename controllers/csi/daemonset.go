@@ -26,10 +26,14 @@ const (
 	MountpointDirPath   = "/var/lib/kubelet/pods"
 	OneAgentDataDirPath = "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data"
 
-	MinCPU    = 200
-	MinMemory = 100
-	MaxCPU    = 200
-	MaxMemory = 100
+	DriverDefaultCPU    = 200
+	DriverDefaultMemory = 100
+
+	RegistrarDefaultCPU    = 50
+	RegistrarDefaultMemory = 50
+
+	LivenessProbeDefaultCPU    = 50
+	LivenessProbeDefaultMemory = 50
 )
 
 type Reconciler struct {
@@ -62,7 +66,7 @@ func (r *Reconciler) Reconcile() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	driverContainerResources := prepareResources(r.client, r.operatorNamespace, r.logger)
+	driverContainerResources := prepareDriverResources(r.client, r.operatorNamespace, r.logger)
 
 	ds, err := buildDesiredCSIDaemonSet(
 		operatorImage, r.operatorNamespace, r.instance, driverContainerResources)
@@ -125,7 +129,7 @@ func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *v1alpha
 					Containers: []corev1.Container{
 						prepareDriverContainer(operatorImage, driverContainerResources),
 						prepareRegistrarContainer(operatorImage),
-						preparelivenessProbeContainer(operatorImage),
+						prepareLivenessProbeContainer(operatorImage),
 					},
 					ServiceAccountName: prepareServiceAccount(dynakube.Spec.CodeModules.ServiceAccountNameCSIDriver),
 					Volumes:            prepareVolumes(),
@@ -211,7 +215,7 @@ func prepareDriverEnvVars() []corev1.EnvVar {
 	}
 }
 
-func prepareResources(client client.Client, operatorNS string, logger logr.Logger) corev1.ResourceRequirements {
+func prepareDriverResources(client client.Client, operatorNS string, logger logr.Logger) corev1.ResourceRequirements {
 	deployment, err := kubeobjects.GetDeployment(client, operatorNS)
 	if err != nil {
 		logger.Info(fmt.Sprintf("failed to get deployment for reading '%s' label", AnnotationCSIResourcesIdentifier), "err", err)
@@ -229,12 +233,12 @@ func prepareResources(client client.Client, operatorNS string, logger logr.Logge
 
 	return corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    getQuantity(MinCPU, resource.Milli),
-			corev1.ResourceMemory: getQuantity(MinMemory, resource.Mega),
+			corev1.ResourceCPU:    getQuantity(DriverDefaultCPU, resource.Milli),
+			corev1.ResourceMemory: getQuantity(DriverDefaultMemory, resource.Mega),
 		},
 		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    getQuantity(MaxCPU, resource.Milli),
-			corev1.ResourceMemory: getQuantity(MaxMemory, resource.Mega),
+			corev1.ResourceCPU:    getQuantity(DriverDefaultCPU, resource.Milli),
+			corev1.ResourceMemory: getQuantity(DriverDefaultMemory, resource.Mega),
 		},
 	}
 }
@@ -315,11 +319,25 @@ func prepareRegistrarContainer(operatorImage string) corev1.Container {
 				ContainerPort: 9809,
 			},
 		},
+		Resources:     prepareRegistrarResources(),
 		LivenessProbe: &livenessProbe,
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser: &userID,
 		},
 		VolumeMounts: volumeMounts,
+	}
+}
+
+func prepareRegistrarResources() corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    getQuantity(RegistrarDefaultCPU, resource.Milli),
+			corev1.ResourceMemory: getQuantity(RegistrarDefaultMemory, resource.Mega),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    getQuantity(RegistrarDefaultCPU, resource.Milli),
+			corev1.ResourceMemory: getQuantity(RegistrarDefaultMemory, resource.Mega),
+		},
 	}
 }
 
@@ -353,7 +371,7 @@ func prepareRegistrarVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func preparelivenessProbeContainer(operatorImage string) corev1.Container {
+func prepareLivenessProbeContainer(operatorImage string) corev1.Container {
 	return corev1.Container{
 		Name:            "liveness-probe",
 		Image:           operatorImage,
@@ -370,6 +388,20 @@ func preparelivenessProbeContainer(operatorImage string) corev1.Container {
 				Name:      "plugin-dir",
 				MountPath: "/csi",
 			},
+		},
+		Resources: prepareLivenessProbeResources(),
+	}
+}
+
+func prepareLivenessProbeResources() corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    getQuantity(LivenessProbeDefaultCPU, resource.Milli),
+			corev1.ResourceMemory: getQuantity(LivenessProbeDefaultMemory, resource.Mega),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    getQuantity(LivenessProbeDefaultCPU, resource.Milli),
+			corev1.ResourceMemory: getQuantity(LivenessProbeDefaultMemory, resource.Mega),
 		},
 	}
 }
