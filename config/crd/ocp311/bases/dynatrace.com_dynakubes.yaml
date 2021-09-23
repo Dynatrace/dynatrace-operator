@@ -3923,8 +3923,8 @@ spec:
                   type: array
               type: object
             monitoredNamespaces:
-              description: Namespace selector for Operator to know in which namespaces
-                should it monitor applications
+              description: Namespace selector for the Operator to know in which namespaces
+                it should monitor applications
               properties:
                 matchExpressions:
                   description: matchExpressions is a list of label selector requirements.

@@ -23,9 +23,9 @@ type DynaKubeSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="API and PaaS Tokens",order=2,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	Tokens string `json:"tokens,omitempty"`
 
-	// Namespace selector for Operator to know in which namespaces should it monitor applications
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="MonitoredNamespaces",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:selector"}
-	MonitoredNamespaces *metav1.LabelSelector `json:"monitoredNamespaces,omitempty"`
+	// Namespace selector for the Operator to know in which namespaces it should monitor applications
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="NamespaceSelector",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:selector"}
+	NamespaceSelector *metav1.LabelSelector `json:"monitoredNamespaces,omitempty"`
 
 	// Optional: Pull secret for your private registry
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom PullSecret",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}

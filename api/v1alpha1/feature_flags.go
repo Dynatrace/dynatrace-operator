@@ -26,7 +26,7 @@ const (
 	annotationFeatureDisableHostsRequests            = annotationFeaturePrefix + "disable-hosts-requests"
 	annotationFeatureOneAgentMaxUnavailable          = annotationFeaturePrefix + "oneagent-max-unavailable"
 	annotationFeatureEnableWebhookReinvocationPolicy = annotationFeaturePrefix + "enable-webhook-reinvocation-policy"
-	annotationFeatureIgnoreUnknownState              = annotationFeaturePrefix + "ingore-unknown-state"
+	annotationFeatureIgnoreUnknownState              = annotationFeaturePrefix + "ignore-unknown-state"
 )
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.

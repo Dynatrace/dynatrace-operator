@@ -34,8 +34,8 @@ type namespaceMutator struct {
 }
 
 // InjectClient implements the inject.Client interface which allows the manager to inject a kubernetes client into this handler
-func (ni *namespaceMutator) InjectClient(clt client.Client) error {
-	ni.client = clt
+func (nm *namespaceMutator) InjectClient(clt client.Client) error {
+	nm.client = clt
 	return nil
 }
 
@@ -45,33 +45,33 @@ func (ni *namespaceMutator) InjectClient(clt client.Client) error {
 //    we would tag our own namespace which would cause the podInjector webhook to inject into our pods which can cause issues. (infra-monitoring pod injected into == bad)
 // 2. if the namespace was updated by the operator => don't do the mapping: we detect this using an annotation, we do this because the operator also does the mapping
 //    but from the dynakube's side (during dynakube reconcile) and we don't want to repeat ourselfs. So we just remove the annotation.
-func (ni *namespaceMutator) Handle(ctx context.Context, request admission.Request) admission.Response {
-	if ni.namespace == request.Namespace {
+func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Request) admission.Response {
+	if nm.namespace == request.Namespace {
 		return admission.Patched("")
 	}
 
-	ni.logger.Info("Namespace request", "namespace", request.Name, "operation", request.Operation)
+	nm.logger.Info("Namespace request", "namespace", request.Name, "operation", request.Operation)
 	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: request.Namespace}}
-	nsMapper := mapper.NewNamespaceMapper(ctx, ni.client, ni.apiReader, ni.namespace, &ns, ni.logger)
+	nsMapper := mapper.NewNamespaceMapper(ctx, nm.client, nm.apiReader, nm.namespace, &ns, nm.logger)
 	if err := decodeRequestToNamespace(request, &ns); err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
 	if _, ok := ns.Annotations[mapper.UpdatedViaDynakubeAnnotation]; ok {
-		ni.logger.Info("Checking namespace labels not necessary", "namespace", request.Name)
+		nm.logger.Info("Checking namespace labels not necessary", "namespace", request.Name)
 		delete(ns.Annotations, mapper.UpdatedViaDynakubeAnnotation)
 		return getResponseForNamespace(&ns, &request)
 	}
 
-	ni.logger.Info("Checking namespace labels", "namespace", request.Name)
-	updated, err := nsMapper.MapFromNamespace()
+	nm.logger.Info("Checking namespace labels", "namespace", request.Name)
+	updatedNamespace, err := nsMapper.MapFromNamespace()
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-	if !updated {
+	if !updatedNamespace {
 		return admission.Patched("")
 	}
-	ni.logger.Info("Namespace", "labels", ns.Labels)
+	nm.logger.Info("Namespace", "labels", ns.Labels)
 	return getResponseForNamespace(&ns, &request)
 }
 

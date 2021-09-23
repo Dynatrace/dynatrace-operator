@@ -43,6 +43,11 @@ type InitGenerator struct {
 	namespace string
 }
 
+type nodeInfo struct {
+	nodes   []corev1.Node
+	imNodes map[string]string
+}
+
 // script holds all the values to be passed to the init script template.
 type script struct {
 	ApiUrl        string
@@ -180,7 +185,7 @@ func (g *InitGenerator) getInfraMonitoringNodes(dk *dynatracev1alpha1.DynaKube) 
 		return nil, errors.WithMessage(err, "failed to query DynaKubeList")
 	}
 
-	nodes, imNodes, err := g.initIMNodes()
+	nodeInf, err := g.initIMNodes()
 	if err != nil {
 		return nil, err
 	}
@@ -196,32 +201,32 @@ func (g *InitGenerator) getInfraMonitoringNodes(dk *dynatracev1alpha1.DynaKube) 
 				tenantUUID = status.ConnectionInfo.TenantUUID
 			}
 			nodeSelector := labels.SelectorFromSet(dks.Items[i].Spec.InfraMonitoring.NodeSelector)
-			for _, node := range nodes {
+			for _, node := range nodeInf.nodes {
 				nodeLabels := labels.Set(node.Labels)
 				if nodeSelector.Matches(nodeLabels) {
 					if tenantUUID != "" {
-						imNodes[node.Name] = tenantUUID
+						nodeInf.imNodes[node.Name] = tenantUUID
 					} else if !dk.FeatureIgnoreUnknownState() {
-						delete(imNodes, node.Name)
+						delete(nodeInf.imNodes, node.Name)
 					}
 				}
 			}
 		}
 	}
 
-	return imNodes, nil
+	return nodeInf.imNodes, nil
 }
 
-func (g *InitGenerator) initIMNodes() ([]corev1.Node, map[string]string, error) {
+func (g *InitGenerator) initIMNodes() (nodeInfo, error) {
 	var nodeList corev1.NodeList
 	if err := g.client.List(context.TODO(), &nodeList); err != nil {
-		return nil, nil, err
+		return nodeInfo{}, err
 	}
 	imNodes := map[string]string{}
 	for _, node := range nodeList.Items {
 		imNodes[node.Name] = notMappedIM
 	}
-	return nodeList.Items, imNodes, nil
+	return nodeInfo{nodeList.Items, imNodes}, nil
 }
 
 func (s *script) generate() (map[string][]byte, error) {

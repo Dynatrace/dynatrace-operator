@@ -23,7 +23,7 @@ func TestInjection(t *testing.T) {
 	dk := &dynatracev1alpha1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: "codeModules-1", Namespace: "dynatrace"},
 		Spec: dynatracev1alpha1.DynaKubeSpec{
-			MonitoredNamespaces: &metav1.LabelSelector{
+			NamespaceSelector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"inject": "true",
 				},

@@ -29,11 +29,11 @@ func (nm NamespaceMapper) MapFromNamespace() (bool, error) {
 	if nm.operatorNs == nm.targetNs.Name {
 		return false, nil
 	}
-	updated, err := nm.updateNamespace()
+	updatedNamespace, err := nm.updateNamespace()
 	if err != nil {
 		return false, err
 	}
-	return updated, nil
+	return updatedNamespace, nil
 }
 
 func (nm NamespaceMapper) updateNamespace() (bool, error) {

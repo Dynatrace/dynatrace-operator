@@ -62,10 +62,10 @@ func setUpdatedViaDynakubeAnnotation(ns *corev1.Namespace) {
 // if the namspace selector is not set on the dynakube its an automatic match
 func match(dk *dynatracev1alpha1.DynaKube, namespace *corev1.Namespace) (bool, error) {
 	matches := false
-	if dk.Spec.MonitoredNamespaces == nil {
+	if dk.Spec.NamespaceSelector == nil {
 		matches = true
 	} else {
-		selector, err := metav1.LabelSelectorAsSelector(dk.Spec.MonitoredNamespaces)
+		selector, err := metav1.LabelSelectorAsSelector(dk.Spec.NamespaceSelector)
 		if err != nil {
 			return matches, errors.WithStack(err)
 		}

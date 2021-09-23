@@ -11,10 +11,10 @@ func createTestBlankDynakube(name string, labels map[string]string, labelExpress
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "dynatrace"},
 	}
 	if labels != nil {
-		dk.Spec.MonitoredNamespaces = &metav1.LabelSelector{MatchLabels: labels}
+		dk.Spec.NamespaceSelector = &metav1.LabelSelector{MatchLabels: labels}
 	}
 	if labelExpression != nil {
-		dk.Spec.MonitoredNamespaces = &metav1.LabelSelector{MatchExpressions: labelExpression}
+		dk.Spec.NamespaceSelector = &metav1.LabelSelector{MatchExpressions: labelExpression}
 	}
 	return dk
 }
