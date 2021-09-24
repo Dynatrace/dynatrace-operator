@@ -1,0 +1,41 @@
+suit: test customresource values for oneagent spec
+templates:
+  - Common/customresource-dynakube.yaml
+tests:
+  - it: should set oneAgent.version
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      oneAgent:
+        version: test-version
+    asserts:
+      - isNotNull:
+          path: spec.oneAgent
+      - equal:
+          path: spec.oneAgent.version
+          value: test-version
+
+  - it: should set oneAgent.image
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      oneAgent.image: test-image
+    asserts:
+      - isNotNull:
+          path: spec.oneAgent
+      - equal:
+          path: spec.oneAgent.image
+          value: test-image
+
+  - it: should set oneAgent.autoUpdate
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      oneAgent.autoUpdate: false
+    asserts:
+      - equal:
+          path: spec.oneAgent.autoUpdate
+          value: false

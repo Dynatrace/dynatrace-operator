@@ -1,0 +1,31 @@
+suit: tests configmap for dynatrace operator
+templates:
+  - Common/configmap.yaml
+tests:
+  - it: should not exist if trustedCAs is not set
+    set:
+      platform: kubernetes
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should exist if trustedCAs is set
+    set:
+      platform: kubernetes
+      trustedCAs: |
+        multiline
+        test-value
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: dynakube
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - equal:
+          path: data.certs
+          value: |
+            multiline
+            test-value

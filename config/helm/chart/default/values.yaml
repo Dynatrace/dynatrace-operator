@@ -1,0 +1,122 @@
+# Copyright 2020 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# may be set to "kubernetes", "openshift", "openshift-3-11", "google"
+platform: "kubernetes"
+
+### base properties
+
+name: "dynakube"
+apiUrl: ""
+customPullSecret: ""
+skipCertCheck: false
+proxy: ""
+trustedCAs: ""
+networkZone: ""
+enableIstio: false
+
+autoCreateSecret: false
+apiToken: ""
+paasToken: ""
+
+operator:
+  image: "quay.io/dynatrace/dynatrace-operator:snapshot"
+  customPullSecret: ""
+  nodeSelector: {}
+  tolerations: {}
+
+createSecurityContextConstraints: true # Only applicable for Openshift
+
+### module properties
+
+activeGate:
+  image: ""
+
+oneAgent:
+  version: ""
+  image: ""
+  autoUpdate: false
+
+codeModules:
+  enabled: true
+  resources: {}
+  volume: {}
+
+infraMonitoring:
+  enabled: true
+  nodeSelector: ""
+  tolerations: [ ]
+  resources: { }
+  args: []
+  env: []
+  priorityClassName: ""
+  dnsPolicy: ""
+  serviceAccountName: ""
+  labels: ""
+  useUnprivilegedMode: true
+  useImmutableImage: false
+  readOnly:
+    enabled: false
+    installationVolume: {}
+    userId: ""
+    groupId: ""
+
+classicFullStack:
+  enabled: false
+  nodeSelector: ""
+  tolerations: [ ]
+  resources: { }
+  args: []
+  env: []
+  priorityClassName: ""
+  dnsPolicy: ""
+  serviceAccountName: ""
+  labels: ""
+  useUnprivilegedMode: true
+  useImmutableImage: false
+  readOnly:
+    enabled: false
+    installationVolume: {}
+    userId: ""
+    groupId: ""
+
+kubernetesMonitoring:
+  enabled: true
+  replicas: 1
+  group: ""
+  customProperties:
+    value: ""
+    valueFrom: ""
+  resources: { }
+  nodeSelector: ""
+  tolerations: []
+  labels: ""
+  args: []
+  env: []
+  serviceAccountName: ""
+
+routing:
+  enabled: true
+  replicas: 1
+  group: ""
+  customProperties:
+    value: ""
+    valueFrom: ""
+  resources: { }
+  nodeSelector: ""
+  tolerations: [ ]
+  labels: ""
+  args: [ ]
+  env: [ ]
+  serviceAccountName: ""

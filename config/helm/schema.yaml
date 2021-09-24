@@ -1,0 +1,163 @@
+# Copyright 2020 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+x-google-marketplace:
+  schemaVersion: v2
+  applicationApiVersion: v1beta1
+  publishedVersion: "0.2.1"
+  publishedVersionMetadata:
+    releaseNote: >-
+      v0.2.1
+
+      Features
+      * classicFullStack - The Dynatrace Operator now supports rolling out a fullstack agent
+      * routing - The Dynatrace Operator now supports rolling out a containerized ActiveGate to route the agent traffic
+
+      Bug fixes
+      * Fixed a bug where setting resource limits for routing did not work
+    releaseTypes:
+      - Feature
+    recommended: true
+
+  managedUpdates:
+    kalmSupported: true
+
+  images:
+    "":
+      properties:
+        operator.image:
+          type: FULL
+  deployerServiceAccount:
+    description: >
+      Service account used to configure the Dynatrace Operator
+    roles:
+      - type: ClusterRole
+        rulesType: CUSTOM
+        rules:
+          - apiGroups:
+              - admissionregistration.k8s.io
+            resources:
+              - mutatingwebhookconfigurations
+            verbs:
+              - get
+              - create
+              - list
+              - patch
+          - apiGroups:
+              - dynatrace.com
+            resources:
+              - dynakubes
+            verbs:
+              - get
+              - list
+              - create
+              - patch
+          - apiGroups:
+              - apiextensions.k8s.io
+            resources:
+              - customresourcedefinitions
+            verbs:
+              - get
+              - list
+              - create
+              - patch
+          - apiGroups:
+              - dynatrace.com
+            resources:
+              - dynakubes
+            verbs:
+              - get
+              - list
+              - watch
+              - update
+              - patch
+          - apiGroups:
+              - app.k8s.io
+            resources:
+              - applications
+            verbs:
+              - get
+              - list
+          - apiGroups:
+              - storage.k8s.io
+            resources:
+              - csidrivers
+            verbs: ["*"]
+          - apiGroups: [""]
+            resources:
+              - services
+              - serviceaccounts
+            verbs: ["*"]
+          - apiGroups:
+              - rbac.authorization.k8s.io
+            resources:
+              - role
+              - rolebinding
+              - clusterroles
+              - clusterrolebindings
+            verbs: ["*"]
+          - apiGroups:
+              - admissionregistration.k8s.io
+            resources:
+              - validatingwebhookconfigurations
+            verbs: ["*"]
+
+properties:
+  name:
+    type: string
+    x-google-marketplace:
+      type: NAME
+  namespace:
+    type: string
+    x-google-marketplace:
+      type: NAMESPACE
+    default: dynatrace
+  apiUrl:
+    type: string
+    description: The Dynatrace api url including `/api` path at the end
+    title: API URL
+  apiToken:
+    type: string
+    description: The API token from your Dynatrace environment
+    title: API Token
+    x-google-marketplace:
+      type: MASKED_FIELD
+  paasToken:
+    type: string
+    description: The PaaS token from your Dynatrace environment
+    title: PaaS Token
+    x-google-marketplace:
+      type: MASKED_FIELD
+  crdApplied:
+    type: boolean
+    description: "Please make sure you have applied the latest CRD by following the instructions in the Github Repository."
+    title: "CRD manually applied"
+    default: false
+  platform:
+    type: string
+    title: The platform you are deploying on
+    description: This should always be set to "google"
+    default: google
+  deployerHelm.image:
+    type: string
+    x-google-marketplace:
+      type: DEPLOYER_IMAGE
+
+required:
+  - name
+  - namespace
+  - apiUrl
+  - apiToken
+  - paasToken
+  - crdApplied

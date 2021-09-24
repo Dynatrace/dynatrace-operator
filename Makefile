@@ -92,32 +92,48 @@ uninstall: manifests kustomize
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="kubernetes" > config/deploy/manifest.yaml
+	sed -i '/app.kubernetes.io/d' config/deploy/manifest.yaml
+	sed -i '/helm.sh/d' config/deploy/manifest.yaml
+
 	kubectl get namespace dynatrace || kubectl create namespace dynatrace
 	rm -f config/deploy/kustomization.yaml
 	mkdir -p config/deploy
-	cd config/deploy && $(KUSTOMIZE) create
-	cd config/deploy && $(KUSTOMIZE) edit add base ../kubernetes
-	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
-	$(KUSTOMIZE) build config/deploy | kubectl create -f -
+	kubectl create -f config/deploy/manifest.yaml --force
+
+#	cd config/deploy && $(KUSTOMIZE) create
+#	cd config/deploy && $(KUSTOMIZE) edit add base ../kubernetes
+#	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
+#	$(KUSTOMIZE) build config/deploy | kubectl create -f -
 
 # Deploy controller in the configured OpenShift cluster in ~/.kube/config
 deploy-ocp: manifests kustomize
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" > config/deploy/manifest.yaml
+	sed -i '/app.kubernetes.io/d' config/deploy/manifest.yaml
+	sed -i '/helm.sh/d' config/deploy/manifest.yaml
+
 	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
 	rm -f config/deploy/kustomization.yaml
 	mkdir -p config/deploy
-	cd config/deploy && $(KUSTOMIZE) create
-	cd config/deploy && $(KUSTOMIZE) edit add base ../openshift
-	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
-	$(KUSTOMIZE) build config/deploy | oc apply -f -
+
+#	cd config/deploy && $(KUSTOMIZE) create
+#	cd config/deploy && $(KUSTOMIZE) edit add base ../openshift
+#	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
+#	$(KUSTOMIZE) build config/deploy | oc apply -f -
 
 deploy-ocp3.11: manifests-ocp311 kustomize
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift3.11" > config/deploy/manifest.yaml
+	sed -i '/app.kubernetes.io/d' config/deploy/manifest.yaml
+	sed -i '/helm.sh/d' config/deploy/manifest.yaml
+
 	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
 	rm -f config/deploy/kustomization.yaml
 	mkdir -p config/deploy
-	cd config/deploy && $(KUSTOMIZE) create
-	cd config/deploy && $(KUSTOMIZE) edit add base ../openshift3.11
-	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
-	$(KUSTOMIZE) build config/deploy | oc apply -f -
+
+#	cd config/deploy && $(KUSTOMIZE) create
+#	cd config/deploy && $(KUSTOMIZE) edit add base ../openshift3.11
+#	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
+#	$(KUSTOMIZE) build config/deploy | oc apply -f -
 
 deploy-local:
 	./build/deploy_local.sh

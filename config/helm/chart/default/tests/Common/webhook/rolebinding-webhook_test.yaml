@@ -1,0 +1,26 @@
+suit: test rolebinding of webhook
+templates:
+  - Common/webhook/rolebinding-webhook.yaml
+tests:
+  - it: should exist
+    asserts:
+      - isKind:
+          of: RoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-webhook
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            name: dynatrace-webhook
+            namespace: NAMESPACE
+      - equal:
+          path: roleRef
+          value:
+            kind: Role
+            name: dynatrace-webhook
+            apiGroup: rbac.authorization.k8s.io

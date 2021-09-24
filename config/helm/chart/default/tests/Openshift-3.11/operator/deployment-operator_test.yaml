@@ -1,0 +1,159 @@
+suite: test deployment for dynatrace operator
+templates:
+  - Openshift-3.11/operator/deployment-operator.yaml
+tests:
+  - it: should not exist if platform is not openshift
+    set:
+      platform: kubernetes
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should exist
+    set:
+      platform: openshift-3-11
+      operator.image: image-name
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.selector
+          value:
+            matchLabels:
+                name: RELEASE-NAME
+      - isNotEmpty:
+          path: spec.template.metadata.labels
+      - equal:
+          path: spec.strategy
+          value:
+            type: Recreate
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 1
+      - equal:
+          path: spec.template.spec
+          value:
+            containers:
+              - name: RELEASE-NAME
+                args:
+                  - operator
+                # Replace this with the built image name
+                image: image-name
+                imagePullPolicy: Always
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+                  - name: POD_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.name
+                  - name: RELATED_IMAGE_DYNATRACE_ONEAGENT
+                    value: registry.connect.redhat.com/dynatrace/oneagent
+                  - name: DISABLE_WEBHOOK
+                    value: "true"
+                ports:
+                  - containerPort: 8080
+                    name: metrics
+                  - containerPort: 10080
+                    name: server-port
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    cpu: 100m
+                    memory: 256Mi
+                readinessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: server-port
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: server-port
+                    scheme: HTTP
+                  initialDelaySeconds: 15
+                  periodSeconds: 10
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: beta.kubernetes.io/arch
+                          operator: In
+                          values:
+                            - amd64
+                            - arm64
+                        - key: beta.kubernetes.io/os
+                          operator: In
+                          values:
+                            - linux
+                    - matchExpressions:
+                        - key: kubernetes.io/arch
+                          operator: In
+                          values:
+                            - amd64
+                            - arm64
+                        - key: kubernetes.io/os
+                          operator: In
+                          values:
+                            - linux
+            serviceAccountName: RELEASE-NAME
+      - isNull:
+          path: spec.template.spec.tolerations
+      - isNull:
+          path: spec.template.spec.nodeSelector
+
+  - it: should have tolerations if set
+    set:
+      platform: openshift-3-11
+      operator.tolerations:
+        test-key: test-value
+    asserts:
+      - equal:
+          path: spec.template.spec.tolerations
+          value:
+            test-key: test-value
+
+  - it: should have nodeSelectors if set
+    set:
+      platform: openshift-3-11
+      operator.nodeSelector:
+        test-key: test-value
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            test-key: test-value
+
+  - it: should have imagePullSecrets defined in spec
+    set: 
+      platform: openshift-3-11
+      operator.customPullSecret: pull-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: pull-secret
+
+  - it: should not have imagePullSecrets defined in spec
+    set: 
+      platform: openshift-3-11
+    asserts:
+      - isNull:
+          path: spec.template.spec.imagePullSecrets

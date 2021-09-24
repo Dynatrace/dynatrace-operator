@@ -1,0 +1,115 @@
+suit: test deployment of webhook
+templates:
+  - Common/webhook/deployment-webhook.yaml
+tests:
+  - it: should exist
+    set:
+      platform: kubernetes
+      operator.image: image-name
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata
+          value:
+            name: dynatrace-webhook
+            namespace: NAMESPACE
+            labels:
+              app.kubernetes.io/instance: RELEASE-NAME
+              app.kubernetes.io/name: RELEASE-NAME
+              dynatrace.com/operator: dynakube
+              helm.sh/chart: dynatrace-operator-0.2.1
+              internal.dynatrace.com/component: webhook
+      - equal:
+          path: spec
+          value:
+            replicas: 1
+            revisionHistoryLimit: 1
+            selector:
+              matchLabels:
+                internal.dynatrace.com/component: webhook
+                internal.dynatrace.com/app: webhook
+            strategy:
+              type: Recreate
+            template:
+              metadata:
+                annotations:
+                  kubectl.kubernetes.io/default-logs-container: webhook
+                labels:
+                  dynatrace.com/operator: oneagent
+                  internal.dynatrace.com/component: webhook
+                  internal.dynatrace.com/app: webhook
+              spec:
+                affinity:
+                  nodeAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      nodeSelectorTerms:
+                        - matchExpressions:
+                            - key: beta.kubernetes.io/arch
+                              operator: In
+                              values:
+                                - amd64
+                                - arm64
+                            - key: beta.kubernetes.io/os
+                              operator: In
+                              values:
+                                - linux
+                        - matchExpressions:
+                            - key: kubernetes.io/arch
+                              operator: In
+                              values:
+                                - amd64
+                                - arm64
+                            - key: kubernetes.io/os
+                              operator: In
+                              values:
+                                - linux
+                containers:
+                  - name: webhook
+                    args:
+                      - webhook-server
+                    image: image-name
+                    imagePullPolicy: Always
+                    env:
+                      - name: POD_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.namespace
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                    readinessProbe:
+                      httpGet:
+                        path: /healthz
+                        port: server-port
+                        scheme: HTTPS
+                      initialDelaySeconds: 60
+                      periodSeconds: 10
+                    ports:
+                      - name: metrics
+                        containerPort: 8383
+                      - name: server-port
+                        containerPort: 8443
+                    resources:
+                      requests:
+                        cpu: 300m
+                        memory: 128Mi
+                      limits:
+                        cpu: 600m
+                        memory: 256Mi
+                serviceAccountName: dynatrace-webhook
+
+  - it: should have imagePullSecrets defined in spec
+    set: 
+      operator: 
+        customPullSecret: pull-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: pull-secret
+
+  - it: should not have imagePullSecrets defined in spec
+    asserts:
+      - isNull:
+          path: spec.template.spec.imagePullSecrets

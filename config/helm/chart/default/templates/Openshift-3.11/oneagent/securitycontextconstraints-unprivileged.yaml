@@ -1,0 +1,67 @@
+{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift or openshift-3-11" (include "dynatrace-operator.platformSet" .))}}
+{{- if and (eq .Values.platform "openshift-3-11") (.Values.createSecurityContextConstraints) }}
+# Copyright 2020 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: "dynatrace-dynakube-oneagent-unprivileged allows access to all privileged and host features and the ability to run as any user, any group, any fsGroup, and with any SELinux context. This is a copy of privileged scc."
+  name: dynatrace-dynakube-oneagent-unprivileged
+  labels:
+  {{- include "dynatrace-operator.labels" . | nindent 4 }}
+allowHostDirVolumePlugin: true
+allowHostIPC: false
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: true
+allowPrivilegedContainer: false
+allowedCapabilities:
+  - CHOWN
+  - DAC_OVERRIDE
+  - DAC_READ_SEARCH
+  - FOWNER
+  - FSETID
+  - KILL
+  - NET_ADMIN
+  - NET_RAW
+  - SETFCAP
+  - SETGID
+  - SETUID
+  - SYS_ADMIN
+  - SYS_CHROOT
+  - SYS_PTRACE
+  - SYS_RESOURCE
+allowedFlexVolumes: null
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
+priority: 1
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+  - ALL
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - "*"
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:dynatrace:dynatrace-dynakube-oneagent-unprivileged
+volumes:
+  - "*"
+{{ end }}

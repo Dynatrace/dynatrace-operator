@@ -1,0 +1,57 @@
+suite: test clusterrole for kubernetes monitoring
+templates:
+  - Common/kubernetes-monitoring/clusterrole-kubernetes-monitoring.yaml
+tests:
+  - it: should exist
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-kubernetes-monitoring
+      - isNotEmpty:
+          path: metadata.labels
+      - isNotEmpty:
+          path: rules
+      - contains:
+          path: rules
+          content:
+              apiGroups:
+                - ""
+                - batch
+                - apps
+                - apps.openshift.io
+                - config.openshift.io
+              resources:
+                - nodes
+                - pods
+                - namespaces
+                - deployments
+                - replicasets
+                - deploymentconfigs
+                - replicationcontrollers
+                - jobs
+                - cronjobs
+                - statefulsets
+                - daemonsets
+                - events
+                - resourcequotas
+                - pods/proxy
+                - nodes/proxy
+                - services
+                - clusterversions
+              verbs:
+                - list
+                - watch
+                - get
+      - contains:
+          path: rules
+          content:
+              nonResourceURLs:
+                - /metrics
+                - /version
+                - /readyz
+                - /healthz
+              verbs:
+                - get
+

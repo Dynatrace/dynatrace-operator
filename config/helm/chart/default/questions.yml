@@ -1,0 +1,447 @@
+categories:
+  - APM
+  - Monitoring
+questions:
+
+  - variable: crdApplied
+    label: "CRD manually applied"
+    description: "Please make sure you have applied the latest CRD by following the instructions in the description above."
+    default: ""
+    required: true
+    type: enum
+    options:
+      - "yes"
+    group: "Prerequisites"
+
+  #################### Global Configuration ####################
+  - variable: apiUrl
+    label: "Dynatrace API URL"
+    description: "Dynatrace API URL including `/api` path at the end"
+    default: "https://ENVIRONMENTID.live.dynatrace.com/api"
+    type: string
+    required: true
+    group: "Global Configuration"
+    show_if: "crdApplied=yes"
+
+  - variable: apiToken
+    label: "Dynatrace API token"
+    description: "Your Dynatrace API token - You can generate this token in your Dynatrace environment"
+    default: ""
+    type: string
+    group: "Global Configuration"
+    show_if: "crdApplied=yes"
+
+  - variable: paasToken
+    label: "Dynatrace PaaS token"
+    description: "Your Dynatrace Platform as a Service token - You can generate this token in your Dynatrace environment"
+    default: ""
+    type: string
+    required: true
+    group: "Global Configuration"
+    show_if: "crdApplied=yes"
+
+  - variable: skipCertCheck
+    label: "Skip certificate check"
+    description: "Disable certificate validation checks for installer download and API communication"
+    default: false
+    type: boolean
+    group: "Global Configuration"
+    show_if: "crdApplied=yes"
+
+  - variable: proxy
+    label: "Define a proxy by it's value"
+    description: "Configures a proxy for the ActiveGate and Operator. Provide the proxy here"
+    default: ""
+    type: string
+    group: "Global Configuration"
+    show_if: "crdApplied=yes"
+
+  - variable: trustedCAs
+    label: "Add custom CA certificates"
+    description: "Sets the name of the configmap containing custom certificates. If this is not set the default embedded certificates on the images will be used"
+    default: ""
+    type: string
+    group: "Global Configuration"
+    show_if: "crdApplied=yes"
+
+  - variable: networkZone
+    label: "Define a network zone"
+    description: "Optional: Sets a NetworkZone for the Dynatrace Operator."
+    default: ""
+    type: string
+    group: "Global Configuration"
+    show_if: "crdApplied=yes"
+
+  - variable: enableIstio
+    label: "Define if istio support should be enabled"
+    description: "Optional: when enabled, and if Istio is installed on the Kubernetes environment, then the Operator will create the corresponding VirtualService and ServiceEntry objects to allow access to the Dynatrace cluster from the agent or the activeGate."
+    default: false
+    type: boolean
+    group: "Global Configuration"
+    show_if: "crdApplied=yes"
+
+  - variable: customPullSecret
+    label: "Define a custom pull secret"
+    description: "Optional: Defines a custom pull secret in case you use a private registry when pulling images from the Dynatrace environment"
+    default: ""
+    type: string
+    group: "Global Configuration"
+    show_if: "crdApplied=yes"
+
+  - variable: operator.image
+    label: "Set a custom image for operator"
+    description: "Optional: Set a custom image for operator. Defaults to docker.io/dynatrace/dynatrace-operator"
+    default: ""
+    type: string
+    group: "Global Configuration"
+    show_if: "crdApplied=yes"
+
+  - variable: operator.customPullSecret
+    label: "Set a custom pull secret for operator image"
+    description: "Optional: Set a custom pull secret for the operator image"
+    default: ""
+    type: string
+    group: "Global Configuration"
+    show_if: "crdApplied=yes"
+
+  - variable: activeGate.image
+    label: "Set custom image for the ActiveGate"
+    description: "Optional: Set a custom image for the ActiveGate. Defaults to ENVIRONMENTID.live.dynatrace.com/linux/activegate"
+    default: ""
+    type: string
+    group: "Global Configuration"
+    show_if: "crdApplied=yes"
+
+  - variable: oneAgent.image
+    label: "Set custom image for the OneAgent"
+    description: "Optional: Set a custom image for the OneAgent."
+    default: ""
+    type: string
+    group: "Global Configuration"
+    show_if: "crdApplied=yes"
+
+  #################### Code Modules (OPTIONAL) ####################
+
+  - variable: codeModules.enabled
+    label: "Enable code modules"
+    description: "Enables code modules and rolls out the OneAgent"
+    default: true
+    type: boolean
+    group: "Code Modules"
+    show_if: "crdApplied=yes"
+    show_subquestion_if: true
+    subquestions:
+      - variable: codeModules.volume
+        label: "Optional: Volume from where to get the OneAgent binary from"
+        description: |
+          Define a volume the OneAgent binary will be taken from.
+          Two options are currently supported.
+          By default, the Dynatrace CSI driver will be used to provide a volume.
+          When using an emptyDir, the previous approach using init containers and wget will be used.
+          - Please edit as Yaml for the best experience
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: codeModules.resources
+        label: "Optional: resource settings for injected OneAgent init-container"
+        description: |
+          Optional: resource settings for injected OneAgent init-container. 
+          - Please edit as Yaml for the best experience
+        type: string
+        show_if: "crdApplied=yes"
+
+  #################### Infra Monitoring (OPTIONAL) ####################
+
+  - variable: infraMonitoring.enabled
+    label: "Enable infrastructure monitoring"
+    description: "Enables infrastructure monitoring and rolls out the OneAgent"
+    default: true
+    type: boolean
+    group: "Infrastructure Monitoring"
+    show_if: "crdApplied=yes"
+    show_subquestion_if: true
+    subquestions:
+      - variable: infraMonitoring.nodeSelector
+        label: "Node selector to control the selection of nodes"
+        description: "Defines a NodeSelector to customize to which nodes the OneAgent will be rolled out - Please edit as Yaml for the best experience"
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: infraMonitoring.tolerations
+        label: "Custom tolerations for the OneAgent"
+        description: "Defines custom tolerations to the OneAgent - Please edit as Yaml for the best experience - see https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/"
+        default: ""
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: infraMonitoring.resources
+        label: "resource settings for inframonitoring pods"
+        description: |
+          Optional: resource settings for OneAgent container. 
+          Consumption of the OneAgent heavily depends on the workload to monitor - adjust values accordingly.
+          - Please edit as Yaml for the best experience
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: infraMonitoring.args
+        label: "Arguments to OneAgent installer"
+        description: "Defines additional arguments which get passed to the OneAgent installer - Please edit as Yaml for the best experience. The expected format is YAML and not a string"
+        default: ""
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: infraMonitoring.env
+        label: "Environment variables for OneAgent"
+        description: "Defines additional environment variables which get passed to the OneAgent - Please edit as Yaml for the best experience"
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: infraMonitoring.priorityClassName
+        label: "Assign priority class to OneAgent pods"
+        description: "Priority class to assign to OneAgent pods, more at https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/"
+        default: ""
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: infraMonitoring.dnsPolicy
+        label: "Set custom DNS Policy"
+        description: "DNS Policy for OneAgent pods. Empty for default (ClusterFirst), more at https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy"
+        default: ""
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: infraMonitoring.labels
+        label: "Custom labels for the OneAgent pods"
+        description: "Defines labels for OneAgent pods to structure workloads as desired - Please edit as Yaml for the best experience"
+        type: multiline
+        show_if: "crdApplied=yes"
+      - variable: infraMonitoring.useUnprivilegedMode
+        label: "Run unprivileged"
+        description: "Support full-stack OneAgent running on unprivileged mode"
+        default: true
+        type: boolean
+        show_if: "crdApplied=yes"
+      - variable: infraMonitoring.useImmutableImage
+        label: "Use immutable OneAgent image"
+        description: "If set the immutable OneAgent image will be used"
+        default: false
+        type: boolean
+        show_if: "crdApplied=yes"
+
+  #################### ClassicFullStack (OPTIONAL) ####################
+
+  - variable: classicFullStack.enabled
+    label: "Enable classic fullstack monitoring"
+    description: "Enables classic fullstack monitoring and rolls out the OneAgent"
+    default: true
+    type: boolean
+    group: "Classic FullStack"
+    show_if: "crdApplied=yes"
+    show_subquestion_if: true
+    subquestions:
+      - variable: classicFullStack.nodeSelector
+        label: "Node selector to control the selection of nodes"
+        description: "Defines a NodeSelector to customize to which nodes the OneAgent will be rolled out - Please edit as Yaml for the best experience"
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: classicFullStack.tolerations
+        label: "Custom tolerations for the OneAgent"
+        description: "Defines custom tolerations to the OneAgent - Please edit as Yaml for the best experience - see https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/"
+        default: ""
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: classicFullStack.args
+        label: "Arguments to OneAgent installer"
+        description: "Defines additional arguments which get passed to the OneAgent installer - Please edit as Yaml for the best experience. The expected format is YAML and not a string"
+        default: ""
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: classicFullStack.env
+        label: "Environment variables for OneAgent"
+        description: "Defines additional environment variables which get passed to the OneAgent - Please edit as Yaml for the best experience"
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: classicFullStack.priorityClassName
+        label: "Assign priority class to OneAgent pods"
+        description: "Priority class to assign to OneAgent pods, more at https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/"
+        default: ""
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: classicFullStack.dnsPolicy
+        label: "Set custom DNS Policy"
+        description: "DNS Policy for OneAgent pods. Empty for default (ClusterFirst), more at https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy"
+        default: ""
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: classicFullStack.labels
+        label: "Custom labels for the OneAgent pods"
+        description: "Defines labels for OneAgent pods to structure workloads as desired - Please edit as Yaml for the best experience"
+        type: multiline
+        show_if: "crdApplied=yes"
+      - variable: classicFullStack.useUnprivilegedMode
+        label: "Run unprivileged"
+        description: "Support full-stack OneAgent running on unprivileged mode"
+        default: true
+        type: boolean
+        show_if: "crdApplied=yes"
+      - variable: classicFullStack.useImmutableImage
+        label: "Use immutable OneAgent image"
+        description: "If set the immutable OneAgent image will be used"
+        default: false
+        type: boolean
+        show_if: "crdApplied=yes"
+
+  #################### Kubernetes Monitoring (OPTIONAL) ####################
+
+  - variable: kubernetesMonitoring.enabled
+    label: "Enable Kubernetes monitoring"
+    description: "Enables Kubernetes monitoring for your cluster"
+    default: true
+    type: boolean
+    group: "Kubernetes Monitoring"
+    show_if: "crdApplied=yes"
+    show_subquestion_if: true
+    subquestions:
+      - variable: kubernetesMonitoring.replicas
+        label: "Amount of replicas of ActiveGate pods"
+        description: "Sets the amount of replicas of ActiveGate pods are made"
+        default: 1
+        type: int
+        show_if: "crdApplied=yes"
+      - variable: kubernetesMonitoring.serviceAccountName
+        label: "Name of the service-account for ActiveGate-pods"
+        description: "Optional: The name of the ServiceAccount to assign to the ActiveGate Pods."
+        default: "dynatrace-kubernetes-monitoring"
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: kubernetesMonitoring.tolerations
+        label: "Custom tolerations for the ActiveGate pods"
+        description: "Defines custom tolerations for the ActiveGate pods - Please edit as Yaml for the best experience - see https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/"
+        default: ""
+        type: multiline
+        show_if: "crdApplied=yes"
+      - variable: kubernetesMonitoring.nodeSelector
+        label: "Node selector to control the selection of nodes"
+        description: "Defines a NodeSelector to customize to which nodes the ActiveGate will be rolled out on - Please edit as Yaml for the best experience"
+        default: ""
+        type: multiline
+        show_if: "crdApplied=yes"
+      - variable: kubernetesMonitoring.labels
+        label: "Custom labels for the ActiveGate pods"
+        description: "Defines labels for ActiveGate pods to structure workloads as desired - Please edit as Yaml for the best experience"
+        default: ""
+        type: multiline
+        show_if: "crdApplied=yes"
+      - variable: kubernetesMonitoring.args
+        label: "Arguments for the ActiveGate installer"
+        description: "Defines additional arguments which get passed to the ActiveGate installer - Please edit as Yaml for the best experience. The expected format is YAML and not a string"
+        default: ""
+        type: multiline
+        show_if: "crdApplied=yes"
+      - variable: kubernetesMonitoring.env
+        label: "Environment variables for the ActiveGate"
+        description: "Defines additional environment variables which get passed to the ActiveGate - Please edit as Yaml for the best experience"
+        default: ""
+        type: multiline
+        show_if: "crdApplied=yes"
+      - variable: kubernetesMonitoring.group
+        label: "Activation group"
+        description: "Optional: Set activation group for ActiveGate"
+        default: ""
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: showKubernetesMonitoringCustomPropertiesSource
+        label: "Select custom properties source"
+        description: "Select from where your custom properties are coming from. Value if you want to enter it directly. ValueFrom if you want to reference a secret."
+        default: "Value"
+        type: enum
+        show_if: "crdApplied=yes"
+        options:
+          - "Value"
+          - "ValueFrom"
+      - variable: kubernetesMonitoring.customProperties.value
+        label: "Custom properties for the ActiveGate as value"
+        description: "Optional: Add custom properties - Please edit as Yaml for the best experience - more at https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-activegate/configuration/configure-activegate/"
+        default: ""
+        type: multiline
+        show_if: "crdApplied=yes && showKubernetesMonitoringCustomPropertiesSource=Value"
+      - variable: kubernetesMonitoring.customProperties.valueFrom
+        label: "Custom properties for the ActiveGate as reference"
+        description: "Optional: Set the name of the secret that stores your custom properties"
+        default: ""
+        type: string
+        show_if: "crdApplied=yes && showKubernetesMonitoringCustomPropertiesSource=ValueFrom"
+
+
+  #################### Routing (OPTIONAL) ####################
+
+  - variable: routing.enabled
+    label: "Enable message routing"
+    description: "Enables routing for the OneAgent pods"
+    default: true
+    type: boolean
+    group: "Routing"
+    show_if: "crdApplied=yes"
+    show_subquestion_if: true
+    subquestions:
+      - variable: routing.replicas
+        label: "Amount of replicas of ActiveGate pods"
+        description: "Sets the amount of replicas of ActiveGate pods are made"
+        default: 1
+        type: int
+        show_if: "crdApplied=yes"
+      - variable: routing.serviceAccountName
+        label: "Name of the service-account for ActiveGate-pods"
+        description: "Optional: The name of the ServiceAccount to assign to the ActiveGate Pods."
+        default: "dynatrace-routing"
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: routing.tolerations
+        label: "Custom tolerations for the ActiveGate pods"
+        description: "Defines custom tolerations for the ActiveGate pods - Please edit as Yaml for the best experience - see https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/"
+        default: ""
+        type: multiline
+        show_if: "crdApplied=yes"
+      - variable: routing.nodeSelector
+        label: "Node selector to control the selection of nodes"
+        description: "Defines a NodeSelector to customize to which nodes the ActiveGate will be rolled out on - Please edit as Yaml for the best experience"
+        default: ""
+        type: multiline
+        show_if: "crdApplied=yes"
+      - variable: routing.labels
+        label: "Custom labels for the ActiveGate pods"
+        description: "Defines labels for ActiveGate pods to structure workloads as desired - Please edit as Yaml for the best experience"
+        default: ""
+        type: multiline
+        show_if: "crdApplied=yes"
+      - variable: routing.args
+        label: "Arguments for the ActiveGate installer"
+        description: "Defines additional arguments which get passed to the ActiveGate installer - Please edit as Yaml for the best experience. The expected format is YAML and not a string"
+        default: ""
+        type: multiline
+        show_if: "crdApplied=yes"
+      - variable: routing.env
+        label: "Environment variables for the ActiveGate"
+        description: "Defines additional environment variables which get passed to the ActiveGate - Please edit as Yaml for the best experience"
+        default: ""
+        type: multiline
+        show_if: "crdApplied=yes"
+      - variable: routing.group
+        label: "Activation group"
+        description: "Optional: Set activation group for ActiveGate"
+        default: ""
+        type: string
+        show_if: "crdApplied=yes"
+      - variable: showRoutingCustomPropertiesSource
+        label: "Select custom properties source"
+        description: "Select from where your custom properties are coming from. Value if you want to enter it directly. ValueFrom if you want to reference a secret."
+        default: "Value"
+        type: enum
+        show_if: "crdApplied=yes"
+        options:
+          - "Value"
+          - "ValueFrom"
+      - variable: routing.customProperties.value
+        label: "Custom properties for the ActiveGate as value"
+        description: "Optional: Add custom properties - Please edit as Yaml for the best experience - more at https://www.dynatrace.com/support/help/setup-and-configuration/dynatrace-activegate/configuration/configure-activegate/"
+        default: ""
+        type: multiline
+        show_if: "crdApplied=yes && showRoutingCustomPropertiesSource=Value"
+      - variable: routing.customProperties.valueFrom
+        label: "Custom properties for the ActiveGate as reference"
+        description: "Optional: Set the name of the secret that stores your custom properties"
+        default: ""
+        type: string
+        show_if: "crdApplied=yes && showRoutingCustomPropertiesSource=ValueFrom"

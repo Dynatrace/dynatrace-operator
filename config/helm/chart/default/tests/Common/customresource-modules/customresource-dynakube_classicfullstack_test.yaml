@@ -1,0 +1,214 @@
+suit: test customresource values for classicFullStack spec
+templates:
+  - Common/customresource-dynakube.yaml
+tests:
+  - it: should be null if disabled
+    set:
+      apiUrl: test-url
+      apiToken: test-token
+      paasToken: test-token
+      classicFullStack.enabled: false
+    asserts:
+      - isNull:
+          path: spec.classicFullStack
+
+  - it: should exist if enabled
+    set:
+      apiUrl: test-url
+      apiToken: test-token
+      paasToken: test-token
+      classicFullStack.enabled: true
+    asserts:
+      - isNotNull:
+          path: spec.classicFullStack
+      - equal:
+          path: spec.classicFullStack.enabled
+          value: true
+
+  - it: should set nodeSelectors
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        nodeSelector:
+          disktype: ssd
+    asserts:
+      - isNotNull:
+          path: spec.classicFullStack.nodeSelector
+      - equal:
+          path: spec.classicFullStack.nodeSelector.disktype
+          value: ssd
+
+  - it: should set tolerations
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        tolerations:
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/master
+            operator: Exists
+    asserts:
+      - isNotNull:
+          path: spec.classicFullStack.tolerations
+      - contains:
+          path: spec.classicFullStack.tolerations
+          content:
+            effect: NoSchedule
+            key: node-role.kubernetes.io/master
+            operator: Exists
+          count: 1
+
+  - it: should set resources
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 150m
+            memory: 1Gi
+    asserts:
+      - isNotNull:
+          path: spec.classicFullStack.resources
+      - isNotNull:
+          path: spec.classicFullStack.resources.requests
+      - isNotNull:
+          path: spec.classicFullStack.resources.limits
+      - equal:
+          path: spec.classicFullStack.resources.requests.cpu
+          value: 100m
+      - equal:
+          path: spec.classicFullStack.resources.requests.memory
+          value: 512Mi
+      - equal:
+          path: spec.classicFullStack.resources.limits.cpu
+          value: 150m
+      - equal:
+          path: spec.classicFullStack.resources.limits.memory
+          value: 1Gi
+
+  - it: should set args
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        args:
+          test-arg: test-value
+    asserts:
+      - isNotNull:
+          path: spec.classicFullStack.args
+      - equal:
+          path: spec.classicFullStack.args.test-arg
+          value: test-value
+
+  - it: should set envs
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        env:
+          test-env: test-value
+    asserts:
+      - isNotNull:
+          path: spec.classicFullStack.env
+      - equal:
+          path: spec.classicFullStack.env.test-env
+          value: test-value
+
+  - it: should set priorityClassName
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        priorityClassName: test-priority-class
+    asserts:
+      - equal:
+          path: spec.classicFullStack.priorityClassName
+          value: test-priority-class
+
+  - it: should set dnsPolicy
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        dnsPolicy: test-dns-policy
+    asserts:
+      - equal:
+          path: spec.classicFullStack.dnsPolicy
+          value: test-dns-policy
+
+
+  - it: should set service account name
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        serviceAccountName: test-service-account
+    asserts:
+      - isNotNull:
+          path: spec.classicFullStack.serviceAccountName
+      - equal:
+          path: spec.classicFullStack.serviceAccountName
+          value: test-service-account
+
+  - it: should set labels
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        labels:
+          test-label: test-value
+    asserts:
+      - isNotNull:
+          path: spec.classicFullStack.labels
+      - equal:
+          path: spec.classicFullStack.labels.test-label
+          value: test-value
+
+  - it: should set useUnprivilegedMode
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        useUnprivilegedMode: true
+    asserts:
+      - equal:
+          path: spec.classicFullStack.useUnprivilegedMode
+          value: true
+
+  - it: should set useImmutableImage
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        useImmutableImage: true
+    asserts:
+      - equal:
+          path: spec.classicFullStack.useImmutableImage
+          value: true

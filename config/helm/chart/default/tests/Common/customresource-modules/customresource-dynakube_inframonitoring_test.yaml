@@ -1,0 +1,214 @@
+suit: test customresource values for infraMonitoring spec
+templates:
+  - Common/customresource-dynakube.yaml
+tests:
+  - it: should be null if disabled
+    set:
+      apiUrl: test-url
+      apiToken: test-token
+      paasToken: test-token
+      infraMonitoring.enabled: false
+    asserts:
+      - isNull:
+          path: spec.infraMonitoring
+
+  - it: should exist if enabled
+    set:
+      apiUrl: test-url
+      apiToken: test-token
+      paasToken: test-token
+      infraMonitoring.enabled: true
+    asserts:
+      - isNotNull:
+          path: spec.infraMonitoring
+      - equal:
+          path: spec.infraMonitoring.enabled
+          value: true
+
+  - it: should set nodeSelectors
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      infraMonitoring:
+        enabled: true
+        nodeSelector:
+          disktype: ssd
+    asserts:
+      - isNotNull:
+          path: spec.infraMonitoring.nodeSelector
+      - equal:
+          path: spec.infraMonitoring.nodeSelector.disktype
+          value: ssd
+
+  - it: should set tolerations
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      infraMonitoring:
+        enabled: true
+        tolerations:
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/master
+            operator: Exists
+    asserts:
+      - isNotNull:
+          path: spec.infraMonitoring.tolerations
+      - contains:
+          path: spec.infraMonitoring.tolerations
+          content:
+            effect: NoSchedule
+            key: node-role.kubernetes.io/master
+            operator: Exists
+          count: 1
+
+  - it: should set resources
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      infraMonitoring:
+        enabled: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 150m
+            memory: 1Gi
+    asserts:
+      - isNotNull:
+          path: spec.infraMonitoring.resources
+      - isNotNull:
+          path: spec.infraMonitoring.resources.requests
+      - isNotNull:
+          path: spec.infraMonitoring.resources.limits
+      - equal:
+          path: spec.infraMonitoring.resources.requests.cpu
+          value: 100m
+      - equal:
+          path: spec.infraMonitoring.resources.requests.memory
+          value: 512Mi
+      - equal:
+          path: spec.infraMonitoring.resources.limits.cpu
+          value: 150m
+      - equal:
+          path: spec.infraMonitoring.resources.limits.memory
+          value: 1Gi
+
+  - it: should set args
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      infraMonitoring:
+        enabled: true
+        args:
+          test-arg: test-value
+    asserts:
+      - isNotNull:
+          path: spec.infraMonitoring.args
+      - equal:
+          path: spec.infraMonitoring.args.test-arg
+          value: test-value
+
+  - it: should set envs
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      infraMonitoring:
+        enabled: true
+        env:
+          test-env: test-value
+    asserts:
+      - isNotNull:
+          path: spec.infraMonitoring.env
+      - equal:
+          path: spec.infraMonitoring.env.test-env
+          value: test-value
+
+  - it: should set priorityClassName
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      infraMonitoring:
+        enabled: true
+        priorityClassName: test-priority-class
+    asserts:
+      - equal:
+          path: spec.infraMonitoring.priorityClassName
+          value: test-priority-class
+
+  - it: should set dnsPolicy
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      infraMonitoring:
+        enabled: true
+        dnsPolicy: test-dns-policy
+    asserts:
+      - equal:
+          path: spec.infraMonitoring.dnsPolicy
+          value: test-dns-policy
+
+
+  - it: should set service account name
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      infraMonitoring:
+        enabled: true
+        serviceAccountName: test-service-account
+    asserts:
+      - isNotNull:
+          path: spec.infraMonitoring.serviceAccountName
+      - equal:
+          path: spec.infraMonitoring.serviceAccountName
+          value: test-service-account
+
+  - it: should set labels
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      infraMonitoring:
+        enabled: true
+        labels:
+          test-label: test-value
+    asserts:
+      - isNotNull:
+          path: spec.infraMonitoring.labels
+      - equal:
+          path: spec.infraMonitoring.labels.test-label
+          value: test-value
+
+  - it: should set useUnprivilegedMode
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      infraMonitoring:
+        enabled: true
+        useUnprivilegedMode: true
+    asserts:
+      - equal:
+          path: spec.infraMonitoring.useUnprivilegedMode
+          value: true
+
+  - it: should set useImmutableImage
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      infraMonitoring:
+        enabled: true
+        useImmutableImage: true
+    asserts:
+      - equal:
+          path: spec.infraMonitoring.useImmutableImage
+          value: true
