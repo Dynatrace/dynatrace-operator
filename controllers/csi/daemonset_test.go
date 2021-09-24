@@ -119,13 +119,13 @@ func TestReconcile_CreateDaemonSet(t *testing.T) {
 		assert.NotNil(t, registrar.Resources)
 		assert.NotNil(t, registrar.Resources.Requests)
 		assert.Len(t, registrar.Resources.Requests, 2)
-		testQuantity(t, registrar.Resources.Requests, corev1.ResourceCPU, "50m")
-		testQuantity(t, registrar.Resources.Requests, corev1.ResourceMemory, "50M")
+		testQuantity(t, registrar.Resources.Requests, corev1.ResourceCPU, "5m")
+		testQuantity(t, registrar.Resources.Requests, corev1.ResourceMemory, "10M")
 
 		assert.NotNil(t, registrar.Resources.Limits)
 		assert.Len(t, registrar.Resources.Limits, 2)
-		testQuantity(t, registrar.Resources.Limits, corev1.ResourceCPU, "50m")
-		testQuantity(t, registrar.Resources.Limits, corev1.ResourceMemory, "50M")
+		testQuantity(t, registrar.Resources.Limits, corev1.ResourceCPU, "5m")
+		testQuantity(t, registrar.Resources.Limits, corev1.ResourceMemory, "10M")
 
 		assert.NotNil(t, registrar.LivenessProbe)
 
@@ -140,13 +140,13 @@ func TestReconcile_CreateDaemonSet(t *testing.T) {
 		assert.NotNil(t, livenessProbe.Resources)
 		assert.NotNil(t, livenessProbe.Resources.Requests)
 		assert.Len(t, livenessProbe.Resources.Requests, 2)
-		testQuantity(t, livenessProbe.Resources.Requests, corev1.ResourceCPU, "50m")
-		testQuantity(t, livenessProbe.Resources.Requests, corev1.ResourceMemory, "50M")
+		testQuantity(t, livenessProbe.Resources.Requests, corev1.ResourceCPU, "5m")
+		testQuantity(t, livenessProbe.Resources.Requests, corev1.ResourceMemory, "10M")
 
 		assert.NotNil(t, livenessProbe.Resources.Limits)
 		assert.Len(t, livenessProbe.Resources.Limits, 2)
-		testQuantity(t, livenessProbe.Resources.Limits, corev1.ResourceCPU, "50m")
-		testQuantity(t, livenessProbe.Resources.Limits, corev1.ResourceMemory, "50M")
+		testQuantity(t, livenessProbe.Resources.Limits, corev1.ResourceCPU, "5m")
+		testQuantity(t, livenessProbe.Resources.Limits, corev1.ResourceMemory, "10M")
 
 		assert.Len(t, livenessProbe.VolumeMounts, 1)
 	})
