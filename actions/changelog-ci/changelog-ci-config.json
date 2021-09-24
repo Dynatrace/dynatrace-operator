@@ -1,7 +1,7 @@
 
 {
   "changelog_type": "pull_request",
-  "header_prefix": "Operator:",
+  "header_prefix": "Dynatrace Operator:",
   "commit_changelog": true,
   "pull_request_title_regex": "^(?=.*version)|(?=.*Version)",
   "group_config": [
