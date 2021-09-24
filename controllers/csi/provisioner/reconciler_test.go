@@ -431,7 +431,7 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 	t.Run(`default DynaKube object returns false`, func(t *testing.T) {
 		dk := &dynatracev1.DynaKube{}
 
-		isEnabled := !dk.ServerlessMode()
+		isEnabled := dk.NeedsCSI()
 
 		assert.False(t, isEnabled)
 	})
@@ -445,7 +445,7 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 			},
 		}
 
-		isEnabled := !dk.ServerlessMode()
+		isEnabled := dk.NeedsCSI()
 
 		assert.True(t, isEnabled)
 	})
@@ -463,7 +463,7 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 			},
 		}
 
-		isEnabled := !dk.ServerlessMode()
+		isEnabled := dk.NeedsCSI()
 
 		assert.False(t, isEnabled)
 	})

@@ -544,6 +544,34 @@ spec:
                           Kubernetes and to registry.connect.redhat.com/dynatrace/oneagent
                           for OpenShift'
                         type: string
+                      initResources:
+                        description: 'Optional: define resources requests and limits
+                          for the initContainer'
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                        type: object
                       namespaceSelector:
                         description: 'Optional: set a namespace selector to limit
                           which namespaces are monitored By default, all namespaces
@@ -754,13 +782,7 @@ spec:
                         description: Node selector to control the selection of nodes
                           (optional)
                         type: object
-                      priorityClassName:
-                        description: 'Optional: If specified, indicates the pod''s
-                          priority. Name must be defined by creating a PriorityClass
-                          object with that name. If not specified the setting will
-                          be removed from the DaemonSet.'
-                        type: string
-                      resources:
+                      oneAgentResources:
                         description: 'Optional: define resources requests and limits
                           for single pods'
                         properties:
@@ -788,6 +810,12 @@ spec:
                               More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                         type: object
+                      priorityClassName:
+                        description: 'Optional: If specified, indicates the pod''s
+                          priority. Name must be defined by creating a PriorityClass
+                          object with that name. If not specified the setting will
+                          be removed from the DaemonSet.'
+                        type: string
                       tolerations:
                         description: 'Optional: set tolerations for the OneAgent pods'
                         items:
@@ -970,6 +998,34 @@ spec:
                           - name
                           type: object
                         type: array
+                      initResources:
+                        description: 'Optional: define resources requests and limits
+                          for the initContainer'
+                        properties:
+                          limits:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Limits describes the maximum amount of compute
+                              resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                          requests:
+                            additionalProperties:
+                              anyOf:
+                              - type: integer
+                              - type: string
+                              pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                              x-kubernetes-int-or-string: true
+                            description: 'Requests describes the minimum amount of
+                              compute resources required. If Requests is omitted for
+                              a container, it defaults to Limits if that is explicitly
+                              specified, otherwise to an implementation-defined value.
+                              More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                            type: object
+                        type: object
                       installationVolume:
                         description: Used if read-only filesystem support is enabled.
                           Determines the volume to which the installation files are
@@ -2546,13 +2602,7 @@ spec:
                         description: Node selector to control the selection of nodes
                           (optional)
                         type: object
-                      priorityClassName:
-                        description: 'Optional: If specified, indicates the pod''s
-                          priority. Name must be defined by creating a PriorityClass
-                          object with that name. If not specified the setting will
-                          be removed from the DaemonSet.'
-                        type: string
-                      resources:
+                      oneAgentResources:
                         description: 'Optional: define resources requests and limits
                           for single pods'
                         properties:
@@ -2580,6 +2630,12 @@ spec:
                               More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                         type: object
+                      priorityClassName:
+                        description: 'Optional: If specified, indicates the pod''s
+                          priority. Name must be defined by creating a PriorityClass
+                          object with that name. If not specified the setting will
+                          be removed from the DaemonSet.'
+                        type: string
                       serverlessMode:
                         description: 'Optional: In case your cluster doesn''t have
                           ''nodes'' so csi drivers won''t work, to make such a usecase
@@ -4302,13 +4358,7 @@ spec:
                         description: Node selector to control the selection of nodes
                           (optional)
                         type: object
-                      priorityClassName:
-                        description: 'Optional: If specified, indicates the pod''s
-                          priority. Name must be defined by creating a PriorityClass
-                          object with that name. If not specified the setting will
-                          be removed from the DaemonSet.'
-                        type: string
-                      resources:
+                      oneAgentResources:
                         description: 'Optional: define resources requests and limits
                           for single pods'
                         properties:
@@ -4336,6 +4386,12 @@ spec:
                               More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                             type: object
                         type: object
+                      priorityClassName:
+                        description: 'Optional: If specified, indicates the pod''s
+                          priority. Name must be defined by creating a PriorityClass
+                          object with that name. If not specified the setting will
+                          be removed from the DaemonSet.'
+                        type: string
                       tolerations:
                         description: 'Optional: set tolerations for the OneAgent pods'
                         items:

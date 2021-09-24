@@ -100,7 +100,7 @@ type HostInjectSpec struct {
 
 	// Optional: define resources requests and limits for single pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=20,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	OneAgentResources corev1.ResourceRequirements `json:"oneAgentResources,omitempty"`
 
 	// Optional: Arguments to the OneAgent installer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent installer arguments",order=21,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
@@ -147,4 +147,8 @@ type AppInjectionSpec struct {
 
 	// Optional: In case your cluster doesn't have 'nodes' so csi drivers won't work, to make such a usecase work set this to true.
 	ServerlessMode bool `json:"serverlessMode,omitempty"`
+
+	// Optional: define resources requests and limits for the initContainer
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
+	InitResources corev1.ResourceRequirements `json:"initResources,omitempty"`
 }

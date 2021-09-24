@@ -5,8 +5,8 @@ import (
 	_ "embed"
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -46,7 +46,7 @@ var (
 			Proxy:      &dynatracev1.DynaKubeProxy{Value: testProxy},
 			TrustedCAs: testtrustCAsCM,
 			Tokens:     testTokensName,
-			OneAgent: dynatracev1.OneAgentSpec{HostMonitoring: &dynatracev1.HostMonitoringSpec{}},
+			OneAgent:   dynatracev1.OneAgentSpec{HostMonitoring: &dynatracev1.HostMonitoringSpec{}},
 		},
 		Status: dynatracev1alpha1.DynaKubeStatus{
 			ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
@@ -63,7 +63,7 @@ var (
 	testDynakubeSimple = &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
 		Spec: dynatracev1.DynaKubeSpec{
-			APIURL: testApiUrl,
+			APIURL:   testApiUrl,
 			OneAgent: dynatracev1.OneAgentSpec{HostMonitoring: &dynatracev1.HostMonitoringSpec{}},
 		},
 		Status: dynatracev1alpha1.DynaKubeStatus{

@@ -1,8 +1,8 @@
 package statefulset
 
 import (
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 )
 
 const (

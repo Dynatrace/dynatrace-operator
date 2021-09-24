@@ -9,7 +9,7 @@ import (
 
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
-	// "github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
+
 	// rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
@@ -222,13 +222,13 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 
 	if dkState.Instance.HostMonitoringMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, daemonset.InframonFeature,
+			r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, daemonset.HostMonitoringFeature,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
 			return
 		}
 	} else {
-		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-"+ daemonset.InframonFeature, Namespace: dkState.Instance.Namespace}}
+		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.HostMonitoringFeature, Namespace: dkState.Instance.Namespace}}
 		if err := r.ensureDeleted(&ds); dkState.Error(err) {
 			return
 		}
@@ -242,7 +242,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 			return
 		}
 	} else {
-		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-"+ daemonset.CloudNativeFeature, Namespace: dkState.Instance.Namespace}}
+		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.CloudNativeFeature, Namespace: dkState.Instance.Namespace}}
 		if err := r.ensureDeleted(&ds); dkState.Error(err) {
 			return
 		}

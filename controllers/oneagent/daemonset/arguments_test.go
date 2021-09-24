@@ -45,11 +45,11 @@ func TestArguments(t *testing.T) {
 	}
 	dsInfo := ClassicFullStack{
 		builderInfo{
-			instance:      &instance,
+			instance:       &instance,
 			hostInjectSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
-			logger:        log,
-			clusterId:     testClusterID,
-			relatedImage:  testValue,
+			logger:         log,
+			clusterId:      testClusterID,
+			relatedImage:   testValue,
 		},
 	}
 	podSpecs := dsInfo.podSpec()
@@ -83,7 +83,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	dsInfo := ClassicFullStack{
 		builderInfo{
 			instance:       instance,
-			hostInjectSpec:  fullStackSpecs,
+			hostInjectSpec: fullStackSpecs,
 			logger:         log,
 			clusterId:      testClusterID,
 			relatedImage:   testValue,
@@ -130,11 +130,11 @@ func TestPodSpec_Arguments(t *testing.T) {
 
 		dsInfo := InfraMonitoring{
 			builderInfo{
-				instance:      instance,
+				instance:       instance,
 				hostInjectSpec: fullStackSpecs,
-				logger:        log,
-				clusterId:     testClusterID,
-				relatedImage:  testValue,
+				logger:         log,
+				clusterId:      testClusterID,
+				relatedImage:   testValue,
 			},
 		}
 		daemonset, _ = dsInfo.BuildDaemonSet()

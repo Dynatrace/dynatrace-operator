@@ -47,7 +47,7 @@ func TestMapFromDynakube(t *testing.T) {
 		assert.Equal(t, 1, len(ns.Annotations))
 	})
 	t.Run("Remove stale dynakube entry for no longer matching ns", func(t *testing.T) {
-		movedDk := createTestDynakubeWithAppInject("moved-dk", nil, nil)
+		movedDk := createTestDynakubeWithAppInject("moved-dk", labels, nil)
 		nsLabels := map[string]string{
 			InstanceLabel: movedDk.Name,
 		}

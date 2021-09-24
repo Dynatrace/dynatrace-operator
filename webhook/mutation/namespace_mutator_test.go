@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -20,16 +20,19 @@ import (
 )
 
 func TestInjection(t *testing.T) {
-	dk := &dynatracev1alpha1.DynaKube{
+	dk := &dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: "codeModules-1", Namespace: "dynatrace"},
-		Spec: dynatracev1alpha1.DynaKubeSpec{
-			NamespaceSelector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"inject": "true",
+		Spec: dynatracev1.DynaKubeSpec{
+			OneAgent: dynatracev1.OneAgentSpec{
+				ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{
+					AppInjectionSpec: dynatracev1.AppInjectionSpec{
+						NamespaceSelector: metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								"inject": "true",
+							},
+						},
+					},
 				},
-			},
-			CodeModules: dynatracev1alpha1.CodeModulesSpec{
-				Enabled: true,
 			},
 		},
 	}

@@ -57,7 +57,7 @@ func (dk *DynaKube) ClassicFullStackMode() bool {
 
 // NeedsOneAgent returns true when a feature requires OneAgent instances.
 func (dk *DynaKube) NeedsOneAgent() bool {
-	return dk.ClassicFullStackMode() || dk.CloudNativeFullstackMode()
+	return dk.ClassicFullStackMode() || dk.CloudNativeFullstackMode() || dk.HostMonitoringMode()
 }
 
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
@@ -102,7 +102,7 @@ func (dk *DynaKube) ServerlessMode() bool {
 }
 
 func (dk *DynaKube) NeedsCSI() bool {
-	if dk.ServerlessMode(){
+	if dk.ServerlessMode() {
 		return false
 	} else if dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.Image != "" {
 		return false
@@ -124,6 +124,26 @@ func (dk *DynaKube) Image() string {
 	}
 
 	return ""
+}
+
+func (dk *DynaKube) InitResources() *corev1.ResourceRequirements {
+	if dk.ApplicationMonitoringMode() {
+		return &dk.Spec.OneAgent.ApplicationMonitoring.InitResources
+	} else if dk.CloudNativeFullstackMode() {
+		return &dk.Spec.OneAgent.CloudNativeFullStack.InitResources
+	}
+	return nil
+}
+
+func (dk *DynaKube) OneAgentResources() *corev1.ResourceRequirements {
+	if dk.ClassicFullStackMode() {
+		return &dk.Spec.OneAgent.ClassicFullStack.OneAgentResources
+	} else if dk.HostMonitoringMode() {
+		return &dk.Spec.OneAgent.HostMonitoring.OneAgentResources
+	} else if dk.CloudNativeFullstackMode() {
+		return &dk.Spec.OneAgent.CloudNativeFullStack.OneAgentResources
+	}
+	return nil
 }
 
 func (dk *DynaKube) NodeSelector() map[string]string {
@@ -158,7 +178,6 @@ func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
 	}
 	return nil
 }
-
 
 // ImmutableOneAgentImage returns the immutable OneAgent image to be used with the dk DynaKube instance.
 func (dk *DynaKube) ImmutableOneAgentImage() string {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
@@ -33,20 +32,11 @@ func ReconcileVersions(
 		dkState.IsOutdated(dk.Status.OneAgent.LastUpdateProbeTimestamp, ProbeThreshold) &&
 		dk.ShouldAutoUpdateOneAgent()
 
-	if needsOneAgentUpdate {
-		upd = true
-		if err := updateOneAgentInstallerVersion(dkState, dk); err != nil {
-			dkState.Log.Error(err, "Failed to fetch OneAgent installer version")
-		}
-	}
-
 	needsActiveGateUpdate := dk.NeedsActiveGate() &&
 		!dk.FeatureDisableActiveGateUpdates() &&
 		dkState.IsOutdated(dk.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
 
-	needsImmutableOneAgentUpdate := needsOneAgentUpdate
-
-	if !needsActiveGateUpdate && !needsImmutableOneAgentUpdate {
+	if !needsActiveGateUpdate && !needsOneAgentUpdate {
 		return upd, nil
 	}
 
@@ -69,7 +59,7 @@ func ReconcileVersions(
 		}
 	}
 
-	if needsImmutableOneAgentUpdate {
+	if needsOneAgentUpdate {
 		if err := updateImageVersion(dkState, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.VersionStatus, &dockerCfg, verProvider, false); err != nil {
 			dkState.Log.Error(err, "Failed to update OneAgent image version")
 		}
@@ -111,28 +101,5 @@ func updateImageVersion(
 		"oldHash", target.ImageHash, "newHash", ver.Hash)
 	target.Version = ver.Version
 	target.ImageHash = ver.Hash
-	return nil
-}
-
-func updateOneAgentInstallerVersion(dkState *controllers.DynakubeState, dk *dynatracev1.DynaKube) error {
-	dk.Status.OneAgent.LastUpdateProbeTimestamp = dkState.Now.DeepCopy()
-	ver := dk.Status.LatestAgentVersionUnixDefault
-
-	oldVer := dk.Status.OneAgent.Version
-
-	if oldVer == ver {
-		return nil
-	}
-
-	if oldVer != "" {
-		if upgrade, err := dtversion.NeedsUpgradeRaw(oldVer, ver); err != nil {
-			return err
-		} else if !upgrade {
-			return nil
-		}
-	}
-
-	dkState.Log.Info("OneAgent update found", "oldVersion", oldVer, "newVersion", ver)
-	dk.Status.OneAgent.Version = ver
 	return nil
 }

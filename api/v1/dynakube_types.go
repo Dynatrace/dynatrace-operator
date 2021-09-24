@@ -39,6 +39,14 @@ type DynaKubeProxy struct {
 	ValueFrom string `json:"valueFrom,omitempty"`
 }
 
+type DynaKubeValueSource struct {
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom properties value",order=32,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	Value string `json:"value,omitempty"`
+
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom properties secret",order=33,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
+	ValueFrom string `json:"valueFrom,omitempty"`
+}
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 //+kubebuilder:storageversion
 

@@ -41,11 +41,11 @@ func TestPrepareVolumes(t *testing.T) {
 		}
 		dsInfo := InfraMonitoring{
 			builderInfo{
-				instance:      instance,
+				instance:       instance,
 				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
-				logger:        logger.NewDTLogger(),
-				clusterId:     "",
-				relatedImage:  "",
+				logger:         logger.NewDTLogger(),
+				clusterId:      "",
+				relatedImage:   "",
 			},
 		}
 		ds, err := dsInfo.BuildDaemonSet()
@@ -68,11 +68,11 @@ func TestPrepareVolumes(t *testing.T) {
 		}
 		dsInfo := InfraMonitoring{
 			builderInfo{
-				instance:      instance,
+				instance:       instance,
 				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
-				logger:        logger.NewDTLogger(),
-				clusterId:     "",
-				relatedImage:  "",
+				logger:         logger.NewDTLogger(),
+				clusterId:      "",
+				relatedImage:   "",
 			},
 		}
 		ds, err := dsInfo.BuildDaemonSet()
@@ -121,11 +121,11 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		}
 		dsInfo := InfraMonitoring{
 			builderInfo{
-				instance:      instance,
+				instance:       instance,
 				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
-				logger:        logger.NewDTLogger(),
-				clusterId:     "",
-				relatedImage:  "",
+				logger:         logger.NewDTLogger(),
+				clusterId:      "",
+				relatedImage:   "",
 			},
 		}
 		ds, err := dsInfo.BuildDaemonSet()
@@ -154,11 +154,11 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		}
 		dsInfo := InfraMonitoring{
 			builderInfo{
-				instance:      instance,
+				instance:       instance,
 				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
-				logger:        logger.NewDTLogger(),
-				clusterId:     "",
-				relatedImage:  "",
+				logger:         logger.NewDTLogger(),
+				clusterId:      "",
+				relatedImage:   "",
 			},
 		}
 		ds, err := dsInfo.BuildDaemonSet()

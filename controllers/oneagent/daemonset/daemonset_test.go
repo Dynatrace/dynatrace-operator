@@ -121,7 +121,7 @@ func TestResources(t *testing.T) {
 				OneAgent: dynatracev1.OneAgentSpec{
 					ClassicFullStack: &dynatracev1.ClassicFullStackSpec{
 						HostInjectSpec: dynatracev1.HostInjectSpec{
-							Resources: corev1.ResourceRequirements{
+							OneAgentResources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    *cpuRequest,
 									corev1.ResourceMemory: *memoryRequest,

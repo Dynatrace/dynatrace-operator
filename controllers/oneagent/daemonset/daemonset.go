@@ -41,9 +41,9 @@ const (
 	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
 	classicHostIdSource  = "--set-host-id-source=auto"
 
-	ClassicFeature     = "classic"
-	InframonFeature    = "inframon"
-	CloudNativeFeature = "cloud-native"
+	ClassicFeature        = "classic"
+	HostMonitoringFeature = "inframon"
+	CloudNativeFeature    = "cloud-native"
 )
 
 type InfraMonitoring struct {
@@ -120,10 +120,10 @@ func (dsInfo *InfraMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	result.Name = dsInfo.instance.Name + fmt.Sprintf("-%s", InframonFeature)
-	result.Labels[labelFeature] = InframonFeature
-	result.Spec.Selector.MatchLabels[labelFeature] = InframonFeature
-	result.Spec.Template.Labels[labelFeature] = InframonFeature
+	result.Name = dsInfo.instance.Name + fmt.Sprintf("-%s", HostMonitoringFeature)
+	result.Labels[labelFeature] = HostMonitoringFeature
+	result.Spec.Selector.MatchLabels[labelFeature] = HostMonitoringFeature
+	result.Spec.Template.Labels[labelFeature] = HostMonitoringFeature
 
 	if len(result.Spec.Template.Spec.Containers) > 0 {
 		appendHostIdArgument(result, inframonHostIdSource)
@@ -264,7 +264,7 @@ func (dsInfo *builderInfo) buildLabels() map[string]string {
 }
 
 func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {
-	resources := dsInfo.hostInjectSpec.Resources
+	resources := dsInfo.hostInjectSpec.OneAgentResources
 	if resources.Requests == nil {
 		resources.Requests = corev1.ResourceList{}
 	}
