@@ -4,12 +4,13 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	v1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/labels"
+
+	// "k8s.io/apimachinery/pkg/labels"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -21,11 +22,8 @@ const (
 )
 
 const (
-	errorConflictingInfraMonitoringAndClassicNodeSelectors = `
-The DynaKubes specifications for infraMonitoring and classicFullStack are conflicting. 
-If both are enabled, the nodeSelectors of those specifications must not select the same nodes.
-This is due to the infraMonitoring and classicFullStack functionalities being incompatible.
-In general, it is advised to use infraMonitoring together with codeModules instead of classicFullStack.
+	errorConflictingMode = `
+The DynaKubes specifications for tries to use multiple modes at the same time, which is not supported.
 `
 	errorNoApiUrl = `
 The DynaKube custom resource is missing the API URL or still has the example value set. 
@@ -54,7 +52,7 @@ func (validator *dynakubeValidator) InjectClient(clt client.Client) error {
 func (validator *dynakubeValidator) Handle(_ context.Context, request admission.Request) admission.Response {
 	validator.logger.Info("validating request", "name", request.Name, "namespace", request.Namespace)
 
-	var dynakube v1alpha1.DynaKube
+	var dynakube v1.DynaKube
 	err := decodeRequestToDynakube(request, &dynakube)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, errors.WithStack(err))
@@ -67,37 +65,49 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 
 	if hasConflictingConfiguration(dynakube) {
 		validator.logger.Info("requested dynakube has conflicting configuration", "name", request.Name, "namespace", request.Namespace)
-		return admission.Denied(errorConflictingInfraMonitoringAndClassicNodeSelectors)
+		return admission.Denied(errorConflictingMode)
 	}
 
 	validator.logger.Info("requested dynakube is valid", "name", request.Name, "namespace", request.Namespace)
 	return admission.Allowed("")
 }
 
-func hasApiUrl(dynakube v1alpha1.DynaKube) bool {
+func hasApiUrl(dynakube v1.DynaKube) bool {
 	return dynakube.Spec.APIURL != "" && dynakube.Spec.APIURL != exampleApiUrl
 }
 
-func hasConflictingConfiguration(dynakube v1alpha1.DynaKube) bool {
-	return dynakube.Spec.InfraMonitoring.Enabled &&
-		dynakube.Spec.ClassicFullStack.Enabled &&
-		hasConflictingNodeSelectors(dynakube)
+func hasConflictingConfiguration(dynakube v1.DynaKube) bool {
+	counter := 0
+	if dynakube.ApplicationMonitoringMode() {
+		counter += 1
+	}
+	if dynakube.CloudNativeFullstackMode() {
+		counter += 1
+	}
+	if dynakube.ClassicFullStackMode() {
+		counter += 1
+	}
+	if dynakube.HostMonitoringMode() {
+		counter += 1
+	}
+	return counter > 1
 }
 
-func hasConflictingNodeSelectors(dynakube v1alpha1.DynaKube) bool {
-	infraNodeSelectorMap := dynakube.Spec.InfraMonitoring.NodeSelector
-	classicNodeSelectorMap := dynakube.Spec.ClassicFullStack.NodeSelector
+// TODO: Implement it to check other dynakubes for conflicting nodeSelectors
+//func hasConflictingNodeSelectors(dynakube v1.DynaKube) bool {
+//	infraNodeSelectorMap := dynakube.Spec.InfraMonitoring.NodeSelector
+//	classicNodeSelectorMap := dynakube.Spec.ClassicFullStack.NodeSelector
+//
+//	infraNodeSelector := labels.SelectorFromSet(infraNodeSelectorMap)
+//	classicNodeSelector := labels.SelectorFromSet(classicNodeSelectorMap)
+//
+//	infraNodeSelectorLabels := labels.Set(infraNodeSelectorMap)
+//	classicNodeSelectorLabels := labels.Set(classicNodeSelectorMap)
+//
+//	return infraNodeSelector.Matches(classicNodeSelectorLabels) || classicNodeSelector.Matches(infraNodeSelectorLabels)
+//}
 
-	infraNodeSelector := labels.SelectorFromSet(infraNodeSelectorMap)
-	classicNodeSelector := labels.SelectorFromSet(classicNodeSelectorMap)
-
-	infraNodeSelectorLabels := labels.Set(infraNodeSelectorMap)
-	classicNodeSelectorLabels := labels.Set(classicNodeSelectorMap)
-
-	return infraNodeSelector.Matches(classicNodeSelectorLabels) || classicNodeSelector.Matches(infraNodeSelectorLabels)
-}
-
-func decodeRequestToDynakube(request admission.Request, dynakube *v1alpha1.DynaKube) error {
+func decodeRequestToDynakube(request admission.Request, dynakube *v1.DynaKube) error {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	if err != nil {
 		return errors.WithStack(err)

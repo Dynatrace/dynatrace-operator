@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -62,182 +62,86 @@ func TestAddDynakubeValidationWebhookToManager(t *testing.T) {
 
 func TestDynakubeValidator_Handle(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
-		assertAllowedResponse(t, v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
+		assertAllowedResponse(t, dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ClassicFullStack: v1alpha1.FullStackSpec{
-					Enabled: false,
-				},
-				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-					FullStackSpec: v1alpha1.FullStackSpec{
-						Enabled: false,
-					},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: nil,
+					HostMonitoring:   nil,
 				},
 			},
 		})
 
-		assertAllowedResponse(t, v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
+		assertAllowedResponse(t, dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ClassicFullStack: v1alpha1.FullStackSpec{
-					Enabled: true,
-				},
-				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-					FullStackSpec: v1alpha1.FullStackSpec{
-						Enabled: false,
-					},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
+					HostMonitoring:   nil,
 				},
 			},
 		})
 
-		assertAllowedResponse(t, v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
+		assertAllowedResponse(t, dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ClassicFullStack: v1alpha1.FullStackSpec{
-					Enabled: false,
-				},
-				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-					FullStackSpec: v1alpha1.FullStackSpec{
-						Enabled: true,
-					},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: nil,
+					HostMonitoring:   &dynatracev1.HostMonitoringSpec{},
 				},
 			},
 		})
 
-		assertAllowedResponse(t, v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				APIURL: testApiUrl,
-				ClassicFullStack: v1alpha1.FullStackSpec{
-					Enabled: true,
-					NodeSelector: map[string]string{
-						"label1": "value1",
-					},
-				},
-				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-					FullStackSpec: v1alpha1.FullStackSpec{
-						Enabled: true,
-						NodeSelector: map[string]string{
-							"label2": "value1",
-						},
-					},
-				},
-			},
-		})
-
-		assertAllowedResponse(t, v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				APIURL: testApiUrl,
-				ClassicFullStack: v1alpha1.FullStackSpec{
-					Enabled: true,
-					NodeSelector: map[string]string{
-						"label1": "value1",
-					},
-				},
-				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-					FullStackSpec: v1alpha1.FullStackSpec{
-						Enabled: true,
-						NodeSelector: map[string]string{
-							"label1": "value2",
-						},
-					},
-				},
-			},
-		})
 	})
 	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
-		assertDeniedResponse(t, v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
+		assertDeniedResponse(t, dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ClassicFullStack: v1alpha1.FullStackSpec{
-					Enabled: true,
-				},
-				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-					FullStackSpec: v1alpha1.FullStackSpec{
-						Enabled: true,
-					},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
+					HostMonitoring:   &dynatracev1.HostMonitoringSpec{},
 				},
 			},
-		}, errorConflictingInfraMonitoringAndClassicNodeSelectors)
+		}, errorConflictingMode)
 
-		assertDeniedResponse(t, v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
+		assertDeniedResponse(t, dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ClassicFullStack: v1alpha1.FullStackSpec{
-					Enabled: true,
-					NodeSelector: map[string]string{
-						"label1": "value1",
-					},
-				},
-				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-					FullStackSpec: v1alpha1.FullStackSpec{
-						Enabled: true,
-						NodeSelector: map[string]string{
-							"label1": "value1",
-						},
-					},
+				OneAgent: dynatracev1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{},
+					HostMonitoring:        &dynatracev1.HostMonitoringSpec{},
 				},
 			},
-		}, errorConflictingInfraMonitoringAndClassicNodeSelectors)
-
-		assertDeniedResponse(t, v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
-				APIURL: testApiUrl,
-				ClassicFullStack: v1alpha1.FullStackSpec{
-					Enabled: true,
-					NodeSelector: map[string]string{
-						"label1": "value1",
-						"label2": "value2",
-					},
-				},
-				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-					FullStackSpec: v1alpha1.FullStackSpec{
-						Enabled: true,
-						NodeSelector: map[string]string{
-							"label1": "value1",
-						},
-					},
-				},
-			},
-		}, errorConflictingInfraMonitoringAndClassicNodeSelectors)
+		}, errorConflictingMode)
 	})
 	t.Run(`missing API URL`, func(t *testing.T) {
-		assertDeniedResponse(t, v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
+		assertDeniedResponse(t, dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: "",
-				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-					FullStackSpec: v1alpha1.FullStackSpec{
-						Enabled: true,
-					},
-				},
 			},
 		}, errorNoApiUrl)
 	})
 	t.Run(`invalid API URL`, func(t *testing.T) {
-		assertDeniedResponse(t, v1alpha1.DynaKube{
-			Spec: v1alpha1.DynaKubeSpec{
+		assertDeniedResponse(t, dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: exampleApiUrl,
-				InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-					FullStackSpec: v1alpha1.FullStackSpec{
-						Enabled: true,
-					},
-				},
 			},
 		}, errorNoApiUrl)
 	})
 }
 
-func assertDeniedResponse(t *testing.T, dynakube v1alpha1.DynaKube, reason string) {
+func assertDeniedResponse(t *testing.T, dynakube dynatracev1.DynaKube, reason string) {
 	response := handleRequest(t, dynakube)
 	assert.False(t, response.Allowed)
 	assert.Equal(t, metav1.StatusReason(reason), response.Result.Reason)
 }
 
-func assertAllowedResponse(t *testing.T, dynakube v1alpha1.DynaKube) {
+func assertAllowedResponse(t *testing.T, dynakube dynatracev1.DynaKube) {
 	response := handleRequest(t, dynakube)
 	assert.True(t, response.Allowed)
 }
 
-func handleRequest(t *testing.T, dynakube v1alpha1.DynaKube) admission.Response {
+func handleRequest(t *testing.T, dynakube dynatracev1.DynaKube) admission.Response {
 	clt := fake.NewClient()
 	validator := &dynakubeValidator{
 		logger: logger.NewDTLogger(),
@@ -266,90 +170,8 @@ func TestDynakubeValidator_InjectClient(t *testing.T) {
 	assert.Equal(t, clt, validator.clt)
 }
 
-func TestHasConflictingConfiguration(t *testing.T) {
-	t.Run(`no conflicts`, func(t *testing.T) {
-		dynakube := buildTestInstance(t)
-
-		dynakube.Spec.InfraMonitoring.NodeSelector = map[string]string{
-			"label1": "value1",
-		}
-		dynakube.Spec.ClassicFullStack.NodeSelector = map[string]string{
-			"label2": "value2",
-		}
-		assert.False(t, hasConflictingConfiguration(dynakube))
-
-		dynakube.Spec.InfraMonitoring.NodeSelector = map[string]string{
-			"label1": "value1",
-		}
-		dynakube.Spec.ClassicFullStack.NodeSelector = map[string]string{
-			"label1": "value2",
-		}
-		assert.False(t, hasConflictingConfiguration(dynakube))
-
-		dynakube.Spec.InfraMonitoring.NodeSelector = map[string]string{
-			"label1": "value2",
-		}
-		dynakube.Spec.ClassicFullStack.NodeSelector = map[string]string{
-			"label1": "value1",
-		}
-		assert.False(t, hasConflictingConfiguration(dynakube))
-	})
-
-	t.Run(`conflicting node selectors`, func(t *testing.T) {
-		dynakube := buildTestInstance(t)
-
-		dynakube.Spec.InfraMonitoring.NodeSelector = map[string]string{
-			"label1": "value1",
-		}
-		dynakube.Spec.ClassicFullStack.NodeSelector = map[string]string{
-			"label1": "value1",
-		}
-		assert.True(t, hasConflictingConfiguration(dynakube))
-
-		dynakube.Spec.InfraMonitoring.NodeSelector = map[string]string{
-			// Empty map matches everything
-		}
-		dynakube.Spec.ClassicFullStack.NodeSelector = map[string]string{
-			"label1": "value1",
-		}
-		assert.True(t, hasConflictingConfiguration(dynakube))
-
-		dynakube.Spec.InfraMonitoring.NodeSelector = map[string]string{
-			"label1": "value1",
-		}
-		dynakube.Spec.ClassicFullStack.NodeSelector = map[string]string{
-			// Empty map matches everything
-		}
-		assert.True(t, hasConflictingConfiguration(dynakube))
-
-		dynakube.Spec.InfraMonitoring.NodeSelector = map[string]string{
-			// Empty map matches everything
-		}
-		dynakube.Spec.ClassicFullStack.NodeSelector = map[string]string{
-			// Empty map matches everything
-		}
-		assert.True(t, hasConflictingConfiguration(dynakube))
-	})
-}
-
-func buildTestInstance(_ *testing.T) v1alpha1.DynaKube {
-	return v1alpha1.DynaKube{
-		Spec: v1alpha1.DynaKubeSpec{
-			APIURL: testApiUrl,
-			ClassicFullStack: v1alpha1.FullStackSpec{
-				Enabled: true,
-			},
-			InfraMonitoring: v1alpha1.InfraMonitoringSpec{
-				FullStackSpec: v1alpha1.FullStackSpec{
-					Enabled: true,
-				},
-			},
-		},
-	}
-}
-
 func TestHasApiUrl(t *testing.T) {
-	instance := v1alpha1.DynaKube{}
+	instance := dynatracev1.DynaKube{}
 	assert.False(t, hasApiUrl(instance))
 
 	instance.Spec.APIURL = testApiUrl
