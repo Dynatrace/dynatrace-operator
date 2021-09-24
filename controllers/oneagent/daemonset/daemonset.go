@@ -46,8 +46,9 @@ const (
 	CloudNativeFeature    = "cloud-native"
 )
 
-type InfraMonitoring struct {
+type HostMonitoring struct {
 	builderInfo
+	feature string
 }
 
 type ClassicFullStack struct {
@@ -70,7 +71,7 @@ type Builder interface {
 }
 
 func NewHostMonitoring(instance *dynatracev1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
-	return &InfraMonitoring{
+	return &HostMonitoring{
 		builderInfo{
 			instance:               instance,
 			hostInjectSpec:         &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
@@ -81,11 +82,12 @@ func NewHostMonitoring(instance *dynatracev1.DynaKube, logger logr.Logger, clust
 			majorKubernetesVersion: majorKubernetesVersion,
 			minorKubernetesVersion: minorKubernetesVersion,
 		},
+		HostMonitoringFeature,
 	}
 }
 
 func NewCloudNativeFullStack(instance *dynatracev1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
-	return &InfraMonitoring{
+	return &HostMonitoring{
 		builderInfo{
 			instance:               instance,
 			hostInjectSpec:         &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
@@ -96,6 +98,7 @@ func NewCloudNativeFullStack(instance *dynatracev1.DynaKube, logger logr.Logger,
 			majorKubernetesVersion: majorKubernetesVersion,
 			minorKubernetesVersion: minorKubernetesVersion,
 		},
+		CloudNativeFeature,
 	}
 }
 
@@ -114,16 +117,16 @@ func NewClassicFullStack(instance *dynatracev1.DynaKube, logger logr.Logger, clu
 	}
 }
 
-func (dsInfo *InfraMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
+func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	result, err := dsInfo.builderInfo.BuildDaemonSet()
 	if err != nil {
 		return nil, err
 	}
 
-	result.Name = dsInfo.instance.Name + fmt.Sprintf("-%s", HostMonitoringFeature)
-	result.Labels[labelFeature] = HostMonitoringFeature
-	result.Spec.Selector.MatchLabels[labelFeature] = HostMonitoringFeature
-	result.Spec.Template.Labels[labelFeature] = HostMonitoringFeature
+	result.Name = dsInfo.instance.Name + fmt.Sprintf("-%s", dsInfo.feature)
+	result.Labels[labelFeature] = dsInfo.feature
+	result.Spec.Selector.MatchLabels[labelFeature] = dsInfo.feature
+	result.Spec.Template.Labels[labelFeature] = dsInfo.feature
 
 	if len(result.Spec.Template.Spec.Containers) > 0 {
 		appendHostIdArgument(result, inframonHostIdSource)
@@ -155,7 +158,7 @@ func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	return result, nil
 }
 
-func (dsInfo *InfraMonitoring) setSecurityContextOptions(daemonset *appsv1.DaemonSet) {
+func (dsInfo *HostMonitoring) setSecurityContextOptions(daemonset *appsv1.DaemonSet) {
 	securityContext := daemonset.Spec.Template.Spec.Containers[0].SecurityContext
 	securityContext.RunAsUser = pointer.Int64Ptr(defaultUserId)
 	securityContext.RunAsGroup = pointer.Int64Ptr(defaultGroupId)

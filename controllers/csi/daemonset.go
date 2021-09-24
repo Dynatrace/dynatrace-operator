@@ -127,7 +127,8 @@ func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *dynatra
 						prepareRegistrarContainer(operatorImage),
 						preparelivenessProbeContainer(operatorImage),
 					},
-					Volumes: prepareVolumes(),
+					ServiceAccountName: DefaultServiceAccountName,
+					Volumes:            prepareVolumes(),
 				},
 			},
 		},
@@ -371,14 +372,6 @@ func preparelivenessProbeContainer(operatorImage string) corev1.Container {
 			},
 		},
 	}
-}
-
-func prepareServiceAccount(saName string) string {
-	serviceAccountName := DefaultServiceAccountName
-	if saName != "" {
-		serviceAccountName = saName
-	}
-	return serviceAccountName
 }
 
 func prepareVolumes() []corev1.Volume {

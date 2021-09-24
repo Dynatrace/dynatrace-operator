@@ -73,9 +73,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		assert.True(t, ucr)
 		assert.Error(t, err)
 
-		AssertCondition(t, dk, dynatracev1alpha1.PaaSTokenConditionType, false, dynatracev1alpha1.ReasonTokenMissing,
+		AssertCondition(t, dk, dynatracev1.PaaSTokenConditionType, false, dynatracev1.ReasonTokenMissing,
 			"Token paasToken on secret dynatrace:dynakube missing")
-		AssertCondition(t, dk, dynatracev1alpha1.APITokenConditionType, false, dynatracev1alpha1.ReasonTokenMissing,
+		AssertCondition(t, dk, dynatracev1.APITokenConditionType, false, dynatracev1.ReasonTokenMissing,
 			"Token apiToken on secret dynatrace:dynakube missing")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
@@ -102,9 +102,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		assert.True(t, ucr)
 		assert.NoError(t, err)
 
-		AssertCondition(t, dk, dynatracev1alpha1.PaaSTokenConditionType, false, dynatracev1alpha1.ReasonTokenUnauthorized,
+		AssertCondition(t, dk, dynatracev1.PaaSTokenConditionType, false, dynatracev1.ReasonTokenUnauthorized,
 			"Token on secret dynatrace:dynakube unauthorized")
-		AssertCondition(t, dk, dynatracev1alpha1.APITokenConditionType, false, dynatracev1alpha1.ReasonTokenError,
+		AssertCondition(t, dk, dynatracev1.APITokenConditionType, false, dynatracev1.ReasonTokenError,
 			"error when querying token on secret dynatrace:dynakube: random error")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
@@ -130,9 +130,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		assert.True(t, ucr)
 		assert.NoError(t, err)
 
-		AssertCondition(t, dk, dynatracev1alpha1.PaaSTokenConditionType, false, dynatracev1alpha1.ReasonTokenScopeMissing,
+		AssertCondition(t, dk, dynatracev1.PaaSTokenConditionType, false, dynatracev1.ReasonTokenScopeMissing,
 			"Token on secret dynatrace:dynakube missing scope InstallerDownload")
-		AssertCondition(t, dk, dynatracev1alpha1.APITokenConditionType, false, dynatracev1alpha1.ReasonTokenUnauthorized,
+		AssertCondition(t, dk, dynatracev1.APITokenConditionType, false, dynatracev1.ReasonTokenUnauthorized,
 			"Token on secret dynatrace:dynakube has leading and/or trailing spaces")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
@@ -159,8 +159,8 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		assert.True(t, ucr)
 		assert.NoError(t, err)
 
-		AssertCondition(t, dk, dynatracev1alpha1.PaaSTokenConditionType, true, dynatracev1alpha1.ReasonTokenReady, "Ready")
-		AssertCondition(t, dk, dynatracev1alpha1.APITokenConditionType, true, dynatracev1alpha1.ReasonTokenReady, "Ready")
+		AssertCondition(t, dk, dynatracev1.PaaSTokenConditionType, true, dynatracev1.ReasonTokenReady, "Ready")
+		AssertCondition(t, dk, dynatracev1.APITokenConditionType, true, dynatracev1.ReasonTokenReady, "Ready")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})

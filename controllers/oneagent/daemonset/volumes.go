@@ -18,7 +18,7 @@ func prepareVolumeMounts(instance *dynatracev1.DynaKube) []corev1.VolumeMount {
 	return volumeMounts
 }
 
-func (dsInfo *InfraMonitoring) appendReadOnlyVolume(daemonset *appsv1.DaemonSet) {
+func (dsInfo *HostMonitoring) appendReadOnlyVolume(daemonset *appsv1.DaemonSet) {
 	daemonset.Spec.Template.Spec.Volumes = append(daemonset.Spec.Template.Spec.Volumes, getInstallationVolume(dsInfo.instance))
 }
 
@@ -29,7 +29,7 @@ func getInstallationVolume(dk *dynatracev1.DynaKube) corev1.Volume {
 	}
 }
 
-func (dsInfo *InfraMonitoring) appendReadOnlyVolumeMount(daemonset *appsv1.DaemonSet) {
+func (dsInfo *HostMonitoring) appendReadOnlyVolumeMount(daemonset *appsv1.DaemonSet) {
 	daemonset.Spec.Template.Spec.Containers[0].VolumeMounts = append(
 		daemonset.Spec.Template.Spec.Containers[0].VolumeMounts,
 		getInstallationMount())
@@ -56,7 +56,7 @@ func getRootMount() corev1.VolumeMount {
 	}
 }
 
-func (dsInfo *InfraMonitoring) setRootMountReadability(result *appsv1.DaemonSet) {
+func (dsInfo *HostMonitoring) setRootMountReadability(result *appsv1.DaemonSet) {
 	volumeMounts := result.Spec.Template.Spec.Containers[0].VolumeMounts
 	for idx, mount := range volumeMounts {
 		if mount.Name == hostRootMount {

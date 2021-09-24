@@ -39,7 +39,7 @@ func TestPrepareVolumes(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := InfraMonitoring{
+		dsInfo := HostMonitoring{
 			builderInfo{
 				instance:       instance,
 				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
@@ -47,6 +47,7 @@ func TestPrepareVolumes(t *testing.T) {
 				clusterId:      "",
 				relatedImage:   "",
 			},
+			HostMonitoringFeature,
 		}
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
@@ -66,7 +67,7 @@ func TestPrepareVolumes(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := InfraMonitoring{
+		dsInfo := HostMonitoring{
 			builderInfo{
 				instance:       instance,
 				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
@@ -74,6 +75,7 @@ func TestPrepareVolumes(t *testing.T) {
 				clusterId:      "",
 				relatedImage:   "",
 			},
+			HostMonitoringFeature,
 		}
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
@@ -119,7 +121,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := InfraMonitoring{
+		dsInfo := HostMonitoring{
 			builderInfo{
 				instance:       instance,
 				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
@@ -127,6 +129,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				clusterId:      "",
 				relatedImage:   "",
 			},
+			HostMonitoringFeature,
 		}
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
@@ -152,7 +155,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := InfraMonitoring{
+		dsInfo := HostMonitoring{
 			builderInfo{
 				instance:       instance,
 				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
@@ -160,6 +163,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				clusterId:      "",
 				relatedImage:   "",
 			},
+			HostMonitoringFeature,
 		}
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)

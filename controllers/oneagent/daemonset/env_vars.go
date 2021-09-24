@@ -47,7 +47,7 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 	return mapToArray(envVarMap)
 }
 
-func (dsInfo *InfraMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
+func (dsInfo *HostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
 	envVars := daemonset.Spec.Template.Spec.Containers[0].Env
 	envVarMap := envVarsToMap(envVars)
 	envVarMap = setDefaultValue(envVarMap, oneagentDisableContainerInjection, "true")

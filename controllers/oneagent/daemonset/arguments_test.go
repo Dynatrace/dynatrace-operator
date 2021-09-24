@@ -79,11 +79,11 @@ func TestPodSpec_Arguments(t *testing.T) {
 		},
 	}
 	metadata := deploymentmetadata.NewDeploymentMetadata(testClusterID, deploymentmetadata.DeploymentTypeFS)
-	fullStackSpecs := &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec
+	hostInjectSpecs := &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec
 	dsInfo := ClassicFullStack{
 		builderInfo{
 			instance:       instance,
-			hostInjectSpec: fullStackSpecs,
+			hostInjectSpec: hostInjectSpecs,
 			logger:         log,
 			clusterId:      testClusterID,
 			relatedImage:   testValue,
@@ -95,7 +95,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	require.NotNil(t, podSpecs)
 	require.NotEmpty(t, podSpecs.Containers)
 
-	for _, arg := range fullStackSpecs.Args {
+	for _, arg := range hostInjectSpecs.Args {
 		assert.Contains(t, podSpecs.Containers[0].Args, arg)
 	}
 	assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-property=OperatorVersion="+version.Version)
@@ -128,14 +128,15 @@ func TestPodSpec_Arguments(t *testing.T) {
 		podSpecs = daemonset.Spec.Template.Spec
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=auto")
 
-		dsInfo := InfraMonitoring{
+		dsInfo := HostMonitoring{
 			builderInfo{
 				instance:       instance,
-				hostInjectSpec: fullStackSpecs,
+				hostInjectSpec: hostInjectSpecs,
 				logger:         log,
 				clusterId:      testClusterID,
 				relatedImage:   testValue,
 			},
+			HostMonitoringFeature,
 		}
 		daemonset, _ = dsInfo.BuildDaemonSet()
 		podSpecs := daemonset.Spec.Template.Spec
