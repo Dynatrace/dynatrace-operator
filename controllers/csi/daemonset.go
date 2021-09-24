@@ -231,16 +231,7 @@ func prepareDriverResources(client client.Client, operatorNS string, logger logr
 		}
 	}
 
-	return corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    getQuantity(DriverDefaultCPU, resource.Milli),
-			corev1.ResourceMemory: getQuantity(DriverDefaultMemory, resource.Mega),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    getQuantity(DriverDefaultCPU, resource.Milli),
-			corev1.ResourceMemory: getQuantity(DriverDefaultMemory, resource.Mega),
-		},
-	}
+	return prepareResources(DriverDefaultCPU, DriverDefaultMemory)
 }
 
 func getQuantity(value int64, scale resource.Scale) resource.Quantity {
@@ -319,25 +310,12 @@ func prepareRegistrarContainer(operatorImage string) corev1.Container {
 				ContainerPort: 9809,
 			},
 		},
-		Resources:     prepareRegistrarResources(),
+		Resources:     prepareResources(RegistrarDefaultCPU, RegistrarDefaultMemory),
 		LivenessProbe: &livenessProbe,
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser: &userID,
 		},
 		VolumeMounts: volumeMounts,
-	}
-}
-
-func prepareRegistrarResources() corev1.ResourceRequirements {
-	return corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    getQuantity(RegistrarDefaultCPU, resource.Milli),
-			corev1.ResourceMemory: getQuantity(RegistrarDefaultMemory, resource.Mega),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    getQuantity(RegistrarDefaultCPU, resource.Milli),
-			corev1.ResourceMemory: getQuantity(RegistrarDefaultMemory, resource.Mega),
-		},
 	}
 }
 
@@ -389,20 +367,7 @@ func prepareLivenessProbeContainer(operatorImage string) corev1.Container {
 				MountPath: "/csi",
 			},
 		},
-		Resources: prepareLivenessProbeResources(),
-	}
-}
-
-func prepareLivenessProbeResources() corev1.ResourceRequirements {
-	return corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    getQuantity(LivenessProbeDefaultCPU, resource.Milli),
-			corev1.ResourceMemory: getQuantity(LivenessProbeDefaultMemory, resource.Mega),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    getQuantity(LivenessProbeDefaultCPU, resource.Milli),
-			corev1.ResourceMemory: getQuantity(LivenessProbeDefaultMemory, resource.Mega),
-		},
+		Resources: prepareResources(LivenessProbeDefaultCPU, LivenessProbeDefaultMemory),
 	}
 }
 
@@ -463,6 +428,19 @@ func prepareVolumes() []corev1.Volume {
 					Type: &hostPathDirOrCreate,
 				},
 			},
+		},
+	}
+}
+
+func prepareResources(cpu int64, memory int64) corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    getQuantity(cpu, resource.Milli),
+			corev1.ResourceMemory: getQuantity(memory, resource.Mega),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    getQuantity(cpu, resource.Milli),
+			corev1.ResourceMemory: getQuantity(memory, resource.Mega),
 		},
 	}
 }
