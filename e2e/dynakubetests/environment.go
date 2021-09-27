@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -44,38 +44,37 @@ func prepareDefaultEnvironment(t *testing.T) (string, client.Client) {
 	return apiURL, clt
 }
 
-func createMinimumViableOneAgent(apiURL string) dynatracev1alpha1.DynaKube {
-	return dynatracev1alpha1.DynaKube{
+func createMinimumViableOneAgent(apiURL string) dynatracev1.DynaKube {
+	return dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      testName,
 		},
-		Spec: dynatracev1alpha1.DynaKubeSpec{
+		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: apiURL,
 			Tokens: e2e.TokenSecretName,
-			ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-				Enabled: true,
-			},
-			OneAgent: dynatracev1alpha1.OneAgentSpec{
-				Image: testImage,
+			OneAgent: dynatracev1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1.ClassicFullStackSpec{
+					Image: testImage,
+				},
 			},
 		},
 	}
 }
 
-func deployOneAgent(t *testing.T, clt client.Client, oneAgent *dynatracev1alpha1.DynaKube) e2e.PhaseWait {
+func deployOneAgent(t *testing.T, clt client.Client, oneAgent *dynatracev1.DynaKube) e2e.PhaseWait {
 	err := clt.Create(context.TODO(), oneAgent)
 	assert.NoError(t, err)
 
 	phaseWait := e2e.NewOneAgentWaitConfiguration(t, clt, maxWaitCycles, namespace, testName)
-	err = phaseWait.WaitForPhase(dynatracev1alpha1.Deploying)
+	err = phaseWait.WaitForPhase(dynatracev1.Deploying)
 	assert.NoError(t, err)
 
 	return phaseWait
 }
 
-func findOneAgentPods(t *testing.T, clt client.Client) (*dynatracev1alpha1.DynaKube, *corev1.PodList) {
-	instance := &dynatracev1alpha1.DynaKube{}
+func findOneAgentPods(t *testing.T, clt client.Client) (*dynatracev1.DynaKube, *corev1.PodList) {
+	instance := &dynatracev1.DynaKube{}
 	err := clt.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: testName}, instance)
 	assert.NoError(t, err)
 
