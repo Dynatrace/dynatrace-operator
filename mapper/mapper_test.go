@@ -26,7 +26,7 @@ func createTestDynakubeWithAppInject(name string, labels map[string]string, labe
 
 func createTestDynakubeWithMultipleFeatures(name string, labels map[string]string, labelExpression []metav1.LabelSelectorRequirement) *dynatracev1.DynaKube {
 	dk := createTestDynakubeWithAppInject(name, labels, labelExpression)
-	dk.Spec.DataIngestSpec.Enabled = true
+	dk.Spec.Routing.Enabled = true
 	return dk
 }
 

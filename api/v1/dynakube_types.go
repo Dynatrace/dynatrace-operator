@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -11,6 +10,8 @@ const (
 
 	// PaaSTokenConditionType identifies the PaaS Token validity condition
 	PaaSTokenConditionType string = "PaaSToken"
+
+	OperatorName = "dynatrace-operator"
 )
 
 // Possible reasons for ApiToken and PaaSToken conditions
@@ -107,29 +108,23 @@ type DynaKubeSpec struct {
 	EnableIstio bool `json:"enableIstio,omitempty"`
 
 	// General configuration about ActiveGate instances
-	ActiveGate v1alpha1.ActiveGateSpec `json:"activeGate,omitempty"`
+	// ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
 
 	// General configuration about OneAgent instances
 	// +kubebuilder:validation:MaxProperties=1
 	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
 
-	//  Configuration for Routing
+	//  Deprecated: Configuration for Routing
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Routing"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	RoutingSpec v1alpha1.RoutingSpec `json:"routing,omitempty"`
+	Routing RoutingSpec `json:"routing,omitempty"`
 
-	//  Configuration for Data Ingest
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Data Ingest"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	DataIngestSpec v1alpha1.DataIngestSpec `json:"dataIngest,omitempty"`
-
-	//  Configuration for Kubernetes Monitoring
+	//  Deprecated: Configuration for Kubernetes Monitoring
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Kubernetes Monitoring"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	KubernetesMonitoringSpec v1alpha1.KubernetesMonitoringSpec `json:"kubernetesMonitoring,omitempty"`
+	KubernetesMonitoring KubernetesMonitoringSpec `json:"kubernetesMonitoring,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

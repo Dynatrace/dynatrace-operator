@@ -73,6 +73,9 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status.Tokens = src.Status.Tokens
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 
+	// ActiveGates
+	// TODO
+
 	return nil
 }
 
@@ -137,6 +140,9 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Status.Phase = DynaKubePhaseType(src.Status.Phase)
 	dst.Status.Tokens = src.Status.Tokens
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
+
+	// ActiveGates
+	// TODO
 
 	return nil
 }

@@ -9,8 +9,8 @@ import (
 
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
-
-	// rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
+	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
@@ -208,9 +208,9 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 	dkState.Update(upd, defaultUpdateInterval, "Found updates")
 	dkState.Error(err)
 
-	// if !r.reconcileActiveGateCapabilities(dkState) {
-	// 	return
-	// }
+	if !r.reconcileActiveGateCapabilities(dkState) {
+		return
+	}
 
 	// Check Code Modules if CSI driver is needed
 	err = dtcsi.ConfigureCSIDriver(
@@ -282,48 +282,48 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 	return nil
 }
 
-// func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers.DynakubeState) bool {
-// 	var caps = []capability.Capability{
-// 		capability.NewKubeMonCapability(&dkState.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties, &dkState.Instance.Spec.ActiveGate),
-// 		capability.NewRoutingCapability(&dkState.Instance.Spec.RoutingSpec.CapabilityProperties, &dkState.Instance.Spec.ActiveGate),
-// 		capability.NewDataIngestCapability(&dkState.Instance.Spec.DataIngestSpec.CapabilityProperties, &dkState.Instance.Spec.ActiveGate),
-// 	}
+func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers.DynakubeState) bool {
+	var caps = []capability.Capability{
+		capability.NewKubeMonCapability(&dkState.Instance.Spec.KubernetesMonitoring.CapabilityProperties),
+		capability.NewRoutingCapability(&dkState.Instance.Spec.Routing.CapabilityProperties),
+		// capability.NewDataIngestCapability(&dkState.Instance.Spec.DataIngestSpec.CapabilityProperties, &dkState.Instance.Spec.ActiveGate),
+	}
 
-// 	for _, c := range caps {
-// 		if c.GetProperties().Enabled {
-// 			upd, err := rcap.NewReconciler(
-// 				c, r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, dtversion.GetImageVersion,
-// 			).Reconcile()
-// 			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, c.GetModuleName()+" reconciled") {
-// 				return false
-// 			}
-// 		} else {
-// 			sts := appsv1.StatefulSet{
-// 				ObjectMeta: metav1.ObjectMeta{
-// 					Name:      capability.CalculateStatefulSetName(c, dkState.Instance.Name),
-// 					Namespace: dkState.Instance.Namespace,
-// 				},
-// 			}
-// 			if err := r.ensureDeleted(&sts); dkState.Error(err) {
-// 				return false
-// 			}
+	for _, c := range caps {
+		if c.GetProperties().Enabled {
+			upd, err := rcap.NewReconciler(
+				c, r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, dtversion.GetImageVersion,
+			).Reconcile()
+			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, c.GetModuleName()+" reconciled") {
+				return false
+			}
+		} else {
+			sts := appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      capability.CalculateStatefulSetName(c, dkState.Instance.Name),
+					Namespace: dkState.Instance.Namespace,
+				},
+			}
+			if err := r.ensureDeleted(&sts); dkState.Error(err) {
+				return false
+			}
 
-// 			if c.GetConfiguration().CreateService {
-// 				svc := corev1.Service{
-// 					ObjectMeta: metav1.ObjectMeta{
-// 						Name:      rcap.BuildServiceName(dkState.Instance.Name, c.GetModuleName()),
-// 						Namespace: dkState.Instance.Namespace,
-// 					},
-// 				}
-// 				if err := r.ensureDeleted(&svc); dkState.Error(err) {
-// 					return false
-// 				}
-// 			}
-// 		}
-// 	}
+			if c.GetConfiguration().CreateService {
+				svc := corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      rcap.BuildServiceName(dkState.Instance.Name, c.GetModuleName()),
+						Namespace: dkState.Instance.Namespace,
+					},
+				}
+				if err := r.ensureDeleted(&svc); dkState.Error(err) {
+					return false
+				}
+			}
+		}
+	}
 
-// 	return true
-// }
+	return true
+}
 
 func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatracev1.DynaKube) (*corev1.Secret, error) {
 	var secret corev1.Secret

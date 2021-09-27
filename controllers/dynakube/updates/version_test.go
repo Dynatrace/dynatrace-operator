@@ -23,7 +23,6 @@ import (
 	"testing"
 
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
@@ -51,8 +50,8 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 	dk := dynatracev1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
 		Spec: dynatracev1.DynaKubeSpec{
-			KubernetesMonitoringSpec: dynatracev1alpha1.KubernetesMonitoringSpec{
-				CapabilityProperties: dynatracev1alpha1.CapabilityProperties{Enabled: true},
+			KubernetesMonitoring: dynatracev1.KubernetesMonitoringSpec{
+				CapabilityProperties: dynatracev1.CapabilityProperties{Enabled: true},
 			},
 			OneAgent: dynatracev1.OneAgentSpec{
 				ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},

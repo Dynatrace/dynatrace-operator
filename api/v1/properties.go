@@ -32,7 +32,7 @@ const (
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
 func (dk *DynaKube) NeedsActiveGate() bool {
-	return dk.Spec.KubernetesMonitoringSpec.Enabled || dk.Spec.RoutingSpec.Enabled
+	return dk.Spec.KubernetesMonitoring.Enabled || dk.Spec.Routing.Enabled
 }
 
 // ApplicationMonitoringMode returns true when application only section is used.
@@ -80,8 +80,10 @@ func (dk *DynaKube) PullSecret() string {
 
 // ActiveGateImage returns the ActiveGate image to be used with the dk DynaKube instance.
 func (dk *DynaKube) ActiveGateImage() string {
-	if dk.Spec.ActiveGate.Image != "" {
-		return dk.Spec.ActiveGate.Image
+	if dk.Spec.KubernetesMonitoring.Image != "" {
+		return dk.Spec.KubernetesMonitoring.Image
+	} else if dk.Spec.Routing.Image != "" {
+		return dk.Spec.Routing.Image
 	}
 
 	if dk.Spec.APIURL == "" {

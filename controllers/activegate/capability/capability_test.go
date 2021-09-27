@@ -1,31 +1,30 @@
 package capability
 
 import (
-	"path/filepath"
 	"reflect"
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	v1 "k8s.io/api/core/v1"
 )
 
 func Test_capabilityBase_GetProperties(t *testing.T) {
-	props := &dynatracev1alpha1.CapabilityProperties{}
+	props := &dynatracev1.CapabilityProperties{}
 
 	type fields struct {
-		properties *dynatracev1alpha1.CapabilityProperties
+		properties *dynatracev1.CapabilityProperties
 	}
 	tests := []struct {
 		name   string
 		fields fields
-		want   *dynatracev1alpha1.CapabilityProperties
+		want   *dynatracev1.CapabilityProperties
 	}{
 		{
 			name: "properties address is preserved",
 			fields: fields{
 				properties: props,
 			},
-			want: &dynatracev1alpha1.CapabilityProperties{},
+			want: &dynatracev1.CapabilityProperties{},
 		},
 	}
 	for _, tt := range tests {
@@ -140,7 +139,7 @@ func Test_capabilityBase_GetCapabilityName(t *testing.T) {
 }
 
 func TestCalculateStatefulSetName(t *testing.T) {
-	c := NewKubeMonCapability(nil, nil)
+	c := NewKubeMonCapability(nil)
 	const instanceName = "testinstance"
 
 	type args struct {
@@ -171,10 +170,10 @@ func TestCalculateStatefulSetName(t *testing.T) {
 }
 
 func TestNewKubeMonCapability(t *testing.T) {
-	props := &dynatracev1alpha1.CapabilityProperties{}
+	props := &dynatracev1.CapabilityProperties{}
 
 	type args struct {
-		crProperties *dynatracev1alpha1.CapabilityProperties
+		crProperties *dynatracev1.CapabilityProperties
 	}
 	tests := []struct {
 		name string
@@ -228,7 +227,7 @@ func TestNewKubeMonCapability(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewKubeMonCapability(tt.args.crProperties, nil); !reflect.DeepEqual(got, tt.want) {
+			if got := NewKubeMonCapability(tt.args.crProperties); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewKubeMonCapability() = %v, want %v", got, tt.want)
 			}
 		})
@@ -237,15 +236,11 @@ func TestNewKubeMonCapability(t *testing.T) {
 
 func TestNewRoutingCapability(t *testing.T) {
 	const tlsSecretName = "tls-secret"
-	agSpecWithTls := &dynatracev1alpha1.ActiveGateSpec{
-		TlsSecretName: tlsSecretName,
-	}
 
-	props := &dynatracev1alpha1.CapabilityProperties{}
+	props := &dynatracev1.CapabilityProperties{}
 
 	type args struct {
-		crProperties *dynatracev1alpha1.CapabilityProperties
-		agSpec       *dynatracev1alpha1.ActiveGateSpec
+		crProperties *dynatracev1.CapabilityProperties
 	}
 	tests := []struct {
 		name string
@@ -256,7 +251,6 @@ func TestNewRoutingCapability(t *testing.T) {
 			name: "default",
 			args: args{
 				crProperties: props,
-				agSpec:       nil,
 			},
 			want: &RoutingCapability{
 				capabilityBase: capabilityBase{
@@ -277,26 +271,12 @@ func TestNewRoutingCapability(t *testing.T) {
 			name: "with-tls-secert-set",
 			args: args{
 				crProperties: props,
-				agSpec:       agSpecWithTls,
 			},
 			want: &RoutingCapability{
 				capabilityBase: capabilityBase{
 					moduleName:     "routing",
 					capabilityName: "MSGrouter",
 					properties:     props,
-					volumes: []v1.Volume{{
-						Name: jettyCerts,
-						VolumeSource: v1.VolumeSource{
-							Secret: &v1.SecretVolumeSource{
-								SecretName: agSpecWithTls.TlsSecretName,
-							},
-						},
-					}},
-					containerVolumeMounts: []v1.VolumeMount{{
-						ReadOnly:  true,
-						Name:      jettyCerts,
-						MountPath: filepath.Join(secretsRootDir, "tls"),
-					}},
 					Configuration: Configuration{
 						SetDnsEntryPoint:     true,
 						SetReadinessPort:     true,
@@ -310,7 +290,7 @@ func TestNewRoutingCapability(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewRoutingCapability(tt.args.crProperties, tt.args.agSpec); !reflect.DeepEqual(got, tt.want) {
+			if got := NewRoutingCapability(tt.args.crProperties); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewRoutingCapability() = %v, want %v", got, tt.want)
 			}
 		})
@@ -318,10 +298,10 @@ func TestNewRoutingCapability(t *testing.T) {
 }
 
 func TestNewMetricsCapability(t *testing.T) {
-	props := &dynatracev1alpha1.CapabilityProperties{}
+	props := &dynatracev1.CapabilityProperties{}
 
 	type args struct {
-		crProperties *dynatracev1alpha1.CapabilityProperties
+		crProperties *dynatracev1.CapabilityProperties
 	}
 	tests := []struct {
 		name string
@@ -351,7 +331,7 @@ func TestNewMetricsCapability(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewDataIngestCapability(tt.args.crProperties, nil); !reflect.DeepEqual(got, tt.want) {
+			if got := NewDataIngestCapability(tt.args.crProperties); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewDataIngestCapability() = %v, want %v", got, tt.want)
 			}
 		})
