@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/pkg/errors"
@@ -30,6 +31,25 @@ type DynatraceClientProperties struct {
 type DynatraceClientProxy struct {
 	Value     string
 	ValueFrom string
+}
+
+func NewDynatraceClientProperties(ctx context.Context, cl client.Client, dk dynatracev1.DynaKube) (*DynatraceClientProperties, error) {
+	var tokens corev1.Secret
+	var err error
+	if err = cl.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
+		err = fmt.Errorf("failed to query tokens: %w", err)
+	}
+	return &DynatraceClientProperties{
+		Client:              cl,
+		Secret:              &tokens,
+		ApiUrl:              dk.Spec.APIURL,
+		Namespace:           dk.Namespace,
+		Proxy:               (*DynatraceClientProxy)(dk.Spec.Proxy),
+		NetworkZone:         dk.Spec.NetworkZone,
+		TrustedCerts:        dk.Spec.TrustedCAs,
+		SkipCertCheck:       dk.Spec.SkipCertCheck,
+		DisableHostRequests: dk.FeatureDisableHostsRequests(),
+	}, err
 }
 
 // BuildDynatraceClient creates a new Dynatrace client using the settings configured on the given instance.

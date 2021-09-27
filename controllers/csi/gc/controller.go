@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/spf13/afero"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -66,24 +65,13 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return reconcileResult, nil
 	}
 
-	var tokens corev1.Secret
-	if err := gc.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
-		gc.logger.Error(err, "failed to query tokens")
+	dtp, err := dynakube.NewDynatraceClientProperties(ctx, gc.client, dk)
+	if err != nil {
+		gc.logger.Error(err, err.Error())
 		return reconcileResult, nil
 	}
 
-	dtp := dynakube.DynatraceClientProperties{
-		Client:              gc.client,
-		Secret:              &tokens,
-		ApiUrl:              dk.Spec.APIURL,
-		Proxy:               (*dynakube.DynatraceClientProxy)(dk.Spec.Proxy),
-		Namespace:           dk.Namespace,
-		NetworkZone:         dk.Spec.NetworkZone,
-		TrustedCerts:        dk.Spec.TrustedCAs,
-		SkipCertCheck:       dk.Spec.SkipCertCheck,
-		DisableHostRequests: dk.FeatureDisableHostsRequests(),
-	}
-	dtc, err := gc.dtcBuildFunc(dtp)
+	dtc, err := gc.dtcBuildFunc(*dtp)
 	if err != nil {
 		gc.logger.Error(err, "failed to create Dynatrace client")
 		return reconcileResult, nil

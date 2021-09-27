@@ -316,23 +316,12 @@ func (r *ReconcileNodes) updateNode(c *Cache, nodeName string) error {
 }
 
 func (r *ReconcileNodes) sendMarkedForTermination(dk *dynatracev1.DynaKube, nodeIP string, lastSeen time.Time) error {
-	var secret corev1.Secret
-	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &secret); err != nil {
-		r.logger.Error(err, "Failed to query for tokens")
+	dtp, err := dynakube.NewDynatraceClientProperties(context.TODO(), r.client, *dk)
+	if err != nil {
+		r.logger.Error(err, err.Error())
 	}
 
-	dtf := dynakube.DynatraceClientProperties{
-		Client:              r.client,
-		Secret:              &secret,
-		ApiUrl:              dk.Spec.APIURL,
-		Proxy:               (*dynakube.DynatraceClientProxy)(dk.Spec.Proxy),
-		Namespace:           dk.Namespace,
-		NetworkZone:         dk.Spec.NetworkZone,
-		TrustedCerts:        dk.Spec.TrustedCAs,
-		SkipCertCheck:       dk.Spec.SkipCertCheck,
-		DisableHostRequests: dk.FeatureDisableActiveGateUpdates(),
-	}
-	dtc, err := r.dtClientFunc(dtf)
+	dtc, err := r.dtClientFunc(*dtp)
 	if err != nil {
 		return err
 	}

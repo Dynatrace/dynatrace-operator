@@ -29,7 +29,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -162,23 +161,11 @@ func hasTenantChanged(old, new metadata.Tenant) bool {
 }
 
 func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1.DynaKube) (dtclient.Client, error) {
-	var tkns corev1.Secret
-	if err := r.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tkns); err != nil {
-		return nil, fmt.Errorf("failed to query tokens: %w", err)
+	dtp, err := dynakube.NewDynatraceClientProperties(ctx, r.client, *dk)
+	if err != nil {
+		return nil, err
 	}
-
-	dtp := dynakube.DynatraceClientProperties{
-		Client:              r.client,
-		Secret:              &tkns,
-		ApiUrl:              dk.Spec.APIURL,
-		Namespace:           dk.Namespace,
-		Proxy:               (*dynakube.DynatraceClientProxy)(dk.Spec.Proxy),
-		NetworkZone:         dk.Spec.NetworkZone,
-		TrustedCerts:        dk.Spec.TrustedCAs,
-		SkipCertCheck:       dk.Spec.SkipCertCheck,
-		DisableHostRequests: dk.FeatureDisableHostsRequests(),
-	}
-	dtc, err := r.dtcBuildFunc(dtp)
+	dtc, err := r.dtcBuildFunc(*dtp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Dynatrace client: %w", err)
 	}
