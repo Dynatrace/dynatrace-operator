@@ -255,10 +255,6 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	}
 }
 
-func (dsInfo *builderInfo) useImmutableImage() bool {
-	return dsInfo.instance.Status.OneAgent.UseImmutableImage
-}
-
 func (dsInfo *builderInfo) buildLabels() map[string]string {
 	return map[string]string{
 		"dynatrace.com/component":         "operator",
@@ -306,10 +302,6 @@ func (dsInfo *builderInfo) image() string {
 func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
 	pullSecretName := dsInfo.instance.PullSecret()
 	pullSecrets := make([]corev1.LocalObjectReference, 0)
-
-	if !dsInfo.useImmutableImage() {
-		return pullSecrets
-	}
 
 	pullSecrets = append(pullSecrets, corev1.LocalObjectReference{
 		Name: pullSecretName,

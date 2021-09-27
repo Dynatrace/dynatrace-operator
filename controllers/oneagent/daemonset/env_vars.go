@@ -3,9 +3,7 @@ package daemonset
 import (
 	"fmt"
 	"sort"
-	"strconv"
 
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -28,17 +26,6 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 	envVarMap := envVarsToMap(environmentVariables)
 	envVarMap = setDefaultValueSource(envVarMap, dtNodeName, &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}})
 	envVarMap = setDefaultValue(envVarMap, dtClusterId, dsInfo.clusterId)
-
-	if !dsInfo.useImmutableImage() {
-		envVarMap = setDefaultValueSource(envVarMap, oneagentDownloadToken, &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dsInfo.instance.Tokens()},
-				Key:                  dtclient.DynatracePaasToken,
-			},
-		})
-		envVarMap = setDefaultValue(envVarMap, oneagentInstallScript, dsInfo.installerUrl())
-		envVarMap = setDefaultValue(envVarMap, oneagentSkipCertCheck, strconv.FormatBool(dsInfo.instance.Spec.SkipCertCheck))
-	}
 
 	if dsInfo.hasProxy() {
 		envVarMap = dsInfo.setDefaultProxy(envVarMap)
