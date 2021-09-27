@@ -40,11 +40,10 @@ type CloudNativeFullStackSpec struct {
 	HostInjectSpec   `json:",inline"`
 	AppInjectionSpec `json:",inline"`
 
-	// Used if read-only filesystem support is enabled.
-	// Determines the volume to which the installation files are stored during installation of the OneAgent
-	// Defaults to an empty-dir
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Installation volume",order=30,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Volume"}
-	InstallationVolume *corev1.VolumeSource `json:"installationVolume,omitempty"`
+	// Optional: Enable support for read only host-filesystems.
+	// Defaults to false
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ReadOnly support for read-only host-filesystem",order=29,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	ReadOnly bool `json:"readOnly,omitempty"`
 }
 
 type ClassicFullStackSpec struct {
@@ -76,11 +75,10 @@ type HostMonitoringSpec struct {
 
 	HostInjectSpec `json:",inline"`
 
-	// Used if read-only filesystem support is enabled.
-	// Determines the volume to which the installation files are stored during installation of the OneAgent
-	// Defaults to an empty-dir
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Installation volume",order=30,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Volume"}
-	InstallationVolume *corev1.VolumeSource `json:"installationVolume,omitempty"`
+	// Optional: Enable support for read only host-filesystems.
+	// Defaults to false
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ReadOnly support for read-only host-filesystem",order=29,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	ReadOnly bool `json:"readOnly,omitempty"`
 }
 
 type HostInjectSpec struct {

@@ -19,20 +19,26 @@ func prepareVolumeMounts(instance *dynatracev1.DynaKube) []corev1.VolumeMount {
 }
 
 func (dsInfo *HostMonitoring) appendReadOnlyVolume(daemonset *appsv1.DaemonSet) {
-	daemonset.Spec.Template.Spec.Volumes = append(daemonset.Spec.Template.Spec.Volumes, getInstallationVolume(dsInfo.instance))
+	if dsInfo.instance.ReadOnly() {
+		daemonset.Spec.Template.Spec.Volumes = append(daemonset.Spec.Template.Spec.Volumes, getReadOnlyVolume(dsInfo.instance))
+	}
 }
 
-func getInstallationVolume(dk *dynatracev1.DynaKube) corev1.Volume {
+func getReadOnlyVolume(dk *dynatracev1.DynaKube) corev1.Volume {
 	return corev1.Volume{
-		Name:         oneagentInstallationMountName,
-		VolumeSource: dk.GetInstallationVolume(),
+		Name: oneagentInstallationMountName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
 	}
 }
 
 func (dsInfo *HostMonitoring) appendReadOnlyVolumeMount(daemonset *appsv1.DaemonSet) {
-	daemonset.Spec.Template.Spec.Containers[0].VolumeMounts = append(
-		daemonset.Spec.Template.Spec.Containers[0].VolumeMounts,
-		getInstallationMount())
+	if dsInfo.instance.ReadOnly() {
+		daemonset.Spec.Template.Spec.Containers[0].VolumeMounts = append(
+			daemonset.Spec.Template.Spec.Containers[0].VolumeMounts,
+			getInstallationMount())
+	}
 }
 
 func getInstallationMount() corev1.VolumeMount {
@@ -61,7 +67,7 @@ func (dsInfo *HostMonitoring) setRootMountReadability(result *appsv1.DaemonSet) 
 	for idx, mount := range volumeMounts {
 		if mount.Name == hostRootMount {
 			// using index here since range returns a copy not a reference
-			volumeMounts[idx].ReadOnly = true
+			volumeMounts[idx].ReadOnly = dsInfo.instance.ReadOnly()
 		}
 	}
 }
