@@ -63,8 +63,8 @@ type DynaKube struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   DynaKubeSpec            `json:"spec,omitempty"`
-	Status v1alpha1.DynaKubeStatus `json:"status,omitempty"`
+	Spec   DynaKubeSpec   `json:"spec,omitempty"`
+	Status DynaKubeStatus `json:"status,omitempty"`
 }
 
 // DynaKubeSpec defines the desired state of DynaKube

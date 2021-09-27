@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -66,11 +65,6 @@ func TestCustomPullSecret(t *testing.T) {
 			},
 			CustomPullSecret: testName,
 		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			OneAgent: dynatracev1alpha1.OneAgentStatus{
-				UseImmutableImage: true,
-			},
-		},
 	}
 	dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
 	ds, err := dsInfo.BuildDaemonSet()
@@ -90,11 +84,6 @@ func TestResources(t *testing.T) {
 				APIURL: testURL,
 				OneAgent: dynatracev1.OneAgentSpec{
 					ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
 				},
 			},
 		}
@@ -133,11 +122,6 @@ func TestResources(t *testing.T) {
 							},
 						},
 					},
-				},
-			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				OneAgent: dynatracev1alpha1.OneAgentStatus{
-					UseImmutableImage: true,
 				},
 			},
 		}

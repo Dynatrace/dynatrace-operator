@@ -7,7 +7,6 @@ import (
 	"time"
 
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
@@ -123,15 +122,15 @@ func TestReconcile_PhaseSetCorrectly(t *testing.T) {
 		},
 	}
 	meta.SetStatusCondition(&base.Status.Conditions, metav1.Condition{
-		Type:    dynatracev1alpha1.APITokenConditionType,
+		Type:    dynatracev1.APITokenConditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  dynatracev1alpha1.ReasonTokenReady,
+		Reason:  dynatracev1.ReasonTokenReady,
 		Message: "Ready",
 	})
 	meta.SetStatusCondition(&base.Status.Conditions, metav1.Condition{
-		Type:    dynatracev1alpha1.PaaSTokenConditionType,
+		Type:    dynatracev1.PaaSTokenConditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  dynatracev1alpha1.ReasonTokenReady,
+		Reason:  dynatracev1.ReasonTokenReady,
 		Message: "Ready",
 	})
 
@@ -140,13 +139,13 @@ func TestReconcile_PhaseSetCorrectly(t *testing.T) {
 
 		res := dk.Status.SetPhaseOnError(nil)
 		assert.False(t, res)
-		assert.Equal(t, dk.Status.Phase, dynatracev1alpha1.DynaKubePhaseType(""))
+		assert.Equal(t, dk.Status.Phase, dynatracev1.DynaKubePhaseType(""))
 
 		res = dk.Status.SetPhaseOnError(errors.New("dummy error"))
 		assert.True(t, res)
 
 		if assert.NotNil(t, dk.Status.Phase) {
-			assert.Equal(t, dynatracev1alpha1.Error, dk.Status.Phase)
+			assert.Equal(t, dynatracev1.Error, dk.Status.Phase)
 		}
 	})
 }
@@ -641,7 +640,7 @@ func newDynaKube() *dynatracev1.DynaKube {
 	return &dynatracev1.DynaKube{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DynaKube",
-			APIVersion: "dynatrace.com/v1alpha1",
+			APIVersion: "dynatrace.com/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-oneagent",

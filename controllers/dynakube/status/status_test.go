@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -89,7 +88,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 		assert.NotNil(t, instance.Status.ConnectionInfo)
 		assert.Equal(t, testUUID, instance.Status.ConnectionInfo.TenantUUID)
 		assert.NotNil(t, instance.Status.ConnectionInfo.CommunicationHosts)
-		assert.Equal(t, []dynatracev1alpha1.CommunicationHostStatus{
+		assert.Equal(t, []dynatracev1.CommunicationHostStatus{
 			{
 				Protocol: testProtocol,
 				Host:     testHost,

@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -48,12 +47,12 @@ var (
 			Tokens:     testTokensName,
 			OneAgent:   dynatracev1.OneAgentSpec{HostMonitoring: &dynatracev1.HostMonitoringSpec{}},
 		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
+		Status: dynatracev1.DynaKubeStatus{
+			ConnectionInfo: dynatracev1.ConnectionInfoStatus{
 				TenantUUID: testTenantUUID,
 			},
-			OneAgent: dynatracev1alpha1.OneAgentStatus{
-				Instances: map[string]dynatracev1alpha1.OneAgentInstance{
+			OneAgent: dynatracev1.OneAgentStatus{
+				Instances: map[string]dynatracev1.OneAgentInstance{
 					testNode1Name: {},
 				},
 			},
@@ -66,12 +65,12 @@ var (
 			APIURL:   testApiUrl,
 			OneAgent: dynatracev1.OneAgentSpec{HostMonitoring: &dynatracev1.HostMonitoringSpec{}},
 		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
+		Status: dynatracev1.DynaKubeStatus{
+			ConnectionInfo: dynatracev1.ConnectionInfoStatus{
 				TenantUUID: testTenantUUID,
 			},
-			OneAgent: dynatracev1alpha1.OneAgentStatus{
-				Instances: map[string]dynatracev1alpha1.OneAgentInstance{
+			OneAgent: dynatracev1.OneAgentStatus{
+				Instances: map[string]dynatracev1.OneAgentInstance{
 					testNode2Name: {},
 				},
 			},
@@ -90,8 +89,8 @@ var (
 				},
 			},
 		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
+		Status: dynatracev1.DynaKubeStatus{
+			ConnectionInfo: dynatracev1.ConnectionInfoStatus{
 				TenantUUID: testTenantUUID,
 			},
 		},

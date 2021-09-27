@@ -5,6 +5,7 @@ package e2e
 import (
 	"testing"
 
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -18,6 +19,9 @@ func CreateClient(t *testing.T) client.Client {
 	assert.NoError(t, err)
 
 	err = dynatracev1alpha1.AddToScheme(scheme.Scheme)
+	assert.NoError(t, err)
+
+	err = dynatracev1.AddToScheme(scheme.Scheme)
 	assert.NoError(t, err)
 
 	clt, err := client.New(cfg, client.Options{

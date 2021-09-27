@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -82,8 +81,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
+			Status: dynatracev1.DynaKubeStatus{
+				ConnectionInfo: dynatracev1.ConnectionInfoStatus{
 					TenantUUID: testName,
 				},
 			},
@@ -122,8 +121,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testEndpoint,
 			},
-			Status: dynatracev1alpha1.DynaKubeStatus{
-				ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
+			Status: dynatracev1.DynaKubeStatus{
+				ConnectionInfo: dynatracev1.ConnectionInfoStatus{
 					TenantUUID: testName,
 				},
 			},

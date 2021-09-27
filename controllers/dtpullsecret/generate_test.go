@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,9 +41,9 @@ func TestReconciler_GenerateData(t *testing.T) {
 		Spec: dynatracev1.DynaKubeSpec{
 			APIURL: testApiUrl,
 		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			ConnectionInfo: dynatracev1alpha1.ConnectionInfoStatus{
-				CommunicationHosts: []dynatracev1alpha1.CommunicationHostStatus{
+		Status: dynatracev1.DynaKubeStatus{
+			ConnectionInfo: dynatracev1.ConnectionInfoStatus{
+				CommunicationHosts: []dynatracev1.CommunicationHostStatus{
 					{
 						Protocol: testProtocol,
 						Host:     testHost,

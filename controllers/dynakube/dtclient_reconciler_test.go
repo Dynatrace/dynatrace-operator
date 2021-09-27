@@ -7,7 +7,6 @@ import (
 	"time"
 
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -178,20 +177,20 @@ func TestReconcileDynatraceClient_MigrateConditions(t *testing.T) {
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dynaKubeName,
 		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
+		Status: dynatracev1.DynaKubeStatus{
 			LastAPITokenProbeTimestamp:  &lastProbe,
 			LastPaaSTokenProbeTimestamp: &lastProbe,
 			Conditions: []metav1.Condition{
 				{
-					Type:    dynatracev1alpha1.APITokenConditionType,
+					Type:    dynatracev1.APITokenConditionType,
 					Status:  metav1.ConditionTrue,
-					Reason:  dynatracev1alpha1.ReasonTokenReady,
+					Reason:  dynatracev1.ReasonTokenReady,
 					Message: "Ready",
 				},
 				{
-					Type:    dynatracev1alpha1.PaaSTokenConditionType,
+					Type:    dynatracev1.PaaSTokenConditionType,
 					Status:  metav1.ConditionTrue,
-					Reason:  dynatracev1alpha1.ReasonTokenReady,
+					Reason:  dynatracev1.ReasonTokenReady,
 					Message: "Ready",
 				},
 			},
@@ -237,15 +236,15 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 		},
 	}
 	meta.SetStatusCondition(&base.Status.Conditions, metav1.Condition{
-		Type:    dynatracev1alpha1.APITokenConditionType,
+		Type:    dynatracev1.APITokenConditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  dynatracev1alpha1.ReasonTokenReady,
+		Reason:  dynatracev1.ReasonTokenReady,
 		Message: "Ready",
 	})
 	meta.SetStatusCondition(&base.Status.Conditions, metav1.Condition{
-		Type:    dynatracev1alpha1.PaaSTokenConditionType,
+		Type:    dynatracev1.PaaSTokenConditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  dynatracev1alpha1.ReasonTokenReady,
+		Reason:  dynatracev1.ReasonTokenReady,
 		Message: "Ready",
 	})
 

@@ -7,14 +7,14 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type PhaseWait interface {
-	WaitForPhase(dynatracev1alpha1.DynaKubePhaseType) error
+	WaitForPhase(dynatracev1.DynaKubePhaseType) error
 }
 
 type waitConfiguration struct {
@@ -35,8 +35,8 @@ func NewOneAgentWaitConfiguration(t *testing.T, clt client.Client, maxWaitCycles
 	}
 }
 
-func (waitConfig *waitConfiguration) WaitForPhase(phase dynatracev1alpha1.DynaKubePhaseType) error {
-	instance := dynatracev1alpha1.DynaKube{}
+func (waitConfig *waitConfiguration) WaitForPhase(phase dynatracev1.DynaKubePhaseType) error {
+	instance := dynatracev1.DynaKube{}
 	iteration := 0
 	for iteration < waitConfig.maxWaitCycles {
 		err := waitConfig.clt.Get(context.TODO(),

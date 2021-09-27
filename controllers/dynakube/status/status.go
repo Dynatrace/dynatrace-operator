@@ -2,7 +2,6 @@ package status
 
 import (
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/pkg/errors"
@@ -43,9 +42,9 @@ func SetDynakubeStatus(instance *dynatracev1.DynaKube, opts Options) error {
 		return errors.WithStack(err)
 	}
 
-	communicationHostStatus := dynatracev1alpha1.CommunicationHostStatus(communicationHost)
+	communicationHostStatus := dynatracev1.CommunicationHostStatus(communicationHost)
 
-	connectionInfoStatus := dynatracev1alpha1.ConnectionInfoStatus{
+	connectionInfoStatus := dynatracev1.ConnectionInfoStatus{
 		CommunicationHosts: communicationHostsToStatus(connectionInfo.CommunicationHosts),
 		TenantUUID:         connectionInfo.TenantUUID,
 	}
@@ -59,11 +58,11 @@ func SetDynakubeStatus(instance *dynatracev1.DynaKube, opts Options) error {
 	return nil
 }
 
-func communicationHostsToStatus(communicationHosts []dtclient.CommunicationHost) []dynatracev1alpha1.CommunicationHostStatus {
-	var communicationHostStatuses []dynatracev1alpha1.CommunicationHostStatus
+func communicationHostsToStatus(communicationHosts []dtclient.CommunicationHost) []dynatracev1.CommunicationHostStatus {
+	var communicationHostStatuses []dynatracev1.CommunicationHostStatus
 
 	for _, communicationHost := range communicationHosts {
-		communicationHostStatuses = append(communicationHostStatuses, dynatracev1alpha1.CommunicationHostStatus(communicationHost))
+		communicationHostStatuses = append(communicationHostStatuses, dynatracev1.CommunicationHostStatus(communicationHost))
 	}
 
 	return communicationHostStatuses

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
@@ -241,11 +240,11 @@ func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logge
 	return false, err
 }
 
-func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1alpha1.OneAgentInstance, error) {
-	instanceStatuses := make(map[string]dynatracev1alpha1.OneAgentInstance)
+func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1.OneAgentInstance, error) {
+	instanceStatuses := make(map[string]dynatracev1.OneAgentInstance)
 
 	for _, pod := range pods {
-		instanceStatuses[pod.Spec.NodeName] = dynatracev1alpha1.OneAgentInstance{
+		instanceStatuses[pod.Spec.NodeName] = dynatracev1.OneAgentInstance{
 			PodName:   pod.Name,
 			IPAddress: pod.Status.HostIP,
 		}
@@ -265,17 +264,17 @@ func (r *ReconcileOneAgent) determineDynaKubePhase(instance *dynatracev1.DynaKub
 	}
 
 	if err != nil {
-		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Error
-		instance.Status.Phase = dynatracev1alpha1.Error
+		phaseChanged = instance.Status.Phase != dynatracev1.Error
+		instance.Status.Phase = dynatracev1.Error
 		return phaseChanged, err
 	}
 
 	if dsActual.Status.NumberReady == dsActual.Status.CurrentNumberScheduled {
-		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Running
-		instance.Status.Phase = dynatracev1alpha1.Running
+		phaseChanged = instance.Status.Phase != dynatracev1.Running
+		instance.Status.Phase = dynatracev1.Running
 	} else {
-		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Deploying
-		instance.Status.Phase = dynatracev1alpha1.Deploying
+		phaseChanged = instance.Status.Phase != dynatracev1.Deploying
+		instance.Status.Phase = dynatracev1.Deploying
 	}
 
 	return phaseChanged, nil

@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
@@ -37,11 +36,6 @@ func TestArguments(t *testing.T) {
 				},
 			},
 		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			OneAgent: dynatracev1alpha1.OneAgentStatus{
-				UseImmutableImage: true,
-			},
-		},
 	}
 	dsInfo := ClassicFullStack{
 		builderInfo{
@@ -70,9 +64,9 @@ func TestPodSpec_Arguments(t *testing.T) {
 				},
 			},
 		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			OneAgent: dynatracev1alpha1.OneAgentStatus{
-				VersionStatus: dynatracev1alpha1.VersionStatus{
+		Status: dynatracev1.DynaKubeStatus{
+			OneAgent: dynatracev1.OneAgentStatus{
+				VersionStatus: dynatracev1.VersionStatus{
 					Version: testContainerImageVersion,
 				},
 			},

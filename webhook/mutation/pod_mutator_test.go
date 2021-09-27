@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
@@ -102,11 +101,6 @@ func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podMutator, *
 						},
 					},
 				},
-			},
-		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			OneAgent: dynatracev1alpha1.OneAgentStatus{
-				UseImmutableImage: true,
 			},
 		},
 	}
@@ -300,11 +294,6 @@ func createDynakubeInstance(_ *testing.T) *dynatracev1.DynaKube {
 			APIURL: "https://test-api-url.com/api",
 			OneAgent: dynatracev1.OneAgentSpec{
 				CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{},
-			},
-		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			OneAgent: dynatracev1alpha1.OneAgentStatus{
-				UseImmutableImage: true,
 			},
 		},
 	}

@@ -38,7 +38,41 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 		dst.Spec.ClassicFullStack.Labels = src.Spec.OneAgent.ClassicFullStack.Labels
 	}
 
-	dst.Status = src.Status
+	// Status
+	dst.Status.ActiveGate.ImageHash = src.Status.ActiveGate.ImageHash
+	dst.Status.ActiveGate.LastUpdateProbeTimestamp = src.Status.ActiveGate.LastUpdateProbeTimestamp
+	dst.Status.ActiveGate.Version = src.Status.ActiveGate.Version
+	dst.Status.ActiveGate.VersionStatus = v1alpha1.VersionStatus(src.Status.ActiveGate.VersionStatus)
+
+	dst.Status.CommunicationHostForClient = v1alpha1.CommunicationHostStatus(src.Status.CommunicationHostForClient)
+	dst.Status.Conditions = src.Status.Conditions
+
+	dst.Status.ConnectionInfo.CommunicationHosts = []v1alpha1.CommunicationHostStatus{}
+	for i := range src.Status.ConnectionInfo.CommunicationHosts {
+		dst.Status.ConnectionInfo.CommunicationHosts = append(dst.Status.ConnectionInfo.CommunicationHosts, v1alpha1.CommunicationHostStatus(src.Status.ConnectionInfo.CommunicationHosts[i]))
+	}
+	dst.Status.ConnectionInfo.TenantUUID = src.Status.ConnectionInfo.TenantUUID
+
+	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID
+	dst.Status.LastAPITokenProbeTimestamp = src.Status.LastAPITokenProbeTimestamp
+	dst.Status.LastClusterVersionProbeTimestamp = src.Status.LastClusterVersionProbeTimestamp
+	dst.Status.LastPaaSTokenProbeTimestamp = src.Status.LastPaaSTokenProbeTimestamp
+
+	dst.Status.OneAgent.UseImmutableImage = true
+	dst.Status.OneAgent.ImageHash = src.Status.OneAgent.ImageHash
+	dst.Status.OneAgent.Instances = map[string]v1alpha1.OneAgentInstance{}
+	for key, value := range src.Status.OneAgent.Instances {
+		dst.Status.OneAgent.Instances[key] = v1alpha1.OneAgentInstance(value)
+	}
+	dst.Status.OneAgent.LastHostsRequestTimestamp = src.Status.OneAgent.LastHostsRequestTimestamp
+	dst.Status.OneAgent.LastUpdateProbeTimestamp = src.Status.OneAgent.LastUpdateProbeTimestamp
+	dst.Status.OneAgent.Version = src.Status.OneAgent.Version
+	dst.Status.OneAgent.VersionStatus = v1alpha1.VersionStatus(src.Status.OneAgent.VersionStatus)
+
+	dst.Status.Phase = v1alpha1.DynaKubePhaseType(src.Status.Phase)
+	dst.Status.Tokens = src.Status.Tokens
+	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
+
 	return nil
 }
 
@@ -70,6 +104,39 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		dst.Spec.OneAgent.ClassicFullStack.DNSPolicy = src.Spec.ClassicFullStack.DNSPolicy
 		dst.Spec.OneAgent.ClassicFullStack.Labels = src.Spec.ClassicFullStack.Labels
 	}
-	dst.Status = src.Status
+	// Status
+	dst.Status.ActiveGate.ImageHash = src.Status.ActiveGate.ImageHash
+	dst.Status.ActiveGate.LastUpdateProbeTimestamp = src.Status.ActiveGate.LastUpdateProbeTimestamp
+	dst.Status.ActiveGate.Version = src.Status.ActiveGate.Version
+	dst.Status.ActiveGate.VersionStatus = VersionStatus(src.Status.ActiveGate.VersionStatus)
+
+	dst.Status.CommunicationHostForClient = CommunicationHostStatus(src.Status.CommunicationHostForClient)
+	dst.Status.Conditions = src.Status.Conditions
+
+	dst.Status.ConnectionInfo.CommunicationHosts = []CommunicationHostStatus{}
+	for i := range src.Status.ConnectionInfo.CommunicationHosts {
+		dst.Status.ConnectionInfo.CommunicationHosts = append(dst.Status.ConnectionInfo.CommunicationHosts, CommunicationHostStatus(src.Status.ConnectionInfo.CommunicationHosts[i]))
+	}
+	dst.Status.ConnectionInfo.TenantUUID = src.Status.ConnectionInfo.TenantUUID
+
+	dst.Status.KubeSystemUUID = src.Status.KubeSystemUUID
+	dst.Status.LastAPITokenProbeTimestamp = src.Status.LastAPITokenProbeTimestamp
+	dst.Status.LastClusterVersionProbeTimestamp = src.Status.LastClusterVersionProbeTimestamp
+	dst.Status.LastPaaSTokenProbeTimestamp = src.Status.LastPaaSTokenProbeTimestamp
+
+	dst.Status.OneAgent.ImageHash = src.Status.OneAgent.ImageHash
+	dst.Status.OneAgent.Instances = map[string]OneAgentInstance{}
+	for key, value := range src.Status.OneAgent.Instances {
+		dst.Status.OneAgent.Instances[key] = OneAgentInstance(value)
+	}
+	dst.Status.OneAgent.LastHostsRequestTimestamp = src.Status.OneAgent.LastHostsRequestTimestamp
+	dst.Status.OneAgent.LastUpdateProbeTimestamp = src.Status.OneAgent.LastUpdateProbeTimestamp
+	dst.Status.OneAgent.Version = src.Status.OneAgent.Version
+	dst.Status.OneAgent.VersionStatus = VersionStatus(src.Status.OneAgent.VersionStatus)
+
+	dst.Status.Phase = DynaKubePhaseType(src.Status.Phase)
+	dst.Status.Tokens = src.Status.Tokens
+	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
+
 	return nil
 }
