@@ -34,7 +34,9 @@ func (dsInfo *HostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet)
 	envVars := daemonset.Spec.Template.Spec.Containers[0].Env
 	envVarMap := envVarsToMap(envVars)
 	envVarMap = setDefaultValue(envVarMap, oneagentDisableContainerInjection, "true")
-	envVarMap = setDefaultValue(envVarMap, oneagentReadOnlyMode, "true")
+	if dsInfo.instance.ReadOnly() {
+		envVarMap = setDefaultValue(envVarMap, oneagentReadOnlyMode, "true")
+	}
 
 	daemonset.Spec.Template.Spec.Containers[0].Env = mapToArray(envVarMap)
 }

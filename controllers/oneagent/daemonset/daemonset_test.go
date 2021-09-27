@@ -153,7 +153,9 @@ func TestInfraMon_SecurityContext(t *testing.T) {
 			Spec: dynatracev1.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynatracev1.OneAgentSpec{
-					HostMonitoring: &dynatracev1.HostMonitoringSpec{},
+					HostMonitoring: &dynatracev1.HostMonitoringSpec{
+						ReadOnly: true,
+					},
 				},
 			},
 		}
