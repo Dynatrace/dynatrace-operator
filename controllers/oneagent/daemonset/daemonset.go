@@ -24,7 +24,6 @@ const (
 	annotationVersion           = "internal.operator.dynatrace.com/version"
 
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
-	defaultOneAgentImage                  = "docker.io/dynatrace/oneagent:latest"
 
 	hostRootMount = "host-root"
 
@@ -292,9 +291,6 @@ func (dsInfo *builderInfo) volumes() []corev1.Volume {
 func (dsInfo *builderInfo) image() string {
 	if dsInfo.relatedImage != "" {
 		return dsInfo.relatedImage
-	}
-	if dsInfo.instance.Image() != "" {
-		return dsInfo.instance.Image()
 	}
 	return dsInfo.instance.ImmutableOneAgentImage()
 }

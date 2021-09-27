@@ -1,7 +1,6 @@
 package daemonset
 
 import (
-	"fmt"
 	"sort"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,9 +11,6 @@ const (
 	dtNodeName  = "DT_K8S_NODE_NAME"
 	dtClusterId = "DT_K8S_CLUSTER_ID"
 
-	oneagentDownloadToken             = "ONEAGENT_INSTALLER_DOWNLOAD_TOKEN"
-	oneagentInstallScript             = "ONEAGENT_INSTALLER_SCRIPT_URL"
-	oneagentSkipCertCheck             = "ONEAGENT_INSTALLER_SKIP_CERT_CHECK"
 	oneagentDisableContainerInjection = "ONEAGENT_DISABLE_CONTAINER_INJECTION"
 	oneagentReadOnlyMode              = "ONEAGENT_READ_ONLY_MODE"
 
@@ -74,10 +70,6 @@ func (dsInfo *builderInfo) setDefaultProxy(envVarMap map[string]corev1.EnvVar) m
 		setDefaultValue(envVarMap, proxy, dsInfo.instance.Spec.Proxy.Value)
 	}
 	return envVarMap
-}
-
-func (dsInfo *builderInfo) installerUrl() string {
-	return fmt.Sprintf("%s/v1/deployment/installer/agent/unix/default/latest?arch=x86&flavor=default", dsInfo.instance.Spec.APIURL)
 }
 
 func setDefaultValue(envVarMap map[string]corev1.EnvVar, name string, value string) map[string]corev1.EnvVar {

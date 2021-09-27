@@ -26,7 +26,6 @@ import (
 )
 
 const (
-	testVersion                 = "test-version"
 	fakeEventRecorderBufferSize = 10
 )
 

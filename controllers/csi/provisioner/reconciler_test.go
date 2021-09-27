@@ -26,11 +26,10 @@ import (
 )
 
 const (
-	dkName            = "dynakube-test"
-	errorMsg          = "test-error"
-	tenantUUID        = "test-uid"
-	agentVersion      = "12345"
-	invalidDriverName = "csi.not.dynatrace.com"
+	dkName       = "dynakube-test"
+	errorMsg     = "test-error"
+	tenantUUID   = "test-uid"
+	agentVersion = "12345"
 )
 
 type mkDirAllErrorFs struct {

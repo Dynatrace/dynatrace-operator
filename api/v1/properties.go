@@ -192,7 +192,7 @@ func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
 func (dk *DynaKube) ImmutableOneAgentImage() string {
 	oneAgentImage := dk.Image()
 	if oneAgentImage != "" {
-		return oneAgentImage
+		return oneAgentImage // TODO: What to do with the Version field in this case ?
 	}
 
 	if dk.Spec.APIURL == "" {
@@ -240,13 +240,4 @@ func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
 		communicationHosts = append(communicationHosts, dtclient.CommunicationHost(communicationHost))
 	}
 	return communicationHosts
-}
-
-func getInstallationVolume(vs *corev1.VolumeSource) *corev1.VolumeSource {
-	if vs == nil {
-		return &corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
-		}
-	}
-	return vs
 }
