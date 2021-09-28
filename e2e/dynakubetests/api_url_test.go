@@ -46,7 +46,7 @@ func TestApiURL(t *testing.T) {
 			Tokens: e2e.TokenSecretName,
 			OneAgent: dynatracev1.OneAgentSpec{
 				ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
-			}
+			},
 		},
 	}
 

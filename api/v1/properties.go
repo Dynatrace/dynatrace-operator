@@ -50,7 +50,7 @@ func (dk *DynaKube) HostMonitoringMode() bool {
 	return dk.Spec.OneAgent != OneAgentSpec{} && dk.Spec.OneAgent.HostMonitoring != nil
 }
 
-// HostMonitoringMode returns true when host monitoring section is used.
+// ClassicFullStackMode returns true when host monitoring section is used.
 func (dk *DynaKube) ClassicFullStackMode() bool {
 	return dk.Spec.OneAgent != OneAgentSpec{} && dk.Spec.OneAgent.ClassicFullStack != nil
 }

@@ -5,8 +5,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
-// var log = logf.Log.WithName("dynakube-conversion")
-
 func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*v1alpha1.DynaKube)
 
@@ -69,9 +67,44 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 
 	// ActiveGates
-	// TODO
+	if src.Spec.ActiveGate.Image != "" {
+		dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
+	} else if src.Spec.Routing.Image != "" {
+		dst.Spec.ActiveGate.Image = src.Spec.Routing.Image
+	} else if src.Spec.KubernetesMonitoring.Image != "" {
+		dst.Spec.ActiveGate.Image = src.Spec.KubernetesMonitoring.Image
+	}
+
+	if src.Spec.Routing.Enabled {
+		convertFromDeprecatedActiveGateCapability(
+			&dst.Spec.RoutingSpec.CapabilityProperties,
+			&src.Spec.Routing.CapabilityProperties)
+	}
+
+	if src.Spec.KubernetesMonitoring.Enabled {
+		convertFromDeprecatedActiveGateCapability(
+			&dst.Spec.KubernetesMonitoringSpec.CapabilityProperties,
+			&src.Spec.KubernetesMonitoring.CapabilityProperties)
+	}
 
 	return nil
+}
+
+func convertFromDeprecatedActiveGateCapability(dst *v1alpha1.CapabilityProperties, src *CapabilityProperties) {
+	dst.Enabled = true
+
+	dst.Replicas = src.Replicas
+	dst.Group = src.Group
+	dst.CustomProperties = &v1alpha1.DynaKubeValueSource{
+		Value:     src.CustomProperties.Value,
+		ValueFrom: src.CustomProperties.ValueFrom,
+	}
+	dst.Resources = src.Resources
+	dst.NodeSelector = src.NodeSelector
+	dst.Tolerations = src.Tolerations
+	dst.Labels = src.Labels
+	dst.Args = src.Args
+	dst.Env = src.Env
 }
 
 func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
@@ -130,7 +163,38 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 
 	// ActiveGates
-	// TODO
+	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
+	dst.Spec.Routing.Image = src.Spec.ActiveGate.Image
+	dst.Spec.KubernetesMonitoring.Image = src.Spec.ActiveGate.Image
+
+	if src.Spec.RoutingSpec.Enabled {
+		convertToDeprecatedActiveGateCapability(
+			&dst.Spec.Routing.CapabilityProperties,
+			&src.Spec.RoutingSpec.CapabilityProperties)
+	}
+
+	if src.Spec.KubernetesMonitoringSpec.Enabled {
+		convertToDeprecatedActiveGateCapability(
+			&dst.Spec.KubernetesMonitoring.CapabilityProperties,
+			&src.Spec.KubernetesMonitoringSpec.CapabilityProperties)
+	}
 
 	return nil
+}
+
+func convertToDeprecatedActiveGateCapability(dst *CapabilityProperties, src *v1alpha1.CapabilityProperties) {
+	dst.Enabled = true
+
+	dst.Replicas = src.Replicas
+	dst.Group = src.Group
+	dst.CustomProperties = &DynaKubeValueSource{
+		Value:     src.CustomProperties.Value,
+		ValueFrom: src.CustomProperties.ValueFrom,
+	}
+	dst.Resources = src.Resources
+	dst.NodeSelector = src.NodeSelector
+	dst.Tolerations = src.Tolerations
+	dst.Labels = src.Labels
+	dst.Args = src.Args
+	dst.Env = src.Env
 }
