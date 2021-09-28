@@ -32,7 +32,7 @@ const (
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
 func (dk *DynaKube) NeedsActiveGate() bool {
-	return dk.Spec.KubernetesMonitoring.Enabled || dk.Spec.Routing.Enabled
+	return dk.DeprecatedActiveGateMode() || dk.ActiveGateMode()
 }
 
 // ApplicationMonitoringMode returns true when application only section is used.
@@ -60,6 +60,14 @@ func (dk *DynaKube) NeedsOneAgent() bool {
 	return dk.ClassicFullStackMode() || dk.CloudNativeFullstackMode() || dk.HostMonitoringMode()
 }
 
+func (dk *DynaKube) DeprecatedActiveGateMode() bool {
+	return dk.Spec.KubernetesMonitoring.Enabled || dk.Spec.Routing.Enabled
+}
+
+func (dk *DynaKube) ActiveGateMode() bool {
+	return len(dk.Spec.ActiveGate.Capabilities) > 0
+}
+
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
 func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 	if dk.CloudNativeFullstackMode() {
@@ -80,10 +88,16 @@ func (dk *DynaKube) PullSecret() string {
 
 // ActiveGateImage returns the ActiveGate image to be used with the dk DynaKube instance.
 func (dk *DynaKube) ActiveGateImage() string {
-	if dk.Spec.KubernetesMonitoring.Image != "" {
-		return dk.Spec.KubernetesMonitoring.Image
-	} else if dk.Spec.Routing.Image != "" {
-		return dk.Spec.Routing.Image
+	if dk.DeprecatedActiveGateMode() {
+		if dk.Spec.KubernetesMonitoring.Image != "" {
+			return dk.Spec.KubernetesMonitoring.Image
+		} else if dk.Spec.Routing.Image != "" {
+			return dk.Spec.Routing.Image
+		}
+	} else if dk.ActiveGateMode() {
+		if dk.Spec.ActiveGate.Image != "" {
+			return dk.Spec.ActiveGate.Image
+		}
 	}
 
 	if dk.Spec.APIURL == "" {

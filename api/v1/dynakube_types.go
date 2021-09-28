@@ -114,6 +114,9 @@ type DynaKubeSpec struct {
 	// +kubebuilder:validation:MaxProperties=1
 	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
 
+	// Something
+	ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
+
 	//  Deprecated: Configuration for Routing
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Routing"
