@@ -23,16 +23,12 @@ type DynaKubeSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="API and PaaS Tokens",order=2,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	Tokens string `json:"tokens,omitempty"`
 
-	// Namespace selector for the Operator to know in which namespaces it should monitor applications
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="NamespaceSelector",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:selector"}
-	NamespaceSelector *metav1.LabelSelector `json:"monitoredNamespaces,omitempty"`
-
 	// Optional: Pull secret for your private registry
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom PullSecret",order=8,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
 	CustomPullSecret string `json:"customPullSecret,omitempty"`
 
 	// Disable certificate validation checks for installer download and API communication
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Skip Certificate Check",order=4,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Skip Certificate Check",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	SkipCertCheck bool `json:"skipCertCheck,omitempty"`
 
 	// Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
@@ -58,12 +54,6 @@ type DynaKubeSpec struct {
 	// General configuration about OneAgent instances
 	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
 
-	// Configuration for CodeModules Monitoring
-	CodeModules CodeModulesSpec `json:"codeModules,omitempty"`
-
-	// Configuration for Infra Monitoring
-	InfraMonitoring InfraMonitoringSpec `json:"infraMonitoring,omitempty"`
-
 	// Configuration for ClassicFullStack Monitoring
 	ClassicFullStack FullStackSpec `json:"classicFullStack,omitempty"`
 
@@ -72,12 +62,6 @@ type DynaKubeSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Routing"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	RoutingSpec RoutingSpec `json:"routing,omitempty"`
-
-	//  Configuration for Data Ingest
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Data Ingest"
-	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:text"
-	DataIngestSpec DataIngestSpec `json:"dataIngest,omitempty"`
 
 	//  Configuration for Kubernetes Monitoring
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
@@ -92,11 +76,11 @@ type ActiveGateSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Image string `json:"image,omitempty"`
 
-	// Optional: the name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
-	// server.p12: certificate+key pair in pkcs12 format
-	// password: passphrase to read server.p12
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TlsSecretName",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	TlsSecretName string `json:"tlsSecretName,omitempty"`
+	// Disable automatic restarts of OneAgent pods in case a new version is available
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Automatically update Agent"
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	AutoUpdate *bool `json:"autoUpdate,omitempty"`
 }
 
 type OneAgentSpec struct {
@@ -116,42 +100,6 @@ type OneAgentSpec struct {
 	AutoUpdate *bool `json:"autoUpdate,omitempty"`
 }
 
-type ReadOnlySpec struct {
-	// Optional: Enable support for read only host-filesystems.
-	// Defaults to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable support for read-only host-filesystem",order=29,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	Enabled bool `json:"enabled,omitempty"`
-
-	// Used if read-only filesystem support is enabled.
-	// Determines the volume to which the installation files are stored during installation of the OneAgent
-	// Defaults to an empty-dir
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Installation volume",order=30,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Volume"}
-	InstallationVolume *corev1.VolumeSource `json:"installationVolume,omitempty"`
-}
-
-type CodeModulesSpec struct {
-	// Enables code modules monitoring
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CodeModules Monitoring",order=14,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
-	Enabled bool `json:"enabled,omitempty"`
-
-	// Optional: define resources requests and limits for the initContainer
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-
-	// Optional: use OneAgent binaries from volume
-	Volume corev1.VolumeSource `json:"volume,omitempty"`
-
-	// Optional: name of the ServiceAccount to assign to the CSIDriver Pods
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Service Account name for CSI Driver",order=25,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ServiceAccount"}
-	ServiceAccountNameCSIDriver string `json:"serviceAccountNameCSIDriver,omitempty"`
-
-	// Optional: specify which agent version should be injected into pods
-	// Must be the exact version in the form of "major.minor.patch.build", for example " 1.227.0.20210909-223330"
-	// The CSI-drivers log output will print available versions if an invalid one is provided
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=26,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	OneAgentVersion string `json:"oneAgentVersion,omitempty"`
-}
-
 type FullStackSpec struct {
 	// Enables FullStack Monitoring
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="FullStack Monitoring",order=16,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
@@ -165,13 +113,17 @@ type FullStackSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tolerations",order=18,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
+	// Optional: Defines the time to wait until OneAgent pod is ready after update - default 300 sec
+	// +kubebuilder:validation:Minimum=0
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Wait seconds until ready",order=19,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:number"}
+	WaitReadySeconds *uint16 `json:"waitReadySeconds,omitempty"`
+
 	// Optional: define resources requests and limits for single pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=20,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 
 	// Optional: Arguments to the OneAgent installer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent installer arguments",order=21,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
-	// +listType=set
 	Args []string `json:"args,omitempty"`
 
 	// Optional: List of environment variables to set for the installer
@@ -202,17 +154,6 @@ type FullStackSpec struct {
 	// Defines if you want to use the immutable image or the installer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Use immutable image",order=28,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
 	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
-}
-
-type InfraMonitoringSpec struct {
-	FullStackSpec `json:",inline"`
-
-	// Offers options to enable read-only filesystem support and configuration options for it
-	ReadOnly ReadOnlySpec `json:"readOnly,omitempty"`
-}
-
-type DataIngestSpec struct {
-	CapabilityProperties `json:",inline"`
 }
 
 type RoutingSpec struct {
@@ -315,20 +256,8 @@ type DynaKubeStatus struct {
 	// LastClusterVersionProbeTimestamp indicates when the cluster's version was last checked
 	LastClusterVersionProbeTimestamp *metav1.Time `json:"lastClusterVersionProbeTimestamp,omitempty"`
 
-	// KubeSystemUUID contains the UUID of the current Kubernetes cluster
-	KubeSystemUUID string `json:"kubeSystemUUID,omitempty"`
-
-	// ConnectionInfo caches information about the tenant and its communication hosts
-	ConnectionInfo ConnectionInfoStatus `json:"connectionInfo,omitempty"`
-
-	// CommunicationHostForClient caches a communication host specific to the api url.
-	CommunicationHostForClient CommunicationHostStatus `json:"communicationHostForClient,omitempty"`
-
-	// LatestAgentVersionUnixDefault caches the current agent version for unix and the default installer which is configured for the environment
-	LatestAgentVersionUnixDefault string `json:"latestAgentVersionUnixDefault,omitempty"`
-
-	// LatestAgentVersionUnixDefault caches the current agent version for unix and the PaaS installer which is configured for the environment
-	LatestAgentVersionUnixPaas string `json:"latestAgentVersionUnixPaas,omitempty"`
+	// EnvironmentID contains the environment ID corresponding to the API URL
+	EnvironmentID string `json:"environmentID,omitempty"`
 
 	// Conditions includes status about the current state of the instance
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
@@ -338,46 +267,40 @@ type DynaKubeStatus struct {
 	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
 }
 
-type ConnectionInfoStatus struct {
-	CommunicationHosts []CommunicationHostStatus `json:"communicationHosts,omitempty"`
-	TenantUUID         string                    `json:"tenantUUID,omitempty"`
-}
-
-type CommunicationHostStatus struct {
-	Protocol string `json:"protocol,omitempty"`
-	Host     string `json:"host,omitempty"`
-	Port     uint32 `json:"port,omitempty"`
-}
-
-type VersionStatus struct {
+type ImageStatus struct {
 	// ImageHash contains the last image hash seen.
 	ImageHash string `json:"imageHash,omitempty"`
 
-	// Version contains the version to be deployed.
+	// ImageVersion contains the version from the last image seen.
+	ImageVersion string `json:"imageVersion,omitempty"`
+
+	// LastImageProbeTimestamp defines the last timestamp when the querying for image updates have been done.
+	LastImageProbeTimestamp *metav1.Time `json:"lastImageProbeTimestamp,omitempty"`
+}
+
+type ActiveGateStatus struct {
+	ImageStatus `json:",inline"`
+}
+
+type OneAgentStatus struct {
+	ImageStatus `json:",inline"`
+
+	// UseImmutableImage is set when an immutable image is currently in use
+	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
+
+	// Dynatrace version being used.
+	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Version",order=1,xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	Version string `json:"version,omitempty"`
+
+	Instances map[string]OneAgentInstance `json:"instances,omitempty"`
 
 	// LastUpdateProbeTimestamp defines the last timestamp when the querying for updates have been done
 	LastUpdateProbeTimestamp *metav1.Time `json:"lastUpdateProbeTimestamp,omitempty"`
 }
 
-type ActiveGateStatus struct {
-	VersionStatus `json:",inline"`
-}
-
-type OneAgentStatus struct {
-	VersionStatus `json:",inline"`
-
-	// UseImmutableImage is set when an immutable image is currently in use
-	UseImmutableImage bool `json:"useImmutableImage,omitempty"`
-
-	Instances map[string]OneAgentInstance `json:"instances,omitempty"`
-
-	// LastHostsRequestTimestamp indicates the last timestamp the Operator queried for hosts
-	LastHostsRequestTimestamp *metav1.Time `json:"lastHostsRequestTimestamp,omitempty"`
-}
-
 type OneAgentInstance struct {
 	PodName   string `json:"podName,omitempty"`
+	Version   string `json:"version,omitempty"`
 	IPAddress string `json:"ipAddress,omitempty"`
 }
 
