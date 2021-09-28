@@ -29,7 +29,7 @@ func (in *ActiveGateSpec) DeepCopyInto(out *ActiveGateSpec) {
 	*out = *in
 	if in.Capabilities != nil {
 		in, out := &in.Capabilities, &out.Capabilities
-		*out = make([]string, len(*in))
+		*out = make([]ActiveGateCapability, len(*in))
 		copy(*out, *in)
 	}
 	if in.Replicas != nil {

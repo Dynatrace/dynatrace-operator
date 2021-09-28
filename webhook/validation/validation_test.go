@@ -92,6 +92,35 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 			},
 		})
 
+		assertAllowedResponse(t, dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				Routing: dynatracev1.RoutingSpec{
+					CapabilityProperties: dynatracev1.CapabilityProperties{
+						Enabled: true,
+					},
+				},
+				KubernetesMonitoring: dynatracev1.KubernetesMonitoringSpec{
+					CapabilityProperties: dynatracev1.CapabilityProperties{
+						Enabled: true,
+					},
+				},
+			},
+		})
+
+		assertAllowedResponse(t, dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				ActiveGate: dynatracev1.ActiveGateSpec{
+					Capabilities: []dynatracev1.ActiveGateCapability{
+						dynatracev1.Routing,
+						dynatracev1.KubeMon,
+						dynatracev1.DataIngest,
+					},
+				},
+			},
+		})
+
 	})
 	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
 		assertDeniedResponse(t, dynatracev1.DynaKube{
@@ -110,6 +139,34 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				OneAgent: dynatracev1.OneAgentSpec{
 					ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{},
 					HostMonitoring:        &dynatracev1.HostMonitoringSpec{},
+				},
+			},
+		}, errorConflictingMode)
+
+		assertDeniedResponse(t, dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				Routing: dynatracev1.RoutingSpec{
+					CapabilityProperties: dynatracev1.CapabilityProperties{
+						Enabled: true,
+					},
+				},
+				ActiveGate: dynatracev1.ActiveGateSpec{
+					Capabilities: []dynatracev1.ActiveGateCapability{
+						dynatracev1.Routing,
+					},
+				},
+			},
+		}, errorConflictingMode)
+
+		assertDeniedResponse(t, dynatracev1.DynaKube{
+			Spec: dynatracev1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				ActiveGate: dynatracev1.ActiveGateSpec{
+					Capabilities: []dynatracev1.ActiveGateCapability{
+						dynatracev1.Routing,
+						dynatracev1.Routing,
+					},
 				},
 			},
 		}, errorConflictingMode)
@@ -171,7 +228,7 @@ func TestDynakubeValidator_InjectClient(t *testing.T) {
 }
 
 func TestHasApiUrl(t *testing.T) {
-	instance := dynatracev1.DynaKube{}
+	instance := &dynatracev1.DynaKube{}
 	assert.False(t, hasApiUrl(instance))
 
 	instance.Spec.APIURL = testApiUrl

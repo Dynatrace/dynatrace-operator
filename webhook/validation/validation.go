@@ -23,11 +23,11 @@ const (
 
 const (
 	errorConflictingMode = `
-The DynaKubes specifications for tries to use multiple modes at the same time, which is not supported.
+The DynaKube's specification tries to use multiple modes at the same time, which is not supported.
 `
 	errorNoApiUrl = `
-The DynaKube custom resource is missing the API URL or still has the example value set. 
-Make sure you correctly specified the URL in your custom resource.
+The DynaKube's specification is missing the API URL or still has the example value set. 
+Make sure you correctly specify the URL in your custom resource.
 `
 )
 
@@ -52,8 +52,8 @@ func (validator *dynakubeValidator) InjectClient(clt client.Client) error {
 func (validator *dynakubeValidator) Handle(_ context.Context, request admission.Request) admission.Response {
 	validator.logger.Info("validating request", "name", request.Name, "namespace", request.Namespace)
 
-	var dynakube v1.DynaKube
-	err := decodeRequestToDynakube(request, &dynakube)
+	dynakube := &v1.DynaKube{}
+	err := decodeRequestToDynakube(request, dynakube)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, errors.WithStack(err))
 	}
@@ -63,8 +63,13 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 		return admission.Denied(errorNoApiUrl)
 	}
 
-	if hasConflictingConfiguration(dynakube) {
-		validator.logger.Info("requested dynakube has conflicting configuration", "name", request.Name, "namespace", request.Namespace)
+	if hasConflictingOneAgentConfiguration(dynakube) {
+		validator.logger.Info("requested dynakube has conflicting one agent configuration", "name", request.Name, "namespace", request.Namespace)
+		return admission.Denied(errorConflictingMode)
+	}
+
+	if hasConflictingActiveGateConfiguration(dynakube) {
+		validator.logger.Info("requested dynakube has conflicting active gate configuration", "name", request.Name, "namespace", request.Namespace)
 		return admission.Denied(errorConflictingMode)
 	}
 
@@ -72,11 +77,11 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 	return admission.Allowed("")
 }
 
-func hasApiUrl(dynakube v1.DynaKube) bool {
+func hasApiUrl(dynakube *v1.DynaKube) bool {
 	return dynakube.Spec.APIURL != "" && dynakube.Spec.APIURL != exampleApiUrl
 }
 
-func hasConflictingConfiguration(dynakube v1.DynaKube) bool {
+func hasConflictingOneAgentConfiguration(dynakube *v1.DynaKube) bool {
 	counter := 0
 	if dynakube.ApplicationMonitoringMode() {
 		counter += 1
@@ -91,6 +96,24 @@ func hasConflictingConfiguration(dynakube v1.DynaKube) bool {
 		counter += 1
 	}
 	return counter > 1
+}
+
+func hasConflictingActiveGateConfiguration(dynakube *v1.DynaKube) bool {
+	if dynakube.DeprecatedActiveGateMode() && dynakube.ActiveGateMode() {
+		return true
+	}
+
+	if dynakube.ActiveGateMode() {
+		capabilities := dynakube.Spec.ActiveGate.Capabilities
+		for i, capability := range capabilities {
+			for j := i + 1; j < len(capabilities); j++ {
+				if capability == capabilities[j] {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // TODO: Implement it to check other dynakubes for conflicting nodeSelectors
