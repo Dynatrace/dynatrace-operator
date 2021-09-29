@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -189,8 +189,8 @@ func prepareFakeClient(objs ...client.Object) client.Client {
 	return fake.NewClient(objs...)
 }
 
-func prepareDynakube(name string) *dynatracev1.DynaKube {
-	return &dynatracev1.DynaKube{
+func prepareDynakube(name string) *dynatracev1beta1.DynaKube {
+	return &dynatracev1beta1.DynaKube{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DynaKube",
 			APIVersion: "dynatrace.com/v1",
@@ -200,8 +200,8 @@ func prepareDynakube(name string) *dynatracev1.DynaKube {
 			Namespace: testNamespace,
 			UID:       types.UID(name),
 		},
-		Spec: dynatracev1.DynaKubeSpec{
-			OneAgent: dynatracev1.OneAgentSpec{},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{},
 		},
 	}
 }

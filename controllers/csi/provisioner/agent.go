@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
@@ -25,7 +25,7 @@ type installAgentConfig struct {
 	dtc      dtclient.Client
 	fs       afero.Fs
 	path     metadata.PathResolver
-	dk       *dynatracev1.DynaKube
+	dk       *dynatracev1beta1.DynaKube
 	tenant   *metadata.Tenant
 	recorder record.EventRecorder
 }
@@ -37,7 +37,7 @@ func newInstallAgentConfig(
 	fs afero.Fs,
 	recorder record.EventRecorder,
 	tenant *metadata.Tenant,
-	dk *dynatracev1.DynaKube,
+	dk *dynatracev1beta1.DynaKube,
 ) *installAgentConfig {
 	return &installAgentConfig{
 		logger:   logger,

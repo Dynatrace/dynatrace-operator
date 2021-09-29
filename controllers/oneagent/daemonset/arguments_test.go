@@ -3,7 +3,7 @@ package daemonset
 import (
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
@@ -25,12 +25,12 @@ const (
 
 func TestArguments(t *testing.T) {
 	log := logger.NewDTLogger()
-	instance := dynatracev1.DynaKube{
-		Spec: dynatracev1.DynaKubeSpec{
+	instance := dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: testURL,
-			OneAgent: dynatracev1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1.ClassicFullStackSpec{
-					HostInjectSpec: dynatracev1.HostInjectSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
+					HostInjectSpec: dynatracev1beta1.HostInjectSpec{
 						Args: []string{testValue},
 					},
 				},
@@ -54,19 +54,19 @@ func TestArguments(t *testing.T) {
 
 func TestPodSpec_Arguments(t *testing.T) {
 	log := logger.NewDTLogger()
-	instance := &dynatracev1.DynaKube{
-		Spec: dynatracev1.DynaKubeSpec{
-			OneAgent: dynatracev1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1.ClassicFullStackSpec{
-					HostInjectSpec: dynatracev1.HostInjectSpec{
+	instance := &dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
+					HostInjectSpec: dynatracev1beta1.HostInjectSpec{
 						Args: []string{testKey, testValue, testUID},
 					},
 				},
 			},
 		},
-		Status: dynatracev1.DynaKubeStatus{
-			OneAgent: dynatracev1.OneAgentStatus{
-				VersionStatus: dynatracev1.VersionStatus{
+		Status: dynatracev1beta1.DynaKubeStatus{
+			OneAgent: dynatracev1beta1.OneAgentStatus{
+				VersionStatus: dynatracev1beta1.VersionStatus{
 					Version: testContainerImageVersion,
 				},
 			},
@@ -100,7 +100,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 	}
 
 	t.Run(`has proxy arg`, func(t *testing.T) {
-		instance.Spec.Proxy = &dynatracev1.DynaKubeProxy{Value: testValue}
+		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		podSpecs = dsInfo.podSpec()
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 

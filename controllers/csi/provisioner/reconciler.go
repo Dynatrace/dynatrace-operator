@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
@@ -77,7 +77,7 @@ func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Acces
 
 func (r *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1.DynaKube{}).
+		For(&dynatracev1beta1.DynaKube{}).
 		Complete(r)
 }
 
@@ -160,7 +160,7 @@ func hasTenantChanged(old, new metadata.Tenant) bool {
 	return old != new
 }
 
-func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1.DynaKube) (dtclient.Client, error) {
+func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
 	dtp, err := dynakube.NewDynatraceClientProperties(ctx, r.client, *dk)
 	if err != nil {
 		return nil, err
@@ -173,8 +173,8 @@ func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1.DynaK
 	return dtc, nil
 }
 
-func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1.DynaKube, error) {
-	var dk dynatracev1.DynaKube
+func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1beta1.DynaKube, error) {
+	var dk dynatracev1beta1.DynaKube
 	err := r.client.Get(ctx, name, &dk)
 
 	return &dk, err

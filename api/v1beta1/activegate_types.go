@@ -1,25 +1,21 @@
-package v1
+package v1beta1
 
 import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type RoutingSpec struct {
-	CapabilityProperties `json:",inline"`
-}
+type ActiveGateCapability string
 
-type KubernetesMonitoringSpec struct {
-	CapabilityProperties `json:",inline"`
-}
+const (
+	Routing    ActiveGateCapability = "routing"
+	KubeMon    ActiveGateCapability = "kubernetes-monitoring"
+	DataIngest ActiveGateCapability = "data-ingest"
+)
 
-// nolint
-// Deprecated: CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
-// Such as KubernetesMonitoring or Routing
-// It encapsulates common properties
-type CapabilityProperties struct {
-	// Enables Capability
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Capability",order=29,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:booleanSwitch"
-	Enabled bool `json:"enabled,omitempty"`
+type ActiveGateSpec struct {
+
+	// Activegate capabilities enabled (routing, kubernetes-monitoring, data-ingest)
+	Capabilities []ActiveGateCapability `json:"capabilities,omitempty"`
 
 	// Amount of replicas for your DynaKube
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=30,xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
@@ -64,8 +60,4 @@ type CapabilityProperties struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Environment variables"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	Env []corev1.EnvVar `json:"env,omitempty"`
-
-	// Optional: set custom Service Account Name used with ActiveGate pods
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Service Account name",order=40,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ServiceAccount"}
-	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }

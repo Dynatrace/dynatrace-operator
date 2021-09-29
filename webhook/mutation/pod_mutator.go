@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
@@ -158,11 +158,11 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 	log.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
-	var dk dynatracev1.DynaKube
+	var dk dynatracev1beta1.DynaKube
 	if err := m.client.Get(ctx, client.ObjectKey{Name: dkName, Namespace: m.namespace}, &dk); k8serrors.IsNotFound(err) {
 		template := "namespace '%s' is assigned to DynaKube instance '%s' but doesn't exist"
 		m.recorder.Eventf(
-			&dynatracev1.DynaKube{ObjectMeta: v1.ObjectMeta{Name: "placeholder", Namespace: m.namespace}},
+			&dynatracev1beta1.DynaKube{ObjectMeta: v1.ObjectMeta{Name: "placeholder", Namespace: m.namespace}},
 			corev1.EventTypeWarning,
 			missingDynakubeEvent,
 			template, req.Namespace, dkName)
@@ -351,7 +351,7 @@ func updateInstallContainer(ic *corev1.Container, number int, name string, image
 }
 
 // updateContainer sets missing preload Variables
-func updateContainer(c *corev1.Container, oa *dynatracev1.DynaKube,
+func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
 	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
 
 	log.Info("updating container with missing preload variables", "containerName", c.Name)

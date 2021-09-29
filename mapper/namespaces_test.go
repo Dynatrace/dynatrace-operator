@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +15,7 @@ func TestMatchForNamespaceNothingEverything(t *testing.T) {
 		"type":   "app",
 		"inject": "true",
 	}
-	dynakubes := []*dynatracev1.DynaKube{
+	dynakubes := []*dynatracev1beta1.DynaKube{
 		createTestDynakubeWithAppInject("codeModules-1", nil, nil),
 		createTestDynakubeWithAppInject("codeModules-2", matchLabels, nil),
 	}

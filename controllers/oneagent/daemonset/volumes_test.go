@@ -3,7 +3,7 @@ package daemonset
 import (
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,7 +11,7 @@ import (
 
 func TestPrepareVolumes(t *testing.T) {
 	t.Run(`has root volume`, func(t *testing.T) {
-		instance := &dynatracev1.DynaKube{}
+		instance := &dynatracev1beta1.DynaKube{}
 		volumes := prepareVolumes(instance)
 
 		assert.Contains(t, volumes, getRootVolume())
@@ -19,8 +19,8 @@ func TestPrepareVolumes(t *testing.T) {
 		assert.NotContains(t, volumes, getReadOnlyVolume(instance))
 	})
 	t.Run(`has certificate volume`, func(t *testing.T) {
-		instance := &dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		instance := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				TrustedCAs: testName,
 			},
 		}
@@ -31,10 +31,10 @@ func TestPrepareVolumes(t *testing.T) {
 		assert.NotContains(t, volumes, getReadOnlyVolume(instance))
 	})
 	t.Run(`has readonly installation volume`, func(t *testing.T) {
-		instance := &dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
-				OneAgent: dynatracev1.OneAgentSpec{
-					HostMonitoring: &dynatracev1.HostMonitoringSpec{
+		instance := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{
 						ReadOnly: true,
 					},
 				},
@@ -60,11 +60,11 @@ func TestPrepareVolumes(t *testing.T) {
 		assert.Contains(t, volumes, getReadOnlyVolume(instance))
 	})
 	t.Run(`has all volumes`, func(t *testing.T) {
-		instance := &dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		instance := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				TrustedCAs: testName,
-				OneAgent: dynatracev1.OneAgentSpec{
-					HostMonitoring: &dynatracev1.HostMonitoringSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{
 						ReadOnly: true,
 					},
 				},

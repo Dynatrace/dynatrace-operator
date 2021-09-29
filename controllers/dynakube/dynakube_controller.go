@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
@@ -64,7 +64,7 @@ func NewReconciler(mgr manager.Manager) *ReconcileDynaKube {
 
 func (r *ReconcileDynaKube) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1.DynaKube{}).
+		For(&dynatracev1beta1.DynaKube{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.DaemonSet{}).
 		Complete(r)
@@ -113,7 +113,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	reqLogger.Info("Reconciling DynaKube")
 
 	// Fetch the DynaKube instance
-	instance := &dynatracev1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: request.NamespacedName.Name}}
+	instance := &dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: request.NamespacedName.Name}}
 	dkMapper := mapper.NewDynakubeMapper(ctx, r.client, r.apiReader, r.operatorNamespace, instance)
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
@@ -325,13 +325,13 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers
 	return true
 }
 
-func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatracev1.DynaKube) (*corev1.Secret, error) {
+func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatracev1beta1.DynaKube) (*corev1.Secret, error) {
 	var secret corev1.Secret
 	err := r.client.Get(ctx, client.ObjectKey{Name: instance.Tokens(), Namespace: instance.Namespace}, &secret)
 	return &secret, errors.WithStack(err)
 }
 
-func (r *ReconcileDynaKube) updateCR(ctx context.Context, log logr.Logger, instance *dynatracev1.DynaKube) error {
+func (r *ReconcileDynaKube) updateCR(ctx context.Context, log logr.Logger, instance *dynatracev1beta1.DynaKube) error {
 	instance.Status.UpdatedTimestamp = metav1.Now()
 	err := r.client.Status().Update(ctx, instance)
 	if err != nil && k8serrors.IsConflict(err) {

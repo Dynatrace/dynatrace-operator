@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -20,9 +20,9 @@ import (
 func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 	namespace := "dynatrace"
 	dynaKube := "dynakube"
-	base := dynatracev1.DynaKube{
+	base := dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: dynaKube, Namespace: namespace},
-		Spec: dynatracev1.DynaKubeSpec{
+		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dynaKube,
 		},
@@ -46,9 +46,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		assert.True(t, ucr)
 		assert.Error(t, err)
 
-		AssertCondition(t, deepCopy, dynatracev1.PaaSTokenConditionType, false, dynatracev1.ReasonTokenSecretNotFound,
+		AssertCondition(t, deepCopy, dynatracev1beta1.PaaSTokenConditionType, false, dynatracev1beta1.ReasonTokenSecretNotFound,
 			"Secret 'dynatrace:dynakube' not found")
-		AssertCondition(t, deepCopy, dynatracev1.APITokenConditionType, false, dynatracev1.ReasonTokenSecretNotFound,
+		AssertCondition(t, deepCopy, dynatracev1beta1.APITokenConditionType, false, dynatracev1beta1.ReasonTokenSecretNotFound,
 			"Secret 'dynatrace:dynakube' not found")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
@@ -72,9 +72,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		assert.True(t, ucr)
 		assert.Error(t, err)
 
-		AssertCondition(t, dk, dynatracev1.PaaSTokenConditionType, false, dynatracev1.ReasonTokenMissing,
+		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, false, dynatracev1beta1.ReasonTokenMissing,
 			"Token paasToken on secret dynatrace:dynakube missing")
-		AssertCondition(t, dk, dynatracev1.APITokenConditionType, false, dynatracev1.ReasonTokenMissing,
+		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, false, dynatracev1beta1.ReasonTokenMissing,
 			"Token apiToken on secret dynatrace:dynakube missing")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
@@ -101,9 +101,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		assert.True(t, ucr)
 		assert.NoError(t, err)
 
-		AssertCondition(t, dk, dynatracev1.PaaSTokenConditionType, false, dynatracev1.ReasonTokenUnauthorized,
+		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, false, dynatracev1beta1.ReasonTokenUnauthorized,
 			"Token on secret dynatrace:dynakube unauthorized")
-		AssertCondition(t, dk, dynatracev1.APITokenConditionType, false, dynatracev1.ReasonTokenError,
+		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, false, dynatracev1beta1.ReasonTokenError,
 			"error when querying token on secret dynatrace:dynakube: random error")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
@@ -129,9 +129,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		assert.True(t, ucr)
 		assert.NoError(t, err)
 
-		AssertCondition(t, dk, dynatracev1.PaaSTokenConditionType, false, dynatracev1.ReasonTokenScopeMissing,
+		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, false, dynatracev1beta1.ReasonTokenScopeMissing,
 			"Token on secret dynatrace:dynakube missing scope InstallerDownload")
-		AssertCondition(t, dk, dynatracev1.APITokenConditionType, false, dynatracev1.ReasonTokenUnauthorized,
+		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, false, dynatracev1beta1.ReasonTokenUnauthorized,
 			"Token on secret dynatrace:dynakube has leading and/or trailing spaces")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
@@ -158,8 +158,8 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		assert.True(t, ucr)
 		assert.NoError(t, err)
 
-		AssertCondition(t, dk, dynatracev1.PaaSTokenConditionType, true, dynatracev1.ReasonTokenReady, "Ready")
-		AssertCondition(t, dk, dynatracev1.APITokenConditionType, true, dynatracev1.ReasonTokenReady, "Ready")
+		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, true, dynatracev1beta1.ReasonTokenReady, "Ready")
+		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, true, dynatracev1beta1.ReasonTokenReady, "Ready")
 
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
@@ -171,26 +171,26 @@ func TestReconcileDynatraceClient_MigrateConditions(t *testing.T) {
 
 	namespace := "dynatrace"
 	dynaKubeName := "dynakube"
-	dk := dynatracev1.DynaKube{
+	dk := dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: dynaKubeName, Namespace: namespace},
-		Spec: dynatracev1.DynaKubeSpec{
+		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dynaKubeName,
 		},
-		Status: dynatracev1.DynaKubeStatus{
+		Status: dynatracev1beta1.DynaKubeStatus{
 			LastAPITokenProbeTimestamp:  &lastProbe,
 			LastPaaSTokenProbeTimestamp: &lastProbe,
 			Conditions: []metav1.Condition{
 				{
-					Type:    dynatracev1.APITokenConditionType,
+					Type:    dynatracev1beta1.APITokenConditionType,
 					Status:  metav1.ConditionTrue,
-					Reason:  dynatracev1.ReasonTokenReady,
+					Reason:  dynatracev1beta1.ReasonTokenReady,
 					Message: "Ready",
 				},
 				{
-					Type:    dynatracev1.PaaSTokenConditionType,
+					Type:    dynatracev1beta1.PaaSTokenConditionType,
 					Status:  metav1.ConditionTrue,
-					Reason:  dynatracev1.ReasonTokenReady,
+					Reason:  dynatracev1beta1.ReasonTokenReady,
 					Message: "Ready",
 				},
 			},
@@ -225,26 +225,26 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 
 	namespace := "dynatrace"
 	dkName := "dynakube"
-	base := dynatracev1.DynaKube{
+	base := dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
-		Spec: dynatracev1.DynaKubeSpec{
+		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dkName,
-			OneAgent: dynatracev1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
 			},
 		},
 	}
 	meta.SetStatusCondition(&base.Status.Conditions, metav1.Condition{
-		Type:    dynatracev1.APITokenConditionType,
+		Type:    dynatracev1beta1.APITokenConditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  dynatracev1.ReasonTokenReady,
+		Reason:  dynatracev1beta1.ReasonTokenReady,
 		Message: "Ready",
 	})
 	meta.SetStatusCondition(&base.Status.Conditions, metav1.Condition{
-		Type:    dynatracev1.PaaSTokenConditionType,
+		Type:    dynatracev1beta1.PaaSTokenConditionType,
 		Status:  metav1.ConditionTrue,
-		Reason:  dynatracev1.ReasonTokenReady,
+		Reason:  dynatracev1beta1.ReasonTokenReady,
 		Message: "Ready",
 	})
 
@@ -315,7 +315,7 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 	})
 }
 
-func AssertCondition(t *testing.T, dk *dynatracev1.DynaKube, ct string, status bool, reason string, message string) {
+func AssertCondition(t *testing.T, dk *dynatracev1beta1.DynaKube, ct string, status bool, reason string, message string) {
 	t.Helper()
 	s := metav1.ConditionFalse
 	if status {

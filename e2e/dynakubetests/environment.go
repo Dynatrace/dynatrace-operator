@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -44,17 +44,17 @@ func prepareDefaultEnvironment(t *testing.T) (string, client.Client) {
 	return apiURL, clt
 }
 
-func createMinimumViableOneAgent(apiURL string) dynatracev1.DynaKube {
-	return dynatracev1.DynaKube{
+func createMinimumViableOneAgent(apiURL string) dynatracev1beta1.DynaKube {
+	return dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      testName,
 		},
-		Spec: dynatracev1.DynaKubeSpec{
+		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: apiURL,
 			Tokens: e2e.TokenSecretName,
-			OneAgent: dynatracev1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1.ClassicFullStackSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
 					Image: testImage,
 				},
 			},
@@ -62,19 +62,19 @@ func createMinimumViableOneAgent(apiURL string) dynatracev1.DynaKube {
 	}
 }
 
-func deployOneAgent(t *testing.T, clt client.Client, oneAgent *dynatracev1.DynaKube) e2e.PhaseWait {
+func deployOneAgent(t *testing.T, clt client.Client, oneAgent *dynatracev1beta1.DynaKube) e2e.PhaseWait {
 	err := clt.Create(context.TODO(), oneAgent)
 	assert.NoError(t, err)
 
 	phaseWait := e2e.NewOneAgentWaitConfiguration(t, clt, maxWaitCycles, namespace, testName)
-	err = phaseWait.WaitForPhase(dynatracev1.Deploying)
+	err = phaseWait.WaitForPhase(dynatracev1beta1.Deploying)
 	assert.NoError(t, err)
 
 	return phaseWait
 }
 
-func findOneAgentPods(t *testing.T, clt client.Client) (*dynatracev1.DynaKube, *corev1.PodList) {
-	instance := &dynatracev1.DynaKube{}
+func findOneAgentPods(t *testing.T, clt client.Client) (*dynatracev1beta1.DynaKube, *corev1.PodList) {
+	instance := &dynatracev1beta1.DynaKube{}
 	err := clt.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: testName}, instance)
 	assert.NoError(t, err)
 

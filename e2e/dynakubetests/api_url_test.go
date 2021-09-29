@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/e2e"
 	"github.com/stretchr/testify/assert"
@@ -36,16 +36,16 @@ func TestApiURL(t *testing.T) {
 	err := e2e.PrepareEnvironment(clt, namespace)
 	require.NoError(t, err)
 
-	instance := dynatracev1.DynaKube{
+	instance := dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      testName,
 		},
-		Spec: dynatracev1.DynaKubeSpec{
+		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: apiURL,
 			Tokens: e2e.TokenSecretName,
-			OneAgent: dynatracev1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
 			},
 		},
 	}
@@ -54,10 +54,10 @@ func TestApiURL(t *testing.T) {
 	assert.NoError(t, err)
 
 	phaseWait := e2e.NewOneAgentWaitConfiguration(t, clt, maxWaitCycles, namespace, testName)
-	err = phaseWait.WaitForPhase(dynatracev1.Deploying)
+	err = phaseWait.WaitForPhase(dynatracev1beta1.Deploying)
 	assert.NoError(t, err)
 
-	err = phaseWait.WaitForPhase(dynatracev1.Running)
+	err = phaseWait.WaitForPhase(dynatracev1beta1.Running)
 	assert.NoError(t, err)
 
 	apiToken, paasToken := e2e.GetTokensFromEnv()

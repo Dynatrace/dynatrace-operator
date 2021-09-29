@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
@@ -44,7 +44,7 @@ func NewReconciler(client client.Client, opts dtcsi.CSIOptions, db metadata.Acce
 
 func (gc *CSIGarbageCollector) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1.DynaKube{}).
+		For(&dynatracev1beta1.DynaKube{}).
 		Complete(gc)
 }
 
@@ -54,7 +54,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	gc.logger.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
 	reconcileResult := reconcile.Result{RequeueAfter: 60 * time.Minute}
 
-	var dk dynatracev1.DynaKube
+	var dk dynatracev1beta1.DynaKube
 	if err := gc.client.Get(ctx, request.NamespacedName, &dk); err != nil {
 		if k8serrors.IsNotFound(err) {
 			gc.logger.Info("given DynaKube object not found")

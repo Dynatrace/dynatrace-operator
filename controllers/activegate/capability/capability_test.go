@@ -4,27 +4,27 @@ import (
 	"reflect"
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	v1 "k8s.io/api/core/v1"
 )
 
 func Test_capabilityBase_GetProperties(t *testing.T) {
-	props := &dynatracev1.CapabilityProperties{}
+	props := &dynatracev1beta1.CapabilityProperties{}
 
 	type fields struct {
-		properties *dynatracev1.CapabilityProperties
+		properties *dynatracev1beta1.CapabilityProperties
 	}
 	tests := []struct {
 		name   string
 		fields fields
-		want   *dynatracev1.CapabilityProperties
+		want   *dynatracev1beta1.CapabilityProperties
 	}{
 		{
 			name: "properties address is preserved",
 			fields: fields{
 				properties: props,
 			},
-			want: &dynatracev1.CapabilityProperties{},
+			want: &dynatracev1beta1.CapabilityProperties{},
 		},
 	}
 	for _, tt := range tests {
@@ -170,10 +170,10 @@ func TestCalculateStatefulSetName(t *testing.T) {
 }
 
 func TestNewKubeMonCapability(t *testing.T) {
-	props := &dynatracev1.CapabilityProperties{}
+	props := &dynatracev1beta1.CapabilityProperties{}
 
 	type args struct {
-		crProperties *dynatracev1.CapabilityProperties
+		crProperties *dynatracev1beta1.CapabilityProperties
 	}
 	tests := []struct {
 		name string
@@ -237,10 +237,10 @@ func TestNewKubeMonCapability(t *testing.T) {
 func TestNewRoutingCapability(t *testing.T) {
 	//const tlsSecretName = "tls-secret"
 
-	props := &dynatracev1.CapabilityProperties{}
+	props := &dynatracev1beta1.CapabilityProperties{}
 
 	type args struct {
-		crProperties *dynatracev1.CapabilityProperties
+		crProperties *dynatracev1beta1.CapabilityProperties
 	}
 	tests := []struct {
 		name string
@@ -298,10 +298,10 @@ func TestNewRoutingCapability(t *testing.T) {
 }
 
 func TestNewMetricsCapability(t *testing.T) {
-	props := &dynatracev1.CapabilityProperties{}
+	props := &dynatracev1beta1.CapabilityProperties{}
 
 	type args struct {
-		crProperties *dynatracev1.CapabilityProperties
+		crProperties *dynatracev1beta1.CapabilityProperties
 	}
 	tests := []struct {
 		name string

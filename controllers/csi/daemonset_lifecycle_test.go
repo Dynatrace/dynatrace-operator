@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -102,7 +102,7 @@ func Test_ConfigureCSIDriver_AddDynakube_CSIStaysEnabled(t *testing.T) {
 	assert.Contains(t, updatedDaemonSet.OwnerReferences, getOwnerReferenceFromDynakube(dynakube))
 }
 
-func getOwnerReferenceFromDynakube(dynakube *dynatracev1.DynaKube) metav1.OwnerReference {
+func getOwnerReferenceFromDynakube(dynakube *dynatracev1beta1.DynaKube) metav1.OwnerReference {
 	return metav1.OwnerReference{
 		APIVersion:         dynakube.APIVersion,
 		Kind:               dynakube.Kind,
@@ -113,7 +113,7 @@ func getOwnerReferenceFromDynakube(dynakube *dynatracev1.DynaKube) metav1.OwnerR
 	}
 }
 
-func prepareFakeClientWithEnabledCSI(dynakubes ...*dynatracev1.DynaKube) client.Client {
+func prepareFakeClientWithEnabledCSI(dynakubes ...*dynatracev1beta1.DynaKube) client.Client {
 	var ownerReferences []metav1.OwnerReference
 	for _, dynakube := range dynakubes {
 		ownerReferences = append(ownerReferences, getOwnerReferenceFromDynakube(dynakube))
@@ -131,13 +131,13 @@ func prepareFakeClientWithEnabledCSI(dynakubes ...*dynatracev1.DynaKube) client.
 	return fakeClient
 }
 
-func prepareDynakubeState(dynakube *dynatracev1.DynaKube, enableCodeModules bool) *controllers.DynakubeState {
+func prepareDynakubeState(dynakube *dynatracev1beta1.DynaKube, enableCodeModules bool) *controllers.DynakubeState {
 	log := logger.NewDTLogger()
 
 	if enableCodeModules {
-		dynakube.Spec = dynatracev1.DynaKubeSpec{
-			OneAgent: dynatracev1.OneAgentSpec{
-				ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{},
+		dynakube.Spec = dynatracev1beta1.DynaKubeSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
 			},
 		}
 	}

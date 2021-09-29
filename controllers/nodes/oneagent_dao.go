@@ -4,11 +4,11 @@ import (
 	"context"
 	"os"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *ReconcileNodes) determineDynakubeForNode(nodeName string) (*dynatracev1.DynaKube, error) {
+func (r *ReconcileNodes) determineDynakubeForNode(nodeName string) (*dynatracev1beta1.DynaKube, error) {
 	dkList, err := r.getOneAgentList()
 	if err != nil {
 		return nil, err
@@ -17,10 +17,10 @@ func (r *ReconcileNodes) determineDynakubeForNode(nodeName string) (*dynatracev1
 	return r.filterOneAgentFromList(dkList, nodeName), nil
 }
 
-func (r *ReconcileNodes) getOneAgentList() (*dynatracev1.DynaKubeList, error) {
+func (r *ReconcileNodes) getOneAgentList() (*dynatracev1beta1.DynaKubeList, error) {
 	watchNamespace := os.Getenv("POD_NAMESPACE")
 
-	var dkList dynatracev1.DynaKubeList
+	var dkList dynatracev1beta1.DynaKubeList
 	err := r.client.List(context.TODO(), &dkList, client.InNamespace(watchNamespace))
 	if err != nil {
 		return nil, err
@@ -29,8 +29,8 @@ func (r *ReconcileNodes) getOneAgentList() (*dynatracev1.DynaKubeList, error) {
 	return &dkList, nil
 }
 
-func (r *ReconcileNodes) filterOneAgentFromList(dkList *dynatracev1.DynaKubeList,
-	nodeName string) *dynatracev1.DynaKube {
+func (r *ReconcileNodes) filterOneAgentFromList(dkList *dynatracev1beta1.DynaKubeList,
+	nodeName string) *dynatracev1beta1.DynaKube {
 
 	for _, dynakube := range dkList.Items {
 		items := dynakube.Status.OneAgent.Instances

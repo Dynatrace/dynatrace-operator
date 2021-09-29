@@ -1,4 +1,4 @@
-package v1
+package v1beta1
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"

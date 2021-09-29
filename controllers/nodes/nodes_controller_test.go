@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -179,19 +179,19 @@ func createDefaultFakeClient() client.Client {
 	return fake.NewClient(
 		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
 		&corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
-		&dynatracev1.DynaKube{
+		&dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "oneagent1", Namespace: testNamespace},
-			Status: dynatracev1.DynaKubeStatus{
-				OneAgent: dynatracev1.OneAgentStatus{
-					Instances: map[string]dynatracev1.OneAgentInstance{"node1": {IPAddress: "1.2.3.4"}},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				OneAgent: dynatracev1beta1.OneAgentStatus{
+					Instances: map[string]dynatracev1beta1.OneAgentInstance{"node1": {IPAddress: "1.2.3.4"}},
 				},
 			},
 		},
-		&dynatracev1.DynaKube{
+		&dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{Name: "oneagent2", Namespace: testNamespace},
-			Status: dynatracev1.DynaKubeStatus{
-				OneAgent: dynatracev1.OneAgentStatus{
-					Instances: map[string]dynatracev1.OneAgentInstance{"node2": {IPAddress: "5.6.7.8"}},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				OneAgent: dynatracev1beta1.OneAgentStatus{
+					Instances: map[string]dynatracev1beta1.OneAgentInstance{"node2": {IPAddress: "5.6.7.8"}},
 				},
 			},
 		},

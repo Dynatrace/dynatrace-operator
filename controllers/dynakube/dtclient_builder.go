@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/pkg/errors"
@@ -33,7 +33,7 @@ type DynatraceClientProxy struct {
 	ValueFrom string
 }
 
-func NewDynatraceClientProperties(ctx context.Context, cl client.Client, dk dynatracev1.DynaKube) (*DynatraceClientProperties, error) {
+func NewDynatraceClientProperties(ctx context.Context, cl client.Client, dk dynatracev1beta1.DynaKube) (*DynatraceClientProperties, error) {
 	var tokens corev1.Secret
 	var err error
 	if err = cl.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -62,60 +62,60 @@ func TestAddDynakubeValidationWebhookToManager(t *testing.T) {
 
 func TestDynakubeValidator_Handle(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
-		assertAllowedResponse(t, dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		assertAllowedResponse(t, dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1.OneAgentSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
 					ClassicFullStack: nil,
 					HostMonitoring:   nil,
 				},
 			},
 		})
 
-		assertAllowedResponse(t, dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		assertAllowedResponse(t, dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
 					HostMonitoring:   nil,
 				},
 			},
 		})
 
-		assertAllowedResponse(t, dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		assertAllowedResponse(t, dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1.OneAgentSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
 					ClassicFullStack: nil,
-					HostMonitoring:   &dynatracev1.HostMonitoringSpec{},
+					HostMonitoring:   &dynatracev1beta1.HostMonitoringSpec{},
 				},
 			},
 		})
 
-		assertAllowedResponse(t, dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		assertAllowedResponse(t, dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				Routing: dynatracev1.RoutingSpec{
-					CapabilityProperties: dynatracev1.CapabilityProperties{
+				Routing: dynatracev1beta1.RoutingSpec{
+					CapabilityProperties: dynatracev1beta1.CapabilityProperties{
 						Enabled: true,
 					},
 				},
-				KubernetesMonitoring: dynatracev1.KubernetesMonitoringSpec{
-					CapabilityProperties: dynatracev1.CapabilityProperties{
+				KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
+					CapabilityProperties: dynatracev1beta1.CapabilityProperties{
 						Enabled: true,
 					},
 				},
 			},
 		})
 
-		assertAllowedResponse(t, dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		assertAllowedResponse(t, dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ActiveGate: dynatracev1.ActiveGateSpec{
-					Capabilities: []dynatracev1.ActiveGateCapability{
-						dynatracev1.Routing,
-						dynatracev1.KubeMon,
-						dynatracev1.DataIngest,
+				ActiveGate: dynatracev1beta1.ActiveGateSpec{
+					Capabilities: []dynatracev1beta1.ActiveGateCapability{
+						dynatracev1beta1.Routing,
+						dynatracev1beta1.KubeMon,
+						dynatracev1beta1.DataIngest,
 					},
 				},
 			},
@@ -123,82 +123,82 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 
 	})
 	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
-		assertDeniedResponse(t, dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		assertDeniedResponse(t, dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
-					HostMonitoring:   &dynatracev1.HostMonitoringSpec{},
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+					HostMonitoring:   &dynatracev1beta1.HostMonitoringSpec{},
 				},
 			},
 		}, errorConflictingMode)
 
-		assertDeniedResponse(t, dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		assertDeniedResponse(t, dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{},
-					HostMonitoring:        &dynatracev1.HostMonitoringSpec{},
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+					HostMonitoring:        &dynatracev1beta1.HostMonitoringSpec{},
 				},
 			},
 		}, errorConflictingMode)
 
-		assertDeniedResponse(t, dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		assertDeniedResponse(t, dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				Routing: dynatracev1.RoutingSpec{
-					CapabilityProperties: dynatracev1.CapabilityProperties{
+				Routing: dynatracev1beta1.RoutingSpec{
+					CapabilityProperties: dynatracev1beta1.CapabilityProperties{
 						Enabled: true,
 					},
 				},
-				ActiveGate: dynatracev1.ActiveGateSpec{
-					Capabilities: []dynatracev1.ActiveGateCapability{
-						dynatracev1.Routing,
+				ActiveGate: dynatracev1beta1.ActiveGateSpec{
+					Capabilities: []dynatracev1beta1.ActiveGateCapability{
+						dynatracev1beta1.Routing,
 					},
 				},
 			},
 		}, errorConflictingMode)
 
-		assertDeniedResponse(t, dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		assertDeniedResponse(t, dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				ActiveGate: dynatracev1.ActiveGateSpec{
-					Capabilities: []dynatracev1.ActiveGateCapability{
-						dynatracev1.Routing,
-						dynatracev1.Routing,
+				ActiveGate: dynatracev1beta1.ActiveGateSpec{
+					Capabilities: []dynatracev1beta1.ActiveGateCapability{
+						dynatracev1beta1.Routing,
+						dynatracev1beta1.Routing,
 					},
 				},
 			},
 		}, errorConflictingMode)
 	})
 	t.Run(`missing API URL`, func(t *testing.T) {
-		assertDeniedResponse(t, dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		assertDeniedResponse(t, dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: "",
 			},
 		}, errorNoApiUrl)
 	})
 	t.Run(`invalid API URL`, func(t *testing.T) {
-		assertDeniedResponse(t, dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		assertDeniedResponse(t, dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: exampleApiUrl,
 			},
 		}, errorNoApiUrl)
 	})
 }
 
-func assertDeniedResponse(t *testing.T, dynakube dynatracev1.DynaKube, reason string) {
+func assertDeniedResponse(t *testing.T, dynakube dynatracev1beta1.DynaKube, reason string) {
 	response := handleRequest(t, dynakube)
 	assert.False(t, response.Allowed)
 	assert.Equal(t, metav1.StatusReason(reason), response.Result.Reason)
 }
 
-func assertAllowedResponse(t *testing.T, dynakube dynatracev1.DynaKube) {
+func assertAllowedResponse(t *testing.T, dynakube dynatracev1beta1.DynaKube) {
 	response := handleRequest(t, dynakube)
 	assert.True(t, response.Allowed)
 }
 
-func handleRequest(t *testing.T, dynakube dynatracev1.DynaKube) admission.Response {
+func handleRequest(t *testing.T, dynakube dynatracev1beta1.DynaKube) admission.Response {
 	clt := fake.NewClient()
 	validator := &dynakubeValidator{
 		logger: logger.NewDTLogger(),
@@ -228,7 +228,7 @@ func TestDynakubeValidator_InjectClient(t *testing.T) {
 }
 
 func TestHasApiUrl(t *testing.T) {
-	instance := &dynatracev1.DynaKube{}
+	instance := &dynatracev1beta1.DynaKube{}
 	assert.False(t, hasApiUrl(instance))
 
 	instance.Spec.APIURL = testApiUrl

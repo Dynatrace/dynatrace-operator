@@ -1,17 +1,17 @@
 package mapper
 
 import (
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func createTestDynakubeWithAppInject(name string, labels map[string]string, labelExpression []metav1.LabelSelectorRequirement) *dynatracev1.DynaKube {
-	dk := &dynatracev1.DynaKube{
+func createTestDynakubeWithAppInject(name string, labels map[string]string, labelExpression []metav1.LabelSelectorRequirement) *dynatracev1beta1.DynaKube {
+	dk := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: "dynatrace"},
-		Spec: dynatracev1.DynaKubeSpec{
-			OneAgent: dynatracev1.OneAgentSpec{
-				ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
 			},
 		},
 	}
@@ -24,7 +24,7 @@ func createTestDynakubeWithAppInject(name string, labels map[string]string, labe
 	return dk
 }
 
-func createTestDynakubeWithMultipleFeatures(name string, labels map[string]string, labelExpression []metav1.LabelSelectorRequirement) *dynatracev1.DynaKube {
+func createTestDynakubeWithMultipleFeatures(name string, labels map[string]string, labelExpression []metav1.LabelSelectorRequirement) *dynatracev1beta1.DynaKube {
 	dk := createTestDynakubeWithAppInject(name, labels, labelExpression)
 	dk.Spec.Routing.Enabled = true
 	return dk

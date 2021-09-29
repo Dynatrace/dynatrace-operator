@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	v1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/go-logr/logr"
@@ -52,7 +52,7 @@ func (validator *dynakubeValidator) InjectClient(clt client.Client) error {
 func (validator *dynakubeValidator) Handle(_ context.Context, request admission.Request) admission.Response {
 	validator.logger.Info("validating request", "name", request.Name, "namespace", request.Namespace)
 
-	dynakube := &v1.DynaKube{}
+	dynakube := &dynatracev1beta1.DynaKube{}
 	err := decodeRequestToDynakube(request, dynakube)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, errors.WithStack(err))
@@ -77,11 +77,11 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 	return admission.Allowed("")
 }
 
-func hasApiUrl(dynakube *v1.DynaKube) bool {
+func hasApiUrl(dynakube *dynatracev1beta1.DynaKube) bool {
 	return dynakube.Spec.APIURL != "" && dynakube.Spec.APIURL != exampleApiUrl
 }
 
-func hasConflictingOneAgentConfiguration(dynakube *v1.DynaKube) bool {
+func hasConflictingOneAgentConfiguration(dynakube *dynatracev1beta1.DynaKube) bool {
 	counter := 0
 	if dynakube.ApplicationMonitoringMode() {
 		counter += 1
@@ -98,7 +98,7 @@ func hasConflictingOneAgentConfiguration(dynakube *v1.DynaKube) bool {
 	return counter > 1
 }
 
-func hasConflictingActiveGateConfiguration(dynakube *v1.DynaKube) bool {
+func hasConflictingActiveGateConfiguration(dynakube *dynatracev1beta1.DynaKube) bool {
 	if dynakube.DeprecatedActiveGateMode() && dynakube.ActiveGateMode() {
 		return true
 	}
@@ -117,7 +117,7 @@ func hasConflictingActiveGateConfiguration(dynakube *v1.DynaKube) bool {
 }
 
 // TODO: Implement it to check other dynakubes for conflicting nodeSelectors
-//func hasConflictingNodeSelectors(dynakube v1.DynaKube) bool {
+//func hasConflictingNodeSelectors(dynakube dynatracev1beta1.DynaKube) bool {
 //	infraNodeSelectorMap := dynakube.Spec.InfraMonitoring.NodeSelector
 //	classicNodeSelectorMap := dynakube.Spec.ClassicFullStack.NodeSelector
 //
@@ -130,7 +130,7 @@ func hasConflictingActiveGateConfiguration(dynakube *v1.DynaKube) bool {
 //	return infraNodeSelector.Matches(classicNodeSelectorLabels) || classicNodeSelector.Matches(infraNodeSelectorLabels)
 //}
 
-func decodeRequestToDynakube(request admission.Request, dynakube *v1.DynaKube) error {
+func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1beta1.DynaKube) error {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	if err != nil {
 		return errors.WithStack(err)

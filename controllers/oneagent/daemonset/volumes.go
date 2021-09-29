@@ -1,12 +1,12 @@
 package daemonset
 
 import (
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func prepareVolumeMounts(instance *dynatracev1.DynaKube) []corev1.VolumeMount {
+func prepareVolumeMounts(instance *dynatracev1beta1.DynaKube) []corev1.VolumeMount {
 	rootMount := getRootMount()
 	var volumeMounts []corev1.VolumeMount
 
@@ -24,7 +24,7 @@ func (dsInfo *HostMonitoring) appendReadOnlyVolume(daemonset *appsv1.DaemonSet) 
 	}
 }
 
-func getReadOnlyVolume(dk *dynatracev1.DynaKube) corev1.Volume {
+func getReadOnlyVolume(dk *dynatracev1beta1.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: oneagentInstallationMountName,
 		VolumeSource: corev1.VolumeSource{
@@ -72,7 +72,7 @@ func (dsInfo *HostMonitoring) setRootMountReadability(result *appsv1.DaemonSet) 
 	}
 }
 
-func prepareVolumes(instance *dynatracev1.DynaKube) []corev1.Volume {
+func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {
 	volumes := []corev1.Volume{getRootVolume()}
 
 	if instance.Spec.TrustedCAs != "" {
@@ -82,7 +82,7 @@ func prepareVolumes(instance *dynatracev1.DynaKube) []corev1.Volume {
 	return volumes
 }
 
-func getCertificateVolume(instance *dynatracev1.DynaKube) corev1.Volume {
+func getCertificateVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: "certs",
 		VolumeSource: corev1.VolumeSource{

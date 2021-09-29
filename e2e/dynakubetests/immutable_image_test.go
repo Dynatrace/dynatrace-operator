@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
 	"github.com/Dynatrace/dynatrace-operator/e2e"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -20,16 +20,16 @@ func TestImmutableImage(t *testing.T) {
 	t.Run(`pull secret is created if image is unset`, func(t *testing.T) {
 		apiURL, clt := prepareDefaultEnvironment(t)
 
-		instance := dynatracev1.DynaKube{
+		instance := dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      testName,
 			},
-			Spec: dynatracev1.DynaKubeSpec{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: apiURL,
 				Tokens: e2e.TokenSecretName,
-				OneAgent: dynatracev1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
 				},
 			},
 		}
@@ -38,7 +38,7 @@ func TestImmutableImage(t *testing.T) {
 		assert.NoError(t, err)
 
 		phaseWait := e2e.NewOneAgentWaitConfiguration(t, clt, maxWaitCycles, namespace, testName)
-		err = phaseWait.WaitForPhase(dynatracev1.Deploying)
+		err = phaseWait.WaitForPhase(dynatracev1beta1.Deploying)
 		assert.NoError(t, err)
 
 		pullSecret := v1.Secret{}
@@ -48,17 +48,17 @@ func TestImmutableImage(t *testing.T) {
 	t.Run(`no pull secret exists if customPullSecret is set`, func(t *testing.T) {
 		apiURL, clt := prepareDefaultEnvironment(t)
 
-		instance := dynatracev1.DynaKube{
+		instance := dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      testName,
 			},
-			Spec: dynatracev1.DynaKubeSpec{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL:           apiURL,
 				Tokens:           e2e.TokenSecretName,
 				CustomPullSecret: testName,
-				OneAgent: dynatracev1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1.ClassicFullStackSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
 						Image: testImage,
 					},
 				},
@@ -69,7 +69,7 @@ func TestImmutableImage(t *testing.T) {
 		assert.NoError(t, err)
 
 		phaseWait := e2e.NewOneAgentWaitConfiguration(t, clt, maxWaitCycles, namespace, testName)
-		err = phaseWait.WaitForPhase(dynatracev1.Deploying)
+		err = phaseWait.WaitForPhase(dynatracev1beta1.Deploying)
 		assert.NoError(t, err)
 
 		pullSecret := v1.Secret{}

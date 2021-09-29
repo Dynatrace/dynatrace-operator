@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
@@ -80,14 +80,14 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	)
 }
 
-func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podMutator, *dynatracev1.DynaKube) {
-	dynakube := &dynatracev1.DynaKube{
+func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podMutator, *dynatracev1beta1.DynaKube) {
+	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: "dynatrace"},
-		Spec: dynatracev1.DynaKubeSpec{
+		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://test-api-url.com/api",
-			OneAgent: dynatracev1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{
-					AppInjectionSpec: dynatracev1.AppInjectionSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+					AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
 						InitResources: corev1.ResourceRequirements{
 							Limits: corev1.ResourceList{
 								corev1.ResourceCPU:    resource.MustParse("1"),
@@ -286,13 +286,13 @@ func TestPodInjectionWithCSI(t *testing.T) {
 	)
 }
 
-func createDynakubeInstance(_ *testing.T) *dynatracev1.DynaKube {
-	instance := &dynatracev1.DynaKube{
+func createDynakubeInstance(_ *testing.T) *dynatracev1beta1.DynaKube {
+	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: "dynatrace"},
-		Spec: dynatracev1.DynaKubeSpec{
+		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://test-api-url.com/api",
-			OneAgent: dynatracev1.OneAgentSpec{
-				CloudNativeFullStack: &dynatracev1.CloudNativeFullStackSpec{},
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
 			},
 		},
 	}
@@ -300,7 +300,7 @@ func createDynakubeInstance(_ *testing.T) *dynatracev1.DynaKube {
 	return instance
 }
 
-func withoutCSIDriver(_ *testing.T, instance *dynatracev1.DynaKube) {
+func withoutCSIDriver(_ *testing.T, instance *dynatracev1beta1.DynaKube) {
 	instance.Spec.OneAgent.CloudNativeFullStack.ServerlessMode = true
 }
 

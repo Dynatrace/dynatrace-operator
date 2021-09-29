@@ -5,7 +5,7 @@ import (
 	_ "embed"
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -38,59 +38,59 @@ var (
 	testNodeWithSelectorName = "nodeWselector"
 	testSelectorLabels       = map[string]string{"test": "label"}
 
-	testDynakubeComplex = &dynatracev1.DynaKube{
+	testDynakubeComplex = &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeComplexName, Namespace: operatorNamespace},
-		Spec: dynatracev1.DynaKubeSpec{
+		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL:     testApiUrl,
-			Proxy:      &dynatracev1.DynaKubeProxy{Value: testProxy},
+			Proxy:      &dynatracev1beta1.DynaKubeProxy{Value: testProxy},
 			TrustedCAs: testtrustCAsCM,
 			Tokens:     testTokensName,
-			OneAgent:   dynatracev1.OneAgentSpec{HostMonitoring: &dynatracev1.HostMonitoringSpec{}},
+			OneAgent:   dynatracev1beta1.OneAgentSpec{HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{}},
 		},
-		Status: dynatracev1.DynaKubeStatus{
-			ConnectionInfo: dynatracev1.ConnectionInfoStatus{
+		Status: dynatracev1beta1.DynaKubeStatus{
+			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
 				TenantUUID: testTenantUUID,
 			},
-			OneAgent: dynatracev1.OneAgentStatus{
-				Instances: map[string]dynatracev1.OneAgentInstance{
+			OneAgent: dynatracev1beta1.OneAgentStatus{
+				Instances: map[string]dynatracev1beta1.OneAgentInstance{
 					testNode1Name: {},
 				},
 			},
 		},
 	}
 
-	testDynakubeSimple = &dynatracev1.DynaKube{
+	testDynakubeSimple = &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
-		Spec: dynatracev1.DynaKubeSpec{
+		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL:   testApiUrl,
-			OneAgent: dynatracev1.OneAgentSpec{HostMonitoring: &dynatracev1.HostMonitoringSpec{}},
+			OneAgent: dynatracev1beta1.OneAgentSpec{HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{}},
 		},
-		Status: dynatracev1.DynaKubeStatus{
-			ConnectionInfo: dynatracev1.ConnectionInfoStatus{
+		Status: dynatracev1beta1.DynaKubeStatus{
+			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
 				TenantUUID: testTenantUUID,
 			},
-			OneAgent: dynatracev1.OneAgentStatus{
-				Instances: map[string]dynatracev1.OneAgentInstance{
+			OneAgent: dynatracev1beta1.OneAgentStatus{
+				Instances: map[string]dynatracev1beta1.OneAgentInstance{
 					testNode2Name: {},
 				},
 			},
 		},
 	}
 
-	testDynakubeWithSelector = &dynatracev1.DynaKube{
+	testDynakubeWithSelector = &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
-		Spec: dynatracev1.DynaKubeSpec{
+		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: testApiUrl,
-			OneAgent: dynatracev1.OneAgentSpec{
-				HostMonitoring: &dynatracev1.HostMonitoringSpec{
-					HostInjectSpec: dynatracev1.HostInjectSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{
+					HostInjectSpec: dynatracev1beta1.HostInjectSpec{
 						NodeSelector: testSelectorLabels,
 					},
 				},
 			},
 		},
-		Status: dynatracev1.DynaKubeStatus{
-			ConnectionInfo: dynatracev1.ConnectionInfoStatus{
+		Status: dynatracev1beta1.DynaKubeStatus{
+			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
 				TenantUUID: testTenantUUID,
 			},
 		},

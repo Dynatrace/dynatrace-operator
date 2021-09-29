@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
@@ -34,7 +34,7 @@ type Reconciler struct {
 }
 
 func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, log logr.Logger,
-	instance *dynatracev1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
+	instance *dynatracev1beta1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider) *Reconciler {
 	baseReconciler := sts.NewReconciler(
 		clt, apiReader, scheme, config, log, instance, imageVersionProvider, capability)
 
@@ -63,7 +63,7 @@ func setReadinessProbePort() events.StatefulSetEvent {
 	}
 }
 
-func setCommunicationsPort(_ *dynatracev1.DynaKube) events.StatefulSetEvent {
+func setCommunicationsPort(_ *dynatracev1beta1.DynaKube) events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		sts.Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{
 			{
@@ -78,7 +78,7 @@ func (r *Reconciler) calculateStatefulSetName() string {
 	return capability.CalculateStatefulSetName(r.Capability, r.Instance.Name)
 }
 
-func addDNSEntryPoint(instance *dynatracev1.DynaKube, moduleName string) events.StatefulSetEvent {
+func addDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		sts.Spec.Template.Spec.Containers[0].Env = append(sts.Spec.Template.Spec.Containers[0].Env,
 			corev1.EnvVar{
@@ -88,7 +88,7 @@ func addDNSEntryPoint(instance *dynatracev1.DynaKube, moduleName string) events.
 	}
 }
 
-func buildDNSEntryPoint(instance *dynatracev1.DynaKube, moduleName string) string {
+func buildDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) string {
 	return fmt.Sprintf("https://%s/communication", buildServiceHostName(instance.Name, moduleName))
 }
 

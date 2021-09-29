@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 
 	// rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
@@ -372,19 +372,19 @@ func TestReconcile_CodeModules_DisableCSI(t *testing.T) {
 	require.Error(t, err)
 }
 
-func buildDynakube(name string, appInjectEnabled bool) *dynatracev1.DynaKube {
-	dk := &dynatracev1.DynaKube{
+func buildDynakube(name string, appInjectEnabled bool) *dynatracev1beta1.DynaKube {
+	dk := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: testDynatraceNamespace,
 			UID:       testUID,
 		},
-		Spec: dynatracev1.DynaKubeSpec{
-			OneAgent: dynatracev1.OneAgentSpec{},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{},
 		},
 	}
 	if appInjectEnabled {
-		dk.Spec.OneAgent.ApplicationMonitoring = &dynatracev1.ApplicationMonitoringSpec{}
+		dk.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta1.ApplicationMonitoringSpec{}
 	}
 	return dk
 }

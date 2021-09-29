@@ -3,7 +3,7 @@ package capability
 import (
 
 	//	"path/filepath"
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -32,7 +32,7 @@ type Configuration struct {
 type Capability interface {
 	GetModuleName() string
 	GetCapabilityName() string
-	GetProperties() *dynatracev1.CapabilityProperties
+	GetProperties() *dynatracev1beta1.CapabilityProperties
 	GetConfiguration() Configuration
 	GetInitContainersTemplates() []corev1.Container
 	GetContainerVolumeMounts() []corev1.VolumeMount
@@ -42,14 +42,14 @@ type Capability interface {
 type capabilityBase struct {
 	moduleName     string
 	capabilityName string
-	properties     *dynatracev1.CapabilityProperties
+	properties     *dynatracev1beta1.CapabilityProperties
 	Configuration
 	initContainersTemplates []corev1.Container
 	containerVolumeMounts   []corev1.VolumeMount
 	volumes                 []corev1.Volume
 }
 
-func (c *capabilityBase) GetProperties() *dynatracev1.CapabilityProperties {
+func (c *capabilityBase) GetProperties() *dynatracev1beta1.CapabilityProperties {
 	return c.properties
 }
 
@@ -97,7 +97,7 @@ type DataIngestCapability struct {
 	capabilityBase
 }
 
-// func (c *capabilityBase) setTlsConfig(agSpec *dynatracev1.ActiveGateSpec) {
+// func (c *capabilityBase) setTlsConfig(agSpec *dynatracev1beta1.ActiveGateSpec) {
 // 	if agSpec == nil {
 // 		return
 // 	}
@@ -121,7 +121,7 @@ type DataIngestCapability struct {
 // 	}
 // }
 
-func NewKubeMonCapability(crProperties *dynatracev1.CapabilityProperties) *KubeMonCapability {
+func NewKubeMonCapability(crProperties *dynatracev1beta1.CapabilityProperties) *KubeMonCapability {
 	c := &KubeMonCapability{
 		capabilityBase{
 			moduleName:     "kubemon",
@@ -163,7 +163,7 @@ func NewKubeMonCapability(crProperties *dynatracev1.CapabilityProperties) *KubeM
 	return c
 }
 
-func NewRoutingCapability(crProperties *dynatracev1.CapabilityProperties) *RoutingCapability {
+func NewRoutingCapability(crProperties *dynatracev1beta1.CapabilityProperties) *RoutingCapability {
 	c := &RoutingCapability{
 		capabilityBase{
 			moduleName:     "routing",
@@ -180,7 +180,7 @@ func NewRoutingCapability(crProperties *dynatracev1.CapabilityProperties) *Routi
 	return c
 }
 
-func NewDataIngestCapability(crProperties *dynatracev1.CapabilityProperties) *DataIngestCapability {
+func NewDataIngestCapability(crProperties *dynatracev1beta1.CapabilityProperties) *DataIngestCapability {
 	c := &DataIngestCapability{
 		capabilityBase{
 			moduleName:     "data-ingest",

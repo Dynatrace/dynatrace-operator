@@ -3,7 +3,7 @@ package controllers
 import (
 	"time"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -14,7 +14,7 @@ import (
 // therefore we need to keep track of the state for this Dynakube over the whole Reconcile. (was it updated, etc.)
 type DynakubeState struct {
 	Log      logr.Logger
-	Instance *dynatracev1.DynaKube
+	Instance *dynatracev1beta1.DynaKube
 	Now      metav1.Time
 
 	// If update is true, then changes on instance will be sent to the Kubernetes API.
@@ -28,7 +28,7 @@ type DynakubeState struct {
 	RequeueAfter time.Duration
 }
 
-func NewDynakubeState(log logr.Logger, dk *dynatracev1.DynaKube) *DynakubeState {
+func NewDynakubeState(log logr.Logger, dk *dynatracev1beta1.DynaKube) *DynakubeState {
 	return &DynakubeState{
 		Log:          log,
 		Instance:     dk,

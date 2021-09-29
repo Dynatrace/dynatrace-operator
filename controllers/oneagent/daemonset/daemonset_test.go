@@ -3,7 +3,7 @@ package daemonset
 import (
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,11 +18,11 @@ const (
 func TestUseImmutableImage(t *testing.T) {
 	log := logger.NewDTLogger()
 	t.Run(`if image is unset, image`, func(t *testing.T) {
-		instance := dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		instance := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
 				},
 			},
 		}
@@ -35,11 +35,11 @@ func TestUseImmutableImage(t *testing.T) {
 		assert.Equal(t, instance.ImmutableOneAgentImage(), podSpecs.Containers[0].Image)
 	})
 	t.Run(`if image is set, set image is used`, func(t *testing.T) {
-		instance := dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		instance := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1.ClassicFullStackSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
 						Image: testImage,
 					},
 				},
@@ -57,11 +57,11 @@ func TestUseImmutableImage(t *testing.T) {
 
 func TestCustomPullSecret(t *testing.T) {
 	log := logger.NewDTLogger()
-	instance := dynatracev1.DynaKube{
-		Spec: dynatracev1.DynaKubeSpec{
+	instance := dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: testURL,
-			OneAgent: dynatracev1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
 			},
 			CustomPullSecret: testName,
 		},
@@ -79,11 +79,11 @@ func TestCustomPullSecret(t *testing.T) {
 func TestResources(t *testing.T) {
 	log := logger.NewDTLogger()
 	t.Run(`minimal cpu request of 100mC is set if no resources specified`, func(t *testing.T) {
-		instance := dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		instance := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1.ClassicFullStackSpec{},
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
 				},
 			},
 		}
@@ -104,12 +104,12 @@ func TestResources(t *testing.T) {
 		memoryRequest := resource.NewScaledQuantity(1, 3)
 		memoryLimit := resource.NewScaledQuantity(2, 3)
 
-		instance := dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		instance := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1.ClassicFullStackSpec{
-						HostInjectSpec: dynatracev1.HostInjectSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
 							OneAgentResources: corev1.ResourceRequirements{
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    *cpuRequest,
@@ -149,11 +149,11 @@ func TestResources(t *testing.T) {
 func TestInfraMon_SecurityContext(t *testing.T) {
 	log := logger.NewDTLogger()
 	t.Run(`User and group id set when read only mode is enabled`, func(t *testing.T) {
-		instance := dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
+		instance := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testURL,
-				OneAgent: dynatracev1.OneAgentSpec{
-					HostMonitoring: &dynatracev1.HostMonitoringSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{
 						ReadOnly: true,
 					},
 				},

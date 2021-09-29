@@ -3,7 +3,7 @@ package statefulset
 import (
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
@@ -27,7 +27,7 @@ const (
 )
 
 func TestNewStatefulSetBuilder(t *testing.T) {
-	stsBuilder := NewStatefulSetProperties(&dynatracev1.DynaKube{}, &dynatracev1.CapabilityProperties{},
+	stsBuilder := NewStatefulSetProperties(&dynatracev1beta1.DynaKube{}, &dynatracev1beta1.CapabilityProperties{},
 		testUID, testValue, "", "", "", "", "", nil, nil, nil)
 	assert.NotNil(t, stsBuilder)
 	assert.NotNil(t, stsBuilder.DynaKube)
@@ -109,7 +109,7 @@ func TestStatefulSet_Container(t *testing.T) {
 	container := buildContainer(NewStatefulSetProperties(instance, capabilityProperties,
 		"", "", "", "", "", "", "", nil, nil, nil))
 
-	assert.Equal(t, dynatracev1.OperatorName, container.Name)
+	assert.Equal(t, dynatracev1beta1.OperatorName, container.Name)
 	assert.Equal(t, instance.ActiveGateImage(), container.Image)
 	assert.Empty(t, container.Resources)
 	assert.Equal(t, corev1.PullAlways, container.ImagePullPolicy)
@@ -130,7 +130,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		assert.Empty(t, volumes)
 	})
 	t.Run(`custom properties from value string`, func(t *testing.T) {
-		capabilityProperties.CustomProperties = &dynatracev1.DynaKubeValueSource{
+		capabilityProperties.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
 			Value: testValue,
 		}
 		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
@@ -149,7 +149,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		}, customPropertiesVolume.Secret.Items)
 	})
 	t.Run(`custom properties from valueFrom`, func(t *testing.T) {
-		capabilityProperties.CustomProperties = &dynatracev1.DynaKubeValueSource{
+		capabilityProperties.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
 			ValueFrom: testKey,
 		}
 		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
@@ -186,7 +186,7 @@ func TestStatefulSet_Env(t *testing.T) {
 		}, envVars)
 	})
 	t.Run(`with proxy from value`, func(t *testing.T) {
-		instance.Spec.Proxy = &dynatracev1.DynaKubeProxy{Value: testValue}
+		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", "", "", "", nil, nil, nil))
 
@@ -196,7 +196,7 @@ func TestStatefulSet_Env(t *testing.T) {
 		})
 	})
 	t.Run(`with proxy from value source`, func(t *testing.T) {
-		instance.Spec.Proxy = &dynatracev1.DynaKubeProxy{ValueFrom: testName}
+		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", "", "", "", nil, nil, nil))
 
@@ -249,7 +249,7 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 		assert.Empty(t, volumeMounts)
 	})
 	t.Run(`with custom properties`, func(t *testing.T) {
-		capabilityProperties.CustomProperties = &dynatracev1.DynaKubeValueSource{Value: testValue}
+		capabilityProperties.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{Value: testValue}
 		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", "", "", "", nil, nil, nil))
 
@@ -291,17 +291,17 @@ func TestStatefulSet_Resources(t *testing.T) {
 	assert.True(t, quantityMemoryRequest.Equal(container.Resources.Requests[corev1.ResourceMemory]))
 }
 
-func buildTestInstance() *dynatracev1.DynaKube {
+func buildTestInstance() *dynatracev1beta1.DynaKube {
 	replicas := int32(3)
 
-	return &dynatracev1.DynaKube{
+	return &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
-		Spec: dynatracev1.DynaKubeSpec{
-			Routing: dynatracev1.RoutingSpec{
-				CapabilityProperties: dynatracev1.CapabilityProperties{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			Routing: dynatracev1beta1.RoutingSpec{
+				CapabilityProperties: dynatracev1beta1.CapabilityProperties{
 					Replicas:    &replicas,
 					Tolerations: []corev1.Toleration{{Value: testValue}},
 					NodeSelector: map[string]string{

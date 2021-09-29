@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strconv"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
@@ -26,7 +26,7 @@ import (
 
 type Reconciler struct {
 	client.Client
-	Instance                         *dynatracev1.DynaKube
+	Instance                         *dynatracev1beta1.DynaKube
 	apiReader                        client.Reader
 	scheme                           *runtime.Scheme
 	log                              logr.Logger
@@ -34,7 +34,7 @@ type Reconciler struct {
 	feature                          string
 	capabilityName                   string
 	serviceAccountOwner              string
-	capability                       *dynatracev1.CapabilityProperties
+	capability                       *dynatracev1beta1.CapabilityProperties
 	onAfterStatefulSetCreateListener []events.StatefulSetEvent
 	initContainersTemplates          []corev1.Container
 	containerVolumeMounts            []corev1.VolumeMount
@@ -43,7 +43,7 @@ type Reconciler struct {
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, log logr.Logger,
-	instance *dynatracev1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, capability capability.Capability) *Reconciler {
+	instance *dynatracev1beta1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, capability capability.Capability) *Reconciler {
 
 	serviceAccountOwner := capability.GetConfiguration().ServiceAccountOwner
 	if serviceAccountOwner == "" {
@@ -220,7 +220,7 @@ func (r *Reconciler) calculateCustomPropertyHash() (string, error) {
 	return strconv.FormatUint(uint64(hash.Sum32()), 10), nil
 }
 
-func (r *Reconciler) getDataFromCustomProperty(customProperties *dynatracev1.DynaKubeValueSource) (string, error) {
+func (r *Reconciler) getDataFromCustomProperty(customProperties *dynatracev1beta1.DynaKubeValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
 		namespace := r.Instance.Namespace
 		var secret corev1.Secret

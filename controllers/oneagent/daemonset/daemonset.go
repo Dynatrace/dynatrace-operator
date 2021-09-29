@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/go-logr/logr"
@@ -55,8 +55,8 @@ type ClassicFullStack struct {
 }
 
 type builderInfo struct {
-	instance               *dynatracev1.DynaKube
-	hostInjectSpec         *dynatracev1.HostInjectSpec
+	instance               *dynatracev1beta1.DynaKube
+	hostInjectSpec         *dynatracev1beta1.HostInjectSpec
 	logger                 logr.Logger
 	clusterId              string
 	relatedImage           string
@@ -69,7 +69,7 @@ type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(instance *dynatracev1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
+func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
 	return &HostMonitoring{
 		builderInfo{
 			instance:               instance,
@@ -85,7 +85,7 @@ func NewHostMonitoring(instance *dynatracev1.DynaKube, logger logr.Logger, clust
 	}
 }
 
-func NewCloudNativeFullStack(instance *dynatracev1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
+func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
 	return &HostMonitoring{
 		builderInfo{
 			instance:               instance,
@@ -101,7 +101,7 @@ func NewCloudNativeFullStack(instance *dynatracev1.DynaKube, logger logr.Logger,
 	}
 }
 
-func NewClassicFullStack(instance *dynatracev1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
+func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
 	return &ClassicFullStack{
 		builderInfo{
 			instance:               instance,

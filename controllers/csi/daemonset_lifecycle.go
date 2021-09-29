@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -127,7 +127,7 @@ func findOwnerReferenceIndex(ownerReferences []metav1.OwnerReference, instanceUI
 	return 0, false
 }
 
-func createOwnerReference(dynakube *dynatracev1.DynaKube) metav1.OwnerReference {
+func createOwnerReference(dynakube *dynatracev1beta1.DynaKube) metav1.OwnerReference {
 	return metav1.OwnerReference{
 		APIVersion:         dynakube.APIVersion,
 		Kind:               dynakube.Kind,

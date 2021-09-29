@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -73,9 +73,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`code modules disabled`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
-				&dynatracev1.DynaKube{
-					Spec: dynatracev1.DynaKubeSpec{
-						OneAgent: dynatracev1.OneAgentSpec{},
+				&dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						OneAgent: dynatracev1beta1.OneAgentSpec{},
 					},
 				},
 			),
@@ -89,11 +89,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`csi driver disabled`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
-				&dynatracev1.DynaKube{
-					Spec: dynatracev1.DynaKubeSpec{
-						OneAgent: dynatracev1.OneAgentSpec{
-							ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{
-								AppInjectionSpec: dynatracev1.AppInjectionSpec{
+				&dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						OneAgent: dynatracev1beta1.OneAgentSpec{
+							ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
+								AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
 									ServerlessMode: true,
 								},
 							},
@@ -111,17 +111,17 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`no tokens`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
-				&dynatracev1.DynaKube{
+				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
-					Spec: dynatracev1.DynaKubeSpec{
-						OneAgent: dynatracev1.OneAgentSpec{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
 					},
-					Status: dynatracev1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1.ConnectionInfoStatus{
+					Status: dynatracev1beta1.DynaKubeStatus{
+						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
 							TenantUUID: tenantUUID,
 						},
 					},
@@ -137,17 +137,17 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`error when creating dynatrace client`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
-				&dynatracev1.DynaKube{
+				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
-					Spec: dynatracev1.DynaKubeSpec{
-						OneAgent: dynatracev1.OneAgentSpec{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
 					},
-					Status: dynatracev1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1.ConnectionInfoStatus{
+					Status: dynatracev1beta1.DynaKubeStatus{
+						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
 							TenantUUID: tenantUUID,
 						},
 					},
@@ -174,12 +174,12 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
-				&dynatracev1.DynaKube{
+				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
-					Spec: dynatracev1.DynaKubeSpec{
-						OneAgent: dynatracev1.OneAgentSpec{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
 					},
@@ -210,17 +210,17 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}, nil)
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
-				&dynatracev1.DynaKube{
+				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
-					Spec: dynatracev1.DynaKubeSpec{
-						OneAgent: dynatracev1.OneAgentSpec{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
 					},
-					Status: dynatracev1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1.ConnectionInfoStatus{
+					Status: dynatracev1beta1.DynaKubeStatus{
+						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
 							TenantUUID: tenantUUID,
 						},
 					},
@@ -261,17 +261,17 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			Return(make([]string, 0), fmt.Errorf(errorMsg))
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
-				&dynatracev1.DynaKube{
+				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
-					Spec: dynatracev1.DynaKubeSpec{
-						OneAgent: dynatracev1.OneAgentSpec{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
 					},
-					Status: dynatracev1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1.ConnectionInfoStatus{
+					Status: dynatracev1beta1.DynaKubeStatus{
+						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
 							TenantUUID: tenantUUID,
 						},
 					},
@@ -315,17 +315,17 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			mock.AnythingOfType("string")).Return(agentVersion, nil)
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
-				&dynatracev1.DynaKube{
+				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
-					Spec: dynatracev1.DynaKubeSpec{
-						OneAgent: dynatracev1.OneAgentSpec{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
 					},
-					Status: dynatracev1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1.ConnectionInfoStatus{
+					Status: dynatracev1beta1.DynaKubeStatus{
+						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
 							TenantUUID: tenantUUID,
 						},
 					},
@@ -377,17 +377,17 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			Return(nil)
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
-				&dynatracev1.DynaKube{
+				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
 					},
-					Spec: dynatracev1.DynaKubeSpec{
-						OneAgent: dynatracev1.OneAgentSpec{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 						},
 					},
-					Status: dynatracev1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1.ConnectionInfoStatus{
+					Status: dynatracev1beta1.DynaKubeStatus{
+						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
 							TenantUUID: tenantUUID,
 						},
 						LatestAgentVersionUnixPaas: agentVersion,
@@ -427,7 +427,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 
 func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 	t.Run(`default DynaKube object returns false`, func(t *testing.T) {
-		dk := &dynatracev1.DynaKube{}
+		dk := &dynatracev1beta1.DynaKube{}
 
 		isEnabled := dk.NeedsCSI()
 
@@ -435,9 +435,9 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 	})
 
 	t.Run(`code modules enabled`, func(t *testing.T) {
-		dk := &dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
-				OneAgent: dynatracev1.OneAgentSpec{
+		dk := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
 					ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 				},
 			},
@@ -449,11 +449,11 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 	})
 
 	t.Run(`code modules enabled with serverless`, func(t *testing.T) {
-		dk := &dynatracev1.DynaKube{
-			Spec: dynatracev1.DynaKubeSpec{
-				OneAgent: dynatracev1.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{
-						AppInjectionSpec: dynatracev1.AppInjectionSpec{
+		dk := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
+						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
 							ServerlessMode: true,
 						},
 					},
@@ -467,6 +467,6 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 	})
 }
 
-func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1.ApplicationMonitoringSpec {
-	return &dynatracev1.ApplicationMonitoringSpec{}
+func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1beta1.ApplicationMonitoringSpec {
+	return &dynatracev1beta1.ApplicationMonitoringSpec{}
 }

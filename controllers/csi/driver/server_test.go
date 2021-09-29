@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	dynatracev1 "github.com/Dynatrace/dynatrace-operator/api/v1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -289,13 +289,13 @@ func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServ
 				Labels: map[string]string{webhook.LabelInstance: dkName},
 			},
 		},
-		&dynatracev1.DynaKube{
+		&dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: dkName,
 			},
-			Spec: dynatracev1.DynaKubeSpec{
-				OneAgent: dynatracev1.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1.ApplicationMonitoringSpec{},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
 				},
 			},
 		},
