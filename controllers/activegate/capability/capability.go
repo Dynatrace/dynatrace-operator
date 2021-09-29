@@ -16,9 +16,9 @@ const (
 	k8scrt2jksWorkingDir      = "/var/lib/dynatrace/gateway"
 	initContainerTemplateName = "certificate-loader"
 
-	jettyCerts = "server-certs"
+	//jettyCerts = "server-certs"
 
-	secretsRootDir = "/var/lib/dynatrace/secrets/"
+	//secretsRootDir = "/var/lib/dynatrace/secrets/"
 )
 
 type Configuration struct {

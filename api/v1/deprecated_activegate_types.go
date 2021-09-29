@@ -12,6 +12,7 @@ type KubernetesMonitoringSpec struct {
 	CapabilityProperties `json:",inline"`
 }
 
+// nolint
 // Deprecated: CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
 // Such as KubernetesMonitoring or Routing
 // It encapsulates common properties

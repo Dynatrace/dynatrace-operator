@@ -235,7 +235,7 @@ func TestNewKubeMonCapability(t *testing.T) {
 }
 
 func TestNewRoutingCapability(t *testing.T) {
-	const tlsSecretName = "tls-secret"
+	//const tlsSecretName = "tls-secret"
 
 	props := &dynatracev1.CapabilityProperties{}
 
