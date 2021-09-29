@@ -21,8 +21,8 @@ resources:
     namespaced: true
   group: dynatrace
   kind: DynaKube
-  path: github.com/Dynatrace/dynatrace-operator/api/v1
-  version: v1
+  path: github.com/Dynatrace/dynatrace-operator/api/v1beta1
+  version: v1beta1
   webhooks:
     conversion: true
     webhookVersion: v1
