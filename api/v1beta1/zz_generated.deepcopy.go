@@ -19,7 +19,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -52,7 +52,7 @@ func (in *ActiveGateSpec) DeepCopyInto(out *ActiveGateSpec) {
 	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
-		*out = make([]corev1.Toleration, len(*in))
+		*out = make([]v1.Toleration, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -71,7 +71,7 @@ func (in *ActiveGateSpec) DeepCopyInto(out *ActiveGateSpec) {
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
-		*out = make([]corev1.EnvVar, len(*in))
+		*out = make([]v1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -160,7 +160,7 @@ func (in *CapabilityProperties) DeepCopyInto(out *CapabilityProperties) {
 	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
-		*out = make([]corev1.Toleration, len(*in))
+		*out = make([]v1.Toleration, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -179,7 +179,7 @@ func (in *CapabilityProperties) DeepCopyInto(out *CapabilityProperties) {
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
-		*out = make([]corev1.EnvVar, len(*in))
+		*out = make([]v1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -428,7 +428,7 @@ func (in *HostInjectSpec) DeepCopyInto(out *HostInjectSpec) {
 	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
-		*out = make([]corev1.Toleration, len(*in))
+		*out = make([]v1.Toleration, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -441,7 +441,7 @@ func (in *HostInjectSpec) DeepCopyInto(out *HostInjectSpec) {
 	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
-		*out = make([]corev1.EnvVar, len(*in))
+		*out = make([]v1.EnvVar, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
