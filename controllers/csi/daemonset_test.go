@@ -193,7 +193,7 @@ func prepareDynakube(name string) *dynatracev1beta1.DynaKube {
 	return &dynatracev1beta1.DynaKube{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "DynaKube",
-			APIVersion: "dynatrace.com/v1",
+			APIVersion: "dynatrace.com/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
