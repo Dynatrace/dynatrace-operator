@@ -3,20 +3,16 @@ package validation
 import (
 	"context"
 	"encoding/json"
-	"path/filepath"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
-	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -25,40 +21,6 @@ const (
 	testNamespace = "test-namespace"
 	testApiUrl    = "https://f.q.d.n/api"
 )
-
-func setupTestEnvironment(_ *testing.T) *envtest.Environment {
-	testEnv := &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "default", "bases")},
-		ErrorIfCRDPathMissing: false,
-		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths:                    []string{filepath.Join("..", "config", "common", "webhook", "validation")},
-			IgnoreErrorIfPathMissing: true,
-		},
-	}
-	return testEnv
-}
-
-func TestAddDynakubeValidationWebhookToManager(t *testing.T) {
-	testEnv := setupTestEnvironment(t)
-	cfg, err := testEnv.Start()
-	require.NoError(t, err)
-	require.NotNil(t, cfg)
-
-	webhookInstallOptions := &testEnv.WebhookInstallOptions
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             scheme.Scheme,
-		Host:               webhookInstallOptions.LocalServingHost,
-		Port:               webhookInstallOptions.LocalServingPort,
-		CertDir:            webhookInstallOptions.LocalServingCertDir,
-		LeaderElection:     false,
-		MetricsBindAddress: "0",
-	})
-	require.NoError(t, err)
-	require.NotNil(t, mgr)
-
-	err = AddDynakubeValidationWebhookToManager(mgr)
-	assert.NoError(t, err)
-}
 
 func TestDynakubeValidator_Handle(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
