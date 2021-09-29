@@ -283,9 +283,9 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 
 	var deploymentMetadata *deploymentmetadata.DeploymentMetadata
-	if cn := dk.CloudNativeFullstackMode(); cn{
+	if dk.CloudNativeFullstackMode(){
 		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeCN)
-	} else{
+	} else {
 		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeAM)
 	}
 
