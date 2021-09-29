@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
@@ -26,7 +26,6 @@ import (
 )
 
 const (
-	testVersion                 = "test-version"
 	fakeEventRecorderBufferSize = 10
 )
 
@@ -81,34 +80,26 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	)
 }
 
-func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podMutator, *dynatracev1alpha1.DynaKube) {
-	dynakube := &dynatracev1alpha1.DynaKube{
+func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podMutator, *dynatracev1beta1.DynaKube) {
+	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: "dynatrace"},
-		Spec: dynatracev1alpha1.DynaKubeSpec{
+		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://test-api-url.com/api",
-			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
-				FullStackSpec: dynatracev1alpha1.FullStackSpec{
-					Enabled:           true,
-					UseImmutableImage: true,
-				},
-			},
-			CodeModules: dynatracev1alpha1.CodeModulesSpec{
-				Enabled: true,
-				Resources: corev1.ResourceRequirements{
-					Limits: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("1"),
-						corev1.ResourceMemory: resource.MustParse("500M"),
-					},
-					Requests: corev1.ResourceList{
-						corev1.ResourceCPU:    resource.MustParse("100m"),
-						corev1.ResourceMemory: resource.MustParse("100M"),
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+					AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+						InitResources: corev1.ResourceRequirements{
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("1"),
+								corev1.ResourceMemory: resource.MustParse("500M"),
+							},
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("100m"),
+								corev1.ResourceMemory: resource.MustParse("100M"),
+							},
+						},
 					},
 				},
-			},
-		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			OneAgent: dynatracev1alpha1.OneAgentStatus{
-				UseImmutableImage: true,
 			},
 		},
 	}
@@ -143,9 +134,7 @@ func TestPodInjection(t *testing.T) {
 	require.NoError(t, err)
 
 	inj, instance := createPodInjector(t, decoder)
-	instance.Spec.CodeModules.Volume = corev1.VolumeSource{
-		EmptyDir: &corev1.EmptyDirVolumeSource{},
-	}
+	instance.Spec.OneAgent.CloudNativeFullStack.ServerlessMode = true
 	err = inj.client.Update(context.TODO(), instance)
 	require.NoError(t, err)
 
@@ -297,23 +286,13 @@ func TestPodInjectionWithCSI(t *testing.T) {
 	)
 }
 
-func createDynakubeInstance(_ *testing.T) *dynatracev1alpha1.DynaKube {
-	instance := &dynatracev1alpha1.DynaKube{
+func createDynakubeInstance(_ *testing.T) *dynatracev1beta1.DynaKube {
+	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: "dynakube", Namespace: "dynatrace"},
-		Spec: dynatracev1alpha1.DynaKubeSpec{
-			InfraMonitoring: dynatracev1alpha1.InfraMonitoringSpec{
-				FullStackSpec: dynatracev1alpha1.FullStackSpec{
-					Enabled:           true,
-					UseImmutableImage: true,
-				},
-			},
-			CodeModules: dynatracev1alpha1.CodeModulesSpec{
-				Enabled: true,
-			},
-		},
-		Status: dynatracev1alpha1.DynaKubeStatus{
-			OneAgent: dynatracev1alpha1.OneAgentStatus{
-				UseImmutableImage: true,
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: "https://test-api-url.com/api",
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
 			},
 		},
 	}
@@ -321,116 +300,11 @@ func createDynakubeInstance(_ *testing.T) *dynatracev1alpha1.DynaKube {
 	return instance
 }
 
-func withAgentVersion(_ *testing.T, instance *dynatracev1alpha1.DynaKube, version string) {
-	instance.Spec.OneAgent = dynatracev1alpha1.OneAgentSpec{
-		Version: version,
-	}
-}
-
-func withoutCSIDriver(_ *testing.T, instance *dynatracev1alpha1.DynaKube) {
-	instance.Spec.CodeModules.Volume = corev1.VolumeSource{
-		EmptyDir: &corev1.EmptyDirVolumeSource{},
-	}
+func withoutCSIDriver(_ *testing.T, instance *dynatracev1beta1.DynaKube) {
+	instance.Spec.OneAgent.CloudNativeFullStack.ServerlessMode = true
 }
 
 func TestUseImmutableImage(t *testing.T) {
-	t.Run(`do not use immutable image`, func(t *testing.T) {
-		decoder, err := admission.NewDecoder(scheme.Scheme)
-		require.NoError(t, err)
-
-		instance := createDynakubeInstance(t)
-		withoutCSIDriver(t, instance)
-
-		inj := &podMutator{
-			client: fake.NewClient(
-				instance,
-				&corev1.Namespace{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:   "test-namespace",
-						Labels: map[string]string{mapper.InstanceLabel: "dynakube"},
-					},
-				},
-			),
-			apiReader: fake.NewClient(
-				&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      dtwebhook.SecretConfigName,
-						Namespace: "test-namespace",
-					},
-				},
-			),
-			decoder:   decoder,
-			image:     "test-image",
-			namespace: "dynatrace",
-			recorder:  record.NewFakeRecorder(fakeEventRecorderBufferSize),
-		}
-
-		basePod := corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-pod-12345",
-				Namespace: "test-namespace",
-				Annotations: map[string]string{
-					"oneagent.dynatrace.com/image": "customregistry/linux/codemodule",
-				}},
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{{
-					Name:  "test-container",
-					Image: "alpine",
-				}},
-			},
-		}
-		basePodBytes, err := json.Marshal(&basePod)
-		require.NoError(t, err)
-
-		req := admission.Request{
-			AdmissionRequest: admissionv1.AdmissionRequest{
-				Object: runtime.RawExtension{
-					Raw: basePodBytes,
-				},
-				Namespace: "test-namespace",
-			},
-		}
-		resp := inj.Handle(context.TODO(), req)
-		require.NoError(t, resp.Complete(req))
-
-		if !resp.Allowed {
-			require.FailNow(t, "failed to inject", resp.Result)
-		}
-
-		patchType := admissionv1.PatchTypeJSONPatch
-		assert.Equal(t, resp.PatchType, &patchType)
-
-		patch, err := jsonpatch.DecodePatch(resp.Patch)
-		require.NoError(t, err)
-
-		updPodBytes, err := patch.Apply(basePodBytes)
-		require.NoError(t, err)
-
-		var updPod corev1.Pod
-		require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
-
-		expected := buildResultPod(t)
-		expected.Spec.Volumes[0] = corev1.Volume{
-			Name: "oneagent-bin",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		}
-		setEnvVar(t, &expected, "MODE", "installer")
-
-		expected.ObjectMeta.Annotations["oneagent.dynatrace.com/image"] = "customregistry/linux/codemodule"
-
-		assert.Equal(t, expected, updPod)
-		t_utils.AssertEvents(t,
-			inj.recorder.(*record.FakeRecorder).Events,
-			t_utils.Events{
-				t_utils.Event{
-					EventType: corev1.EventTypeNormal,
-					Reason:    injectEvent,
-				},
-			},
-		)
-	})
 	t.Run(`use immutable image`, func(t *testing.T) {
 		decoder, err := admission.NewDecoder(scheme.Scheme)
 		require.NoError(t, err)
@@ -897,7 +771,6 @@ func TestAgentVersion(t *testing.T) {
 
 	instance := createDynakubeInstance(t)
 	withoutCSIDriver(t, instance)
-	withAgentVersion(t, instance, testVersion)
 
 	inj := &podMutator{
 		client: fake.NewClient(
@@ -991,7 +864,6 @@ func TestAgentVersionWithCSI(t *testing.T) {
 	require.NoError(t, err)
 
 	instance := createDynakubeInstance(t)
-	withAgentVersion(t, instance, testVersion)
 
 	inj := &podMutator{
 		client: fake.NewClient(

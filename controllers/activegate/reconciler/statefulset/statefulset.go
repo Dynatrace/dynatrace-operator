@@ -3,7 +3,7 @@ package statefulset
 import (
 	"fmt"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
@@ -34,8 +34,8 @@ const (
 )
 
 type statefulSetProperties struct {
-	*dynatracev1alpha1.DynaKube
-	*dynatracev1alpha1.CapabilityProperties
+	*dynatracev1beta1.DynaKube
+	*dynatracev1beta1.CapabilityProperties
 	customPropertiesHash    string
 	kubeSystemUID           types.UID
 	feature                 string
@@ -49,7 +49,7 @@ type statefulSetProperties struct {
 	volumes                 []corev1.Volume
 }
 
-func NewStatefulSetProperties(instance *dynatracev1alpha1.DynaKube, capabilityProperties *dynatracev1alpha1.CapabilityProperties,
+func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties,
 	kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string,
 	majorKubernetesVersion string, minorKubernetesVersion string, initContainers []corev1.Container,
 	containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume) *statefulSetProperties {
@@ -113,9 +113,9 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 
 func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 	return corev1.PodSpec{
-		Containers:         []corev1.Container{buildContainer(stsProperties)},
-		InitContainers:     buildInitContainers(stsProperties),
-		NodeSelector:       stsProperties.NodeSelector,
+		Containers:     []corev1.Container{buildContainer(stsProperties)},
+		InitContainers: buildInitContainers(stsProperties),
+		// NodeSelector: something,
 		ServiceAccountName: determineServiceAccountName(stsProperties),
 		Affinity:           affinity(stsProperties),
 		Tolerations:        stsProperties.Tolerations,
@@ -139,7 +139,7 @@ func buildInitContainers(stsProperties *statefulSetProperties) []corev1.Containe
 
 func buildContainer(stsProperties *statefulSetProperties) corev1.Container {
 	return corev1.Container{
-		Name:            dynatracev1alpha1.OperatorName,
+		Name:            dynatracev1beta1.OperatorName,
 		Image:           stsProperties.DynaKube.ActiveGateImage(),
 		Resources:       stsProperties.CapabilityProperties.Resources,
 		ImagePullPolicy: corev1.PullAlways,
@@ -229,7 +229,7 @@ func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
 	return envs
 }
 
-func buildProxyEnv(proxy *dynatracev1alpha1.DynaKubeProxy) corev1.EnvVar {
+func buildProxyEnv(proxy *dynatracev1beta1.DynaKubeProxy) corev1.EnvVar {
 	if proxy.ValueFrom != "" {
 		return corev1.EnvVar{
 			Name: DTInternalProxy,
@@ -255,12 +255,12 @@ func determineServiceAccountName(stsProperties *statefulSetProperties) string {
 	return stsProperties.ServiceAccountName
 }
 
-func isCustomPropertiesNilOrEmpty(customProperties *dynatracev1alpha1.DynaKubeValueSource) bool {
+func isCustomPropertiesNilOrEmpty(customProperties *dynatracev1beta1.DynaKubeValueSource) bool {
 	return customProperties == nil ||
 		(customProperties.Value == "" &&
 			customProperties.ValueFrom == "")
 }
 
-func isProxyNilOrEmpty(proxy *dynatracev1alpha1.DynaKubeProxy) bool {
+func isProxyNilOrEmpty(proxy *dynatracev1beta1.DynaKubeProxy) bool {
 	return proxy == nil || (proxy.Value == "" && proxy.ValueFrom == "")
 }

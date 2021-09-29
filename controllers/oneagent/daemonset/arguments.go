@@ -9,7 +9,7 @@ import (
 
 func (dsInfo *builderInfo) arguments() []string {
 	metadata := deploymentmetadata.NewDeploymentMetadata(dsInfo.clusterId, dsInfo.deploymentType)
-	args := dsInfo.fullstackSpec.Args
+	args := dsInfo.hostInjectSpec.Args
 	args = dsInfo.appendProxyArg(args)
 	args = dsInfo.appendNetworkZoneArg(args)
 	args = appendOperatorVersionArg(args)

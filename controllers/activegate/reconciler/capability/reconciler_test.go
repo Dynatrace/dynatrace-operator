@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
 	rsfs "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
@@ -30,10 +30,9 @@ const (
 )
 
 var metricsCapability = capability.NewDataIngestCapability(
-	&v1alpha1.CapabilityProperties{
+	&dynatracev1beta1.CapabilityProperties{
 		Enabled: true,
 	},
-	nil,
 )
 
 func TestNewReconiler(t *testing.T) {
@@ -51,7 +50,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 			},
 		}).
 		Build()
-	instance := &v1alpha1.DynaKube{
+	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 		}}
@@ -71,7 +70,7 @@ func TestReconcile(t *testing.T) {
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
 
-		metricsCapability.GetProperties().CustomProperties = &v1alpha1.DynaKubeValueSource{
+		metricsCapability.GetProperties().CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
 			Value: testValue,
 		}
 		_, err := r.Reconcile()
@@ -130,7 +129,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
 
-		r.Instance.Spec.Proxy = &v1alpha1.DynaKubeProxy{Value: testValue}
+		r.Instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		update, err = r.Reconcile()
 
 		assert.True(t, update)
@@ -205,7 +204,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 			name: "instance and module names are defined",
 			fields: fields{
 				Reconciler: &rsfs.Reconciler{
-					Instance: &v1alpha1.DynaKube{
+					Instance: &dynatracev1beta1.DynaKube{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "instanceName",
 						},
@@ -219,7 +218,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 			name: "empty instance name",
 			fields: fields{
 				Reconciler: &rsfs.Reconciler{
-					Instance: &v1alpha1.DynaKube{
+					Instance: &dynatracev1beta1.DynaKube{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "",
 						},

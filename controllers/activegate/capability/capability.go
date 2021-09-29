@@ -1,10 +1,10 @@
 package capability
 
 import (
-	"path/filepath"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	v1 "k8s.io/api/core/v1"
+	//	"path/filepath"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -16,9 +16,9 @@ const (
 	k8scrt2jksWorkingDir      = "/var/lib/dynatrace/gateway"
 	initContainerTemplateName = "certificate-loader"
 
-	jettyCerts = "server-certs"
+	//jettyCerts = "server-certs"
 
-	secretsRootDir = "/var/lib/dynatrace/secrets/"
+	//secretsRootDir = "/var/lib/dynatrace/secrets/"
 )
 
 type Configuration struct {
@@ -32,24 +32,24 @@ type Configuration struct {
 type Capability interface {
 	GetModuleName() string
 	GetCapabilityName() string
-	GetProperties() *dynatracev1alpha1.CapabilityProperties
+	GetProperties() *dynatracev1beta1.CapabilityProperties
 	GetConfiguration() Configuration
-	GetInitContainersTemplates() []v1.Container
-	GetContainerVolumeMounts() []v1.VolumeMount
-	GetVolumes() []v1.Volume
+	GetInitContainersTemplates() []corev1.Container
+	GetContainerVolumeMounts() []corev1.VolumeMount
+	GetVolumes() []corev1.Volume
 }
 
 type capabilityBase struct {
 	moduleName     string
 	capabilityName string
-	properties     *dynatracev1alpha1.CapabilityProperties
+	properties     *dynatracev1beta1.CapabilityProperties
 	Configuration
-	initContainersTemplates []v1.Container
-	containerVolumeMounts   []v1.VolumeMount
-	volumes                 []v1.Volume
+	initContainersTemplates []corev1.Container
+	containerVolumeMounts   []corev1.VolumeMount
+	volumes                 []corev1.Volume
 }
 
-func (c *capabilityBase) GetProperties() *dynatracev1alpha1.CapabilityProperties {
+func (c *capabilityBase) GetProperties() *dynatracev1beta1.CapabilityProperties {
 	return c.properties
 }
 
@@ -69,15 +69,15 @@ func (c *capabilityBase) GetCapabilityName() string {
 // Caller must set following fields:
 //   Image:
 //   Resources:
-func (c *capabilityBase) GetInitContainersTemplates() []v1.Container {
+func (c *capabilityBase) GetInitContainersTemplates() []corev1.Container {
 	return c.initContainersTemplates
 }
 
-func (c *capabilityBase) GetContainerVolumeMounts() []v1.VolumeMount {
+func (c *capabilityBase) GetContainerVolumeMounts() []corev1.VolumeMount {
 	return c.containerVolumeMounts
 }
 
-func (c *capabilityBase) GetVolumes() []v1.Volume {
+func (c *capabilityBase) GetVolumes() []corev1.Volume {
 	return c.volumes
 }
 
@@ -97,31 +97,31 @@ type DataIngestCapability struct {
 	capabilityBase
 }
 
-func (c *capabilityBase) setTlsConfig(agSpec *dynatracev1alpha1.ActiveGateSpec) {
-	if agSpec == nil {
-		return
-	}
+// func (c *capabilityBase) setTlsConfig(agSpec *dynatracev1beta1.ActiveGateSpec) {
+// 	if agSpec == nil {
+// 		return
+// 	}
 
-	if agSpec.TlsSecretName != "" {
-		c.volumes = append(c.volumes,
-			v1.Volume{
-				Name: jettyCerts,
-				VolumeSource: v1.VolumeSource{
-					Secret: &v1.SecretVolumeSource{
-						SecretName: agSpec.TlsSecretName,
-					},
-				},
-			})
-		c.containerVolumeMounts = append(c.containerVolumeMounts,
-			v1.VolumeMount{
-				ReadOnly:  true,
-				Name:      jettyCerts,
-				MountPath: filepath.Join(secretsRootDir, "tls"),
-			})
-	}
-}
+// 	if agSpec.TlsSecretName != "" {
+// 		c.volumes = append(c.volumes,
+// 			corev1.Volume{
+// 				Name: jettyCerts,
+// 				VolumeSource: corev1.VolumeSource{
+// 					Secret: &corev1.SecretVolumeSource{
+// 						SecretName: agSpec.TlsSecretName,
+// 					},
+// 				},
+// 			})
+// 		c.containerVolumeMounts = append(c.containerVolumeMounts,
+// 			corev1.VolumeMount{
+// 				ReadOnly:  true,
+// 				Name:      jettyCerts,
+// 				MountPath: filepath.Join(secretsRootDir, "tls"),
+// 			})
+// 	}
+// }
 
-func NewKubeMonCapability(crProperties *dynatracev1alpha1.CapabilityProperties, agSpec *dynatracev1alpha1.ActiveGateSpec) *KubeMonCapability {
+func NewKubeMonCapability(crProperties *dynatracev1beta1.CapabilityProperties) *KubeMonCapability {
 	c := &KubeMonCapability{
 		capabilityBase{
 			moduleName:     "kubemon",
@@ -130,14 +130,14 @@ func NewKubeMonCapability(crProperties *dynatracev1alpha1.CapabilityProperties, 
 			Configuration: Configuration{
 				ServiceAccountOwner: "kubernetes-monitoring",
 			},
-			initContainersTemplates: []v1.Container{
+			initContainersTemplates: []corev1.Container{
 				{
 					Name:            initContainerTemplateName,
-					ImagePullPolicy: v1.PullAlways,
+					ImagePullPolicy: corev1.PullAlways,
 					WorkingDir:      k8scrt2jksWorkingDir,
 					Command:         []string{"/bin/bash"},
 					Args:            []string{"-c", k8scrt2jksPath},
-					VolumeMounts: []v1.VolumeMount{
+					VolumeMounts: []corev1.VolumeMount{
 						{
 							ReadOnly:  false,
 							Name:      trustStoreVolume,
@@ -146,27 +146,24 @@ func NewKubeMonCapability(crProperties *dynatracev1alpha1.CapabilityProperties, 
 					},
 				},
 			},
-			containerVolumeMounts: []v1.VolumeMount{{
+			containerVolumeMounts: []corev1.VolumeMount{{
 				ReadOnly:  true,
 				Name:      trustStoreVolume,
 				MountPath: activeGateCacertsPath,
 				SubPath:   k8sCertificateFile,
 			}},
-			volumes: []v1.Volume{{
+			volumes: []corev1.Volume{{
 				Name: trustStoreVolume,
-				VolumeSource: v1.VolumeSource{
-					EmptyDir: &v1.EmptyDirVolumeSource{},
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				}},
 			},
 		},
 	}
-
-	c.capabilityBase.setTlsConfig(agSpec)
-
 	return c
 }
 
-func NewRoutingCapability(crProperties *dynatracev1alpha1.CapabilityProperties, agSpec *dynatracev1alpha1.ActiveGateSpec) *RoutingCapability {
+func NewRoutingCapability(crProperties *dynatracev1beta1.CapabilityProperties) *RoutingCapability {
 	c := &RoutingCapability{
 		capabilityBase{
 			moduleName:     "routing",
@@ -180,13 +177,10 @@ func NewRoutingCapability(crProperties *dynatracev1alpha1.CapabilityProperties, 
 			},
 		},
 	}
-
-	c.capabilityBase.setTlsConfig(agSpec)
-
 	return c
 }
 
-func NewDataIngestCapability(crProperties *dynatracev1alpha1.CapabilityProperties, agSpec *dynatracev1alpha1.ActiveGateSpec) *DataIngestCapability {
+func NewDataIngestCapability(crProperties *dynatracev1beta1.CapabilityProperties) *DataIngestCapability {
 	c := &DataIngestCapability{
 		capabilityBase{
 			moduleName:     "data-ingest",
@@ -200,8 +194,5 @@ func NewDataIngestCapability(crProperties *dynatracev1alpha1.CapabilityPropertie
 			},
 		},
 	}
-
-	c.capabilityBase.setTlsConfig(agSpec)
-
 	return c
 }

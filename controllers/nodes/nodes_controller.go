@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
@@ -119,9 +119,9 @@ func (r *ReconcileNodes) onDeletion(node string) error {
 		return err
 	}
 
-	if err = r.removeNode(c, node, func(oaName string) (*dynatracev1alpha1.DynaKube, error) {
-		var dynaKube dynatracev1alpha1.DynaKube
-		if err := r.client.Get(context.TODO(), client.ObjectKey{Name: oaName, Namespace: r.namespace}, &dynaKube); err != nil {
+	if err = r.removeNode(c, node, func(dkName string) (*dynatracev1beta1.DynaKube, error) {
+		var dynaKube dynatracev1beta1.DynaKube
+		if err := r.client.Get(context.TODO(), client.ObjectKey{Name: dkName, Namespace: r.namespace}, &dynaKube); err != nil {
 			return nil, err
 		}
 		return &dynaKube, nil
@@ -135,14 +135,14 @@ func (r *ReconcileNodes) onDeletion(node string) error {
 func (r *ReconcileNodes) reconcileAll() error {
 	r.logger.Info("reconciling nodes")
 
-	var oaLst dynatracev1alpha1.DynaKubeList
-	if err := r.client.List(context.TODO(), &oaLst, client.InNamespace(r.namespace)); err != nil {
+	var dkList dynatracev1beta1.DynaKubeList
+	if err := r.client.List(context.TODO(), &dkList, client.InNamespace(r.namespace)); err != nil {
 		return err
 	}
 
-	oas := make(map[string]*dynatracev1alpha1.DynaKube, len(oaLst.Items))
-	for i := range oaLst.Items {
-		oas[oaLst.Items[i].Name] = &oaLst.Items[i]
+	dks := make(map[string]*dynatracev1beta1.DynaKube, len(dkList.Items))
+	for i := range dkList.Items {
+		dks[dkList.Items[i].Name] = &dkList.Items[i]
 	}
 
 	c, err := r.getCache()
@@ -170,15 +170,15 @@ func (r *ReconcileNodes) reconcileAll() error {
 	}
 
 	// Add or update all nodes seen on OneAgent instances to the c.
-	for _, oa := range oas {
-		if oa.Status.OneAgent.Instances != nil {
-			for node, info := range oa.Status.OneAgent.Instances {
+	for _, dk := range dks {
+		if dk.Status.OneAgent.Instances != nil {
+			for node, info := range dk.Status.OneAgent.Instances {
 				if _, ok := nodes[node]; !ok {
 					continue
 				}
 
 				info := CacheEntry{
-					Instance:  oa.Name,
+					Instance:  dk.Name,
 					IPAddress: info.IPAddress,
 					LastSeen:  time.Now().UTC(),
 				}
@@ -200,14 +200,14 @@ func (r *ReconcileNodes) reconcileAll() error {
 			continue
 		}
 
-		if err := r.removeNode(c, node, func(name string) (*dynatracev1alpha1.DynaKube, error) {
-			if oa, ok := oas[name]; ok {
-				return oa, nil
+		if err := r.removeNode(c, node, func(name string) (*dynatracev1beta1.DynaKube, error) {
+			if dk, ok := dks[name]; ok {
+				return dk, nil
 			}
 
 			return nil, errors.NewNotFound(schema.GroupResource{
-				Group:    oaLst.GroupVersionKind().Group,
-				Resource: oaLst.GroupVersionKind().Kind,
+				Group:    dkList.GroupVersionKind().Group,
+				Resource: dkList.GroupVersionKind().Kind,
 			}, name)
 		}); err != nil {
 			r.logger.Error(err, "failed to remove node", "node", node)
@@ -265,7 +265,7 @@ func (r *ReconcileNodes) updateCache(c *Cache) error {
 	return r.client.Update(context.TODO(), c.Obj)
 }
 
-func (r *ReconcileNodes) removeNode(c *Cache, node string, oaFunc func(name string) (*dynatracev1alpha1.DynaKube, error)) error {
+func (r *ReconcileNodes) removeNode(c *Cache, node string, dkFunc func(name string) (*dynatracev1beta1.DynaKube, error)) error {
 	logger := r.logger.WithValues("node", node)
 
 	nodeInfo, err := c.Get(node)
@@ -281,7 +281,7 @@ func (r *ReconcileNodes) removeNode(c *Cache, node string, oaFunc func(name stri
 	} else if nodeInfo.IPAddress == "" {
 		logger.Info("removing node with unknown IP")
 	} else {
-		oa, err := oaFunc(nodeInfo.Instance)
+		dk, err := dkFunc(nodeInfo.Instance)
 		if errors.IsNotFound(err) {
 			logger.Info("oneagent got already deleted")
 			c.Delete(node)
@@ -291,7 +291,7 @@ func (r *ReconcileNodes) removeNode(c *Cache, node string, oaFunc func(name stri
 			return err
 		}
 
-		err = r.markForTermination(c, oa, nodeInfo.IPAddress, node)
+		err = r.markForTermination(c, dk, nodeInfo.IPAddress, node)
 		if err != nil {
 			return err
 		}
@@ -315,13 +315,13 @@ func (r *ReconcileNodes) updateNode(c *Cache, nodeName string) error {
 	return r.reconcileUnschedulableNode(node, c)
 }
 
-func (r *ReconcileNodes) sendMarkedForTermination(dk *dynatracev1alpha1.DynaKube, nodeIP string, lastSeen time.Time) error {
-	var secret corev1.Secret
-	if err := r.client.Get(context.TODO(), client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &secret); err != nil {
-		r.logger.Error(err, "Failed to query for tokens")
+func (r *ReconcileNodes) sendMarkedForTermination(dk *dynatracev1beta1.DynaKube, nodeIP string, lastSeen time.Time) error {
+	dtp, err := dynakube.NewDynatraceClientProperties(context.TODO(), r.client, *dk)
+	if err != nil {
+		r.logger.Error(err, err.Error())
 	}
 
-	dtc, err := r.dtClientFunc(r.client, dk, &secret)
+	dtc, err := r.dtClientFunc(*dtp)
 	if err != nil {
 		return err
 	}
@@ -337,7 +337,7 @@ func (r *ReconcileNodes) sendMarkedForTermination(dk *dynatracev1alpha1.DynaKube
 	ts := uint64(lastSeen.Add(-10*time.Minute).UnixNano()) / uint64(time.Millisecond)
 	return dtc.SendEvent(&dtclient.EventData{
 		EventType:     dtclient.MarkedForTerminationEvent,
-		Source:        "OneAgent Operator",
+		Source:        "Dynatrace Operator",
 		Description:   "Kubernetes node cordoned. Node might be drained or terminated.",
 		StartInMillis: ts,
 		EndInMillis:   ts,
@@ -348,21 +348,21 @@ func (r *ReconcileNodes) sendMarkedForTermination(dk *dynatracev1alpha1.DynaKube
 }
 
 func (r *ReconcileNodes) reconcileUnschedulableNode(node *corev1.Node, c *Cache) error {
-	oneAgent, err := r.determineOneAgentForNode(node.Name)
+	dynakube, err := r.determineDynakubeForNode(node.Name)
 	if err != nil {
 		return err
 	}
-	if oneAgent == nil {
+	if dynakube == nil {
 		return nil
 	}
 
-	// determineOneAgentForNode  only returns a oneagent object if a node instance is present
-	instance := oneAgent.Status.OneAgent.Instances[node.Name]
+	// determineDynakubeForNode only returns a Dynakube object if a node instance is present
+	instance := dynakube.Status.OneAgent.Instances[node.Name]
 	if _, err = c.Get(node.Name); err != nil {
 		if err == ErrNotFound {
 			// If node not found in c add it
 			cachedNode := CacheEntry{
-				Instance:  oneAgent.Name,
+				Instance:  dynakube.Name,
 				IPAddress: instance.IPAddress,
 				LastSeen:  time.Now().UTC(),
 			}
@@ -374,10 +374,10 @@ func (r *ReconcileNodes) reconcileUnschedulableNode(node *corev1.Node, c *Cache)
 			return err
 		}
 	}
-	return r.markForTermination(c, oneAgent, instance.IPAddress, node.Name)
+	return r.markForTermination(c, dynakube, instance.IPAddress, node.Name)
 }
 
-func (r *ReconcileNodes) markForTermination(c *Cache, dk *dynatracev1alpha1.DynaKube,
+func (r *ReconcileNodes) markForTermination(c *Cache, dk *dynatracev1beta1.DynaKube,
 	ipAddress string, nodeName string) error {
 	cachedNode, err := c.Get(nodeName)
 	if err != nil {

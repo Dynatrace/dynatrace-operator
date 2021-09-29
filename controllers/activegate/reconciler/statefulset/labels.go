@@ -1,6 +1,8 @@
 package statefulset
 
-import "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+import (
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
+)
 
 const (
 	KeyDynatrace    = "dynatrace.com/component"
@@ -9,13 +11,13 @@ const (
 	ValueActiveGate = "activegate"
 )
 
-func buildLabels(instance *v1alpha1.DynaKube, feature string, capabilityProperties *v1alpha1.CapabilityProperties) map[string]string {
+func buildLabels(instance *dynatracev1beta1.DynaKube, feature string, capabilityProperties *dynatracev1beta1.CapabilityProperties) map[string]string {
 	return mergeLabels(instance.Labels,
 		BuildLabelsFromInstance(instance, feature),
 		capabilityProperties.Labels)
 }
 
-func BuildLabelsFromInstance(instance *v1alpha1.DynaKube, feature string) map[string]string {
+func BuildLabelsFromInstance(instance *dynatracev1beta1.DynaKube, feature string) map[string]string {
 	return map[string]string{
 		KeyDynatrace:  ValueActiveGate,
 		KeyActiveGate: instance.Name,
