@@ -1,8 +1,9 @@
 package capability
 
 import (
+	"path/filepath"
+	"strings"
 
-	//	"path/filepath"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -16,10 +17,18 @@ const (
 	k8scrt2jksWorkingDir      = "/var/lib/dynatrace/gateway"
 	initContainerTemplateName = "certificate-loader"
 
-	//jettyCerts = "server-certs"
+	jettyCerts = "server-certs"
 
-	//secretsRootDir = "/var/lib/dynatrace/secrets/"
+	secretsRootDir = "/var/lib/dynatrace/secrets/"
 )
+
+type baseFunc func() *capabilityBase
+
+var activeGateCapabilities = map[dynatracev1beta1.ActiveGateCapability]baseFunc{
+	dynatracev1beta1.KubeMon:    kubeMonBase,
+	dynatracev1beta1.Routing:    routingBase,
+	dynatracev1beta1.DataIngest: dataIngestBase,
+}
 
 type Configuration struct {
 	SetDnsEntryPoint     bool
@@ -30,6 +39,7 @@ type Configuration struct {
 }
 
 type Capability interface {
+	Enabled() bool
 	GetModuleName() string
 	GetCapabilityName() string
 	GetProperties() *dynatracev1beta1.CapabilityProperties
@@ -40,6 +50,7 @@ type Capability interface {
 }
 
 type capabilityBase struct {
+	enabled        bool
 	moduleName     string
 	capabilityName string
 	properties     *dynatracev1beta1.CapabilityProperties
@@ -47,6 +58,10 @@ type capabilityBase struct {
 	initContainersTemplates []corev1.Container
 	containerVolumeMounts   []corev1.VolumeMount
 	volumes                 []corev1.Volume
+}
+
+func (c *capabilityBase) Enabled() bool {
+	return c.enabled
 }
 
 func (c *capabilityBase) GetProperties() *dynatracev1beta1.CapabilityProperties {
@@ -85,114 +100,174 @@ func CalculateStatefulSetName(capability Capability, instanceName string) string
 	return instanceName + "-" + capability.GetModuleName()
 }
 
+// Deprecated
 type KubeMonCapability struct {
 	capabilityBase
 }
 
+// Deprecated
 type RoutingCapability struct {
 	capabilityBase
 }
 
-type DataIngestCapability struct {
+type MultiCapability struct {
 	capabilityBase
 }
 
-// func (c *capabilityBase) setTlsConfig(agSpec *dynatracev1beta1.ActiveGateSpec) {
-// 	if agSpec == nil {
-// 		return
-// 	}
+func (c *capabilityBase) setTlsConfig(agSpec *dynatracev1beta1.ActiveGateSpec) {
+	if agSpec == nil {
+		return
+	}
 
-// 	if agSpec.TlsSecretName != "" {
-// 		c.volumes = append(c.volumes,
-// 			corev1.Volume{
-// 				Name: jettyCerts,
-// 				VolumeSource: corev1.VolumeSource{
-// 					Secret: &corev1.SecretVolumeSource{
-// 						SecretName: agSpec.TlsSecretName,
-// 					},
-// 				},
-// 			})
-// 		c.containerVolumeMounts = append(c.containerVolumeMounts,
-// 			corev1.VolumeMount{
-// 				ReadOnly:  true,
-// 				Name:      jettyCerts,
-// 				MountPath: filepath.Join(secretsRootDir, "tls"),
-// 			})
-// 	}
-// }
+	if agSpec.TlsSecretName != "" {
+		c.volumes = append(c.volumes,
+			corev1.Volume{
+				Name: jettyCerts,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: agSpec.TlsSecretName,
+					},
+				},
+			})
+		c.containerVolumeMounts = append(c.containerVolumeMounts,
+			corev1.VolumeMount{
+				ReadOnly:  true,
+				Name:      jettyCerts,
+				MountPath: filepath.Join(secretsRootDir, "tls"),
+			})
+	}
+}
 
-func NewKubeMonCapability(crProperties *dynatracev1beta1.CapabilityProperties) *KubeMonCapability {
-	c := &KubeMonCapability{
+func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
+	mc := MultiCapability{
 		capabilityBase{
-			moduleName:     "kubemon",
-			capabilityName: "kubernetes_monitoring",
-			properties:     crProperties,
-			Configuration: Configuration{
-				ServiceAccountOwner: "kubernetes-monitoring",
-			},
-			initContainersTemplates: []corev1.Container{
-				{
-					Name:            initContainerTemplateName,
-					ImagePullPolicy: corev1.PullAlways,
-					WorkingDir:      k8scrt2jksWorkingDir,
-					Command:         []string{"/bin/bash"},
-					Args:            []string{"-c", k8scrt2jksPath},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							ReadOnly:  false,
-							Name:      trustStoreVolume,
-							MountPath: activeGateSslPath,
-						},
+			moduleName: "multi",
+			properties: &dk.Spec.ActiveGate.CapabilityProperties,
+		},
+	}
+	if dk == nil || !dk.ActiveGateMode() {
+		return &mc
+	}
+	mc.enabled = true
+	capabilityNames := []string{}
+	for _, capName := range dk.Spec.ActiveGate.Capabilities {
+		cap := activeGateCapabilities[capName]()
+		capabilityNames = append(capabilityNames, cap.capabilityName)
+		mc.initContainersTemplates = append(mc.initContainersTemplates, cap.initContainersTemplates...)
+		mc.containerVolumeMounts = append(mc.containerVolumeMounts, cap.containerVolumeMounts...)
+		mc.volumes = append(mc.volumes, cap.volumes...)
+
+		if !mc.CreateService {
+			mc.CreateService = cap.CreateService
+		}
+		if !mc.SetCommunicationPort {
+			mc.SetCommunicationPort = cap.SetCommunicationPort
+		}
+		if !mc.SetDnsEntryPoint {
+			mc.SetDnsEntryPoint = cap.SetDnsEntryPoint
+		}
+		if !mc.SetReadinessPort {
+			mc.SetReadinessPort = cap.SetReadinessPort
+		}
+		if mc.ServiceAccountOwner == "" {
+			mc.ServiceAccountOwner = cap.ServiceAccountOwner
+		}
+	}
+	mc.capabilityName = strings.Join(capabilityNames[:], ",")
+	mc.setTlsConfig(&dk.Spec.ActiveGate)
+	return &mc
+
+}
+
+// Deprecated
+func NewKubeMonCapability(dk *dynatracev1beta1.DynaKube) *KubeMonCapability {
+	c := &KubeMonCapability{
+		*kubeMonBase(),
+	}
+	if dk == nil {
+		return c
+	}
+	c.enabled = dk.Spec.KubernetesMonitoring.Enabled
+	c.properties = &dk.Spec.KubernetesMonitoring.CapabilityProperties
+	return c
+}
+
+// Deprecated
+func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) *RoutingCapability {
+	c := &RoutingCapability{
+		*routingBase(),
+	}
+	if dk == nil {
+		return c
+	}
+	c.enabled = dk.Spec.Routing.Enabled
+	c.properties = &dk.Spec.Routing.CapabilityProperties
+	return c
+}
+
+func kubeMonBase() *capabilityBase {
+	c := capabilityBase{
+		moduleName:     "kubemon",
+		capabilityName: "kubernetes_monitoring",
+		Configuration: Configuration{
+			ServiceAccountOwner: "kubernetes-monitoring",
+		},
+		initContainersTemplates: []corev1.Container{
+			{
+				Name:            initContainerTemplateName,
+				ImagePullPolicy: corev1.PullAlways,
+				WorkingDir:      k8scrt2jksWorkingDir,
+				Command:         []string{"/bin/bash"},
+				Args:            []string{"-c", k8scrt2jksPath},
+				VolumeMounts: []corev1.VolumeMount{
+					{
+						ReadOnly:  false,
+						Name:      trustStoreVolume,
+						MountPath: activeGateSslPath,
 					},
 				},
 			},
-			containerVolumeMounts: []corev1.VolumeMount{{
-				ReadOnly:  true,
-				Name:      trustStoreVolume,
-				MountPath: activeGateCacertsPath,
-				SubPath:   k8sCertificateFile,
+		},
+		containerVolumeMounts: []corev1.VolumeMount{{
+			ReadOnly:  true,
+			Name:      trustStoreVolume,
+			MountPath: activeGateCacertsPath,
+			SubPath:   k8sCertificateFile,
+		}},
+		volumes: []corev1.Volume{{
+			Name: trustStoreVolume,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			}},
-			volumes: []corev1.Volume{{
-				Name: trustStoreVolume,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				}},
-			},
 		},
 	}
-	return c
+	return &c
 }
 
-func NewRoutingCapability(crProperties *dynatracev1beta1.CapabilityProperties) *RoutingCapability {
-	c := &RoutingCapability{
-		capabilityBase{
-			moduleName:     "routing",
-			capabilityName: "MSGrouter",
-			properties:     crProperties,
-			Configuration: Configuration{
-				SetDnsEntryPoint:     true,
-				SetReadinessPort:     true,
-				SetCommunicationPort: true,
-				CreateService:        true,
-			},
+func routingBase() *capabilityBase {
+	c := capabilityBase{
+		moduleName:     "routing",
+		capabilityName: "MSGrouter",
+		Configuration: Configuration{
+			SetDnsEntryPoint:     true,
+			SetReadinessPort:     true,
+			SetCommunicationPort: true,
+			CreateService:        true,
 		},
 	}
-	return c
+	return &c
 }
 
-func NewDataIngestCapability(crProperties *dynatracev1beta1.CapabilityProperties) *DataIngestCapability {
-	c := &DataIngestCapability{
-		capabilityBase{
-			moduleName:     "data-ingest",
-			capabilityName: "metrics_ingest",
-			properties:     crProperties,
-			Configuration: Configuration{
-				SetDnsEntryPoint:     true,
-				SetReadinessPort:     true,
-				SetCommunicationPort: true,
-				CreateService:        true,
-			},
+func dataIngestBase() *capabilityBase {
+	c := capabilityBase{
+		moduleName:     "data-ingest",
+		capabilityName: "metrics_ingest",
+		Configuration: Configuration{
+			SetDnsEntryPoint:     true,
+			SetReadinessPort:     true,
+			SetCommunicationPort: true,
+			CreateService:        true,
 		},
 	}
-	return c
+	return &c
 }

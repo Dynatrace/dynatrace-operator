@@ -183,8 +183,6 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 }
 
 func convertToDeprecatedActiveGateCapability(dst *CapabilityProperties, src *v1alpha1.CapabilityProperties) {
-	dst.Enabled = true
-
 	dst.Replicas = src.Replicas
 	dst.Group = src.Group
 	dst.CustomProperties = &DynaKubeValueSource{

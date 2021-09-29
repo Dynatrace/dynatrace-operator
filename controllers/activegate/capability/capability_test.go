@@ -171,9 +171,16 @@ func TestCalculateStatefulSetName(t *testing.T) {
 
 func TestNewKubeMonCapability(t *testing.T) {
 	props := &dynatracev1beta1.CapabilityProperties{}
+	dk := &dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
+				CapabilityProperties: *props,
+			},
+		},
+	}
 
 	type args struct {
-		crProperties *dynatracev1beta1.CapabilityProperties
+		dynakube *dynatracev1beta1.DynaKube
 	}
 	tests := []struct {
 		name string
@@ -183,7 +190,7 @@ func TestNewKubeMonCapability(t *testing.T) {
 		{
 			name: "",
 			args: args{
-				crProperties: props,
+				dynakube: dk,
 			},
 			want: &KubeMonCapability{
 				capabilityBase: capabilityBase{
@@ -227,7 +234,7 @@ func TestNewKubeMonCapability(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewKubeMonCapability(tt.args.crProperties); !reflect.DeepEqual(got, tt.want) {
+			if got := NewKubeMonCapability(tt.args.dynakube); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewKubeMonCapability() = %v, want %v", got, tt.want)
 			}
 		})
@@ -235,12 +242,18 @@ func TestNewKubeMonCapability(t *testing.T) {
 }
 
 func TestNewRoutingCapability(t *testing.T) {
-	//const tlsSecretName = "tls-secret"
 
 	props := &dynatracev1beta1.CapabilityProperties{}
+	dk := &dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			Routing: dynatracev1beta1.RoutingSpec{
+				CapabilityProperties: *props,
+			},
+		},
+	}
 
 	type args struct {
-		crProperties *dynatracev1beta1.CapabilityProperties
+		dynakube *dynatracev1beta1.DynaKube
 	}
 	tests := []struct {
 		name string
@@ -250,27 +263,7 @@ func TestNewRoutingCapability(t *testing.T) {
 		{
 			name: "default",
 			args: args{
-				crProperties: props,
-			},
-			want: &RoutingCapability{
-				capabilityBase: capabilityBase{
-					moduleName:     "routing",
-					capabilityName: "MSGrouter",
-					properties:     props,
-					Configuration: Configuration{
-						SetDnsEntryPoint:     true,
-						SetReadinessPort:     true,
-						SetCommunicationPort: true,
-						CreateService:        true,
-						ServiceAccountOwner:  "",
-					},
-				},
-			},
-		},
-		{
-			name: "with-tls-secert-set",
-			args: args{
-				crProperties: props,
+				dynakube: dk,
 			},
 			want: &RoutingCapability{
 				capabilityBase: capabilityBase{
@@ -290,49 +283,8 @@ func TestNewRoutingCapability(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewRoutingCapability(tt.args.crProperties); !reflect.DeepEqual(got, tt.want) {
+			if got := NewRoutingCapability(tt.args.dynakube); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewRoutingCapability() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestNewMetricsCapability(t *testing.T) {
-	props := &dynatracev1beta1.CapabilityProperties{}
-
-	type args struct {
-		crProperties *dynatracev1beta1.CapabilityProperties
-	}
-	tests := []struct {
-		name string
-		args args
-		want *DataIngestCapability
-	}{
-		{
-			name: "",
-			args: args{
-				crProperties: props,
-			},
-			want: &DataIngestCapability{
-				capabilityBase: capabilityBase{
-					moduleName:     "data-ingest",
-					capabilityName: "metrics_ingest",
-					properties:     props,
-					Configuration: Configuration{
-						SetDnsEntryPoint:     true,
-						SetReadinessPort:     true,
-						SetCommunicationPort: true,
-						CreateService:        true,
-						ServiceAccountOwner:  "",
-					},
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewDataIngestCapability(tt.args.crProperties); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewDataIngestCapability() = %v, want %v", got, tt.want)
 			}
 		})
 	}

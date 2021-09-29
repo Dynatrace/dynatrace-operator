@@ -29,9 +29,13 @@ const (
 	testNamespace = "test-namespace"
 )
 
-var metricsCapability = capability.NewDataIngestCapability(
-	&dynatracev1beta1.CapabilityProperties{
-		Enabled: true,
+var metricsCapability = capability.NewRoutingCapability(
+	&dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			Routing: dynatracev1beta1.RoutingSpec{
+				Enabled: true,
+			},
+		},
 	},
 )
 
@@ -193,7 +197,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 	type fields struct {
 		Reconciler *rsfs.Reconciler
 		log        logr.Logger
-		Capability *capability.DataIngestCapability
+		Capability *capability.RoutingCapability
 	}
 	tests := []struct {
 		name   string
@@ -212,7 +216,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 				},
 				Capability: metricsCapability,
 			},
-			want: "instanceName-data-ingest",
+			want: "instanceName-routing",
 		},
 		{
 			name: "empty instance name",

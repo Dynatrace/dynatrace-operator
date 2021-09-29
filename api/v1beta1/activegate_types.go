@@ -21,6 +21,23 @@ type ActiveGateSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=30,xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
 	Replicas *int32 `json:"replicas,omitempty"`
 
+	CapabilityProperties `json:",inline"`
+
+	// Optional: the name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
+	// server.p12: certificate+key pair in pkcs12 format
+	// password: passphrase to read server.p12
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TlsSecretName",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	TlsSecretName string `json:"tlsSecretName,omitempty"`
+}
+
+// CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
+// Such as KubernetesMonitoring or Routing
+// It encapsulates common properties
+type CapabilityProperties struct {
+	// Amount of replicas for your DynaKube
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=30,xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
+	Replicas *int32 `json:"replicas,omitempty"`
+
 	// Optional: the ActiveGate container image. Defaults to the latest ActiveGate image provided by the Docker Registry
 	// implementation from the Dynatrace environment set as API URL.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}

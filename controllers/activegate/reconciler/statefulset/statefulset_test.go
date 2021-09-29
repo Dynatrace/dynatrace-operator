@@ -87,8 +87,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 
 	assert.NotEqual(t, corev1.PodSpec{}, templateSpec)
 	assert.NotEmpty(t, templateSpec.Containers)
-	// assert.Equal(t, capabilityProperties.NodeSelector, templateSpec.NodeSelector)
-	assert.Equal(t, capabilityProperties.ServiceAccountName, templateSpec.ServiceAccountName)
+	assert.Equal(t, capabilityProperties.NodeSelector, templateSpec.NodeSelector)
 
 	assert.NotEmpty(t, templateSpec.Affinity)
 	assert.NotEmpty(t, templateSpec.Affinity.NodeAffinity)
@@ -307,7 +306,6 @@ func buildTestInstance() *dynatracev1beta1.DynaKube {
 					NodeSelector: map[string]string{
 						testKey: testValue,
 					},
-					ServiceAccountName: testName,
 					Env: []corev1.EnvVar{
 						{Name: testKey, Value: testValue},
 					},

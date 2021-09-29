@@ -113,9 +113,9 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 
 func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 	return corev1.PodSpec{
-		Containers:     []corev1.Container{buildContainer(stsProperties)},
-		InitContainers: buildInitContainers(stsProperties),
-		// NodeSelector: something,
+		Containers:         []corev1.Container{buildContainer(stsProperties)},
+		InitContainers:     buildInitContainers(stsProperties),
+		NodeSelector:       stsProperties.CapabilityProperties.NodeSelector,
 		ServiceAccountName: determineServiceAccountName(stsProperties),
 		Affinity:           affinity(stsProperties),
 		Tolerations:        stsProperties.Tolerations,
@@ -249,10 +249,7 @@ func buildProxyEnv(proxy *dynatracev1beta1.DynaKubeProxy) corev1.EnvVar {
 }
 
 func determineServiceAccountName(stsProperties *statefulSetProperties) string {
-	if stsProperties.ServiceAccountName == "" {
-		return serviceAccountPrefix + stsProperties.serviceAccountOwner
-	}
-	return stsProperties.ServiceAccountName
+	return serviceAccountPrefix + stsProperties.serviceAccountOwner
 }
 
 func isCustomPropertiesNilOrEmpty(customProperties *dynatracev1beta1.DynaKubeValueSource) bool {

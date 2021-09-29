@@ -58,14 +58,10 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
 				Routing: dynatracev1beta1.RoutingSpec{
-					CapabilityProperties: dynatracev1beta1.CapabilityProperties{
-						Enabled: true,
-					},
+					Enabled: true,
 				},
 				KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
-					CapabilityProperties: dynatracev1beta1.CapabilityProperties{
-						Enabled: true,
-					},
+					Enabled: true,
 				},
 			},
 		})
@@ -109,9 +105,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
 				Routing: dynatracev1beta1.RoutingSpec{
-					CapabilityProperties: dynatracev1beta1.CapabilityProperties{
-						Enabled: true,
-					},
+					Enabled: true,
 				},
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
 					Capabilities: []dynatracev1beta1.ActiveGateCapability{
