@@ -1,0 +1,17 @@
+name: Changelog generation
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run Changelog CI
+        uses: "./actions/changelog-ci"
+        with: 
+          config_file: "./actions/changelog-ci/changelog-ci-config.json"
