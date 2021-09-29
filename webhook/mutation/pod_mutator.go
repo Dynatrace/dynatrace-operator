@@ -282,7 +282,12 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		basePodName = basePodName[:p]
 	}
 
-	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeAM)
+	var deploymentMetadata *deploymentmetadata.DeploymentMetadata
+	if cn := dk.CloudNativeFullstackMode(); cn{
+		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeCN)
+	} else{
+		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeAM)
+	}
 
 	ic := corev1.Container{
 		Name:            dtwebhook.InstallContainerName,

@@ -93,7 +93,7 @@ func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, logger logr.Lo
 			logger:                 logger,
 			clusterId:              clusterId,
 			relatedImage:           os.Getenv(relatedImageEnvVar),
-			deploymentType:         deploymentmetadata.DeploymentTypeHM,
+			deploymentType:         deploymentmetadata.DeploymentTypeCN,
 			majorKubernetesVersion: majorKubernetesVersion,
 			minorKubernetesVersion: minorKubernetesVersion,
 		},
