@@ -131,7 +131,7 @@ func (installAgentCfg *installAgentConfig) installAgent() error {
 		if getVersionsError != nil {
 			return fmt.Errorf("failed to fetch OneAgent version: %w", err)
 		}
-		return fmt.Errorf("failed to fetch OneAgent version: %w, available versions are: %s", err, "\n[ "+strings.Join(availableVersions, ",\n")+" ]\n")
+		return fmt.Errorf("failed to fetch OneAgent version: %w, available versions are: %s", err, "[ "+strings.Join(availableVersions, " , ")+" ]")
 	}
 
 	var fileSize int64
