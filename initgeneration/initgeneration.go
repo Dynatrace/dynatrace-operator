@@ -98,7 +98,6 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 		return false, err
 	}
 	for _, targetNs := range nsList {
-		g.logger.Info("Updating init secret from dynakube for", "namespace", targetNs.Name)
 		if err = kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs.Name, data, corev1.SecretTypeOpaque, g.logger); err != nil {
 			return false, err
 		}
