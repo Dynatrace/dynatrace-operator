@@ -188,7 +188,7 @@ func TestNewKubeMonCapability(t *testing.T) {
 		want *KubeMonCapability
 	}{
 		{
-			name: "",
+			name: "default",
 			args: args{
 				dynakube: dk,
 			},
@@ -285,6 +285,212 @@ func TestNewRoutingCapability(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := NewRoutingCapability(tt.args.dynakube); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewRoutingCapability() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNewMultiCapability(t *testing.T) {
+
+	props := &dynatracev1beta1.CapabilityProperties{}
+
+	type args struct {
+		dynakube *dynatracev1beta1.DynaKube
+	}
+	tests := []struct {
+		name string
+		args args
+		want *MultiCapability
+	}{
+		{
+			name: "empty",
+			args: args{
+				dynakube: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{},
+				},
+			},
+			want: &MultiCapability{
+				capabilityBase: capabilityBase{
+					enabled:    false,
+					moduleName: "multi",
+				},
+			},
+		},
+		{
+			name: "just routing",
+			args: args{
+				dynakube: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						ActiveGate: dynatracev1beta1.ActiveGateSpec{
+							Capabilities: []dynatracev1beta1.ActiveGateCapability{
+								dynatracev1beta1.Routing,
+							},
+						},
+					},
+				},
+			},
+			want: &MultiCapability{
+				capabilityBase: capabilityBase{
+					enabled:        true,
+					moduleName:     "multi",
+					capabilityName: "MSGrouter",
+					properties:     props,
+					Configuration: Configuration{
+						SetDnsEntryPoint:     true,
+						SetReadinessPort:     true,
+						SetCommunicationPort: true,
+						CreateService:        true,
+						ServiceAccountOwner:  "",
+					},
+				},
+			},
+		},
+		{
+			name: "just data-ingest",
+			args: args{
+				dynakube: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						ActiveGate: dynatracev1beta1.ActiveGateSpec{
+							Capabilities: []dynatracev1beta1.ActiveGateCapability{
+								dynatracev1beta1.DataIngest,
+							},
+						},
+					},
+				},
+			},
+			want: &MultiCapability{
+				capabilityBase: capabilityBase{
+					enabled:        true,
+					moduleName:     "multi",
+					capabilityName: "metrics_ingest",
+					properties:     props,
+					Configuration: Configuration{
+						SetDnsEntryPoint:     true,
+						SetReadinessPort:     true,
+						SetCommunicationPort: true,
+						CreateService:        true,
+						ServiceAccountOwner:  "",
+					},
+				},
+			},
+		},
+		{
+			name: "just kubemon",
+			args: args{
+				dynakube: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						ActiveGate: dynatracev1beta1.ActiveGateSpec{
+							Capabilities: []dynatracev1beta1.ActiveGateCapability{
+								dynatracev1beta1.KubeMon,
+							},
+						},
+					},
+				},
+			},
+			want: &MultiCapability{
+				capabilityBase: capabilityBase{
+					enabled:        true,
+					moduleName:     "multi",
+					capabilityName: "kubernetes_monitoring",
+					properties:     props,
+					Configuration: Configuration{
+						ServiceAccountOwner: "kubernetes-monitoring",
+					},
+					initContainersTemplates: []v1.Container{
+						{
+							Name:            initContainerTemplateName,
+							ImagePullPolicy: v1.PullAlways,
+							WorkingDir:      k8scrt2jksWorkingDir,
+							Command:         []string{"/bin/bash"},
+							Args:            []string{"-c", k8scrt2jksPath},
+							VolumeMounts: []v1.VolumeMount{
+								{
+									ReadOnly:  false,
+									Name:      trustStoreVolume,
+									MountPath: activeGateSslPath,
+								},
+							},
+						},
+					},
+					containerVolumeMounts: []v1.VolumeMount{{
+						ReadOnly:  true,
+						Name:      trustStoreVolume,
+						MountPath: activeGateCacertsPath,
+						SubPath:   k8sCertificateFile,
+					}},
+					volumes: []v1.Volume{{
+						Name: trustStoreVolume,
+						VolumeSource: v1.VolumeSource{
+							EmptyDir: &v1.EmptyDirVolumeSource{},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name: "all capability at once",
+			args: args{
+				dynakube: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						ActiveGate: dynatracev1beta1.ActiveGateSpec{
+							Capabilities: []dynatracev1beta1.ActiveGateCapability{
+								dynatracev1beta1.KubeMon,
+								dynatracev1beta1.DataIngest,
+								dynatracev1beta1.Routing,
+							},
+						},
+					},
+				},
+			},
+			want: &MultiCapability{
+				capabilityBase: capabilityBase{
+					enabled:        true,
+					moduleName:     "multi",
+					capabilityName: "kubernetes_monitoring,metrics_ingest,MSGrouter",
+					properties:     props,
+					Configuration: Configuration{
+						SetDnsEntryPoint:     true,
+						SetReadinessPort:     true,
+						SetCommunicationPort: true,
+						CreateService:        true,
+						ServiceAccountOwner:  "kubernetes-monitoring",
+					},
+					initContainersTemplates: []v1.Container{
+						{
+							Name:            initContainerTemplateName,
+							ImagePullPolicy: v1.PullAlways,
+							WorkingDir:      k8scrt2jksWorkingDir,
+							Command:         []string{"/bin/bash"},
+							Args:            []string{"-c", k8scrt2jksPath},
+							VolumeMounts: []v1.VolumeMount{
+								{
+									ReadOnly:  false,
+									Name:      trustStoreVolume,
+									MountPath: activeGateSslPath,
+								},
+							},
+						},
+					},
+					containerVolumeMounts: []v1.VolumeMount{{
+						ReadOnly:  true,
+						Name:      trustStoreVolume,
+						MountPath: activeGateCacertsPath,
+						SubPath:   k8sCertificateFile,
+					}},
+					volumes: []v1.Volume{{
+						Name: trustStoreVolume,
+						VolumeSource: v1.VolumeSource{
+							EmptyDir: &v1.EmptyDirVolumeSource{},
+						},
+					}},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewMultiCapability(tt.args.dynakube); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewMultiCapability() = %v, want %v", got, tt.want)
 			}
 		})
 	}

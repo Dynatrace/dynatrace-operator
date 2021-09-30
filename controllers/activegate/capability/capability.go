@@ -142,13 +142,13 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 	mc := MultiCapability{
 		capabilityBase{
 			moduleName: "multi",
-			properties: &dk.Spec.ActiveGate.CapabilityProperties,
 		},
 	}
 	if dk == nil || !dk.ActiveGateMode() {
 		return &mc
 	}
 	mc.enabled = true
+	mc.properties = &dk.Spec.ActiveGate.CapabilityProperties
 	capabilityNames := []string{}
 	for _, capName := range dk.Spec.ActiveGate.Capabilities {
 		cap := activeGateCapabilities[capName]()
