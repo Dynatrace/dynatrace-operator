@@ -13,4 +13,4 @@ spec:
           name: dynatrace-webhook
           path: /convert
       conversionReviewVersions:
-      - v1
+      - v1beta1
