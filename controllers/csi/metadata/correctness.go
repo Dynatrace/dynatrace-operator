@@ -3,7 +3,7 @@ package metadata
 import (
 	"context"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -52,7 +52,7 @@ func correctTenants(cl client.Client, access Access, log logr.Logger) error {
 	}
 	pruned := []string{}
 	for dynakubeName := range dynakubes {
-		var dynakube dynatracev1alpha1.DynaKube
+		var dynakube dynatracev1beta1.DynaKube
 		if err := cl.Get(context.TODO(), client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
 			continue
 		}

@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
@@ -23,11 +23,11 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironment(t *testing.T) {
 
 	defer e.Stop()
 
-	e.AddOneAgent(oaName, &dynatracev1alpha1.DynaKubeSpec{
+	e.AddOneAgent(oaName, &dynatracev1beta1.DynaKubeSpec{
 		APIURL: DefaultTestAPIURL,
 		Tokens: "token-test",
-		ClassicFullStack: dynatracev1alpha1.FullStackSpec{
-			Enabled: true,
+		OneAgent: dynatracev1beta1.OneAgentSpec{
+			ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
 		},
 	})
 

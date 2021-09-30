@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/go-logr/logr"
@@ -22,10 +21,9 @@ const (
 
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
+	annotationVersion           = "internal.operator.dynatrace.com/version"
 
-	defaultServiceAccountName             = "dynatrace-dynakube-oneagent"
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
-	defaultOneAgentImage                  = "docker.io/dynatrace/oneagent:latest"
 
 	hostRootMount = "host-root"
 
@@ -42,12 +40,14 @@ const (
 	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
 	classicHostIdSource  = "--set-host-id-source=auto"
 
-	ClassicFeature  = "classic"
-	InframonFeature = "inframon"
+	ClassicFeature        = "classic"
+	HostMonitoringFeature = "inframon"
+	CloudNativeFeature    = "cloud-native"
 )
 
-type InfraMonitoring struct {
+type HostMonitoring struct {
 	builderInfo
+	feature string
 }
 
 type ClassicFullStack struct {
@@ -55,8 +55,8 @@ type ClassicFullStack struct {
 }
 
 type builderInfo struct {
-	instance               *v1alpha1.DynaKube
-	fullstackSpec          *v1alpha1.FullStackSpec
+	instance               *dynatracev1beta1.DynaKube
+	hostInjectSpec         *dynatracev1beta1.HostInjectSpec
 	logger                 logr.Logger
 	clusterId              string
 	relatedImage           string
@@ -69,11 +69,11 @@ type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewInfraMonitoring(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
-	return &InfraMonitoring{
+func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
+	return &HostMonitoring{
 		builderInfo{
 			instance:               instance,
-			fullstackSpec:          &instance.Spec.InfraMonitoring.FullStackSpec,
+			hostInjectSpec:         &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
 			logger:                 logger,
 			clusterId:              clusterId,
 			relatedImage:           os.Getenv(relatedImageEnvVar),
@@ -81,14 +81,31 @@ func NewInfraMonitoring(instance *v1alpha1.DynaKube, logger logr.Logger, cluster
 			majorKubernetesVersion: majorKubernetesVersion,
 			minorKubernetesVersion: minorKubernetesVersion,
 		},
+		HostMonitoringFeature,
 	}
 }
 
-func NewClassicFullStack(instance *v1alpha1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
+func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
+	return &HostMonitoring{
+		builderInfo{
+			instance:               instance,
+			hostInjectSpec:         &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
+			logger:                 logger,
+			clusterId:              clusterId,
+			relatedImage:           os.Getenv(relatedImageEnvVar),
+			deploymentType:         deploymentmetadata.DeploymentTypeHM,
+			majorKubernetesVersion: majorKubernetesVersion,
+			minorKubernetesVersion: minorKubernetesVersion,
+		},
+		CloudNativeFeature,
+	}
+}
+
+func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
 	return &ClassicFullStack{
 		builderInfo{
 			instance:               instance,
-			fullstackSpec:          &instance.Spec.ClassicFullStack,
+			hostInjectSpec:         &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
 			logger:                 logger,
 			clusterId:              clusterId,
 			relatedImage:           os.Getenv(relatedImageEnvVar),
@@ -99,16 +116,16 @@ func NewClassicFullStack(instance *v1alpha1.DynaKube, logger logr.Logger, cluste
 	}
 }
 
-func (dsInfo *InfraMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
+func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	result, err := dsInfo.builderInfo.BuildDaemonSet()
 	if err != nil {
 		return nil, err
 	}
 
-	result.Name = dsInfo.instance.Name + fmt.Sprintf("-%s", InframonFeature)
-	result.Labels[labelFeature] = InframonFeature
-	result.Spec.Selector.MatchLabels[labelFeature] = InframonFeature
-	result.Spec.Template.Labels[labelFeature] = InframonFeature
+	result.Name = dsInfo.instance.Name + fmt.Sprintf("-%s", dsInfo.feature)
+	result.Labels[labelFeature] = dsInfo.feature
+	result.Spec.Selector.MatchLabels[labelFeature] = dsInfo.feature
+	result.Spec.Template.Labels[labelFeature] = dsInfo.feature
 
 	if len(result.Spec.Template.Spec.Containers) > 0 {
 		appendHostIdArgument(result, inframonHostIdSource)
@@ -140,10 +157,10 @@ func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	return result, nil
 }
 
-func (dsInfo *InfraMonitoring) setSecurityContextOptions(daemonset *appsv1.DaemonSet) {
+func (dsInfo *HostMonitoring) setSecurityContextOptions(daemonset *appsv1.DaemonSet) {
 	securityContext := daemonset.Spec.Template.Spec.Containers[0].SecurityContext
 
-	if dsInfo.instance.Spec.InfraMonitoring.ReadOnly.Enabled {
+	if dsInfo.instance.ReadOnly() {
 		securityContext.RunAsUser = pointer.Int64Ptr(defaultUserId)
 		securityContext.RunAsGroup = pointer.Int64Ptr(defaultGroupId)
 	}
@@ -156,14 +173,11 @@ func appendHostIdArgument(result *appsv1.DaemonSet, source string) {
 func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	instance := dsInfo.instance
 	podSpec := dsInfo.podSpec()
-	labels := kubeobjects.MergeLabels(dsInfo.buildLabels(), dsInfo.fullstackSpec.Labels)
+	labels := kubeobjects.MergeLabels(dsInfo.buildLabels(), dsInfo.hostInjectSpec.Labels)
 	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
 	annotations := map[string]string{
-		statefulset.AnnotationVersion: instance.Status.OneAgent.Version,
-	}
-
-	if dsInfo.unprivileged() {
-		annotations[annotationUnprivileged] = annotationUnprivilegedValue
+		annotationVersion:      instance.Status.OneAgent.Version,
+		annotationUnprivileged: annotationUnprivilegedValue,
 	}
 
 	result := &appsv1.DaemonSet{
@@ -196,10 +210,8 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 }
 
 func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
-	serviceAccount := dsInfo.serviceAccountName()
 	resources := dsInfo.resources()
 	dnsPolicy := dsInfo.dnsPolicy()
-	securityContext := dsInfo.securityContext()
 	arguments := dsInfo.arguments()
 	environmentVariables := dsInfo.environmentVariables()
 	volumeMounts := dsInfo.volumeMounts()
@@ -228,25 +240,21 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 				TimeoutSeconds:      1,
 			},
 			Resources:       resources,
-			SecurityContext: securityContext,
+			SecurityContext: unprivilegedSecurityContext(),
 			VolumeMounts:    volumeMounts,
 		}},
 		ImagePullSecrets:   imagePullSecrets,
 		HostNetwork:        true,
 		HostPID:            true,
 		HostIPC:            false,
-		NodeSelector:       dsInfo.fullstackSpec.NodeSelector,
-		PriorityClassName:  dsInfo.fullstackSpec.PriorityClassName,
-		ServiceAccountName: serviceAccount,
-		Tolerations:        dsInfo.fullstackSpec.Tolerations,
+		NodeSelector:       dsInfo.hostInjectSpec.NodeSelector,
+		PriorityClassName:  dsInfo.hostInjectSpec.PriorityClassName,
+		ServiceAccountName: defaultUnprivilegedServiceAccountName,
+		Tolerations:        dsInfo.hostInjectSpec.Tolerations,
 		DNSPolicy:          dnsPolicy,
 		Volumes:            volumes,
 		Affinity:           affinity,
 	}
-}
-
-func (dsInfo *builderInfo) useImmutableImage() bool {
-	return dsInfo.instance.Status.OneAgent.UseImmutableImage
 }
 
 func (dsInfo *builderInfo) buildLabels() map[string]string {
@@ -256,21 +264,8 @@ func (dsInfo *builderInfo) buildLabels() map[string]string {
 	}
 }
 
-func (dsInfo *builderInfo) serviceAccountName() string {
-	if dsInfo.fullstackSpec.ServiceAccountName != "" {
-		return dsInfo.fullstackSpec.ServiceAccountName
-	} else if dsInfo.unprivileged() {
-		return defaultUnprivilegedServiceAccountName
-	}
-	return defaultServiceAccountName
-}
-
-func (dsInfo *builderInfo) unprivileged() bool {
-	return dsInfo.fullstackSpec.UseUnprivilegedMode == nil || (dsInfo.fullstackSpec.UseUnprivilegedMode != nil && *dsInfo.fullstackSpec.UseUnprivilegedMode)
-}
-
 func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {
-	resources := dsInfo.fullstackSpec.Resources
+	resources := dsInfo.hostInjectSpec.OneAgentResources
 	if resources.Requests == nil {
 		resources.Requests = corev1.ResourceList{}
 	}
@@ -282,17 +277,10 @@ func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {
 }
 
 func (dsInfo *builderInfo) dnsPolicy() corev1.DNSPolicy {
-	if dsInfo.fullstackSpec.DNSPolicy != "" {
-		return dsInfo.fullstackSpec.DNSPolicy
+	if dsInfo.hostInjectSpec.DNSPolicy != "" {
+		return dsInfo.hostInjectSpec.DNSPolicy
 	}
 	return corev1.DNSClusterFirstWithHostNet
-}
-
-func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
-	if dsInfo.unprivileged() {
-		return unprivilegedSecurityContext()
-	}
-	return privilegedSecurityContext()
 }
 
 func (dsInfo *builderInfo) volumeMounts() []corev1.VolumeMount {
@@ -304,37 +292,20 @@ func (dsInfo *builderInfo) volumes() []corev1.Volume {
 }
 
 func (dsInfo *builderInfo) image() string {
-	if dsInfo.instance.Spec.OneAgent.Image != "" {
-		return dsInfo.instance.Spec.OneAgent.Image
-	}
-
-	if dsInfo.useImmutableImage() {
-		return dsInfo.instance.ImmutableOneAgentImage()
-	} else if dsInfo.relatedImage != "" {
+	if dsInfo.relatedImage != "" {
 		return dsInfo.relatedImage
 	}
-
-	return defaultOneAgentImage
+	return dsInfo.instance.ImmutableOneAgentImage()
 }
 
 func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
 	pullSecretName := dsInfo.instance.PullSecret()
 	pullSecrets := make([]corev1.LocalObjectReference, 0)
 
-	if !dsInfo.useImmutableImage() {
-		return pullSecrets
-	}
-
 	pullSecrets = append(pullSecrets, corev1.LocalObjectReference{
 		Name: pullSecretName,
 	})
 	return pullSecrets
-}
-
-func privilegedSecurityContext() *corev1.SecurityContext {
-	return &corev1.SecurityContext{
-		Privileged: pointer.BoolPtr(true),
-	}
 }
 
 func unprivilegedSecurityContext() *corev1.SecurityContext {

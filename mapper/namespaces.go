@@ -3,7 +3,7 @@ package mapper
 import (
 	"context"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -37,7 +37,7 @@ func (nm NamespaceMapper) MapFromNamespace() (bool, error) {
 }
 
 func (nm NamespaceMapper) updateNamespace() (bool, error) {
-	dkList := &dynatracev1alpha1.DynaKubeList{}
+	dkList := &dynatracev1beta1.DynaKubeList{}
 	err := nm.client.List(nm.ctx, dkList)
 
 	if err != nil {

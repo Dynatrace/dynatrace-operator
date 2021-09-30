@@ -1,0 +1,24 @@
+name: Changelog CI
+description: Changelog CI is a GitHub Action that generates the changelog out of the difference to the last released version, and commits it automatically to the pull request, which matches the regex specified in the config file.
+branding:
+  icon: 'clock'
+  color: 'blue'
+inputs:
+  changelog_filename:
+    description: 'Name of the changelog file (can also be different)'
+    required: false
+    default: 'CHANGELOG.md'
+  config_file:
+    description: 'Location of the config JSON file'
+    required: false
+  committer_username:
+    description: 'Username of that user who will commit to the pull request'
+    required: false
+    default: 'github-actions[bot]'
+  committer_email:
+    description: 'Email Address of that Bot who will commit the changelog (default github bot)'
+    required: false
+    default: '41898282+github-actions[bot]@users.noreply.github.com'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'

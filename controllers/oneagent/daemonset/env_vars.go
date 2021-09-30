@@ -1,11 +1,8 @@
 package daemonset
 
 import (
-	"fmt"
 	"sort"
-	"strconv"
 
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -14,9 +11,6 @@ const (
 	dtNodeName  = "DT_K8S_NODE_NAME"
 	dtClusterId = "DT_K8S_CLUSTER_ID"
 
-	oneagentDownloadToken             = "ONEAGENT_INSTALLER_DOWNLOAD_TOKEN"
-	oneagentInstallScript             = "ONEAGENT_INSTALLER_SCRIPT_URL"
-	oneagentSkipCertCheck             = "ONEAGENT_INSTALLER_SKIP_CERT_CHECK"
 	oneagentDisableContainerInjection = "ONEAGENT_DISABLE_CONTAINER_INJECTION"
 	oneagentReadOnlyMode              = "ONEAGENT_READ_ONLY_MODE"
 
@@ -24,21 +18,10 @@ const (
 )
 
 func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
-	environmentVariables := dsInfo.fullstackSpec.Env
+	environmentVariables := dsInfo.hostInjectSpec.Env
 	envVarMap := envVarsToMap(environmentVariables)
 	envVarMap = setDefaultValueSource(envVarMap, dtNodeName, &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}})
 	envVarMap = setDefaultValue(envVarMap, dtClusterId, dsInfo.clusterId)
-
-	if !dsInfo.useImmutableImage() {
-		envVarMap = setDefaultValueSource(envVarMap, oneagentDownloadToken, &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{Name: dsInfo.instance.Tokens()},
-				Key:                  dtclient.DynatracePaasToken,
-			},
-		})
-		envVarMap = setDefaultValue(envVarMap, oneagentInstallScript, dsInfo.installerUrl())
-		envVarMap = setDefaultValue(envVarMap, oneagentSkipCertCheck, strconv.FormatBool(dsInfo.instance.Spec.SkipCertCheck))
-	}
 
 	if dsInfo.hasProxy() {
 		envVarMap = dsInfo.setDefaultProxy(envVarMap)
@@ -47,12 +30,11 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 	return mapToArray(envVarMap)
 }
 
-func (dsInfo *InfraMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
+func (dsInfo *HostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
 	envVars := daemonset.Spec.Template.Spec.Containers[0].Env
 	envVarMap := envVarsToMap(envVars)
 	envVarMap = setDefaultValue(envVarMap, oneagentDisableContainerInjection, "true")
-
-	if dsInfo.instance.Spec.InfraMonitoring.ReadOnly.Enabled {
+	if dsInfo.instance.ReadOnly() {
 		envVarMap = setDefaultValue(envVarMap, oneagentReadOnlyMode, "true")
 	}
 
@@ -90,10 +72,6 @@ func (dsInfo *builderInfo) setDefaultProxy(envVarMap map[string]corev1.EnvVar) m
 		setDefaultValue(envVarMap, proxy, dsInfo.instance.Spec.Proxy.Value)
 	}
 	return envVarMap
-}
-
-func (dsInfo *builderInfo) installerUrl() string {
-	return fmt.Sprintf("%s/v1/deployment/installer/agent/unix/default/latest?arch=x86&flavor=default", dsInfo.instance.Spec.APIURL)
 }
 
 func setDefaultValue(envVarMap map[string]corev1.EnvVar, name string, value string) map[string]corev1.EnvVar {

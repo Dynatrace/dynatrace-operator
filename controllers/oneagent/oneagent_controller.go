@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
@@ -38,8 +38,7 @@ func NewOneAgentReconciler(
 	scheme *runtime.Scheme,
 	config *rest.Config,
 	logger logr.Logger,
-	instance *dynatracev1alpha1.DynaKube,
-	fullStack *dynatracev1alpha1.FullStackSpec,
+	instance *dynatracev1beta1.DynaKube,
 	feature string) *ReconcileOneAgent {
 	return &ReconcileOneAgent{
 		client:          client,
@@ -47,7 +46,6 @@ func NewOneAgentReconciler(
 		scheme:          scheme,
 		logger:          logger,
 		instance:        instance,
-		fullStack:       fullStack,
 		feature:         feature,
 		config:          config,
 		versionProvider: kubesystem.NewVersionProvider(config),
@@ -61,8 +59,7 @@ type ReconcileOneAgent struct {
 	apiReader       client.Reader
 	scheme          *runtime.Scheme
 	logger          logr.Logger
-	instance        *dynatracev1alpha1.DynaKube
-	fullStack       *dynatracev1alpha1.FullStackSpec
+	instance        *dynatracev1beta1.DynaKube
 	feature         string
 	config          *rest.Config
 	versionProvider kubesystem.VersionProvider
@@ -75,7 +72,6 @@ type ReconcileOneAgent struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.DynakubeState) (bool, error) {
 	r.logger.Info("Reconciling OneAgent")
-	rec.Update(setUseImmutableImageStatus(r.instance, r.fullStack), 5*time.Minute, "UseImmutableImage changed")
 
 	upd, err := r.reconcileRollout(rec)
 	if err != nil {
@@ -116,7 +112,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.Dyna
 //
 // Return an error in the following conditions
 // - APIURL empty
-func validate(cr *dynatracev1alpha1.DynaKube) error {
+func validate(cr *dynatracev1beta1.DynaKube) error {
 	var msg []string
 	if cr.Spec.APIURL == "" {
 		msg = append(msg, ".spec.apiUrl is missing")
@@ -168,7 +164,7 @@ func (r *ReconcileOneAgent) getDesiredDaemonSet(dkState *controllers.DynakubeSta
 	return dsDesired, nil
 }
 
-func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1alpha1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
+func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1beta1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
 		client.InNamespace((*instance).GetNamespace()),
@@ -189,8 +185,10 @@ func (r *ReconcileOneAgent) newDaemonSetForCR(dkState *controllers.DynakubeState
 
 	if r.feature == daemonset.ClassicFeature {
 		ds, err = daemonset.NewClassicFullStack(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
-	} else {
-		ds, err = daemonset.NewInfraMonitoring(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
+	} else if r.feature == daemonset.HostMonitoringFeature {
+		ds, err = daemonset.NewHostMonitoring(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
+	} else if r.feature == daemonset.CloudNativeFeature {
+		ds, err = daemonset.NewCloudNativeFullStack(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
 	}
 	if err != nil {
 		return nil, err
@@ -221,7 +219,7 @@ func (r *ReconcileOneAgent) getVersionsFromVersionProvider() (string, string, er
 	return "", "", nil
 }
 
-func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logger logr.Logger, instance *dynatracev1alpha1.DynaKube) (bool, error) {
+func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logger logr.Logger, instance *dynatracev1beta1.DynaKube) (bool, error) {
 	pods, listOpts, err := r.getPods(ctx, instance, r.feature)
 	if err != nil {
 		handlePodListError(logger, err, listOpts)
@@ -242,11 +240,11 @@ func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logge
 	return false, err
 }
 
-func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1alpha1.OneAgentInstance, error) {
-	instanceStatuses := make(map[string]dynatracev1alpha1.OneAgentInstance)
+func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1beta1.OneAgentInstance, error) {
+	instanceStatuses := make(map[string]dynatracev1beta1.OneAgentInstance)
 
 	for _, pod := range pods {
-		instanceStatuses[pod.Spec.NodeName] = dynatracev1alpha1.OneAgentInstance{
+		instanceStatuses[pod.Spec.NodeName] = dynatracev1beta1.OneAgentInstance{
 			PodName:   pod.Name,
 			IPAddress: pod.Status.HostIP,
 		}
@@ -255,18 +253,7 @@ func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1alpha1.OneAge
 	return instanceStatuses, nil
 }
 
-// SetUseImmutableImageStatus updates the status' UseImmutableImage field to indicate whether the Operator should use
-// immutable images or not.
-func setUseImmutableImageStatus(instance *dynatracev1alpha1.DynaKube, fs *dynatracev1alpha1.FullStackSpec) bool {
-	if fs.UseImmutableImage == instance.Status.OneAgent.UseImmutableImage {
-		return false
-	}
-
-	instance.Status.OneAgent.UseImmutableImage = fs.UseImmutableImage
-	return true
-}
-
-func (r *ReconcileOneAgent) determineDynaKubePhase(instance *dynatracev1alpha1.DynaKube) (bool, error) {
+func (r *ReconcileOneAgent) determineDynaKubePhase(instance *dynatracev1beta1.DynaKube) (bool, error) {
 	var phaseChanged bool
 	dsActual := &appsv1.DaemonSet{}
 	instanceName := fmt.Sprintf("%s-%s", instance.Name, r.feature)
@@ -277,17 +264,17 @@ func (r *ReconcileOneAgent) determineDynaKubePhase(instance *dynatracev1alpha1.D
 	}
 
 	if err != nil {
-		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Error
-		instance.Status.Phase = dynatracev1alpha1.Error
+		phaseChanged = instance.Status.Phase != dynatracev1beta1.Error
+		instance.Status.Phase = dynatracev1beta1.Error
 		return phaseChanged, err
 	}
 
 	if dsActual.Status.NumberReady == dsActual.Status.CurrentNumberScheduled {
-		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Running
-		instance.Status.Phase = dynatracev1alpha1.Running
+		phaseChanged = instance.Status.Phase != dynatracev1beta1.Running
+		instance.Status.Phase = dynatracev1beta1.Running
 	} else {
-		phaseChanged = instance.Status.Phase != dynatracev1alpha1.Deploying
-		instance.Status.Phase = dynatracev1alpha1.Deploying
+		phaseChanged = instance.Status.Phase != dynatracev1beta1.Deploying
+		instance.Status.Phase = dynatracev1beta1.Deploying
 	}
 
 	return phaseChanged, nil

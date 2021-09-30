@@ -3,7 +3,7 @@ package capability
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +18,7 @@ const (
 )
 
 func TestCreateService(t *testing.T) {
-	instance := &v1alpha1.DynaKube{
+	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: v1.ObjectMeta{Namespace: testNamespace, Name: testName},
 	}
 	service := createService(instance, testFeature)

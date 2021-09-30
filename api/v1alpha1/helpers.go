@@ -1,12 +1,9 @@
 /*
 Copyright 2021 Dynatrace LLC.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,9 +16,6 @@ package v1alpha1
 import (
 	"fmt"
 	"strings"
-
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	v1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -32,18 +26,6 @@ const (
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
 func (dk *DynaKube) NeedsActiveGate() bool {
 	return dk.Spec.KubernetesMonitoringSpec.Enabled || dk.Spec.RoutingSpec.Enabled
-}
-
-// NeedsOneAgent returns true when a feature requires OneAgent instances.
-func (dk *DynaKube) NeedsOneAgent() bool {
-	return dk.Spec.ClassicFullStack.Enabled || dk.Spec.InfraMonitoring.Enabled
-}
-
-// NeedsImmutableOneAgent returns true when a feature requires OneAgent instances running the immutable image.
-func (dk *DynaKube) NeedsImmutableOneAgent() bool {
-	cfs := &dk.Spec.ClassicFullStack
-	im := &dk.Spec.InfraMonitoring
-	return (cfs.Enabled && cfs.UseImmutableImage) || (im.Enabled && im.UseImmutableImage)
 }
 
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
@@ -97,40 +79,4 @@ func buildImageRegistry(apiURL string) string {
 	registry = strings.TrimPrefix(registry, "http://")
 	registry = strings.TrimSuffix(registry, "/api")
 	return registry
-}
-
-// Tokens returns the name of the Secret to be used for tokens.
-func (dk *DynaKube) Tokens() string {
-	if tkns := dk.Spec.Tokens; tkns != "" {
-		return tkns
-	}
-	return dk.Name
-}
-
-func (dk *DynaKube) CommunicationHostForClient() dtclient.CommunicationHost {
-	return dtclient.CommunicationHost(dk.Status.CommunicationHostForClient)
-}
-
-func (dk *DynaKube) ConnectionInfo() dtclient.ConnectionInfo {
-	return dtclient.ConnectionInfo{
-		CommunicationHosts: dk.CommunicationHosts(),
-		TenantUUID:         dk.Status.ConnectionInfo.TenantUUID,
-	}
-}
-
-func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
-	var communicationHosts []dtclient.CommunicationHost
-	for _, communicationHost := range dk.Status.ConnectionInfo.CommunicationHosts {
-		communicationHosts = append(communicationHosts, dtclient.CommunicationHost(communicationHost))
-	}
-	return communicationHosts
-}
-
-func (readOnlySpec *ReadOnlySpec) GetInstallationVolume() v1.VolumeSource {
-	if readOnlySpec.InstallationVolume == nil {
-		return v1.VolumeSource{
-			EmptyDir: &v1.EmptyDirVolumeSource{},
-		}
-	}
-	return *readOnlySpec.InstallationVolume
 }

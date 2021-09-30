@@ -4,14 +4,13 @@ import (
 	"context"
 	"time"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/go-logr/logr"
 	"github.com/spf13/afero"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,7 +44,7 @@ func NewReconciler(client client.Client, opts dtcsi.CSIOptions, db metadata.Acce
 
 func (gc *CSIGarbageCollector) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1alpha1.DynaKube{}).
+		For(&dynatracev1beta1.DynaKube{}).
 		Complete(gc)
 }
 
@@ -55,7 +54,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	gc.logger.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
 	reconcileResult := reconcile.Result{RequeueAfter: 60 * time.Minute}
 
-	var dk dynatracev1alpha1.DynaKube
+	var dk dynatracev1beta1.DynaKube
 	if err := gc.client.Get(ctx, request.NamespacedName, &dk); err != nil {
 		if k8serrors.IsNotFound(err) {
 			gc.logger.Info("given DynaKube object not found")
@@ -66,13 +65,13 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return reconcileResult, nil
 	}
 
-	var tokens corev1.Secret
-	if err := gc.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
-		gc.logger.Error(err, "failed to query tokens")
+	dtp, err := dynakube.NewDynatraceClientProperties(ctx, gc.client, dk)
+	if err != nil {
+		gc.logger.Error(err, err.Error())
 		return reconcileResult, nil
 	}
 
-	dtc, err := gc.dtcBuildFunc(gc.client, &dk, &tokens)
+	dtc, err := gc.dtcBuildFunc(*dtp)
 	if err != nil {
 		gc.logger.Error(err, "failed to create Dynatrace client")
 		return reconcileResult, nil

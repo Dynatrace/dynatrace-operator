@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
@@ -29,7 +29,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -78,7 +77,7 @@ func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Acces
 
 func (r *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1alpha1.DynaKube{}).
+		For(&dynatracev1beta1.DynaKube{}).
 		Complete(r)
 }
 
@@ -99,8 +98,8 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		}
 		return reconcile.Result{}, err
 	}
-	if !hasCodeModulesWithCSIVolumeEnabled(dk) {
-		rlog.Info("Code modules or csi driver disabled")
+	if !dk.NeedsCSI() {
+		rlog.Info("CSI driver disabled")
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
@@ -161,13 +160,12 @@ func hasTenantChanged(old, new metadata.Tenant) bool {
 	return old != new
 }
 
-func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1alpha1.DynaKube) (dtclient.Client, error) {
-	var tkns corev1.Secret
-	if err := r.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tkns); err != nil {
-		return nil, fmt.Errorf("failed to query tokens: %w", err)
+func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
+	dtp, err := dynakube.NewDynatraceClientProperties(ctx, r.client, *dk)
+	if err != nil {
+		return nil, err
 	}
-
-	dtc, err := r.dtcBuildFunc(r.client, dk, &tkns)
+	dtc, err := r.dtcBuildFunc(*dtp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Dynatrace client: %w", err)
 	}
@@ -175,8 +173,8 @@ func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1alpha1
 	return dtc, nil
 }
 
-func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1alpha1.DynaKube, error) {
-	var dk dynatracev1alpha1.DynaKube
+func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1beta1.DynaKube, error) {
+	var dk dynatracev1beta1.DynaKube
 	err := r.client.Get(ctx, name, &dk)
 
 	return &dk, err
@@ -188,13 +186,4 @@ func (r *OneAgentProvisioner) createCSIDirectories(envDir string) error {
 	}
 
 	return nil
-}
-
-func hasCodeModulesWithCSIVolumeEnabled(dk *dynatracev1alpha1.DynaKube) bool {
-	return dk.Spec.CodeModules.Enabled &&
-		(dk.Spec.CodeModules.Volume == corev1.VolumeSource{} || isDynatraceOneAgentCSIVolumeSource(&dk.Spec.CodeModules.Volume))
-}
-
-func isDynatraceOneAgentCSIVolumeSource(volume *corev1.VolumeSource) bool {
-	return volume.CSI != nil && volume.CSI.Driver == dtcsi.DriverName
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
@@ -38,7 +38,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 			},
 		}).
 		Build()
-	instance := &dynatracev1alpha1.DynaKube{
+	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 		}}
@@ -46,10 +46,10 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		return dtversion.ImageVersion{}, nil
 	}
 
-	capability.NewRoutingCapability(&instance.Spec.RoutingSpec.CapabilityProperties, nil)
+	capability.NewRoutingCapability(&instance.Spec.Routing.CapabilityProperties)
 
 	r := NewReconciler(clt, clt, scheme.Scheme, nil, log, instance, imgVerProvider,
-		capability.NewRoutingCapability(&instance.Spec.RoutingSpec.CapabilityProperties, nil))
+		capability.NewRoutingCapability(&instance.Spec.Routing.CapabilityProperties))
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.scheme)
@@ -63,7 +63,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 func TestReconcile(t *testing.T) {
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		r.Instance.Spec.RoutingSpec.CustomProperties = &dynatracev1alpha1.DynaKubeValueSource{
+		r.Instance.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
 			Value: testValue,
 		}
 		_, err := r.Reconcile()
@@ -103,7 +103,7 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
 
-		r.Instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
+		r.Instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		update, err = r.Reconcile()
 
 		assert.True(t, update)
@@ -181,7 +181,7 @@ func TestReconcile_UpdateStatefulSetIfOutdated(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, updated)
 
-	r.Instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
+	r.Instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 	desiredSts, err = r.buildDesiredStatefulSet()
 	require.NoError(t, err)
 
@@ -209,7 +209,7 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, deleted)
 
-	r.Instance.Spec.Proxy = &dynatracev1alpha1.DynaKubeProxy{Value: testValue}
+	r.Instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 	desiredSts, err = r.buildDesiredStatefulSet()
 	require.NoError(t, err)
 	correctLabels := desiredSts.Labels
@@ -229,12 +229,12 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, hash)
 
-	r.Instance.Spec.RoutingSpec.CustomProperties = &dynatracev1alpha1.DynaKubeValueSource{Value: testValue}
+	r.Instance.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{Value: testValue}
 	hash, err = r.calculateCustomPropertyHash()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
-	r.Instance.Spec.RoutingSpec.CustomProperties = &dynatracev1alpha1.DynaKubeValueSource{ValueFrom: testName}
+	r.Instance.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{ValueFrom: testName}
 	hash, err = r.calculateCustomPropertyHash()
 	assert.Error(t, err)
 	assert.Empty(t, hash)

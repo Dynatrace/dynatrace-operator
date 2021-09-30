@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
@@ -64,7 +64,7 @@ func NewReconciler(mgr manager.Manager) *ReconcileDynaKube {
 
 func (r *ReconcileDynaKube) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1alpha1.DynaKube{}).
+		For(&dynatracev1beta1.DynaKube{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&appsv1.DaemonSet{}).
 		Complete(r)
@@ -100,7 +100,7 @@ type ReconcileDynaKube struct {
 	operatorNamespace string
 }
 
-type DynatraceClientFunc func(rtc client.Client, instance *dynatracev1alpha1.DynaKube, secret *corev1.Secret) (dtclient.Client, error)
+type DynatraceClientFunc func(properties DynatraceClientProperties) (dtclient.Client, error)
 
 // Reconcile reads that state of the cluster for a DynaKube object and makes changes based on the state read
 // and what is in the DynaKube.Spec
@@ -113,7 +113,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	reqLogger.Info("Reconciling DynaKube")
 
 	// Fetch the DynaKube instance
-	instance := &dynatracev1alpha1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: request.NamespacedName.Name}}
+	instance := &dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: request.NamespacedName.Name}}
 	dkMapper := mapper.NewDynakubeMapper(ctx, r.client, r.apiReader, r.operatorNamespace, instance)
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
@@ -220,39 +220,53 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 		return
 	}
 
-	if dkState.Instance.Spec.InfraMonitoring.Enabled {
+	if dkState.Instance.HostMonitoringMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, &dkState.Instance.Spec.InfraMonitoring.FullStackSpec, daemonset.InframonFeature,
+			r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, daemonset.HostMonitoringFeature,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
 			return
 		}
 	} else {
-		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-inframon", Namespace: dkState.Instance.Namespace}}
+		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.HostMonitoringFeature, Namespace: dkState.Instance.Namespace}}
 		if err := r.ensureDeleted(&ds); dkState.Error(err) {
 			return
 		}
 	}
 
-	if dkState.Instance.Spec.ClassicFullStack.Enabled {
+	if dkState.Instance.CloudNativeFullstackMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, &dkState.Instance.Spec.ClassicFullStack, daemonset.ClassicFeature,
+			r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, daemonset.CloudNativeFeature,
+		).Reconcile(ctx, dkState)
+		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "cloud native infra monitoring reconciled") {
+			return
+		}
+	} else {
+		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.CloudNativeFeature, Namespace: dkState.Instance.Namespace}}
+		if err := r.ensureDeleted(&ds); dkState.Error(err) {
+			return
+		}
+	}
+
+	if dkState.Instance.ClassicFullStackMode() {
+		upd, err = oneagent.NewOneAgentReconciler(
+			r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, daemonset.ClassicFeature,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "classic fullstack reconciled") {
 			return
 		}
 	} else {
-		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-classic", Namespace: dkState.Instance.Namespace}}
+		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.ClassicFeature, Namespace: dkState.Instance.Namespace}}
 		if err := r.ensureDeleted(&ds); dkState.Error(err) {
 			return
 		}
 	}
 
-	if dkState.Instance.Spec.CodeModules.Enabled {
+	if dkState.Instance.NeedAppInjection() {
 		if err := dkMapper.MapFromDynakube(); err != nil {
 			dkState.Log.Error(err, "update of a map of namespaces failed")
 		}
-		if dkState.Instance.Spec.InfraMonitoring.Enabled {
+		if dkState.Instance.NeedsOneAgent() {
 			upd, err := initgeneration.NewInitGenerator(r.client, r.apiReader, dkState.Instance.Namespace, r.logger).GenerateForDynakube(ctx, dkState.Instance)
 			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "new init script created") {
 				return
@@ -270,9 +284,9 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 
 func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers.DynakubeState) bool {
 	var caps = []capability.Capability{
-		capability.NewKubeMonCapability(&dkState.Instance.Spec.KubernetesMonitoringSpec.CapabilityProperties, &dkState.Instance.Spec.ActiveGate),
-		capability.NewRoutingCapability(&dkState.Instance.Spec.RoutingSpec.CapabilityProperties, &dkState.Instance.Spec.ActiveGate),
-		capability.NewDataIngestCapability(&dkState.Instance.Spec.DataIngestSpec.CapabilityProperties, &dkState.Instance.Spec.ActiveGate),
+		capability.NewKubeMonCapability(&dkState.Instance.Spec.KubernetesMonitoring.CapabilityProperties),
+		capability.NewRoutingCapability(&dkState.Instance.Spec.Routing.CapabilityProperties),
+		// capability.NewDataIngestCapability(&dkState.Instance.Spec.DataIngestSpec.CapabilityProperties, &dkState.Instance.Spec.ActiveGate),
 	}
 
 	for _, c := range caps {
@@ -311,13 +325,13 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers
 	return true
 }
 
-func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatracev1alpha1.DynaKube) (*corev1.Secret, error) {
+func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatracev1beta1.DynaKube) (*corev1.Secret, error) {
 	var secret corev1.Secret
 	err := r.client.Get(ctx, client.ObjectKey{Name: instance.Tokens(), Namespace: instance.Namespace}, &secret)
 	return &secret, errors.WithStack(err)
 }
 
-func (r *ReconcileDynaKube) updateCR(ctx context.Context, log logr.Logger, instance *dynatracev1alpha1.DynaKube) error {
+func (r *ReconcileDynaKube) updateCR(ctx context.Context, log logr.Logger, instance *dynatracev1beta1.DynaKube) error {
 	instance.Status.UpdatedTimestamp = metav1.Now()
 	err := r.client.Status().Update(ctx, instance)
 	if err != nil && k8serrors.IsConflict(err) {
