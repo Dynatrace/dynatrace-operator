@@ -153,9 +153,7 @@ func TestInfraMon_SecurityContext(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{
-						ReadOnly: true,
-					},
+					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
 				},
 			},
 		}
@@ -169,9 +167,5 @@ func TestInfraMon_SecurityContext(t *testing.T) {
 
 		assert.NotNil(t, securityContextConstraints)
 		assert.Nil(t, securityContextConstraints.RunAsNonRoot)
-		assert.NotNil(t, securityContextConstraints.RunAsUser)
-		assert.NotNil(t, securityContextConstraints.RunAsGroup)
-		assert.Equal(t, int64(1001), *securityContextConstraints.RunAsUser)
-		assert.Equal(t, int64(1001), *securityContextConstraints.RunAsGroup)
 	})
 }

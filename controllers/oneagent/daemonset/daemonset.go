@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
 )
 
 const (
@@ -129,10 +128,7 @@ func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 
 	if len(result.Spec.Template.Spec.Containers) > 0 {
 		appendHostIdArgument(result, inframonHostIdSource)
-		dsInfo.setSecurityContextOptions(result)
 		dsInfo.appendInfraMonEnvVars(result)
-		dsInfo.appendReadOnlyVolume(result)
-		dsInfo.appendReadOnlyVolumeMount(result)
 		dsInfo.setRootMountReadability(result)
 	}
 
@@ -155,15 +151,6 @@ func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	}
 
 	return result, nil
-}
-
-func (dsInfo *HostMonitoring) setSecurityContextOptions(daemonset *appsv1.DaemonSet) {
-	securityContext := daemonset.Spec.Template.Spec.Containers[0].SecurityContext
-
-	if dsInfo.instance.ReadOnly() {
-		securityContext.RunAsUser = pointer.Int64Ptr(defaultUserId)
-		securityContext.RunAsGroup = pointer.Int64Ptr(defaultGroupId)
-	}
 }
 
 func appendHostIdArgument(result *appsv1.DaemonSet, source string) {

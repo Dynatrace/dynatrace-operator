@@ -39,11 +39,6 @@ type CloudNativeFullStackSpec struct {
 
 	HostInjectSpec   `json:",inline"`
 	AppInjectionSpec `json:",inline"`
-
-	// Optional: Enable support for read only host-filesystems.
-	// Defaults to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ReadOnly support for read-only host-filesystem",order=29,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	ReadOnly bool `json:"readOnly,omitempty"`
 }
 
 type ClassicFullStackSpec struct {
@@ -74,11 +69,6 @@ type HostMonitoringSpec struct {
 	Version string `json:"version,omitempty"`
 
 	HostInjectSpec `json:",inline"`
-
-	// Optional: Enable support for read only host-filesystems.
-	// Defaults to false
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ReadOnly support for read-only host-filesystem",order=29,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	ReadOnly bool `json:"readOnly,omitempty"`
 }
 
 type HostInjectSpec struct {
