@@ -106,6 +106,9 @@ func hasConflictingActiveGateConfiguration(dynakube *dynatracev1beta1.DynaKube) 
 	if dynakube.ActiveGateMode() {
 		capabilities := dynakube.Spec.ActiveGate.Capabilities
 		for i, capability := range capabilities {
+			if _, ok := dynatracev1beta1.ActiveGateCapabilities[capability]; !ok {
+				return true
+			}
 			for j := i + 1; j < len(capabilities); j++ {
 				if capability == capabilities[j] {
 					return true
