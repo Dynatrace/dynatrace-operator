@@ -18,13 +18,6 @@ func prepareVolumeMounts(instance *dynatracev1beta1.DynaKube) []corev1.VolumeMou
 	return volumeMounts
 }
 
-func getInstallationMount() corev1.VolumeMount {
-	return corev1.VolumeMount{
-		Name:      oneagentInstallationMountName,
-		MountPath: oneagentInstallationMountPath,
-	}
-}
-
 func getCertificateMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      "certs",

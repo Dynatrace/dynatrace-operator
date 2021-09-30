@@ -33,9 +33,6 @@ const (
 
 	podName = "dynatrace-oneagent"
 
-	defaultUserId  = 1001
-	defaultGroupId = 1001
-
 	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
 	classicHostIdSource  = "--set-host-id-source=auto"
 
