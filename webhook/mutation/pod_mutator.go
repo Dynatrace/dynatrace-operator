@@ -195,7 +195,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 					// container does not have LD_PRELOAD set
 					log.Info("instrumenting missing container", "name", c.Name)
 
-					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeAM)
+					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
 					updateContainer(c, &dk, pod, deploymentMetadata)
 
 					if installContainer == nil {
@@ -283,10 +283,10 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 
 	var deploymentMetadata *deploymentmetadata.DeploymentMetadata
-	if dk.CloudNativeFullstackMode(){
-		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeCN)
+	if dk.CloudNativeFullstackMode() {
+		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeCloudNative)
 	} else {
-		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeAM)
+		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
 	}
 
 	ic := corev1.Container{

@@ -15,11 +15,11 @@ const (
 	keyOrchestratorID        = "orchestrator_id"
 	keyOrchestrationTech     = "orchestration_tech"
 
-	DeploymentTypeAM = "application_monitoring"
-	DeploymentTypeFS = "classic_fullstack"
-	DeploymentTypeCN = "cloud_native_fullstack"
-	DeploymentTypeHM = "host_monitoring"
-	DeploymentTypeAG = "active_gate"
+	DeploymentTypeApplicationMonitoring = "application_monitoring"
+	DeploymentTypeFullStack             = "classic_fullstack"
+	DeploymentTypeCloudNative           = "cloud_native_fullstack"
+	DeploymentTypeHostMonitoring        = "host_monitoring"
+	DeploymentTypeActiveGate            = "active_gate"
 )
 
 type DeploymentMetadata struct {

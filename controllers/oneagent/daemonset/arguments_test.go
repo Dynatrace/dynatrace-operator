@@ -72,7 +72,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 			},
 		},
 	}
-	metadata := deploymentmetadata.NewDeploymentMetadata(testClusterID, deploymentmetadata.DeploymentTypeFS)
+	metadata := deploymentmetadata.NewDeploymentMetadata(testClusterID, deploymentmetadata.DeploymentTypeFullStack)
 	hostInjectSpecs := &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec
 	dsInfo := ClassicFullStack{
 		builderInfo{
@@ -81,7 +81,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 			logger:         log,
 			clusterId:      testClusterID,
 			relatedImage:   testValue,
-			deploymentType: deploymentmetadata.DeploymentTypeFS,
+			deploymentType: deploymentmetadata.DeploymentTypeFullStack,
 		},
 	}
 

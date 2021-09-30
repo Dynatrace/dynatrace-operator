@@ -14,7 +14,7 @@ const (
 )
 
 func newTestDeploymentMetadata(_ *testing.T) *DeploymentMetadata {
-	return NewDeploymentMetadata(testOrchestratorID, DeploymentTypeFS)
+	return NewDeploymentMetadata(testOrchestratorID, DeploymentTypeFullStack)
 }
 
 func TestNewDeploymentMetadata(t *testing.T) {
