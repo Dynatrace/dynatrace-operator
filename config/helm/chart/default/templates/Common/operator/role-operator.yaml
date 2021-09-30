@@ -30,6 +30,7 @@ rules:
       - watch
       - update
       - create
+
   - apiGroups:
       - dynatrace.com
     resources:
@@ -49,6 +50,7 @@ rules:
       - create
       - update
       - delete
+
   - apiGroups:
       - apps
     resources:
@@ -60,6 +62,7 @@ rules:
       - create
       - update
       - delete
+
   - apiGroups:
       - apps
     resources:
@@ -87,6 +90,7 @@ rules:
       - create
       - update
       - delete
+
   - apiGroups:
       - ""  # "" indicates the core API group
     resources:
@@ -97,6 +101,7 @@ rules:
       - watch
       - delete
       - create
+
   - apiGroups:
       - ""  # "" indicates the core API group
     resources:
@@ -107,6 +112,7 @@ rules:
       - watch
       - create
       - update
+
   - apiGroups:
       - ""
     resources:
@@ -114,6 +120,7 @@ rules:
     verbs:
       - list
       - create
+
   - apiGroups:
       - ""
     resources:
