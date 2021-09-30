@@ -26,9 +26,6 @@ const (
 
 	hostRootMount = "host-root"
 
-	oneagentInstallationMountName = "oneagent-installation"
-	oneagentInstallationMountPath = "/mnt/volume_storage_mount"
-
 	relatedImageEnvVar = "RELATED_IMAGE_DYNATRACE_ONEAGENT"
 
 	podName = "dynatrace-oneagent"

@@ -12,7 +12,6 @@ const (
 	dtClusterId = "DT_K8S_CLUSTER_ID"
 
 	oneagentDisableContainerInjection = "ONEAGENT_DISABLE_CONTAINER_INJECTION"
-	oneagentReadOnlyMode              = "ONEAGENT_READ_ONLY_MODE"
 
 	proxy = "https_proxy"
 )
