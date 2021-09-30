@@ -123,6 +123,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 
 	// ClassicFullStack
 	if src.Spec.ClassicFullStack.Enabled {
+		dst.Spec.OneAgent.ClassicFullStack = &ClassicFullStackSpec{}
 		dst.Spec.OneAgent.ClassicFullStack.AutoUpdate = src.Spec.OneAgent.AutoUpdate
 		dst.Spec.OneAgent.ClassicFullStack.Image = src.Spec.OneAgent.Image
 		dst.Spec.OneAgent.ClassicFullStack.Version = src.Spec.OneAgent.Version
