@@ -132,6 +132,17 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				},
 			},
 		}, errorConflictingMode)
+
+		assertDeniedResponse(t, dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				ActiveGate: dynatracev1beta1.ActiveGateSpec{
+					Capabilities: []dynatracev1beta1.ActiveGateCapability{
+						"invalid-capability",
+					},
+				},
+			},
+		}, errorConflictingMode)
 	})
 	t.Run(`missing API URL`, func(t *testing.T) {
 		assertDeniedResponse(t, dynatracev1beta1.DynaKube{

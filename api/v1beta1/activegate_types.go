@@ -12,6 +12,12 @@ const (
 	DataIngest ActiveGateCapability = "data-ingest"
 )
 
+var ActiveGateCapabilities = map[ActiveGateCapability]bool{
+	Routing:    true,
+	KubeMon:    true,
+	DataIngest: true,
+}
+
 type ActiveGateSpec struct {
 
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, data-ingest)
