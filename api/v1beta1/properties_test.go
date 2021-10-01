@@ -83,24 +83,3 @@ func TestTokens(t *testing.T) {
 		assert.Equal(t, dk.Tokens(), testName)
 	})
 }
-
-//
-//func TestReadOnlySpec_GetInstallationVolume(t *testing.T) {
-//	const testPath = "my/test/path"
-//
-//	readOnlySpec := ReadOnlySpec{}
-//	assert.Equal(t, v1.VolumeSource{
-//		EmptyDir: &v1.EmptyDirVolumeSource{},
-//	}, readOnlySpec.GetInstallationVolume())
-//
-//	readOnlySpec.InstallationVolume = &v1.VolumeSource{
-//		HostPath: &v1.HostPathVolumeSource{
-//			Path: testPath,
-//		},
-//	}
-//	assert.Equal(t, v1.VolumeSource{
-//		HostPath: &v1.HostPathVolumeSource{
-//			Path: testPath,
-//		},
-//	}, readOnlySpec.GetInstallationVolume())
-//}

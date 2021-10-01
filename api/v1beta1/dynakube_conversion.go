@@ -37,27 +37,6 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 		dst.Spec.ClassicFullStack.Labels = src.Spec.OneAgent.ClassicFullStack.Labels
 	}
 
-	// ActiveGate
-	if src.Spec.ActiveGate.Image != "" {
-		dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
-	} else if src.Spec.Routing.Image != "" {
-		dst.Spec.ActiveGate.Image = src.Spec.Routing.Image
-	} else if src.Spec.KubernetesMonitoring.Image != "" {
-		dst.Spec.ActiveGate.Image = src.Spec.KubernetesMonitoring.Image
-	}
-
-	if src.Spec.Routing.Enabled {
-		convertFromDeprecatedActiveGateCapability(
-			&dst.Spec.RoutingSpec.CapabilityProperties,
-			&src.Spec.Routing.CapabilityProperties)
-	}
-
-	if src.Spec.KubernetesMonitoring.Enabled {
-		convertFromDeprecatedActiveGateCapability(
-			&dst.Spec.KubernetesMonitoringSpec.CapabilityProperties,
-			&src.Spec.KubernetesMonitoring.CapabilityProperties)
-	}
-
 	// Status
 	dst.Status.ActiveGate.ImageHash = src.Status.ActiveGate.ImageHash
 	dst.Status.ActiveGate.LastImageProbeTimestamp = src.Status.ActiveGate.LastUpdateProbeTimestamp
@@ -87,6 +66,27 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status.Phase = v1alpha1.DynaKubePhaseType(src.Status.Phase)
 	dst.Status.Tokens = src.Status.Tokens
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
+
+	// ActiveGates
+	if src.Spec.ActiveGate.Image != "" {
+		dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
+	} else if src.Spec.Routing.Image != "" {
+		dst.Spec.ActiveGate.Image = src.Spec.Routing.Image
+	} else if src.Spec.KubernetesMonitoring.Image != "" {
+		dst.Spec.ActiveGate.Image = src.Spec.KubernetesMonitoring.Image
+	}
+
+	if src.Spec.Routing.Enabled {
+		convertFromDeprecatedActiveGateCapability(
+			&dst.Spec.RoutingSpec.CapabilityProperties,
+			&src.Spec.Routing.CapabilityProperties)
+	}
+
+	if src.Spec.KubernetesMonitoring.Enabled {
+		convertFromDeprecatedActiveGateCapability(
+			&dst.Spec.KubernetesMonitoringSpec.CapabilityProperties,
+			&src.Spec.KubernetesMonitoring.CapabilityProperties)
+	}
 
 	return nil
 }
@@ -139,24 +139,6 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		dst.Spec.OneAgent.ClassicFullStack.DNSPolicy = src.Spec.ClassicFullStack.DNSPolicy
 		dst.Spec.OneAgent.ClassicFullStack.Labels = src.Spec.ClassicFullStack.Labels
 	}
-
-	// ActiveGate
-	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
-	dst.Spec.Routing.Image = src.Spec.ActiveGate.Image
-	dst.Spec.KubernetesMonitoring.Image = src.Spec.ActiveGate.Image
-
-	if src.Spec.RoutingSpec.Enabled {
-		convertToDeprecatedActiveGateCapability(
-			&dst.Spec.Routing.CapabilityProperties,
-			&src.Spec.RoutingSpec.CapabilityProperties)
-	}
-
-	if src.Spec.KubernetesMonitoringSpec.Enabled {
-		convertToDeprecatedActiveGateCapability(
-			&dst.Spec.KubernetesMonitoring.CapabilityProperties,
-			&src.Spec.KubernetesMonitoringSpec.CapabilityProperties)
-	}
-
 	// Status
 	dst.Status.ActiveGate.ImageHash = src.Status.ActiveGate.ImageHash
 	dst.Status.ActiveGate.LastUpdateProbeTimestamp = src.Status.ActiveGate.LastImageProbeTimestamp
@@ -184,12 +166,29 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Status.Tokens = src.Status.Tokens
 	dst.Status.UpdatedTimestamp = src.Status.UpdatedTimestamp
 
+	// ActiveGates
+	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
+	dst.Spec.Routing.Image = src.Spec.ActiveGate.Image
+	dst.Spec.KubernetesMonitoring.Image = src.Spec.ActiveGate.Image
+
+	if src.Spec.RoutingSpec.Enabled {
+		dst.Spec.Routing.Enabled = true
+		convertToDeprecatedActiveGateCapability(
+			&dst.Spec.Routing.CapabilityProperties,
+			&src.Spec.RoutingSpec.CapabilityProperties)
+	}
+
+	if src.Spec.KubernetesMonitoringSpec.Enabled {
+		dst.Spec.KubernetesMonitoring.Enabled = true
+		convertToDeprecatedActiveGateCapability(
+			&dst.Spec.KubernetesMonitoring.CapabilityProperties,
+			&src.Spec.KubernetesMonitoringSpec.CapabilityProperties)
+	}
+
 	return nil
 }
 
 func convertToDeprecatedActiveGateCapability(dst *CapabilityProperties, src *v1alpha1.CapabilityProperties) {
-	dst.Enabled = true
-
 	dst.Replicas = src.Replicas
 	dst.Group = src.Group
 	dst.CustomProperties = &DynaKubeValueSource{

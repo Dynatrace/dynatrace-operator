@@ -2,13 +2,14 @@ package capability
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	v1 "k8s.io/api/core/v1"
 )
 
-func Test_capabilityBase_GetProperties(t *testing.T) {
+func Test_capabilityBase_Properties(t *testing.T) {
 	props := &dynatracev1beta1.CapabilityProperties{}
 
 	type fields struct {
@@ -32,14 +33,14 @@ func Test_capabilityBase_GetProperties(t *testing.T) {
 			c := &capabilityBase{
 				properties: tt.fields.properties,
 			}
-			if got := c.GetProperties(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("capabilityBase.GetProperties() = %v, want %v", got, tt.want)
+			if got := c.Properties(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("capabilityBase.Properties() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_capabilityBase_GetConfiguration(t *testing.T) {
+func Test_capabilityBase_Configuration(t *testing.T) {
 	conf := Configuration{
 		SetDnsEntryPoint:     false,
 		SetReadinessPort:     false,
@@ -69,8 +70,8 @@ func Test_capabilityBase_GetConfiguration(t *testing.T) {
 			c := &capabilityBase{
 				Configuration: tt.fields.Configuration,
 			}
-			if got := c.GetConfiguration(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("capabilityBase.GetConfiguration() = %v, want %v", got, tt.want)
+			if got := c.Config(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("capabilityBase.Config() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -98,10 +99,10 @@ func Test_capabilityBase_GetModuleName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &capabilityBase{
-				moduleName: tt.fields.moduleName,
+				shortName: tt.fields.moduleName,
 			}
-			if got := c.GetModuleName(); got != tt.want {
-				t.Errorf("capabilityBase.GetModuleName() = %v, want %v", got, tt.want)
+			if got := c.ShortName(); got != tt.want {
+				t.Errorf("capabilityBase.ShortName() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -129,10 +130,10 @@ func Test_capabilityBase_GetCapabilityName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &capabilityBase{
-				capabilityName: tt.fields.capabilityName,
+				argName: tt.fields.capabilityName,
 			}
-			if got := c.GetCapabilityName(); got != tt.want {
-				t.Errorf("capabilityBase.GetCapabilityName() = %v, want %v", got, tt.want)
+			if got := c.ArgName(); got != tt.want {
+				t.Errorf("capabilityBase.ArgName() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -157,7 +158,7 @@ func TestCalculateStatefulSetName(t *testing.T) {
 				capability:   c,
 				instanceName: instanceName,
 			},
-			want: instanceName + "-" + c.GetModuleName(),
+			want: instanceName + "-" + c.ShortName(),
 		},
 	}
 	for _, tt := range tests {
@@ -171,9 +172,16 @@ func TestCalculateStatefulSetName(t *testing.T) {
 
 func TestNewKubeMonCapability(t *testing.T) {
 	props := &dynatracev1beta1.CapabilityProperties{}
+	dk := &dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
+				CapabilityProperties: *props,
+			},
+		},
+	}
 
 	type args struct {
-		crProperties *dynatracev1beta1.CapabilityProperties
+		dynakube *dynatracev1beta1.DynaKube
 	}
 	tests := []struct {
 		name string
@@ -181,15 +189,15 @@ func TestNewKubeMonCapability(t *testing.T) {
 		want *KubeMonCapability
 	}{
 		{
-			name: "",
+			name: "default",
 			args: args{
-				crProperties: props,
+				dynakube: dk,
 			},
 			want: &KubeMonCapability{
 				capabilityBase: capabilityBase{
-					moduleName:     "kubemon",
-					capabilityName: "kubernetes_monitoring",
-					properties:     props,
+					shortName:  dynatracev1beta1.KubeMonCapability.ShortName,
+					argName:    dynatracev1beta1.KubeMonCapability.ArgumentName,
+					properties: props,
 					Configuration: Configuration{
 						ServiceAccountOwner: "kubernetes-monitoring",
 					},
@@ -227,7 +235,7 @@ func TestNewKubeMonCapability(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewKubeMonCapability(tt.args.crProperties); !reflect.DeepEqual(got, tt.want) {
+			if got := NewKubeMonCapability(tt.args.dynakube); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewKubeMonCapability() = %v, want %v", got, tt.want)
 			}
 		})
@@ -235,12 +243,18 @@ func TestNewKubeMonCapability(t *testing.T) {
 }
 
 func TestNewRoutingCapability(t *testing.T) {
-	//const tlsSecretName = "tls-secret"
 
 	props := &dynatracev1beta1.CapabilityProperties{}
+	dk := &dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			Routing: dynatracev1beta1.RoutingSpec{
+				CapabilityProperties: *props,
+			},
+		},
+	}
 
 	type args struct {
-		crProperties *dynatracev1beta1.CapabilityProperties
+		dynakube *dynatracev1beta1.DynaKube
 	}
 	tests := []struct {
 		name string
@@ -250,33 +264,13 @@ func TestNewRoutingCapability(t *testing.T) {
 		{
 			name: "default",
 			args: args{
-				crProperties: props,
+				dynakube: dk,
 			},
 			want: &RoutingCapability{
 				capabilityBase: capabilityBase{
-					moduleName:     "routing",
-					capabilityName: "MSGrouter",
-					properties:     props,
-					Configuration: Configuration{
-						SetDnsEntryPoint:     true,
-						SetReadinessPort:     true,
-						SetCommunicationPort: true,
-						CreateService:        true,
-						ServiceAccountOwner:  "",
-					},
-				},
-			},
-		},
-		{
-			name: "with-tls-secert-set",
-			args: args{
-				crProperties: props,
-			},
-			want: &RoutingCapability{
-				capabilityBase: capabilityBase{
-					moduleName:     "routing",
-					capabilityName: "MSGrouter",
-					properties:     props,
+					shortName:  dynatracev1beta1.RoutingCapability.ShortName,
+					argName:    dynatracev1beta1.RoutingCapability.ArgumentName,
+					properties: props,
 					Configuration: Configuration{
 						SetDnsEntryPoint:     true,
 						SetReadinessPort:     true,
@@ -290,34 +284,58 @@ func TestNewRoutingCapability(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewRoutingCapability(tt.args.crProperties); !reflect.DeepEqual(got, tt.want) {
+			if got := NewRoutingCapability(tt.args.dynakube); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewRoutingCapability() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestNewMetricsCapability(t *testing.T) {
+func TestNewMultiCapability(t *testing.T) {
+
 	props := &dynatracev1beta1.CapabilityProperties{}
 
 	type args struct {
-		crProperties *dynatracev1beta1.CapabilityProperties
+		dynakube *dynatracev1beta1.DynaKube
 	}
 	tests := []struct {
 		name string
 		args args
-		want *DataIngestCapability
+		want *MultiCapability
 	}{
 		{
-			name: "",
+			name: "empty",
 			args: args{
-				crProperties: props,
+				dynakube: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{},
+				},
 			},
-			want: &DataIngestCapability{
+			want: &MultiCapability{
 				capabilityBase: capabilityBase{
-					moduleName:     "data-ingest",
-					capabilityName: "metrics_ingest",
-					properties:     props,
+					enabled:   false,
+					shortName: multiActiveGatePodName,
+				},
+			},
+		},
+		{
+			name: "just routing",
+			args: args{
+				dynakube: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						ActiveGate: dynatracev1beta1.ActiveGateSpec{
+							Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+								dynatracev1beta1.RoutingCapability.DisplayName,
+							},
+						},
+					},
+				},
+			},
+			want: &MultiCapability{
+				capabilityBase: capabilityBase{
+					enabled:    true,
+					shortName:  multiActiveGatePodName,
+					argName:    dynatracev1beta1.RoutingCapability.ArgumentName,
+					properties: props,
 					Configuration: Configuration{
 						SetDnsEntryPoint:     true,
 						SetReadinessPort:     true,
@@ -328,11 +346,152 @@ func TestNewMetricsCapability(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "just data-ingest",
+			args: args{
+				dynakube: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						ActiveGate: dynatracev1beta1.ActiveGateSpec{
+							Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+								dynatracev1beta1.DataIngestCapability.DisplayName,
+							},
+						},
+					},
+				},
+			},
+			want: &MultiCapability{
+				capabilityBase: capabilityBase{
+					enabled:    true,
+					shortName:  multiActiveGatePodName,
+					argName:    dynatracev1beta1.DataIngestCapability.ArgumentName,
+					properties: props,
+					Configuration: Configuration{
+						SetDnsEntryPoint:     true,
+						SetReadinessPort:     true,
+						SetCommunicationPort: true,
+						CreateService:        true,
+						ServiceAccountOwner:  "",
+					},
+				},
+			},
+		},
+		{
+			name: "just kubemon",
+			args: args{
+				dynakube: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						ActiveGate: dynatracev1beta1.ActiveGateSpec{
+							Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+								dynatracev1beta1.KubeMonCapability.DisplayName,
+							},
+						},
+					},
+				},
+			},
+			want: &MultiCapability{
+				capabilityBase: capabilityBase{
+					enabled:    true,
+					shortName:  multiActiveGatePodName,
+					argName:    dynatracev1beta1.KubeMonCapability.ArgumentName,
+					properties: props,
+					Configuration: Configuration{
+						ServiceAccountOwner: "kubernetes-monitoring",
+					},
+					initContainersTemplates: []v1.Container{
+						{
+							Name:            initContainerTemplateName,
+							ImagePullPolicy: v1.PullAlways,
+							WorkingDir:      k8scrt2jksWorkingDir,
+							Command:         []string{"/bin/bash"},
+							Args:            []string{"-c", k8scrt2jksPath},
+							VolumeMounts: []v1.VolumeMount{
+								{
+									ReadOnly:  false,
+									Name:      trustStoreVolume,
+									MountPath: activeGateSslPath,
+								},
+							},
+						},
+					},
+					containerVolumeMounts: []v1.VolumeMount{{
+						ReadOnly:  true,
+						Name:      trustStoreVolume,
+						MountPath: activeGateCacertsPath,
+						SubPath:   k8sCertificateFile,
+					}},
+					volumes: []v1.Volume{{
+						Name: trustStoreVolume,
+						VolumeSource: v1.VolumeSource{
+							EmptyDir: &v1.EmptyDirVolumeSource{},
+						},
+					}},
+				},
+			},
+		},
+		{
+			name: "all capability at once",
+			args: args{
+				dynakube: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						ActiveGate: dynatracev1beta1.ActiveGateSpec{
+							Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+								dynatracev1beta1.KubeMonCapability.DisplayName,
+								dynatracev1beta1.DataIngestCapability.DisplayName,
+								dynatracev1beta1.RoutingCapability.DisplayName,
+							},
+						},
+					},
+				},
+			},
+			want: &MultiCapability{
+				capabilityBase: capabilityBase{
+					enabled:    true,
+					shortName:  multiActiveGatePodName,
+					argName:    strings.Join([]string{dynatracev1beta1.KubeMonCapability.ArgumentName, dynatracev1beta1.DataIngestCapability.ArgumentName, dynatracev1beta1.RoutingCapability.ArgumentName}, ","),
+					properties: props,
+					Configuration: Configuration{
+						SetDnsEntryPoint:     true,
+						SetReadinessPort:     true,
+						SetCommunicationPort: true,
+						CreateService:        true,
+						ServiceAccountOwner:  "kubernetes-monitoring",
+					},
+					initContainersTemplates: []v1.Container{
+						{
+							Name:            initContainerTemplateName,
+							ImagePullPolicy: v1.PullAlways,
+							WorkingDir:      k8scrt2jksWorkingDir,
+							Command:         []string{"/bin/bash"},
+							Args:            []string{"-c", k8scrt2jksPath},
+							VolumeMounts: []v1.VolumeMount{
+								{
+									ReadOnly:  false,
+									Name:      trustStoreVolume,
+									MountPath: activeGateSslPath,
+								},
+							},
+						},
+					},
+					containerVolumeMounts: []v1.VolumeMount{{
+						ReadOnly:  true,
+						Name:      trustStoreVolume,
+						MountPath: activeGateCacertsPath,
+						SubPath:   k8sCertificateFile,
+					}},
+					volumes: []v1.Volume{{
+						Name: trustStoreVolume,
+						VolumeSource: v1.VolumeSource{
+							EmptyDir: &v1.EmptyDirVolumeSource{},
+						},
+					}},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewDataIngestCapability(tt.args.crProperties); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewDataIngestCapability() = %v, want %v", got, tt.want)
+			if got := NewMultiCapability(tt.args.dynakube); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewMultiCapability() = %v, want %v", got, tt.want)
 			}
 		})
 	}

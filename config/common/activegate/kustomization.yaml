@@ -1,0 +1,2 @@
+resources:
+  - serviceaccount-activegate.yaml

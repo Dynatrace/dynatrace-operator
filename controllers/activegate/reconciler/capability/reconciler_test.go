@@ -29,9 +29,13 @@ const (
 	testNamespace = "test-namespace"
 )
 
-var metricsCapability = capability.NewDataIngestCapability(
-	&dynatracev1beta1.CapabilityProperties{
-		Enabled: true,
+var metricsCapability = capability.NewRoutingCapability(
+	&dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			Routing: dynatracev1beta1.RoutingSpec{
+				Enabled: true,
+			},
+		},
 	},
 )
 
@@ -70,7 +74,7 @@ func TestReconcile(t *testing.T) {
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
 
-		metricsCapability.GetProperties().CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
+		metricsCapability.Properties().CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
 			Value: testValue,
 		}
 		_, err := r.Reconcile()
@@ -81,7 +85,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		var customProperties corev1.Secret
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + metricsCapability.GetModuleName() + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + metricsCapability.ShortName() + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
 		assert.NoError(t, err)
 		assert.NotNil(t, customProperties)
 		assert.Contains(t, customProperties.Data, customproperties.DataKey)
@@ -107,7 +111,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
 			Name:  dtDNSEntryPoint,
-			Value: buildDNSEntryPoint(r.Instance, r.GetModuleName()),
+			Value: buildDNSEntryPoint(r.Instance, r.ShortName()),
 		})
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
@@ -157,7 +161,7 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 
 		svc := &corev1.Service{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(r.Instance.Name, r.GetModuleName()), Namespace: r.Instance.Namespace}, svc)
+		err = r.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(r.Instance.Name, r.ShortName()), Namespace: r.Instance.Namespace}, svc)
 		assert.NoError(t, err)
 		assert.NotNil(t, svc)
 
@@ -174,7 +178,7 @@ func TestReconcile(t *testing.T) {
 
 func TestSetReadinessProbePort(t *testing.T) {
 	r := createDefaultReconciler(t)
-	stsProps := rsfs.NewStatefulSetProperties(r.Instance, metricsCapability.GetProperties(), "", "", "", "", "", "", "", nil, nil, nil)
+	stsProps := rsfs.NewStatefulSetProperties(r.Instance, metricsCapability.Properties(), "", "", "", "", "", "", "", nil, nil, nil)
 	sts, err := rsfs.CreateStatefulSet(stsProps)
 
 	assert.NoError(t, err)
@@ -193,7 +197,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 	type fields struct {
 		Reconciler *rsfs.Reconciler
 		log        logr.Logger
-		Capability *capability.DataIngestCapability
+		Capability *capability.RoutingCapability
 	}
 	tests := []struct {
 		name   string
@@ -212,7 +216,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 				},
 				Capability: metricsCapability,
 			},
-			want: "instanceName-data-ingest",
+			want: "instanceName-routing",
 		},
 		{
 			name: "empty instance name",
@@ -226,7 +230,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 				},
 				Capability: metricsCapability,
 			},
-			want: "-" + metricsCapability.GetModuleName(),
+			want: "-" + metricsCapability.ShortName(),
 		},
 	}
 	for _, tt := range tests {

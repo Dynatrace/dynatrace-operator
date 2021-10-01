@@ -4,19 +4,68 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type ActiveGateCapability string
+type CapabilityDisplayName string
 
-const (
-	Routing    ActiveGateCapability = "routing"
-	KubeMon    ActiveGateCapability = "kubernetes-monitoring"
-	DataIngest ActiveGateCapability = "data-ingest"
+type ActiveGateCapability struct {
+
+	// The name of the capability known by the user, mainly used in the CR
+	DisplayName CapabilityDisplayName
+
+	// The name used for marking the pod for given capability
+	ShortName string
+
+	// The string passed to the active gate image to enable a given capability
+	ArgumentName string
+}
+
+var (
+	RoutingCapability = ActiveGateCapability{
+		DisplayName:  "routing",
+		ShortName:    "routing",
+		ArgumentName: "MSGrouter",
+	}
+
+	KubeMonCapability = ActiveGateCapability{
+		DisplayName:  "kubernetes-monitoring",
+		ShortName:    "kubemon",
+		ArgumentName: "kubernetes_monitoring",
+	}
+
+	DataIngestCapability = ActiveGateCapability{
+		DisplayName:  "data-ingest",
+		ShortName:    "data-ingest",
+		ArgumentName: "metrics_ingest",
+	}
 )
+
+var ActiveGateDisplayNames = map[CapabilityDisplayName]bool{
+	RoutingCapability.DisplayName:    true,
+	KubeMonCapability.DisplayName:    true,
+	DataIngestCapability.DisplayName: true,
+}
 
 type ActiveGateSpec struct {
 
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, data-ingest)
-	Capabilities []ActiveGateCapability `json:"capabilities,omitempty"`
+	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 
+	// Amount of replicas for your ActiveGates
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=30,xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
+	Replicas *int32 `json:"replicas,omitempty"`
+
+	CapabilityProperties `json:",inline"`
+
+	// Optional: the name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
+	// server.p12: certificate+key pair in pkcs12 format
+	// password: passphrase to read server.p12
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TlsSecretName",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	TlsSecretName string `json:"tlsSecretName,omitempty"`
+}
+
+// CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
+// Such as KubernetesMonitoring or Routing
+// It encapsulates common properties
+type CapabilityProperties struct {
 	// Amount of replicas for your DynaKube
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=30,xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
 	Replicas *int32 `json:"replicas,omitempty"`

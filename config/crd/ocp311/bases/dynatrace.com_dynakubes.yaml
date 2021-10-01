@@ -1166,6 +1166,12 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
+                  tlsSecretName:
+                    description: 'Optional: the name of a secret containing ActiveGate
+                      TLS cert+key and password. If not set, self-signed certificate
+                      is used. server.p12: certificate+key pair in pkcs12 format password:
+                      passphrase to read server.p12'
+                    type: string
                   tolerations:
                     description: 'Optional: set tolerations for the ActiveGatePods
                       pods'
@@ -1403,10 +1409,6 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
-                  serviceAccountName:
-                    description: 'Optional: set custom Service Account Name used with
-                      ActiveGate pods'
-                    type: string
                   tolerations:
                     description: 'Optional: set tolerations for the ActiveGatePods
                       pods'
@@ -2533,10 +2535,6 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                         type: object
                     type: object
-                  serviceAccountName:
-                    description: 'Optional: set custom Service Account Name used with
-                      ActiveGate pods'
-                    type: string
                   tolerations:
                     description: 'Optional: set tolerations for the ActiveGatePods
                       pods'

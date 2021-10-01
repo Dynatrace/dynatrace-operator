@@ -3,7 +3,7 @@
   "changelog_type": "pull_request",
   "header_prefix": "Dynatrace Operator:",
   "commit_changelog": true,
-  "pull_request_title_regex": "^(?=.*version)|(?=.*Version)",
+  "pull_request_title_regex": "^(?=.*release)|(?=.*Release)",
   "group_config": [
     {
       "title": "New Features",
