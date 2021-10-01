@@ -38,7 +38,7 @@ var (
 	}
 )
 
-var ActiveGateCapabilities = map[CapabilityDisplayName]bool{
+var ActiveGateDisplayNames = map[CapabilityDisplayName]bool{
 	RoutingCapability.DisplayName:    true,
 	KubeMonCapability.DisplayName:    true,
 	DataIngestCapability.DisplayName: true,
