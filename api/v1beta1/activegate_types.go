@@ -11,7 +11,7 @@ type ActiveGateCapability struct {
 	// The name of the capability known by the user, mainly used in the CR
 	DisplayName CapabilityDisplayName
 
-	// The name of used for marking the pod for given capability
+	// The name used for marking the pod for given capability
 	ShortName string
 
 	// The string passed to the active gate image to enable a given capability
@@ -43,7 +43,7 @@ type ActiveGateSpec struct {
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, data-ingest)
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 
-	// Amount of replicas for your DynaKube
+	// Amount of replicas for your ActiveGates
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=30,xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
 	Replicas *int32 `json:"replicas,omitempty"`
 
