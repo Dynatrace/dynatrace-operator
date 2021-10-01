@@ -9,7 +9,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func Test_capabilityBase_GetProperties(t *testing.T) {
+func Test_capabilityBase_Properties(t *testing.T) {
 	props := &dynatracev1beta1.CapabilityProperties{}
 
 	type fields struct {
@@ -33,14 +33,14 @@ func Test_capabilityBase_GetProperties(t *testing.T) {
 			c := &capabilityBase{
 				properties: tt.fields.properties,
 			}
-			if got := c.GetProperties(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("capabilityBase.GetProperties() = %v, want %v", got, tt.want)
+			if got := c.Properties(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("capabilityBase.Properties() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_capabilityBase_GetConfiguration(t *testing.T) {
+func Test_capabilityBase_Configuration(t *testing.T) {
 	conf := Configuration{
 		SetDnsEntryPoint:     false,
 		SetReadinessPort:     false,
@@ -70,8 +70,8 @@ func Test_capabilityBase_GetConfiguration(t *testing.T) {
 			c := &capabilityBase{
 				Configuration: tt.fields.Configuration,
 			}
-			if got := c.GetConfiguration(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("capabilityBase.GetConfiguration() = %v, want %v", got, tt.want)
+			if got := c.Config(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("capabilityBase.Config() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -101,8 +101,8 @@ func Test_capabilityBase_GetModuleName(t *testing.T) {
 			c := &capabilityBase{
 				shortName: tt.fields.moduleName,
 			}
-			if got := c.GetShortName(); got != tt.want {
-				t.Errorf("capabilityBase.GetShortName() = %v, want %v", got, tt.want)
+			if got := c.ShortName(); got != tt.want {
+				t.Errorf("capabilityBase.ShortName() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -130,10 +130,10 @@ func Test_capabilityBase_GetCapabilityName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &capabilityBase{
-				ArgName: tt.fields.capabilityName,
+				argName: tt.fields.capabilityName,
 			}
-			if got := c.GetArgName(); got != tt.want {
-				t.Errorf("capabilityBase.GetArgName() = %v, want %v", got, tt.want)
+			if got := c.ArgName(); got != tt.want {
+				t.Errorf("capabilityBase.ArgName() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -158,7 +158,7 @@ func TestCalculateStatefulSetName(t *testing.T) {
 				capability:   c,
 				instanceName: instanceName,
 			},
-			want: instanceName + "-" + c.GetShortName(),
+			want: instanceName + "-" + c.ShortName(),
 		},
 	}
 	for _, tt := range tests {
@@ -196,7 +196,7 @@ func TestNewKubeMonCapability(t *testing.T) {
 			want: &KubeMonCapability{
 				capabilityBase: capabilityBase{
 					shortName:  dynatracev1beta1.KubeMonCapability.ShortName,
-					ArgName:    dynatracev1beta1.KubeMonCapability.ArgumentName,
+					argName:    dynatracev1beta1.KubeMonCapability.ArgumentName,
 					properties: props,
 					Configuration: Configuration{
 						ServiceAccountOwner: "kubernetes-monitoring",
@@ -269,7 +269,7 @@ func TestNewRoutingCapability(t *testing.T) {
 			want: &RoutingCapability{
 				capabilityBase: capabilityBase{
 					shortName:  dynatracev1beta1.RoutingCapability.ShortName,
-					ArgName:    dynatracev1beta1.RoutingCapability.ArgumentName,
+					argName:    dynatracev1beta1.RoutingCapability.ArgumentName,
 					properties: props,
 					Configuration: Configuration{
 						SetDnsEntryPoint:     true,
@@ -334,7 +334,7 @@ func TestNewMultiCapability(t *testing.T) {
 				capabilityBase: capabilityBase{
 					enabled:    true,
 					shortName:  multiActiveGatePodName,
-					ArgName:    dynatracev1beta1.RoutingCapability.ArgumentName,
+					argName:    dynatracev1beta1.RoutingCapability.ArgumentName,
 					properties: props,
 					Configuration: Configuration{
 						SetDnsEntryPoint:     true,
@@ -363,7 +363,7 @@ func TestNewMultiCapability(t *testing.T) {
 				capabilityBase: capabilityBase{
 					enabled:    true,
 					shortName:  multiActiveGatePodName,
-					ArgName:    dynatracev1beta1.DataIngestCapability.ArgumentName,
+					argName:    dynatracev1beta1.DataIngestCapability.ArgumentName,
 					properties: props,
 					Configuration: Configuration{
 						SetDnsEntryPoint:     true,
@@ -392,7 +392,7 @@ func TestNewMultiCapability(t *testing.T) {
 				capabilityBase: capabilityBase{
 					enabled:    true,
 					shortName:  multiActiveGatePodName,
-					ArgName:    dynatracev1beta1.KubeMonCapability.ArgumentName,
+					argName:    dynatracev1beta1.KubeMonCapability.ArgumentName,
 					properties: props,
 					Configuration: Configuration{
 						ServiceAccountOwner: "kubernetes-monitoring",
@@ -447,7 +447,7 @@ func TestNewMultiCapability(t *testing.T) {
 				capabilityBase: capabilityBase{
 					enabled:    true,
 					shortName:  multiActiveGatePodName,
-					ArgName:    strings.Join([]string{dynatracev1beta1.KubeMonCapability.ArgumentName, dynatracev1beta1.DataIngestCapability.ArgumentName, dynatracev1beta1.RoutingCapability.ArgumentName}, ","),
+					argName:    strings.Join([]string{dynatracev1beta1.KubeMonCapability.ArgumentName, dynatracev1beta1.DataIngestCapability.ArgumentName, dynatracev1beta1.RoutingCapability.ArgumentName}, ","),
 					properties: props,
 					Configuration: Configuration{
 						SetDnsEntryPoint:     true,

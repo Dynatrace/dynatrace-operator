@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	multiActiveGatePodName    = "activegates"
+	multiActiveGatePodName    = "activegate"
 	trustStoreVolume          = "truststore-volume"
 	k8scrt2jksPath            = "/opt/dynatrace/gateway/k8scrt2jks.sh"
 	activeGateCacertsPath     = "/opt/dynatrace/gateway/jre/lib/security/cacerts"
@@ -41,19 +41,19 @@ type Configuration struct {
 
 type Capability interface {
 	Enabled() bool
-	GetShortName() string
-	GetArgName() string
-	GetProperties() *dynatracev1beta1.CapabilityProperties
-	GetConfiguration() Configuration
-	GetInitContainersTemplates() []corev1.Container
-	GetContainerVolumeMounts() []corev1.VolumeMount
-	GetVolumes() []corev1.Volume
+	ShortName() string
+	ArgName() string
+	Properties() *dynatracev1beta1.CapabilityProperties
+	Config() Configuration
+	InitContainersTemplates() []corev1.Container
+	ContainerVolumeMounts() []corev1.VolumeMount
+	Volumes() []corev1.Volume
 }
 
 type capabilityBase struct {
 	enabled    bool
 	shortName  string
-	ArgName    string
+	argName    string
 	properties *dynatracev1beta1.CapabilityProperties
 	Configuration
 	initContainersTemplates []corev1.Container
@@ -65,40 +65,40 @@ func (c *capabilityBase) Enabled() bool {
 	return c.enabled
 }
 
-func (c *capabilityBase) GetProperties() *dynatracev1beta1.CapabilityProperties {
+func (c *capabilityBase) Properties() *dynatracev1beta1.CapabilityProperties {
 	return c.properties
 }
 
-func (c *capabilityBase) GetConfiguration() Configuration {
+func (c *capabilityBase) Config() Configuration {
 	return c.Configuration
 }
 
-func (c *capabilityBase) GetShortName() string {
+func (c *capabilityBase) ShortName() string {
 	return c.shortName
 }
 
-func (c *capabilityBase) GetArgName() string {
-	return c.ArgName
+func (c *capabilityBase) ArgName() string {
+	return c.argName
 }
 
 // Note:
 // Caller must set following fields:
 //   Image:
 //   Resources:
-func (c *capabilityBase) GetInitContainersTemplates() []corev1.Container {
+func (c *capabilityBase) InitContainersTemplates() []corev1.Container {
 	return c.initContainersTemplates
 }
 
-func (c *capabilityBase) GetContainerVolumeMounts() []corev1.VolumeMount {
+func (c *capabilityBase) ContainerVolumeMounts() []corev1.VolumeMount {
 	return c.containerVolumeMounts
 }
 
-func (c *capabilityBase) GetVolumes() []corev1.Volume {
+func (c *capabilityBase) Volumes() []corev1.Volume {
 	return c.volumes
 }
 
 func CalculateStatefulSetName(capability Capability, instanceName string) string {
-	return instanceName + "-" + capability.GetShortName()
+	return instanceName + "-" + capability.ShortName()
 }
 
 // Deprecated
@@ -153,7 +153,7 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 	capabilityNames := []string{}
 	for _, capName := range dk.Spec.ActiveGate.Capabilities {
 		cap := activeGateCapabilities[capName]()
-		capabilityNames = append(capabilityNames, cap.ArgName)
+		capabilityNames = append(capabilityNames, cap.argName)
 		mc.initContainersTemplates = append(mc.initContainersTemplates, cap.initContainersTemplates...)
 		mc.containerVolumeMounts = append(mc.containerVolumeMounts, cap.containerVolumeMounts...)
 		mc.volumes = append(mc.volumes, cap.volumes...)
@@ -174,7 +174,7 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 			mc.ServiceAccountOwner = cap.ServiceAccountOwner
 		}
 	}
-	mc.ArgName = strings.Join(capabilityNames[:], ",")
+	mc.argName = strings.Join(capabilityNames[:], ",")
 	mc.setTlsConfig(&dk.Spec.ActiveGate)
 	return &mc
 
@@ -209,7 +209,7 @@ func NewRoutingCapability(dk *dynatracev1beta1.DynaKube) *RoutingCapability {
 func kubeMonBase() *capabilityBase {
 	c := capabilityBase{
 		shortName: dynatracev1beta1.KubeMonCapability.ShortName,
-		ArgName:   dynatracev1beta1.KubeMonCapability.ArgumentName,
+		argName:   dynatracev1beta1.KubeMonCapability.ArgumentName,
 		Configuration: Configuration{
 			ServiceAccountOwner: "kubernetes-monitoring",
 		},
@@ -248,7 +248,7 @@ func kubeMonBase() *capabilityBase {
 func routingBase() *capabilityBase {
 	c := capabilityBase{
 		shortName: dynatracev1beta1.RoutingCapability.ShortName,
-		ArgName:   dynatracev1beta1.RoutingCapability.ArgumentName,
+		argName:   dynatracev1beta1.RoutingCapability.ArgumentName,
 		Configuration: Configuration{
 			SetDnsEntryPoint:     true,
 			SetReadinessPort:     true,
@@ -262,7 +262,7 @@ func routingBase() *capabilityBase {
 func dataIngestBase() *capabilityBase {
 	c := capabilityBase{
 		shortName: dynatracev1beta1.DataIngestCapability.ShortName,
-		ArgName:   dynatracev1beta1.DataIngestCapability.ArgumentName,
+		argName:   dynatracev1beta1.DataIngestCapability.ArgumentName,
 		Configuration: Configuration{
 			SetDnsEntryPoint:     true,
 			SetReadinessPort:     true,

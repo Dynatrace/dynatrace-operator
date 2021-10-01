@@ -45,9 +45,9 @@ type Reconciler struct {
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, config *rest.Config, log logr.Logger,
 	instance *dynatracev1beta1.DynaKube, imageVersionProvider dtversion.ImageVersionProvider, capability capability.Capability) *Reconciler {
 
-	serviceAccountOwner := capability.GetConfiguration().ServiceAccountOwner
+	serviceAccountOwner := capability.Config().ServiceAccountOwner
 	if serviceAccountOwner == "" {
-		serviceAccountOwner = capability.GetShortName()
+		serviceAccountOwner = capability.ShortName()
 	}
 
 	return &Reconciler{
@@ -57,14 +57,14 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		log:                              log,
 		Instance:                         instance,
 		imageVersionProvider:             imageVersionProvider,
-		feature:                          capability.GetShortName(),
-		capabilityName:                   capability.GetArgName(),
+		feature:                          capability.ShortName(),
+		capabilityName:                   capability.ArgName(),
 		serviceAccountOwner:              serviceAccountOwner,
-		capability:                       capability.GetProperties(),
+		capability:                       capability.Properties(),
 		onAfterStatefulSetCreateListener: []events.StatefulSetEvent{},
-		initContainersTemplates:          capability.GetInitContainersTemplates(),
-		containerVolumeMounts:            capability.GetContainerVolumeMounts(),
-		volumes:                          capability.GetVolumes(),
+		initContainersTemplates:          capability.InitContainersTemplates(),
+		containerVolumeMounts:            capability.ContainerVolumeMounts(),
+		volumes:                          capability.Volumes(),
 		versionProvider:                  kubesystem.NewVersionProvider(config),
 	}
 }

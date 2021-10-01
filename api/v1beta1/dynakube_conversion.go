@@ -168,12 +168,14 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Spec.KubernetesMonitoring.Image = src.Spec.ActiveGate.Image
 
 	if src.Spec.RoutingSpec.Enabled {
+		dst.Spec.Routing.Enabled = true
 		convertToDeprecatedActiveGateCapability(
 			&dst.Spec.Routing.CapabilityProperties,
 			&src.Spec.RoutingSpec.CapabilityProperties)
 	}
 
 	if src.Spec.KubernetesMonitoringSpec.Enabled {
+		dst.Spec.KubernetesMonitoring.Enabled = true
 		convertToDeprecatedActiveGateCapability(
 			&dst.Spec.KubernetesMonitoring.CapabilityProperties,
 			&src.Spec.KubernetesMonitoringSpec.CapabilityProperties)

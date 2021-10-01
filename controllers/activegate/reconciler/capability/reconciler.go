@@ -38,15 +38,15 @@ func NewReconciler(capability capability.Capability, clt client.Client, apiReade
 	baseReconciler := sts.NewReconciler(
 		clt, apiReader, scheme, config, log, instance, imageVersionProvider, capability)
 
-	if capability.GetConfiguration().SetDnsEntryPoint {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.GetShortName()))
+	if capability.Config().SetDnsEntryPoint {
+		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.ShortName()))
 	}
 
-	if capability.GetConfiguration().SetCommunicationPort {
+	if capability.Config().SetCommunicationPort {
 		baseReconciler.AddOnAfterStatefulSetCreateListener(setCommunicationsPort(instance))
 	}
 
-	if capability.GetConfiguration().SetReadinessPort {
+	if capability.Config().SetReadinessPort {
 		baseReconciler.AddOnAfterStatefulSetCreateListener(setReadinessProbePort())
 	}
 
@@ -93,7 +93,7 @@ func buildDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) 
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
-	if r.GetConfiguration().CreateService {
+	if r.Config().CreateService {
 		update, err = r.createServiceIfNotExists()
 		if update || err != nil {
 			return update, errors.WithStack(err)
@@ -105,11 +105,11 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 }
 
 func (r *Reconciler) createServiceIfNotExists() (bool, error) {
-	service := createService(r.Instance, r.GetShortName())
+	service := createService(r.Instance, r.ShortName())
 
 	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
 	if err != nil && k8serrors.IsNotFound(err) {
-		r.log.Info("creating service", "module", r.GetShortName())
+		r.log.Info("creating service", "module", r.ShortName())
 		if err := controllerutil.SetControllerReference(r.Instance, service, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)
 		}
