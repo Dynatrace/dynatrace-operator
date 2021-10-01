@@ -105,9 +105,9 @@ func hasConflictingActiveGateConfiguration(dynakube *dynatracev1beta1.DynaKube) 
 
 	if dynakube.ActiveGateMode() {
 		capabilities := dynakube.Spec.ActiveGate.Capabilities
-		duplicateChecker := map[dynatracev1beta1.ActiveGateCapability]bool{}
+		duplicateChecker := map[dynatracev1beta1.CapabilityDisplayName]bool{}
 		for _, capability := range capabilities {
-			if _, ok := dynatracev1beta1.ActiveGateCapabilities[capability]; !ok || duplicateChecker[capability] {
+			if _, ok := dynatracev1beta1.ActiveGateDisplayNames[capability]; !ok || duplicateChecker[capability] {
 				return true
 			}
 			duplicateChecker[capability] = true

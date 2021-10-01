@@ -38,10 +38,10 @@ var (
 	}
 )
 
-var ActiveGateCapabilities = map[ActiveGateCapability]bool{
-	Routing:    true,
-	KubeMon:    true,
-	DataIngest: true,
+var ActiveGateDisplayNames = map[CapabilityDisplayName]bool{
+	RoutingCapability.DisplayName:    true,
+	KubeMonCapability.DisplayName:    true,
+	DataIngestCapability.DisplayName: true,
 }
 
 type ActiveGateSpec struct {
