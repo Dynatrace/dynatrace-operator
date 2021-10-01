@@ -123,7 +123,6 @@ func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	if len(result.Spec.Template.Spec.Containers) > 0 {
 		appendHostIdArgument(result, inframonHostIdSource)
 		dsInfo.appendInfraMonEnvVars(result)
-		dsInfo.setRootMountReadability(result)
 	}
 
 	return result, nil
