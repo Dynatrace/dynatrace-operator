@@ -47,7 +47,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 
 	serviceAccountOwner := capability.GetConfiguration().ServiceAccountOwner
 	if serviceAccountOwner == "" {
-		serviceAccountOwner = capability.GetModuleName()
+		serviceAccountOwner = capability.GetShortName()
 	}
 
 	return &Reconciler{
@@ -57,8 +57,8 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		log:                              log,
 		Instance:                         instance,
 		imageVersionProvider:             imageVersionProvider,
-		feature:                          capability.GetModuleName(),
-		capabilityName:                   capability.GetCapabilityName(),
+		feature:                          capability.GetShortName(),
+		capabilityName:                   capability.GetArgName(),
 		serviceAccountOwner:              serviceAccountOwner,
 		capability:                       capability.GetProperties(),
 		onAfterStatefulSetCreateListener: []events.StatefulSetEvent{},

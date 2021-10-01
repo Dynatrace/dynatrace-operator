@@ -2,6 +2,7 @@ package capability
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
@@ -98,10 +99,10 @@ func Test_capabilityBase_GetModuleName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &capabilityBase{
-				moduleName: tt.fields.moduleName,
+				shortName: tt.fields.moduleName,
 			}
-			if got := c.GetModuleName(); got != tt.want {
-				t.Errorf("capabilityBase.GetModuleName() = %v, want %v", got, tt.want)
+			if got := c.GetShortName(); got != tt.want {
+				t.Errorf("capabilityBase.GetShortName() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -129,10 +130,10 @@ func Test_capabilityBase_GetCapabilityName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &capabilityBase{
-				capabilityName: tt.fields.capabilityName,
+				ArgName: tt.fields.capabilityName,
 			}
-			if got := c.GetCapabilityName(); got != tt.want {
-				t.Errorf("capabilityBase.GetCapabilityName() = %v, want %v", got, tt.want)
+			if got := c.GetArgName(); got != tt.want {
+				t.Errorf("capabilityBase.GetArgName() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -157,7 +158,7 @@ func TestCalculateStatefulSetName(t *testing.T) {
 				capability:   c,
 				instanceName: instanceName,
 			},
-			want: instanceName + "-" + c.GetModuleName(),
+			want: instanceName + "-" + c.GetShortName(),
 		},
 	}
 	for _, tt := range tests {
@@ -194,9 +195,9 @@ func TestNewKubeMonCapability(t *testing.T) {
 			},
 			want: &KubeMonCapability{
 				capabilityBase: capabilityBase{
-					moduleName:     "kubemon",
-					capabilityName: "kubernetes_monitoring",
-					properties:     props,
+					shortName:  dynatracev1beta1.KubeMonCapability.ShortName,
+					ArgName:    dynatracev1beta1.KubeMonCapability.ArgumentName,
+					properties: props,
 					Configuration: Configuration{
 						ServiceAccountOwner: "kubernetes-monitoring",
 					},
@@ -267,9 +268,9 @@ func TestNewRoutingCapability(t *testing.T) {
 			},
 			want: &RoutingCapability{
 				capabilityBase: capabilityBase{
-					moduleName:     "routing",
-					capabilityName: "MSGrouter",
-					properties:     props,
+					shortName:  dynatracev1beta1.RoutingCapability.ShortName,
+					ArgName:    dynatracev1beta1.RoutingCapability.ArgumentName,
+					properties: props,
 					Configuration: Configuration{
 						SetDnsEntryPoint:     true,
 						SetReadinessPort:     true,
@@ -311,8 +312,8 @@ func TestNewMultiCapability(t *testing.T) {
 			},
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
-					enabled:    false,
-					moduleName: "multi",
+					enabled:   false,
+					shortName: multiActiveGatePodName,
 				},
 			},
 		},
@@ -322,8 +323,8 @@ func TestNewMultiCapability(t *testing.T) {
 				dynakube: &dynatracev1beta1.DynaKube{
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						ActiveGate: dynatracev1beta1.ActiveGateSpec{
-							Capabilities: []dynatracev1beta1.ActiveGateCapability{
-								dynatracev1beta1.Routing,
+							Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+								dynatracev1beta1.RoutingCapability.DisplayName,
 							},
 						},
 					},
@@ -331,10 +332,10 @@ func TestNewMultiCapability(t *testing.T) {
 			},
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
-					enabled:        true,
-					moduleName:     "multi",
-					capabilityName: "MSGrouter",
-					properties:     props,
+					enabled:    true,
+					shortName:  multiActiveGatePodName,
+					ArgName:    dynatracev1beta1.RoutingCapability.ArgumentName,
+					properties: props,
 					Configuration: Configuration{
 						SetDnsEntryPoint:     true,
 						SetReadinessPort:     true,
@@ -351,8 +352,8 @@ func TestNewMultiCapability(t *testing.T) {
 				dynakube: &dynatracev1beta1.DynaKube{
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						ActiveGate: dynatracev1beta1.ActiveGateSpec{
-							Capabilities: []dynatracev1beta1.ActiveGateCapability{
-								dynatracev1beta1.DataIngest,
+							Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+								dynatracev1beta1.DataIngestCapability.DisplayName,
 							},
 						},
 					},
@@ -360,10 +361,10 @@ func TestNewMultiCapability(t *testing.T) {
 			},
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
-					enabled:        true,
-					moduleName:     "multi",
-					capabilityName: "metrics_ingest",
-					properties:     props,
+					enabled:    true,
+					shortName:  multiActiveGatePodName,
+					ArgName:    dynatracev1beta1.DataIngestCapability.ArgumentName,
+					properties: props,
 					Configuration: Configuration{
 						SetDnsEntryPoint:     true,
 						SetReadinessPort:     true,
@@ -380,8 +381,8 @@ func TestNewMultiCapability(t *testing.T) {
 				dynakube: &dynatracev1beta1.DynaKube{
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						ActiveGate: dynatracev1beta1.ActiveGateSpec{
-							Capabilities: []dynatracev1beta1.ActiveGateCapability{
-								dynatracev1beta1.KubeMon,
+							Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+								dynatracev1beta1.KubeMonCapability.DisplayName,
 							},
 						},
 					},
@@ -389,10 +390,10 @@ func TestNewMultiCapability(t *testing.T) {
 			},
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
-					enabled:        true,
-					moduleName:     "multi",
-					capabilityName: "kubernetes_monitoring",
-					properties:     props,
+					enabled:    true,
+					shortName:  multiActiveGatePodName,
+					ArgName:    dynatracev1beta1.KubeMonCapability.ArgumentName,
+					properties: props,
 					Configuration: Configuration{
 						ServiceAccountOwner: "kubernetes-monitoring",
 					},
@@ -433,10 +434,10 @@ func TestNewMultiCapability(t *testing.T) {
 				dynakube: &dynatracev1beta1.DynaKube{
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						ActiveGate: dynatracev1beta1.ActiveGateSpec{
-							Capabilities: []dynatracev1beta1.ActiveGateCapability{
-								dynatracev1beta1.KubeMon,
-								dynatracev1beta1.DataIngest,
-								dynatracev1beta1.Routing,
+							Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+								dynatracev1beta1.KubeMonCapability.DisplayName,
+								dynatracev1beta1.DataIngestCapability.DisplayName,
+								dynatracev1beta1.RoutingCapability.DisplayName,
 							},
 						},
 					},
@@ -444,10 +445,10 @@ func TestNewMultiCapability(t *testing.T) {
 			},
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
-					enabled:        true,
-					moduleName:     "multi",
-					capabilityName: "kubernetes_monitoring,metrics_ingest,MSGrouter",
-					properties:     props,
+					enabled:    true,
+					shortName:  multiActiveGatePodName,
+					ArgName:    strings.Join([]string{dynatracev1beta1.KubeMonCapability.ArgumentName, dynatracev1beta1.DataIngestCapability.ArgumentName, dynatracev1beta1.RoutingCapability.ArgumentName}, ","),
+					properties: props,
 					Configuration: Configuration{
 						SetDnsEntryPoint:     true,
 						SetReadinessPort:     true,

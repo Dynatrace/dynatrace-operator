@@ -4,18 +4,44 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type ActiveGateCapability string
+type CapabilityDisplayName string
 
-const (
-	Routing    ActiveGateCapability = "routing"
-	KubeMon    ActiveGateCapability = "kubernetes-monitoring"
-	DataIngest ActiveGateCapability = "data-ingest"
+type ActiveGateCapability struct {
+
+	// The name of the capability known by the user, mainly used in the CR
+	DisplayName CapabilityDisplayName
+
+	// The name of used for marking the pod for given capability
+	ShortName string
+
+	// The string passed to the active gate image to enable a given capability
+	ArgumentName string
+}
+
+var (
+	RoutingCapability = ActiveGateCapability{
+		DisplayName:  "routing",
+		ShortName:    "routing",
+		ArgumentName: "MSGrouter",
+	}
+
+	KubeMonCapability = ActiveGateCapability{
+		DisplayName:  "kubernetes-monitoring",
+		ShortName:    "kubemon",
+		ArgumentName: "kubernetes_monitoring",
+	}
+
+	DataIngestCapability = ActiveGateCapability{
+		DisplayName:  "data-ingest",
+		ShortName:    "data-ingest",
+		ArgumentName: "metrics_ingest",
+	}
 )
 
 type ActiveGateSpec struct {
 
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, data-ingest)
-	Capabilities []ActiveGateCapability `json:"capabilities,omitempty"`
+	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 
 	// Amount of replicas for your DynaKube
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=30,xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"

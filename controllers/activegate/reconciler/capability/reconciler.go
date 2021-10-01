@@ -39,7 +39,7 @@ func NewReconciler(capability capability.Capability, clt client.Client, apiReade
 		clt, apiReader, scheme, config, log, instance, imageVersionProvider, capability)
 
 	if capability.GetConfiguration().SetDnsEntryPoint {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.GetModuleName()))
+		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.GetShortName()))
 	}
 
 	if capability.GetConfiguration().SetCommunicationPort {
@@ -105,11 +105,11 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 }
 
 func (r *Reconciler) createServiceIfNotExists() (bool, error) {
-	service := createService(r.Instance, r.GetModuleName())
+	service := createService(r.Instance, r.GetShortName())
 
 	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
 	if err != nil && k8serrors.IsNotFound(err) {
-		r.log.Info("creating service", "module", r.GetModuleName())
+		r.log.Info("creating service", "module", r.GetShortName())
 		if err := controllerutil.SetControllerReference(r.Instance, service, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)
 		}

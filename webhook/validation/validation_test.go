@@ -70,10 +70,10 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.ActiveGateCapability{
-						dynatracev1beta1.Routing,
-						dynatracev1beta1.KubeMon,
-						dynatracev1beta1.DataIngest,
+					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+						dynatracev1beta1.RoutingCapability.DisplayName,
+						dynatracev1beta1.KubeMonCapability.DisplayName,
+						dynatracev1beta1.DataIngestCapability.DisplayName,
 					},
 				},
 			},
@@ -108,8 +108,8 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					Enabled: true,
 				},
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.ActiveGateCapability{
-						dynatracev1beta1.Routing,
+					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+						dynatracev1beta1.RoutingCapability.DisplayName,
 					},
 				},
 			},
@@ -119,9 +119,9 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.ActiveGateCapability{
-						dynatracev1beta1.Routing,
-						dynatracev1beta1.Routing,
+					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+						dynatracev1beta1.RoutingCapability.DisplayName,
+						dynatracev1beta1.RoutingCapability.DisplayName,
 					},
 				},
 			},

@@ -294,7 +294,7 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers
 			upd, err := rcap.NewReconciler(
 				c, r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, dtversion.GetImageVersion,
 			).Reconcile()
-			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, c.GetModuleName()+" reconciled") {
+			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, c.GetShortName()+" reconciled") {
 				return false
 			}
 		} else {
@@ -311,7 +311,7 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers
 			if c.GetConfiguration().CreateService {
 				svc := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      rcap.BuildServiceName(dkState.Instance.Name, c.GetModuleName()),
+						Name:      rcap.BuildServiceName(dkState.Instance.Name, c.GetShortName()),
 						Namespace: dkState.Instance.Namespace,
 					},
 				}
