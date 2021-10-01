@@ -284,17 +284,17 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 
 func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers.DynakubeState) bool {
 	var caps = []capability.Capability{
-		capability.NewKubeMonCapability(&dkState.Instance.Spec.KubernetesMonitoring.CapabilityProperties),
-		capability.NewRoutingCapability(&dkState.Instance.Spec.Routing.CapabilityProperties),
-		// capability.NewDataIngestCapability(&dkState.Instance.Spec.DataIngestSpec.CapabilityProperties, &dkState.Instance.Spec.ActiveGate),
+		capability.NewKubeMonCapability(dkState.Instance),
+		capability.NewRoutingCapability(dkState.Instance),
+		capability.NewMultiCapability(dkState.Instance),
 	}
 
 	for _, c := range caps {
-		if c.GetProperties().Enabled {
+		if c.Enabled() {
 			upd, err := rcap.NewReconciler(
 				c, r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, dtversion.GetImageVersion,
 			).Reconcile()
-			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, c.GetModuleName()+" reconciled") {
+			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, c.ShortName()+" reconciled") {
 				return false
 			}
 		} else {
@@ -308,10 +308,10 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers
 				return false
 			}
 
-			if c.GetConfiguration().CreateService {
+			if c.Config().CreateService {
 				svc := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      rcap.BuildServiceName(dkState.Instance.Name, c.GetModuleName()),
+						Name:      rcap.BuildServiceName(dkState.Instance.Name, c.ShortName()),
 						Namespace: dkState.Instance.Namespace,
 					},
 				}

@@ -4,6 +4,7 @@ resources:
 - oneagent/securitycontextconstraints.yaml
 - oneagent/securitycontextconstraints-unprivileged.yaml
 bases:
+  - ../common/activegate
   - ../common/data-ingest
   - ../common/kubernetes-monitoring
   - ../common/oneagent

@@ -169,12 +169,14 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Spec.KubernetesMonitoring.Image = src.Spec.ActiveGate.Image
 
 	if src.Spec.RoutingSpec.Enabled {
+		dst.Spec.Routing.Enabled = true
 		convertToDeprecatedActiveGateCapability(
 			&dst.Spec.Routing.CapabilityProperties,
 			&src.Spec.RoutingSpec.CapabilityProperties)
 	}
 
 	if src.Spec.KubernetesMonitoringSpec.Enabled {
+		dst.Spec.KubernetesMonitoring.Enabled = true
 		convertToDeprecatedActiveGateCapability(
 			&dst.Spec.KubernetesMonitoring.CapabilityProperties,
 			&src.Spec.KubernetesMonitoringSpec.CapabilityProperties)
@@ -184,8 +186,6 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 }
 
 func convertToDeprecatedActiveGateCapability(dst *CapabilityProperties, src *v1alpha1.CapabilityProperties) {
-	dst.Enabled = true
-
 	dst.Replicas = src.Replicas
 	dst.Group = src.Group
 	dst.CustomProperties = &DynaKubeValueSource{
