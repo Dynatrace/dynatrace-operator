@@ -131,7 +131,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
-					Capabilities: []dynatracev1beta1.ActiveGateCapability{
+					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 						"invalid-capability",
 					},
 				},
