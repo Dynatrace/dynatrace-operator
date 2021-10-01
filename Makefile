@@ -222,6 +222,7 @@ bundle: manifests kustomize
 	echo 'LABEL com.redhat.openshift.versions="v4.5,v4.6,v4.7"' >> ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile
 	echo 'LABEL com.redhat.delivery.operator.bundle=true' >> ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile
 	echo 'LABEL com.redhat.delivery.backport=true' >> ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile
+	$(KUSTOMIZE) build ./config/crd/default > ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace.com_dynakubes.yaml
 ifeq ($(PLATFORM), openshift)
 	sed 's/\bkubectl\b/oc/g' ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml > ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output
 	mv ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml
