@@ -152,7 +152,12 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 	mc.properties = &dk.Spec.ActiveGate.CapabilityProperties
 	capabilityNames := []string{}
 	for _, capName := range dk.Spec.ActiveGate.Capabilities {
-		cap := activeGateCapabilities[capName]()
+		capabilityGenerator, ok := activeGateCapabilities[capName]
+		if !ok {
+			continue
+		}
+		cap := capabilityGenerator()
+
 		capabilityNames = append(capabilityNames, cap.argName)
 		mc.initContainersTemplates = append(mc.initContainersTemplates, cap.initContainersTemplates...)
 		mc.containerVolumeMounts = append(mc.containerVolumeMounts, cap.containerVolumeMounts...)
