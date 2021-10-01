@@ -1,2 +1,2 @@
 resources:
-  - serviceaccount-activegates.yaml
+  - serviceaccount-data-ingest.yaml
