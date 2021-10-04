@@ -10,6 +10,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -463,6 +464,7 @@ func buildReconciliation(fakeClient client.Client) *ReconcileDynaKube {
 		},
 		operatorPodName:   testOperatorPodName,
 		operatorNamespace: testDynatraceNamespace,
+		logger:            logger.NewDTLogger(),
 	}
 	return r
 }

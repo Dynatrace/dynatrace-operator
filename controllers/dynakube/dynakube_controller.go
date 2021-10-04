@@ -114,7 +114,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 
 	// Fetch the DynaKube instance
 	instance := &dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: request.NamespacedName.Name}}
-	dkMapper := mapper.NewDynakubeMapper(ctx, r.client, r.apiReader, r.operatorNamespace, instance)
+	dkMapper := mapper.NewDynakubeMapper(ctx, r.client, r.apiReader, r.operatorNamespace, instance, r.logger)
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
