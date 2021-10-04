@@ -127,20 +127,20 @@ deploy-local-easy:
 manifests: controller-gen manifests-ocp311
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/default/bases
 
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="kubernetes" > config/deploy/manifest-kubernetes.yaml
-	sed -i '/app.kubernetes.io/d' config/deploy/manifest-kubernetes.yaml
-	sed -i '/helm.sh/d' config/deploy/manifest-kubernetes.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="kubernetes" > config/deploy/kubernetes/manifest.yaml
+	sed -i '/app.kubernetes.io/d' config/deploy/kubernetes/manifest.yaml
+	sed -i '/helm.sh/d' config/deploy/kubernetes/manifest.yaml
 
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" > config/deploy/manifest-openshift.yaml
-	sed -i '/app.kubernetes.io/d' config/deploy/manifest-openshift.yaml
-	sed -i '/helm.sh/d' config/deploy/manifest-openshift.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" > config/deploy/openshift/manifest.yaml
+	sed -i '/app.kubernetes.io/d' config/deploy/openshift/manifest.yaml
+	sed -i '/helm.sh/d' config/deploy/openshift/manifest.yaml
 
 manifests-ocp311: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS_OCP311) paths="./..." output:crd:artifacts:config=config/crd/ocp311/bases
 
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift-3-11" > config/deploy/manifest-openshift-3-11.yaml
-	sed -i '/app.kubernetes.io/d' config/deploy/manifest-openshift-3-11.yaml
-	sed -i '/helm.sh/d' config/deploy/manifest-openshift-3-11.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift-3-11" > config/deploy/openshift-3-11/manifest.yaml
+	sed -i '/app.kubernetes.io/d' config/deploy/openshift-3-11/manifest.yaml
+	sed -i '/helm.sh/d' config/deploy/openshift-3-11/manifest.yaml
 
 # Run go fmt against code
 fmt:
@@ -205,7 +205,7 @@ bundle: manifests kustomize
 	operator-sdk generate kustomize manifests -q
 	cd config/olm/$(PLATFORM) && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"="$(IMG)"
 	$(KUSTOMIZE) build config/olm/$(PLATFORM) | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
-	operator-sdk bundle validate ./bundle
+	#operator-sdk bundle validate ./bundle
 	rm -rf ./config/olm/$(PLATFORM)/$(VERSION)
 	mkdir -p ./config/olm/$(PLATFORM)/$(VERSION)
 	mv ./bundle/* ./config/olm/$(PLATFORM)/$(VERSION)
