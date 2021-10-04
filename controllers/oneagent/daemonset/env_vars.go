@@ -12,7 +12,6 @@ const (
 	dtClusterId = "DT_K8S_CLUSTER_ID"
 
 	oneagentDisableContainerInjection = "ONEAGENT_DISABLE_CONTAINER_INJECTION"
-	oneagentReadOnlyMode              = "ONEAGENT_READ_ONLY_MODE"
 
 	proxy = "https_proxy"
 )
@@ -34,10 +33,6 @@ func (dsInfo *HostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet)
 	envVars := daemonset.Spec.Template.Spec.Containers[0].Env
 	envVarMap := envVarsToMap(envVars)
 	envVarMap = setDefaultValue(envVarMap, oneagentDisableContainerInjection, "true")
-	if dsInfo.instance.ReadOnly() {
-		envVarMap = setDefaultValue(envVarMap, oneagentReadOnlyMode, "true")
-	}
-
 	daemonset.Spec.Template.Spec.Containers[0].Env = mapToArray(envVarMap)
 }
 

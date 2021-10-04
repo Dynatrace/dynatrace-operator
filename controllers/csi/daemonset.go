@@ -26,10 +26,14 @@ const (
 	MountpointDirPath   = "/var/lib/kubelet/pods"
 	OneAgentDataDirPath = "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data"
 
-	MinCPU    = 200
-	MinMemory = 100
-	MaxCPU    = 200
-	MaxMemory = 100
+	driverDefaultCPU    = 200
+	driverDefaultMemory = 100
+
+	registrarDefaultCPU    = 5
+	registrarDefaultMemory = 15
+
+	livenessProbeDefaultCPU    = 5
+	livenessProbeDefaultMemory = 15
 )
 
 type Reconciler struct {
@@ -62,7 +66,7 @@ func (r *Reconciler) Reconcile() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	driverContainerResources := prepareResources(r.client, r.operatorNamespace, r.logger)
+	driverContainerResources := prepareDriverResources(r.client, r.operatorNamespace, r.logger)
 
 	ds, err := buildDesiredCSIDaemonSet(
 		operatorImage, r.operatorNamespace, r.instance, driverContainerResources)
@@ -125,7 +129,7 @@ func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *dynatra
 					Containers: []corev1.Container{
 						prepareDriverContainer(operatorImage, driverContainerResources),
 						prepareRegistrarContainer(operatorImage),
-						preparelivenessProbeContainer(operatorImage),
+						prepareLivenessProbeContainer(operatorImage),
 					},
 					ServiceAccountName: DefaultServiceAccountName,
 					Volumes:            prepareVolumes(),
@@ -211,7 +215,7 @@ func prepareDriverEnvVars() []corev1.EnvVar {
 	}
 }
 
-func prepareResources(client client.Client, operatorNS string, logger logr.Logger) corev1.ResourceRequirements {
+func prepareDriverResources(client client.Client, operatorNS string, logger logr.Logger) corev1.ResourceRequirements {
 	deployment, err := kubeobjects.GetDeployment(client, operatorNS)
 	if err != nil {
 		logger.Info(fmt.Sprintf("failed to get deployment for reading '%s' label", AnnotationCSIResourcesIdentifier), "err", err)
@@ -227,16 +231,7 @@ func prepareResources(client client.Client, operatorNS string, logger logr.Logge
 		}
 	}
 
-	return corev1.ResourceRequirements{
-		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    getQuantity(MinCPU, resource.Milli),
-			corev1.ResourceMemory: getQuantity(MinMemory, resource.Mega),
-		},
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    getQuantity(MaxCPU, resource.Milli),
-			corev1.ResourceMemory: getQuantity(MaxMemory, resource.Mega),
-		},
-	}
+	return prepareResources(driverDefaultCPU, driverDefaultMemory)
 }
 
 func getQuantity(value int64, scale resource.Scale) resource.Quantity {
@@ -315,6 +310,7 @@ func prepareRegistrarContainer(operatorImage string) corev1.Container {
 				ContainerPort: 9809,
 			},
 		},
+		Resources:     prepareResources(registrarDefaultCPU, registrarDefaultMemory),
 		LivenessProbe: &livenessProbe,
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser: &userID,
@@ -353,7 +349,7 @@ func prepareRegistrarVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func preparelivenessProbeContainer(operatorImage string) corev1.Container {
+func prepareLivenessProbeContainer(operatorImage string) corev1.Container {
 	return corev1.Container{
 		Name:            "liveness-probe",
 		Image:           operatorImage,
@@ -371,6 +367,7 @@ func preparelivenessProbeContainer(operatorImage string) corev1.Container {
 				MountPath: "/csi",
 			},
 		},
+		Resources: prepareResources(livenessProbeDefaultCPU, livenessProbeDefaultMemory),
 	}
 }
 
@@ -423,6 +420,19 @@ func prepareVolumes() []corev1.Volume {
 					Type: &hostPathDirOrCreate,
 				},
 			},
+		},
+	}
+}
+
+func prepareResources(cpu int64, memory int64) corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    getQuantity(cpu, resource.Milli),
+			corev1.ResourceMemory: getQuantity(memory, resource.Mega),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    getQuantity(cpu, resource.Milli),
+			corev1.ResourceMemory: getQuantity(memory, resource.Mega),
 		},
 	}
 }

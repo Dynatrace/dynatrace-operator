@@ -2055,10 +2055,6 @@ spec:
                           object with that name. If not specified the setting will
                           be removed from the DaemonSet.'
                         type: string
-                      readOnly:
-                        description: 'Optional: Enable support for read only host-filesystems.
-                          Defaults to false'
-                        type: boolean
                       serverlessMode:
                         description: 'Optional: In case your cluster doesn''t have
                           ''nodes'' so csi drivers won''t work, to make such a usecase
@@ -2298,10 +2294,6 @@ spec:
                           object with that name. If not specified the setting will
                           be removed from the DaemonSet.'
                         type: string
-                      readOnly:
-                        description: 'Optional: Enable support for read only host-filesystems.
-                          Defaults to false'
-                        type: boolean
                       tolerations:
                         description: 'Optional: set tolerations for the OneAgent pods'
                         items:

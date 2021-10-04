@@ -129,16 +129,6 @@ func (dk *DynaKube) NeedsCSI() bool {
 func (dk *DynaKube) NeedAppInjection() bool {
 	return dk.CloudNativeFullstackMode() || dk.ApplicationMonitoringMode()
 }
-
-func (dk *DynaKube) ReadOnly() bool {
-	if dk.CloudNativeFullstackMode() {
-		return dk.Spec.OneAgent.CloudNativeFullStack.ReadOnly
-	} else if dk.HostMonitoringMode() {
-		return dk.Spec.OneAgent.HostMonitoring.ReadOnly
-	}
-	return false
-}
-
 func (dk *DynaKube) Image() string {
 	if dk.ClassicFullStackMode() {
 		return dk.Spec.OneAgent.ClassicFullStack.Image

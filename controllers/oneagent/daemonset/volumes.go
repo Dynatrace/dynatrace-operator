@@ -2,7 +2,6 @@ package daemonset
 
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -18,36 +17,6 @@ func prepareVolumeMounts(instance *dynatracev1beta1.DynaKube) []corev1.VolumeMou
 	return volumeMounts
 }
 
-func (dsInfo *HostMonitoring) appendReadOnlyVolume(daemonset *appsv1.DaemonSet) {
-	if dsInfo.instance.ReadOnly() {
-		daemonset.Spec.Template.Spec.Volumes = append(daemonset.Spec.Template.Spec.Volumes, getReadOnlyVolume(dsInfo.instance))
-	}
-}
-
-func getReadOnlyVolume(dk *dynatracev1beta1.DynaKube) corev1.Volume {
-	return corev1.Volume{
-		Name: oneagentInstallationMountName,
-		VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
-		},
-	}
-}
-
-func (dsInfo *HostMonitoring) appendReadOnlyVolumeMount(daemonset *appsv1.DaemonSet) {
-	if dsInfo.instance.ReadOnly() {
-		daemonset.Spec.Template.Spec.Containers[0].VolumeMounts = append(
-			daemonset.Spec.Template.Spec.Containers[0].VolumeMounts,
-			getInstallationMount())
-	}
-}
-
-func getInstallationMount() corev1.VolumeMount {
-	return corev1.VolumeMount{
-		Name:      oneagentInstallationMountName,
-		MountPath: oneagentInstallationMountPath,
-	}
-}
-
 func getCertificateMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      "certs",
@@ -59,16 +28,6 @@ func getRootMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      hostRootMount,
 		MountPath: "/mnt/root",
-	}
-}
-
-func (dsInfo *HostMonitoring) setRootMountReadability(result *appsv1.DaemonSet) {
-	volumeMounts := result.Spec.Template.Spec.Containers[0].VolumeMounts
-	for idx, mount := range volumeMounts {
-		if mount.Name == hostRootMount {
-			// using index here since range returns a copy not a reference
-			volumeMounts[idx].ReadOnly = dsInfo.instance.ReadOnly()
-		}
 	}
 }
 
