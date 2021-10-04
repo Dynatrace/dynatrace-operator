@@ -26,14 +26,14 @@ const (
 	MountpointDirPath   = "/var/lib/kubelet/pods"
 	OneAgentDataDirPath = "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data"
 
-	DriverDefaultCPU    = 200
-	DriverDefaultMemory = 100
+	driverDefaultCPU    = 200
+	driverDefaultMemory = 100
 
-	RegistrarDefaultCPU    = 5
-	RegistrarDefaultMemory = 10
+	registrarDefaultCPU    = 5
+	registrarDefaultMemory = 10
 
-	LivenessProbeDefaultCPU    = 5
-	LivenessProbeDefaultMemory = 10
+	livenessProbeDefaultCPU    = 5
+	livenessProbeDefaultMemory = 10
 )
 
 type Reconciler struct {
@@ -231,7 +231,7 @@ func prepareDriverResources(client client.Client, operatorNS string, logger logr
 		}
 	}
 
-	return prepareResources(DriverDefaultCPU, DriverDefaultMemory)
+	return prepareResources(driverDefaultCPU, driverDefaultMemory)
 }
 
 func getQuantity(value int64, scale resource.Scale) resource.Quantity {
@@ -310,7 +310,7 @@ func prepareRegistrarContainer(operatorImage string) corev1.Container {
 				ContainerPort: 9809,
 			},
 		},
-		Resources:     prepareResources(RegistrarDefaultCPU, RegistrarDefaultMemory),
+		Resources:     prepareResources(registrarDefaultCPU, registrarDefaultMemory),
 		LivenessProbe: &livenessProbe,
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser: &userID,
@@ -367,7 +367,7 @@ func prepareLivenessProbeContainer(operatorImage string) corev1.Container {
 				MountPath: "/csi",
 			},
 		},
-		Resources: prepareResources(LivenessProbeDefaultCPU, LivenessProbeDefaultMemory),
+		Resources: prepareResources(livenessProbeDefaultCPU, livenessProbeDefaultMemory),
 	}
 }
 
