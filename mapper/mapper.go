@@ -114,7 +114,7 @@ func updateLabels(matches bool, dynakube *dynatracev1beta1.DynaKube, namespace *
 		if !ok || oldDkName != dynakube.Name {
 			updated = true
 			addNamespaceInjectLabel(dynakube.Name, namespace)
-			log.Info("Started Monitoring Namespace", "Namespace", namespace.Name, "Dynakube", dynakube.Name)
+			log.Info("Started monitoring Namespace", "Namespace", namespace.Name, "Dynakube", dynakube.Name)
 		}
 	} else if ok && oldDkName == dynakube.Name {
 		updated = true
