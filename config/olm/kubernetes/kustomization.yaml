@@ -3,10 +3,3 @@ kind: Kustomization
 resources:
 - ../../deploy/kubernetes/
 - ../../samples
-images:
-- name: docker.io/dynatrace/dynatrace-operator:snapshot
-  newName: docker.io/dynatrace/dynatrace-operator
-  newTag: v0.2.1
-- name: quay.io/dynatrace/dynatrace-operator:snapshot
-  newName: quay.io/dynatrace/dynatrace-operator
-  newTag: snapshot-test-0-0-1
