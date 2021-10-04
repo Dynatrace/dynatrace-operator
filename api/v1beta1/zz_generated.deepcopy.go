@@ -47,11 +47,6 @@ func (in *ActiveGateSpec) DeepCopyInto(out *ActiveGateSpec) {
 		*out = make([]CapabilityDisplayName, len(*in))
 		copy(*out, *in)
 	}
-	if in.Replicas != nil {
-		in, out := &in.Replicas, &out.Replicas
-		*out = new(int32)
-		**out = **in
-	}
 	in.CapabilityProperties.DeepCopyInto(&out.CapabilityProperties)
 }
 

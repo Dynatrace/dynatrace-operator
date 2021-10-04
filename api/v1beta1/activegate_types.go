@@ -49,10 +49,6 @@ type ActiveGateSpec struct {
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, data-ingest)
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 
-	// Amount of replicas for your ActiveGates
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=30,xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
-	Replicas *int32 `json:"replicas,omitempty"`
-
 	CapabilityProperties `json:",inline"`
 
 	// Optional: the name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
@@ -66,7 +62,7 @@ type ActiveGateSpec struct {
 // Such as KubernetesMonitoring or Routing
 // It encapsulates common properties
 type CapabilityProperties struct {
-	// Amount of replicas for your DynaKube
+	// Amount of replicas for your ActiveGates
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=30,xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
 	Replicas *int32 `json:"replicas,omitempty"`
 
