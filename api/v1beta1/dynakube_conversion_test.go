@@ -20,6 +20,8 @@ const (
 	testProxyValue                = "test-proxyvalue"
 	testTrustedCAs                = "test-trustedCAs"
 	testNetworkZone               = "test-networkzone"
+	testOneAgentImage             = "test-oneagent-image"
+	testOneAgentVersion           = "test-oneagent-version"
 	testPriorityClassName         = "test-priorityclassname"
 	testDNSPolicy                 = "test-dnspolicy"
 	testActiveGateImage           = "test-activegateimage"
@@ -30,10 +32,7 @@ func TestConversion_ConvertFrom(t *testing.T) {
 	trueVal := true
 	time := metav1.Now()
 	oldDynakube := &v1alpha1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testName,
-		},
+		ObjectMeta: prepareObjectMeta(),
 		Spec: v1alpha1.DynaKubeSpec{
 			APIURL:           testUrl,
 			Tokens:           testToken,
@@ -45,6 +44,12 @@ func TestConversion_ConvertFrom(t *testing.T) {
 			TrustedCAs:  testTrustedCAs,
 			NetworkZone: testNetworkZone,
 			EnableIstio: true,
+
+			OneAgent: v1alpha1.OneAgentSpec{
+				Version:    testOneAgentVersion,
+				Image:      testOneAgentImage,
+				AutoUpdate: &trueVal,
+			},
 
 			ClassicFullStack: v1alpha1.FullStackSpec{
 				Enabled: true,
@@ -60,6 +65,9 @@ func TestConversion_ConvertFrom(t *testing.T) {
 					},
 				},
 				Resources: corev1.ResourceRequirements{
+					Requests: map[corev1.ResourceName]resource.Quantity{
+						corev1.ResourceMemory: *resource.NewScaledQuantity(1, 2),
+					},
 					Limits: map[corev1.ResourceName]resource.Quantity{
 						corev1.ResourceCPU: *resource.NewScaledQuantity(1, 2),
 					},
@@ -89,10 +97,10 @@ func TestConversion_ConvertFrom(t *testing.T) {
 			},
 
 			RoutingSpec: v1alpha1.RoutingSpec{
-				CapabilityProperties: prepareCapability(),
+				CapabilityProperties: prepareAlphaCapability(),
 			},
 			KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
-				CapabilityProperties: prepareCapability(),
+				CapabilityProperties: prepareAlphaCapability(),
 			},
 		},
 		Status: v1alpha1.DynaKubeStatus{
@@ -158,6 +166,8 @@ func TestConversion_ConvertFrom(t *testing.T) {
 	assert.Equal(t, oldDynakube.Spec.EnableIstio, convertedDynakube.Spec.EnableIstio)
 
 	require.NotNil(t, convertedDynakube.Spec.OneAgent.ClassicFullStack)
+	assert.Equal(t, oldDynakube.Spec.OneAgent.Image, convertedDynakube.Spec.OneAgent.ClassicFullStack.Image)
+	assert.Equal(t, oldDynakube.Spec.OneAgent.Version, convertedDynakube.Spec.OneAgent.ClassicFullStack.Version)
 	assert.Equal(t, oldDynakube.Spec.ClassicFullStack.NodeSelector, convertedDynakube.Spec.OneAgent.ClassicFullStack.NodeSelector)
 	assert.Equal(t, oldDynakube.Spec.ClassicFullStack.PriorityClassName, convertedDynakube.Spec.OneAgent.ClassicFullStack.PriorityClassName)
 	assert.Equal(t, oldDynakube.Spec.ClassicFullStack.Tolerations, convertedDynakube.Spec.OneAgent.ClassicFullStack.Tolerations)
@@ -168,12 +178,12 @@ func TestConversion_ConvertFrom(t *testing.T) {
 
 	require.NotNil(t, convertedDynakube.Spec.Routing)
 	assert.Equal(t, oldDynakube.Spec.ActiveGate.Image, convertedDynakube.Spec.Routing.Image)
-	compareCapability(t,
+	compareAlphaCapability(t,
 		oldDynakube.Spec.RoutingSpec.CapabilityProperties,
 		convertedDynakube.Spec.Routing.CapabilityProperties)
 
 	require.NotNil(t, convertedDynakube.Spec.KubernetesMonitoring)
-	compareCapability(t,
+	compareAlphaCapability(t,
 		oldDynakube.Spec.KubernetesMonitoringSpec.CapabilityProperties,
 		convertedDynakube.Spec.KubernetesMonitoring.CapabilityProperties)
 
@@ -201,7 +211,14 @@ func TestConversion_ConvertFrom(t *testing.T) {
 	assert.Equal(t, oldDynakube.Status.UpdatedTimestamp, convertedDynakube.Status.UpdatedTimestamp)
 }
 
-func prepareCapability() v1alpha1.CapabilityProperties {
+func prepareObjectMeta() metav1.ObjectMeta {
+	return metav1.ObjectMeta{
+		Namespace: testNamespace,
+		Name:      testName,
+	}
+}
+
+func prepareAlphaCapability() v1alpha1.CapabilityProperties {
 	intVal := int32(3)
 	return v1alpha1.CapabilityProperties{
 		Enabled:  true,
@@ -244,7 +261,7 @@ func prepareCapability() v1alpha1.CapabilityProperties {
 	}
 }
 
-func compareCapability(t *testing.T, expectedCapability v1alpha1.CapabilityProperties, actualCapability CapabilityProperties) {
+func compareAlphaCapability(t *testing.T, expectedCapability v1alpha1.CapabilityProperties, actualCapability CapabilityProperties) {
 	assert.Equal(t, expectedCapability.Replicas, actualCapability.Replicas)
 	assert.Equal(t, expectedCapability.Group, actualCapability.Group)
 	assert.Equal(t, expectedCapability.CustomProperties.ValueFrom, actualCapability.CustomProperties.ValueFrom)
@@ -257,4 +274,216 @@ func compareCapability(t *testing.T, expectedCapability v1alpha1.CapabilityPrope
 	assert.Equal(t, expectedCapability.Env, actualCapability.Env)
 }
 
-// todo: convertto
+func TestConversion_ConvertTo(t *testing.T) {
+	time := metav1.Now()
+	oldDynakube := &DynaKube{
+		ObjectMeta: prepareObjectMeta(),
+		Spec: DynaKubeSpec{
+			APIURL:           testUrl,
+			Tokens:           testToken,
+			CustomPullSecret: testCustomPullSecret,
+			SkipCertCheck:    true,
+			Proxy: &DynaKubeProxy{
+				Value: testProxyValue,
+			},
+			TrustedCAs:  testTrustedCAs,
+			NetworkZone: testNetworkZone,
+			EnableIstio: true,
+
+			OneAgent: OneAgentSpec{
+				ClassicFullStack: &ClassicFullStackSpec{
+					Image:   testOneAgentImage,
+					Version: testOneAgentVersion,
+					HostInjectSpec: HostInjectSpec{
+						NodeSelector: map[string]string{
+							"key": "value",
+						},
+						PriorityClassName: "test-priorityclass",
+						Tolerations: []corev1.Toleration{
+							{
+								Key:      "key",
+								Operator: "operator",
+								Value:    "value",
+								Effect:   "effect",
+							},
+						},
+						OneAgentResources: corev1.ResourceRequirements{
+							Requests: map[corev1.ResourceName]resource.Quantity{
+								corev1.ResourceMemory: *resource.NewScaledQuantity(1, 2),
+							},
+							Limits: map[corev1.ResourceName]resource.Quantity{
+								corev1.ResourceCPU: *resource.NewScaledQuantity(1, 2),
+							},
+						},
+						Args: []string{
+							"arg1",
+							"arg2",
+						},
+						Env: []corev1.EnvVar{
+							{
+								Name:  "name",
+								Value: "value",
+							},
+						},
+						DNSPolicy: testDNSPolicy,
+						Labels: map[string]string{
+							"key": "value",
+						},
+					},
+				},
+			},
+
+			Routing: RoutingSpec{
+				Enabled:              true,
+				CapabilityProperties: prepareBetaCapability(),
+			},
+
+			KubernetesMonitoring: KubernetesMonitoringSpec{
+				Enabled:              true,
+				CapabilityProperties: prepareBetaCapability(),
+			},
+		},
+		Status: DynaKubeStatus{
+			Phase:                            "test-phase",
+			UpdatedTimestamp:                 time,
+			LastAPITokenProbeTimestamp:       &time,
+			LastPaaSTokenProbeTimestamp:      &time,
+			Tokens:                           "test-tokens",
+			LastClusterVersionProbeTimestamp: &time,
+			Conditions: []metav1.Condition{
+				{
+					Type:               "type",
+					Status:             "status",
+					ObservedGeneration: 3,
+					LastTransitionTime: time,
+					Reason:             "reason",
+					Message:            "message",
+				},
+			},
+			ActiveGate: ActiveGateStatus{},
+			OneAgent: OneAgentStatus{
+				Instances: map[string]OneAgentInstance{
+					testStatusOneAgentInstanceKey: {
+						PodName:   "test-instance-podname",
+						IPAddress: "test-instance-ip",
+					},
+				},
+			},
+		},
+	}
+
+	convertedDynakube := &v1alpha1.DynaKube{}
+	err := oldDynakube.ConvertTo(convertedDynakube)
+	require.NoError(t, err)
+
+	assert.Equal(t, oldDynakube.ObjectMeta.Namespace, convertedDynakube.ObjectMeta.Namespace)
+	assert.Equal(t, oldDynakube.ObjectMeta.Name, convertedDynakube.ObjectMeta.Name)
+
+	assert.Equal(t, oldDynakube.Spec.APIURL, convertedDynakube.Spec.APIURL)
+	assert.Equal(t, oldDynakube.Spec.Tokens, convertedDynakube.Spec.Tokens)
+	assert.Equal(t, oldDynakube.Spec.CustomPullSecret, convertedDynakube.Spec.CustomPullSecret)
+	assert.Equal(t, oldDynakube.Spec.SkipCertCheck, convertedDynakube.Spec.SkipCertCheck)
+	assert.Equal(t, oldDynakube.Spec.Proxy.ValueFrom, convertedDynakube.Spec.Proxy.ValueFrom)
+	assert.Equal(t, oldDynakube.Spec.Proxy.Value, convertedDynakube.Spec.Proxy.Value)
+	assert.Equal(t, oldDynakube.Spec.TrustedCAs, convertedDynakube.Spec.TrustedCAs)
+	assert.Equal(t, oldDynakube.Spec.NetworkZone, convertedDynakube.Spec.NetworkZone)
+	assert.Equal(t, oldDynakube.Spec.EnableIstio, convertedDynakube.Spec.EnableIstio)
+
+	require.NotNil(t, convertedDynakube.Spec.ClassicFullStack)
+	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.Image, convertedDynakube.Spec.OneAgent.Image)
+	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.Version, convertedDynakube.Spec.OneAgent.Version)
+	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.NodeSelector, convertedDynakube.Spec.ClassicFullStack.NodeSelector)
+	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.PriorityClassName, convertedDynakube.Spec.ClassicFullStack.PriorityClassName)
+	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.Tolerations, convertedDynakube.Spec.ClassicFullStack.Tolerations)
+	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.OneAgentResources, convertedDynakube.Spec.ClassicFullStack.Resources)
+	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.Args, convertedDynakube.Spec.ClassicFullStack.Args)
+	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.DNSPolicy, convertedDynakube.Spec.ClassicFullStack.DNSPolicy)
+	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.Labels, convertedDynakube.Spec.ClassicFullStack.Labels)
+
+	require.NotNil(t, convertedDynakube.Spec.ActiveGate)
+	assert.Equal(t, oldDynakube.Spec.ActiveGate.Image, convertedDynakube.Spec.ActiveGate.Image)
+
+	require.NotNil(t, convertedDynakube.Spec.RoutingSpec)
+	compareBetaCapability(t,
+		oldDynakube.Spec.Routing.CapabilityProperties,
+		convertedDynakube.Spec.RoutingSpec.CapabilityProperties)
+
+	require.NotNil(t, convertedDynakube.Spec.KubernetesMonitoringSpec)
+	compareBetaCapability(t,
+		oldDynakube.Spec.KubernetesMonitoring.CapabilityProperties,
+		convertedDynakube.Spec.KubernetesMonitoringSpec.CapabilityProperties)
+
+	assert.Equal(t, oldDynakube.Status.ActiveGate.ImageHash, convertedDynakube.Status.ActiveGate.ImageHash)
+	assert.Equal(t, oldDynakube.Status.Conditions, convertedDynakube.Status.Conditions)
+	assert.Equal(t, oldDynakube.Status.LastAPITokenProbeTimestamp, convertedDynakube.Status.LastAPITokenProbeTimestamp)
+	assert.Equal(t, oldDynakube.Status.LastClusterVersionProbeTimestamp, convertedDynakube.Status.LastClusterVersionProbeTimestamp)
+	assert.Equal(t, oldDynakube.Status.LastPaaSTokenProbeTimestamp, convertedDynakube.Status.LastPaaSTokenProbeTimestamp)
+	assert.Equal(t, oldDynakube.Status.OneAgent.ImageHash, convertedDynakube.Status.OneAgent.ImageHash)
+
+	assert.Len(t, convertedDynakube.Status.OneAgent.Instances, 1)
+	oldInstance := oldDynakube.Status.OneAgent.Instances[testStatusOneAgentInstanceKey]
+	convertedInstance := convertedDynakube.Status.OneAgent.Instances[testStatusOneAgentInstanceKey]
+	assert.Equal(t, oldInstance.IPAddress, convertedInstance.IPAddress)
+	assert.Equal(t, oldInstance.PodName, convertedInstance.PodName)
+
+	assert.Equal(t, oldDynakube.Status.OneAgent.LastUpdateProbeTimestamp, convertedDynakube.Status.OneAgent.LastUpdateProbeTimestamp)
+	assert.Equal(t, oldDynakube.Status.OneAgent.Version, convertedDynakube.Status.OneAgent.Version)
+	assert.Equal(t, string(oldDynakube.Status.Phase), string(convertedDynakube.Status.Phase))
+	assert.Equal(t, oldDynakube.Status.Tokens, convertedDynakube.Status.Tokens)
+	assert.Equal(t, oldDynakube.Status.UpdatedTimestamp, convertedDynakube.Status.UpdatedTimestamp)
+}
+
+func compareBetaCapability(t *testing.T, expectedCapability CapabilityProperties, actualCapability v1alpha1.CapabilityProperties) {
+	assert.Equal(t, expectedCapability.Replicas, actualCapability.Replicas)
+	assert.Equal(t, expectedCapability.Group, actualCapability.Group)
+	assert.Equal(t, expectedCapability.CustomProperties.ValueFrom, actualCapability.CustomProperties.ValueFrom)
+	assert.Equal(t, expectedCapability.CustomProperties.Value, actualCapability.CustomProperties.Value)
+	assert.Equal(t, expectedCapability.Resources, actualCapability.Resources)
+	assert.Equal(t, expectedCapability.NodeSelector, actualCapability.NodeSelector)
+	assert.Equal(t, expectedCapability.Tolerations, actualCapability.Tolerations)
+	assert.Equal(t, expectedCapability.Labels, actualCapability.Labels)
+	assert.Equal(t, expectedCapability.Args, actualCapability.Args)
+	assert.Equal(t, expectedCapability.Env, actualCapability.Env)
+}
+
+func prepareBetaCapability() CapabilityProperties {
+	intVal := int32(3)
+	return CapabilityProperties{
+		Replicas: &intVal,
+		Group:    "test-activegate-group",
+		CustomProperties: &DynaKubeValueSource{
+			Value: "test-routing-value",
+		},
+		Resources: corev1.ResourceRequirements{
+			Limits: map[corev1.ResourceName]resource.Quantity{
+				corev1.ResourceCPU: *resource.NewScaledQuantity(1, 1),
+			},
+			Requests: map[corev1.ResourceName]resource.Quantity{
+				corev1.ResourceMemory: *resource.NewScaledQuantity(2, 2),
+			},
+		},
+		NodeSelector: map[string]string{
+			"key": "value",
+		},
+		Tolerations: []corev1.Toleration{
+			{
+				Key:      "key",
+				Operator: "operator",
+				Value:    "value",
+				Effect:   "effect",
+			},
+		},
+		Labels: map[string]string{
+			"key": "value",
+		},
+		Args: []string{
+			"arg1",
+		},
+		Env: []corev1.EnvVar{
+			{
+				Name:  "name",
+				Value: "value",
+			},
+		},
+	}
+}
