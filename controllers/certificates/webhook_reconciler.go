@@ -266,6 +266,13 @@ func (r *ReconcileWebhookCertificates) updateCRDConfiguration(ctx context.Contex
 		return err
 	}
 
+	if crd.Spec.Conversion == nil ||
+		crd.Spec.Conversion.Webhook == nil ||
+		crd.Spec.Conversion.Webhook.ClientConfig == nil {
+		r.logger.Info("No conversion webhook config, no cert will be provided")
+		return nil
+	}
+
 	data, hasData := secret.Data[RootCert]
 	if !hasData {
 		return errors.New(errorCertificatesSecretEmpty)
@@ -275,11 +282,8 @@ func (r *ReconcileWebhookCertificates) updateCRDConfiguration(ctx context.Contex
 		data = append(data, oldData...)
 	}
 
-	if crd.Spec.Conversion.Webhook.ClientConfig != nil {
-		crd.Spec.Conversion.Webhook.ClientConfig.CABundle = data
-	}
-
 	// update crd
+	crd.Spec.Conversion.Webhook.ClientConfig.CABundle = data
 	if err := r.client.Update(ctx, &crd); err != nil {
 		return err
 	}
