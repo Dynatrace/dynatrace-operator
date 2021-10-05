@@ -125,6 +125,9 @@ type ApplicationMonitoringSpec struct {
 	// Example: {major.minor.release} - 1.200.0
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Version string `json:"version,omitempty"`
+
+	// Optional: If you want to use CSIDriver, only useable if your cluster has 'nodes', to make such a usecase work set this to true.
+	UseCSIDriver *bool `json:"UseCSIDriver,omitempty"`
 }
 
 type AppInjectionSpec struct {
@@ -132,9 +135,6 @@ type AppInjectionSpec struct {
 	// By default, all namespaces will be monitored
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
 	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
-
-	// Optional: In case your cluster doesn't have 'nodes' so csi drivers won't work, to make such a usecase work set this to true.
-	ServerlessMode bool `json:"serverlessMode,omitempty"`
 
 	// Optional: define resources requests and limits for the initContainer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}

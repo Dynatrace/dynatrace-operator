@@ -384,7 +384,10 @@ func buildDynakube(name string, appInjectEnabled bool) *dynatracev1beta1.DynaKub
 		},
 	}
 	if appInjectEnabled {
-		dk.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta1.ApplicationMonitoringSpec{}
+		useCSIDriver := true
+		dk.Spec.OneAgent.ApplicationMonitoring = &dynatracev1beta1.ApplicationMonitoringSpec{
+			UseCSIDriver: &useCSIDriver,
+		}
 	}
 	return dk
 }

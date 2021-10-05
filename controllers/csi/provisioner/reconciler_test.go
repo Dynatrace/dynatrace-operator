@@ -93,9 +93,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						OneAgent: dynatracev1beta1.OneAgentSpec{
 							ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
-								AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
-									ServerlessMode: true,
-								},
+								AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{},
 							},
 						},
 					},
@@ -453,9 +451,7 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
-						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
-							ServerlessMode: true,
-						},
+						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{},
 					},
 				},
 			},
@@ -468,5 +464,8 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 }
 
 func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1beta1.ApplicationMonitoringSpec {
-	return &dynatracev1beta1.ApplicationMonitoringSpec{}
+	useCSIDriver := true
+	return &dynatracev1beta1.ApplicationMonitoringSpec{
+		UseCSIDriver: &useCSIDriver,
+	}
 }

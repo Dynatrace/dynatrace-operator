@@ -134,7 +134,6 @@ func TestPodInjection(t *testing.T) {
 	require.NoError(t, err)
 
 	inj, instance := createPodInjector(t, decoder)
-	instance.Spec.OneAgent.CloudNativeFullStack.ServerlessMode = true
 	err = inj.client.Update(context.TODO(), instance)
 	require.NoError(t, err)
 
@@ -182,11 +181,13 @@ func TestPodInjection(t *testing.T) {
 	expected.Spec.Volumes[0] = corev1.Volume{
 		Name: "oneagent-bin",
 		VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
+			CSI: &corev1.CSIVolumeSource{
+				Driver: dtcsi.DriverName,
+			},
 		},
 	}
 
-	setEnvVar(t, &expected, "MODE", "installer")
+	setEnvVar(t, &expected, "MODE", "provisioned")
 
 	expected.Spec.InitContainers[0].Image = "test-api-url.com/linux/codemodule"
 
@@ -300,17 +301,12 @@ func createDynakubeInstance(_ *testing.T) *dynatracev1beta1.DynaKube {
 	return instance
 }
 
-func withoutCSIDriver(_ *testing.T, instance *dynatracev1beta1.DynaKube) {
-	instance.Spec.OneAgent.CloudNativeFullStack.ServerlessMode = true
-}
-
 func TestUseImmutableImage(t *testing.T) {
 	t.Run(`use immutable image`, func(t *testing.T) {
 		decoder, err := admission.NewDecoder(scheme.Scheme)
 		require.NoError(t, err)
 
 		instance := createDynakubeInstance(t)
-		withoutCSIDriver(t, instance)
 
 		inj := &podMutator{
 			client: fake.NewClient(
@@ -384,10 +380,12 @@ func TestUseImmutableImage(t *testing.T) {
 		expected.Spec.Volumes[0] = corev1.Volume{
 			Name: "oneagent-bin",
 			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+				CSI: &corev1.CSIVolumeSource{
+					Driver: dtcsi.DriverName,
+				},
 			},
 		}
-		setEnvVar(t, &expected, "MODE", "installer")
+		setEnvVar(t, &expected, "MODE", "provisioned")
 
 		expected.ObjectMeta.Annotations["oneagent.dynatrace.com/image"] = "customregistry/linux/codemodule"
 
@@ -408,7 +406,6 @@ func TestUseImmutableImage(t *testing.T) {
 		require.NoError(t, err)
 
 		instance := createDynakubeInstance(t)
-		withoutCSIDriver(t, instance)
 
 		inj := &podMutator{
 			client: fake.NewClient(
@@ -480,10 +477,12 @@ func TestUseImmutableImage(t *testing.T) {
 		expected.Spec.Volumes[0] = corev1.Volume{
 			Name: "oneagent-bin",
 			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+				CSI: &corev1.CSIVolumeSource{
+					Driver: dtcsi.DriverName,
+				},
 			},
 		}
-		setEnvVar(t, &expected, "MODE", "installer")
+		setEnvVar(t, &expected, "MODE", "provisioned")
 
 		assert.Equal(t, expected, updPod)
 		t_utils.AssertEvents(t,
@@ -770,7 +769,6 @@ func TestAgentVersion(t *testing.T) {
 	require.NoError(t, err)
 
 	instance := createDynakubeInstance(t)
-	withoutCSIDriver(t, instance)
 
 	inj := &podMutator{
 		client: fake.NewClient(
@@ -842,10 +840,12 @@ func TestAgentVersion(t *testing.T) {
 	expected.Spec.Volumes[0] = corev1.Volume{
 		Name: "oneagent-bin",
 		VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
+			CSI: &corev1.CSIVolumeSource{
+				Driver: dtcsi.DriverName,
+			},
 		},
 	}
-	setEnvVar(t, &expected, "MODE", "installer")
+	setEnvVar(t, &expected, "MODE", "provisioned")
 
 	assert.Equal(t, expected, updPod)
 	t_utils.AssertEvents(t,

@@ -135,9 +135,13 @@ func prepareDynakubeState(dynakube *dynatracev1beta1.DynaKube, enableCodeModules
 	log := logger.NewDTLogger()
 
 	if enableCodeModules {
+		useCSIDriver := true
 		dynakube.Spec = dynatracev1beta1.DynaKubeSpec{
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+				ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
+					UseCSIDriver:     &useCSIDriver,
+					AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{},
+				},
 			},
 		}
 	}
