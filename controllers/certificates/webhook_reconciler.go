@@ -266,9 +266,7 @@ func (r *ReconcileWebhookCertificates) updateCRDConfiguration(ctx context.Contex
 		return err
 	}
 
-	if crd.Spec.Conversion == nil ||
-		crd.Spec.Conversion.Webhook == nil ||
-		crd.Spec.Conversion.Webhook.ClientConfig == nil {
+	if !hasConversionWebhook(crd) {
 		r.logger.Info("No conversion webhook config, no cert will be provided")
 		return nil
 	}
@@ -288,4 +286,8 @@ func (r *ReconcileWebhookCertificates) updateCRDConfiguration(ctx context.Contex
 		return err
 	}
 	return nil
+}
+
+func hasConversionWebhook(crd apiv1.CustomResourceDefinition) bool {
+	return crd.Spec.Conversion != nil && crd.Spec.Conversion.Webhook != nil && crd.Spec.Conversion.Webhook.ClientConfig != nil
 }
