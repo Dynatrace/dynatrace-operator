@@ -114,3 +114,62 @@ func TestTokens(t *testing.T) {
 		assert.Equal(t, dk.Tokens(), testName)
 	})
 }
+
+func TestTenantUUID(t *testing.T) {
+	t.Run("", func(t *testing.T) {
+		apiUrl := "https://demo.dev.dynatracelabs.com/api"
+		expectedTenantId := "demo"
+
+		actualTenantId, err := TenantUUID(apiUrl)
+
+		assert.NoErrorf(t, err, "Expected that getting tenant id from '%s' will be successful", apiUrl)
+		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
+			apiUrl, expectedTenantId, actualTenantId,
+		)
+	})
+
+	t.Run("", func(t *testing.T) {
+		apiUrl := "demo.dev.dynatracelabs.com/api"
+		expectedTenantId := ""
+		expectedError := "problem getting tenant id from fqdn ''"
+
+		actualTenantId, err := TenantUUID(apiUrl)
+
+		assert.EqualErrorf(t, err, expectedError, "Expected that getting tenant id from '%s' will result in: '%v'",
+			apiUrl, expectedError,
+		)
+		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
+			apiUrl, expectedTenantId, actualTenantId,
+		)
+	})
+
+	t.Run("", func(t *testing.T) {
+		apiUrl := "https://google.com"
+		expectedTenantId := ""
+		expectedError := "api url https://google.com does not end with /api"
+
+		actualTenantId, err := TenantUUID(apiUrl)
+
+		assert.EqualErrorf(t, err, expectedError, "Expected that getting tenant id from '%s' will result in: '%v'",
+			apiUrl, expectedError,
+		)
+		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
+			apiUrl, expectedTenantId, actualTenantId,
+		)
+	})
+
+	t.Run("", func(t *testing.T) {
+		apiUrl := "/api"
+		expectedTenantId := ""
+		expectedError := "problem getting tenant id from fqdn ''"
+
+		actualTenantId, err := TenantUUID(apiUrl)
+
+		assert.EqualErrorf(t, err, expectedError, "Expected that getting tenant id from '%s' will result in: '%v'",
+			apiUrl, expectedError,
+		)
+		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
+			apiUrl, expectedTenantId, actualTenantId,
+		)
+	})
+}

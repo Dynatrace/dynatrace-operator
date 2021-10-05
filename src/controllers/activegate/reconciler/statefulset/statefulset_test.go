@@ -5,6 +5,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -98,7 +99,12 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 		corev1.NodeSelectorTerm{MatchExpressions: kubeobjects.AffinityNodeRequirement()})
 
 	assert.Equal(t, capabilityProperties.Tolerations, templateSpec.Tolerations)
-	assert.Empty(t, templateSpec.Volumes)
+	assert.Equalf(t, instance.FeatureEnableStatsDIngest(), len(templateSpec.Volumes) > 0,
+		"Expected that there are no volumes iff StatsD is disabled",
+	)
+	assert.Equalf(t, instance.FeatureEnableStatsDIngest(), volumeIsDefined(templateSpec.Volumes, "auth-tokens"),
+		"Expected that volume mount %s has a predefined pod volume", "auth-tokens",
+	)
 	assert.NotEmpty(t, templateSpec.ImagePullSecrets)
 	assert.Contains(t, templateSpec.ImagePullSecrets, corev1.LocalObjectReference{Name: instance.Name + dtpullsecret.PullSecretSuffix})
 }
@@ -106,17 +112,25 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 func TestStatefulSet_Container(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-	container := buildContainer(NewStatefulSetProperties(instance, capabilityProperties,
-		"", "", "", "", "", nil, nil, nil))
+	stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
+		"", "", "", "", "", nil, nil, nil)
+	extraContainerBuilders := getContainerBuilders(stsProperties)
+	containers := buildContainers(stsProperties, extraContainerBuilders)
+	activeGateContainer := containers[0]
 
-	assert.Equal(t, ActivegateContainerName, container.Name)
-	assert.Equal(t, instance.ActiveGateImage(), container.Image)
-	assert.Empty(t, container.Resources)
-	assert.Equal(t, corev1.PullAlways, container.ImagePullPolicy)
-	assert.NotEmpty(t, container.Env)
-	assert.Empty(t, container.Args)
-	assert.Empty(t, container.VolumeMounts)
-	assert.NotNil(t, container.ReadinessProbe)
+	assert.Equal(t, consts.ActiveGateContainerName, activeGateContainer.Name)
+	assert.Equal(t, instance.ActiveGateImage(), activeGateContainer.Image)
+	assert.Empty(t, activeGateContainer.Resources)
+	assert.Equal(t, corev1.PullAlways, activeGateContainer.ImagePullPolicy)
+	assert.NotEmpty(t, activeGateContainer.Env)
+	assert.Empty(t, activeGateContainer.Args)
+	assert.Equalf(t, instance.FeatureEnableStatsDIngest(), len(activeGateContainer.VolumeMounts) > 0,
+		"Expected that there are no volume mounts iff StatsD is disabled",
+	)
+	assert.Equalf(t, instance.FeatureEnableStatsDIngest(), mountPathIsIn(activeGateContainer.VolumeMounts, "/var/lib/dynatrace/gateway/config"),
+		"Expected that ActiveGate container defines mount point %s if and only if StatsD ingest is enabled", "/var/lib/dynatrace/gateway/config",
+	)
+	assert.NotNil(t, activeGateContainer.ReadinessProbe)
 }
 
 func TestStatefulSet_Volumes(t *testing.T) {
@@ -124,17 +138,24 @@ func TestStatefulSet_Volumes(t *testing.T) {
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 
 	t.Run(`without custom properties`, func(t *testing.T) {
-		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", nil, nil, nil))
-
-		assert.Empty(t, volumes)
+		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", "",
+			nil, nil, nil,
+		)
+		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
+		assert.Falsef(t, volumeIsDefined(volumes, customproperties.VolumeName),
+			"Expected that volume %s is not defined if there are no custom properties", customproperties.VolumeName,
+		)
 	})
 	t.Run(`custom properties from value string`, func(t *testing.T) {
 		capabilityProperties.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
 			Value: testValue,
 		}
-		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", testFeature, "", "", nil, nil, nil))
+		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", testFeature, "", "",
+			nil, nil, nil,
+		)
+		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 		expectedSecretName := instance.Name + "-router-" + customproperties.Suffix
 
 		require.NotEmpty(t, volumes)
@@ -152,8 +173,11 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		capabilityProperties.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
 			ValueFrom: testKey,
 		}
-		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", nil, nil, nil))
+		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", "",
+			nil, nil, nil,
+		)
+		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 		expectedSecretName := testKey
 
 		require.NotEmpty(t, volumes)
@@ -176,7 +200,9 @@ func TestStatefulSet_Env(t *testing.T) {
 
 	t.Run(`without proxy`, func(t *testing.T) {
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			testUID, "", testFeature, "MSGrouter", "", nil, nil, nil))
+			testUID, "", testFeature, "MSGrouter", "",
+			nil, nil, nil,
+		))
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: DTCapabilities, Value: "MSGrouter"},
 			{Name: DTIdSeedNamespace, Value: instance.Namespace},
@@ -190,7 +216,9 @@ func TestStatefulSet_Env(t *testing.T) {
 		instance.Spec.NetworkZone = testName
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", nil, nil, nil))
+			"", "", "", "", "",
+			nil, nil, nil,
+		))
 
 		assert.NotEmpty(t, envVars)
 
@@ -204,7 +232,9 @@ func TestStatefulSet_Env(t *testing.T) {
 		instance.Spec.ActiveGate.Group = testValue
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", nil, nil, nil))
+			"", "", "", "", "",
+			nil, nil, nil,
+		))
 
 		assert.NotEmpty(t, envVars)
 
@@ -221,13 +251,19 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 
 	t.Run(`without custom properties`, func(t *testing.T) {
 		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", nil, nil, nil))
-		assert.Empty(t, volumeMounts)
+			"", "", "", "", "",
+			nil, nil, nil,
+		))
+		assert.Falsef(t, mountPathIsIn(volumeMounts, customproperties.MountPath),
+			"Expected that there is no mount point %s if there are no custom properties", customproperties.MountPath,
+		)
 	})
 	t.Run(`with custom properties`, func(t *testing.T) {
 		capabilityProperties.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{Value: testValue}
 		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", nil, nil, nil))
+			"", "", "", "", "",
+			nil, nil, nil,
+		))
 
 		assert.NotEmpty(t, volumeMounts)
 		assert.Contains(t, volumeMounts, corev1.VolumeMount{
@@ -325,7 +361,10 @@ func TestStatefulSet_Resources(t *testing.T) {
 		},
 	}
 
-	container := buildContainer(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil))
+	container := buildActiveGateContainer(NewStatefulSetProperties(instance, capabilityProperties,
+		"", "", "", "", "",
+		nil, nil, nil,
+	))
 
 	assert.True(t, quantityCpuLimit.Equal(container.Resources.Limits[corev1.ResourceCPU]))
 	assert.True(t, quantityMemoryLimit.Equal(container.Resources.Limits[corev1.ResourceMemory]))
@@ -350,6 +389,7 @@ func buildTestInstance() *dynatracev1beta1.DynaKube {
 			Namespace: testNamespace,
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: "https://testing.dev.dynatracelabs.com/api",
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{
 				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 					dynatracev1beta1.RoutingCapability.DisplayName,

@@ -12,30 +12,46 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+const AnnotationEnableStatsD = dynatracev1beta1.InternalFlagPrefix + "enable-statsd"
+
 func createService(instance *dynatracev1beta1.DynaKube, feature string) *corev1.Service {
+	enableStatsD := instance.FeatureEnableStatsDIngest()
+	ports := []corev1.ServicePort{
+		{
+			Name:       consts.HttpsServicePortName,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       consts.HttpsServicePort,
+			TargetPort: intstr.FromString(consts.HttpsServicePortName),
+		},
+		{
+			Name:       consts.HttpServicePortName,
+			Protocol:   corev1.ProtocolTCP,
+			Port:       consts.HttpServicePort,
+			TargetPort: intstr.FromString(consts.HttpServicePortName),
+		},
+	}
+	if enableStatsD {
+		ports = append(ports, corev1.ServicePort{
+			Name:       consts.StatsDIngestPortName,
+			Protocol:   corev1.ProtocolUDP,
+			Port:       consts.StatsDIngestPort,
+			TargetPort: intstr.FromString(consts.StatsDIngestTargetPort),
+		})
+	}
+
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      BuildServiceName(instance.Name, feature),
 			Namespace: instance.Namespace,
 			Labels:    statefulset.BuildLabelsFromInstance(instance, feature),
+			Annotations: map[string]string{
+				AnnotationEnableStatsD: fmt.Sprintf("%t", enableStatsD),
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
 			Selector: statefulset.BuildLabelsFromInstance(instance, feature),
-			Ports: []corev1.ServicePort{
-				{
-					Name:       consts.HttpsServiceTargetPort,
-					Protocol:   corev1.ProtocolTCP,
-					Port:       consts.HttpsServicePort,
-					TargetPort: intstr.FromString(consts.HttpsServiceTargetPort),
-				},
-				{
-					Name:       consts.HttpServiceTargetPort,
-					Protocol:   corev1.ProtocolTCP,
-					Port:       consts.HttpServicePort,
-					TargetPort: intstr.FromString(consts.HttpServiceTargetPort),
-				},
-			},
+			Ports:    ports,
 		},
 	}
 }

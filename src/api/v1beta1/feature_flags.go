@@ -34,6 +34,8 @@ const (
 	annotationFeatureIgnoredNamespaces                = annotationFeaturePrefix + "ignored-namespaces"
 	annotationFeatureAutomaticKubernetesApiMonitoring = annotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
 	annotationFeatureDisableMetadataEnrichment        = annotationFeaturePrefix + "disable-metadata-enrichment"
+	annotationFeatureEnableStatsDIngest               = annotationFeaturePrefix + "enable-statsd"
+	annotationFeatureUseActiveGateImageForStatsD      = annotationFeaturePrefix + "use-activegate-image-for-statsd"
 )
 
 var (
@@ -116,4 +118,16 @@ func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoring() bool {
 // FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,
 func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
 	return dk.Annotations[annotationFeatureDisableMetadataEnrichment] == "true"
+}
+
+// FeatureEnableStatsDIngest is a feature flag that makes the operator include 2 extra containers (Extension Controller and StatsD data source)
+// in the ActiveGate pod, and defines an extra UDP port in the AG service for StatsD packets.
+func (dk *DynaKube) FeatureEnableStatsDIngest() bool {
+	return dk.Annotations[annotationFeatureEnableStatsDIngest] == "true"
+}
+
+// FeatureUseActiveGateImageForStatsD is a feature flag that makes the operator use ActiveGate image when initializing Extension Controller and StatsD containers
+// (using special predefined entry points).
+func (dk *DynaKube) FeatureUseActiveGateImageForStatsD() bool {
+	return dk.Annotations[annotationFeatureUseActiveGateImageForStatsD] == "true"
 }

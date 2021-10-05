@@ -22,7 +22,7 @@ var (
 	RoutingCapability = ActiveGateCapability{
 		DisplayName:  "routing",
 		ShortName:    "routing",
-		ArgumentName: "MSGrouter",
+		ArgumentName: "MSGrouter,extension_controller",
 	}
 
 	KubeMonCapability = ActiveGateCapability{

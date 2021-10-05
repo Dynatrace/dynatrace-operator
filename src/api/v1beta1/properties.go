@@ -18,9 +18,11 @@ package v1beta1
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -247,6 +249,27 @@ func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
 		communicationHosts = append(communicationHosts, dtclient.CommunicationHost(communicationHost))
 	}
 	return communicationHosts
+}
+
+func TenantUUID(apiUrl string) (string, error) {
+	if !strings.HasSuffix(apiUrl, "/api") {
+		return "", fmt.Errorf("api url %s does not end with /api", apiUrl)
+	}
+
+	parsedUrl, err := url.Parse(apiUrl)
+	if err != nil {
+		return "", errors.WithMessagef(err, "problem parsing tenant id from url %s", apiUrl)
+	}
+
+	fqdn := parsedUrl.Hostname()
+	hostnameWithDomains := strings.FieldsFunc(fqdn,
+		func(r rune) bool { return r == '.' },
+	)
+	if len(hostnameWithDomains) < 1 {
+		return "", fmt.Errorf("problem getting tenant id from fqdn '%s'", fqdn)
+	}
+
+	return hostnameWithDomains[0], nil
 }
 
 func (dk *DynaKube) HostGroup() string {

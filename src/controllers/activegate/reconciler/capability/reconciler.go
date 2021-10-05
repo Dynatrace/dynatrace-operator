@@ -55,21 +55,51 @@ func NewReconciler(capability capability.Capability, clt client.Client, apiReade
 
 func setReadinessProbePort() events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
-		sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HttpsServiceTargetPort)
+		sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HttpsServicePortName)
 	}
 }
 
-func setCommunicationsPort(_ *dynatracev1beta1.DynaKube) events.StatefulSetEvent {
+func getContainerByName(containers []corev1.Container, containerName string) (*corev1.Container, error) {
+	for i := range containers {
+		if containers[i].Name == containerName {
+			return &containers[i], nil
+		}
+	}
+	return nil, errors.Errorf(`Cannot find container "%s" in the provided slice (len %d)`,
+		containerName, len(containers),
+	)
+}
+
+func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
-		sts.Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{
-			{
-				Name:          consts.HttpsServiceTargetPort,
-				ContainerPort: httpsContainerPort,
-			},
-			{
-				Name:          consts.HttpServiceTargetPort,
-				ContainerPort: httpContainerPort,
-			},
+		{
+			activeGateContainer, err := getContainerByName(sts.Spec.Template.Spec.Containers, consts.ActiveGateContainerName)
+			if err == nil {
+				activeGateContainer.Ports = []corev1.ContainerPort{
+					{
+						Name:          consts.HttpsServicePortName,
+						ContainerPort: httpsContainerPort,
+					},
+					{
+						Name:          consts.HttpServicePortName,
+						ContainerPort: httpContainerPort,
+					},
+				}
+			}
+			// TODO How to report an error?
+		}
+		if dk.FeatureEnableStatsDIngest() {
+			statsdContainer, err := getContainerByName(sts.Spec.Template.Spec.Containers, consts.StatsDContainerName)
+			if err == nil {
+				statsdContainer.Ports = []corev1.ContainerPort{
+					{
+						Name:          consts.StatsDIngestTargetPort,
+						ContainerPort: consts.StatsDIngestPort,
+						Protocol:      corev1.ProtocolUDP,
+					},
+				}
+			}
+			// TODO How to report error?
 		}
 	}
 }
@@ -98,6 +128,11 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		if update || err != nil {
 			return update, errors.WithStack(err)
 		}
+
+		update, err = r.updateServiceIfOutdated()
+		if update || err != nil {
+			return update, errors.WithStack(err)
+		}
 	}
 
 	update, err = r.Reconciler.Reconcile()
@@ -118,4 +153,33 @@ func (r *Reconciler) createServiceIfNotExists() (bool, error) {
 		return true, errors.WithStack(err)
 	}
 	return false, errors.WithStack(err)
+}
+
+func (r *Reconciler) updateServiceIfOutdated() (bool, error) {
+	desiredService := createService(r.Instance, r.ShortName())
+	installedService := &corev1.Service{}
+
+	err := r.Get(context.TODO(), client.ObjectKey{Name: desiredService.Name, Namespace: desiredService.Namespace}, installedService)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	if r.isOutdated(installedService, desiredService) {
+		desiredService.Spec.ClusterIP = installedService.Spec.ClusterIP
+		desiredService.ObjectMeta.ResourceVersion = installedService.ObjectMeta.ResourceVersion
+		updateErr := r.updateService(desiredService)
+		if updateErr != nil {
+			return false, updateErr
+		}
+		return true, nil
+	}
+	return false, nil
+}
+
+func (r *Reconciler) isOutdated(installedService, desiredService *corev1.Service) bool {
+	return !dynatracev1beta1.IsInternalFlagsEqual(installedService, desiredService)
+}
+
+func (r *Reconciler) updateService(service *corev1.Service) error {
+	return r.Update(context.TODO(), service)
 }
