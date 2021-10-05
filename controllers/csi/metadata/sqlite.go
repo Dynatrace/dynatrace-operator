@@ -40,12 +40,6 @@ const (
 	WHERE UUID = ?;
 	`
 
-	getTenantStatement = `
-	SELECT LatestVersion, Dynakube
-	FROM tenants
-	WHERE UUID = ?;
-	`
-
 	getTenantViaDynakubeStatement = `
 	SELECT UUID, LatestVersion
 	FROM tenants
