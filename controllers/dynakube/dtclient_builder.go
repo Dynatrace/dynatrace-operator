@@ -17,7 +17,7 @@ type options struct {
 }
 
 type DynatraceClientProperties struct {
-	Client              client.Client
+	ApiReader           client.Reader
 	Secret              *corev1.Secret
 	Proxy               *DynatraceClientProxy
 	ApiUrl              string
@@ -33,14 +33,19 @@ type DynatraceClientProxy struct {
 	ValueFrom string
 }
 
-func NewDynatraceClientProperties(ctx context.Context, cl client.Client, dk dynatracev1beta1.DynaKube) (*DynatraceClientProperties, error) {
+const (
+	proxy        = "proxy"
+	certificates = "certs"
+)
+
+func NewDynatraceClientProperties(ctx context.Context, apiReader client.Reader, dk dynatracev1beta1.DynaKube) (*DynatraceClientProperties, error) {
 	var tokens corev1.Secret
 	var err error
-	if err = cl.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
+	if err = apiReader.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: dk.Namespace}, &tokens); err != nil {
 		err = fmt.Errorf("failed to query tokens: %w", err)
 	}
 	return &DynatraceClientProperties{
-		Client:              cl,
+		ApiReader:           apiReader,
 		Secret:              &tokens,
 		ApiUrl:              dk.Spec.APIURL,
 		Namespace:           dk.Namespace,
@@ -56,7 +61,7 @@ func NewDynatraceClientProperties(ctx context.Context, cl client.Client, dk dyna
 func BuildDynatraceClient(properties DynatraceClientProperties) (dtclient.Client, error) {
 	namespace := properties.Namespace
 	secret := properties.Secret
-	clt := properties.Client
+	apiReader := properties.ApiReader
 
 	tokens, err := kubeobjects.NewTokens(secret)
 	if err != nil {
@@ -68,12 +73,12 @@ func BuildDynatraceClient(properties DynatraceClientProperties) (dtclient.Client
 	opts.appendNetworkZone(properties.NetworkZone)
 	opts.appendDisableHostsRequests(properties.DisableHostRequests)
 
-	err = opts.appendProxySettings(clt, properties.Proxy, namespace)
+	err = opts.appendProxySettings(apiReader, properties.Proxy, namespace)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	err = opts.appendTrustedCerts(clt, properties.TrustedCerts, namespace)
+	err = opts.appendTrustedCerts(apiReader, properties.TrustedCerts, namespace)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -108,16 +113,16 @@ func (opts *options) appendDisableHostsRequests(disableHostsRequests bool) {
 	opts.Opts = append(opts.Opts, dtclient.DisableHostsRequests(disableHostsRequests))
 }
 
-func (opts *options) appendProxySettings(rtc client.Client, proxy *DynatraceClientProxy, namespace string) error {
-	if p := proxy; p != nil {
+func (opts *options) appendProxySettings(apiReader client.Reader, proxyEntry *DynatraceClientProxy, namespace string) error {
+	if p := proxyEntry; p != nil {
 		if p.ValueFrom != "" {
 			proxySecret := &corev1.Secret{}
-			err := rtc.Get(context.TODO(), client.ObjectKey{Name: p.ValueFrom, Namespace: namespace}, proxySecret)
+			err := apiReader.Get(context.TODO(), client.ObjectKey{Name: p.ValueFrom, Namespace: namespace}, proxySecret)
 			if err != nil {
 				return fmt.Errorf("failed to get proxy secret: %w", err)
 			}
 
-			proxyURL, err := kubeobjects.ExtractToken(proxySecret, Proxy)
+			proxyURL, err := kubeobjects.ExtractToken(proxySecret, proxy)
 			if err != nil {
 				return fmt.Errorf("failed to extract proxy secret field: %w", err)
 			}
@@ -129,21 +134,16 @@ func (opts *options) appendProxySettings(rtc client.Client, proxy *DynatraceClie
 	return nil
 }
 
-func (opts *options) appendTrustedCerts(rtc client.Client, trustedCerts string, namespace string) error {
+func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts string, namespace string) error {
 	if trustedCerts != "" {
 		certs := &corev1.ConfigMap{}
-		if err := rtc.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
+		if err := apiReader.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
 			return fmt.Errorf("failed to get certificate configmap: %w", err)
 		}
-		if certs.Data[Certificates] == "" {
+		if certs.Data[certificates] == "" {
 			return fmt.Errorf("failed to extract certificate configmap field: missing field certs")
 		}
-		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[Certificates])))
+		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[certificates])))
 	}
 	return nil
 }
-
-const (
-	Proxy        = "proxy"
-	Certificates = "certs"
-)

@@ -43,8 +43,8 @@ func (fs *mkDirAllErrorFs) MkdirAll(_ string, _ os.FileMode) error {
 func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`no dynakube instance`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(),
-			db:     metadata.FakeMemoryDB(),
+			apiReader: fake.NewClient(),
+			db:        metadata.FakeMemoryDB(),
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{})
 
@@ -57,8 +57,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		tenant := metadata.Tenant{TenantUUID: tenantUUID, LatestVersion: agentVersion, Dynakube: dkName}
 		_ = db.InsertTenant(&tenant)
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(),
-			db:     db,
+			apiReader: fake.NewClient(),
+			db:        db,
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: tenant.Dynakube}})
 
@@ -72,7 +72,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`code modules disabled`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						OneAgent: dynatracev1beta1.OneAgentSpec{},
@@ -88,7 +88,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`csi driver disabled`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						OneAgent: dynatracev1beta1.OneAgentSpec{
@@ -110,7 +110,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`no tokens`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -136,7 +136,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`error when creating dynatrace client`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -164,16 +164,16 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		assert.EqualError(t, err, "failed to create Dynatrace client: "+errorMsg)
+		assert.EqualError(t, err, "failed to create Dynatrace apiReader: "+errorMsg)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 	})
-	t.Run(`error when querying dynatrace client for connection info`, func(t *testing.T) {
+	t.Run(`error when querying dynatrace apiReader for connection info`, func(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{}, fmt.Errorf(errorMsg))
 
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -209,7 +209,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			TenantUUID: tenantUUID,
 		}, nil)
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -260,7 +260,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, mock.AnythingOfType("string")).
 			Return(make([]string, 0), fmt.Errorf(errorMsg))
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -314,7 +314,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return(agentVersion, nil)
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -376,7 +376,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			}).
 			Return(nil)
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,

@@ -54,6 +54,7 @@ var log = logger.NewDTLogger().WithName("provisioner")
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
 	client       client.Client
+	apiReader    client.Reader
 	opts         dtcsi.CSIOptions
 	dtcBuildFunc dynakube.DynatraceClientFunc
 	fs           afero.Fs
@@ -66,6 +67,7 @@ type OneAgentProvisioner struct {
 func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
 		client:       mgr.GetClient(),
+		apiReader:    mgr.GetAPIReader(),
 		opts:         opts,
 		dtcBuildFunc: dynakube.BuildDynatraceClient,
 		fs:           afero.NewOsFs(),
@@ -99,7 +101,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 	if !dk.NeedsCSI() {
-		rlog.Info("CSI driver disabled")
+		rlog.Info("CSI driver not needed", "dynakube", dk.Name)
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
@@ -117,7 +119,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	// Incase of a new tenant
+	// In case of a new tenant
 	if tenant == nil {
 		tenant = &metadata.Tenant{TenantUUID: dk.ConnectionInfo().TenantUUID}
 	}
@@ -145,7 +147,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 			log.Info("Adding tenant:", "uuid", tenant.TenantUUID, "version", tenant.LatestVersion, "dynakube", tenant.Dynakube)
 			err = r.db.InsertTenant(tenant)
 		} else {
-			log.Info("Updateing tenant:", "uuid", tenant.TenantUUID, "oldVersion", oldTenant.LatestVersion, "newVersion", tenant.LatestVersion, "oldDynakube", oldTenant.Dynakube, "newDynakube", tenant.Dynakube)
+			log.Info("Updating tenant:", "uuid", tenant.TenantUUID, "oldVersion", oldTenant.LatestVersion, "newVersion", tenant.LatestVersion, "oldDynakube", oldTenant.Dynakube, "newDynakube", tenant.Dynakube)
 			err = r.db.UpdateTenant(tenant)
 		}
 		if err != nil {
@@ -161,13 +163,13 @@ func hasTenantChanged(old, new metadata.Tenant) bool {
 }
 
 func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
-	dtp, err := dynakube.NewDynatraceClientProperties(ctx, r.client, *dk)
+	dtp, err := dynakube.NewDynatraceClientProperties(ctx, r.apiReader, *dk)
 	if err != nil {
 		return nil, err
 	}
 	dtc, err := r.dtcBuildFunc(*dtp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Dynatrace client: %w", err)
+		return nil, fmt.Errorf("failed to create Dynatrace apiReader: %w", err)
 	}
 
 	return dtc, nil
@@ -175,7 +177,7 @@ func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.
 
 func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1beta1.DynaKube, error) {
 	var dk dynatracev1beta1.DynaKube
-	err := r.client.Get(ctx, name, &dk)
+	err := r.apiReader.Get(ctx, name, &dk)
 
 	return &dk, err
 }
