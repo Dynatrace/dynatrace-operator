@@ -164,7 +164,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
-		assert.EqualError(t, err, "failed to create Dynatrace apiReader: "+errorMsg)
+		assert.EqualError(t, err, "failed to create Dynatrace client: "+errorMsg)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 	})

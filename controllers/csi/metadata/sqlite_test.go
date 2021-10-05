@@ -110,7 +110,7 @@ func TestUpdateTenant(t *testing.T) {
 	var lv string
 	var dk string
 	assert.NoError(t, err)
-	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE UUID = ?;", tenantsTableName), testTenant1.TenantUUID)
+	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE Dynakube = ?;", tenantsTableName), testTenant1.Dynakube)
 	err = row.Scan(&uuid, &lv, &dk)
 	assert.NoError(t, err)
 	assert.Equal(t, uuid, testTenant1.TenantUUID)

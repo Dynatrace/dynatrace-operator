@@ -121,18 +121,20 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 
 	// In case of a new tenant
 	if tenant == nil {
-		tenant = &metadata.Tenant{TenantUUID: dk.ConnectionInfo().TenantUUID}
+		tenant = &metadata.Tenant{
+			TenantUUID: dk.ConnectionInfo().TenantUUID,
+		}
 	}
 	rlog.Info("checking tenant", "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
 	oldTenant := *tenant
+
+	tenant.Dynakube = dk.Name
 
 	if err = r.createCSIDirectories(r.path.EnvDir(tenant.TenantUUID)); err != nil {
 		rlog.Error(err, "error when creating csi directories", "path", r.path.EnvDir(tenant.TenantUUID))
 		return reconcile.Result{}, errors.WithStack(err)
 	}
-
 	rlog.Info("csi directories exist", "path", r.path.EnvDir(tenant.TenantUUID))
-	tenant.Dynakube = dk.Name
 
 	installAgentCfg := newInstallAgentConfig(rlog, dtc, r.path, r.fs, r.recorder, tenant, dk)
 	if err = installAgentCfg.updateAgent(); err != nil {
@@ -141,7 +143,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 	}
 	if hasTenantChanged(oldTenant, *tenant) {
-		rlog.Info("tenant has changed", "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
+		rlog.Info("tenant has changed", "dynakube", tenant.Dynakube, "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
 		// New tenants doesn't have these fields set in the beginning
 		if oldTenant.Dynakube == "" && oldTenant.LatestVersion == "" {
 			log.Info("Adding tenant:", "uuid", tenant.TenantUUID, "version", tenant.LatestVersion, "dynakube", tenant.Dynakube)
@@ -169,7 +171,7 @@ func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.
 	}
 	dtc, err := r.dtcBuildFunc(*dtp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Dynatrace apiReader: %w", err)
+		return nil, fmt.Errorf("failed to create Dynatrace client: %w", err)
 	}
 
 	return dtc, nil

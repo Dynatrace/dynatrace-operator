@@ -36,8 +36,8 @@ const (
 	`
 	updateTenantStatement = `
 	UPDATE tenants
-	SET LatestVersion = ?, Dynakube = ?
-	WHERE UUID = ?;
+	SET LatestVersion = ?, UUID = ?
+	WHERE Dynakube = ?;
 	`
 
 	getTenantViaDynakubeStatement = `
@@ -142,7 +142,7 @@ func (a *SqliteAccess) InsertTenant(tenant *Tenant) error {
 }
 
 func (a *SqliteAccess) UpdateTenant(tenant *Tenant) error {
-	err := a.executeStatement(updateTenantStatement, tenant.LatestVersion, tenant.Dynakube, tenant.TenantUUID)
+	err := a.executeStatement(updateTenantStatement, tenant.LatestVersion, tenant.TenantUUID, tenant.Dynakube)
 	if err != nil {
 		err = fmt.Errorf("couldn't update tenant, LatestVersion %s, Dynakube %s, UUID %s, err: %s",
 			tenant.LatestVersion,
