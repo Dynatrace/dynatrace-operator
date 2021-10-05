@@ -94,17 +94,7 @@ func TestGetTenant(t *testing.T) {
 	err := db.InsertTenant(&testTenant1)
 	assert.Nil(t, err)
 
-	tenant, err := db.GetTenant(testTenant1.TenantUUID)
-	assert.NoError(t, err)
-	assert.Equal(t, testTenant1, *tenant)
-}
-
-func TestGetTenantViaDynakube(t *testing.T) {
-	db := FakeMemoryDB()
-	err := db.InsertTenant(&testTenant1)
-	assert.Nil(t, err)
-
-	tenant, err := db.GetTenantViaDynakube(testTenant1.Dynakube)
+	tenant, err := db.GetTenant(testTenant1.Dynakube)
 	assert.NoError(t, err)
 	assert.Equal(t, testTenant1, *tenant)
 }

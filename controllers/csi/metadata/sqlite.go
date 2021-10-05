@@ -17,7 +17,7 @@ const (
 		UUID VARCHAR NOT NULL,
 		LatestVersion VARCHAR NOT NULL,
 		Dynakube VARCHAR NOT NULL,
-		PRIMARY KEY (UUID)
+		PRIMARY KEY (Dynakube)
 	); `
 
 	volumesTableName       = "volumes"
@@ -167,17 +167,7 @@ func (a *SqliteAccess) DeleteTenant(tenantUUID string) error {
 	return err
 }
 
-func (a *SqliteAccess) GetTenant(tenantUUID string) (*Tenant, error) {
-	var latestVersion string
-	var dynakube string
-	err := a.querySimpleStatement(getTenantStatement, tenantUUID, &latestVersion, &dynakube)
-	if err != nil {
-		err = fmt.Errorf("couldn't get tenant for UUID %s, err: %s", tenantUUID, err)
-	}
-	return NewTenant(tenantUUID, latestVersion, dynakube), err
-}
-
-func (a *SqliteAccess) GetTenantViaDynakube(dynakubeName string) (*Tenant, error) {
+func (a *SqliteAccess) GetTenant(dynakubeName string) (*Tenant, error) {
 	var tenantUUID string
 	var latestVersion string
 	err := a.querySimpleStatement(getTenantViaDynakubeStatement, dynakubeName, &tenantUUID, &latestVersion)
