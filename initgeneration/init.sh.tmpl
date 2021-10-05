@@ -17,6 +17,7 @@ skip_cert_checks="{{if .SkipCertCheck}}true{{else}}false{{end}}"
 custom_ca="{{if .TrustedCAs}}true{{else}}false{{end}}"
 fail_code=0
 cluster_id="{{.ClusterID}}"
+host_group="{{.HostGroup}}"
 
 declare -A im_nodes
 im_nodes=(
@@ -29,6 +30,14 @@ im_nodes=(
 setFailCode(){
 	if [[ "${FAILURE_POLICY}" == "fail" ]]; then
 		fail_code=1
+	fi
+}
+
+setHostGroup(){
+	if [[ "${host_group}" != "" ]]; then
+		cp "${bin_dir}/agent/conf/ruxitagentproc.conf" /tmp
+		sed -i "s/\[general\]/\[general\]\nhostGroup ${host_group}/" tmp/ruxitagentproc.conf
+		cat tmp/ruxitagentproc.conf > "${bin_dir}/agent/conf/ruxitagentproc.conf"
 	fi
 }
 
@@ -102,10 +111,10 @@ isCloudNativeFullStack true" >> ${1}
 }
 
 createConfigurationFiles() {
-	echo -n "${INSTALLPATH}/agent/lib64/liboneagentproc.so" >> "${share_dir}/ld.so.preload"
-
 	# Script fails if empty
 	host_tenant="${im_nodes[${K8S_NODE_NAME}]}"
+
+	echo -n "${bin_dir}/agent/lib64/liboneagentproc.so" >> "${share_dir}/ld.so.preload"
 
 	for i in $(seq 1 $CONTAINERS_COUNT)
 	do
@@ -137,3 +146,5 @@ printf "\nDownloading OneAgent\n"
 downloadOneAgentIfNecessary
 printf "\nCreating configuration files for containers\n"
 createConfigurationFiles
+printf "\nSetting HostGroup\n"
+setHostGroup

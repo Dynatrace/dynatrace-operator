@@ -33,6 +33,7 @@ var (
 	testTenantUUID           = "abc12345"
 	kubesystemNamespace      = "kube-system"
 	kubesystemUID            = types.UID("42")
+	testHostGroup            = "host-test"
 	testNode1Name            = "node1"
 	testNode2Name            = "node2"
 	testNodeWithSelectorName = "nodeWselector"
@@ -45,7 +46,14 @@ var (
 			Proxy:      &dynatracev1beta1.DynaKubeProxy{Value: testProxy},
 			TrustedCAs: testtrustCAsCM,
 			Tokens:     testTokensName,
-			OneAgent:   dynatracev1beta1.OneAgentSpec{HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{}},
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+					HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+						Args: []string{
+							"--set-host-group=" + testHostGroup,
+						},
+					},
+				}},
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
 			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
@@ -63,7 +71,7 @@ var (
 		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL:   testApiUrl,
-			OneAgent: dynatracev1beta1.OneAgentSpec{HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{}},
+			OneAgent: dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
 			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
@@ -82,7 +90,7 @@ var (
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: testApiUrl,
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{
+				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
 					HostInjectSpec: dynatracev1beta1.HostInjectSpec{
 						NodeSelector: testSelectorLabels,
 					},
@@ -318,6 +326,7 @@ func TestPrepareScriptForDynaKube(t *testing.T) {
 			ClusterID:     string(kubesystemUID),
 			TenantUUID:    dk.Status.ConnectionInfo.TenantUUID,
 			IMNodes:       imNodes,
+			HostGroup:     testHostGroup,
 		}
 		assert.Equal(t, &expectedScript, sc)
 
