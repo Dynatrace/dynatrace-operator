@@ -47,7 +47,7 @@ func newInstallAgentConfig(
 	}
 }
 
-func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID string) (error, string) {
+func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID string) (string, error) {
 	dk := installAgentCfg.dk
 	logger := installAgentCfg.logger
 	currentVersion := installAgentCfg.getOneAgentVersionFromInstance()
@@ -61,15 +61,15 @@ func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID strin
 				corev1.EventTypeWarning,
 				failedInstallAgentVersionEvent,
 				"Failed to install agent version: %s to tenant: %s, err: %s", currentVersion, tenantUUID, err)
-			return err, ""
+			return "", err
 		}
 		installAgentCfg.recorder.Eventf(dk,
 			corev1.EventTypeNormal,
 			installAgentVersionEvent,
 			"Installed agent version: %s to tenant: %s", currentVersion, tenantUUID)
-		return nil, currentVersion
+		return currentVersion, nil
 	}
-	return nil, ""
+	return "", nil
 }
 
 func (installAgentCfg *installAgentConfig) getOneAgentVersionFromInstance() string {

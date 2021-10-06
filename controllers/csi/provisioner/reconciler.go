@@ -135,7 +135,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	rlog.Info("csi directories exist", "path", r.path.EnvDir(tenant.TenantUUID))
 
 	installAgentCfg := newInstallAgentConfig(rlog, dtc, r.path, r.fs, r.recorder, dk)
-	if err, updatedVersion := installAgentCfg.updateAgent(tenant.LatestVersion, tenant.TenantUUID); err != nil {
+	if updatedVersion, err := installAgentCfg.updateAgent(tenant.LatestVersion, tenant.TenantUUID); err != nil {
 		rlog.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
