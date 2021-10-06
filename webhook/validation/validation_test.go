@@ -3,6 +3,7 @@ package validation
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
@@ -89,7 +90,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					HostMonitoring:   &dynatracev1beta1.HostMonitoringSpec{},
 				},
 			},
-		}, errorConflictingMode)
+		}, errorConflictingOneagentMode)
 
 		assertDeniedResponse(t, dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -99,7 +100,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					HostMonitoring:        &dynatracev1beta1.HostMonitoringSpec{},
 				},
 			},
-		}, errorConflictingMode)
+		}, errorConflictingOneagentMode)
 
 		assertDeniedResponse(t, dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -113,7 +114,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					},
 				},
 			},
-		}, errorConflictingMode)
+		}, errorConflictingActiveGateSections)
 
 		assertDeniedResponse(t, dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -125,7 +126,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					},
 				},
 			},
-		}, errorConflictingMode)
+		}, fmt.Sprintf(errorDuplicateActiveGateCapability, dynatracev1beta1.RoutingCapability.DisplayName))
 
 		assertDeniedResponse(t, dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -136,7 +137,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					},
 				},
 			},
-		}, errorConflictingMode)
+		}, fmt.Sprintf(errorInvalidActiveGateCapability, "invalid-capability"))
 	})
 	t.Run(`missing API URL`, func(t *testing.T) {
 		assertDeniedResponse(t, dynatracev1beta1.DynaKube{

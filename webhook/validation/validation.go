@@ -2,6 +2,7 @@ package validation
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
@@ -22,11 +23,25 @@ const (
 )
 
 const (
-	errorConflictingMode = `
-The DynaKube's specification tries to use multiple modes at the same time, which is not supported.
+	errorConflictingOneagentMode = `
+The DynaKube's specification tries to use multiple oneagent modes at the same time, which is not supported.
 `
+	errorConflictingActiveGateSections = `
+The DynaKube's specification tries to use the deprecated ActiveGate section(s) alongside the new ActiveGate section, which is not supported.
+`
+
+	errorInvalidActiveGateCapability = `
+The DynaKube's specification tries to use an invalid capability in ActiveGate section, invalid capability=%s.
+Make sure you correctly specify the ActiveGate capabilities in your custom resource.
+`
+
+	errorDuplicateActiveGateCapability = `
+The DynaKube's specification tries to specify duplicate capabilities in the ActiveGate section, duplicate capability=%s.
+Make sure you don't duplicate an Activegate capability in your custom resource.
+`
+
 	errorNoApiUrl = `
-The DynaKube's specification is missing the API URL or still has the example value set. 
+The DynaKube's specification is missing the API URL or still has the example value set.
 Make sure you correctly specify the URL in your custom resource.
 `
 )
@@ -65,12 +80,17 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 
 	if hasConflictingOneAgentConfiguration(dynakube) {
 		validator.logger.Info("requested dynakube has conflicting one agent configuration", "name", request.Name, "namespace", request.Namespace)
-		return admission.Denied(errorConflictingMode)
+		return admission.Denied(errorConflictingOneagentMode)
 	}
 
 	if hasConflictingActiveGateConfiguration(dynakube) {
 		validator.logger.Info("requested dynakube has conflicting active gate configuration", "name", request.Name, "namespace", request.Namespace)
-		return admission.Denied(errorConflictingMode)
+		return admission.Denied(errorConflictingActiveGateSections)
+	}
+
+	if errMsg := hasInvalidActiveGateCapabilities(dynakube); errMsg != "" {
+		validator.logger.Info("requested dynakube has invalid active gate capability", "name", request.Name, "namespace", request.Namespace)
+		return admission.Denied(errMsg)
 	}
 
 	validator.logger.Info("requested dynakube is valid", "name", request.Name, "namespace", request.Namespace)
@@ -99,21 +119,23 @@ func hasConflictingOneAgentConfiguration(dynakube *dynatracev1beta1.DynaKube) bo
 }
 
 func hasConflictingActiveGateConfiguration(dynakube *dynatracev1beta1.DynaKube) bool {
-	if dynakube.DeprecatedActiveGateMode() && dynakube.ActiveGateMode() {
-		return true
-	}
+	return dynakube.DeprecatedActiveGateMode() && dynakube.ActiveGateMode()
+}
 
+func hasInvalidActiveGateCapabilities(dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.ActiveGateMode() {
 		capabilities := dynakube.Spec.ActiveGate.Capabilities
 		duplicateChecker := map[dynatracev1beta1.CapabilityDisplayName]bool{}
 		for _, capability := range capabilities {
-			if _, ok := dynatracev1beta1.ActiveGateDisplayNames[capability]; !ok || duplicateChecker[capability] {
-				return true
+			if _, ok := dynatracev1beta1.ActiveGateDisplayNames[capability]; !ok {
+				return fmt.Sprintf(errorInvalidActiveGateCapability, capability)
+			} else if duplicateChecker[capability] {
+				return fmt.Sprintf(errorDuplicateActiveGateCapability, capability)
 			}
 			duplicateChecker[capability] = true
 		}
 	}
-	return false
+	return ""
 }
 
 // TODO: Implement it to check other dynakubes for conflicting nodeSelectors
