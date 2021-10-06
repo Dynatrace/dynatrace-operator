@@ -168,7 +168,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 	})
-	t.Run(`error when querying dynatrace apiReader for connection info`, func(t *testing.T) {
+	t.Run(`error when querying dynatrace client for connection info`, func(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{}, fmt.Errorf(errorMsg))
 

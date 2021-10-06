@@ -34,9 +34,9 @@ type Access interface {
 
 	InsertTenant(tenant *Tenant) error
 	UpdateTenant(tenant *Tenant) error
-	DeleteTenant(tenantUUID string) error
+	DeleteTenant(dynakubeName string) error
 	GetTenant(dynakubeName string) (*Tenant, error)
-	GetDynakubes() (map[string]string, error)
+	GetTenants() (map[string]string, error)
 
 	InsertVolume(volume *Volume) error
 	DeleteVolume(volumeID string) error

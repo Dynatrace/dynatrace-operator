@@ -59,7 +59,7 @@ const (
 
 	deleteVolumeStatement = "DELETE FROM volumes WHERE ID = ?;"
 
-	deleteTenantStatement = "DELETE FROM tenants WHERE UUID = ?;"
+	deleteTenantStatement = "DELETE FROM tenants WHERE Dynakube = ?;"
 
 	getUsedVersionsStatement = `
 	SELECT Version
@@ -72,7 +72,7 @@ const (
 	FROM volumes;
 	`
 
-	getDynakubesStatement = `
+	getTenantsStatement = `
 	SELECT UUID, Dynakube
 	FROM tenants;
 	`
@@ -86,7 +86,7 @@ type SqliteAccess struct {
 	conn *sql.DB
 }
 
-// Creates a new SqliteAccess, connects to the database.
+// NewAccess creates a new SqliteAccess, connects to the database.
 func NewAccess(path string) (Access, error) {
 	a := SqliteAccess{}
 	err := a.Setup(path)
@@ -118,7 +118,7 @@ func (a *SqliteAccess) createTables() error {
 	return nil
 }
 
-//Connects to the database and creates the necessary tables if they don't exists
+// Setup connects to the database and creates the necessary tables if they don't exists
 func (a *SqliteAccess) Setup(path string) error {
 	if err := a.connect(sqliteDriverName, path); err != nil {
 		return err
@@ -129,6 +129,7 @@ func (a *SqliteAccess) Setup(path string) error {
 	return nil
 }
 
+// InsertTenant inserts a new Tenant
 func (a *SqliteAccess) InsertTenant(tenant *Tenant) error {
 	err := a.executeStatement(insertTenantStatement, tenant.TenantUUID, tenant.LatestVersion, tenant.Dynakube)
 	if err != nil {
@@ -141,6 +142,7 @@ func (a *SqliteAccess) InsertTenant(tenant *Tenant) error {
 	return err
 }
 
+// UpdateTenant updates an existing Tenant by matching the Dynakube name
 func (a *SqliteAccess) UpdateTenant(tenant *Tenant) error {
 	err := a.executeStatement(updateTenantStatement, tenant.LatestVersion, tenant.TenantUUID, tenant.Dynakube)
 	if err != nil {
@@ -153,24 +155,27 @@ func (a *SqliteAccess) UpdateTenant(tenant *Tenant) error {
 	return err
 }
 
-func (a *SqliteAccess) DeleteTenant(tenantUUID string) error {
-	err := a.executeStatement(deleteTenantStatement, tenantUUID)
+// DeleteTenant deletes an existing Tenant by Dynakube name
+func (a *SqliteAccess) DeleteTenant(dynakubeName string) error {
+	err := a.executeStatement(deleteTenantStatement, dynakubeName)
 	if err != nil {
-		err = fmt.Errorf("couldn't delete tenant, UUID %s, err: %s", tenantUUID, err)
+		err = fmt.Errorf("couldn't delete tenant, Dynakube %s, err: %s", dynakubeName, err)
 	}
 	return err
 }
 
+// GetTenant gets Tenant by Dynakube name
 func (a *SqliteAccess) GetTenant(dynakubeName string) (*Tenant, error) {
 	var tenantUUID string
 	var latestVersion string
 	err := a.querySimpleStatement(getTenantViaDynakubeStatement, dynakubeName, &tenantUUID, &latestVersion)
 	if err != nil {
-		err = fmt.Errorf("couldn't get tenant field for Dynakube %s, err: %s", dynakubeName, err)
+		err = fmt.Errorf("couldn't get tenant, Dynakube %s, err: %s", dynakubeName, err)
 	}
 	return NewTenant(tenantUUID, latestVersion, dynakubeName), err
 }
 
+// InsertVolume inserts a new Volume
 func (a *SqliteAccess) InsertVolume(volume *Volume) error {
 	err := a.executeStatement(insertVolumeStatement, volume.VolumeID, volume.PodName, volume.Version, volume.TenantUUID)
 	if err != nil {
@@ -184,6 +189,7 @@ func (a *SqliteAccess) InsertVolume(volume *Volume) error {
 	return err
 }
 
+// GetVolume gets Volume by its ID
 func (a *SqliteAccess) GetVolume(volumeID string) (*Volume, error) {
 	var PodName string
 	var version string
@@ -195,6 +201,7 @@ func (a *SqliteAccess) GetVolume(volumeID string) (*Volume, error) {
 	return NewVolume(volumeID, PodName, version, tenantUUID), err
 }
 
+// DeleteVolume deletes a Volume by its ID
 func (a *SqliteAccess) DeleteVolume(volumeID string) error {
 	err := a.executeStatement(deleteVolumeStatement, volumeID)
 	if err != nil {
@@ -226,7 +233,7 @@ func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, erro
 	return versions, nil
 }
 
-// Gets all PodNames present in the `volumes` database in map with their corresponding volumeIDs.
+// GetPodNames gets all PodNames present in the `volumes` database in map with their corresponding volumeIDs.
 func (a *SqliteAccess) GetPodNames() (map[string]string, error) {
 	rows, err := a.conn.Query(getPodNamesStatement)
 	if err != nil {
@@ -246,13 +253,13 @@ func (a *SqliteAccess) GetPodNames() (map[string]string, error) {
 	return podNames, nil
 }
 
-// Gets all Dynakubes present in the `tenants` database in map with their corresponding tenantUUIDs.
-func (a *SqliteAccess) GetDynakubes() (map[string]string, error) {
-	rows, err := a.conn.Query(getDynakubesStatement)
+// GetTenants gets all Tenants and maps their tenantUUID to the corresponding Dynakubes.
+func (a *SqliteAccess) GetTenants() (map[string]string, error) {
+	rows, err := a.conn.Query(getTenantsStatement)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get Dynakubes for, err: %s", err)
+		return nil, fmt.Errorf("couldn't get Tenants for, err: %s", err)
 	}
-	dynakubes := map[string]string{}
+	tenants := map[string]string{}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var uuid string
@@ -261,19 +268,19 @@ func (a *SqliteAccess) GetDynakubes() (map[string]string, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan from database for Dynakube, err: %s", err)
 		}
-		dynakubes[dynakube] = uuid
+		tenants[dynakube] = uuid
 	}
-	return dynakubes, nil
+	return tenants, nil
 }
 
-// Excutes the provided SQL statement on the database.
+// Executes the provided SQL statement on the database.
 // The `vars` are passed to the SQL statement (in-order), to fill in the SQL wildcards.
 func (a *SqliteAccess) executeStatement(statement string, vars ...interface{}) error {
 	_, err := a.conn.Exec(statement, vars...)
 	return err
 }
 
-// Excutes the provided SQL SELECT statement on the database.
+// Executes the provided SQL SELECT statement on the database.
 // The SQL statement should always return a single row.
 // The `id` is passed to the SQL query to fill in an SQL wildcard
 // The `vars` are filled with the values of the return of the SELECT statement, so the `vars` need to be pointers.

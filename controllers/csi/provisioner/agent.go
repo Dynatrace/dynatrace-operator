@@ -50,7 +50,7 @@ func newInstallAgentConfig(
 	}
 }
 
-func (installAgentCfg *installAgentConfig) updateAgent() error {
+func (installAgentCfg *installAgentConfig) updateAgent() (error, string) {
 	tenant := installAgentCfg.tenant
 	dk := installAgentCfg.dk
 	logger := installAgentCfg.logger
@@ -59,21 +59,21 @@ func (installAgentCfg *installAgentConfig) updateAgent() error {
 
 	if _, err := os.Stat(targetDir); currentVersion != tenant.LatestVersion || os.IsNotExist(err) {
 		logger.Info("updating agent", "version", currentVersion, "previous version", tenant.LatestVersion)
-		tenant.LatestVersion = currentVersion
 
 		if err := installAgentCfg.installAgentVersion(); err != nil {
 			installAgentCfg.recorder.Eventf(dk,
 				corev1.EventTypeWarning,
 				failedInstallAgentVersionEvent,
 				"Failed to install agent version: %s to tenant: %s, err: %s", tenant.LatestVersion, tenant.TenantUUID, err)
-			return err
+			return err, ""
 		}
 		installAgentCfg.recorder.Eventf(dk,
 			corev1.EventTypeNormal,
 			installAgentVersionEvent,
 			"Installed agent version: %s to tenant: %s", currentVersion, tenant.TenantUUID)
+		return nil, currentVersion
 	}
-	return nil
+	return nil, ""
 }
 
 func (installAgentCfg *installAgentConfig) getOneAgentVersionFromInstance() string {
