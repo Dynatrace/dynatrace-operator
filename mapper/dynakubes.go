@@ -4,6 +4,7 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -16,10 +17,11 @@ type DynakubeMapper struct {
 	apiReader  client.Reader
 	operatorNs string
 	dk         *dynatracev1beta1.DynaKube
+	logger     logr.Logger
 }
 
-func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynatracev1beta1.DynaKube) DynakubeMapper {
-	return DynakubeMapper{ctx, clt, apiReader, operatorNs, dk}
+func NewDynakubeMapper(ctx context.Context, clt client.Client, apiReader client.Reader, operatorNs string, dk *dynatracev1beta1.DynaKube, logger logr.Logger) DynakubeMapper {
+	return DynakubeMapper{ctx, clt, apiReader, operatorNs, dk, logger}
 }
 
 // MapFromDynakube checks all the namespaces to all the dynakubes
@@ -73,7 +75,7 @@ func (dm DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *d
 		if dm.operatorNs == namespace.Name {
 			continue
 		}
-		updated, err = updateNamespace(namespace, dkList)
+		updated, err = updateNamespace(namespace, dkList, dm.logger)
 		if updated {
 			modifiedNs = append(modifiedNs, namespace)
 		}
