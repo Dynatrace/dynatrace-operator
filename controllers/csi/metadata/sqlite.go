@@ -40,7 +40,7 @@ const (
 	WHERE Dynakube = ?;
 	`
 
-	getTenantViaDynakubeStatement = `
+	getTenantStatement = `
 	SELECT UUID, LatestVersion
 	FROM tenants
 	WHERE Dynakube = ?;
@@ -91,7 +91,7 @@ func NewAccess(path string) (Access, error) {
 	a := SqliteAccess{}
 	err := a.Setup(path)
 	if err != nil {
-		log.Error(err, "Failed to connect to the database, err: %s", err.Error())
+		log.Error(err, "failed to connect to the database, err: %s", err.Error())
 		return nil, err
 	}
 	return &a, nil
@@ -118,7 +118,7 @@ func (a *SqliteAccess) createTables() error {
 	return nil
 }
 
-// Setup connects to the database and creates the necessary tables if they don't exists
+// Setup connects to the database and creates the necessary tables if they don't exist
 func (a *SqliteAccess) Setup(path string) error {
 	if err := a.connect(sqliteDriverName, path); err != nil {
 		return err
@@ -133,7 +133,7 @@ func (a *SqliteAccess) Setup(path string) error {
 func (a *SqliteAccess) InsertTenant(tenant *Tenant) error {
 	err := a.executeStatement(insertTenantStatement, tenant.TenantUUID, tenant.LatestVersion, tenant.Dynakube)
 	if err != nil {
-		err = fmt.Errorf("couldn't insert tenant, UUID %s, LatestVersion %s, Dynakube %s, err: %s",
+		err = fmt.Errorf("couldn't insert tenant, uuid '%s', latest version '%s', dynakube '%s', err: %s",
 			tenant.TenantUUID,
 			tenant.LatestVersion,
 			tenant.Dynakube,
@@ -146,10 +146,10 @@ func (a *SqliteAccess) InsertTenant(tenant *Tenant) error {
 func (a *SqliteAccess) UpdateTenant(tenant *Tenant) error {
 	err := a.executeStatement(updateTenantStatement, tenant.LatestVersion, tenant.TenantUUID, tenant.Dynakube)
 	if err != nil {
-		err = fmt.Errorf("couldn't update tenant, LatestVersion %s, Dynakube %s, UUID %s, err: %s",
+		err = fmt.Errorf("couldn't update tenant, uuid '%s', latest version '%s', dynakube '%s', err: %s",
+			tenant.TenantUUID,
 			tenant.LatestVersion,
 			tenant.Dynakube,
-			tenant.TenantUUID,
 			err)
 	}
 	return err
@@ -159,7 +159,7 @@ func (a *SqliteAccess) UpdateTenant(tenant *Tenant) error {
 func (a *SqliteAccess) DeleteTenant(dynakubeName string) error {
 	err := a.executeStatement(deleteTenantStatement, dynakubeName)
 	if err != nil {
-		err = fmt.Errorf("couldn't delete tenant, Dynakube %s, err: %s", dynakubeName, err)
+		err = fmt.Errorf("couldn't delete tenant, dynakube '%s', err: %s", dynakubeName, err)
 	}
 	return err
 }
@@ -168,9 +168,9 @@ func (a *SqliteAccess) DeleteTenant(dynakubeName string) error {
 func (a *SqliteAccess) GetTenant(dynakubeName string) (*Tenant, error) {
 	var tenantUUID string
 	var latestVersion string
-	err := a.querySimpleStatement(getTenantViaDynakubeStatement, dynakubeName, &tenantUUID, &latestVersion)
+	err := a.querySimpleStatement(getTenantStatement, dynakubeName, &tenantUUID, &latestVersion)
 	if err != nil {
-		err = fmt.Errorf("couldn't get tenant, Dynakube %s, err: %s", dynakubeName, err)
+		err = fmt.Errorf("couldn't get tenant, dynakube '%s', err: %s", dynakubeName, err)
 	}
 	return NewTenant(tenantUUID, latestVersion, dynakubeName), err
 }
@@ -179,7 +179,7 @@ func (a *SqliteAccess) GetTenant(dynakubeName string) (*Tenant, error) {
 func (a *SqliteAccess) InsertVolume(volume *Volume) error {
 	err := a.executeStatement(insertVolumeStatement, volume.VolumeID, volume.PodName, volume.Version, volume.TenantUUID)
 	if err != nil {
-		err = fmt.Errorf("couldn't insert volume info, UID %s, VolumeID %s, Version %s, TenantUUId: %s err: %s",
+		err = fmt.Errorf("couldn't insert volume info, volume id '%s', pod '%s', version '%s', dynakube '%s', err: %s",
 			volume.VolumeID,
 			volume.PodName,
 			volume.Version,
@@ -196,7 +196,7 @@ func (a *SqliteAccess) GetVolume(volumeID string) (*Volume, error) {
 	var tenantUUID string
 	err := a.querySimpleStatement(getVolumeStatement, volumeID, &PodName, &version, &tenantUUID)
 	if err != nil {
-		err = fmt.Errorf("couldn't get volume field for VolumeID %s, err: %s", volumeID, err)
+		err = fmt.Errorf("couldn't get volume field for volume id '%s', err: %s", volumeID, err)
 	}
 	return NewVolume(volumeID, PodName, version, tenantUUID), err
 }
@@ -205,7 +205,7 @@ func (a *SqliteAccess) GetVolume(volumeID string) (*Volume, error) {
 func (a *SqliteAccess) DeleteVolume(volumeID string) error {
 	err := a.executeStatement(deleteVolumeStatement, volumeID)
 	if err != nil {
-		err = fmt.Errorf("couldn't delete volume VolumeID %s, err: %s", volumeID, err)
+		err = fmt.Errorf("couldn't delete volume for volume id '%s', err: %s", volumeID, err)
 	}
 	return err
 }
@@ -216,7 +216,7 @@ func (a *SqliteAccess) DeleteVolume(volumeID string) error {
 func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, error) {
 	rows, err := a.conn.Query(getUsedVersionsStatement, tenantUUID)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get used version info for tenantUUID %s, err: %s", tenantUUID, err)
+		return nil, fmt.Errorf("couldn't get used version info for tenant uuid '%s', err: %s", tenantUUID, err)
 	}
 	versions := map[string]bool{}
 	defer func() { _ = rows.Close() }()
@@ -224,7 +224,7 @@ func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, erro
 		var version string
 		err := rows.Scan(&version)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan from database for tenantUUID %s, err: %s", tenantUUID, err)
+			return nil, fmt.Errorf("failed to scan from database for tenant uuid '%s', err: %s", tenantUUID, err)
 		}
 		if _, ok := versions[version]; !ok {
 			versions[version] = true
@@ -237,7 +237,7 @@ func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, erro
 func (a *SqliteAccess) GetPodNames() (map[string]string, error) {
 	rows, err := a.conn.Query(getPodNamesStatement)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get PodNames for, err: %s", err)
+		return nil, fmt.Errorf("couldn't get pod names, err: %s", err)
 	}
 	podNames := map[string]string{}
 	defer func() { _ = rows.Close() }()
@@ -246,7 +246,7 @@ func (a *SqliteAccess) GetPodNames() (map[string]string, error) {
 		var volumeID string
 		err := rows.Scan(&volumeID, &podName)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan from database for PodName, err: %s", err)
+			return nil, fmt.Errorf("failed to scan from database for pod names, err: %s", err)
 		}
 		podNames[podName] = volumeID
 	}
@@ -257,7 +257,7 @@ func (a *SqliteAccess) GetPodNames() (map[string]string, error) {
 func (a *SqliteAccess) GetTenants() (map[string]string, error) {
 	rows, err := a.conn.Query(getTenantsStatement)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get Tenants for, err: %s", err)
+		return nil, fmt.Errorf("couldn't get tenants, err: %s", err)
 	}
 	tenants := map[string]string{}
 	defer func() { _ = rows.Close() }()
@@ -266,7 +266,7 @@ func (a *SqliteAccess) GetTenants() (map[string]string, error) {
 		var dynakube string
 		err := rows.Scan(&uuid, &dynakube)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan from database for Dynakube, err: %s", err)
+			return nil, fmt.Errorf("failed to scan from database for tenant, err: %s", err)
 		}
 		tenants[dynakube] = uuid
 	}

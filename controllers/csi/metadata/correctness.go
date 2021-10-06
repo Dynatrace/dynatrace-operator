@@ -33,8 +33,6 @@ func correctVolumes(cl client.Client, access Access, log logr.Logger) error {
 		var pod corev1.Pod
 		if err := cl.Get(context.TODO(), client.ObjectKey{Name: podName}, &pod); !k8serrors.IsNotFound(err) {
 			continue
-		} else if err != nil {
-			return err
 		}
 		volumeID := podNames[podName]
 		if err := access.DeleteVolume(volumeID); err != nil {
@@ -57,8 +55,6 @@ func correctTenants(cl client.Client, access Access, log logr.Logger) error {
 		var dynakube dynatracev1beta1.DynaKube
 		if err := cl.Get(context.TODO(), client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
 			continue
-		} else if err != nil {
-			return err
 		}
 		if err := access.DeleteTenant(dynakubeName); err != nil {
 			return err
