@@ -108,7 +108,7 @@ func (dk *DynaKube) ActiveGateImage() string {
 	return fmt.Sprintf("%s/linux/activegate:latest", registry)
 }
 
-func (dk *DynaKube) UseCSIDriver() bool {
+func (dk *DynaKube) NeedsCSIDriver() bool {
 	if dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.Image != "" {
 		return false
 	}

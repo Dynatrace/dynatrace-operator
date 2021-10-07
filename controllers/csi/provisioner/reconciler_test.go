@@ -427,7 +427,7 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 	t.Run(`default DynaKube object returns false`, func(t *testing.T) {
 		dk := &dynatracev1beta1.DynaKube{}
 
-		isEnabled := dk.UseCSIDriver()
+		isEnabled := dk.NeedsCSIDriver()
 
 		assert.False(t, isEnabled)
 	})
@@ -441,7 +441,7 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 			},
 		}
 
-		isEnabled := dk.UseCSIDriver()
+		isEnabled := dk.NeedsCSIDriver()
 
 		assert.True(t, isEnabled)
 	})
@@ -457,7 +457,7 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 			},
 		}
 
-		isEnabled := dk.UseCSIDriver()
+		isEnabled := dk.NeedsCSIDriver()
 
 		assert.False(t, isEnabled)
 	})

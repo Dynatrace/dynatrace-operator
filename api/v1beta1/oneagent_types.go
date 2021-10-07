@@ -127,7 +127,7 @@ type ApplicationMonitoringSpec struct {
 	Version string `json:"version,omitempty"`
 
 	// Optional: If you want to use CSIDriver; disable if your cluster does not have 'nodes' to fall back to the volume approach.
-	UseCSIDriver *bool `json:"UseCSIDriver,omitempty"`
+	UseCSIDriver *bool `json:"NeedsCSIDriver,omitempty"`
 }
 
 type AppInjectionSpec struct {

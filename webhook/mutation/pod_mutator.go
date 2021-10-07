@@ -236,7 +236,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 	dkVol := corev1.VolumeSource{}
 	mode := ""
-	if dk.UseCSIDriver() {
+	if dk.NeedsCSIDriver() {
 		dkVol.CSI = &corev1.CSIVolumeSource{
 			Driver: dtcsi.DriverName,
 		}

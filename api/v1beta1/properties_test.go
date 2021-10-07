@@ -52,7 +52,7 @@ func TestDynaKube_UseCSIDriver(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, false, dk.UseCSIDriver())
+		assert.Equal(t, false, dk.NeedsCSIDriver())
 	})
 
 	t.Run(`DynaKube with application monitoring with csi driver enabled`, func(t *testing.T) {
@@ -66,7 +66,7 @@ func TestDynaKube_UseCSIDriver(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, true, dk.UseCSIDriver())
+		assert.Equal(t, true, dk.NeedsCSIDriver())
 	})
 
 	t.Run(`DynaKube with application monitoring with csi driver enabled and with an image set`, func(t *testing.T) {
@@ -81,12 +81,12 @@ func TestDynaKube_UseCSIDriver(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, false, dk.UseCSIDriver())
+		assert.Equal(t, false, dk.NeedsCSIDriver())
 	})
 
 	t.Run(`DynaKube with cloud native`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{CloudNativeFullStack: &CloudNativeFullStackSpec{}}}}
-		assert.Equal(t, true, dk.UseCSIDriver())
+		assert.Equal(t, true, dk.NeedsCSIDriver())
 	})
 }
 
