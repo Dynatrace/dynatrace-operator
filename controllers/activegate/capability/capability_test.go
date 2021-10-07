@@ -314,6 +314,9 @@ func TestNewMultiCapability(t *testing.T) {
 				capabilityBase: capabilityBase{
 					enabled:   false,
 					shortName: multiActiveGatePodName,
+					Configuration: Configuration{
+						CreateService: true,
+					},
 				},
 			},
 		},

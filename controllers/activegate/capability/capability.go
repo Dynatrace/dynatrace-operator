@@ -146,6 +146,7 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 		},
 	}
 	if dk == nil || !dk.ActiveGateMode() {
+		mc.CreateService = true // necessary for cleaning up service if created
 		return &mc
 	}
 	mc.enabled = true
