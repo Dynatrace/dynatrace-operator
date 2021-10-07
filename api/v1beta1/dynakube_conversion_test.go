@@ -28,6 +28,42 @@ const (
 	testStatusOneAgentInstanceKey = "test-instance"
 )
 
+func TestConversion_ConvertTFrom_Create(t *testing.T) {
+	autoUpdate := true
+	oldDynakube := &v1alpha1.DynaKube{
+		ObjectMeta: prepareObjectMeta(),
+		Spec: v1alpha1.DynaKubeSpec{
+			APIURL: testAPIURL,
+			Tokens: testToken,
+
+			OneAgent: v1alpha1.OneAgentSpec{
+				AutoUpdate: &autoUpdate,
+			},
+
+			ClassicFullStack: v1alpha1.FullStackSpec{
+				Enabled: true,
+			},
+			KubernetesMonitoringSpec: v1alpha1.KubernetesMonitoringSpec{
+				CapabilityProperties: v1alpha1.CapabilityProperties{
+					Enabled: true,
+				},
+			},
+		},
+	}
+	convertedDynakube := &DynaKube{}
+	err := convertedDynakube.ConvertFrom(oldDynakube)
+	require.NoError(t, err)
+
+	assert.Equal(t, oldDynakube.ObjectMeta.Namespace, convertedDynakube.ObjectMeta.Namespace)
+	assert.Equal(t, oldDynakube.ObjectMeta.Name, convertedDynakube.ObjectMeta.Name)
+
+	assert.Equal(t, oldDynakube.Spec.APIURL, convertedDynakube.Spec.APIURL)
+	assert.Equal(t, oldDynakube.Spec.Tokens, convertedDynakube.Spec.Tokens)
+
+	require.NotNil(t, convertedDynakube.Spec.OneAgent.ClassicFullStack)
+	assert.Equal(t, oldDynakube.Spec.OneAgent.AutoUpdate, convertedDynakube.Spec.OneAgent.ClassicFullStack.AutoUpdate)
+}
+
 func TestConversion_ConvertFrom(t *testing.T) {
 	trueVal := true
 	time := metav1.Now()

@@ -38,9 +38,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	}
 
 	// ActiveGates
-	if src.Spec.ActiveGate.Image != "" {
-		dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
-	} else if src.Spec.Routing.Image != "" {
+	if src.Spec.Routing.Image != "" {
 		dst.Spec.ActiveGate.Image = src.Spec.Routing.Image
 	} else if src.Spec.KubernetesMonitoring.Image != "" {
 		dst.Spec.ActiveGate.Image = src.Spec.KubernetesMonitoring.Image
@@ -96,9 +94,11 @@ func convertToDeprecatedActiveGateCapability(dst *v1alpha1.CapabilityProperties,
 
 	dst.Replicas = src.Replicas
 	dst.Group = src.Group
-	dst.CustomProperties = &v1alpha1.DynaKubeValueSource{
-		Value:     src.CustomProperties.Value,
-		ValueFrom: src.CustomProperties.ValueFrom,
+	if src.CustomProperties != nil {
+		dst.CustomProperties = &v1alpha1.DynaKubeValueSource{
+			Value:     src.CustomProperties.Value,
+			ValueFrom: src.CustomProperties.ValueFrom,
+		}
 	}
 	dst.Resources = src.Resources
 	dst.NodeSelector = src.NodeSelector
@@ -141,7 +141,6 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	}
 
 	// ActiveGates
-	dst.Spec.ActiveGate.Image = src.Spec.ActiveGate.Image
 	dst.Spec.Routing.Image = src.Spec.ActiveGate.Image
 	dst.Spec.KubernetesMonitoring.Image = src.Spec.ActiveGate.Image
 
@@ -192,9 +191,11 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 func convertFromDeprecatedActiveGateCapability(dst *CapabilityProperties, src *v1alpha1.CapabilityProperties) {
 	dst.Replicas = src.Replicas
 	dst.Group = src.Group
-	dst.CustomProperties = &DynaKubeValueSource{
-		Value:     src.CustomProperties.Value,
-		ValueFrom: src.CustomProperties.ValueFrom,
+	if src.CustomProperties != nil {
+		dst.CustomProperties = &DynaKubeValueSource{
+			Value:     src.CustomProperties.Value,
+			ValueFrom: src.CustomProperties.ValueFrom,
+		}
 	}
 	dst.Resources = src.Resources
 	dst.NodeSelector = src.NodeSelector
