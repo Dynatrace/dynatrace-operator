@@ -29,7 +29,7 @@ rules:
     verbs:
       - create
   - apiGroups:
-    - ""
+      - ""
     resources:
       - secrets
     resourceNames:
@@ -40,4 +40,18 @@ rules:
       - list
       - watch
       - update
-
+  - apiGroups:
+      - ""
+      - "apps"
+      - "batch"
+    resources:
+      - replicasets
+      - statefulsets
+      - daemonsets
+      - deployments
+      - replicationcontrollers
+      - jobs
+    verbs:
+      - list
+      - watch
+      - get
