@@ -70,7 +70,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Nil(t, ten)
 	})
-	t.Run(`code modules disabled`, func(t *testing.T) {
+	t.Run(`application monitoring disabled`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
 			client: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -427,12 +427,12 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 	t.Run(`default DynaKube object returns false`, func(t *testing.T) {
 		dk := &dynatracev1beta1.DynaKube{}
 
-		isEnabled := dk.NeedsCSI()
+		isEnabled := dk.UseCSIDriver()
 
 		assert.False(t, isEnabled)
 	})
 
-	t.Run(`code modules enabled`, func(t *testing.T) {
+	t.Run(`application monitoring enabled`, func(t *testing.T) {
 		dk := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
@@ -441,12 +441,12 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 			},
 		}
 
-		isEnabled := dk.NeedsCSI()
+		isEnabled := dk.UseCSIDriver()
 
 		assert.True(t, isEnabled)
 	})
 
-	t.Run(`code modules enabled with serverless`, func(t *testing.T) {
+	t.Run(`application monitoring enabled without csi driver`, func(t *testing.T) {
 		dk := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
@@ -457,7 +457,7 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 			},
 		}
 
-		isEnabled := dk.NeedsCSI()
+		isEnabled := dk.UseCSIDriver()
 
 		assert.False(t, isEnabled)
 	})

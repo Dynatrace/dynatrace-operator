@@ -98,7 +98,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		}
 		return reconcile.Result{}, err
 	}
-	if !dk.NeedsCSI() {
+	if !dk.UseCSIDriver() {
 		rlog.Info("CSI driver disabled")
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}

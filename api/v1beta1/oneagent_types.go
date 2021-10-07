@@ -126,7 +126,7 @@ type ApplicationMonitoringSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Version string `json:"version,omitempty"`
 
-	// Optional: If you want to use CSIDriver, only useable if your cluster has 'nodes', to make such a usecase work set this to true.
+	// Optional: If you want to use CSIDriver; disable if your cluster does not have 'nodes' to fall back to the volume approach.
 	UseCSIDriver *bool `json:"UseCSIDriver,omitempty"`
 }
 

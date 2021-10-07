@@ -109,21 +109,10 @@ func (dk *DynaKube) ActiveGateImage() string {
 }
 
 func (dk *DynaKube) UseCSIDriver() bool {
-	if dk.CloudNativeFullstackMode() {
-		return true
-	} else if dk.ApplicationMonitoringMode() {
-		return dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil && *dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
-	}
-	return false
-}
-
-func (dk *DynaKube) NeedsCSI() bool {
-	if dk.UseCSIDriver() {
-		return true
-	} else if dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.Image != "" {
+	if dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.Image != "" {
 		return false
 	}
-	return dk.CloudNativeFullstackMode()
+	return dk.CloudNativeFullstackMode() || (dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil && *dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver)
 }
 
 func (dk *DynaKube) NeedAppInjection() bool {
