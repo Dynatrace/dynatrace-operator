@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Checks if the entries in the storage are actually valid
+// CorrectMetadata checks if the entries in the storage are actually valid
 // Removes not valid entries
 func CorrectMetadata(cl client.Client, access Access, log logr.Logger) error {
 	if err := correctVolumes(cl, access, log); err != nil {
@@ -46,20 +46,20 @@ func correctVolumes(cl client.Client, access Access, log logr.Logger) error {
 
 // Removes tenant entries if their dynakube no longer exists
 func correctTenants(cl client.Client, access Access, log logr.Logger) error {
-	dynakubes, err := access.GetDynakubes()
+	tenants, err := access.GetTenants()
 	if err != nil {
 		return err
 	}
 	pruned := []string{}
-	for dynakubeName := range dynakubes {
+	for dynakubeName := range tenants {
 		var dynakube dynatracev1beta1.DynaKube
 		if err := cl.Get(context.TODO(), client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
 			continue
 		}
-		tenantUUID := dynakubes[dynakubeName]
-		if err := access.DeleteTenant(tenantUUID); err != nil {
+		if err := access.DeleteTenant(dynakubeName); err != nil {
 			return err
 		}
+		tenantUUID := tenants[dynakubeName]
 		pruned = append(pruned, tenantUUID+"|"+dynakubeName)
 	}
 	log.Info("CSI tenants database is corrected (tenant|dynakube)", "prunedRows", pruned)

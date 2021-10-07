@@ -54,6 +54,7 @@ var log = logger.NewDTLogger().WithName("provisioner")
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
 	client       client.Client
+	apiReader    client.Reader
 	opts         dtcsi.CSIOptions
 	dtcBuildFunc dynakube.DynatraceClientFunc
 	fs           afero.Fs
@@ -66,6 +67,7 @@ type OneAgentProvisioner struct {
 func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
 		client:       mgr.GetClient(),
+		apiReader:    mgr.GetAPIReader(),
 		opts:         opts,
 		dtcBuildFunc: dynakube.BuildDynatraceClient,
 		fs:           afero.NewOsFs(),
@@ -90,16 +92,12 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	dk, err := r.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			tenant, _ := r.db.GetTenantViaDynakube(request.NamespacedName.Name)
-			if tenant != nil {
-				return reconcile.Result{}, r.db.DeleteTenant(tenant.TenantUUID)
-			}
-			return reconcile.Result{}, nil
+			return reconcile.Result{}, r.db.DeleteTenant(request.Name)
 		}
 		return reconcile.Result{}, err
 	}
 	if !dk.NeedsCSI() {
-		rlog.Info("CSI driver disabled")
+		rlog.Info("CSI driver not needed", "dynakube", dk.Name)
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
@@ -107,53 +105,71 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		rlog.Info("DynaKube instance has not been reconciled yet and some values usually cached are missing, retrying in a few seconds")
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
+
+	// creates a dt client and checks tokens exist for the given dynakube
 	dtc, err := buildDtc(r, ctx, dk)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	tenant, err := r.db.GetTenant(dk.ConnectionInfo().TenantUUID)
+	tenant, err := r.db.GetTenant(dk.Name)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	// Incase of a new tenant
+	// In case of a new tenant
+	var oldTenant metadata.Tenant
 	if tenant == nil {
-		tenant = &metadata.Tenant{TenantUUID: dk.ConnectionInfo().TenantUUID}
+		tenant = &metadata.Tenant{}
+	} else {
+		oldTenant = *tenant
 	}
-	rlog.Info("checking tenant", "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
-	oldTenant := *tenant
+	rlog.Info("checking tenant", "dynakube", tenant.Dynakube,
+		"uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
+
+	tenant.Dynakube = dk.Name
+	tenant.TenantUUID = dk.ConnectionInfo().TenantUUID
 
 	if err = r.createCSIDirectories(r.path.EnvDir(tenant.TenantUUID)); err != nil {
 		rlog.Error(err, "error when creating csi directories", "path", r.path.EnvDir(tenant.TenantUUID))
 		return reconcile.Result{}, errors.WithStack(err)
 	}
-
 	rlog.Info("csi directories exist", "path", r.path.EnvDir(tenant.TenantUUID))
-	tenant.Dynakube = dk.Name
 
-	installAgentCfg := newInstallAgentConfig(rlog, dtc, r.path, r.fs, r.recorder, tenant, dk)
-	if err = installAgentCfg.updateAgent(); err != nil {
+	installAgentCfg := newInstallAgentConfig(rlog, dtc, r.path, r.fs, r.recorder, dk)
+	if updatedVersion, err := installAgentCfg.updateAgent(tenant.LatestVersion, tenant.TenantUUID); err != nil {
 		rlog.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
+	} else if updatedVersion != "" {
+		tenant.LatestVersion = updatedVersion
 	}
-	if hasTenantChanged(oldTenant, *tenant) {
-		rlog.Info("tenant has changed", "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
-		// New tenants doesn't have these fields set in the beginning
-		if oldTenant.Dynakube == "" && oldTenant.LatestVersion == "" {
-			log.Info("Adding tenant:", "uuid", tenant.TenantUUID, "version", tenant.LatestVersion, "dynakube", tenant.Dynakube)
-			err = r.db.InsertTenant(tenant)
-		} else {
-			log.Info("Updateing tenant:", "uuid", tenant.TenantUUID, "oldVersion", oldTenant.LatestVersion, "newVersion", tenant.LatestVersion, "oldDynakube", oldTenant.Dynakube, "newDynakube", tenant.Dynakube)
-			err = r.db.UpdateTenant(tenant)
-		}
-		if err != nil {
-			return reconcile.Result{}, errors.WithStack(err)
-		}
+
+	err = r.createOrUpdateTenant(oldTenant, tenant)
+	if err != nil {
+		return reconcile.Result{}, err
 	}
 
 	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
+}
+
+func (r *OneAgentProvisioner) createOrUpdateTenant(oldTenant metadata.Tenant, tenant *metadata.Tenant) error {
+	if hasTenantChanged(oldTenant, *tenant) {
+		log.Info("tenant has changed",
+			"dynakube", tenant.Dynakube, "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
+		if oldTenant == (metadata.Tenant{}) {
+			log.Info("Adding tenant",
+				"dynakube", tenant.Dynakube, "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
+			return r.db.InsertTenant(tenant)
+		} else {
+			log.Info("Updating tenant",
+				"dynakube", tenant.Dynakube,
+				"old version", oldTenant.LatestVersion, "new version", tenant.LatestVersion,
+				"old tenant UUID", oldTenant.TenantUUID, "new tenant UUID", tenant.TenantUUID)
+			return r.db.UpdateTenant(tenant)
+		}
+	}
+	return nil
 }
 
 func hasTenantChanged(old, new metadata.Tenant) bool {
@@ -161,7 +177,7 @@ func hasTenantChanged(old, new metadata.Tenant) bool {
 }
 
 func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
-	dtp, err := dynakube.NewDynatraceClientProperties(ctx, r.client, *dk)
+	dtp, err := dynakube.NewDynatraceClientProperties(ctx, r.apiReader, *dk)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +191,7 @@ func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.
 
 func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1beta1.DynaKube, error) {
 	var dk dynatracev1beta1.DynaKube
-	err := r.client.Get(ctx, name, &dk)
+	err := r.apiReader.Get(ctx, name, &dk)
 
 	return &dk, err
 }

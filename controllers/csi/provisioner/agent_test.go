@@ -38,11 +38,10 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			Fs: afero.NewMemMapFs(),
 		}
 		installAgentCfg := &installAgentConfig{
-			fs:     fs,
-			tenant: &metadata.Tenant{LatestVersion: ""},
+			fs: fs,
 		}
 
-		err := installAgentCfg.installAgent()
+		err := installAgentCfg.installAgent("", "")
 		assert.EqualError(t, err, "failed to create temporary file for download: "+errorMsg)
 	})
 	t.Run(`error when downloading latest agent`, func(t *testing.T) {
@@ -59,10 +58,9 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			fs:     fs,
 			dtc:    dtc,
 			logger: log,
-			tenant: &metadata.Tenant{LatestVersion: ""},
 		}
 
-		err := installAgentCfg.installAgent()
+		err := installAgentCfg.installAgent("", "")
 		assert.EqualError(t, err, "failed to fetch OneAgent version: "+errorMsg)
 	})
 	t.Run(`error unzipping file`, func(t *testing.T) {
@@ -86,10 +84,9 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			fs:     fs,
 			dtc:    dtc,
 			logger: log,
-			tenant: &metadata.Tenant{LatestVersion: ""},
 		}
 
-		err := installAgentCfg.installAgent()
+		err := installAgentCfg.installAgent("", "")
 		assert.Error(t, err)
 	})
 	t.Run(`downloading and unzipping agent`, func(t *testing.T) {
@@ -116,10 +113,9 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			dtc:    dtc,
 			logger: log,
 			path:   pathResolver,
-			tenant: &metadata.Tenant{LatestVersion: ""},
 		}
 
-		err := installAgentCfg.installAgent()
+		err := installAgentCfg.installAgent("", "")
 		require.NoError(t, err)
 
 		info, err := fs.Stat(filepath.Join(pathResolver.AgentBinaryDir(""), testFilename))
@@ -134,11 +130,10 @@ func TestOneAgentProvisioner_Unzip(t *testing.T) {
 	t.Run(`file nil`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		installAgentCfg := &installAgentConfig{
-			path:   metadata.PathResolver{RootDir: testDir},
-			fs:     fs,
-			tenant: &metadata.Tenant{},
+			path: metadata.PathResolver{RootDir: testDir},
+			fs:   fs,
 		}
-		err := installAgentCfg.unzip(nil)
+		err := installAgentCfg.unzip(nil, "", "")
 		require.EqualError(t, err, "file is nil")
 	})
 	t.Run(`unzip test zip file`, func(t *testing.T) {
@@ -148,12 +143,11 @@ func TestOneAgentProvisioner_Unzip(t *testing.T) {
 			path:   pathResolver,
 			logger: log,
 			fs:     fs,
-			tenant: &metadata.Tenant{},
 		}
 		zipFile := setupTestZip(t, fs)
 		defer func() { _ = zipFile.Close() }()
 
-		err := installAgentCfg.unzip(zipFile)
+		err := installAgentCfg.unzip(zipFile, "", "")
 		require.NoError(t, err)
 
 		binaryDir := pathResolver.AgentBinaryDir("")

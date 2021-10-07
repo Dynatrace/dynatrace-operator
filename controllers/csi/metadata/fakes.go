@@ -75,15 +75,13 @@ func checkIfTablesExist(db *SqliteAccess) bool {
 
 type FakeFailDB struct{}
 
-func (f *FakeFailDB) Setup(dbPath string) error                    { return sql.ErrTxDone }
-func (f *FakeFailDB) InsertTenant(tenant *Tenant) error            { return sql.ErrTxDone }
-func (f *FakeFailDB) UpdateTenant(tenant *Tenant) error            { return sql.ErrTxDone }
-func (f *FakeFailDB) DeleteTenant(tenantUUID string) error         { return sql.ErrTxDone }
-func (f *FakeFailDB) GetTenant(tenantUUID string) (*Tenant, error) { return nil, sql.ErrTxDone }
-func (f *FakeFailDB) GetTenantViaDynakube(dynakubeName string) (*Tenant, error) {
-	return nil, sql.ErrTxDone
-}
-func (f *FakeFailDB) GetDynakubes() (map[string]string, error)   { return nil, sql.ErrTxDone }
+func (f *FakeFailDB) Setup(dbPath string) error                      { return sql.ErrTxDone }
+func (f *FakeFailDB) InsertTenant(tenant *Tenant) error              { return sql.ErrTxDone }
+func (f *FakeFailDB) UpdateTenant(tenant *Tenant) error              { return sql.ErrTxDone }
+func (f *FakeFailDB) DeleteTenant(dynakubeName string) error         { return sql.ErrTxDone }
+func (f *FakeFailDB) GetTenant(dynakubeName string) (*Tenant, error) { return nil, sql.ErrTxDone }
+
+func (f *FakeFailDB) GetTenants() (map[string]string, error)     { return nil, sql.ErrTxDone }
 func (f *FakeFailDB) InsertVolume(volume *Volume) error          { return sql.ErrTxDone }
 func (f *FakeFailDB) DeleteVolume(volumeID string) error         { return sql.ErrTxDone }
 func (f *FakeFailDB) GetVolume(volumeID string) (*Volume, error) { return nil, sql.ErrTxDone }

@@ -20,7 +20,7 @@ import (
 
 // CSIGarbageCollector removes unused and outdated agent versions
 type CSIGarbageCollector struct {
-	client       client.Client
+	apiReader    client.Reader
 	logger       logr.Logger
 	opts         dtcsi.CSIOptions
 	dtcBuildFunc dynakube.DynatraceClientFunc
@@ -30,9 +30,9 @@ type CSIGarbageCollector struct {
 }
 
 // NewReconciler returns a new CSIGarbageCollector
-func NewReconciler(client client.Client, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
+func NewReconciler(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
-		client:       client,
+		apiReader:    apiReader,
 		logger:       log.Log.WithName("csi.gc.controller"),
 		opts:         opts,
 		dtcBuildFunc: dynakube.BuildDynatraceClient,
@@ -55,7 +55,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	reconcileResult := reconcile.Result{RequeueAfter: 60 * time.Minute}
 
 	var dk dynatracev1beta1.DynaKube
-	if err := gc.client.Get(ctx, request.NamespacedName, &dk); err != nil {
+	if err := gc.apiReader.Get(ctx, request.NamespacedName, &dk); err != nil {
 		if k8serrors.IsNotFound(err) {
 			gc.logger.Info("given DynaKube object not found")
 			return reconcileResult, nil
@@ -65,7 +65,7 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 		return reconcileResult, nil
 	}
 
-	dtp, err := dynakube.NewDynatraceClientProperties(ctx, gc.client, dk)
+	dtp, err := dynakube.NewDynatraceClientProperties(ctx, gc.apiReader, dk)
 	if err != nil {
 		gc.logger.Error(err, err.Error())
 		return reconcileResult, nil
