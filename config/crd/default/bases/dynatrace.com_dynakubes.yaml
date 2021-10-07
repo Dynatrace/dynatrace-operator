@@ -1144,7 +1144,7 @@ spec:
                       of nodes'
                     type: object
                   replicas:
-                    description: Amount of replicas for your DynaKube
+                    description: Amount of replicas for your ActiveGates
                     format: int32
                     type: integer
                   resources:
@@ -1387,7 +1387,7 @@ spec:
                       of nodes'
                     type: object
                   replicas:
-                    description: Amount of replicas for your DynaKube
+                    description: Amount of replicas for your ActiveGates
                     format: int32
                     type: integer
                   resources:
@@ -2500,7 +2500,7 @@ spec:
                       of nodes'
                     type: object
                   replicas:
-                    description: Amount of replicas for your DynaKube
+                    description: Amount of replicas for your ActiveGates
                     format: int32
                     type: integer
                   resources:

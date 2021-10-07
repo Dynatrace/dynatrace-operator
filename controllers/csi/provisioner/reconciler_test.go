@@ -27,6 +27,7 @@ import (
 
 const (
 	dkName       = "dynakube-test"
+	otherDkName  = "other-dk"
 	errorMsg     = "test-error"
 	tenantUUID   = "test-uid"
 	agentVersion = "12345"
@@ -43,8 +44,8 @@ func (fs *mkDirAllErrorFs) MkdirAll(_ string, _ os.FileMode) error {
 func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`no dynakube instance`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(),
-			db:     metadata.FakeMemoryDB(),
+			apiReader: fake.NewClient(),
+			db:        metadata.FakeMemoryDB(),
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{})
 
@@ -57,8 +58,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		tenant := metadata.Tenant{TenantUUID: tenantUUID, LatestVersion: agentVersion, Dynakube: dkName}
 		_ = db.InsertTenant(&tenant)
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(),
-			db:     db,
+			apiReader: fake.NewClient(),
+			db:        db,
 		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: tenant.Dynakube}})
 
@@ -72,7 +73,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`application monitoring disabled`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						OneAgent: dynatracev1beta1.OneAgentSpec{},
@@ -88,7 +89,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`csi driver disabled`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						OneAgent: dynatracev1beta1.OneAgentSpec{
@@ -108,7 +109,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`no tokens`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -134,7 +135,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`error when creating dynatrace client`, func(t *testing.T) {
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -171,7 +172,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{}, fmt.Errorf(errorMsg))
 
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -207,7 +208,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			TenantUUID: tenantUUID,
 		}, nil)
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -258,7 +259,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, mock.AnythingOfType("string")).
 			Return(make([]string, 0), fmt.Errorf(errorMsg))
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -312,7 +313,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return(agentVersion, nil)
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -374,7 +375,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			}).
 			Return(nil)
 		r := &OneAgentProvisioner{
-			client: fake.NewClient(
+			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -468,4 +469,55 @@ func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1beta1.Applica
 	return &dynatracev1beta1.ApplicationMonitoringSpec{
 		UseCSIDriver: &useCSIDriver,
 	}
+}
+
+func TestProvisioner_CreateTenant(t *testing.T) {
+	db := metadata.FakeMemoryDB()
+	expectedOtherDynakube := metadata.NewTenant(tenantUUID, "v1", otherDkName)
+	db.InsertTenant(expectedOtherDynakube)
+	r := &OneAgentProvisioner{
+		db: db,
+	}
+
+	oldTenant := metadata.Tenant{}
+	newTenant := metadata.NewTenant(tenantUUID, "v1", dkName)
+
+	err := r.createOrUpdateTenant(oldTenant, newTenant)
+	require.NoError(t, err)
+
+	tenant, err := db.GetTenant(dkName)
+	assert.NoError(t, err)
+	assert.NotNil(t, tenant)
+	assert.Equal(t, *newTenant, *tenant)
+
+	otherTenant, err := db.GetTenant(otherDkName)
+	assert.NoError(t, err)
+	assert.NotNil(t, tenant)
+	assert.Equal(t, *expectedOtherDynakube, *otherTenant)
+}
+
+func TestProvisioner_UpdateTenant(t *testing.T) {
+	db := metadata.FakeMemoryDB()
+	oldTenant := metadata.NewTenant(tenantUUID, "v1", dkName)
+	db.InsertTenant(oldTenant)
+	expectedOtherDynakube := metadata.NewTenant(tenantUUID, "v1", otherDkName)
+	db.InsertTenant(expectedOtherDynakube)
+
+	r := &OneAgentProvisioner{
+		db: db,
+	}
+	newTenant := metadata.NewTenant("new-uuid", "v2", dkName)
+
+	err := r.createOrUpdateTenant(*oldTenant, newTenant)
+	require.NoError(t, err)
+
+	tenant, err := db.GetTenant(dkName)
+	assert.NoError(t, err)
+	assert.NotNil(t, tenant)
+	assert.Equal(t, *newTenant, *tenant)
+
+	otherDynakube, err := db.GetTenant(otherDkName)
+	assert.NoError(t, err)
+	assert.NotNil(t, tenant)
+	assert.Equal(t, *expectedOtherDynakube, *otherDynakube)
 }

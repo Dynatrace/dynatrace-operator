@@ -69,7 +69,7 @@ func TestCheckStorageCorrectness_PURGE(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, &testVolume1, vol)
 
-	ten, err := db.GetTenant(testTenant1.TenantUUID)
+	ten, err := db.GetTenant(testTenant1.Dynakube)
 	assert.NoError(t, err)
 	assert.Equal(t, &testTenant1, ten)
 

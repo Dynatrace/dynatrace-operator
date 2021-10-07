@@ -37,7 +37,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			}}
 		fakeClient := fake.NewClient(instance, &secret)
 		dtf := DynatraceClientProperties{
-			Client:    fakeClient,
+			ApiReader: fakeClient,
 			Secret:    &secret,
 			ApiUrl:    instance.Spec.APIURL,
 			Namespace: testNamespace,
@@ -67,7 +67,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			}}
 		fakeClient := fake.NewClient(instance, &secret)
 		dtf := DynatraceClientProperties{
-			Client:    fakeClient,
+			ApiReader: fakeClient,
 			Secret:    &secret,
 			ApiUrl:    instance.Spec.APIURL,
 			Namespace: testNamespace,
@@ -77,7 +77,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 		assert.Error(t, err)
 
 		dtf = DynatraceClientProperties{
-			Client:    fakeClient,
+			ApiReader: fakeClient,
 			ApiUrl:    instance.Spec.APIURL,
 			Namespace: testNamespace,
 		}
@@ -103,7 +103,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 				}}}
 		fakeClient := fake.NewClient(instance, &secret)
 		dtf := DynatraceClientProperties{
-			Client:    fakeClient,
+			ApiReader: fakeClient,
 			Secret:    &secret,
 			ApiUrl:    instance.Spec.APIURL,
 			Namespace: testNamespace,
@@ -132,7 +132,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 
 		fakeClient := fake.NewClient(instance, &secret)
 		dtf := DynatraceClientProperties{
-			Client:       fakeClient,
+			ApiReader:    fakeClient,
 			Secret:       &secret,
 			ApiUrl:       instance.Spec.APIURL,
 			Namespace:    testNamespace,

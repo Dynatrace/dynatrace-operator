@@ -94,17 +94,7 @@ func TestGetTenant(t *testing.T) {
 	err := db.InsertTenant(&testTenant1)
 	assert.Nil(t, err)
 
-	tenant, err := db.GetTenant(testTenant1.TenantUUID)
-	assert.NoError(t, err)
-	assert.Equal(t, testTenant1, *tenant)
-}
-
-func TestGetTenantViaDynakube(t *testing.T) {
-	db := FakeMemoryDB()
-	err := db.InsertTenant(&testTenant1)
-	assert.Nil(t, err)
-
-	tenant, err := db.GetTenantViaDynakube(testTenant1.Dynakube)
+	tenant, err := db.GetTenant(testTenant1.Dynakube)
 	assert.NoError(t, err)
 	assert.Equal(t, testTenant1, *tenant)
 }
@@ -120,7 +110,7 @@ func TestUpdateTenant(t *testing.T) {
 	var lv string
 	var dk string
 	assert.NoError(t, err)
-	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE UUID = ?;", tenantsTableName), testTenant1.TenantUUID)
+	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE Dynakube = ?;", tenantsTableName), testTenant1.Dynakube)
 	err = row.Scan(&uuid, &lv, &dk)
 	assert.NoError(t, err)
 	assert.Equal(t, uuid, testTenant1.TenantUUID)
@@ -135,11 +125,11 @@ func TestGetDynakubes(t *testing.T) {
 	err = db.InsertTenant(&testTenant2)
 	assert.Nil(t, err)
 
-	dynakubes, err := db.GetDynakubes()
+	tenants, err := db.GetTenants()
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(dynakubes))
-	assert.Equal(t, testTenant1.TenantUUID, dynakubes[testTenant1.Dynakube])
-	assert.Equal(t, testTenant2.TenantUUID, dynakubes[testTenant2.Dynakube])
+	assert.Equal(t, 2, len(tenants))
+	assert.Equal(t, testTenant1.TenantUUID, tenants[testTenant1.Dynakube])
+	assert.Equal(t, testTenant2.TenantUUID, tenants[testTenant2.Dynakube])
 }
 
 func TestDeleteTenant(t *testing.T) {
@@ -149,12 +139,12 @@ func TestDeleteTenant(t *testing.T) {
 	err = db.InsertTenant(&testTenant2)
 	assert.Nil(t, err)
 
-	err = db.DeleteTenant(testTenant1.TenantUUID)
+	err = db.DeleteTenant(testTenant1.Dynakube)
 	assert.NoError(t, err)
-	dynakubes, err := db.GetDynakubes()
+	tenants, err := db.GetTenants()
 	assert.NoError(t, err)
-	assert.Equal(t, len(dynakubes), 1)
-	assert.Equal(t, testTenant2.TenantUUID, dynakubes[testTenant2.Dynakube])
+	assert.Equal(t, len(tenants), 1)
+	assert.Equal(t, testTenant2.TenantUUID, tenants[testTenant2.Dynakube])
 }
 
 func TestGetVolume_Empty(t *testing.T) {
