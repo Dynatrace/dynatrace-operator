@@ -27,6 +27,7 @@ import (
 
 const (
 	dkName       = "dynakube-test"
+	otherDkName  = "other-dk"
 	errorMsg     = "test-error"
 	tenantUUID   = "test-uid"
 	agentVersion = "12345"
@@ -469,4 +470,55 @@ func TestHasCodeModulesWithCSIVolumeEnabled(t *testing.T) {
 
 func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1beta1.ApplicationMonitoringSpec {
 	return &dynatracev1beta1.ApplicationMonitoringSpec{}
+}
+
+func TestProvisioner_CreateTenant(t *testing.T) {
+	db := metadata.FakeMemoryDB()
+	expectedOtherDynakube := metadata.NewTenant(tenantUUID, "v1", otherDkName)
+	db.InsertTenant(expectedOtherDynakube)
+	r := &OneAgentProvisioner{
+		db: db,
+	}
+
+	oldTenant := metadata.Tenant{}
+	newTenant := metadata.NewTenant(tenantUUID, "v1", dkName)
+
+	err := r.createOrUpdateTenant(oldTenant, newTenant)
+	require.NoError(t, err)
+
+	tenant, err := db.GetTenant(dkName)
+	assert.NoError(t, err)
+	assert.NotNil(t, tenant)
+	assert.Equal(t, *newTenant, *tenant)
+
+	otherTenant, err := db.GetTenant(otherDkName)
+	assert.NoError(t, err)
+	assert.NotNil(t, tenant)
+	assert.Equal(t, *expectedOtherDynakube, *otherTenant)
+}
+
+func TestProvisioner_UpdateTenant(t *testing.T) {
+	db := metadata.FakeMemoryDB()
+	oldTenant := metadata.NewTenant(tenantUUID, "v1", dkName)
+	db.InsertTenant(oldTenant)
+	expectedOtherDynakube := metadata.NewTenant(tenantUUID, "v1", otherDkName)
+	db.InsertTenant(expectedOtherDynakube)
+
+	r := &OneAgentProvisioner{
+		db: db,
+	}
+	newTenant := metadata.NewTenant("new-uuid", "v2", dkName)
+
+	err := r.createOrUpdateTenant(*oldTenant, newTenant)
+	require.NoError(t, err)
+
+	tenant, err := db.GetTenant(dkName)
+	assert.NoError(t, err)
+	assert.NotNil(t, tenant)
+	assert.Equal(t, *newTenant, *tenant)
+
+	otherDynakube, err := db.GetTenant(otherDkName)
+	assert.NoError(t, err)
+	assert.NotNil(t, tenant)
+	assert.Equal(t, *expectedOtherDynakube, *otherDynakube)
 }

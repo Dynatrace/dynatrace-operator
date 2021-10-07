@@ -105,6 +105,8 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		rlog.Info("DynaKube instance has not been reconciled yet and some values usually cached are missing, retrying in a few seconds")
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
+
+	// creates a dt client and checks tokens exist for the given dynakube
 	dtc, err := buildDtc(r, ctx, dk)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -143,26 +145,31 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		tenant.LatestVersion = updatedVersion
 	}
 
+	err = r.createOrUpdateTenant(oldTenant, tenant)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
+}
+
+func (r *OneAgentProvisioner) createOrUpdateTenant(oldTenant metadata.Tenant, tenant *metadata.Tenant) error {
 	if hasTenantChanged(oldTenant, *tenant) {
-		rlog.Info("tenant has changed",
+		log.Info("tenant has changed",
 			"dynakube", tenant.Dynakube, "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
 		if oldTenant == (metadata.Tenant{}) {
 			log.Info("Adding tenant",
 				"dynakube", tenant.Dynakube, "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
-			err = r.db.InsertTenant(tenant)
+			return r.db.InsertTenant(tenant)
 		} else {
 			log.Info("Updating tenant",
 				"dynakube", tenant.Dynakube,
 				"old version", oldTenant.LatestVersion, "new version", tenant.LatestVersion,
 				"old tenant UUID", oldTenant.TenantUUID, "new tenant UUID", tenant.TenantUUID)
-			err = r.db.UpdateTenant(tenant)
-		}
-		if err != nil {
-			return reconcile.Result{}, errors.WithStack(err)
+			return r.db.UpdateTenant(tenant)
 		}
 	}
-
-	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
+	return nil
 }
 
 func hasTenantChanged(old, new metadata.Tenant) bool {
