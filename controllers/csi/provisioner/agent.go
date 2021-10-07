@@ -26,7 +26,6 @@ type installAgentConfig struct {
 	fs       afero.Fs
 	path     metadata.PathResolver
 	dk       *dynatracev1beta1.DynaKube
-	tenant   *metadata.Tenant
 	recorder record.EventRecorder
 }
 
@@ -36,7 +35,6 @@ func newInstallAgentConfig(
 	path metadata.PathResolver,
 	fs afero.Fs,
 	recorder record.EventRecorder,
-	tenant *metadata.Tenant,
 	dk *dynatracev1beta1.DynaKube,
 ) *installAgentConfig {
 	return &installAgentConfig{
@@ -45,35 +43,33 @@ func newInstallAgentConfig(
 		path:     path,
 		fs:       fs,
 		recorder: recorder,
-		tenant:   tenant,
 		dk:       dk,
 	}
 }
 
-func (installAgentCfg *installAgentConfig) updateAgent() error {
-	tenant := installAgentCfg.tenant
+func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID string) (string, error) {
 	dk := installAgentCfg.dk
 	logger := installAgentCfg.logger
 	currentVersion := installAgentCfg.getOneAgentVersionFromInstance()
-	targetDir := installAgentCfg.path.AgentBinaryDirForVersion(tenant.TenantUUID, currentVersion)
+	targetDir := installAgentCfg.path.AgentBinaryDirForVersion(tenantUUID, currentVersion)
 
-	if _, err := os.Stat(targetDir); currentVersion != tenant.LatestVersion || os.IsNotExist(err) {
-		logger.Info("updating agent", "version", currentVersion, "previous version", tenant.LatestVersion)
-		tenant.LatestVersion = currentVersion
+	if _, err := os.Stat(targetDir); currentVersion != version || os.IsNotExist(err) {
+		logger.Info("updating agent", "version", currentVersion, "previous version", version)
 
-		if err := installAgentCfg.installAgentVersion(); err != nil {
+		if err := installAgentCfg.installAgentVersion(currentVersion, tenantUUID); err != nil {
 			installAgentCfg.recorder.Eventf(dk,
 				corev1.EventTypeWarning,
 				failedInstallAgentVersionEvent,
-				"Failed to install agent version: %s to tenant: %s, err: %s", tenant.LatestVersion, tenant.TenantUUID, err)
-			return err
+				"Failed to install agent version: %s to tenant: %s, err: %s", currentVersion, tenantUUID, err)
+			return "", err
 		}
 		installAgentCfg.recorder.Eventf(dk,
 			corev1.EventTypeNormal,
 			installAgentVersionEvent,
-			"Installed agent version: %s to tenant: %s", currentVersion, tenant.TenantUUID)
+			"Installed agent version: %s to tenant: %s", currentVersion, tenantUUID)
+		return currentVersion, nil
 	}
-	return nil
+	return "", nil
 }
 
 func (installAgentCfg *installAgentConfig) getOneAgentVersionFromInstance() string {
@@ -85,14 +81,12 @@ func (installAgentCfg *installAgentConfig) getOneAgentVersionFromInstance() stri
 	return currentVersion
 }
 
-func (installAgentCfg *installAgentConfig) installAgentVersion() error {
-	tenantUUID := installAgentCfg.tenant.TenantUUID
+func (installAgentCfg *installAgentConfig) installAgentVersion(version, tenantUUID string) error {
 	logger := installAgentCfg.logger
-	version := installAgentCfg.tenant.LatestVersion
 	targetDir := installAgentCfg.path.AgentBinaryDirForVersion(tenantUUID, version)
 
 	logger.Info("installing agent", "target dir", targetDir)
-	if err := installAgentCfg.installAgent(); err != nil {
+	if err := installAgentCfg.installAgent(version, tenantUUID); err != nil {
 		_ = installAgentCfg.fs.RemoveAll(targetDir)
 
 		return fmt.Errorf("failed to install agent: %w", err)
@@ -101,11 +95,10 @@ func (installAgentCfg *installAgentConfig) installAgentVersion() error {
 	return nil
 }
 
-func (installAgentCfg *installAgentConfig) installAgent() error {
+func (installAgentCfg *installAgentConfig) installAgent(version, tenantUUID string) error {
 	logger := installAgentCfg.logger
 	dtc := installAgentCfg.dtc
 	fs := installAgentCfg.fs
-	version := installAgentCfg.tenant.LatestVersion
 
 	arch := dtclient.ArchX86
 	if runtime.GOARCH == "arm64" {
@@ -141,7 +134,7 @@ func (installAgentCfg *installAgentConfig) installAgent() error {
 
 	logger.Info("Saved OneAgent package", "dest", tmpFile.Name(), "size", fileSize)
 	logger.Info("Unzipping OneAgent package")
-	if err := installAgentCfg.unzip(tmpFile); err != nil {
+	if err := installAgentCfg.unzip(tmpFile, version, tenantUUID); err != nil {
 		return fmt.Errorf("failed to unzip file: %w", err)
 	}
 	logger.Info("Unzipped OneAgent package")
@@ -149,9 +142,8 @@ func (installAgentCfg *installAgentConfig) installAgent() error {
 	return nil
 }
 
-func (installAgentCfg *installAgentConfig) unzip(file afero.File) error {
-	version := installAgentCfg.tenant.LatestVersion
-	target := installAgentCfg.path.AgentBinaryDirForVersion(installAgentCfg.tenant.TenantUUID, version)
+func (installAgentCfg *installAgentConfig) unzip(file afero.File, version, tenantUUID string) error {
+	target := installAgentCfg.path.AgentBinaryDirForVersion(tenantUUID, version)
 	fs := installAgentCfg.fs
 
 	if file == nil {

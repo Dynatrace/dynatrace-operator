@@ -116,7 +116,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 	}
 
 	dtc, err := dtf(DynatraceClientProperties{
-		Client:              r.Client,
+		ApiReader:           r.Client,
 		Secret:              secret,
 		Proxy:               convertProxy(instance.Spec.Proxy),
 		ApiUrl:              instance.Spec.APIURL,

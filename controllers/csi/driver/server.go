@@ -335,7 +335,7 @@ func (svr *CSIDriverServer) loadVolumeInfo(volumeID string) (*metadata.Volume, e
 	if volume == nil {
 		return &metadata.Volume{}, nil
 	}
-	svr.log.Info("loaded volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	svr.log.Info("loaded volume info", "id", volume.VolumeID, "pod name", volume.PodName, "version", volume.Version, "dynakube", volume.TenantUUID)
 	return volume, nil
 }
 

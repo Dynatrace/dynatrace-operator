@@ -44,5 +44,5 @@ func (nm NamespaceMapper) updateNamespace() (bool, error) {
 		return false, errors.Cause(err)
 	}
 
-	return updateNamespace(nm.targetNs, dkList)
+	return updateNamespace(nm.targetNs, dkList, nm.logger)
 }

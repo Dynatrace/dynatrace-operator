@@ -4,6 +4,7 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -77,7 +78,7 @@ func match(dk *dynatracev1beta1.DynaKube, namespace *corev1.Namespace) (bool, er
 // updateNamespace tries to match the namespace to every dynakube with codeModules
 // finds conflicting dynakubes(2 dynakube with codeModules on the same namespace)
 // adds/updates/removes labels from the namespace.
-func updateNamespace(namespace *corev1.Namespace, dkList *dynatracev1beta1.DynaKubeList) (bool, error) {
+func updateNamespace(namespace *corev1.Namespace, dkList *dynatracev1beta1.DynaKubeList, log logr.Logger) (bool, error) {
 	var updated bool
 	conflict := ConflictChecker{}
 	for i := range dkList.Items {
@@ -91,7 +92,8 @@ func updateNamespace(namespace *corev1.Namespace, dkList *dynatracev1beta1.DynaK
 				return updated, err
 			}
 		}
-		upd, err := updateLabels(matches, dynakube, namespace)
+
+		upd, err := updateLabels(matches, dynakube, namespace, log)
 		if err != nil {
 			return updated, err
 		}
@@ -102,7 +104,7 @@ func updateNamespace(namespace *corev1.Namespace, dkList *dynatracev1beta1.DynaK
 	return updated, nil
 }
 
-func updateLabels(matches bool, dynakube *dynatracev1beta1.DynaKube, namespace *corev1.Namespace) (bool, error) {
+func updateLabels(matches bool, dynakube *dynatracev1beta1.DynaKube, namespace *corev1.Namespace, log logr.Logger) (bool, error) {
 	updated := false
 	if namespace.Labels == nil {
 		namespace.Labels = make(map[string]string)
@@ -112,6 +114,7 @@ func updateLabels(matches bool, dynakube *dynatracev1beta1.DynaKube, namespace *
 		if !ok || oldDkName != dynakube.Name {
 			updated = true
 			addNamespaceInjectLabel(dynakube.Name, namespace)
+			log.Info("started monitoring namespace", "namespace", namespace.Name, "dynakube", dynakube.Name)
 		}
 	} else if ok && oldDkName == dynakube.Name {
 		updated = true
