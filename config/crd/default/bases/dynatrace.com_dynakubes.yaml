@@ -1474,7 +1474,7 @@ spec:
                       monitoring'
                     nullable: true
                     properties:
-                      NeedsCSIDriver:
+                      UseCSIDriver:
                         description: 'Optional: If you want to use CSIDriver; disable
                           if your cluster does not have ''nodes'' to fall back to
                           the volume approach.'
