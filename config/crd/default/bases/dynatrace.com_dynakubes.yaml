@@ -1474,11 +1474,6 @@ spec:
                       monitoring'
                     nullable: true
                     properties:
-                      UseCSIDriver:
-                        description: 'Optional: If you want to use CSIDriver; disable
-                          if your cluster does not have ''nodes'' to fall back to
-                          the volume approach.'
-                        type: boolean
                       image:
                         description: 'Optional: the Dynatrace installer container
                           image Defaults to docker.io/dynatrace/oneagent:latest for
@@ -1560,6 +1555,11 @@ spec:
                               only "value". The requirements are ANDed.
                             type: object
                         type: object
+                      useCSIDriver:
+                        description: 'Optional: If you want to use CSIDriver; disable
+                          if your cluster does not have ''nodes'' to fall back to
+                          the volume approach.'
+                        type: boolean
                       version:
                         description: 'Optional: If specified, indicates the OneAgent
                           version to use Defaults to latest Example: {major.minor.release}
