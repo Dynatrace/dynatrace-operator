@@ -43,6 +43,53 @@ func TestActiveGateImage(t *testing.T) {
 	//})
 }
 
+func TestDynaKube_UseCSIDriver(t *testing.T) {
+	t.Run(`DynaKube with application monitoring without csi driver`, func(t *testing.T) {
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					ApplicationMonitoring: &ApplicationMonitoringSpec{},
+				},
+			},
+		}
+		assert.Equal(t, false, dk.NeedsCSIDriver())
+	})
+
+	t.Run(`DynaKube with application monitoring with csi driver enabled`, func(t *testing.T) {
+		useCSIDriver := true
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					ApplicationMonitoring: &ApplicationMonitoringSpec{
+						UseCSIDriver: &useCSIDriver,
+					},
+				},
+			},
+		}
+		assert.Equal(t, true, dk.NeedsCSIDriver())
+	})
+
+	t.Run(`DynaKube with application monitoring with csi driver enabled and with an image set`, func(t *testing.T) {
+		useCSIDriver := true
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					ApplicationMonitoring: &ApplicationMonitoringSpec{
+						UseCSIDriver: &useCSIDriver,
+						Image:        `test-endpoint/linux/image:latest`,
+					},
+				},
+			},
+		}
+		assert.Equal(t, false, dk.NeedsCSIDriver())
+	})
+
+	t.Run(`DynaKube with cloud native`, func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{CloudNativeFullStack: &CloudNativeFullStackSpec{}}}}
+		assert.Equal(t, true, dk.NeedsCSIDriver())
+	})
+}
+
 //
 //func TestOneAgentImage(t *testing.T) {
 //	t.Run(`OneAgentImage with no API URL`, func(t *testing.T) {

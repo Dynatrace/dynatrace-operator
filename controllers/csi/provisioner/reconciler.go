@@ -96,7 +96,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		}
 		return reconcile.Result{}, err
 	}
-	if !dk.NeedsCSI() {
+	if !dk.NeedsCSIDriver() {
 		rlog.Info("CSI driver not needed", "dynakube", dk.Name)
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}

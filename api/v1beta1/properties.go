@@ -108,22 +108,11 @@ func (dk *DynaKube) ActiveGateImage() string {
 	return fmt.Sprintf("%s/linux/activegate:latest", registry)
 }
 
-func (dk *DynaKube) ServerlessMode() bool {
-	if dk.CloudNativeFullstackMode() {
-		return dk.Spec.OneAgent.CloudNativeFullStack.ServerlessMode
-	} else if dk.ApplicationMonitoringMode() {
-		return dk.Spec.OneAgent.ApplicationMonitoring.ServerlessMode
-	}
-	return false
-}
-
-func (dk *DynaKube) NeedsCSI() bool {
-	if dk.ServerlessMode() {
-		return false
-	} else if dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.Image != "" {
+func (dk *DynaKube) NeedsCSIDriver() bool {
+	if dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.Image != "" {
 		return false
 	}
-	return dk.CloudNativeFullstackMode() || dk.ApplicationMonitoringMode()
+	return dk.CloudNativeFullstackMode() || (dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil && *dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver)
 }
 
 func (dk *DynaKube) NeedAppInjection() bool {

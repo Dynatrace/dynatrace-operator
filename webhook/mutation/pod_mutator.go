@@ -236,14 +236,14 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 	dkVol := corev1.VolumeSource{}
 	mode := ""
-	if dk.ServerlessMode() {
-		dkVol.EmptyDir = &corev1.EmptyDirVolumeSource{}
-		mode = "installer"
-	} else {
+	if dk.NeedsCSIDriver() {
 		dkVol.CSI = &corev1.CSIVolumeSource{
 			Driver: dtcsi.DriverName,
 		}
 		mode = "provisioned"
+	} else {
+		dkVol.EmptyDir = &corev1.EmptyDirVolumeSource{}
+		mode = "installer"
 	}
 
 	pod.Spec.Volumes = append(pod.Spec.Volumes,

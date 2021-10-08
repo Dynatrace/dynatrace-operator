@@ -20,7 +20,7 @@ func ConfigureCSIDriver(
 	client client.Client, scheme *runtime.Scheme, operatorPodName, operatorNamespace string,
 	dkState *controllers.DynakubeState, updateInterval time.Duration) error {
 
-	if dkState.Instance.NeedsCSI() {
+	if dkState.Instance.NeedsCSIDriver() {
 		err := addDynakubeOwnerReference(client, scheme, operatorPodName, operatorNamespace, dkState, updateInterval)
 		if err != nil {
 			return err

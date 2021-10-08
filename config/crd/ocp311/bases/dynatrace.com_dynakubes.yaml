@@ -1547,10 +1547,10 @@ spec:
                               only "value". The requirements are ANDed.
                             type: object
                         type: object
-                      serverlessMode:
-                        description: 'Optional: In case your cluster doesn''t have
-                          ''nodes'' so csi drivers won''t work, to make such a usecase
-                          work set this to true.'
+                      useCSIDriver:
+                        description: 'Optional: If you want to use CSIDriver; disable
+                          if your cluster does not have ''nodes'' to fall back to
+                          the volume approach.'
                         type: boolean
                       version:
                         description: 'Optional: If specified, indicates the OneAgent
@@ -2047,11 +2047,6 @@ spec:
                           object with that name. If not specified the setting will
                           be removed from the DaemonSet.'
                         type: string
-                      serverlessMode:
-                        description: 'Optional: In case your cluster doesn''t have
-                          ''nodes'' so csi drivers won''t work, to make such a usecase
-                          work set this to true.'
-                        type: boolean
                       tolerations:
                         description: 'Optional: set tolerations for the OneAgent pods'
                         items:
