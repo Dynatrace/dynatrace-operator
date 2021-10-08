@@ -51,6 +51,8 @@ var (
 					HostInjectSpec: dynatracev1beta1.HostInjectSpec{
 						Args: []string{
 							"--set-host-group=" + testHostGroup,
+							"--something=else",
+							"",
 						},
 					},
 				}},
