@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"context"
+	"regexp"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/go-logr/logr"
@@ -16,6 +17,11 @@ const (
 	InstanceLabel                = "dynakube.dynatrace.com/instance"
 	UpdatedViaDynakubeAnnotation = "dynatrace.com/updated-via-operator"
 )
+
+var ignoredNamespaces = []string{
+	"^kube-.*",
+	"^openshift-.*",
+}
 
 type ConflictChecker struct {
 	alreadyUsed bool
@@ -121,4 +127,13 @@ func updateLabels(matches bool, dynakube *dynatracev1beta1.DynaKube, namespace *
 		delete(namespace.Labels, InstanceLabel)
 	}
 	return updated, nil
+}
+
+func isIgnoredNamespace(namespaceName string) bool {
+	for _, pattern := range ignoredNamespaces {
+		if matched, _ := regexp.MatchString(pattern, namespaceName); matched {
+			return true
+		}
+	}
+	return false
 }
