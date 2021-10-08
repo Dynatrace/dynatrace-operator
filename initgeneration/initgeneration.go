@@ -178,12 +178,7 @@ func getHostGroup(dk *dynatracev1beta1.DynaKube) string {
 	var hostGroup string
 	if dk.CloudNativeFullstackMode() && dk.Spec.OneAgent.CloudNativeFullStack.Args != nil {
 		for _, arg := range dk.Spec.OneAgent.CloudNativeFullStack.Args {
-			split := strings.Split(arg, "=")
-			if len(split) != 2 {
-				continue
-			}
-			key := split[0]
-			value := split[1]
+			key, value := splitArg(arg)
 			if key == "--set-host-group" {
 				hostGroup = value
 				break
@@ -191,6 +186,16 @@ func getHostGroup(dk *dynatracev1beta1.DynaKube) string {
 		}
 	}
 	return hostGroup
+}
+
+func splitArg(arg string) (key, value string) {
+	split := strings.Split(arg, "=")
+	if len(split) != 2 {
+		return
+	}
+	key = split[0]
+	value = split[1]
+	return
 }
 
 // getInfraMonitoringNodes creates a mapping between all the nodes and the tenantUID for the infra-monitoring dynakube on that node.
