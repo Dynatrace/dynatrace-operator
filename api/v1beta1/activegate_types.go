@@ -95,10 +95,6 @@ type CapabilityProperties struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Labels",order=37,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Labels map[string]string `json:"labels,omitempty"`
 
-	// Optional: Adds additional arguments for the ActiveGate instances
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Arguments",order=38,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
-	Args []string `json:"args,omitempty"`
-
 	// Optional: List of environment variables to set for the ActiveGate
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Environment variables",order=39,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true

@@ -104,7 +104,6 @@ func convertToDeprecatedActiveGateCapability(dst *v1alpha1.CapabilityProperties,
 	dst.NodeSelector = src.NodeSelector
 	dst.Tolerations = src.Tolerations
 	dst.Labels = src.Labels
-	dst.Args = src.Args
 	dst.Env = src.Env
 }
 
@@ -201,6 +200,5 @@ func convertFromDeprecatedActiveGateCapability(dst *CapabilityProperties, src *v
 	dst.NodeSelector = src.NodeSelector
 	dst.Tolerations = src.Tolerations
 	dst.Labels = src.Labels
-	dst.Args = src.Args
 	dst.Env = src.Env
 }

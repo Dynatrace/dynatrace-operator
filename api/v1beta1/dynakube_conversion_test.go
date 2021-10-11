@@ -306,7 +306,6 @@ func compareAlphaCapability(t *testing.T, expectedCapability v1alpha1.Capability
 	assert.Equal(t, expectedCapability.NodeSelector, actualCapability.NodeSelector)
 	assert.Equal(t, expectedCapability.Tolerations, actualCapability.Tolerations)
 	assert.Equal(t, expectedCapability.Labels, actualCapability.Labels)
-	assert.Equal(t, expectedCapability.Args, actualCapability.Args)
 	assert.Equal(t, expectedCapability.Env, actualCapability.Env)
 }
 
@@ -478,7 +477,6 @@ func compareBetaCapability(t *testing.T, expectedCapability CapabilityProperties
 	assert.Equal(t, expectedCapability.NodeSelector, actualCapability.NodeSelector)
 	assert.Equal(t, expectedCapability.Tolerations, actualCapability.Tolerations)
 	assert.Equal(t, expectedCapability.Labels, actualCapability.Labels)
-	assert.Equal(t, expectedCapability.Args, actualCapability.Args)
 	assert.Equal(t, expectedCapability.Env, actualCapability.Env)
 }
 
@@ -511,9 +509,6 @@ func prepareBetaCapability() CapabilityProperties {
 		},
 		Labels: map[string]string{
 			"key": "value",
-		},
-		Args: []string{
-			"arg1",
 		},
 		Env: []corev1.EnvVar{
 			{
