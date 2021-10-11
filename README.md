@@ -19,6 +19,7 @@ Depending on the version of the Dynatrace Operator, it supports the following pl
 | Dynatrace Operator version | Kubernetes | OpenShift Container Platform               |
 | -------------------------- | ---------- | ------------------------------------------ |
 | master                     | 1.18+      | 3.11.188+, 4.5+                            |
+| v0.3.0                     | 1.18+      | 3.11.188+, 4.5+                            |
 | v0.2.1                     | 1.18+      | 3.11.188+, 4.5+                            |
 | v0.1.0                     | 1.18+      | 3.11.188+, 4.4+                            |
 
@@ -51,7 +52,7 @@ Make sure the *Dynatrace API* token has the following permission:
 $ kubectl -n dynatrace create secret generic dynakube --from-literal="apiToken=DYNATRACE_API_TOKEN" --from-literal="paasToken=PLATFORM_AS_A_SERVICE_TOKEN"
 ```
 
-#### Create `DynaKube` custom resource for ActiveGate and OneAgent rollout
+#### Create `DynaKube` custom resource for ActiveGate and CloudNativeFullStack rollout
 
 The rollout of Dynatrace ActiveGate is governed by a custom resource of type `DynaKube`. This custom resource will
 contain parameters for various Dynatrace capabilities (API monitoring, routing, etc.)
@@ -60,7 +61,7 @@ Note: `.spec.tokens` denotes the name of the secret holding access tokens. If no
 for a secret called like the DynaKube custom resource `.metadata.name`.
 
 ```yaml
-apiVersion: dynatrace.com/v1alpha1
+apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
   name: dynakube
@@ -68,7 +69,6 @@ metadata:
 spec:
   # dynatrace api url including `/api` path at the end
   # either set ENVIRONMENTID to the proper tenant id or change the apiUrl as a whole, e.q. for Managed
-  #
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
   # name of secret holding `apiToken` and `paasToken`
@@ -76,82 +76,45 @@ spec:
   #
   # tokens: ""
 
+
   # Optional: Sets Network Zone for OneAgent and ActiveGate pods
-  # Should be set if you use routing to optimize connectivity
   # Make sure networkZones are enabled on your cluster before (see https://www.dynatrace.com/support/help/setup-and-configuration/network-zones/network-zones-basic-info/)
   #
   # networkZone: name-of-my-network-zone
 
-  # Enables and configures an ActiveGate instance that allows monitoring
-  # of Kubernetes environments
-  #
-  kubernetesMonitoring:
-    enabled: true
+  oneAgent:
+    # enable cloud-native fullstack monitoring and change its settings
+    # Cannot be used in conjunction with classic fullstack monitoring or application-only monitoring or host monitoring
+    cloudNativeFullStack:
 
-  # Enables and configures the OneAgent to automatically run on all your K8s nodes
-  #
-  classicFullStack:
-    enabled: false
+      # Optional: tolerations to include with the OneAgent DaemonSet.
+      # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+      #
+      tolerations:
+      - effect: NoSchedule3
+        key: node-role.kubernetes.io/master
+        operator: Exists
 
-  # Enables and configures an ActiveGate instance that allows routing
-  # of OneAgent traffic
-  # Make sure you have a NetworkZone set to optimize connectivity
-  #
-  routing:
-    enabled: true
-
-  # To be released
-  #
-  # Enables and configures infrastructure monitoring
-  # Collects data such as CPU or memory usage of host nodes.
-  #
-  infraMonitoring:
-    # Enable infrastructure monitoring
-    enabled: true
-
-  # To be released
-  #
-  # Enables and configures monitoring pods by injecting oneagent init containers into them.
-  # Pods to be monitored must be created in previously labeled namespaces.
-  #
-  codeModules:
-    # Enable pod monitoring
-    enabled: true
+  # Configuration for ActiveGate instances.
+  activeGate:
+    # Enables listed ActiveGate capabilities
+    capabilities:
+      - routing
+      - kubernetes-monitoring
+      - data-ingest
 
 ```
 
 This is the most basic configuration for the DynaKube object. In case you want to have adjustments please have a look
-at [our DynaKube Custom Resource example](https://raw.githubusercontent.com/Dynatrace/dynatrace-operator/master/config/samples/cr.yaml)
+at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples)
 . Save this to cr.yaml and apply it to your cluster.
 
 ```sh
 $ kubectl apply -f cr.yaml
 ```
 
-#### Enable Kubernetes API monitoring
-
-To get native Kubernetes metrics, you need to connect the Kubernetes API to Dynatrace.
-
-1. Get the Kubernetes API URL
-
-```sh
-$ kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'
-```
-
-2. Get the bearer token
-
-```sh
-$ kubectl get secret $(kubectl get sa dynatrace-kubernetes-monitoring -o jsonpath='{.secrets[0].name}' -n dynatrace) -o jsonpath='{.data.token}' -n dynatrace | base64 --decode
-```
-
-3. In Dynatrace, go to Settings > Cloud and virtualization > Kubernetes
-
-4. Select Connect new cluster
-
-5. Provide a Name, the Kubernetes API URL, and the Bearer token for the Kubernetes cluster and click 'Connect'
-
 For detailed instructions see
-our [official help page.](https://www.dynatrace.com/support/help/technology-support/cloud-platforms/kubernetes/monitor-kubernetes-environments/)
+our [official help page.](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/)
 
 </details>
 <details><summary>Uninstall</summary>
@@ -198,7 +161,7 @@ Make sure the *Dynatrace API* token has the following permission:
 $ oc -n dynatrace create secret generic dynakube --from-literal="apiToken=DYNATRACE_API_TOKEN" --from-literal="paasToken=PLATFORM_AS_A_SERVICE_TOKEN"
 ```
 
-#### Create `DynaKube` custom resource for ActiveGate and OneAgent rollout
+#### Create `DynaKube` custom resource for ActiveGate and CloudNativeFullStack rollout
 
 The rollout of Dynatrace ActiveGate is governed by a custom resource of type `DynaKube`.
 
@@ -206,7 +169,7 @@ Note: `.spec.tokens` denotes the name of the secret holding access tokens. If no
 for a secret called like the DynaKube custom resource `.metadata.name`.
 
 ```yaml
-apiVersion: dynatrace.com/v1alpha1
+apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
   name: dynakube
@@ -214,7 +177,6 @@ metadata:
 spec:
   # dynatrace api url including `/api` path at the end
   # either set ENVIRONMENTID to the proper tenant id or change the apiUrl as a whole, e.q. for Managed
-  #
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
   # name of secret holding `apiToken` and `paasToken`
@@ -222,79 +184,42 @@ spec:
   #
   # tokens: ""
 
+
   # Optional: Sets Network Zone for OneAgent and ActiveGate pods
-  # Should be set if you use routing to optimize connectivity
   # Make sure networkZones are enabled on your cluster before (see https://www.dynatrace.com/support/help/setup-and-configuration/network-zones/network-zones-basic-info/)
   #
   # networkZone: name-of-my-network-zone
 
-  # Enables and configures an ActiveGate instance that allows monitoring
-  # of Kubernetes environments
-  #
-  kubernetesMonitoring:
-    enabled: true
+  oneAgent:
+    # enable cloud-native fullstack monitoring and change its settings
+    # Cannot be used in conjunction with classic fullstack monitoring or application-only monitoring or host monitoring
+    cloudNativeFullStack:
 
-  # Enables and configures the OneAgent to automatically run on all your K8s nodes
-  #
-  classicFullStack:
-    enabled: false
+      # Optional: tolerations to include with the OneAgent DaemonSet.
+      # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+      #
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
 
-  # Enables and configures an ActiveGate instance that allows routing
-  # of OneAgent traffic
-  # Make sure you have a NetworkZone set to optimize connectivity
-  #
-  routing:
-    enabled: true
-
-  # To be released
-  #
-  # Enables and configures infrastructure monitoring.
-  # Collects data such as CPU or memory usage of host nodes.
-  #
-  infraMonitoring:
-    # Enable infrastructure monitoring
-    enabled: true
-
-  # To be released
-  #
-  # Enables and configures monitoring pods by injecting oneagent init containers into them.
-  # Pods to be monitored must be created in previously labeled namespaces.
-  #
-  codeModules:
-    # Enable pod monitoring
-    enabled: true
+  # Configuration for ActiveGate instances.
+  activeGate:
+    # Enables listed ActiveGate capabilities
+    capabilities:
+      - routing
+      - kubernetes-monitoring
+      - data-ingest
 
 ```
 
 This is the most basic configuration for the DynaKube object. In case you want to have adjustments please have a look
-at [our DynaKube Custom Resource example](https://raw.githubusercontent.com/Dynatrace/dynatrace-operator/master/config/samples/cr.yaml)
+at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples)
 . Save this to cr.yaml and apply it to your cluster.
 
 ```sh
 $ oc apply -f cr.yaml
 ```
-
-#### Enable Kubernetes API monitoring
-
-To get native Kubernetes metrics, you need to connect the Kubernetes API to Dynatrace.
-
-1. Get the Kubernetes API URL
-
-```sh
-$ oc config view --minify -o jsonpath='{.clusters[0].cluster.server}'
-```
-
-2. Get the bearer token
-
-```sh
-$ oc get secret $(oc get sa dynatrace-kubernetes-monitoring -o jsonpath='{.secrets[1].name}' -n dynatrace) -o jsonpath='{.data.token}' -n dynatrace | base64 --decode
-```
-
-3. In Dynatrace, go to Settings > Cloud and virtualization > Kubernetes
-
-4. Select Connect new cluster
-
-5. Provide a Name, the Kubernetes API URL, and the Bearer token for the Kubernetes cluster and click 'Connect'
 
 For detailed instructions see
 our [official help page.](https://www.dynatrace.com/support/help/technology-support/cloud-platforms/openshift/monitor-openshift-environments/)
