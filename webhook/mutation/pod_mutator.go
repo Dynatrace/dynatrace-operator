@@ -159,7 +159,7 @@ func rootOwner(ctx context.Context, cnt client.Client, o *v1.PartialObjectMetada
 				},
 			}
 			if err := cnt.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: om.Namespace}, obj); err != nil {
-				log.Error(err, "Failed to query the object", "apiVersion", owner.APIVersion, "kind", owner.Kind, "name", owner.Name, "namespace", om.Namespace)
+				log.Error(err, "failed to query the object", "apiVersion", owner.APIVersion, "kind", owner.Kind, "name", owner.Name, "namespace", om.Namespace)
 				return o.ObjectMeta.Name, o.Kind, err
 			}
 			return rootOwner(ctx, cnt, obj)
