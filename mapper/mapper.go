@@ -4,6 +4,7 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -13,7 +14,7 @@ import (
 )
 
 const (
-	InstanceLabel                = "dynakube.dynatrace.com/instance"
+	InstanceLabel                = dtwebhook.LabelInstance
 	UpdatedViaDynakubeAnnotation = "dynatrace.com/updated-via-operator"
 )
 
