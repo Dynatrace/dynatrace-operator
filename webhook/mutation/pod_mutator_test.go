@@ -958,7 +958,7 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 			InitContainers: []corev1.Container{{
 				Name:            dtwebhook.InstallContainerName,
 				Image:           "test-image",
-				ImagePullPolicy: corev1.PullAlways,
+				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"/usr/bin/env"},
 				Args:            []string{"bash", "/mnt/config/init.sh"},
 				Env: []corev1.EnvVar{
