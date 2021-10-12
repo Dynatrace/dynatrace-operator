@@ -96,7 +96,7 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 		return admission.Denied(errMsg)
 	}
 
-	if errMsg := hasConflictingNodeSelector(validator.clt, dynakube); errMsg != "" {
+	if errMsg := hasConflictingNodeSelector(validator.clt, dynakube, validator.logger); errMsg != "" {
 		validator.logger.Info("requested dynakube has conflicting nodeSelector", "name", request.Name, "namespace", request.Namespace)
 		return admission.Denied(errMsg)
 	}
@@ -146,12 +146,15 @@ func hasInvalidActiveGateCapabilities(dynakube *dynatracev1beta1.DynaKube) strin
 	return ""
 }
 
-func hasConflictingNodeSelector(client client.Client, dynakube *dynatracev1beta1.DynaKube) string {
-	if !dynakube.NeedsOneAgent() {
+func hasConflictingNodeSelector(client client.Client, dynakube *dynatracev1beta1.DynaKube, logger logr.Logger) string {
+	if !dynakube.NeedsOneAgent() || dynakube.NodeSelector() == nil {
 		return ""
 	}
 	validDynakubes := &dynatracev1beta1.DynaKubeList{}
-	_ = client.List(context.TODO(), validDynakubes)
+	if err := client.List(context.TODO(), validDynakubes); err != nil {
+		logger.Info("error ocurred while listing dynakubes", "err", err.Error())
+		return ""
+	}
 	for i := range validDynakubes.Items {
 		nodeSelectorMap := dynakube.NodeSelector()
 		validNodeSelectorMap := validDynakubes.Items[i].NodeSelector()
@@ -162,13 +165,13 @@ func hasConflictingNodeSelector(client client.Client, dynakube *dynatracev1beta1
 	return ""
 }
 
-func hasConflictingMatchLabels(labelMap1, labelMap2 map[string]string) bool {
-	if labelMap1 != nil && labelMap2 != nil {
-		labelSelector1 := labels.SelectorFromSet(labelMap1)
-		labelSelector2 := labels.SelectorFromSet(labelMap2)
-		labelSelectorLabels1 := labels.Set(labelMap1)
-		labelSelectorLabels2 := labels.Set(labelMap2)
-		return labelSelector1.Matches(labelSelectorLabels2) || labelSelector2.Matches(labelSelectorLabels1)
+func hasConflictingMatchLabels(labelMap, otherLabelMap map[string]string) bool {
+	if labelMap != nil && otherLabelMap != nil {
+		labelSelector := labels.SelectorFromSet(labelMap)
+		otherLabelSelector := labels.SelectorFromSet(otherLabelMap)
+		labelSelectorLabels := labels.Set(labelMap)
+		otherLabelSelectorLabels := labels.Set(otherLabelMap)
+		return labelSelector.Matches(otherLabelSelectorLabels) || otherLabelSelector.Matches(labelSelectorLabels)
 	}
 	return false
 }
