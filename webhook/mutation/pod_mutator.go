@@ -292,7 +292,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	ic := corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           image,
-		ImagePullPolicy: corev1.PullAlways,
+		ImagePullPolicy: corev1.PullIfNotPresent,
 		Command:         []string{"/usr/bin/env"},
 		Args:            []string{"bash", "/mnt/config/init.sh"},
 		Env: []corev1.EnvVar{
