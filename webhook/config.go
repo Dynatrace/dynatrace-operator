@@ -2,7 +2,7 @@ package webhook
 
 const (
 	// LabelInstance can be set in a Namespace and indicates the corresponding DynaKube object assigned to it.
-	LabelInstance = "dynakube.dynatrace.com/instance"
+	LabelInstance = "dynakube.internal.dynatrace.com/instance"
 
 	// AnnotationInject can be set at pod or namespace label to enable/disable injection, where at pod level has higher
 	// priority.

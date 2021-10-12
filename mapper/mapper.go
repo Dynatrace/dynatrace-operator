@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	InstanceLabel                = "dynakube.dynatrace.com/instance"
+	InstanceLabel                = "dynakube.internal.dynatrace.com/instance"
 	UpdatedViaDynakubeAnnotation = "dynatrace.com/updated-via-operator"
 )
 
