@@ -98,13 +98,20 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 		return err
 	}
 
+	// the injected podMutator.client doesn't have permissions to Get(sth) from a different namespace
+	metaClient, err := client.New(mgr.GetConfig(), client.Options{})
+	if err != nil {
+		return err
+	}
+
 	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podMutator{
-		apiReader: mgr.GetAPIReader(),
-		namespace: ns,
-		image:     pod.Spec.Containers[0].Image,
-		apmExists: apmExists,
-		clusterID: string(UID),
-		recorder:  mgr.GetEventRecorderFor("Webhook Server"),
+		apiReader:  mgr.GetAPIReader(),
+		namespace:  ns,
+		image:      pod.Spec.Containers[0].Image,
+		apmExists:  apmExists,
+		clusterID:  string(UID),
+		recorder:   mgr.GetEventRecorderFor("Webhook Server"),
+		metaClient: metaClient,
 	}})
 	return nil
 }
@@ -117,17 +124,18 @@ func registerHealthzEndpoint(mgr manager.Manager) {
 
 // podMutator injects the OneAgent into Pods
 type podMutator struct {
-	client    client.Client
-	apiReader client.Reader
-	decoder   *admission.Decoder
-	image     string
-	namespace string
-	apmExists bool
-	clusterID string
-	recorder  record.EventRecorder
+	client     client.Client
+	apiReader  client.Reader
+	decoder    *admission.Decoder
+	image      string
+	namespace  string
+	apmExists  bool
+	clusterID  string
+	recorder   record.EventRecorder
+	metaClient client.Client
 }
 
-func rootOwnerPod(ctx context.Context, cnt client.Client, pod *corev1.Pod, namespace string) (string, string, error) {
+func rootOwnerPod(cnt client.Client, pod *corev1.Pod, namespace string) (string, string, error) {
 	obj := &v1.PartialObjectMetadata{
 		TypeMeta: v1.TypeMeta{
 			APIVersion: pod.APIVersion,
@@ -140,10 +148,10 @@ func rootOwnerPod(ctx context.Context, cnt client.Client, pod *corev1.Pod, names
 			OwnerReferences: pod.ObjectMeta.OwnerReferences,
 		},
 	}
-	return rootOwner(ctx, cnt, obj)
+	return rootOwner(cnt, obj)
 }
 
-func rootOwner(ctx context.Context, cnt client.Client, o *v1.PartialObjectMetadata) (string, string, error) {
+func rootOwner(cnt client.Client, o *v1.PartialObjectMetadata) (string, string, error) {
 	if len(o.ObjectMeta.OwnerReferences) == 0 {
 		return o.ObjectMeta.Name, o.Kind, nil
 	}
@@ -157,11 +165,12 @@ func rootOwner(ctx context.Context, cnt client.Client, o *v1.PartialObjectMetada
 					Kind:       owner.Kind,
 				},
 			}
-			if err := cnt.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: om.Namespace}, obj); err != nil {
+			if err := cnt.Get(context.TODO(), client.ObjectKey{Name: owner.Name, Namespace: om.Namespace}, obj); err != nil {
 				log.Error(err, "failed to query the object", "apiVersion", owner.APIVersion, "kind", owner.Kind, "name", owner.Name, "namespace", om.Namespace)
 				return o.ObjectMeta.Name, o.Kind, err
 			}
-			return rootOwner(ctx, cnt, obj)
+
+			return rootOwner(cnt, obj)
 		}
 	}
 	return o.ObjectMeta.Name, o.Kind, nil
@@ -277,7 +286,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 	pod.Annotations[dtwebhook.AnnotationInjected] = "true"
 
-	workloadName, workloadKind, workloadErr := rootOwnerPod(ctx, m.client, pod, req.Namespace)
+	workloadName, workloadKind, workloadErr := rootOwnerPod(m.metaClient, pod, req.Namespace)
 	if workloadErr != nil {
 		return admission.Errored(http.StatusInternalServerError, workloadErr)
 	}
