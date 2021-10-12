@@ -152,7 +152,7 @@ func hasConflictingNodeSelector(client client.Client, dynakube *dynatracev1beta1
 	}
 	validDynakubes := &dynatracev1beta1.DynaKubeList{}
 	if err := client.List(context.TODO(), validDynakubes); err != nil {
-		logger.Info("error ocurred while listing dynakubes", "err", err.Error())
+		logger.Info("error occurred while listing dynakubes", "err", err.Error())
 		return ""
 	}
 	for i := range validDynakubes.Items {
