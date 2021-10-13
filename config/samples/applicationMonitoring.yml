@@ -48,7 +48,6 @@ spec:
     applicationMonitoring:
       # Optional: If specified, indicates the OneAgent version to use
       # Defaults to latest
-      # Example: {major.minor.release} - 1.200.0
       #
       # version:
 

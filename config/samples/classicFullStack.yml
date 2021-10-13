@@ -24,6 +24,7 @@ spec:
   #   valueFrom: name-of-my-proxy-secret
 
   # Optional: Adds custom RootCAs from a configmap
+  #
   # trustedCAs: name-of-my-ca-configmap
 
   # Optional: Sets Network Zone for OneAgent and ActiveGate pods
@@ -104,6 +105,7 @@ spec:
       # Optional: arguments to add to the OneAgent installer.
       # Available options: https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
       # Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
+      #
       # args: []
       
   # Configuration for ActiveGate instances.

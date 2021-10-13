@@ -13,13 +13,6 @@ spec:
   #
   # tokens: ""
 
-  # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements >
-  # if namespaceSelector is not set then we inject into every namespace
-  #
-  # namespaceSelector:
-  #     matchLabels:
-  #       test: test
-
   # Optional: Disable certificate validation checks for installer download and API communication
   #
   # skipCertCheck: false
@@ -31,6 +24,7 @@ spec:
   #   valueFrom: name-of-my-proxy-secret
 
   # Optional: Adds custom RootCAs from a configmap
+  #
   # trustedCAs: name-of-my-ca-configmap
 
   # Optional: Sets Network Zone for OneAgent and ActiveGate pods
@@ -52,7 +46,8 @@ spec:
     # enable host monitoring and change its settings
     # Cannot be used in conjunction with cloud-native fullstack monitoring or classic fullstack monitoring or application-only monitoring
     hostMonitoring:
-      # Optional: The version of the OneAgent to be used when useImmutableImage is enabled. The latest is used by default.
+      # Optional: If specified, indicates the OneAgent version to use
+      # Defaults to latest
       #
       # version:
       
@@ -77,12 +72,6 @@ spec:
         - effect: NoSchedule
           key: node-role.kubernetes.io/master
           operator: Exists
-
-      # Optional: If specified, indicates the OneAgent version to use
-      # Defaults to latest
-      # Example: {major.minor.release} - 1.200.0
-      #
-      # version:
 
       # Optional: resource settings for OneAgent container. Consumption of the OneAgent heavily depends
       # on the workload to monitor; please adjust values accordingly.

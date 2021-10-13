@@ -13,13 +13,6 @@ spec:
   #
   # tokens: ""
 
-  # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements >
-  # if namespaceSelector is not set then we inject into every namespace
-  #
-  # namespaceSelector:
-  #     matchLabels:
-  #       test: test
-
   # Optional: Disable certificate validation checks for installer download and API communication
   #
   # skipCertCheck: false
@@ -31,6 +24,7 @@ spec:
   #   valueFrom: name-of-my-proxy-secret
 
   # Optional: Adds custom RootCAs from a configmap
+  #
   # trustedCAs: name-of-my-ca-configmap
 
   # Optional: Sets Network Zone for OneAgent and ActiveGate pods
@@ -54,7 +48,6 @@ spec:
     cloudNativeFullStack:
       # Optional: If specified, indicates the OneAgent version to use
       # Defaults to latest
-      # Example: {major.minor.release} - 1.200.0
       #
       # version:
 
@@ -104,6 +97,12 @@ spec:
       # Optional: additional environment variables to add to the OneAgent Pods.
       #
       # env: []
+
+      # Optional: arguments to add to the OneAgent installer.
+      # Available options: https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
+      # Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
+      #
+      # args: []
 
       # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements >
       # if namespaceSelector is not set then we inject into every namespace
@@ -163,12 +162,7 @@ spec:
     #
     # labels:
     #   custom: label
-
-    # Optional: arguments to add to the ActiveGate instances.
-    # Available options: https://www.dynatrace.com/support/help/shortlink/activegate-custom-installation#linux
-    #
-    # args: []
-
+    
     # Optional: additional environment variables to add to the ActiveGate Pods.
     #
     # env: []
