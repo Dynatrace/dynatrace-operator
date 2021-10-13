@@ -140,15 +140,15 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	inject := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInject, "true")
+	if inject == "false" {
+		return admission.Patched("")
+	}
+
 	var ns corev1.Namespace
 	if err := m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
 		log.Error(err, "Failed to query the namespace before pod injection")
 		return admission.Errored(http.StatusInternalServerError, err)
-	}
-
-	inject := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInject, "true")
-	if inject == "false" {
-		return admission.Patched("")
 	}
 
 	dkName, ok := ns.Labels[mapper.InstanceLabel]
