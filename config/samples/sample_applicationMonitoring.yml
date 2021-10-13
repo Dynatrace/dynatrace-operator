@@ -6,19 +6,12 @@ metadata:
 spec:
   # dynatrace api url including `/api` path at the end
   # either set ENVIRONMENTID to the proper tenant id or change the apiUrl as a whole, e.q. for Managed
-  apiUrl: https://asj34817.dev.dynatracelabs.com/api
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
   # name of secret holding `apiToken` and `paasToken`
   # if unset, name of custom resource is used
   #
   # tokens: ""
-
-  # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements >
-  # if namespaceSelector is not set then we inject into every namespace
-  #
-  # namespaceSelector:
-  #     matchLabels:
-  #       test: test
 
   # Optional: Disable certificate validation checks for installer download and API communication
   #
@@ -31,6 +24,7 @@ spec:
   #   valueFrom: name-of-my-proxy-secret
 
   # Optional: Adds custom RootCAs from a configmap
+  #
   # trustedCAs: name-of-my-ca-configmap
 
   # Optional: Sets Network Zone for OneAgent and ActiveGate pods
@@ -124,11 +118,6 @@ spec:
     #
     # labels:
     #   custom: label
-
-    # Optional: arguments to add to the ActiveGate instances.
-    # Available options: https://www.dynatrace.com/support/help/shortlink/activegate-custom-installation#linux
-    #
-    # args: []
 
     # Optional: additional environment variables to add to the ActiveGate Pods.
     #

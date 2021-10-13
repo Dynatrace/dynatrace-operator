@@ -6,7 +6,7 @@ metadata:
 spec:
   # dynatrace api url including `/api` path at the end
   # either set ENVIRONMENTID to the proper tenant id or change the apiUrl as a whole, e.q. for Managed
-  apiUrl: https://asj34817.dev.dynatracelabs.com/api
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
   # name of secret holding `apiToken` and `paasToken`
   # if unset, name of custom resource is used
@@ -104,12 +104,6 @@ spec:
       # Optional: additional environment variables to add to the OneAgent Pods.
       #
       # env: []
-
-      # Optional: arguments to add to the OneAgent installer.
-      # Available options: https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
-      # Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
-      #
-      # args: []
 
       # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements >
       # if namespaceSelector is not set then we inject into every namespace
