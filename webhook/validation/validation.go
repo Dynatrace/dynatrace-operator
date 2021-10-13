@@ -10,8 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-
-	// "k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/labels"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -38,6 +37,10 @@ Make sure you correctly specify the ActiveGate capabilities in your custom resou
 	errorDuplicateActiveGateCapability = `
 The DynaKube's specification tries to specify duplicate capabilities in the ActiveGate section, duplicate capability=%s.
 Make sure you don't duplicate an Activegate capability in your custom resource.
+`
+	errorNodeSelectorConflict = `
+The DynaKube's specification tries to specify a nodeSelector conflicts with an another Dynakube's nodeSelector, which is not supported.
+The conflicting Dynakube: %s
 `
 
 	errorNoApiUrl = `
@@ -93,6 +96,11 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 		return admission.Denied(errMsg)
 	}
 
+	if errMsg := hasConflictingNodeSelector(validator.clt, dynakube, validator.logger); errMsg != "" {
+		validator.logger.Info("requested dynakube has conflicting nodeSelector", "name", request.Name, "namespace", request.Namespace)
+		return admission.Denied(errMsg)
+	}
+
 	validator.logger.Info("requested dynakube is valid", "name", request.Name, "namespace", request.Namespace)
 	return admission.Allowed("")
 }
@@ -138,19 +146,35 @@ func hasInvalidActiveGateCapabilities(dynakube *dynatracev1beta1.DynaKube) strin
 	return ""
 }
 
-// TODO: Implement it to check other dynakubes for conflicting nodeSelectors
-//func hasConflictingNodeSelectors(dynakube dynatracev1beta1.DynaKube) bool {
-//	infraNodeSelectorMap := dynakube.Spec.InfraMonitoring.NodeSelector
-//	classicNodeSelectorMap := dynakube.Spec.ClassicFullStack.NodeSelector
-//
-//	infraNodeSelector := labels.SelectorFromSet(infraNodeSelectorMap)
-//	classicNodeSelector := labels.SelectorFromSet(classicNodeSelectorMap)
-//
-//	infraNodeSelectorLabels := labels.Set(infraNodeSelectorMap)
-//	classicNodeSelectorLabels := labels.Set(classicNodeSelectorMap)
-//
-//	return infraNodeSelector.Matches(classicNodeSelectorLabels) || classicNodeSelector.Matches(infraNodeSelectorLabels)
-//}
+func hasConflictingNodeSelector(client client.Client, dynakube *dynatracev1beta1.DynaKube, logger logr.Logger) string {
+	if !dynakube.NeedsOneAgent() || dynakube.NodeSelector() == nil {
+		return ""
+	}
+	validDynakubes := &dynatracev1beta1.DynaKubeList{}
+	if err := client.List(context.TODO(), validDynakubes); err != nil {
+		logger.Info("error occurred while listing dynakubes", "err", err.Error())
+		return ""
+	}
+	for i := range validDynakubes.Items {
+		nodeSelectorMap := dynakube.NodeSelector()
+		validNodeSelectorMap := validDynakubes.Items[i].NodeSelector()
+		if hasConflictingMatchLabels(nodeSelectorMap, validNodeSelectorMap) {
+			return fmt.Sprintf(errorNodeSelectorConflict, validDynakubes.Items[i].Name)
+		}
+	}
+	return ""
+}
+
+func hasConflictingMatchLabels(labelMap, otherLabelMap map[string]string) bool {
+	if labelMap != nil && otherLabelMap != nil {
+		labelSelector := labels.SelectorFromSet(labelMap)
+		otherLabelSelector := labels.SelectorFromSet(otherLabelMap)
+		labelSelectorLabels := labels.Set(labelMap)
+		otherLabelSelectorLabels := labels.Set(otherLabelMap)
+		return labelSelector.Matches(otherLabelSelectorLabels) || otherLabelSelector.Matches(labelSelectorLabels)
+	}
+	return false
+}
 
 func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1beta1.DynaKube) error {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
