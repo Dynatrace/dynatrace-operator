@@ -309,9 +309,6 @@ func buildTestInstance() *dynatracev1beta1.DynaKube {
 					Env: []corev1.EnvVar{
 						{Name: testKey, Value: testValue},
 					},
-					Args: []string{
-						testKey,
-					},
 				}},
 		},
 	}

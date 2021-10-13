@@ -983,12 +983,6 @@ spec:
               activeGate:
                 description: Something
                 properties:
-                  args:
-                    description: 'Optional: Adds additional arguments for the ActiveGate
-                      instances'
-                    items:
-                      type: string
-                    type: array
                   capabilities:
                     description: Activegate capabilities enabled (routing, kubernetes-monitoring,
                       data-ingest)
@@ -1229,12 +1223,6 @@ spec:
               kubernetesMonitoring:
                 description: ' Deprecated: Configuration for Kubernetes Monitoring'
                 properties:
-                  args:
-                    description: 'Optional: Adds additional arguments for the ActiveGate
-                      instances'
-                    items:
-                      type: string
-                    type: array
                   customProperties:
                     description: 'Optional: Add a custom properties file by providing
                       it as a value or reference it from a secret If referenced from
@@ -2342,12 +2330,6 @@ spec:
               routing:
                 description: ' Deprecated: Configuration for Routing'
                 properties:
-                  args:
-                    description: 'Optional: Adds additional arguments for the ActiveGate
-                      instances'
-                    items:
-                      type: string
-                    type: array
                   customProperties:
                     description: 'Optional: Add a custom properties file by providing
                       it as a value or reference it from a secret If referenced from
