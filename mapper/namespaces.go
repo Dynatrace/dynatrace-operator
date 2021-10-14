@@ -26,9 +26,6 @@ func NewNamespaceMapper(ctx context.Context, clt client.Client, apiReader client
 
 // MapFromNamespace adds the labels to the targetNs if there is a matching Dynakube
 func (nm NamespaceMapper) MapFromNamespace() (bool, error) {
-	if nm.operatorNs == nm.targetNs.Name || isIgnoredNamespace(nm.targetNs.Name) {
-		return false, nil
-	}
 	updatedNamespace, err := nm.updateNamespace()
 	if err != nil {
 		return false, err
@@ -44,5 +41,5 @@ func (nm NamespaceMapper) updateNamespace() (bool, error) {
 		return false, errors.Cause(err)
 	}
 
-	return updateNamespace(nm.targetNs, dkList, nm.logger)
+	return updateNamespace(nm.operatorNs, nm.targetNs, dkList, nm.logger)
 }

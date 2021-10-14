@@ -98,4 +98,20 @@ func TestMapFromNamespace(t *testing.T) {
 		assert.False(t, updated)
 		assert.Equal(t, 0, len(nm.targetNs.Labels))
 	})
+
+	t.Run("Feature flag for monitoring system namespaces", func(t *testing.T) {
+		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil, nil)
+		dk.Annotations = map[string]string{
+			"alpha.operator.dynatrace.com/feature-inject-system-namespaces": "true",
+		}
+		namespace := createNamespace("openshift-something", nil)
+		clt := fake.NewClient(dk)
+		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace, logger.NewDTLogger())
+
+		updated, err := nm.MapFromNamespace()
+
+		assert.NoError(t, err)
+		assert.True(t, updated)
+		assert.Equal(t, 1, len(nm.targetNs.Labels))
+	})
 }

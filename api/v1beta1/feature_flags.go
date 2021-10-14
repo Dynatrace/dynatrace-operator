@@ -27,6 +27,7 @@ const (
 	annotationFeatureOneAgentMaxUnavailable          = annotationFeaturePrefix + "oneagent-max-unavailable"
 	annotationFeatureEnableWebhookReinvocationPolicy = annotationFeaturePrefix + "enable-webhook-reinvocation-policy"
 	annotationFeatureIgnoreUnknownState              = annotationFeaturePrefix + "ignore-unknown-state"
+	annotationFeatureInjectSystemNamespaces          = annotationFeaturePrefix + "inject-system-namespaces"
 )
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
@@ -69,4 +70,9 @@ func (dk *DynaKube) GetFeatureEnableWebhookReinvocationPolicy() string {
 // this may cause extra host to appear in the tenant for each process.
 func (dk *DynaKube) FeatureIgnoreUnknownState() bool {
 	return dk.Annotations[annotationFeatureIgnoreUnknownState] == "true"
+}
+
+// FeatureInjectSystemNamespaces is a feature flag that makes the operator inject into applications in system namespace, such as kube-system and openshift-apiserver.
+func (dk *DynaKube) FeatureInjectSystemNamespaces() bool {
+	return dk.Annotations[annotationFeatureInjectSystemNamespaces] == "true"
 }

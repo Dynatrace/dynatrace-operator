@@ -20,7 +20,7 @@ const (
 
 var ignoredNamespaces = []string{
 	"^kube-.*",
-	"^openshift-.*",
+	"^openshift(-.*)?",
 }
 
 type ConflictChecker struct {
@@ -84,11 +84,14 @@ func match(dk *dynatracev1beta1.DynaKube, namespace *corev1.Namespace) (bool, er
 // updateNamespace tries to match the namespace to every dynakube with codeModules
 // finds conflicting dynakubes(2 dynakube with codeModules on the same namespace)
 // adds/updates/removes labels from the namespace.
-func updateNamespace(namespace *corev1.Namespace, dkList *dynatracev1beta1.DynaKubeList, log logr.Logger) (bool, error) {
+func updateNamespace(operatorNs string, namespace *corev1.Namespace, dkList *dynatracev1beta1.DynaKubeList, log logr.Logger) (bool, error) {
 	var updated bool
 	conflict := ConflictChecker{}
 	for i := range dkList.Items {
 		dynakube := &dkList.Items[i]
+		if operatorNs == namespace.Name || (!dynakube.FeatureInjectSystemNamespaces() && isIgnoredNamespace(namespace.Name)) {
+			return false, nil
+		}
 		matches, err := match(dynakube, namespace)
 		if err != nil {
 			return updated, err

@@ -110,6 +110,24 @@ func TestMapFromDynakube(t *testing.T) {
 		assert.Equal(t, 0, len(ns.Labels))
 		assert.Equal(t, 0, len(ns.Annotations))
 	})
+	t.Run("Feature flag for monitoring system namespaces", func(t *testing.T) {
+		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil, nil)
+		dk.Annotations = map[string]string{
+			"alpha.operator.dynatrace.com/feature-inject-system-namespaces": "true",
+		}
+		namespace := createNamespace("openshift-something", nil)
+		clt := fake.NewClient(dk, namespace)
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk, logger.NewDTLogger())
+
+		err := dm.MapFromDynakube()
+
+		assert.NoError(t, err)
+		var ns corev1.Namespace
+		err = clt.Get(context.TODO(), types.NamespacedName{Name: namespace.Name}, &ns)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(ns.Labels))
+		assert.Equal(t, 1, len(ns.Annotations))
+	})
 }
 
 func TestUnmapFromDynaKube(t *testing.T) {
