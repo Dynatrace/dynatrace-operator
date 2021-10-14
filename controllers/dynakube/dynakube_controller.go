@@ -270,6 +270,11 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "new init script created") {
 			return
 		}
+	} else {
+		if err := dkMapper.UnmapFromDynaKube(); err != nil {
+			dkState.Log.Error(err, "could not unmap dynakube from namespace")
+			return
+		}
 	}
 }
 
