@@ -126,66 +126,46 @@ EOF
   fi
 }
 
-buildClassicFullStackSection() {
+buildCloudNativeFullStackSection() {
   cat <<EOF
-  classicFullStack:
-    enabled: true
-    tolerations:
-    - effect: NoSchedule
-      key: node-role.kubernetes.io/master
-      operator: Exists
-$(buildClassicFullStackArgsField)
-$(buildClassicFullStackEnvField)
+  oneAgent:
+    cloudNativeFullStack:
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+
+$(buildHostMonitoringArgsField)
+$(buildHostMonitoringEnvField)
 EOF
 }
 
-buildClassicFullStackArgsField() {
+buildHostMonitoringArgsField() {
   if [ -n "$CLUSTER_NAME" ]; then
     cat <<EOF
-    args:
-    - --set-host-group=${CLUSTER_NAME}
+      args:
+      - --set-host-group=${CLUSTER_NAME}
 EOF
   fi
 }
 
-buildClassicFullStackEnvField() {
+buildHostMonitoringEnvField() {
   if "$ENABLE_VOLUME_STORAGE" = "true"; then
     cat <<EOF
-    env:
-    - name: ONEAGENT_ENABLE_VOLUME_STORAGE
-      value: "${ENABLE_VOLUME_STORAGE}"
+      env:
+      - name: ONEAGENT_ENABLE_VOLUME_STORAGE
+        value: "${ENABLE_VOLUME_STORAGE}"
 EOF
   fi
 }
 
-buildRoutingSection() {
+buildActiveGateSection() {
   cat <<EOF
-  routing:
-    enabled: true
-EOF
-  if [ -n "$CLUSTER_NAME" ]; then
-    cat <<EOF
-    group: ${CLUSTER_NAME}
-EOF
-  fi
-}
-
-buildKubeMonSection() {
-  cat <<EOF
-  kubernetesMonitoring:
-    enabled: true
-EOF
-  if [ -n "$CLUSTER_NAME" ]; then
-    cat <<EOF
-    group: ${CLUSTER_NAME}
-EOF
-  fi
-}
-
-buildDataIngestSection() {
-  cat <<EOF
-  dataIngest:
-    enabled: true
+  activeGate:
+    capabilities:
+      - routing
+      - kubernetes-monitoring
+      - data-ingest
 EOF
   if [ -n "$CLUSTER_NAME" ]; then
     cat <<EOF
@@ -197,17 +177,15 @@ EOF
 applyDynaKubeCR() {
   dynakube="$(
     cat <<EOF
-apiVersion: dynatrace.com/v1alpha1
+apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
 spec:
 $(buildGlobalSection)
-$(buildClassicFullStackSection)
-$(buildRoutingSection)
-$(buildKubeMonSection)
-$(buildDataIngestSection)
+$(buildCloudNativeFullStackSection)
+$(buildActiveGateSection)
 EOF
   )"
 
