@@ -13,7 +13,7 @@ spec:
       internal.dynatrace.com/component: webhook
       internal.dynatrace.com/app: webhook
   strategy:
-    type: Recreate
+    type: RollingUpgrade
   template:
     metadata:
       annotations:
