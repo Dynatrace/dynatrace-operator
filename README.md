@@ -91,7 +91,7 @@ spec:
       # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
       #
       tolerations:
-      - effect: NoSchedule3
+      - effect: NoSchedule
         key: node-role.kubernetes.io/master
         operator: Exists
 
