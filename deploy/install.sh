@@ -306,10 +306,20 @@ checkTokenScopes() {
     exit 1
   fi
 
+  if echo "$responseAPI" | grep -Fq '"revoked": true'; then
+    echo "Error: API token has been revoked!"
+    exit 1
+  fi
+
   responsePaaS=$(apiRequest "POST" "/v1/tokens/lookup" "${jsonPaaS}")
 
   if echo "$responsePaaS" | grep -Fq "Token does not exist"; then
     echo "Error: PaaS token does not exist!"
+    exit 1
+  fi
+
+  if echo "$responseAPI" | grep -Fq '"revoked": true'; then
+    echo "Error: PaaS token has been revoked!"
     exit 1
   fi
 }
