@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
+	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -467,8 +468,16 @@ func TestReconcile_CodeModules_DisableCSI(t *testing.T) {
 			},
 		},
 	}
+	namespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testNamespace,
+			Labels: map[string]string{
+				mapper.InstanceLabel: testName,
+			},
+		},
+	}
 	dynakube := buildDynakube(testName, false)
-	fakeClient := buildFakeClient(dynakube, daemonSet)
+	fakeClient := buildFakeClient(dynakube, daemonSet, namespace)
 	r := buildReconciliation(fakeClient)
 
 	result, err := r.Reconcile(context.TODO(), reconcile.Request{
@@ -484,6 +493,10 @@ func TestReconcile_CodeModules_DisableCSI(t *testing.T) {
 			Namespace: testDynatraceNamespace,
 		}, updatedDaemonSet)
 	require.Error(t, err)
+	updatedNamespace := &corev1.Namespace{}
+	err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: testNamespace}, updatedNamespace)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(updatedNamespace.Labels))
 }
 
 func buildDynakube(name string, appInjectEnabled bool) *dynatracev1beta1.DynaKube {
