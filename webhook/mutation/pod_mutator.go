@@ -155,15 +155,6 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	if !ok {
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("no DynaKube instance set for namespace: %s", req.Namespace))
 	}
-	var initSecret corev1.Secret
-	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtwebhook.SecretConfigName, Namespace: ns.Name}, &initSecret); k8serrors.IsNotFound(err) {
-		if err := initgeneration.NewInitGenerator(m.client, m.apiReader, m.namespace, log).GenerateForNamespace(ctx, dkName, ns.Name); err != nil {
-			log.Error(err, "Failed to create the init secret before pod injection")
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-	}
-	log.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
-
 	var dk dynatracev1beta1.DynaKube
 	if err := m.client.Get(ctx, client.ObjectKey{Name: dkName, Namespace: m.namespace}, &dk); k8serrors.IsNotFound(err) {
 		template := "namespace '%s' is assigned to DynaKube instance '%s' but doesn't exist"
@@ -177,6 +168,18 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	} else if err != nil {
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
+	if !dk.NeedAppInjection() {
+		return admission.Patched("")
+	}
+
+	var initSecret corev1.Secret
+	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtwebhook.SecretConfigName, Namespace: ns.Name}, &initSecret); k8serrors.IsNotFound(err) {
+		if err := initgeneration.NewInitGenerator(m.client, m.apiReader, m.namespace, log).GenerateForNamespace(ctx, dkName, ns.Name); err != nil {
+			log.Error(err, "Failed to create the init secret before pod injection")
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+	}
+	log.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
 	if pod.Annotations == nil {
 		pod.Annotations = map[string]string{}
