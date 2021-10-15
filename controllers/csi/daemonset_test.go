@@ -153,6 +153,36 @@ func TestReconcile_CreateDaemonSet(t *testing.T) {
 	t.Run("volumes valid", func(t *testing.T) {
 		assert.Len(t, createdDaemonSet.Spec.Template.Spec.Volumes, 5)
 	})
+
+	t.Run("tolerations valid", func(t *testing.T) {
+		assert.Len(t, createdDaemonSet.Spec.Template.Spec.Tolerations, 0)
+	})
+}
+
+func TestReconcile_CreateDaemonSet_FeatureFlag(t *testing.T) {
+	log := logger.NewDTLogger()
+	fakeClient := prepareFakeClient()
+	dk := prepareDynakube(testDynakube)
+	dk.Annotations = map[string]string{
+		"alpha.operator.dynatrace.com/feature-inject-system-namespaces": "true",
+	}
+	rec := NewReconciler(fakeClient, scheme.Scheme, log, dk, testOperatorPodName, testNamespace)
+
+	result, err := rec.Reconcile()
+	require.NoError(t, err)
+	assert.True(t, result)
+
+	createdDaemonSet := &appsv1.DaemonSet{}
+	err = fakeClient.Get(context.TODO(), client.ObjectKey{
+		Namespace: testNamespace,
+		Name:      DaemonSetName,
+	}, createdDaemonSet)
+	require.NoError(t, err)
+
+	t.Run("tolerations valid", func(t *testing.T) {
+		assert.Len(t, createdDaemonSet.Spec.Template.Spec.Tolerations, 1)
+		assert.Equal(t, corev1.TaintEffectNoSchedule, createdDaemonSet.Spec.Template.Spec.Tolerations[0].Effect)
+	})
 }
 
 func testQuantity(t *testing.T, resourceList corev1.ResourceList, key corev1.ResourceName, quantity string) {

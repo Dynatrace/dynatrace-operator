@@ -73,6 +73,7 @@ func (dk *DynaKube) FeatureIgnoreUnknownState() bool {
 }
 
 // FeatureInjectSystemNamespaces is a feature flag that makes the operator inject into applications in system namespace, such as kube-system and openshift-apiserver.
+// this will cause the csi driver(if enabled) to be scheduled on master nodes.
 func (dk *DynaKube) FeatureInjectSystemNamespaces() bool {
 	return dk.Annotations[annotationFeatureInjectSystemNamespaces] == "true"
 }
