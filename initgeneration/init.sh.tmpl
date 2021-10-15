@@ -26,6 +26,8 @@ im_nodes=(
   {{- end}}
 )
 ###############################################
+# Script fails if empty
+host_tenant="${im_nodes[${K8S_NODE_NAME}]}"
 
 setFailCode(){
 	if [[ "${FAILURE_POLICY}" == "fail" ]]; then

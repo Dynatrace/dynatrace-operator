@@ -38,10 +38,11 @@ var (
 
 // InitGenerator manages the init secret generation for the user namespaces.
 type InitGenerator struct {
-	client    client.Client
-	apiReader client.Reader
-	logger    logr.Logger
-	namespace string
+	client        client.Client
+	apiReader     client.Reader
+	logger        logr.Logger
+	namespace     string
+	canWatchNodes bool
 }
 
 type nodeInfo struct {
@@ -73,12 +74,9 @@ func NewInitGenerator(client client.Client, apiReader client.Reader, ns string, 
 
 // GenerateForNamespace creates the init secret for namespace while only having the name of the corresponding dynakube
 // Used by the podInjection webhook in case the namespace lacks the init secret.
-func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dkName, targetNs string) error {
+func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1beta1.DynaKube, targetNs string) error {
 	g.logger.Info("Reconciling namespace init secret for", "namespace", targetNs)
-	var dk dynatracev1beta1.DynaKube
-	if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dkName, Namespace: g.namespace}, &dk); err != nil {
-		return err
-	}
+	g.canWatchNodes = false
 	data, err := g.generate(ctx, &dk)
 	if err != nil {
 		return err
@@ -90,6 +88,7 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dkName, target
 // Used by the dynakube controller during reconcile.
 func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) (bool, error) {
 	g.logger.Info("Reconciling namespace init secret for", "dynakube", dk.Name)
+	g.canWatchNodes = true
 	data, err := g.generate(ctx, dk)
 	if err != nil {
 		return false, err
@@ -211,36 +210,62 @@ func (g *InitGenerator) getInfraMonitoringNodes(dk *dynatracev1beta1.DynaKube) (
 		return nil, errors.WithMessage(err, "failed to query DynaKubeList")
 	}
 
-	nodeInf, err := g.initIMNodes()
-	if err != nil {
-		return nil, err
-	}
+	imNodes := map[string]string{}
 
-	for i := range dks.Items {
-		status := &dks.Items[i].Status
-		if dk != nil && dk.Name == dks.Items[i].Name {
-			status = &dk.Status
+	if g.canWatchNodes {
+		nodeInf, err := g.initIMNodes()
+		if err != nil {
+			return nil, err
 		}
-		if dks.Items[i].NeedsOneAgent() {
-			tenantUUID := ""
-			if status.ConnectionInfo.TenantUUID != "" {
-				tenantUUID = status.ConnectionInfo.TenantUUID
+
+		for i := range dks.Items {
+			status := &dks.Items[i].Status
+			if dk != nil && dk.Name == dks.Items[i].Name {
+				status = &dk.Status
 			}
-			nodeSelector := labels.SelectorFromSet(dks.Items[i].NodeSelector())
-			for _, node := range nodeInf.nodes {
-				nodeLabels := labels.Set(node.Labels)
-				if nodeSelector.Matches(nodeLabels) {
+			if dks.Items[i].NeedsOneAgent() {
+				tenantUUID := ""
+				if status.ConnectionInfo.TenantUUID != "" {
+					tenantUUID = status.ConnectionInfo.TenantUUID
+				}
+				nodeSelector := labels.SelectorFromSet(dks.Items[i].NodeSelector())
+				for _, node := range nodeInf.nodes {
+					nodeLabels := labels.Set(node.Labels)
+					if nodeSelector.Matches(nodeLabels) {
+						if tenantUUID != "" {
+							nodeInf.imNodes[node.Name] = tenantUUID
+						} else if !dk.FeatureIgnoreUnknownState() {
+							delete(nodeInf.imNodes, node.Name)
+						}
+					}
+				}
+			}
+		}
+		imNodes = nodeInf.imNodes
+
+	} else {
+		for i := range dks.Items {
+			status := &dks.Items[i].Status
+			if dk != nil && dk.Name == dks.Items[i].Name {
+				status = &dk.Status
+			}
+			if dks.Items[i].NeedsOneAgent() {
+				tenantUUID := ""
+				if status.ConnectionInfo.TenantUUID != "" {
+					tenantUUID = status.ConnectionInfo.TenantUUID
+				}
+				for nodeName := range dks.Items[i].Status.OneAgent.Instances {
 					if tenantUUID != "" {
-						nodeInf.imNodes[node.Name] = tenantUUID
+						imNodes[nodeName] = tenantUUID
 					} else if !dk.FeatureIgnoreUnknownState() {
-						delete(nodeInf.imNodes, node.Name)
+						delete(imNodes, nodeName)
 					}
 				}
 			}
 		}
 	}
 
-	return nodeInf.imNodes, nil
+	return imNodes, nil
 }
 
 func (g *InitGenerator) initIMNodes() (nodeInfo, error) {

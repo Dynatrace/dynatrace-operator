@@ -174,7 +174,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 	var initSecret corev1.Secret
 	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtwebhook.SecretConfigName, Namespace: ns.Name}, &initSecret); k8serrors.IsNotFound(err) {
-		if err := initgeneration.NewInitGenerator(m.client, m.apiReader, m.namespace, log).GenerateForNamespace(ctx, dkName, ns.Name); err != nil {
+		if err := initgeneration.NewInitGenerator(m.client, m.apiReader, m.namespace, log).GenerateForNamespace(ctx, dk, ns.Name); err != nil {
 			log.Error(err, "Failed to create the init secret before pod injection")
 			return admission.Errored(http.StatusBadRequest, err)
 		}

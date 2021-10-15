@@ -7,14 +7,6 @@ metadata:
     internal.dynatrace.com/component: webhook
 rules:
   - apiGroups:
-      - "" # "" indicates the core API group
-    resources:
-      - nodes
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
       - ""
     resources:
       - namespaces
