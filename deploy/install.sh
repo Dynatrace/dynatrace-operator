@@ -318,7 +318,7 @@ checkTokenScopes() {
     exit 1
   fi
 
-  if echo "$responseAPI" | grep -Fq '"revoked": true'; then
+  if echo "$responsePaaS" | grep -Fq '"revoked": true'; then
     echo "Error: PaaS token has been revoked!"
     exit 1
   fi
