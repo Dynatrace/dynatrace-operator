@@ -116,9 +116,6 @@ isCloudNativeFullStack true" >> ${1}
 }
 
 createConfigurationFiles() {
-	# Script fails if empty
-	host_tenant="${im_nodes[${K8S_NODE_NAME}]}"
-
 	echo -n "${INSTALLPATH}/agent/lib64/liboneagentproc.so" >> "${share_dir}/ld.so.preload"
 
 	for i in $(seq 1 $CONTAINERS_COUNT)
