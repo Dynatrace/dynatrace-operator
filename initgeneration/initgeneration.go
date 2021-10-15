@@ -61,6 +61,7 @@ type script struct {
 	TenantUUID    string
 	IMNodes       map[string]string
 	HostGroup     string
+	HasHost       bool
 }
 
 func NewInitGenerator(client client.Client, apiReader client.Reader, ns string, logger logr.Logger) *InitGenerator {
@@ -170,6 +171,7 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, 
 		TenantUUID:    dk.Status.ConnectionInfo.TenantUUID,
 		IMNodes:       infraMonitoringNodes,
 		HostGroup:     getHostGroup(dk),
+		HasHost:       dk.CloudNativeFullstackMode(),
 	}, nil
 }
 
@@ -205,66 +207,38 @@ func splitArg(arg string) (key, value string) {
 //
 // Checks all the dynakubes with infra-monitoring against all the nodes (using the nodeSelector), creating the above mentioned mapping.
 func (g *InitGenerator) getInfraMonitoringNodes(dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
-	var dks dynatracev1beta1.DynaKubeList
-	if err := g.client.List(context.TODO(), &dks, client.InNamespace(g.namespace)); err != nil {
-		return nil, errors.WithMessage(err, "failed to query DynaKubeList")
-	}
 
 	imNodes := map[string]string{}
-
+	if !dk.CloudNativeFullstackMode() {
+		return imNodes, nil
+	}
+	tenantUUID := dk.Status.ConnectionInfo.TenantUUID
 	if g.canWatchNodes {
 		nodeInf, err := g.initIMNodes()
 		if err != nil {
 			return nil, err
 		}
-
-		for i := range dks.Items {
-			status := &dks.Items[i].Status
-			if dk != nil && dk.Name == dks.Items[i].Name {
-				status = &dk.Status
-			}
-			if dks.Items[i].NeedsOneAgent() {
-				tenantUUID := ""
-				if status.ConnectionInfo.TenantUUID != "" {
-					tenantUUID = status.ConnectionInfo.TenantUUID
-				}
-				nodeSelector := labels.SelectorFromSet(dks.Items[i].NodeSelector())
-				for _, node := range nodeInf.nodes {
-					nodeLabels := labels.Set(node.Labels)
-					if nodeSelector.Matches(nodeLabels) {
-						if tenantUUID != "" {
-							nodeInf.imNodes[node.Name] = tenantUUID
-						} else if !dk.FeatureIgnoreUnknownState() {
-							delete(nodeInf.imNodes, node.Name)
-						}
-					}
+		nodeSelector := labels.SelectorFromSet(dk.NodeSelector())
+		for _, node := range nodeInf.nodes {
+			nodeLabels := labels.Set(node.Labels)
+			if nodeSelector.Matches(nodeLabels) {
+				if tenantUUID != "" {
+					nodeInf.imNodes[node.Name] = tenantUUID
+				} else if !dk.FeatureIgnoreUnknownState() {
+					delete(nodeInf.imNodes, node.Name)
 				}
 			}
 		}
 		imNodes = nodeInf.imNodes
-
 	} else {
-		for i := range dks.Items {
-			status := &dks.Items[i].Status
-			if dk != nil && dk.Name == dks.Items[i].Name {
-				status = &dk.Status
-			}
-			if dks.Items[i].NeedsOneAgent() {
-				tenantUUID := ""
-				if status.ConnectionInfo.TenantUUID != "" {
-					tenantUUID = status.ConnectionInfo.TenantUUID
-				}
-				for nodeName := range dks.Items[i].Status.OneAgent.Instances {
-					if tenantUUID != "" {
-						imNodes[nodeName] = tenantUUID
-					} else if !dk.FeatureIgnoreUnknownState() {
-						delete(imNodes, nodeName)
-					}
-				}
+		for nodeName := range dk.Status.OneAgent.Instances {
+			if tenantUUID != "" {
+				imNodes[nodeName] = tenantUUID
+			} else if !dk.FeatureIgnoreUnknownState() {
+				delete(imNodes, nodeName)
 			}
 		}
 	}
-
 	return imNodes, nil
 }
 
