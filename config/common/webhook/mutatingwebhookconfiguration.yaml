@@ -8,6 +8,8 @@ metadata:
 webhooks:
   - name: webhook.pod.dynatrace.com
     reinvocationPolicy: IfNeeded
+    failurePolicy: Ignore
+    timeoutSeconds: 2
     rules:
       - apiGroups: [ "" ]
         apiVersions: [ "v1" ]
@@ -27,6 +29,7 @@ webhooks:
     sideEffects: None
   - name: webhook.ns.dynatrace.com
     reinvocationPolicy: IfNeeded
+    timeoutSeconds: 2
     rules:
       - apiGroups: [ "" ]
         apiVersions: [ "v1" ]
