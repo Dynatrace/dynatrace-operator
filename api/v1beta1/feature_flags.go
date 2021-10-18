@@ -103,7 +103,7 @@ func (dk *DynaKube) FeatureCSITolerations() []corev1.Toleration {
 	return *tolerations
 }
 
-// FeatureIgnoredNamespaces is a feature flag for ignoreing certain namespaces.
+// FeatureIgnoredNamespaces is a feature flag for ignoring certain namespaces.
 // defaults to "[ \"^dynatrace$\", \"^kube-.*\", \"openshift(-.*)?\" ]"
 func (dk *DynaKube) FeatureIgnoredNamespaces() []string {
 	raw, ok := dk.Annotations[annotationFeatureIgnoredNamespaces]
