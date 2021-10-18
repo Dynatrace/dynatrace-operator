@@ -164,7 +164,7 @@ func TestReconcile_CreateDaemonSet_FeatureFlag(t *testing.T) {
 	fakeClient := prepareFakeClient()
 	dk := prepareDynakube(testDynakube)
 	dk.Annotations = map[string]string{
-		"alpha.operator.dynatrace.com/feature-inject-system-namespaces": "true",
+		"alpha.operator.dynatrace.com/feature-csi-master-nodes": "true",
 	}
 	rec := NewReconciler(fakeClient, scheme.Scheme, log, dk, testOperatorPodName, testNamespace)
 

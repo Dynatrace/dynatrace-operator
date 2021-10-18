@@ -101,7 +101,7 @@ func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube 
 	driverContainerResources corev1.ResourceRequirements) (*appsv1.DaemonSet, error) {
 	ds := prepareDaemonSet(operatorImage, operatorNamespace, dynakube, driverContainerResources)
 
-	if dynakube.FeatureInjectSystemNamespaces() {
+	if dynakube.FeatureCSIOnMasterNodes() {
 		ds.Spec.Template.Spec.Tolerations = []corev1.Toleration{
 			{
 				Key:      masterNodeTaintKey,

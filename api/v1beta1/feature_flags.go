@@ -17,6 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
+	"encoding/json"
 	"strconv"
 )
 
@@ -27,8 +28,15 @@ const (
 	annotationFeatureOneAgentMaxUnavailable          = annotationFeaturePrefix + "oneagent-max-unavailable"
 	annotationFeatureEnableWebhookReinvocationPolicy = annotationFeaturePrefix + "enable-webhook-reinvocation-policy"
 	annotationFeatureIgnoreUnknownState              = annotationFeaturePrefix + "ignore-unknown-state"
-	annotationFeatureInjectSystemNamespaces          = annotationFeaturePrefix + "inject-system-namespaces"
+	annotationFeatureCSIOnMasterNodes                = annotationFeaturePrefix + "csi-master-nodes"
+	annotationFeatureIgnoredNamespaces               = annotationFeaturePrefix + "ignored-namespaces"
 )
+
+var defaultIgnoredNamespaces = []string{
+	"^dynatrace$",
+	"^kube-.*",
+	"^openshift(-.*)?",
+}
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
 func (dk *DynaKube) FeatureDisableActiveGateUpdates() bool {
@@ -72,8 +80,22 @@ func (dk *DynaKube) FeatureIgnoreUnknownState() bool {
 	return dk.Annotations[annotationFeatureIgnoreUnknownState] == "true"
 }
 
-// FeatureInjectSystemNamespaces is a feature flag that makes the operator inject into applications in system namespace, such as kube-system and openshift-apiserver.
-// this will cause the csi driver(if enabled) to be scheduled on master nodes.
-func (dk *DynaKube) FeatureInjectSystemNamespaces() bool {
-	return dk.Annotations[annotationFeatureInjectSystemNamespaces] == "true"
+// FeatureCSIOnMasterNodes is a feature flag that will cause the csi driver(if enabled) to be scheduled on master nodes.
+func (dk *DynaKube) FeatureCSIOnMasterNodes() bool {
+	return dk.Annotations[annotationFeatureCSIOnMasterNodes] == "true"
+}
+
+// FeatureIgnoredNamespaces is a feature flag for ignoreing certain namespaces.
+// defaults to "[ \"^dynatrace$\", \"^kube-.*\", \"openshift(-.*)?\" ]"
+func (dk *DynaKube) FeatureIgnoredNamespaces() []string {
+	raw, ok := dk.Annotations[annotationFeatureIgnoredNamespaces]
+	if !ok || raw == "" {
+		return defaultIgnoredNamespaces
+	}
+	ignoredNamespaces := &[]string{}
+	err := json.Unmarshal([]byte(raw), ignoredNamespaces)
+	if err != nil {
+		return defaultIgnoredNamespaces
+	}
+	return *ignoredNamespaces
 }

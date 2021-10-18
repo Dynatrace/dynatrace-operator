@@ -18,11 +18,6 @@ const (
 	UpdatedViaDynakubeAnnotation = "dynatrace.com/updated-via-operator"
 )
 
-var ignoredNamespaces = []string{
-	"^kube-.*",
-	"^openshift(-.*)?",
-}
-
 type ConflictChecker struct {
 	alreadyUsed bool
 }
@@ -89,7 +84,7 @@ func updateNamespace(operatorNs string, namespace *corev1.Namespace, dkList *dyn
 	conflict := ConflictChecker{}
 	for i := range dkList.Items {
 		dynakube := &dkList.Items[i]
-		if operatorNs == namespace.Name || (!dynakube.FeatureInjectSystemNamespaces() && isIgnoredNamespace(namespace.Name)) {
+		if operatorNs == namespace.Name || isIgnoredNamespace(dynakube, namespace.Name) {
 			return false, nil
 		}
 		matches, err := match(dynakube, namespace)
@@ -132,8 +127,8 @@ func updateLabels(matches bool, dynakube *dynatracev1beta1.DynaKube, namespace *
 	return updated, nil
 }
 
-func isIgnoredNamespace(namespaceName string) bool {
-	for _, pattern := range ignoredNamespaces {
+func isIgnoredNamespace(dk *dynatracev1beta1.DynaKube, namespaceName string) bool {
+	for _, pattern := range dk.FeatureIgnoredNamespaces() {
 		if matched, _ := regexp.MatchString(pattern, namespaceName); matched {
 			return true
 		}
