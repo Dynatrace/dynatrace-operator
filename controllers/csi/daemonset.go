@@ -26,10 +26,10 @@ const (
 	MountpointDirPath   = "/var/lib/kubelet/pods"
 	OneAgentDataDirPath = "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data"
 
-	driverDefaultCPU    = 200
+	driverDefaultCPU    = 300
 	driverDefaultMemory = 100
 
-	registrarDefaultCPU    = 5
+	registrarDefaultCPU    = 10
 	registrarDefaultMemory = 15
 
 	livenessProbeDefaultCPU    = 5
