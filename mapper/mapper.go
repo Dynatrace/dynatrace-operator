@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"context"
+	"regexp"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
@@ -79,11 +80,14 @@ func match(dk *dynatracev1beta1.DynaKube, namespace *corev1.Namespace) (bool, er
 // updateNamespace tries to match the namespace to every dynakube with codeModules
 // finds conflicting dynakubes(2 dynakube with codeModules on the same namespace)
 // adds/updates/removes labels from the namespace.
-func updateNamespace(namespace *corev1.Namespace, dkList *dynatracev1beta1.DynaKubeList, log logr.Logger) (bool, error) {
+func updateNamespace(operatorNs string, namespace *corev1.Namespace, dkList *dynatracev1beta1.DynaKubeList, log logr.Logger) (bool, error) {
 	var updated bool
 	conflict := ConflictChecker{}
 	for i := range dkList.Items {
 		dynakube := &dkList.Items[i]
+		if operatorNs == namespace.Name || isIgnoredNamespace(dynakube, namespace.Name) {
+			return false, nil
+		}
 		matches, err := match(dynakube, namespace)
 		if err != nil {
 			return updated, err
@@ -122,4 +126,13 @@ func updateLabels(matches bool, dynakube *dynatracev1beta1.DynaKube, namespace *
 		delete(namespace.Labels, InstanceLabel)
 	}
 	return updated, nil
+}
+
+func isIgnoredNamespace(dk *dynatracev1beta1.DynaKube, namespaceName string) bool {
+	for _, pattern := range dk.FeatureIgnoredNamespaces() {
+		if matched, _ := regexp.MatchString(pattern, namespaceName); matched {
+			return true
+		}
+	}
+	return false
 }
