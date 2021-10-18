@@ -19,6 +19,9 @@ package v1beta1
 import (
 	"encoding/json"
 	"strconv"
+
+	"github.com/Dynatrace/dynatrace-operator/logger"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -28,15 +31,19 @@ const (
 	annotationFeatureOneAgentMaxUnavailable          = annotationFeaturePrefix + "oneagent-max-unavailable"
 	annotationFeatureEnableWebhookReinvocationPolicy = annotationFeaturePrefix + "enable-webhook-reinvocation-policy"
 	annotationFeatureIgnoreUnknownState              = annotationFeaturePrefix + "ignore-unknown-state"
-	annotationFeatureCSIOnMasterNodes                = annotationFeaturePrefix + "csi-master-nodes"
+	annotationFeatureCSITolerations                  = annotationFeaturePrefix + "csi-tolerations"
 	annotationFeatureIgnoredNamespaces               = annotationFeaturePrefix + "ignored-namespaces"
 )
 
-var defaultIgnoredNamespaces = []string{
-	"^dynatrace$",
-	"^kube-.*",
-	"^openshift(-.*)?",
-}
+var (
+	log = logger.NewDTLogger()
+
+	defaultIgnoredNamespaces = []string{
+		"^dynatrace$",
+		"^kube-.*",
+		"^openshift(-.*)?",
+	}
+)
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
 func (dk *DynaKube) FeatureDisableActiveGateUpdates() bool {
@@ -80,9 +87,20 @@ func (dk *DynaKube) FeatureIgnoreUnknownState() bool {
 	return dk.Annotations[annotationFeatureIgnoreUnknownState] == "true"
 }
 
-// FeatureCSIOnMasterNodes is a feature flag that will cause the csi driver(if enabled) to be scheduled on master nodes.
-func (dk *DynaKube) FeatureCSIOnMasterNodes() bool {
-	return dk.Annotations[annotationFeatureCSIOnMasterNodes] == "true"
+// FeatureCSITolerations is a feature flag to set tolerations for the csi drive daemonset.
+// example: [{\"key\":\"node-role.kubernetes.io/master\",\"operator\":\"Exists\",\"effect\":\"NoSchedule\"}]
+func (dk *DynaKube) FeatureCSITolerations() []corev1.Toleration {
+	raw, ok := dk.Annotations[annotationFeatureCSITolerations]
+	if !ok || raw == "" {
+		return nil
+	}
+	tolerations := &[]corev1.Toleration{}
+	err := json.Unmarshal([]byte(raw), tolerations)
+	if err != nil {
+		log.Error(err, "failed to unmarshal csi tolerations feature-flag")
+		return nil
+	}
+	return *tolerations
 }
 
 // FeatureIgnoredNamespaces is a feature flag for ignoreing certain namespaces.
@@ -95,6 +113,7 @@ func (dk *DynaKube) FeatureIgnoredNamespaces() []string {
 	ignoredNamespaces := &[]string{}
 	err := json.Unmarshal([]byte(raw), ignoredNamespaces)
 	if err != nil {
+		log.Error(err, "failed to unmarshal ignoredNamespaces feature-flag")
 		return defaultIgnoredNamespaces
 	}
 	return *ignoredNamespaces

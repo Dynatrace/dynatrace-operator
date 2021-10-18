@@ -159,12 +159,12 @@ func TestReconcile_CreateDaemonSet(t *testing.T) {
 	})
 }
 
-func TestReconcile_CreateDaemonSet_FeatureFlag(t *testing.T) {
+func TestReconcile_CreateDaemonSet_TolerationFeatureFlag(t *testing.T) {
 	log := logger.NewDTLogger()
 	fakeClient := prepareFakeClient()
 	dk := prepareDynakube(testDynakube)
 	dk.Annotations = map[string]string{
-		"alpha.operator.dynatrace.com/feature-csi-master-nodes": "true",
+		"alpha.operator.dynatrace.com/feature-csi-tolerations": "[{\"key\":\"node-role.kubernetes.io/master\",\"operator\":\"Exists\",\"effect\":\"NoSchedule\",\"tolerationSeconds\":420},{\"key\":\"test.test\",\"operator\":\"Equal\",\"effect\":\"NoSchedule\",\"value\":\"test\"}]",
 	}
 	rec := NewReconciler(fakeClient, scheme.Scheme, log, dk, testOperatorPodName, testNamespace)
 
@@ -180,8 +180,18 @@ func TestReconcile_CreateDaemonSet_FeatureFlag(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("tolerations valid", func(t *testing.T) {
-		assert.Len(t, createdDaemonSet.Spec.Template.Spec.Tolerations, 1)
+		assert.Len(t, createdDaemonSet.Spec.Template.Spec.Tolerations, 2)
+
+		assert.Equal(t, "node-role.kubernetes.io/master", createdDaemonSet.Spec.Template.Spec.Tolerations[0].Key)
+		assert.Equal(t, corev1.TolerationOpExists, createdDaemonSet.Spec.Template.Spec.Tolerations[0].Operator)
 		assert.Equal(t, corev1.TaintEffectNoSchedule, createdDaemonSet.Spec.Template.Spec.Tolerations[0].Effect)
+		assert.Equal(t, int64(420), *createdDaemonSet.Spec.Template.Spec.Tolerations[0].TolerationSeconds)
+
+		assert.Equal(t, "test.test", createdDaemonSet.Spec.Template.Spec.Tolerations[1].Key)
+		assert.Equal(t, corev1.TolerationOpEqual, createdDaemonSet.Spec.Template.Spec.Tolerations[1].Operator)
+		assert.Equal(t, corev1.TaintEffectNoSchedule, createdDaemonSet.Spec.Template.Spec.Tolerations[1].Effect)
+		assert.Equal(t, "test", createdDaemonSet.Spec.Template.Spec.Tolerations[1].Value)
+
 	})
 }
 

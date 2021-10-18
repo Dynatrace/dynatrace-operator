@@ -34,8 +34,6 @@ const (
 
 	livenessProbeDefaultCPU    = 5
 	livenessProbeDefaultMemory = 15
-
-	masterNodeTaintKey = "node-role.kubernetes.io/master"
 )
 
 type Reconciler struct {
@@ -101,14 +99,8 @@ func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube 
 	driverContainerResources corev1.ResourceRequirements) (*appsv1.DaemonSet, error) {
 	ds := prepareDaemonSet(operatorImage, operatorNamespace, dynakube, driverContainerResources)
 
-	if dynakube.FeatureCSIOnMasterNodes() {
-		ds.Spec.Template.Spec.Tolerations = []corev1.Toleration{
-			{
-				Key:      masterNodeTaintKey,
-				Operator: corev1.TolerationOpExists,
-				Effect:   corev1.TaintEffectNoSchedule,
-			},
-		}
+	if tolerations := dynakube.FeatureCSITolerations(); tolerations != nil {
+		ds.Spec.Template.Spec.Tolerations = tolerations
 	}
 
 	dsHash, err := kubeobjects.GenerateHash(ds)
