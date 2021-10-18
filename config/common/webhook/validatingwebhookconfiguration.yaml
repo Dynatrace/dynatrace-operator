@@ -23,4 +23,5 @@ webhooks:
         resources:
           - dynakubes
     name: webhook.dynatrace.com
+    timeoutSeconds: 2
     sideEffects: None

@@ -29,6 +29,7 @@ webhooks:
     sideEffects: None
   - name: webhook.ns.dynatrace.com
     reinvocationPolicy: IfNeeded
+    failurePolicy: Ignore
     timeoutSeconds: 2
     rules:
       - apiGroups: [ "" ]
