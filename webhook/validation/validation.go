@@ -158,7 +158,7 @@ func hasConflictingNodeSelector(client client.Client, dynakube *dynatracev1beta1
 	for _, item := range validDynakubes.Items {
 		nodeSelectorMap := dynakube.NodeSelector()
 		validNodeSelectorMap := item.NodeSelector()
-		if hasConflictingMatchLabels(nodeSelectorMap, validNodeSelectorMap) && item.Name != dynakube.Name {
+		if item.Name != dynakube.Name && hasConflictingMatchLabels(nodeSelectorMap, validNodeSelectorMap) {
 			return fmt.Sprintf(errorNodeSelectorConflict, item.Name)
 		}
 	}
