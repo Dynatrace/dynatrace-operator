@@ -155,11 +155,11 @@ func hasConflictingNodeSelector(client client.Client, dynakube *dynatracev1beta1
 		logger.Info("error occurred while listing dynakubes", "err", err.Error())
 		return ""
 	}
-	for i := range validDynakubes.Items {
+	for _, item := range validDynakubes.Items {
 		nodeSelectorMap := dynakube.NodeSelector()
-		validNodeSelectorMap := validDynakubes.Items[i].NodeSelector()
-		if hasConflictingMatchLabels(nodeSelectorMap, validNodeSelectorMap) {
-			return fmt.Sprintf(errorNodeSelectorConflict, validDynakubes.Items[i].Name)
+		validNodeSelectorMap := item.NodeSelector()
+		if hasConflictingMatchLabels(nodeSelectorMap, validNodeSelectorMap) && item.Name != dynakube.Name {
+			return fmt.Sprintf(errorNodeSelectorConflict, item.Name)
 		}
 	}
 	return ""
