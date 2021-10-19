@@ -161,7 +161,7 @@ func TestReconcile_CreateDaemonSet(t *testing.T) {
 
 func TestReconcile_CreateDaemonSet_TolerationFeatureFlag(t *testing.T) {
 	log := logger.NewDTLogger()
-	fakeClient := prepareFakeClient()
+	fakeClient := prepareFakeClient("")
 	dk := prepareDynakube(testDynakube)
 	dk.Annotations = map[string]string{
 		"alpha.operator.dynatrace.com/feature-csi-tolerations": "[{\"key\":\"node-role.kubernetes.io/master\",\"operator\":\"Exists\",\"effect\":\"NoSchedule\",\"tolerationSeconds\":420},{\"key\":\"test.test\",\"operator\":\"Equal\",\"effect\":\"NoSchedule\",\"value\":\"test\"}]",
