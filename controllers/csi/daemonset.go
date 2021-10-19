@@ -427,7 +427,7 @@ func prepareVolumes() []corev1.Volume {
 }
 
 func prepareResources(containerName string, resourcesMap map[string]corev1.ResourceList, defaultCpu, defaultMemory int64) corev1.ResourceRequirements {
-	resources, _ := resourcesMap[containerName]
+	resources := resourcesMap[containerName]
 
 	cpu := getResource(defaultCpu, resources, corev1.ResourceCPU, resource.Milli)
 	memory := getResource(defaultMemory, resources, corev1.ResourceMemory, resource.Mega)

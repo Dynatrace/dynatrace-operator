@@ -32,7 +32,7 @@ func GetDeployment(c client.Client, podName, namespace string) (*appsv1.Deployme
 
 	dOwner := metav1.GetControllerOf(&rs)
 	if dOwner == nil {
-		return nil, errors.Errorf("no controller found for ReplicaSet: %s", pod.Name)
+		return nil, errors.Errorf("no controller found for ReplicaSet: %s", rs.Name)
 	} else if dOwner.Kind != "Deployment" {
 		return nil, errors.Errorf("unexpected controller found for ReplicaSet: %s, kind: %s", pod.Name, dOwner.Kind)
 	}
