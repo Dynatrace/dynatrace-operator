@@ -2,7 +2,6 @@ package kubeobjects
 
 import (
 	"context"
-	"os"
 
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,14 +11,9 @@ import (
 )
 
 // GetDeployment returns the Deployment object who is the owner of this pod.
-func GetDeployment(c client.Client, ns string) (*appsv1.Deployment, error) {
+func GetDeployment(c client.Client, podName, namespace string) (*appsv1.Deployment, error) {
 	var pod corev1.Pod
-	podName := os.Getenv("POD_NAME")
-	if podName == "" {
-		return nil, errors.New("POD_NAME environment variable does not exist")
-	}
-
-	err := c.Get(context.TODO(), client.ObjectKey{Name: podName, Namespace: ns}, &pod)
+	err := c.Get(context.TODO(), client.ObjectKey{Name: podName, Namespace: namespace}, &pod)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -32,7 +26,7 @@ func GetDeployment(c client.Client, ns string) (*appsv1.Deployment, error) {
 	}
 
 	var rs appsv1.ReplicaSet
-	if err := c.Get(context.TODO(), client.ObjectKey{Name: rsOwner.Name, Namespace: ns}, &rs); err != nil {
+	if err := c.Get(context.TODO(), client.ObjectKey{Name: rsOwner.Name, Namespace: namespace}, &rs); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
@@ -44,7 +38,7 @@ func GetDeployment(c client.Client, ns string) (*appsv1.Deployment, error) {
 	}
 
 	var d appsv1.Deployment
-	if err := c.Get(context.TODO(), client.ObjectKey{Name: dOwner.Name, Namespace: ns}, &d); err != nil {
+	if err := c.Get(context.TODO(), client.ObjectKey{Name: dOwner.Name, Namespace: namespace}, &d); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	return &d, nil

@@ -1,7 +1,6 @@
 package kubeobjects
 
 import (
-	"os"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
@@ -16,7 +15,6 @@ import (
 func TestGetDeployment(t *testing.T) {
 	const ns = "dynatrace"
 
-	os.Setenv("POD_NAME", "mypod")
 	trueVar := true
 
 	fakeClient := fake.NewClient(
@@ -45,7 +43,7 @@ func TestGetDeployment(t *testing.T) {
 			},
 		})
 
-	deploy, err := GetDeployment(fakeClient, "dynatrace")
+	deploy, err := GetDeployment(fakeClient, "mypod", "dynatrace")
 	require.NoError(t, err)
 	assert.Equal(t, "mydeployment", deploy.Name)
 	assert.Equal(t, "dynatrace", deploy.Namespace)

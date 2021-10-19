@@ -3,7 +3,6 @@ package dtcsi
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
@@ -25,6 +24,10 @@ const (
 	PluginsDirPath      = "/var/lib/kubelet/plugins"
 	MountpointDirPath   = "/var/lib/kubelet/pods"
 	OneAgentDataDirPath = "/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data"
+
+	driverContainerName        = "driver"
+	registrarContainerName     = "registrar"
+	livenessProbeContainerName = "liveness-probe"
 
 	driverDefaultCPU    = 300
 	driverDefaultMemory = 100
@@ -66,10 +69,13 @@ func (r *Reconciler) Reconcile() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	driverContainerResources := prepareDriverResources(r.client, r.operatorNamespace, r.logger)
+	resourcesMap, err := loadAnnotationResources(r.client, r.operatorPodName, r.operatorNamespace)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
 
 	ds, err := buildDesiredCSIDaemonSet(
-		operatorImage, r.operatorNamespace, r.instance, driverContainerResources)
+		operatorImage, r.operatorNamespace, r.instance, resourcesMap)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
@@ -96,8 +102,8 @@ func (r *Reconciler) getOperatorImage() (string, error) {
 }
 
 func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube *dynatracev1beta1.DynaKube,
-	driverContainerResources corev1.ResourceRequirements) (*appsv1.DaemonSet, error) {
-	ds := prepareDaemonSet(operatorImage, operatorNamespace, dynakube, driverContainerResources)
+	resourcesMap map[string]corev1.ResourceList) (*appsv1.DaemonSet, error) {
+	ds := prepareDaemonSet(operatorImage, operatorNamespace, dynakube, resourcesMap)
 
 	dsHash, err := kubeobjects.GenerateHash(ds)
 	if err != nil {
@@ -109,7 +115,7 @@ func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube 
 }
 
 func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *dynatracev1beta1.DynaKube,
-	driverContainerResources corev1.ResourceRequirements) *appsv1.DaemonSet {
+	resourcesMap map[string]corev1.ResourceList) *appsv1.DaemonSet {
 	labels := prepareDaemonSetLabels()
 
 	return &appsv1.DaemonSet{
@@ -127,9 +133,9 @@ func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *dynatra
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						prepareDriverContainer(operatorImage, driverContainerResources),
-						prepareRegistrarContainer(operatorImage),
-						prepareLivenessProbeContainer(operatorImage),
+						prepareDriverContainer(operatorImage, resourcesMap),
+						prepareRegistrarContainer(operatorImage, resourcesMap),
+						prepareLivenessProbeContainer(operatorImage, resourcesMap),
 					},
 					ServiceAccountName: DefaultServiceAccountName,
 					Volumes:            prepareVolumes(),
@@ -167,9 +173,9 @@ func prepareMetadata(namespace string, dynakube *dynatracev1beta1.DynaKube) meta
 	}
 }
 
-func prepareDriverContainer(operatorImage string, resources corev1.ResourceRequirements) corev1.Container {
+func prepareDriverContainer(operatorImage string, resourcesMap map[string]corev1.ResourceList) corev1.Container {
 	return corev1.Container{
-		Name:  "driver",
+		Name:  driverContainerName,
 		Image: operatorImage,
 		Args: []string{
 			"csi-driver",
@@ -186,7 +192,7 @@ func prepareDriverContainer(operatorImage string, resources corev1.ResourceRequi
 				ContainerPort: 10080,
 			},
 		},
-		Resources:       resources,
+		Resources:       prepareResources(driverContainerName, resourcesMap, driverDefaultCPU, driverDefaultMemory),
 		LivenessProbe:   prepareDriverLivenessProbe(),
 		SecurityContext: prepareSecurityContext(),
 		VolumeMounts:    prepareDriverVolumeMounts(),
@@ -215,23 +221,19 @@ func prepareDriverEnvVars() []corev1.EnvVar {
 	}
 }
 
-func prepareDriverResources(client client.Client, operatorNS string, logger logr.Logger) corev1.ResourceRequirements {
-	deployment, err := kubeobjects.GetDeployment(client, operatorNS)
+func loadAnnotationResources(client client.Client, operatorPodName, operatorNamespace string) (map[string]corev1.ResourceList, error) {
+	deployment, err := kubeobjects.GetDeployment(client, operatorPodName, operatorNamespace)
 	if err != nil {
-		logger.Info(fmt.Sprintf("failed to get deployment for reading '%s' label", AnnotationCSIResourcesIdentifier), "err", err)
-	} else {
-		var res corev1.ResourceRequirements
-
-		if label, ok := deployment.Annotations[AnnotationCSIResourcesIdentifier]; ok {
-			if err = json.Unmarshal([]byte(label), &res); err != nil {
-				logger.Info(fmt.Sprintf("failed to unmarshal '%s' label json", AnnotationCSIResourcesIdentifier), "err", err)
-			} else {
-				return res
-			}
-		}
+		return nil, err
 	}
 
-	return prepareResources(driverDefaultCPU, driverDefaultMemory)
+	var resourceMap map[string]corev1.ResourceList
+	if label, ok := deployment.Annotations[AnnotationCSIResourcesIdentifier]; ok {
+		if err = json.Unmarshal([]byte(label), &resourceMap); err != nil {
+			return nil, err
+		}
+	}
+	return resourceMap, nil
 }
 
 func getQuantity(value int64, scale resource.Scale) resource.Quantity {
@@ -287,13 +289,13 @@ func prepareDriverVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func prepareRegistrarContainer(operatorImage string) corev1.Container {
+func prepareRegistrarContainer(operatorImage string, resourcesMap map[string]corev1.ResourceList) corev1.Container {
 	userID := int64(0)
 	livenessProbe := prepareRegistrarLivenessProbe()
 	volumeMounts := prepareRegistrarVolumeMounts()
 
 	return corev1.Container{
-		Name:            "registrar",
+		Name:            registrarContainerName,
 		Image:           operatorImage,
 		ImagePullPolicy: corev1.PullAlways,
 		Command: []string{
@@ -310,7 +312,7 @@ func prepareRegistrarContainer(operatorImage string) corev1.Container {
 				ContainerPort: 9809,
 			},
 		},
-		Resources:     prepareResources(registrarDefaultCPU, registrarDefaultMemory),
+		Resources:     prepareResources(registrarContainerName, resourcesMap, registrarDefaultCPU, registrarDefaultMemory),
 		LivenessProbe: &livenessProbe,
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser: &userID,
@@ -349,9 +351,9 @@ func prepareRegistrarVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func prepareLivenessProbeContainer(operatorImage string) corev1.Container {
+func prepareLivenessProbeContainer(operatorImage string, resourcesMap map[string]corev1.ResourceList) corev1.Container {
 	return corev1.Container{
-		Name:            "liveness-probe",
+		Name:            livenessProbeContainerName,
 		Image:           operatorImage,
 		ImagePullPolicy: corev1.PullAlways,
 		Command: []string{
@@ -367,7 +369,7 @@ func prepareLivenessProbeContainer(operatorImage string) corev1.Container {
 				MountPath: "/csi",
 			},
 		},
-		Resources: prepareResources(livenessProbeDefaultCPU, livenessProbeDefaultMemory),
+		Resources: prepareResources(livenessProbeContainerName, resourcesMap, livenessProbeDefaultCPU, livenessProbeDefaultMemory),
 	}
 }
 
@@ -424,15 +426,30 @@ func prepareVolumes() []corev1.Volume {
 	}
 }
 
-func prepareResources(cpu int64, memory int64) corev1.ResourceRequirements {
+func prepareResources(containerName string, resourcesMap map[string]corev1.ResourceList, defaultCpu, defaultMemory int64) corev1.ResourceRequirements {
+	resources, _ := resourcesMap[containerName]
+
+	cpu := getResource(defaultCpu, resources, corev1.ResourceCPU, resource.Milli)
+	memory := getResource(defaultMemory, resources, corev1.ResourceMemory, resource.Mega)
+
 	return corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
-			corev1.ResourceCPU:    getQuantity(cpu, resource.Milli),
-			corev1.ResourceMemory: getQuantity(memory, resource.Mega),
+			corev1.ResourceCPU:    cpu,
+			corev1.ResourceMemory: memory,
 		},
 		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:    getQuantity(cpu, resource.Milli),
-			corev1.ResourceMemory: getQuantity(memory, resource.Mega),
+			corev1.ResourceCPU:    cpu,
+			corev1.ResourceMemory: memory,
 		},
 	}
+}
+
+func getResource(defaultValue int64, resources corev1.ResourceList, resourceType corev1.ResourceName, resourceQuantity resource.Scale) resource.Quantity {
+	if resources != nil {
+		resourceValue, ok := resources[resourceType]
+		if ok && !resourceValue.IsZero() {
+			return resourceValue
+		}
+	}
+	return getQuantity(defaultValue, resourceQuantity)
 }
