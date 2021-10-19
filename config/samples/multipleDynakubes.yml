@@ -1,0 +1,71 @@
+apiVersion: dynatrace.com/v1beta1
+kind: DynaKube
+metadata:
+  name: dynakube-application-monitoring
+  namespace: dynatrace
+spec:
+  # Dynatrace apiUrl including the `/api` path at the end.
+  # For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
+  # For Managed, change the apiUrl address.
+  # For instructions on how to determine the environment ID and how to configure the apiUrl address, see https://www.dynatrace.com/support/help/reference/dynatrace-concepts/environment-id/.
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
+  # Optional: Name of the secret holding the API and PaaS tokens.
+  # If unset, Dynatrace Operator uses the name of the custom resource.
+  # For multiple Dynakube setup, each Dynakube can point to the same secret
+  #
+  # tokens: "my-secret"
+
+  oneAgent:
+    # Enable application monitoring
+    applicationMonitoring: 
+      namespaceSelector:
+        matchLabels:
+          monitor: applicationMonitoring
+  activeGate:
+    # Enables listed ActiveGate capabilities
+    capabilities:
+      - kubernetes-monitoring
+
+    # Amount of replicas of ActiveGate pods
+    #
+    replicas: 3
+---
+apiVersion: dynatrace.com/v1beta1
+kind: DynaKube
+metadata:
+  name: dynakube-cloud-native
+  namespace: dynatrace
+spec:
+  # Dynatrace apiUrl including the `/api` path at the end.
+  # For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
+  # For Managed, change the apiUrl address.
+  # For instructions on how to determine the environment ID and how to configure the apiUrl address, see https://www.dynatrace.com/support/help/reference/dynatrace-concepts/environment-id/.
+  apiUrl: https://asj34817.dev.dynatracelabs.com/api
+
+  # Optional: Name of the secret holding the API and PaaS tokens.
+  # If unset, Dynatrace Operator uses the name of the custom resource.
+  # For a multiple Dynakube setup, each Dynakube can point to the same secret as it is reused
+  #
+  # tokens: "my-secret"
+
+  oneAgent:
+    # Enable cloud-native fullstack monitoring
+    cloudNativeFullStack: 
+      # Optional: tolerations to include with the OneAgent DaemonSet.
+      # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
+      namespaceSelector:
+        matchLabels:
+          monitor: cloudNativeFullStack
+  activeGate:
+    # Enables listed ActiveGate capabilities
+    capabilities:
+      - routing
+      - data-ingest
+
+    # Amount of replicas of activegate pods
+    replicas: 2

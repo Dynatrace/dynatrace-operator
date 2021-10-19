@@ -1,0 +1,173 @@
+apiVersion: dynatrace.com/v1beta1
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+spec:
+  # Dynatrace apiUrl including the `/api` path at the end.
+  # For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
+  # For Managed, change the apiUrl address.
+  # For instructions on how to determine the environment ID and how to configure the apiUrl address, see https://www.dynatrace.com/support/help/reference/dynatrace-concepts/environment-id/.
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
+
+  # Optional: name of secret holding `apiToken` and `paasToken`
+  # If unset, name of custom resource is used
+  #
+  # tokens: ""
+
+  # Optional: Disable certificate validation checks for installer download and API communication
+  #
+  # skipCertCheck: false
+
+  # Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
+  #
+  # proxy:
+  #   value: https://my-proxy-url.com
+  #   valueFrom: name-of-my-proxy-secret
+
+  # Optional: Adds custom RootCAs from a configmap
+  #
+  # trustedCAs: name-of-my-ca-configmap
+
+  # Optional: Sets Network Zone for OneAgent and ActiveGate pods
+  # Make sure networkZones are enabled on your cluster before (see https://www.dynatrace.com/support/help/setup-and-configuration/network-zones/network-zones-basic-info/)
+  #
+  # networkZone: name-of-my-network-zone
+
+  # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the dynatrace environment
+  # The secret has to be of type 'kubernetes.io/dockerconfigjson' (see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
+  #
+  # customPullSecret: "custom-pull-secret"
+
+  # Optional: when enabled, and if Istio is installed on the Kubernetes environment, then the
+  # Operator will create the corresponding VirtualService and ServiceEntry objects to allow access
+  # to the Dynatrace cluster from the agent or the activeGate. Disabled by default.
+  #
+  # enableIstio: false
+
+  oneAgent:
+    # enable host monitoring and change its settings
+    # Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or application-only monitoring
+    hostMonitoring:
+      # Optional: If specified, indicates the OneAgent version to use
+      # Defaults to latest
+      #
+      # version:
+      
+      # Optional: to use a custom OneAgent Docker image. Defaults to docker.io/dynatrace/oneagent in
+      # Kubernetes and registry.connect.redhat.com/dynatrace/oneagent in OpenShift, if deployed via CSV
+      image: ""
+
+      # Optional: node selector to control on which nodes the OneAgent will be deployed.
+      #
+      # nodeSelector: {}
+
+      # Optional: priority class to assign to the OneAgent Pods. By default no class is set.
+      # See more here: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+      #
+      # priorityClassName: priority-class
+
+      # Optional: tolerations to include with the OneAgent DaemonSet.
+      # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
+
+      # Optional: resource settings for OneAgent container. Consumption of the OneAgent heavily depends
+      # on the workload to monitor; please adjust values accordingly.
+      #
+      # oneAgentResources:
+      #   requests:
+      #     cpu: 100m
+      #     memory: 512Mi
+      #   limits:
+      #     cpu: 300m
+      #     memory: 1.5Gi
+      
+      # Optional: disables automatic restarts of OneAgent pods in case a new version is available. True
+      # by default.
+      #
+      # autoUpdate: true
+
+      # Optional: DNS Policy for OneAgent pods. Defaults to ClusterFirstWithHostNet.
+      # See more: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+      #
+      # dnsPolicy: "ClusterFirstWithHostNet"
+
+      # Optional: labels are customer defined labels for OneAgent Pods to structure workloads as desired.
+      #
+      # labels:
+      #   custom: label
+
+      # Optional: additional environment variables to add to the OneAgent Pods.
+      #
+      # env: []
+
+      # Optional: arguments to add to the OneAgent installer.
+      # Available options: https://www.dynatrace.com/support/help/shortlink/linux-custom-installation
+      # Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
+      #
+      # args: []
+  
+  # Configuration for ActiveGate instances.
+  activeGate:
+    # Enables listed ActiveGate capabilities
+    capabilities:
+      - routing
+      - kubernetes-monitoring
+      - data-ingest
+    
+    # Optional: to use a custom ActiveGate Docker image.
+    image: ""
+
+    # Amount of replicas of ActiveGate pods
+    #
+    # replicas: 1
+
+    # Optional: tolerations to include with the ActiveGate StatefulSet.
+    # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+    #
+    # tolerations:
+    # - effect: NoSchedule
+    #   key: node-role.kubernetes.io/master
+    #   operator: Exists
+
+    # Optional: node selector to control on which nodes the ActiveGate will be deployed.
+    #
+    # nodeSelector: {}
+
+    # Optional: resource settings for ActiveGate container. Consumption of the ActiveGate heavily depends
+    # on the workload to monitor; please adjust values accordingly.
+    #
+    # Suggested starting point for resources below:
+    #
+    # resources:
+    #   requests:
+    #     cpu: 150m
+    #     memory: 250M
+    #   limits:
+    #     cpu: 300m
+    #     memory: 1G
+
+    # Optional: labels are customer defined labels for ActiveGate Pods to structure workloads as desired.
+    #
+    # labels:
+    #   custom: label
+
+    # Optional: additional environment variables to add to the ActiveGate Pods.
+    #
+    # env: []
+
+    # Optional: Set activation group for ActiveGate
+    #
+    # group: ""
+
+    # Optional: Add a custom properties file by providing it as a value or reference it from a secret
+    # If referenced from a secret, make sure the key is called 'customProperties'
+    #
+    # customProperties:
+    #   value: |
+    #     [connectivity]
+    #     networkZone=
+    #   valueFrom: myCustomPropertiesConfigMap
