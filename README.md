@@ -12,6 +12,14 @@ With v0.2.0 we added the classicFullStack functionality which allows rolling out
 cluster. Furthermore, the Dynatrace Operator is now capable of rolling out a containerized ActiveGate for routing the
 OneAgent traffic.
 
+With v0.3.0 we added the cloudNativeFullStack mode, which combines host-monitoring, 
+with our new webhook based injection mechanism for automatic-app-only injection. In addition, the CRD structure has been
+changed to provide an easier and more understandable way to deploy Dynatrace in your environment. 
+**routing** and **kubernetesMonitoring** within the Dynakube spec are deprecated now and moved to the activeGate section.
+For more information please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples),
+or our [official help page.](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/)
+
+
 ## Supported platforms
 
 Depending on the version of the Dynatrace Operator, it supports the following platforms:
@@ -20,7 +28,7 @@ Depending on the version of the Dynatrace Operator, it supports the following pl
 | -------------------------- | ---------- | ------------------------------------------ |
 | master                     | 1.18+      | 3.11.188+, 4.5+                            |
 | v0.3.0                     | 1.18+      | 3.11.188+, 4.5+                            |
-| v0.2.1                     | 1.18+      | 3.11.188+, 4.5+                            |
+| v0.2.2                     | 1.18+      | 3.11.188+, 4.5+                            |
 | v0.1.0                     | 1.18+      | 3.11.188+, 4.4+                            |
 
 ## Quick Start
@@ -41,7 +49,7 @@ $ kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/late
 
 A secret holding tokens for authenticating to the Dynatrace cluster needs to be created upfront. Create access tokens of
 type *Dynatrace API* and *Platform as a Service* and use its values in the following commands respectively. For
-assistance please refere
+assistance please refer
 to [Create user-generated access tokens.](https://www.dynatrace.com/support/help/get-started/introduction/why-do-i-need-an-access-token-and-an-environment-id/#create-user-generated-access-tokens)
 
 Make sure the *Dynatrace API* token has the following permission:
@@ -52,9 +60,9 @@ Make sure the *Dynatrace API* token has the following permission:
 $ kubectl -n dynatrace create secret generic dynakube --from-literal="apiToken=DYNATRACE_API_TOKEN" --from-literal="paasToken=PLATFORM_AS_A_SERVICE_TOKEN"
 ```
 
-#### Create `DynaKube` custom resource for ActiveGate and CloudNativeFullStack rollout
+#### Create `DynaKube` custom resource for ActiveGate and OneAgent rollout
 
-The rollout of Dynatrace ActiveGate is governed by a custom resource of type `DynaKube`. This custom resource will
+The rollout of the Dynatrace components is governed by a custom resource of type `DynaKube`. This custom resource will
 contain parameters for various Dynatrace capabilities (API monitoring, routing, etc.)
 
 Note: `.spec.tokens` denotes the name of the secret holding access tokens. If not specified Dynatrace Operator searches
@@ -67,15 +75,16 @@ metadata:
   name: dynakube
   namespace: dynatrace
 spec:
-  # dynatrace api url including `/api` path at the end
-  # either set ENVIRONMENTID to the proper tenant id or change the apiUrl as a whole, e.q. for Managed
+  # Dynatrace apiUrl including the `/api` path at the end.
+  # For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
+  # For Managed, change the apiUrl address.
+  # For instructions on how to determine the environment ID and how to configure the apiUrl address, see https://www.dynatrace.com/support/help/reference/dynatrace-concepts/environment-id/.
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
   # name of secret holding `apiToken` and `paasToken`
   # if unset, name of custom resource is used
   #
   # tokens: ""
-
 
   # Optional: Sets Network Zone for OneAgent and ActiveGate pods
   # Make sure networkZones are enabled on your cluster before (see https://www.dynatrace.com/support/help/setup-and-configuration/network-zones/network-zones-basic-info/)
@@ -89,7 +98,6 @@ spec:
 
       # Optional: tolerations to include with the OneAgent DaemonSet.
       # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-      #
       tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/master
@@ -105,9 +113,9 @@ spec:
 
 ```
 
-This is the most basic configuration for the DynaKube object. In case you want to have adjustments please have a look
-at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples)
-. Save this to cr.yaml and apply it to your cluster.
+This is the most basic configuration for the DynaKube object. We recommend you to use cloud-native Fullstack injection to roll out Dynatrace to your cluster, as shown in the example above. 
+In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples). 
+Save one of the sample configurations, change the API url to your environment and apply it to your cluster.
 
 ```sh
 $ kubectl apply -f cr.yaml
@@ -161,9 +169,10 @@ Make sure the *Dynatrace API* token has the following permission:
 $ oc -n dynatrace create secret generic dynakube --from-literal="apiToken=DYNATRACE_API_TOKEN" --from-literal="paasToken=PLATFORM_AS_A_SERVICE_TOKEN"
 ```
 
-#### Create `DynaKube` custom resource for ActiveGate and CloudNativeFullStack rollout
+#### Create `DynaKube` custom resource for ActiveGate and OneAgent rollout
 
-The rollout of Dynatrace ActiveGate is governed by a custom resource of type `DynaKube`.
+The rollout of the Dynatrace components is governed by a custom resource of type `DynaKube`. This custom resource will
+contain parameters for various Dynatrace capabilities (API monitoring, routing, etc.)
 
 Note: `.spec.tokens` denotes the name of the secret holding access tokens. If not specified Dynatrace Operator searches
 for a secret called like the DynaKube custom resource `.metadata.name`.
@@ -175,15 +184,16 @@ metadata:
   name: dynakube
   namespace: dynatrace
 spec:
-  # dynatrace api url including `/api` path at the end
-  # either set ENVIRONMENTID to the proper tenant id or change the apiUrl as a whole, e.q. for Managed
+  # Dynatrace apiUrl including the `/api` path at the end.
+  # For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
+  # For Managed, change the apiUrl address.
+  # For instructions on how to determine the environment ID and how to configure the apiUrl address, see https://www.dynatrace.com/support/help/reference/dynatrace-concepts/environment-id/.
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
   # name of secret holding `apiToken` and `paasToken`
   # if unset, name of custom resource is used
   #
   # tokens: ""
-
 
   # Optional: Sets Network Zone for OneAgent and ActiveGate pods
   # Make sure networkZones are enabled on your cluster before (see https://www.dynatrace.com/support/help/setup-and-configuration/network-zones/network-zones-basic-info/)
@@ -197,7 +207,6 @@ spec:
 
       # Optional: tolerations to include with the OneAgent DaemonSet.
       # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-      #
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/master
@@ -213,9 +222,9 @@ spec:
 
 ```
 
-This is the most basic configuration for the DynaKube object. In case you want to have adjustments please have a look
-at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples)
-. Save this to cr.yaml and apply it to your cluster.
+This is the most basic configuration for the DynaKube object. We recommend you to use cloud-native Fullstack injection to roll out Dynatrace to your cluster, as shown in the example above.
+In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples).
+Save one of the sample configurations, change the API url to your environment and apply it to your cluster.
 
 ```sh
 $ oc apply -f cr.yaml

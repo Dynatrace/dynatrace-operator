@@ -4,12 +4,14 @@ metadata:
   name: dynakube
   namespace: dynatrace
 spec:
-  # dynatrace api url including `/api` path at the end
-  # either set ENVIRONMENTID to the proper tenant id or change the apiUrl as a whole, e.q. for Managed
+  # Dynatrace apiUrl including the `/api` path at the end.
+  # For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
+  # For Managed, change the apiUrl address.
+  # For instructions on how to determine the environment ID and how to configure the apiUrl address, see https://www.dynatrace.com/support/help/reference/dynatrace-concepts/environment-id/.
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
-  # name of secret holding `apiToken` and `paasToken`
-  # if unset, name of custom resource is used
+  # Optional: name of secret holding `apiToken` and `paasToken`
+  # If unset, name of custom resource is used
   #
   # tokens: ""
 
@@ -33,8 +35,9 @@ spec:
   # networkZone: name-of-my-network-zone
 
   # Optional: Defines a custom pull secret in case you use a private registry when pulling images from the dynatrace environment
+  # The secret has to be of type 'kubernetes.io/dockerconfigjson' (see https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
   #
-  # customPullSecret:
+  # customPullSecret: "custom-pull-secret"
 
   # Optional: when enabled, and if Istio is installed on the Kubernetes environment, then the
   # Operator will create the corresponding VirtualService and ServiceEntry objects to allow access
@@ -44,7 +47,7 @@ spec:
 
   oneAgent:
     # Optional: enable classic fullstack monitoring and change its settings
-    # Cannot be used in conjunction with cloud-native fullstack monitoring or application-only monitoring or host monitoring
+    # Cannot be used in conjunction with cloud-native fullstack monitoring, application-only monitoring or host monitoring
     classicFullStack:
       # Optional: If specified, indicates the OneAgent version to use
       # Defaults to latest
@@ -52,8 +55,7 @@ spec:
       # version:
 
       # Optional: to use a custom OneAgent Docker image. Defaults to docker.io/dynatrace/oneagent in
-      # Kubernetes and registry.connect.redhat.com/dynatrace/oneagent in OpenShift.
-      #
+      # Kubernetes and registry.connect.redhat.com/dynatrace/oneagent in OpenShift, if deployed via CSV
       image: ""
 
       # Optional: node selector to control on which nodes the OneAgent will be deployed.
@@ -83,7 +85,7 @@ spec:
       #     cpu: 300m
       #     memory: 1.5Gi
       
-      # Optional: disables automatic restarts of oneagent pods in case a new version is available. True
+      # Optional: disables automatic restarts of OneAgent pods in case a new version is available. True
       # by default.
       #
       # autoUpdate: true
@@ -119,7 +121,7 @@ spec:
     # Optional: to use a custom ActiveGate Docker image.
     image: ""
 
-    # Amount of replicas of activegate pods
+    # Amount of replicas of ActiveGate pods
     #
     # replicas: 1
 
@@ -131,7 +133,7 @@ spec:
     #   key: node-role.kubernetes.io/master
     #   operator: Exists
 
-    # Optional: node selector to control on which nodes the routing ActiveGate will be deployed.
+    # Optional: node selector to control on which nodes the ActiveGate will be deployed.
     #
     # nodeSelector: {}
 
