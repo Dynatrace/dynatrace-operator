@@ -13,7 +13,7 @@ spec:
     matchLabels:
       name: dynatrace-operator
   strategy:
-    type: RollingUpgrade
+    type: RollingUpdate
   template:
     metadata:
       labels:

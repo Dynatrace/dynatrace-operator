@@ -99,6 +99,10 @@ func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube 
 	driverContainerResources corev1.ResourceRequirements) (*appsv1.DaemonSet, error) {
 	ds := prepareDaemonSet(operatorImage, operatorNamespace, dynakube, driverContainerResources)
 
+	if tolerations := dynakube.FeatureCSITolerations(); tolerations != nil {
+		ds.Spec.Template.Spec.Tolerations = tolerations
+	}
+
 	dsHash, err := kubeobjects.GenerateHash(ds)
 	if err != nil {
 		return nil, err
