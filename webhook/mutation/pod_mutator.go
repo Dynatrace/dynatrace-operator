@@ -288,9 +288,12 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 	pod.Annotations[dtwebhook.AnnotationInjected] = "true"
 
-	workloadName, workloadKind, workloadErr := rootOwnerPod(ctx, m.metaClient, pod, req.Namespace)
-	if workloadErr != nil {
-		return admission.Errored(http.StatusInternalServerError, workloadErr)
+	var workloadName, workloadKind string
+	if mintEnabled {
+		workloadName, workloadKind, err = rootOwnerPod(ctx, m.metaClient, pod, req.Namespace)
+		if err != nil {
+			return admission.Errored(http.StatusInternalServerError, err)
+		}
 	}
 
 	technologies := url.QueryEscape(kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
@@ -383,8 +386,6 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 			{Name: "K8S_BASEPODNAME", Value: basePodName},
 			{Name: "K8S_NAMESPACE", ValueFrom: fieldEnvVar("metadata.namespace")},
 			{Name: "K8S_NODE_NAME", ValueFrom: fieldEnvVar("spec.nodeName")},
-			{Name: "DT_WORKLOAD_KIND", Value: workloadKind},
-			{Name: "DT_WORKLOAD_NAME", Value: workloadName},
 		},
 		SecurityContext: sc,
 		VolumeMounts: []corev1.VolumeMount{
@@ -396,6 +397,11 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 
 	if mintEnabled {
+		ic.Env = append(ic.Env,
+			corev1.EnvVar{Name: "DT_WORKLOAD_KIND", Value: workloadKind},
+			corev1.EnvVar{Name: "DT_WORKLOAD_NAME", Value: workloadName},
+		)
+
 		ic.VolumeMounts = append(ic.VolumeMounts, corev1.VolumeMount{
 			Name:      "mint-enrichment",
 			MountPath: "/var/lib/dynatrace/enrichment"})
