@@ -174,6 +174,10 @@ EOF
   fi
 }
 
+waitForWebhook() {
+  "${CLI}" -n dynatrace wait pod --for=condition=ready -l internal.dynatrace.com/app=webhook --timeout=300s
+}
+
 applyDynaKubeCR() {
   dynakube="$(
     cat <<EOF
@@ -353,6 +357,8 @@ printf "\nCreating Dynatrace namespace...\n"
 checkIfNSExists
 printf "\nApplying Dynatrace Operator...\n"
 applyDynatraceOperator
+printf "\nWait for webhook to become available\n"
+waitForWebhook
 printf "\nApplying DynaKube CustomResource...\n"
 applyDynaKubeCR
 printf "\nAdding cluster to Dynatrace...\n"
