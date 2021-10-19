@@ -54,7 +54,7 @@ func TestReconcile_NoOperatorImage(t *testing.T) {
 
 func TestReconcile_CreateDaemonSet(t *testing.T) {
 	log := logger.NewDTLogger()
-	fakeClient := prepareFakeClient("")
+	fakeClient := prepareFakeClient("", "")
 	dk := prepareDynakube(testDynakube)
 	rec := NewReconciler(fakeClient, scheme.Scheme, log, dk, testOperatorPodName, testNamespace)
 
@@ -160,12 +160,10 @@ func TestReconcile_CreateDaemonSet(t *testing.T) {
 }
 
 func TestReconcile_CreateDaemonSet_TolerationFeatureFlag(t *testing.T) {
+	tolerationAnnotation := "[{\"key\":\"node-role.kubernetes.io/master\",\"operator\":\"Exists\",\"effect\":\"NoSchedule\",\"tolerationSeconds\":420},{\"key\":\"test.test\",\"operator\":\"Equal\",\"effect\":\"NoSchedule\",\"value\":\"test\"}]"
 	log := logger.NewDTLogger()
-	fakeClient := prepareFakeClient()
+	fakeClient := prepareFakeClient("", tolerationAnnotation)
 	dk := prepareDynakube(testDynakube)
-	dk.Annotations = map[string]string{
-		"alpha.operator.dynatrace.com/feature-csi-tolerations": "[{\"key\":\"node-role.kubernetes.io/master\",\"operator\":\"Exists\",\"effect\":\"NoSchedule\",\"tolerationSeconds\":420},{\"key\":\"test.test\",\"operator\":\"Equal\",\"effect\":\"NoSchedule\",\"value\":\"test\"}]",
-	}
 	rec := NewReconciler(fakeClient, scheme.Scheme, log, dk, testOperatorPodName, testNamespace)
 
 	result, err := rec.Reconcile()
@@ -213,7 +211,7 @@ func TestReconcile_UpdateDaemonSet(t *testing.T) {
 			},
 		},
 	}
-	fakeClient := prepareFakeClient("", ds)
+	fakeClient := prepareFakeClient("", "", ds)
 
 	dk := prepareDynakube(testDynakube)
 	rec := NewReconciler(fakeClient, scheme.Scheme, log, dk, testOperatorPodName, testNamespace)
@@ -235,9 +233,9 @@ func TestReconcile_UpdateDaemonSet(t *testing.T) {
 
 func TestReconcile_CSIResourceAnnotation(t *testing.T) {
 	log := logger.NewDTLogger()
-	fakeClient := prepareFakeClient("{\"driver\":{\"cpu\":\"99m\",\"memory\":\"99Mi\"}," +
-		"\"registrar\":{\"cpu\":\"99m\",\"memory\":\"99Mi\"}," +
-		"\"liveness-probe\":{\"cpu\":\"99m\",\"memory\":\"99Mi\"}}")
+	fakeClient := prepareFakeClient("{\"driver\":{\"cpu\":\"99m\",\"memory\":\"99Mi\"},"+
+		"\"registrar\":{\"cpu\":\"99m\",\"memory\":\"99Mi\"},"+
+		"\"liveness-probe\":{\"cpu\":\"99m\",\"memory\":\"99Mi\"}}", "")
 	dk := prepareDynakube(testDynakube)
 	rec := NewReconciler(fakeClient, scheme.Scheme, log, dk, testOperatorPodName, testNamespace)
 
@@ -277,7 +275,7 @@ func TestReconcile_CSIResourceAnnotation(t *testing.T) {
 	testQuantity(t, livenessProbe.Resources.Limits, corev1.ResourceMemory, "99Mi")
 }
 
-func prepareFakeClient(annotation string, objs ...client.Object) client.Client {
+func prepareFakeClient(resourceAnnotation, tolerationsAnnotation string, objs ...client.Object) client.Client {
 	trueVal := true
 
 	deployment := &appsv1.Deployment{
@@ -290,8 +288,12 @@ func prepareFakeClient(annotation string, objs ...client.Object) client.Client {
 			Annotations: map[string]string{},
 		},
 	}
-	if annotation != "" {
-		deployment.Annotations[AnnotationCSIResourcesIdentifier] = annotation
+	if resourceAnnotation != "" {
+		deployment.Annotations[AnnotationCSIResourcesIdentifier] = resourceAnnotation
+	}
+
+	if tolerationsAnnotation != "" {
+		deployment.Annotations[AnnotationCSITolerations] = tolerationsAnnotation
 	}
 
 	replicaSet := &appsv1.ReplicaSet{

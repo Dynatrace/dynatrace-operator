@@ -31,6 +31,10 @@ const (
 	DaemonSetName                    = "dynatrace-oneagent-csi-driver"
 	DefaultServiceAccountName        = "dynatrace-oneagent-csi-driver"
 	AnnotationCSIResourcesIdentifier = "dynatrace.com/csi-resources"
+
+	// AnnotationCSITolerations is a annotation to set tolerations for the csi drive daemonset.
+	// example: [{\"key\":\"node-role.kubernetes.io/master\",\"operator\":\"Exists\",\"effect\":\"NoSchedule\"}]
+	AnnotationCSITolerations = "dynatrace.com/csi-tolerations"
 )
 
 var MetadataAccessPath = filepath.Join(DataPath, "csi.db")

@@ -21,7 +21,6 @@ import (
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/logger"
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -31,7 +30,6 @@ const (
 	annotationFeatureOneAgentMaxUnavailable          = annotationFeaturePrefix + "oneagent-max-unavailable"
 	annotationFeatureEnableWebhookReinvocationPolicy = annotationFeaturePrefix + "enable-webhook-reinvocation-policy"
 	annotationFeatureIgnoreUnknownState              = annotationFeaturePrefix + "ignore-unknown-state"
-	annotationFeatureCSITolerations                  = annotationFeaturePrefix + "csi-tolerations"
 	annotationFeatureIgnoredNamespaces               = annotationFeaturePrefix + "ignored-namespaces"
 )
 
@@ -85,22 +83,6 @@ func (dk *DynaKube) GetFeatureEnableWebhookReinvocationPolicy() string {
 // this may cause extra host to appear in the tenant for each process.
 func (dk *DynaKube) FeatureIgnoreUnknownState() bool {
 	return dk.Annotations[annotationFeatureIgnoreUnknownState] == "true"
-}
-
-// FeatureCSITolerations is a feature flag to set tolerations for the csi drive daemonset.
-// example: [{\"key\":\"node-role.kubernetes.io/master\",\"operator\":\"Exists\",\"effect\":\"NoSchedule\"}]
-func (dk *DynaKube) FeatureCSITolerations() []corev1.Toleration {
-	raw, ok := dk.Annotations[annotationFeatureCSITolerations]
-	if !ok || raw == "" {
-		return nil
-	}
-	tolerations := &[]corev1.Toleration{}
-	err := json.Unmarshal([]byte(raw), tolerations)
-	if err != nil {
-		log.Error(err, "failed to unmarshal csi tolerations feature-flag")
-		return nil
-	}
-	return *tolerations
 }
 
 // FeatureIgnoredNamespaces is a feature flag for ignoring certain namespaces.
