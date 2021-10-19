@@ -103,6 +103,11 @@ var (
 			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
 				TenantUUID: testTenantUUID,
 			},
+			OneAgent: dynatracev1beta1.OneAgentStatus{
+				Instances: map[string]dynatracev1beta1.OneAgentInstance{
+					testNodeWithSelectorName: {},
+				},
+			},
 		},
 	}
 
@@ -154,7 +159,7 @@ func TestGenerateForNamespace(t *testing.T) {
 		clt := fake.NewClient(testDynakubeComplex, &testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
 
-		err := ig.GenerateForNamespace(context.TODO(), testDynakubeComplex.Name, testNamespace.Name)
+		err := ig.GenerateForNamespace(context.TODO(), *testDynakubeComplex, testNamespace.Name)
 		assert.NoError(t, err)
 
 		var initSecret corev1.Secret
@@ -181,7 +186,7 @@ func TestGenerateForNamespace(t *testing.T) {
 		clt := fake.NewClient(testDynakubeSimple, &testNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
 
-		err := ig.GenerateForNamespace(context.TODO(), testDynakubeSimple.Name, testNamespace.Name)
+		err := ig.GenerateForNamespace(context.TODO(), *testDynakubeSimple, testNamespace.Name)
 		assert.NoError(t, err)
 
 		var initSecret corev1.Secret
@@ -285,18 +290,29 @@ func TestGenerateForDynakube(t *testing.T) {
 }
 
 func TestGetInfraMonitoringNodes(t *testing.T) {
-	t.Run("Get IMNodes from multiple dynakubes", func(t *testing.T) {
-		clt := fake.NewClient(testDynakubeComplex, testDynakubeSimple, testNode1, testNode2)
+	t.Run("Get IMNodes using nodes", func(t *testing.T) {
+		clt := fake.NewClient(testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		ig.canWatchNodes = true
 		imNodes, err := ig.getInfraMonitoringNodes(testDynakubeSimple)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(imNodes))
 		assert.Equal(t, testTenantUUID, imNodes[testNode1Name])
 		assert.Equal(t, testTenantUUID, imNodes[testNode2Name])
 	})
-	t.Run("Get IMNodes from dynakubes with nodeSelector", func(t *testing.T) {
-		clt := fake.NewClient(testNodeWithLabels, testDynakubeWithSelector, testNode1, testNode2)
+	t.Run("Get IMNodes from dynakubes (without node access)", func(t *testing.T) {
+		clt := fake.NewClient()
 		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		ig.canWatchNodes = false
+		imNodes, err := ig.getInfraMonitoringNodes(testDynakubeSimple)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, len(imNodes))
+		assert.Equal(t, testTenantUUID, imNodes[testNode2Name])
+	})
+	t.Run("Get IMNodes from dynakubes with nodeSelector", func(t *testing.T) {
+		clt := fake.NewClient(testNodeWithLabels, testNode1, testNode2)
+		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		ig.canWatchNodes = true
 		imNodes, err := ig.getInfraMonitoringNodes(testDynakubeWithSelector)
 		assert.NoError(t, err)
 		assert.Equal(t, 3, len(imNodes))
@@ -329,6 +345,7 @@ func TestPrepareScriptForDynaKube(t *testing.T) {
 			TenantUUID:    dk.Status.ConnectionInfo.TenantUUID,
 			IMNodes:       imNodes,
 			HostGroup:     testHostGroup,
+			HasHost:       true,
 		}
 		assert.Equal(t, &expectedScript, sc)
 

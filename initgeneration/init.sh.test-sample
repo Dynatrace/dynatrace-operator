@@ -18,6 +18,7 @@ custom_ca="true"
 fail_code=0
 cluster_id="42"
 host_group="host-test"
+has_host="true"
 
 declare -A im_nodes
 im_nodes=(
@@ -25,6 +26,11 @@ im_nodes=(
   ["node2"]="abc12345"
 )
 ###############################################
+host_tenant="-"
+if [[ "${has_host}" == "true" ]]; then
+	# Script fails if empty
+	host_tenant="${im_nodes[${K8S_NODE_NAME}]}"
+fi
 
 setFailCode(){
 	if [[ "${FAILURE_POLICY}" == "fail" ]]; then
@@ -110,9 +116,6 @@ isCloudNativeFullStack true" >> ${1}
 }
 
 createConfigurationFiles() {
-	# Script fails if empty
-	host_tenant="${im_nodes[${K8S_NODE_NAME}]}"
-
 	echo -n "${INSTALLPATH}/agent/lib64/liboneagentproc.so" >> "${share_dir}/ld.so.preload"
 
 	for i in $(seq 1 $CONTAINERS_COUNT)
