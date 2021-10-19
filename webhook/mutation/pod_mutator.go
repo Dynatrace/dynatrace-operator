@@ -189,10 +189,12 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	inject := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInject, "true")
-	if inject == "false" {
+	inject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationInject, true)
+	if !inject {
 		return admission.Patched("")
 	}
+
+	mintEnabled := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationMintInject, true)
 
 	var ns corev1.Namespace
 	if err := m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
@@ -254,7 +256,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 					log.Info("instrumenting missing container", "name", c.Name)
 
 					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
-					updateContainer(c, &dk, pod, deploymentMetadata)
+					updateContainer(c, &dk, pod, deploymentMetadata, mintEnabled)
 
 					if installContainer == nil {
 						for j := range pod.Spec.InitContainers {
@@ -325,13 +327,16 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 				},
 			},
 		},
-		corev1.Volume{
-			Name: "data-ingest-enrichment",
+	)
+
+	if mintEnabled {
+		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
+			Name: "mint-enrichment",
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
-		},
-	)
+		})
+	}
 
 	var sc *corev1.SecurityContext
 	if pod.Spec.Containers[0].SecurityContext != nil {
@@ -386,9 +391,14 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 			{Name: "oneagent-bin", MountPath: "/mnt/bin"},
 			{Name: "oneagent-share", MountPath: "/mnt/share"},
 			{Name: "oneagent-config", MountPath: "/mnt/config"},
-			{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
 		},
 		Resources: *dk.InitResources(),
+	}
+
+	if mintEnabled {
+		ic.VolumeMounts = append(ic.VolumeMounts, corev1.VolumeMount{
+			Name:      "mint-enrichment",
+			MountPath: "/var/lib/dynatrace/enrichment"})
 	}
 
 	for i := range pod.Spec.Containers {
@@ -396,7 +406,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 		updateInstallContainer(&ic, i+1, c.Name, c.Image)
 
-		updateContainer(c, &dk, pod, deploymentMetadata)
+		updateContainer(c, &dk, pod, deploymentMetadata, mintEnabled)
 	}
 
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
@@ -430,7 +440,7 @@ func updateInstallContainer(ic *corev1.Container, number int, name string, image
 
 // updateContainer sets missing preload Variables
 func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
-	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
+	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata, mintEnabled bool) {
 
 	log.Info("updating container with missing preload variables", "containerName", c.Name)
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
@@ -449,10 +459,13 @@ func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
 			Name:      "oneagent-share",
 			MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
 			SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
-		},
-		corev1.VolumeMount{
-			Name:      "data-ingest-enrichment",
+		})
+
+	if mintEnabled {
+		c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+			Name:      "mint-enrichment",
 			MountPath: "/var/lib/dynatrace/enrichment"})
+	}
 
 	c.Env = append(c.Env,
 		corev1.EnvVar{

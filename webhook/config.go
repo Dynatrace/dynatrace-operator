@@ -11,6 +11,9 @@ const (
 	// AnnotationInjected is set to "true" by the webhook to Pods to indicate that it has been modified.
 	AnnotationInjected = "oneagent.dynatrace.com/injected"
 
+	AnnotationMintInject   = "mint-inject"
+	AnnotationMintInjected = "mint-injected"
+
 	// AnnotationTechnologies can be set on a Pod to configure which code module technologies to download. It's set to
 	// "all" if not set.
 	AnnotationTechnologies = "oneagent.dynatrace.com/technologies"
