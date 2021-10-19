@@ -571,11 +571,11 @@ func buildFakeClient(objs ...client.Object) client.Client {
 			Namespace: testDynatraceNamespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         deployment.APIVersion,
-					Kind:               deployment.Kind,
-					Name:               deployment.Name,
-					UID:                deployment.UID,
-					Controller:         &trueVal,
+					APIVersion: deployment.APIVersion,
+					Kind:       deployment.Kind,
+					Name:       deployment.Name,
+					UID:        deployment.UID,
+					Controller: &trueVal,
 				},
 			},
 		},
@@ -605,11 +605,11 @@ func buildFakeClient(objs ...client.Object) client.Client {
 				Namespace: testDynatraceNamespace,
 				OwnerReferences: []metav1.OwnerReference{
 					{
-						APIVersion:         replicaSet.APIVersion,
-						Kind:               replicaSet.Kind,
-						Name:               replicaSet.Name,
-						UID:                replicaSet.UID,
-						Controller:         &trueVal,
+						APIVersion: replicaSet.APIVersion,
+						Kind:       replicaSet.Kind,
+						Name:       replicaSet.Name,
+						UID:        replicaSet.UID,
+						Controller: &trueVal,
 					},
 				},
 			},
