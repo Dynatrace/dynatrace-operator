@@ -126,42 +126,46 @@ EOF
   fi
 }
 
-buildClassicFullStackSection() {
+buildCloudNativeFullStackSection() {
   cat <<EOF
-  classicFullStack:
-    enabled: true
-    tolerations:
-    - effect: NoSchedule
-      key: node-role.kubernetes.io/master
-      operator: Exists
-$(buildClassicFullStackArgsField)
-$(buildClassicFullStackEnvField)
+  oneAgent:
+    cloudNativeFullStack:
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+
+$(buildHostMonitoringArgsField)
+$(buildHostMonitoringEnvField)
 EOF
 }
 
-buildClassicFullStackArgsField() {
+buildHostMonitoringArgsField() {
   if [ -n "$CLUSTER_NAME" ]; then
     cat <<EOF
-    args:
-    - --set-host-group=${CLUSTER_NAME}
+      args:
+      - --set-host-group=${CLUSTER_NAME}
 EOF
   fi
 }
 
-buildClassicFullStackEnvField() {
+buildHostMonitoringEnvField() {
   if "$ENABLE_VOLUME_STORAGE" = "true"; then
     cat <<EOF
-    env:
-    - name: ONEAGENT_ENABLE_VOLUME_STORAGE
-      value: "${ENABLE_VOLUME_STORAGE}"
+      env:
+      - name: ONEAGENT_ENABLE_VOLUME_STORAGE
+        value: "${ENABLE_VOLUME_STORAGE}"
 EOF
   fi
 }
 
-buildRoutingSection() {
+buildActiveGateSection() {
   cat <<EOF
-  routing:
-    enabled: true
+  activeGate:
+    capabilities:
+      - routing
+      - kubernetes-monitoring
+      - data-ingest
 EOF
   if [ -n "$CLUSTER_NAME" ]; then
     cat <<EOF
@@ -170,44 +174,22 @@ EOF
   fi
 }
 
-buildKubeMonSection() {
-  cat <<EOF
-  kubernetesMonitoring:
-    enabled: true
-EOF
-  if [ -n "$CLUSTER_NAME" ]; then
-    cat <<EOF
-    group: ${CLUSTER_NAME}
-EOF
-  fi
-}
-
-buildDataIngestSection() {
-  cat <<EOF
-  dataIngest:
-    enabled: true
-EOF
-  if [ -n "$CLUSTER_NAME" ]; then
-    cat <<EOF
-    group: ${CLUSTER_NAME}
-EOF
-  fi
+waitForWebhook() {
+  "${CLI}" -n dynatrace wait pod --for=condition=ready -l internal.dynatrace.com/app=webhook --timeout=300s
 }
 
 applyDynaKubeCR() {
   dynakube="$(
     cat <<EOF
-apiVersion: dynatrace.com/v1alpha1
+apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
 spec:
 $(buildGlobalSection)
-$(buildClassicFullStackSection)
-$(buildRoutingSection)
-$(buildKubeMonSection)
-$(buildDataIngestSection)
+$(buildCloudNativeFullStackSection)
+$(buildActiveGateSection)
 EOF
   )"
 
@@ -328,10 +310,20 @@ checkTokenScopes() {
     exit 1
   fi
 
+  if echo "$responseAPI" | grep -Fq '"revoked": true'; then
+    echo "Error: API token has been revoked!"
+    exit 1
+  fi
+
   responsePaaS=$(apiRequest "POST" "/v1/tokens/lookup" "${jsonPaaS}")
 
   if echo "$responsePaaS" | grep -Fq "Token does not exist"; then
     echo "Error: PaaS token does not exist!"
+    exit 1
+  fi
+
+  if echo "$responsePaaS" | grep -Fq '"revoked": true'; then
+    echo "Error: PaaS token has been revoked!"
     exit 1
   fi
 }
@@ -365,6 +357,8 @@ printf "\nCreating Dynatrace namespace...\n"
 checkIfNSExists
 printf "\nApplying Dynatrace Operator...\n"
 applyDynatraceOperator
+printf "\nWait for webhook to become available\n"
+waitForWebhook
 printf "\nApplying DynaKube CustomResource...\n"
 applyDynaKubeCR
 printf "\nAdding cluster to Dynatrace...\n"
