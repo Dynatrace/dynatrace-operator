@@ -439,7 +439,7 @@ func TestReconcile_CodeModules_EnableCSI(t *testing.T) {
 	r := buildReconciliation(fakeClient)
 
 	result, err := r.Reconcile(context.TODO(), reconcile.Request{
-		NamespacedName: types.NamespacedName{Namespace: "dynatrace", Name: testName},
+		NamespacedName: types.NamespacedName{Namespace: testDynatraceNamespace, Name: testName},
 	})
 	require.NoError(t, err)
 	require.NotNil(t, result)
@@ -550,8 +550,41 @@ func buildMockDtClient() *dtclient.MockDynatraceClient {
 }
 
 func buildFakeClient(objs ...client.Object) client.Client {
+	trueVal := true
+
+	deployment := &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Deployment",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "deployment",
+			Namespace: testDynatraceNamespace,
+		},
+	}
+
+	replicaSet := &appsv1.ReplicaSet{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "ReplicaSet",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "replicaset",
+			Namespace: testDynatraceNamespace,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: deployment.APIVersion,
+					Kind:       deployment.Kind,
+					Name:       deployment.Name,
+					UID:        deployment.UID,
+					Controller: &trueVal,
+				},
+			},
+		},
+	}
+
 	objs = append(
 		objs,
+		deployment,
+		replicaSet,
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -570,6 +603,15 @@ func buildFakeClient(objs ...client.Object) client.Client {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testOperatorPodName,
 				Namespace: testDynatraceNamespace,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: replicaSet.APIVersion,
+						Kind:       replicaSet.Kind,
+						Name:       replicaSet.Name,
+						UID:        replicaSet.UID,
+						Controller: &trueVal,
+					},
+				},
 			},
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{

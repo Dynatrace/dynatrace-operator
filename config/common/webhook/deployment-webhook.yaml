@@ -69,6 +69,6 @@ spec:
               cpu: 300m
               memory: 128Mi
             limits:
-              cpu: 600m
-              memory: 256Mi
+              cpu: 300m
+              memory: 128Mi
       serviceAccountName: dynatrace-webhook

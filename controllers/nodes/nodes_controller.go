@@ -29,6 +29,7 @@ const (
 var unschedulableTaints = []string{"ToBeDeletedByClusterAutoscaler"}
 
 type ReconcileNodes struct {
+	podName      string
 	namespace    string
 	client       client.Client
 	cache        cache.Cache
@@ -42,6 +43,7 @@ type ReconcileNodes struct {
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager, ns string) error {
 	return mgr.Add(&ReconcileNodes{
+		podName:      os.Getenv("POD_NAME"),
 		namespace:    ns,
 		client:       mgr.GetClient(),
 		cache:        mgr.GetCache(),
@@ -237,7 +239,7 @@ func (r *ReconcileNodes) getCache() (*Cache, error) {
 		}
 
 		if !r.local { // If running locally, don't set the controller.
-			deploy, err := kubeobjects.GetDeployment(r.client, r.namespace)
+			deploy, err := kubeobjects.GetDeployment(r.client, r.podName, r.namespace)
 			if err != nil {
 				return nil, err
 			}

@@ -23,7 +23,7 @@ const (
 
 func Test_ConfigureCSIDriver_Enable(t *testing.T) {
 	dynakube := prepareDynakube(testDynakube)
-	fakeClient := prepareFakeClient()
+	fakeClient := prepareFakeClient("")
 	dkState := prepareDynakubeState(dynakube, true)
 
 	err := ConfigureCSIDriver(fakeClient, scheme.Scheme, testOperatorPodName, testNamespace, dkState, 10)
@@ -127,7 +127,7 @@ func prepareFakeClientWithEnabledCSI(dynakubes ...*dynatracev1beta1.DynaKube) cl
 		},
 	}
 
-	fakeClient := prepareFakeClient(csiDaemonSet)
+	fakeClient := prepareFakeClient("", csiDaemonSet)
 	return fakeClient
 }
 
