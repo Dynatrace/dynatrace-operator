@@ -69,13 +69,23 @@ func (r *Reconciler) Reconcile() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	resourcesMap, err := loadAnnotationResources(r.client, r.operatorPodName, r.operatorNamespace)
+	deployment, err := kubeobjects.GetDeployment(r.client, r.operatorPodName, r.operatorNamespace)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	resourcesMap, err := loadAnnotationResources(deployment.Annotations)
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	tolerations, err := loadAnnotationTolerations(deployment.Annotations)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
 
 	ds, err := buildDesiredCSIDaemonSet(
-		operatorImage, r.operatorNamespace, r.instance, resourcesMap)
+		operatorImage, r.operatorNamespace, r.instance, resourcesMap, tolerations)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
@@ -101,13 +111,35 @@ func (r *Reconciler) getOperatorImage() (string, error) {
 	return operatorPod.Spec.Containers[0].Image, nil
 }
 
-func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube *dynatracev1beta1.DynaKube,
-	resourcesMap map[string]corev1.ResourceList) (*appsv1.DaemonSet, error) {
-	ds := prepareDaemonSet(operatorImage, operatorNamespace, dynakube, resourcesMap)
-
-	if tolerations := dynakube.FeatureCSITolerations(); tolerations != nil {
-		ds.Spec.Template.Spec.Tolerations = tolerations
+func loadAnnotationResources(annotations map[string]string) (map[string]corev1.ResourceList, error) {
+	var resourceMap map[string]corev1.ResourceList
+	if annotation, ok := annotations[AnnotationCSIResourcesIdentifier]; ok {
+		if annotation == "" {
+			return nil, nil
+		}
+		if err := json.Unmarshal([]byte(annotation), &resourceMap); err != nil {
+			return nil, err
+		}
 	}
+	return resourceMap, nil
+}
+
+func loadAnnotationTolerations(annotations map[string]string) ([]corev1.Toleration, error) {
+	tolerations := &[]corev1.Toleration{}
+	if annotation, ok := annotations[AnnotationCSITolerations]; ok {
+		if annotation == "" {
+			return nil, nil
+		}
+		if err := json.Unmarshal([]byte(annotation), tolerations); err != nil {
+			return nil, err
+		}
+	}
+	return *tolerations, nil
+}
+
+func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube *dynatracev1beta1.DynaKube,
+	resourcesMap map[string]corev1.ResourceList, tolerations []corev1.Toleration) (*appsv1.DaemonSet, error) {
+	ds := prepareDaemonSet(operatorImage, operatorNamespace, dynakube, resourcesMap, tolerations)
 
 	dsHash, err := kubeobjects.GenerateHash(ds)
 	if err != nil {
@@ -119,7 +151,7 @@ func buildDesiredCSIDaemonSet(operatorImage, operatorNamespace string, dynakube 
 }
 
 func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *dynatracev1beta1.DynaKube,
-	resourcesMap map[string]corev1.ResourceList) *appsv1.DaemonSet {
+	resourcesMap map[string]corev1.ResourceList, tolerations []corev1.Toleration) *appsv1.DaemonSet {
 	labels := prepareDaemonSetLabels()
 
 	return &appsv1.DaemonSet{
@@ -143,6 +175,7 @@ func prepareDaemonSet(operatorImage, operatorNamespace string, dynakube *dynatra
 					},
 					ServiceAccountName: DefaultServiceAccountName,
 					Volumes:            prepareVolumes(),
+					Tolerations:        tolerations,
 				},
 			},
 		},
@@ -223,21 +256,6 @@ func prepareDriverEnvVars() []corev1.EnvVar {
 			},
 		},
 	}
-}
-
-func loadAnnotationResources(client client.Client, operatorPodName, operatorNamespace string) (map[string]corev1.ResourceList, error) {
-	deployment, err := kubeobjects.GetDeployment(client, operatorPodName, operatorNamespace)
-	if err != nil {
-		return nil, err
-	}
-
-	var resourceMap map[string]corev1.ResourceList
-	if label, ok := deployment.Annotations[AnnotationCSIResourcesIdentifier]; ok {
-		if err = json.Unmarshal([]byte(label), &resourceMap); err != nil {
-			return nil, err
-		}
-	}
-	return resourceMap, nil
 }
 
 func getQuantity(value int64, scale resource.Scale) resource.Quantity {
