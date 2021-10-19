@@ -54,7 +54,7 @@ func TestReconcile_NoOperatorImage(t *testing.T) {
 
 func TestReconcile_CreateDaemonSet(t *testing.T) {
 	log := logger.NewDTLogger()
-	fakeClient := prepareFakeClient()
+	fakeClient := prepareFakeClient("")
 	dk := prepareDynakube(testDynakube)
 	rec := NewReconciler(fakeClient, scheme.Scheme, log, dk, testOperatorPodName, testNamespace)
 
@@ -173,7 +173,7 @@ func TestReconcile_UpdateDaemonSet(t *testing.T) {
 			},
 		},
 	}
-	fakeClient := prepareFakeClient(ds)
+	fakeClient := prepareFakeClient("", ds)
 
 	dk := prepareDynakube(testDynakube)
 	rec := NewReconciler(fakeClient, scheme.Scheme, log, dk, testOperatorPodName, testNamespace)
@@ -193,7 +193,51 @@ func TestReconcile_UpdateDaemonSet(t *testing.T) {
 	assert.NotEqual(t, "old", updatedDaemonSet.Annotations[kubeobjects.AnnotationHash])
 }
 
-func prepareFakeClient(objs ...client.Object) client.Client {
+func TestReconcile_CSIResourceAnnotation(t *testing.T) {
+	log := logger.NewDTLogger()
+	fakeClient := prepareFakeClient("{\"driver\":{\"cpu\":\"99m\",\"memory\":\"99Mi\"}," +
+		"\"registrar\":{\"cpu\":\"99m\",\"memory\":\"99Mi\"}," +
+		"\"liveness-probe\":{\"cpu\":\"99m\",\"memory\":\"99Mi\"}}")
+	dk := prepareDynakube(testDynakube)
+	rec := NewReconciler(fakeClient, scheme.Scheme, log, dk, testOperatorPodName, testNamespace)
+
+	result, err := rec.Reconcile()
+	require.NoError(t, err)
+	assert.True(t, result)
+
+	createdDaemonSet := &appsv1.DaemonSet{}
+	err = fakeClient.Get(context.TODO(), client.ObjectKey{
+		Namespace: testNamespace,
+		Name:      DaemonSetName,
+	}, createdDaemonSet)
+	require.NoError(t, err)
+
+	driver := createdDaemonSet.Spec.Template.Spec.Containers[0]
+	require.NotNil(t, driver.Resources.Requests)
+	testQuantity(t, driver.Resources.Requests, corev1.ResourceCPU, "99m")
+	testQuantity(t, driver.Resources.Requests, corev1.ResourceMemory, "99Mi")
+	require.NotNil(t, driver.Resources.Limits)
+	testQuantity(t, driver.Resources.Limits, corev1.ResourceCPU, "99m")
+	testQuantity(t, driver.Resources.Limits, corev1.ResourceMemory, "99Mi")
+
+	registrar := createdDaemonSet.Spec.Template.Spec.Containers[1]
+	require.NotNil(t, registrar.Resources.Requests)
+	testQuantity(t, registrar.Resources.Requests, corev1.ResourceCPU, "99m")
+	testQuantity(t, registrar.Resources.Requests, corev1.ResourceMemory, "99Mi")
+	require.NotNil(t, registrar.Resources.Limits)
+	testQuantity(t, registrar.Resources.Limits, corev1.ResourceCPU, "99m")
+	testQuantity(t, registrar.Resources.Limits, corev1.ResourceMemory, "99Mi")
+
+	livenessProbe := createdDaemonSet.Spec.Template.Spec.Containers[2]
+	require.NotNil(t, livenessProbe.Resources.Requests)
+	testQuantity(t, livenessProbe.Resources.Requests, corev1.ResourceCPU, "99m")
+	testQuantity(t, livenessProbe.Resources.Requests, corev1.ResourceMemory, "99Mi")
+	require.NotNil(t, livenessProbe.Resources.Limits)
+	testQuantity(t, livenessProbe.Resources.Limits, corev1.ResourceCPU, "99m")
+	testQuantity(t, livenessProbe.Resources.Limits, corev1.ResourceMemory, "99Mi")
+}
+
+func prepareFakeClient(annotation string, objs ...client.Object) client.Client {
 	trueVal := true
 
 	deployment := &appsv1.Deployment{
@@ -201,9 +245,13 @@ func prepareFakeClient(objs ...client.Object) client.Client {
 			Kind: "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deployment",
-			Namespace: testNamespace,
+			Name:        "deployment",
+			Namespace:   testNamespace,
+			Annotations: map[string]string{},
 		},
+	}
+	if annotation != "" {
+		deployment.Annotations[AnnotationCSIResourcesIdentifier] = annotation
 	}
 
 	replicaSet := &appsv1.ReplicaSet{
@@ -215,11 +263,11 @@ func prepareFakeClient(objs ...client.Object) client.Client {
 			Namespace: testNamespace,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         deployment.APIVersion,
-					Kind:               deployment.Kind,
-					Name:               deployment.Name,
-					UID:                deployment.UID,
-					Controller:         &trueVal,
+					APIVersion: deployment.APIVersion,
+					Kind:       deployment.Kind,
+					Name:       deployment.Name,
+					UID:        deployment.UID,
+					Controller: &trueVal,
 				},
 			},
 		},
@@ -234,11 +282,11 @@ func prepareFakeClient(objs ...client.Object) client.Client {
 				Namespace: testNamespace,
 				OwnerReferences: []metav1.OwnerReference{
 					{
-						APIVersion:         replicaSet.APIVersion,
-						Kind:               replicaSet.Kind,
-						Name:               replicaSet.Name,
-						UID:                replicaSet.UID,
-						Controller:         &trueVal,
+						APIVersion: replicaSet.APIVersion,
+						Kind:       replicaSet.Kind,
+						Name:       replicaSet.Name,
+						UID:        replicaSet.UID,
+						Controller: &trueVal,
 					},
 				},
 			},
