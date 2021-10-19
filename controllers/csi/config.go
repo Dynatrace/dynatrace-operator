@@ -32,7 +32,7 @@ const (
 	DefaultServiceAccountName        = "dynatrace-oneagent-csi-driver"
 	AnnotationCSIResourcesIdentifier = "dynatrace.com/csi-resources"
 
-	// AnnotationCSITolerations is a feature flag to set tolerations for the csi drive daemonset.
+	// AnnotationCSITolerations is a annotation to set tolerations for the csi drive daemonset.
 	// example: [{\"key\":\"node-role.kubernetes.io/master\",\"operator\":\"Exists\",\"effect\":\"NoSchedule\"}]
 	AnnotationCSITolerations = "dynatrace.com/csi-tolerations"
 )
