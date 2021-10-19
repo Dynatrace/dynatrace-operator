@@ -51,7 +51,7 @@ rules:
       - deployments
       - replicationcontrollers
       - jobs
+      - cronjobs
     verbs:
       - list
-      - watch
       - get
