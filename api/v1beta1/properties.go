@@ -109,9 +109,6 @@ func (dk *DynaKube) ActiveGateImage() string {
 }
 
 func (dk *DynaKube) NeedsCSIDriver() bool {
-	if dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.Image != "" {
-		return false
-	}
 	return dk.CloudNativeFullstackMode() || (dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil && *dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver)
 }
 
@@ -123,10 +120,7 @@ func (dk *DynaKube) Image() string {
 		return dk.Spec.OneAgent.ClassicFullStack.Image
 	} else if dk.HostMonitoringMode() {
 		return dk.Spec.OneAgent.HostMonitoring.Image
-	} else if dk.ApplicationMonitoringMode() {
-		return dk.Spec.OneAgent.ApplicationMonitoring.Image
 	}
-
 	return ""
 }
 

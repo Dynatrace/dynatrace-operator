@@ -1462,12 +1462,6 @@ spec:
                       monitoring'
                     nullable: true
                     properties:
-                      image:
-                        description: 'Optional: the Dynatrace installer container
-                          image Defaults to docker.io/dynatrace/oneagent:latest for
-                          Kubernetes and to registry.connect.redhat.com/dynatrace/oneagent
-                          for OpenShift'
-                        type: string
                       initResources:
                         description: 'Optional: define resources requests and limits
                           for the initContainer'
