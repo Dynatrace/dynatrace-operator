@@ -1033,7 +1033,7 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 					{Name: "oneagent-bin", MountPath: "/mnt/bin"},
 					{Name: "oneagent-share", MountPath: "/mnt/share"},
 					{Name: "oneagent-config", MountPath: "/mnt/config"},
-					{Name: "mint-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
+					{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
 				},
 			}},
 			Containers: []corev1.Container{{
@@ -1054,7 +1054,7 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 						SubPath:   "container_test-container.conf",
 					},
 					{Name: "data-ingest-endpoint", MountPath: "/var/lib/dynatrace/enrichment/endpoint"},
-					{Name: "mint-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
+					{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
 				},
 			}},
 			Volumes: []corev1.Volume{
@@ -1089,7 +1089,7 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 					},
 				},
 				{
-					Name: "mint-enrichment",
+					Name: "data-ingest-enrichment",
 					VolumeSource: corev1.VolumeSource{
 						EmptyDir: &corev1.EmptyDirVolumeSource{},
 					},

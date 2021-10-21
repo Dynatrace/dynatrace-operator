@@ -358,7 +358,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 			},
 		},
 		corev1.Volume{
-			Name: "mint-enrichment",
+			Name: "data-ingest-enrichment",
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
@@ -417,7 +417,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 			{Name: "oneagent-bin", MountPath: "/mnt/bin"},
 			{Name: "oneagent-share", MountPath: "/mnt/share"},
 			{Name: "oneagent-config", MountPath: "/mnt/config"},
-			{Name: "mint-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
+			{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
 		},
 		Resources: *dk.InitResources(),
 	}
@@ -486,9 +486,8 @@ func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
 			MountPath: "/var/lib/dynatrace/enrichment/endpoint",
 		},
 		corev1.VolumeMount{
-			Name:      "mint-enrichment",
-			MountPath: "/var/lib/dynatrace/enrichment",
-		})
+			Name:      "data-ingest-enrichment",
+			MountPath: "/var/lib/dynatrace/enrichment"})
 
 	c.Env = append(c.Env,
 		corev1.EnvVar{
