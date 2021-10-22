@@ -12,10 +12,10 @@ With v0.2.0 we added the classicFullStack functionality which allows rolling out
 cluster. Furthermore, the Dynatrace Operator is now capable of rolling out a containerized ActiveGate for routing the
 OneAgent traffic.
 
-With v0.3.0 we added the cloudNativeFullStack mode, which combines host-monitoring, 
-with our new webhook based injection mechanism for automatic-app-only injection. In addition, the CRD structure has been
-changed to provide an easier and more understandable way to deploy Dynatrace in your environment. 
-**routing** and **kubernetesMonitoring** within the Dynakube spec are deprecated now and moved to the activeGate section.
+With v0.3.0 the CRD structure has been changed to provide an easier and more understandable way to deploy Dynatrace in your environment.
+- **routing** and **kubernetesMonitoring** within the Dynakube spec are deprecated now and moved to the **activeGate** section.
+- We added **applicationMonitoring** mode, a webhook based injection mechanism for automatic-app-only injection, and **hostMonitoring** for only monitoring the host in the cluster without app-only injection. In addition we also added the *beta* of cloudNativeFullStack mode, which combines hostMonitoring, with the webhook based applicationMonitoring.
+
 For more information please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples),
 or our [official help page.](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/)
 
@@ -92,9 +92,9 @@ spec:
   # networkZone: name-of-my-network-zone
 
   oneAgent:
-    # enable cloud-native fullstack monitoring and change its settings
-    # Cannot be used in conjunction with classic fullstack monitoring or application-only monitoring or host monitoring
-    cloudNativeFullStack:
+    # enable classic fullstack monitoring and change its settings
+    # Cannot be used in conjunction with cloud-native fullstack monitoring, application-only monitoring or host monitoring
+    classicFullStack:
 
       # Optional: tolerations to include with the OneAgent DaemonSet.
       # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
@@ -109,12 +109,11 @@ spec:
     capabilities:
       - routing
       - kubernetes-monitoring
-      - data-ingest
 
 ```
 
-This is the most basic configuration for the DynaKube object. We recommend you to use cloud-native Fullstack injection to roll out Dynatrace to your cluster, as shown in the example above. 
-In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples). 
+This is the most basic configuration for the DynaKube object. We recommend you to use classicFullstack injection to roll out Dynatrace to your cluster, as shown in the example above.
+In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples).
 Save one of the sample configurations, change the API url to your environment and apply it to your cluster.
 
 ```sh
@@ -201,9 +200,9 @@ spec:
   # networkZone: name-of-my-network-zone
 
   oneAgent:
-    # enable cloud-native fullstack monitoring and change its settings
-    # Cannot be used in conjunction with classic fullstack monitoring or application-only monitoring or host monitoring
-    cloudNativeFullStack:
+    # enable classic fullstack monitoring and change its settings
+    # Cannot be used in conjunction with cloud-native fullstack monitoring, application-only monitoring or host monitoring
+    classicFullStack:
 
       # Optional: tolerations to include with the OneAgent DaemonSet.
       # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
@@ -222,7 +221,7 @@ spec:
 
 ```
 
-This is the most basic configuration for the DynaKube object. We recommend you to use cloud-native Fullstack injection to roll out Dynatrace to your cluster, as shown in the example above.
+This is the most basic configuration for the DynaKube object. We recommend you to use classic Fullstack injection to roll out Dynatrace to your cluster, as shown in the example above.
 In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples).
 Save one of the sample configurations, change the API url to your environment and apply it to your cluster.
 
