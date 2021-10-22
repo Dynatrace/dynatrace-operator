@@ -1781,10 +1781,10 @@ spec:
                         type: string
                     type: object
                   cloudNativeFullStack:
-                    description: 'Optional: enable cloud-native fullstack monitoring
-                      and change its settings Cannot be used in conjunction with classic
-                      fullstack monitoring or application-only monitoring or host
-                      monitoring'
+                    description: 'Optional: (Beta feature) enable cloud-native fullstack
+                      monitoring and change its settings Cannot be used in conjunction
+                      with classic fullstack monitoring or application-only monitoring
+                      or host monitoring'
                     nullable: true
                     properties:
                       args:
