@@ -29,6 +29,18 @@ The script has the following dependencies:
 - `jq`
 - `curl`
 
+In addition, macOS has the following requirements:
+- GNU implementation of `getopt`
+  - please install gnu-based version and reopen terminal:
+    ```bash
+    brew install gnu-getopt && brew link --force gnu-getopt
+    ```
+- GNU implementation of `cut`
+  - please install `gcut`: 
+    ```bash
+    brew install coreutils
+    ```
+
 ## Usage
 
 Run the following command to run the script.

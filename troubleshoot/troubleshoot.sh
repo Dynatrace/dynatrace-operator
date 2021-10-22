@@ -22,42 +22,6 @@ function usage {
   exit 1
 }
 
-options="hd:n:cr"
-long_options="help,dynakube:,namespace:,oc,openshift"
-eval set -- "$(getopt --options="$options" --longoptions="$long_options" --name "$0" -- "$@")"
-
-while true; do
-  case "${1}" in
-    -h | --help)
-      usage
-      ;;
-    -d | --dynakube)
-      selected_dynakube="${2}"
-      shift 2
-      ;;
-    -n | --namespace)
-      selected_namespace="${2}"
-      shift 2
-      ;;
-    -c | --oc)
-      cli="oc"
-      shift
-      ;;
-    -r | --openshift)
-      default_oneagent_image="registry.connect.redhat.com/dynatrace/oneagent"
-      shift
-      ;;
-    --)
-      shift
-      break
-      ;;
-    *)
-      echo "Internal error!"
-      exit 1
-      ;;
-  esac
-done
-
 function log {
   printf "[%10s] %s\n" "$log_section" "$1"
 }
@@ -68,11 +32,14 @@ function error {
 }
 
 function checkDependencies {
-  dependencies=("jq" "curl")
+  dependencies=("jq" "curl" "getopt")
   if [[ "${cli}" == "oc" ]] ; then
     dependencies+=("oc")
   else
     dependencies+=("kubectl")
+  fi
+  if [[ $OSTYPE == 'darwin'* ]]; then
+    dependencies+=("gcut")
   fi
 
   for dependency in "${dependencies[@]}"; do
@@ -80,6 +47,49 @@ function checkDependencies {
     then
       error "${dependency} is required to run this script!"
     fi
+  done
+
+  if [[ $(getopt 2>&1) != *"getopt"* ]]; then
+    error "GNU implementation of 'getopt' required."
+  fi
+}
+
+function parseArguments {
+  options="hd:n:cr"
+  long_options="help,dynakube:,namespace:,oc,openshift"
+
+  eval set -- "$(getopt --options="$options" --longoptions="$long_options" --name "$0" -- "$@")"
+
+  while true; do
+    case "${1}" in
+      -h | --help)
+        usage
+        ;;
+      -d | --dynakube)
+        selected_dynakube="${2}"
+        shift 2
+        ;;
+      -n | --namespace)
+        selected_namespace="${2}"
+        shift 2
+        ;;
+      -c | --oc)
+        cli="oc"
+        shift
+        ;;
+      -r | --openshift)
+        default_oneagent_image="registry.connect.redhat.com/dynatrace/oneagent"
+        shift
+        ;;
+      --)
+        shift
+        break
+        ;;
+      *)
+        echo "Internal error!"
+        exit 1
+        ;;
+    esac
   done
 }
 
@@ -259,14 +269,24 @@ function checkImagePullable {
   oneagent_image="${dynakube_oneagent_image##"$oneagent_registry/"}"
 
   # check if image has version set
-  image_version="$(cut --delimiter ':' --only-delimited --fields=2 <<< "${oneagent_image}")"
+  if [[ $OSTYPE == 'darwin'* ]]; then
+    image_version="$(gcut --delimiter ':' --only-delimited --fields=2 <<< "${oneagent_image}")"
+  else
+    image_version="$(cut --delimiter ':' --only-delimited --fields=2 <<< "${oneagent_image}")"
+  fi
+
   if [[ -z "$image_version"  ]] ; then
     # no version set, default to latest
     oneagent_version="latest"
 
     log "using latest image version"
   else
-    oneagent_image="$(cut --delimiter ':' --fields=1 <<< "${oneagent_image}")"
+    if [[ $OSTYPE == 'darwin'* ]]; then
+      oneagent_image="$(gcut --delimiter ':' --fields=1 <<< "${oneagent_image}")"
+    else
+      oneagent_image="$(cut --delimiter ':' --fields=1 <<< "${oneagent_image}")"
+    fi
+
     oneagent_version="$image_version"
 
     log "using custom image version"
@@ -448,6 +468,7 @@ function checkDTClusterConnection {
 
 ####### MAIN #######
 checkDependencies
+parseArguments "$@"
 
 checkNamespace
 checkDynakube
