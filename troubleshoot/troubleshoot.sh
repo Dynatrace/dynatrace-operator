@@ -5,7 +5,6 @@ set -eu
 selected_dynakube="dynakube"
 selected_namespace="dynatrace"
 cli="kubectl"
-default_oneagent_image="docker.io/dynatrace/oneagent"
 
 missing_value="<no value>"
 api_url=""
@@ -209,8 +208,12 @@ function getImage {
   type="$1"
 
   if [[ "${type}" == "oneAgent" ]] ; then
-    # oneagent uses docker.io by default
-    image="${default_oneagent_image}"
+    # oneagent immutable image is not published and uses the cluster registry by default
+    api_url=$("${cli}" get dynakube "${selected_dynakube}" \
+      --namespace "${selected_namespace}" \
+      --template="{{.spec.apiUrl}}")
+    image="${api_url#*//}"
+    image="${image%/*}/linux/oneagent"
   else
     # activegate is not published and uses the cluster registry by default
     api_url=$("${cli}" get dynakube "${selected_dynakube}" \
@@ -351,28 +354,7 @@ function checkImagePullable {
   if [[ "$oneagent_image_works" == "true" ]] ; then
     log "oneagent image '$dynakube_oneagent_image' found"
   else
-    if [[ "$oneagent_registry" == "docker.io" ]] ; then
-      # get auth token with pull access for docker hub registry
-      token="$(
-        curl --silent \
-        "https://auth.docker.io/token?service=registry.docker.io&scope=repository:$oneagent_image:pull" \
-        | jq --raw-output '.token'
-      )"
-
-      # check selected image exists on docker hub
-      dockerio_image_request="$run_container_command 'curl --head \
-        --header \"Authorization: Bearer ${token}\" \
-        https://registry-1.docker.io/v2/$oneagent_image/manifests/$oneagent_version \
-        --silent --output /dev/null --write-out %{http_code}'"
-
-      if [[ "$(eval "$dockerio_image_request")" == "200" ]] ; then
-        log "oneagent image '$oneagent_image' with version '$oneagent_version' exists on docker.io registry"
-      else
-        error "oneagent image '$oneagent_image' with version '$oneagent_version' not found on docker.io registry"
-      fi
-    else
-      error "oneagent image '$dynakube_oneagent_image' with version '$oneagent_version' missing."
-    fi
+    error "oneagent image '$dynakube_activegate_image' missing"
   fi
 
   if [[ "$activegate_image_works" == "true" ]] ; then
