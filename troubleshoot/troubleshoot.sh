@@ -11,6 +11,11 @@ api_url=""
 paas_token=""
 log_section=""
 
+cut_command=cut
+if [[ $OSTYPE == 'darwin'* ]]; then
+  cut_command=gcut
+fi
+
 function usage {
   echo "Usage: $(basename "${0}") [options]" 2>&1
   echo "   [ -d | --dynakube DYNAKUBE ]    Specify a different Dynakube name, Default: 'dynakube'."
@@ -31,14 +36,11 @@ function error {
 }
 
 function checkDependencies {
-  dependencies=("jq" "curl" "getopt")
+  dependencies=("jq" "curl" "getopt" ${cut_command})
   if [[ "${cli}" == "oc" ]] ; then
     dependencies+=("oc")
   else
     dependencies+=("kubectl")
-  fi
-  if [[ $OSTYPE == 'darwin'* ]]; then
-    dependencies+=("gcut")
   fi
 
   for dependency in "${dependencies[@]}"; do
@@ -272,11 +274,7 @@ function checkImagePullable {
   oneagent_image="${dynakube_oneagent_image##"$oneagent_registry/"}"
 
   # check if image has version set
-  if [[ $OSTYPE == 'darwin'* ]]; then
-    image_version="$(gcut --delimiter ':' --only-delimited --fields=2 <<< "${oneagent_image}")"
-  else
-    image_version="$(cut --delimiter ':' --only-delimited --fields=2 <<< "${oneagent_image}")"
-  fi
+  image_version="$(${cut_command} --delimiter ':' --only-delimited --fields=2 <<< "${oneagent_image}")"
 
   if [[ -z "$image_version"  ]] ; then
     # no version set, default to latest
@@ -284,12 +282,7 @@ function checkImagePullable {
 
     log "using latest image version"
   else
-    if [[ $OSTYPE == 'darwin'* ]]; then
-      oneagent_image="$(gcut --delimiter ':' --fields=1 <<< "${oneagent_image}")"
-    else
-      oneagent_image="$(cut --delimiter ':' --fields=1 <<< "${oneagent_image}")"
-    fi
-
+    oneagent_image="$(${cut_command} --delimiter ':' --fields=1 <<< "${oneagent_image}")"
     oneagent_version="$image_version"
 
     log "using custom image version"
