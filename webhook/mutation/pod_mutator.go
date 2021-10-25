@@ -194,7 +194,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return admission.Patched("")
 	}
 
-	mintEnabled := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationMintInject, true)
+	dataIngestEnabled := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationDataIngestInject, true)
 
 	var ns corev1.Namespace
 	if err := m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
@@ -256,7 +256,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 					log.Info("instrumenting missing container", "name", c.Name)
 
 					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
-					updateContainer(c, &dk, pod, deploymentMetadata, mintEnabled)
+					updateContainer(c, &dk, pod, deploymentMetadata, dataIngestEnabled)
 
 					if installContainer == nil {
 						for j := range pod.Spec.InitContainers {
@@ -289,7 +289,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	pod.Annotations[dtwebhook.AnnotationInjected] = "true"
 
 	var workloadName, workloadKind string
-	if mintEnabled {
+	if dataIngestEnabled {
 		workloadName, workloadKind, err = rootOwnerPod(ctx, m.metaClient, pod, req.Namespace)
 		if err != nil {
 			return admission.Errored(http.StatusInternalServerError, err)
@@ -332,9 +332,9 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		},
 	)
 
-	if mintEnabled {
+	if dataIngestEnabled {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: "mint-enrichment",
+			Name: "data-ingest-enrichment",
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
@@ -367,6 +367,8 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
 	}
 
+	const dataIngestEnabledEnvVarName = "DATA_INGEST_ENABLED"
+
 	ic := corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           image,
@@ -396,15 +398,20 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		Resources: *dk.InitResources(),
 	}
 
-	if mintEnabled {
+	if dataIngestEnabled {
 		ic.Env = append(ic.Env,
 			corev1.EnvVar{Name: "DT_WORKLOAD_KIND", Value: workloadKind},
 			corev1.EnvVar{Name: "DT_WORKLOAD_NAME", Value: workloadName},
+			corev1.EnvVar{Name: dataIngestEnabledEnvVarName, Value: "true"},
 		)
 
 		ic.VolumeMounts = append(ic.VolumeMounts, corev1.VolumeMount{
-			Name:      "mint-enrichment",
+			Name:      "data-ingest-enrichment",
 			MountPath: "/var/lib/dynatrace/enrichment"})
+	} else {
+		ic.Env = append(ic.Env,
+			corev1.EnvVar{Name: dataIngestEnabledEnvVarName, Value: "false"},
+		)
 	}
 
 	for i := range pod.Spec.Containers {
@@ -412,7 +419,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 		updateInstallContainer(&ic, i+1, c.Name, c.Image)
 
-		updateContainer(c, &dk, pod, deploymentMetadata, mintEnabled)
+		updateContainer(c, &dk, pod, deploymentMetadata, dataIngestEnabled)
 	}
 
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
@@ -446,7 +453,7 @@ func updateInstallContainer(ic *corev1.Container, number int, name string, image
 
 // updateContainer sets missing preload Variables
 func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
-	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata, mintEnabled bool) {
+	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata, dataIngestEnabled bool) {
 
 	log.Info("updating container with missing preload variables", "containerName", c.Name)
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
@@ -467,9 +474,9 @@ func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
 			SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
 		})
 
-	if mintEnabled {
+	if dataIngestEnabled {
 		c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
-			Name:      "mint-enrichment",
+			Name:      "data-ingest-enrichment",
 			MountPath: "/var/lib/dynatrace/enrichment"})
 	}
 

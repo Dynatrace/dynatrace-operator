@@ -116,12 +116,6 @@ isCloudNativeFullStack true" >> ${1}
 }
 
 writeConfEnrichmentTo() {
-  set +u
-  if [ -z "${DT_WORKLOAD_KIND}" ]; then
-    return
-  fi
-  set -u
-
   mkdir -p "${1}"
   echo "k8s.pod.uid ${K8S_PODUID}
 k8s.pod.name ${K8S_PODNAME}
@@ -161,7 +155,9 @@ createConfigurationFiles() {
 		if [[ "${host_tenant}" != "-" ]]; then
 			if [[ "abc12345" == "${host_tenant}" ]]; then
 				writeConfK8To ${container_conf_file}
-				writeConfEnrichmentTo "/var/lib/dynatrace/enrichment" "dt_metadata"
+				if [[ "${DATA_INGEST_ENABLED}" == "true" ]]; then
+					writeConfMintTo "/var/lib/dynatrace/enrichment" "dt_metadata"
+				fi
 			fi
 			writeConfHostTo ${container_conf_file}
 		fi
