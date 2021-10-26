@@ -189,12 +189,12 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	inject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationInject, true)
-	if !inject {
-		return admission.Patched("")
-	}
+	oneAgentInject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationInject, true)
+	//if !oneAgentInject {
+	//	return admission.Patched("")
+	//}
 
-	dataIngestEnabled := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationDataIngestInject, true)
+	dataIngestInject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationDataIngestInject, true)
 
 	var ns corev1.Namespace
 	if err := m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
@@ -256,7 +256,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 					log.Info("instrumenting missing container", "name", c.Name)
 
 					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
-					updateContainer(c, &dk, pod, deploymentMetadata, dataIngestEnabled)
+					updateContainer(c, &dk, pod, deploymentMetadata, dataIngestInject)
 
 					if installContainer == nil {
 						for j := range pod.Spec.InitContainers {
@@ -289,7 +289,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	pod.Annotations[dtwebhook.AnnotationInjected] = "true"
 
 	var workloadName, workloadKind string
-	if dataIngestEnabled {
+	if dataIngestInject {
 		workloadName, workloadKind, err = rootOwnerPod(ctx, m.metaClient, pod, req.Namespace)
 		if err != nil {
 			return admission.Errored(http.StatusInternalServerError, err)
@@ -332,7 +332,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		},
 	)
 
-	if dataIngestEnabled {
+	if dataIngestInject {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: "data-ingest-enrichment",
 			VolumeSource: corev1.VolumeSource{
@@ -367,8 +367,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
 	}
 
-	const dataIngestEnabledEnvVarName = "DATA_INGEST_ENABLED"
-
+	const dataIngestEnabledEnvVarName = "DATA_INGEST_INJECTED"
 	ic := corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           image,
@@ -376,13 +375,8 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		Command:         []string{"/usr/bin/env"},
 		Args:            []string{"bash", "/mnt/config/init.sh"},
 		Env: []corev1.EnvVar{
-			{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
-			{Name: "TECHNOLOGIES", Value: technologies},
-			{Name: "INSTALLPATH", Value: installPath},
-			{Name: "INSTALLER_URL", Value: installerURL},
-			{Name: "FAILURE_POLICY", Value: failurePolicy},
 			{Name: "CONTAINERS_COUNT", Value: strconv.Itoa(len(pod.Spec.Containers))},
-			{Name: "MODE", Value: mode},
+			{Name: "FAILURE_POLICY", Value: failurePolicy},
 			{Name: "K8S_PODNAME", ValueFrom: fieldEnvVar("metadata.name")},
 			{Name: "K8S_PODUID", ValueFrom: fieldEnvVar("metadata.uid")},
 			{Name: "K8S_BASEPODNAME", Value: basePodName},
@@ -391,14 +385,33 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		},
 		SecurityContext: sc,
 		VolumeMounts: []corev1.VolumeMount{
-			{Name: "oneagent-bin", MountPath: "/mnt/bin"},
-			{Name: "oneagent-share", MountPath: "/mnt/share"},
 			{Name: "oneagent-config", MountPath: "/mnt/config"},
 		},
 		Resources: *dk.InitResources(),
 	}
 
-	if dataIngestEnabled {
+	const oneagentInjectedEnvVarName = "ONEAGENT_INJECTED"
+	if oneAgentInject {
+		ic.Env = append(ic.Env,
+			corev1.EnvVar{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
+			corev1.EnvVar{Name: "TECHNOLOGIES", Value: technologies},
+			corev1.EnvVar{Name: "INSTALLPATH", Value: installPath},
+			corev1.EnvVar{Name: "INSTALLER_URL", Value: installerURL},
+			corev1.EnvVar{Name: "MODE", Value: mode},
+			corev1.EnvVar{Name: oneagentInjectedEnvVarName, Value: "true"},
+		)
+
+		ic.VolumeMounts = append(ic.VolumeMounts,
+			corev1.VolumeMount{Name: "oneagent-bin", MountPath: "/mnt/bin"},
+			corev1.VolumeMount{Name: "oneagent-share", MountPath: "/mnt/share"},
+		)
+	} else {
+		ic.Env = append(ic.Env,
+			corev1.EnvVar{Name: oneagentInjectedEnvVarName, Value: "false"},
+		)
+	}
+
+	if dataIngestInject {
 		ic.Env = append(ic.Env,
 			corev1.EnvVar{Name: "DT_WORKLOAD_KIND", Value: workloadKind},
 			corev1.EnvVar{Name: "DT_WORKLOAD_NAME", Value: workloadName},
@@ -419,7 +432,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 		updateInstallContainer(&ic, i+1, c.Name, c.Image)
 
-		updateContainer(c, &dk, pod, deploymentMetadata, dataIngestEnabled)
+		updateContainer(c, &dk, pod, deploymentMetadata, dataIngestInject)
 	}
 
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)

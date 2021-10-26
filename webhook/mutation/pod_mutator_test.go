@@ -2,6 +2,7 @@ package mutation
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
@@ -130,6 +131,11 @@ func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podMutator, *
 }
 
 func TestPodInjection(t *testing.T) {
+	//type conf struct {
+	//	OneAgentEnabled   bool
+	//	DataIngestEnabled bool
+	//}
+
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	require.NoError(t, err)
 
@@ -179,14 +185,15 @@ func TestPodInjection(t *testing.T) {
 	var updPod corev1.Pod
 	require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-	expected := buildResultPod(t)
+	expected := buildResultPod(t, true, true)
 
-	expected.Spec.Volumes[0] = corev1.Volume{
-		Name: "oneagent-bin",
-		VolumeSource: corev1.VolumeSource{
-			CSI: &corev1.CSIVolumeSource{
-				Driver: dtcsi.DriverName,
-			},
+	idx := sort.Search(len(expected.Spec.Volumes), func(i int) bool {
+		return expected.Spec.Volumes[i].Name >= "oneagent-bin"
+	})
+
+	expected.Spec.Volumes[idx].VolumeSource = corev1.VolumeSource{
+		CSI: &corev1.CSIVolumeSource{
+			Driver: dtcsi.DriverName,
 		},
 	}
 
@@ -205,6 +212,8 @@ func TestPodInjection(t *testing.T) {
 		},
 	}
 
+	sortPodInternals(&expected)
+	sortPodInternals(&updPod)
 	assert.Equal(t, expected, updPod)
 	t_utils.AssertEvents(t,
 		inj.recorder.(*record.FakeRecorder).Events,
@@ -265,7 +274,7 @@ func TestPodInjectionWithCSI(t *testing.T) {
 	var updPod corev1.Pod
 	require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-	expected := buildResultPod(t)
+	expected := buildResultPod(t, true, true)
 
 	expected.Spec.InitContainers[0].Image = "test-api-url.com/linux/codemodule"
 
@@ -280,6 +289,8 @@ func TestPodInjectionWithCSI(t *testing.T) {
 		},
 	}
 
+	sortPodInternals(&expected)
+	sortPodInternals(&updPod)
 	assert.Equal(t, expected, updPod)
 
 	t_utils.AssertEvents(t,
@@ -385,19 +396,24 @@ func TestUseImmutableImage(t *testing.T) {
 		var updPod corev1.Pod
 		require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-		expected := buildResultPod(t)
-		expected.Spec.Volumes[0] = corev1.Volume{
-			Name: "oneagent-bin",
-			VolumeSource: corev1.VolumeSource{
-				CSI: &corev1.CSIVolumeSource{
-					Driver: dtcsi.DriverName,
-				},
+		expected := buildResultPod(t, true, true)
+
+		idx := sort.Search(len(expected.Spec.Volumes), func(i int) bool {
+			return expected.Spec.Volumes[i].Name >= "oneagent-bin"
+		})
+
+		expected.Spec.Volumes[idx].VolumeSource = corev1.VolumeSource{
+			CSI: &corev1.CSIVolumeSource{
+				Driver: dtcsi.DriverName,
 			},
 		}
+
 		setEnvVar(t, &expected, "MODE", "provisioned")
 
 		expected.ObjectMeta.Annotations["oneagent.dynatrace.com/image"] = "customregistry/linux/codemodule"
 
+		sortPodInternals(&expected)
+		sortPodInternals(&updPod)
 		assert.Equal(t, expected, updPod)
 		t_utils.AssertEvents(t,
 			inj.recorder.(*record.FakeRecorder).Events,
@@ -485,17 +501,20 @@ func TestUseImmutableImage(t *testing.T) {
 		var updPod corev1.Pod
 		require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-		expected := buildResultPod(t)
-		expected.Spec.Volumes[0] = corev1.Volume{
-			Name: "oneagent-bin",
-			VolumeSource: corev1.VolumeSource{
-				CSI: &corev1.CSIVolumeSource{
-					Driver: dtcsi.DriverName,
-				},
+		expected := buildResultPod(t, true, true)
+		idx := sort.Search(len(expected.Spec.Volumes), func(i int) bool {
+			return expected.Spec.Volumes[i].Name >= "oneagent-bin"
+		})
+
+		expected.Spec.Volumes[idx].VolumeSource = corev1.VolumeSource{
+			CSI: &corev1.CSIVolumeSource{
+				Driver: dtcsi.DriverName,
 			},
 		}
 		setEnvVar(t, &expected, "MODE", "provisioned")
 
+		sortPodInternals(&expected)
+		sortPodInternals(&updPod)
 		assert.Equal(t, expected, updPod)
 		t_utils.AssertEvents(t,
 			inj.recorder.(*record.FakeRecorder).Events,
@@ -587,10 +606,12 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 		var updPod corev1.Pod
 		require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-		expected := buildResultPod(t)
+		expected := buildResultPod(t, true, true)
 
 		expected.ObjectMeta.Annotations["oneagent.dynatrace.com/image"] = "customregistry/linux/codemodule"
 
+		sortPodInternals(&expected)
+		sortPodInternals(&updPod)
 		assert.Equal(t, expected, updPod)
 		t_utils.AssertEvents(t,
 			inj.recorder.(*record.FakeRecorder).Events,
@@ -679,10 +700,12 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 		var updPod corev1.Pod
 		require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-		expected := buildResultPod(t)
+		expected := buildResultPod(t, true, true)
 
 		expected.ObjectMeta.Annotations["oneagent.dynatrace.com/image"] = "customregistry/linux/codemodule"
 
+		sortPodInternals(&expected)
+		sortPodInternals(&updPod)
 		assert.Equal(t, expected, updPod)
 		t_utils.AssertEvents(t,
 			inj.recorder.(*record.FakeRecorder).Events,
@@ -770,8 +793,10 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 		var updPod corev1.Pod
 		require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-		expected := buildResultPod(t)
+		expected := buildResultPod(t, true, true)
 
+		sortPodInternals(&expected)
+		sortPodInternals(&updPod)
 		assert.Equal(t, expected, updPod)
 		t_utils.AssertEvents(t,
 			inj.recorder.(*record.FakeRecorder).Events,
@@ -860,17 +885,20 @@ func TestAgentVersion(t *testing.T) {
 	var updPod corev1.Pod
 	require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-	expected := buildResultPod(t)
-	expected.Spec.Volumes[0] = corev1.Volume{
-		Name: "oneagent-bin",
-		VolumeSource: corev1.VolumeSource{
-			CSI: &corev1.CSIVolumeSource{
-				Driver: dtcsi.DriverName,
-			},
+	expected := buildResultPod(t, true, true)
+	idx := sort.Search(len(expected.Spec.Volumes), func(i int) bool {
+		return expected.Spec.Volumes[i].Name >= "oneagent-bin"
+	})
+
+	expected.Spec.Volumes[idx].VolumeSource = corev1.VolumeSource{
+		CSI: &corev1.CSIVolumeSource{
+			Driver: dtcsi.DriverName,
 		},
 	}
 	setEnvVar(t, &expected, "MODE", "provisioned")
 
+	sortPodInternals(&expected)
+	sortPodInternals(&updPod)
 	assert.Equal(t, expected, updPod)
 	t_utils.AssertEvents(t,
 		inj.recorder.(*record.FakeRecorder).Events,
@@ -958,7 +986,10 @@ func TestAgentVersionWithCSI(t *testing.T) {
 	var updPod corev1.Pod
 	require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
-	expected := buildResultPod(t)
+	expected := buildResultPod(t, true, true)
+
+	sortPodInternals(&expected)
+	sortPodInternals(&updPod)
 	assert.Equal(t, expected, updPod)
 
 	t_utils.AssertEvents(t,
@@ -972,17 +1003,17 @@ func TestAgentVersionWithCSI(t *testing.T) {
 	)
 }
 
-func buildResultPod(_ *testing.T) corev1.Pod {
-	return corev1.Pod{
+func buildResultPod(_ *testing.T, oneAgentEnabled bool, dataIngestEnabled bool) corev1.Pod {
+	pod := corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "Pod",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-pod-12345",
 			Namespace: "test-namespace",
-			Annotations: map[string]string{
-				"oneagent.dynatrace.com/injected": "true",
-			},
+			//Annotations: map[string]string{
+			//	"oneagent.dynatrace.com/injected": "true",
+			//},
 		},
 		Spec: corev1.PodSpec{
 			InitContainers: []corev1.Container{{
@@ -992,29 +1023,29 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 				Command:         []string{"/usr/bin/env"},
 				Args:            []string{"bash", "/mnt/config/init.sh"},
 				Env: []corev1.EnvVar{
-					{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
-					{Name: "TECHNOLOGIES", Value: "all"},
-					{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
-					{Name: "INSTALLER_URL", Value: ""},
+					//{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
+					//{Name: "TECHNOLOGIES", Value: "all"},
+					//{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
+					//{Name: "INSTALLER_URL", Value: ""},
 					{Name: "FAILURE_POLICY", Value: "silent"},
 					{Name: "CONTAINERS_COUNT", Value: "1"},
-					{Name: "MODE", Value: "provisioned"},
+					//{Name: "MODE", Value: "provisioned"},
 					{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
 					{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
 					{Name: "K8S_BASEPODNAME", Value: "test-pod"},
 					{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
 					{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
-					{Name: "DT_WORKLOAD_KIND", Value: "Pod"},
-					{Name: "DT_WORKLOAD_NAME", Value: "test-pod-12345"},
-					{Name: "DATA_INGEST_ENABLED", Value: "true"},
-					{Name: "CONTAINER_1_NAME", Value: "test-container"},
-					{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
+					//{Name: "DT_WORKLOAD_KIND", Value: "Pod"},
+					//{Name: "DT_WORKLOAD_NAME", Value: "test-pod-12345"},
+					//{Name: "DATA_INGEST_INJECTED", Value: "true"},
+					//{Name: "CONTAINER_1_NAME", Value: "test-container"},
+					//{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
 				},
 				VolumeMounts: []corev1.VolumeMount{
-					{Name: "oneagent-bin", MountPath: "/mnt/bin"},
-					{Name: "oneagent-share", MountPath: "/mnt/share"},
+					//{Name: "oneagent-bin", MountPath: "/mnt/bin"},
+					//{Name: "oneagent-share", MountPath: "/mnt/share"},
 					{Name: "oneagent-config", MountPath: "/mnt/config"},
-					{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
+					//{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
 				},
 			}},
 			Containers: []corev1.Container{{
@@ -1025,31 +1056,31 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 					{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator-cloud_native_fullstack;script_version=snapshot;orchestrator_id="},
 				},
 				VolumeMounts: []corev1.VolumeMount{
-					{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
-					{Name: "oneagent-bin", MountPath: "/opt/dynatrace/oneagent-paas"},
-					{
-						Name:      "oneagent-share",
-						MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-						SubPath:   "container_test-container.conf",
-					},
-					{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
+					//{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
+					//{Name: "oneagent-bin", MountPath: "/opt/dynatrace/oneagent-paas"},
+					//{
+					//	Name:      "oneagent-share",
+					//	MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
+					//	SubPath:   "container_test-container.conf",
+					//},
+					//{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
 				},
 			}},
 			Volumes: []corev1.Volume{
-				{
-					Name: "oneagent-bin",
-					VolumeSource: corev1.VolumeSource{
-						CSI: &corev1.CSIVolumeSource{
-							Driver: dtcsi.DriverName,
-						},
-					},
-				},
-				{
-					Name: "oneagent-share",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
-				},
+				//{
+				//	Name: "oneagent-bin",
+				//	VolumeSource: corev1.VolumeSource{
+				//		CSI: &corev1.CSIVolumeSource{
+				//			Driver: dtcsi.DriverName,
+				//		},
+				//	},
+				//},
+				//{
+				//	Name: "oneagent-share",
+				//	VolumeSource: corev1.VolumeSource{
+				//		EmptyDir: &corev1.EmptyDirVolumeSource{},
+				//	},
+				//},
 				{
 					Name: "oneagent-config",
 					VolumeSource: corev1.VolumeSource{
@@ -1058,15 +1089,105 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 						},
 					},
 				},
-				{
-					Name: "data-ingest-enrichment",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
-					},
-				},
+				//{
+				//	Name: "data-ingest-enrichment",
+				//	VolumeSource: corev1.VolumeSource{
+				//		EmptyDir: &corev1.EmptyDirVolumeSource{},
+				//	},
+				//},
 			},
 		},
 	}
+
+	if oneAgentEnabled {
+		if pod.ObjectMeta.Annotations == nil {
+			pod.ObjectMeta.Annotations = make(map[string]string)
+		}
+		pod.ObjectMeta.Annotations["oneagent.dynatrace.com/injected"] = "true"
+
+		pod.Spec.InitContainers[0].Env = append(pod.Spec.InitContainers[0].Env,
+			corev1.EnvVar{Name: "ONEAGENT_INJECTED", Value: "true"},
+			corev1.EnvVar{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
+			corev1.EnvVar{Name: "TECHNOLOGIES", Value: "all"},
+			corev1.EnvVar{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
+			corev1.EnvVar{Name: "INSTALLER_URL", Value: ""},
+			corev1.EnvVar{Name: "MODE", Value: "provisioned"},
+			corev1.EnvVar{Name: "CONTAINER_1_NAME", Value: "test-container"},
+			corev1.EnvVar{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
+		)
+
+		pod.Spec.InitContainers[0].VolumeMounts = append(pod.Spec.InitContainers[0].VolumeMounts,
+			corev1.VolumeMount{Name: "oneagent-bin", MountPath: "/mnt/bin"},
+			corev1.VolumeMount{Name: "oneagent-share", MountPath: "/mnt/share"},
+		)
+
+		pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts,
+			corev1.VolumeMount{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},
+			corev1.VolumeMount{Name: "oneagent-bin", MountPath: "/opt/dynatrace/oneagent-paas"},
+			corev1.VolumeMount{
+				Name:      "oneagent-share",
+				MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
+				SubPath:   "container_test-container.conf",
+			},
+		)
+
+		pod.Spec.Volumes = append(pod.Spec.Volumes,
+			corev1.Volume{
+				Name: "oneagent-bin",
+				VolumeSource: corev1.VolumeSource{
+					CSI: &corev1.CSIVolumeSource{
+						Driver: dtcsi.DriverName,
+					},
+				},
+			},
+			corev1.Volume{
+				Name: "oneagent-share",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+		)
+	} else {
+		pod.Spec.InitContainers[0].Env = append(pod.Spec.InitContainers[0].Env,
+			corev1.EnvVar{Name: "ONEAGENT_INJECTED", Value: "false"},
+		)
+	}
+
+	if dataIngestEnabled {
+		if pod.ObjectMeta.Annotations == nil {
+			pod.ObjectMeta.Annotations = make(map[string]string)
+		}
+
+		pod.Spec.InitContainers[0].Env = append(pod.Spec.InitContainers[0].Env,
+			corev1.EnvVar{Name: "DATA_INGEST_INJECTED", Value: "true"},
+			corev1.EnvVar{Name: "DT_WORKLOAD_KIND", Value: "Pod"},
+			corev1.EnvVar{Name: "DT_WORKLOAD_NAME", Value: "test-pod-12345"},
+		)
+
+		pod.Spec.InitContainers[0].VolumeMounts = append(pod.Spec.InitContainers[0].VolumeMounts,
+			corev1.VolumeMount{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
+		)
+
+		pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts,
+			corev1.VolumeMount{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
+		)
+
+		pod.Spec.Volumes = append(pod.Spec.Volumes,
+			corev1.Volume{
+				Name: "data-ingest-enrichment",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+		)
+	} else {
+		pod.Spec.InitContainers[0].Env = append(pod.Spec.InitContainers[0].Env,
+			corev1.EnvVar{Name: "DATA_INGEST_INJECTED", Value: "false"},
+		)
+	}
+
+	sortPodInternals(&pod)
+	return pod
 }
 
 func setEnvVar(_ *testing.T, pod *corev1.Pod, name string, value string) {
