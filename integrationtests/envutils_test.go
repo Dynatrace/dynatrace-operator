@@ -40,16 +40,19 @@ type ControllerTestEnvironment struct {
 }
 
 func newTestEnvironment() (*ControllerTestEnvironment, error) {
-	kubernetesAPIServer := &envtest.Environment{
-		KubeAPIServerFlags: append(envtest.DefaultKubeAPIServerFlags, "--allow-privileged"),
+	environment := &envtest.Environment{
 		CRDDirectoryPaths: []string{
 			filepath.Join("..", "config", "crd", "default", "bases"),
 			// ToDo: currently this is the only way to get the CRD - see https://github.com/kubernetes-sigs/controller-runtime/pull/1393
-			filepath.Join(build.Default.GOPATH, "pkg", "mod", "istio.io", "api@v0.0.0-20201217173512-1f62aaeb5ee3", "kubernetes"),
+			filepath.Join(build.Default.GOPATH, "pkg", "mod", "istio.io", "api@v0.0.0-20211020081732-2de5b65af1fe", "kubernetes"),
 		},
 	}
+	kubernetesAPIServer := environment.ControlPlane.GetAPIServer()
 
-	cfg, err := kubernetesAPIServer.Start()
+	arguments := kubernetesAPIServer.Configure()
+	arguments.Set("--allow-privileged")
+
+	cfg, err := environment.Start()
 	if err != nil {
 		return nil, err
 	}
@@ -86,14 +89,17 @@ func newTestEnvironment() (*ControllerTestEnvironment, error) {
 		"https://endpoint1.test.com/communication",
 		"https://endpoint2.test.com/communication",
 	}
-	environment := &ControllerTestEnvironment{
-		server:             kubernetesAPIServer,
+	testEnvironment := &ControllerTestEnvironment{
+		server:             environment,
 		Client:             kubernetesClient,
 		CommunicationHosts: communicationHosts,
 	}
-	environment.Reconciler = dynakube.NewDynaKubeReconciler(kubernetesClient, kubernetesClient, scheme.Scheme, mockDynatraceClientFunc(&environment.CommunicationHosts), zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)), cfg)
+	testEnvironment.Reconciler = dynakube.NewDynaKubeReconciler(
+		kubernetesClient, kubernetesClient, scheme.Scheme,
+		mockDynatraceClientFunc(&testEnvironment.CommunicationHosts),
+		zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)), cfg)
 
-	return environment, nil
+	return testEnvironment, nil
 }
 
 func (e *ControllerTestEnvironment) Stop() error {
