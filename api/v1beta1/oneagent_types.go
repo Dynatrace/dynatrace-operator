@@ -8,25 +8,25 @@ import (
 type OneAgentMode string
 
 type OneAgentSpec struct {
-	// Optional: enable cloud-native fullstack monitoring and change its settings
-	// Cannot be used in conjunction with classic fullstack monitoring or application-only monitoring or host monitoring
-	// +nullable
-	CloudNativeFullStack *CloudNativeFullStackSpec `json:"cloudNativeFullStack,omitempty"`
-
 	// Optional: enable classic fullstack monitoring and change its settings
-	// Cannot be used in conjunction with cloud-native fullstack monitoring or application-only monitoring or host monitoring
+	// Cannot be used in conjunction with cloud-native fullstack monitoring, application monitoring or host monitoring
 	// +nullable
 	ClassicFullStack *ClassicFullStackSpec `json:"classicFullStack,omitempty"`
 
 	// Optional: enable application-only monitoring and change its settings
-	// Cannot be used in conjunction with cloud-native fullstack monitoring or classic fullstack monitoring or host monitoring
+	// Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or host monitoring
 	// +nullable
 	ApplicationMonitoring *ApplicationMonitoringSpec `json:"applicationMonitoring,omitempty"`
 
 	// Optional: enable host monitoring and change its settings
-	// Cannot be used in conjunction with cloud-native fullstack monitoring or classic fullstack monitoring or application-only monitoring
+	// Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or application monitoring
 	// +nullable
 	HostMonitoring *HostMonitoringSpec `json:"hostMonitoring,omitempty"`
+
+	// Optional: (Beta feature) enable cloud-native fullstack monitoring and change its settings
+	// Cannot be used in conjunction with classic fullstack monitoring, application monitoring or host monitoring
+	// +nullable
+	CloudNativeFullStack *CloudNativeFullStackSpec `json:"cloudNativeFullStack,omitempty"`
 }
 
 type CloudNativeFullStackSpec struct {

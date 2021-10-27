@@ -1,3 +1,4 @@
+# THE FEATURE ENABLED IN THIS YAML IS STILL IN BETA AND SHOULD NOT BE USED IN A PRODUCTION ENVIRONMENT
 apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
@@ -80,7 +81,7 @@ spec:
       #   limits:
       #     cpu: 300m
       #     memory: 1.5Gi
-      
+
       # Optional: disables automatic restarts of OneAgent pods in case a new version is available. True
       # by default.
       #
@@ -115,7 +116,7 @@ spec:
 
       # Optional: define resources requests and limits for the initContainer
       # See more: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
-      # 
+      #
       # initResources:
       #   requests:
       #     cpu: 100m
@@ -123,7 +124,7 @@ spec:
       #   limits:
       #     cpu: 300m
       #     memory: 1.5Gi
-  
+
   # Configuration for ActiveGate instances.
   activeGate:
     # Enables listed ActiveGate capabilities
@@ -131,7 +132,7 @@ spec:
       - routing
       - kubernetes-monitoring
       - data-ingest
-    
+
     # Optional: to use a custom ActiveGate Docker image.
     image: ""
 
@@ -168,7 +169,7 @@ spec:
     #
     # labels:
     #   custom: label
-    
+
     # Optional: additional environment variables to add to the ActiveGate Pods.
     #
     # env: []
