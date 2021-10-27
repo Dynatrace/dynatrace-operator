@@ -54,10 +54,6 @@ spec:
       #
       # version:
 
-      # Optional: to use a custom OneAgent Docker image. Defaults to docker.io/dynatrace/oneagent in
-      # Kubernetes and registry.connect.redhat.com/dynatrace/oneagent in OpenShift, if deployed via CSV
-      image: ""
-
       # Optional: If you want to use CSIDriver; disable if your cluster does not have 'nodes' to fall back to the volume approach.
       # Defaults to false
       #
@@ -77,7 +73,7 @@ spec:
       #   limits:
       #     cpu: 300m
       #     memory: 1.5Gi
-  
+
   # Configuration for ActiveGate instances.
   activeGate:
     # Enables listed ActiveGate capabilities
@@ -85,7 +81,7 @@ spec:
       - routing
       - kubernetes-monitoring
       - data-ingest
-    
+
     # Optional: to use a custom ActiveGate Docker image.
     image: ""
 

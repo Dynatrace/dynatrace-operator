@@ -69,50 +69,34 @@ func TestDynaKube_UseCSIDriver(t *testing.T) {
 		assert.Equal(t, true, dk.NeedsCSIDriver())
 	})
 
-	t.Run(`DynaKube with application monitoring with csi driver enabled and with an image set`, func(t *testing.T) {
-		useCSIDriver := true
-		dk := DynaKube{
-			Spec: DynaKubeSpec{
-				OneAgent: OneAgentSpec{
-					ApplicationMonitoring: &ApplicationMonitoringSpec{
-						UseCSIDriver: &useCSIDriver,
-						Image:        `test-endpoint/linux/image:latest`,
-					},
-				},
-			},
-		}
-		assert.Equal(t, false, dk.NeedsCSIDriver())
-	})
-
 	t.Run(`DynaKube with cloud native`, func(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{CloudNativeFullStack: &CloudNativeFullStackSpec{}}}}
 		assert.Equal(t, true, dk.NeedsCSIDriver())
 	})
 }
 
-//
-//func TestOneAgentImage(t *testing.T) {
-//	t.Run(`OneAgentImage with no API URL`, func(t *testing.T) {
-//		dk := DynaKube{}
-//		assert.Equal(t, "", dk.ImmutableOneAgentImage())
-//	})
-//
-//	t.Run(`OneAgentImage with API URL`, func(t *testing.T) {
-//		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
-//		assert.Equal(t, "test-endpoint/linux/oneagent:latest", dk.ImmutableOneAgentImage())
-//	})
-//
-//	t.Run(`OneAgentImage with API URL and custom version`, func(t *testing.T) {
-//		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL, OneAgent: OneAgentSpec{Version: "1.234.5"}}}
-//		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5", dk.ImmutableOneAgentImage())
-//	})
-//
-//	t.Run(`OneAgentImage with custom image`, func(t *testing.T) {
-//		customImg := "registry/my/oneagent:latest"
-//		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{Image: customImg}}}
-//		assert.Equal(t, customImg, dk.ImmutableOneAgentImage())
-//	})
-//}
+func TestOneAgentImage(t *testing.T) {
+	t.Run(`OneAgentImage with no API URL`, func(t *testing.T) {
+		dk := DynaKube{}
+		assert.Equal(t, "", dk.ImmutableOneAgentImage())
+	})
+
+	t.Run(`OneAgentImage with API URL`, func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL}}
+		assert.Equal(t, "test-endpoint/linux/oneagent:latest", dk.ImmutableOneAgentImage())
+	})
+
+	t.Run(`OneAgentImage with API URL and custom version`, func(t *testing.T) {
+		dk := DynaKube{Spec: DynaKubeSpec{APIURL: testAPIURL, OneAgent: OneAgentSpec{ClassicFullStack: &ClassicFullStackSpec{Version: "1.234.5"}}}}
+		assert.Equal(t, "test-endpoint/linux/oneagent:1.234.5", dk.ImmutableOneAgentImage())
+	})
+
+	t.Run(`OneAgentImage with custom image`, func(t *testing.T) {
+		customImg := "registry/my/oneagent:latest"
+		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{ClassicFullStack: &ClassicFullStackSpec{Image: customImg}}}}
+		assert.Equal(t, customImg, dk.ImmutableOneAgentImage())
+	})
+}
 
 func TestTokens(t *testing.T) {
 	testName := "test-name"

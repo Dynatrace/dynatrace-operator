@@ -19,7 +19,7 @@ spec:
 
   oneAgent:
     # Enable application monitoring
-    applicationMonitoring: 
+    applicationMonitoring:
       namespaceSelector:
         matchLabels:
           monitor: applicationMonitoring
@@ -54,7 +54,7 @@ spec:
 
   oneAgent:
     # Enable cloud-native fullstack monitoring
-    cloudNativeFullStack: 
+    cloudNativeFullStack:
       # Optional: tolerations to include with the OneAgent DaemonSet.
       # See more here: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
       tolerations:
