@@ -1,3 +1,4 @@
+# THE CLOUD-NATIVE FULLSTACK MODE ENABLED IN THIS YAML IS STILL IN BETA AND SHOULD NOT BE USED IN A PRODUCTION ENVIRONMENT
 apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
@@ -30,7 +31,9 @@ spec:
     # Amount of replicas of ActiveGate pods
     #
     replicas: 3
----
+
+--- # THE FOLLOWING FEATURE IS STILL IN BETA
+
 apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:

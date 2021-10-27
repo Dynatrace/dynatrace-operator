@@ -1458,8 +1458,7 @@ spec:
                   applicationMonitoring:
                     description: 'Optional: enable application-only monitoring and
                       change its settings Cannot be used in conjunction with cloud-native
-                      fullstack monitoring or classic fullstack monitoring or host
-                      monitoring'
+                      fullstack monitoring, classic fullstack monitoring or host monitoring'
                     nullable: true
                     properties:
                       image:
@@ -1557,8 +1556,7 @@ spec:
                   classicFullStack:
                     description: 'Optional: enable classic fullstack monitoring and
                       change its settings Cannot be used in conjunction with cloud-native
-                      fullstack monitoring or application-only monitoring or host
-                      monitoring'
+                      fullstack monitoring, application monitoring or host monitoring'
                     nullable: true
                     properties:
                       args:
@@ -1791,8 +1789,8 @@ spec:
                   cloudNativeFullStack:
                     description: 'Optional: (Beta feature) enable cloud-native fullstack
                       monitoring and change its settings Cannot be used in conjunction
-                      with classic fullstack monitoring or application-only monitoring
-                      or host monitoring'
+                      with classic fullstack monitoring, application monitoring or
+                      host monitoring'
                     nullable: true
                     properties:
                       args:
@@ -2094,8 +2092,7 @@ spec:
                   hostMonitoring:
                     description: 'Optional: enable host monitoring and change its
                       settings Cannot be used in conjunction with cloud-native fullstack
-                      monitoring or classic fullstack monitoring or application-only
-                      monitoring'
+                      monitoring, classic fullstack monitoring or application monitoring'
                     nullable: true
                     properties:
                       args:
