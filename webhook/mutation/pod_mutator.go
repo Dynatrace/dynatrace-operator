@@ -154,12 +154,16 @@ func rootOwnerPod(ctx context.Context, cnt client.Client, pod *corev1.Pod, names
 
 func rootOwner(ctx context.Context, cnt client.Client, o *v1.PartialObjectMetadata) (string, string, error) {
 	if len(o.ObjectMeta.OwnerReferences) == 0 {
-		return o.ObjectMeta.Name, o.Kind, nil
+		kind := o.Kind
+		if kind == "Pod" {
+			kind = ""
+		}
+		return o.ObjectMeta.Name, kind, nil
 	}
 
 	om := o.ObjectMeta
 	for _, owner := range om.OwnerReferences {
-		if owner.Controller != nil && *owner.Controller {
+		if owner.Controller != nil && *owner.Controller && isWellKnownWorkload(owner) {
 			obj := &v1.PartialObjectMetadata{
 				TypeMeta: v1.TypeMeta{
 					APIVersion: owner.APIVersion,
@@ -175,6 +179,27 @@ func rootOwner(ctx context.Context, cnt client.Client, o *v1.PartialObjectMetada
 		}
 	}
 	return o.ObjectMeta.Name, o.Kind, nil
+}
+
+func isWellKnownWorkload(ownerRef v1.OwnerReference) bool {
+	knownWorkloads := []v1.TypeMeta{
+		{Kind: "ReplicaSet", APIVersion: "apps/v1"},
+		{Kind: "Deployment", APIVersion: "apps/v1"},
+		{Kind: "ReplicationController", APIVersion: "v1"},
+		{Kind: "StatefulSet", APIVersion: "apps/v1"},
+		{Kind: "DaemonSet", APIVersion: "apps/v1"},
+		{Kind: "Job", APIVersion: "batch/v1"},
+		{Kind: "CronJob", APIVersion: "batch/v1"},
+		{Kind: "DeploymentConfig", APIVersion: "apps.openshift.io/v1"},
+	}
+
+	for _, knownController := range knownWorkloads {
+		if ownerRef.Kind == knownController.Kind &&
+			ownerRef.APIVersion == knownController.APIVersion {
+			return true
+		}
+	}
+	return false
 }
 
 // podMutator adds an annotation to every incoming pods
