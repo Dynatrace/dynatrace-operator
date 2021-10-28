@@ -126,10 +126,10 @@ EOF
   fi
 }
 
-buildCloudNativeFullStackSection() {
+buildClassicFullStackSection() {
   cat <<EOF
   oneAgent:
-    cloudNativeFullStack:
+    classicFullStack:
       tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/master
@@ -165,7 +165,6 @@ buildActiveGateSection() {
     capabilities:
       - routing
       - kubernetes-monitoring
-      - data-ingest
 EOF
   if [ -n "$CLUSTER_NAME" ]; then
     cat <<EOF
@@ -188,7 +187,7 @@ metadata:
   namespace: dynatrace
 spec:
 $(buildGlobalSection)
-$(buildCloudNativeFullStackSection)
+$(buildClassicFullStackSection)
 $(buildActiveGateSection)
 EOF
   )"
