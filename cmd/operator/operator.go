@@ -46,7 +46,6 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error)
 		return nil, cleanUp, err
 	}
 
-	certificates.GenerateCertificates(mgr)
 	log.Info("Registering Components.")
 
 	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

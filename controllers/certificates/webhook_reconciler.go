@@ -54,23 +54,6 @@ type ReconcileWebhookCertificates struct {
 	logger    logr.Logger
 }
 
-func GenerateCertificates(mgr manager.Manager) error {
-	reconciler := ReconcileWebhookCertificates{
-		ctx:       context.TODO(),
-		client:    mgr.GetClient(),
-		namespace: "dynatrace",
-		logger:    log.Log.WithName("operator.webhook-certificates"),
-	}
-	req := reconcile.Request{}
-	req.Namespace = reconciler.namespace
-
-	_, err := reconciler.Reconcile(reconciler.ctx, req)
-	if err != nil {
-		reconciler.logger.Error(err, "oh no")
-	}
-	return err
-}
-
 func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	r.logger.Info("reconciling webhook certificates",
 		"namespace", request.Namespace, "name", request.Name)
@@ -284,8 +267,24 @@ func (r *ReconcileWebhookCertificates) updateCRDConfiguration(ctx context.Contex
 	}
 
 	if !hasConversionWebhook(crd) {
-		r.logger.Info("No conversion webhook config, no cert will be provided")
-		return nil
+		r.logger.Info("No conversion webhook config, creating ...")
+
+		path := "/convert"
+		crd.Spec.Conversion = &apiv1.CustomResourceConversion{
+			Strategy: "Webhook",
+			Webhook: &apiv1.WebhookConversion{
+				ClientConfig: &apiv1.WebhookClientConfig{
+					Service: &apiv1.ServiceReference{
+						Namespace: "dynatrace",
+						Name:      "dynatrace-webhook",
+						Path:      &path,
+					},
+				},
+				ConversionReviewVersions: []string{
+					"v1beta1",
+				},
+			},
+		}
 	}
 
 	data, hasData := secret.Data[RootCert]
