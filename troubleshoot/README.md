@@ -19,7 +19,7 @@ This script checks the following scenarios:
   - Tenant is reachable from the operator pod using the same options as the `dynatrace-operator` (proxy, certificate, ...)
 - Image (OneAgent and ActiveGate)
   - registry is accessible
-  - image is accessible from the operator pod using registry from (custom) pull secret or docker hub
+  - image is accessible from the operator pod using registry from the tenant or (custom) pull secret
   
 ## Requirements
 
@@ -72,7 +72,3 @@ Specify options by appending them to the command, e.g: `./troubleshoot.sh --dyna
 `-c` or`--oc`
 - changes CLI to `oc`
 - default: `kubectl`
-
-`-r` or`--openshift`
-- changes the default image to `registry.connect.redhat.com/dynatrace/oneagent`
-- default: `docker.io/dynatrace/oneagent`

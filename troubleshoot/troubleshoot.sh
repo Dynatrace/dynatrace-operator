@@ -11,9 +11,9 @@ api_url=""
 paas_token=""
 log_section=""
 
-cut_command=cut
+cut_command="cut"
 if [[ $OSTYPE == 'darwin'* ]]; then
-  cut_command=gcut
+  cut_command="gcut"
 fi
 
 function usage {
@@ -21,7 +21,6 @@ function usage {
   echo "   [ -d | --dynakube DYNAKUBE ]    Specify a different Dynakube name, Default: 'dynakube'."
   echo "   [ -n | --namespace NAMESPACE ]  Specify a different Namespace, Default: 'dynatrace'."
   echo "   [ -c | --oc ]                   Use 'oc' instead of 'kubectl' to access cluster."
-  echo "   [ -r | --openshift ]            Check the OneAgent image in the RedHat registry."
   echo "   [ -h | --help ]                 Display usage information."
   exit 1
 }
@@ -36,7 +35,7 @@ function error {
 }
 
 function checkDependencies {
-  dependencies=("jq" "curl" "getopt" ${cut_command})
+  dependencies=("jq" "curl" "getopt" "${cut_command}")
   if [[ "${cli}" == "oc" ]] ; then
     dependencies+=("oc")
   else
@@ -76,10 +75,6 @@ function parseArguments {
         ;;
       -c | --oc)
         cli="oc"
-        shift
-        ;;
-      -r | --openshift)
-        default_oneagent_image="registry.connect.redhat.com/dynatrace/oneagent"
         shift
         ;;
       --)
