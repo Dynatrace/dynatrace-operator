@@ -54,6 +54,23 @@ type ReconcileWebhookCertificates struct {
 	logger    logr.Logger
 }
 
+func GenerateCertificates(mgr manager.Manager) error {
+	reconciler := ReconcileWebhookCertificates{
+		ctx:       context.TODO(),
+		client:    mgr.GetClient(),
+		namespace: "dynatrace",
+		logger:    log.Log.WithName("operator.webhook-certificates"),
+	}
+	req := reconcile.Request{}
+	req.Namespace = reconciler.namespace
+
+	_, err := reconciler.Reconcile(reconciler.ctx, req)
+	if err != nil {
+		reconciler.logger.Error(err, "oh no")
+	}
+	return err
+}
+
 func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	r.logger.Info("reconciling webhook certificates",
 		"namespace", request.Namespace, "name", request.Name)

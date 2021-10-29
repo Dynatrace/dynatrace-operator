@@ -46,6 +46,7 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error)
 		return nil, cleanUp, err
 	}
 
+	certificates.GenerateCertificates(mgr)
 	log.Info("Registering Components.")
 
 	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -57,9 +58,9 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error)
 	}
 
 	funcs := []func(manager.Manager, string) error{
-		certificates.Add,
 		dynakube.Add,
 		nodes.Add,
+		certificates.Add,
 	}
 
 	for _, f := range funcs {
