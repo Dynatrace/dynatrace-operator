@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"time"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/eventfilter"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/go-logr/logr"
@@ -31,6 +32,7 @@ const (
 	crdName                      = "dynakubes.dynatrace.com"
 	secretPostfix                = "-certs"
 	errorCertificatesSecretEmpty = "certificates secret is empty"
+	conversionWebhookPath        = "/convert"
 )
 
 func Add(mgr manager.Manager, ns string) error {
@@ -267,21 +269,21 @@ func (r *ReconcileWebhookCertificates) updateCRDConfiguration(ctx context.Contex
 	}
 
 	if !hasConversionWebhook(crd) {
-		r.logger.Info("No conversion webhook config, creating ...")
+		r.logger.Info("No conversion webhook config, adding it to CRD...")
 
-		path := "/convert"
+		path := conversionWebhookPath
 		crd.Spec.Conversion = &apiv1.CustomResourceConversion{
-			Strategy: "Webhook",
+			Strategy: apiv1.WebhookConverter,
 			Webhook: &apiv1.WebhookConversion{
 				ClientConfig: &apiv1.WebhookClientConfig{
 					Service: &apiv1.ServiceReference{
-						Namespace: "dynatrace",
-						Name:      "dynatrace-webhook",
+						Namespace: r.namespace,
+						Name:      webhook.DeploymentName,
 						Path:      &path,
 					},
 				},
 				ConversionReviewVersions: []string{
-					"v1beta1",
+					dynatracev1beta1.GroupVersion.Version,
 				},
 			},
 		}
