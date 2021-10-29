@@ -1012,7 +1012,7 @@ func buildResultPod(_ *testing.T, oneAgentEnabled bool, dataIngestEnabled bool) 
 			Name:      "test-pod-12345",
 			Namespace: "test-namespace",
 			//Annotations: map[string]string{
-			//	"oneagent.dynatrace.com/injected": "true",
+			//	"dynakube.dynatrace.com/injected": "true",
 			//},
 		},
 		Spec: corev1.PodSpec{
@@ -1103,7 +1103,7 @@ func buildResultPod(_ *testing.T, oneAgentEnabled bool, dataIngestEnabled bool) 
 		if pod.ObjectMeta.Annotations == nil {
 			pod.ObjectMeta.Annotations = make(map[string]string)
 		}
-		pod.ObjectMeta.Annotations["oneagent.dynatrace.com/injected"] = "true"
+		pod.ObjectMeta.Annotations["dynakube.dynatrace.com/injected"] = "true"
 
 		pod.Spec.InitContainers[0].Env = append(pod.Spec.InitContainers[0].Env,
 			corev1.EnvVar{Name: "ONEAGENT_INJECTED", Value: "true"},
@@ -1217,7 +1217,7 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "test-pod-12345",
 			Namespace:   "test-namespace",
-			Annotations: map[string]string{dtwebhook.AnnotationInjected: "true"}},
+			Annotations: map[string]string{dtwebhook.AnnotationDynatraceInjected: "true"}},
 		Spec: corev1.PodSpec{
 			InitContainers: []corev1.Container{{
 				Name:  dtwebhook.InstallContainerName,

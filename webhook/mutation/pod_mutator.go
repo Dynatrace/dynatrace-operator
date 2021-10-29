@@ -189,12 +189,8 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	oneAgentInject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationInject, true)
-	//if !oneAgentInject {
-	//	return admission.Patched("")
-	//}
-
-	dataIngestInject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationDataIngestInject, true)
+	oneAgentInject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInject, true)
+	dataIngestInject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationDataIngestInject, oneAgentInject)
 
 	var ns corev1.Namespace
 	if err := m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
@@ -236,7 +232,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		pod.Annotations = map[string]string{}
 	}
 
-	if pod.Annotations[dtwebhook.AnnotationInjected] == "true" {
+	if pod.Annotations[dtwebhook.AnnotationDynatraceInjected] == "true" {
 		if dk.FeatureEnableWebhookReinvocationPolicy() {
 			var needsUpdate = false
 			var installContainer *corev1.Container
@@ -286,7 +282,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 		return admission.Patched("")
 	}
-	pod.Annotations[dtwebhook.AnnotationInjected] = "true"
+	pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = "true"
 
 	var workloadName, workloadKind string
 	if dataIngestInject {
