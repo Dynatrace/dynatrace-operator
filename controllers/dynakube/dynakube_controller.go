@@ -98,7 +98,6 @@ type ReconcileDynaKube struct {
 	config            *rest.Config
 	operatorPodName   string
 	operatorNamespace string
-	mgr               manager.Manager
 }
 
 type DynatraceClientFunc func(properties DynatraceClientProperties) (dtclient.Client, error)
