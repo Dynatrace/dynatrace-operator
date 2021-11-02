@@ -37,21 +37,30 @@ func Add(mgr manager.Manager, ns string) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
 		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, ns)).
-		Complete(newWebhookReconciler(mgr))
+		Complete(newWebhookReconciler(mgr, func() {}))
 }
 
-func newWebhookReconciler(mgr manager.Manager) *ReconcileWebhookCertificates {
+func AddBootstrap(mgr manager.Manager, ns string, cancelMgr context.CancelFunc) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&appsv1.Deployment{}).
+		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, ns)).
+		Complete(newWebhookReconciler(mgr, cancelMgr))
+}
+
+func newWebhookReconciler(mgr manager.Manager, cancelMgr context.CancelFunc) *ReconcileWebhookCertificates {
 	return &ReconcileWebhookCertificates{
-		client: mgr.GetClient(),
-		logger: log.Log.WithName("operator.webhook-certificates"),
+		cancelBootstrapper: cancelMgr,
+		client:             mgr.GetClient(),
+		logger:             log.Log.WithName("operator.webhook-certificates"),
 	}
 }
 
 type ReconcileWebhookCertificates struct {
-	ctx       context.Context
-	client    client.Client
-	namespace string
-	logger    logr.Logger
+	ctx                context.Context
+	client             client.Client
+	namespace          string
+	logger             logr.Logger
+	cancelBootstrapper context.CancelFunc
 }
 
 func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -106,6 +115,7 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		isSecretOutdated = true
 	} else if isWebhookCertificateValid {
 		r.logger.Info("secret for certificates up to date, skipping update")
+		r.cancelBootstrapper()
 		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 	}
 
@@ -120,6 +130,7 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		return reconcile.Result{}, err
 	}
 
+	r.cancelBootstrapper()
 	return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 }
 

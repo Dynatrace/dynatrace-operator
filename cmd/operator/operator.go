@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"github.com/Dynatrace/dynatrace-operator/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/nodes"
@@ -28,32 +29,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+func startBootstrapper(ns string, cfg *rest.Config, cancelMgr context.CancelFunc) (manager.Manager, error) {
+	log.Info(ns)
+	mgr, err := setupMgr(ns, cfg)
+	if err != nil {
+		return mgr, err
+	}
+
+	return mgr, certificates.AddBootstrap(mgr, ns, cancelMgr)
+}
+
 func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
 	log.Info(ns)
 	cleanUp := func() {}
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Namespace:                  ns,
-		Scheme:                     scheme.Scheme,
-		MetricsBindAddress:         ":8080",
-		Port:                       8383,
-		LeaderElection:             true,
-		LeaderElectionID:           "dynatrace-operator-lock",
-		LeaderElectionResourceLock: "configmaps",
-		LeaderElectionNamespace:    ns,
-		HealthProbeBindAddress:     "0.0.0.0:10080",
-	})
+	mgr, err := setupMgr(ns, cfg)
 	if err != nil {
-		return nil, cleanUp, err
-	}
-
-	log.Info("Registering Components.")
-
-	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		log.Error(err, "could not start health endpoint for operator")
-	}
-
-	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		log.Error(err, "could not start ready endpoint for operator")
+		return mgr, cleanUp, err
 	}
 
 	funcs := []func(manager.Manager, string) error{
@@ -69,4 +60,32 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error)
 	}
 
 	return mgr, cleanUp, nil
+}
+
+func setupMgr(ns string, cfg *rest.Config) (manager.Manager, error) {
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Namespace:                  ns,
+		Scheme:                     scheme.Scheme,
+		MetricsBindAddress:         ":8080",
+		Port:                       8383,
+		LeaderElection:             true,
+		LeaderElectionID:           "dynatrace-operator-lock",
+		LeaderElectionResourceLock: "configmaps",
+		LeaderElectionNamespace:    ns,
+		HealthProbeBindAddress:     "0.0.0.0:10080",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info("Registering Components.")
+
+	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+		log.Error(err, "could not start health endpoint for operator")
+	}
+
+	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+		log.Error(err, "could not start ready endpoint for operator")
+	}
+	return mgr, err
 }
