@@ -40,12 +40,11 @@ func startBootstrapper(ns string, cfg *rest.Config, cancelMgr context.CancelFunc
 	return mgr, certificates.AddBootstrap(mgr, ns, cancelMgr)
 }
 
-func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
+func startOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 	log.Info("starting operator", "namespace", ns)
-	cleanUp := func() {}
 	mgr, err := setupMgr(ns, cfg)
 	if err != nil {
-		return mgr, cleanUp, err
+		return mgr, err
 	}
 
 	funcs := []func(manager.Manager, string) error{
@@ -56,11 +55,11 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error)
 
 	for _, f := range funcs {
 		if err := f(mgr, ns); err != nil {
-			return nil, cleanUp, err
+			return nil, err
 		}
 	}
 
-	return mgr, cleanUp, nil
+	return mgr, nil
 }
 
 func setupMgr(ns string, cfg *rest.Config) (manager.Manager, error) {

@@ -17,13 +17,13 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/spf13/pflag"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -33,15 +33,13 @@ var (
 	log = logger.NewDTLogger()
 )
 
-type subCommand func(string, *rest.Config) (mgr manager.Manager, cleanUp func(), err error)
+const (
+	operatorCmd      = "operator"
+	csiDriverCmd     = "csi-driver"
+	webhookServerCmd = "webhook-server"
+)
 
-var subcmdCallbacks = map[string]subCommand{
-	"csi-driver":     startCSIDriver,
-	"operator":       startOperator,
-	"webhook-server": startWebhookServer,
-}
-
-var errBadSubcmd = errors.New("subcommand must be operator, or webhook-server")
+var errBadSubcmd = errors.New(fmt.Sprintf("subcommand must be %s, %s or %s", operatorCmd, csiDriverCmd, webhookServerCmd))
 
 func main() {
 	pflag.CommandLine.AddFlagSet(webhookServerFlags())
@@ -52,42 +50,36 @@ func main() {
 
 	version.LogVersion()
 
-	subcmd := "operator"
-	if args := pflag.Args(); len(args) > 0 {
-		subcmd = args[0]
-	}
-
-	subcmdFn := subcmdCallbacks[subcmd]
-	if subcmdFn == nil {
-		log.Error(errBadSubcmd, "Unknown subcommand", "command", subcmd)
-		os.Exit(1)
-	}
-
 	namespace := os.Getenv("POD_NAMESPACE")
-
 	cfg, err := config.GetConfig()
 	if err != nil {
 		log.Error(err, "")
 		os.Exit(1)
 	}
 
-	bootstrapperCtx, done := context.WithCancel(context.TODO())
-	if subcmd == "operator" {
-		mgr, err := startBootstrapper(namespace, cfg, done)
-		if err != nil {
-			log.Error(err, "bootstrapper could not be configured")
-			os.Exit(1)
-		}
-		if err := mgr.Start(bootstrapperCtx); err != nil {
-			log.Error(err, "problem running bootstrap manager")
-			os.Exit(1)
-		}
-	}
+	var mgr manager.Manager
+	var cleanUp func()
 
-	mgr, cleanUp, err := subcmdFn(namespace, cfg)
-	defer cleanUp()
-	if err != nil {
-		log.Error(err, "")
+	subCmd := getSubCommand()
+	switch subCmd {
+	case operatorCmd:
+		// start manager only for certificates
+		bootstrapperCtx, done := context.WithCancel(context.TODO())
+		mgr, err := startBootstrapper(namespace, cfg, done)
+		exitOnError(err, "bootstrapper could not be configured")
+		exitOnError(mgr.Start(bootstrapperCtx), "problem running bootstrap manager")
+		// bootstrap manager stopped, starting full manager
+		mgr, err = startOperator(namespace, cfg)
+	case csiDriverCmd:
+		mgr, cleanUp, err = startCSIDriver(namespace, cfg)
+		exitOnError(err, "CSIDriver startup failed")
+		defer cleanUp()
+	case webhookServerCmd:
+		mgr, cleanUp, err = startWebhookServer(namespace, cfg)
+		exitOnError(err, "webhook-server startup failed")
+		defer cleanUp()
+	default:
+		log.Error(errBadSubcmd, "Unknown subcommand", "command", subCmd)
 		os.Exit(1)
 	}
 
@@ -99,8 +91,19 @@ func main() {
 	})
 
 	log.Info("starting manager")
-	if err := mgr.Start(signalHandler); err != nil {
-		log.Error(err, "problem running manager")
+	exitOnError(mgr.Start(signalHandler), "problem running manager")
+}
+
+func exitOnError(err error, msg string, keysAndValues ...interface{}) {
+	if err != nil {
+		log.Error(err, msg, keysAndValues)
 		os.Exit(1)
 	}
+}
+
+func getSubCommand() string {
+	if args := pflag.Args(); len(args) > 0 {
+		return args[0]
+	}
+	return operatorCmd
 }
