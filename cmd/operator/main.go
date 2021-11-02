@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
@@ -39,7 +38,7 @@ const (
 	webhookServerCmd = "webhook-server"
 )
 
-var errBadSubcmd = errors.New(fmt.Sprintf("subcommand must be %s, %s or %s", operatorCmd, csiDriverCmd, webhookServerCmd))
+var errBadSubcmd = fmt.Errorf("subcommand must be %s, %s or %s", operatorCmd, csiDriverCmd, webhookServerCmd)
 
 func main() {
 	pflag.CommandLine.AddFlagSet(webhookServerFlags())
@@ -63,20 +62,21 @@ func main() {
 	subCmd := getSubCommand()
 	switch subCmd {
 	case operatorCmd:
-		// start manager only for certificates
+		// setup manager only for certificates
 		bootstrapperCtx, done := context.WithCancel(context.TODO())
-		mgr, err = startBootstrapper(namespace, cfg, done)
-		exitOnError(err, "bootstrapper could not be configured")
+		mgr, err = setupBootstrapper(namespace, cfg, done)
+		exitOnError(err, "bootstrapper setup failed")
 		exitOnError(mgr.Start(bootstrapperCtx), "problem running bootstrap manager")
 		// bootstrap manager stopped, starting full manager
-		mgr, err = startOperator(namespace, cfg)
+		mgr, err = setupOperator(namespace, cfg)
+		exitOnError(err, "operator setup failed")
 	case csiDriverCmd:
-		mgr, cleanUp, err = startCSIDriver(namespace, cfg)
-		exitOnError(err, "CSIDriver startup failed")
+		mgr, cleanUp, err = setupCSIDriver(namespace, cfg)
+		exitOnError(err, "csi driver setup failed")
 		defer cleanUp()
 	case webhookServerCmd:
-		mgr, cleanUp, err = startWebhookServer(namespace, cfg)
-		exitOnError(err, "webhook-server startup failed")
+		mgr, cleanUp, err = setupWebhookServer(namespace, cfg)
+		exitOnError(err, "webhook-server setup failed")
 		defer cleanUp()
 	default:
 		log.Error(errBadSubcmd, "Unknown subcommand", "command", subCmd)

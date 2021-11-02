@@ -46,7 +46,7 @@ func startWebhookManager(info startupInfo) {
 }
 
 func startComponent(name string, startInfo startupInfo) {
-	mgr, cleanUp, err := startWebhookServer(startInfo.namespace, startInfo.cfg)
+	mgr, cleanUp, err := setupWebhookServer(startInfo.namespace, startInfo.cfg)
 	defer cleanUp()
 	if err != nil {
 		log.Error(err, "")

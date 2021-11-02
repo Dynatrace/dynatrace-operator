@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func startBootstrapper(ns string, cfg *rest.Config, cancelMgr context.CancelFunc) (manager.Manager, error) {
+func setupBootstrapper(ns string, cfg *rest.Config, cancelMgr context.CancelFunc) (manager.Manager, error) {
 	log.Info("starting certificate bootstrapper", "namespace", ns)
 	mgr, err := setupBootstrapMgr(ns, cfg)
 	if err != nil {
@@ -40,7 +40,7 @@ func startBootstrapper(ns string, cfg *rest.Config, cancelMgr context.CancelFunc
 	return mgr, certificates.AddBootstrap(mgr, ns, cancelMgr)
 }
 
-func startOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
+func setupOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 	log.Info("starting operator", "namespace", ns)
 	mgr, err := setupMgr(ns, cfg)
 	if err != nil {
