@@ -15,6 +15,18 @@ func NewDynakube(dynakubeName, tenantUUID, latestVersion string) *Dynakube {
 	return &Dynakube{dynakubeName, tenantUUID, latestVersion}
 }
 
+type RuxitRevission struct {
+	TenantUUID      string
+	LatestRevission uint
+}
+
+func NewRuxitRevission(tenantUUID string, revission uint) *RuxitRevission {
+	if tenantUUID == "" || revission == 0 {
+		return nil
+	}
+	return &RuxitRevission{tenantUUID, revission}
+}
+
 type Volume struct {
 	VolumeID   string
 	PodName    string
@@ -38,6 +50,11 @@ type Access interface {
 	DeleteDynakube(dynakubeName string) error
 	GetDynakube(dynakubeName string) (*Dynakube, error)
 	GetDynakubes() (map[string]string, error)
+
+	InsertRuxitRevission(ruxitRev *RuxitRevission) error
+	UpdateRuxitRevission(ruxitRev *RuxitRevission) error
+	DeleteRuxitRevission(tenantUUID string) error
+	GetRuxitRevission(tenantUUID string) (*RuxitRevission, error)
 
 	InsertVolume(volume *Volume) error
 	DeleteVolume(volumeID string) error
