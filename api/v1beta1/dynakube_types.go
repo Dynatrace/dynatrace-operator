@@ -107,14 +107,18 @@ type DynaKubeSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enable Istio automatic management",order=9,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	EnableIstio bool `json:"enableIstio,omitempty"`
 
-	// General configuration about ActiveGate instances
-	// ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
+	// Optional: set a namespace selector to limit which namespaces are monitored
+	// By default, all namespaces will be monitored
+	// Has no effect during classicFullStack and hostMonitoring mode
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
+	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
 	// General configuration about OneAgent instances
 	// +kubebuilder:validation:MaxProperties=1
 	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
 
-	// Something
+	// General configuration about ActiveGate instances
+	// ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
 	ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
 
 	//  Deprecated: Configuration for Routing
