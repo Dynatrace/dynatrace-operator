@@ -41,6 +41,8 @@ type Client interface {
 
 	GetConnectionInfo() (ConnectionInfo, error)
 
+	GetRuxitConfRevission(prevRevission uint) (*RuxitConfRevission, error)
+
 	// GetCommunicationHostForClient returns a CommunicationHost for the client's API URL. Or error, if failed to be parsed.
 	GetCommunicationHostForClient() (CommunicationHost, error)
 
