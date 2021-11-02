@@ -2,6 +2,7 @@ package mutation
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"testing"
 
@@ -1099,12 +1100,20 @@ func buildResultPod(_ *testing.T, oneAgentEnabled bool, dataIngestEnabled bool) 
 		},
 	}
 
+	if pod.ObjectMeta.Annotations == nil {
+		pod.ObjectMeta.Annotations = make(map[string]string)
+	}
 	if oneAgentEnabled {
-		if pod.ObjectMeta.Annotations == nil {
-			pod.ObjectMeta.Annotations = make(map[string]string)
-		}
-		pod.ObjectMeta.Annotations["dynakube.dynatrace.com/injected"] = "true"
+		pod.ObjectMeta.Annotations["dynakube.dynatrace.com/injected"] = "oneagent"
+	}
+	if dataIngestEnabled {
+		pod.ObjectMeta.Annotations["dynakube.dynatrace.com/injected"] = "data-ingest"
+	}
+	if oneAgentEnabled && dataIngestEnabled {
+		pod.ObjectMeta.Annotations["dynakube.dynatrace.com/injected"] = "data-ingest,oneagent"
+	}
 
+	if oneAgentEnabled {
 		pod.Spec.InitContainers[0].Env = append(pod.Spec.InitContainers[0].Env,
 			corev1.EnvVar{Name: "ONEAGENT_INJECTED", Value: "true"},
 			corev1.EnvVar{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
@@ -1217,7 +1226,7 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "test-pod-12345",
 			Namespace:   "test-namespace",
-			Annotations: map[string]string{dtwebhook.AnnotationDynatraceInjected: "true"}},
+			Annotations: map[string]string{dtwebhook.AnnotationDynatraceInjected: "data-ingest,oneagent"}},
 		Spec: corev1.PodSpec{
 			InitContainers: []corev1.Container{{
 				Name:  dtwebhook.InstallContainerName,
@@ -1292,6 +1301,10 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 	require.Equal(t, "LD_PRELOAD", updPod.Spec.Containers[1].Env[0].Name)
 
 	var updInstallContainer = updPod.Spec.InitContainers[0]
+	for e := range updInstallContainer.Env {
+		print(e)
+	}
+	fmt.Println(updInstallContainer.Env)
 	require.Equal(t, 4, len(updInstallContainer.Env))
 	require.Equal(t, "CONTAINER_2_NAME", updInstallContainer.Env[2].Name)
 	require.Equal(t, thirdPartyContainerName, updInstallContainer.Env[2].Value)

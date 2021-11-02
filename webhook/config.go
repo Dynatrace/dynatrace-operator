@@ -8,10 +8,12 @@ const (
 	AnnotationDynatraceInjected = "dynakube.dynatrace.com/injected"
 
 	// AnnotationOneAgentInject can be set at pod level to enable/disable OneAgent injection.
-	AnnotationOneAgentInject = "oneagent.dynatrace.com/inject"
+	OneAgentPrefix           = "oneagent"
+	AnnotationOneAgentInject = OneAgentPrefix + ".dynatrace.com/inject"
 
 	// AnnotationDataIngestInject can be set at pod level to enable/disable data-ingest injection.
-	AnnotationDataIngestInject = "data-ingest.dynatrace.com/inject"
+	DataIngestPrefix           = "data-ingest"
+	AnnotationDataIngestInject = DataIngestPrefix + ".dynatrace.com/inject"
 
 	// AnnotationTechnologies can be set on a Pod to configure which code module technologies to download. It's set to
 	// "all" if not set.

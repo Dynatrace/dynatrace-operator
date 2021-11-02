@@ -189,8 +189,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	oneAgentInject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInject, true)
-	dataIngestInject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationDataIngestInject, oneAgentInject)
+	injectionInfo := m.CreateInjectionInfo(pod)
 
 	var ns corev1.Namespace
 	if err := m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
@@ -232,7 +231,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		pod.Annotations = map[string]string{}
 	}
 
-	if pod.Annotations[dtwebhook.AnnotationDynatraceInjected] == "true" {
+	if strings.Contains(pod.Annotations[dtwebhook.AnnotationDynatraceInjected], dtwebhook.OneAgentPrefix) {
 		if dk.FeatureEnableWebhookReinvocationPolicy() {
 			var needsUpdate = false
 			var installContainer *corev1.Container
@@ -252,7 +251,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 					log.Info("instrumenting missing container", "name", c.Name)
 
 					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
-					updateContainer(c, &dk, pod, deploymentMetadata, dataIngestInject)
+					updateContainer(c, &dk, pod, deploymentMetadata, injectionInfo.in(DataIngest))
 
 					if installContainer == nil {
 						for j := range pod.Spec.InitContainers {
@@ -282,10 +281,10 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 		return admission.Patched("")
 	}
-	pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = "true"
+	pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = injectionInfo.injectedAnnotation()
 
 	var workloadName, workloadKind string
-	if dataIngestInject {
+	if injectionInfo.in(DataIngest) {
 		workloadName, workloadKind, err = rootOwnerPod(ctx, m.metaClient, pod, req.Namespace)
 		if err != nil {
 			return admission.Errored(http.StatusInternalServerError, err)
@@ -328,7 +327,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		},
 	)
 
-	if dataIngestInject {
+	if injectionInfo.in(DataIngest) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: "data-ingest-enrichment",
 			VolumeSource: corev1.VolumeSource{
@@ -363,7 +362,6 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
 	}
 
-	const dataIngestEnabledEnvVarName = "DATA_INGEST_INJECTED"
 	ic := corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           image,
@@ -387,7 +385,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 
 	const oneagentInjectedEnvVarName = "ONEAGENT_INJECTED"
-	if oneAgentInject {
+	if injectionInfo.in(OneAgent) {
 		ic.Env = append(ic.Env,
 			corev1.EnvVar{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
 			corev1.EnvVar{Name: "TECHNOLOGIES", Value: technologies},
@@ -407,7 +405,8 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		)
 	}
 
-	if dataIngestInject {
+	const dataIngestEnabledEnvVarName = "DATA_INGEST_INJECTED"
+	if injectionInfo.in(DataIngest) {
 		ic.Env = append(ic.Env,
 			corev1.EnvVar{Name: "DT_WORKLOAD_KIND", Value: workloadKind},
 			corev1.EnvVar{Name: "DT_WORKLOAD_NAME", Value: workloadName},
@@ -428,7 +427,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 		updateInstallContainer(&ic, i+1, c.Name, c.Image)
 
-		updateContainer(c, &dk, pod, deploymentMetadata, dataIngestInject)
+		updateContainer(c, &dk, pod, deploymentMetadata, injectionInfo.in(DataIngest))
 	}
 
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
@@ -438,6 +437,16 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		injectEvent,
 		"Injecting the necessary info into pod %s in namespace %s", basePodName, ns.Name)
 	return getResponseForPod(pod, &req)
+}
+
+func (m *podMutator) CreateInjectionInfo(pod *corev1.Pod) *InjectionInfo {
+	oneAgentInject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInject, true)
+	dataIngestInject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationDataIngestInject, oneAgentInject)
+
+	injectionInfo := NewInjectionInfo()
+	injectionInfo.add(NewFeature(OneAgent, oneAgentInject))
+	injectionInfo.add(NewFeature(DataIngest, dataIngestInject))
+	return injectionInfo
 }
 
 // InjectClient injects the client
