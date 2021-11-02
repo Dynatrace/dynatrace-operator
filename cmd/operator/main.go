@@ -65,7 +65,7 @@ func main() {
 	case operatorCmd:
 		// start manager only for certificates
 		bootstrapperCtx, done := context.WithCancel(context.TODO())
-		mgr, err := startBootstrapper(namespace, cfg, done)
+		mgr, err = startBootstrapper(namespace, cfg, done)
 		exitOnError(err, "bootstrapper could not be configured")
 		exitOnError(mgr.Start(bootstrapperCtx), "problem running bootstrap manager")
 		// bootstrap manager stopped, starting full manager

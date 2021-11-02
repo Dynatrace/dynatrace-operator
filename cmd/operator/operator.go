@@ -32,7 +32,7 @@ import (
 
 func startBootstrapper(ns string, cfg *rest.Config, cancelMgr context.CancelFunc) (manager.Manager, error) {
 	log.Info("starting certificate bootstrapper", "namespace", ns)
-	mgr, err := setupMgr(ns, cfg)
+	mgr, err := setupBootstrapMgr(ns, cfg)
 	if err != nil {
 		return mgr, err
 	}
@@ -60,6 +60,18 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 	}
 
 	return mgr, nil
+}
+
+func setupBootstrapMgr(ns string, cfg *rest.Config) (manager.Manager, error) {
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Namespace: ns,
+		Scheme:    scheme.Scheme,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return mgr, err
 }
 
 func setupMgr(ns string, cfg *rest.Config) (manager.Manager, error) {
