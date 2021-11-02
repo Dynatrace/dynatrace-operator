@@ -46,7 +46,7 @@ func correctVolumes(cl client.Client, access Access, log logr.Logger) error {
 
 // Removes tenant entries if their dynakube no longer exists
 func correctTenants(cl client.Client, access Access, log logr.Logger) error {
-	tenants, err := access.GetTenants()
+	tenants, err := access.GetDynakubes()
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func correctTenants(cl client.Client, access Access, log logr.Logger) error {
 		if err := cl.Get(context.TODO(), client.ObjectKey{Name: dynakubeName}, &dynakube); !k8serrors.IsNotFound(err) {
 			continue
 		}
-		if err := access.DeleteTenant(dynakubeName); err != nil {
+		if err := access.DeleteDynakube(dynakubeName); err != nil {
 			return err
 		}
 		tenantUUID := tenants[dynakubeName]

@@ -55,19 +55,19 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`dynakube deleted`, func(t *testing.T) {
 		db := metadata.FakeMemoryDB()
-		tenant := metadata.Tenant{TenantUUID: tenantUUID, LatestVersion: agentVersion, Dynakube: dkName}
-		_ = db.InsertTenant(&tenant)
+		tenant := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
+		_ = db.InsertDynakube(&tenant)
 		r := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        db,
 		}
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: tenant.Dynakube}})
+		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: tenant.Name}})
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 
-		ten, err := db.GetTenant(tenant.TenantUUID)
+		ten, err := db.GetDynakube(tenant.TenantUUID)
 		assert.NoError(t, err)
 		assert.Nil(t, ten)
 	})
@@ -351,7 +351,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`correct directories are created`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		memDB := metadata.FakeMemoryDB()
-		err := memDB.InsertTenant(metadata.NewTenant(tenantUUID, agentVersion, dkName))
+		err := memDB.InsertDynakube(metadata.NewDynakube(dkName, tenantUUID, agentVersion))
 		require.NoError(t, err)
 
 		mockClient := &dtclient.MockDynatraceClient{}
@@ -473,50 +473,50 @@ func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1beta1.Applica
 
 func TestProvisioner_CreateTenant(t *testing.T) {
 	db := metadata.FakeMemoryDB()
-	expectedOtherDynakube := metadata.NewTenant(tenantUUID, "v1", otherDkName)
-	db.InsertTenant(expectedOtherDynakube)
+	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1")
+	db.InsertDynakube(expectedOtherDynakube)
 	r := &OneAgentProvisioner{
 		db: db,
 	}
 
-	oldTenant := metadata.Tenant{}
-	newTenant := metadata.NewTenant(tenantUUID, "v1", dkName)
+	oldTenant := metadata.Dynakube{}
+	newTenant := metadata.NewDynakube(dkName, tenantUUID, "v1")
 
-	err := r.createOrUpdateTenant(oldTenant, newTenant)
+	err := r.createOrUpdateDynakube(oldTenant, newTenant)
 	require.NoError(t, err)
 
-	tenant, err := db.GetTenant(dkName)
+	tenant, err := db.GetDynakube(dkName)
 	assert.NoError(t, err)
 	assert.NotNil(t, tenant)
 	assert.Equal(t, *newTenant, *tenant)
 
-	otherTenant, err := db.GetTenant(otherDkName)
+	otherTenant, err := db.GetDynakube(otherDkName)
 	assert.NoError(t, err)
 	assert.NotNil(t, tenant)
 	assert.Equal(t, *expectedOtherDynakube, *otherTenant)
 }
 
-func TestProvisioner_UpdateTenant(t *testing.T) {
+func TestProvisioner_UpdateDynakube(t *testing.T) {
 	db := metadata.FakeMemoryDB()
-	oldTenant := metadata.NewTenant(tenantUUID, "v1", dkName)
-	db.InsertTenant(oldTenant)
-	expectedOtherDynakube := metadata.NewTenant(tenantUUID, "v1", otherDkName)
-	db.InsertTenant(expectedOtherDynakube)
+	oldTenant := metadata.NewDynakube(dkName, tenantUUID, "v1")
+	db.InsertDynakube(oldTenant)
+	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1")
+	db.InsertDynakube(expectedOtherDynakube)
 
 	r := &OneAgentProvisioner{
 		db: db,
 	}
-	newTenant := metadata.NewTenant("new-uuid", "v2", dkName)
+	newTenant := metadata.NewDynakube(dkName, "new-uuid", "v2")
 
-	err := r.createOrUpdateTenant(*oldTenant, newTenant)
+	err := r.createOrUpdateDynakube(*oldTenant, newTenant)
 	require.NoError(t, err)
 
-	tenant, err := db.GetTenant(dkName)
+	tenant, err := db.GetDynakube(dkName)
 	assert.NoError(t, err)
 	assert.NotNil(t, tenant)
 	assert.Equal(t, *newTenant, *tenant)
 
-	otherDynakube, err := db.GetTenant(otherDkName)
+	otherDynakube, err := db.GetDynakube(otherDkName)
 	assert.NoError(t, err)
 	assert.NotNil(t, tenant)
 	assert.Equal(t, *expectedOtherDynakube, *otherDynakube)

@@ -1,17 +1,17 @@
 package metadata
 
-type Tenant struct {
+type Dynakube struct {
+	Name          string
 	TenantUUID    string
 	LatestVersion string
-	Dynakube      string
 }
 
-// NewTenant returns a new Tenant if all fields are set.
-func NewTenant(uuid, latestVersion, dynakube string) *Tenant {
-	if uuid == "" || latestVersion == "" || dynakube == "" {
+// NewDynakube returns a new Tenant if all fields are set.
+func NewDynakube(dynakubeName, tenantUUID, latestVersion string) *Dynakube {
+	if tenantUUID == "" || latestVersion == "" || dynakubeName == "" {
 		return nil
 	}
-	return &Tenant{uuid, latestVersion, dynakube}
+	return &Dynakube{dynakubeName, tenantUUID, latestVersion}
 }
 
 type Volume struct {
@@ -32,11 +32,11 @@ func NewVolume(id, podUID, version, tenantUUID string) *Volume {
 type Access interface {
 	Setup(path string) error
 
-	InsertTenant(tenant *Tenant) error
-	UpdateTenant(tenant *Tenant) error
-	DeleteTenant(dynakubeName string) error
-	GetTenant(dynakubeName string) (*Tenant, error)
-	GetTenants() (map[string]string, error)
+	InsertDynakube(dynakube *Dynakube) error
+	UpdateDynakube(dynakube *Dynakube) error
+	DeleteDynakube(dynakubeName string) error
+	GetDynakube(dynakubeName string) (*Dynakube, error)
+	GetDynakubes() (map[string]string, error)
 
 	InsertVolume(volume *Volume) error
 	DeleteVolume(volumeID string) error

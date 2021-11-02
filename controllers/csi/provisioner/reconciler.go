@@ -92,7 +92,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	dk, err := r.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			return reconcile.Result{}, r.db.DeleteTenant(request.Name)
+			return reconcile.Result{}, r.db.DeleteDynakube(request.Name)
 		}
 		return reconcile.Result{}, err
 	}
@@ -112,29 +112,29 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	tenant, err := r.db.GetTenant(dk.Name)
+	tenant, err := r.db.GetDynakube(dk.Name)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
 	// In case of a new tenant
-	var oldTenant metadata.Tenant
+	var oldTenant metadata.Dynakube
 	if tenant == nil {
-		tenant = &metadata.Tenant{}
+		tenant = &metadata.Dynakube{}
 	} else {
 		oldTenant = *tenant
 	}
-	rlog.Info("checking tenant", "dynakube", tenant.Dynakube,
+	rlog.Info("checking tenant", "dynakube", tenant.Name,
 		"uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
 
-	tenant.Dynakube = dk.Name
+	tenant.Name = dk.Name
 	tenant.TenantUUID = dk.ConnectionInfo().TenantUUID
 
 	if err = r.createCSIDirectories(r.path.EnvDir(tenant.TenantUUID)); err != nil {
 		rlog.Error(err, "error when creating csi directories", "path", r.path.EnvDir(tenant.TenantUUID))
 		return reconcile.Result{}, errors.WithStack(err)
 	}
-	rlog.Info("csi directories exist", "path", r.path.EnvDir(tenant.TenantUUID))
+	rlog.Info("csi directories exist", "path", r.path.EnvDir(tenant.TenantUUID)) /*  */
 
 	installAgentCfg := newInstallAgentConfig(rlog, dtc, r.path, r.fs, r.recorder, dk)
 	if updatedVersion, err := installAgentCfg.updateAgent(tenant.LatestVersion, tenant.TenantUUID); err != nil {
@@ -145,7 +145,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		tenant.LatestVersion = updatedVersion
 	}
 
-	err = r.createOrUpdateTenant(oldTenant, tenant)
+	err = r.createOrUpdateDynakube(oldTenant, tenant)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -153,26 +153,26 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 }
 
-func (r *OneAgentProvisioner) createOrUpdateTenant(oldTenant metadata.Tenant, tenant *metadata.Tenant) error {
+func (r *OneAgentProvisioner) createOrUpdateDynakube(oldTenant metadata.Dynakube, tenant *metadata.Dynakube) error {
 	if hasTenantChanged(oldTenant, *tenant) {
 		log.Info("tenant has changed",
-			"dynakube", tenant.Dynakube, "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
-		if oldTenant == (metadata.Tenant{}) {
+			"dynakube", tenant.Name, "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
+		if oldTenant == (metadata.Dynakube{}) {
 			log.Info("Adding tenant",
-				"dynakube", tenant.Dynakube, "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
-			return r.db.InsertTenant(tenant)
+				"dynakube", tenant.Name, "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
+			return r.db.InsertDynakube(tenant)
 		} else {
 			log.Info("Updating tenant",
-				"dynakube", tenant.Dynakube,
+				"dynakube", tenant.Name,
 				"old version", oldTenant.LatestVersion, "new version", tenant.LatestVersion,
 				"old tenant UUID", oldTenant.TenantUUID, "new tenant UUID", tenant.TenantUUID)
-			return r.db.UpdateTenant(tenant)
+			return r.db.UpdateDynakube(tenant)
 		}
 	}
 	return nil
 }
 
-func hasTenantChanged(old, new metadata.Tenant) bool {
+func hasTenantChanged(old, new metadata.Dynakube) bool {
 	return old != new
 }
 
