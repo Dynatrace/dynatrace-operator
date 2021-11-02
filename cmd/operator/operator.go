@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/nodes"
@@ -30,7 +31,7 @@ import (
 )
 
 func startBootstrapper(ns string, cfg *rest.Config, cancelMgr context.CancelFunc) (manager.Manager, error) {
-	log.Info(ns)
+	log.Info("starting certificate bootstrapper", "namespace", ns)
 	mgr, err := setupMgr(ns, cfg)
 	if err != nil {
 		return mgr, err
@@ -40,7 +41,7 @@ func startBootstrapper(ns string, cfg *rest.Config, cancelMgr context.CancelFunc
 }
 
 func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
-	log.Info(ns)
+	log.Info("starting operator", "namespace", ns)
 	cleanUp := func() {}
 	mgr, err := setupMgr(ns, cfg)
 	if err != nil {
@@ -78,8 +79,7 @@ func setupMgr(ns string, cfg *rest.Config) (manager.Manager, error) {
 		return nil, err
 	}
 
-	log.Info("Registering Components.")
-
+	log.Info("registering manager components")
 	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		log.Error(err, "could not start health endpoint for operator")
 	}

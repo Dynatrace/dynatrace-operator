@@ -71,6 +71,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	bootstrapperCtx, done := context.WithCancel(context.TODO())
+	if subcmd == "operator" {
+		mgr, err := startBootstrapper(namespace, cfg, done)
+		if err != nil {
+			log.Error(err, "bootstrapper could not be configured")
+			os.Exit(1)
+		}
+		if err := mgr.Start(bootstrapperCtx); err != nil {
+			log.Error(err, "problem running bootstrap manager")
+			os.Exit(1)
+		}
+	}
+
 	mgr, cleanUp, err := subcmdFn(namespace, cfg)
 	defer cleanUp()
 	if err != nil {
@@ -78,20 +91,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	signalHandler, done := context.WithCancel(ctrl.SetupSignalHandler())
-	if subcmd == "operator" {
-		mgr, err := startBootstrapper(namespace, cfg, done)
-		if err != nil {
-			log.Error(err, "bootstrapper could not be configured")
-			os.Exit(1)
-		}
-		if err := mgr.Start(signalHandler); err != nil {
-			log.Error(err, "problem running bootstrap manager")
-			os.Exit(1)
-		}
-	}
-
-	signalHandler = ctrl.SetupSignalHandler()
+	signalHandler := ctrl.SetupSignalHandler()
 	startWebhookIfDebugFlagSet(startupInfo{
 		cfg:           cfg,
 		namespace:     namespace,

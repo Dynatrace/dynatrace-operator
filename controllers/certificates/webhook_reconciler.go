@@ -37,7 +37,7 @@ func Add(mgr manager.Manager, ns string) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
 		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, ns)).
-		Complete(newWebhookReconciler(mgr, func() {}))
+		Complete(newWebhookReconciler(mgr, nil))
 }
 
 func AddBootstrap(mgr manager.Manager, ns string, cancelMgr context.CancelFunc) error {
@@ -49,18 +49,18 @@ func AddBootstrap(mgr manager.Manager, ns string, cancelMgr context.CancelFunc) 
 
 func newWebhookReconciler(mgr manager.Manager, cancelMgr context.CancelFunc) *ReconcileWebhookCertificates {
 	return &ReconcileWebhookCertificates{
-		cancelBootstrapper: cancelMgr,
-		client:             mgr.GetClient(),
-		logger:             log.Log.WithName("operator.webhook-certificates"),
+		cancelMgrFunc: cancelMgr,
+		client:        mgr.GetClient(),
+		logger:        log.Log.WithName("operator.webhook-certificates"),
 	}
 }
 
 type ReconcileWebhookCertificates struct {
-	ctx                context.Context
-	client             client.Client
-	namespace          string
-	logger             logr.Logger
-	cancelBootstrapper context.CancelFunc
+	ctx           context.Context
+	client        client.Client
+	namespace     string
+	logger        logr.Logger
+	cancelMgrFunc context.CancelFunc
 }
 
 func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -115,7 +115,7 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		isSecretOutdated = true
 	} else if isWebhookCertificateValid {
 		r.logger.Info("secret for certificates up to date, skipping update")
-		r.cancelBootstrapper()
+		r.cancelMgr()
 		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 	}
 
@@ -130,8 +130,15 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		return reconcile.Result{}, err
 	}
 
-	r.cancelBootstrapper()
+	r.cancelMgr()
 	return reconcile.Result{RequeueAfter: SuccessDuration}, nil
+}
+
+func (r *ReconcileWebhookCertificates) cancelMgr() {
+	if r.cancelMgrFunc != nil {
+		r.logger.Info("stopping manager after certificate creation")
+		r.cancelMgrFunc()
+	}
 }
 
 func (r *ReconcileWebhookCertificates) createOrUpdateSecret(ctx context.Context, secret *corev1.Secret, createSecret bool) error {
