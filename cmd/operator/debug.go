@@ -45,25 +45,8 @@ func startWebhookManager(info startupInfo) {
 	startComponent("webhook-server", info)
 }
 
-func startComponent(name string, info startupInfo) {
-	subCmd, err := getSubcommand(name)
-	if err != nil {
-		return
-	}
-	startSubCommand(name, subCmd, &info)
-}
-
-func getSubcommand(name string) (subCommand, error) {
-	subcmdFn, hasSubCommand := subcmdCallbacks[name]
-	if !hasSubCommand {
-		log.Error(errBadSubcmd, "unknown command", "command", "webhook-server")
-		return subcmdFn, errBadSubcmd
-	}
-	return subcmdFn, nil
-}
-
-func startSubCommand(name string, cmd subCommand, startInfo *startupInfo) {
-	mgr, cleanUp, err := cmd(startInfo.namespace, startInfo.cfg)
+func startComponent(name string, startInfo startupInfo) {
+	mgr, cleanUp, err := startWebhookServer(startInfo.namespace, startInfo.cfg)
 	defer cleanUp()
 	if err != nil {
 		log.Error(err, "")
