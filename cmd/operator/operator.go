@@ -17,6 +17,8 @@ limitations under the License.
 package main
 
 import (
+	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/nodes"
@@ -28,9 +30,51 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
-	log.Info(ns)
-	cleanUp := func() {}
+func setupBootstrapper(ns string, cfg *rest.Config, cancelMgr context.CancelFunc) (manager.Manager, error) {
+	log.Info("starting certificate bootstrapper", "namespace", ns)
+	mgr, err := setupBootstrapMgr(ns, cfg)
+	if err != nil {
+		return mgr, err
+	}
+
+	return mgr, certificates.AddBootstrap(mgr, ns, cancelMgr)
+}
+
+func setupOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
+	log.Info("starting operator", "namespace", ns)
+	mgr, err := setupMgr(ns, cfg)
+	if err != nil {
+		return mgr, err
+	}
+
+	funcs := []func(manager.Manager, string) error{
+		dynakube.Add,
+		nodes.Add,
+		certificates.Add,
+	}
+
+	for _, f := range funcs {
+		if err := f(mgr, ns); err != nil {
+			return nil, err
+		}
+	}
+
+	return mgr, nil
+}
+
+func setupBootstrapMgr(ns string, cfg *rest.Config) (manager.Manager, error) {
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Namespace: ns,
+		Scheme:    scheme.Scheme,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return mgr, err
+}
+
+func setupMgr(ns string, cfg *rest.Config) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Namespace:                  ns,
 		Scheme:                     scheme.Scheme,
@@ -43,11 +87,10 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error)
 		HealthProbeBindAddress:     "0.0.0.0:10080",
 	})
 	if err != nil {
-		return nil, cleanUp, err
+		return nil, err
 	}
 
-	log.Info("Registering Components.")
-
+	log.Info("registering manager components")
 	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		log.Error(err, "could not start health endpoint for operator")
 	}
@@ -55,18 +98,5 @@ func startOperator(ns string, cfg *rest.Config) (manager.Manager, func(), error)
 	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		log.Error(err, "could not start ready endpoint for operator")
 	}
-
-	funcs := []func(manager.Manager, string) error{
-		dynakube.Add,
-		nodes.Add,
-		certificates.Add,
-	}
-
-	for _, f := range funcs {
-		if err := f(mgr, ns); err != nil {
-			return nil, cleanUp, err
-		}
-	}
-
-	return mgr, cleanUp, nil
+	return mgr, err
 }
