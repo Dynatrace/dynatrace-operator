@@ -251,7 +251,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 					log.Info("instrumenting missing container", "name", c.Name)
 
 					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
-					updateContainer(c, &dk, pod, deploymentMetadata, injectionInfo.in(DataIngest))
+					updateContainer(c, &dk, pod, deploymentMetadata, injectionInfo.enabled(DataIngest))
 
 					if installContainer == nil {
 						for j := range pod.Spec.InitContainers {
@@ -284,7 +284,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = injectionInfo.injectedAnnotation()
 
 	var workloadName, workloadKind string
-	if injectionInfo.in(DataIngest) {
+	if injectionInfo.enabled(DataIngest) {
 		workloadName, workloadKind, err = rootOwnerPod(ctx, m.metaClient, pod, req.Namespace)
 		if err != nil {
 			return admission.Errored(http.StatusInternalServerError, err)
@@ -327,7 +327,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		},
 	)
 
-	if injectionInfo.in(DataIngest) {
+	if injectionInfo.enabled(DataIngest) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
 			Name: "data-ingest-enrichment",
 			VolumeSource: corev1.VolumeSource{
@@ -385,7 +385,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 
 	const oneagentInjectedEnvVarName = "ONEAGENT_INJECTED"
-	if injectionInfo.in(OneAgent) {
+	if injectionInfo.enabled(OneAgent) {
 		ic.Env = append(ic.Env,
 			corev1.EnvVar{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
 			corev1.EnvVar{Name: "TECHNOLOGIES", Value: technologies},
@@ -406,7 +406,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 
 	const dataIngestEnabledEnvVarName = "DATA_INGEST_INJECTED"
-	if injectionInfo.in(DataIngest) {
+	if injectionInfo.enabled(DataIngest) {
 		ic.Env = append(ic.Env,
 			corev1.EnvVar{Name: "DT_WORKLOAD_KIND", Value: workloadKind},
 			corev1.EnvVar{Name: "DT_WORKLOAD_NAME", Value: workloadName},
@@ -427,7 +427,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 		updateInstallContainer(&ic, i+1, c.Name, c.Image)
 
-		updateContainer(c, &dk, pod, deploymentMetadata, injectionInfo.in(DataIngest))
+		updateContainer(c, &dk, pod, deploymentMetadata, injectionInfo.enabled(DataIngest))
 	}
 
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
