@@ -22,7 +22,7 @@ var (
 	RoutingCapability = ActiveGateCapability{
 		DisplayName:  "routing",
 		ShortName:    "routing",
-		ArgumentName: "MSGrouter,extension_controller",
+		ArgumentName: "MSGrouter",
 	}
 
 	KubeMonCapability = ActiveGateCapability{
@@ -42,6 +42,12 @@ var (
 		ShortName:    "dynatrace-api",
 		ArgumentName: "restInterface",
 	}
+
+	StatsDIngestCapability = ActiveGateCapability{
+		DisplayName:  "statsd-ingest",
+		ShortName:    "statsd-ingest",
+		ArgumentName: "extension_controller",
+	}
 )
 
 var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
@@ -49,6 +55,7 @@ var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
 	KubeMonCapability.DisplayName:       {},
 	MetricsIngestCapability.DisplayName: {},
 	DynatraceApiCapability.DisplayName:  {},
+	StatsDIngestCapability.DisplayName:  {},
 }
 
 type ActiveGateSpec struct {

@@ -98,7 +98,7 @@ func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) events.StatefulSetEven
 				log.Info("Cannot find container in the StatefulSet", "container name", consts.ActiveGateContainerName)
 			}
 		}
-		if dk.FeatureEnableStatsDIngest() {
+		if dk.NeedsStatsD() {
 			statsdContainer, err := getContainerByName(sts.Spec.Template.Spec.Containers, consts.StatsDContainerName)
 			if err == nil {
 				statsdContainer.Ports = []corev1.ContainerPort{
