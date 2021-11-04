@@ -46,6 +46,13 @@ spec:
   #
   # enableIstio: false
 
+  # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements>
+  # if namespaceSelector is not set then we inject into every namespace
+  #
+  # namespaceSelector:
+  #   matchLabels:
+  #     test: test
+
   oneAgent:
     # Enable cloud-native fullstack monitoring and change its settings
     # Cannot be used in conjunction with classic fullstack monitoring, application-only monitoring or host monitoring
@@ -106,13 +113,6 @@ spec:
       # Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
       #
       # args: []
-
-      # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements>
-      # if namespaceSelector is not set then we inject into every namespace
-      #
-      # namespaceSelector:
-      #   matchLabels:
-      #     test: test
 
       # Optional: define resources requests and limits for the initContainer
       # See more: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
