@@ -1,17 +1,17 @@
 package dtclient
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/pkg/errors"
 )
 
 const notModifiedStatusCode = 304
 
-type RuxitConfRevission struct {
+type RuxitProcConf struct {
 	Revision   uint            `json:"revision"`
 	Properties []RuxitProperty `json:"properties"`
 }
@@ -22,36 +22,29 @@ type RuxitProperty struct {
 	Value   string `json:"value"`
 }
 
-func (rc RuxitConfRevission) ToString() string {
-	sections := map[string]string{}
+func (rc RuxitProcConf) ToMap() map[string]map[string]string {
+	sections := map[string]map[string]string{}
 	for _, prop := range rc.Properties {
 		section := sections[prop.Section]
-		section += fmt.Sprintf("\n%s: %s", prop.Key, prop.Value)
+		if section == nil {
+			section = map[string]string{}
+		}
+		section[prop.Key] = prop.Value
 		sections[prop.Section] = section
 	}
-	content := ""
-	for section, value := range sections {
-		content += fmt.Sprintf("/n[%s]/n%s", section, value)
-	}
-	return content
+	return sections
 }
 
-func (dtc *dynatraceClient) GetRuxitConfRevission(prevRevission uint) (*RuxitConfRevission, error) {
-	ruxitConfURL := fmt.Sprintf("%s/v1/deployment/agentProcessSections", dtc.url)
-	var model struct {
-		Revission uint `json:"revission"`
-	}
-	model.Revission = prevRevission
+func (dtc *dynatraceClient) GetRuxitProcConf(prevRevision uint) (*RuxitProcConf, error) {
+	ruxitConfURL := fmt.Sprintf("%s/v1/deployment/installer/agent/processmoduleconfig", dtc.url)
 
-	jsonStr, err := json.Marshal(model)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	req, err := http.NewRequest("POST", ruxitConfURL, bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest("GET", ruxitConfURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}
+	query := req.URL.Query()
+	query.Add("revision", strconv.FormatUint(uint64(prevRevision), 10))
+	req.URL.RawQuery = query.Encode()
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", dtc.paasToken))
 
@@ -62,7 +55,7 @@ func (dtc *dynatraceClient) GetRuxitConfRevission(prevRevission uint) (*RuxitCon
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("error making post request to dynatrace api: %w", err)
+		return nil, fmt.Errorf("error making get request to dynatrace api: %w", err)
 	}
 	defer func() {
 		//Swallow error, nothing has to be done at this point
@@ -74,11 +67,11 @@ func (dtc *dynatraceClient) GetRuxitConfRevission(prevRevission uint) (*RuxitCon
 		return nil, err
 	}
 
-	return dtc.readResponseForRuxitConfRevission(responseData)
+	return dtc.readResponseForRuxitProcConf(responseData)
 }
 
-func (dtc *dynatraceClient) readResponseForRuxitConfRevission(response []byte) (*RuxitConfRevission, error) {
-	resp := RuxitConfRevission{}
+func (dtc *dynatraceClient) readResponseForRuxitProcConf(response []byte) (*RuxitProcConf, error) {
+	resp := RuxitProcConf{}
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
 		dtc.logger.Error(err, "error unmarshalling json response")

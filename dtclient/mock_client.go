@@ -46,9 +46,9 @@ func (o *MockDynatraceClient) GetCommunicationHostForClient() (CommunicationHost
 	return args.Get(0).(CommunicationHost), args.Error(1)
 }
 
-func (o *MockDynatraceClient) GetRuxitConfRevission(prevRevission uint) (*RuxitConfRevission, error) {
-	args := o.Called(prevRevission)
-	return args.Get(0).(*RuxitConfRevission), args.Error(1)
+func (o *MockDynatraceClient) GetRuxitProcConf(prevRevision uint) (*RuxitProcConf, error) {
+	args := o.Called(prevRevision)
+	return args.Get(0).(*RuxitProcConf), args.Error(1)
 }
 
 func (o *MockDynatraceClient) SendEvent(event *EventData) error {

@@ -18,7 +18,10 @@ package csiprovisioner
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
@@ -136,8 +139,22 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 	rlog.Info("csi directories exist", "path", r.path.EnvDir(dynakube.TenantUUID))
 
+	ruxitRevission, err := r.db.GetRuxitRevission(dynakube.TenantUUID)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	if ruxitRevission == nil {
+		ruxitRevission = metadata.NewRuxitRevission(dynakube.TenantUUID, 0)
+	}
+
+	ruxitConf, err := r.getRuxitProcConf(ruxitRevission, dtc)
+	if err != nil {
+		rlog.Error(err, "error when getting the latest ruxitagentproc.conf")
+		return reconcile.Result{}, err
+	}
+
 	installAgentCfg := newInstallAgentConfig(rlog, dtc, r.path, r.fs, r.recorder, dk)
-	if updatedVersion, err := installAgentCfg.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID); err != nil {
+	if updatedVersion, err := installAgentCfg.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID, ruxitRevission.LatestRevission, ruxitConf); err != nil {
 		rlog.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
@@ -150,7 +167,80 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
+	err = r.createOrUpdateRuxitRevision(dynakube.TenantUUID, ruxitRevission, ruxitConf)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
+}
+
+func (r *OneAgentProvisioner) getRuxitProcConf(ruxitRevission *metadata.RuxitRevision, dtc dtclient.Client) (*dtclient.RuxitProcConf, error) {
+	var latestRevission uint
+	if ruxitRevission.LatestRevission != 0 {
+		latestRevission = ruxitRevission.LatestRevission
+	}
+
+	ruxitConf, err := dtc.GetRuxitProcConf(latestRevission)
+	if err != nil {
+		return nil, err
+	}
+	if ruxitConf == nil {
+		ruxitConf, err = r.readRuxitCache(ruxitRevission)
+		if err != nil && os.IsNotExist(err) {
+			ruxitConf, err = dtc.GetRuxitProcConf(0)
+			if err != nil {
+				return nil, err
+			}
+		} else if err != nil {
+			return nil, err
+		}
+	}
+	return ruxitConf, r.writeRuxitCache(ruxitRevission, ruxitConf)
+}
+
+func (r *OneAgentProvisioner) readRuxitCache(ruxitRevission *metadata.RuxitRevision) (*dtclient.RuxitProcConf, error) {
+	var ruxitConf dtclient.RuxitProcConf
+	ruxitConfCache, err := r.fs.Open(r.path.AgentRuxitRevision(ruxitRevission.TenantUUID))
+	if err != nil {
+		return nil, err
+	}
+	jsonBytes, err := ioutil.ReadAll(ruxitConfCache)
+	ruxitConfCache.Close()
+	if err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(jsonBytes, &ruxitConf); err != nil {
+		return nil, err
+	}
+	return &ruxitConf, nil
+}
+
+func (r *OneAgentProvisioner) writeRuxitCache(ruxitRevission *metadata.RuxitRevision, ruxitConf *dtclient.RuxitProcConf) error {
+	ruxitConfFile, err := r.fs.OpenFile(r.path.AgentRuxitRevision(ruxitRevission.TenantUUID), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	jsonBytes, err := json.Marshal(ruxitConf)
+	if err != nil {
+		ruxitConfFile.Close()
+		return err
+	}
+	_, err = ruxitConfFile.Write(jsonBytes)
+	ruxitConfFile.Close()
+	return err
+}
+
+func (r *OneAgentProvisioner) createOrUpdateRuxitRevision(tenantUUID string, ruxitRevision *metadata.RuxitRevision, ruxitConf *dtclient.RuxitProcConf) error {
+	if ruxitRevision.LatestRevission == 0 && ruxitConf != nil {
+		log.Info("inserting ruxit revission into db", "tenantUUID", tenantUUID, "revission", ruxitConf.Revision)
+		return r.db.InsertRuxitRevission(metadata.NewRuxitRevission(tenantUUID, ruxitConf.Revision))
+	} else if ruxitConf != nil && ruxitConf.Revision != ruxitRevision.LatestRevission {
+		log.Info("updating ruxit revission in db", "tenantUUID", tenantUUID, "old-revission", ruxitRevision.LatestRevission, "new-revission", ruxitConf.Revision)
+		ruxitRevision.LatestRevission = ruxitConf.Revision
+		return r.db.UpdateRuxitRevission(ruxitRevision)
+	}
+	return nil
 }
 
 func (r *OneAgentProvisioner) createOrUpdateDynakube(oldDynakube metadata.Dynakube, dynakube *metadata.Dynakube) error {

@@ -82,10 +82,10 @@ func (f *FakeFailDB) DeleteDynakube(dynakubeName string) error           { retur
 func (f *FakeFailDB) GetDynakube(dynakubeName string) (*Dynakube, error) { return nil, sql.ErrTxDone }
 func (f *FakeFailDB) GetDynakubes() (map[string]string, error)   { return nil, sql.ErrTxDone }
 
-func (f *FakeFailDB) InsertRuxitRevission(ruxitRev *RuxitRevission) error { return sql.ErrTxDone }
-func (f *FakeFailDB) UpdateRuxitRevission(ruxitRev *RuxitRevission) error { return sql.ErrTxDone }
-func (f *FakeFailDB) DeleteRuxitRevission(tenantUUID string) error        { return sql.ErrTxDone }
-func (f *FakeFailDB) GetRuxitRevission(tenantUUID string) (*RuxitRevission, error) {
+func (f *FakeFailDB) InsertRuxitRevission(ruxitRev *RuxitRevision) error { return sql.ErrTxDone }
+func (f *FakeFailDB) UpdateRuxitRevission(ruxitRev *RuxitRevision) error { return sql.ErrTxDone }
+func (f *FakeFailDB) DeleteRuxitRevission(tenantUUID string) error       { return sql.ErrTxDone }
+func (f *FakeFailDB) GetRuxitRevission(tenantUUID string) (*RuxitRevision, error) {
 	return nil, sql.ErrTxDone
 }
 func (f *FakeFailDB) InsertVolume(volume *Volume) error          { return sql.ErrTxDone }

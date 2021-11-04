@@ -205,7 +205,7 @@ func (a *SqliteAccess) GetDynakube(dynakubeName string) (*Dynakube, error) {
 }
 
 // InsertRuxitRevission inserts a new RuxitRevission
-func (a *SqliteAccess) InsertRuxitRevission(ruxitRev *RuxitRevission) error {
+func (a *SqliteAccess) InsertRuxitRevission(ruxitRev *RuxitRevision) error {
 	err := a.executeStatement(insertRuxitRevissionStatement, ruxitRev.TenantUUID, ruxitRev.LatestRevission)
 	if err != nil {
 		err = fmt.Errorf("couldn't insert ruxitRevission, tenantUUID '%s', latestRevission '%d', err: %s",
@@ -217,7 +217,7 @@ func (a *SqliteAccess) InsertRuxitRevission(ruxitRev *RuxitRevission) error {
 }
 
 // UpdateRuxitRevission updates an existing RuxitRevission
-func (a *SqliteAccess) UpdateRuxitRevission(ruxitRev *RuxitRevission) error {
+func (a *SqliteAccess) UpdateRuxitRevission(ruxitRev *RuxitRevision) error {
 	err := a.executeStatement(updateRuxitRevissionStatement, ruxitRev.LatestRevission, ruxitRev.TenantUUID)
 	if err != nil {
 		err = fmt.Errorf("couldn't update ruxitRevission, tenantUUID '%s', latestRevission '%d', err: %s",
@@ -238,7 +238,7 @@ func (a *SqliteAccess) DeleteRuxitRevission(tenantUUID string) error {
 }
 
 // GetRuxitRevission gets RuxitRevission by tenantUUID
-func (a *SqliteAccess) GetRuxitRevission(tenantUUID string) (*RuxitRevission, error) {
+func (a *SqliteAccess) GetRuxitRevission(tenantUUID string) (*RuxitRevision, error) {
 	var revission uint
 	err := a.querySimpleStatement(getRuxitRevissionStatement, tenantUUID, &revission)
 	if err != nil {
