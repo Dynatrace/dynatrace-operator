@@ -169,12 +169,7 @@ func (dk *DynaKube) Version() string {
 }
 
 func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
-	if dk.CloudNativeFullstackMode() {
-		return &dk.Spec.OneAgent.CloudNativeFullStack.NamespaceSelector
-	} else if dk.ApplicationMonitoringMode() {
-		return &dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector
-	}
-	return nil
+	return &dk.Spec.NamespaceSelector
 }
 
 // ImmutableOneAgentImage returns the immutable OneAgent image to be used with the dk DynaKube instance.

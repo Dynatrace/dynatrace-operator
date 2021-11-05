@@ -992,7 +992,8 @@ spec:
             description: DynaKubeSpec defines the desired state of DynaKube
             properties:
               activeGate:
-                description: Something
+                description: General configuration about ActiveGate instances ActiveGate
+                  ActiveGateSpec `json:"activeGate,omitempty"`
                 properties:
                   capabilities:
                     description: Activegate capabilities enabled (routing, kubernetes-monitoring,
@@ -1453,6 +1454,52 @@ spec:
                       type: object
                     type: array
                 type: object
+              namespaceSelector:
+                description: 'Optional: set a namespace selector to limit which namespaces
+                  are monitored By default, all namespaces will be monitored Has no
+                  effect during classicFullStack and hostMonitoring mode'
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: A label selector requirement is a selector that
+                        contains values, a key, and an operator that relates the key
+                        and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: operator represents a key's relationship to
+                            a set of values. Valid operators are In, NotIn, Exists
+                            and DoesNotExist.
+                          type: string
+                        values:
+                          description: values is an array of string values. If the
+                            operator is In or NotIn, the values array must be non-empty.
+                            If the operator is Exists or DoesNotExist, the values
+                            array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: matchLabels is a map of {key,value} pairs. A single
+                      {key,value} in the matchLabels map is equivalent to an element
+                      of matchExpressions, whose key field is "key", the operator
+                      is "In", and the values array contains only "value". The requirements
+                      are ANDed.
+                    type: object
+                type: object
               networkZone:
                 description: 'Optional: Sets Network Zone for OneAgent and ActiveGate
                   pods'
@@ -1492,53 +1539,6 @@ spec:
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
                               More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
-                            type: object
-                        type: object
-                      namespaceSelector:
-                        description: 'Optional: set a namespace selector to limit
-                          which namespaces are monitored By default, all namespaces
-                          will be monitored'
-                        properties:
-                          matchExpressions:
-                            description: matchExpressions is a list of label selector
-                              requirements. The requirements are ANDed.
-                            items:
-                              description: A label selector requirement is a selector
-                                that contains values, a key, and an operator that
-                                relates the key and values.
-                              properties:
-                                key:
-                                  description: key is the label key that the selector
-                                    applies to.
-                                  type: string
-                                operator:
-                                  description: operator represents a key's relationship
-                                    to a set of values. Valid operators are In, NotIn,
-                                    Exists and DoesNotExist.
-                                  type: string
-                                values:
-                                  description: values is an array of string values.
-                                    If the operator is In or NotIn, the values array
-                                    must be non-empty. If the operator is Exists or
-                                    DoesNotExist, the values array must be empty.
-                                    This array is replaced during a strategic merge
-                                    patch.
-                                  items:
-                                    type: string
-                                  type: array
-                              required:
-                              - key
-                              - operator
-                              type: object
-                            type: array
-                          matchLabels:
-                            additionalProperties:
-                              type: string
-                            description: matchLabels is a map of {key,value} pairs.
-                              A single {key,value} in the matchLabels map is equivalent
-                              to an element of matchExpressions, whose key field is
-                              "key", the operator is "In", and the values array contains
-                              only "value". The requirements are ANDed.
                             type: object
                         type: object
                       useCSIDriver:
@@ -1954,53 +1954,6 @@ spec:
                           type: string
                         description: 'Optional: Adds additional labels for the OneAgent
                           pods'
-                        type: object
-                      namespaceSelector:
-                        description: 'Optional: set a namespace selector to limit
-                          which namespaces are monitored By default, all namespaces
-                          will be monitored'
-                        properties:
-                          matchExpressions:
-                            description: matchExpressions is a list of label selector
-                              requirements. The requirements are ANDed.
-                            items:
-                              description: A label selector requirement is a selector
-                                that contains values, a key, and an operator that
-                                relates the key and values.
-                              properties:
-                                key:
-                                  description: key is the label key that the selector
-                                    applies to.
-                                  type: string
-                                operator:
-                                  description: operator represents a key's relationship
-                                    to a set of values. Valid operators are In, NotIn,
-                                    Exists and DoesNotExist.
-                                  type: string
-                                values:
-                                  description: values is an array of string values.
-                                    If the operator is In or NotIn, the values array
-                                    must be non-empty. If the operator is Exists or
-                                    DoesNotExist, the values array must be empty.
-                                    This array is replaced during a strategic merge
-                                    patch.
-                                  items:
-                                    type: string
-                                  type: array
-                              required:
-                              - key
-                              - operator
-                              type: object
-                            type: array
-                          matchLabels:
-                            additionalProperties:
-                              type: string
-                            description: matchLabels is a map of {key,value} pairs.
-                              A single {key,value} in the matchLabels map is equivalent
-                              to an element of matchExpressions, whose key field is
-                              "key", the operator is "In", and the values array contains
-                              only "value". The requirements are ANDed.
-                            type: object
                         type: object
                       nodeSelector:
                         additionalProperties:

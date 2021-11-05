@@ -16,13 +16,13 @@ spec:
   # For multiple Dynakube setup, each Dynakube can point to the same secret
   #
   # tokens: "my-secret"
+  namespaceSelector:
+    matchLabels:
+      monitor: applicationMonitoring
 
   oneAgent:
     # Enable application monitoring
-    applicationMonitoring:
-      namespaceSelector:
-        matchLabels:
-          monitor: applicationMonitoring
+    applicationMonitoring: {}
   activeGate:
     # Enables listed ActiveGate capabilities
     capabilities:
@@ -51,6 +51,9 @@ spec:
   # For a multiple Dynakube setup, each Dynakube can point to the same secret as it is reused
   #
   # tokens: "my-secret"
+  namespaceSelector:
+    matchLabels:
+      monitor: cloudNativeFullStack
 
   oneAgent:
     # Enable cloud-native fullstack monitoring
@@ -61,9 +64,6 @@ spec:
         - effect: NoSchedule
           key: node-role.kubernetes.io/master
           operator: Exists
-      namespaceSelector:
-        matchLabels:
-          monitor: cloudNativeFullStack
   activeGate:
     # Enables listed ActiveGate capabilities
     capabilities:
