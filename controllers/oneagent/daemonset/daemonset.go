@@ -16,7 +16,11 @@ import (
 )
 
 const (
-	labelFeature = "operator.dynatrace.com/feature"
+	labelFeature        = "operator.dynatrace.com/feature"
+	labelAgentType      = "operator.dynatrace.com/agenttype"
+	labelAgentTypeValue = "os"
+
+	podNameOSAgent = "oneagent"
 
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
@@ -115,10 +119,11 @@ func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	result.Name = dsInfo.instance.Name + fmt.Sprintf("-%s", dsInfo.feature)
+	result.Name = fmt.Sprintf("%s-%s", dsInfo.instance.Name, podNameOSAgent)
 	result.Labels[labelFeature] = dsInfo.feature
-	result.Spec.Selector.MatchLabels[labelFeature] = dsInfo.feature
+	result.Spec.Selector.MatchLabels[labelAgentType] = labelAgentTypeValue
 	result.Spec.Template.Labels[labelFeature] = dsInfo.feature
+	result.Spec.Template.Labels[labelAgentType] = labelAgentTypeValue
 
 	if len(result.Spec.Template.Spec.Containers) > 0 {
 		appendHostIdArgument(result, inframonHostIdSource)
@@ -134,10 +139,11 @@ func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	result.Name = dsInfo.instance.Name + fmt.Sprintf("-%s", ClassicFeature)
+	result.Name = fmt.Sprintf("%s-%s", dsInfo.instance.Name, podNameOSAgent)
 	result.Labels[labelFeature] = ClassicFeature
-	result.Spec.Selector.MatchLabels[labelFeature] = ClassicFeature
+	result.Spec.Selector.MatchLabels[labelAgentType] = labelAgentTypeValue
 	result.Spec.Template.Labels[labelFeature] = ClassicFeature
+	result.Spec.Template.Labels[labelAgentType] = labelAgentTypeValue
 
 	if len(result.Spec.Template.Spec.Containers) > 0 {
 		appendHostIdArgument(result, classicHostIdSource)
