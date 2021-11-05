@@ -19,7 +19,7 @@ This script checks the following scenarios:
   - Tenant is reachable from the operator pod using the same options as the `dynatrace-operator` (proxy, certificate, ...)
 - Image (OneAgent and ActiveGate)
   - registry is accessible
-  - image is accessible from the operator pod using registry from (custom) pull secret or docker hub
+  - image is accessible from the operator pod using registry from the tenant or (custom) pull secret
   
 ## Requirements
 
@@ -28,6 +28,18 @@ The script has the following dependencies:
 - `kubectl` or `oc`
 - `jq`
 - `curl`
+
+In addition, macOS has the following requirements:
+- GNU implementation of `getopt`
+  - please install gnu-based version and reopen terminal:
+    ```bash
+    brew install gnu-getopt && brew link --force gnu-getopt
+    ```
+- GNU implementation of `cut`
+  - please install `gcut`: 
+    ```bash
+    brew install coreutils
+    ```
 
 ## Usage
 
@@ -60,7 +72,3 @@ Specify options by appending them to the command, e.g: `./troubleshoot.sh --dyna
 `-c` or`--oc`
 - changes CLI to `oc`
 - default: `kubectl`
-
-`-r` or`--openshift`
-- changes the default image to `registry.connect.redhat.com/dynatrace/oneagent`
-- default: `docker.io/dynatrace/oneagent`

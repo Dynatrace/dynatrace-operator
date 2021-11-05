@@ -5,58 +5,25 @@ set -eu
 selected_dynakube="dynakube"
 selected_namespace="dynatrace"
 cli="kubectl"
-default_oneagent_image="docker.io/dynatrace/oneagent"
 
 missing_value="<no value>"
 api_url=""
 paas_token=""
 log_section=""
 
+cut_command="cut"
+if [[ $OSTYPE == 'darwin'* ]]; then
+  cut_command="gcut"
+fi
+
 function usage {
   echo "Usage: $(basename "${0}") [options]" 2>&1
   echo "   [ -d | --dynakube DYNAKUBE ]    Specify a different Dynakube name, Default: 'dynakube'."
   echo "   [ -n | --namespace NAMESPACE ]  Specify a different Namespace, Default: 'dynatrace'."
   echo "   [ -c | --oc ]                   Use 'oc' instead of 'kubectl' to access cluster."
-  echo "   [ -r | --openshift ]            Check the OneAgent image in the RedHat registry."
   echo "   [ -h | --help ]                 Display usage information."
   exit 1
 }
-
-options="hd:n:cr"
-long_options="help,dynakube:,namespace:,oc,openshift"
-eval set -- "$(getopt --options="$options" --longoptions="$long_options" --name "$0" -- "$@")"
-
-while true; do
-  case "${1}" in
-    -h | --help)
-      usage
-      ;;
-    -d | --dynakube)
-      selected_dynakube="${2}"
-      shift 2
-      ;;
-    -n | --namespace)
-      selected_namespace="${2}"
-      shift 2
-      ;;
-    -c | --oc)
-      cli="oc"
-      shift
-      ;;
-    -r | --openshift)
-      default_oneagent_image="registry.connect.redhat.com/dynatrace/oneagent"
-      shift
-      ;;
-    --)
-      shift
-      break
-      ;;
-    *)
-      echo "Internal error!"
-      exit 1
-      ;;
-  esac
-done
 
 function log {
   printf "[%10s] %s\n" "$log_section" "$1"
@@ -68,7 +35,7 @@ function error {
 }
 
 function checkDependencies {
-  dependencies=("jq" "curl")
+  dependencies=("jq" "curl" "getopt" "${cut_command}")
   if [[ "${cli}" == "oc" ]] ; then
     dependencies+=("oc")
   else
@@ -80,6 +47,45 @@ function checkDependencies {
     then
       error "${dependency} is required to run this script!"
     fi
+  done
+
+  if [[ $(getopt 2>&1) != *"getopt"* ]]; then
+    error "GNU implementation of 'getopt' required."
+  fi
+}
+
+function parseArguments {
+  options="hd:n:cr"
+  long_options="help,dynakube:,namespace:,oc,openshift"
+
+  eval set -- "$(getopt --options="$options" --longoptions="$long_options" --name "$0" -- "$@")"
+
+  while true; do
+    case "${1}" in
+      -h | --help)
+        usage
+        ;;
+      -d | --dynakube)
+        selected_dynakube="${2}"
+        shift 2
+        ;;
+      -n | --namespace)
+        selected_namespace="${2}"
+        shift 2
+        ;;
+      -c | --oc)
+        cli="oc"
+        shift
+        ;;
+      --)
+        shift
+        break
+        ;;
+      *)
+        echo "Internal error!"
+        exit 1
+        ;;
+    esac
   done
 }
 
@@ -199,8 +205,12 @@ function getImage {
   type="$1"
 
   if [[ "${type}" == "oneAgent" ]] ; then
-    # oneagent uses docker.io by default
-    image="${default_oneagent_image}"
+    # oneagent immutable image is not published and uses the cluster registry by default
+    api_url=$("${cli}" get dynakube "${selected_dynakube}" \
+      --namespace "${selected_namespace}" \
+      --template="{{.spec.apiUrl}}")
+    image="${api_url#*//}"
+    image="${image%/*}/linux/oneagent"
   else
     # activegate is not published and uses the cluster registry by default
     api_url=$("${cli}" get dynakube "${selected_dynakube}" \
@@ -259,14 +269,15 @@ function checkImagePullable {
   oneagent_image="${dynakube_oneagent_image##"$oneagent_registry/"}"
 
   # check if image has version set
-  image_version="$(cut --delimiter ':' --only-delimited --fields=2 <<< "${oneagent_image}")"
+  image_version="$(${cut_command} --delimiter ':' --only-delimited --fields=2 <<< "${oneagent_image}")"
+
   if [[ -z "$image_version"  ]] ; then
     # no version set, default to latest
     oneagent_version="latest"
 
     log "using latest image version"
   else
-    oneagent_image="$(cut --delimiter ':' --fields=1 <<< "${oneagent_image}")"
+    oneagent_image="$(${cut_command} --delimiter ':' --fields=1 <<< "${oneagent_image}")"
     oneagent_version="$image_version"
 
     log "using custom image version"
@@ -331,28 +342,7 @@ function checkImagePullable {
   if [[ "$oneagent_image_works" == "true" ]] ; then
     log "oneagent image '$dynakube_oneagent_image' found"
   else
-    if [[ "$oneagent_registry" == "docker.io" ]] ; then
-      # get auth token with pull access for docker hub registry
-      token="$(
-        curl --silent \
-        "https://auth.docker.io/token?service=registry.docker.io&scope=repository:$oneagent_image:pull" \
-        | jq --raw-output '.token'
-      )"
-
-      # check selected image exists on docker hub
-      dockerio_image_request="$run_container_command 'curl --head \
-        --header \"Authorization: Bearer ${token}\" \
-        https://registry-1.docker.io/v2/$oneagent_image/manifests/$oneagent_version \
-        --silent --output /dev/null --write-out %{http_code}'"
-
-      if [[ "$(eval "$dockerio_image_request")" == "200" ]] ; then
-        log "oneagent image '$oneagent_image' with version '$oneagent_version' exists on docker.io registry"
-      else
-        error "oneagent image '$oneagent_image' with version '$oneagent_version' not found on docker.io registry"
-      fi
-    else
-      error "oneagent image '$dynakube_oneagent_image' with version '$oneagent_version' missing."
-    fi
+    error "oneagent image '$dynakube_activegate_image' missing"
   fi
 
   if [[ "$activegate_image_works" == "true" ]] ; then
@@ -448,6 +438,7 @@ function checkDTClusterConnection {
 
 ####### MAIN #######
 checkDependencies
+parseArguments "$@"
 
 checkNamespace
 checkDynakube
