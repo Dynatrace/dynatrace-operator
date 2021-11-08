@@ -1,0 +1,172 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    dynatrace.com/operator: dynatrace
+  name: dynatrace-oneagent-csi-driver
+  namespace: dynatrace
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      internal.oneagent.dynatrace.com/app: csi-driver
+      internal.oneagent.dynatrace.com/component: csi-driver
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-logs-container: driver
+      labels:
+        internal.oneagent.dynatrace.com/app: csi-driver
+        internal.oneagent.dynatrace.com/component: csi-driver
+    spec:
+      containers:
+      - args:
+        - csi-driver
+        - --endpoint=unix://csi/csi.sock
+        - --node-id=$(KUBE_NODE_NAME)
+        - --health-probe-bind-address=:10080
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: KUBE_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        image: quay.io/dynatrace/dynatrace-operator:snapshot
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: healthz
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: driver
+        ports:
+        - containerPort: 10080
+          name: healthz
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 300m
+            memory: 100M
+          requests:
+            cpu: 300m
+            memory: 100M
+        securityContext:
+          privileged: true
+          runAsUser: 0
+          seLinuxOptions:
+            level: s0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /csi
+          name: plugin-dir
+        - mountPath: /var/lib/kubelet/plugins
+          mountPropagation: Bidirectional
+          name: plugins-dir
+        - mountPath: /var/lib/kubelet/pods
+          mountPropagation: Bidirectional
+          name: mountpoint-dir
+        - mountPath: /data
+          mountPropagation: Bidirectional
+          name: dynatrace-oneagent-data-dir
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
+        - --health-port=9809
+        command:
+        - csi-node-driver-registrar
+        image: quay.io/dynatrace/dynatrace-operator:snapshot
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: healthz
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: registrar
+        ports:
+        - containerPort: 9809
+          name: healthz
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 10m
+            memory: 15M
+          requests:
+            cpu: 10m
+            memory: 15M
+        securityContext:
+          runAsUser: 0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /csi
+          name: plugin-dir
+        - mountPath: /registration
+          name: registration-dir
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --health-port=9898
+        command:
+        - livenessprobe
+        image: quay.io/dynatrace/dynatrace-operator:snapshot
+        imagePullPolicy: Always
+        name: liveness-probe
+        resources:
+          limits:
+            cpu: 5m
+            memory: 15M
+          requests:
+            cpu: 5m
+            memory: 15M
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /csi
+          name: plugin-dir
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: dynatrace-oneagent-csi-driver
+      serviceAccountName: dynatrace-oneagent-csi-driver
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - hostPath:
+          path: /var/lib/kubelet/plugins_registry/
+          type: Directory
+        name: registration-dir
+      - hostPath:
+          path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
+          type: DirectoryOrCreate
+        name: plugin-dir
+      - hostPath:
+          path: /var/lib/kubelet/plugins
+          type: Directory
+        name: plugins-dir
+      - hostPath:
+          path: /var/lib/kubelet/pods
+          type: DirectoryOrCreate
+        name: mountpoint-dir
+      - hostPath:
+          path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
+          type: DirectoryOrCreate
+        name: dynatrace-oneagent-data-dir
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate

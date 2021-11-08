@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
-	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/status"
@@ -211,15 +210,6 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 	if !r.reconcileActiveGateCapabilities(dkState) {
 		return
 	}
-
-	// Check Code Modules if CSI driver is needed
-	err = dtcsi.ConfigureCSIDriver(
-		r.client, r.scheme, r.operatorPodName, r.operatorNamespace, dkState, defaultUpdateInterval)
-	if err != nil {
-		dkState.Log.Error(err, "could not check code modules")
-		return
-	}
-
 	if dkState.Instance.HostMonitoringMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
 			r.client, r.apiReader, r.scheme, r.config, dkState.Log, dkState.Instance, daemonset.HostMonitoringFeature,

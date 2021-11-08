@@ -7,11 +7,9 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
-	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
-	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -431,72 +429,6 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	}, routingSvc)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
-}
-
-func TestReconcile_CodeModules_EnableCSI(t *testing.T) {
-	dynakube := buildDynakube(testName, true)
-	fakeClient := buildFakeClient(dynakube)
-	r := buildReconciliation(fakeClient)
-
-	result, err := r.Reconcile(context.TODO(), reconcile.Request{
-		NamespacedName: types.NamespacedName{Namespace: testDynatraceNamespace, Name: testName},
-	})
-	require.NoError(t, err)
-	require.NotNil(t, result)
-
-	daemonSet := &appsv1.DaemonSet{}
-	err = fakeClient.Get(context.TODO(),
-		client.ObjectKey{
-			Name:      dtcsi.DaemonSetName,
-			Namespace: testDynatraceNamespace,
-		}, daemonSet)
-	require.NoError(t, err)
-
-	assert.Equal(t, 3, len(daemonSet.Spec.Template.Spec.Containers))
-	assert.Equal(t, "driver", daemonSet.Spec.Template.Spec.Containers[0].Name)
-}
-
-func TestReconcile_CodeModules_DisableCSI(t *testing.T) {
-	daemonSet := &appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dtcsi.DaemonSetName,
-			Namespace: testDynatraceNamespace,
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					UID: testUID,
-				},
-			},
-		},
-	}
-	namespace := &corev1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: testNamespace,
-			Labels: map[string]string{
-				mapper.InstanceLabel: testName,
-			},
-		},
-	}
-	dynakube := buildDynakube(testName, false)
-	fakeClient := buildFakeClient(dynakube, daemonSet, namespace)
-	r := buildReconciliation(fakeClient)
-
-	result, err := r.Reconcile(context.TODO(), reconcile.Request{
-		NamespacedName: types.NamespacedName{Namespace: "dynatrace", Name: testName},
-	})
-	require.NoError(t, err)
-	require.NotNil(t, result)
-
-	updatedDaemonSet := &appsv1.DaemonSet{}
-	err = fakeClient.Get(context.TODO(),
-		client.ObjectKey{
-			Name:      dtcsi.DaemonSetName,
-			Namespace: testDynatraceNamespace,
-		}, updatedDaemonSet)
-	require.Error(t, err)
-	updatedNamespace := &corev1.Namespace{}
-	err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: testNamespace}, updatedNamespace)
-	require.NoError(t, err)
-	require.Equal(t, 0, len(updatedNamespace.Labels))
 }
 
 func buildDynakube(name string, appInjectEnabled bool) *dynatracev1beta1.DynaKube {
