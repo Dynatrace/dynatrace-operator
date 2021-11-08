@@ -37,10 +37,6 @@ const (
 	testAnotherHost     = "test-another-host"
 	testAnotherPort     = uint32(5678)
 	testAnotherProtocol = "test-another-protocol"
-
-	testOperatorPodName    = "test-operator-name"
-	testDynatraceNamespace = "dynatrace"
-	testOperatorImage      = "test-operator-image"
 )
 
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
