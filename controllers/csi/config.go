@@ -28,6 +28,7 @@ const (
 	OverlayMappedDirPath = "mapped"
 	OverlayVarDirPath    = "var"
 	OverlayWorkDirPath   = "work"
+	DaemonSetName        = "dynatrace-oneagent-csi-driver"
 )
 
 var MetadataAccessPath = filepath.Join(DataPath, "csi.db")
