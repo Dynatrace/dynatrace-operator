@@ -33,10 +33,10 @@ const (
 	driverDefaultMemory = 100
 
 	registrarDefaultCPU    = 10
-	registrarDefaultMemory = 15
+	registrarDefaultMemory = 18
 
 	livenessProbeDefaultCPU    = 5
-	livenessProbeDefaultMemory = 15
+	livenessProbeDefaultMemory = 18
 )
 
 type Reconciler struct {
