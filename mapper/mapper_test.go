@@ -16,10 +16,10 @@ func createTestDynakubeWithAppInject(name string, labels map[string]string, labe
 		},
 	}
 	if labels != nil {
-		dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{MatchLabels: labels}
+		dk.Spec.NamespaceSelector = metav1.LabelSelector{MatchLabels: labels}
 	}
 	if labelExpression != nil {
-		dk.Spec.OneAgent.ApplicationMonitoring.NamespaceSelector = metav1.LabelSelector{MatchExpressions: labelExpression}
+		dk.Spec.NamespaceSelector = metav1.LabelSelector{MatchExpressions: labelExpression}
 	}
 	return dk
 }
