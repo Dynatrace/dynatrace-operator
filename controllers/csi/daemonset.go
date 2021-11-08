@@ -32,13 +32,11 @@ const (
 	driverDefaultCPU    = 300
 	driverDefaultMemory = 100
 
-	registrarDefaultCPU           = 10
-	registrarDefaultMemoryRequest = 15
-	registrarDefaultMemoryLimit   = 18
+	registrarDefaultCPU    = 10
+	registrarDefaultMemory = 15
 
-	livenessProbeDefaultCPU           = 5
-	livenessProbeDefaultMemoryRequest = 15
-	livenessProbeDefaultMemoryLimit   = 18
+	livenessProbeDefaultCPU    = 5
+	livenessProbeDefaultMemory = 15
 )
 
 type Reconciler struct {
@@ -231,13 +229,7 @@ func prepareDriverContainer(operatorImage string, resourcesMap map[string]corev1
 				ContainerPort: 10080,
 			},
 		},
-		Resources: (&containerResources{
-			containerName:        driverContainerName,
-			resourcesMap:         resourcesMap,
-			defaultCpu:           driverDefaultCPU,
-			defaultMemoryRequest: driverDefaultMemory,
-			defaultMemoryLimit:   driverDefaultMemory,
-		}).resourceRequirements(),
+		Resources:       prepareResources(driverContainerName, resourcesMap, driverDefaultCPU, driverDefaultMemory),
 		LivenessProbe:   prepareDriverLivenessProbe(),
 		SecurityContext: prepareSecurityContext(),
 		VolumeMounts:    prepareDriverVolumeMounts(),
@@ -342,13 +334,7 @@ func prepareRegistrarContainer(operatorImage string, resourcesMap map[string]cor
 				ContainerPort: 9809,
 			},
 		},
-		Resources: (&containerResources{
-			containerName:        registrarContainerName,
-			resourcesMap:         resourcesMap,
-			defaultCpu:           registrarDefaultCPU,
-			defaultMemoryRequest: registrarDefaultMemoryRequest,
-			defaultMemoryLimit:   registrarDefaultMemoryLimit,
-		}).resourceRequirements(),
+		Resources:     prepareResources(registrarContainerName, resourcesMap, registrarDefaultCPU, registrarDefaultMemory),
 		LivenessProbe: &livenessProbe,
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser: &userID,
@@ -405,13 +391,7 @@ func prepareLivenessProbeContainer(operatorImage string, resourcesMap map[string
 				MountPath: "/csi",
 			},
 		},
-		Resources: (&containerResources{
-			containerName:        livenessProbeContainerName,
-			resourcesMap:         resourcesMap,
-			defaultCpu:           livenessProbeDefaultCPU,
-			defaultMemoryRequest: livenessProbeDefaultMemoryRequest,
-			defaultMemoryLimit:   livenessProbeDefaultMemoryLimit,
-		}).resourceRequirements(),
+		Resources: prepareResources(livenessProbeContainerName, resourcesMap, livenessProbeDefaultCPU, livenessProbeDefaultMemory),
 	}
 }
 
@@ -466,4 +446,32 @@ func prepareVolumes() []corev1.Volume {
 			},
 		},
 	}
+}
+
+func prepareResources(containerName string, resourcesMap map[string]corev1.ResourceList, defaultCpu, defaultMemory int64) corev1.ResourceRequirements {
+	resources := resourcesMap[containerName]
+
+	cpu := getResource(defaultCpu, resources, corev1.ResourceCPU, resource.Milli)
+	memory := getResource(defaultMemory, resources, corev1.ResourceMemory, resource.Mega)
+
+	return corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    cpu,
+			corev1.ResourceMemory: memory,
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    cpu,
+			corev1.ResourceMemory: memory,
+		},
+	}
+}
+
+func getResource(defaultValue int64, resources corev1.ResourceList, resourceType corev1.ResourceName, resourceQuantity resource.Scale) resource.Quantity {
+	if resources != nil {
+		resourceValue, ok := resources[resourceType]
+		if ok && !resourceValue.IsZero() {
+			return resourceValue
+		}
+	}
+	return getQuantity(defaultValue, resourceQuantity)
 }
