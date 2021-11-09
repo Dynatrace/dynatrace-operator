@@ -267,6 +267,7 @@ func handleRequest(t *testing.T, dynakube, other *dynatracev1beta1.DynaKube) adm
 	validator := &dynakubeValidator{
 		logger: logger.NewDTLogger(),
 		clt:    clt,
+		apiReader: clt,
 	}
 
 	data, err := json.Marshal(*dynakube)

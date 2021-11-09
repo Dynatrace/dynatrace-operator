@@ -7,6 +7,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/logger"
+	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -38,6 +39,11 @@ Make sure you correctly specify the ActiveGate capabilities in your custom resou
 The DynaKube's specification tries to specify duplicate capabilities in the ActiveGate section, duplicate capability=%s.
 Make sure you don't duplicate an Activegate capability in your custom resource.
 `
+	errorConflictingNamespaceSelector = `
+The DynaKube's specification tries to inject into namespaces where another Dynakube already injects into, which is not supported.
+Make sure the namespaceSelector doesn't conflict with other Dynakubes namespaceSelector
+`
+
 	errorNodeSelectorConflict = `
 The DynaKube's specification tries to specify a nodeSelector conflicts with an another Dynakube's nodeSelector, which is not supported.
 The conflicting Dynakube: %s
@@ -52,14 +58,15 @@ Make sure you correctly specify the URL in your custom resource.
 
 func AddDynakubeValidationWebhookToManager(manager ctrl.Manager) error {
 	manager.GetWebhookServer().Register("/validate", &webhook.Admission{
-		Handler: newDynakubeValidator(),
+		Handler: newDynakubeValidator(manager.GetAPIReader()),
 	})
 	return nil
 }
 
 type dynakubeValidator struct {
-	logger logr.Logger
-	clt    client.Client
+	logger    logr.Logger
+	clt       client.Client
+	apiReader client.Reader
 }
 
 // InjectClient implements the inject.Client interface which allows the manager to inject a kubernetes client into this handler
@@ -90,6 +97,11 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 	if hasConflictingActiveGateConfiguration(dynakube) {
 		validator.logger.Info("requested dynakube has conflicting active gate configuration", "name", request.Name, "namespace", request.Namespace)
 		return admission.Denied(errorConflictingActiveGateSections)
+	}
+
+	if validator.hasConflictingNamespaceSelector(dynakube) {
+		validator.logger.Info("requested dynakube has conflicting namespaceSelector", "name", request.Name, "namespace", request.Namespace)
+		return admission.Denied(errorConflictingNamespaceSelector)
 	}
 
 	if errMsg := hasInvalidActiveGateCapabilities(dynakube); errMsg != "" {
@@ -129,6 +141,15 @@ func hasConflictingOneAgentConfiguration(dynakube *dynatracev1beta1.DynaKube) bo
 		counter += 1
 	}
 	return counter > 1
+}
+
+func (validator *dynakubeValidator) hasConflictingNamespaceSelector(dynakube *dynatracev1beta1.DynaKube) bool {
+	if !dynakube.NeedAppInjection(){
+		return false
+	}
+	dkMapper := mapper.NewDynakubeMapper(context.TODO(), validator.clt, validator.apiReader, dynakube.Namespace, dynakube, validator.logger)
+	_, err := dkMapper.MatchingNamespaces()
+	return err != nil
 }
 
 func hasConflictingActiveGateConfiguration(dynakube *dynatracev1beta1.DynaKube) bool {
@@ -194,8 +215,9 @@ func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1bet
 	return nil
 }
 
-func newDynakubeValidator() admission.Handler {
+func newDynakubeValidator(apiReader client.Reader) admission.Handler {
 	return &dynakubeValidator{
-		logger: logger.NewDTLogger(),
+		logger:    logger.NewDTLogger(),
+		apiReader: apiReader,
 	}
 }
