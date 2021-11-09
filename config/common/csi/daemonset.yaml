@@ -14,7 +14,7 @@ spec:
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-logs-container: driver
+        kubectl.kubernetes.io/default-container: driver
       labels:
         internal.oneagent.dynatrace.com/app: csi-driver
         internal.oneagent.dynatrace.com/component: csi-driver

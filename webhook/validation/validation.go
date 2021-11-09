@@ -27,8 +27,7 @@ const (
 
 const (
 	errorCSIRequired = `
-The DynaKube's specification tries to use the CSI driver while no CSI DaemonSet was deployed.
-Make sure that the deployed kubernetes/openshift.yaml contains the CSI DaemonSet.
+The Dynakube's specification requires the CSI driver to work. Make sure you deployed the correct manifests.
 `
 	errorConflictingOneagentMode = `
 The DynaKube's specification tries to use multiple oneagent modes at the same time, which is not supported.
@@ -174,7 +173,6 @@ func missingCSIDaemonSet(client client.Client, dynakube *dynatracev1beta1.DynaKu
 		return true
 	} else if err != nil {
 		logger.Info("error occurred while listing dynakubes", "err", err.Error())
-		return false
 	}
 	return false
 }
