@@ -11,7 +11,7 @@ import (
 
 const notModifiedStatusCode = 304
 
-type RuxitProcConf struct {
+type RuxitProcResponse struct {
 	Revision   uint            `json:"revision"`
 	Properties []RuxitProperty `json:"properties"`
 }
@@ -22,7 +22,9 @@ type RuxitProperty struct {
 	Value   string `json:"value"`
 }
 
-func (rc RuxitProcConf) ToMap() map[string]map[string]string {
+type RuxitProcMap map[string]map[string]string
+
+func (rc RuxitProcResponse) ToMap() RuxitProcMap {
 	sections := map[string]map[string]string{}
 	for _, prop := range rc.Properties {
 		section := sections[prop.Section]
@@ -35,7 +37,7 @@ func (rc RuxitProcConf) ToMap() map[string]map[string]string {
 	return sections
 }
 
-func (dtc *dynatraceClient) GetRuxitProcConf(prevRevision uint) (*RuxitProcConf, error) {
+func (dtc *dynatraceClient) GetRuxitProcConf(prevRevision uint) (*RuxitProcResponse, error) {
 	ruxitConfURL := fmt.Sprintf("%s/v1/deployment/installer/agent/processmoduleconfig", dtc.url)
 
 	req, err := http.NewRequest("GET", ruxitConfURL, nil)
@@ -70,8 +72,8 @@ func (dtc *dynatraceClient) GetRuxitProcConf(prevRevision uint) (*RuxitProcConf,
 	return dtc.readResponseForRuxitProcConf(responseData)
 }
 
-func (dtc *dynatraceClient) readResponseForRuxitProcConf(response []byte) (*RuxitProcConf, error) {
-	resp := RuxitProcConf{}
+func (dtc *dynatraceClient) readResponseForRuxitProcConf(response []byte) (*RuxitProcResponse, error) {
+	resp := RuxitProcResponse{}
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
 		dtc.logger.Error(err, "error unmarshalling json response")
