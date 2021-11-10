@@ -151,11 +151,11 @@ createConfigurationFiles() {
 		echo "Writing ${container_conf_file} file..."
 
 		writeConfBaseTo ${container_conf_file}
+		writeConfEnrichmentTo "/var/lib/dynatrace/enrichment" "dt_metadata"
 
 		if [[ "${host_tenant}" != "-" ]]; then
 			if [[ "{{.TenantUUID}}" == "${host_tenant}" ]]; then
 				writeConfK8To ${container_conf_file}
-				writeConfEnrichmentTo "/var/lib/dynatrace/enrichment" "dt_metadata"
 			fi
 			writeConfHostTo ${container_conf_file}
 		fi
