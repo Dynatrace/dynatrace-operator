@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/admission/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,6 +34,17 @@ var defaultDynakubeObjectMeta = metav1.ObjectMeta{
 
 var defaultCSIDaemonSet = appsv1.DaemonSet{
 	ObjectMeta: metav1.ObjectMeta{Name: dtcsi.DaemonSetName, Namespace: testNamespace},
+}
+
+var dummyLabels = map[string]string{
+	"dummy": "label",
+}
+
+var dummyNamespace = corev1.Namespace{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:   "dummy",
+		Labels: dummyLabels,
+	},
 }
 
 func TestDynakubeValidator_Handle(t *testing.T) {
@@ -270,6 +282,60 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					},
 				},
 			}, &defaultCSIDaemonSet)
+
+		assertDeniedResponse(t,
+			errorConflictingNamespaceSelector,
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					OneAgent: dynatracev1beta1.OneAgentSpec{
+						CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+					},
+				},
+			},
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "conflicting-dk",
+					Namespace: testNamespace,
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					OneAgent: dynatracev1beta1.OneAgentSpec{
+						ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+					},
+				},
+			}, &defaultCSIDaemonSet, &dummyNamespace)
+
+		assertDeniedResponse(t,
+			errorConflictingNamespaceSelector,
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					NamespaceSelector: metav1.LabelSelector{
+						MatchLabels: dummyLabels,
+					},
+					APIURL: testApiUrl,
+					OneAgent: dynatracev1beta1.OneAgentSpec{
+						ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+					},
+				},
+			},
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "conflicting-dk",
+					Namespace: testNamespace,
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					NamespaceSelector: metav1.LabelSelector{
+						MatchLabels: dummyLabels,
+					},
+					OneAgent: dynatracev1beta1.OneAgentSpec{
+						ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+					},
+				},
+			}, &defaultCSIDaemonSet, &dummyNamespace)
 
 		assertDeniedResponse(t,
 			errorCSIRequired,
