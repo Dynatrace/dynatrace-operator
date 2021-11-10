@@ -46,8 +46,8 @@ spec:
   #
   # enableIstio: false
 
-  # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements>
-  # if namespaceSelector is not set then we inject into every namespace
+  # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements >
+  # namespaceSelector has no effect when used together with hostMonitoring or classicFullstack
   #
   # namespaceSelector:
   #   matchLabels:
