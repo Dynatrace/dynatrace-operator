@@ -21,20 +21,14 @@ import (
 )
 
 const (
-	DataPath                         = "/data"
-	DriverName                       = "csi.oneagent.dynatrace.com"
-	AgentBinaryDir                   = "bin"
-	AgentRunDir                      = "run"
-	OverlayMappedDirPath             = "mapped"
-	OverlayVarDirPath                = "var"
-	OverlayWorkDirPath               = "work"
-	DaemonSetName                    = "dynatrace-oneagent-csi-driver"
-	DefaultServiceAccountName        = "dynatrace-oneagent-csi-driver"
-	AnnotationCSIResourcesIdentifier = "dynatrace.com/csi-resources"
-
-	// AnnotationCSITolerations is a annotation to set tolerations for the csi drive daemonset.
-	// example: [{\"key\":\"node-role.kubernetes.io/master\",\"operator\":\"Exists\",\"effect\":\"NoSchedule\"}]
-	AnnotationCSITolerations = "dynatrace.com/csi-tolerations"
+	DataPath             = "/data"
+	DriverName           = "csi.oneagent.dynatrace.com"
+	AgentBinaryDir       = "bin"
+	AgentRunDir          = "run"
+	OverlayMappedDirPath = "mapped"
+	OverlayVarDirPath    = "var"
+	OverlayWorkDirPath   = "work"
+	DaemonSetName        = "dynatrace-oneagent-csi-driver"
 )
 
 var MetadataAccessPath = filepath.Join(DataPath, "csi.db")
