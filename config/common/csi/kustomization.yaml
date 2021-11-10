@@ -1,4 +1,5 @@
 resources:
+  - daemonset.yaml
   - csidriver.yaml
   - serviceaccount-csi.yaml
   - clusterrole-csi.yaml
