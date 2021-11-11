@@ -6,7 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	endpoint "github.com/Dynatrace/dynatrace-operator/controllers/dataingestendpointsecret"
+	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/controllers/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -1184,8 +1184,8 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 				Env: []corev1.EnvVar{
 					{Name: "LD_PRELOAD", Value: "/opt/dynatrace/oneagent-paas/agent/lib64/liboneagentproc.so"},
 					{Name: "DT_DEPLOYMENT_METADATA", Value: "orchestration_tech=Operator-cloud_native_fullstack;script_version=snapshot;orchestrator_id="},
-					{Name: endpoint.UrlSecretField, Value: "https://test-api-url.com/api/v2/metrics/ingest"},
-					{Name: endpoint.TokenSecretField, Value: dataIngestToken},
+					{Name: dtingestendpoint.UrlSecretField, Value: "https://test-api-url.com/api/v2/metrics/ingest"},
+					{Name: dtingestendpoint.TokenSecretField, Value: dataIngestToken},
 				},
 				VolumeMounts: []corev1.VolumeMount{
 					{Name: "oneagent-share", MountPath: "/etc/ld.so.preload", SubPath: "ld.so.preload"},

@@ -1,4 +1,4 @@
-package dataingestendpointsecret
+package ingestendpoint
 
 import (
 	"bytes"

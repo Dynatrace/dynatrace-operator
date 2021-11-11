@@ -12,7 +12,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	endpoint "github.com/Dynatrace/dynatrace-operator/controllers/dataingestendpointsecret"
+	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/controllers/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
@@ -184,7 +184,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	endpointGenerator := endpoint.NewEndpointGenerator(m.client, m.apiReader, m.namespace, log)
+	endpointGenerator := dtingestendpoint.NewEndpointGenerator(m.client, m.apiReader, m.namespace, log)
 
 	var endpointSecret corev1.Secret
 	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtwebhook.SecretEndpointName, Namespace: ns.Name}, &endpointSecret); k8serrors.IsNotFound(err) {
@@ -432,12 +432,12 @@ func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
 			Value: deploymentMetadata.AsString(),
 		},
 		corev1.EnvVar{
-			Name:  endpoint.UrlSecretField,
-			Value: dataIngestFields[endpoint.UrlSecretField],
+			Name:  dtingestendpoint.UrlSecretField,
+			Value: dataIngestFields[dtingestendpoint.UrlSecretField],
 		},
 		corev1.EnvVar{
-			Name:  endpoint.TokenSecretField,
-			Value: dataIngestFields[endpoint.TokenSecretField],
+			Name:  dtingestendpoint.TokenSecretField,
+			Value: dataIngestFields[dtingestendpoint.TokenSecretField],
 		},
 	)
 
