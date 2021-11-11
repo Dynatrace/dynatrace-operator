@@ -129,7 +129,7 @@ func (a *SqliteAccess) Setup(path string) error {
 	return nil
 }
 
-// InsertDynakube inserts a new Tenant
+// InsertDynakube inserts a new Dynakube
 func (a *SqliteAccess) InsertDynakube(dynakube *Dynakube) error {
 	err := a.executeStatement(insertDynakubeStatement, dynakube.Name, dynakube.TenantUUID, dynakube.LatestVersion)
 	if err != nil {
@@ -142,29 +142,29 @@ func (a *SqliteAccess) InsertDynakube(dynakube *Dynakube) error {
 	return err
 }
 
-// UpdateDynakube updates an existing Tenant by matching the Dynakube name
-func (a *SqliteAccess) UpdateDynakube(tenant *Dynakube) error {
-	err := a.executeStatement(updateDynakubeStatement, tenant.LatestVersion, tenant.TenantUUID, tenant.Name)
+// UpdateDynakube updates an existing Dynakube by matching the name
+func (a *SqliteAccess) UpdateDynakube(dynakube *Dynakube) error {
+	err := a.executeStatement(updateDynakubeStatement, dynakube.LatestVersion, dynakube.TenantUUID, dynakube.Name)
 	if err != nil {
 		err = fmt.Errorf("couldn't update dynakube, tenantUUID '%s', latest version '%s', name '%s', err: %s",
-			tenant.TenantUUID,
-			tenant.LatestVersion,
-			tenant.Name,
+			dynakube.TenantUUID,
+			dynakube.LatestVersion,
+			dynakube.Name,
 			err)
 	}
 	return err
 }
 
-// DeleteDynakube deletes an existing Tenant by Dynakube name
+// DeleteDynakube deletes an existing Dynakube using its name
 func (a *SqliteAccess) DeleteDynakube(dynakubeName string) error {
 	err := a.executeStatement(deleteDynakubeStatement, dynakubeName)
 	if err != nil {
-		err = fmt.Errorf("couldn't delete tenant, dynakube '%s', err: %s", dynakubeName, err)
+		err = fmt.Errorf("couldn't delete dynakube, name '%s', err: %s", dynakubeName, err)
 	}
 	return err
 }
 
-// GetDynakube gets Tenant by Dynakube name
+// GetDynakube gets Dynakube using its name
 func (a *SqliteAccess) GetDynakube(dynakubeName string) (*Dynakube, error) {
 	var tenantUUID string
 	var latestVersion string
@@ -253,24 +253,24 @@ func (a *SqliteAccess) GetPodNames() (map[string]string, error) {
 	return podNames, nil
 }
 
-// GetDynakubes gets all Tenants and maps their tenantUUID to the corresponding Dynakubes.
+// GetDynakubes gets all Dynakubes and maps their name to the corresponding TenantUUID.
 func (a *SqliteAccess) GetDynakubes() (map[string]string, error) {
 	rows, err := a.conn.Query(getDynakubesStatement)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get tenants, err: %s", err)
+		return nil, fmt.Errorf("couldn't get dynakubes, err: %s", err)
 	}
-	tenants := map[string]string{}
+	dynakubes := map[string]string{}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var uuid string
 		var dynakube string
 		err := rows.Scan(&uuid, &dynakube)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan from database for tenant, err: %s", err)
+			return nil, fmt.Errorf("failed to scan from database for dynakube, err: %s", err)
 		}
-		tenants[dynakube] = uuid
+		dynakubes[dynakube] = uuid
 	}
-	return tenants, nil
+	return dynakubes, nil
 }
 
 // Executes the provided SQL statement on the database.

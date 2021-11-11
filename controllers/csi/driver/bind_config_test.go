@@ -54,7 +54,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
 	})
-	t.Run(`no tenant in storage`, func(t *testing.T) {
+	t.Run(`no dynakube in storage`, func(t *testing.T) {
 		clt := fake.NewClient(
 			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}},
 			&dynatracev1beta1.DynaKube{
