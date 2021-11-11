@@ -60,7 +60,8 @@ The conflicting Dynakube: %s
 The DynaKube's specification is missing the API URL or still has the example value set.
 Make sure you correctly specify the URL in your custom resource.
 `
-	warningCloudNativeFullStack = `cloudNativeFullStack mode is a BETA feature. Please be aware that it is NOT production ready, and you may run into bugs.`
+	warningCloudNativeFullStack  = `cloudNativeFullStack mode is in BETA. Please be aware that it is NOT production ready and you may run into bugs.`
+	warningApplicationMonitoring = `applicationMonitoring mode is in BETA. Please be aware that it is NOT production ready and you may run into bugs.`
 )
 
 func AddDynakubeValidationWebhookToManager(manager ctrl.Manager) error {
@@ -130,6 +131,9 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 	if dynakube.CloudNativeFullstackMode() {
 		validator.logger.Info("Dynakube with cloudNativeFullStack was applied, warning was provided.")
 		return admission.Allowed("").WithWarnings(warningCloudNativeFullStack)
+	} else if dynakube.ApplicationMonitoringMode() {
+		validator.logger.Info("Dynakube with applicationMonitoring was applied, warning was provided.")
+		return admission.Allowed("").WithWarnings(warningApplicationMonitoring)
 	}
 	return admission.Allowed("")
 }
