@@ -6,11 +6,15 @@ import (
 	"net/http"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	appsv1 "k8s.io/api/apps/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -22,6 +26,9 @@ const (
 )
 
 const (
+	errorCSIRequired = `
+The Dynakube's specification requires the CSI driver to work. Make sure you deployed the correct manifests.
+`
 	errorConflictingOneagentMode = `
 The DynaKube's specification tries to use multiple oneagent modes at the same time, which is not supported.
 `
@@ -92,6 +99,11 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 		return admission.Denied(errorConflictingActiveGateSections)
 	}
 
+	if missingCSIDaemonSet(validator.clt, dynakube, validator.logger) {
+		validator.logger.Info("requested dynakube uses csi driver, but csi driver is missing in the cluster", "name", request.Name, "namespace", request.Namespace)
+		return admission.Denied(errorCSIRequired)
+	}
+
 	if errMsg := hasInvalidActiveGateCapabilities(dynakube); errMsg != "" {
 		validator.logger.Info("requested dynakube has invalid active gate capability", "name", request.Name, "namespace", request.Namespace)
 		return admission.Denied(errMsg)
@@ -149,6 +161,20 @@ func hasInvalidActiveGateCapabilities(dynakube *dynatracev1beta1.DynaKube) strin
 		}
 	}
 	return ""
+}
+
+func missingCSIDaemonSet(client client.Client, dynakube *dynatracev1beta1.DynaKube, logger logr.Logger) bool {
+	if !dynakube.NeedsCSIDriver() {
+		return false
+	}
+	csiDaemonSet := appsv1.DaemonSet{}
+	err := client.Get(context.TODO(), types.NamespacedName{Name: dtcsi.DaemonSetName, Namespace: dynakube.Namespace}, &csiDaemonSet)
+	if k8serrors.IsNotFound(err) {
+		return true
+	} else if err != nil {
+		logger.Info("error occurred while listing dynakubes", "err", err.Error())
+	}
+	return false
 }
 
 func hasConflictingNodeSelector(client client.Client, dynakube *dynatracev1beta1.DynaKube, logger logr.Logger) string {

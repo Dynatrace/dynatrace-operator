@@ -7,6 +7,5 @@ bases:
   - ../common/oneagent
   - ../common/operator
   - ../common/routing
-  - ../common/csi
   - ../common/webhook
   - ../crd/default
