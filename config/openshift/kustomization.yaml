@@ -16,6 +16,10 @@ bases:
   - ../common/routing
   - ../common/webhook
   - ../crd/default
+images:
+  - name: quay.io/dynatrace/dynatrace-operator:snapshot
+    newName: quay.io/dynatrace/dynatrace-operator
+    newTag: snapshot-release-0-3
 patchesJson6902:
   - target:
       group: ""
