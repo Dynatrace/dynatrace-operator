@@ -5,39 +5,39 @@ import (
 )
 
 var (
-	testTenant1 = Tenant{
+	testDynakube1 = Dynakube{
 		TenantUUID:    "asc1",
 		LatestVersion: "123",
-		Dynakube:      "dk1",
+		Name:          "dk1",
 	}
-	testTenant2 = Tenant{
+	testDynakube2 = Dynakube{
 		TenantUUID:    "asc2",
 		LatestVersion: "223",
-		Dynakube:      "dk2",
+		Name:          "dk2",
 	}
-	testTenant3 = Tenant{
+	testDynakube3 = Dynakube{
 		TenantUUID:    "asc3",
 		LatestVersion: "323",
-		Dynakube:      "dk3",
+		Name:          "dk3",
 	}
 
 	testVolume1 = Volume{
 		VolumeID:   "vol-1",
 		PodName:    "pod1",
-		Version:    testTenant1.LatestVersion,
-		TenantUUID: testTenant1.TenantUUID,
+		Version:    testDynakube1.LatestVersion,
+		TenantUUID: testDynakube1.TenantUUID,
 	}
 	testVolume2 = Volume{
 		VolumeID:   "vol-2",
 		PodName:    "pod2",
-		Version:    testTenant2.LatestVersion,
-		TenantUUID: testTenant2.TenantUUID,
+		Version:    testDynakube2.LatestVersion,
+		TenantUUID: testDynakube2.TenantUUID,
 	}
 	testVolume3 = Volume{
 		VolumeID:   "vol-3",
 		PodName:    "pod3",
-		Version:    testTenant3.LatestVersion,
-		TenantUUID: testTenant3.TenantUUID,
+		Version:    testDynakube3.LatestVersion,
+		TenantUUID: testDynakube3.TenantUUID,
 	}
 )
 
@@ -62,12 +62,12 @@ func checkIfTablesExist(db *SqliteAccess) bool {
 		return false
 	}
 	var tentatsTable string
-	row = db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", tenantsTableName)
+	row = db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", dynakubesTableName)
 	err = row.Scan(&tentatsTable)
 	if err != nil {
 		return false
 	}
-	if tentatsTable != tenantsTableName || volumesTable != volumesTableName {
+	if tentatsTable != dynakubesTableName || volumesTable != volumesTableName {
 		return false
 	}
 	return true
@@ -75,13 +75,13 @@ func checkIfTablesExist(db *SqliteAccess) bool {
 
 type FakeFailDB struct{}
 
-func (f *FakeFailDB) Setup(dbPath string) error                      { return sql.ErrTxDone }
-func (f *FakeFailDB) InsertTenant(tenant *Tenant) error              { return sql.ErrTxDone }
-func (f *FakeFailDB) UpdateTenant(tenant *Tenant) error              { return sql.ErrTxDone }
-func (f *FakeFailDB) DeleteTenant(dynakubeName string) error         { return sql.ErrTxDone }
-func (f *FakeFailDB) GetTenant(dynakubeName string) (*Tenant, error) { return nil, sql.ErrTxDone }
+func (f *FakeFailDB) Setup(dbPath string) error                          { return sql.ErrTxDone }
+func (f *FakeFailDB) InsertDynakube(tenant *Dynakube) error              { return sql.ErrTxDone }
+func (f *FakeFailDB) UpdateDynakube(tenant *Dynakube) error              { return sql.ErrTxDone }
+func (f *FakeFailDB) DeleteDynakube(dynakubeName string) error           { return sql.ErrTxDone }
+func (f *FakeFailDB) GetDynakube(dynakubeName string) (*Dynakube, error) { return nil, sql.ErrTxDone }
 
-func (f *FakeFailDB) GetTenants() (map[string]string, error)     { return nil, sql.ErrTxDone }
+func (f *FakeFailDB) GetDynakubes() (map[string]string, error)   { return nil, sql.ErrTxDone }
 func (f *FakeFailDB) InsertVolume(volume *Volume) error          { return sql.ErrTxDone }
 func (f *FakeFailDB) DeleteVolume(volumeID string) error         { return sql.ErrTxDone }
 func (f *FakeFailDB) GetVolume(volumeID string) (*Volume, error) { return nil, sql.ErrTxDone }
