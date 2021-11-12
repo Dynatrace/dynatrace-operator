@@ -75,7 +75,7 @@ jobs:
 
     - <<: *deploy_amd
       name: Deploy snapshot non-master branch AMD to Quay
-      if: (branch != master) AND (branch !~ /^release-.+$/)) AND (tag IS blank)
+      if: (branch != master) AND (branch !~ ^release-) AND (tag IS blank)
       env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
 
     - <<: *deploy_amd
