@@ -3,6 +3,7 @@ changelog:
     labels:
       - ignore-for-release
       - minor
+      - cherrypick
   categories:
     - title: New Features 🎉
       labels:
