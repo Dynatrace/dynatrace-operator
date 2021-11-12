@@ -18,7 +18,7 @@ import (
 
 const (
 	dkName       = "a-dynakube"
-	tenantUuid   = "a-tenant-uuid"
+	tenantUUID   = "a-tenant-uuid"
 	agentVersion = "1.2-3"
 )
 
@@ -54,7 +54,7 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
 	})
-	t.Run(`no tenant in storage`, func(t *testing.T) {
+	t.Run(`no dynakube in storage`, func(t *testing.T) {
 		clt := fake.NewClient(
 			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}},
 			&dynatracev1beta1.DynaKube{
@@ -128,13 +128,13 @@ func TestCSIDriverServer_NewBindConfig(t *testing.T) {
 			namespace: namespace,
 		}
 
-		srv.db.InsertTenant(metadata.NewTenant(tenantUuid, agentVersion, dkName))
+		srv.db.InsertDynakube(metadata.NewDynakube(dkName, tenantUUID, agentVersion))
 
 		bindCfg, err := newBindConfig(context.TODO(), srv, volumeCfg)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, bindCfg)
-		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid, "bin", agentVersion), srv.path.AgentBinaryDirForVersion(tenantUuid, agentVersion))
-		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUuid), srv.path.EnvDir(tenantUuid))
+		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUUID, "bin", agentVersion), srv.path.AgentBinaryDirForVersion(tenantUUID, agentVersion))
+		assert.Equal(t, filepath.Join(srv.opts.RootDir, tenantUUID), srv.path.EnvDir(tenantUUID))
 	})
 }
