@@ -28,7 +28,7 @@ const (
 
 func TestNewStatefulSetBuilder(t *testing.T) {
 	stsBuilder := NewStatefulSetProperties(&dynatracev1beta1.DynaKube{}, &dynatracev1beta1.CapabilityProperties{},
-		testUID, testValue, "", "", "", "", "", nil, nil, nil)
+		testUID, testValue, "", "", "", nil, nil, nil)
 	assert.NotNil(t, stsBuilder)
 	assert.NotNil(t, stsBuilder.DynaKube)
 	assert.NotNil(t, stsBuilder.CapabilityProperties)
@@ -41,7 +41,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.Routing.CapabilityProperties
 	sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties,
-		"", "", testFeature, "", "", "", "", nil, nil, nil))
+		"", "", testFeature, "", "", nil, nil, nil))
 
 	assert.NoError(t, err)
 	assert.NotNil(t, sts)
@@ -71,7 +71,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 
 	t.Run(`template has annotations`, func(t *testing.T) {
 		sts, _ := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties,
-			"", testValue, "", "", "", "", "", nil, nil, nil))
+			"", testValue, "", "", "", nil, nil, nil))
 		assert.Equal(t, map[string]string{
 			AnnotationVersion:         instance.Status.ActiveGate.Version,
 			AnnotationCustomPropsHash: testValue,
@@ -83,7 +83,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.Routing.CapabilityProperties
 	templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties,
-		"", "", "", "", "", "", "", nil, nil, nil))
+		"", "", "", "", "", nil, nil, nil))
 
 	assert.NotEqual(t, corev1.PodSpec{}, templateSpec)
 	assert.NotEmpty(t, templateSpec.Containers)
@@ -106,7 +106,7 @@ func TestStatefulSet_Container(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.Routing.CapabilityProperties
 	container := buildContainer(NewStatefulSetProperties(instance, capabilityProperties,
-		"", "", "", "", "", "", "", nil, nil, nil))
+		"", "", "", "", "", nil, nil, nil))
 
 	assert.Equal(t, dynatracev1beta1.OperatorName, container.Name)
 	assert.Equal(t, instance.ActiveGateImage(), container.Image)
@@ -124,7 +124,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 
 	t.Run(`without custom properties`, func(t *testing.T) {
 		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", "", "", nil, nil, nil))
+			"", "", "", "", "", nil, nil, nil))
 
 		assert.Empty(t, volumes)
 	})
@@ -133,7 +133,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 			Value: testValue,
 		}
 		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", testFeature, "", "", "", "", nil, nil, nil))
+			"", "", testFeature, "", "", nil, nil, nil))
 		expectedSecretName := instance.Name + "-router-" + customproperties.Suffix
 
 		require.NotEmpty(t, volumes)
@@ -152,7 +152,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 			ValueFrom: testKey,
 		}
 		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", "", "", nil, nil, nil))
+			"", "", "", "", "", nil, nil, nil))
 		expectedSecretName := testKey
 
 		require.NotEmpty(t, volumes)
@@ -175,7 +175,7 @@ func TestStatefulSet_Env(t *testing.T) {
 
 	t.Run(`without proxy`, func(t *testing.T) {
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			testUID, "", testFeature, "MSGrouter", "", "", "", nil, nil, nil))
+			testUID, "", testFeature, "MSGrouter", "", nil, nil, nil))
 		assert.Equal(t, []corev1.EnvVar{
 			{Name: DTCapabilities, Value: "MSGrouter"},
 			{Name: DTIdSeedNamespace, Value: instance.Namespace},
@@ -187,7 +187,7 @@ func TestStatefulSet_Env(t *testing.T) {
 	t.Run(`with proxy from value`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", "", "", nil, nil, nil))
+			"", "", "", "", "", nil, nil, nil))
 
 		assert.Contains(t, envVars, corev1.EnvVar{
 			Name:  DTInternalProxy,
@@ -197,7 +197,7 @@ func TestStatefulSet_Env(t *testing.T) {
 	t.Run(`with proxy from value source`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", "", "", nil, nil, nil))
+			"", "", "", "", "", nil, nil, nil))
 
 		assert.NotEmpty(t, envVars)
 
@@ -213,7 +213,7 @@ func TestStatefulSet_Env(t *testing.T) {
 		instance.Spec.NetworkZone = testName
 		capabilityProperties := &instance.Spec.Routing.CapabilityProperties
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", "", "", nil, nil, nil))
+			"", "", "", "", "", nil, nil, nil))
 
 		assert.NotEmpty(t, envVars)
 
@@ -227,7 +227,7 @@ func TestStatefulSet_Env(t *testing.T) {
 		instance.Spec.Routing.Group = testValue
 		capabilityProperties := &instance.Spec.Routing.CapabilityProperties
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", "", "", nil, nil, nil))
+			"", "", "", "", "", nil, nil, nil))
 
 		assert.NotEmpty(t, envVars)
 
@@ -244,13 +244,13 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 
 	t.Run(`without custom properties`, func(t *testing.T) {
 		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", "", "", nil, nil, nil))
+			"", "", "", "", "", nil, nil, nil))
 		assert.Empty(t, volumeMounts)
 	})
 	t.Run(`with custom properties`, func(t *testing.T) {
 		capabilityProperties.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{Value: testValue}
 		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", "", "", nil, nil, nil))
+			"", "", "", "", "", nil, nil, nil))
 
 		assert.NotEmpty(t, volumeMounts)
 		assert.Contains(t, volumeMounts, corev1.VolumeMount{
@@ -282,7 +282,7 @@ func TestStatefulSet_Resources(t *testing.T) {
 		},
 	}
 
-	container := buildContainer(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", "", "", nil, nil, nil))
+	container := buildContainer(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil))
 
 	assert.True(t, quantityCpuLimit.Equal(container.Resources.Limits[corev1.ResourceCPU]))
 	assert.True(t, quantityMemoryLimit.Equal(container.Resources.Limits[corev1.ResourceMemory]))
