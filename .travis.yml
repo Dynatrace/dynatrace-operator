@@ -141,6 +141,10 @@ jobs:
       name: Create manifest for non-master snapshot for Quay
       if: (branch != master) AND (tag IS blank)
       env: IMAGE=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')"
+      script:
+        - sudo chmod o+x /etc/docker
+        - docker manifest create $IMAGE:$TAG $IMAGE:$TAG-amd64
+        - docker manifest push $IMAGE:$TAG
 
     - <<: *create_manifest
       stage: manifest
