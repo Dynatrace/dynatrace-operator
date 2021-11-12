@@ -75,7 +75,7 @@ jobs:
 
     - <<: *deploy_amd
       name: Deploy snapshot non-master branch AMD to Quay
-      if: (branch != master) AND (tag IS blank)
+      if: (branch != master) AND (tag IS blank) AND (branch =~ ^release)
       env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
 
     - <<: *deploy_amd
@@ -113,16 +113,6 @@ jobs:
       workspaces:
         use:
           - dockerconfig
-
-    - <<: *deploy_arm
-      name: Deploy snapshot non-master branch ARM to Quay
-      if: (branch != master) AND (tag IS blank)
-      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$(echo $TRAVIS_BRANCH | sed 's#[^a-zA-Z0-9_-]#-#g')" LABEL="quay.expires-after=10d"
-
-    - <<: *deploy_arm
-      name: Deploy snapshot on release branch ARM to Quay
-      if: (branch =~ /^release-.+$/) AND (tag IS blank)
-      env: IMAGES=$OAO_IMAGE_QUAY TAG="snapshot-$TRAVIS_BRANCH"
 
     - <<: *deploy_arm
       name: Deploy release ARM to DockerHub, Quay
