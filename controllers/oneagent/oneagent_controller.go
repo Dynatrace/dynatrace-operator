@@ -144,7 +144,7 @@ func (r *ReconcileOneAgent) reconcileRollout(dkState *controllers.DynakubeState)
 		return updateCR, err
 	}
 	if updateCR {
-		// remove old daemonset with deployment mode in name
+		// remove old daemonset with feature in name
 		oldClassicDaemonset := &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("%s-%s", r.instance.Name, daemonset.ClassicFeature),
@@ -152,7 +152,9 @@ func (r *ReconcileOneAgent) reconcileRollout(dkState *controllers.DynakubeState)
 			},
 		}
 		err = r.client.Delete(context.TODO(), oldClassicDaemonset)
-		if err != nil && !k8serrors.IsNotFound(err) {
+		if err == nil {
+			r.logger.Info("removed oneagent daemonset with feature in name")
+		} else if !k8serrors.IsNotFound(err) {
 			return false, err
 		}
 	}
