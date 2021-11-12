@@ -27,15 +27,15 @@ func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeC
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("namespace '%s' doesn't have DynaKube assigned", volumeCfg.namespace))
 	}
 
-	tenant, err := svr.db.GetTenant(dkName)
+	dynakube, err := svr.db.GetDynakube(dkName)
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("failed to extract tenant for DynaKube %s: %s", dkName, err.Error()))
 	}
-	if tenant == nil {
-		return nil, status.Error(codes.Unavailable, fmt.Sprintf("tenant is missing from metadata for DynaKube %s", dkName))
+	if dynakube == nil {
+		return nil, status.Error(codes.Unavailable, fmt.Sprintf("dynakube (%s) is missing from metadata database", dkName))
 	}
 	return &bindConfig{
-		tenantUUID: tenant.TenantUUID,
-		version:    tenant.LatestVersion,
+		tenantUUID: dynakube.TenantUUID,
+		version:    dynakube.LatestVersion,
 	}, nil
 }
