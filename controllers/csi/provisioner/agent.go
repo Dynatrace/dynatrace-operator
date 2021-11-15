@@ -47,7 +47,7 @@ func newInstallAgentConfig(
 	}
 }
 
-func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID string, latestRevision uint, latestConfResponse *dtclient.RuxitProcResponse, confPatch *ruxitConfPatch) (string, error) {
+func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID string, latestRevision uint, latestRuxitProcResponse *dtclient.RuxitProcResponse) (string, error) {
 	dk := installAgentCfg.dk
 	logger := installAgentCfg.logger
 	currentVersion := installAgentCfg.getOneAgentVersionFromInstance()
@@ -63,7 +63,7 @@ func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID strin
 				"Failed to install agent version: %s to tenant: %s, err: %s", currentVersion, tenantUUID, err)
 			return "", err
 		}
-		if err := installAgentCfg.updateRuxitConf(currentVersion, tenantUUID, confPatch); err != nil {
+		if err := installAgentCfg.updateRuxitConf(currentVersion, tenantUUID, latestRuxitProcResponse); err != nil {
 			return "", err
 		}
 		installAgentCfg.recorder.Eventf(dk,
@@ -72,8 +72,8 @@ func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID strin
 			"Installed agent version: %s to tenant: %s", currentVersion, tenantUUID)
 		return currentVersion, nil
 	}
-	if latestRevision != latestConfResponse.Revision {
-		if err := installAgentCfg.updateRuxitConf(currentVersion, tenantUUID, confPatch); err != nil {
+	if latestRevision != latestRuxitProcResponse.Revision {
+		if err := installAgentCfg.updateRuxitConf(currentVersion, tenantUUID, latestRuxitProcResponse); err != nil {
 			return "", err
 		}
 	}

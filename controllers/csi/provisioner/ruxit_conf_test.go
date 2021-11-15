@@ -13,18 +13,15 @@ func TestMergeLine(t *testing.T) {
 			"prop1": "val1",
 		},
 	}
-	testConfPatch := ruxitConfPatch{
-		updateMap: testUpdateMap,
-	}
 
 	t.Run(`key not in any map`, func(t *testing.T) {
 		testLine := "prop2 val2"
-		merged := mergeLine(testLine, "general", &testConfPatch)
+		merged := mergeLine(testLine, "general", testUpdateMap)
 		assert.Equal(t, "prop2 val2", merged)
 	})
 	t.Run(`key in update map`, func(t *testing.T) {
 		testLine := "prop1 val2"
-		merged := mergeLine(testLine, "general", &testConfPatch)
+		merged := mergeLine(testLine, "general", testUpdateMap)
 		assert.Equal(t, "prop1 val1", merged)
 	})
 }

@@ -12,58 +12,36 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
+	"github.com/spf13/afero"
 )
-
-type ruxitConfPatch struct {
-	updateMap dtclient.RuxitProcMap
-}
 
 var confSectionRegexp, _ = regexp.Compile(`\[(.*)\]`)
 
-func (r *OneAgentProvisioner) getRuxitProcConf(ruxitRevission *metadata.RuxitRevision, dtc dtclient.Client) (*dtclient.RuxitProcResponse, *ruxitConfPatch, error) {
+func (r *OneAgentProvisioner) getRuxitProcResponse(ruxitRevission *metadata.RuxitRevision, dtc dtclient.Client) (*dtclient.RuxitProcResponse, error) {
 	var latestRevission uint
 	if ruxitRevission.LatestRevission != 0 {
 		latestRevission = ruxitRevission.LatestRevission
 	}
 
-	latestRuxitConfResponse, err := dtc.GetRuxitProcConf(latestRevission)
+	latestRuxitProcResponse, err := dtc.GetRuxitProcConf(latestRevission)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	storedRuxitConfResponse, err := r.readRuxitCache(ruxitRevission)
-	if err != nil && os.IsNotExist(err) && latestRuxitConfResponse == nil {
-		latestRuxitConfResponse, err = dtc.GetRuxitProcConf(0)
+	storedRuxitProcResponse, err := r.readRuxitCache(ruxitRevission)
+	if err != nil && os.IsNotExist(err) && latestRuxitProcResponse == nil {
+		latestRuxitProcResponse, err = dtc.GetRuxitProcConf(0)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	} else if err != nil && !os.IsNotExist(err) {
-		return nil, nil, err
+		return nil, err
 	}
 
-	if storedRuxitConfResponse == nil {
-		storedRuxitConfResponse = latestRuxitConfResponse
-	} else if latestRuxitConfResponse == nil {
-		latestRuxitConfResponse = storedRuxitConfResponse
+	if latestRuxitProcResponse != nil {
+		return latestRuxitProcResponse, nil
 	}
-
-	confPatch := createRuxitConfPatch(latestRuxitConfResponse, storedRuxitConfResponse)
-
-	return latestRuxitConfResponse, confPatch, nil
-}
-
-func createRuxitConfPatch(latestRuxitConfResponse, storedRuxitConfResponse *dtclient.RuxitProcResponse) *ruxitConfPatch {
-	confPatch := ruxitConfPatch{}
-	if latestRuxitConfResponse != nil {
-		confPatch = ruxitConfPatch{
-			updateMap: latestRuxitConfResponse.ToMap(),
-		}
-	} else {
-		confPatch = ruxitConfPatch{
-			updateMap: storedRuxitConfResponse.ToMap(),
-		}
-	}
-	return &confPatch
+	return storedRuxitProcResponse, nil
 }
 
 func (r *OneAgentProvisioner) readRuxitCache(ruxitRevission *metadata.RuxitRevision) (*dtclient.RuxitProcResponse, error) {
@@ -84,12 +62,12 @@ func (r *OneAgentProvisioner) readRuxitCache(ruxitRevission *metadata.RuxitRevis
 	return &ruxitConf, nil
 }
 
-func (r *OneAgentProvisioner) writeRuxitCache(ruxitRevission *metadata.RuxitRevision, ruxitConf *dtclient.RuxitProcResponse) error {
+func (r *OneAgentProvisioner) writeRuxitCache(ruxitRevission *metadata.RuxitRevision, ruxitResponse *dtclient.RuxitProcResponse) error {
 	ruxitConfFile, err := r.fs.OpenFile(r.path.AgentRuxitRevision(ruxitRevission.TenantUUID), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
-	jsonBytes, err := json.Marshal(ruxitConf)
+	jsonBytes, err := json.Marshal(ruxitResponse)
 	if err != nil {
 		ruxitConfFile.Close()
 		return err
@@ -99,36 +77,29 @@ func (r *OneAgentProvisioner) writeRuxitCache(ruxitRevission *metadata.RuxitRevi
 	return err
 }
 
-func (r *OneAgentProvisioner) createOrUpdateRuxitRevision(tenantUUID string, ruxitRevision *metadata.RuxitRevision, ruxitConf *dtclient.RuxitProcResponse) error {
-	if ruxitRevision.LatestRevission == 0 && ruxitConf != nil {
-		log.Info("inserting ruxit revission into db", "tenantUUID", tenantUUID, "revission", ruxitConf.Revision)
-		return r.db.InsertRuxitRevission(metadata.NewRuxitRevission(tenantUUID, ruxitConf.Revision))
-	} else if ruxitConf != nil && ruxitConf.Revision != ruxitRevision.LatestRevission {
-		log.Info("updating ruxit revission in db", "tenantUUID", tenantUUID, "old-revission", ruxitRevision.LatestRevission, "new-revission", ruxitConf.Revision)
-		ruxitRevision.LatestRevission = ruxitConf.Revision
+func (r *OneAgentProvisioner) createOrUpdateRuxitRevision(tenantUUID string, ruxitRevision *metadata.RuxitRevision, ruxitResponse *dtclient.RuxitProcResponse) error {
+	if ruxitRevision.LatestRevission == 0 && ruxitResponse != nil {
+		log.Info("inserting ruxit revission into db", "tenantUUID", tenantUUID, "revission", ruxitResponse.Revision)
+		return r.db.InsertRuxitRevission(metadata.NewRuxitRevission(tenantUUID, ruxitResponse.Revision))
+	} else if ruxitResponse != nil && ruxitResponse.Revision != ruxitRevision.LatestRevission {
+		log.Info("updating ruxit revission in db", "tenantUUID", tenantUUID, "old-revission", ruxitRevision.LatestRevission, "new-revission", ruxitResponse.Revision)
+		ruxitRevision.LatestRevission = ruxitResponse.Revision
 		return r.db.UpdateRuxitRevission(ruxitRevision)
 	}
 	return nil
 }
 
-func (installAgentCfg *installAgentConfig) updateRuxitConf(version, tenantUUID string, confPatch *ruxitConfPatch) error {
-	if confPatch != nil {
+func (installAgentCfg *installAgentConfig) updateRuxitConf(version, tenantUUID string, ruxitResponse *dtclient.RuxitProcResponse) error {
+	if ruxitResponse != nil {
+		procMap := ruxitResponse.ToMap()
 		installAgentCfg.logger.Info("updating ruxitagentproc.conf", "agentVersion", version, "tenantUUID", tenantUUID)
-		confContent, err := installAgentCfg.mergeRuxitConf(version, tenantUUID, confPatch)
-		if err != nil {
-			return err
-		}
-
-		// for sections not in the conf file found in the zip
-		confContent = append(confContent, addLeftovers(confPatch.updateMap)...)
-
-		return installAgentCfg.storeRuxitConf(version, tenantUUID, confContent)
+		return installAgentCfg.mergeRuxitConf(version, tenantUUID, procMap)
 	}
 	installAgentCfg.logger.Info("no changes to ruxitagentproc.conf, skipping update")
 	return nil
 }
 
-func (installAgentCfg *installAgentConfig) mergeRuxitConf(version, tenantUUID string, confPatch *ruxitConfPatch) ([]string, error) {
+func (installAgentCfg *installAgentConfig) mergeRuxitConf(version, tenantUUID string, procMap dtclient.RuxitProcMap) error {
 	usedRuxitConfPath := installAgentCfg.path.AgentRuxitConfForVersion(tenantUUID, version)
 	sourceRuxitConfPath := installAgentCfg.path.SourceAgentRuxitConfForVersion(tenantUUID, version)
 	sourceRuxitConfFile, err := installAgentCfg.fs.Open(sourceRuxitConfPath)
@@ -139,60 +110,78 @@ func (installAgentCfg *installAgentConfig) mergeRuxitConf(version, tenantUUID st
 		// TODO: Migrate into a function
 		fileInfo, err := installAgentCfg.fs.Stat(usedRuxitConfPath)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		sourceRuxitConfFile, err = installAgentCfg.fs.OpenFile(sourceRuxitConfPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, fileInfo.Mode())
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		usedRuxitConfFile, err := installAgentCfg.fs.Open(usedRuxitConfPath)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		_, err = io.Copy(sourceRuxitConfFile, usedRuxitConfFile)
 		if err != nil {
-			return nil, err
+			sourceRuxitConfFile.Close()
+			usedRuxitConfFile.Close()
+			return err
 		}
+		usedRuxitConfFile.Close()
 	}
-	if err != nil {
-		return nil, err
-	}
-	scanner := bufio.NewScanner(sourceRuxitConfFile)
-	currentSection := ""
-	finalLines := []string{}
-	for scanner.Scan() {
-		line := scanner.Text()
-		if header := confSectionHeader(line); header != "" {
-			finalLines = append(finalLines, addLeftoversForSection(currentSection, confPatch.updateMap)...)
-			currentSection = header
-			finalLines = append(finalLines, line)
-			installAgentCfg.logger.Info("ruxitagentproc.conf updating", "section", currentSection)
-		} else if strings.HasPrefix(line, "#") {
-			finalLines = append(finalLines, line)
-		} else {
-			finalLines = append(finalLines, mergeLine(line, currentSection, confPatch))
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		sourceRuxitConfFile.Close()
-		return nil, err
-	}
-
-	// the last section's leftover cleanup never runs in the for loop
-	finalLines = append(finalLines, addLeftoversForSection(currentSection, confPatch.updateMap)...)
-
-	return finalLines, sourceRuxitConfFile.Close()
-}
-
-func (installAgentCfg *installAgentConfig) storeRuxitConf(version, tenantUUID string, content []string) error {
-	ruxitConfPath := installAgentCfg.path.AgentRuxitConfForVersion(tenantUUID, version)
-	fileInfo, err := installAgentCfg.fs.Stat(ruxitConfPath)
+	sourceRuxitConfFile.Close()
 	if err != nil {
 		return err
 	}
-	ruxitConfFile, err := installAgentCfg.fs.OpenFile(ruxitConfPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, fileInfo.Mode())
+	return updateConfFile(installAgentCfg.fs, sourceRuxitConfPath, usedRuxitConfPath, procMap)
+}
+
+// TODO: move into other/separate package
+func updateConfFile(fs afero.Fs, sourcePath, destPath string, procMap dtclient.RuxitProcMap) error {
+	sourceFile, err := fs.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+	scanner := bufio.NewScanner(sourceFile)
+	currentSection := ""
+	content := []string{}
+	for scanner.Scan() {
+		line := scanner.Text()
+		if header := confSectionHeader(line); header != "" {
+			content = append(content, addLeftoversForSection(currentSection, procMap)...)
+			currentSection = header
+			content = append(content, line)
+		} else if strings.HasPrefix(line, "#") {
+			content = append(content, line)
+		} else {
+			content = append(content, mergeLine(line, currentSection, procMap))
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		sourceFile.Close()
+		return err
+	}
+
+	// the last section's leftover cleanup never runs in the for loop
+	content = append(content, addLeftoversForSection(currentSection, procMap)...)
+
+	// for sections not in the conf file found in the zip
+	content = append(content, addLeftovers(procMap)...)
+
+	if err = sourceFile.Close(); err != nil {
+		return err
+	}
+
+	return storeConfFile(fs, destPath, content)
+}
+
+func storeConfFile(fs afero.Fs, destPath string, content []string) error {
+	fileInfo, err := fs.Stat(destPath)
+	if err != nil {
+		return err
+	}
+	ruxitConfFile, err := fs.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, fileInfo.Mode())
 	if err != nil {
 		return err
 	}
@@ -213,9 +202,9 @@ func confSectionHeader(confLine string) string {
 	return ""
 }
 
-func addLeftovers(ruxitConf dtclient.RuxitProcMap) []string {
+func addLeftovers(procMap dtclient.RuxitProcMap) []string {
 	lines := []string{}
-	for section, props := range ruxitConf {
+	for section, props := range procMap {
 		lines = append(lines, fmt.Sprintf("[%s]", section)) // TODO: should add logs here
 		for key, value := range props {
 			lines = append(lines, fmt.Sprintf("%s %s", key, value))
@@ -224,25 +213,25 @@ func addLeftovers(ruxitConf dtclient.RuxitProcMap) []string {
 	return lines
 }
 
-func addLeftoversForSection(currentSection string, ruxitConf dtclient.RuxitProcMap) []string {
+func addLeftoversForSection(currentSection string, procMap dtclient.RuxitProcMap) []string {
 	lines := []string{}
 	if currentSection != "" {
-		section, ok := ruxitConf[currentSection]
+		section, ok := procMap[currentSection]
 		if ok {
 			for key, value := range section {
 				lines = append(lines, fmt.Sprintf("%s %s", key, value))
 			}
-			delete(ruxitConf, currentSection)
+			delete(procMap, currentSection)
 		}
 	}
 	return lines
 }
 
-func mergeLine(line, currentSection string, confPatch *ruxitConfPatch) string {
+func mergeLine(line, currentSection string, procMap dtclient.RuxitProcMap) string {
 	splitLine := strings.Split(line, " ")
 	key := splitLine[0]
 
-	props, ok := confPatch.updateMap[currentSection]
+	props, ok := procMap[currentSection]
 	if !ok {
 		return line
 	}
@@ -250,6 +239,6 @@ func mergeLine(line, currentSection string, confPatch *ruxitConfPatch) string {
 	if !ok {
 		return line
 	}
-	delete(confPatch.updateMap[currentSection], key)
+	delete(procMap[currentSection], key)
 	return fmt.Sprintf("%s %s", key, newValue)
 }

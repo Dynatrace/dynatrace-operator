@@ -80,7 +80,7 @@ func (f *FakeFailDB) InsertDynakube(tenant *Dynakube) error              { retur
 func (f *FakeFailDB) UpdateDynakube(tenant *Dynakube) error              { return sql.ErrTxDone }
 func (f *FakeFailDB) DeleteDynakube(dynakubeName string) error           { return sql.ErrTxDone }
 func (f *FakeFailDB) GetDynakube(dynakubeName string) (*Dynakube, error) { return nil, sql.ErrTxDone }
-func (f *FakeFailDB) GetDynakubes() (map[string]string, error)   { return nil, sql.ErrTxDone }
+func (f *FakeFailDB) GetDynakubes() (map[string]string, error)           { return nil, sql.ErrTxDone }
 
 func (f *FakeFailDB) InsertRuxitRevission(ruxitRev *RuxitRevision) error { return sql.ErrTxDone }
 func (f *FakeFailDB) UpdateRuxitRevission(ruxitRev *RuxitRevision) error { return sql.ErrTxDone }
