@@ -6,3 +6,7 @@ resources:
   - clusterrolebinding-csi.yaml
   - role-csi.yaml
   - rolebinding-csi.yaml
+images:
+  - name: quay.io/dynatrace/dynatrace-operator:snapshot
+    newName: quay.io/dynatrace/dynatrace-operator
+    newTag: snapshot-release-0-3
