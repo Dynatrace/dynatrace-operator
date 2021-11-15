@@ -9,7 +9,6 @@ resources:
   - oneagent/clusterrolebinding-oneagent-unprivileged.yaml
 bases:
   - ../common/activegate
-  - ../common/data-ingest
   - ../common/kubernetes-monitoring
   - ../common/oneagent
   - ../common/operator
