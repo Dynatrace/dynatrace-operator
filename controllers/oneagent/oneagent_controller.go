@@ -6,7 +6,6 @@ import (
 	"os"
 	"reflect"
 	"strconv"
-	"strings"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
@@ -15,14 +14,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -37,33 +34,28 @@ func NewOneAgentReconciler(
 	client client.Client,
 	apiReader client.Reader,
 	scheme *runtime.Scheme,
-	config *rest.Config,
 	logger logr.Logger,
 	instance *dynatracev1beta1.DynaKube,
 	feature string) *ReconcileOneAgent {
 	return &ReconcileOneAgent{
-		client:          client,
-		apiReader:       apiReader,
-		scheme:          scheme,
-		logger:          logger,
-		instance:        instance,
-		feature:         feature,
-		config:          config,
-		versionProvider: kubesystem.NewVersionProvider(config),
+		client:    client,
+		apiReader: apiReader,
+		scheme:    scheme,
+		logger:    logger,
+		instance:  instance,
+		feature:   feature,
 	}
 }
 
 type ReconcileOneAgent struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client          client.Client
-	apiReader       client.Reader
-	scheme          *runtime.Scheme
-	logger          logr.Logger
-	instance        *dynatracev1beta1.DynaKube
-	feature         string
-	config          *rest.Config
-	versionProvider kubesystem.VersionProvider
+	client    client.Client
+	apiReader client.Reader
+	scheme    *runtime.Scheme
+	logger    logr.Logger
+	instance  *dynatracev1beta1.DynaKube
+	feature   string
 }
 
 // Reconcile reads that state of the cluster for a OneAgent object and makes changes based on the state read
@@ -107,21 +99,6 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.Dyna
 	rec.Error(err)
 
 	return upd, nil
-}
-
-// validate sanity checks if essential fields in the custom resource are available
-//
-// Return an error in the following conditions
-// - APIURL empty
-func validate(cr *dynatracev1beta1.DynaKube) error {
-	var msg []string
-	if cr.Spec.APIURL == "" {
-		msg = append(msg, ".spec.apiUrl is missing")
-	}
-	if len(msg) > 0 {
-		return errors.New(strings.Join(msg, ", "))
-	}
-	return nil
 }
 
 func (r *ReconcileOneAgent) reconcileRollout(dkState *controllers.DynakubeState) (bool, error) {
@@ -194,17 +171,12 @@ func (r *ReconcileOneAgent) newDaemonSetForCR(dkState *controllers.DynakubeState
 	var ds *appsv1.DaemonSet
 	var err error
 
-	major, minor, err := r.getVersionsFromVersionProvider()
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
 	if r.feature == daemonset.ClassicFeature {
-		ds, err = daemonset.NewClassicFullStack(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
+		ds, err = daemonset.NewClassicFullStack(dkState.Instance, dkState.Log, clusterID).BuildDaemonSet()
 	} else if r.feature == daemonset.HostMonitoringFeature {
-		ds, err = daemonset.NewHostMonitoring(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
+		ds, err = daemonset.NewHostMonitoring(dkState.Instance, dkState.Log, clusterID).BuildDaemonSet()
 	} else if r.feature == daemonset.CloudNativeFeature {
-		ds, err = daemonset.NewCloudNativeFullStack(dkState.Instance, dkState.Log, clusterID, major, minor).BuildDaemonSet()
+		ds, err = daemonset.NewCloudNativeFullStack(dkState.Instance, dkState.Log, clusterID).BuildDaemonSet()
 	}
 	if err != nil {
 		return nil, err
@@ -217,22 +189,6 @@ func (r *ReconcileOneAgent) newDaemonSetForCR(dkState *controllers.DynakubeState
 	ds.Annotations[kubeobjects.AnnotationHash] = dsHash
 
 	return ds, nil
-}
-
-func (r *ReconcileOneAgent) getVersionsFromVersionProvider() (string, string, error) {
-	if r.versionProvider != nil {
-		major, err := r.versionProvider.Major()
-		if err != nil {
-			return major, "", errors.WithStack(err)
-		}
-
-		minor, err := r.versionProvider.Minor()
-		if err != nil {
-			return major, minor, errors.WithStack(err)
-		}
-		return major, minor, nil
-	}
-	return "", "", nil
 }
 
 func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logger logr.Logger, instance *dynatracev1beta1.DynaKube) (bool, error) {

@@ -6,9 +6,6 @@ const (
 	kubernetesArch = "kubernetes.io/arch"
 	kubernetesOS   = "kubernetes.io/os"
 
-	kubernetesBetaArch = "beta.kubernetes.io/arch"
-	kubernetesBetaOS   = "beta.kubernetes.io/os"
-
 	amd64 = "amd64"
 	arm64 = "arm64"
 	linux = "linux"
@@ -22,14 +19,6 @@ func AffinityNodeRequirementWithARM64() []corev1.NodeSelectorRequirement {
 	return affinityNodeRequirementsForArches(amd64, arm64)
 }
 
-func AffinityBetaNodeRequirement() []corev1.NodeSelectorRequirement {
-	return affinityBetaNodeRequirementsForArches(amd64)
-}
-
-func AffinityBetaNodeRequirementWithARM64() []corev1.NodeSelectorRequirement {
-	return affinityBetaNodeRequirementsForArches(amd64, arm64)
-}
-
 func affinityNodeRequirementsForArches(arches ...string) []corev1.NodeSelectorRequirement {
 	return []corev1.NodeSelectorRequirement{
 		{
@@ -39,21 +28,6 @@ func affinityNodeRequirementsForArches(arches ...string) []corev1.NodeSelectorRe
 		},
 		{
 			Key:      kubernetesOS,
-			Operator: corev1.NodeSelectorOpIn,
-			Values:   []string{linux},
-		},
-	}
-}
-
-func affinityBetaNodeRequirementsForArches(arches ...string) []corev1.NodeSelectorRequirement {
-	return []corev1.NodeSelectorRequirement{
-		{
-			Key:      kubernetesBetaArch,
-			Operator: corev1.NodeSelectorOpIn,
-			Values:   arches,
-		},
-		{
-			Key:      kubernetesBetaOS,
 			Operator: corev1.NodeSelectorOpIn,
 			Values:   []string{linux},
 		},

@@ -26,7 +26,7 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
+		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -45,7 +45,7 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
+		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -66,7 +66,7 @@ func TestCustomPullSecret(t *testing.T) {
 			CustomPullSecret: testName,
 		},
 	}
-	dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
+	dsInfo := NewClassicFullStack(&instance, log, testClusterID)
 	ds, err := dsInfo.BuildDaemonSet()
 	require.NoError(t, err)
 
@@ -87,7 +87,7 @@ func TestResources(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
+		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -126,7 +126,7 @@ func TestResources(t *testing.T) {
 			},
 		}
 
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID, "", "")
+		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -157,7 +157,7 @@ func TestInfraMon_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewHostMonitoring(&instance, log, testClusterID, "", "")
+		dsInfo := NewHostMonitoring(&instance, log, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 

@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
 	rsfs "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -58,11 +57,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 		}}
-	imgVerProvider := func(img string, dockerConfig *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
-		return dtversion.ImageVersion{}, nil
-	}
-
-	r := NewReconciler(metricsCapability, clt, clt, scheme.Scheme, nil, log, instance, imgVerProvider)
+	r := NewReconciler(metricsCapability, clt, clt, scheme.Scheme, log, instance)
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.Instance)
@@ -178,7 +173,7 @@ func TestReconcile(t *testing.T) {
 
 func TestSetReadinessProbePort(t *testing.T) {
 	r := createDefaultReconciler(t)
-	stsProps := rsfs.NewStatefulSetProperties(r.Instance, metricsCapability.Properties(), "", "", "", "", "", "", "", nil, nil, nil)
+	stsProps := rsfs.NewStatefulSetProperties(r.Instance, metricsCapability.Properties(), "", "", "", "", "", nil, nil, nil)
 	sts, err := rsfs.CreateStatefulSet(stsProps)
 
 	assert.NoError(t, err)

@@ -8,4 +8,4 @@ bases:
   - ../common/operator
   - ../common/routing
   - ../common/webhook
-  - ../crd/default
+  - ../crd

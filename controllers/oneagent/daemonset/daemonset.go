@@ -52,63 +52,55 @@ type ClassicFullStack struct {
 }
 
 type builderInfo struct {
-	instance               *dynatracev1beta1.DynaKube
-	hostInjectSpec         *dynatracev1beta1.HostInjectSpec
-	logger                 logr.Logger
-	clusterId              string
-	relatedImage           string
-	deploymentType         string
-	minorKubernetesVersion string
-	majorKubernetesVersion string
+	instance       *dynatracev1beta1.DynaKube
+	hostInjectSpec *dynatracev1beta1.HostInjectSpec
+	logger         logr.Logger
+	clusterId      string
+	relatedImage   string
+	deploymentType string
 }
 
 type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
+func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string) Builder {
 	return &HostMonitoring{
 		builderInfo{
-			instance:               instance,
-			hostInjectSpec:         &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
-			logger:                 logger,
-			clusterId:              clusterId,
-			relatedImage:           os.Getenv(relatedImageEnvVar),
-			deploymentType:         deploymentmetadata.DeploymentTypeHostMonitoring,
-			majorKubernetesVersion: majorKubernetesVersion,
-			minorKubernetesVersion: minorKubernetesVersion,
+			instance:       instance,
+			hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
+			logger:         logger,
+			clusterId:      clusterId,
+			relatedImage:   os.Getenv(relatedImageEnvVar),
+			deploymentType: deploymentmetadata.DeploymentTypeHostMonitoring,
 		},
 		HostMonitoringFeature,
 	}
 }
 
-func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
+func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string) Builder {
 	return &HostMonitoring{
 		builderInfo{
-			instance:               instance,
-			hostInjectSpec:         &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
-			logger:                 logger,
-			clusterId:              clusterId,
-			relatedImage:           os.Getenv(relatedImageEnvVar),
-			deploymentType:         deploymentmetadata.DeploymentTypeCloudNative,
-			majorKubernetesVersion: majorKubernetesVersion,
-			minorKubernetesVersion: minorKubernetesVersion,
+			instance:       instance,
+			hostInjectSpec: &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
+			logger:         logger,
+			clusterId:      clusterId,
+			relatedImage:   os.Getenv(relatedImageEnvVar),
+			deploymentType: deploymentmetadata.DeploymentTypeCloudNative,
 		},
 		CloudNativeFeature,
 	}
 }
 
-func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string, majorKubernetesVersion string, minorKubernetesVersion string) Builder {
+func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string) Builder {
 	return &ClassicFullStack{
 		builderInfo{
-			instance:               instance,
-			hostInjectSpec:         &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
-			logger:                 logger,
-			clusterId:              clusterId,
-			relatedImage:           os.Getenv(relatedImageEnvVar),
-			deploymentType:         deploymentmetadata.DeploymentTypeFullStack,
-			majorKubernetesVersion: majorKubernetesVersion,
-			minorKubernetesVersion: minorKubernetesVersion,
+			instance:       instance,
+			hostInjectSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
+			logger:         logger,
+			clusterId:      clusterId,
+			relatedImage:   os.Getenv(relatedImageEnvVar),
+			deploymentType: deploymentmetadata.DeploymentTypeFullStack,
 		},
 	}
 }
