@@ -140,9 +140,6 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	if ruxitRevission == nil {
-		ruxitRevission = metadata.NewRuxitRevission(dynakube.TenantUUID, 0)
-	}
 
 	latestRuxitProcResponse, err := r.getRuxitProcResponse(ruxitRevission, dtc)
 	if err != nil {

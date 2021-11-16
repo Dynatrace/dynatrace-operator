@@ -81,11 +81,19 @@ const (
 	WHERE TenantUUID = ?;
 	`
 
+	ruxitRevisionPrunerTriggerName      = "revisionPruner"
+	ruxitRevisionPrunerTriggerStatement = `
+	CREATE TRIGGER IF NOT EXISTS revisionPruner
+		AFTER DELETE ON dynakubes
+		WHEN NOT EXISTS (SELECT 1 FROM dynakubes WHERE TenantUUID = OLD.TenantUUID)
+	BEGIN
+	    DELETE FROM ruxitRevissions WHERE TenantUUID = OLD.TenantUUID;
+	END;
+	`
+
 	deleteVolumeStatement = "DELETE FROM volumes WHERE ID = ?;"
 
 	deleteDynakubeStatement = "DELETE FROM dynakubes WHERE Name = ?;"
-
-	deleteRuxitRevissionStatement = "DELETE FROM ruxitRevissions WHERE TenantUUID = ?;"
 
 	getUsedVersionsStatement = `
 	SELECT Version
@@ -143,6 +151,9 @@ func (a *SqliteAccess) createTables() error {
 	}
 	if _, err := a.conn.Exec(ruxitRevCreateStatement); err != nil {
 		return fmt.Errorf("couldn't create the table %s, err: %s", ruxitRevTableName, err)
+	}
+	if _, err := a.conn.Exec(ruxitRevisionPrunerTriggerStatement); err != nil {
+		return fmt.Errorf("couldn't create the trigger for pruning table %s, err: %s", ruxitRevTableName, err)
 	}
 	return nil
 }
@@ -224,15 +235,6 @@ func (a *SqliteAccess) UpdateRuxitRevission(ruxitRev *RuxitRevision) error {
 			ruxitRev.TenantUUID,
 			ruxitRev.LatestRevission,
 			err)
-	}
-	return err
-}
-
-// DeleteRuxitRevission deletes an existing RuxitRevission by tenantUUID
-func (a *SqliteAccess) DeleteRuxitRevission(tenantUUID string) error {
-	err := a.executeStatement(deleteRuxitRevissionStatement, tenantUUID)
-	if err != nil {
-		err = fmt.Errorf("couldn't delete ruxitRevission, tenantUUID '%s', err: %s", tenantUUID, err)
 	}
 	return err
 }

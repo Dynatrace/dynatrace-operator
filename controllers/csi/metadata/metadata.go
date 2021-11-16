@@ -53,7 +53,6 @@ type Access interface {
 
 	InsertRuxitRevission(ruxitRev *RuxitRevision) error
 	UpdateRuxitRevission(ruxitRev *RuxitRevision) error
-	DeleteRuxitRevission(tenantUUID string) error
 	GetRuxitRevission(tenantUUID string) (*RuxitRevision, error)
 
 	InsertVolume(volume *Volume) error

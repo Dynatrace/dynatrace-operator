@@ -6,9 +6,9 @@ import (
 	"io/ioutil"
 	"os"
 
+	ruxit "github.com/Dynatrace/dynatrace-operator/conf"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	ruxit "github.com/Dynatrace/dynatrace-operator/conf"
 )
 
 // getRuxitProcResponse gets the latest `RuxitProcResponse`, it can come from the tenant if we don't have the latest revision saved locally,
@@ -91,7 +91,7 @@ func (installAgentCfg *installAgentConfig) updateRuxitConf(version, tenantUUID s
 		installAgentCfg.logger.Info("updating ruxitagentproc.conf", "agentVersion", version, "tenantUUID", tenantUUID)
 		usedRuxitConfPath := installAgentCfg.path.AgentRuxitConfForVersion(tenantUUID, version)
 		sourceRuxitConfPath := installAgentCfg.path.SourceAgentRuxitConfForVersion(tenantUUID, version)
-		if err := installAgentCfg.checkRuxitConfCopy(sourceRuxitConfPath, usedRuxitConfPath) ;err != nil {
+		if err := installAgentCfg.checkRuxitConfCopy(sourceRuxitConfPath, usedRuxitConfPath); err != nil {
 			return err
 		}
 		return ruxit.UpdateConfFile(installAgentCfg.fs, sourceRuxitConfPath, usedRuxitConfPath, conf)
