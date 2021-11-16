@@ -1,0 +1,26 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+      - minor
+      - cherrypick
+  categories:
+    - title: New Features 🎉
+      labels:
+        - feature
+    - title: Bugfixes
+      labels:
+        - bug
+        - bugfix
+    - title: Code Improvements
+      labels:
+        - improvement
+        - enhancement
+    - title: Documentation Updates 
+      labels:
+        - documentation
+        - docs
+        - doc
+    - title: Other Changes
+      labels:
+        - "*"
