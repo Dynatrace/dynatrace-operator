@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -57,11 +56,11 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, false, upd)
 
-		checkTestSecretExists(t, fakeClient, webhook.SecretEndpointName, testNamespace1, testDataIngestSecret)
+		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace1, testDataIngestSecret)
 
-		checkTestSecretNotExists(t, fakeClient, webhook.SecretEndpointName, testNamespace2)
+		checkTestSecretNotExists(t, fakeClient, SecretEndpointName, testNamespace2)
 
-		checkTestSecretNotExists(t, fakeClient, webhook.SecretEndpointName, testNamespaceDynatrace)
+		checkTestSecretNotExists(t, fakeClient, SecretEndpointName, testNamespaceDynatrace)
 	})
 	t.Run(`data-ingest endpoint secret created and token updated`, func(t *testing.T) {
 		instance := buildTestDynakube()
@@ -79,11 +78,11 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, true, upd)
 
-		checkTestSecretExists(t, fakeClient, webhook.SecretEndpointName, testNamespace1, testUpdatedTokenDataIngestSecret)
+		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace1, testUpdatedTokenDataIngestSecret)
 
-		checkTestSecretNotExists(t, fakeClient, webhook.SecretEndpointName, testNamespace2)
+		checkTestSecretNotExists(t, fakeClient, SecretEndpointName, testNamespace2)
 
-		checkTestSecretNotExists(t, fakeClient, webhook.SecretEndpointName, testNamespaceDynatrace)
+		checkTestSecretNotExists(t, fakeClient, SecretEndpointName, testNamespaceDynatrace)
 	})
 	t.Run(`data-ingest endpoint secret created and apiUrl updated`, func(t *testing.T) {
 		instance := buildTestDynakube()
@@ -101,11 +100,11 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, true, upd)
 
-		checkTestSecretExists(t, fakeClient, webhook.SecretEndpointName, testNamespace1, testUpdatedApiUrlDataIngestSecret)
+		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace1, testUpdatedApiUrlDataIngestSecret)
 
-		checkTestSecretNotExists(t, fakeClient, webhook.SecretEndpointName, testNamespace2)
+		checkTestSecretNotExists(t, fakeClient, SecretEndpointName, testNamespace2)
 
-		checkTestSecretNotExists(t, fakeClient, webhook.SecretEndpointName, testNamespaceDynatrace)
+		checkTestSecretNotExists(t, fakeClient, SecretEndpointName, testNamespaceDynatrace)
 	})
 
 	t.Run(`data-ingest endpoint secret created in all namespaces but not updated`, func(t *testing.T) {
@@ -118,11 +117,11 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, true, upd)
 
-		checkTestSecretExists(t, fakeClient, webhook.SecretEndpointName, testNamespace1, testDataIngestSecret)
+		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace1, testDataIngestSecret)
 
-		checkTestSecretExists(t, fakeClient, webhook.SecretEndpointName, testNamespace2, testDataIngestSecret)
+		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace2, testDataIngestSecret)
 
-		checkTestSecretNotExists(t, fakeClient, webhook.SecretEndpointName, testNamespaceDynatrace)
+		checkTestSecretNotExists(t, fakeClient, SecretEndpointName, testNamespaceDynatrace)
 
 		upd, err = endpointSecretGenerator.GenerateForDynakube(context.TODO(), instance)
 		assert.NoError(t, err)
@@ -144,11 +143,11 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, true, upd)
 
-		checkTestSecretExists(t, fakeClient, webhook.SecretEndpointName, testNamespace1, testUpdatedTokenDataIngestSecret)
+		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace1, testUpdatedTokenDataIngestSecret)
 
-		checkTestSecretExists(t, fakeClient, webhook.SecretEndpointName, testNamespace2, testUpdatedTokenDataIngestSecret)
+		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace2, testUpdatedTokenDataIngestSecret)
 
-		checkTestSecretNotExists(t, fakeClient, webhook.SecretEndpointName, testNamespaceDynatrace)
+		checkTestSecretNotExists(t, fakeClient, SecretEndpointName, testNamespaceDynatrace)
 	})
 	t.Run(`data-ingest endpoint secret created in all namespaces and apiUrl updated`, func(t *testing.T) {
 		instance := buildTestDynakube()
@@ -166,11 +165,11 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, true, upd)
 
-		checkTestSecretExists(t, fakeClient, webhook.SecretEndpointName, testNamespace1, testUpdatedApiUrlDataIngestSecret)
+		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace1, testUpdatedApiUrlDataIngestSecret)
 
-		checkTestSecretExists(t, fakeClient, webhook.SecretEndpointName, testNamespace2, testUpdatedApiUrlDataIngestSecret)
+		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace2, testUpdatedApiUrlDataIngestSecret)
 
-		checkTestSecretNotExists(t, fakeClient, webhook.SecretEndpointName, testNamespaceDynatrace)
+		checkTestSecretNotExists(t, fakeClient, SecretEndpointName, testNamespaceDynatrace)
 	})
 }
 

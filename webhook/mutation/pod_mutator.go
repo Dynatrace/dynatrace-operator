@@ -187,7 +187,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	endpointGenerator := dtingestendpoint.NewEndpointGenerator(m.client, m.apiReader, m.namespace, log)
 
 	var endpointSecret corev1.Secret
-	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtwebhook.SecretEndpointName, Namespace: ns.Name}, &endpointSecret); k8serrors.IsNotFound(err) {
+	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtingestendpoint.SecretEndpointName, Namespace: ns.Name}, &endpointSecret); k8serrors.IsNotFound(err) {
 		if _, err := endpointGenerator.GenerateForNamespace(ctx, dkName, ns.Name); err != nil {
 			log.Error(err, "failed to create the data-ingest endpoint secret before pod injection")
 			return admission.Errored(http.StatusBadRequest, err)
@@ -199,7 +199,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 	dataIngestFields, err := endpointGenerator.PrepareFields(ctx, &dk)
 	if err != nil {
-		log.Error(err, "AA failed to query the data-ingest endpoint secret before pod injection")
+		log.Error(err, "failed to query the data-ingest endpoint secret before pod injection")
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
@@ -299,7 +299,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 			Name: "data-ingest-endpoint",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: dtwebhook.SecretEndpointName,
+					SecretName: dtingestendpoint.SecretEndpointName,
 				},
 			},
 		})

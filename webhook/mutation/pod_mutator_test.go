@@ -135,7 +135,7 @@ func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podMutator, *
 			},
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      dtwebhook.SecretEndpointName,
+					Name:      dtingestendpoint.SecretEndpointName,
 					Namespace: "test-namespace",
 				},
 			},
@@ -363,7 +363,7 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      dtwebhook.SecretEndpointName,
+						Name:      dtingestendpoint.SecretEndpointName,
 						Namespace: "test-namespace",
 					},
 				},
@@ -486,7 +486,7 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      dtwebhook.SecretEndpointName,
+						Name:      dtingestendpoint.SecretEndpointName,
 						Namespace: "test-namespace",
 					},
 				},
@@ -607,7 +607,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 				},
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      dtwebhook.SecretEndpointName,
+						Name:      dtingestendpoint.SecretEndpointName,
 						Namespace: "test-namespace",
 					},
 				},
@@ -720,7 +720,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 				},
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      dtwebhook.SecretEndpointName,
+						Name:      dtingestendpoint.SecretEndpointName,
 						Namespace: "test-namespace",
 					},
 				},
@@ -834,7 +834,7 @@ func TestUseImmutableImageWithCSI(t *testing.T) {
 				},
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      dtwebhook.SecretEndpointName,
+						Name:      dtingestendpoint.SecretEndpointName,
 						Namespace: "test-namespace",
 					},
 				},
@@ -945,7 +945,7 @@ func TestAgentVersion(t *testing.T) {
 			},
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      dtwebhook.SecretEndpointName,
+					Name:      dtingestendpoint.SecretEndpointName,
 					Namespace: "test-namespace",
 				},
 			},
@@ -1064,7 +1064,7 @@ func TestAgentVersionWithCSI(t *testing.T) {
 			},
 			&corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      dtwebhook.SecretEndpointName,
+					Name:      dtingestendpoint.SecretEndpointName,
 					Namespace: "test-namespace",
 				},
 			},
@@ -1225,7 +1225,7 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 					Name: "data-ingest-endpoint",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: dtwebhook.SecretEndpointName,
+							SecretName: dtingestendpoint.SecretEndpointName,
 						},
 					},
 				},
