@@ -26,7 +26,7 @@ func (pr PathResolver) SourceAgentRuxitConfForVersion(tenantUUID string, version
 	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "conf", "_ruxitagentproc.conf")
 }
 
-func (pr PathResolver) AgentRuxitRevision(tenantUUID string) string {
+func (pr PathResolver) AgentRuxitProcResponseCache(tenantUUID string) string {
 	return filepath.Join(pr.EnvDir(tenantUUID), "revision.json")
 }
 

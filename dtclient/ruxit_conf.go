@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	ruxit "github.com/Dynatrace/dynatrace-operator/conf"
 	"github.com/pkg/errors"
 )
 
@@ -22,9 +23,7 @@ type RuxitProperty struct {
 	Value   string `json:"value"`
 }
 
-type RuxitProcMap map[string]map[string]string
-
-func (rc RuxitProcResponse) ToMap() RuxitProcMap {
+func (rc RuxitProcResponse) ToMap() ruxit.ConfMap {
 	sections := map[string]map[string]string{}
 	for _, prop := range rc.Properties {
 		section := sections[prop.Section]
