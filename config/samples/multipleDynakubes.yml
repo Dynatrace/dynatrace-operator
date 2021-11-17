@@ -68,7 +68,6 @@ spec:
     # Enables listed ActiveGate capabilities
     capabilities:
       - routing
-      - data-ingest
 
     # Amount of replicas of activegate pods
     replicas: 2
