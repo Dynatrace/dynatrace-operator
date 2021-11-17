@@ -1,4 +1,3 @@
-# THE FEATURE ENABLED IN THIS YAML IS STILL IN BETA AND SHOULD NOT BE USED IN A PRODUCTION ENVIRONMENT
 apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
@@ -63,6 +62,7 @@ spec:
       #
       # version:
 
+      # ENABLING 'useCSIDriver' IS STILL IN BETA AND SHOULD NOT BE USED IN A PRODUCTION ENVIRONMENT
       # Optional: If you want to use CSIDriver; disable if your cluster does not have 'nodes' to fall back to the volume approach.
       # Defaults to false
       #
