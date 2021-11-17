@@ -234,9 +234,10 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		pod.Annotations = map[string]string{}
 	}
 
-	if strings.Contains(pod.Annotations[dtwebhook.AnnotationDynatraceInjected], dtwebhook.OneAgentPrefix) {
-		log.Info(">>> " + pod.Annotations[dtwebhook.AnnotationDynatraceInjected] + " -contains- " + dtwebhook.OneAgentPrefix)
-		if dk.FeatureEnableWebhookReinvocationPolicy() {
+	if len(pod.Annotations[dtwebhook.AnnotationDynatraceInjected]) > 0 {
+		log.Info(">>> " + pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
+		
+		if dk.FeatureEnableWebhookReinvocationPolicy() && injectionInfo.enabled(OneAgent) {
 			var needsUpdate = false
 			var installContainer *corev1.Container
 			for i := range pod.Spec.Containers {
@@ -313,6 +314,17 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		mode = "installer"
 	}
 
+	pod.Spec.Volumes = append(pod.Spec.Volumes,
+		corev1.Volume{
+			Name: "oneagent-config",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: dtwebhook.SecretConfigName,
+				},
+			},
+		},
+	)
+
 	if injectionInfo.enabled(OneAgent) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes,
 			corev1.Volume{Name: "oneagent-bin", VolumeSource: dkVol},
@@ -320,14 +332,6 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 				Name: "oneagent-share",
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			corev1.Volume{
-				Name: "oneagent-config",
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: dtwebhook.SecretConfigName,
-					},
 				},
 			},
 		)
