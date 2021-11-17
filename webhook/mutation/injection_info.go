@@ -55,7 +55,7 @@ func NewInjectionInfo() *InjectionInfo {
 }
 
 func (info *InjectionInfo) enabled(wanted FeatureType) bool {
-	for k, _ := range info.features {
+	for k := range info.features {
 		if k.ftype == wanted && k.Enabled {
 			return true
 		}
@@ -67,15 +67,11 @@ func (info *InjectionInfo) add(f *Feature) {
 	info.features[f] = struct{}{}
 }
 
-func (info *InjectionInfo) remove(f *Feature) {
-	delete(info.features, f)
-}
-
 func (info *InjectionInfo) injectedAnnotation() string {
 	builder := strings.Builder{}
 
 	ftrs := []string{}
-	for injectable, _ := range info.features {
+	for injectable := range info.features {
 		if injectable.Enabled {
 			ftrs = append(ftrs, injectable.name())
 		}
