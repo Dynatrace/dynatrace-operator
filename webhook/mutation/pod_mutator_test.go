@@ -1298,7 +1298,7 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 	require.NoError(t, json.Unmarshal(updPodBytes, &updPod))
 
 	// check updated pod
-	require.Equal(t, "LD_PRELOAD", updPod.Spec.Containers[1].Env[0].Name)
+	require.Equal(t, "DT_DEPLOYMENT_METADATA", updPod.Spec.Containers[1].Env[0].Name)
 
 	var updInstallContainer = updPod.Spec.InitContainers[0]
 	for e := range updInstallContainer.Env {

@@ -251,7 +251,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 					log.Info("instrumenting missing container", "name", c.Name)
 
 					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
-					updateContainer(c, &dk, pod, deploymentMetadata, injectionInfo.enabled(DataIngest))
+					updateContainer(c, &dk, pod, deploymentMetadata, injectionInfo)
 
 					if installContainer == nil {
 						for j := range pod.Spec.InitContainers {
@@ -309,23 +309,25 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		mode = "installer"
 	}
 
-	pod.Spec.Volumes = append(pod.Spec.Volumes,
-		corev1.Volume{Name: "oneagent-bin", VolumeSource: dkVol},
-		corev1.Volume{
-			Name: "oneagent-share",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-		corev1.Volume{
-			Name: "oneagent-config",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dtwebhook.SecretConfigName,
+	if injectionInfo.enabled(OneAgent) {
+		pod.Spec.Volumes = append(pod.Spec.Volumes,
+			corev1.Volume{Name: "oneagent-bin", VolumeSource: dkVol},
+			corev1.Volume{
+				Name: "oneagent-share",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
-		},
-	)
+			corev1.Volume{
+				Name: "oneagent-config",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dtwebhook.SecretConfigName,
+					},
+				},
+			},
+		)
+	}
 
 	if injectionInfo.enabled(DataIngest) {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
@@ -427,7 +429,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 		updateInstallContainer(&ic, i+1, c.Name, c.Image)
 
-		updateContainer(c, &dk, pod, deploymentMetadata, injectionInfo.enabled(DataIngest))
+		updateContainer(c, &dk, pod, deploymentMetadata, injectionInfo)
 	}
 
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
@@ -470,43 +472,46 @@ func updateInstallContainer(ic *corev1.Container, number int, name string, image
 }
 
 // updateContainer sets missing preload Variables
-func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
-	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata, dataIngestEnabled bool) {
+func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube, pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata, injectionInfo *InjectionInfo) {
 
 	log.Info("updating container with missing preload variables", "containerName", c.Name)
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 
-	c.VolumeMounts = append(c.VolumeMounts,
-		corev1.VolumeMount{
-			Name:      "oneagent-share",
-			MountPath: "/etc/ld.so.preload",
-			SubPath:   "ld.so.preload",
-		},
-		corev1.VolumeMount{
-			Name:      "oneagent-bin",
-			MountPath: installPath,
-		},
-		corev1.VolumeMount{
-			Name:      "oneagent-share",
-			MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-			SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
-		})
-
-	if dataIngestEnabled {
-		c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
-			Name:      "data-ingest-enrichment",
-			MountPath: "/var/lib/dynatrace/enrichment"})
-	}
-
 	c.Env = append(c.Env,
-		corev1.EnvVar{
-			Name:  "LD_PRELOAD",
-			Value: installPath + "/agent/lib64/liboneagentproc.so",
-		},
 		corev1.EnvVar{
 			Name:  "DT_DEPLOYMENT_METADATA",
 			Value: deploymentMetadata.AsString(),
 		})
+
+	if injectionInfo.enabled(OneAgent) {
+		c.VolumeMounts = append(c.VolumeMounts,
+			corev1.VolumeMount{
+				Name:      "oneagent-share",
+				MountPath: "/etc/ld.so.preload",
+				SubPath:   "ld.so.preload",
+			},
+			corev1.VolumeMount{
+				Name:      "oneagent-bin",
+				MountPath: installPath,
+			},
+			corev1.VolumeMount{
+				Name:      "oneagent-share",
+				MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
+				SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
+			})
+
+		c.Env = append(c.Env,
+			corev1.EnvVar{
+				Name:  "LD_PRELOAD",
+				Value: installPath + "/agent/lib64/liboneagentproc.so",
+			})
+	}
+
+	if injectionInfo.enabled(DataIngest) {
+		c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+			Name:      "data-ingest-enrichment",
+			MountPath: "/var/lib/dynatrace/enrichment"})
+	}
 
 	if oa.Spec.Proxy != nil && (oa.Spec.Proxy.Value != "" || oa.Spec.Proxy.ValueFrom != "") {
 		c.Env = append(c.Env,
