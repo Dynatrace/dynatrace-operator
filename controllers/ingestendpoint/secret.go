@@ -106,8 +106,13 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
+	dataIngestToken := ""
+	if token, ok := tokens.Data[dtclient.DynatraceDataIngestToken]; ok {
+		dataIngestToken = string(token)
+	}
+
 	return map[string]string{
 		UrlSecretField:   fmt.Sprintf("%s/v2/metrics/ingest", dk.Spec.APIURL),
-		TokenSecretField: string(tokens.Data[dtclient.DynatraceDataIngestToken]),
+		TokenSecretField: dataIngestToken,
 	}, nil
 }
