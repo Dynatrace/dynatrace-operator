@@ -63,6 +63,15 @@ func (info *InjectionInfo) enabled(wanted FeatureType) bool {
 	return false
 }
 
+func (info *InjectionInfo) any() bool {
+	for k := range info.features {
+		if k.Enabled {
+			return true
+		}
+	}
+	return false
+}
+
 func (info *InjectionInfo) add(f *Feature) {
 	info.features[f] = struct{}{}
 }

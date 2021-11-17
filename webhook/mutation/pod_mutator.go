@@ -190,6 +190,9 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 
 	injectionInfo := m.CreateInjectionInfo(pod)
+	if !injectionInfo.any() {
+		return admission.Patched("")
+	}
 
 	var ns corev1.Namespace
 	if err := m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
