@@ -25,20 +25,3 @@ func linuxRequirement() corev1.NodeSelectorRequirement {
 		Values:   []string{linux},
 	}
 }
-
-func TestAffinityBetaNodeRequirement(t *testing.T) {
-	assert.Equal(t, AffinityBetaNodeRequirement(), affinityBetaNodeRequirementsForArches(amd64))
-	assert.Equal(t, AffinityBetaNodeRequirementWithARM64(), affinityBetaNodeRequirementsForArches(amd64, arm64))
-	assert.Equal(t, len(AffinityBetaNodeRequirement()), nodeSelectorRequirements)
-
-	assert.Contains(t, AffinityBetaNodeRequirement(), linuxBetaRequirement())
-	assert.Contains(t, AffinityBetaNodeRequirementWithARM64(), linuxBetaRequirement())
-}
-
-func linuxBetaRequirement() corev1.NodeSelectorRequirement {
-	return corev1.NodeSelectorRequirement{
-		Key:      kubernetesBetaOS,
-		Operator: corev1.NodeSelectorOpIn,
-		Values:   []string{linux},
-	}
-}

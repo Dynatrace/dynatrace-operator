@@ -2,7 +2,6 @@ package v1beta1
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type OneAgentMode string
@@ -13,7 +12,7 @@ type OneAgentSpec struct {
 	// +nullable
 	ClassicFullStack *ClassicFullStackSpec `json:"classicFullStack,omitempty"`
 
-	// Optional: enable application-only monitoring and change its settings
+	// Optional: (Beta feature) enable application-only monitoring and change its settings
 	// Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or host monitoring
 	// +nullable
 	ApplicationMonitoring *ApplicationMonitoringSpec `json:"applicationMonitoring,omitempty"`
@@ -126,11 +125,6 @@ type ApplicationMonitoringSpec struct {
 }
 
 type AppInjectionSpec struct {
-	// Optional: set a namespace selector to limit which namespaces are monitored
-	// By default, all namespaces will be monitored
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Namespace Selector",order=17,xDescriptors="urn:alm:descriptor:com.tectonic.ui:selector:core:v1:Namespace"
-	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
-
 	// Optional: define resources requests and limits for the initContainer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	InitResources corev1.ResourceRequirements `json:"initResources,omitempty"`

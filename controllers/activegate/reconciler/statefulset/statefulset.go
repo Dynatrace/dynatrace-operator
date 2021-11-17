@@ -41,8 +41,6 @@ type statefulSetProperties struct {
 	feature                 string
 	capabilityName          string
 	serviceAccountOwner     string
-	majorKubernetesVersion  string
-	minorKubernetesVersion  string
 	OnAfterCreateListener   []events.StatefulSetEvent
 	initContainersTemplates []corev1.Container
 	containerVolumeMounts   []corev1.VolumeMount
@@ -51,8 +49,7 @@ type statefulSetProperties struct {
 
 func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties,
 	kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string,
-	majorKubernetesVersion string, minorKubernetesVersion string, initContainers []corev1.Container,
-	containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume) *statefulSetProperties {
+	initContainers []corev1.Container, containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume) *statefulSetProperties {
 	if serviceAccountOwner == "" {
 		serviceAccountOwner = feature
 	}
@@ -65,8 +62,6 @@ func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityPro
 		feature:                 feature,
 		capabilityName:          capabilityName,
 		serviceAccountOwner:     serviceAccountOwner,
-		majorKubernetesVersion:  majorKubernetesVersion,
-		minorKubernetesVersion:  minorKubernetesVersion,
 		OnAfterCreateListener:   []events.StatefulSetEvent{},
 		initContainersTemplates: initContainers,
 		containerVolumeMounts:   containerVolumeMounts,
@@ -117,7 +112,7 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 		InitContainers:     buildInitContainers(stsProperties),
 		NodeSelector:       stsProperties.CapabilityProperties.NodeSelector,
 		ServiceAccountName: determineServiceAccountName(stsProperties),
-		Affinity:           affinity(stsProperties),
+		Affinity:           affinity(),
 		Tolerations:        stsProperties.Tolerations,
 		Volumes:            buildVolumes(stsProperties),
 		ImagePullSecrets: []corev1.LocalObjectReference{

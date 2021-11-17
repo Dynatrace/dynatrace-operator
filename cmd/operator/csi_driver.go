@@ -50,7 +50,7 @@ func csiDriverFlags() *pflag.FlagSet {
 	return csiDriverFlags
 }
 
-func startCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
+func setupCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
 	defaultUmask := unix.Umask(0000)
 	cleanUp := func() {
 		unix.Umask(defaultUmask)

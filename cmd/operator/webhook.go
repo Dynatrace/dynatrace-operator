@@ -40,7 +40,7 @@ func webhookServerFlags() *pflag.FlagSet {
 	return webhookServerFlagSet
 }
 
-func startWebhookServer(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
+func setupWebhookServer(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
 	mgr, cleanUp, err := newManagerWithCertificates(ns, cfg)
 	if err != nil {
 		return nil, cleanUp, err

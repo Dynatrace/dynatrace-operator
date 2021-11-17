@@ -92,7 +92,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	dk, err := r.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			return reconcile.Result{}, r.db.DeleteTenant(request.Name)
+			return reconcile.Result{}, r.db.DeleteDynakube(request.Name)
 		}
 		return reconcile.Result{}, err
 	}
@@ -112,40 +112,40 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	tenant, err := r.db.GetTenant(dk.Name)
+	dynakube, err := r.db.GetDynakube(dk.Name)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	// In case of a new tenant
-	var oldTenant metadata.Tenant
-	if tenant == nil {
-		tenant = &metadata.Tenant{}
+	// In case of a new dynakube
+	var oldDynakube metadata.Dynakube
+	if dynakube == nil {
+		dynakube = &metadata.Dynakube{}
 	} else {
-		oldTenant = *tenant
+		oldDynakube = *dynakube
 	}
-	rlog.Info("checking tenant", "dynakube", tenant.Dynakube,
-		"uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
+	rlog.Info("checking dynakube", "name", dynakube.Name,
+		"tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
 
-	tenant.Dynakube = dk.Name
-	tenant.TenantUUID = dk.ConnectionInfo().TenantUUID
+	dynakube.Name = dk.Name
+	dynakube.TenantUUID = dk.ConnectionInfo().TenantUUID
 
-	if err = r.createCSIDirectories(r.path.EnvDir(tenant.TenantUUID)); err != nil {
-		rlog.Error(err, "error when creating csi directories", "path", r.path.EnvDir(tenant.TenantUUID))
+	if err = r.createCSIDirectories(r.path.EnvDir(dynakube.TenantUUID)); err != nil {
+		rlog.Error(err, "error when creating csi directories", "path", r.path.EnvDir(dynakube.TenantUUID))
 		return reconcile.Result{}, errors.WithStack(err)
 	}
-	rlog.Info("csi directories exist", "path", r.path.EnvDir(tenant.TenantUUID))
+	rlog.Info("csi directories exist", "path", r.path.EnvDir(dynakube.TenantUUID))
 
 	installAgentCfg := newInstallAgentConfig(rlog, dtc, r.path, r.fs, r.recorder, dk)
-	if updatedVersion, err := installAgentCfg.updateAgent(tenant.LatestVersion, tenant.TenantUUID); err != nil {
+	if updatedVersion, err := installAgentCfg.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID); err != nil {
 		rlog.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 	} else if updatedVersion != "" {
-		tenant.LatestVersion = updatedVersion
+		dynakube.LatestVersion = updatedVersion
 	}
 
-	err = r.createOrUpdateTenant(oldTenant, tenant)
+	err = r.createOrUpdateDynakube(oldDynakube, dynakube)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -153,27 +153,23 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 }
 
-func (r *OneAgentProvisioner) createOrUpdateTenant(oldTenant metadata.Tenant, tenant *metadata.Tenant) error {
-	if hasTenantChanged(oldTenant, *tenant) {
-		log.Info("tenant has changed",
-			"dynakube", tenant.Dynakube, "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
-		if oldTenant == (metadata.Tenant{}) {
-			log.Info("Adding tenant",
-				"dynakube", tenant.Dynakube, "uuid", tenant.TenantUUID, "version", tenant.LatestVersion)
-			return r.db.InsertTenant(tenant)
+func (r *OneAgentProvisioner) createOrUpdateDynakube(oldDynakube metadata.Dynakube, dynakube *metadata.Dynakube) error {
+	if oldDynakube != *dynakube {
+		log.Info("dynakube has changed",
+			"name", dynakube.Name, "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
+		if oldDynakube == (metadata.Dynakube{}) {
+			log.Info("adding dynakube to db",
+				"name", dynakube.Name, "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
+			return r.db.InsertDynakube(dynakube)
 		} else {
-			log.Info("Updating tenant",
-				"dynakube", tenant.Dynakube,
-				"old version", oldTenant.LatestVersion, "new version", tenant.LatestVersion,
-				"old tenant UUID", oldTenant.TenantUUID, "new tenant UUID", tenant.TenantUUID)
-			return r.db.UpdateTenant(tenant)
+			log.Info("updating dynakube in db",
+				"name", dynakube.Name,
+				"old version", oldDynakube.LatestVersion, "new version", dynakube.LatestVersion,
+				"old tenantUUID", oldDynakube.TenantUUID, "new tenantUUID", dynakube.TenantUUID)
+			return r.db.UpdateDynakube(dynakube)
 		}
 	}
 	return nil
-}
-
-func hasTenantChanged(old, new metadata.Tenant) bool {
-	return old != new
 }
 
 func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {

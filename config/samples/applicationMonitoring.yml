@@ -45,26 +45,28 @@ spec:
   #
   # enableIstio: false
 
+  # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements >
+  # if not set we inject into every namespace
+  # namespaceSelector has no effect when used together with hostMonitoring or classicFullstack
+  #
+  # namespaceSelector:
+  #   matchLabels:
+  #     test: test
+
   oneAgent:
-     # enable application-only monitoring and change its settings
-     # Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or host monitoring
+    # enable application-only monitoring and change its settings
+    # Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or host monitoring
     applicationMonitoring:
       # Optional: If specified, indicates the OneAgent version to use
       # Defaults to latest
       #
       # version:
 
+      # ENABLING 'useCSIDriver' IS STILL IN BETA AND SHOULD NOT BE USED IN A PRODUCTION ENVIRONMENT
       # Optional: If you want to use CSIDriver; disable if your cluster does not have 'nodes' to fall back to the volume approach.
       # Defaults to false
       #
       # useCSIDriver: true
-
-      # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements >
-      # if namespaceSelector is not set then we inject into every namespace
-      #
-      # namespaceSelector:
-      #   matchLabels:
-      #     test: test
 
       # initResources:
       #   requests:

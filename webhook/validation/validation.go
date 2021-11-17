@@ -6,11 +6,16 @@ import (
 	"net/http"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
+	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/logger"
+	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	appsv1 "k8s.io/api/apps/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -22,6 +27,9 @@ const (
 )
 
 const (
+	errorCSIRequired = `
+The Dynakube's specification requires the CSI driver to work. Make sure you deployed the correct manifests.
+`
 	errorConflictingOneagentMode = `
 The DynaKube's specification tries to use multiple oneagent modes at the same time, which is not supported.
 `
@@ -38,6 +46,11 @@ Make sure you correctly specify the ActiveGate capabilities in your custom resou
 The DynaKube's specification tries to specify duplicate capabilities in the ActiveGate section, duplicate capability=%s.
 Make sure you don't duplicate an Activegate capability in your custom resource.
 `
+	errorConflictingNamespaceSelector = `
+The DynaKube's specification tries to inject into namespaces where another Dynakube already injects into, which is not supported.
+Make sure the namespaceSelector doesn't conflict with other Dynakubes namespaceSelector
+`
+
 	errorNodeSelectorConflict = `
 The DynaKube's specification tries to specify a nodeSelector conflicts with an another Dynakube's nodeSelector, which is not supported.
 The conflicting Dynakube: %s
@@ -47,19 +60,21 @@ The conflicting Dynakube: %s
 The DynaKube's specification is missing the API URL or still has the example value set.
 Make sure you correctly specify the URL in your custom resource.
 `
-	warningCloudNativeFullStack = `cloudNativeFullStack mode is a BETA feature. Please be aware that it is NOT production ready, and you may run into bugs.`
+	warningCloudNativeFullStack  = `cloudNativeFullStack mode is in BETA. Please be aware that it is NOT production ready and you may run into bugs.`
+	warningApplicationMonitoring = `applicationMonitoring mode is in BETA. Please be aware that it is NOT production ready and you may run into bugs.`
 )
 
 func AddDynakubeValidationWebhookToManager(manager ctrl.Manager) error {
 	manager.GetWebhookServer().Register("/validate", &webhook.Admission{
-		Handler: newDynakubeValidator(),
+		Handler: newDynakubeValidator(manager.GetAPIReader()),
 	})
 	return nil
 }
 
 type dynakubeValidator struct {
-	logger logr.Logger
-	clt    client.Client
+	logger    logr.Logger
+	clt       client.Client
+	apiReader client.Reader
 }
 
 // InjectClient implements the inject.Client interface which allows the manager to inject a kubernetes client into this handler
@@ -92,6 +107,16 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 		return admission.Denied(errorConflictingActiveGateSections)
 	}
 
+	if validator.hasConflictingNamespaceSelector(dynakube) {
+		validator.logger.Info("requested dynakube has conflicting namespaceSelector", "name", request.Name, "namespace", request.Namespace)
+		return admission.Denied(errorConflictingNamespaceSelector)
+	}
+
+	if missingCSIDaemonSet(validator.clt, dynakube, validator.logger) {
+		validator.logger.Info("requested dynakube uses csi driver, but csi driver is missing in the cluster", "name", request.Name, "namespace", request.Namespace)
+		return admission.Denied(errorCSIRequired)
+	}
+
 	if errMsg := hasInvalidActiveGateCapabilities(dynakube); errMsg != "" {
 		validator.logger.Info("requested dynakube has invalid active gate capability", "name", request.Name, "namespace", request.Namespace)
 		return admission.Denied(errMsg)
@@ -106,6 +131,9 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 	if dynakube.CloudNativeFullstackMode() {
 		validator.logger.Info("Dynakube with cloudNativeFullStack was applied, warning was provided.")
 		return admission.Allowed("").WithWarnings(warningCloudNativeFullStack)
+	} else if dynakube.ApplicationMonitoringMode() && dynakube.NeedsCSIDriver() {
+		validator.logger.Info("Dynakube with applicationMonitoring was applied, warning was provided.")
+		return admission.Allowed("").WithWarnings(warningApplicationMonitoring)
 	}
 	return admission.Allowed("")
 }
@@ -131,6 +159,15 @@ func hasConflictingOneAgentConfiguration(dynakube *dynatracev1beta1.DynaKube) bo
 	return counter > 1
 }
 
+func (validator *dynakubeValidator) hasConflictingNamespaceSelector(dynakube *dynatracev1beta1.DynaKube) bool {
+	if !dynakube.NeedAppInjection() {
+		return false
+	}
+	dkMapper := mapper.NewDynakubeMapper(context.TODO(), validator.clt, validator.apiReader, dynakube.Namespace, dynakube, validator.logger)
+	_, err := dkMapper.MatchingNamespaces()
+	return err != nil
+}
+
 func hasConflictingActiveGateConfiguration(dynakube *dynatracev1beta1.DynaKube) bool {
 	return dynakube.DeprecatedActiveGateMode() && dynakube.ActiveGateMode()
 }
@@ -149,6 +186,20 @@ func hasInvalidActiveGateCapabilities(dynakube *dynatracev1beta1.DynaKube) strin
 		}
 	}
 	return ""
+}
+
+func missingCSIDaemonSet(client client.Client, dynakube *dynatracev1beta1.DynaKube, logger logr.Logger) bool {
+	if !dynakube.NeedsCSIDriver() {
+		return false
+	}
+	csiDaemonSet := appsv1.DaemonSet{}
+	err := client.Get(context.TODO(), types.NamespacedName{Name: dtcsi.DaemonSetName, Namespace: dynakube.Namespace}, &csiDaemonSet)
+	if k8serrors.IsNotFound(err) {
+		return true
+	} else if err != nil {
+		logger.Info("error occurred while listing dynakubes", "err", err.Error())
+	}
+	return false
 }
 
 func hasConflictingNodeSelector(client client.Client, dynakube *dynatracev1beta1.DynaKube, logger logr.Logger) string {
@@ -194,8 +245,9 @@ func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1bet
 	return nil
 }
 
-func newDynakubeValidator() admission.Handler {
+func newDynakubeValidator(apiReader client.Reader) admission.Handler {
 	return &dynakubeValidator{
-		logger: logger.NewDTLogger(),
+		logger:    logger.NewDTLogger(),
+		apiReader: apiReader,
 	}
 }
