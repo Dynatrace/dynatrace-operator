@@ -27,19 +27,19 @@ env:
 
 jobs:
   include:
-    - stage: preparation
-      name: Tests
-      script: ./build/test.sh
-      cache:
-        directories:
-          - /usr/local/kubebuilder/bin
+    #- stage: preparation
+    #  name: Tests
+    #  script: ./build/test.sh
+    #  cache:
+    #    directories:
+    #      - /usr/local/kubebuilder/bin
 
-    - stage: preparation
-      name: Linting
-      language: go
-      script:
-        - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.31.0
-        - golangci-lint run --build-tags integration,containers_image_storage_stub --timeout 300s
+    #- stage: preparation
+    #  name: Linting
+    #  language: go
+    #  script:
+    #    - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.31.0
+    #    - golangci-lint run --build-tags integration,containers_image_storage_stub --timeout 300s
 
     - stage: preparation
       name: Set configs

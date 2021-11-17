@@ -232,6 +232,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 
 	if strings.Contains(pod.Annotations[dtwebhook.AnnotationDynatraceInjected], dtwebhook.OneAgentPrefix) {
+		log.Info(">>> " + pod.Annotations[dtwebhook.AnnotationDynatraceInjected] + " -contains- " + dtwebhook.OneAgentPrefix)
 		if dk.FeatureEnableWebhookReinvocationPolicy() {
 			var needsUpdate = false
 			var installContainer *corev1.Container
@@ -438,6 +439,9 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		corev1.EventTypeNormal,
 		injectEvent,
 		"Injecting the necessary info into pod %s in namespace %s", basePodName, ns.Name)
+
+	log.Info(">>>: " + pod.String())
+
 	return getResponseForPod(pod, &req)
 }
 
