@@ -3,6 +3,7 @@ package conf
 import (
 	"bufio"
 	"fmt"
+	"io/fs"
 	"os"
 	"regexp"
 	"strings"
@@ -20,6 +21,10 @@ var sectionRegexp, _ = regexp.Compile(`\[(.*)\]`)
 // UpdateConfFile opens the file at `sourcePath` and merges it with the ConfMap provided
 // then writes the results into a file at `destPath`
 func UpdateConfFile(fs afero.Fs, sourcePath, destPath string, conf ConfMap) error {
+	fileInfo, err := fs.Stat(sourcePath)
+	if err != nil {
+		return err
+	}
 	sourceFile, err := fs.Open(sourcePath)
 	if err != nil {
 		return err
@@ -30,7 +35,12 @@ func UpdateConfFile(fs afero.Fs, sourcePath, destPath string, conf ConfMap) erro
 	for scanner.Scan() {
 		line := scanner.Text()
 		if header := confSectionHeader(line); header != "" {
-			content = append(content, addLeftoversForSection(currentSection, conf)...)
+			leftovers := addLeftoversForSection(currentSection, conf)
+			if hasExtraNewLine(leftovers, content) {
+				content = content[:len(content)-1]
+				leftovers = append(leftovers, "")
+			}
+			content = append(content, leftovers...)
 			currentSection = header
 			content = append(content, line)
 		} else if strings.HasPrefix(line, "#") {
@@ -45,24 +55,36 @@ func UpdateConfFile(fs afero.Fs, sourcePath, destPath string, conf ConfMap) erro
 	}
 
 	// the last section's leftover cleanup never runs in the for loop
-	content = append(content, addLeftoversForSection(currentSection, conf)...)
+	leftovers := addLeftoversForSection(currentSection, conf)
+	if hasExtraNewLine(leftovers, content) {
+		content = content[:len(content)-1]
+	}
+	content = append(content, leftovers...)
 
 	// for sections not in the original conf file need to be added as well
-	content = append(content, addLeftovers(conf)...)
+	leftovers = addLeftovers(conf)
+	if hasMissingNewLine(leftovers, content) {
+		content = append(content, "")
+	}
+	content = append(content, leftovers...)
 
 	if err = sourceFile.Close(); err != nil {
 		return err
 	}
 
-	return storeConfFile(fs, destPath, content)
+	return storeConfFile(fs, destPath, fileInfo.Mode(), content)
 }
 
-func storeConfFile(fs afero.Fs, destPath string, content []string) error {
-	fileInfo, err := fs.Stat(destPath)
-	if err != nil {
-		return err
-	}
-	ruxitConfFile, err := fs.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, fileInfo.Mode())
+func hasExtraNewLine(leftovers, content []string) bool {
+	return len(leftovers) != 0 && len(content) != 0 && content[len(content)-1] == ""
+}
+
+func hasMissingNewLine(leftovers, content []string) bool {
+	return len(leftovers) != 0 && len(content) != 0 && content[len(content)-1] != ""
+}
+
+func storeConfFile(fs afero.Fs, destPath string, fileMode fs.FileMode, content []string) error {
+	ruxitConfFile, err := fs.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, fileMode)
 	if err != nil {
 		return err
 	}

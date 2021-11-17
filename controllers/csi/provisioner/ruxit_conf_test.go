@@ -221,6 +221,7 @@ func TestUpdateRuxitConf(t *testing.T) {
 	expectedUsed := `
 [general]
 key value
+
 [test]
 test test3
 `
