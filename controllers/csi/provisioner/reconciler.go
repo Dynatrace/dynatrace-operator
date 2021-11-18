@@ -136,19 +136,19 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 	rlog.Info("csi directories exist", "path", r.path.EnvDir(dynakube.TenantUUID))
 
-	ruxitRevission, err := r.db.GetRuxitRevission(dynakube.TenantUUID)
+	ruxitRevision, err := r.db.GetRuxitRevision(dynakube.TenantUUID)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	latestRuxitProcResponse, err := r.getRuxitProcResponse(ruxitRevission, dtc)
+	latestRuxitProcResponse, err := r.getRuxitProcResponse(ruxitRevision, dtc)
 	if err != nil {
 		rlog.Error(err, "error when getting the latest ruxitagentproc.conf")
 		return reconcile.Result{}, err
 	}
 
 	installAgentCfg := newInstallAgentConfig(rlog, dtc, r.path, r.fs, r.recorder, dk)
-	if updatedVersion, err := installAgentCfg.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID, ruxitRevission.LatestRevission, latestRuxitProcResponse); err != nil {
+	if updatedVersion, err := installAgentCfg.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID, ruxitRevision.LatestRevision, latestRuxitProcResponse); err != nil {
 		rlog.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
@@ -161,12 +161,12 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	err = r.writeRuxitCache(ruxitRevission, latestRuxitProcResponse)
+	err = r.writeRuxitCache(ruxitRevision, latestRuxitProcResponse)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	err = r.createOrUpdateRuxitRevision(dynakube.TenantUUID, ruxitRevission, latestRuxitProcResponse)
+	err = r.createOrUpdateRuxitRevision(dynakube.TenantUUID, ruxitRevision, latestRuxitProcResponse)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

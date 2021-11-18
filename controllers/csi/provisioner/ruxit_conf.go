@@ -13,18 +13,18 @@ import (
 
 // getRuxitProcResponse gets the latest `RuxitProcResponse`, it can come from the tenant if we don't have the latest revision saved locally,
 // otherwise we use the locally cached response
-func (r *OneAgentProvisioner) getRuxitProcResponse(ruxitRevission *metadata.RuxitRevision, dtc dtclient.Client) (*dtclient.RuxitProcResponse, error) {
-	var latestRevission uint
-	if ruxitRevission.LatestRevission != 0 {
-		latestRevission = ruxitRevission.LatestRevission
+func (r *OneAgentProvisioner) getRuxitProcResponse(ruxitRevision *metadata.RuxitRevision, dtc dtclient.Client) (*dtclient.RuxitProcResponse, error) {
+	var latestRevision uint
+	if ruxitRevision.LatestRevision != 0 {
+		latestRevision = ruxitRevision.LatestRevision
 	}
 
-	latestRuxitProcResponse, err := dtc.GetRuxitProcConf(latestRevission)
+	latestRuxitProcResponse, err := dtc.GetRuxitProcConf(latestRevision)
 	if err != nil {
 		return nil, err
 	}
 
-	storedRuxitProcResponse, err := r.readRuxitCache(ruxitRevission)
+	storedRuxitProcResponse, err := r.readRuxitCache(ruxitRevision)
 	if err != nil && os.IsNotExist(err) && latestRuxitProcResponse == nil {
 		latestRuxitProcResponse, err = dtc.GetRuxitProcConf(0)
 		if err != nil {
@@ -40,9 +40,9 @@ func (r *OneAgentProvisioner) getRuxitProcResponse(ruxitRevission *metadata.Ruxi
 	return storedRuxitProcResponse, nil
 }
 
-func (r *OneAgentProvisioner) readRuxitCache(ruxitRevission *metadata.RuxitRevision) (*dtclient.RuxitProcResponse, error) {
+func (r *OneAgentProvisioner) readRuxitCache(ruxitRevision *metadata.RuxitRevision) (*dtclient.RuxitProcResponse, error) {
 	var ruxitConf dtclient.RuxitProcResponse
-	ruxitProcCache, err := r.fs.Open(r.path.AgentRuxitProcResponseCache(ruxitRevission.TenantUUID))
+	ruxitProcCache, err := r.fs.Open(r.path.AgentRuxitProcResponseCache(ruxitRevision.TenantUUID))
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +58,8 @@ func (r *OneAgentProvisioner) readRuxitCache(ruxitRevission *metadata.RuxitRevis
 	return &ruxitConf, nil
 }
 
-func (r *OneAgentProvisioner) writeRuxitCache(ruxitRevission *metadata.RuxitRevision, ruxitResponse *dtclient.RuxitProcResponse) error {
-	ruxitProcCache, err := r.fs.OpenFile(r.path.AgentRuxitProcResponseCache(ruxitRevission.TenantUUID), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+func (r *OneAgentProvisioner) writeRuxitCache(ruxitRevision *metadata.RuxitRevision, ruxitResponse *dtclient.RuxitProcResponse) error {
+	ruxitProcCache, err := r.fs.OpenFile(r.path.AgentRuxitProcResponseCache(ruxitRevision.TenantUUID), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
@@ -74,13 +74,13 @@ func (r *OneAgentProvisioner) writeRuxitCache(ruxitRevission *metadata.RuxitRevi
 }
 
 func (r *OneAgentProvisioner) createOrUpdateRuxitRevision(tenantUUID string, ruxitRevision *metadata.RuxitRevision, ruxitResponse *dtclient.RuxitProcResponse) error {
-	if ruxitRevision.LatestRevission == 0 && ruxitResponse != nil {
-		log.Info("inserting ruxit revission into db", "tenantUUID", tenantUUID, "revission", ruxitResponse.Revision)
-		return r.db.InsertRuxitRevission(metadata.NewRuxitRevission(tenantUUID, ruxitResponse.Revision))
-	} else if ruxitResponse != nil && ruxitResponse.Revision != ruxitRevision.LatestRevission {
-		log.Info("updating ruxit revission in db", "tenantUUID", tenantUUID, "old-revission", ruxitRevision.LatestRevission, "new-revission", ruxitResponse.Revision)
-		ruxitRevision.LatestRevission = ruxitResponse.Revision
-		return r.db.UpdateRuxitRevission(ruxitRevision)
+	if ruxitRevision.LatestRevision == 0 && ruxitResponse != nil {
+		log.Info("inserting ruxit revision into db", "tenantUUID", tenantUUID, "revision", ruxitResponse.Revision)
+		return r.db.InsertRuxitRevision(metadata.NewRuxitRevision(tenantUUID, ruxitResponse.Revision))
+	} else if ruxitResponse != nil && ruxitResponse.Revision != ruxitRevision.LatestRevision {
+		log.Info("updating ruxit revision in db", "tenantUUID", tenantUUID, "old-revision", ruxitRevision.LatestRevision, "new-revision", ruxitResponse.Revision)
+		ruxitRevision.LatestRevision = ruxitResponse.Revision
+		return r.db.UpdateRuxitRevision(ruxitRevision)
 	}
 	return nil
 }

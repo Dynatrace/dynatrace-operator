@@ -242,30 +242,30 @@ func TestDeleteVolume(t *testing.T) {
 func TestGetRuxitRevision_Empty(t *testing.T) {
 	db := FakeMemoryDB()
 
-	rv, err := db.GetRuxitRevission(testRuxitRevision1.TenantUUID)
+	rv, err := db.GetRuxitRevision(testRuxitRevision1.TenantUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, rv)
 	var defaultRevision uint
-	assert.Equal(t, defaultRevision, rv.LatestRevission)
+	assert.Equal(t, defaultRevision, rv.LatestRevision)
 }
 
 func TestGetRuxitRevision(t *testing.T) {
 	db := FakeMemoryDB()
-	err := db.InsertRuxitRevission(&testRuxitRevision1)
+	err := db.InsertRuxitRevision(&testRuxitRevision1)
 	assert.NoError(t, err)
 
-	ruxitRevision, err := db.GetRuxitRevission(testRuxitRevision1.TenantUUID)
+	ruxitRevision, err := db.GetRuxitRevision(testRuxitRevision1.TenantUUID)
 	assert.NoError(t, err)
 	assert.Equal(t, testRuxitRevision1, *ruxitRevision)
 }
 
 func TestUpdateRuxitRevision(t *testing.T) {
 	db := FakeMemoryDB()
-	err := db.InsertRuxitRevission(&testRuxitRevision1)
+	err := db.InsertRuxitRevision(&testRuxitRevision1)
 	assert.NoError(t, err)
 
-	testRuxitRevision1.LatestRevission = 69
-	err = db.UpdateRuxitRevission(&testRuxitRevision1)
+	testRuxitRevision1.LatestRevision = 69
+	err = db.UpdateRuxitRevision(&testRuxitRevision1)
 	var uuid string
 	var lr uint
 	assert.NoError(t, err)
@@ -273,14 +273,14 @@ func TestUpdateRuxitRevision(t *testing.T) {
 	err = row.Scan(&uuid, &lr)
 	assert.NoError(t, err)
 	assert.Equal(t, uuid, testRuxitRevision1.TenantUUID)
-	assert.Equal(t, lr, testRuxitRevision1.LatestRevission)
+	assert.Equal(t, lr, testRuxitRevision1.LatestRevision)
 }
 
 func TestRuxitPrunerTrigger(t *testing.T) {
 	db := FakeMemoryDB()
-	err := db.InsertRuxitRevission(&testRuxitRevision1)
+	err := db.InsertRuxitRevision(&testRuxitRevision1)
 	assert.NoError(t, err)
-	err = db.InsertRuxitRevission(&testRuxitRevision2)
+	err = db.InsertRuxitRevision(&testRuxitRevision2)
 	assert.NoError(t, err)
 	err = db.InsertDynakube(&testDynakube1)
 	assert.NoError(t, err)
@@ -289,13 +289,13 @@ func TestRuxitPrunerTrigger(t *testing.T) {
 
 	err = db.DeleteDynakube(testDynakube2.Name)
 	assert.NoError(t, err)
-	rv, err := db.GetRuxitRevission(testRuxitRevision2.TenantUUID)
+	rv, err := db.GetRuxitRevision(testRuxitRevision2.TenantUUID)
 	assert.NoError(t, err)
-	assert.NotEqual(t, testRuxitRevision2.LatestRevission, rv.LatestRevission) // was deleted from db by trigger therefore get returns new revision with default LatestRevision value
+	assert.NotEqual(t, testRuxitRevision2.LatestRevision, rv.LatestRevision) // was deleted from db by trigger therefore get returns new revision with default LatestRevision value
 
 	err = db.DeleteDynakube(testDynakube1.Name)
 	assert.NoError(t, err)
-	rv, err = db.GetRuxitRevission(testRuxitRevision1.TenantUUID)
+	rv, err = db.GetRuxitRevision(testRuxitRevision1.TenantUUID)
 	assert.NoError(t, err)
-	assert.NotEqual(t, testRuxitRevision1.LatestRevission, rv.LatestRevission) // was deleted from db by trigger therefore get returns new revision with default LatestRevision value
+	assert.NotEqual(t, testRuxitRevision1.LatestRevision, rv.LatestRevision) // was deleted from db by trigger therefore get returns new revision with default LatestRevision value
 }
