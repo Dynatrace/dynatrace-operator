@@ -12,6 +12,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
+	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/controllers/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
@@ -174,11 +175,34 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 	var initSecret corev1.Secret
 	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtwebhook.SecretConfigName, Namespace: ns.Name}, &initSecret); k8serrors.IsNotFound(err) {
-		if err := initgeneration.NewInitGenerator(m.client, m.apiReader, m.namespace, log).GenerateForNamespace(ctx, dk, ns.Name); err != nil {
+		if _, err := initgeneration.NewInitGenerator(m.client, m.apiReader, m.namespace, log).GenerateForNamespace(ctx, dk, ns.Name); err != nil {
 			log.Error(err, "Failed to create the init secret before pod injection")
 			return admission.Errored(http.StatusBadRequest, err)
 		}
+	} else if err != nil {
+		log.Error(err, "failed to query the init secret before pod injection")
+		return admission.Errored(http.StatusBadRequest, err)
 	}
+
+	endpointGenerator := dtingestendpoint.NewEndpointGenerator(m.client, m.apiReader, m.namespace, log)
+
+	var endpointSecret corev1.Secret
+	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtingestendpoint.SecretEndpointName, Namespace: ns.Name}, &endpointSecret); k8serrors.IsNotFound(err) {
+		if _, err := endpointGenerator.GenerateForNamespace(ctx, dkName, ns.Name); err != nil {
+			log.Error(err, "failed to create the data-ingest endpoint secret before pod injection")
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+	} else if err != nil {
+		log.Error(err, "failed to query the data-ingest endpoint secret before pod injection")
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	dataIngestFields, err := endpointGenerator.PrepareFields(ctx, &dk)
+	if err != nil {
+		log.Error(err, "failed to query the data-ingest endpoint secret before pod injection")
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
 	log.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
 	if pod.Annotations == nil {
@@ -205,7 +229,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 					log.Info("instrumenting missing container", "name", c.Name)
 
 					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
-					updateContainer(c, &dk, pod, deploymentMetadata)
+					updateContainer(c, &dk, pod, deploymentMetadata, dataIngestFields)
 
 					if installContainer == nil {
 						for j := range pod.Spec.InitContainers {
@@ -270,6 +294,14 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 					SecretName: dtwebhook.SecretConfigName,
 				},
 			},
+		},
+		corev1.Volume{
+			Name: "data-ingest-endpoint",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: dtingestendpoint.SecretEndpointName,
+				},
+			},
 		})
 
 	var sc *corev1.SecurityContext
@@ -332,7 +364,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 		updateInstallContainer(&ic, i+1, c.Name, c.Image)
 
-		updateContainer(c, &dk, pod, deploymentMetadata)
+		updateContainer(c, &dk, pod, deploymentMetadata, dataIngestFields)
 	}
 
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
@@ -366,7 +398,7 @@ func updateInstallContainer(ic *corev1.Container, number int, name string, image
 
 // updateContainer sets missing preload Variables
 func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
-	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
+	pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata, dataIngestFields map[string]string) {
 
 	log.Info("updating container with missing preload variables", "containerName", c.Name)
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
@@ -385,7 +417,10 @@ func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
 			Name:      "oneagent-share",
 			MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
 			SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
-		})
+		},
+		corev1.VolumeMount{
+			Name:      "data-ingest-endpoint",
+			MountPath: "/var/lib/dynatrace/enrichment/endpoint"})
 
 	c.Env = append(c.Env,
 		corev1.EnvVar{
@@ -395,7 +430,16 @@ func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
 		corev1.EnvVar{
 			Name:  "DT_DEPLOYMENT_METADATA",
 			Value: deploymentMetadata.AsString(),
-		})
+		},
+		corev1.EnvVar{
+			Name:  dtingestendpoint.UrlSecretField,
+			Value: dataIngestFields[dtingestendpoint.UrlSecretField],
+		},
+		corev1.EnvVar{
+			Name:  dtingestendpoint.TokenSecretField,
+			Value: dataIngestFields[dtingestendpoint.TokenSecretField],
+		},
+	)
 
 	if oa.Spec.Proxy != nil && (oa.Spec.Proxy.Value != "" || oa.Spec.Proxy.ValueFrom != "") {
 		c.Env = append(c.Env,

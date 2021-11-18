@@ -34,6 +34,7 @@ rules:
       - secrets
     resourceNames:
       - dynatrace-dynakube-config
+      - dynatrace-data-ingest-endpoint
     verbs:
       - get
       - list
