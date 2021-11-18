@@ -14,7 +14,7 @@ OneAgent traffic.
 
 With v0.3.0 the CRD structure has been changed to provide an easier and more understandable way to deploy Dynatrace in your environment.
 - **routing** and **kubernetesMonitoring** within the Dynakube spec are deprecated now and moved to the **activeGate** section.
-- (PREVIEW, when used with 'useCSIDriver') added **applicationMonitoring** mode, a webhook based injection mechanism for automatic-app-only injection
+- (combination with 'useCSIDriver' is still in PREVIEW) added **applicationMonitoring** mode, a webhook based injection mechanism for automatic-app-only injection
 - added **hostMonitoring** for only monitoring the host in the cluster without app-only injection
 - (PREVIEW) added **cloudNativeFullStack** mode, which combines **hostMonitoring**, with the webhook based **applicationMonitoring**
 
