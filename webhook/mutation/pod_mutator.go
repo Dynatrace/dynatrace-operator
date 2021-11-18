@@ -272,10 +272,8 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 			},
 		})
 
-	var sc *corev1.SecurityContext
-	if pod.Spec.Containers[0].SecurityContext != nil {
-		sc = pod.Spec.Containers[0].SecurityContext.DeepCopy()
-	}
+	rootUser := int64(0)
+	sc := corev1.SecurityContext{RunAsUser: &rootUser}
 
 	fieldEnvVar := func(key string) *corev1.EnvVarSource {
 		return &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: key}}
@@ -318,7 +316,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 			{Name: "K8S_NAMESPACE", ValueFrom: fieldEnvVar("metadata.namespace")},
 			{Name: "K8S_NODE_NAME", ValueFrom: fieldEnvVar("spec.nodeName")},
 		},
-		SecurityContext: sc,
+		SecurityContext: &sc,
 		VolumeMounts: []corev1.VolumeMount{
 			{Name: "oneagent-bin", MountPath: "/mnt/bin"},
 			{Name: "oneagent-share", MountPath: "/mnt/share"},

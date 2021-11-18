@@ -946,6 +946,8 @@ func TestAgentVersionWithCSI(t *testing.T) {
 }
 
 func buildResultPod(_ *testing.T) corev1.Pod {
+	rootUser := int64(0)
+	sc := corev1.SecurityContext{RunAsUser: &rootUser}
 	return corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-pod-12345",
@@ -961,6 +963,7 @@ func buildResultPod(_ *testing.T) corev1.Pod {
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command:         []string{"/usr/bin/env"},
 				Args:            []string{"bash", "/mnt/config/init.sh"},
+				SecurityContext: &sc,
 				Env: []corev1.EnvVar{
 					{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
 					{Name: "TECHNOLOGIES", Value: "all"},

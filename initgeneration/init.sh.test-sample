@@ -40,9 +40,7 @@ setFailCode(){
 
 setHostGroup(){
 	if [[ "${host_group}" != "" ]]; then
-		cp "${bin_dir}/agent/conf/ruxitagentproc.conf" /tmp
-		sed -i "s/\[general\]/\[general\]\nhostGroup ${host_group}/" tmp/ruxitagentproc.conf
-		cat tmp/ruxitagentproc.conf > "${bin_dir}/agent/conf/ruxitagentproc.conf"
+		sed -i "s/\[general\]/\[general\]\nhostGroup ${host_group}/" "${bin_dir}/agent/conf/ruxitagentproc.conf"
 	fi
 }
 
