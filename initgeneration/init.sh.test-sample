@@ -117,12 +117,12 @@ isCloudNativeFullStack true" >> ${1}
 
 writeConfEnrichmentTo() {
   mkdir -p "${1}"
-  echo "k8s.pod.uid ${K8S_PODUID}
-k8s.pod.name ${K8S_PODNAME}
-k8s.namespace.name ${K8S_NAMESPACE}
-dt.kubernetes.workload.kind ${DT_WORKLOAD_KIND}
-dt.kubernetes.workload.name ${DT_WORKLOAD_NAME}
-dt.kubernetes.cluster.id ${cluster_id}" >> "${1}/${2}.properties"
+  echo "k8s.pod.uid=${K8S_PODUID}
+k8s.pod.name=${K8S_PODNAME}
+k8s.namespace.name=${K8S_NAMESPACE}
+dt.kubernetes.workload.kind=${DT_WORKLOAD_KIND}
+dt.kubernetes.workload.name=${DT_WORKLOAD_NAME}
+dt.kubernetes.cluster.id=${cluster_id}" >> "${1}/${2}.properties"
 
   echo "{
 \"k8s.pod.uid\": \"${K8S_PODUID}\",
