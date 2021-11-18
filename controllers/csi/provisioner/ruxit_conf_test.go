@@ -16,16 +16,8 @@ import (
 )
 
 var (
-	testTenantUUID         = "zib123"
-	testVersion            = "v123"
-	testDummyRuxitRevision = metadata.RuxitRevision{
-		TenantUUID:     testTenantUUID,
-		LatestRevision: 0,
-	}
-	testRuxitRevision = metadata.RuxitRevision{
-		TenantUUID:     testTenantUUID,
-		LatestRevision: 1,
-	}
+	testTenantUUID        = "zib123"
+	testVersion           = "v123"
 	testRuxitProcResponse = dtclient.RuxitProcResponse{
 		Revision: 3,
 		Properties: []dtclient.RuxitProperty{
@@ -63,64 +55,52 @@ func prepTestFsCache(fs afero.Fs) {
 func TestGetRuxitProcResponse(t *testing.T) {
 	var emptyResponse *dtclient.RuxitProcResponse
 	t.Run(`no cache + no revision (dry run)`, func(t *testing.T) {
+		var defaultRevision uint
 		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetRuxitProcConf", testDummyRuxitRevision.LatestRevision).
+		mockClient.On("GetRuxitProcConf", defaultRevision).
 			Return(&testRuxitProcResponse, nil)
 		r := &OneAgentProvisioner{
 			fs: memFs,
 		}
 
-		response, err := r.getRuxitProcResponse(&testDummyRuxitRevision, mockClient)
+		response, lastRevision, err := r.getRuxitProcResponse(testTenantUUID, mockClient)
 
 		require.Nil(t, err)
 		assert.Equal(t, testRuxitProcResponse, *response)
-	})
-	t.Run(`no cache + revision present (recover from inconsistent env)`, func(t *testing.T) {
-		memFs := afero.NewMemMapFs()
-		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetRuxitProcConf", testRuxitRevision.LatestRevision).
-			Return(emptyResponse, nil)
-		mockClient.On("GetRuxitProcConf", testDummyRuxitRevision.LatestRevision).
-			Return(&testRuxitProcResponse, nil)
-		r := &OneAgentProvisioner{
-			fs: memFs,
-		}
-
-		response, err := r.getRuxitProcResponse(&testRuxitRevision, mockClient)
-
-		require.Nil(t, err)
-		assert.Equal(t, testRuxitProcResponse, *response)
+		assert.Equal(t, defaultRevision, lastRevision)
 	})
 	t.Run(`cache + latest revision (cached run)`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		prepTestFsCache(memFs)
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetRuxitProcConf", testRuxitRevision.LatestRevision).
+		mockClient.On("GetRuxitProcConf", testRuxitProcResponseCache.Revision).
 			Return(emptyResponse, nil)
 		r := &OneAgentProvisioner{
 			fs: memFs,
 		}
 
-		response, err := r.getRuxitProcResponse(&testRuxitRevision, mockClient)
+		response, lastRevision, err := r.getRuxitProcResponse(testTenantUUID, mockClient)
 
 		require.Nil(t, err)
 		assert.Equal(t, testRuxitProcResponseCache, *response)
+		assert.Equal(t, testRuxitProcResponseCache.Revision, lastRevision)
 	})
 	t.Run(`cache + old revision (outdated cache should be ignored)`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		prepTestFsCache(memFs)
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetRuxitProcConf", testRuxitRevision.LatestRevision).
+		mockClient.On("GetRuxitProcConf", testRuxitProcResponseCache.Revision).
 			Return(&testRuxitProcResponse, nil)
 		r := &OneAgentProvisioner{
 			fs: memFs,
 		}
 
-		response, err := r.getRuxitProcResponse(&testRuxitRevision, mockClient)
+		response, lastRevision, err := r.getRuxitProcResponse(testTenantUUID, mockClient)
 
 		require.Nil(t, err)
 		assert.Equal(t, testRuxitProcResponse, *response)
+		assert.Equal(t, testRuxitProcResponseCache.Revision, lastRevision)
 	})
 }
 
@@ -131,7 +111,7 @@ func TestReadRuxitCache(t *testing.T) {
 		fs: memFs,
 	}
 
-	cache, err := r.readRuxitCache(&testRuxitRevision)
+	cache, err := r.readRuxitCache(testTenantUUID)
 	require.Nil(t, err)
 	assert.Equal(t, testRuxitProcResponseCache, *cache)
 }
@@ -142,57 +122,12 @@ func TestWriteRuxitCache(t *testing.T) {
 		fs: memFs,
 	}
 
-	err := r.writeRuxitCache(&testRuxitRevision, &testRuxitProcResponseCache)
+	err := r.writeRuxitCache(testTenantUUID, &testRuxitProcResponseCache)
 
 	require.Nil(t, err)
-	cache, err := r.readRuxitCache(&testRuxitRevision)
+	cache, err := r.readRuxitCache(testTenantUUID)
 	require.Nil(t, err)
 	assert.Equal(t, testRuxitProcResponseCache, *cache)
-}
-
-func TestCreateOrUpdateRuxitRevision(t *testing.T) {
-	t.Run(`create`, func(t *testing.T) {
-		memDB := metadata.FakeMemoryDB()
-		r := &OneAgentProvisioner{
-			db: memDB,
-		}
-
-		err := r.createOrUpdateRuxitRevision(testTenantUUID, &testDummyRuxitRevision, &testRuxitProcResponse)
-
-		require.Nil(t, err)
-		rev, err := memDB.GetRuxitRevision(testTenantUUID)
-		require.Nil(t, err)
-		assert.Equal(t, testRuxitProcResponse.Revision, rev.LatestRevision)
-	})
-	t.Run(`update`, func(t *testing.T) {
-		memDB := metadata.FakeMemoryDB()
-		memDB.InsertRuxitRevision(&testRuxitRevision)
-		r := &OneAgentProvisioner{
-			db: memDB,
-		}
-
-		err := r.createOrUpdateRuxitRevision(testTenantUUID, &testRuxitRevision, &testRuxitProcResponse)
-
-		require.Nil(t, err)
-		rev, err := memDB.GetRuxitRevision(testTenantUUID)
-		require.Nil(t, err)
-		assert.Equal(t, testRuxitProcResponse.Revision, rev.LatestRevision)
-	})
-	t.Run(`no new revision do nothing`, func(t *testing.T) {
-		memDB := metadata.FakeMemoryDB()
-		r := &OneAgentProvisioner{
-			db: memDB,
-		}
-		sameRev := metadata.RuxitRevision{TenantUUID: testTenantUUID, LatestRevision: testRuxitProcResponseCache.Revision}
-
-		err := r.createOrUpdateRuxitRevision(testTenantUUID, &sameRev, &testRuxitProcResponseCache)
-
-		require.Nil(t, err)
-		rev, err := memDB.GetRuxitRevision(testTenantUUID)
-		require.Nil(t, err)
-		assert.Equal(t, testDummyRuxitRevision.LatestRevision, rev.LatestRevision)
-	})
-
 }
 
 func prepTestConfFs(fs afero.Fs) {

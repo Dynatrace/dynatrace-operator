@@ -21,15 +21,6 @@ var (
 		Name:          "dk3",
 	}
 
-	testRuxitRevision1 = RuxitRevision{
-		TenantUUID:     testDynakube1.TenantUUID,
-		LatestRevision: 1,
-	}
-	testRuxitRevision2 = RuxitRevision{
-		TenantUUID:     testDynakube2.TenantUUID,
-		LatestRevision: 2,
-	}
-
 	testVolume1 = Volume{
 		VolumeID:   "vol-1",
 		PodName:    "pod1",
@@ -91,11 +82,6 @@ func (f *FakeFailDB) DeleteDynakube(dynakubeName string) error           { retur
 func (f *FakeFailDB) GetDynakube(dynakubeName string) (*Dynakube, error) { return nil, sql.ErrTxDone }
 func (f *FakeFailDB) GetDynakubes() (map[string]string, error)           { return nil, sql.ErrTxDone }
 
-func (f *FakeFailDB) InsertRuxitRevision(ruxitRev *RuxitRevision) error { return sql.ErrTxDone }
-func (f *FakeFailDB) UpdateRuxitRevision(ruxitRev *RuxitRevision) error { return sql.ErrTxDone }
-func (f *FakeFailDB) GetRuxitRevision(tenantUUID string) (*RuxitRevision, error) {
-	return nil, sql.ErrTxDone
-}
 func (f *FakeFailDB) InsertVolume(volume *Volume) error          { return sql.ErrTxDone }
 func (f *FakeFailDB) DeleteVolume(volumeID string) error         { return sql.ErrTxDone }
 func (f *FakeFailDB) GetVolume(volumeID string) (*Volume, error) { return nil, sql.ErrTxDone }

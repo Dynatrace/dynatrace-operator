@@ -30,14 +30,6 @@ const (
 		PRIMARY KEY (ID)
 	);`
 
-	ruxitRevTableName       = "ruxitRevisions"
-	ruxitRevCreateStatement = `
-	CREATE TABLE IF NOT EXISTS ruxitRevisions (
-		TenantUUID VARCHAR NOT NULL,
-		LatestRevision VARCHAR NOT NULL,
-		PRIMARY KEY (TenantUUID)
-	);`
-
 	insertDynakubeStatement = `
 	INSERT INTO dynakubes (Name, TenantUUID, LatestVersion)
 	VALUES (?,?,?);
@@ -63,32 +55,6 @@ const (
 	SELECT PodName, Version, TenantUUID
 	FROM volumes
 	WHERE ID = ?;
-	`
-
-	insertRuxitRevisionStatement = `
-	INSERT INTO ruxitRevisions (TenantUUID, LatestRevision)
-	VALUES (?,?);
-	`
-	updateRuxitRevisionStatement = `
-	UPDATE ruxitRevisions
-	SET LatestRevision = ?
-	WHERE TenantUUID = ?;
-	`
-
-	getRuxitRevisionStatement = `
-	SELECT LatestRevision
-	FROM ruxitRevisions
-	WHERE TenantUUID = ?;
-	`
-
-	ruxitRevisionPrunerTriggerName      = "revisionPruner"
-	ruxitRevisionPrunerTriggerStatement = `
-	CREATE TRIGGER IF NOT EXISTS revisionPruner
-		AFTER DELETE ON dynakubes
-		WHEN NOT EXISTS (SELECT 1 FROM dynakubes WHERE TenantUUID = OLD.TenantUUID)
-	BEGIN
-	    DELETE FROM ruxitRevisions WHERE TenantUUID = OLD.TenantUUID;
-	END;
 	`
 
 	deleteVolumeStatement = "DELETE FROM volumes WHERE ID = ?;"
@@ -149,12 +115,6 @@ func (a *SqliteAccess) createTables() error {
 	if _, err := a.conn.Exec(volumesCreateStatement); err != nil {
 		return fmt.Errorf("couldn't create the table %s, err: %s", volumesTableName, err)
 	}
-	if _, err := a.conn.Exec(ruxitRevCreateStatement); err != nil {
-		return fmt.Errorf("couldn't create the table %s, err: %s", ruxitRevTableName, err)
-	}
-	if _, err := a.conn.Exec(ruxitRevisionPrunerTriggerStatement); err != nil {
-		return fmt.Errorf("couldn't create the trigger for pruning table %s, err: %s", ruxitRevTableName, err)
-	}
 	return nil
 }
 
@@ -213,40 +173,6 @@ func (a *SqliteAccess) GetDynakube(dynakubeName string) (*Dynakube, error) {
 		err = fmt.Errorf("couldn't get dynakube, name '%s', err: %s", dynakubeName, err)
 	}
 	return NewDynakube(dynakubeName, tenantUUID, latestVersion), err
-}
-
-// InsertRuxitRevision inserts a new RuxitRevision
-func (a *SqliteAccess) InsertRuxitRevision(ruxitRev *RuxitRevision) error {
-	err := a.executeStatement(insertRuxitRevisionStatement, ruxitRev.TenantUUID, ruxitRev.LatestRevision)
-	if err != nil {
-		err = fmt.Errorf("couldn't insert ruxitRevision, tenantUUID '%s', latestRevision '%d', err: %s",
-			ruxitRev.TenantUUID,
-			ruxitRev.LatestRevision,
-			err)
-	}
-	return err
-}
-
-// UpdateRuxitRevision updates an existing RuxitRevision
-func (a *SqliteAccess) UpdateRuxitRevision(ruxitRev *RuxitRevision) error {
-	err := a.executeStatement(updateRuxitRevisionStatement, ruxitRev.LatestRevision, ruxitRev.TenantUUID)
-	if err != nil {
-		err = fmt.Errorf("couldn't update ruxitRevision, tenantUUID '%s', latestRevision '%d', err: %s",
-			ruxitRev.TenantUUID,
-			ruxitRev.LatestRevision,
-			err)
-	}
-	return err
-}
-
-// GetRuxitRevision gets RuxitRevision by tenantUUID
-func (a *SqliteAccess) GetRuxitRevision(tenantUUID string) (*RuxitRevision, error) {
-	var revision uint
-	err := a.querySimpleStatement(getRuxitRevisionStatement, tenantUUID, &revision)
-	if err != nil {
-		err = fmt.Errorf("couldn't get ruxitRevision, tenantUUID '%s', err: %s", tenantUUID, err)
-	}
-	return NewRuxitRevision(tenantUUID, revision), err
 }
 
 // InsertVolume inserts a new Volume
