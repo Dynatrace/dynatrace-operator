@@ -23,7 +23,7 @@ import (
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -136,23 +136,23 @@ type podMutator struct {
 	recorder   record.EventRecorder
 }
 
-func rootOwnerPod(ctx context.Context, cnt client.Client, pod *corev1.Pod, namespace string) (string, string, error) {
-	obj := &v1.PartialObjectMetadata{
-		TypeMeta: v1.TypeMeta{
+func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod, namespace string) (string, string, error) {
+	obj := &metav1.PartialObjectMetadata{
+		TypeMeta: metav1.TypeMeta{
 			APIVersion: pod.APIVersion,
 			Kind:       pod.Kind,
 		},
-		ObjectMeta: v1.ObjectMeta{
+		ObjectMeta: metav1.ObjectMeta{
 			Name: pod.ObjectMeta.Name,
 			// pod.ObjectMeta.Namespace is empty yet
 			Namespace:       namespace,
 			OwnerReferences: pod.ObjectMeta.OwnerReferences,
 		},
 	}
-	return rootOwner(ctx, cnt, obj)
+	return findRootOwner(ctx, clt, obj)
 }
 
-func rootOwner(ctx context.Context, cnt client.Client, o *v1.PartialObjectMetadata) (string, string, error) {
+func findRootOwner(ctx context.Context, clt client.Client, o *metav1.PartialObjectMetadata) (string, string, error) {
 	if len(o.ObjectMeta.OwnerReferences) == 0 {
 		kind := o.Kind
 		if kind == "Pod" {
@@ -164,25 +164,25 @@ func rootOwner(ctx context.Context, cnt client.Client, o *v1.PartialObjectMetada
 	om := o.ObjectMeta
 	for _, owner := range om.OwnerReferences {
 		if owner.Controller != nil && *owner.Controller && isWellKnownWorkload(owner) {
-			obj := &v1.PartialObjectMetadata{
-				TypeMeta: v1.TypeMeta{
+			obj := &metav1.PartialObjectMetadata{
+				TypeMeta: metav1.TypeMeta{
 					APIVersion: owner.APIVersion,
 					Kind:       owner.Kind,
 				},
 			}
-			if err := cnt.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: om.Namespace}, obj); err != nil {
+			if err := clt.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: om.Namespace}, obj); err != nil {
 				log.Error(err, "failed to query the object", "apiVersion", owner.APIVersion, "kind", owner.Kind, "name", owner.Name, "namespace", om.Namespace)
 				return o.ObjectMeta.Name, o.Kind, err
 			}
 
-			return rootOwner(ctx, cnt, obj)
+			return findRootOwner(ctx, clt, obj)
 		}
 	}
 	return o.ObjectMeta.Name, o.Kind, nil
 }
 
-func isWellKnownWorkload(ownerRef v1.OwnerReference) bool {
-	knownWorkloads := []v1.TypeMeta{
+func isWellKnownWorkload(ownerRef metav1.OwnerReference) bool {
+	knownWorkloads := []metav1.TypeMeta{
 		{Kind: "ReplicaSet", APIVersion: "apps/v1"},
 		{Kind: "Deployment", APIVersion: "apps/v1"},
 		{Kind: "ReplicationController", APIVersion: "v1"},
@@ -234,7 +234,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	if err := m.client.Get(ctx, client.ObjectKey{Name: dkName, Namespace: m.namespace}, &dk); k8serrors.IsNotFound(err) {
 		template := "namespace '%s' is assigned to DynaKube instance '%s' but doesn't exist"
 		m.recorder.Eventf(
-			&dynatracev1beta1.DynaKube{ObjectMeta: v1.ObjectMeta{Name: "placeholder", Namespace: m.namespace}},
+			&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "placeholder", Namespace: m.namespace}},
 			corev1.EventTypeWarning,
 			missingDynakubeEvent,
 			template, req.Namespace, dkName)
@@ -335,9 +335,9 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 	pod.Annotations[dtwebhook.AnnotationInjected] = "true"
 
-	workloadName, workloadKind, workloadErr := rootOwnerPod(ctx, m.metaClient, pod, req.Namespace)
-	if workloadErr != nil {
-		return admission.Errored(http.StatusInternalServerError, workloadErr)
+	workloadName, workloadKind, err := findRootOwnerOfPod(ctx, m.metaClient, pod, req.Namespace)
+	if err != nil {
+		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
 	technologies := url.QueryEscape(kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
