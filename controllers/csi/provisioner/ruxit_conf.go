@@ -13,26 +13,26 @@ import (
 // getRuxitProcResponse gets the latest `RuxitProcResponse`, it can come from the tenant if we don't have the latest revision saved locally,
 // otherwise we use the locally cached response
 func (r *OneAgentProvisioner) getRuxitProcResponse(dtc dtclient.Client, tenantUUID string) (*dtclient.RuxitProcResponse, uint, error) {
-	var lastRevision uint
+	var storedRevision uint
 	storedRuxitProcResponse, err := r.readRuxitCache(tenantUUID)
 	if os.IsNotExist(err) {
-		latestRuxitProcResponse, err := dtc.GetRuxitProcConf(lastRevision)
+		latestRuxitProcResponse, err := dtc.GetRuxitProcConf(storedRevision)
 		if err != nil {
-			return nil, lastRevision, err
+			return nil, storedRevision, err
 		}
-		return latestRuxitProcResponse, lastRevision, nil
+		return latestRuxitProcResponse, storedRevision, nil
 	} else if err != nil {
-		return nil, lastRevision, err
+		return nil, storedRevision, err
 	}
-	lastRevision = storedRuxitProcResponse.Revision
+	storedRevision = storedRuxitProcResponse.Revision
 	latestRuxitProcResponse, err := dtc.GetRuxitProcConf(storedRuxitProcResponse.Revision)
 	if err != nil {
-		return nil, lastRevision, err
+		return nil, storedRevision, err
 	}
 	if latestRuxitProcResponse != nil {
-		return latestRuxitProcResponse, lastRevision, nil
+		return latestRuxitProcResponse, storedRevision, nil
 	}
-	return storedRuxitProcResponse, lastRevision, nil
+	return storedRuxitProcResponse, storedRevision, nil
 }
 
 func (r *OneAgentProvisioner) readRuxitCache(tenantUUID string) (*dtclient.RuxitProcResponse, error) {

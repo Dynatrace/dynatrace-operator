@@ -47,7 +47,7 @@ func newInstallAgentConfig(
 	}
 }
 
-func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID string, lastRevision uint, latestRuxitProcResponse *dtclient.RuxitProcResponse) (string, error) {
+func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID string, previousRevision uint, latestRuxitProcResponse *dtclient.RuxitProcResponse) (string, error) {
 	dk := installAgentCfg.dk
 	logger := installAgentCfg.logger
 	currentVersion := installAgentCfg.getOneAgentVersionFromInstance()
@@ -73,7 +73,7 @@ func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID strin
 			"Installed agent version: %s to tenant: %s", currentVersion, tenantUUID)
 		return currentVersion, nil
 	}
-	if lastRevision != latestRuxitProcResponse.Revision {
+	if previousRevision != latestRuxitProcResponse.Revision {
 		installAgentCfg.logger.Info("updating ruxit on installed version")
 		if err := installAgentCfg.updateRuxitConf(currentVersion, tenantUUID, latestRuxitProcResponse); err != nil {
 			return "", err

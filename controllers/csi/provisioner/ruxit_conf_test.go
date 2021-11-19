@@ -64,11 +64,11 @@ func TestGetRuxitProcResponse(t *testing.T) {
 			fs: memFs,
 		}
 
-		response, lastRevision, err := r.getRuxitProcResponse(mockClient, testTenantUUID)
+		response, storedRevision, err := r.getRuxitProcResponse(mockClient, testTenantUUID)
 
 		require.Nil(t, err)
 		assert.Equal(t, testRuxitProcResponse, *response)
-		assert.Equal(t, defaultRevision, lastRevision)
+		assert.Equal(t, defaultRevision, storedRevision)
 	})
 	t.Run(`cache + latest revision (cached run)`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
@@ -80,11 +80,11 @@ func TestGetRuxitProcResponse(t *testing.T) {
 			fs: memFs,
 		}
 
-		response, lastRevision, err := r.getRuxitProcResponse(mockClient, testTenantUUID)
+		response, storedRevision, err := r.getRuxitProcResponse(mockClient, testTenantUUID)
 
 		require.Nil(t, err)
 		assert.Equal(t, testRuxitProcResponseCache, *response)
-		assert.Equal(t, testRuxitProcResponseCache.Revision, lastRevision)
+		assert.Equal(t, testRuxitProcResponseCache.Revision, storedRevision)
 	})
 	t.Run(`cache + old revision (outdated cache should be ignored)`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
@@ -96,11 +96,11 @@ func TestGetRuxitProcResponse(t *testing.T) {
 			fs: memFs,
 		}
 
-		response, lastRevision, err := r.getRuxitProcResponse(mockClient, testTenantUUID)
+		response, storedRevision, err := r.getRuxitProcResponse(mockClient, testTenantUUID)
 
 		require.Nil(t, err)
 		assert.Equal(t, testRuxitProcResponse, *response)
-		assert.Equal(t, testRuxitProcResponseCache.Revision, lastRevision)
+		assert.Equal(t, testRuxitProcResponseCache.Revision, storedRevision)
 	})
 }
 
