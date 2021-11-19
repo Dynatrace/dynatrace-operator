@@ -22,14 +22,15 @@ spec:
 
   oneAgent:
     # Enable application monitoring
-    applicationMonitoring: {}
+    applicationMonitoring:
+      # Enable CSIDriver
+      useCSIDriver: true
   activeGate:
     # Enables listed ActiveGate capabilities
     capabilities:
       - kubernetes-monitoring
 
     # Amount of replicas of ActiveGate pods
-    #
     replicas: 3
 
 ---
