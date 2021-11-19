@@ -37,7 +37,7 @@ func TestCheckStorageCorrectness_DoNothing(t *testing.T) {
 	log := logger.NewDTLogger()
 	client := fake.NewClient(
 		&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
-		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testTenant1.Dynakube}},
+		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
 	)
 
 	err := CorrectMetadata(client, db, log)
@@ -53,13 +53,13 @@ func TestCheckStorageCorrectness_PURGE(t *testing.T) {
 	db.InsertVolume(&testVolume1)
 	db.InsertVolume(&testVolume2)
 	db.InsertVolume(&testVolume3)
-	db.InsertTenant(&testTenant1)
-	db.InsertTenant(&testTenant2)
-	db.InsertTenant(&testTenant3)
+	db.InsertDynakube(&testDynakube1)
+	db.InsertDynakube(&testDynakube2)
+	db.InsertDynakube(&testDynakube3)
 	log := logger.NewDTLogger()
 	client := fake.NewClient(
 		&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
-		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testTenant1.Dynakube}},
+		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
 	)
 
 	err := CorrectMetadata(client, db, log)
@@ -69,9 +69,9 @@ func TestCheckStorageCorrectness_PURGE(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, &testVolume1, vol)
 
-	ten, err := db.GetTenant(testTenant1.Dynakube)
+	ten, err := db.GetDynakube(testDynakube1.Name)
 	assert.NoError(t, err)
-	assert.Equal(t, &testTenant1, ten)
+	assert.Equal(t, &testDynakube1, ten)
 
 	// PURGED
 	vol, err = db.GetVolume(testVolume2.VolumeID)
@@ -84,12 +84,12 @@ func TestCheckStorageCorrectness_PURGE(t *testing.T) {
 	assert.Nil(t, vol)
 
 	// PURGED
-	ten, err = db.GetTenant(testTenant2.TenantUUID)
+	ten, err = db.GetDynakube(testDynakube2.TenantUUID)
 	assert.NoError(t, err)
 	assert.Nil(t, ten)
 
 	// PURGED
-	ten, err = db.GetTenant(testTenant3.TenantUUID)
+	ten, err = db.GetDynakube(testDynakube3.TenantUUID)
 	assert.NoError(t, err)
 	assert.Nil(t, ten)
 }

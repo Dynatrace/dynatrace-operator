@@ -7,7 +7,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
@@ -42,20 +41,15 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 		}}
-	imgVerProvider := func(img string, dockerConfig *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
-		return dtversion.ImageVersion{}, nil
-	}
 
 	capability.NewRoutingCapability(instance)
 
-	r := NewReconciler(clt, clt, scheme.Scheme, nil, log, instance, imgVerProvider,
-		capability.NewRoutingCapability(instance))
+	r := NewReconciler(clt, clt, scheme.Scheme, log, instance, capability.NewRoutingCapability(instance))
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.scheme)
 	require.NotNil(t, r.log)
 	require.NotNil(t, r.Instance)
-	require.NotNil(t, r.imageVersionProvider)
 
 	return r
 }

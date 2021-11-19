@@ -37,7 +37,7 @@ func TestCreateOrUpdateSecretIfNotExists(t *testing.T) {
 			Data: data,
 		})
 
-		err := CreateOrUpdateSecretIfNotExists(client, client, testSecretName, testNamespace, data, "", log)
+		_, err := CreateOrUpdateSecretIfNotExists(client, client, testSecretName, testNamespace, data, "", log)
 		assert.NoError(t, err)
 	})
 	t.Run(`Secret present, different data => update data`, func(t *testing.T) {
@@ -50,7 +50,7 @@ func TestCreateOrUpdateSecretIfNotExists(t *testing.T) {
 			Data: map[string][]byte{},
 		})
 
-		err := CreateOrUpdateSecretIfNotExists(client, client, testSecretName, testNamespace, data, testSecretType, log)
+		_, err := CreateOrUpdateSecretIfNotExists(client, client, testSecretName, testNamespace, data, testSecretType, log)
 		assert.NoError(t, err)
 
 		var updatedSecret corev1.Secret
@@ -67,7 +67,7 @@ func TestCreateOrUpdateSecretIfNotExists(t *testing.T) {
 			Data: map[string][]byte{},
 		})
 
-		err := CreateOrUpdateSecretIfNotExists(client, client, testSecretName, testNamespace, data, testSecretType, log)
+		_, err := CreateOrUpdateSecretIfNotExists(client, client, testSecretName, testNamespace, data, testSecretType, log)
 		assert.NoError(t, err)
 
 		var newSecret corev1.Secret
@@ -81,7 +81,7 @@ func TestCreateOrUpdateSecretIfNotExists(t *testing.T) {
 		data := map[string][]byte{testKey1: []byte(testValue1)}
 		client := fake.NewClient()
 
-		err := CreateOrUpdateSecretIfNotExists(client, client, testSecretName, testNamespace, data, testSecretType, log)
+		_, err := CreateOrUpdateSecretIfNotExists(client, client, testSecretName, testNamespace, data, testSecretType, log)
 		assert.NoError(t, err)
 
 		var newSecret corev1.Secret

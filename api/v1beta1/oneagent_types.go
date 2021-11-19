@@ -12,7 +12,7 @@ type OneAgentSpec struct {
 	// +nullable
 	ClassicFullStack *ClassicFullStackSpec `json:"classicFullStack,omitempty"`
 
-	// Optional: enable application-only monitoring and change its settings
+	// Optional: (Beta feature) enable application-only monitoring and change its settings
 	// Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or host monitoring
 	// +nullable
 	ApplicationMonitoring *ApplicationMonitoringSpec `json:"applicationMonitoring,omitempty"`

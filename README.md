@@ -14,7 +14,7 @@ OneAgent traffic.
 
 With v0.3.0 the CRD structure has been changed to provide an easier and more understandable way to deploy Dynatrace in your environment.
 - **routing** and **kubernetesMonitoring** within the Dynakube spec are deprecated now and moved to the **activeGate** section.
-- added **applicationMonitoring** mode, a webhook based injection mechanism for automatic-app-only injection
+- (BETA, when used with 'useCSIDriver') added **applicationMonitoring** mode, a webhook based injection mechanism for automatic-app-only injection
 - added **hostMonitoring** for only monitoring the host in the cluster without app-only injection
 - (BETA) added **cloudNativeFullStack** mode, which combines **hostMonitoring**, with the webhook based **applicationMonitoring**
 
@@ -28,7 +28,7 @@ Depending on the version of the Dynatrace Operator, it supports the following pl
 
 | Dynatrace Operator version | Kubernetes | OpenShift Container Platform               |
 | -------------------------- | ---------- | ------------------------------------------ |
-| master                     | 1.20+      | 3.11.188+, 4.7+                            |
+| master                     | 1.20+      | 4.7+                            |
 | v0.3.0                     | 1.20+      | 3.11.188+, 4.7+                            |
 | v0.2.2                     | 1.18+      | 3.11.188+, 4.5+                            |
 | v0.1.0                     | 1.18+      | 3.11.188+, 4.4+                            |
@@ -148,13 +148,6 @@ To create the namespace and apply the operator run the following commands (for O
 ```sh
 $ oc adm new-project --node-selector="" dynatrace
 $ oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift.yaml
-```
-
-If you are using *OpenShift 3.11*, make sure to run the following commands, instead of the ones above
-
-```sh
-$ oc adm new-project --node-selector="" dynatrace
-$ oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift3.11.yaml
 ```
 
 A secret holding tokens for authenticating to the Dynatrace cluster needs to be created upfront. Create access tokens of

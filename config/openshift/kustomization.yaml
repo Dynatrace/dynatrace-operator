@@ -1,7 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - csi/securitycontextconstraints-csidriver.yaml
   - oneagent/securitycontextconstraints.yaml
   - oneagent/securitycontextconstraints-unprivileged.yaml
   - oneagent/clusterrole-oneagent.yaml
@@ -10,14 +9,12 @@ resources:
   - oneagent/clusterrolebinding-oneagent-unprivileged.yaml
 bases:
   - ../common/activegate
-  - ../common/data-ingest
   - ../common/kubernetes-monitoring
   - ../common/oneagent
   - ../common/operator
   - ../common/routing
-  - ../common/csi
   - ../common/webhook
-  - ../crd/default
+  - ../crd
 patchesJson6902:
   - target:
       group: ""

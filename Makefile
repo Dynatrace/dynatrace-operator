@@ -24,7 +24,6 @@ endif
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:preserveUnknownFields=false, crdVersions=v1"
-CRD_OPTIONS_OCP311 ?= "crd:preserveUnknownFields=false, crdVersions=v1beta1"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -96,7 +95,7 @@ deploy: manifests kustomize
 	rm -f config/deploy/kustomization.yaml
 	mkdir -p config/deploy
 	cd config/deploy && $(KUSTOMIZE) create
-	cd config/deploy && $(KUSTOMIZE) edit add base ../kubernetes
+	cd config/deploy && $(KUSTOMIZE) edit add base ../kubernetes-csi
 	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
 	$(KUSTOMIZE) build config/deploy | kubectl apply -f -
 
@@ -106,16 +105,7 @@ deploy-ocp: manifests kustomize
 	rm -f config/deploy/kustomization.yaml
 	mkdir -p config/deploy
 	cd config/deploy && $(KUSTOMIZE) create
-	cd config/deploy && $(KUSTOMIZE) edit add base ../openshift
-	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
-	$(KUSTOMIZE) build config/deploy | oc apply -f -
-
-deploy-ocp3.11: manifests-ocp311 kustomize
-	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
-	rm -f config/deploy/kustomization.yaml
-	mkdir -p config/deploy
-	cd config/deploy && $(KUSTOMIZE) create
-	cd config/deploy && $(KUSTOMIZE) edit add base ../openshift3.11
+	cd config/deploy && $(KUSTOMIZE) edit add base ../openshift-csi
 	cd config/deploy && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
 	$(KUSTOMIZE) build config/deploy | oc apply -f -
 
@@ -127,11 +117,8 @@ deploy-local-easy:
 	./build/deploy_local.sh
 
 # Generate manifests e.g. CRD, RBAC etc.
-manifests: controller-gen manifests-ocp311
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/default/bases
-
-manifests-ocp311: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS_OCP311) paths="./..." output:crd:artifacts:config=config/crd/ocp311/bases
+manifests: controller-gen
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
 fmt:
