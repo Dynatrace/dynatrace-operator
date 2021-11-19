@@ -6,11 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	ruxit "github.com/Dynatrace/dynatrace-operator/conf"
+	"github.com/Dynatrace/dynatrace-operator/conf"
 	"github.com/pkg/errors"
 )
-
-const notModifiedStatusCode = 304
 
 type RuxitProcResponse struct {
 	Revision   uint            `json:"revision"`
@@ -23,7 +21,7 @@ type RuxitProperty struct {
 	Value   string `json:"value"`
 }
 
-func (rc RuxitProcResponse) ToMap() ruxit.ConfMap {
+func (rc RuxitProcResponse) ToMap() conf.ConfMap {
 	sections := map[string]map[string]string{}
 	for _, prop := range rc.Properties {
 		section := sections[prop.Section]
@@ -39,7 +37,7 @@ func (rc RuxitProcResponse) ToMap() ruxit.ConfMap {
 func (dtc *dynatraceClient) GetRuxitProcConf(prevRevision uint) (*RuxitProcResponse, error) {
 	ruxitConfURL := fmt.Sprintf("%s/v1/deployment/installer/agent/processmoduleconfig", dtc.url)
 
-	req, err := http.NewRequest("GET", ruxitConfURL, nil)
+	req, err := http.NewRequest(http.MethodGet, ruxitConfURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}
@@ -51,7 +49,7 @@ func (dtc *dynatraceClient) GetRuxitProcConf(prevRevision uint) (*RuxitProcRespo
 
 	resp, err := dtc.httpClient.Do(req)
 
-	if resp.StatusCode == notModifiedStatusCode {
+	if resp.StatusCode == http.StatusNotModified {
 		return nil, nil
 	}
 

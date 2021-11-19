@@ -11,7 +11,7 @@ import (
 )
 
 func TestMergeLine(t *testing.T) {
-	testCongMap := ConfMap{
+	testConfMap := ConfMap{
 		"general": {
 			"prop1": "val1",
 		},
@@ -19,12 +19,12 @@ func TestMergeLine(t *testing.T) {
 
 	t.Run(`key not map`, func(t *testing.T) {
 		testLine := "prop2 val2"
-		merged := mergeLine(testLine, "general", testCongMap)
+		merged := mergeLine(testLine, "general", testConfMap)
 		assert.Equal(t, "prop2 val2", merged)
 	})
 	t.Run(`key in map`, func(t *testing.T) {
 		testLine := "prop1 val2"
-		merged := mergeLine(testLine, "general", testCongMap)
+		merged := mergeLine(testLine, "general", testConfMap)
 		assert.Equal(t, "prop1 val1", merged)
 	})
 }

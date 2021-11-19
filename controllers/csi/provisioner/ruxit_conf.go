@@ -6,22 +6,22 @@ import (
 	"io/ioutil"
 	"os"
 
-	ruxit "github.com/Dynatrace/dynatrace-operator/conf"
+	"github.com/Dynatrace/dynatrace-operator/conf"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 )
 
 // getRuxitProcResponse gets the latest `RuxitProcResponse`, it can come from the tenant if we don't have the latest revision saved locally,
 // otherwise we use the locally cached response
-func (r *OneAgentProvisioner) getRuxitProcResponse(tenantUUID string, dtc dtclient.Client) (*dtclient.RuxitProcResponse, uint, error) {
+func (r *OneAgentProvisioner) getRuxitProcResponse(dtc dtclient.Client, tenantUUID string) (*dtclient.RuxitProcResponse, uint, error) {
 	var lastRevision uint
 	storedRuxitProcResponse, err := r.readRuxitCache(tenantUUID)
-	if err != nil && os.IsNotExist(err) {
+	if os.IsNotExist(err) {
 		latestRuxitProcResponse, err := dtc.GetRuxitProcConf(lastRevision)
 		if err != nil {
 			return nil, lastRevision, err
 		}
 		return latestRuxitProcResponse, lastRevision, nil
-	} else if err != nil && !os.IsNotExist(err) {
+	} else if err != nil {
 		return nil, lastRevision, err
 	}
 	lastRevision = storedRuxitProcResponse.Revision
@@ -70,14 +70,14 @@ func (r *OneAgentProvisioner) writeRuxitCache(tenantUUID string, ruxitResponse *
 
 func (installAgentCfg *installAgentConfig) updateRuxitConf(version, tenantUUID string, ruxitResponse *dtclient.RuxitProcResponse) error {
 	if ruxitResponse != nil {
-		conf := ruxitResponse.ToMap()
+		ruxitConf := ruxitResponse.ToMap()
 		installAgentCfg.logger.Info("updating ruxitagentproc.conf", "agentVersion", version, "tenantUUID", tenantUUID)
 		usedRuxitConfPath := installAgentCfg.path.AgentRuxitConfForVersion(tenantUUID, version)
 		sourceRuxitConfPath := installAgentCfg.path.SourceAgentRuxitConfForVersion(tenantUUID, version)
 		if err := installAgentCfg.checkRuxitConfCopy(sourceRuxitConfPath, usedRuxitConfPath); err != nil {
 			return err
 		}
-		return ruxit.UpdateConfFile(installAgentCfg.fs, sourceRuxitConfPath, usedRuxitConfPath, conf)
+		return conf.UpdateConfFile(installAgentCfg.fs, sourceRuxitConfPath, usedRuxitConfPath, ruxitConf)
 	}
 	installAgentCfg.logger.Info("no changes to ruxitagentproc.conf, skipping update")
 	return nil

@@ -64,7 +64,7 @@ func TestGetRuxitProcResponse(t *testing.T) {
 			fs: memFs,
 		}
 
-		response, lastRevision, err := r.getRuxitProcResponse(testTenantUUID, mockClient)
+		response, lastRevision, err := r.getRuxitProcResponse(mockClient, testTenantUUID)
 
 		require.Nil(t, err)
 		assert.Equal(t, testRuxitProcResponse, *response)
@@ -80,7 +80,7 @@ func TestGetRuxitProcResponse(t *testing.T) {
 			fs: memFs,
 		}
 
-		response, lastRevision, err := r.getRuxitProcResponse(testTenantUUID, mockClient)
+		response, lastRevision, err := r.getRuxitProcResponse(mockClient, testTenantUUID)
 
 		require.Nil(t, err)
 		assert.Equal(t, testRuxitProcResponseCache, *response)
@@ -96,7 +96,7 @@ func TestGetRuxitProcResponse(t *testing.T) {
 			fs: memFs,
 		}
 
-		response, lastRevision, err := r.getRuxitProcResponse(testTenantUUID, mockClient)
+		response, lastRevision, err := r.getRuxitProcResponse(mockClient, testTenantUUID)
 
 		require.Nil(t, err)
 		assert.Equal(t, testRuxitProcResponse, *response)

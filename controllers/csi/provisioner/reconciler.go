@@ -136,7 +136,7 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 	rlog.Info("csi directories exist", "path", r.path.EnvDir(dynakube.TenantUUID))
 
-	latestRuxitProcResponse, lastRevision, err := r.getRuxitProcResponse(dynakube.TenantUUID, dtc)
+	latestRuxitProcResponse, lastRevision, err := r.getRuxitProcResponse(dtc, dynakube.TenantUUID)
 	if err != nil {
 		rlog.Error(err, "error when getting the latest ruxitagentproc.conf")
 		return reconcile.Result{}, err
