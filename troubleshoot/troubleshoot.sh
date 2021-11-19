@@ -352,7 +352,7 @@ function checkImagePullable {
         activegate_image_works=true
       fi
     else
-      log "image '$activegate_image' with version '$oneagent_version' not found on registry '$registry'"
+      log "image '$activegate_image' with version '$activegate_version' not found on registry '$registry'"
     fi
   done
 
