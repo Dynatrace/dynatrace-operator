@@ -61,7 +61,7 @@ spec:
       # Optional: If you want to use CSIDriver; disable if your cluster does not have 'nodes' to fall back to the volume approach.
       # Defaults to false
       #
-      # useCSIDriver: true
+      useCSIDriver: false
 
       # the namespaces which we want to inject into; matchLabels: <map-of-labels-to-match>; matchExpression: <see example https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements >
       # if namespaceSelector is not set then we inject into every namespace
