@@ -19,8 +19,8 @@ RUN CGO_ENABLED=1 go build "$GO_BUILD_ARGS" -o ./build/_output/bin/dynatrace-ope
 
 FROM registry.access.redhat.com/ubi8/ubi-micro:8.4
 
-COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.2.0 /csi-node-driver-registrar /usr/local/bin
-COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.3.0 /livenessprobe /usr/local/bin
+COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.3.0 /csi-node-driver-registrar /usr/local/bin
+COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.5.0 /livenessprobe /usr/local/bin
 
 # copy tools required by init.sh
 COPY --from=package-download /usr/bin/unzip /usr/local/bin/unzip
