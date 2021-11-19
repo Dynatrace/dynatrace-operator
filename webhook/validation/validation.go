@@ -131,7 +131,7 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 	if dynakube.CloudNativeFullstackMode() {
 		validator.logger.Info("Dynakube with cloudNativeFullStack was applied, warning was provided.")
 		return admission.Allowed("").WithWarnings(warningCloudNativeFullStack)
-	} else if dynakube.ApplicationMonitoringMode() {
+	} else if dynakube.ApplicationMonitoringMode() && dynakube.NeedsCSIDriver() {
 		validator.logger.Info("Dynakube with applicationMonitoring was applied, warning was provided.")
 		return admission.Allowed("").WithWarnings(warningApplicationMonitoring)
 	}

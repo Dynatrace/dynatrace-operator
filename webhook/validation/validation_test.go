@@ -49,7 +49,7 @@ var dummyNamespace = corev1.Namespace{
 
 func TestDynakubeValidator_Handle(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
-		assertAllowedResponse(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
@@ -60,7 +60,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 			},
 		})
 
-		assertAllowedResponse(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
@@ -71,7 +71,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 			},
 		})
 
-		assertAllowedResponse(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
@@ -82,7 +82,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 			},
 		})
 
-		assertAllowedResponse(t,
+		assertAllowedResponseWithoutWarnings(t,
 			&dynatracev1beta1.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynatracev1beta1.DynaKubeSpec{
@@ -114,7 +114,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				},
 			})
 
-		assertAllowedResponse(t,
+		assertAllowedResponseWithWarnings(t,
 			&dynatracev1beta1.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynatracev1beta1.DynaKubeSpec{
@@ -146,7 +146,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				},
 			}, &defaultCSIDaemonSet)
 
-		assertAllowedResponse(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
@@ -159,7 +159,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 			},
 		})
 
-		assertAllowedResponse(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
@@ -172,6 +172,29 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				},
 			},
 		})
+
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+				},
+			},
+		})
+
+		useCSIDriver := true
+		assertAllowedResponseWithWarnings(t, &dynatracev1beta1.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
+						UseCSIDriver: &useCSIDriver,
+					},
+				},
+			},
+		}, &defaultCSIDaemonSet)
 
 	})
 	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
@@ -371,9 +394,20 @@ func assertDeniedResponse(t *testing.T, reason string, dynakube *dynatracev1beta
 	assert.Equal(t, metav1.StatusReason(reason), response.Result.Reason)
 }
 
-func assertAllowedResponse(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) {
+func assertAllowedResponseWithoutWarnings(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) {
+	response := assertAllowedResponse(t, dynakube, other...)
+	assert.Equal(t, len(response.Warnings), 0)
+}
+
+func assertAllowedResponseWithWarnings(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) {
+	response := assertAllowedResponse(t, dynakube, other...)
+	assert.Equal(t, len(response.Warnings), 1)
+}
+
+func assertAllowedResponse(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) admission.Response {
 	response := handleRequest(t, dynakube, other...)
 	assert.True(t, response.Allowed)
+	return response
 }
 
 func handleRequest(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) admission.Response {
