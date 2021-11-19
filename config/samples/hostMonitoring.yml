@@ -116,7 +116,6 @@ spec:
     capabilities:
       - routing
       - kubernetes-monitoring
-      - data-ingest
     
     # Optional: to use a custom ActiveGate Docker image.
     image: ""
