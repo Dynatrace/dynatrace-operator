@@ -48,6 +48,7 @@ COPY --from=package-download /usr/lib64/libcurl.* \
      /usr/lib64/libkrb5support.* \
      /usr/lib64/libkeyutils.* \
      /usr/lib64/libsasl2.* \
+     /usr/lib64/libbz2.* \
      /usr/lib64/libbrotlicommon.* /usr/lib64/
 
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
