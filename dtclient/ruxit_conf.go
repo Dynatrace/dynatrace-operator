@@ -35,24 +35,16 @@ func (rc RuxitProcResponse) ToMap() conf.ConfMap {
 }
 
 func (dtc *dynatraceClient) GetRuxitProcConf(prevRevision uint) (*RuxitProcResponse, error) {
-	ruxitConfURL := fmt.Sprintf("%s/v1/deployment/installer/agent/processmoduleconfig", dtc.url)
-
-	req, err := http.NewRequest(http.MethodGet, ruxitConfURL, nil)
+	req, err := dtc.createRuxitProcConfRequest(prevRevision)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing http request: %w", err)
+		return nil, err
 	}
-	query := req.URL.Query()
-	query.Add("revision", strconv.FormatUint(uint64(prevRevision), 10))
-	req.URL.RawQuery = query.Encode()
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", dtc.paasToken))
 
 	resp, err := dtc.httpClient.Do(req)
 
-	if resp.StatusCode == http.StatusNotModified {
+	if dtc.specialRuxitProcConfRequestStatus(resp) {
 		return nil, nil
 	}
-
 	if err != nil {
 		return nil, fmt.Errorf("error making get request to dynatrace api: %w", err)
 	}
@@ -67,6 +59,35 @@ func (dtc *dynatraceClient) GetRuxitProcConf(prevRevision uint) (*RuxitProcRespo
 	}
 
 	return dtc.readResponseForRuxitProcConf(responseData)
+}
+
+func (dtc *dynatraceClient) createRuxitProcConfRequest(prevRevision uint) (*http.Request, error) {
+	ruxitConfURL := fmt.Sprintf("%s/v1/deployment/installer/agent/processmoduleconfig", dtc.url)
+
+	req, err := http.NewRequest(http.MethodGet, ruxitConfURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error initializing http request: %w", err)
+	}
+	query := req.URL.Query()
+	query.Add("revision", strconv.FormatUint(uint64(prevRevision), 10))
+	req.URL.RawQuery = query.Encode()
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", dtc.paasToken))
+
+	return req, nil
+}
+
+func (dtc *dynatraceClient) specialRuxitProcConfRequestStatus(resp *http.Response) bool {
+	if resp.StatusCode == http.StatusNotModified {
+		return true
+	}
+
+	if resp.StatusCode == http.StatusNotFound {
+		dtc.logger.Info("endpoint for ruxitagentproc.conf is not available on the cluster.")
+		return true
+	}
+
+	return false
 }
 
 func (dtc *dynatraceClient) readResponseForRuxitProcConf(response []byte) (*RuxitProcResponse, error) {
