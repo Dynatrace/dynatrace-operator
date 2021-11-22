@@ -41,7 +41,7 @@ type Client interface {
 
 	GetConnectionInfo() (ConnectionInfo, error)
 
-	GetRuxitProcConf(prevRevision uint) (*RuxitProcResponse, error)
+	GetProcessModuleConfig(prevRevision uint) (*ProcessModuleConfig, error)
 
 	// GetCommunicationHostForClient returns a CommunicationHost for the client's API URL. Or error, if failed to be parsed.
 	GetCommunicationHostForClient() (CommunicationHost, error)

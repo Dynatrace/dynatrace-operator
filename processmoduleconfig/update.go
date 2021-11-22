@@ -1,4 +1,4 @@
-package conf
+package processmoduleconfig
 
 import (
 	"bufio"
@@ -18,9 +18,9 @@ type ConfMap map[string]map[string]string
 // example match: [general]
 var sectionRegexp, _ = regexp.Compile(`\[(.*)\]`)
 
-// UpdateConfFile opens the file at `sourcePath` and merges it with the ConfMap provided
+// Update opens the file at `sourcePath` and merges it with the ConfMap provided
 // then writes the results into a file at `destPath`
-func UpdateConfFile(fs afero.Fs, sourcePath, destPath string, conf ConfMap) error {
+func Update(fs afero.Fs, sourcePath, destPath string, conf ConfMap) error {
 	fileInfo, err := fs.Stat(sourcePath)
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func UpdateConfFile(fs afero.Fs, sourcePath, destPath string, conf ConfMap) erro
 		return err
 	}
 
-	return storeConfFile(fs, destPath, fileInfo.Mode(), content)
+	return storeFile(fs, destPath, fileInfo.Mode(), content)
 }
 
 func hasExtraNewLine(leftovers, content []string) bool {
@@ -83,19 +83,19 @@ func hasMissingNewLine(leftovers, content []string) bool {
 	return len(leftovers) != 0 && len(content) != 0 && content[len(content)-1] != ""
 }
 
-func storeConfFile(fs afero.Fs, destPath string, fileMode fs.FileMode, content []string) error {
-	ruxitConfFile, err := fs.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, fileMode)
+func storeFile(fs afero.Fs, destPath string, fileMode fs.FileMode, content []string) error {
+	file, err := fs.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, fileMode)
 	if err != nil {
 		return err
 	}
 	for _, line := range content {
-		_, _ = ruxitConfFile.WriteString(line + "\n")
+		_, _ = file.WriteString(line + "\n")
 		if err != nil {
-			ruxitConfFile.Close()
+			file.Close()
 			return err
 		}
 	}
-	return ruxitConfFile.Close()
+	return file.Close()
 }
 
 func confSectionHeader(confLine string) string {

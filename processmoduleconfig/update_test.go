@@ -1,4 +1,4 @@
-package conf
+package processmoduleconfig
 
 import (
 	"io/ioutil"
@@ -95,7 +95,7 @@ func TestStoreConfFile(t *testing.T) {
 val key
 `
 
-	err := storeConfFile(memFs, "/dest", 0776, []string{"[general]", "val key"})
+	err := storeFile(memFs, "/dest", 0776, []string{"[general]", "val key"})
 
 	require.Nil(t, err)
 	file, _ := memFs.Open("/dest")
@@ -140,7 +140,7 @@ prop5 new
 	source.WriteString(sourceContent)
 	source.Close()
 
-	err := UpdateConfFile(memFs, "/source", "/dest", testConfMap)
+	err := Update(memFs, "/source", "/dest", testConfMap)
 	require.Nil(t, err)
 	file, _ := memFs.Open("/dest")
 	content, _ := ioutil.ReadAll(file)
@@ -165,7 +165,7 @@ prop3 old
 	source.WriteString(sourceContent)
 	source.Close()
 
-	err := UpdateConfFile(memFs, "/source", "/dest", testConfMap)
+	err := Update(memFs, "/source", "/dest", testConfMap)
 	require.Nil(t, err)
 	file, _ := memFs.Open("/dest")
 	content, _ := ioutil.ReadAll(file)
@@ -185,7 +185,7 @@ func TestUpdateConfFileEmptySource(t *testing.T) {
 	source.WriteString(sourceContent)
 	source.Close()
 
-	err := UpdateConfFile(memFs, "/source", "/dest", testConfMap)
+	err := Update(memFs, "/source", "/dest", testConfMap)
 	require.Nil(t, err)
 	file, _ := memFs.Open("/dest")
 	content, _ := ioutil.ReadAll(file)

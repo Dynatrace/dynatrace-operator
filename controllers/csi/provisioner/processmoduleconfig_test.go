@@ -18,9 +18,9 @@ import (
 var (
 	testTenantUUID        = "zib123"
 	testVersion           = "v123"
-	testRuxitProcResponse = dtclient.RuxitProcResponse{
+	testRuxitProcResponse = dtclient.ProcessModuleConfig{
 		Revision: 3,
-		Properties: []dtclient.RuxitProperty{
+		Properties: []dtclient.ProcessModuleProperty{
 			{
 				Section: "test",
 				Key:     "test",
@@ -28,9 +28,9 @@ var (
 			},
 		},
 	}
-	testRuxitProcResponseCache = dtclient.RuxitProcResponse{
+	testRuxitProcResponseCache = dtclient.ProcessModuleConfig{
 		Revision: 1,
-		Properties: []dtclient.RuxitProperty{
+		Properties: []dtclient.ProcessModuleProperty{
 			{
 				Section: "test",
 				Key:     "test",
@@ -53,18 +53,18 @@ func prepTestFsCache(fs afero.Fs) {
 }
 
 func TestGetRuxitProcResponse(t *testing.T) {
-	var emptyResponse *dtclient.RuxitProcResponse
+	var emptyResponse *dtclient.ProcessModuleConfig
 	t.Run(`no cache + no revision (dry run)`, func(t *testing.T) {
 		var defaultRevision uint
 		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetRuxitProcConf", defaultRevision).
+		mockClient.On("GetProcessModuleConfig", defaultRevision).
 			Return(&testRuxitProcResponse, nil)
 		r := &OneAgentProvisioner{
 			fs: memFs,
 		}
 
-		response, storedRevision, err := r.getRuxitProcResponse(mockClient, testTenantUUID)
+		response, storedRevision, err := r.getProcessModuleConfig(mockClient, testTenantUUID)
 
 		require.Nil(t, err)
 		assert.Equal(t, testRuxitProcResponse, *response)
@@ -74,13 +74,13 @@ func TestGetRuxitProcResponse(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		prepTestFsCache(memFs)
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetRuxitProcConf", testRuxitProcResponseCache.Revision).
+		mockClient.On("GetProcessModuleConfig", testRuxitProcResponseCache.Revision).
 			Return(emptyResponse, nil)
 		r := &OneAgentProvisioner{
 			fs: memFs,
 		}
 
-		response, storedRevision, err := r.getRuxitProcResponse(mockClient, testTenantUUID)
+		response, storedRevision, err := r.getProcessModuleConfig(mockClient, testTenantUUID)
 
 		require.Nil(t, err)
 		assert.Equal(t, testRuxitProcResponseCache, *response)
@@ -90,13 +90,13 @@ func TestGetRuxitProcResponse(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		prepTestFsCache(memFs)
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetRuxitProcConf", testRuxitProcResponseCache.Revision).
+		mockClient.On("GetProcessModuleConfig", testRuxitProcResponseCache.Revision).
 			Return(&testRuxitProcResponse, nil)
 		r := &OneAgentProvisioner{
 			fs: memFs,
 		}
 
-		response, storedRevision, err := r.getRuxitProcResponse(mockClient, testTenantUUID)
+		response, storedRevision, err := r.getProcessModuleConfig(mockClient, testTenantUUID)
 
 		require.Nil(t, err)
 		assert.Equal(t, testRuxitProcResponse, *response)
@@ -111,7 +111,7 @@ func TestReadRuxitCache(t *testing.T) {
 		fs: memFs,
 	}
 
-	cache, err := r.readRuxitCache(testTenantUUID)
+	cache, err := r.readProcessModuleConfigCache(testTenantUUID)
 	require.Nil(t, err)
 	assert.Equal(t, testRuxitProcResponseCache, *cache)
 }
@@ -122,18 +122,18 @@ func TestWriteRuxitCache(t *testing.T) {
 		fs: memFs,
 	}
 
-	err := r.writeRuxitCache(testTenantUUID, &testRuxitProcResponseCache)
+	err := r.writeProcessModuleConfigCache(testTenantUUID, &testRuxitProcResponseCache)
 
 	require.Nil(t, err)
-	cache, err := r.readRuxitCache(testTenantUUID)
+	cache, err := r.readProcessModuleConfigCache(testTenantUUID)
 	require.Nil(t, err)
 	assert.Equal(t, testRuxitProcResponseCache, *cache)
 }
 
 func prepTestConfFs(fs afero.Fs) {
 	path := metadata.PathResolver{}
-	fs.MkdirAll(filepath.Base(path.AgentRuxitConfForVersion(testTenantUUID, testVersion)), 0755)
-	usedConf, _ := fs.OpenFile(path.AgentRuxitConfForVersion(testTenantUUID, testVersion), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	fs.MkdirAll(filepath.Base(path.AgentProcessModuleConfigForVersion(testTenantUUID, testVersion)), 0755)
+	usedConf, _ := fs.OpenFile(path.AgentProcessModuleConfigForVersion(testTenantUUID, testVersion), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	usedConf.WriteString(testRuxitConf)
 }
 
@@ -161,10 +161,10 @@ key value
 test test3
 `
 
-	agentConfig.updateRuxitConf(testVersion, testTenantUUID, &testRuxitProcResponse)
+	agentConfig.updateProcessModuleConfig(testVersion, testTenantUUID, &testRuxitProcResponse)
 
-	assertTestConf(t, memFs, path.AgentRuxitConfForVersion(testTenantUUID, testVersion), expectedUsed)
-	assertTestConf(t, memFs, path.SourceAgentRuxitConfForVersion(testTenantUUID, testVersion), testRuxitConf)
+	assertTestConf(t, memFs, path.AgentProcessModuleConfigForVersion(testTenantUUID, testVersion), expectedUsed)
+	assertTestConf(t, memFs, path.SourceAgentProcessModuleConfigForVersion(testTenantUUID, testVersion), testRuxitConf)
 }
 
 func TestCheckRuxitConfCopy(t *testing.T) {
@@ -174,10 +174,10 @@ func TestCheckRuxitConfCopy(t *testing.T) {
 	agentConfig := &installAgentConfig{
 		fs: memFs,
 	}
-	sourcePath := path.SourceAgentRuxitConfForVersion(testTenantUUID, testVersion)
-	destPath := path.AgentRuxitConfForVersion(testTenantUUID, testVersion)
+	sourcePath := path.SourceAgentProcessModuleConfigForVersion(testTenantUUID, testVersion)
+	destPath := path.AgentProcessModuleConfigForVersion(testTenantUUID, testVersion)
 
-	agentConfig.checkRuxitConfCopy(sourcePath, destPath)
+	agentConfig.checkProcessModuleConfigCopy(sourcePath, destPath)
 
 	assertTestConf(t, memFs, sourcePath, testRuxitConf)
 }

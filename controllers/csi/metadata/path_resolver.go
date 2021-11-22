@@ -18,11 +18,11 @@ func (pr PathResolver) AgentBinaryDir(tenantUUID string) string {
 	return filepath.Join(pr.EnvDir(tenantUUID), dtcsi.AgentBinaryDir)
 }
 
-func (pr PathResolver) AgentRuxitConfForVersion(tenantUUID string, version string) string {
+func (pr PathResolver) AgentProcessModuleConfigForVersion(tenantUUID string, version string) string {
 	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "conf", "ruxitagentproc.conf")
 }
 
-func (pr PathResolver) SourceAgentRuxitConfForVersion(tenantUUID string, version string) string {
+func (pr PathResolver) SourceAgentProcessModuleConfigForVersion(tenantUUID string, version string) string {
 	return filepath.Join(pr.AgentBinaryDirForVersion(tenantUUID, version), "agent", "conf", "_ruxitagentproc.conf")
 }
 

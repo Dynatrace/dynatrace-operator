@@ -6,24 +6,24 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Dynatrace/dynatrace-operator/conf"
+	"github.com/Dynatrace/dynatrace-operator/processmoduleconfig"
 	"github.com/pkg/errors"
 )
 
-type RuxitProcResponse struct {
-	Revision   uint            `json:"revision"`
-	Properties []RuxitProperty `json:"properties"`
+type ProcessModuleConfig struct {
+	Revision   uint                    `json:"revision"`
+	Properties []ProcessModuleProperty `json:"properties"`
 }
 
-type RuxitProperty struct {
+type ProcessModuleProperty struct {
 	Section string `json:"section"`
 	Key     string `json:"key"`
 	Value   string `json:"value"`
 }
 
-func (rc RuxitProcResponse) ToMap() conf.ConfMap {
+func (pmc ProcessModuleConfig) ToMap() processmoduleconfig.ConfMap {
 	sections := map[string]map[string]string{}
-	for _, prop := range rc.Properties {
+	for _, prop := range pmc.Properties {
 		section := sections[prop.Section]
 		if section == nil {
 			section = map[string]string{}
@@ -34,15 +34,15 @@ func (rc RuxitProcResponse) ToMap() conf.ConfMap {
 	return sections
 }
 
-func (dtc *dynatraceClient) GetRuxitProcConf(prevRevision uint) (*RuxitProcResponse, error) {
-	req, err := dtc.createRuxitProcConfRequest(prevRevision)
+func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessModuleConfig, error) {
+	req, err := dtc.createProcessModuleConfigRequest(prevRevision)
 	if err != nil {
 		return nil, err
 	}
 
 	resp, err := dtc.httpClient.Do(req)
 
-	if dtc.specialRuxitProcConfRequestStatus(resp) {
+	if dtc.specialProcessModuleConfigRequestStatus(resp) {
 		return nil, nil
 	}
 	if err != nil {
@@ -58,13 +58,13 @@ func (dtc *dynatraceClient) GetRuxitProcConf(prevRevision uint) (*RuxitProcRespo
 		return nil, err
 	}
 
-	return dtc.readResponseForRuxitProcConf(responseData)
+	return dtc.readResponseForProcessModuleConfig(responseData)
 }
 
-func (dtc *dynatraceClient) createRuxitProcConfRequest(prevRevision uint) (*http.Request, error) {
-	ruxitConfURL := fmt.Sprintf("%s/v1/deployment/installer/agent/processmoduleconfig", dtc.url)
+func (dtc *dynatraceClient) createProcessModuleConfigRequest(prevRevision uint) (*http.Request, error) {
+	processModuleConfigURL := fmt.Sprintf("%s/v1/deployment/installer/agent/processmoduleconfig", dtc.url)
 
-	req, err := http.NewRequest(http.MethodGet, ruxitConfURL, nil)
+	req, err := http.NewRequest(http.MethodGet, processModuleConfigURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}
@@ -77,7 +77,7 @@ func (dtc *dynatraceClient) createRuxitProcConfRequest(prevRevision uint) (*http
 	return req, nil
 }
 
-func (dtc *dynatraceClient) specialRuxitProcConfRequestStatus(resp *http.Response) bool {
+func (dtc *dynatraceClient) specialProcessModuleConfigRequestStatus(resp *http.Response) bool {
 	if resp.StatusCode == http.StatusNotModified {
 		return true
 	}
@@ -90,8 +90,8 @@ func (dtc *dynatraceClient) specialRuxitProcConfRequestStatus(resp *http.Respons
 	return false
 }
 
-func (dtc *dynatraceClient) readResponseForRuxitProcConf(response []byte) (*RuxitProcResponse, error) {
-	resp := RuxitProcResponse{}
+func (dtc *dynatraceClient) readResponseForProcessModuleConfig(response []byte) (*ProcessModuleConfig, error) {
+	resp := ProcessModuleConfig{}
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
 		dtc.logger.Error(err, "error unmarshalling json response")
