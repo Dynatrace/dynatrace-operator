@@ -523,3 +523,75 @@ func TestProvisioner_UpdateDynakube(t *testing.T) {
 	assert.NotNil(t, dynakube)
 	assert.Equal(t, *expectedOtherDynakube, *otherDynakube)
 }
+
+func TestAddHostGroup(t *testing.T) {
+	t.Run(`dk with hostGroup, no api`, func(t *testing.T) {
+		dk := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+							Args: []string{
+								"--set-host-group=test",
+							},
+						},
+					},
+				},
+			},
+		}
+		result := addHostGroup(dk, nil)
+		assert.NotNil(t, result)
+		assert.Equal(t, "test", result.ToMap()["general"]["hostGroup"])
+	})
+	t.Run(`dk with hostGroup, api present`, func(t *testing.T) {
+		dk := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+							Args: []string{
+								"--set-host-group=test",
+							},
+						},
+					},
+				},
+			},
+		}
+		pmc := dtclient.ProcessModuleConfig{
+			Properties: []dtclient.ProcessModuleProperty{
+				{
+					Section: "general",
+					Key:     "other",
+					Value:   "other",
+				},
+			},
+		}
+		result := addHostGroup(dk, &pmc)
+		assert.NotNil(t, result)
+		assert.Len(t, result.ToMap()["general"], 2)
+		assert.Equal(t, "test", result.ToMap()["general"]["hostGroup"])
+	})
+	t.Run(`dk without hostGroup`, func(t *testing.T) {
+		dk := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
+					},
+				},
+			},
+		}
+		pmc := dtclient.ProcessModuleConfig{
+			Properties: []dtclient.ProcessModuleProperty{
+				{
+					Section: "general",
+					Key:     "other",
+					Value:   "other",
+				},
+			},
+		}
+		result := addHostGroup(dk, &pmc)
+		assert.NotNil(t, result)
+		assert.Equal(t, *result, pmc)
+	})
+}
