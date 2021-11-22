@@ -1,4 +1,4 @@
-# THE CLOUD-NATIVE FULLSTACK MODE AND APPLICATION-MONITORING MODE ENABLED IN THIS YAML ARE STILL IN BETA AND SHOULD NOT BE USED IN A PRODUCTION ENVIRONMENT
+# THE CLOUD-NATIVE FULLSTACK MODE AND APPLICATION-MONITORING MODE ENABLED IN THIS YAML ARE STILL IN PREVIEW AND SHOULD NOT BE USED IN A PRODUCTION ENVIRONMENT
 apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
@@ -22,14 +22,15 @@ spec:
 
   oneAgent:
     # Enable application monitoring
-    applicationMonitoring: {}
+    applicationMonitoring:
+      # Enable CSIDriver
+      useCSIDriver: true
   activeGate:
     # Enables listed ActiveGate capabilities
     capabilities:
       - kubernetes-monitoring
 
     # Amount of replicas of ActiveGate pods
-    #
     replicas: 3
 
 ---

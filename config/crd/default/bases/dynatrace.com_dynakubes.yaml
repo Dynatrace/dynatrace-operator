@@ -1508,7 +1508,7 @@ spec:
                 description: General configuration about OneAgent instances
                 properties:
                   applicationMonitoring:
-                    description: 'Optional: (Beta feature) enable application-only
+                    description: 'Optional: (Preview feature) enable application-only
                       monitoring and change its settings Cannot be used in conjunction
                       with cloud-native fullstack monitoring, classic fullstack monitoring
                       or host monitoring'
@@ -1788,10 +1788,10 @@ spec:
                         type: string
                     type: object
                   cloudNativeFullStack:
-                    description: 'Optional: (Beta feature) enable cloud-native fullstack
-                      monitoring and change its settings Cannot be used in conjunction
-                      with classic fullstack monitoring, application monitoring or
-                      host monitoring'
+                    description: 'Optional: (Preview feature) enable cloud-native
+                      fullstack monitoring and change its settings Cannot be used
+                      in conjunction with classic fullstack monitoring, application
+                      monitoring or host monitoring'
                     nullable: true
                     properties:
                       args:
