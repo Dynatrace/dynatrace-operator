@@ -55,5 +55,6 @@ rules:
     resources:
       - daemonsets
     verbs:
+      - list
       - watch
 
