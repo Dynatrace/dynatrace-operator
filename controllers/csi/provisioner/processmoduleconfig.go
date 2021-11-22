@@ -7,40 +7,57 @@ import (
 	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/processmoduleconfig"
 )
 
-// getProcessModuleConfig gets the latest `RuxitProcResponse`, it can come from the tenant if we don't have the latest revision saved locally,
-// otherwise we use the locally cached response
-func (r *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Client, tenantUUID string) (*dtclient.ProcessModuleConfig, uint, error) {
-	var storedRevision uint
-	storedProcessModuleConfig, err := r.readProcessModuleConfigCache(tenantUUID)
-	if os.IsNotExist(err) {
-		latestProcessModuleConfig, err := dtc.GetProcessModuleConfig(storedRevision)
-		if err != nil {
-			return nil, storedRevision, err
-		}
-		if latestProcessModuleConfig == nil {
-			latestProcessModuleConfig = &dtclient.ProcessModuleConfig{}
-		}
-		return latestProcessModuleConfig, storedRevision, nil
-	} else if err != nil {
-		return nil, storedRevision, err
-	}
-	storedRevision = storedProcessModuleConfig.Revision
-	latestProcessModuleConfig, err := dtc.GetProcessModuleConfig(storedProcessModuleConfig.Revision)
-	if err != nil {
-		return nil, storedRevision, err
-	}
-	if latestProcessModuleConfig != nil {
-		return latestProcessModuleConfig, storedRevision, nil
-	}
-	return storedProcessModuleConfig, storedRevision, nil
+type processModuleConfigCache struct {
+	*dtclient.ProcessModuleConfig
+	Hash string `json:"hash"`
 }
 
-func (r *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID string) (*dtclient.ProcessModuleConfig, error) {
-	var processModuleConfig dtclient.ProcessModuleConfig
+func newProcessModuleConfigCache(pmc *dtclient.ProcessModuleConfig) *processModuleConfigCache {
+	if pmc == nil {
+		pmc = &dtclient.ProcessModuleConfig{}
+	}
+	hash, err := kubeobjects.GenerateHash(pmc)
+	if err != nil {
+		return nil
+	}
+	return &processModuleConfigCache{
+		pmc,
+		hash,
+	}
+}
+
+// getProcessModuleConfig gets the latest `RuxitProcResponse`, it can come from the tenant if we don't have the latest revision saved locally,
+// otherwise we use the locally cached response
+func (r *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Client, tenantUUID string) (*dtclient.ProcessModuleConfig, string, error) {
+	var storedHash string
+	storedProcessModuleConfig, err := r.readProcessModuleConfigCache(tenantUUID)
+	if os.IsNotExist(err) {
+		latestProcessModuleConfig, err := dtc.GetProcessModuleConfig(0)
+		if err != nil {
+			return nil, storedHash, err
+		}
+		return latestProcessModuleConfig, storedHash, nil
+	} else if err != nil {
+		return nil, storedHash, err
+	}
+	storedHash = storedProcessModuleConfig.Hash
+	latestProcessModuleConfig, err := dtc.GetProcessModuleConfig(storedProcessModuleConfig.Revision)
+	if err != nil {
+		return nil, storedHash, err
+	}
+	if latestProcessModuleConfig != nil {
+		return latestProcessModuleConfig, storedHash, nil
+	}
+	return storedProcessModuleConfig.ProcessModuleConfig, storedHash, nil
+}
+
+func (r *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID string) (*processModuleConfigCache, error) {
+	var processModuleConfig processModuleConfigCache
 	processModuleConfigCache, err := r.fs.Open(r.path.AgentRuxitProcResponseCache(tenantUUID))
 	if err != nil {
 		return nil, err
@@ -57,10 +74,7 @@ func (r *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID string) (*
 	return &processModuleConfig, nil
 }
 
-func (r *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID string, processModuleConfig *dtclient.ProcessModuleConfig) error {
-	if processModuleConfig.Revision == 0 {
-		return nil
-	}
+func (r *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID string, processModuleConfig *processModuleConfigCache) error {
 	processModuleConfigCache, err := r.fs.OpenFile(r.path.AgentRuxitProcResponseCache(tenantUUID), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
@@ -77,17 +91,13 @@ func (r *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID string, p
 
 func (installAgentCfg *installAgentConfig) updateProcessModuleConfig(version, tenantUUID string, processModuleConfig *dtclient.ProcessModuleConfig) error {
 	if processModuleConfig != nil {
-		updateMap := addHostGroup(installAgentCfg.dk, processModuleConfig.ToMap())
-		if len(updateMap) == 0 {
-			return nil
-		}
 		installAgentCfg.logger.Info("updating ruxitagentproc.conf", "agentVersion", version, "tenantUUID", tenantUUID)
 		usedProcessModuleConfigPath := installAgentCfg.path.AgentProcessModuleConfigForVersion(tenantUUID, version)
 		sourceProcessModuleConfigPath := installAgentCfg.path.SourceAgentProcessModuleConfigForVersion(tenantUUID, version)
 		if err := installAgentCfg.checkProcessModuleConfigCopy(sourceProcessModuleConfigPath, usedProcessModuleConfigPath); err != nil {
 			return err
 		}
-		return processmoduleconfig.Update(installAgentCfg.fs, sourceProcessModuleConfigPath, usedProcessModuleConfigPath, updateMap)
+		return processmoduleconfig.Update(installAgentCfg.fs, sourceProcessModuleConfigPath, usedProcessModuleConfigPath, processModuleConfig.ToMap())
 	}
 	installAgentCfg.logger.Info("no changes to ruxitagentproc.conf, skipping update")
 	return nil
@@ -126,14 +136,11 @@ func (installAgentCfg *installAgentConfig) checkProcessModuleConfigCopy(sourcePa
 	return nil
 }
 
-func addHostGroup(dk *dynatracev1beta1.DynaKube, pmc processmoduleconfig.ConfMap) processmoduleconfig.ConfMap {
+func addHostGroup(dk *dynatracev1beta1.DynaKube, pmc *dtclient.ProcessModuleConfig) *dtclient.ProcessModuleConfig {
 	hostGroup := dk.HostGroup()
 	if hostGroup == "" {
 		return pmc
 	}
-	if pmc["general"] == nil {
-		pmc["general"] = make(map[string]string)
-	}
-	pmc["general"]["hostGroup"] = hostGroup
+	pmc.Properties = append(pmc.Properties, dtclient.ProcessModuleProperty{Section: "general", Key: "hostGroup", Value: hostGroup})
 	return pmc
 }
