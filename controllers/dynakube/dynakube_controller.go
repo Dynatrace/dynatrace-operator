@@ -15,6 +15,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube/updates"
+	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/controllers/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/controllers/istio"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
@@ -258,6 +259,11 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 		}
 		upd, err := initgeneration.NewInitGenerator(r.client, r.apiReader, dkState.Instance.Namespace, r.logger).GenerateForDynakube(ctx, dkState.Instance)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "new init script created") {
+			return
+		}
+
+		upd, err = dtingestendpoint.NewEndpointGenerator(r.client, r.apiReader, dkState.Instance.Namespace, r.logger).GenerateForDynakube(ctx, dkState.Instance)
+		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "new data-ingest endpoint secret created") {
 			return
 		}
 	} else {

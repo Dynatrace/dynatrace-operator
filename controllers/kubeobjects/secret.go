@@ -16,11 +16,11 @@ import (
 )
 
 // CreateOrUpdateSecretIfNotExists creates a secret in case it does not exist or updates it if there are changes
-func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretName string, targetNS string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) error {
+func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretName string, targetNS string, data map[string][]byte, secretType corev1.SecretType, log logr.Logger) (bool, error) {
 	var cfg corev1.Secret
 	err := r.Get(context.TODO(), client.ObjectKey{Name: secretName, Namespace: targetNS}, &cfg)
 	if k8serrors.IsNotFound(err) {
-		log.Info("Creating OneAgent config secret")
+		log.Info("Creating secret", "namespace", targetNS, "secret", secretName)
 		if err := c.Create(context.TODO(), &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretName,
@@ -29,24 +29,25 @@ func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretNam
 			Type: secretType,
 			Data: data,
 		}); err != nil {
-			return errors.Wrapf(err, "failed to create secret %s", secretName)
+			return false, errors.Wrapf(err, "failed to create secret %s", secretName)
 		}
-		return nil
+		return true, nil
 	}
 
 	if err != nil {
-		return errors.Wrapf(err, "failed to query for secret %s", secretName)
+		return false, errors.Wrapf(err, "failed to query for secret %s", secretName)
 	}
 
 	if !reflect.DeepEqual(data, cfg.Data) {
-		log.Info(fmt.Sprintf("Updating secret %s", secretName))
+		log.Info("Updating secret", "namespace", targetNS, "secret", secretName)
 		cfg.Data = data
 		if err := c.Update(context.TODO(), &cfg); err != nil {
-			return errors.Wrapf(err, "failed to update secret %s", secretName)
+			return false, errors.Wrapf(err, "failed to update secret %s", secretName)
 		}
+		return true, nil
 	}
 
-	return nil
+	return false, nil
 }
 
 type Tokens struct {

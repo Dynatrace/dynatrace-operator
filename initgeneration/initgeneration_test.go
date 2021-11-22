@@ -159,7 +159,7 @@ func TestGenerateForNamespace(t *testing.T) {
 		clt := fake.NewClient(testDynakubeComplex, &testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
 
-		err := ig.GenerateForNamespace(context.TODO(), *testDynakubeComplex, testNamespace.Name)
+		_, err := ig.GenerateForNamespace(context.TODO(), *testDynakubeComplex, testNamespace.Name)
 		assert.NoError(t, err)
 
 		var initSecret corev1.Secret
@@ -186,7 +186,7 @@ func TestGenerateForNamespace(t *testing.T) {
 		clt := fake.NewClient(testDynakubeSimple, &testNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
 
-		err := ig.GenerateForNamespace(context.TODO(), *testDynakubeSimple, testNamespace.Name)
+		_, err := ig.GenerateForNamespace(context.TODO(), *testDynakubeSimple, testNamespace.Name)
 		assert.NoError(t, err)
 
 		var initSecret corev1.Secret

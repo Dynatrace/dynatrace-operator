@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	DynatracePaasToken = "paasToken"
-	DynatraceApiToken  = "apiToken"
+	DynatracePaasToken       = "paasToken"
+	DynatraceApiToken        = "apiToken"
+	DynatraceDataIngestToken = "dataIngestToken"
 )
 
 // Client is the interface for the Dynatrace REST API client.
