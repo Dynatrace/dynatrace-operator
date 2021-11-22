@@ -47,7 +47,7 @@ func newInstallAgentConfig(
 	}
 }
 
-func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID string) (string, error) {
+func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID string, previousRevision uint, latestProcessModuleConfig *dtclient.ProcessModuleConfig) (string, error) {
 	dk := installAgentCfg.dk
 	logger := installAgentCfg.logger
 	currentVersion := installAgentCfg.getOneAgentVersionFromInstance()
@@ -63,12 +63,23 @@ func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID strin
 				"Failed to install agent version: %s to tenant: %s, err: %s", currentVersion, tenantUUID, err)
 			return "", err
 		}
+		installAgentCfg.logger.Info("updating ruxitagentproc.conf on new version")
+		if err := installAgentCfg.updateProcessModuleConfig(currentVersion, tenantUUID, latestProcessModuleConfig); err != nil {
+			return "", err
+		}
 		installAgentCfg.recorder.Eventf(dk,
 			corev1.EventTypeNormal,
 			installAgentVersionEvent,
 			"Installed agent version: %s to tenant: %s", currentVersion, tenantUUID)
 		return currentVersion, nil
 	}
+	if previousRevision != latestProcessModuleConfig.Revision {
+		installAgentCfg.logger.Info("updating ruxitagentproc.conf on installed version")
+		if err := installAgentCfg.updateProcessModuleConfig(currentVersion, tenantUUID, latestProcessModuleConfig); err != nil {
+			return "", err
+		}
+	}
+
 	return "", nil
 }
 

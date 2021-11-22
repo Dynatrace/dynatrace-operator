@@ -61,13 +61,11 @@ func TestCreateTables(t *testing.T) {
 	row = db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", dynakubesTableName)
 	row.Scan(&dkTable)
 	assert.Equal(t, dkTable, dynakubesTableName)
-
 }
 
 func TestInsertDynakube(t *testing.T) {
 	db := FakeMemoryDB()
 
-	// Insert
 	err := db.InsertDynakube(&testDynakube1)
 	assert.Nil(t, err)
 	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE TenantUUID = ?;", dynakubesTableName), testDynakube1.TenantUUID)
