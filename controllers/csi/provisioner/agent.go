@@ -73,7 +73,7 @@ func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID strin
 			"Installed agent version: %s to tenant: %s", currentVersion, tenantUUID)
 		return currentVersion, nil
 	}
-	if previousRevision != latestProcessModuleConfig.Revision {
+	if latestProcessModuleConfig != nil && previousRevision < latestProcessModuleConfig.Revision {
 		installAgentCfg.logger.Info("updating ruxitagentproc.conf on installed version")
 		if err := installAgentCfg.updateProcessModuleConfig(currentVersion, tenantUUID, latestProcessModuleConfig); err != nil {
 			return "", err

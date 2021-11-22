@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/logger"
@@ -151,6 +152,7 @@ func TestUpdateRuxitConf(t *testing.T) {
 	prepTestConfFs(memFs)
 	agentConfig := &installAgentConfig{
 		fs:     memFs,
+		dk:     &dynatracev1beta1.DynaKube{},
 		logger: logger.NewDTLogger(),
 	}
 	expectedUsed := `
@@ -180,4 +182,77 @@ func TestCheckRuxitConfCopy(t *testing.T) {
 	agentConfig.checkProcessModuleConfigCopy(sourcePath, destPath)
 
 	assertTestConf(t, memFs, sourcePath, testRuxitConf)
+}
+
+func TestAddHostGroup(t *testing.T) {
+	t.Run(`dk with hostGroup, no api`, func(t *testing.T) {
+		dk := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+							Args: []string{
+								"--set-host-group=test",
+							},
+						},
+					},
+				},
+			},
+		}
+		emptyResponse := dtclient.ProcessModuleConfig{}
+		result := addHostGroup(dk, emptyResponse.ToMap())
+		assert.NotNil(t, result)
+		assert.Equal(t, "test", result["general"]["hostGroup"])
+	})
+	t.Run(`dk with hostGroup, api present`, func(t *testing.T) {
+		dk := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+							Args: []string{
+								"--set-host-group=test",
+							},
+						},
+					},
+				},
+			},
+		}
+		pmc := dtclient.ProcessModuleConfig{
+			Properties: []dtclient.ProcessModuleProperty{
+				{
+					Section: "general",
+					Key:     "other",
+					Value:   "other",
+				},
+			},
+		}
+		result := addHostGroup(dk, pmc.ToMap())
+		assert.NotNil(t, result)
+		assert.Len(t, result["general"], 2)
+		assert.Equal(t, "test", result["general"]["hostGroup"])
+	})
+	t.Run(`dk without hostGroup`, func(t *testing.T) {
+		dk := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
+					},
+				},
+			},
+		}
+		pmc := dtclient.ProcessModuleConfig{
+			Properties: []dtclient.ProcessModuleProperty{
+				{
+					Section: "general",
+					Key:     "other",
+					Value:   "other",
+				},
+			},
+		}
+		result := addHostGroup(dk, pmc.ToMap())
+		assert.NotNil(t, result)
+		assert.Equal(t, result, pmc.ToMap())
+	})
 }

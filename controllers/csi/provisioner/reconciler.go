@@ -141,7 +141,6 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		rlog.Error(err, "error when getting the latest ruxitagentproc.conf")
 		return reconcile.Result{}, err
 	}
-	latestProcessModuleConfig = addHostGroup(dk, latestProcessModuleConfig)
 
 	installAgentCfg := newInstallAgentConfig(rlog, dtc, r.path, r.fs, r.recorder, dk)
 	if updatedVersion, err := installAgentCfg.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID, storedRevision, latestProcessModuleConfig); err != nil {
@@ -210,16 +209,4 @@ func (r *OneAgentProvisioner) createCSIDirectories(envDir string) error {
 	}
 
 	return nil
-}
-
-func addHostGroup(dk *dynatracev1beta1.DynaKube, pmc *dtclient.ProcessModuleConfig) *dtclient.ProcessModuleConfig {
-	hostGroup := dk.HostGroup()
-	if hostGroup == "" {
-		return pmc
-	}
-	if pmc == nil {
-		pmc = &dtclient.ProcessModuleConfig{}
-	}
-	pmc.Properties = append(pmc.Properties, dtclient.ProcessModuleProperty{Section: "general", Key: "hostGroup", Value: hostGroup})
-	return pmc
 }

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/processmoduleconfig"
 )
@@ -19,6 +20,9 @@ func (r *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Client, tenant
 		latestProcessModuleConfig, err := dtc.GetProcessModuleConfig(storedRevision)
 		if err != nil {
 			return nil, storedRevision, err
+		}
+		if latestProcessModuleConfig == nil {
+			latestProcessModuleConfig = &dtclient.ProcessModuleConfig{}
 		}
 		return latestProcessModuleConfig, storedRevision, nil
 	} else if err != nil {
@@ -54,6 +58,9 @@ func (r *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID string) (*
 }
 
 func (r *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID string, processModuleConfig *dtclient.ProcessModuleConfig) error {
+	if processModuleConfig.Revision == 0 {
+		return nil
+	}
 	processModuleConfigCache, err := r.fs.OpenFile(r.path.AgentRuxitProcResponseCache(tenantUUID), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
@@ -70,13 +77,17 @@ func (r *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID string, p
 
 func (installAgentCfg *installAgentConfig) updateProcessModuleConfig(version, tenantUUID string, processModuleConfig *dtclient.ProcessModuleConfig) error {
 	if processModuleConfig != nil {
+		updateMap := addHostGroup(installAgentCfg.dk, processModuleConfig.ToMap())
+		if len(updateMap) == 0 {
+			return nil
+		}
 		installAgentCfg.logger.Info("updating ruxitagentproc.conf", "agentVersion", version, "tenantUUID", tenantUUID)
 		usedProcessModuleConfigPath := installAgentCfg.path.AgentProcessModuleConfigForVersion(tenantUUID, version)
 		sourceProcessModuleConfigPath := installAgentCfg.path.SourceAgentProcessModuleConfigForVersion(tenantUUID, version)
 		if err := installAgentCfg.checkProcessModuleConfigCopy(sourceProcessModuleConfigPath, usedProcessModuleConfigPath); err != nil {
 			return err
 		}
-		return processmoduleconfig.Update(installAgentCfg.fs, sourceProcessModuleConfigPath, usedProcessModuleConfigPath, processModuleConfig.ToMap())
+		return processmoduleconfig.Update(installAgentCfg.fs, sourceProcessModuleConfigPath, usedProcessModuleConfigPath, updateMap)
 	}
 	installAgentCfg.logger.Info("no changes to ruxitagentproc.conf, skipping update")
 	return nil
@@ -113,4 +124,16 @@ func (installAgentCfg *installAgentConfig) checkProcessModuleConfigCopy(sourcePa
 		return usedProcessModuleConfigFile.Close()
 	}
 	return nil
+}
+
+func addHostGroup(dk *dynatracev1beta1.DynaKube, pmc processmoduleconfig.ConfMap) processmoduleconfig.ConfMap {
+	hostGroup := dk.HostGroup()
+	if hostGroup == "" {
+		return pmc
+	}
+	if pmc["general"] == nil {
+		pmc["general"] = make(map[string]string)
+	}
+	pmc["general"]["hostGroup"] = hostGroup
+	return pmc
 }
