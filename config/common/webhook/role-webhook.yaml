@@ -50,3 +50,10 @@ rules:
       - get
       - update
       - create
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+    verbs:
+      - watch
+

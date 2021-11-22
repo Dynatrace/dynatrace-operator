@@ -44,6 +44,7 @@ rules:
       - ""
       - "apps"
       - "batch"
+      - "apps.openshift.io"
     resources:
       - replicasets
       - statefulsets
@@ -52,6 +53,6 @@ rules:
       - replicationcontrollers
       - jobs
       - cronjobs
+      - deploymentconfigs
     verbs:
-      - list
       - get
