@@ -287,12 +287,29 @@ function checkImagePullable {
   # split activegate image into registry and image name
   activegate_registry="${dynakube_activegate_image%%/*}"
   activegate_image="${dynakube_activegate_image##"$activegate_registry/"}"
-  log "using '$activegate_image' on '$activegate_registry' as activegate image"
+
+  # check if image has version set
+  activegate_image_version="$(${cut_command} --delimiter ':' --only-delimited --fields=2 <<< "${activegate_image}")"
+
+  if [[ -z "$activegate_image_version"  ]] ; then
+    # no version set, default to latest
+    activegate_version="latest"
+
+    log "using latest image version of activeGate"
+  else
+    activegate_image="$(${cut_command} --delimiter ':' --fields=1 <<< "${activegate_image}")"
+    activegate_version="$activegate_image_version"
+
+    log "using custom image version of activeGate"
+  fi
+
+  log "using '$activegate_image' on '$activegate_registry' with version '$activegate_version' as activegate image"
 
   # parse docker config
   oneagent_image_works=false
   activegate_image_works=false
   entries=$(echo "$pull_secret" | jq --compact-output '.auths | to_entries[]')
+
   for entry in $entries ; do
     registry=$(echo "$entry" | jq --raw-output '.key')
     username=$(echo "$entry" | jq --raw-output '.value.username')
@@ -326,7 +343,7 @@ function checkImagePullable {
 
     # check activegate image
     check_image="$run_container_command 'curl --user $username:$password --head \
-      https://$registry/v2/$activegate_image/manifests/latest \
+      https://$registry/v2/$activegate_image/manifests/$activegate_version \
       --silent --output /dev/null --write-out %{http_code}'"
     image_response_code=$(eval "${check_image}")
     if [[ "$image_response_code" == "200" ]] ; then
@@ -335,14 +352,14 @@ function checkImagePullable {
         activegate_image_works=true
       fi
     else
-      log "image '$activegate_image' not found on registry '$registry'"
+      log "image '$activegate_image' with version '$activegate_version' not found on registry '$registry'"
     fi
   done
 
   if [[ "$oneagent_image_works" == "true" ]] ; then
     log "oneagent image '$dynakube_oneagent_image' found"
   else
-    error "oneagent image '$dynakube_activegate_image' missing"
+    error "oneagent image '$dynakube_oneagent_image' missing"
   fi
 
   if [[ "$activegate_image_works" == "true" ]] ; then
