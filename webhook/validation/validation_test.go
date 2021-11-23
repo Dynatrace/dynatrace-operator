@@ -8,7 +8,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -416,7 +415,6 @@ func handleRequest(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...c
 		clt = fake.NewClient(other...)
 	}
 	validator := &dynakubeValidator{
-		logger:    logger.NewDTLogger(),
 		clt:       clt,
 		apiReader: clt,
 	}
@@ -445,8 +443,8 @@ func TestDynakubeValidator_InjectClient(t *testing.T) {
 
 func TestHasApiUrl(t *testing.T) {
 	instance := &dynatracev1beta1.DynaKube{}
-	assert.False(t, hasApiUrl(instance))
+	assert.Empty(t, noApiUrl(nil, instance))
 
 	instance.Spec.APIURL = testApiUrl
-	assert.True(t, hasApiUrl(instance))
+	assert.Equal(t, errorNoApiUrl ,noApiUrl(nil, instance))
 }
