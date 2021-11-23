@@ -55,7 +55,7 @@ func NewInjectionInfo() *InjectionInfo {
 }
 
 func (info *InjectionInfo) enabled(wanted FeatureType) bool {
-	for k := range info.features {
+	for k := range info.features { // TODO: iteration needed?
 		if k.ftype == wanted && k.Enabled {
 			return true
 		}
@@ -63,7 +63,7 @@ func (info *InjectionInfo) enabled(wanted FeatureType) bool {
 	return false
 }
 
-func (info *InjectionInfo) any() bool {
+func (info *InjectionInfo) anyEnabled() bool {
 	for k := range info.features {
 		if k.Enabled {
 			return true

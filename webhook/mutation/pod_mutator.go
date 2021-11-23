@@ -216,7 +216,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 
 	injectionInfo := m.CreateInjectionInfo(pod)
-	if !injectionInfo.any() {
+	if !injectionInfo.anyEnabled() {
 		return admission.Patched("")
 	}
 
@@ -285,22 +285,35 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 	if len(pod.Annotations[dtwebhook.AnnotationDynatraceInjected]) > 0 {
 		log.Info(">>> " + pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
-		
-		if dk.FeatureEnableWebhookReinvocationPolicy() && injectionInfo.enabled(OneAgent) {
+
+		if dk.FeatureEnableWebhookReinvocationPolicy() {
 			var needsUpdate = false
 			var installContainer *corev1.Container
 			for i := range pod.Spec.Containers {
 				c := &pod.Spec.Containers[i]
 
-				preloaded := false
-				for _, e := range c.Env {
-					if e.Name == "LD_PRELOAD" {
-						preloaded = true
-						break
+				oaInjected := false
+				if injectionInfo.enabled(OneAgent) {
+					for _, e := range c.Env {
+						if e.Name == "LD_PRELOAD" {
+							oaInjected = true
+							break
+						}
+					}
+				}
+				diInjected := false
+				if injectionInfo.enabled(DataIngest) {
+					for _, vm := range c.VolumeMounts {
+						if vm.Name == "data-ingest-endpoint" {
+							diInjected = true
+							break
+						}
 					}
 				}
 
-				if !preloaded {
+				injectionMissing := (injectionInfo.enabled(OneAgent) && !oaInjected) || (injectionInfo.enabled(DataIngest) && !diInjected)
+
+				if injectionMissing {
 					// container does not have LD_PRELOAD set
 					log.Info("instrumenting missing container", "name", c.Name)
 
@@ -365,7 +378,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
-			Name: "oneagent-config",
+			Name: "injection-config",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: dtwebhook.SecretConfigName,
@@ -450,7 +463,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		},
 		SecurityContext: sc,
 		VolumeMounts: []corev1.VolumeMount{
-			{Name: "oneagent-config", MountPath: "/mnt/config"},
+			{Name: "injection-config", MountPath: "/mnt/config"},
 			//{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
 		},
 		Resources: *dk.InitResources(),

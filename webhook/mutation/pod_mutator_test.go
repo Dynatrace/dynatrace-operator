@@ -1065,7 +1065,7 @@ func buildResultPod(_ *testing.T, oneAgentEnabled bool, dataIngestEnabled bool) 
 				VolumeMounts: []corev1.VolumeMount{
 					//{Name: "oneagent-bin", MountPath: "/mnt/bin"},
 					//{Name: "oneagent-share", MountPath: "/mnt/share"},
-					{Name: "oneagent-config", MountPath: "/mnt/config"},
+					{Name: "injection-config", MountPath: "/mnt/config"},
 					//{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
 				},
 			}},
@@ -1103,7 +1103,7 @@ func buildResultPod(_ *testing.T, oneAgentEnabled bool, dataIngestEnabled bool) 
 				//	},
 				//},
 				{
-					Name: "oneagent-config",
+					Name: "injection-config",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName: dtwebhook.SecretConfigName,
