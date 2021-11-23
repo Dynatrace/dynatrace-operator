@@ -258,4 +258,27 @@ func TestAddHostGroup(t *testing.T) {
 		assert.NotNil(t, result)
 		assert.Equal(t, *result, pmc)
 	})
+	t.Run(`dk without hostGroup, remove previous hostgroup`, func(t *testing.T) {
+		dk := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
+					},
+				},
+			},
+		}
+		pmc := dtclient.ProcessModuleConfig{
+			Properties: []dtclient.ProcessModuleProperty{
+				{
+					Section: "general",
+					Key:     "hostGroup",
+					Value:   "other",
+				},
+			},
+		}
+		result := addHostGroup(dk, &pmc)
+		assert.NotNil(t, result)
+		assert.Len(t, pmc.Properties, 0)
+	})
 }
