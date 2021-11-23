@@ -387,27 +387,22 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	}
 
 	if injectionInfo.enabled(DataIngest) {
-		pod.Spec.Volumes = append(pod.Spec.Volumes, 
-		corev1.Volume{
-			Name: "data-ingest-enrichment",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-		corev1.Volume{
-			Name: "data-ingest-endpoint",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dtingestendpoint.SecretEndpointName,
+		pod.Spec.Volumes = append(pod.Spec.Volumes,
+			corev1.Volume{
+				Name: "data-ingest-enrichment",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
-		},
-		corev1.Volume{
-			Name: "data-ingest-enrichment",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			corev1.Volume{
+				Name: "data-ingest-endpoint",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dtingestendpoint.SecretEndpointName,
+					},
+				},
 			},
-		})
+		)
 	}
 
 	var sc *corev1.SecurityContext
@@ -450,13 +445,13 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 			{Name: "K8S_BASEPODNAME", Value: basePodName},
 			{Name: "K8S_NAMESPACE", ValueFrom: fieldEnvVar("metadata.namespace")},
 			{Name: "K8S_NODE_NAME", ValueFrom: fieldEnvVar("spec.nodeName")},
-			{Name: "DT_WORKLOAD_KIND", Value: workloadKind},
-			{Name: "DT_WORKLOAD_NAME", Value: workloadName},
+			//{Name: "DT_WORKLOAD_KIND", Value: workloadKind},
+			//{Name: "DT_WORKLOAD_NAME", Value: workloadName},
 		},
 		SecurityContext: sc,
 		VolumeMounts: []corev1.VolumeMount{
 			{Name: "oneagent-config", MountPath: "/mnt/config"},
-			{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
+			//{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
 		},
 		Resources: *dk.InitResources(),
 	}
@@ -586,30 +581,26 @@ func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube, pod *co
 	}
 
 	if injectionInfo.enabled(DataIngest) {
-		c.VolumeMounts = append(c.VolumeMounts, 
-		corev1.VolumeMount{
-			Name:      "data-ingest-enrichment",
-			MountPath: "/var/lib/dynatrace/enrichment"
+		c.VolumeMounts = append(c.VolumeMounts,
+			corev1.VolumeMount{
+				Name:      "data-ingest-enrichment",
+				MountPath: "/var/lib/dynatrace/enrichment",
 			},
-		corev1.VolumeMount{
-			Name:      "data-ingest-endpoint",
-			MountPath: "/var/lib/dynatrace/enrichment/endpoint",
-			},
-		corev1.VolumeMount{
-			Name:      "data-ingest-enrichment",
-			MountPath: "/var/lib/dynatrace/enrichment",
+			corev1.VolumeMount{
+				Name:      "data-ingest-endpoint",
+				MountPath: "/var/lib/dynatrace/enrichment/endpoint",
 			},
 		)
-		
+
 		c.Env = append(c.Env,
-		corev1.EnvVar{
-			Name:  dtingestendpoint.UrlSecretField,
-			Value: dataIngestFields[dtingestendpoint.UrlSecretField],
-		},
-		corev1.EnvVar{
-			Name:  dtingestendpoint.TokenSecretField,
-			Value: dataIngestFields[dtingestendpoint.TokenSecretField],
-		},
+			corev1.EnvVar{
+				Name:  dtingestendpoint.UrlSecretField,
+				Value: dataIngestFields[dtingestendpoint.UrlSecretField],
+			},
+			corev1.EnvVar{
+				Name:  dtingestendpoint.TokenSecretField,
+				Value: dataIngestFields[dtingestendpoint.TokenSecretField],
+			},
 		)
 	}
 

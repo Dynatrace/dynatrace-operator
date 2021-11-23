@@ -1189,14 +1189,14 @@ func buildResultPod(_ *testing.T, oneAgentEnabled bool, dataIngestEnabled bool) 
 
 		pod.Spec.InitContainers[0].Env = append(pod.Spec.InitContainers[0].Env,
 			corev1.EnvVar{Name: "DATA_INGEST_INJECTED", Value: "true"},
-			corev1.EnvVar{Name: "DT_WORKLOAD_KIND", Value: "Pod"},
+			corev1.EnvVar{Name: "DT_WORKLOAD_KIND", Value: ""},
 			corev1.EnvVar{Name: "DT_WORKLOAD_NAME", Value: "test-pod-12345"},
 		)
 
 		pod.Spec.InitContainers[0].VolumeMounts = append(pod.Spec.InitContainers[0].VolumeMounts,
 			corev1.VolumeMount{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
 		)
-		
+
 		pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env,
 			corev1.EnvVar{Name: dtingestendpoint.UrlSecretField, Value: "https://test-api-url.com/api/v2/metrics/ingest"},
 			corev1.EnvVar{Name: dtingestendpoint.TokenSecretField, Value: dataIngestToken},
@@ -1212,20 +1212,14 @@ func buildResultPod(_ *testing.T, oneAgentEnabled bool, dataIngestEnabled bool) 
 				Name: "data-ingest-enrichment",
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				{
-					Name: "data-ingest-endpoint",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: dtingestendpoint.SecretEndpointName,
-						},
-					},
 				},
-				{
-					Name: "data-ingest-enrichment",
-					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+			corev1.Volume{
+				Name: "data-ingest-endpoint",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dtingestendpoint.SecretEndpointName,
 					},
-				},
 				},
 			},
 		)

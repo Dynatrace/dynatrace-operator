@@ -151,7 +151,6 @@ createConfigurationFilesOA() {
 		echo "Writing ${container_conf_file} file..."
 
 		writeConfBaseTo ${container_conf_file}
-		writeConfEnrichmentTo "/var/lib/dynatrace/enrichment" "dt_metadata"
 
 		if [[ "${host_tenant}" != "-" ]]; then
 			if [[ "{{.TenantUUID}}" == "${host_tenant}" ]]; then
@@ -163,16 +162,7 @@ createConfigurationFilesOA() {
 }
 
 createConfigurationFilesDI() {
-	for i in $(seq 1 $CONTAINERS_COUNT)
-	do
-		if [[ "${host_tenant}" != "-" ]]; then
-			if [[ "{{.TenantUUID}}" == "${host_tenant}" ]]; then
-				if [[ "${DATA_INGEST_INJECTED}" == "true" ]]; then
-					writeConfEnrichmentTo "/var/lib/dynatrace/enrichment" "dt_metadata"
-				fi
-			fi
-		fi
-	done
+	writeConfEnrichmentTo "/var/lib/dynatrace/enrichment" "dt_metadata"
 }
 
 ####### MAIN #######
