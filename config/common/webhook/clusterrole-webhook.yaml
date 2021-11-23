@@ -29,7 +29,7 @@ rules:
     verbs:
       - create
   - apiGroups:
-    - ""
+      - ""
     resources:
       - secrets
     resourceNames:
@@ -40,4 +40,19 @@ rules:
       - list
       - watch
       - update
-
+  - apiGroups:
+      - ""
+      - "apps"
+      - "batch"
+      - "apps.openshift.io"
+    resources:
+      - replicasets
+      - statefulsets
+      - daemonsets
+      - deployments
+      - replicationcontrollers
+      - jobs
+      - cronjobs
+      - deploymentconfigs
+    verbs:
+      - get
