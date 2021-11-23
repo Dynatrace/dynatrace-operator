@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	DynatracePaasToken = "paasToken"
-	DynatraceApiToken  = "apiToken"
+	DynatracePaasToken       = "paasToken"
+	DynatraceApiToken        = "apiToken"
+	DynatraceDataIngestToken = "dataIngestToken"
 )
 
 // Client is the interface for the Dynatrace REST API client.
@@ -40,6 +41,8 @@ type Client interface {
 	GetAgentVersions(os, installerType, flavor, arch string) ([]string, error)
 
 	GetConnectionInfo() (ConnectionInfo, error)
+
+	GetProcessModuleConfig(prevRevision uint) (*ProcessModuleConfig, error)
 
 	// GetCommunicationHostForClient returns a CommunicationHost for the client's API URL. Or error, if failed to be parsed.
 	GetCommunicationHostForClient() (CommunicationHost, error)

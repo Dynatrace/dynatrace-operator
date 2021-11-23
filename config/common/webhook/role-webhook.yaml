@@ -55,25 +55,6 @@ rules:
     resources:
       - daemonsets
     verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - replicasets
-      - deployments
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - "apps"
-    resources:
-      - replicasets
-      - deployments
-    verbs:
-      - get
       - list
       - watch
 

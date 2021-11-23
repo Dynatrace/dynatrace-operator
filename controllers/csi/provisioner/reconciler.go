@@ -136,8 +136,14 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 	rlog.Info("csi directories exist", "path", r.path.EnvDir(dynakube.TenantUUID))
 
+	latestProcessModuleConfig, storedRevision, err := r.getProcessModuleConfig(dtc, dynakube.TenantUUID)
+	if err != nil {
+		rlog.Error(err, "error when getting the latest ruxitagentproc.conf")
+		return reconcile.Result{}, err
+	}
+
 	installAgentCfg := newInstallAgentConfig(rlog, dtc, r.path, r.fs, r.recorder, dk)
-	if updatedVersion, err := installAgentCfg.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID); err != nil {
+	if updatedVersion, err := installAgentCfg.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID, storedRevision, latestProcessModuleConfig); err != nil {
 		rlog.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
@@ -146,6 +152,11 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	err = r.createOrUpdateDynakube(oldDynakube, dynakube)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	err = r.writeProcessModuleConfigCache(dynakube.TenantUUID, latestProcessModuleConfig)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

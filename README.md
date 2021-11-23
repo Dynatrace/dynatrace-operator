@@ -14,9 +14,9 @@ OneAgent traffic.
 
 With v0.3.0 the CRD structure has been changed to provide an easier and more understandable way to deploy Dynatrace in your environment.
 - **routing** and **kubernetesMonitoring** within the Dynakube spec are deprecated now and moved to the **activeGate** section.
-- (BETA, when used with 'useCSIDriver') added **applicationMonitoring** mode, a webhook based injection mechanism for automatic-app-only injection
+- (combination with 'useCSIDriver' is still in PREVIEW) added **applicationMonitoring** mode, a webhook based injection mechanism for automatic-app-only injection
 - added **hostMonitoring** for only monitoring the host in the cluster without app-only injection
-- (BETA) added **cloudNativeFullStack** mode, which combines **hostMonitoring**, with the webhook based **applicationMonitoring**
+- (PREVIEW) added **cloudNativeFullStack** mode, which combines **hostMonitoring**, with the webhook based **applicationMonitoring**
 
 For more information please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples),
 or our [official help page.](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/)
@@ -28,8 +28,8 @@ Depending on the version of the Dynatrace Operator, it supports the following pl
 
 | Dynatrace Operator version | Kubernetes | OpenShift Container Platform               |
 | -------------------------- | ---------- | ------------------------------------------ |
-| master                     | 1.20+      | 4.7+                            |
-| v0.3.0                     | 1.20+      | 3.11.188+, 4.7+                            |
+| master                     | 1.20+      | 4.7+                                       |
+| v0.3.0                     | 1.20+      | 4.7+                                       |
 | v0.2.2                     | 1.18+      | 3.11.188+, 4.5+                            |
 | v0.1.0                     | 1.18+      | 3.11.188+, 4.4+                            |
 

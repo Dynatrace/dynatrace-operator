@@ -34,6 +34,7 @@ rules:
       - secrets
     resourceNames:
       - dynatrace-dynakube-config
+      - dynatrace-data-ingest-endpoint
     verbs:
       - get
       - list
@@ -43,6 +44,7 @@ rules:
       - ""
       - "apps"
       - "batch"
+      - "apps.openshift.io"
     resources:
       - replicasets
       - statefulsets
@@ -51,6 +53,6 @@ rules:
       - replicationcontrollers
       - jobs
       - cronjobs
+      - deploymentconfigs
     verbs:
-      - list
       - get
