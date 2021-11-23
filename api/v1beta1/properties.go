@@ -225,3 +225,27 @@ func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
 	}
 	return communicationHosts
 }
+
+func (dk *DynaKube) HostGroup() string {
+	var hostGroup string
+	if dk.CloudNativeFullstackMode() && dk.Spec.OneAgent.CloudNativeFullStack.Args != nil {
+		for _, arg := range dk.Spec.OneAgent.CloudNativeFullStack.Args {
+			key, value := splitArg(arg)
+			if key == "--set-host-group" {
+				hostGroup = value
+				break
+			}
+		}
+	}
+	return hostGroup
+}
+
+func splitArg(arg string) (key, value string) {
+	split := strings.Split(arg, "=")
+	if len(split) != 2 {
+		return
+	}
+	key = split[0]
+	value = split[1]
+	return
+}

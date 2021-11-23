@@ -17,7 +17,6 @@ skip_cert_checks="false"
 custom_ca="true"
 fail_code=0
 cluster_id="42"
-host_group="host-test"
 has_host="true"
 
 declare -A im_nodes
@@ -35,14 +34,6 @@ fi
 setFailCode(){
 	if [[ "${FAILURE_POLICY}" == "fail" ]]; then
 		fail_code=1
-	fi
-}
-
-setHostGroup(){
-	if [[ "${host_group}" != "" ]]; then
-		cp "${bin_dir}/agent/conf/ruxitagentproc.conf" /tmp
-		sed -i "s/\[general\]/\[general\]\nhostGroup ${host_group}/" tmp/ruxitagentproc.conf
-		cat tmp/ruxitagentproc.conf > "${bin_dir}/agent/conf/ruxitagentproc.conf"
 	fi
 }
 
@@ -148,5 +139,3 @@ printf "\nDownloading OneAgent\n"
 downloadOneAgentIfNecessary
 printf "\nCreating configuration files for containers\n"
 createConfigurationFiles
-printf "\nSetting HostGroup\n"
-setHostGroup

@@ -5,7 +5,6 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"strings"
 	"text/template"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
@@ -60,7 +59,6 @@ type script struct {
 	ClusterID     string
 	TenantUUID    string
 	IMNodes       map[string]string
-	HostGroup     string
 	HasHost       bool
 }
 
@@ -170,33 +168,8 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, 
 		ClusterID:     string(kubeSystemUID),
 		TenantUUID:    dk.Status.ConnectionInfo.TenantUUID,
 		IMNodes:       infraMonitoringNodes,
-		HostGroup:     getHostGroup(dk),
 		HasHost:       dk.CloudNativeFullstackMode(),
 	}, nil
-}
-
-func getHostGroup(dk *dynatracev1beta1.DynaKube) string {
-	var hostGroup string
-	if dk.CloudNativeFullstackMode() && dk.Spec.OneAgent.CloudNativeFullStack.Args != nil {
-		for _, arg := range dk.Spec.OneAgent.CloudNativeFullStack.Args {
-			key, value := splitArg(arg)
-			if key == "--set-host-group" {
-				hostGroup = value
-				break
-			}
-		}
-	}
-	return hostGroup
-}
-
-func splitArg(arg string) (key, value string) {
-	split := strings.Split(arg, "=")
-	if len(split) != 2 {
-		return
-	}
-	key = split[0]
-	value = split[1]
-	return
 }
 
 // getInfraMonitoringNodes creates a mapping between all the nodes and the tenantUID for the infra-monitoring dynakube on that node.
