@@ -137,6 +137,9 @@ func (installAgentCfg *installAgentConfig) checkProcessModuleConfigCopy(sourcePa
 }
 
 func addHostGroup(dk *dynatracev1beta1.DynaKube, pmc *dtclient.ProcessModuleConfig) *dtclient.ProcessModuleConfig {
+	if pmc == nil {
+		pmc = &dtclient.ProcessModuleConfig{}
+	}
 	hostGroup := dk.HostGroup()
 	if hostGroup == "" {
 		newProps := []dtclient.ProcessModuleProperty{}
