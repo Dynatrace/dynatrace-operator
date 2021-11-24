@@ -141,16 +141,25 @@ func addHostGroup(dk *dynatracev1beta1.DynaKube, pmc *dtclient.ProcessModuleConf
 		pmc = &dtclient.ProcessModuleConfig{}
 	}
 	hostGroup := dk.HostGroup()
-	if hostGroup == "" {
-		newProps := []dtclient.ProcessModuleProperty{}
-		for _, prop := range pmc.Properties {
-			if prop.Key != "hostGroup" {
+	newProps := []dtclient.ProcessModuleProperty{}
+	hasHostGroup := false
+	for _, prop := range pmc.Properties {
+		if prop.Key != "hostGroup" {
+			newProps = append(newProps, prop)
+		} else {
+			hasHostGroup = true
+			if hostGroup == "" {
+				continue
+			} else if hostGroup == prop.Value {
 				newProps = append(newProps, prop)
+			} else {
+				newProps = append(pmc.Properties, dtclient.ProcessModuleProperty{Section: "general", Key: "hostGroup", Value: hostGroup})
 			}
 		}
-		pmc.Properties = newProps
-		return pmc
 	}
-	pmc.Properties = append(pmc.Properties, dtclient.ProcessModuleProperty{Section: "general", Key: "hostGroup", Value: hostGroup})
+	if !hasHostGroup && hostGroup != "" {
+		newProps = append(pmc.Properties, dtclient.ProcessModuleProperty{Section: "general", Key: "hostGroup", Value: hostGroup})
+	}
+	pmc.Properties = newProps
 	return pmc
 }
