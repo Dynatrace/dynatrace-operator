@@ -17,7 +17,6 @@ func GetFieldBool(values map[string]string, key string, defaultValue bool) bool 
 		return defaultValue
 	}
 	if x := values[key]; x != "" {
-		// i18n ignored on purpose :)
 		parsed, err := strconv.ParseBool(x)
 		if err == nil {
 			return parsed

@@ -254,7 +254,7 @@ func impl(t *testing.T, injectionInfo *InjectionInfo) {
 			Namespace: "test-namespace",
 		},
 	}
-	///
+
 	resp := inj.Handle(context.TODO(), req)
 	require.NoError(t, resp.Complete(req))
 

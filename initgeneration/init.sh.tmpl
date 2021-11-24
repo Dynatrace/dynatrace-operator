@@ -17,7 +17,6 @@ skip_cert_checks="{{if .SkipCertCheck}}true{{else}}false{{end}}"
 custom_ca="{{if .TrustedCAs}}true{{else}}false{{end}}"
 fail_code=0
 cluster_id="{{.ClusterID}}"
-host_group="{{.HostGroup}}"
 has_host="{{.HasHost}}"
 
 declare -A im_nodes
@@ -36,14 +35,6 @@ fi
 setFailCode(){
 	if [[ "${FAILURE_POLICY}" == "fail" ]]; then
 		fail_code=1
-	fi
-}
-
-setHostGroup(){
-	if [[ "${host_group}" != "" ]]; then
-		cp "${bin_dir}/agent/conf/ruxitagentproc.conf" /tmp
-		sed -i "s/\[general\]/\[general\]\nhostGroup ${host_group}/" tmp/ruxitagentproc.conf
-		cat tmp/ruxitagentproc.conf > "${bin_dir}/agent/conf/ruxitagentproc.conf"
 	fi
 }
 
@@ -180,5 +171,3 @@ if [[ "${DATA_INGEST_INJECTED}" == "true" ]]; then
   createConfigurationFilesDI
 fi
 
-printf "\nSetting HostGroup\n"
-setHostGroup
