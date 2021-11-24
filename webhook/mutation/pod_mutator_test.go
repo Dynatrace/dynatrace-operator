@@ -138,11 +138,6 @@ func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podMutator, *
 }
 
 func TestPodInjection(t *testing.T) {
-	//type conf struct {
-	//	OneAgentEnabled   bool
-	//	DataIngestEnabled bool
-	//}
-
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	require.NoError(t, err)
 
@@ -1260,7 +1255,8 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "test-pod-12345",
 			Namespace:   "test-namespace",
-			Annotations: map[string]string{dtwebhook.AnnotationDynatraceInjected: "data-ingest,oneagent"}},
+			Annotations: map[string]string{dtwebhook.AnnotationDynatraceInjected: "oneagent"}},
+			//Annotations: map[string]string{dtwebhook.AnnotationDynatraceInjected: "data-ingest,oneagent"}},
 		Spec: corev1.PodSpec{
 			InitContainers: []corev1.Container{{
 				Name:  dtwebhook.InstallContainerName,

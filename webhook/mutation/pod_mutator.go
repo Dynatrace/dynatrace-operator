@@ -250,9 +250,252 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		pod.Annotations = map[string]string{}
 	}
 
-	if len(pod.Annotations[dtwebhook.AnnotationDynatraceInjected]) > 0 {
-		log.Info(">>> " + pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
+	reinvocationResponse, reinvocationDone := m.ensureReinvocationPolicy(pod, dk, injectionInfo, dataIngestFields, req, emptyPatch)
+	if reinvocationDone {
+		return reinvocationResponse
+	}
 
+	pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = injectionInfo.injectedAnnotation()
+
+	workloadName, workloadKind, response, done := m.retrieveWorkload(ctx, req, injectionInfo, pod)
+	if done {
+		return response
+	}
+
+	technologies, installPath, installerURL, failurePolicy, image := m.getBasicData(pod)
+
+	dkVol, mode := m.ensureDkVolume(dk)
+
+	m.ensureInjectionConfigVolume(pod)
+
+	m.ensureOneAgentVolumes(injectionInfo, pod, dkVol)
+
+	m.ensureDataIngestVolumes(injectionInfo, pod)
+
+	sc := m.getSecurityContext(pod)
+
+	basePodName := m.getBasePodName(pod)
+
+	deploymentMetadata := m.getDeploymentMetadata(dk)
+
+	ic := m.createInstallInitContainerBase(image, pod, failurePolicy, basePodName, sc, dk)
+
+	decorateInstallContainerWithOA(&ic, injectionInfo, technologies, installPath, installerURL, mode)
+	decorateInstallContainerWithDI(&ic, injectionInfo, workloadKind, workloadName)
+
+	updateContainers(pod, injectionInfo, &ic, dk, deploymentMetadata, dataIngestFields)
+
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
+
+	m.recorder.Eventf(&dk,
+		corev1.EventTypeNormal,
+		injectEvent,
+		"Injecting the necessary info into pod %s in namespace %s", basePodName, ns.Name)
+
+	return getResponseForPod(pod, &req)
+}
+
+func updateContainers(pod *corev1.Pod, injectionInfo *InjectionInfo, ic *corev1.Container, dk dynatracev1beta1.DynaKube, deploymentMetadata *deploymentmetadata.DeploymentMetadata, dataIngestFields map[string]string) {
+	for i := range pod.Spec.Containers {
+		c := &pod.Spec.Containers[i]
+
+		if injectionInfo.enabled(OneAgent) {
+			updateInstallContainerOA(ic, i+1, c.Name, c.Image)
+			updateContainerOA(c, &dk, pod, deploymentMetadata, injectionInfo, dataIngestFields)
+		}
+		if injectionInfo.enabled(DataIngest) {
+			updateContainerDI(c, &dk, pod, deploymentMetadata, injectionInfo, dataIngestFields)
+		}
+	}
+}
+
+func decorateInstallContainerWithDI(ic *corev1.Container, injectionInfo *InjectionInfo, workloadKind string, workloadName string) {
+	const dataIngestEnabledEnvVarName = "DATA_INGEST_INJECTED"
+	if injectionInfo.enabled(DataIngest) {
+		ic.Env = append(ic.Env,
+			corev1.EnvVar{Name: "DT_WORKLOAD_KIND", Value: workloadKind},
+			corev1.EnvVar{Name: "DT_WORKLOAD_NAME", Value: workloadName},
+			corev1.EnvVar{Name: dataIngestEnabledEnvVarName, Value: "true"},
+		)
+
+		ic.VolumeMounts = append(ic.VolumeMounts, corev1.VolumeMount{
+			Name:      "data-ingest-enrichment",
+			MountPath: "/var/lib/dynatrace/enrichment"})
+	} else {
+		ic.Env = append(ic.Env,
+			corev1.EnvVar{Name: dataIngestEnabledEnvVarName, Value: "false"},
+		)
+	}
+}
+
+func decorateInstallContainerWithOA(ic *corev1.Container, injectionInfo *InjectionInfo, technologies string, installPath string, installerURL string, mode string) {
+	const oneagentInjectedEnvVarName = "ONEAGENT_INJECTED"
+	if injectionInfo.enabled(OneAgent) {
+		ic.Env = append(ic.Env,
+			corev1.EnvVar{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
+			corev1.EnvVar{Name: "TECHNOLOGIES", Value: technologies},
+			corev1.EnvVar{Name: "INSTALLPATH", Value: installPath},
+			corev1.EnvVar{Name: "INSTALLER_URL", Value: installerURL},
+			corev1.EnvVar{Name: "MODE", Value: mode},
+			corev1.EnvVar{Name: oneagentInjectedEnvVarName, Value: "true"},
+		)
+
+		ic.VolumeMounts = append(ic.VolumeMounts,
+			corev1.VolumeMount{Name: "oneagent-bin", MountPath: "/mnt/bin"},
+			corev1.VolumeMount{Name: "oneagent-share", MountPath: "/mnt/share"},
+		)
+	} else {
+		ic.Env = append(ic.Env,
+			corev1.EnvVar{Name: oneagentInjectedEnvVarName, Value: "false"},
+		)
+	}
+}
+
+func (m *podMutator) createInstallInitContainerBase(image string, pod *corev1.Pod, failurePolicy string, basePodName string, sc *corev1.SecurityContext, dk dynatracev1beta1.DynaKube) corev1.Container {
+	ic := corev1.Container{
+		Name:            dtwebhook.InstallContainerName,
+		Image:           image,
+		ImagePullPolicy: corev1.PullIfNotPresent,
+		Command:         []string{"/usr/bin/env"},
+		Args:            []string{"bash", "/mnt/config/init.sh"},
+		Env: []corev1.EnvVar{
+			{Name: "CONTAINERS_COUNT", Value: strconv.Itoa(len(pod.Spec.Containers))},
+			{Name: "FAILURE_POLICY", Value: failurePolicy},
+			{Name: "K8S_PODNAME", ValueFrom: fieldEnvVar("metadata.name")},
+			{Name: "K8S_PODUID", ValueFrom: fieldEnvVar("metadata.uid")},
+			{Name: "K8S_BASEPODNAME", Value: basePodName},
+			{Name: "K8S_NAMESPACE", ValueFrom: fieldEnvVar("metadata.namespace")},
+			{Name: "K8S_NODE_NAME", ValueFrom: fieldEnvVar("spec.nodeName")},
+			//{Name: "DT_WORKLOAD_KIND", Value: workloadKind},
+			//{Name: "DT_WORKLOAD_NAME", Value: workloadName},
+		},
+		SecurityContext: sc,
+		VolumeMounts: []corev1.VolumeMount{
+			{Name: "injection-config", MountPath: "/mnt/config"},
+			//{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
+		},
+		Resources: *dk.InitResources(),
+	}
+	return ic
+}
+
+func (m *podMutator) getDeploymentMetadata(dk dynatracev1beta1.DynaKube) *deploymentmetadata.DeploymentMetadata {
+	var deploymentMetadata *deploymentmetadata.DeploymentMetadata
+	if dk.CloudNativeFullstackMode() {
+		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeCloudNative)
+	} else {
+		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
+	}
+	return deploymentMetadata
+}
+
+func (m *podMutator) getBasePodName(pod *corev1.Pod) string {
+	basePodName := pod.GenerateName
+	if basePodName == "" {
+		basePodName = pod.Name
+	}
+
+	// Only include up to the last dash character, exclusive.
+	if p := strings.LastIndex(basePodName, "-"); p != -1 {
+		basePodName = basePodName[:p]
+	}
+	return basePodName
+}
+
+func (m *podMutator) getSecurityContext(pod *corev1.Pod) *corev1.SecurityContext {
+	var sc *corev1.SecurityContext
+	if pod.Spec.Containers[0].SecurityContext != nil {
+		sc = pod.Spec.Containers[0].SecurityContext.DeepCopy()
+	}
+	return sc
+}
+
+func (m *podMutator) ensureDataIngestVolumes(injectionInfo *InjectionInfo, pod *corev1.Pod) {
+	if injectionInfo.enabled(DataIngest) {
+		pod.Spec.Volumes = append(pod.Spec.Volumes,
+			corev1.Volume{
+				Name: "data-ingest-enrichment",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+			corev1.Volume{
+				Name: "data-ingest-endpoint",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: dtingestendpoint.SecretEndpointName,
+					},
+				},
+			},
+		)
+	}
+}
+
+func (m *podMutator) ensureOneAgentVolumes(injectionInfo *InjectionInfo, pod *corev1.Pod, dkVol corev1.VolumeSource) {
+	if injectionInfo.enabled(OneAgent) {
+		pod.Spec.Volumes = append(pod.Spec.Volumes,
+			corev1.Volume{Name: "oneagent-bin", VolumeSource: dkVol},
+			corev1.Volume{
+				Name: "oneagent-share",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+		)
+	}
+}
+
+func (m *podMutator) ensureInjectionConfigVolume(pod *corev1.Pod) {
+	pod.Spec.Volumes = append(pod.Spec.Volumes,
+		corev1.Volume{
+			Name: "injection-config",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: dtwebhook.SecretConfigName,
+				},
+			},
+		},
+	)
+}
+
+func (m *podMutator) getBasicData(pod *corev1.Pod) (string, string, string, string, string) {
+	technologies := url.QueryEscape(kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
+	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
+	installerURL := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, "")
+	failurePolicy := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")
+	image := m.image
+	return technologies, installPath, installerURL, failurePolicy, image
+}
+
+func (m *podMutator) ensureDkVolume(dk dynatracev1beta1.DynaKube) (corev1.VolumeSource, string) {
+	dkVol := corev1.VolumeSource{}
+	mode := ""
+	if dk.NeedsCSIDriver() {
+		dkVol.CSI = &corev1.CSIVolumeSource{
+			Driver: dtcsi.DriverName,
+		}
+		mode = "provisioned"
+	} else {
+		dkVol.EmptyDir = &corev1.EmptyDirVolumeSource{}
+		mode = "installer"
+	}
+	return dkVol, mode
+}
+
+func (m *podMutator) retrieveWorkload(ctx context.Context, req admission.Request, injectionInfo *InjectionInfo, pod *corev1.Pod) (string, string, admission.Response, bool) {
+	var workloadName, workloadKind string
+	if injectionInfo.enabled(DataIngest) {
+		var err error
+		workloadName, workloadKind, err = findRootOwnerOfPod(ctx, m.metaClient, pod, req.Namespace)
+		if err != nil {
+			return "", "", admission.Errored(http.StatusInternalServerError, err), true
+		}
+	}
+	return workloadName, workloadKind, admission.Response{}, false
+}
+
+func (m *podMutator) ensureReinvocationPolicy(pod *corev1.Pod, dk dynatracev1beta1.DynaKube, injectionInfo *InjectionInfo, dataIngestFields map[string]string, req admission.Request, emptyPatch admission.Response) (admission.Response, bool) {
+	if len(pod.Annotations[dtwebhook.AnnotationDynatraceInjected]) > 0 {
 		if dk.FeatureEnableWebhookReinvocationPolicy() {
 			var needsUpdate = false
 			var installContainer *corev1.Container
@@ -278,14 +521,16 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 					}
 				}
 
-				injectionMissing := (injectionInfo.enabled(OneAgent) && !oaInjected) || (injectionInfo.enabled(DataIngest) && !diInjected)
+				oaInjectionMissing := injectionInfo.enabled(OneAgent) && !oaInjected
+				diInjectionMissing := injectionInfo.enabled(DataIngest) && !diInjected
 
-				if injectionMissing {
+				if oaInjectionMissing {
 					// container does not have LD_PRELOAD set
 					log.Info("instrumenting missing container", "name", c.Name)
 
 					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
-					updateContainer(c, &dk, pod, deploymentMetadata, injectionInfo, dataIngestFields)
+
+					updateContainerOA(c, &dk, pod, deploymentMetadata, injectionInfo, dataIngestFields)
 
 					if installContainer == nil {
 						for j := range pod.Spec.InitContainers {
@@ -297,7 +542,16 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 							}
 						}
 					}
-					updateInstallContainer(installContainer, i+1, c.Name, c.Image)
+					updateInstallContainerOA(installContainer, i+1, c.Name, c.Image)
+
+					needsUpdate = true
+				}
+
+				if diInjectionMissing {
+					log.Info("instrumenting missing container", "name", c.Name)
+
+					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
+					updateContainerDI(c, &dk, pod, deploymentMetadata, injectionInfo, dataIngestFields)
 
 					needsUpdate = true
 				}
@@ -309,190 +563,13 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 					corev1.EventTypeNormal,
 					updatePodEvent,
 					"Updating pod %s in namespace %s with missing containers", pod.GenerateName, pod.Namespace)
-				return getResponseForPod(pod, &req)
+				return getResponseForPod(pod, &req), true
 			}
 		}
 
-		return emptyPatch
+		return emptyPatch, true
 	}
-	pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = injectionInfo.injectedAnnotation()
-
-	var workloadName, workloadKind string
-	if injectionInfo.enabled(DataIngest) {
-		var err error
-		workloadName, workloadKind, err = findRootOwnerOfPod(ctx, m.metaClient, pod, req.Namespace)
-		if err != nil {
-			return admission.Errored(http.StatusInternalServerError, err)
-		}
-	}
-
-	technologies := url.QueryEscape(kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
-	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
-	installerURL := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, "")
-	failurePolicy := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")
-	image := m.image
-
-	dkVol := corev1.VolumeSource{}
-	mode := ""
-	if dk.NeedsCSIDriver() {
-		dkVol.CSI = &corev1.CSIVolumeSource{
-			Driver: dtcsi.DriverName,
-		}
-		mode = "provisioned"
-	} else {
-		dkVol.EmptyDir = &corev1.EmptyDirVolumeSource{}
-		mode = "installer"
-	}
-
-	pod.Spec.Volumes = append(pod.Spec.Volumes,
-		corev1.Volume{
-			Name: "injection-config",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dtwebhook.SecretConfigName,
-				},
-			},
-		},
-	)
-
-	if injectionInfo.enabled(OneAgent) {
-		pod.Spec.Volumes = append(pod.Spec.Volumes,
-			corev1.Volume{Name: "oneagent-bin", VolumeSource: dkVol},
-			corev1.Volume{
-				Name: "oneagent-share",
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-		)
-	}
-
-	if injectionInfo.enabled(DataIngest) {
-		pod.Spec.Volumes = append(pod.Spec.Volumes,
-			corev1.Volume{
-				Name: "data-ingest-enrichment",
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-			corev1.Volume{
-				Name: "data-ingest-endpoint",
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						SecretName: dtingestendpoint.SecretEndpointName,
-					},
-				},
-			},
-		)
-	}
-
-	var sc *corev1.SecurityContext
-	if pod.Spec.Containers[0].SecurityContext != nil {
-		sc = pod.Spec.Containers[0].SecurityContext.DeepCopy()
-	}
-
-	fieldEnvVar := func(key string) *corev1.EnvVarSource {
-		return &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: key}}
-	}
-
-	basePodName := pod.GenerateName
-	if basePodName == "" {
-		basePodName = pod.Name
-	}
-
-	// Only include up to the last dash character, exclusive.
-	if p := strings.LastIndex(basePodName, "-"); p != -1 {
-		basePodName = basePodName[:p]
-	}
-
-	var deploymentMetadata *deploymentmetadata.DeploymentMetadata
-	if dk.CloudNativeFullstackMode() {
-		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeCloudNative)
-	} else {
-		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
-	}
-
-	ic := corev1.Container{
-		Name:            dtwebhook.InstallContainerName,
-		Image:           image,
-		ImagePullPolicy: corev1.PullIfNotPresent,
-		Command:         []string{"/usr/bin/env"},
-		Args:            []string{"bash", "/mnt/config/init.sh"},
-		Env: []corev1.EnvVar{
-			{Name: "CONTAINERS_COUNT", Value: strconv.Itoa(len(pod.Spec.Containers))},
-			{Name: "FAILURE_POLICY", Value: failurePolicy},
-			{Name: "K8S_PODNAME", ValueFrom: fieldEnvVar("metadata.name")},
-			{Name: "K8S_PODUID", ValueFrom: fieldEnvVar("metadata.uid")},
-			{Name: "K8S_BASEPODNAME", Value: basePodName},
-			{Name: "K8S_NAMESPACE", ValueFrom: fieldEnvVar("metadata.namespace")},
-			{Name: "K8S_NODE_NAME", ValueFrom: fieldEnvVar("spec.nodeName")},
-			//{Name: "DT_WORKLOAD_KIND", Value: workloadKind},
-			//{Name: "DT_WORKLOAD_NAME", Value: workloadName},
-		},
-		SecurityContext: sc,
-		VolumeMounts: []corev1.VolumeMount{
-			{Name: "injection-config", MountPath: "/mnt/config"},
-			//{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
-		},
-		Resources: *dk.InitResources(),
-	}
-
-	const oneagentInjectedEnvVarName = "ONEAGENT_INJECTED"
-	if injectionInfo.enabled(OneAgent) {
-		ic.Env = append(ic.Env,
-			corev1.EnvVar{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
-			corev1.EnvVar{Name: "TECHNOLOGIES", Value: technologies},
-			corev1.EnvVar{Name: "INSTALLPATH", Value: installPath},
-			corev1.EnvVar{Name: "INSTALLER_URL", Value: installerURL},
-			corev1.EnvVar{Name: "MODE", Value: mode},
-			corev1.EnvVar{Name: oneagentInjectedEnvVarName, Value: "true"},
-		)
-
-		ic.VolumeMounts = append(ic.VolumeMounts,
-			corev1.VolumeMount{Name: "oneagent-bin", MountPath: "/mnt/bin"},
-			corev1.VolumeMount{Name: "oneagent-share", MountPath: "/mnt/share"},
-		)
-	} else {
-		ic.Env = append(ic.Env,
-			corev1.EnvVar{Name: oneagentInjectedEnvVarName, Value: "false"},
-		)
-	}
-
-	const dataIngestEnabledEnvVarName = "DATA_INGEST_INJECTED"
-	if injectionInfo.enabled(DataIngest) {
-		ic.Env = append(ic.Env,
-			corev1.EnvVar{Name: "DT_WORKLOAD_KIND", Value: workloadKind},
-			corev1.EnvVar{Name: "DT_WORKLOAD_NAME", Value: workloadName},
-			corev1.EnvVar{Name: dataIngestEnabledEnvVarName, Value: "true"},
-		)
-
-		ic.VolumeMounts = append(ic.VolumeMounts, corev1.VolumeMount{
-			Name:      "data-ingest-enrichment",
-			MountPath: "/var/lib/dynatrace/enrichment"})
-	} else {
-		ic.Env = append(ic.Env,
-			corev1.EnvVar{Name: dataIngestEnabledEnvVarName, Value: "false"},
-		)
-	}
-
-	for i := range pod.Spec.Containers {
-		c := &pod.Spec.Containers[i]
-
-		updateInstallContainer(&ic, i+1, c.Name, c.Image)
-
-		updateContainer(c, &dk, pod, deploymentMetadata, injectionInfo, dataIngestFields)
-	}
-
-	pod.Spec.InitContainers = append(pod.Spec.InitContainers, ic)
-
-	m.recorder.Eventf(&dk,
-		corev1.EventTypeNormal,
-		injectEvent,
-		"Injecting the necessary info into pod %s in namespace %s", basePodName, ns.Name)
-
-	log.Info(">>>: " + pod.String())
-
-	return getResponseForPod(pod, &req)
+	return admission.Response{}, false
 }
 
 func (m *podMutator) getPod(req admission.Request) (*corev1.Pod, *admission.Response) {
@@ -599,73 +676,44 @@ func (m *podMutator) InjectDecoder(d *admission.Decoder) error {
 	return nil
 }
 
-// updateInstallContainer adds Container to list of Containers of Install Container
-func updateInstallContainer(ic *corev1.Container, number int, name string, image string) {
+// updateInstallContainerOA adds Container to list of Containers of Install Container
+func updateInstallContainerOA(ic *corev1.Container, number int, name string, image string) {
 	log.Info("updating install container with new container", "containerName", name, "containerImage", image)
 	ic.Env = append(ic.Env,
 		corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_NAME", number), Value: name},
 		corev1.EnvVar{Name: fmt.Sprintf("CONTAINER_%d_IMAGE", number), Value: image})
 }
 
-// updateContainer sets missing preload Variables
-func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube, pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata, injectionInfo *InjectionInfo, dataIngestFields map[string]string) {
+// updateContainerOA sets missing preload Variables
+func updateContainerOA(c *corev1.Container, oa *dynatracev1beta1.DynaKube, pod *corev1.Pod,
+	deploymentMetadata *deploymentmetadata.DeploymentMetadata, injectionInfo *InjectionInfo, dataIngestFields map[string]string) {
 
 	log.Info("updating container with missing preload variables", "containerName", c.Name)
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 
-	c.Env = append(c.Env,
-		corev1.EnvVar{
-			Name:  "DT_DEPLOYMENT_METADATA",
-			Value: deploymentMetadata.AsString(),
+	addMetadataIfMissing(c, deploymentMetadata)
+
+	c.VolumeMounts = append(c.VolumeMounts,
+		corev1.VolumeMount{
+			Name:      "oneagent-share",
+			MountPath: "/etc/ld.so.preload",
+			SubPath:   "ld.so.preload",
+		},
+		corev1.VolumeMount{
+			Name:      "oneagent-bin",
+			MountPath: installPath,
+		},
+		corev1.VolumeMount{
+			Name:      "oneagent-share",
+			MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
+			SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
 		})
 
-	if injectionInfo.enabled(OneAgent) {
-		c.VolumeMounts = append(c.VolumeMounts,
-			corev1.VolumeMount{
-				Name:      "oneagent-share",
-				MountPath: "/etc/ld.so.preload",
-				SubPath:   "ld.so.preload",
-			},
-			corev1.VolumeMount{
-				Name:      "oneagent-bin",
-				MountPath: installPath,
-			},
-			corev1.VolumeMount{
-				Name:      "oneagent-share",
-				MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-				SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
-			})
-
-		c.Env = append(c.Env,
-			corev1.EnvVar{
-				Name:  "LD_PRELOAD",
-				Value: installPath + "/agent/lib64/liboneagentproc.so",
-			})
-	}
-
-	if injectionInfo.enabled(DataIngest) {
-		c.VolumeMounts = append(c.VolumeMounts,
-			corev1.VolumeMount{
-				Name:      "data-ingest-enrichment",
-				MountPath: "/var/lib/dynatrace/enrichment",
-			},
-			corev1.VolumeMount{
-				Name:      "data-ingest-endpoint",
-				MountPath: "/var/lib/dynatrace/enrichment/endpoint",
-			},
-		)
-
-		c.Env = append(c.Env,
-			corev1.EnvVar{
-				Name:  dtingestendpoint.UrlSecretField,
-				Value: dataIngestFields[dtingestendpoint.UrlSecretField],
-			},
-			corev1.EnvVar{
-				Name:  dtingestendpoint.TokenSecretField,
-				Value: dataIngestFields[dtingestendpoint.TokenSecretField],
-			},
-		)
-	}
+	c.Env = append(c.Env,
+		corev1.EnvVar{
+			Name:  "LD_PRELOAD",
+			Value: installPath + "/agent/lib64/liboneagentproc.so",
+		})
 
 	if oa.Spec.Proxy != nil && (oa.Spec.Proxy.Value != "" || oa.Spec.Proxy.ValueFrom != "") {
 		c.Env = append(c.Env,
@@ -685,6 +733,53 @@ func updateContainer(c *corev1.Container, oa *dynatracev1beta1.DynaKube, pod *co
 	if oa.Spec.NetworkZone != "" {
 		c.Env = append(c.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: oa.Spec.NetworkZone})
 	}
+
+}
+
+func addMetadataIfMissing(c *corev1.Container, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
+	const mtName = "DT_DEPLOYMENT_METADATA"
+
+	for _, v := range c.Env {
+		if v.Name == mtName {
+			return
+		}
+	}
+
+	c.Env = append(c.Env,
+		corev1.EnvVar{
+			Name:  mtName,
+			Value: deploymentMetadata.AsString(),
+		})
+}
+
+func updateContainerDI(c *corev1.Container, oa *dynatracev1beta1.DynaKube, pod *corev1.Pod,
+	deploymentMetadata *deploymentmetadata.DeploymentMetadata, injectionInfo *InjectionInfo, dataIngestFields map[string]string) {
+
+	log.Info("updating container with missing data ingest enrichment", "containerName", c.Name)
+
+	addMetadataIfMissing(c, deploymentMetadata)
+
+	c.VolumeMounts = append(c.VolumeMounts,
+		corev1.VolumeMount{
+			Name:      "data-ingest-enrichment",
+			MountPath: "/var/lib/dynatrace/enrichment",
+		},
+		corev1.VolumeMount{
+			Name:      "data-ingest-endpoint",
+			MountPath: "/var/lib/dynatrace/enrichment/endpoint",
+		},
+	)
+
+	c.Env = append(c.Env,
+		corev1.EnvVar{
+			Name:  dtingestendpoint.UrlSecretField,
+			Value: dataIngestFields[dtingestendpoint.UrlSecretField],
+		},
+		corev1.EnvVar{
+			Name:  dtingestendpoint.TokenSecretField,
+			Value: dataIngestFields[dtingestendpoint.TokenSecretField],
+		},
+	)
 }
 
 // getResponseForPod tries to format pod as json
