@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	errorCSIRequired = `
-The Dynakube's specification requires the CSI driver to work. Make sure you deployed the correct manifests.
-`)
+	errorCSIRequired = `The Dynakube's specification requires the CSI driver to work. Make sure you deployed the correct manifests.
+`
+)
 
 func missingCSIDaemonSet(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if !dynakube.NeedsCSIDriver() {

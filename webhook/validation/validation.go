@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
+
 var log = logger.NewDTLogger().WithName("validation-webhook")
 
 type validator func(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string
@@ -23,6 +24,7 @@ var validators = []validator{
 	missingCSIDaemonSet,
 	conflictingActiveGateConfiguration,
 	invalidActiveGateCapabilities,
+	duplicateActiveGateCapabilities,
 	conflictingOneAgentConfiguration,
 	conflictingNodeSelector,
 	conflictingNamespaceSelector,
@@ -87,9 +89,9 @@ func (validator *dynakubeValidator) runValidators(validators []validator, dynaku
 }
 
 func sumErrors(validationErrors []string) string {
-	summedErrors := fmt.Sprintf("%d number of errors found in dynakube", len(validationErrors))
+	summedErrors := fmt.Sprintf("\n%d error(s) found in the Dynakube", len(validationErrors))
 	for i, errMsg := range validationErrors {
-		summedErrors += fmt.Sprintf("\n %d. %s", i, errMsg)
+		summedErrors += fmt.Sprintf("\n %d. %s", i+1, errMsg)
 	}
 	return summedErrors
 }

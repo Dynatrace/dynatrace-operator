@@ -7,10 +7,10 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 )
 
-const errorConflictingNamespaceSelector = `
-The DynaKube's specification tries to inject into namespaces where another Dynakube already injects into, which is not supported.
+const errorConflictingNamespaceSelector = `The DynaKube's specification tries to inject into namespaces where another Dynakube already injects into, which is not supported.
 Make sure the namespaceSelector doesn't conflict with other Dynakubes namespaceSelector
 `
+
 func conflictingNamespaceSelector(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if !dynakube.NeedAppInjection() {
 		return ""
