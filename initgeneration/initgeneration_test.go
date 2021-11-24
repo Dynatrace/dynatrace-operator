@@ -33,7 +33,6 @@ var (
 	testTenantUUID           = "abc12345"
 	kubesystemNamespace      = "kube-system"
 	kubesystemUID            = types.UID("42")
-	testHostGroup            = "host-test"
 	testNode1Name            = "node1"
 	testNode2Name            = "node2"
 	testNodeWithSelectorName = "nodeWselector"
@@ -50,7 +49,6 @@ var (
 				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
 					HostInjectSpec: dynatracev1beta1.HostInjectSpec{
 						Args: []string{
-							"--set-host-group=" + testHostGroup,
 							"--something=else",
 							"",
 						},
@@ -344,7 +342,6 @@ func TestPrepareScriptForDynaKube(t *testing.T) {
 			ClusterID:     string(kubesystemUID),
 			TenantUUID:    dk.Status.ConnectionInfo.TenantUUID,
 			IMNodes:       imNodes,
-			HostGroup:     testHostGroup,
 			HasHost:       true,
 		}
 		assert.Equal(t, &expectedScript, sc)

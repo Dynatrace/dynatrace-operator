@@ -258,6 +258,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		mockClient.
 			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, mock.AnythingOfType("string")).
 			Return(make([]string, 0), fmt.Errorf(errorMsg))
+		mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("uint")).Return(&testProcessModuleConfig, nil)
 		r := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -374,6 +375,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
+		mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("uint")).Return(&testProcessModuleConfig, nil)
 		r := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
@@ -471,7 +473,7 @@ func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1beta1.Applica
 	}
 }
 
-func TestProvisioner_CreateTenant(t *testing.T) {
+func TestProvisioner_CreateDynakube(t *testing.T) {
 	db := metadata.FakeMemoryDB()
 	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1")
 	db.InsertDynakube(expectedOtherDynakube)
