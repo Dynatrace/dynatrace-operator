@@ -3,17 +3,16 @@ package validation
 import (
 	"context"
 	"fmt"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"k8s.io/apimachinery/pkg/labels"
 )
 
 const (
-	errorConflictingOneagentMode = `
-The DynaKube's specification tries to use multiple oneagent modes at the same time, which is not supported.
+	errorConflictingOneagentMode = `The DynaKube's specification tries to use multiple oneagent modes at the same time, which is not supported.
 `
 
-	errorNodeSelectorConflict = `
-The DynaKube's specification tries to specify a nodeSelector conflicts with an another Dynakube's nodeSelector, which is not supported.
+	errorNodeSelectorConflict = `The DynaKube's specification tries to specify a nodeSelector conflicts with an another Dynakube's nodeSelector, which is not supported.
 The conflicting Dynakube: %s
 `
 )
@@ -40,7 +39,7 @@ func conflictingOneAgentConfiguration(dv *dynakubeValidator, dynakube *dynatrace
 }
 
 func conflictingNodeSelector(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	if !dynakube.NeedsOneAgent() || dynakube.NodeSelector() == nil {
+	if !dynakube.NeedsOneAgent() {
 		return ""
 	}
 	validDynakubes := &dynatracev1beta1.DynaKubeList{}
@@ -49,17 +48,25 @@ func conflictingNodeSelector(dv *dynakubeValidator, dynakube *dynatracev1beta1.D
 		return ""
 	}
 	for _, item := range validDynakubes.Items {
+		if !item.NeedsOneAgent() {
+			continue
+		}
 		nodeSelectorMap := dynakube.NodeSelector()
 		validNodeSelectorMap := item.NodeSelector()
-		if item.Name != dynakube.Name && hasConflictingMatchLabels(nodeSelectorMap, validNodeSelectorMap) {
-			log.Info("requested dynakube has conflicting nodeSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
-			return fmt.Sprintf(errorNodeSelectorConflict, item.Name)
+		if item.Name != dynakube.Name {
+			if hasConflictingMatchLabels(nodeSelectorMap, validNodeSelectorMap) {
+				log.Info("requested dynakube has conflicting nodeSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
+				return fmt.Sprintf(errorNodeSelectorConflict, item.Name)
+			}
 		}
 	}
 	return ""
 }
 
 func hasConflictingMatchLabels(labelMap, otherLabelMap map[string]string) bool {
+	if labelMap == nil || otherLabelMap == nil {
+		return true
+	}
 	if labelMap != nil && otherLabelMap != nil {
 		labelSelector := labels.SelectorFromSet(labelMap)
 		otherLabelSelector := labels.SelectorFromSet(otherLabelMap)
