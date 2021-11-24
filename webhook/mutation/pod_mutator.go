@@ -267,15 +267,11 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	dkVol, mode := m.ensureDkVolume(dk)
 
 	m.ensureInjectionConfigVolume(pod)
-
 	m.ensureOneAgentVolumes(injectionInfo, pod, dkVol)
-
 	m.ensureDataIngestVolumes(injectionInfo, pod)
 
 	sc := m.getSecurityContext(pod)
-
 	basePodName := m.getBasePodName(pod)
-
 	deploymentMetadata := m.getDeploymentMetadata(dk)
 
 	installContainer := m.createInstallInitContainerBase(image, pod, failurePolicy, basePodName, sc, dk)
@@ -285,7 +281,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 	updateContainers(pod, injectionInfo, &installContainer, dk, deploymentMetadata, dataIngestFields)
 
-	pod.Spec.InitContainers = append(pod.Spec.InitContainers, installContainer)
+	addToInitContainers(pod, installContainer)
 
 	m.recorder.Eventf(&dk,
 		corev1.EventTypeNormal,
@@ -293,6 +289,10 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		"Injecting the necessary info into pod %s in namespace %s", basePodName, ns.Name)
 
 	return getResponseForPod(pod, &req)
+}
+
+func addToInitContainers(pod *corev1.Pod, installContainer corev1.Container) {
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, installContainer)
 }
 
 func updateContainers(pod *corev1.Pod, injectionInfo *InjectionInfo, ic *corev1.Container, dk dynatracev1beta1.DynaKube, deploymentMetadata *deploymentmetadata.DeploymentMetadata, dataIngestFields map[string]string) {
@@ -497,81 +497,79 @@ func (m *podMutator) retrieveWorkload(ctx context.Context, req admission.Request
 }
 
 func (m *podMutator) ensureReinvocationPolicy(pod *corev1.Pod, dk dynatracev1beta1.DynaKube, injectionInfo *InjectionInfo, dataIngestFields map[string]string, req admission.Request) *admission.Response {
+	if len(pod.Annotations[dtwebhook.AnnotationDynatraceInjected]) == 0 || !dk.FeatureEnableWebhookReinvocationPolicy() {
+		return nil
+	}
+
 	var rsp admission.Response
+	var needsUpdate = false
+	var installContainer *corev1.Container
+	for i := range pod.Spec.Containers {
+		c := &pod.Spec.Containers[i]
 
-	if len(pod.Annotations[dtwebhook.AnnotationDynatraceInjected]) > 0 {
-		if dk.FeatureEnableWebhookReinvocationPolicy() {
-			var needsUpdate = false
-			var installContainer *corev1.Container
-			for i := range pod.Spec.Containers {
-				c := &pod.Spec.Containers[i]
-
-				oaInjected := false
-				if injectionInfo.enabled(OneAgent) {
-					for _, e := range c.Env {
-						if e.Name == "LD_PRELOAD" {
-							oaInjected = true
-							break
-						}
-					}
+		oaInjected := false
+		if injectionInfo.enabled(OneAgent) {
+			for _, e := range c.Env {
+				if e.Name == "LD_PRELOAD" {
+					oaInjected = true
+					break
 				}
-				diInjected := false
-				if injectionInfo.enabled(DataIngest) {
-					for _, vm := range c.VolumeMounts {
-						if vm.Name == "data-ingest-endpoint" {
-							diInjected = true
-							break
-						}
-					}
-				}
-
-				oaInjectionMissing := injectionInfo.enabled(OneAgent) && !oaInjected
-				diInjectionMissing := injectionInfo.enabled(DataIngest) && !diInjected
-
-				if oaInjectionMissing {
-					// container does not have LD_PRELOAD set
-					log.Info("instrumenting missing container", "name", c.Name)
-
-					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
-
-					updateContainerOA(c, &dk, pod, deploymentMetadata, injectionInfo, dataIngestFields)
-
-					if installContainer == nil {
-						for j := range pod.Spec.InitContainers {
-							ic := &pod.Spec.InitContainers[j]
-
-							if ic.Name == dtwebhook.InstallContainerName {
-								installContainer = ic
-								break
-							}
-						}
-					}
-					updateInstallContainerOA(installContainer, i+1, c.Name, c.Image)
-
-					needsUpdate = true
-				}
-
-				if diInjectionMissing {
-					log.Info("instrumenting missing container", "name", c.Name)
-
-					deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
-					updateContainerDI(c, &dk, pod, deploymentMetadata, injectionInfo, dataIngestFields)
-
-					needsUpdate = true
-				}
-			}
-
-			if needsUpdate {
-				log.Info("updating pod with missing containers")
-				m.recorder.Eventf(&dk,
-					corev1.EventTypeNormal,
-					updatePodEvent,
-					"Updating pod %s in namespace %s with missing containers", pod.GenerateName, pod.Namespace)
-				rsp = getResponseForPod(pod, &req)
-				return &rsp
 			}
 		}
-		return nil
+		diInjected := false
+		if injectionInfo.enabled(DataIngest) {
+			for _, vm := range c.VolumeMounts {
+				if vm.Name == "data-ingest-endpoint" {
+					diInjected = true
+					break
+				}
+			}
+		}
+
+		oaInjectionMissing := injectionInfo.enabled(OneAgent) && !oaInjected
+		diInjectionMissing := injectionInfo.enabled(DataIngest) && !diInjected
+
+		if oaInjectionMissing {
+			// container does not have LD_PRELOAD set
+			log.Info("instrumenting missing container", "name", c.Name)
+
+			deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
+
+			updateContainerOA(c, &dk, pod, deploymentMetadata, injectionInfo, dataIngestFields)
+
+			if installContainer == nil {
+				for j := range pod.Spec.InitContainers {
+					ic := &pod.Spec.InitContainers[j]
+
+					if ic.Name == dtwebhook.InstallContainerName {
+						installContainer = ic
+						break
+					}
+				}
+			}
+			updateInstallContainerOA(installContainer, i+1, c.Name, c.Image)
+
+			needsUpdate = true
+		}
+
+		if diInjectionMissing {
+			log.Info("instrumenting missing container", "name", c.Name)
+
+			deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
+			updateContainerDI(c, &dk, pod, deploymentMetadata, injectionInfo, dataIngestFields)
+
+			needsUpdate = true
+		}
+	}
+
+	if needsUpdate {
+		log.Info("updating pod with missing containers")
+		m.recorder.Eventf(&dk,
+			corev1.EventTypeNormal,
+			updatePodEvent,
+			"Updating pod %s in namespace %s with missing containers", pod.GenerateName, pod.Namespace)
+		rsp = getResponseForPod(pod, &req)
+		return &rsp
 	}
 	return nil
 }
