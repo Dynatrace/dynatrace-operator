@@ -2,6 +2,7 @@ package mutation
 
 import (
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/webhook"
@@ -21,19 +22,20 @@ const (
 
 type Feature struct {
 	ftype   FeatureType
+	enabled bool
 }
 
-func NewFeature(ftype FeatureType) Feature {
-	return Feature{ftype: ftype}
+func NewFeature(ftype FeatureType, enabled bool) Feature {
+	return Feature{ftype: ftype, enabled: enabled}
 }
 
 func (f Feature) annotationValue() string {
-	return "true"
+	return strconv.FormatBool(f.enabled)
 }
 
-func (f Feature) name() string {
+func (f FeatureType) name() string {
 	anno := "unknown"
-	switch f.ftype {
+	switch f {
 	case OneAgent:
 		anno = webhook.OneAgentPrefix
 	case DataIngest:
@@ -42,33 +44,68 @@ func (f Feature) name() string {
 	return anno
 }
 
+// for testing only
+func (f FeatureType) namePrefixed() string {
+	anno := "unknown"
+	switch f {
+	case OneAgent:
+		anno = webhook.AnnotationOneAgentInject
+	case DataIngest:
+		anno = webhook.AnnotationDataIngestInject
+	}
+	return anno
+}
+
 type InjectionInfo struct {
-	features map[Feature]struct{}
+	features map[FeatureType]bool
 }
 
 func NewInjectionInfo() *InjectionInfo {
-	return &InjectionInfo{features: make(map[Feature]struct{})}
+	return &InjectionInfo{features: make(map[FeatureType]bool)}
 }
 
-func (info *InjectionInfo) enabled(wanted FeatureType) bool {
-	_, exists := info.features[NewFeature(wanted)]
+func (info *InjectionInfo) exists(wanted FeatureType) bool {
+	_, exists := info.features[wanted]
 	return exists
 }
 
+func (info *InjectionInfo) enabled(wanted FeatureType) bool {
+	val, exists := info.features[wanted]
+	return exists && val
+}
+
 func (info *InjectionInfo) anyEnabled() bool {
-	return len(info.features) > 0
+	for _, enabled := range info.features {
+		if enabled {
+			return true
+		}
+	}
+	return false
 }
 
 func (info *InjectionInfo) add(f Feature) {
-	info.features[f] = struct{}{}
+	info.features[f.ftype] = f.enabled
+}
+
+// for testing only
+func (info *InjectionInfo) createInjectAnnotations() map[string]string {
+	m := make(map[string]string)
+	for featureType, enabled := range info.features {
+		f := NewFeature(featureType, enabled)
+		m[f.ftype.namePrefixed()] = f.annotationValue()
+	}
+
+	return m
 }
 
 func (info *InjectionInfo) injectedAnnotation() string {
 	builder := strings.Builder{}
 
-	ftrs := []string{}
-	for injectable := range info.features {
-		ftrs = append(ftrs, injectable.name())
+	var ftrs []string
+	for injectable, enabled := range info.features {
+		if enabled {
+			ftrs = append(ftrs, injectable.name())
+		}
 	}
 	sort.Strings(ftrs)
 

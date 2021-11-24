@@ -70,7 +70,6 @@ func doSort(c corev1.Container) {
 	sort.Sort(ByEnv(c.Env))
 }
 
-
 func fieldEnvVar(key string) *corev1.EnvVarSource {
 	return &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: key}}
 }

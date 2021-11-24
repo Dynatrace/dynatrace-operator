@@ -204,6 +204,7 @@ func isWellKnownWorkload(ownerRef metav1.OwnerReference) bool {
 
 // podMutator adds an annotation to every incoming pods
 func (m *podMutator) Handle(ctx context.Context, req admission.Request) admission.Response {
+
 	emptyPatch := admission.Patched("")
 
 	if m.apmExists {
@@ -255,7 +256,10 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return *reinvocationResponse
 	}
 
-	pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = injectionInfo.injectedAnnotation()
+	injectedAnnotation := injectionInfo.injectedAnnotation()
+	if injectedAnnotation != "" {
+		pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = injectedAnnotation
+	}
 
 	workloadName, workloadKind, workloadResponse := m.retrieveWorkload(ctx, req, injectionInfo, pod)
 	if workloadResponse != nil {
@@ -366,13 +370,10 @@ func (m *podMutator) createInstallInitContainerBase(image string, pod *corev1.Po
 			{Name: "K8S_BASEPODNAME", Value: basePodName},
 			{Name: "K8S_NAMESPACE", ValueFrom: fieldEnvVar("metadata.namespace")},
 			{Name: "K8S_NODE_NAME", ValueFrom: fieldEnvVar("spec.nodeName")},
-			//{Name: "DT_WORKLOAD_KIND", Value: workloadKind},
-			//{Name: "DT_WORKLOAD_NAME", Value: workloadName},
 		},
 		SecurityContext: sc,
 		VolumeMounts: []corev1.VolumeMount{
 			{Name: "injection-config", MountPath: "/mnt/config"},
-			//{Name: "data-ingest-enrichment", MountPath: "/var/lib/dynatrace/enrichment"},
 		},
 		Resources: *dk.InitResources(),
 	}
@@ -672,12 +673,8 @@ func (m *podMutator) CreateInjectionInfo(pod *corev1.Pod) *InjectionInfo {
 	dataIngestInject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationDataIngestInject, oneAgentInject)
 
 	injectionInfo := NewInjectionInfo()
-	if oneAgentInject {
-		injectionInfo.add(NewFeature(OneAgent))
-	}
-	if dataIngestInject {
-		injectionInfo.add(NewFeature(DataIngest))
-	}
+	injectionInfo.add(NewFeature(OneAgent, oneAgentInject))
+	injectionInfo.add(NewFeature(DataIngest, dataIngestInject))
 	return injectionInfo
 }
 

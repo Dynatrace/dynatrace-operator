@@ -6,7 +6,7 @@ import (
 
 func TestFeature_name(t *testing.T) {
 	type fields struct {
-		ftype   FeatureType
+		ftype FeatureType
 	}
 	tests := []struct {
 		name   string
@@ -16,14 +16,14 @@ func TestFeature_name(t *testing.T) {
 		{
 			name: "",
 			fields: fields{
-				ftype:   OneAgent,
+				ftype: OneAgent,
 			},
 			want: "oneagent",
 		},
 		{
 			name: "",
 			fields: fields{
-				ftype:   DataIngest,
+				ftype: DataIngest,
 			},
 			want: "data-ingest",
 		},
@@ -31,9 +31,9 @@ func TestFeature_name(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := Feature{
-				ftype:   tt.fields.ftype,
+				ftype: tt.fields.ftype,
 			}
-			if got := f.name(); got != tt.want {
+			if got := f.ftype.name(); got != tt.want {
 				t.Errorf("name() = %v, want %v", got, tt.want)
 			}
 		})
@@ -41,13 +41,15 @@ func TestFeature_name(t *testing.T) {
 }
 
 func TestInjectionInfo_enabled(t *testing.T) {
-	features := func() map[Feature]struct{} {
+	features := func() map[FeatureType]bool {
 		i := NewInjectionInfo()
 		i.add(Feature{
 			ftype:   OneAgent,
+			enabled: true,
 		})
 		i.add(Feature{
 			ftype:   DataIngest,
+			enabled: true,
 		})
 		return i.features
 	}()
@@ -96,7 +98,7 @@ func TestInjectionInfo_enabled(t *testing.T) {
 
 func TestInjectionInfo_injectedAnnotation(t *testing.T) {
 	type fields struct {
-		features map[Feature]struct{}
+		features map[FeatureType]bool
 	}
 	tests := []struct {
 		name   string
@@ -104,12 +106,13 @@ func TestInjectionInfo_injectedAnnotation(t *testing.T) {
 		want   string
 	}{
 		{
-			name: "OA-enabled",
+			name: "OA-explicitlyEnabled",
 			fields: fields{
-				features: func() map[Feature]struct{} {
+				features: func() map[FeatureType]bool {
 					i := NewInjectionInfo()
 					i.add(Feature{
 						ftype:   OneAgent,
+						enabled: true,
 					})
 					return i.features
 				}(),
@@ -117,15 +120,17 @@ func TestInjectionInfo_injectedAnnotation(t *testing.T) {
 			want: "oneagent",
 		},
 		{
-			name: "OA and DI enabled",
+			name: "OA and DI explicitlyEnabled",
 			fields: fields{
-				features: func() map[Feature]struct{} {
+				features: func() map[FeatureType]bool {
 					i := NewInjectionInfo()
 					i.add(Feature{
 						ftype:   OneAgent,
+						enabled: true,
 					})
 					i.add(Feature{
 						ftype:   DataIngest,
+						enabled: true,
 					})
 					return i.features
 				}(),

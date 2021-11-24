@@ -29,14 +29,9 @@ func TestGetField(t *testing.T) {
 func TestGetFieldBool(t *testing.T) {
 	data2expectedValid := map[string]bool{
 		"true":  true,
-		"TRue":  true,
-		"yes":   true,
-		"yEs":   true,
 		"1":     true,
 		"false": false,
-		"falSE": false,
-		"no":    false,
-		"nO":    false,
+		"FALSE": false,
 		"0":     false,
 	}
 
