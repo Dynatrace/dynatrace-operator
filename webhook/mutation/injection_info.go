@@ -21,18 +21,14 @@ const (
 
 type Feature struct {
 	ftype   FeatureType
-	Enabled bool
 }
 
-func NewFeature(ftype FeatureType, enabled bool) *Feature {
-	return &Feature{ftype: ftype, Enabled: enabled}
+func NewFeature(ftype FeatureType) Feature {
+	return Feature{ftype: ftype}
 }
 
 func (f Feature) annotationValue() string {
-	if f.Enabled {
-		return "true"
-	}
-	return "false"
+	return "true"
 }
 
 func (f Feature) name() string {
@@ -47,32 +43,23 @@ func (f Feature) name() string {
 }
 
 type InjectionInfo struct {
-	features map[*Feature]struct{}
+	features map[Feature]struct{}
 }
 
 func NewInjectionInfo() *InjectionInfo {
-	return &InjectionInfo{features: make(map[*Feature]struct{})}
+	return &InjectionInfo{features: make(map[Feature]struct{})}
 }
 
 func (info *InjectionInfo) enabled(wanted FeatureType) bool {
-	for k := range info.features { // TODO: iteration needed?
-		if k.ftype == wanted && k.Enabled {
-			return true
-		}
-	}
-	return false
+	_, exists := info.features[NewFeature(wanted)]
+	return exists
 }
 
 func (info *InjectionInfo) anyEnabled() bool {
-	for k := range info.features {
-		if k.Enabled {
-			return true
-		}
-	}
-	return false
+	return len(info.features) > 0
 }
 
-func (info *InjectionInfo) add(f *Feature) {
+func (info *InjectionInfo) add(f Feature) {
 	info.features[f] = struct{}{}
 }
 
@@ -81,11 +68,8 @@ func (info *InjectionInfo) injectedAnnotation() string {
 
 	ftrs := []string{}
 	for injectable := range info.features {
-		if injectable.Enabled {
-			ftrs = append(ftrs, injectable.name())
-		}
+		ftrs = append(ftrs, injectable.name())
 	}
-
 	sort.Strings(ftrs)
 
 	for _, ftr := range ftrs {
