@@ -22,7 +22,7 @@ type logFileInfo struct {
 func (gc *CSIGarbageCollector) runLogGarbageCollection(tenantUUID string) {
 	logs, err := gc.getLogFileInfo(tenantUUID)
 	if err != nil {
-		gc.logger.Info("failed to get log file information")
+		log.Info("failed to get log file information")
 		return
 	}
 
@@ -90,7 +90,7 @@ func (gc *CSIGarbageCollector) tryRemoveLogFolders(unusedVolumeIDs []os.FileInfo
 	for _, unusedVolumeID := range unusedVolumeIDs {
 		if isOlderThanTwoWeeks(unusedVolumeID.ModTime()) {
 			if err := gc.fs.RemoveAll(gc.path.AgentRunDirForVolume(tenantUUID, unusedVolumeID.Name())); err != nil {
-				gc.logger.Info("failed to remove logs for pod", "podUID", unusedVolumeID.Name(), "error", err)
+				log.Info("failed to remove logs for pod", "podUID", unusedVolumeID.Name(), "error", err)
 			}
 		}
 	}
