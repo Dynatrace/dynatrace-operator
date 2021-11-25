@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -14,25 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
-
-var log = logger.NewDTLogger().WithName("validation-webhook")
-
-type validator func(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string
-
-var validators = []validator{
-	noApiUrl,
-	missingCSIDaemonSet,
-	conflictingActiveGateConfiguration,
-	invalidActiveGateCapabilities,
-	duplicateActiveGateCapabilities,
-	conflictingOneAgentConfiguration,
-	conflictingNodeSelector,
-	conflictingNamespaceSelector,
-}
-
-var warnings = []validator{
-	previewWarning,
-}
 
 type dynakubeValidator struct {
 	clt       client.Client

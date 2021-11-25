@@ -39,7 +39,7 @@ func TestConflictingNamespaceSelector(t *testing.T) {
 
 	t.Run(`invalid dynakube specs`, func(t *testing.T) {
 		assertDeniedResponse(t,
-			[]string{errorConflictingNamespaceSelector},
+			[]string{errorConflictingNamespaceSelectorNoSelector},
 			&dynatracev1beta1.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynatracev1beta1.DynaKubeSpec{
