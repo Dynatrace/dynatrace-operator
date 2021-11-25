@@ -204,7 +204,6 @@ func isWellKnownWorkload(ownerRef metav1.OwnerReference) bool {
 
 // podMutator adds an annotation to every incoming pods
 func (m *podMutator) Handle(ctx context.Context, req admission.Request) admission.Response {
-
 	emptyPatch := admission.Patched("")
 
 	if m.apmExists {
@@ -251,9 +250,9 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		pod.Annotations = map[string]string{}
 	}
 
-	reinvocationResponse := m.ensureReinvocationPolicy(pod, dk, injectionInfo, dataIngestFields, req)
-	if reinvocationResponse != nil {
-		return *reinvocationResponse
+	response := m.handleAlreadyInjectedPod(pod, dk, injectionInfo, dataIngestFields, req)
+	if response != nil {
+		return *response
 	}
 
 	injectedAnnotation := injectionInfo.injectedAnnotation()
@@ -293,6 +292,19 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		"Injecting the necessary info into pod %s in namespace %s", basePodName, ns.Name)
 
 	return getResponseForPod(pod, &req)
+}
+
+func (m *podMutator) handleAlreadyInjectedPod(pod *corev1.Pod, dk dynatracev1beta1.DynaKube, injectionInfo *InjectionInfo, dataIngestFields map[string]string, req admission.Request) *admission.Response {
+	// are there any injections already?
+	if len(pod.Annotations[dtwebhook.AnnotationDynatraceInjected]) > 0 {
+		if dk.FeatureEnableWebhookReinvocationPolicy() {
+			rsp := m.ensureReinvocationPolicy(pod, dk, injectionInfo, dataIngestFields, req)
+			return &rsp
+		}
+		rsp := admission.Patched("")
+		return &rsp
+	}
+	return nil
 }
 
 func addToInitContainers(pod *corev1.Pod, installContainer corev1.Container) {
@@ -497,12 +509,7 @@ func (m *podMutator) retrieveWorkload(ctx context.Context, req admission.Request
 	return workloadName, workloadKind, nil
 }
 
-func (m *podMutator) ensureReinvocationPolicy(pod *corev1.Pod, dk dynatracev1beta1.DynaKube, injectionInfo *InjectionInfo, dataIngestFields map[string]string, req admission.Request) *admission.Response {
-	if len(pod.Annotations[dtwebhook.AnnotationDynatraceInjected]) == 0 || !dk.FeatureEnableWebhookReinvocationPolicy() {
-		return nil
-	}
-
-	var rsp admission.Response
+func (m *podMutator) ensureReinvocationPolicy(pod *corev1.Pod, dk dynatracev1beta1.DynaKube, injectionInfo *InjectionInfo, dataIngestFields map[string]string, req admission.Request) admission.Response {
 	var needsUpdate = false
 	var installContainer *corev1.Container
 	for i := range pod.Spec.Containers {
@@ -569,10 +576,9 @@ func (m *podMutator) ensureReinvocationPolicy(pod *corev1.Pod, dk dynatracev1bet
 			corev1.EventTypeNormal,
 			updatePodEvent,
 			"Updating pod %s in namespace %s with missing containers", pod.GenerateName, pod.Namespace)
-		rsp = getResponseForPod(pod, &req)
-		return &rsp
+		return getResponseForPod(pod, &req)
 	}
-	return nil
+	return admission.Patched("")
 }
 
 func (m *podMutator) getPod(req admission.Request) (*corev1.Pod, *admission.Response) {
