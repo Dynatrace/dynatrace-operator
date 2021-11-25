@@ -26,7 +26,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -39,17 +38,10 @@ import (
 )
 
 const (
-	failedInstallAgentVersionEvent = "FailedInstallAgentVersion"
-	installAgentVersionEvent       = "InstallAgentVersion"
-)
-
-const (
 	defaultRequeueDuration = 5 * time.Minute
 	longRequeueDuration    = 30 * time.Minute
 	shortRequeueDuration   = 15 * time.Second
 )
-
-var log = logger.NewDTLogger().WithName("provisioner")
 
 // OneAgentProvisioner reconciles a DynaKube object
 type OneAgentProvisioner struct {
@@ -86,8 +78,9 @@ func (r *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 var _ reconcile.Reconciler = &OneAgentProvisioner{}
 
 func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	rlog := log.WithValues("namespace", request.Namespace, "name", request.Name)
-	rlog.Info("Reconciling DynaKube")
+	log = log.WithValues("namespace", request.Namespace, "dynakube", request.Name)
+	defer resetLogger()
+	log.Info("Reconciling DynaKube")
 
 	dk, err := r.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
@@ -97,12 +90,12 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		return reconcile.Result{}, err
 	}
 	if !dk.NeedsCSIDriver() {
-		rlog.Info("CSI driver not needed", "dynakube", dk.Name)
+		log.Info("CSI driver not needed")
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
 
 	if dk.ConnectionInfo().TenantUUID == "" {
-		rlog.Info("DynaKube instance has not been reconciled yet and some values usually cached are missing, retrying in a few seconds")
+		log.Info("DynaKube instance has not been reconciled yet and some values usually cached are missing, retrying in a few seconds")
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
 
@@ -124,28 +117,27 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	} else {
 		oldDynakube = *dynakube
 	}
-	rlog.Info("checking dynakube", "name", dynakube.Name,
-		"tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
+	log.Info("checking dynakube", "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
 
 	dynakube.Name = dk.Name
 	dynakube.TenantUUID = dk.ConnectionInfo().TenantUUID
 
 	if err = r.createCSIDirectories(r.path.EnvDir(dynakube.TenantUUID)); err != nil {
-		rlog.Error(err, "error when creating csi directories", "path", r.path.EnvDir(dynakube.TenantUUID))
+		log.Error(err, "error when creating csi directories", "path", r.path.EnvDir(dynakube.TenantUUID))
 		return reconcile.Result{}, errors.WithStack(err)
 	}
-	rlog.Info("csi directories exist", "path", r.path.EnvDir(dynakube.TenantUUID))
+	log.Info("csi directories exist", "path", r.path.EnvDir(dynakube.TenantUUID))
 
 	latestProcessModuleConfig, storedHash, err := r.getProcessModuleConfig(dtc, dynakube.TenantUUID)
 	if err != nil {
-		rlog.Error(err, "error when getting the latest ruxitagentproc.conf")
+		log.Error(err, "error when getting the latest ruxitagentproc.conf")
 		return reconcile.Result{}, err
 	}
 	latestProcessModuleConfigCache := newProcessModuleConfigCache(addHostGroup(dk, latestProcessModuleConfig))
 
-	installAgentCfg := newInstallAgentConfig(rlog, dtc, r.path, r.fs, r.recorder, dk)
+	installAgentCfg := newInstallAgentConfig(dtc, r.path, r.fs, r.recorder, dk)
 	if updatedVersion, err := installAgentCfg.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID, storedHash, latestProcessModuleConfigCache); err != nil {
-		rlog.Info("error when updating agent", "error", err.Error())
+		log.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 	} else if updatedVersion != "" {
@@ -170,12 +162,10 @@ func (r *OneAgentProvisioner) createOrUpdateDynakube(oldDynakube metadata.Dynaku
 		log.Info("dynakube has changed",
 			"name", dynakube.Name, "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
 		if oldDynakube == (metadata.Dynakube{}) {
-			log.Info("adding dynakube to db",
-				"name", dynakube.Name, "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
+			log.Info("adding dynakube to db", "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
 			return r.db.InsertDynakube(dynakube)
 		} else {
 			log.Info("updating dynakube in db",
-				"name", dynakube.Name,
 				"old version", oldDynakube.LatestVersion, "new version", dynakube.LatestVersion,
 				"old tenantUUID", oldDynakube.TenantUUID, "new tenantUUID", dynakube.TenantUUID)
 			return r.db.UpdateDynakube(dynakube)

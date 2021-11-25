@@ -11,7 +11,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	"github.com/go-logr/logr"
 	"github.com/klauspost/compress/zip"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
@@ -21,7 +20,6 @@ import (
 const agentConfPath = "agent/conf/"
 
 type installAgentConfig struct {
-	logger   logr.Logger
 	dtc      dtclient.Client
 	fs       afero.Fs
 	path     metadata.PathResolver
@@ -30,7 +28,6 @@ type installAgentConfig struct {
 }
 
 func newInstallAgentConfig(
-	logger logr.Logger,
 	dtc dtclient.Client,
 	path metadata.PathResolver,
 	fs afero.Fs,
@@ -38,7 +35,6 @@ func newInstallAgentConfig(
 	dk *dynatracev1beta1.DynaKube,
 ) *installAgentConfig {
 	return &installAgentConfig{
-		logger:   logger,
 		dtc:      dtc,
 		path:     path,
 		fs:       fs,
@@ -49,12 +45,11 @@ func newInstallAgentConfig(
 
 func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID string, previousHash string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
 	dk := installAgentCfg.dk
-	logger := installAgentCfg.logger
 	currentVersion := installAgentCfg.getOneAgentVersionFromInstance()
 	targetDir := installAgentCfg.path.AgentBinaryDirForVersion(tenantUUID, currentVersion)
 
 	if _, err := os.Stat(targetDir); currentVersion != version || os.IsNotExist(err) {
-		logger.Info("updating agent", "version", currentVersion, "previous version", version)
+		log.Info("updating agent", "version", currentVersion, "previous version", version)
 
 		if err := installAgentCfg.installAgentVersion(currentVersion, tenantUUID); err != nil {
 			installAgentCfg.recorder.Eventf(dk,
@@ -63,7 +58,7 @@ func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID strin
 				"Failed to install agent version: %s to tenant: %s, err: %s", currentVersion, tenantUUID, err)
 			return "", err
 		}
-		installAgentCfg.logger.Info("updating ruxitagentproc.conf on new version")
+		log.Info("updating ruxitagentproc.conf on new version")
 		if err := installAgentCfg.updateProcessModuleConfig(currentVersion, tenantUUID, latestProcessModuleConfigCache.ProcessModuleConfig); err != nil {
 			return "", err
 		}
@@ -74,7 +69,7 @@ func (installAgentCfg *installAgentConfig) updateAgent(version, tenantUUID strin
 		return currentVersion, nil
 	}
 	if latestProcessModuleConfigCache != nil && previousHash != latestProcessModuleConfigCache.Hash {
-		installAgentCfg.logger.Info("updating ruxitagentproc.conf on installed version")
+		log.Info("updating ruxitagentproc.conf on latest installed version")
 		if err := installAgentCfg.updateProcessModuleConfig(currentVersion, tenantUUID, latestProcessModuleConfigCache.ProcessModuleConfig); err != nil {
 			return "", err
 		}
@@ -93,10 +88,9 @@ func (installAgentCfg *installAgentConfig) getOneAgentVersionFromInstance() stri
 }
 
 func (installAgentCfg *installAgentConfig) installAgentVersion(version, tenantUUID string) error {
-	logger := installAgentCfg.logger
 	targetDir := installAgentCfg.path.AgentBinaryDirForVersion(tenantUUID, version)
 
-	logger.Info("installing agent", "target dir", targetDir)
+	log.Info("installing agent", "target dir", targetDir)
 	if err := installAgentCfg.installAgent(version, tenantUUID); err != nil {
 		_ = installAgentCfg.fs.RemoveAll(targetDir)
 
@@ -107,7 +101,6 @@ func (installAgentCfg *installAgentConfig) installAgentVersion(version, tenantUU
 }
 
 func (installAgentCfg *installAgentConfig) installAgent(version, tenantUUID string) error {
-	logger := installAgentCfg.logger
 	dtc := installAgentCfg.dtc
 	fs := installAgentCfg.fs
 
@@ -123,11 +116,11 @@ func (installAgentCfg *installAgentConfig) installAgent(version, tenantUUID stri
 	defer func() {
 		_ = tmpFile.Close()
 		if err := fs.Remove(tmpFile.Name()); err != nil {
-			logger.Error(err, "Failed to delete downloaded file", "path", tmpFile.Name())
+			log.Error(err, "failed to delete downloaded file", "path", tmpFile.Name())
 		}
 	}()
 
-	logger.Info("Downloading OneAgent package", "architecture", arch)
+	log.Info("downloading OneAgent package", "architecture", arch)
 	err = dtc.GetAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch, version, tmpFile)
 
 	if err != nil {
@@ -143,12 +136,12 @@ func (installAgentCfg *installAgentConfig) installAgent(version, tenantUUID stri
 		fileSize = stat.Size()
 	}
 
-	logger.Info("Saved OneAgent package", "dest", tmpFile.Name(), "size", fileSize)
-	logger.Info("Unzipping OneAgent package")
+	log.Info("saved OneAgent package", "dest", tmpFile.Name(), "size", fileSize)
+	log.Info("unzipping OneAgent package")
 	if err := installAgentCfg.unzip(tmpFile, version, tenantUUID); err != nil {
 		return fmt.Errorf("failed to unzip file: %w", err)
 	}
-	logger.Info("Unzipped OneAgent package")
+	log.Info("unzipped OneAgent package")
 
 	return nil
 }
