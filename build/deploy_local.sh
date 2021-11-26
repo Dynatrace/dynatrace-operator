@@ -23,7 +23,7 @@ if [[ "${LOCALBUILD}" ]]; then
   export GOOS=linux
   export GOARCH=amd64
 
-  go build "$args" -o ./build/_output/bin/dynatrace-operator ./cmd/operator/
+  go build "$args" -o ./build/_output/bin/dynatrace-operator ./src/cmd/operator/
 
   go get github.com/google/go-licenses
   go-licenses save ./... --save_path third_party_licenses --force
