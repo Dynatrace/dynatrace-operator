@@ -5,7 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/webhook"
+	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type Injectable interface {
@@ -37,9 +39,9 @@ func (f FeatureType) name() string {
 	anno := "unknown"
 	switch f {
 	case OneAgent:
-		anno = webhook.OneAgentPrefix
+		anno = dtwebhook.OneAgentPrefix
 	case DataIngest:
-		anno = webhook.DataIngestPrefix
+		anno = dtwebhook.DataIngestPrefix
 	}
 	return anno
 }
@@ -49,15 +51,25 @@ func (f FeatureType) namePrefixed() string {
 	anno := "unknown"
 	switch f {
 	case OneAgent:
-		anno = webhook.AnnotationOneAgentInject
+		anno = dtwebhook.AnnotationOneAgentInject
 	case DataIngest:
-		anno = webhook.AnnotationDataIngestInject
+		anno = dtwebhook.AnnotationDataIngestInject
 	}
 	return anno
 }
 
 type InjectionInfo struct {
 	features map[FeatureType]bool
+}
+
+func NewInjectionInfoForPod(pod *corev1.Pod) *InjectionInfo {
+	oneAgentInject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInject, true)
+	dataIngestInject := kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationDataIngestInject, oneAgentInject)
+
+	injectionInfo := NewInjectionInfo()
+	injectionInfo.add(NewFeature(OneAgent, oneAgentInject))
+	injectionInfo.add(NewFeature(DataIngest, dataIngestInject))
+	return injectionInfo
 }
 
 func NewInjectionInfo() *InjectionInfo {
@@ -119,5 +131,15 @@ func (info *InjectionInfo) injectedAnnotation() string {
 		return ret[:len(ret)-1]
 	} else {
 		return ret
+	}
+}
+
+func (info *InjectionInfo) fillAnnotations(pod *corev1.Pod) {
+	injectedAnnotation := info.injectedAnnotation()
+	if injectedAnnotation != "" {
+		if pod.Annotations == nil {
+			pod.Annotations = map[string]string{}
+		}
+		pod.Annotations[dtwebhook.AnnotationDynatraceInjected] = injectedAnnotation
 	}
 }
