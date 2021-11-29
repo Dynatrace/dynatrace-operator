@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -14,9 +13,8 @@ import (
 func TestCheckStorageCorrectness_FreshDB(t *testing.T) {
 	// db without tables
 	db := emptyMemoryDB()
-	log := logger.NewDTLogger()
 
-	err := CorrectMetadata(nil, db, log)
+	err := CorrectMetadata(nil, db)
 
 	assert.Error(t, err)
 }
@@ -24,9 +22,8 @@ func TestCheckStorageCorrectness_FreshDB(t *testing.T) {
 func TestCheckStorageCorrectness_EmptyDB(t *testing.T) {
 	// db with tables but empty
 	db := FakeMemoryDB()
-	log := logger.NewDTLogger()
 
-	err := CorrectMetadata(nil, db, log)
+	err := CorrectMetadata(nil, db)
 
 	assert.NoError(t, err)
 }
@@ -34,13 +31,12 @@ func TestCheckStorageCorrectness_EmptyDB(t *testing.T) {
 func TestCheckStorageCorrectness_DoNothing(t *testing.T) {
 	db := FakeMemoryDB()
 	db.InsertVolume(&testVolume1)
-	log := logger.NewDTLogger()
 	client := fake.NewClient(
 		&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
 		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
 	)
 
-	err := CorrectMetadata(client, db, log)
+	err := CorrectMetadata(client, db)
 
 	assert.NoError(t, err)
 	vol, err := db.GetVolume(testVolume1.VolumeID)
@@ -56,13 +52,12 @@ func TestCheckStorageCorrectness_PURGE(t *testing.T) {
 	db.InsertDynakube(&testDynakube1)
 	db.InsertDynakube(&testDynakube2)
 	db.InsertDynakube(&testDynakube3)
-	log := logger.NewDTLogger()
 	client := fake.NewClient(
 		&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: testVolume1.PodName}},
 		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: testDynakube1.Name}},
 	)
 
-	err := CorrectMetadata(client, db, log)
+	err := CorrectMetadata(client, db)
 	assert.NoError(t, err)
 
 	vol, err := db.GetVolume(testVolume1.VolumeID)

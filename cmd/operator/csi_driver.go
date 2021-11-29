@@ -86,7 +86,7 @@ func setupCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error
 		log.Error(err, "failed to setup database storage for CSI Driver")
 		os.Exit(1)
 	}
-	if err := metadata.CorrectMetadata(mgr.GetClient(), access, log); err != nil {
+	if err := metadata.CorrectMetadata(mgr.GetClient(), access); err != nil {
 		log.Error(err, "failed to correct database storage for CSI Driver")
 	}
 
