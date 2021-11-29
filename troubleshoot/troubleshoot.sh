@@ -286,8 +286,9 @@ function checkImagePullable {
   log "using '$oneagent_image' on '$oneagent_registry' with version '$oneagent_version' as oneagent image"
 
   # split activegate image into registry and image name
-  activegate_registry="${dynakube_activegate_image%%/*}"
-  activegate_image="${dynakube_activegate_image##"$activegate_registry/"}"
+  activegate_registry="${dynakube_activegate_image%%/linux*}"
+  activegate_image="${dynakube_activegate_image#$activegate_registry}"
+  activegate_image="${activegate_image#/*}"
 
   # check if image has version set
   activegate_image_version="$(${cut_command} --delimiter ':' --only-delimited --fields=2 <<< "${activegate_image}")"
