@@ -312,17 +312,24 @@ func (svr *CSIDriverServer) loadVolumeInfo(volumeID string) (*metadata.Volume, e
 
 func logGRPC() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if info.FullMethod == "/csi.v1.Identity/Probe" {
+		if info.FullMethod == "/csi.v1.Identity/Probe" || info.FullMethod == "/csi.v1.Node/NodeGetCapabilities" {
 			return handler(ctx, req)
 		}
-
-		log.Info("GRPC call", "method", info.FullMethod, "request", req)
-
+		methodName := ""
+		if info.FullMethod == "/csi.v1.Node/NodePublishVolume" {
+			req := req.(csi.NodePublishVolumeRequest)
+			methodName = "NodePublishVolume"
+			log.Info("GRPC call", "method", info.FullMethod, "volume-id", req.VolumeId)
+		} else if info.FullMethod == "/csi.v1.Node/NodeUnpublishVolume" {
+			req := req.(csi.NodeUnpublishVolumeRequest)
+			methodName = "NodeUnpublishVolume"
+			log.Info("GRPC call", "method", info.FullMethod, "volume-id", req.VolumeId)
+		}
 		resp, err := handler(ctx, req)
 		if err != nil {
-			log.Error(err, "GRPC call failed")
+			log.Error(err, fmt.Sprintf("%s GRPC call failed", methodName))
 		} else {
-			log.Info("GRPC call successful", "response", resp)
+			log.Info(fmt.Sprintf("%s GRPC call successful", methodName))
 		}
 		return resp, err
 	}

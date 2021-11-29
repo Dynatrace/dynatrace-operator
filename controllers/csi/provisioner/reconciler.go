@@ -78,9 +78,7 @@ func (r *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 var _ reconcile.Reconciler = &OneAgentProvisioner{}
 
 func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log = log.WithValues("namespace", request.Namespace, "dynakube", request.Name)
-	defer resetLogger()
-	log.Info("Reconciling DynaKube")
+	log.Info("Reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
 	dk, err := r.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {

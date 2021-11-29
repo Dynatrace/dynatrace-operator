@@ -12,7 +12,3 @@ const (
 var (
 	log = logger.NewDTLogger().WithName("csi-provisioner")
 )
-
-func resetLogger() {
-	log = logger.NewDTLogger().WithName("csi-provisioner")
-}
