@@ -96,7 +96,7 @@ func createPodInjector(_ *testing.T, decoder *admission.Decoder, injectionInfo *
 			Namespace: "dynatrace",
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL: "https://test-api-url.com/api",
+			APIURL: "https://tenant.test-api-url.com/api",
 			OneAgent: dynatracev1beta1.OneAgentSpec{
 				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
 					AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
@@ -489,7 +489,7 @@ func createDynakubeInstance(_ *testing.T) *dynatracev1beta1.DynaKube {
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: dynakubeName, Namespace: "dynatrace"},
 		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL: "https://test-api-url.com/api",
+			APIURL: "https://tenant.test-api-url.com/api",
 			OneAgent: dynatracev1beta1.OneAgentSpec{
 				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
 			},
@@ -1342,7 +1342,7 @@ func buildResultPod(_ *testing.T, oneAgentFf FeatureFlag, dataIngestFf FeatureFl
 		)
 
 		pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env,
-			corev1.EnvVar{Name: dtingestendpoint.UrlSecretField, Value: "https://test-api-url.com/api/v2/metrics/ingest"},
+			corev1.EnvVar{Name: dtingestendpoint.UrlSecretField, Value: "https://tenant.test-api-url.com/api/v2/metrics/ingest"},
 			corev1.EnvVar{Name: dtingestendpoint.TokenSecretField, Value: dataIngestToken},
 		)
 

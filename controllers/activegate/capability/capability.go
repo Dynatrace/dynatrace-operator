@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	multiActiveGatePodName    = "activegate"
+	MultiActiveGateName       = "activegate"
 	trustStoreVolume          = "truststore-volume"
 	k8scrt2jksPath            = "/opt/dynatrace/gateway/k8scrt2jks.sh"
 	activeGateCacertsPath     = "/opt/dynatrace/gateway/jre/lib/security/cacerts"
@@ -142,7 +142,7 @@ func (c *capabilityBase) setTlsConfig(agSpec *dynatracev1beta1.ActiveGateSpec) {
 func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 	mc := MultiCapability{
 		capabilityBase{
-			shortName: multiActiveGatePodName,
+			shortName: MultiActiveGateName,
 		},
 	}
 	if dk == nil || !dk.ActiveGateMode() {

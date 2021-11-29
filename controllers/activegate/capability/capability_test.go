@@ -313,7 +313,7 @@ func TestNewMultiCapability(t *testing.T) {
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
 					enabled:   false,
-					shortName: multiActiveGatePodName,
+					shortName: MultiActiveGateName,
 					Configuration: Configuration{
 						CreateService: true,
 					},
@@ -336,7 +336,7 @@ func TestNewMultiCapability(t *testing.T) {
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
 					enabled:    true,
-					shortName:  multiActiveGatePodName,
+					shortName:  MultiActiveGateName,
 					argName:    dynatracev1beta1.RoutingCapability.ArgumentName,
 					properties: props,
 					Configuration: Configuration{
@@ -365,7 +365,7 @@ func TestNewMultiCapability(t *testing.T) {
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
 					enabled:    true,
-					shortName:  multiActiveGatePodName,
+					shortName:  MultiActiveGateName,
 					argName:    dynatracev1beta1.DataIngestCapability.ArgumentName,
 					properties: props,
 					Configuration: Configuration{
@@ -394,7 +394,7 @@ func TestNewMultiCapability(t *testing.T) {
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
 					enabled:    true,
-					shortName:  multiActiveGatePodName,
+					shortName:  MultiActiveGateName,
 					argName:    dynatracev1beta1.KubeMonCapability.ArgumentName,
 					properties: props,
 					Configuration: Configuration{
@@ -449,7 +449,7 @@ func TestNewMultiCapability(t *testing.T) {
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
 					enabled:    true,
-					shortName:  multiActiveGatePodName,
+					shortName:  MultiActiveGateName,
 					argName:    strings.Join([]string{dynatracev1beta1.KubeMonCapability.ArgumentName, dynatracev1beta1.DataIngestCapability.ArgumentName, dynatracev1beta1.RoutingCapability.ArgumentName}, ","),
 					properties: props,
 					Configuration: Configuration{
