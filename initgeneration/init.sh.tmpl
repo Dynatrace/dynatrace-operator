@@ -17,7 +17,6 @@ skip_cert_checks="{{if .SkipCertCheck}}true{{else}}false{{end}}"
 custom_ca="{{if .TrustedCAs}}true{{else}}false{{end}}"
 fail_code=0
 cluster_id="{{.ClusterID}}"
-host_group="{{.HostGroup}}"
 has_host="{{.HasHost}}"
 
 declare -A im_nodes
@@ -36,14 +35,6 @@ fi
 setFailCode(){
 	if [[ "${FAILURE_POLICY}" == "fail" ]]; then
 		fail_code=1
-	fi
-}
-
-setHostGroup(){
-	if [[ "${host_group}" != "" ]]; then
-		cp "${bin_dir}/agent/conf/ruxitagentproc.conf" /tmp
-		sed -i "s/\[general\]/\[general\]\nhostGroup ${host_group}/" tmp/ruxitagentproc.conf
-		cat tmp/ruxitagentproc.conf > "${bin_dir}/agent/conf/ruxitagentproc.conf"
 	fi
 }
 
@@ -116,6 +107,25 @@ tenant ${host_tenant}
 isCloudNativeFullStack true" >> ${1}
 }
 
+writeConfEnrichmentTo() {
+  mkdir -p "${1}"
+  echo "k8s.pod.uid=${K8S_PODUID}
+k8s.pod.name=${K8S_PODNAME}
+k8s.namespace.name=${K8S_NAMESPACE}
+dt.kubernetes.workload.kind=${DT_WORKLOAD_KIND}
+dt.kubernetes.workload.name=${DT_WORKLOAD_NAME}
+dt.kubernetes.cluster.id=${cluster_id}" > "${1}/${2}.properties"
+
+  echo "{
+\"k8s.pod.uid\": \"${K8S_PODUID}\",
+\"k8s.pod.name\": \"${K8S_PODNAME}\",
+\"k8s.namespace.name\": \"${K8S_NAMESPACE}\",
+\"dt.kubernetes.workload.kind\": \"${DT_WORKLOAD_KIND}\",
+\"dt.kubernetes.workload.name\": \"${DT_WORKLOAD_NAME}\",
+\"dt.kubernetes.cluster.id\": \"${cluster_id}\"
+}" > "${1}/${2}.json"
+}
+
 createConfigurationFiles() {
 	echo -n "${INSTALLPATH}/agent/lib64/liboneagentproc.so" >> "${share_dir}/ld.so.preload"
 
@@ -132,6 +142,7 @@ createConfigurationFiles() {
 		echo "Writing ${container_conf_file} file..."
 
 		writeConfBaseTo ${container_conf_file}
+		writeConfEnrichmentTo "/var/lib/dynatrace/enrichment" "dt_metadata"
 
 		if [[ "${host_tenant}" != "-" ]]; then
 			if [[ "{{.TenantUUID}}" == "${host_tenant}" ]]; then
@@ -149,5 +160,3 @@ printf "\nDownloading OneAgent\n"
 downloadOneAgentIfNecessary
 printf "\nCreating configuration files for containers\n"
 createConfigurationFiles
-printf "\nSetting HostGroup\n"
-setHostGroup

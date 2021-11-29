@@ -6,75 +6,30 @@ import (
 	"net/http"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
-	"github.com/Dynatrace/dynatrace-operator/logger"
-	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	appsv1 "k8s.io/api/apps/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-const (
-	exampleApiUrl = "https://ENVIRONMENTID.live.dynatrace.com/api"
-)
+type dynakubeValidator struct {
+	clt       client.Client
+	apiReader client.Reader
+}
 
-const (
-	errorCSIRequired = `
-The Dynakube's specification requires the CSI driver to work. Make sure you deployed the correct manifests.
-`
-	errorConflictingOneagentMode = `
-The DynaKube's specification tries to use multiple oneagent modes at the same time, which is not supported.
-`
-	errorConflictingActiveGateSections = `
-The DynaKube's specification tries to use the deprecated ActiveGate section(s) alongside the new ActiveGate section, which is not supported.
-`
-
-	errorInvalidActiveGateCapability = `
-The DynaKube's specification tries to use an invalid capability in ActiveGate section, invalid capability=%s.
-Make sure you correctly specify the ActiveGate capabilities in your custom resource.
-`
-
-	errorDuplicateActiveGateCapability = `
-The DynaKube's specification tries to specify duplicate capabilities in the ActiveGate section, duplicate capability=%s.
-Make sure you don't duplicate an Activegate capability in your custom resource.
-`
-	errorConflictingNamespaceSelector = `
-The DynaKube's specification tries to inject into namespaces where another Dynakube already injects into, which is not supported.
-Make sure the namespaceSelector doesn't conflict with other Dynakubes namespaceSelector
-`
-
-	errorNodeSelectorConflict = `
-The DynaKube's specification tries to specify a nodeSelector conflicts with an another Dynakube's nodeSelector, which is not supported.
-The conflicting Dynakube: %s
-`
-
-	errorNoApiUrl = `
-The DynaKube's specification is missing the API URL or still has the example value set.
-Make sure you correctly specify the URL in your custom resource.
-`
-	warningCloudNativeFullStack  = `cloudNativeFullStack mode is in PREVIEW. Please be aware that it is NOT production ready and you may run into bugs.`
-	warningApplicationMonitoring = `applicationMonitoring mode is in PREVIEW. Please be aware that it is NOT production ready and you may run into bugs.`
-)
+func newDynakubeValidator(apiReader client.Reader) admission.Handler {
+	return &dynakubeValidator{
+		apiReader: apiReader,
+	}
+}
 
 func AddDynakubeValidationWebhookToManager(manager ctrl.Manager) error {
 	manager.GetWebhookServer().Register("/validate", &webhook.Admission{
 		Handler: newDynakubeValidator(manager.GetAPIReader()),
 	})
 	return nil
-}
-
-type dynakubeValidator struct {
-	logger    logr.Logger
-	clt       client.Client
-	apiReader client.Reader
 }
 
 // InjectClient implements the inject.Client interface which allows the manager to inject a kubernetes client into this handler
@@ -84,152 +39,41 @@ func (validator *dynakubeValidator) InjectClient(clt client.Client) error {
 }
 
 func (validator *dynakubeValidator) Handle(_ context.Context, request admission.Request) admission.Response {
-	validator.logger.Info("validating request", "name", request.Name, "namespace", request.Namespace)
+	log.Info("validating request", "name", request.Name, "namespace", request.Namespace)
 
 	dynakube := &dynatracev1beta1.DynaKube{}
 	err := decodeRequestToDynakube(request, dynakube)
 	if err != nil {
 		return admission.Errored(http.StatusInternalServerError, errors.WithStack(err))
 	}
-
-	if !hasApiUrl(dynakube) {
-		validator.logger.Info("requested dynakube has no api url", "name", request.Name, "namespace", request.Namespace)
-		return admission.Denied(errorNoApiUrl)
+	validationErrors := validator.runValidators(validators, dynakube)
+	response := admission.Allowed("")
+	if len(validationErrors) > 0 {
+		response = admission.Denied(sumErrors(validationErrors))
 	}
-
-	if hasConflictingOneAgentConfiguration(dynakube) {
-		validator.logger.Info("requested dynakube has conflicting one agent configuration", "name", request.Name, "namespace", request.Namespace)
-		return admission.Denied(errorConflictingOneagentMode)
+	warningMessages := validator.runValidators(warnings, dynakube)
+	if len(warningMessages) > 0 {
+		response = response.WithWarnings(warningMessages...)
 	}
-
-	if hasConflictingActiveGateConfiguration(dynakube) {
-		validator.logger.Info("requested dynakube has conflicting active gate configuration", "name", request.Name, "namespace", request.Namespace)
-		return admission.Denied(errorConflictingActiveGateSections)
-	}
-
-	if validator.hasConflictingNamespaceSelector(dynakube) {
-		validator.logger.Info("requested dynakube has conflicting namespaceSelector", "name", request.Name, "namespace", request.Namespace)
-		return admission.Denied(errorConflictingNamespaceSelector)
-	}
-
-	if missingCSIDaemonSet(validator.clt, dynakube, validator.logger) {
-		validator.logger.Info("requested dynakube uses csi driver, but csi driver is missing in the cluster", "name", request.Name, "namespace", request.Namespace)
-		return admission.Denied(errorCSIRequired)
-	}
-
-	if errMsg := hasInvalidActiveGateCapabilities(dynakube); errMsg != "" {
-		validator.logger.Info("requested dynakube has invalid active gate capability", "name", request.Name, "namespace", request.Namespace)
-		return admission.Denied(errMsg)
-	}
-
-	if errMsg := hasConflictingNodeSelector(validator.clt, dynakube, validator.logger); errMsg != "" {
-		validator.logger.Info("requested dynakube has conflicting nodeSelector", "name", request.Name, "namespace", request.Namespace)
-		return admission.Denied(errMsg)
-	}
-
-	validator.logger.Info("requested dynakube is valid", "name", request.Name, "namespace", request.Namespace)
-	if dynakube.CloudNativeFullstackMode() {
-		validator.logger.Info("Dynakube with cloudNativeFullStack was applied, warning was provided.")
-		return admission.Allowed("").WithWarnings(warningCloudNativeFullStack)
-	} else if dynakube.ApplicationMonitoringMode() && dynakube.NeedsCSIDriver() {
-		validator.logger.Info("Dynakube with applicationMonitoring was applied, warning was provided.")
-		return admission.Allowed("").WithWarnings(warningApplicationMonitoring)
-	}
-	return admission.Allowed("")
+	return response
 }
 
-func hasApiUrl(dynakube *dynatracev1beta1.DynaKube) bool {
-	return dynakube.Spec.APIURL != "" && dynakube.Spec.APIURL != exampleApiUrl
-}
-
-func hasConflictingOneAgentConfiguration(dynakube *dynatracev1beta1.DynaKube) bool {
-	counter := 0
-	if dynakube.ApplicationMonitoringMode() {
-		counter += 1
-	}
-	if dynakube.CloudNativeFullstackMode() {
-		counter += 1
-	}
-	if dynakube.ClassicFullStackMode() {
-		counter += 1
-	}
-	if dynakube.HostMonitoringMode() {
-		counter += 1
-	}
-	return counter > 1
-}
-
-func (validator *dynakubeValidator) hasConflictingNamespaceSelector(dynakube *dynatracev1beta1.DynaKube) bool {
-	if !dynakube.NeedAppInjection() {
-		return false
-	}
-	dkMapper := mapper.NewDynakubeMapper(context.TODO(), validator.clt, validator.apiReader, dynakube.Namespace, dynakube, validator.logger)
-	_, err := dkMapper.MatchingNamespaces()
-	return err != nil
-}
-
-func hasConflictingActiveGateConfiguration(dynakube *dynatracev1beta1.DynaKube) bool {
-	return dynakube.DeprecatedActiveGateMode() && dynakube.ActiveGateMode()
-}
-
-func hasInvalidActiveGateCapabilities(dynakube *dynatracev1beta1.DynaKube) string {
-	if dynakube.ActiveGateMode() {
-		capabilities := dynakube.Spec.ActiveGate.Capabilities
-		duplicateChecker := map[dynatracev1beta1.CapabilityDisplayName]bool{}
-		for _, capability := range capabilities {
-			if _, ok := dynatracev1beta1.ActiveGateDisplayNames[capability]; !ok {
-				return fmt.Sprintf(errorInvalidActiveGateCapability, capability)
-			} else if duplicateChecker[capability] {
-				return fmt.Sprintf(errorDuplicateActiveGateCapability, capability)
-			}
-			duplicateChecker[capability] = true
+func (validator *dynakubeValidator) runValidators(validators []validator, dynakube *dynatracev1beta1.DynaKube) []string {
+	results := []string{}
+	for _, validate := range validators {
+		if errMsg := validate(validator, dynakube); errMsg != "" {
+			results = append(results, errMsg)
 		}
 	}
-	return ""
+	return results
 }
 
-func missingCSIDaemonSet(client client.Client, dynakube *dynatracev1beta1.DynaKube, logger logr.Logger) bool {
-	if !dynakube.NeedsCSIDriver() {
-		return false
+func sumErrors(validationErrors []string) string {
+	summedErrors := fmt.Sprintf("\n%d error(s) found in the Dynakube", len(validationErrors))
+	for i, errMsg := range validationErrors {
+		summedErrors += fmt.Sprintf("\n %d. %s", i+1, errMsg)
 	}
-	csiDaemonSet := appsv1.DaemonSet{}
-	err := client.Get(context.TODO(), types.NamespacedName{Name: dtcsi.DaemonSetName, Namespace: dynakube.Namespace}, &csiDaemonSet)
-	if k8serrors.IsNotFound(err) {
-		return true
-	} else if err != nil {
-		logger.Info("error occurred while listing dynakubes", "err", err.Error())
-	}
-	return false
-}
-
-func hasConflictingNodeSelector(client client.Client, dynakube *dynatracev1beta1.DynaKube, logger logr.Logger) string {
-	if !dynakube.NeedsOneAgent() || dynakube.NodeSelector() == nil {
-		return ""
-	}
-	validDynakubes := &dynatracev1beta1.DynaKubeList{}
-	if err := client.List(context.TODO(), validDynakubes); err != nil {
-		logger.Info("error occurred while listing dynakubes", "err", err.Error())
-		return ""
-	}
-	for _, item := range validDynakubes.Items {
-		nodeSelectorMap := dynakube.NodeSelector()
-		validNodeSelectorMap := item.NodeSelector()
-		if item.Name != dynakube.Name && hasConflictingMatchLabels(nodeSelectorMap, validNodeSelectorMap) {
-			return fmt.Sprintf(errorNodeSelectorConflict, item.Name)
-		}
-	}
-	return ""
-}
-
-func hasConflictingMatchLabels(labelMap, otherLabelMap map[string]string) bool {
-	if labelMap != nil && otherLabelMap != nil {
-		labelSelector := labels.SelectorFromSet(labelMap)
-		otherLabelSelector := labels.SelectorFromSet(otherLabelMap)
-		labelSelectorLabels := labels.Set(labelMap)
-		otherLabelSelectorLabels := labels.Set(otherLabelMap)
-		return labelSelector.Matches(otherLabelSelectorLabels) || otherLabelSelector.Matches(labelSelectorLabels)
-	}
-	return false
+	return summedErrors
 }
 
 func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1beta1.DynaKube) error {
@@ -243,11 +87,4 @@ func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1bet
 		return errors.WithStack(err)
 	}
 	return nil
-}
-
-func newDynakubeValidator(apiReader client.Reader) admission.Handler {
-	return &dynakubeValidator{
-		logger:    logger.NewDTLogger(),
-		apiReader: apiReader,
-	}
 }
