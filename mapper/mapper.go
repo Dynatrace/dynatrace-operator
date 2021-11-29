@@ -17,7 +17,7 @@ import (
 const (
 	InstanceLabel                = dtwebhook.LabelInstance
 	UpdatedViaDynakubeAnnotation = "dynatrace.com/updated-via-operator"
-	ConflictErrorMessage         = "namespace matches two or more DynaKubes which is unsupported. " +
+	ErrorConflictingNamespace    = "namespace matches two or more DynaKubes which is unsupported. " +
 		"refine the labels on your namespace metadata or DynaKube/CodeModules specification"
 )
 
@@ -30,7 +30,7 @@ func (c *ConflictChecker) check(dk *dynatracev1beta1.DynaKube) error {
 		return nil
 	}
 	if c.alreadyUsed {
-		return errors.New(ConflictErrorMessage)
+		return errors.New(ErrorConflictingNamespace)
 	}
 	c.alreadyUsed = true
 	return nil

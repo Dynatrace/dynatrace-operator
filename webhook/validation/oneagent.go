@@ -67,12 +67,9 @@ func hasConflictingMatchLabels(labelMap, otherLabelMap map[string]string) bool {
 	if labelMap == nil || otherLabelMap == nil {
 		return true
 	}
-	if labelMap != nil && otherLabelMap != nil {
-		labelSelector := labels.SelectorFromSet(labelMap)
-		otherLabelSelector := labels.SelectorFromSet(otherLabelMap)
-		labelSelectorLabels := labels.Set(labelMap)
-		otherLabelSelectorLabels := labels.Set(otherLabelMap)
-		return labelSelector.Matches(otherLabelSelectorLabels) || otherLabelSelector.Matches(labelSelectorLabels)
-	}
-	return false
+	labelSelector := labels.SelectorFromSet(labelMap)
+	otherLabelSelector := labels.SelectorFromSet(otherLabelMap)
+	labelSelectorLabels := labels.Set(labelMap)
+	otherLabelSelectorLabels := labels.Set(otherLabelMap)
+	return labelSelector.Matches(otherLabelSelectorLabels) || otherLabelSelector.Matches(labelSelectorLabels)
 }

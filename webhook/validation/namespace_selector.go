@@ -22,7 +22,7 @@ func conflictingNamespaceSelector(dv *dynakubeValidator, dynakube *dynatracev1be
 	}
 	dkMapper := mapper.NewDynakubeMapper(context.TODO(), dv.clt, dv.apiReader, dynakube.Namespace, dynakube, log)
 	_, err := dkMapper.MatchingNamespaces()
-	if err != nil && err.Error() == mapper.ConflictErrorMessage {
+	if err != nil && err.Error() == mapper.ErrorConflictingNamespace {
 		if dynakube.NamespaceSelector().MatchExpressions == nil && dynakube.NamespaceSelector().MatchLabels == nil {
 			log.Info("requested dynakube has conflicting namespaceSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
 			return errorConflictingNamespaceSelectorNoSelector
