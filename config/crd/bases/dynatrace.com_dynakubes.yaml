@@ -1127,8 +1127,9 @@ spec:
                     type: string
                   image:
                     description: 'Optional: the ActiveGate container image. Defaults
-                      to the latest ActiveGate image provided by the Docker Registry
-                      implementation from the Dynatrace environment set as API URL.'
+                      to the latest ActiveGate image provided by the registry on the
+                      tenant implementation from the Dynatrace environment set as
+                      API URL.'
                     type: string
                   labels:
                     additionalProperties:
@@ -1365,8 +1366,9 @@ spec:
                     type: string
                   image:
                     description: 'Optional: the ActiveGate container image. Defaults
-                      to the latest ActiveGate image provided by the Docker Registry
-                      implementation from the Dynatrace environment set as API URL.'
+                      to the latest ActiveGate image provided by the registry on the
+                      tenant implementation from the Dynatrace environment set as
+                      API URL.'
                     type: string
                   labels:
                     additionalProperties:
@@ -1689,9 +1691,8 @@ spec:
                         type: array
                       image:
                         description: 'Optional: the Dynatrace installer container
-                          image Defaults to docker.io/dynatrace/oneagent:latest for
-                          Kubernetes and to registry.connect.redhat.com/dynatrace/oneagent
-                          for OpenShift'
+                          image Defaults to the registry in the tenant for both Kubernetes
+                          and for OpenShift'
                         type: string
                       labels:
                         additionalProperties:
@@ -2420,8 +2421,9 @@ spec:
                     type: string
                   image:
                     description: 'Optional: the ActiveGate container image. Defaults
-                      to the latest ActiveGate image provided by the Docker Registry
-                      implementation from the Dynatrace environment set as API URL.'
+                      to the latest ActiveGate image provided by the registry on the
+                      tenant implementation from the Dynatrace environment set as
+                      API URL.'
                     type: string
                   labels:
                     additionalProperties:
