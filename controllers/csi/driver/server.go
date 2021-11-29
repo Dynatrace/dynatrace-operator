@@ -319,17 +319,15 @@ func logGRPC() grpc.UnaryServerInterceptor {
 		if info.FullMethod == "/csi.v1.Node/NodePublishVolume" {
 			req := req.(csi.NodePublishVolumeRequest)
 			methodName = "NodePublishVolume"
-			log.Info("GRPC call", "method", info.FullMethod, "volume-id", req.VolumeId)
+			log.Info("GRPC call", "method", methodName, "volume-id", req.VolumeId)
 		} else if info.FullMethod == "/csi.v1.Node/NodeUnpublishVolume" {
 			req := req.(csi.NodeUnpublishVolumeRequest)
 			methodName = "NodeUnpublishVolume"
-			log.Info("GRPC call", "method", info.FullMethod, "volume-id", req.VolumeId)
+			log.Info("GRPC call", "method", methodName, "volume-id", req.VolumeId)
 		}
 		resp, err := handler(ctx, req)
 		if err != nil {
 			log.Error(err, fmt.Sprintf("%s GRPC call failed", methodName))
-		} else {
-			log.Info(fmt.Sprintf("%s GRPC call successful", methodName))
 		}
 		return resp, err
 	}
