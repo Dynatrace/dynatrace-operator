@@ -91,7 +91,7 @@ func (r *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID string, p
 
 func (installAgentCfg *installAgentConfig) updateProcessModuleConfig(version, tenantUUID string, processModuleConfig *dtclient.ProcessModuleConfig) error {
 	if processModuleConfig != nil {
-		installAgentCfg.logger.Info("updating ruxitagentproc.conf", "agentVersion", version, "tenantUUID", tenantUUID)
+		log.Info("updating ruxitagentproc.conf", "agentVersion", version, "tenantUUID", tenantUUID)
 		usedProcessModuleConfigPath := installAgentCfg.path.AgentProcessModuleConfigForVersion(tenantUUID, version)
 		sourceProcessModuleConfigPath := installAgentCfg.path.SourceAgentProcessModuleConfigForVersion(tenantUUID, version)
 		if err := installAgentCfg.checkProcessModuleConfigCopy(sourceProcessModuleConfigPath, usedProcessModuleConfigPath); err != nil {
@@ -99,7 +99,7 @@ func (installAgentCfg *installAgentConfig) updateProcessModuleConfig(version, te
 		}
 		return processmoduleconfig.Update(installAgentCfg.fs, sourceProcessModuleConfigPath, usedProcessModuleConfigPath, processModuleConfig.ToMap())
 	}
-	installAgentCfg.logger.Info("no changes to ruxitagentproc.conf, skipping update")
+	log.Info("no changes to ruxitagentproc.conf, skipping update")
 	return nil
 }
 
@@ -108,6 +108,7 @@ func (installAgentCfg *installAgentConfig) updateProcessModuleConfig(version, te
 // so its easier to update
 func (installAgentCfg *installAgentConfig) checkProcessModuleConfigCopy(sourcePath, destPath string) error {
 	if _, err := installAgentCfg.fs.Open(sourcePath); os.IsNotExist(err) {
+		log.Info("saving original ruxitagentproc.conf to _ruxitagentproc.conf")
 		fileInfo, err := installAgentCfg.fs.Stat(destPath)
 		if err != nil {
 			return err

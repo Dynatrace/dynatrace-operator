@@ -10,7 +10,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -154,9 +153,8 @@ func TestUpdateProcessModuleConfig(t *testing.T) {
 	memFs := afero.NewMemMapFs()
 	prepTestConfFs(memFs)
 	agentConfig := &installAgentConfig{
-		fs:     memFs,
-		dk:     &dynatracev1beta1.DynaKube{},
-		logger: logger.NewDTLogger(),
+		fs: memFs,
+		dk: &dynatracev1beta1.DynaKube{},
 	}
 	expectedUsed := `
 [general]

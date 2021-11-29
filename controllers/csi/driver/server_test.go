@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	logr "github.com/go-logr/logr/testing"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -312,7 +311,6 @@ func newServerForTesting(t *testing.T, mounter *mount.FakeMounter) CSIDriverServ
 
 	return CSIDriverServer{
 		client:  fake.NewClient(objects...),
-		log:     logr.TestLogger{T: t},
 		opts:    csiOptions,
 		fs:      afero.Afero{Fs: tmpFs},
 		mounter: mounter,

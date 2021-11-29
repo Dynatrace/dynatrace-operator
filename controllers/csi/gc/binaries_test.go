@@ -7,7 +7,6 @@ import (
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/spf13/afero"
@@ -104,11 +103,10 @@ func TestBinaryGarbageCollector_ignoresUsed(t *testing.T) {
 
 func NewMockGarbageCollector() *CSIGarbageCollector {
 	return &CSIGarbageCollector{
-		logger: logger.NewDTLogger(),
-		opts:   dtcsi.CSIOptions{RootDir: rootDir},
-		fs:     afero.NewMemMapFs(),
-		db:     metadata.FakeMemoryDB(),
-		path:   metadata.PathResolver{RootDir: rootDir},
+		opts: dtcsi.CSIOptions{RootDir: rootDir},
+		fs:   afero.NewMemMapFs(),
+		db:   metadata.FakeMemoryDB(),
+		path: metadata.PathResolver{RootDir: rootDir},
 	}
 }
 

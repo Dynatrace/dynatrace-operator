@@ -4,7 +4,6 @@ import (
 	"context"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -12,18 +11,18 @@ import (
 
 // CorrectMetadata checks if the entries in the storage are actually valid
 // Removes not valid entries
-func CorrectMetadata(cl client.Client, access Access, log logr.Logger) error {
-	if err := correctVolumes(cl, access, log); err != nil {
+func CorrectMetadata(cl client.Client, access Access) error {
+	if err := correctVolumes(cl, access); err != nil {
 		return err
 	}
-	if err := correctDynakubes(cl, access, log); err != nil {
+	if err := correctDynakubes(cl, access); err != nil {
 		return err
 	}
 	return nil
 }
 
 // Removes volume entries if their pod is no longer exists
-func correctVolumes(cl client.Client, access Access, log logr.Logger) error {
+func correctVolumes(cl client.Client, access Access) error {
 	podNames, err := access.GetPodNames()
 	if err != nil {
 		return err
@@ -45,7 +44,7 @@ func correctVolumes(cl client.Client, access Access, log logr.Logger) error {
 }
 
 // Removes dynakube entries if their Dynakube instance no longer exists in the cluster
-func correctDynakubes(cl client.Client, access Access, log logr.Logger) error {
+func correctDynakubes(cl client.Client, access Access) error {
 	dynakubes, err := access.GetDynakubes()
 	if err != nil {
 		return err

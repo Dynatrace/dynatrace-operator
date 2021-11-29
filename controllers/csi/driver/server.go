@@ -28,11 +28,8 @@ import (
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/go-logr/logr"
-	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/spf13/afero"
 	"google.golang.org/grpc"
@@ -42,35 +39,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
-
-var (
-	memoryUsageMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "dynatrace",
-		Subsystem: "csi_driver",
-		Name:      "memory_usage",
-		Help:      "Memory usage of the csi driver in bytes",
-	})
-	agentsVersionsMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "dynatrace",
-		Subsystem: "csi_driver",
-		Name:      "agent_versions",
-		Help:      "Number of an agent version currently mounted by the CSI driver",
-	}, []string{"version"})
-	memoryMetricTick = 5000 * time.Millisecond
-)
-
-func init() {
-	metrics.Registry.MustRegister(memoryUsageMetric)
-	metrics.Registry.MustRegister(agentsVersionsMetric)
-}
-
-var log = logger.NewDTLogger().WithName("server")
 
 type CSIDriverServer struct {
 	client  client.Client
-	log     logr.Logger
 	opts    dtcsi.CSIOptions
 	fs      afero.Afero
 	mounter mount.Interface
@@ -85,7 +57,6 @@ var _ csi.NodeServer = &CSIDriverServer{}
 func NewServer(client client.Client, opts dtcsi.CSIOptions, db metadata.Access) *CSIDriverServer {
 	return &CSIDriverServer{
 		client:  client,
-		log:     log,
 		opts:    opts,
 		fs:      afero.Afero{Fs: afero.NewOsFs()},
 		mounter: mount.New(""),
@@ -110,23 +81,23 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 		}
 	}
 
-	svr.log.Info("Starting listener", "protocol", proto, "address", addr)
+	log.Info("Starting listener", "protocol", proto, "address", addr)
 
 	listener, err := net.Listen(proto, addr)
 	if err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 
-	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC(log)))
+	server := grpc.NewServer(grpc.UnaryInterceptor(logGRPC()))
 	go func() {
 		ticker := time.NewTicker(memoryMetricTick)
 		done := false
 		for !done {
 			select {
 			case <-ctx.Done():
-				svr.log.Info("Stopping server")
+				log.Info("Stopping server")
 				server.GracefulStop()
-				svr.log.Info("Stopped server")
+				log.Info("Stopped server")
 				done = true
 			case <-ticker.C:
 				var m runtime.MemStats
@@ -139,7 +110,7 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 	csi.RegisterIdentityServer(server, svr)
 	csi.RegisterNodeServer(server, svr)
 
-	svr.log.Info("Listening for connections on address", "address", listener.Addr())
+	log.Info("Listening for connections on address", "address", listener.Addr())
 
 	_ = server.Serve(listener)
 
@@ -180,7 +151,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	svr.log.Info("Publishing volume",
+	log.Info("Publishing volume",
 		"target", volumeCfg.targetPath,
 		"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
 		"readonly", req.GetReadonly(),
@@ -213,7 +184,7 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 
 	volume, err := svr.loadVolumeInfo(volumeID)
 	if err != nil {
-		svr.log.Info("failed to load volume info", "error", err.Error())
+		log.Info("failed to load volume info", "error", err.Error())
 	}
 
 	overlayFSPath := svr.path.AgentRunDirForVolume(volume.TenantUUID, volumeID)
@@ -225,13 +196,13 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 	if err = svr.db.DeleteVolume(volume.VolumeID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	svr.log.Info("deleted volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	log.Info("deleted volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 
 	if err = svr.fs.RemoveAll(targetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	svr.log.Info("volume has been unpublished", "targetPath", targetPath)
+	log.Info("volume has been unpublished", "targetPath", targetPath)
 
 	svr.fireVolumeUnpublishedMetric(*volume)
 
@@ -243,7 +214,7 @@ func (svr *CSIDriverServer) fireVolumeUnpublishedMetric(volume metadata.Volume) 
 		agentsVersionsMetric.WithLabelValues(volume.Version).Dec()
 		var m = &dto.Metric{}
 		if err := agentsVersionsMetric.WithLabelValues(volume.Version).Write(m); err != nil {
-			svr.log.Error(err, "failed to get the value of agent version metric")
+			log.Error(err, "failed to get the value of agent version metric")
 		}
 		if m.Gauge.GetValue() <= float64(0) {
 			agentsVersionsMetric.DeleteLabelValues(volume.Version)
@@ -308,13 +279,13 @@ func (svr *CSIDriverServer) mountOneAgent(bindCfg *bindConfig, volumeCfg *volume
 
 func (svr *CSIDriverServer) umountOneAgent(targetPath string, overlayFSPath string) error {
 	if err := svr.mounter.Unmount(targetPath); err != nil {
-		svr.log.Error(err, "Unmount failed", "path", targetPath)
+		log.Error(err, "Unmount failed", "path", targetPath)
 	}
 
 	if filepath.IsAbs(overlayFSPath) {
 		agentDirectoryForPod := filepath.Join(overlayFSPath, dtcsi.OverlayMappedDirPath)
 		if err := svr.mounter.Unmount(agentDirectoryForPod); err != nil {
-			svr.log.Error(err, "Unmount failed", "path", agentDirectoryForPod)
+			log.Error(err, "Unmount failed", "path", agentDirectoryForPod)
 		}
 	}
 
@@ -323,7 +294,7 @@ func (svr *CSIDriverServer) umountOneAgent(targetPath string, overlayFSPath stri
 
 func (svr *CSIDriverServer) storeVolumeInfo(bindCfg *bindConfig, volumeCfg *volumeConfig) error {
 	volume := metadata.NewVolume(volumeCfg.volumeId, volumeCfg.podName, bindCfg.version, bindCfg.tenantUUID)
-	svr.log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 	return svr.db.InsertVolume(volume)
 }
 
@@ -335,23 +306,28 @@ func (svr *CSIDriverServer) loadVolumeInfo(volumeID string) (*metadata.Volume, e
 	if volume == nil {
 		return &metadata.Volume{}, nil
 	}
-	svr.log.Info("loaded volume info", "id", volume.VolumeID, "pod name", volume.PodName, "version", volume.Version, "dynakube", volume.TenantUUID)
+	log.Info("loaded volume info", "id", volume.VolumeID, "pod name", volume.PodName, "version", volume.Version, "dynakube", volume.TenantUUID)
 	return volume, nil
 }
 
-func logGRPC(log logr.Logger) grpc.UnaryServerInterceptor {
+func logGRPC() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if info.FullMethod == "/csi.v1.Identity/Probe" {
+		if info.FullMethod == "/csi.v1.Identity/Probe" || info.FullMethod == "/csi.v1.Node/NodeGetCapabilities" {
 			return handler(ctx, req)
 		}
-
-		log.Info("GRPC call", "method", info.FullMethod, "request", req)
-
+		methodName := ""
+		if info.FullMethod == "/csi.v1.Node/NodePublishVolume" {
+			req := req.(*csi.NodePublishVolumeRequest)
+			methodName = "NodePublishVolume"
+			log.Info("GRPC call", "method", methodName, "volume-id", req.VolumeId)
+		} else if info.FullMethod == "/csi.v1.Node/NodeUnpublishVolume" {
+			req := req.(*csi.NodeUnpublishVolumeRequest)
+			methodName = "NodeUnpublishVolume"
+			log.Info("GRPC call", "method", methodName, "volume-id", req.VolumeId)
+		}
 		resp, err := handler(ctx, req)
 		if err != nil {
-			log.Error(err, "GRPC call failed")
-		} else {
-			log.Info("GRPC call successful", "response", resp)
+			log.Error(err, fmt.Sprintf("%s GRPC call failed", methodName))
 		}
 		return resp, err
 	}

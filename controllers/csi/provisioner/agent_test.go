@@ -10,7 +10,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -32,7 +31,6 @@ func (fs failFs) OpenFile(string, int, os.FileMode) (afero.File, error) {
 }
 
 func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
-	log := logger.NewDTLogger()
 	t.Run(`error when creating temp file`, func(t *testing.T) {
 		fs := failFs{
 			Fs: afero.NewMemMapFs(),
@@ -55,9 +53,8 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, mock.AnythingOfType("string")).
 			Return([]string{}, fmt.Errorf(errorMsg))
 		installAgentCfg := &installAgentConfig{
-			fs:     fs,
-			dtc:    dtc,
-			logger: log,
+			fs:  fs,
+			dtc: dtc,
 		}
 
 		err := installAgentCfg.installAgent("", "")
@@ -81,9 +78,8 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			}).
 			Return(nil)
 		installAgentCfg := &installAgentConfig{
-			fs:     fs,
-			dtc:    dtc,
-			logger: log,
+			fs:  fs,
+			dtc: dtc,
 		}
 
 		err := installAgentCfg.installAgent("", "")
@@ -109,10 +105,9 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 			}).
 			Return(nil)
 		installAgentCfg := &installAgentConfig{
-			fs:     fs,
-			dtc:    dtc,
-			logger: log,
-			path:   pathResolver,
+			fs:   fs,
+			dtc:  dtc,
+			path: pathResolver,
 		}
 
 		err := installAgentCfg.installAgent("", "")
@@ -140,9 +135,8 @@ func TestOneAgentProvisioner_Unzip(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		pathResolver := metadata.PathResolver{RootDir: testDir}
 		installAgentCfg := &installAgentConfig{
-			path:   pathResolver,
-			logger: log,
-			fs:     fs,
+			path: pathResolver,
+			fs:   fs,
 		}
 		zipFile := setupTestZip(t, fs)
 		defer func() { _ = zipFile.Close() }()

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -76,10 +75,6 @@ const (
 	SELECT tenantUUID, Name
 	FROM dynakubes;
 	`
-)
-
-var (
-	log = logger.NewDTLogger().WithName("storage")
 )
 
 type SqliteAccess struct {
