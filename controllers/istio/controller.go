@@ -7,7 +7,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	"github.com/go-logr/logr"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,7 +17,6 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type probeResult int
@@ -35,10 +33,8 @@ const (
 type Controller struct {
 	istioClient istioclientset.Interface
 	scheme      *runtime.Scheme
-
-	logger    logr.Logger
-	config    *rest.Config
-	namespace string
+	config      *rest.Config
+	namespace   string
 }
 
 // NewController - creates new instance of istio controller
@@ -46,7 +42,6 @@ func NewController(config *rest.Config, scheme *runtime.Scheme) *Controller {
 	c := &Controller{
 		config:    config,
 		scheme:    scheme,
-		logger:    log.Log.WithName("istio.controller"),
 		namespace: os.Getenv("POD_NAMESPACE"),
 	}
 	istioClient, err := c.initializeIstioClient(config)
@@ -61,7 +56,7 @@ func NewController(config *rest.Config, scheme *runtime.Scheme) *Controller {
 func (c *Controller) initializeIstioClient(config *rest.Config) (istioclientset.Interface, error) {
 	ic, err := istioclientset.NewForConfig(config)
 	if err != nil {
-		c.logger.Error(err, "istio: failed to initialize client")
+		log.Error(err, "istio: failed to initialize client")
 	}
 
 	return ic, err
@@ -75,7 +70,7 @@ func (c *Controller) ReconcileIstio(instance *dynatracev1beta1.DynaKube) (update
 	if err != nil {
 		return false, fmt.Errorf("istio: failed to verify Istio availability: %w", err)
 	}
-	c.logger.Info("istio: status", "enabled", enabled)
+	log.Info("istio: status", "enabled", enabled)
 
 	if !enabled {
 		return false, nil
@@ -144,19 +139,19 @@ func (c *Controller) removeIstioConfigurationForServiceEntry(listOps *metav1.Lis
 
 	list, err := c.istioClient.NetworkingV1alpha3().ServiceEntries(namespace).List(context.TODO(), *listOps)
 	if err != nil {
-		c.logger.Error(err, fmt.Sprintf("istio: error listing service entries, %v", err))
+		log.Error(err, fmt.Sprintf("istio: error listing service entries, %v", err))
 		return false, err
 	}
 
 	del := false
 	for _, se := range list.Items {
 		if _, inUse := seen[se.GetName()]; !inUse {
-			c.logger.Info(fmt.Sprintf("istio: removing %s: %v", se.Kind, se.GetName()))
+			log.Info(fmt.Sprintf("istio: removing %s: %v", se.Kind, se.GetName()))
 			err = c.istioClient.NetworkingV1alpha3().
 				ServiceEntries(namespace).
 				Delete(context.TODO(), se.GetName(), metav1.DeleteOptions{})
 			if err != nil {
-				c.logger.Error(err, fmt.Sprintf("istio: error deleting service entry, %s : %v", se.GetName(), err))
+				log.Error(err, fmt.Sprintf("istio: error deleting service entry, %s : %v", se.GetName(), err))
 				continue
 			}
 			del = true
@@ -171,19 +166,19 @@ func (c *Controller) removeIstioConfigurationForVirtualService(listOps *metav1.L
 
 	list, err := c.istioClient.NetworkingV1alpha3().VirtualServices(namespace).List(context.TODO(), *listOps)
 	if err != nil {
-		c.logger.Error(err, fmt.Sprintf("istio: error listing virtual service, %v", err))
+		log.Error(err, fmt.Sprintf("istio: error listing virtual service, %v", err))
 		return false, err
 	}
 
 	del := false
 	for _, vs := range list.Items {
 		if _, inUse := seen[vs.GetName()]; !inUse {
-			c.logger.Info(fmt.Sprintf("istio: removing %s: %v", vs.Kind, vs.GetName()))
+			log.Info(fmt.Sprintf("istio: removing %s: %v", vs.Kind, vs.GetName()))
 			err = c.istioClient.NetworkingV1alpha3().
 				VirtualServices(namespace).
 				Delete(context.TODO(), vs.GetName(), metav1.DeleteOptions{})
 			if err != nil {
-				c.logger.Error(err, fmt.Sprintf("istio: error deleting virtual service, %s : %v", vs.GetName(), err))
+				log.Error(err, fmt.Sprintf("istio: error deleting virtual service, %s : %v", vs.GetName(), err))
 				continue
 			}
 			del = true
@@ -198,7 +193,7 @@ func (c *Controller) reconcileIstioCreateConfigurations(instance *dynatracev1bet
 
 	crdProbe := c.verifyIstioCrdAvailability(instance)
 	if crdProbe != probeTypeFound {
-		c.logger.Info("istio: failed to lookup CRD for ServiceEntry/VirtualService: Did you install Istio recently? Please restart the Operator.")
+		log.Info("istio: failed to lookup CRD for ServiceEntry/VirtualService: Did you install Istio recently? Please restart the Operator.")
 		return false, nil
 	}
 
@@ -244,7 +239,7 @@ func (c *Controller) handleIstioConfigurationForVirtualService(instance *dynatra
 	if probe == probeObjectFound {
 		return false, nil
 	} else if probe == probeUnknown {
-		c.logger.Error(err, "istio: failed to query VirtualService")
+		log.Error(err, "istio: failed to query VirtualService")
 		return false, err
 	}
 
@@ -256,10 +251,10 @@ func (c *Controller) handleIstioConfigurationForVirtualService(instance *dynatra
 
 	err = c.createIstioConfigurationForVirtualService(instance, virtualService, role)
 	if err != nil {
-		c.logger.Error(err, "istio: failed to create VirtualService")
+		log.Error(err, "istio: failed to create VirtualService")
 		return false, err
 	}
-	c.logger.Info("istio: VirtualService created", "objectName", name, "host", communicationHost.Host,
+	log.Info("istio: VirtualService created", "objectName", name, "host", communicationHost.Host,
 		"port", communicationHost.Port, "protocol", communicationHost.Protocol)
 
 	return true, nil
@@ -272,17 +267,17 @@ func (c *Controller) handleIstioConfigurationForServiceEntry(instance *dynatrace
 	if probe == probeObjectFound {
 		return false, nil
 	} else if probe == probeUnknown {
-		c.logger.Error(err, "istio: failed to query ServiceEntry")
+		log.Error(err, "istio: failed to query ServiceEntry")
 		return false, err
 	}
 
 	serviceEntry := buildServiceEntry(name, c.namespace, communicationHost.Host, communicationHost.Protocol, communicationHost.Port)
 	err = c.createIstioConfigurationForServiceEntry(instance, serviceEntry, role)
 	if err != nil {
-		c.logger.Error(err, "istio: failed to create ServiceEntry")
+		log.Error(err, "istio: failed to create ServiceEntry")
 		return false, err
 	}
-	c.logger.Info("istio: ServiceEntry created", "objectName", name, "host", communicationHost.Host, "port", communicationHost.Port)
+	log.Info("istio: ServiceEntry created", "objectName", name, "host", communicationHost.Host, "port", communicationHost.Port)
 
 	return true, nil
 }
