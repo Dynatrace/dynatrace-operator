@@ -70,7 +70,7 @@ func (r *Reconciler) AddOnAfterStatefulSetCreateListener(event events.StatefulSe
 func (r *Reconciler) Reconcile() (update bool, err error) {
 	if r.capability.CustomProperties != nil {
 		err = customproperties.
-			NewReconciler(r, r.Instance, r.log, r.serviceAccountOwner, *r.capability.CustomProperties, r.scheme).
+			NewReconciler(r, r.Instance, r.serviceAccountOwner, *r.capability.CustomProperties, r.scheme).
 			Reconcile()
 		if err != nil {
 			r.log.Error(err, "could not reconcile custom properties")

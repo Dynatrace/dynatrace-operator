@@ -23,7 +23,7 @@ const (
 
 func TestReconciler_Reconcile(t *testing.T) {
 	t.Run(`Reconile works with minimal setup`, func(t *testing.T) {
-		r := NewReconciler(nil, nil, nil, "", dynatracev1beta1.DynaKubeValueSource{}, nil)
+		r := NewReconciler(nil, nil, "", dynatracev1beta1.DynaKubeValueSource{}, nil)
 		err := r.Reconcile()
 		assert.NoError(t, err)
 	})
@@ -35,7 +35,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 		fakeClient := fake.NewClient(instance)
-		r := NewReconciler(fakeClient, instance, nil, testOwner, valueSource, scheme.Scheme)
+		r := NewReconciler(fakeClient, instance, testOwner, valueSource, scheme.Scheme)
 		err := r.Reconcile()
 
 		assert.NoError(t, err)
@@ -57,7 +57,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			}}
 		fakeClient := fake.NewClient(instance)
-		r := NewReconciler(fakeClient, instance, nil, testOwner, valueSource, scheme.Scheme)
+		r := NewReconciler(fakeClient, instance, testOwner, valueSource, scheme.Scheme)
 		err := r.Reconcile()
 
 		assert.NoError(t, err)
