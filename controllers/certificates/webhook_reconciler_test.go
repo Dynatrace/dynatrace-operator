@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
 	"github.com/stretchr/testify/assert"
@@ -177,7 +176,6 @@ func prepareFakeClient(withSecret bool, generateValidSecret bool) client.Client 
 		}
 		if generateValidSecret {
 			cert := Certs{
-				Log:    logger.NewDTLogger(),
 				Domain: testDomain,
 				Now:    time.Now(),
 			}
@@ -206,7 +204,6 @@ func prepareReconcile(clt client.Client) (*ReconcileWebhookCertificates, reconci
 		client:    clt,
 		apiReader: clt,
 		namespace: testNamespace,
-		logger:    logger.NewDTLogger(),
 	}
 
 	request := reconcile.Request{
@@ -234,7 +231,6 @@ func testWebhookClientConfig(
 
 func verifyCertificates(t *testing.T, rec *ReconcileWebhookCertificates, secret *corev1.Secret, clt client.Client, isUpdate bool) {
 	cert := Certs{
-		Log:     rec.logger,
 		Domain:  rec.getDomain(),
 		Data:    secret.Data,
 		SrcData: secret.Data,

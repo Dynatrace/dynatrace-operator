@@ -10,8 +10,6 @@ import (
 	"fmt"
 	"math/big"
 	"time"
-
-	"github.com/go-logr/logr"
 )
 
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), 128)
@@ -28,7 +26,6 @@ const (
 
 // Certs handles creation and renewal of CA and SSL/TLS server certificates.
 type Certs struct {
-	Log     logr.Logger
 	Domain  string
 	SrcData map[string][]byte
 	Data    map[string][]byte
@@ -70,28 +67,28 @@ func (cs *Certs) ValidateCerts() error {
 
 func (cs *Certs) validateRootCerts(now time.Time) bool {
 	if cs.Data[RootKey] == nil || cs.Data[RootCert] == nil {
-		cs.Log.Info("No root certificates found, creating")
+		log.Info("No root certificates found, creating")
 		return true
 	}
 
 	var err error
 
 	if block, _ := pem.Decode(cs.Data[RootCert]); block == nil {
-		cs.Log.Info("Failed to parse root certificates, renewing", "error", "can't decode PEM file")
+		log.Info("Failed to parse root certificates, renewing", "error", "can't decode PEM file")
 		return true
 	} else if cs.rootPublicCert, err = x509.ParseCertificate(block.Bytes); err != nil {
-		cs.Log.Info("Failed to parse root certificates, renewing", "error", err)
+		log.Info("Failed to parse root certificates, renewing", "error", err)
 		return true
 	} else if now.After(cs.rootPublicCert.NotAfter.Add(-renewalThreshold)) {
-		cs.Log.Info("Root certificates are about to expire, renewing", "current", now, "expiration", cs.rootPublicCert.NotAfter)
+		log.Info("Root certificates are about to expire, renewing", "current", now, "expiration", cs.rootPublicCert.NotAfter)
 		return true
 	}
 
 	if block, _ := pem.Decode(cs.Data[RootKey]); block == nil {
-		cs.Log.Info("Failed to parse root key, renewing", "error", "can't decode PEM file")
+		log.Info("Failed to parse root key, renewing", "error", "can't decode PEM file")
 		return true
 	} else if cs.rootPrivateKey, err = x509.ParseECPrivateKey(block.Bytes); err != nil {
-		cs.Log.Info("Failed to parse root key, renewing", "error", err)
+		log.Info("Failed to parse root key, renewing", "error", err)
 		return true
 	}
 
@@ -100,24 +97,24 @@ func (cs *Certs) validateRootCerts(now time.Time) bool {
 
 func (cs *Certs) validateServerCerts(now time.Time) bool {
 	if cs.Data[ServerKey] == nil || cs.Data[ServerCert] == nil {
-		cs.Log.Info("No server certificates found, creating")
+		log.Info("No server certificates found, creating")
 		return true
 	}
 
 	block, _ := pem.Decode(cs.Data[ServerCert])
 	if block == nil {
-		cs.Log.Info("Failed to parse server certificates, renewing", "error", "can't decode PEM file")
+		log.Info("Failed to parse server certificates, renewing", "error", "can't decode PEM file")
 		return true
 	}
 
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		cs.Log.Info("Failed to parse server certificates, renewing", "error", err)
+		log.Info("Failed to parse server certificates, renewing", "error", err)
 		return true
 	}
 
 	if now.After(cert.NotAfter.Add(-renewalThreshold)) {
-		cs.Log.Info("Server certificates are about to expire, renewing", "current", now, "expiration", cert.NotAfter)
+		log.Info("Server certificates are about to expire, renewing", "current", now, "expiration", cert.NotAfter)
 		return true
 	}
 
@@ -126,7 +123,7 @@ func (cs *Certs) validateServerCerts(now time.Time) bool {
 
 func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 	// Generate CA root keys
-	cs.Log.Info("generating root certificate")
+	log.Info("generating root certificate")
 	privateKey, err := cs.generatePrivateKey(RootKey)
 	if err != nil {
 		return err
@@ -172,13 +169,13 @@ func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 	cs.Data[RootCertOld] = cs.Data[RootCert]
 	cs.Data[RootCert] = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: rootPublicCertDER})
 
-	cs.Log.Info("root certificate generated")
+	log.Info("root certificate generated")
 	return nil
 }
 
 func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 	// Generate server keys
-	cs.Log.Info("generating server certificate")
+	log.Info("generating server certificate")
 	privateKey, err := cs.generatePrivateKey(ServerKey)
 	if err != nil {
 		return err
@@ -217,7 +214,7 @@ func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 	}
 
 	cs.Data[ServerCert] = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverPublicCertDER})
-	cs.Log.Info("server certificate generated")
+	log.Info("server certificate generated")
 	return nil
 }
 

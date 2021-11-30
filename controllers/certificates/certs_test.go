@@ -6,17 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCertsValidation(t *testing.T) {
-	log := logger.NewDTLogger()
 	now, _ := time.Parse(time.RFC3339, "2018-01-10T00:00:00Z")
 	domain := "dynatrace-oneagent-webhook.webhook.svc"
 	firstCerts := Certs{
-		Log:    log,
 		Domain: domain,
 		Now:    now,
 	}
@@ -28,7 +25,7 @@ func TestCertsValidation(t *testing.T) {
 	t.Run("up-to-date certs", func(t *testing.T) {
 		newTime := now.Add(5 * time.Minute)
 
-		newCerts := Certs{Log: log, Domain: domain, SrcData: firstCerts.Data, Now: newTime}
+		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime}
 		require.NoError(t, newCerts.ValidateCerts())
 		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 
@@ -43,7 +40,7 @@ func TestCertsValidation(t *testing.T) {
 	t.Run("outdated server certs", func(t *testing.T) {
 		newTime := now.Add((6*24 + 22) * time.Hour) // 6d22h
 
-		newCerts := Certs{Log: log, Domain: domain, SrcData: firstCerts.Data, Now: newTime}
+		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime}
 		require.NoError(t, newCerts.ValidateCerts())
 		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 
@@ -58,7 +55,7 @@ func TestCertsValidation(t *testing.T) {
 	t.Run("outdated root certs", func(t *testing.T) {
 		newTime := now.Add((364*24 + 22) * time.Hour) // 364d22h
 
-		newCerts := Certs{Log: log, Domain: domain, SrcData: firstCerts.Data, Now: newTime}
+		newCerts := Certs{Domain: domain, SrcData: firstCerts.Data, Now: newTime}
 		require.NoError(t, newCerts.ValidateCerts())
 		requireValidCerts(t, domain, newTime, newCerts.Data[RootCert], newCerts.Data[ServerCert])
 

@@ -9,7 +9,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/eventfilter"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -20,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -52,7 +50,6 @@ func newWebhookReconciler(mgr manager.Manager, cancelMgr context.CancelFunc) *Re
 		cancelMgrFunc: cancelMgr,
 		client:        mgr.GetClient(),
 		apiReader:     mgr.GetAPIReader(),
-		logger:        log.Log.WithName("operator.webhook-certificates"),
 	}
 }
 
@@ -61,12 +58,11 @@ type ReconcileWebhookCertificates struct {
 	client        client.Client
 	apiReader     client.Reader
 	namespace     string
-	logger        logr.Logger
 	cancelMgrFunc context.CancelFunc
 }
 
 func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	r.logger.Info("reconciling webhook certificates",
+	log.Info("reconciling webhook certificates",
 		"namespace", request.Namespace, "name", request.Name)
 	r.namespace = request.Namespace
 	r.ctx = ctx
@@ -89,7 +85,6 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 	}
 
 	certs := Certs{
-		Log:     r.logger,
 		Domain:  r.getDomain(),
 		SrcData: secret.Data,
 		Now:     time.Now(),
@@ -116,7 +111,7 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		secret.Data = certs.Data
 		isSecretOutdated = true
 	} else if isWebhookCertificateValid {
-		r.logger.Info("secret for certificates up to date, skipping update")
+		log.Info("secret for certificates up to date, skipping update")
 		r.cancelMgr()
 		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 	}
@@ -138,26 +133,26 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 
 func (r *ReconcileWebhookCertificates) cancelMgr() {
 	if r.cancelMgrFunc != nil {
-		r.logger.Info("stopping manager after certificate creation")
+		log.Info("stopping manager after certificate creation")
 		r.cancelMgrFunc()
 	}
 }
 
 func (r *ReconcileWebhookCertificates) createOrUpdateSecret(ctx context.Context, secret *corev1.Secret, createSecret bool) error {
 	if createSecret {
-		r.logger.Info("creating certificates secret")
+		log.Info("creating certificates secret")
 		err := r.client.Create(ctx, secret)
 		if err != nil {
 			return err
 		}
-		r.logger.Info("created certificates secret")
+		log.Info("created certificates secret")
 	} else {
-		r.logger.Info("updating certificates secret")
+		log.Info("updating certificates secret")
 		err := r.client.Update(ctx, secret)
 		if err != nil {
 			return err
 		}
-		r.logger.Info("updated certificates secret")
+		log.Info("updated certificates secret")
 	}
 	return nil
 }
@@ -167,7 +162,7 @@ func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.C
 	validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) error {
 
 	// update certificates for webhook configurations
-	r.logger.Info("saving certificates into webhook configurations")
+	log.Info("saving certificates into webhook configurations")
 	for i := range mutatingWebhookConfiguration.Webhooks {
 		if err := r.updateConfiguration(&mutatingWebhookConfiguration.Webhooks[i].ClientConfig, secret); err != nil {
 			return err
@@ -188,7 +183,7 @@ func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.C
 	if err := r.client.Update(ctx, validatingWebhookConfiguration); err != nil {
 		return err
 	}
-	r.logger.Info("saved certificates into webhook configurations")
+	log.Info("saved certificates into webhook configurations")
 	return nil
 }
 
@@ -287,7 +282,7 @@ func (r *ReconcileWebhookCertificates) updateCRDConfiguration(ctx context.Contex
 	}
 
 	if !hasConversionWebhook(crd) {
-		r.logger.Info("No conversion webhook config, no cert will be provided")
+		log.Info("No conversion webhook config, no cert will be provided")
 		return nil
 	}
 
