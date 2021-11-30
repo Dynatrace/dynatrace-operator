@@ -66,8 +66,7 @@ type CapabilityProperties struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=30,xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
 	Replicas *int32 `json:"replicas,omitempty"`
 
-	// Optional: the ActiveGate container image. Defaults to the latest ActiveGate image provided by the Docker Registry
-	// implementation from the Dynatrace environment set as API URL.
+	// Optional: the ActiveGate container image. Defaults to the latest ActiveGate image provided by the registry on the tenant
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Image string `json:"image,omitempty"`
 
