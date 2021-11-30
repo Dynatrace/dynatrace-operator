@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
@@ -155,7 +154,7 @@ func TestGenerateForNamespace(t *testing.T) {
 			},
 		}
 		clt := fake.NewClient(testDynakubeComplex, &testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testNode1, testNode2)
-		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		_, err := ig.GenerateForNamespace(context.TODO(), *testDynakubeComplex, testNamespace.Name)
 		assert.NoError(t, err)
@@ -182,7 +181,7 @@ func TestGenerateForNamespace(t *testing.T) {
 			},
 		}
 		clt := fake.NewClient(testDynakubeSimple, &testNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
-		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		_, err := ig.GenerateForNamespace(context.TODO(), *testDynakubeSimple, testNamespace.Name)
 		assert.NoError(t, err)
@@ -207,7 +206,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			},
 		}
 		clt := fake.NewClient(&testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testNode1, testNode2)
-		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		updated, err := ig.GenerateForDynakube(context.TODO(), dk)
 		assert.NoError(t, err)
@@ -236,7 +235,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			},
 		}
 		clt := fake.NewClient(&testNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
-		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		updated, err := ig.GenerateForDynakube(context.TODO(), dk)
 		assert.NoError(t, err)
@@ -265,7 +264,7 @@ func TestGenerateForDynakube(t *testing.T) {
 			},
 		}
 		clt := fake.NewClient(&testNamespace, &testOtherNamespace, testSecretDynakubeSimple, kubeNamespace, testNode1, testNode2)
-		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		updated, err := ig.GenerateForDynakube(context.TODO(), dk)
 		assert.NoError(t, err)
@@ -290,7 +289,7 @@ func TestGenerateForDynakube(t *testing.T) {
 func TestGetInfraMonitoringNodes(t *testing.T) {
 	t.Run("Get IMNodes using nodes", func(t *testing.T) {
 		clt := fake.NewClient(testNode1, testNode2)
-		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		ig := NewInitGenerator(clt, clt, operatorNamespace)
 		ig.canWatchNodes = true
 		imNodes, err := ig.getInfraMonitoringNodes(testDynakubeSimple)
 		assert.NoError(t, err)
@@ -300,7 +299,7 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 	})
 	t.Run("Get IMNodes from dynakubes (without node access)", func(t *testing.T) {
 		clt := fake.NewClient()
-		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		ig := NewInitGenerator(clt, clt, operatorNamespace)
 		ig.canWatchNodes = false
 		imNodes, err := ig.getInfraMonitoringNodes(testDynakubeSimple)
 		assert.NoError(t, err)
@@ -309,7 +308,7 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 	})
 	t.Run("Get IMNodes from dynakubes with nodeSelector", func(t *testing.T) {
 		clt := fake.NewClient(testNodeWithLabels, testNode1, testNode2)
-		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		ig := NewInitGenerator(clt, clt, operatorNamespace)
 		ig.canWatchNodes = true
 		imNodes, err := ig.getInfraMonitoringNodes(testDynakubeWithSelector)
 		assert.NoError(t, err)
@@ -329,7 +328,7 @@ func TestPrepareScriptForDynaKube(t *testing.T) {
 			},
 		}
 		clt := fake.NewClient(&testNamespace, testSecretDynakubeComplex, caConfigMap)
-		ig := NewInitGenerator(clt, clt, operatorNamespace, logger.NewDTLogger())
+		ig := NewInitGenerator(clt, clt, operatorNamespace)
 		imNodes := map[string]string{testNode1Name: testTenantUUID, testNode2Name: testTenantUUID}
 		sc, err := ig.prepareScriptForDynaKube(dk, kubesystemUID, imNodes)
 		assert.NoError(t, err)
