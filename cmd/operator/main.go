@@ -29,7 +29,7 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger()
+	log = logger.NewDTLogger().WithName("main")
 )
 
 const (
