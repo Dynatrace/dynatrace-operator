@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -18,7 +17,7 @@ func TestMapFromDynakube(t *testing.T) {
 
 	t.Run("Add to namespace", func(t *testing.T) {
 		clt := fake.NewClient(dk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk, logger.NewDTLogger())
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 
 		err := dm.MapFromDynakube()
 
@@ -36,7 +35,7 @@ func TestMapFromDynakube(t *testing.T) {
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 		clt := fake.NewClient(dk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk, logger.NewDTLogger())
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 
 		err := dm.MapFromDynakube()
 
@@ -54,7 +53,7 @@ func TestMapFromDynakube(t *testing.T) {
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 		clt := fake.NewClient(movedDk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", movedDk, logger.NewDTLogger())
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", movedDk)
 
 		err := dm.MapFromDynakube()
 
@@ -73,7 +72,7 @@ func TestMapFromDynakube(t *testing.T) {
 		}
 		namespace := createNamespace("test-namespace", nsLabels)
 		clt := fake.NewClient(dk, conflictingDk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", conflictingDk, logger.NewDTLogger())
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", conflictingDk)
 
 		err := dm.MapFromDynakube()
 
@@ -83,7 +82,7 @@ func TestMapFromDynakube(t *testing.T) {
 		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil, nil)
 		namespace := createNamespace("kube-something", nil)
 		clt := fake.NewClient(dk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk, logger.NewDTLogger())
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 
 		err := dm.MapFromDynakube()
 
@@ -99,7 +98,7 @@ func TestMapFromDynakube(t *testing.T) {
 		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil, nil)
 		namespace := createNamespace("openshift-something", nil)
 		clt := fake.NewClient(dk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk, logger.NewDTLogger())
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 
 		err := dm.MapFromDynakube()
 
@@ -117,7 +116,7 @@ func TestMapFromDynakube(t *testing.T) {
 		}
 		namespace := createNamespace("openshift-something", nil)
 		clt := fake.NewClient(dk, namespace)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk, logger.NewDTLogger())
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 
 		err := dm.MapFromDynakube()
 
@@ -140,13 +139,13 @@ func TestUnmapFromDynaKube(t *testing.T) {
 
 	t.Run("Remove from no ns => no error", func(t *testing.T) {
 		clt := fake.NewClient()
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk, logger.NewDTLogger())
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 		err := dm.UnmapFromDynaKube()
 		assert.NoError(t, err)
 	})
 	t.Run("Remove from everywhere, multiple entries", func(t *testing.T) {
 		clt := fake.NewClient(namespace, namespace2)
-		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk, logger.NewDTLogger())
+		dm := NewDynakubeMapper(context.TODO(), clt, clt, "dynatrace", dk)
 		err := dm.UnmapFromDynaKube()
 		assert.NoError(t, err)
 		var ns corev1.Namespace
