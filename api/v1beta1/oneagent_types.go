@@ -98,7 +98,8 @@ type HostInjectSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent environment variable installer arguments",order=22,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
-	// Disable automatic restarts of OneAgent pods in case a new version is available
+	// Optional: Enables automatic restarts of OneAgent pods in case a new version is available
+	// Defaults to true
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Automatically update Agent",order=13,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	AutoUpdate *bool `json:"autoUpdate,omitempty"`
 

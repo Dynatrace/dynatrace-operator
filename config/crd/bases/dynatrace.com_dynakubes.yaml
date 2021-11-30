@@ -1566,8 +1566,8 @@ spec:
                         type: array
                         x-kubernetes-list-type: set
                       autoUpdate:
-                        description: Disable automatic restarts of OneAgent pods in
-                          case a new version is available
+                        description: 'Optional: Enables automatic restarts of OneAgent
+                          pods in case a new version is available Defaults to true'
                         type: boolean
                       dnsPolicy:
                         description: 'Optional: Sets DNS Policy for the OneAgent pods'
@@ -1801,8 +1801,8 @@ spec:
                         type: array
                         x-kubernetes-list-type: set
                       autoUpdate:
-                        description: Disable automatic restarts of OneAgent pods in
-                          case a new version is available
+                        description: 'Optional: Enables automatic restarts of OneAgent
+                          pods in case a new version is available Defaults to true'
                         type: boolean
                       dnsPolicy:
                         description: 'Optional: Sets DNS Policy for the OneAgent pods'
@@ -2057,8 +2057,8 @@ spec:
                         type: array
                         x-kubernetes-list-type: set
                       autoUpdate:
-                        description: Disable automatic restarts of OneAgent pods in
-                          case a new version is available
+                        description: 'Optional: Enables automatic restarts of OneAgent
+                          pods in case a new version is available Defaults to true'
                         type: boolean
                       dnsPolicy:
                         description: 'Optional: Sets DNS Policy for the OneAgent pods'
