@@ -57,7 +57,7 @@ type ClassicFullStackSpec struct {
 
 type HostMonitoringSpec struct {
 	// Optional: the Dynatrace installer container image
-	// Defaults to docker.io/dynatrace/oneagent:latest for Kubernetes and to registry.connect.redhat.com/dynatrace/oneagent for OpenShift
+	// Defaults to the registry on the tenant for both Kubernetes and for OpenShift
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Image string `json:"image,omitempty"`
 
