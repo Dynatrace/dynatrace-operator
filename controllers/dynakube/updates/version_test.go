@@ -26,7 +26,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/controllers/dtversion"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -62,7 +61,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 	fakeClient := fake.NewClient()
 
 	now := metav1.Now()
-	dkState := &controllers.DynakubeState{Instance: &dk, Log: logger.NewDTLogger(), Now: now}
+	dkState := &controllers.DynakubeState{Instance: &dk, Now: now}
 
 	errVerProvider := func(img string, dockerConfig *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
 		return dtversion.ImageVersion{}, errors.New("Not implemented")
