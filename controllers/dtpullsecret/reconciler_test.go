@@ -12,7 +12,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -36,7 +35,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Data: map[string][]byte{dtclient.DynatracePaasToken: []byte(testPaasToken)},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, logf.Log, secret)
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, secret)
 
 		mockDTC.
 			On("GetConnectionInfo").
@@ -66,7 +65,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				CustomPullSecret: testValue,
 			}}
-		r := NewReconciler(nil, nil, nil, instance, nil, nil)
+		r := NewReconciler(nil, nil, nil, instance, nil)
 		err := r.Reconcile()
 
 		assert.NoError(t, err)
@@ -88,7 +87,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, logf.Log,
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance,
 			&corev1.Secret{
 				Data: map[string][]byte{
 					dtclient.DynatracePaasToken: []byte(testValue),
@@ -128,7 +127,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, logf.Log,
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance,
 			&corev1.Secret{
 				Data: map[string][]byte{
 					dtclient.DynatracePaasToken: []byte(testValue),

@@ -197,7 +197,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 	}
 
 	err = dtpullsecret.
-		NewReconciler(r.client, r.apiReader, r.scheme, dkState.Instance, dkState.Log, secret).
+		NewReconciler(r.client, r.apiReader, r.scheme, dkState.Instance, secret).
 		Reconcile()
 	if dkState.Error(err) {
 		dkState.Log.Error(err, "could not reconcile Dynatrace pull secret")

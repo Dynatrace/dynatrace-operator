@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -24,18 +23,16 @@ type Reconciler struct {
 	client.Client
 	apiReader client.Reader
 	instance  *dynatracev1beta1.DynaKube
-	log       logr.Logger
 	token     *corev1.Secret
 	scheme    *runtime.Scheme
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, log logr.Logger, token *corev1.Secret) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, token *corev1.Secret) *Reconciler {
 	return &Reconciler{
 		Client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
 		instance:  instance,
-		log:       log,
 		token:     token,
 	}
 }
@@ -44,7 +41,7 @@ func (r *Reconciler) Reconcile() error {
 	if r.instance.Spec.CustomPullSecret == "" {
 		err := r.reconcilePullSecret()
 		if err != nil {
-			r.log.Error(err, "could not reconcile pull secret")
+			log.Error(err, "could not reconcile pull secret")
 			return errors.WithStack(err)
 		}
 	}
@@ -70,7 +67,7 @@ func (r *Reconciler) createPullSecretIfNotExists(pullSecretData map[string][]byt
 	var config corev1.Secret
 	err := r.apiReader.Get(context.TODO(), client.ObjectKey{Name: extendWithPullSecretSuffix(r.instance.Name), Namespace: r.instance.Namespace}, &config)
 	if k8serrors.IsNotFound(err) {
-		r.log.Info("Creating pull secret")
+		log.Info("Creating pull secret")
 		return r.createPullSecret(pullSecretData)
 	}
 	return &config, err
@@ -98,7 +95,7 @@ func (r *Reconciler) createPullSecret(pullSecretData map[string][]byte) (*corev1
 }
 
 func (r *Reconciler) updatePullSecret(pullSecret *corev1.Secret, desiredPullSecretData map[string][]byte) error {
-	r.log.Info(fmt.Sprintf("Updating secret %s", pullSecret.Name))
+	log.Info(fmt.Sprintf("Updating secret %s", pullSecret.Name))
 	pullSecret.Data = desiredPullSecretData
 	if err := r.Update(context.TODO(), pullSecret); err != nil {
 		return fmt.Errorf("failed to update secret %s: %w", pullSecret.Name, err)
