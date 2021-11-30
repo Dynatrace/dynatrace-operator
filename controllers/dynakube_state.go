@@ -4,7 +4,6 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -13,7 +12,6 @@ import (
 // so we pass the to-be-reconciled Dynakube all over the place AND in some cases the reconcilers will update said Dynakube
 // therefore we need to keep track of the state for this Dynakube over the whole Reconcile. (was it updated, etc.)
 type DynakubeState struct {
-	Log      logr.Logger
 	Instance *dynatracev1beta1.DynaKube
 	Now      metav1.Time
 
@@ -28,9 +26,8 @@ type DynakubeState struct {
 	RequeueAfter time.Duration
 }
 
-func NewDynakubeState(log logr.Logger, dk *dynatracev1beta1.DynaKube) *DynakubeState {
+func NewDynakubeState(dk *dynatracev1beta1.DynaKube) *DynakubeState {
 	return &DynakubeState{
-		Log:          log,
 		Instance:     dk,
 		RequeueAfter: 30 * time.Minute,
 		Now:          metav1.Now(),
@@ -49,7 +46,7 @@ func (dkState *DynakubeState) Update(upd bool, d time.Duration, cause string) bo
 	if !upd {
 		return false
 	}
-	dkState.Log.Info("Updating DynaKube CR", "cause", cause)
+	log.Info("Updating DynaKube CR", "cause", cause)
 	dkState.Updated = true
 	dkState.RequeueAfter = d
 	return true

@@ -120,7 +120,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-	dkState := controllers.NewDynakubeState(log, instance)
+	dkState := controllers.NewDynakubeState(instance)
 	r.reconcileDynaKube(ctx, dkState, &dkMapper)
 
 	if dkState.Err != nil {
@@ -132,7 +132,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 
 		var serr dtclient.ServerError
 		if ok := errors.As(dkState.Err, &serr); ok && serr.Code == http.StatusTooManyRequests {
-			dkState.Log.Info("Request limit for Dynatrace API reached! Next reconcile in one minute")
+			log.Info("Request limit for Dynatrace API reached! Next reconcile in one minute")
 			return reconcile.Result{RequeueAfter: 1 * time.Minute}, nil
 		}
 
@@ -204,7 +204,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 	}
 	if dkState.Instance.HostMonitoringMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, log, dkState.Instance, daemonset.HostMonitoringFeature,
+			r.client, r.apiReader, r.scheme, dkState.Instance, daemonset.HostMonitoringFeature,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
 			return
@@ -218,7 +218,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 
 	if dkState.Instance.CloudNativeFullstackMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, log, dkState.Instance, daemonset.CloudNativeFeature,
+			r.client, r.apiReader, r.scheme, dkState.Instance, daemonset.CloudNativeFeature,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "cloud native infra monitoring reconciled") {
 			return
@@ -232,7 +232,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 
 	if dkState.Instance.ClassicFullStackMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, log, dkState.Instance, daemonset.ClassicFeature,
+			r.client, r.apiReader, r.scheme, dkState.Instance, daemonset.ClassicFeature,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "classic fullstack reconciled") {
 			return

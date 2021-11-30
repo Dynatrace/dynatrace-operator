@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -16,7 +15,6 @@ const (
 )
 
 func TestUseImmutableImage(t *testing.T) {
-	log := logger.NewDTLogger()
 	t.Run(`if image is unset, image`, func(t *testing.T) {
 		instance := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -26,7 +24,7 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -45,7 +43,7 @@ func TestUseImmutableImage(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -56,7 +54,6 @@ func TestUseImmutableImage(t *testing.T) {
 }
 
 func TestCustomPullSecret(t *testing.T) {
-	log := logger.NewDTLogger()
 	instance := dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: testURL,
@@ -66,7 +63,7 @@ func TestCustomPullSecret(t *testing.T) {
 			CustomPullSecret: testName,
 		},
 	}
-	dsInfo := NewClassicFullStack(&instance, log, testClusterID)
+	dsInfo := NewClassicFullStack(&instance, testClusterID)
 	ds, err := dsInfo.BuildDaemonSet()
 	require.NoError(t, err)
 
@@ -77,7 +74,6 @@ func TestCustomPullSecret(t *testing.T) {
 }
 
 func TestResources(t *testing.T) {
-	log := logger.NewDTLogger()
 	t.Run(`minimal cpu request of 100mC is set if no resources specified`, func(t *testing.T) {
 		instance := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -87,7 +83,7 @@ func TestResources(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -126,7 +122,7 @@ func TestResources(t *testing.T) {
 			},
 		}
 
-		dsInfo := NewClassicFullStack(&instance, log, testClusterID)
+		dsInfo := NewClassicFullStack(&instance, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -147,7 +143,6 @@ func TestResources(t *testing.T) {
 }
 
 func TestInfraMon_SecurityContext(t *testing.T) {
-	log := logger.NewDTLogger()
 	t.Run(`User and group id set when read only mode is enabled`, func(t *testing.T) {
 		instance := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -157,7 +152,7 @@ func TestInfraMon_SecurityContext(t *testing.T) {
 				},
 			},
 		}
-		dsInfo := NewHostMonitoring(&instance, log, testClusterID)
+		dsInfo := NewHostMonitoring(&instance, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
