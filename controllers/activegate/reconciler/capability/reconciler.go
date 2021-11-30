@@ -32,7 +32,7 @@ type Reconciler struct {
 func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme,
 	instance *dynatracev1beta1.DynaKube) *Reconciler {
 	baseReconciler := sts.NewReconciler(
-		clt, apiReader, scheme, log, instance, capability)
+		clt, apiReader, scheme, instance, capability)
 
 	if capability.Config().SetDnsEntryPoint {
 		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.ShortName()))

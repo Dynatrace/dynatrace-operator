@@ -12,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -27,7 +26,6 @@ type Reconciler struct {
 	Instance                         *dynatracev1beta1.DynaKube
 	apiReader                        client.Reader
 	scheme                           *runtime.Scheme
-	log                              logr.Logger
 	feature                          string
 	capabilityName                   string
 	serviceAccountOwner              string
@@ -38,7 +36,7 @@ type Reconciler struct {
 	volumes                          []corev1.Volume
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, log logr.Logger,
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme,
 	instance *dynatracev1beta1.DynaKube, capability capability.Capability) *Reconciler {
 
 	serviceAccountOwner := capability.Config().ServiceAccountOwner
@@ -50,7 +48,6 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 		Client:                           clt,
 		apiReader:                        apiReader,
 		scheme:                           scheme,
-		log:                              log,
 		Instance:                         instance,
 		feature:                          capability.ShortName(),
 		capabilityName:                   capability.ArgName(),
@@ -73,13 +70,13 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 			NewReconciler(r, r.Instance, r.serviceAccountOwner, *r.capability.CustomProperties, r.scheme).
 			Reconcile()
 		if err != nil {
-			r.log.Error(err, "could not reconcile custom properties")
+			log.Error(err, "could not reconcile custom properties")
 			return false, errors.WithStack(err)
 		}
 	}
 
 	if update, err = r.manageStatefulSet(); err != nil {
-		r.log.Error(err, "could not reconcile stateful set")
+		log.Error(err, "could not reconcile stateful set")
 		return false, errors.WithStack(err)
 	}
 
@@ -146,7 +143,7 @@ func (r *Reconciler) getStatefulSet(desiredSts *appsv1.StatefulSet) (*appsv1.Sta
 func (r *Reconciler) createStatefulSetIfNotExists(desiredSts *appsv1.StatefulSet) (bool, error) {
 	_, err := r.getStatefulSet(desiredSts)
 	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
-		r.log.Info("creating new stateful set for " + r.feature)
+		log.Info("creating new stateful set for " + r.feature)
 		return true, r.Create(context.TODO(), desiredSts)
 	}
 	return false, err
@@ -161,7 +158,7 @@ func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet)
 		return false, nil
 	}
 
-	r.log.Info("updating existing stateful set")
+	log.Info("updating existing stateful set")
 	if err = r.Update(context.TODO(), desiredSts); err != nil {
 		return false, err
 	}
@@ -175,7 +172,7 @@ func (r *Reconciler) deleteStatefulSetIfOldLabelsAreUsed(desiredSts *appsv1.Stat
 	}
 
 	if !reflect.DeepEqual(currentSts.Labels, desiredSts.Labels) {
-		r.log.Info("Deleting existing stateful set")
+		log.Info("Deleting existing stateful set")
 		if err = r.Delete(context.TODO(), desiredSts); err != nil {
 			return false, err
 		}
