@@ -125,7 +125,7 @@ dt.kubernetes.cluster.id=${cluster_id}" > "${1}/${2}.properties"
 }" > "${1}/${2}.json"
 }
 
-createConfigurationFiles() {
+createConfigurationFilesOneAgent() {
 	echo -n "${INSTALLPATH}/agent/lib64/liboneagentproc.so" >> "${share_dir}/ld.so.preload"
 
 	for i in $(seq 1 $CONTAINERS_COUNT)
@@ -141,7 +141,6 @@ createConfigurationFiles() {
 		echo "Writing ${container_conf_file} file..."
 
 		writeConfBaseTo ${container_conf_file}
-		writeConfEnrichmentTo "/var/lib/dynatrace/enrichment" "dt_metadata"
 
 		if [[ "${host_tenant}" != "-" ]]; then
 			if [[ "abc12345" == "${host_tenant}" ]]; then
@@ -152,10 +151,22 @@ createConfigurationFiles() {
 	done
 }
 
+createConfigurationFilesDataIngest() {
+	writeConfEnrichmentTo "/var/lib/dynatrace/enrichment" "dt_metadata"
+}
+
 ####### MAIN #######
 printf "\nSetting fail code\n"
 setFailCode
-printf "\nDownloading OneAgent\n"
-downloadOneAgentIfNecessary
-printf "\nCreating configuration files for containers\n"
-createConfigurationFiles
+
+if [[ "${ONEAGENT_INJECTED}" == "true" ]]; then
+  printf "\nDownloading OneAgent\n"
+  downloadOneAgentIfNecessary
+  printf "\nCreating configuration files for containers\n"
+  createConfigurationFilesOneAgent
+fi
+
+if [[ "${DATA_INGEST_INJECTED}" == "true" ]]; then
+  createConfigurationFilesDataIngest
+fi
+

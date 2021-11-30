@@ -25,3 +25,35 @@ func TestGetField(t *testing.T) {
 		assert.Equal(t, "default", value)
 	})
 }
+
+func TestGetFieldBool(t *testing.T) {
+	data2expectedValid := map[string]bool{
+		"true":  true,
+		"1":     true,
+		"false": false,
+		"FALSE": false,
+		"0":     false,
+	}
+
+	for text, expected := range data2expectedValid {
+		t.Run("", func(t *testing.T) {
+			m := make(map[string]string)
+			m["value"] = text
+			value := GetFieldBool(m, "value", true)
+			assert.Equal(t, value, expected)
+		})
+	}
+
+	data2expectedInvalid := []string{"nie", "NEIN", "Tak", "ja", "01", "00", "10", "blabla", ""}
+	for _, text := range data2expectedInvalid {
+		t.Run("", func(t *testing.T) {
+			m := make(map[string]string)
+			m["value"] = text
+			value1 := GetFieldBool(m, "value", true)
+			value2 := GetFieldBool(m, "value", false)
+
+			assert.Equal(t, value1, true)
+			assert.Equal(t, value2, false)
+		})
+	}
+}

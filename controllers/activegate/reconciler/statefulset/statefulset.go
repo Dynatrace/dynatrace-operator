@@ -31,6 +31,8 @@ const (
 	DTDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
 
 	ProxySecretKey = "proxy"
+
+	ActivegateContainerName = "activegate"
 )
 
 type statefulSetProperties struct {
@@ -134,7 +136,7 @@ func buildInitContainers(stsProperties *statefulSetProperties) []corev1.Containe
 
 func buildContainer(stsProperties *statefulSetProperties) corev1.Container {
 	return corev1.Container{
-		Name:            dynatracev1beta1.OperatorName,
+		Name:            ActivegateContainerName,
 		Image:           stsProperties.DynaKube.ActiveGateImage(),
 		Resources:       stsProperties.CapabilityProperties.Resources,
 		ImagePullPolicy: corev1.PullAlways,

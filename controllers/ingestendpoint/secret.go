@@ -29,7 +29,7 @@ type EndpointSecretGenerator struct {
 	namespace string
 }
 
-func NewEndpointGenerator(client client.Client, apiReader client.Reader, ns string, logger logr.Logger) *EndpointSecretGenerator {
+func NewEndpointSecretGenerator(client client.Client, apiReader client.Reader, ns string, logger logr.Logger) *EndpointSecretGenerator {
 	return &EndpointSecretGenerator{
 		client:    client,
 		apiReader: apiReader,

@@ -4,12 +4,16 @@ const (
 	// LabelInstance can be set in a Namespace and indicates the corresponding DynaKube object assigned to it.
 	LabelInstance = "dynakube.internal.dynatrace.com/instance"
 
-	// AnnotationInject can be set at pod or namespace label to enable/disable injection, where at pod level has higher
-	// priority.
-	AnnotationInject = "oneagent.dynatrace.com/inject"
+	// AnnotationDynatraceInjected is set to "true" by the webhook to Pods to indicate that it has been injected.
+	AnnotationDynatraceInjected = "dynakube.dynatrace.com/injected"
 
-	// AnnotationInjected is set to "true" by the webhook to Pods to indicate that it has been modified.
-	AnnotationInjected = "oneagent.dynatrace.com/injected"
+	// AnnotationOneAgentInject can be set at pod level to enable/disable OneAgent injection.
+	OneAgentPrefix           = "oneagent"
+	AnnotationOneAgentInject = OneAgentPrefix + ".dynatrace.com/inject"
+
+	// AnnotationDataIngestInject can be set at pod level to enable/disable data-ingest injection.
+	DataIngestPrefix           = "data-ingest"
+	AnnotationDataIngestInject = DataIngestPrefix + ".dynatrace.com/inject"
 
 	// AnnotationTechnologies can be set on a Pod to configure which code module technologies to download. It's set to
 	// "all" if not set.

@@ -108,7 +108,7 @@ func TestStatefulSet_Container(t *testing.T) {
 	container := buildContainer(NewStatefulSetProperties(instance, capabilityProperties,
 		"", "", "", "", "", nil, nil, nil))
 
-	assert.Equal(t, dynatracev1beta1.OperatorName, container.Name)
+	assert.Equal(t, ActivegateContainerName, container.Name)
 	assert.Equal(t, instance.ActiveGateImage(), container.Image)
 	assert.Empty(t, container.Resources)
 	assert.Equal(t, corev1.PullAlways, container.ImagePullPolicy)
