@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/internal/events"
 	sts "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -27,11 +26,10 @@ const (
 
 type Reconciler struct {
 	*sts.Reconciler
-	log logr.Logger
 	capability.Capability
 }
 
-func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, log logr.Logger,
+func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme,
 	instance *dynatracev1beta1.DynaKube) *Reconciler {
 	baseReconciler := sts.NewReconciler(
 		clt, apiReader, scheme, log, instance, capability)
@@ -50,7 +48,6 @@ func NewReconciler(capability capability.Capability, clt client.Client, apiReade
 
 	return &Reconciler{
 		Reconciler: baseReconciler,
-		log:        log,
 		Capability: capability,
 	}
 }
@@ -107,7 +104,7 @@ func (r *Reconciler) createServiceIfNotExists() (bool, error) {
 
 	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
 	if err != nil && k8serrors.IsNotFound(err) {
-		r.log.Info("creating service", "module", r.ShortName())
+		log.Info("creating service", "module", r.ShortName())
 		if err := controllerutil.SetControllerReference(r.Instance, service, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)
 		}

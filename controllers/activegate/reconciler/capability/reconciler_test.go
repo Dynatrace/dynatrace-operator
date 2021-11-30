@@ -10,9 +10,7 @@ import (
 	rsfs "github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
-	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -43,7 +41,6 @@ func TestNewReconiler(t *testing.T) {
 }
 
 func createDefaultReconciler(t *testing.T) *Reconciler {
-	log := logger.NewDTLogger()
 	clt := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithObjects(&corev1.Namespace{
@@ -57,7 +54,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 		}}
-	r := NewReconciler(metricsCapability, clt, clt, scheme.Scheme, log, instance)
+	r := NewReconciler(metricsCapability, clt, clt, scheme.Scheme, instance)
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.Instance)
@@ -191,7 +188,6 @@ func TestSetReadinessProbePort(t *testing.T) {
 func TestReconciler_calculateStatefulSetName(t *testing.T) {
 	type fields struct {
 		Reconciler *rsfs.Reconciler
-		log        logr.Logger
 		Capability *capability.RoutingCapability
 	}
 	tests := []struct {
@@ -232,7 +228,6 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Reconciler{
 				Reconciler: tt.fields.Reconciler,
-				log:        tt.fields.log,
 				Capability: tt.fields.Capability,
 			}
 			if got := r.calculateStatefulSetName(); got != tt.want {

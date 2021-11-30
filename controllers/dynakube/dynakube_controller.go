@@ -291,7 +291,7 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers
 	for _, c := range caps {
 		if c.Enabled() {
 			upd, err := rcap.NewReconciler(
-				c, r.client, r.apiReader, r.scheme, dkState.Log, dkState.Instance).Reconcile()
+				c, r.client, r.apiReader, r.scheme, dkState.Instance).Reconcile()
 			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, c.ShortName()+" reconciled") {
 				return false
 			}
