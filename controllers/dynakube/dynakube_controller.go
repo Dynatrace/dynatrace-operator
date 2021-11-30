@@ -21,9 +21,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/initgeneration"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -33,7 +31,6 @@ import (
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -41,8 +38,6 @@ import (
 const (
 	defaultUpdateInterval = 5 * time.Minute
 )
-
-var log = logf.Log.WithName("controller_dynakube")
 
 func Add(mgr manager.Manager, _ string) error {
 	return NewReconciler(mgr).SetupWithManager(mgr)
@@ -58,7 +53,6 @@ func NewReconciler(mgr manager.Manager) *ReconcileDynaKube {
 		config:            mgr.GetConfig(),
 		operatorPodName:   os.Getenv("POD_NAME"),
 		operatorNamespace: os.Getenv("POD_NAMESPACE"),
-		logger:            logger.NewDTLogger(),
 	}
 }
 
@@ -70,13 +64,12 @@ func (r *ReconcileDynaKube) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, logger logr.Logger, config *rest.Config) *ReconcileDynaKube {
+func NewDynaKubeReconciler(c client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, config *rest.Config) *ReconcileDynaKube {
 	return &ReconcileDynaKube{
 		client:            c,
 		apiReader:         apiReader,
 		scheme:            scheme,
 		dtcBuildFunc:      dtcBuildFunc,
-		logger:            logger,
 		config:            config,
 		operatorPodName:   os.Getenv("POD_NAME"),
 		operatorNamespace: os.Getenv("POD_NAMESPACE"),
@@ -94,7 +87,6 @@ type ReconcileDynaKube struct {
 	apiReader         client.Reader
 	scheme            *runtime.Scheme
 	dtcBuildFunc      DynatraceClientFunc
-	logger            logr.Logger
 	config            *rest.Config
 	operatorPodName   string
 	operatorNamespace string
@@ -109,12 +101,11 @@ type DynatraceClientFunc func(properties DynatraceClientProperties) (dtclient.Cl
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("namespace", request.Namespace, "name", request.Name)
-	reqLogger.Info("Reconciling DynaKube")
+	log.Info("Reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
 	// Fetch the DynaKube instance
 	instance := &dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: request.NamespacedName.Name}}
-	dkMapper := mapper.NewDynakubeMapper(ctx, r.client, r.apiReader, r.operatorNamespace, instance, r.logger)
+	dkMapper := mapper.NewDynakubeMapper(ctx, r.client, r.apiReader, r.operatorNamespace, instance, log)
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
@@ -129,12 +120,12 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-	dkState := controllers.NewDynakubeState(reqLogger, instance)
+	dkState := controllers.NewDynakubeState(log, instance)
 	r.reconcileDynaKube(ctx, dkState, &dkMapper)
 
 	if dkState.Err != nil {
 		if dkState.Updated || instance.Status.SetPhaseOnError(dkState.Err) {
-			if errClient := r.updateCR(ctx, reqLogger, instance); errClient != nil {
+			if errClient := r.updateCR(ctx, instance); errClient != nil {
 				return reconcile.Result{}, fmt.Errorf("failed to update CR after failure, original, %s, then: %w", dkState.Err, errClient)
 			}
 		}
@@ -149,7 +140,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	}
 
 	if dkState.Updated {
-		if err := r.updateCR(ctx, reqLogger, instance); err != nil {
+		if err := r.updateCR(ctx, instance); err != nil {
 			return reconcile.Result{}, err
 		}
 	}
@@ -176,21 +167,21 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 		ApiClient: r.apiReader,
 	})
 	if dkState.Error(err) {
-		dkState.Log.Error(err, "could not set Dynakube status")
+		log.Error(err, "could not set Dynakube status")
 		return
 	}
 
 	// Fetch api token secret
 	secret, err := r.getTokenSecret(ctx, dkState.Instance)
 	if err != nil {
-		dkState.Log.Error(err, "could not find token secret")
+		log.Error(err, "could not find token secret")
 		return
 	}
 
 	if dkState.Instance.Spec.EnableIstio {
 		if upd, err = istio.NewController(r.config, r.scheme).ReconcileIstio(dkState.Instance); err != nil {
 			// If there are errors log them, but move on.
-			dkState.Log.Info("Istio: failed to reconcile objects", "error", err)
+			log.Info("Istio: failed to reconcile objects", "error", err)
 		} else if upd {
 			dkState.Update(true, 30*time.Second, "Istio: objects updated")
 		}
@@ -200,7 +191,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 		NewReconciler(r.client, r.apiReader, r.scheme, dkState.Instance, secret).
 		Reconcile()
 	if dkState.Error(err) {
-		dkState.Log.Error(err, "could not reconcile Dynatrace pull secret")
+		log.Error(err, "could not reconcile Dynatrace pull secret")
 		return
 	}
 
@@ -213,7 +204,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 	}
 	if dkState.Instance.HostMonitoringMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, dkState.Log, dkState.Instance, daemonset.HostMonitoringFeature,
+			r.client, r.apiReader, r.scheme, log, dkState.Instance, daemonset.HostMonitoringFeature,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
 			return
@@ -227,7 +218,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 
 	if dkState.Instance.CloudNativeFullstackMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, dkState.Log, dkState.Instance, daemonset.CloudNativeFeature,
+			r.client, r.apiReader, r.scheme, log, dkState.Instance, daemonset.CloudNativeFeature,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "cloud native infra monitoring reconciled") {
 			return
@@ -241,7 +232,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 
 	if dkState.Instance.ClassicFullStackMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
-			r.client, r.apiReader, r.scheme, dkState.Log, dkState.Instance, daemonset.ClassicFeature,
+			r.client, r.apiReader, r.scheme, log, dkState.Instance, daemonset.ClassicFeature,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "classic fullstack reconciled") {
 			return
@@ -255,20 +246,20 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 
 	if dkState.Instance.NeedAppInjection() {
 		if err := dkMapper.MapFromDynakube(); err != nil {
-			dkState.Log.Error(err, "update of a map of namespaces failed")
+			log.Error(err, "update of a map of namespaces failed")
 		}
-		upd, err := initgeneration.NewInitGenerator(r.client, r.apiReader, dkState.Instance.Namespace, r.logger).GenerateForDynakube(ctx, dkState.Instance)
+		upd, err := initgeneration.NewInitGenerator(r.client, r.apiReader, dkState.Instance.Namespace, log).GenerateForDynakube(ctx, dkState.Instance)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "new init script created") {
 			return
 		}
 
-		upd, err = dtingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, dkState.Instance.Namespace, r.logger).GenerateForDynakube(ctx, dkState.Instance)
+		upd, err = dtingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, dkState.Instance.Namespace, log).GenerateForDynakube(ctx, dkState.Instance)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "new data-ingest endpoint secret created") {
 			return
 		}
 	} else {
 		if err := dkMapper.UnmapFromDynaKube(); err != nil {
-			dkState.Log.Error(err, "could not unmap dynakube from namespace")
+			log.Error(err, "could not unmap dynakube from namespace")
 			return
 		}
 	}
@@ -329,7 +320,7 @@ func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatr
 	return &secret, errors.WithStack(err)
 }
 
-func (r *ReconcileDynaKube) updateCR(ctx context.Context, log logr.Logger, instance *dynatracev1beta1.DynaKube) error {
+func (r *ReconcileDynaKube) updateCR(ctx context.Context, instance *dynatracev1beta1.DynaKube) error {
 	instance.Status.UpdatedTimestamp = metav1.Now()
 	err := r.client.Status().Update(ctx, instance)
 	if err != nil && k8serrors.IsConflict(err) {
