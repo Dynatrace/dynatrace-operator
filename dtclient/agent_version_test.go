@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -53,9 +52,7 @@ const (
 )
 
 func TestResponseForLatestVersion(t *testing.T) {
-	dc := &dynatraceClient{
-		logger: consoleLogger,
-	}
+	dc := &dynatraceClient{}
 	readFromString := func(json string) (string, error) {
 		r := []byte(json)
 		return dc.readResponseForLatestVersion(r)
@@ -89,7 +86,6 @@ func TestGetEntityIDForIP(t *testing.T) {
 	defer dynatraceServer.Close()
 
 	dtc := dynatraceClient{
-		logger:     log.Log.WithName("dtc"),
 		apiToken:   apiToken,
 		paasToken:  paasToken,
 		httpClient: dynatraceServer.Client(),
@@ -180,7 +176,6 @@ func TestGetLatestAgent(t *testing.T) {
 	defer dynatraceServer.Close()
 
 	dtc := dynatraceClient{
-		logger:     log.Log.WithName("dtc"),
 		apiToken:   apiToken,
 		paasToken:  paasToken,
 		httpClient: dynatraceServer.Client(),
@@ -214,7 +209,6 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		dtc := dynatraceClient{
-			logger:     log.Log.WithName("dtc"),
 			httpClient: dynatraceServer.Client(),
 			url:        dynatraceServer.URL,
 			paasToken:  paasToken,
@@ -230,7 +224,6 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		dtc := dynatraceClient{
-			logger:     log.Log.WithName("dtc"),
 			httpClient: dynatraceServer.Client(),
 			url:        dynatraceServer.URL,
 			paasToken:  paasToken,
@@ -248,7 +241,6 @@ func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		dtc := dynatraceClient{
-			logger:     log.Log.WithName("dtc"),
 			httpClient: dynatraceServer.Client(),
 			url:        dynatraceServer.URL,
 			paasToken:  paasToken,
@@ -267,7 +259,6 @@ func TestDynatraceClient_GetAgentVersions(t *testing.T) {
 		defer dynatraceServer.Close()
 
 		dtc := dynatraceClient{
-			logger:     log.Log.WithName("dtc"),
 			httpClient: dynatraceServer.Client(),
 			url:        dynatraceServer.URL,
 			paasToken:  paasToken,

@@ -32,9 +32,7 @@ const mixedCommunicationEndpointsResponse = `{
 }`
 
 func TestReadCommunicationHosts(t *testing.T) {
-	dc := &dynatraceClient{
-		logger: consoleLogger,
-	}
+	dc := &dynatraceClient{}
 
 	readFromString := func(json string) (ConnectionInfo, error) {
 		r := []byte(json)

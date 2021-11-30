@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -119,7 +118,6 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 		url:       url,
 		apiToken:  apiToken,
 		paasToken: paasToken,
-		logger:    log.Log.WithName("dynatrace.client"),
 
 		hostCache: make(map[string]hostInfo),
 		httpClient: &http.Client{
@@ -154,7 +152,7 @@ func Proxy(proxyURL string) Option {
 	return func(c *dynatraceClient) {
 		p, err := url.Parse(proxyURL)
 		if err != nil {
-			c.logger.Info("Could not parse proxy URL!")
+			log.Info("Could not parse proxy URL!")
 			return
 		}
 		t := c.httpClient.Transport.(*http.Transport)
@@ -166,7 +164,7 @@ func Certs(certs []byte) Option {
 	return func(c *dynatraceClient) {
 		rootCAs := x509.NewCertPool()
 		if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
-			c.logger.Info("Failed to append custom certs!")
+			log.Info("Failed to append custom certs!")
 		}
 
 		t := c.httpClient.Transport.(*http.Transport)

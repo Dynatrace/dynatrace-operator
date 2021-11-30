@@ -83,7 +83,7 @@ func (dtc *dynatraceClient) specialProcessModuleConfigRequestStatus(resp *http.R
 	}
 
 	if resp.StatusCode == http.StatusNotFound {
-		dtc.logger.Info("endpoint for ruxitagentproc.conf is not available on the cluster.")
+		log.Info("endpoint for ruxitagentproc.conf is not available on the cluster.")
 		return true
 	}
 
@@ -94,7 +94,7 @@ func (dtc *dynatraceClient) readResponseForProcessModuleConfig(response []byte) 
 	resp := ProcessModuleConfig{}
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
-		dtc.logger.Error(err, "error unmarshalling json response")
+		log.Error(err, "error unmarshalling json response")
 		return nil, err
 	}
 
