@@ -16,6 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+var nsLog = log.WithName("namespace")
+
 func AddNamespaceMutationWebhookToManager(manager ctrl.Manager, ns string) error {
 	manager.GetWebhookServer().Register("/label-ns", &webhook.Admission{
 		Handler: newNamespaceMutator(ns, manager.GetAPIReader()),
@@ -47,7 +49,7 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 		return admission.Patched("")
 	}
 
-	log.Info("namespace request", "namespace", request.Name, "operation", request.Operation)
+	nsLog.Info("namespace request", "namespace", request.Name, "operation", request.Operation)
 	ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: request.Namespace}}
 	nsMapper := mapper.NewNamespaceMapper(ctx, nm.client, nm.apiReader, nm.namespace, &ns)
 	if err := decodeRequestToNamespace(request, &ns); err != nil {
@@ -55,12 +57,12 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 	}
 
 	if _, ok := ns.Annotations[mapper.UpdatedViaDynakubeAnnotation]; ok {
-		log.Info("checking namespace labels not necessary", "namespace", request.Name)
+		nsLog.Info("checking namespace labels not necessary", "namespace", request.Name)
 		delete(ns.Annotations, mapper.UpdatedViaDynakubeAnnotation)
 		return getResponseForNamespace(&ns, &request)
 	}
 
-	log.Info("checking namespace labels", "namespace", request.Name)
+	nsLog.Info("checking namespace labels", "namespace", request.Name)
 	updatedNamespace, err := nsMapper.MapFromNamespace()
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
@@ -68,7 +70,7 @@ func (nm *namespaceMutator) Handle(ctx context.Context, request admission.Reques
 	if !updatedNamespace {
 		return admission.Patched("")
 	}
-	log.Info("namespace", "labels", ns.Labels)
+	nsLog.Info("namespace", "labels", ns.Labels)
 	return getResponseForNamespace(&ns, &request)
 }
 
