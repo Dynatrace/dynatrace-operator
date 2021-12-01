@@ -40,19 +40,32 @@ rules:
       - list
       - watch
       - update
+  # data-ingest workload owner lookup
   - apiGroups:
       - ""
-      - "apps"
-      - "batch"
-      - "apps.openshift.io"
+    resources:
+      - replicationcontrollers
+    verbs:
+      - get
+  - apiGroups:
+      - apps
     resources:
       - replicasets
       - statefulsets
       - daemonsets
       - deployments
-      - replicationcontrollers
+    verbs:
+      - get
+  - apiGroups:
+      - batch
+    resources:
       - jobs
       - cronjobs
+    verbs:
+      - get
+  - apiGroups:
+      - apps.openshift.io
+    resources:
       - deploymentconfigs
     verbs:
       - get
