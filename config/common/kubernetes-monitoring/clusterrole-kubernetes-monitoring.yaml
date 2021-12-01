@@ -5,27 +5,51 @@ metadata:
 rules:
   - apiGroups:
       - ""
-      - batch
-      - apps
-      - apps.openshift.io
-      - config.openshift.io
     resources:
       - nodes
       - pods
       - namespaces
-      - deployments
-      - replicasets
-      - deploymentconfigs
       - replicationcontrollers
-      - jobs
-      - cronjobs
-      - statefulsets
-      - daemonsets
       - events
       - resourcequotas
       - pods/proxy
       - nodes/proxy
       - services
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+      - cronjobs
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - replicasets
+      - statefulsets
+      - daemonsets
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
+      - apps.openshift.io
+    resources:
+      - deploymentconfigs
+    verbs:
+      - list
+      - watch
+      - get
+  - apiGroups:
+      - config.openshift.io
+    resources:
       - clusterversions
     verbs:
       - list
