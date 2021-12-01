@@ -86,7 +86,7 @@ func getPathToKustomize() (string, error) {
 
 	workingDir = workingDir[:(strings.LastIndex(workingDir, "dynatrace-operator") + len("dynatrace-operator"))]
 	pathToKustomize := fmt.Sprintf("%s/config/kubernetes/", workingDir)
-	log.Info(fmt.Sprintf("assuming 'kustomization.yaml' to be in '%s'", pathToKustomize))
+	log.Info("assuming 'kustomization.yaml' to be in", "path", pathToKustomize)
 	if _, err := os.Stat(fmt.Sprintf("%skustomization.yaml", pathToKustomize)); err != nil {
 		log.Error(err, "'kustomization.yaml' not found in path", "path", pathToKustomize)
 		return "", errors.WithStack(err)

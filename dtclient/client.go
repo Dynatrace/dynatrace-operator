@@ -152,7 +152,7 @@ func Proxy(proxyURL string) Option {
 	return func(c *dynatraceClient) {
 		p, err := url.Parse(proxyURL)
 		if err != nil {
-			log.Info("Could not parse proxy URL!")
+			log.Info("could not parse proxy URL!")
 			return
 		}
 		t := c.httpClient.Transport.(*http.Transport)
@@ -164,7 +164,7 @@ func Certs(certs []byte) Option {
 	return func(c *dynatraceClient) {
 		rootCAs := x509.NewCertPool()
 		if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
-			log.Info("Failed to append custom certs!")
+			log.Info("failed to append custom certs!")
 		}
 
 		t := c.httpClient.Transport.(*http.Transport)

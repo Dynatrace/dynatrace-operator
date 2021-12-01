@@ -20,7 +20,7 @@ func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretNam
 	var cfg corev1.Secret
 	err := r.Get(context.TODO(), client.ObjectKey{Name: secretName, Namespace: targetNS}, &cfg)
 	if k8serrors.IsNotFound(err) {
-		log.Info("Creating secret", "namespace", targetNS, "secret", secretName)
+		log.Info("creating secret", "namespace", targetNS, "secret", secretName)
 		if err := c.Create(context.TODO(), &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      secretName,
@@ -39,7 +39,7 @@ func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secretNam
 	}
 
 	if !reflect.DeepEqual(data, cfg.Data) {
-		log.Info("Updating secret", "namespace", targetNS, "secret", secretName)
+		log.Info("updating secret", "namespace", targetNS, "secret", secretName)
 		cfg.Data = data
 		if err := c.Update(context.TODO(), &cfg); err != nil {
 			return false, errors.Wrapf(err, "failed to update secret %s", secretName)

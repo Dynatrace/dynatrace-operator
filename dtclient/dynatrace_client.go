@@ -224,7 +224,7 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 
 			for _, ip := range info.IPAddresses {
 				if old, ok := dtc.hostCache[ip]; ok {
-					log.Info("Hosts cache: replacing host", "ip", ip, "new", hostInfo.entityID, "old", old.entityID)
+					log.Info("hosts cache: replacing host", "ip", ip, "new", hostInfo.entityID, "old", old.entityID)
 				}
 
 				dtc.hostCache[ip] = hostInfo
@@ -233,7 +233,7 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 	}
 
 	if len(inactive) > 0 {
-		log.Info("Hosts cache: ignoring inactive hosts", "ids", inactive)
+		log.Info("hosts cache: ignoring inactive hosts", "ids", inactive)
 	}
 
 	return nil

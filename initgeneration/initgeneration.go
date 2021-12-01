@@ -71,7 +71,7 @@ func NewInitGenerator(client client.Client, apiReader client.Reader, ns string) 
 // GenerateForNamespace creates the init secret for namespace while only having the name of the corresponding dynakube
 // Used by the podInjection webhook in case the namespace lacks the init secret.
 func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1beta1.DynaKube, targetNs string) (bool, error) {
-	log.Info("Reconciling namespace init secret for", "namespace", targetNs)
+	log.Info("reconciling namespace init secret for", "namespace", targetNs)
 	g.canWatchNodes = false
 	data, err := g.generate(ctx, &dk)
 	if err != nil {
@@ -83,7 +83,7 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1
 // GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
 func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) (bool, error) {
-	log.Info("Reconciling namespace init secret for", "dynakube", dk.Name)
+	log.Info("reconciling namespace init secret for", "dynakube", dk.Name)
 	g.canWatchNodes = true
 	data, err := g.generate(ctx, dk)
 	if err != nil {
@@ -102,7 +102,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 			anyUpdate = true
 		}
 	}
-	log.Info("Done updating init secrets")
+	log.Info("done updating init secrets")
 	return anyUpdate, nil
 }
 

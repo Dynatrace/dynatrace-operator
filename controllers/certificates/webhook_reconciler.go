@@ -282,7 +282,7 @@ func (r *ReconcileWebhookCertificates) updateCRDConfiguration(ctx context.Contex
 	}
 
 	if !hasConversionWebhook(crd) {
-		log.Info("No conversion webhook config, no cert will be provided")
+		log.Info("no conversion webhook config, no cert will be provided")
 		return nil
 	}
 

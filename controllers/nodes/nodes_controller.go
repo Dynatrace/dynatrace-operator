@@ -108,9 +108,7 @@ func (r *ReconcileNodes) onUpdate(node string) error {
 }
 
 func (r *ReconcileNodes) onDeletion(node string) error {
-	logger := log.WithValues("node", node)
-
-	logger.Info("node deletion notification received")
+	log.Info("node deletion notification received", "node", node)
 
 	c, err := r.getCache()
 	if err != nil {

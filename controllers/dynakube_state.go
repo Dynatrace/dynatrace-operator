@@ -46,7 +46,7 @@ func (dkState *DynakubeState) Update(upd bool, d time.Duration, cause string) bo
 	if !upd {
 		return false
 	}
-	log.Info("Updating DynaKube CR", "cause", cause)
+	log.Info("updating DynaKube CR", "cause", cause)
 	dkState.Updated = true
 	dkState.RequeueAfter = d
 	return true

@@ -67,7 +67,7 @@ func (r *Reconciler) createPullSecretIfNotExists(pullSecretData map[string][]byt
 	var config corev1.Secret
 	err := r.apiReader.Get(context.TODO(), client.ObjectKey{Name: extendWithPullSecretSuffix(r.instance.Name), Namespace: r.instance.Namespace}, &config)
 	if k8serrors.IsNotFound(err) {
-		log.Info("Creating pull secret")
+		log.Info("creating pull secret")
 		return r.createPullSecret(pullSecretData)
 	}
 	return &config, err
@@ -95,7 +95,7 @@ func (r *Reconciler) createPullSecret(pullSecretData map[string][]byte) (*corev1
 }
 
 func (r *Reconciler) updatePullSecret(pullSecret *corev1.Secret, desiredPullSecretData map[string][]byte) error {
-	log.Info(fmt.Sprintf("Updating secret %s", pullSecret.Name))
+	log.Info("updating secret", "name", pullSecret.Name)
 	pullSecret.Data = desiredPullSecretData
 	if err := r.Update(context.TODO(), pullSecret); err != nil {
 		return fmt.Errorf("failed to update secret %s: %w", pullSecret.Name, err)

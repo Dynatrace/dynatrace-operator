@@ -42,7 +42,7 @@ func NewEndpointSecretGenerator(client client.Client, apiReader client.Reader, n
 // GenerateForNamespace creates the data-ingest-endpoint secret for namespace while only having the name of the corresponding dynakube
 // Used by the podInjection webhook in case the namespace lacks the secret.
 func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkName, targetNs string) (bool, error) {
-	log.Info("Reconciling data-ingest endpoint secret for", "namespace", targetNs)
+	log.Info("reconciling data-ingest endpoint secret for", "namespace", targetNs)
 	var dk dynatracev1beta1.DynaKube
 	if err := g.client.Get(ctx, client.ObjectKey{Name: dkName, Namespace: g.namespace}, &dk); err != nil {
 		return false, err
@@ -58,7 +58,7 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 // GenerateForDynakube creates/updates the data-ingest-endpoint secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
 func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) (bool, error) {
-	log.Info("Reconciling data-ingest endpoint secret for", "dynakube", dk.Name)
+	log.Info("reconciling data-ingest endpoint secret for", "dynakube", dk.Name)
 
 	data, err := g.prepare(ctx, dk)
 	if err != nil {
@@ -77,7 +77,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 			anyUpdate = true
 		}
 	}
-	log.Info("Done updating data-ingest endpoint secrets")
+	log.Info("done updating data-ingest endpoint secrets")
 	return anyUpdate, nil
 }
 

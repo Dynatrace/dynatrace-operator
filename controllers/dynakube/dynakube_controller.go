@@ -101,7 +101,7 @@ type DynatraceClientFunc func(properties DynatraceClientProperties) (dtclient.Cl
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log.Info("Reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
+	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
 	// Fetch the DynaKube instance
 	instance := &dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: request.NamespacedName.Name}}
@@ -132,7 +132,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 
 		var serr dtclient.ServerError
 		if ok := errors.As(dkState.Err, &serr); ok && serr.Code == http.StatusTooManyRequests {
-			log.Info("Request limit for Dynatrace API reached! Next reconcile in one minute")
+			log.Info("request limit for Dynatrace API reached! Next reconcile in one minute")
 			return reconcile.Result{RequeueAfter: 1 * time.Minute}, nil
 		}
 

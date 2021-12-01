@@ -45,7 +45,7 @@ func main() {
 	pflag.CommandLine.AddFlagSet(csiDriverFlags())
 	pflag.Parse()
 
-	ctrl.SetLogger(logger.NewDTLogger())
+	ctrl.SetLogger(log)
 
 	version.LogVersion()
 
@@ -79,7 +79,7 @@ func main() {
 		exitOnError(err, "webhook-server setup failed")
 		defer cleanUp()
 	default:
-		log.Error(errBadSubcmd, "Unknown subcommand", "command", subCmd)
+		log.Error(errBadSubcmd, "unknown subcommand", "command", subCmd)
 		os.Exit(1)
 	}
 

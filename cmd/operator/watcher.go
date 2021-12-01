@@ -22,7 +22,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,7 +34,6 @@ type certificateWatcher struct {
 	certificateDirectory  string
 	namespace             string
 	certificateSecretName string
-	logger                logr.Logger
 }
 
 func newCertificateWatcher(mgr manager.Manager, namespace string, secretName string) *certificateWatcher {
@@ -45,18 +43,17 @@ func newCertificateWatcher(mgr manager.Manager, namespace string, secretName str
 		certificateDirectory:  certsDir,
 		namespace:             namespace,
 		certificateSecretName: secretName,
-		logger:                log,
 	}
 }
 
 func (watcher *certificateWatcher) watchForCertificatesSecret() {
 	for {
 		<-time.After(6 * time.Hour)
-		watcher.logger.Info("checking for new certificates")
+		log.Info("checking for new certificates")
 		if updated, err := watcher.updateCertificatesFromSecret(); err != nil {
-			watcher.logger.Info("failed to update certificates", "error", err)
+			log.Info("failed to update certificates", "error", err)
 		} else if updated {
-			watcher.logger.Info("updated certificate successfully")
+			log.Info("updated certificate successfully")
 		}
 	}
 }

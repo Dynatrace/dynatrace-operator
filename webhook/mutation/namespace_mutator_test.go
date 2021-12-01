@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	jsonpatch "github.com/evanphx/json-patch"
@@ -48,7 +47,6 @@ func TestInjection(t *testing.T) {
 		client:    clt,
 		apiReader: clt,
 		namespace: "dynatrace",
-		logger:    logger.NewDTLogger(),
 	}
 	t.Run("Don't inject into operator ns", func(t *testing.T) {
 		baseNs := &corev1.Namespace{

@@ -139,19 +139,19 @@ func (c *Controller) removeIstioConfigurationForServiceEntry(listOps *metav1.Lis
 
 	list, err := c.istioClient.NetworkingV1alpha3().ServiceEntries(namespace).List(context.TODO(), *listOps)
 	if err != nil {
-		log.Error(err, fmt.Sprintf("istio: error listing service entries, %v", err))
+		log.Error(err, "istio: error listing service entries")
 		return false, err
 	}
 
 	del := false
 	for _, se := range list.Items {
 		if _, inUse := seen[se.GetName()]; !inUse {
-			log.Info(fmt.Sprintf("istio: removing %s: %v", se.Kind, se.GetName()))
+			log.Info("istio: removing", "kind", se.Kind, "name", se.GetName())
 			err = c.istioClient.NetworkingV1alpha3().
 				ServiceEntries(namespace).
 				Delete(context.TODO(), se.GetName(), metav1.DeleteOptions{})
 			if err != nil {
-				log.Error(err, fmt.Sprintf("istio: error deleting service entry, %s : %v", se.GetName(), err))
+				log.Error(err, "istio: error deleting service entry", "name", se.GetName())
 				continue
 			}
 			del = true
@@ -166,19 +166,19 @@ func (c *Controller) removeIstioConfigurationForVirtualService(listOps *metav1.L
 
 	list, err := c.istioClient.NetworkingV1alpha3().VirtualServices(namespace).List(context.TODO(), *listOps)
 	if err != nil {
-		log.Error(err, fmt.Sprintf("istio: error listing virtual service, %v", err))
+		log.Error(err, "istio: error listing virtual service")
 		return false, err
 	}
 
 	del := false
 	for _, vs := range list.Items {
 		if _, inUse := seen[vs.GetName()]; !inUse {
-			log.Info(fmt.Sprintf("istio: removing %s: %v", vs.Kind, vs.GetName()))
+			log.Info("istio: removing", "kind", vs.Kind, "name", vs.GetName())
 			err = c.istioClient.NetworkingV1alpha3().
 				VirtualServices(namespace).
 				Delete(context.TODO(), vs.GetName(), metav1.DeleteOptions{})
 			if err != nil {
-				log.Error(err, fmt.Sprintf("istio: error deleting virtual service, %s : %v", vs.GetName(), err))
+				log.Error(err, "istio: error deleting virtual service", "name", vs.GetName())
 				continue
 			}
 			del = true

@@ -44,14 +44,14 @@ func (r *Reconciler) Reconcile() error {
 	if r.hasCustomPropertiesValueOnly() {
 		mustNotUpdate, err := r.createCustomPropertiesIfNotExists()
 		if err != nil {
-			log.Error(err, fmt.Sprintf("could not create custom properties for '%s'", r.customPropertiesOwnerName))
+			log.Error(err, "could not create custom properties", "owner", r.customPropertiesOwnerName)
 			return errors.WithStack(err)
 		}
 
 		if !mustNotUpdate {
 			err = r.updateCustomPropertiesIfOutdated()
 			if err != nil {
-				log.Error(err, fmt.Sprintf("could not update custom properties for '%s'", r.customPropertiesOwnerName))
+				log.Error(err, "could not update custom properties", "owner", r.customPropertiesOwnerName)
 				return errors.WithStack(err)
 			}
 		}

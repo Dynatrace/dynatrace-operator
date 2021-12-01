@@ -18,7 +18,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/initgeneration"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/webhook"
 	corev1 "k8s.io/api/core/v1"
@@ -32,40 +31,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-const (
-	injectEvent          = "Inject"
-	updatePodEvent       = "UpdatePod"
-	missingDynakubeEvent = "MissingDynakube"
-
-	dataIngestInjectedEnvVarName = "DATA_INGEST_INJECTED"
-	oneAgentInjectedEnvVarName   = "ONEAGENT_INJECTED"
-	dynatraceMetadataEnvVarName  = "DT_DEPLOYMENT_METADATA"
-
-	workloadKindEnvVarName = "DT_WORKLOAD_KIND"
-	workloadNameEnvVarName = "DT_WORKLOAD_NAME"
-
-	dataIngestVolumeName = "data-ingest-enrichment"
-	dataIngestMountPath  = "/var/lib/dynatrace/enrichment"
-
-	dataIngestEndpointVolumeName = "data-ingest-endpoint"
-
-	oneAgentBinVolumeName   = "oneagent-bin"
-	oneAgentShareVolumeName = "oneagent-share"
-
-	injectionConfigVolumeName = "injection-config"
-
-	provisionedVolumeMode = "provisioned"
-	installerVolumeMode   = "installer"
-)
-
-var log = logger.NewDTLogger()
-var debug = os.Getenv("DEBUG_OPERATOR")
-
 // AddPodMutationWebhookToManager adds the Webhook server to the Manager
 func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 	podName := os.Getenv("POD_NAME")
 	if podName == "" {
-		log.Info("No Pod name set for webhook container")
+		log.Info("no Pod name set for webhook container")
 	}
 
 	if podName == "" && debug == "true" {

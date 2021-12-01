@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"k8s.io/client-go/rest"
@@ -53,7 +52,7 @@ func startComponent(name string, startInfo startupInfo) {
 		os.Exit(1)
 	}
 
-	log.Info(fmt.Sprintf("starting manager '%s'", name))
+	log.Info("starting manager", "name", name)
 	if err := mgr.Start(startInfo.signalHandler); err != nil {
 		log.Error(err, "problem running manager")
 		os.Exit(1)

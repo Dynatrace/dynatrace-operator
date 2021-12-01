@@ -34,7 +34,7 @@ const (
 )
 
 var (
-	log = logger.NewDTLogger()
+	log = logger.NewDTLogger().WithName("dynakube-api")
 
 	defaultIgnoredNamespaces = []string{
 		"^dynatrace$",

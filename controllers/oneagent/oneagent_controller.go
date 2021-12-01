@@ -60,20 +60,20 @@ type ReconcileOneAgent struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.DynakubeState) (bool, error) {
-	log.Info("Reconciling OneAgent")
+	log.Info("reconciling OneAgent")
 
 	upd, err := r.reconcileRollout(rec)
 	if err != nil {
 		return false, err
 	} else if upd {
-		log.Info("Rollout reconciled")
+		log.Info("rollout reconciled")
 	}
 
 	updInterval := defaultUpdateInterval
 	if val := os.Getenv(updateEnvVar); val != "" {
 		x, err := strconv.Atoi(val)
 		if err != nil {
-			log.Info("Conversion of ONEAGENT_OPERATOR_UPDATE_INTERVAL failed")
+			log.Info("conversion of ONEAGENT_OPERATOR_UPDATE_INTERVAL failed")
 		} else {
 			updInterval = time.Duration(x) * time.Minute
 		}
@@ -103,7 +103,7 @@ func (r *ReconcileOneAgent) reconcileRollout(dkState *controllers.DynakubeState)
 	// Define a new DaemonSet object
 	dsDesired, err := r.getDesiredDaemonSet(dkState)
 	if err != nil {
-		log.Info("Failed to get desired daemonset")
+		log.Info("failed to get desired daemonset")
 		return false, err
 	}
 
