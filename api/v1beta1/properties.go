@@ -68,7 +68,7 @@ func (dk *DynaKube) ActiveGateMode() bool {
 	return len(dk.Spec.ActiveGate.Capabilities) > 0
 }
 
-func (dk *DynaKube) ActiveGateCapabilityMode(mode string) bool {
+func (dk *DynaKube) IsActiveGateMode(mode string) bool {
 	for _, capability := range dk.Spec.ActiveGate.Capabilities {
 		if string(capability) == mode {
 			return true

@@ -115,16 +115,9 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 		dataIngestToken = string(token)
 	}
 
-	diUrl := ""
-	var err error
-	if dk.ActiveGateCapabilityMode(dynatracev1beta1.DataIngestCapability.ShortName) {
-		if diUrl, err = dataIngestUrlFromApiUrl(dk); err != nil {
-			return nil, err
-		}
-	} else if len(dk.Spec.APIURL) > 0 {
-		diUrl = fmt.Sprintf("%s/v2/metrics/ingest", dk.Spec.APIURL)
-	} else {
-		return nil, fmt.Errorf("failed to create data-ingest endpoint, DynaKube.spec.apiUrl is empty")
+	diUrl, err := getDataIngestUrlFromDk(dk)
+	if err != nil {
+		return nil, err
 	}
 
 	return map[string]string{
@@ -133,13 +126,23 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 	}, nil
 }
 
+func getDataIngestUrlFromDk(dk *dynatracev1beta1.DynaKube) (string, error) {
+	if dk.IsActiveGateMode(dynatracev1beta1.DataIngestCapability.ShortName) {
+		return dataIngestUrlFromApiUrl(dk)
+	} else if len(dk.Spec.APIURL) > 0 {
+		return fmt.Sprintf("%s/v2/metrics/ingest", dk.Spec.APIURL), nil
+	} else {
+		return "", fmt.Errorf("failed to create data-ingest endpoint, DynaKube.spec.apiUrl is empty")
+	}
+}
+
 func dataIngestUrlFromApiUrl(dk *dynatracev1beta1.DynaKube) (string, error) {
-	url, err := url.Parse(dk.Spec.APIURL)
+	apiUrl, err := url.Parse(dk.Spec.APIURL)
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to parse DynaKube.spec.apiUrl")
 	}
 
-	tenant, err := extractTenant(url)
+	tenant, err := extractTenant(apiUrl)
 	if err != nil {
 		return "", err
 	}
