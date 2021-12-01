@@ -4,8 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
+	agcapability "github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
@@ -111,8 +115,57 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 		dataIngestToken = string(token)
 	}
 
+	diUrl, err := dataIngestUrl(dk)
+	if err != nil {
+		return nil, err
+	}
+
 	return map[string]string{
-		UrlSecretField:   fmt.Sprintf("%s/v2/metrics/ingest", dk.Spec.APIURL),
+		UrlSecretField:   diUrl,
 		TokenSecretField: dataIngestToken,
 	}, nil
+}
+
+func dataIngestUrl(dk *dynatracev1beta1.DynaKube) (string, error) {
+	if dk.IsActiveGateMode(dynatracev1beta1.DataIngestCapability.ShortName) {
+		return dataIngestUrlForClusterActiveGate(dk)
+	} else if len(dk.Spec.APIURL) > 0 {
+		return dataIngestUrlForDynatraceActiveGate(dk)
+	} else {
+		return "", fmt.Errorf("failed to create data-ingest endpoint, DynaKube.spec.apiUrl is empty")
+	}
+}
+
+func dataIngestUrlForDynatraceActiveGate(dk *dynatracev1beta1.DynaKube) (string, error) {
+	return fmt.Sprintf("%s/v2/metrics/ingest", dk.Spec.APIURL), nil
+}
+
+func dataIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string, error) {
+	apiUrl, err := url.Parse(dk.Spec.APIURL)
+	if err != nil {
+		return "", errors.WithMessage(err, "failed to parse DynaKube.spec.apiUrl")
+	}
+
+	tenant, err := extractTenant(apiUrl)
+	if err != nil {
+		return "", err
+	}
+
+	serviceName := capability.BuildServiceName(dk.Name, agcapability.MultiActiveGateName)
+	return fmt.Sprintf("https://%s.%s/e/%s/api/v2/metrics/ingest", serviceName, dk.Namespace, tenant), nil
+}
+
+func extractTenant(url *url.URL) (string, error) {
+	tenant := ""
+	subdomains := strings.Split(url.Hostname(), ".")
+	subpaths := strings.Split(url.Path, "/")
+	//Path = '/e/<token>/api' -> ['', 'e',  '<tenant>', 'api']
+	if len(subpaths) >= 4 && subpaths[1] == "e" && subpaths[3] == "api" {
+		tenant = subpaths[2]
+	} else if len(subdomains) >= 2 {
+		tenant = subdomains[0]
+	} else {
+		return "", fmt.Errorf("failed to parse DynaKube.spec.apiUrl, unknown tenant")
+	}
+	return tenant, nil
 }

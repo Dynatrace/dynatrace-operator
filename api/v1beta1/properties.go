@@ -68,6 +68,15 @@ func (dk *DynaKube) ActiveGateMode() bool {
 	return len(dk.Spec.ActiveGate.Capabilities) > 0
 }
 
+func (dk *DynaKube) IsActiveGateMode(mode string) bool {
+	for _, capability := range dk.Spec.ActiveGate.Capabilities {
+		if string(capability) == mode {
+			return true
+		}
+	}
+	return false
+}
+
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
 func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 	if dk.CloudNativeFullstackMode() {

@@ -20,18 +20,26 @@ const (
 	testDataIngestToken        = "test-data-ingest-token"
 	testUpdatedDataIngestToken = "updated-test-data-ingest-token"
 
-	testApiUrl        = "https://test/api"
-	testUpdatedApiUrl = "https://updated-test/api"
+	testApiUrl        = "https://tenant.test/api"
+	testUpdatedApiUrl = "https://tenant.updated-test/api"
 
-	testDataIngestSecret = `DT_METRICS_INGEST_URL=https://test/api/v2/metrics/ingest
+	testDataIngestSecret = `DT_METRICS_INGEST_URL=https://tenant.test/api/v2/metrics/ingest
 DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
 `
-	testUpdatedTokenDataIngestSecret = `DT_METRICS_INGEST_URL=https://test/api/v2/metrics/ingest
+	testUpdatedTokenDataIngestSecret = `DT_METRICS_INGEST_URL=https://tenant.test/api/v2/metrics/ingest
 DT_METRICS_INGEST_API_TOKEN=updated-test-data-ingest-token
 `
-	testUpdatedApiUrlDataIngestSecret = `DT_METRICS_INGEST_URL=https://updated-test/api/v2/metrics/ingest
+	testUpdatedApiUrlDataIngestSecret = `DT_METRICS_INGEST_URL=https://tenant.updated-test/api/v2/metrics/ingest
 DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
 `
+
+	testDataIngestSecretLocalAG = `DT_METRICS_INGEST_URL=https://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest
+DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
+`
+	testUpdatedApiUrlDataIngestSecretLocalAG = `DT_METRICS_INGEST_URL=https://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest
+DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
+`
+
 	testNamespace1 = "test-namespace-one"
 	testNamespace2 = "test-namespace-two"
 
@@ -118,7 +126,6 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		assert.Equal(t, true, upd)
 
 		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace1, testDataIngestSecret)
-
 		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace2, testDataIngestSecret)
 
 		checkTestSecretNotExists(t, fakeClient, SecretEndpointName, testNamespaceDynatrace)
@@ -144,7 +151,6 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		assert.Equal(t, true, upd)
 
 		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace1, testUpdatedTokenDataIngestSecret)
-
 		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace2, testUpdatedTokenDataIngestSecret)
 
 		checkTestSecretNotExists(t, fakeClient, SecretEndpointName, testNamespaceDynatrace)
@@ -166,8 +172,31 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		assert.Equal(t, true, upd)
 
 		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace1, testUpdatedApiUrlDataIngestSecret)
-
 		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace2, testUpdatedApiUrlDataIngestSecret)
+
+		checkTestSecretNotExists(t, fakeClient, SecretEndpointName, testNamespaceDynatrace)
+	})
+	t.Run(`data-ingest endpoint secret created (local AG) in all namespaces and apiUrl updated`, func(t *testing.T) {
+		instance := buildTestDynakubeWithDataIngestCapability()
+		fakeClient := buildTestClient(instance)
+
+		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace, log)
+
+		upd, err := endpointSecretGenerator.GenerateForDynakube(context.TODO(), instance)
+		assert.NoError(t, err)
+		assert.Equal(t, true, upd)
+
+		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace1, testDataIngestSecretLocalAG)
+		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace2, testDataIngestSecretLocalAG)
+
+		newInstance := updatedTestDynakubeWithDataIngestCapability()
+
+		upd, err = endpointSecretGenerator.GenerateForDynakube(context.TODO(), newInstance)
+		assert.NoError(t, err)
+		assert.Equal(t, false, upd)
+
+		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace1, testUpdatedApiUrlDataIngestSecretLocalAG)
+		checkTestSecretExists(t, fakeClient, SecretEndpointName, testNamespace2, testUpdatedApiUrlDataIngestSecretLocalAG)
 
 		checkTestSecretNotExists(t, fakeClient, SecretEndpointName, testNamespaceDynatrace)
 	})
@@ -219,6 +248,24 @@ func updatedTestDynakube() *dynatracev1beta1.DynaKube {
 	}
 }
 
+func updatedTestDynakubeWithDataIngestCapability() *dynatracev1beta1.DynaKube {
+	return &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testDynakubeName,
+			Namespace: testNamespaceDynatrace,
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+					dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.KubeMonCapability.ShortName),
+					dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.DataIngestCapability.ShortName),
+				},
+			},
+			APIURL: testUpdatedApiUrl,
+		},
+	}
+}
+
 func updateTestDynakube(t *testing.T, fakeClient client.Client) {
 	var dk dynatracev1beta1.DynaKube
 	err := fakeClient.Get(context.TODO(), client.ObjectKey{Name: testDynakubeName, Namespace: testNamespaceDynatrace}, &dk)
@@ -237,6 +284,24 @@ func buildTestDynakube() *dynatracev1beta1.DynaKube {
 			Namespace: testNamespaceDynatrace,
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: testApiUrl,
+		},
+	}
+}
+
+func buildTestDynakubeWithDataIngestCapability() *dynatracev1beta1.DynaKube {
+	return &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testDynakubeName,
+			Namespace: testNamespaceDynatrace,
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+					dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.KubeMonCapability.ShortName),
+					dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.DataIngestCapability.ShortName),
+				},
+			},
 			APIURL: testApiUrl,
 		},
 	}
