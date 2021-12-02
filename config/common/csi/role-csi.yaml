@@ -9,7 +9,7 @@ rules:
     resources:
       - endpoints
     verbs:
-      - get"
+      - get
       - watch
       - list
       - delete
