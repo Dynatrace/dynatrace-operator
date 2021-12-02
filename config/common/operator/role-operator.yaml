@@ -24,7 +24,6 @@ rules:
       - dynakubes/status
     verbs:
       - update
-
   - apiGroups:
       - apps
     resources:
@@ -62,9 +61,8 @@ rules:
       - deployments/finalizers
     verbs:
       - update
-
   - apiGroups:
-      - "" # "" indicates the core API group
+      - ""
     resources:
       - configmaps
     verbs:
@@ -75,7 +73,7 @@ rules:
       - update
       - delete
   - apiGroups:
-      - "" # "" indicates the core API group
+      - ""
     resources:
       - pods
     verbs:
@@ -85,7 +83,7 @@ rules:
       - delete
       - create
   - apiGroups:
-      - "" # "" indicates the core API group
+      - ""
     resources:
       - secrets
     verbs:
@@ -111,7 +109,6 @@ rules:
       - get
       - list
       - watch
-
   - apiGroups:
       - monitoring.coreos.com
     resources:
@@ -119,7 +116,6 @@ rules:
     verbs:
       - get
       - create
-
   - apiGroups:
       - networking.istio.io
     resources:
@@ -131,7 +127,6 @@ rules:
       - create
       - update
       - delete
-
   - apiGroups:
       - coordination.k8s.io
     resources:
