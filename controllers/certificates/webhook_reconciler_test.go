@@ -32,8 +32,9 @@ func TestGetSecret(t *testing.T) {
 	t.Run(`get nil if secret does not exists`, func(t *testing.T) {
 		clt := fake.NewClient()
 		r := &ReconcileWebhookCertificates{
-			client: clt,
-			ctx:    context.TODO(),
+			client:    clt,
+			apiReader: clt,
+			ctx:       context.TODO(),
 		}
 		secret, err := r.getSecret()
 		require.NoError(t, err)
@@ -48,6 +49,7 @@ func TestGetSecret(t *testing.T) {
 		})
 		r := &ReconcileWebhookCertificates{
 			client:    clt,
+			apiReader: clt,
 			ctx:       context.TODO(),
 			namespace: testNamespace,
 		}
@@ -202,6 +204,7 @@ func prepareReconcile(clt client.Client) (*ReconcileWebhookCertificates, reconci
 	rec := &ReconcileWebhookCertificates{
 		ctx:       context.TODO(),
 		client:    clt,
+		apiReader: clt,
 		namespace: testNamespace,
 		logger:    logger.NewDTLogger(),
 	}

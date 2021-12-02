@@ -51,6 +51,7 @@ func newWebhookReconciler(mgr manager.Manager, cancelMgr context.CancelFunc) *Re
 	return &ReconcileWebhookCertificates{
 		cancelMgrFunc: cancelMgr,
 		client:        mgr.GetClient(),
+		apiReader:     mgr.GetAPIReader(),
 		logger:        log.Log.WithName("operator.webhook-certificates"),
 	}
 }
@@ -58,6 +59,7 @@ func newWebhookReconciler(mgr manager.Manager, cancelMgr context.CancelFunc) *Re
 type ReconcileWebhookCertificates struct {
 	ctx           context.Context
 	client        client.Client
+	apiReader     client.Reader
 	namespace     string
 	logger        logr.Logger
 	cancelMgrFunc context.CancelFunc
@@ -193,7 +195,7 @@ func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.C
 func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx context.Context) (
 	*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 	var mutatingWebhook admissionregistrationv1.MutatingWebhookConfiguration
-	err := r.client.Get(ctx, client.ObjectKey{
+	err := r.apiReader.Get(ctx, client.ObjectKey{
 		Name: webhook.DeploymentName,
 	}, &mutatingWebhook)
 	if err != nil {
@@ -209,7 +211,7 @@ func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx conte
 func (r *ReconcileWebhookCertificates) getValidatingWebhookConfiguration(ctx context.Context) (
 	*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 	var mutatingWebhook admissionregistrationv1.ValidatingWebhookConfiguration
-	err := r.client.Get(ctx, client.ObjectKey{
+	err := r.apiReader.Get(ctx, client.ObjectKey{
 		Name: webhook.DeploymentName,
 	}, &mutatingWebhook)
 	if err != nil {
@@ -224,7 +226,7 @@ func (r *ReconcileWebhookCertificates) getValidatingWebhookConfiguration(ctx con
 
 func (r *ReconcileWebhookCertificates) getSecret() (*corev1.Secret, error) {
 	var oldSecret corev1.Secret
-	err := r.client.Get(r.ctx, client.ObjectKey{Name: r.buildSecretName(), Namespace: r.namespace}, &oldSecret)
+	err := r.apiReader.Get(r.ctx, client.ObjectKey{Name: r.buildSecretName(), Namespace: r.namespace}, &oldSecret)
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	}
@@ -280,7 +282,7 @@ func (r *ReconcileWebhookCertificates) updateConfiguration(
 func (r *ReconcileWebhookCertificates) updateCRDConfiguration(ctx context.Context, secret *corev1.Secret) error {
 
 	var crd apiv1.CustomResourceDefinition
-	if err := r.client.Get(ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
+	if err := r.apiReader.Get(ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
 		return err
 	}
 
