@@ -177,7 +177,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		instance := buildTestDynakubeWithDataIngestCapability()
 		fakeClient := buildTestClient(instance)
 
-		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace, log)
+		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
 
 		upd, err := endpointSecretGenerator.GenerateForDynakube(context.TODO(), instance)
 		assert.NoError(t, err)
