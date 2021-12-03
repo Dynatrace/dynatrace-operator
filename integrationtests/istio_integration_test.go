@@ -7,7 +7,7 @@ import (
 	"context"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/stretchr/testify/assert"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	"sigs.k8s.io/controller-runtime/pkg/client"

@@ -6,7 +6,7 @@ metadata:
     capabilities: Deep Insights
     categories: Monitoring,Logging & Tracing
     containerImage: registry.connect.redhat.com/dynatrace/dynatrace-operator
-    repository: https://github.com/Dynatrace/dynatrace-operator
+    repository: https://github.com/Dynatrace/dynatrace-operator/src
     support: Dynatrace
   name: dynatrace-operator.v0.0.0
   namespace: placeholder
@@ -628,7 +628,7 @@ spec:
   - observability
   links:
   - name: Dynatrace Operator
-    url: https://github.com/Dynatrace/dynatrace-operator
+    url: https://github.com/Dynatrace/dynatrace-operator/src
   - name: OpenShift Monitoring Info
     url: https://www.dynatrace.com/technologies/openshift-monitoring
   maintainers:

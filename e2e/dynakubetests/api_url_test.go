@@ -10,9 +10,9 @@ import (
 	"os"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/e2e"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -102,12 +102,12 @@ isOCP311() {
 
 applyDynatraceOperator() {
   if [ "${CLI}" = "kubectl" ]; then
-    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
+    "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/src/releases/latest/download/kubernetes.yaml
   else
     if isOCP311; then
-      "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift3.11.yaml
+      "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/src/releases/latest/download/openshift3.11.yaml
     else
-      "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift.yaml
+      "${CLI}" apply -f https://github.com/Dynatrace/dynatrace-operator/src/releases/latest/download/openshift.yaml
     fi
   fi
 

@@ -43,7 +43,7 @@ metadata:
     containerImage: docker.io/dynatrace/dynatrace-operator
     operators.operatorframework.io/builder: operator-sdk-v1.5.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-    repository: https://github.com/Dynatrace/dynatrace-operator
+    repository: https://github.com/Dynatrace/dynatrace-operator/src
     support: Dynatrace
   name: dynatrace-operator.v0.2.1
   namespace: placeholder
@@ -758,7 +758,7 @@ spec:
     - observability
   links:
     - name: Dynatrace Operator
-      url: https://github.com/Dynatrace/dynatrace-operator
+      url: https://github.com/Dynatrace/dynatrace-operator/src
     - name: Kubernetes Monitoring Info
       url: https://www.dynatrace.com/technologies/Kubernetes-monitoring
   maintainers:

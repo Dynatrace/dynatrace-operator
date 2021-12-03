@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/scheme"
-	"github.com/Dynatrace/dynatrace-operator/webhook/validation"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook/validation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	ctrl "sigs.k8s.io/controller-runtime"

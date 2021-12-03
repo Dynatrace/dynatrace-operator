@@ -6,8 +6,8 @@ package e2e
 import (
 	"testing"
 
-	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/api/v1alpha1"
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
+	dynatracev1alpha1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
