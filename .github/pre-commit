@@ -31,8 +31,8 @@ fi
 golangci-lint run --build-tags integration,containers_image_storage_stub
 res=$?
 if [[ $res -ne 0  ]] ; then
-echo "Linting failed"
-exit 2
+    echo "Linting failed"
+    exit 2
 fi
 ​
 # Unit tests
