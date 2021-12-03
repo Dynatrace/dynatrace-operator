@@ -23,9 +23,9 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtversion"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -61,7 +61,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 	fakeClient := fake.NewClient()
 
 	now := metav1.Now()
-	dkState := &controllers.DynakubeState{Instance: &dk, Now: now}
+	dkState := &status.DynakubeState{Instance: &dk, Now: now}
 
 	errVerProvider := func(img string, dockerConfig *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
 		return dtversion.ImageVersion{}, errors.New("Not implemented")
@@ -103,7 +103,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 }
 
 // Adding *testing.T parameter to prevent usage in production code
-func createTestPullSecret(_ *testing.T, clt client.Client, dkState *controllers.DynakubeState, data []byte) error {
+func createTestPullSecret(_ *testing.T, clt client.Client, dkState *status.DynakubeState, data []byte) error {
 	return clt.Create(context.TODO(), &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: dkState.Instance.Namespace,

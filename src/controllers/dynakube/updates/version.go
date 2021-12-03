@@ -5,8 +5,8 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtversion"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -21,7 +21,7 @@ type VersionProviderCallback func(string, *dtversion.DockerConfig) (dtversion.Im
 // ReconcileImageVersions updates the version and hash for the images used by the rec.Instance DynaKube instance.
 func ReconcileVersions(
 	ctx context.Context,
-	dkState *controllers.DynakubeState,
+	dkState *status.DynakubeState,
 	cl client.Client,
 	verProvider VersionProviderCallback,
 ) (bool, error) {
@@ -69,7 +69,7 @@ func ReconcileVersions(
 }
 
 func updateImageVersion(
-	dkState *controllers.DynakubeState,
+	dkState *status.DynakubeState,
 	img string,
 	target *dynatracev1beta1.VersionStatus,
 	dockerCfg *dtversion.DockerConfig,

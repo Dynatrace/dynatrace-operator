@@ -6,8 +6,8 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -87,7 +87,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		feature:   daemonset.ClassicFeature,
 	}
 
-	dkState := controllers.DynakubeState{Instance: dynakube}
+	dkState := status.DynakubeState{Instance: dynakube}
 	_, err := reconciler.Reconcile(context.TODO(), &dkState)
 	assert.NoError(t, err)
 
@@ -180,7 +180,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Spec.Tokens = ""
 		dk.Status.Tokens = ""
-		dkState := controllers.DynakubeState{Instance: dk}
+		dkState := status.DynakubeState{Instance: dk}
 
 		// act
 		updateCR, err := reconciler.reconcileRollout(&dkState)
@@ -195,7 +195,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Spec.Tokens = ""
 		dk.Status.Tokens = "not the actual name"
-		dkState := controllers.DynakubeState{Instance: dk}
+		dkState := status.DynakubeState{Instance: dk}
 
 		// act
 		updateCR, err := reconciler.reconcileRollout(&dkState)
@@ -224,7 +224,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Status.Tokens = dk.Tokens()
 		dk.Spec.Tokens = customTokenName
-		dkState := controllers.DynakubeState{Instance: dk}
+		dkState := status.DynakubeState{Instance: dk}
 
 		// act
 		updateCR, err := reconciler.reconcileRollout(&dkState)
@@ -291,7 +291,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Spec = ds.Spec.Template.Spec
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
-		dkState := controllers.DynakubeState{Instance: dk, RequeueAfter: 30 * time.Minute}
+		dkState := status.DynakubeState{Instance: dk, RequeueAfter: 30 * time.Minute}
 		err = reconciler.client.Create(context.TODO(), pod)
 
 		assert.NoError(t, err)
@@ -326,7 +326,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
 
-		dkState := controllers.DynakubeState{Instance: dk, RequeueAfter: 30 * time.Minute}
+		dkState := status.DynakubeState{Instance: dk, RequeueAfter: 30 * time.Minute}
 		err = reconciler.client.Create(context.TODO(), pod)
 
 		assert.NoError(t, err)
@@ -355,7 +355,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 	r := ReconcileOneAgent{
 		feature: daemonset.HostMonitoringFeature,
 	}
-	dkState := &controllers.DynakubeState{
+	dkState := &status.DynakubeState{
 		Instance: &dynatracev1beta1.DynaKube{
 			ObjectMeta: dkKey,
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -398,7 +398,7 @@ func TestHasSpecChanged(t *testing.T) {
 			}
 			mod(&oldInstance, &newInstance)
 
-			dkState := &controllers.DynakubeState{
+			dkState := &status.DynakubeState{
 				Instance: &oldInstance,
 			}
 			ds1, err := r.newDaemonSetForCR(dkState, "cluster1")
@@ -490,7 +490,7 @@ func TestNewDaemonset_Affinity(t *testing.T) {
 		r := ReconcileOneAgent{
 			feature: daemonset.HostMonitoringFeature,
 		}
-		dkState := &controllers.DynakubeState{
+		dkState := &status.DynakubeState{
 			Instance: newDynaKube(),
 		}
 		versionProvider.On("Major").Return("1", nil)

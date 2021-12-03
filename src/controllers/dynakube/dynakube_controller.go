@@ -8,7 +8,6 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
@@ -120,7 +119,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-	dkState := controllers.NewDynakubeState(instance)
+	dkState := status.NewDynakubeState(instance)
 	r.reconcileDynaKube(ctx, dkState, &dkMapper)
 
 	if dkState.Err != nil {
@@ -148,7 +147,7 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	return reconcile.Result{RequeueAfter: dkState.RequeueAfter}, nil
 }
 
-func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *controllers.DynakubeState, dkMapper *mapper.DynakubeMapper) {
+func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *status.DynakubeState, dkMapper *mapper.DynakubeMapper) {
 	dtcReconciler := DynatraceClientReconciler{
 		Client:              r.client,
 		DynatraceClientFunc: r.dtcBuildFunc,
@@ -272,7 +271,7 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 	return nil
 }
 
-func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers.DynakubeState) bool {
+func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *status.DynakubeState) bool {
 	var caps = []capability.Capability{
 		capability.NewKubeMonCapability(dkState.Instance),
 		capability.NewRoutingCapability(dkState.Instance),

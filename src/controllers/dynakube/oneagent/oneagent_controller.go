@@ -9,8 +9,8 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	appsv1 "k8s.io/api/apps/v1"
@@ -59,7 +59,7 @@ type ReconcileOneAgent struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.DynakubeState) (bool, error) {
+func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *status.DynakubeState) (bool, error) {
 	log.Info("reconciling OneAgent")
 
 	upd, err := r.reconcileRollout(rec)
@@ -97,7 +97,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.Dyna
 	return upd, nil
 }
 
-func (r *ReconcileOneAgent) reconcileRollout(dkState *controllers.DynakubeState) (bool, error) {
+func (r *ReconcileOneAgent) reconcileRollout(dkState *status.DynakubeState) (bool, error) {
 	updateCR := false
 
 	// Define a new DaemonSet object
@@ -140,7 +140,7 @@ func (r *ReconcileOneAgent) reconcileRollout(dkState *controllers.DynakubeState)
 	return updateCR, nil
 }
 
-func (r *ReconcileOneAgent) getDesiredDaemonSet(dkState *controllers.DynakubeState) (*appsv1.DaemonSet, error) {
+func (r *ReconcileOneAgent) getDesiredDaemonSet(dkState *status.DynakubeState) (*appsv1.DaemonSet, error) {
 	kubeSysUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
 		return nil, err
@@ -163,7 +163,7 @@ func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1be
 	return podList.Items, listOps, err
 }
 
-func (r *ReconcileOneAgent) newDaemonSetForCR(dkState *controllers.DynakubeState, clusterID string) (*appsv1.DaemonSet, error) {
+func (r *ReconcileOneAgent) newDaemonSetForCR(dkState *status.DynakubeState, clusterID string) (*appsv1.DaemonSet, error) {
 	var ds *appsv1.DaemonSet
 	var err error
 

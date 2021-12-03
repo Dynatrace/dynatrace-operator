@@ -1,4 +1,4 @@
-package controllers
+package status
 
 import (
 	"time"
