@@ -44,7 +44,8 @@ func TestAddLeftoversForSection(t *testing.T) {
 		leftovers := addLeftoversForSection("general", testConfMap)
 		assert.Len(t, testConfMap, 1)
 		assert.Len(t, leftovers, 2)
-		assert.Equal(t, []string{"prop1 val1", "prop2 val2"}, leftovers)
+		assert.Contains(t, leftovers, "prop1 val1")
+		assert.Contains(t, leftovers, "prop2 val2")
 	})
 	t.Run(`1 section`, func(t *testing.T) {
 		testConfMap := ConfMap{
