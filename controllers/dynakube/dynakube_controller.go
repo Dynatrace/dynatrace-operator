@@ -152,8 +152,6 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 	dtcReconciler := DynatraceClientReconciler{
 		Client:              r.client,
 		DynatraceClientFunc: r.dtcBuildFunc,
-		UpdateAPIToken:      true,
-		UpdatePaaSToken:     true,
 	}
 	dtc, upd, err := dtcReconciler.Reconcile(ctx, dkState.Instance)
 
@@ -171,13 +169,6 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 		return
 	}
 
-	// Fetch api token secret
-	secret, err := r.getTokenSecret(ctx, dkState.Instance)
-	if err != nil {
-		log.Error(err, "could not find token secret")
-		return
-	}
-
 	if dkState.Instance.Spec.EnableIstio {
 		if upd, err = istio.NewController(r.config, r.scheme).ReconcileIstio(dkState.Instance); err != nil {
 			// If there are errors log them, but move on.
@@ -188,7 +179,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *cont
 	}
 
 	err = dtpullsecret.
-		NewReconciler(r.client, r.apiReader, r.scheme, dkState.Instance, secret).
+		NewReconciler(r.client, r.apiReader, r.scheme, dkState.Instance, dtcReconciler.ApiToken, dtcReconciler.PaasToken).
 		Reconcile()
 	if dkState.Error(err) {
 		log.Error(err, "could not reconcile Dynatrace pull secret")

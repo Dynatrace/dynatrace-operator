@@ -43,17 +43,12 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	if r.token == nil {
-		return nil, fmt.Errorf("token secret is nil, cannot generate docker config")
-	}
-
-	paasToken, hasToken := r.token.Data[dtclient.DynatracePaasToken]
-	if !hasToken {
+	if r.paasToken == "" {
 		return nil, fmt.Errorf("token secret does not contain a paas token, cannot generate docker config")
 	}
 
 	dockerConfig := newDockerConfigWithAuth(connectionInfo.TenantUUID,
-		string(paasToken),
+		string(r.paasToken),
 		registry,
 		r.buildAuthString(connectionInfo))
 
@@ -61,12 +56,7 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 }
 
 func (r *Reconciler) buildAuthString(connectionInfo dtclient.ConnectionInfo) string {
-	paasToken := ""
-	if r.token != nil {
-		paasToken = string(r.token.Data[dtclient.DynatracePaasToken])
-	}
-
-	auth := fmt.Sprintf("%s:%s", connectionInfo.TenantUUID, paasToken)
+	auth := fmt.Sprintf("%s:%s", connectionInfo.TenantUUID, r.paasToken)
 	return b64.StdEncoding.EncodeToString([]byte(auth))
 }
 
