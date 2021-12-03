@@ -11,7 +11,7 @@ WORKDIR /app
 RUN go get github.com/google/go-licenses && go-licenses save ./... --save_path third_party_licenses --force
 RUN go get -d ./...
 
-RUN CGO_ENABLED=1 go build "$GO_BUILD_ARGS" -o ./build/_output/bin/dynatrace-operator ./cmd/operator/
+RUN CGO_ENABLED=1 go build "$GO_BUILD_ARGS" -o ./build/_output/bin/dynatrace-operator ./src/cmd/operator/
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 

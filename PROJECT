@@ -4,7 +4,7 @@ layout:
 plugins:
   go.sdk.operatorframework.io/v3: {}
 projectName: dynatrace-operator
-repo: github.com/Dynatrace/dynatrace-operator/src
+repo: github.com/Dynatrace/dynatrace-operator
 resources:
 - api:
     crdVersion: v1

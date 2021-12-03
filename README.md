@@ -18,7 +18,7 @@ With v0.3.0 the CRD structure has been changed to provide an easier and more und
 - added **hostMonitoring** for only monitoring the host in the cluster without app-only injection
 - (PREVIEW) added **cloudNativeFullStack** mode, which combines **hostMonitoring**, with the webhook based **applicationMonitoring**
 
-For more information please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/src/tree/master/config/samples),
+For more information please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples),
 or our [official help page.](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/)
 
 
@@ -46,7 +46,7 @@ To create the namespace and apply the operator run the following commands
 
 ```sh
 $ kubectl create namespace dynatrace
-$ kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/src/releases/latest/download/kubernetes.yaml
+$ kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
 ```
 
 A secret holding tokens for authenticating to the Dynatrace cluster needs to be created upfront. Create access tokens of
@@ -115,7 +115,7 @@ spec:
 ```
 
 This is the most basic configuration for the DynaKube object. We recommend you to use classic Fullstack injection to roll out Dynatrace to your cluster, as shown in the example above.
-In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/src/tree/master/config/samples).
+In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples).
 Save one of the sample configurations, change the API url to your environment and apply it to your cluster.
 
 ```sh
@@ -134,7 +134,7 @@ Remove DynaKube custom resources and clean-up all remaining Dynatrace Operator s
 
 ```sh
 $ kubectl delete -n dynatrace dynakube --all
-$ kubectl delete -f https://github.com/Dynatrace/dynatrace-operator/src/releases/latest/download/kubernetes.yaml
+$ kubectl delete -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/kubernetes.yaml
 ```
 
 </details>
@@ -147,7 +147,7 @@ To create the namespace and apply the operator run the following commands (for O
 
 ```sh
 $ oc adm new-project --node-selector="" dynatrace
-$ oc apply -f https://github.com/Dynatrace/dynatrace-operator/src/releases/latest/download/openshift.yaml
+$ oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift.yaml
 ```
 
 A secret holding tokens for authenticating to the Dynatrace cluster needs to be created upfront. Create access tokens of
@@ -217,7 +217,7 @@ spec:
 ```
 
 This is the most basic configuration for the DynaKube object. We recommend you to use classic Fullstack injection to roll out Dynatrace to your cluster, as shown in the example above.
-In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/src/tree/master/config/samples).
+In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples).
 Save one of the sample configurations, change the API url to your environment and apply it to your cluster.
 
 ```sh
@@ -236,7 +236,7 @@ Remove DynaKube custom resources and clean-up all remaining Dynatrace Operator s
 
 ```sh
 $ oc delete -n dynatrace dynakube --all
-$ oc delete -f https://github.com/Dynatrace/dynatrace-operator/src/releases/latest/download/openshift.yaml
+$ oc delete -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/openshift.yaml
 ```
 
 </details>

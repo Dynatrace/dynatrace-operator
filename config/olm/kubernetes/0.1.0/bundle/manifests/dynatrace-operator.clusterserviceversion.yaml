@@ -27,7 +27,7 @@ metadata:
     containerImage: quay.io/dynatrace/dynatrace-operator
     operators.operatorframework.io/builder: operator-sdk-v1.3.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
-    repository: https://github.com/Dynatrace/dynatrace-operator/src
+    repository: https://github.com/Dynatrace/dynatrace-operator
     support: Dynatrace
   name: dynatrace-operator.v0.1.0
   namespace: placeholder
@@ -382,7 +382,7 @@ spec:
   - observability
   links:
   - name: Dynatrace Operator
-    url: https://github.com/Dynatrace/dynatrace-operator/src
+    url: https://github.com/Dynatrace/dynatrace-operator
   - name: OpenShift Monitoring Info
     url: https://www.dynatrace.com/technologies/openshift-monitoring
   maintainers:
