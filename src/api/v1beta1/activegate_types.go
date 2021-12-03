@@ -118,4 +118,18 @@ type CapabilityProperties struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Environment variables"
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:com.tectonic.ui:advanced,urn:alm:descriptor:com.tectonic.ui:text"
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	StatsdCapabilityProperties `json:",inline"`
+}
+
+type StatsdCapabilityProperties struct {
+	// Optional: the StatsD data source container image. Defaults to the latest image provided by the Docker Registry
+	// implementation from the Dynatrace environment set as API URL.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="StatsdImage",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	StatsdImage string `json:"statsdImage,omitempty"`
+
+	// Optional: the Extension Framework 2.0 controller image. Defaults to the latest image provided by the Docker Registry
+	// implementation from the Dynatrace environment set as API URL.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="EecImage",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	ExtensionControllerImage string `json:"eecImage,omitempty"`
 }

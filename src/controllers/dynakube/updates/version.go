@@ -36,7 +36,15 @@ func ReconcileVersions(
 		!dk.FeatureDisableActiveGateUpdates() &&
 		dkState.IsOutdated(dk.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
 
-	if !needsActiveGateUpdate && !needsOneAgentUpdate {
+	needsEecUpdate := dk.NeedsActiveGate() &&
+		!dk.FeatureDisableActiveGateUpdates() &&
+		dkState.IsOutdated(dk.Status.ExtensionController.LastUpdateProbeTimestamp, ProbeThreshold)
+
+	needsStatsdUpdate := dk.NeedsActiveGate() &&
+		!dk.FeatureDisableActiveGateUpdates() &&
+		dkState.IsOutdated(dk.Status.Statsd.LastUpdateProbeTimestamp, ProbeThreshold)
+
+	if !(needsActiveGateUpdate || needsOneAgentUpdate || needsEecUpdate || needsStatsdUpdate) {
 		return upd, nil
 	}
 
@@ -56,6 +64,18 @@ func ReconcileVersions(
 	if needsActiveGateUpdate {
 		if err := updateImageVersion(dkState, dk.ActiveGateImage(), &dk.Status.ActiveGate.VersionStatus, &dockerCfg, verProvider, true); err != nil {
 			log.Error(err, "failed to update ActiveGate image version")
+		}
+	}
+
+	if needsEecUpdate {
+		if err := updateImageVersion(dkState, dk.EecImage(), &dk.Status.ExtensionController.VersionStatus, &dockerCfg, verProvider, true); err != nil {
+			log.Error(err, "Failed to update Extension Controller image version")
+		}
+	}
+
+	if needsStatsdUpdate {
+		if err := updateImageVersion(dkState, dk.StatsdImage(), &dk.Status.Statsd.VersionStatus, &dockerCfg, verProvider, true); err != nil {
+			log.Error(err, "Failed to update StatsD image version")
 		}
 	}
 

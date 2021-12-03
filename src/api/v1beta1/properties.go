@@ -137,6 +137,38 @@ func (dk *DynaKube) ActiveGateImage() string {
 	return fmt.Sprintf("%s/linux/activegate:latest", registry)
 }
 
+// EecImage returns the Extension Controller image to be used with the dk DynaKube instance.
+func (dk *DynaKube) EecImage() string {
+	if dk.ActiveGateMode() {
+		if dk.Spec.ActiveGate.ExtensionControllerImage != "" {
+			return dk.Spec.ActiveGate.ExtensionControllerImage
+		}
+	}
+
+	if dk.Spec.APIURL == "" {
+		return ""
+	}
+
+	registry := buildImageRegistry(dk.Spec.APIURL)
+	return fmt.Sprintf("%s/linux/dynatrace-eec:latest", registry)
+}
+
+// StatsdImage returns the StatsD data source image to be used with the dk DynaKube instance.
+func (dk *DynaKube) StatsdImage() string {
+	if dk.ActiveGateMode() {
+		if dk.Spec.ActiveGate.StatsdImage != "" {
+			return dk.Spec.ActiveGate.StatsdImage
+		}
+	}
+
+	if dk.Spec.APIURL == "" {
+		return ""
+	}
+
+	registry := buildImageRegistry(dk.Spec.APIURL)
+	return fmt.Sprintf("%s/linux/dynatrace-datasource-statsd:latest", registry)
+}
+
 func (dk *DynaKube) NeedsCSIDriver() bool {
 	return dk.CloudNativeFullstackMode() || (dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil && *dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver)
 }

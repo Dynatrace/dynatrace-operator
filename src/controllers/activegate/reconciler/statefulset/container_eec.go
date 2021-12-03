@@ -36,7 +36,7 @@ func NewExtensionController(stsProperties *statefulSetProperties) *ExtensionCont
 func (eec *ExtensionController) BuildContainer() corev1.Container {
 	return corev1.Container{
 		Name:            consts.EecContainerName,
-		Image:           eec.stsProperties.DynaKube.ActiveGateImage(),
+		Image:           eec.image(),
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             eec.buildEnvs(),
 		VolumeMounts:    eec.buildVolumeMounts(),
@@ -79,6 +79,13 @@ func (eec *ExtensionController) BuildVolumes() []corev1.Volume {
 			},
 		},
 	}
+}
+
+func (eec *ExtensionController) image() string {
+	if eec.stsProperties.FeatureUseActiveGateImageForStatsd() {
+		return eec.stsProperties.ActiveGateImage()
+	}
+	return eec.stsProperties.EecImage()
 }
 
 func (eec *ExtensionController) buildPorts() []corev1.ContainerPort {
