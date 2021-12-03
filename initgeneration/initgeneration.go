@@ -133,8 +133,14 @@ func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaK
 
 func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) (*script, error) {
 	var tokens corev1.Secret
+	var paasToken []byte
 	if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
+	}
+	if len(tokens.Data[dtclient.DynatracePaasToken]) != 0 {
+		paasToken = tokens.Data[dtclient.DynatracePaasToken]
+	} else {
+		paasToken = tokens.Data[dtclient.DynatraceApiToken]
 	}
 
 	var proxy string
@@ -162,7 +168,7 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, 
 	return &script{
 		ApiUrl:        dk.Spec.APIURL,
 		SkipCertCheck: dk.Spec.SkipCertCheck,
-		PaaSToken:     string(tokens.Data[dtclient.DynatracePaasToken]),
+		PaaSToken:     string(paasToken),
 		Proxy:         proxy,
 		TrustedCAs:    trustedCAs,
 		ClusterID:     string(kubeSystemUID),
