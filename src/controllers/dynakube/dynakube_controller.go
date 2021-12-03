@@ -262,6 +262,30 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 			return
 		}
 	}
+
+	//start config creation
+	// empt
+	if dkState.Instance.Status.KubeSystemUUID != "" && dkState.Instance.Spec.ActiveGate.EnableAutomaticApiMonitoring {
+		log.Info("start settings creation")
+		if err := r.ensureSettingExists(dtc, dkState.Instance.Name, dkState.Instance.Status.KubeSystemUUID); err != nil {
+			log.Error(err, "could not create setting")
+			return
+		}
+	}
+
+}
+
+func (r *ReconcileDynaKube) ensureSettingExists(dtc dtclient.Client, name string, kubeSystemUUID string) error {
+	// if( dtc.getMeWithKubeSystemuzid() == nil)
+	// //return
+
+	// if (dtc.getSettingForScope(meId) != nil)
+	// //return
+
+	if _, err := dtc.CreateSetting(name, kubeSystemUUID); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {

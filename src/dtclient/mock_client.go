@@ -65,3 +65,8 @@ func (o *MockDynatraceClient) GetTokenScopes(token string) (TokenScopes, error) 
 	args := o.Called(token)
 	return args.Get(0).(TokenScopes), args.Error(1)
 }
+
+func (o *MockDynatraceClient) CreateSetting(label string, kubeSystemUUID string) (string, error) {
+	args := o.Called(label, kubeSystemUUID)
+	return args.String(0), args.Error(1)
+}

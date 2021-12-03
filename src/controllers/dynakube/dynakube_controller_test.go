@@ -78,6 +78,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{TenantUUID: "abc123456"}, nil)
 		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
+		mockClient.On("CreateSetting", "test-name", "test-uid").Return("", nil)
 
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
@@ -256,6 +257,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
+	mockClient.On("CreateSetting", "test-name", "test-uid").Return("", nil)
 
 	_, err := r.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
@@ -374,6 +376,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
+	mockClient.On("CreateSetting", "test-name", "test-uid").Return("", nil)
 
 	_, err := r.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)

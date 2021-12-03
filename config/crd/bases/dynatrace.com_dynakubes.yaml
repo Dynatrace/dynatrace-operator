@@ -1011,6 +1011,9 @@ spec:
                       valueFrom:
                         type: string
                     type: object
+                  enableAutomaticApiMonitoring:
+                    description: Enable self-registering of Activegate
+                    type: boolean
                   env:
                     description: 'Optional: List of environment variables to set for
                       the ActiveGate'
