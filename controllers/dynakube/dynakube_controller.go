@@ -305,12 +305,6 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *controllers
 	return true
 }
 
-func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatracev1beta1.DynaKube) (*corev1.Secret, error) {
-	var secret corev1.Secret
-	err := r.client.Get(ctx, client.ObjectKey{Name: instance.Tokens(), Namespace: instance.Namespace}, &secret)
-	return &secret, errors.WithStack(err)
-}
-
 func (r *ReconcileDynaKube) updateCR(ctx context.Context, instance *dynatracev1beta1.DynaKube) error {
 	instance.Status.UpdatedTimestamp = metav1.Now()
 	err := r.client.Status().Update(ctx, instance)
