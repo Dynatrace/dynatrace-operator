@@ -41,7 +41,7 @@ type ControllerTestEnvironment struct {
 func newTestEnvironment() (*ControllerTestEnvironment, error) {
 	environment := &envtest.Environment{
 		CRDDirectoryPaths: []string{
-			filepath.Join("..", "config", "crd", "bases"),
+			filepath.Join("..", "..", "config", "crd", "bases"),
 			// ToDo: currently this is the only way to get the CRD - see https://github.com/kubernetes-sigs/controller-runtime/pull/1393
 			filepath.Join(build.Default.GOPATH, "pkg", "mod", "istio.io", "api@v0.0.0-20211020081732-2de5b65af1fe", "kubernetes"),
 		},
