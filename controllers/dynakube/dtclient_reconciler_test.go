@@ -36,8 +36,6 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		rec := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
-			UpdatePaaSToken:     true,
-			UpdateAPIToken:      true,
 			Now:                 metav1.Now(),
 		}
 
@@ -62,8 +60,6 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		rec := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
-			UpdatePaaSToken:     true,
-			UpdateAPIToken:      true,
 			Now:                 metav1.Now(),
 		}
 
@@ -91,8 +87,6 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		rec := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
-			UpdatePaaSToken:     true,
-			UpdateAPIToken:      true,
 			Now:                 metav1.Now(),
 		}
 
@@ -119,8 +113,6 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		rec := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
-			UpdatePaaSToken:     true,
-			UpdateAPIToken:      true,
 			Now:                 metav1.Now(),
 		}
 
@@ -148,8 +140,6 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		rec := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
-			UpdatePaaSToken:     true,
-			UpdateAPIToken:      true,
 			Now:                 metav1.Now(),
 		}
 
@@ -203,8 +193,6 @@ func TestReconcileDynatraceClient_MigrateConditions(t *testing.T) {
 	rec := &DynatraceClientReconciler{
 		Client:              c,
 		DynatraceClientFunc: StaticDynatraceClient(dtcMock),
-		UpdatePaaSToken:     true,
-		UpdateAPIToken:      true,
 		Now:                 now,
 	}
 
@@ -263,8 +251,6 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 		rec := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
-			UpdatePaaSToken:     true,
-			UpdateAPIToken:      true,
 			Now:                 now,
 		}
 
@@ -296,8 +282,6 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 		rec := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
-			UpdatePaaSToken:     true,
-			UpdateAPIToken:      true,
 			Now:                 now,
 		}
 

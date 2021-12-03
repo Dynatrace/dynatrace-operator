@@ -7,10 +7,8 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -55,12 +53,8 @@ func TestReconciler_GenerateData(t *testing.T) {
 		},
 	}
 	r := &Reconciler{
-		instance: instance,
-		token: &corev1.Secret{
-			Data: map[string][]byte{
-				dtclient.DynatracePaasToken: []byte(testPaasToken),
-			},
-		},
+		instance:  instance,
+		paasToken: testPaasToken,
 	}
 
 	data, err := r.GenerateData()

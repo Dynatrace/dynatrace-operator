@@ -71,7 +71,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 	secretKey := ns + ":" + secretName
 	secret, err := r.getTokensFromSecret(ctx, instance)
 	if k8serrors.IsNotFound(err) {
-		message := fmt.Sprintf("Secret '%s' not found", instance.Tokens())
+		message := fmt.Sprintf("Secret '%s' not found", secretKey)
 
 		for _, t := range tokens {
 			updateCR = setCondition(&sts.Conditions, metav1.Condition{
