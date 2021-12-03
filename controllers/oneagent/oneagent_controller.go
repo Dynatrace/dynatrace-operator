@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/controllers/oneagent/daemonset"
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -34,14 +33,12 @@ func NewOneAgentReconciler(
 	client client.Client,
 	apiReader client.Reader,
 	scheme *runtime.Scheme,
-	logger logr.Logger,
 	instance *dynatracev1beta1.DynaKube,
 	feature string) *ReconcileOneAgent {
 	return &ReconcileOneAgent{
 		client:    client,
 		apiReader: apiReader,
 		scheme:    scheme,
-		logger:    logger,
 		instance:  instance,
 		feature:   feature,
 	}
@@ -53,7 +50,6 @@ type ReconcileOneAgent struct {
 	client    client.Client
 	apiReader client.Reader
 	scheme    *runtime.Scheme
-	logger    logr.Logger
 	instance  *dynatracev1beta1.DynaKube
 	feature   string
 }
@@ -64,20 +60,20 @@ type ReconcileOneAgent struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.DynakubeState) (bool, error) {
-	r.logger.Info("Reconciling OneAgent")
+	log.Info("reconciling OneAgent")
 
 	upd, err := r.reconcileRollout(rec)
 	if err != nil {
 		return false, err
 	} else if upd {
-		r.logger.Info("Rollout reconciled")
+		log.Info("rollout reconciled")
 	}
 
 	updInterval := defaultUpdateInterval
 	if val := os.Getenv(updateEnvVar); val != "" {
 		x, err := strconv.Atoi(val)
 		if err != nil {
-			r.logger.Info("Conversion of ONEAGENT_OPERATOR_UPDATE_INTERVAL failed")
+			log.Info("conversion of ONEAGENT_OPERATOR_UPDATE_INTERVAL failed")
 		} else {
 			updInterval = time.Duration(x) * time.Minute
 		}
@@ -87,7 +83,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *controllers.Dyna
 		r.instance.Status.OneAgent.LastHostsRequestTimestamp = rec.Now.DeepCopy()
 		rec.Update(true, 5*time.Minute, "updated last host request time stamp")
 
-		upd, err = r.reconcileInstanceStatuses(ctx, r.logger, r.instance)
+		upd, err = r.reconcileInstanceStatuses(ctx, r.instance)
 		rec.Update(upd, 5*time.Minute, "Instance statuses reconciled")
 		if rec.Error(err) {
 			return false, err
@@ -107,7 +103,7 @@ func (r *ReconcileOneAgent) reconcileRollout(dkState *controllers.DynakubeState)
 	// Define a new DaemonSet object
 	dsDesired, err := r.getDesiredDaemonSet(dkState)
 	if err != nil {
-		dkState.Log.Info("Failed to get desired daemonset")
+		log.Info("failed to get desired daemonset")
 		return false, err
 	}
 
@@ -116,7 +112,7 @@ func (r *ReconcileOneAgent) reconcileRollout(dkState *controllers.DynakubeState)
 		return false, err
 	}
 
-	updateCR, err = kubeobjects.CreateOrUpdateDaemonSet(r.client, r.logger, dsDesired)
+	updateCR, err = kubeobjects.CreateOrUpdateDaemonSet(r.client, log, dsDesired)
 	if err != nil {
 		return updateCR, err
 	}
@@ -130,7 +126,7 @@ func (r *ReconcileOneAgent) reconcileRollout(dkState *controllers.DynakubeState)
 		}
 		err = r.client.Delete(context.TODO(), oldClassicDaemonset)
 		if err == nil {
-			r.logger.Info("removed oneagent daemonset with feature in name")
+			log.Info("removed oneagent daemonset with feature in name")
 		} else if !k8serrors.IsNotFound(err) {
 			return false, err
 		}
@@ -172,11 +168,11 @@ func (r *ReconcileOneAgent) newDaemonSetForCR(dkState *controllers.DynakubeState
 	var err error
 
 	if r.feature == daemonset.ClassicFeature {
-		ds, err = daemonset.NewClassicFullStack(dkState.Instance, dkState.Log, clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewClassicFullStack(dkState.Instance, clusterID).BuildDaemonSet()
 	} else if r.feature == daemonset.HostMonitoringFeature {
-		ds, err = daemonset.NewHostMonitoring(dkState.Instance, dkState.Log, clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewHostMonitoring(dkState.Instance, clusterID).BuildDaemonSet()
 	} else if r.feature == daemonset.CloudNativeFeature {
-		ds, err = daemonset.NewCloudNativeFullStack(dkState.Instance, dkState.Log, clusterID).BuildDaemonSet()
+		ds, err = daemonset.NewCloudNativeFullStack(dkState.Instance, clusterID).BuildDaemonSet()
 	}
 	if err != nil {
 		return nil, err
@@ -191,10 +187,10 @@ func (r *ReconcileOneAgent) newDaemonSetForCR(dkState *controllers.DynakubeState
 	return ds, nil
 }
 
-func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, logger logr.Logger, instance *dynatracev1beta1.DynaKube) (bool, error) {
+func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, instance *dynatracev1beta1.DynaKube) (bool, error) {
 	pods, listOpts, err := r.getPods(ctx, instance, r.feature)
 	if err != nil {
-		handlePodListError(logger, err, listOpts)
+		handlePodListError(err, listOpts)
 	}
 
 	instanceStatuses, err := getInstanceStatuses(pods)

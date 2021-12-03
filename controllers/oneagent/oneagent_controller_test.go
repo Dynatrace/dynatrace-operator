@@ -2,7 +2,6 @@ package oneagent
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
@@ -23,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 const (
@@ -43,8 +41,6 @@ func (f *fakeVersionProvider) Minor() (string, error) {
 	args := f.Called()
 	return args.Get(0).(string), args.Error(1)
 }
-
-var consoleLogger = zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout))
 
 var sampleKubeSystemNS = &corev1.Namespace{
 	ObjectMeta: metav1.ObjectMeta{
@@ -87,12 +83,11 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		client:    fakeClient,
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
-		logger:    consoleLogger,
 		instance:  dynakube,
 		feature:   daemonset.ClassicFeature,
 	}
 
-	dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dynakube}
+	dkState := controllers.DynakubeState{Instance: dynakube}
 	_, err := reconciler.Reconcile(context.TODO(), &dkState)
 	assert.NoError(t, err)
 
@@ -176,7 +171,6 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		client:    c,
 		apiReader: c,
 		scheme:    scheme.Scheme,
-		logger:    consoleLogger,
 		feature:   daemonset.ClassicFeature,
 		instance:  &base,
 	}
@@ -186,7 +180,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Spec.Tokens = ""
 		dk.Status.Tokens = ""
-		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk}
+		dkState := controllers.DynakubeState{Instance: dk}
 
 		// act
 		updateCR, err := reconciler.reconcileRollout(&dkState)
@@ -201,7 +195,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Spec.Tokens = ""
 		dk.Status.Tokens = "not the actual name"
-		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk}
+		dkState := controllers.DynakubeState{Instance: dk}
 
 		// act
 		updateCR, err := reconciler.reconcileRollout(&dkState)
@@ -221,7 +215,6 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 			client:    c,
 			apiReader: c,
 			scheme:    scheme.Scheme,
-			logger:    consoleLogger,
 			instance:  &base,
 			feature:   daemonset.ClassicFeature,
 		}
@@ -231,7 +224,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Status.Tokens = dk.Tokens()
 		dk.Spec.Tokens = customTokenName
-		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk}
+		dkState := controllers.DynakubeState{Instance: dk}
 
 		// act
 		updateCR, err := reconciler.reconcileRollout(&dkState)
@@ -276,7 +269,6 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		client:    c,
 		apiReader: c,
 		scheme:    scheme.Scheme,
-		logger:    consoleLogger,
 		instance:  &base,
 		feature:   daemonset.ClassicFeature,
 	}
@@ -284,7 +276,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	t.Run(`reconileImp Instances set, if autoUpdate is true`, func(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Status.OneAgent.Version = oldVersion
-		dsInfo := daemonset.NewClassicFullStack(dk, consoleLogger, testClusterID)
+		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -299,7 +291,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Spec = ds.Spec.Template.Spec
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
-		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
+		dkState := controllers.DynakubeState{Instance: dk, RequeueAfter: 30 * time.Minute}
 		err = reconciler.client.Create(context.TODO(), pod)
 
 		assert.NoError(t, err)
@@ -318,7 +310,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		autoUpdate := false
 		dk.Spec.OneAgent.ClassicFullStack.AutoUpdate = &autoUpdate
 		dk.Status.OneAgent.Version = oldVersion
-		dsInfo := daemonset.NewClassicFullStack(dk, consoleLogger, testClusterID)
+		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
 
@@ -334,7 +326,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
 
-		dkState := controllers.DynakubeState{Log: consoleLogger, Instance: dk, RequeueAfter: 30 * time.Minute}
+		dkState := controllers.DynakubeState{Instance: dk, RequeueAfter: 30 * time.Minute}
 		err = reconciler.client.Create(context.TODO(), pod)
 
 		assert.NoError(t, err)
@@ -364,7 +356,6 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 		feature: daemonset.HostMonitoringFeature,
 	}
 	dkState := &controllers.DynakubeState{
-		Log: consoleLogger,
 		Instance: &dynatracev1beta1.DynaKube{
 			ObjectMeta: dkKey,
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -408,7 +399,6 @@ func TestHasSpecChanged(t *testing.T) {
 			mod(&oldInstance, &newInstance)
 
 			dkState := &controllers.DynakubeState{
-				Log:      consoleLogger,
 				Instance: &oldInstance,
 			}
 			ds1, err := r.newDaemonSetForCR(dkState, "cluster1")
@@ -502,7 +492,6 @@ func TestNewDaemonset_Affinity(t *testing.T) {
 		}
 		dkState := &controllers.DynakubeState{
 			Instance: newDynaKube(),
-			Log:      consoleLogger,
 		}
 		versionProvider.On("Major").Return("1", nil)
 		versionProvider.On("Minor").Return("20+", nil)
@@ -625,16 +614,15 @@ func TestInstanceStatus(t *testing.T) {
 		client:    fakeClient,
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
-		logger:    consoleLogger,
 		instance:  dynakube,
 		feature:   daemonset.HostMonitoringFeature,
 	}
 
-	upd, err := reconciler.reconcileInstanceStatuses(context.Background(), reconciler.logger, reconciler.instance)
+	upd, err := reconciler.reconcileInstanceStatuses(context.Background(), reconciler.instance)
 	assert.NoError(t, err)
 	assert.True(t, upd)
 
-	upd, err = reconciler.reconcileInstanceStatuses(context.Background(), reconciler.logger, reconciler.instance)
+	upd, err = reconciler.reconcileInstanceStatuses(context.Background(), reconciler.instance)
 	assert.NoError(t, err)
 	assert.False(t, upd)
 }

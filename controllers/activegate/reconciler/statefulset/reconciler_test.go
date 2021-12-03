@@ -8,7 +8,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/controllers/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -27,7 +26,6 @@ func TestNewReconiler(t *testing.T) {
 }
 
 func createDefaultReconciler(t *testing.T) *Reconciler {
-	log := logger.NewDTLogger()
 	clt := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithObjects(&corev1.Namespace{
@@ -44,11 +42,10 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 
 	capability.NewRoutingCapability(instance)
 
-	r := NewReconciler(clt, clt, scheme.Scheme, log, instance, capability.NewRoutingCapability(instance))
+	r := NewReconciler(clt, clt, scheme.Scheme, instance, capability.NewRoutingCapability(instance))
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.scheme)
-	require.NotNil(t, r.log)
 	require.NotNil(t, r.Instance)
 
 	return r

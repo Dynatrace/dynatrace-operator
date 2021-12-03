@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 )
 
@@ -24,7 +23,6 @@ type dynatraceClient struct {
 	url       string
 	apiToken  string
 	paasToken string
-	logger    logr.Logger
 
 	networkZone string
 
@@ -197,7 +195,7 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 	var hostInfoResponses []hostInfoResponse
 	err := json.Unmarshal(response, &hostInfoResponses)
 	if err != nil {
-		dtc.logger.Error(err, "error unmarshalling json response")
+		log.Error(err, "error unmarshalling json response")
 		return errors.WithStack(err)
 	}
 
@@ -226,7 +224,7 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 
 			for _, ip := range info.IPAddresses {
 				if old, ok := dtc.hostCache[ip]; ok {
-					dtc.logger.Info("Hosts cache: replacing host", "ip", ip, "new", hostInfo.entityID, "old", old.entityID)
+					log.Info("hosts cache: replacing host", "ip", ip, "new", hostInfo.entityID, "old", old.entityID)
 				}
 
 				dtc.hostCache[ip] = hostInfo
@@ -235,7 +233,7 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 	}
 
 	if len(inactive) > 0 {
-		dtc.logger.Info("Hosts cache: ignoring inactive hosts", "ids", inactive)
+		log.Info("hosts cache: ignoring inactive hosts", "ids", inactive)
 	}
 
 	return nil

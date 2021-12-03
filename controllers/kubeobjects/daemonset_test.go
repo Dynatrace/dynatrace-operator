@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,7 +18,6 @@ const (
 )
 
 func Test_CreateOrUpdateDaemonSet_Create(t *testing.T) {
-	log := logger.NewDTLogger()
 	dsBefore := appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -43,7 +41,6 @@ func Test_CreateOrUpdateDaemonSet_Create(t *testing.T) {
 }
 
 func Test_CreateOrUpdateDaemonSet_Update(t *testing.T) {
-	log := logger.NewDTLogger()
 	dsBefore := appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
@@ -82,7 +79,7 @@ func Test_CreateOrUpdateDaemonSet_Update(t *testing.T) {
 }
 
 func Test_CreateOrUpdateDaemonSet_NoUpdateRequired(t *testing.T) {
-	log := logger.NewDTLogger()
+
 	dsBefore := appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,

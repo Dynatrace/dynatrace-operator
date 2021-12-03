@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -41,7 +40,6 @@ func TestPrepareVolumes(t *testing.T) {
 			builderInfo{
 				instance:       instance,
 				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
-				logger:         logger.NewDTLogger(),
 				clusterId:      "",
 				relatedImage:   "",
 			},

@@ -18,7 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -96,8 +95,7 @@ func newTestEnvironment() (*ControllerTestEnvironment, error) {
 	}
 	testEnvironment.Reconciler = dynakube.NewDynaKubeReconciler(
 		kubernetesClient, kubernetesClient, scheme.Scheme,
-		mockDynatraceClientFunc(&testEnvironment.CommunicationHosts),
-		zap.New(zap.UseDevMode(true), zap.WriteTo(os.Stdout)), cfg)
+		mockDynatraceClientFunc(&testEnvironment.CommunicationHosts), cfg)
 
 	return testEnvironment, nil
 }

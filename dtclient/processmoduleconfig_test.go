@@ -29,7 +29,6 @@ const goodProcessModuleConfigResponse = `
 func TestCreateProcessModuleConfigRequest(t *testing.T) {
 	dc := &dynatraceClient{
 		paasToken: "token123",
-		logger:    consoleLogger,
 	}
 	require.NotNil(t, dc)
 
@@ -40,9 +39,7 @@ func TestCreateProcessModuleConfigRequest(t *testing.T) {
 }
 
 func TestSpecialProcessModuleConfigRequestStatus(t *testing.T) {
-	dc := &dynatraceClient{
-		logger: consoleLogger,
-	}
+	dc := &dynatraceClient{}
 	require.NotNil(t, dc)
 
 	assert.True(t, dc.specialProcessModuleConfigRequestStatus(&http.Response{StatusCode: http.StatusNotModified}))
@@ -52,9 +49,7 @@ func TestSpecialProcessModuleConfigRequestStatus(t *testing.T) {
 }
 
 func TestReadResponseForProcessModuleConfig(t *testing.T) {
-	dc := &dynatraceClient{
-		logger: consoleLogger,
-	}
+	dc := &dynatraceClient{}
 	require.NotNil(t, dc)
 
 	processConfig, err := dc.readResponseForProcessModuleConfig([]byte(goodProcessModuleConfigResponse))

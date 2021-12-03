@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,7 +84,6 @@ func TestController_ReconcileIstio(t *testing.T) {
 	controller := Controller{
 		istioClient: fakeistio.NewSimpleClientset(virtualService),
 		scheme:      scheme.Scheme,
-		logger:      logger.NewDTLogger(),
 		config: &rest.Config{
 			Host:    server.URL,
 			APIPath: testApiPath,

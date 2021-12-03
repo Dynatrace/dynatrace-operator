@@ -28,7 +28,7 @@ func (dtc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
 	defer func() {
 		err := response.Body.Close()
 		if err != nil {
-			dtc.logger.Error(err, err.Error())
+			log.Error(err, err.Error())
 		}
 	}()
 
@@ -36,18 +36,18 @@ func (dtc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
 	if err != nil {
 		err = dtc.handleErrorResponseFromAPI(data, response.StatusCode)
 		if err != nil {
-			dtc.logger.Error(err, err.Error())
+			log.Error(err, err.Error())
 		}
 		return nil, errors.WithStack(err)
 	}
 
 	tenantInfo, err := dtc.readResponseForTenantInfo(data)
 	if err != nil {
-		dtc.logger.Error(err, err.Error())
+		log.Error(err, err.Error())
 		return nil, errors.WithStack(err)
 	}
 	if len(tenantInfo.Endpoints) <= 0 {
-		dtc.logger.Info("tenant has no endpoints")
+		log.Info("tenant has no endpoints")
 	}
 
 	tenantInfo.CommunicationEndpoint = tenantInfo.findCommunicationEndpoint()
@@ -64,7 +64,7 @@ func (dtc *dynatraceClient) readResponseForTenantInfo(response []byte) (*TenantI
 	jr := &jsonResponse{}
 	err := json.Unmarshal(response, jr)
 	if err != nil {
-		dtc.logger.Error(err, "error unmarshalling json response")
+		log.Error(err, "error unmarshalling json response")
 		return nil, errors.WithStack(err)
 	}
 

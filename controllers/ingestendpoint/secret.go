@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,23 +28,21 @@ const (
 type EndpointSecretGenerator struct {
 	client    client.Client
 	apiReader client.Reader
-	logger    logr.Logger
 	namespace string
 }
 
-func NewEndpointSecretGenerator(client client.Client, apiReader client.Reader, ns string, logger logr.Logger) *EndpointSecretGenerator {
+func NewEndpointSecretGenerator(client client.Client, apiReader client.Reader, ns string) *EndpointSecretGenerator {
 	return &EndpointSecretGenerator{
 		client:    client,
 		apiReader: apiReader,
 		namespace: ns,
-		logger:    logger,
 	}
 }
 
 // GenerateForNamespace creates the data-ingest-endpoint secret for namespace while only having the name of the corresponding dynakube
 // Used by the podInjection webhook in case the namespace lacks the secret.
 func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkName, targetNs string) (bool, error) {
-	g.logger.Info("Reconciling data-ingest endpoint secret for", "namespace", targetNs)
+	log.Info("reconciling data-ingest endpoint secret for", "namespace", targetNs)
 	var dk dynatracev1beta1.DynaKube
 	if err := g.client.Get(ctx, client.ObjectKey{Name: dkName, Namespace: g.namespace}, &dk); err != nil {
 		return false, err
@@ -55,13 +52,13 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 	if err != nil {
 		return false, err
 	}
-	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs, data, corev1.SecretTypeOpaque, g.logger)
+	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs, data, corev1.SecretTypeOpaque, log)
 }
 
 // GenerateForDynakube creates/updates the data-ingest-endpoint secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
 func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) (bool, error) {
-	g.logger.Info("Reconciling data-ingest endpoint secret for", "dynakube", dk.Name)
+	log.Info("reconciling data-ingest endpoint secret for", "dynakube", dk.Name)
 
 	data, err := g.prepare(ctx, dk)
 	if err != nil {
@@ -74,13 +71,13 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		return false, err
 	}
 	for _, targetNs := range nsList {
-		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs.Name, data, corev1.SecretTypeOpaque, g.logger); err != nil {
+		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs.Name, data, corev1.SecretTypeOpaque, log); err != nil {
 			return upd, err
 		} else if upd {
 			anyUpdate = true
 		}
 	}
-	g.logger.Info("Done updating data-ingest endpoint secrets")
+	log.Info("done updating data-ingest endpoint secrets")
 	return anyUpdate, nil
 }
 

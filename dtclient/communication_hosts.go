@@ -53,7 +53,7 @@ func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conn
 	resp := jsonResponse{}
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
-		dtc.logger.Error(err, "error unmarshalling json response")
+		log.Error(err, "error unmarshalling json response")
 		return ConnectionInfo{}, err
 	}
 
@@ -61,11 +61,9 @@ func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conn
 	ch := make([]CommunicationHost, 0, len(resp.CommunicationEndpoints))
 
 	for _, s := range resp.CommunicationEndpoints {
-		logger := dtc.logger.WithValues("url", s)
-
 		e, err := dtc.parseEndpoint(s)
 		if err != nil {
-			logger.Info("failed to parse communication endpoint")
+			log.Info("failed to parse communication endpoint", "url", s)
 			continue
 		}
 		ch = append(ch, e)

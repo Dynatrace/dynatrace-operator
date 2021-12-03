@@ -50,9 +50,9 @@ func waitForCertificates(watcher *certificateWatcher) {
 
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
-				log.Info("Waiting for certificate secret to be available.")
+				log.Info("waiting for certificate secret to be available.")
 			} else {
-				log.Info("Failed to update certificates", "error", err)
+				log.Info("failed to update certificates", "error", err)
 			}
 			time.Sleep(10 * time.Second)
 			continue

@@ -26,7 +26,7 @@ func (r *ReconcileNodes) watchDeletions(stop <-chan struct{}) (chan string, erro
 			if o, err := meta.Accessor(obj); err == nil {
 				chDels <- o.GetName()
 			} else {
-				r.logger.Error(err, "missing Meta", "object", obj, "type", fmt.Sprintf("%T", obj))
+				log.Error(err, "missing Meta", "object", obj, "type", fmt.Sprintf("%T", obj))
 			}
 		},
 	})
@@ -53,7 +53,7 @@ func (r *ReconcileNodes) handleUpdate(chUpdates chan string) func(oldObj, newObj
 	return func(oldObj, newObj interface{}) {
 		newMeta, err := meta.Accessor(newObj)
 		if err != nil {
-			r.logger.Error(err, "missing Meta",
+			log.Error(err, "missing Meta",
 				"new object", newObj, "type", fmt.Sprintf("%T", newObj))
 			return
 		}

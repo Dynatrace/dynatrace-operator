@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -47,14 +46,12 @@ DT_METRICS_INGEST_API_TOKEN=test-data-ingest-token
 	testDynakubeName       = "dynakube"
 )
 
-var log = logger.NewDTLogger()
-
 func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 	t.Run(`data-ingest endpoint secret created but not updated`, func(t *testing.T) {
 		instance := buildTestDynakube()
 		fakeClient := buildTestClient(instance)
 
-		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace, log)
+		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
 
 		upd, err := endpointSecretGenerator.GenerateForNamespace(context.TODO(), testDynakubeName, testNamespace1)
 		assert.NoError(t, err)
@@ -74,7 +71,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		instance := buildTestDynakube()
 		fakeClient := buildTestClient(instance)
 
-		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace, log)
+		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
 
 		upd, err := endpointSecretGenerator.GenerateForNamespace(context.TODO(), testDynakubeName, testNamespace1)
 		assert.NoError(t, err)
@@ -96,7 +93,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		instance := buildTestDynakube()
 		fakeClient := buildTestClient(instance)
 
-		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace, log)
+		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
 
 		upd, err := endpointSecretGenerator.GenerateForNamespace(context.TODO(), testDynakubeName, testNamespace1)
 		assert.NoError(t, err)
@@ -119,7 +116,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		instance := buildTestDynakube()
 		fakeClient := buildTestClient(instance)
 
-		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace, log)
+		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
 
 		upd, err := endpointSecretGenerator.GenerateForDynakube(context.TODO(), instance)
 		assert.NoError(t, err)
@@ -138,7 +135,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		instance := buildTestDynakube()
 		fakeClient := buildTestClient(instance)
 
-		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace, log)
+		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
 
 		upd, err := endpointSecretGenerator.GenerateForDynakube(context.TODO(), instance)
 		assert.NoError(t, err)
@@ -159,7 +156,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		instance := buildTestDynakube()
 		fakeClient := buildTestClient(instance)
 
-		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace, log)
+		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
 
 		upd, err := endpointSecretGenerator.GenerateForDynakube(context.TODO(), instance)
 		assert.NoError(t, err)
@@ -180,7 +177,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 		instance := buildTestDynakubeWithDataIngestCapability()
 		fakeClient := buildTestClient(instance)
 
-		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace, log)
+		endpointSecretGenerator := NewEndpointSecretGenerator(fakeClient, fakeClient, testNamespaceDynatrace)
 
 		upd, err := endpointSecretGenerator.GenerateForDynakube(context.TODO(), instance)
 		assert.NoError(t, err)

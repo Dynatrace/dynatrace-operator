@@ -81,7 +81,7 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 		}
 	}
 
-	log.Info("Starting listener", "protocol", proto, "address", addr)
+	log.Info("starting listener", "protocol", proto, "address", addr)
 
 	listener, err := net.Listen(proto, addr)
 	if err != nil {
@@ -95,9 +95,9 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 		for !done {
 			select {
 			case <-ctx.Done():
-				log.Info("Stopping server")
+				log.Info("stopping server")
 				server.GracefulStop()
-				log.Info("Stopped server")
+				log.Info("stopped server")
 				done = true
 			case <-ticker.C:
 				var m runtime.MemStats
@@ -110,7 +110,7 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 	csi.RegisterIdentityServer(server, svr)
 	csi.RegisterNodeServer(server, svr)
 
-	log.Info("Listening for connections on address", "address", listener.Addr())
+	log.Info("listening for connections on address", "address", listener.Addr())
 
 	_ = server.Serve(listener)
 
@@ -151,7 +151,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	log.Info("Publishing volume",
+	log.Info("publishing volume",
 		"target", volumeCfg.targetPath,
 		"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
 		"readonly", req.GetReadonly(),
@@ -327,7 +327,7 @@ func logGRPC() grpc.UnaryServerInterceptor {
 		}
 		resp, err := handler(ctx, req)
 		if err != nil {
-			log.Error(err, fmt.Sprintf("%s GRPC call failed", methodName))
+			log.Error(err, "GRPC call failed", "method", methodName)
 		}
 		return resp, err
 	}

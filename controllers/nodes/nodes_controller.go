@@ -9,7 +9,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,7 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -34,7 +32,6 @@ type ReconcileNodes struct {
 	client       client.Client
 	cache        cache.Cache
 	scheme       *runtime.Scheme
-	logger       logr.Logger
 	dtClientFunc dynakube.DynatraceClientFunc
 	local        bool
 }
@@ -48,7 +45,6 @@ func Add(mgr manager.Manager, ns string) error {
 		client:       mgr.GetClient(),
 		cache:        mgr.GetCache(),
 		scheme:       mgr.GetScheme(),
-		logger:       log.Log.WithName("nodes.controller"),
 		dtClientFunc: dynakube.BuildDynatraceClient,
 		local:        os.Getenv("RUN_LOCAL") == "true",
 	})
@@ -65,12 +61,12 @@ func (r *ReconcileNodes) Start(stop context.Context) error {
 		//
 		// Start() failing would exit the Operator process. Since this is a minor feature, let's disable
 		// for now until further investigation is done.
-		r.logger.Info("failed to initialize watcher for deleted nodes - disabled", "error", err)
+		log.Info("failed to initialize watcher for deleted nodes - disabled", "error", err)
 		chDels = make(chan string)
 	}
 	chUpdates, err := r.watchUpdates()
 	if err != nil {
-		r.logger.Info("failed to initialize watcher for updating nodes - disabled", "error", err)
+		log.Info("failed to initialize watcher for updating nodes - disabled", "error", err)
 		chUpdates = make(chan string)
 	}
 
@@ -79,19 +75,19 @@ func (r *ReconcileNodes) Start(stop context.Context) error {
 	for {
 		select {
 		case <-stop.Done():
-			r.logger.Info("stopping nodes controller")
+			log.Info("stopping nodes controller")
 			return nil
 		case node := <-chDels:
 			if err := r.onDeletion(node); err != nil {
-				r.logger.Error(err, "failed to reconcile deletion", "node", node)
+				log.Error(err, "failed to reconcile deletion", "node", node)
 			}
 		case node := <-chUpdates:
 			if err := r.onUpdate(node); err != nil {
-				r.logger.Error(err, "failed to reconcile updates", "node", node)
+				log.Error(err, "failed to reconcile updates", "node", node)
 			}
 		case <-chAll:
 			if err := r.reconcileAll(); err != nil {
-				r.logger.Error(err, "failed to reconcile nodes")
+				log.Error(err, "failed to reconcile nodes")
 			}
 		}
 	}
@@ -107,14 +103,12 @@ func (r *ReconcileNodes) onUpdate(node string) error {
 		return err
 	}
 
-	r.logger.Info("updating nodes cache", "node", node)
+	log.Info("updating nodes cache", "node", node)
 	return r.updateCache(c)
 }
 
 func (r *ReconcileNodes) onDeletion(node string) error {
-	logger := r.logger.WithValues("node", node)
-
-	logger.Info("node deletion notification received")
+	log.Info("node deletion notification received", "node", node)
 
 	c, err := r.getCache()
 	if err != nil {
@@ -135,7 +129,7 @@ func (r *ReconcileNodes) onDeletion(node string) error {
 }
 
 func (r *ReconcileNodes) reconcileAll() error {
-	r.logger.Info("reconciling nodes")
+	log.Info("reconciling nodes")
 
 	var dkList dynatracev1beta1.DynaKubeList
 	if err := r.client.List(context.TODO(), &dkList, client.InNamespace(r.namespace)); err != nil {
@@ -212,7 +206,7 @@ func (r *ReconcileNodes) reconcileAll() error {
 				Resource: dkList.GroupVersionKind().Kind,
 			}, name)
 		}); err != nil {
-			r.logger.Error(err, "failed to remove node", "node", node)
+			log.Error(err, "failed to remove node", "node", node)
 		}
 	}
 
@@ -228,7 +222,7 @@ func (r *ReconcileNodes) getCache() (*Cache, error) {
 	}
 
 	if errors.IsNotFound(err) {
-		r.logger.Info("no cache found, creating")
+		log.Info("no cache found, creating")
 
 		cm := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
@@ -268,7 +262,7 @@ func (r *ReconcileNodes) updateCache(c *Cache) error {
 }
 
 func (r *ReconcileNodes) removeNode(c *Cache, node string, dkFunc func(name string) (*dynatracev1beta1.DynaKube, error)) error {
-	logger := r.logger.WithValues("node", node)
+	logger := log.WithValues("node", node)
 
 	nodeInfo, err := c.Get(node)
 	if err == ErrNotFound {
@@ -320,7 +314,7 @@ func (r *ReconcileNodes) updateNode(c *Cache, nodeName string) error {
 func (r *ReconcileNodes) sendMarkedForTermination(dk *dynatracev1beta1.DynaKube, nodeIP string, lastSeen time.Time) error {
 	dtp, err := dynakube.NewDynatraceClientProperties(context.TODO(), r.client, *dk)
 	if err != nil {
-		r.logger.Error(err, err.Error())
+		log.Error(err, err.Error())
 	}
 
 	dtc, err := r.dtClientFunc(*dtp)
@@ -330,7 +324,7 @@ func (r *ReconcileNodes) sendMarkedForTermination(dk *dynatracev1beta1.DynaKube,
 
 	entityID, err := dtc.GetEntityIDForIP(nodeIP)
 	if err != nil {
-		r.logger.Info("failed to send mark for termination event",
+		log.Info("failed to send mark for termination event",
 			"reason", "failed to determine entity id", "dynakube", dk.Name, "nodeIP", nodeIP, "cause", err)
 
 		return err
@@ -394,7 +388,7 @@ func (r *ReconcileNodes) markForTermination(c *Cache, dk *dynatracev1beta1.DynaK
 		return err
 	}
 
-	r.logger.Info("sending mark for termination event to dynatrace server", "dynakube", dk.Name, "ip", ipAddress,
+	log.Info("sending mark for termination event to dynatrace server", "dynakube", dk.Name, "ip", ipAddress,
 		"node", nodeName)
 
 	return r.sendMarkedForTermination(dk, ipAddress, cachedNode.LastSeen)

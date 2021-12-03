@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,18 +25,16 @@ const (
 type Reconciler struct {
 	client.Client
 	scheme                    *runtime.Scheme
-	log                       logr.Logger
 	customPropertiesSource    dynatracev1beta1.DynaKubeValueSource
 	customPropertiesOwnerName string
 	instance                  *dynatracev1beta1.DynaKube
 }
 
-func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, log logr.Logger, customPropertiesOwnerName string, customPropertiesSource dynatracev1beta1.DynaKubeValueSource, scheme *runtime.Scheme) *Reconciler {
+func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, customPropertiesSource dynatracev1beta1.DynaKubeValueSource, scheme *runtime.Scheme) *Reconciler {
 	return &Reconciler{
 		Client:                    clt,
 		instance:                  instance,
 		scheme:                    scheme,
-		log:                       log,
 		customPropertiesSource:    customPropertiesSource,
 		customPropertiesOwnerName: customPropertiesOwnerName,
 	}
@@ -47,14 +44,14 @@ func (r *Reconciler) Reconcile() error {
 	if r.hasCustomPropertiesValueOnly() {
 		mustNotUpdate, err := r.createCustomPropertiesIfNotExists()
 		if err != nil {
-			r.log.Error(err, fmt.Sprintf("could not create custom properties for '%s'", r.customPropertiesOwnerName))
+			log.Error(err, "could not create custom properties", "owner", r.customPropertiesOwnerName)
 			return errors.WithStack(err)
 		}
 
 		if !mustNotUpdate {
 			err = r.updateCustomPropertiesIfOutdated()
 			if err != nil {
-				r.log.Error(err, fmt.Sprintf("could not update custom properties for '%s'", r.customPropertiesOwnerName))
+				log.Error(err, "could not update custom properties", "owner", r.customPropertiesOwnerName)
 				return errors.WithStack(err)
 			}
 		}

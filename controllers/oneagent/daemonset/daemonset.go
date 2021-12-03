@@ -7,7 +7,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/controllers/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -54,7 +53,6 @@ type ClassicFullStack struct {
 type builderInfo struct {
 	instance       *dynatracev1beta1.DynaKube
 	hostInjectSpec *dynatracev1beta1.HostInjectSpec
-	logger         logr.Logger
 	clusterId      string
 	relatedImage   string
 	deploymentType string
@@ -64,12 +62,11 @@ type Builder interface {
 	BuildDaemonSet() (*appsv1.DaemonSet, error)
 }
 
-func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string) Builder {
+func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string) Builder {
 	return &HostMonitoring{
 		builderInfo{
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
-			logger:         logger,
 			clusterId:      clusterId,
 			relatedImage:   os.Getenv(relatedImageEnvVar),
 			deploymentType: deploymentmetadata.DeploymentTypeHostMonitoring,
@@ -78,12 +75,11 @@ func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, logger logr.Logger, 
 	}
 }
 
-func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string) Builder {
+func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) Builder {
 	return &HostMonitoring{
 		builderInfo{
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
-			logger:         logger,
 			clusterId:      clusterId,
 			relatedImage:   os.Getenv(relatedImageEnvVar),
 			deploymentType: deploymentmetadata.DeploymentTypeCloudNative,
@@ -92,12 +88,11 @@ func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, logger logr.Lo
 	}
 }
 
-func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, logger logr.Logger, clusterId string) Builder {
+func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) Builder {
 	return &ClassicFullStack{
 		builderInfo{
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
-			logger:         logger,
 			clusterId:      clusterId,
 			relatedImage:   os.Getenv(relatedImageEnvVar),
 			deploymentType: deploymentmetadata.DeploymentTypeFullStack,

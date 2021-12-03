@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/mapper"
 	"github.com/Dynatrace/dynatrace-operator/webhook"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -39,7 +38,6 @@ var (
 type InitGenerator struct {
 	client        client.Client
 	apiReader     client.Reader
-	logger        logr.Logger
 	namespace     string
 	canWatchNodes bool
 }
@@ -62,31 +60,30 @@ type script struct {
 	HasHost       bool
 }
 
-func NewInitGenerator(client client.Client, apiReader client.Reader, ns string, logger logr.Logger) *InitGenerator {
+func NewInitGenerator(client client.Client, apiReader client.Reader, ns string) *InitGenerator {
 	return &InitGenerator{
 		client:    client,
 		apiReader: apiReader,
 		namespace: ns,
-		logger:    logger,
 	}
 }
 
 // GenerateForNamespace creates the init secret for namespace while only having the name of the corresponding dynakube
 // Used by the podInjection webhook in case the namespace lacks the init secret.
 func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1beta1.DynaKube, targetNs string) (bool, error) {
-	g.logger.Info("Reconciling namespace init secret for", "namespace", targetNs)
+	log.Info("reconciling namespace init secret for", "namespace", targetNs)
 	g.canWatchNodes = false
 	data, err := g.generate(ctx, &dk)
 	if err != nil {
 		return false, err
 	}
-	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs, data, corev1.SecretTypeOpaque, g.logger)
+	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs, data, corev1.SecretTypeOpaque, log)
 }
 
 // GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
 func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) (bool, error) {
-	g.logger.Info("Reconciling namespace init secret for", "dynakube", dk.Name)
+	log.Info("reconciling namespace init secret for", "dynakube", dk.Name)
 	g.canWatchNodes = true
 	data, err := g.generate(ctx, dk)
 	if err != nil {
@@ -99,13 +96,13 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 		return false, err
 	}
 	for _, targetNs := range nsList {
-		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs.Name, data, corev1.SecretTypeOpaque, g.logger); err != nil {
+		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs.Name, data, corev1.SecretTypeOpaque, log); err != nil {
 			return false, err
 		} else if upd {
 			anyUpdate = true
 		}
 	}
-	g.logger.Info("Done updating init secrets")
+	log.Info("done updating init secrets")
 	return anyUpdate, nil
 }
 

@@ -17,12 +17,12 @@ var (
 	// BuildDate is the date when the binary was build. Assigned externally.
 	BuildDate = ""
 
-	log = logger.NewDTLogger().WithName("dynatrace-operator.version")
+	log = logger.NewDTLogger().WithName("dynatrace-operator-version")
 )
 
 // LogVersion logs metadata about the Operator.
 func LogVersion() {
-	log.Info("Dynatrace Operator",
+	log.Info("dynatrace-operator",
 		"version", Version,
 		"gitCommit", Commit,
 		"buildDate", BuildDate,

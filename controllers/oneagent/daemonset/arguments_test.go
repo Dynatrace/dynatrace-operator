@@ -5,7 +5,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/logger"
 	"github.com/Dynatrace/dynatrace-operator/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -24,7 +23,6 @@ const (
 )
 
 func TestArguments(t *testing.T) {
-	log := logger.NewDTLogger()
 	instance := dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: testURL,
@@ -41,7 +39,6 @@ func TestArguments(t *testing.T) {
 		builderInfo{
 			instance:       &instance,
 			hostInjectSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
-			logger:         log,
 			clusterId:      testClusterID,
 			relatedImage:   testValue,
 		},
@@ -53,7 +50,6 @@ func TestArguments(t *testing.T) {
 }
 
 func TestPodSpec_Arguments(t *testing.T) {
-	log := logger.NewDTLogger()
 	instance := &dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			OneAgent: dynatracev1beta1.OneAgentSpec{
@@ -78,7 +74,6 @@ func TestPodSpec_Arguments(t *testing.T) {
 		builderInfo{
 			instance:       instance,
 			hostInjectSpec: hostInjectSpecs,
-			logger:         log,
 			clusterId:      testClusterID,
 			relatedImage:   testValue,
 			deploymentType: deploymentmetadata.DeploymentTypeFullStack,
@@ -126,7 +121,6 @@ func TestPodSpec_Arguments(t *testing.T) {
 			builderInfo{
 				instance:       instance,
 				hostInjectSpec: hostInjectSpecs,
-				logger:         log,
 				clusterId:      testClusterID,
 				relatedImage:   testValue,
 			},

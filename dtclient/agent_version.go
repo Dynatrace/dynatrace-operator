@@ -57,7 +57,7 @@ func (dtc *dynatraceClient) readResponseForLatestVersion(response []byte) (strin
 	jr := &jsonResponse{}
 	err := json.Unmarshal(response, jr)
 	if err != nil {
-		dtc.logger.Error(err, "error unmarshalling json response")
+		log.Error(err, "error unmarshalling json response")
 		return "", err
 	}
 
@@ -79,7 +79,7 @@ func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch strin
 		dtc.url, os, installerType, flavor, arch)
 	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
 	if err == nil {
-		dtc.logger.Info("Downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "md5", md5)
+		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "md5", md5)
 	}
 	return err
 }
@@ -111,7 +111,7 @@ func (dtc *dynatraceClient) GetAgent(os, installerType, flavor, arch, version st
 	url := dtc.getAgentUrl(os, installerType, flavor, arch, version)
 	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
 	if err == nil {
-		dtc.logger.Info("Downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "md5", md5)
+		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "md5", md5)
 	}
 	return err
 }

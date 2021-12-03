@@ -55,13 +55,13 @@ func ReconcileVersions(
 
 	if needsActiveGateUpdate {
 		if err := updateImageVersion(dkState, dk.ActiveGateImage(), &dk.Status.ActiveGate.VersionStatus, &dockerCfg, verProvider, true); err != nil {
-			dkState.Log.Error(err, "Failed to update ActiveGate image version")
+			log.Error(err, "failed to update ActiveGate image version")
 		}
 	}
 
 	if needsOneAgentUpdate {
 		if err := updateImageVersion(dkState, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.VersionStatus, &dockerCfg, verProvider, false); err != nil {
-			dkState.Log.Error(err, "Failed to update OneAgent image version")
+			log.Error(err, "failed to update OneAgent image version")
 		}
 	}
 
@@ -95,7 +95,7 @@ func updateImageVersion(
 		}
 	}
 
-	dkState.Log.Info("Update found",
+	log.Info("update found",
 		"image", img,
 		"oldVersion", target.Version, "newVersion", ver.Version,
 		"oldHash", target.ImageHash, "newHash", ver.Hash)
