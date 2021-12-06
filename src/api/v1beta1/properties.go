@@ -85,6 +85,10 @@ func (dk *DynaKube) HasActiveGateTLS() bool {
 	return dk.ActiveGateMode() && dk.Spec.ActiveGate.TlsSecretName != ""
 }
 
+func (dk *DynaKube) HasProxy() bool {
+	return dk.Spec.Proxy != nil && (dk.Spec.Proxy.Value != "" || dk.Spec.Proxy.ValueFrom != "")
+}
+
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
 func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 	if dk.CloudNativeFullstackMode() {
