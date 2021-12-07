@@ -213,3 +213,10 @@ bundle-minimal: bundle
 .PHONY: bundle-build
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+setup-pre-commit:
+	$(info WARNING Make sure that golangci-lint is installed, for more info see https://golangci-lint.run/usage/install/")
+	GO111MODULE=off go get github.com/daixiang0/gci
+	GO111MODULE=off go get golang.org/x/tools/cmd/goimports
+	cp ./.github/pre-commit ./.git/hooks/pre-commit
+	chmod +x ./.git/hooks/pre-commit
