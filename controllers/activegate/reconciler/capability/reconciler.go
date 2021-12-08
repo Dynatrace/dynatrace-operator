@@ -20,8 +20,9 @@ import (
 )
 
 const (
-	containerPort   = 9999
-	dtDNSEntryPoint = "DT_DNS_ENTRY_POINT"
+	httpsContainerPort = 9999
+	httpContainerPort  = 9998
+	dtDNSEntryPoint    = "DT_DNS_ENTRY_POINT"
 )
 
 type Reconciler struct {
@@ -54,7 +55,7 @@ func NewReconciler(capability capability.Capability, clt client.Client, apiReade
 
 func setReadinessProbePort() events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
-		sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.ServiceTargetPort)
+		sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HttpsServiceTargetPort)
 	}
 }
 
@@ -62,8 +63,12 @@ func setCommunicationsPort(_ *dynatracev1beta1.DynaKube) events.StatefulSetEvent
 	return func(sts *appsv1.StatefulSet) {
 		sts.Spec.Template.Spec.Containers[0].Ports = []corev1.ContainerPort{
 			{
-				Name:          consts.ServiceTargetPort,
-				ContainerPort: containerPort,
+				Name:          consts.HttpsServiceTargetPort,
+				ContainerPort: httpsContainerPort,
+			},
+			{
+				Name:          consts.HttpServiceTargetPort,
+				ContainerPort: httpContainerPort,
 			},
 		}
 	}

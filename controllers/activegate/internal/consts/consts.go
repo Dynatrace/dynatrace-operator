@@ -1,6 +1,8 @@
 package consts
 
 const (
-	ServicePort       = 443
-	ServiceTargetPort = "ag-https"
+	HttpsServicePort       = 443
+	HttpsServiceTargetPort = "ag-https"
+	HttpServicePort        = 80
+	HttpServiceTargetPort  = "ag-http"
 )
