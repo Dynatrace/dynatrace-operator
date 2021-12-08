@@ -24,9 +24,16 @@ func createService(instance *dynatracev1beta1.DynaKube, feature string) *corev1.
 			Selector: statefulset.BuildLabelsFromInstance(instance, feature),
 			Ports: []corev1.ServicePort{
 				{
+					Name:       consts.HttpsServiceTargetPort,
 					Protocol:   corev1.ProtocolTCP,
-					Port:       consts.ServicePort,
-					TargetPort: intstr.FromString(consts.ServiceTargetPort),
+					Port:       consts.HttpsServicePort,
+					TargetPort: intstr.FromString(consts.HttpsServiceTargetPort),
+				},
+				{
+					Name:       consts.HttpServiceTargetPort,
+					Protocol:   corev1.ProtocolTCP,
+					Port:       consts.HttpServicePort,
+					TargetPort: intstr.FromString(consts.HttpServiceTargetPort),
 				},
 			},
 		},
