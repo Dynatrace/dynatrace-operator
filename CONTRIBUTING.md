@@ -10,9 +10,9 @@ For those just getting started, consult this  [guide](https://help.github.com/ar
 ## Coding style guide
 
 ### General
-- Use descriptive names (`namespace` is better then `ns`, `dynakube` is better then `dk`, etc.)
+- Use descriptive names (`namespace` is better than `ns`, `dynakube` is better than `dk`, etc.)
 - Avoid using `client.Client` for 'getting' resources, use `client.Reader` (also known as `apiReader`) instead.
-  - `client.Client` uses a cache (or tries to) that requires more permissions then normally, and can also give you outdated results.
+  - `client.Client` uses a cache (or tries to) that requires more permissions than normally, and can also give you outdated results.
 
 ### Logging
 
