@@ -28,7 +28,7 @@ import (
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/version"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/spf13/afero"

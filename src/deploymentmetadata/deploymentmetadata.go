@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/version"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 )
 
 const (

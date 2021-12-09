@@ -20,7 +20,7 @@ import (
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
-	"github.com/Dynatrace/dynatrace-operator/version"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/spf13/pflag"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"

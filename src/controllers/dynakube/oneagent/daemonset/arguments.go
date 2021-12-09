@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/version"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 )
 
 func (dsInfo *builderInfo) arguments() []string {
