@@ -1,9 +1,3 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-- script: sed -i "" "s|_APIURL_|$APIURL|g" ./01-dynakube.yaml
-- script: kubectl -n dynatrace create secret generic dynakube --from-literal="apiToken=${APITOKEN}" --from-literal="paasToken=${PAASTOKEN}"
----
 apiVersion: v1
 kind: Namespace
 metadata:

@@ -1,11 +1,15 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+- script: sh ../dk.sh
+- script: kubectl -n dynatrace create secret generic dynakube --from-literal="apiToken=${APITOKEN}" --from-literal="paasToken=${PAASTOKEN}"
+---
 apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
 spec:
-  apiUrl: _APIURL_
-
   namespaceSelector:
     matchLabels:
       test: test
