@@ -98,7 +98,7 @@ jobs:
         name: Prepare
         id: prep
         run: |
-          # https://blog.oddbit.com/post/2020-09-25-building-multi-architecture-im/
+          # https://blog.oddbit.com/post/2020-09-25-building-multi-architecture-im/ 
           DOCKER_IMAGE=registry.gitlab.com/gabriel.krenn/test-private-registry/actions
           VERSION=latest
           SHORTREF=${GITHUB_SHA::8}
