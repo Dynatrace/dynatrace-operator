@@ -8,15 +8,15 @@ ARG GO_BUILD_ARGS
 COPY . /app
 WORKDIR /app
 
-RUN go get github.com/google/go-licenses && go-licenses save ./... --save_path third_party_licenses --force
-RUN go get -d ./...
+# move previously cached go modules to gopath
+RUN mkdir -p ${GOPATH}/pkg && mv ./mod ${GOPATH}/pkg
 
-RUN CGO_ENABLED=1 go build "$GO_BUILD_ARGS" -o ./build/_output/bin/dynatrace-operator ./src/cmd/operator/
+RUN CGO_ENABLED=1 go build -ldflags "${GO_BUILD_ARGS:1:-1}" -o ./build/_output/bin/dynatrace-operator ./cmd/operator/
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
-COPY --from=operator-build /app/third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
+COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 
 LABEL name="Dynatrace ActiveGate Operator" \
       vendor="Dynatrace LLC" \
