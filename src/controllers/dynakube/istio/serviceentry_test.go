@@ -42,10 +42,10 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_DNS,
 			},
 		}
-		result := buildServiceEntry(testName, DefaultTestNamespace, testHost, protocolHttps, testPort)
+		result := BuildServiceEntry(testName, DefaultTestNamespace, testHost, protocolHttps, testPort)
 		assert.EqualValues(t, expected, result)
 
-		result = buildServiceEntry(testName, DefaultTestNamespace, testHost1, protocolHttps, testPort1)
+		result = BuildServiceEntry(testName, DefaultTestNamespace, testHost1, protocolHttps, testPort1)
 		assert.NotEqualValues(t, expected, result)
 	})
 	t.Run(`generate with Ip`, func(t *testing.T) {
@@ -67,10 +67,10 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_NONE,
 			},
 		}
-		result := buildServiceEntry(testName, DefaultTestNamespace, testIp, protocolHttps, testPort)
+		result := BuildServiceEntry(testName, DefaultTestNamespace, testIp, protocolHttps, testPort)
 		assert.EqualValues(t, expected, result)
 
-		result = buildServiceEntry(testName, DefaultTestNamespace, testIp, protocolHttps, testPort1)
+		result = BuildServiceEntry(testName, DefaultTestNamespace, testIp, protocolHttps, testPort1)
 		assert.NotEqualValues(t, expected, result)
 	})
 }

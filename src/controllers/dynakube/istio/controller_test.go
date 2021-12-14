@@ -57,7 +57,7 @@ func TestIstioClient_BuildDynatraceVirtualService(t *testing.T) {
 		t.Error("Failed to set environment variable")
 	}
 
-	vs := buildVirtualService(testVirtualServiceName, DefaultTestNamespace, testVirtualServiceHost, testVirtualServiceProtocol, testVirtualServicePort)
+	vs := BuildVirtualService(testVirtualServiceName, DefaultTestNamespace, testVirtualServiceHost, testVirtualServiceProtocol, testVirtualServicePort)
 	ic := fakeistio.NewSimpleClientset(vs)
 	vsList, err := ic.NetworkingV1alpha3().VirtualServices(DefaultTestNamespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -79,7 +79,7 @@ func TestController_ReconcileIstio(t *testing.T) {
 	port, err := strconv.ParseUint(serverUrl.Port(), 10, 32)
 	require.NoError(t, err)
 
-	virtualService := buildVirtualService(testVirtualServiceName, DefaultTestNamespace, "localhost", serverUrl.Scheme, uint32(port))
+	virtualService := BuildVirtualService(testVirtualServiceName, DefaultTestNamespace, "localhost", serverUrl.Scheme, uint32(port))
 	instance := &dynatracev1beta1.DynaKube{}
 	controller := Controller{
 		istioClient: fakeistio.NewSimpleClientset(virtualService),
