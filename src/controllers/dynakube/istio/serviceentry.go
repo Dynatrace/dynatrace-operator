@@ -15,7 +15,7 @@ const (
 	protocolTcp      = "TCP"
 )
 
-func buildServiceEntry(name, namespace, host, protocol string, port uint32) *istiov1alpha3.ServiceEntry {
+func BuildServiceEntry(name, namespace, host, protocol string, port uint32) *istiov1alpha3.ServiceEntry {
 	if net.ParseIP(host) != nil { // It's an IP.
 		return buildServiceEntryIP(name, namespace, host, port)
 	}

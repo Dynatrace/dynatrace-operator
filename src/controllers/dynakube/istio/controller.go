@@ -3,30 +3,16 @@ package istio
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-)
-
-type probeResult int
-
-const (
-	probeObjectFound probeResult = iota
-	probeObjectNotFound
-	probeTypeFound
-	probeTypeNotFound
-	probeUnknown
 )
 
 // Controller - manager istioclientset and config
@@ -112,7 +98,7 @@ func (c *Controller) reconcileIstioConfigurations(instance *dynatracev1beta1.Dyn
 func (c *Controller) reconcileIstioRemoveConfigurations(instance *dynatracev1beta1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
-	labelSelector := labels.SelectorFromSet(buildIstioLabels(instance.GetName(), role)).String()
+	labelSelector := labels.SelectorFromSet(BuildIstioLabels(instance.GetName(), role)).String()
 	listOps := &metav1.ListOptions{
 		LabelSelector: labelSelector,
 	}
@@ -191,8 +177,8 @@ func (c *Controller) removeIstioConfigurationForVirtualService(listOps *metav1.L
 func (c *Controller) reconcileIstioCreateConfigurations(instance *dynatracev1beta1.DynaKube,
 	communicationHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
-	crdProbe := c.verifyIstioCrdAvailability(instance)
-	if crdProbe != probeTypeFound {
+	crdProbe := kubeobjects.VerifyIstioCrdAvailability(instance, c.config)
+	if crdProbe != kubeobjects.ProbeTypeFound {
 		log.Info("istio: failed to lookup CRD for ServiceEntry/VirtualService: Did you install Istio recently? Please restart the Operator.")
 		return false, nil
 	}
@@ -201,11 +187,13 @@ func (c *Controller) reconcileIstioCreateConfigurations(instance *dynatracev1bet
 	for _, commHost := range communicationHosts {
 		name := buildNameForEndpoint(instance.GetName(), commHost.Protocol, commHost.Host, commHost.Port)
 
-		createdServiceEntry, err := c.handleIstioConfigurationForServiceEntry(instance, name, commHost, role)
+		createdServiceEntry, err := kubeobjects.HandleIstioConfigurationForServiceEntry(instance, name, commHost,
+			role, c.config, c.namespace, c.istioClient, c.scheme)
 		if err != nil {
 			return false, err
 		}
-		createdVirtualService, err := c.handleIstioConfigurationForVirtualService(instance, name, commHost, role)
+		createdVirtualService, err := kubeobjects.HandleIstioConfigurationForVirtualService(instance, name, commHost,
+			role, c.config, c.namespace, c.istioClient, c.scheme)
 		if err != nil {
 			return false, err
 		}
@@ -214,126 +202,4 @@ func (c *Controller) reconcileIstioCreateConfigurations(instance *dynatracev1bet
 	}
 
 	return configurationUpdated, nil
-}
-
-func (c *Controller) verifyIstioCrdAvailability(instance *dynatracev1beta1.DynaKube) probeResult {
-	var probe probeResult
-
-	probe, _ = c.kubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), "")
-	if probe == probeTypeNotFound {
-		return probe
-	}
-
-	probe, _ = c.kubernetesObjectProbe(VirtualServiceGVK, instance.GetNamespace(), "")
-	if probe == probeTypeNotFound {
-		return probe
-	}
-
-	return probeTypeFound
-}
-
-func (c *Controller) handleIstioConfigurationForVirtualService(instance *dynatracev1beta1.DynaKube,
-	name string, communicationHost dtclient.CommunicationHost, role string) (bool, error) {
-
-	probe, err := c.kubernetesObjectProbe(VirtualServiceGVK, instance.GetNamespace(), name)
-	if probe == probeObjectFound {
-		return false, nil
-	} else if probe == probeUnknown {
-		log.Error(err, "istio: failed to query VirtualService")
-		return false, err
-	}
-
-	virtualService := buildVirtualService(name, c.namespace, communicationHost.Host, communicationHost.Protocol,
-		communicationHost.Port)
-	if virtualService == nil {
-		return false, nil
-	}
-
-	err = c.createIstioConfigurationForVirtualService(instance, virtualService, role)
-	if err != nil {
-		log.Error(err, "istio: failed to create VirtualService")
-		return false, err
-	}
-	log.Info("istio: VirtualService created", "objectName", name, "host", communicationHost.Host,
-		"port", communicationHost.Port, "protocol", communicationHost.Protocol)
-
-	return true, nil
-}
-
-func (c *Controller) handleIstioConfigurationForServiceEntry(instance *dynatracev1beta1.DynaKube,
-	name string, communicationHost dtclient.CommunicationHost, role string) (bool, error) {
-
-	probe, err := c.kubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), name)
-	if probe == probeObjectFound {
-		return false, nil
-	} else if probe == probeUnknown {
-		log.Error(err, "istio: failed to query ServiceEntry")
-		return false, err
-	}
-
-	serviceEntry := buildServiceEntry(name, c.namespace, communicationHost.Host, communicationHost.Protocol, communicationHost.Port)
-	err = c.createIstioConfigurationForServiceEntry(instance, serviceEntry, role)
-	if err != nil {
-		log.Error(err, "istio: failed to create ServiceEntry")
-		return false, err
-	}
-	log.Info("istio: ServiceEntry created", "objectName", name, "host", communicationHost.Host, "port", communicationHost.Port)
-
-	return true, nil
-}
-
-func (c *Controller) createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube,
-	serviceEntry *istiov1alpha3.ServiceEntry, role string) error {
-
-	serviceEntry.Labels = buildIstioLabels(dynaKube.GetName(), role)
-	if err := controllerutil.SetControllerReference(dynaKube, serviceEntry, c.scheme); err != nil {
-		return err
-	}
-	sve, err := c.istioClient.NetworkingV1alpha3().ServiceEntries(dynaKube.GetNamespace()).Create(context.TODO(), serviceEntry, metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-	if sve == nil {
-		return fmt.Errorf("could not create service entry with spec %v", serviceEntry.Spec)
-	}
-	return nil
-}
-
-func (c *Controller) createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKube,
-	virtualService *istiov1alpha3.VirtualService, role string) error {
-
-	virtualService.Labels = buildIstioLabels(dynaKube.GetName(), role)
-	if err := controllerutil.SetControllerReference(dynaKube, virtualService, c.scheme); err != nil {
-		return err
-	}
-	vs, err := c.istioClient.NetworkingV1alpha3().VirtualServices(dynaKube.GetNamespace()).Create(context.TODO(), virtualService, metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-	if vs == nil {
-		return fmt.Errorf("could not create virtual service with spec %v", virtualService.Spec)
-	}
-
-	return nil
-}
-
-func (c *Controller) kubernetesObjectProbe(gvk schema.GroupVersionKind,
-	namespace string, name string) (probeResult, error) {
-
-	var objQuery unstructured.Unstructured
-	objQuery.Object = make(map[string]interface{})
-
-	objQuery.SetGroupVersionKind(gvk)
-
-	runtimeClient, err := client.New(c.config, client.Options{})
-	if err != nil {
-		return probeUnknown, err
-	}
-	if name == "" {
-		err = runtimeClient.List(context.TODO(), &objQuery, client.InNamespace(namespace))
-	} else {
-		err = runtimeClient.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: name}, &objQuery)
-	}
-
-	return mapErrorToObjectProbeResult(err)
 }

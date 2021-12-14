@@ -10,7 +10,7 @@ const (
 	protocolHttps = "https"
 )
 
-func buildVirtualService(name, namespace, host, protocol string, port uint32) *istiov1alpha3.VirtualService {
+func BuildVirtualService(name, namespace, host, protocol string, port uint32) *istiov1alpha3.VirtualService {
 	if isIp(host) {
 		return nil
 	}
