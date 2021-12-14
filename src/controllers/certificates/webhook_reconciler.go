@@ -106,8 +106,8 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 
 	isWebhookCertificateValid := r.checkMutatingWebhookConfigurations(
 		mutatingWebhookConfiguration, validatingWebhookConfiguration, certs.Data[RootCert])
-
 	isSecretOutdated := false
+
 	if !reflect.DeepEqual(certs.Data, secret.Data) {
 		// certificate needs to be updated
 		secret.Data = certs.Data
