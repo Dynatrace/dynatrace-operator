@@ -95,11 +95,13 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 
 	mutatingWebhookConfiguration, err := r.getMutatingWebhookConfiguration(ctx)
 	if err != nil {
-		return reconcile.Result{}, err
+		log.Error(err, "could not find mutating webhook configuration")
+		// return reconcile.Result{}, err
 	}
 	validatingWebhookConfiguration, err := r.getValidatingWebhookConfiguration(ctx)
 	if err != nil {
-		return reconcile.Result{}, err
+		log.Error(err, "could not find validating webhook configuration")
+		// return reconcile.Result{}, err
 	}
 
 	isWebhookCertificateValid := r.checkMutatingWebhookConfigurations(
@@ -163,26 +165,37 @@ func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.C
 
 	// update certificates for webhook configurations
 	log.Info("saving certificates into webhook configurations")
-	for i := range mutatingWebhookConfiguration.Webhooks {
-		if err := r.updateConfiguration(&mutatingWebhookConfiguration.Webhooks[i].ClientConfig, secret); err != nil {
-			return err
+	if mutatingWebhookConfiguration != nil {
+		for i := range mutatingWebhookConfiguration.Webhooks {
+			if err := r.updateConfiguration(&mutatingWebhookConfiguration.Webhooks[i].ClientConfig, secret); err != nil {
+				return err
+			}
 		}
 	}
-	for i := range validatingWebhookConfiguration.Webhooks {
-		if err := r.updateConfiguration(&validatingWebhookConfiguration.Webhooks[i].ClientConfig, secret); err != nil {
-			return err
+
+	if validatingWebhookConfiguration != nil {
+		for i := range validatingWebhookConfiguration.Webhooks {
+			if err := r.updateConfiguration(&validatingWebhookConfiguration.Webhooks[i].ClientConfig, secret); err != nil {
+				return err
+			}
 		}
 	}
 
 	if err := r.updateCRDConfiguration(ctx, secret); err != nil {
 		return err
 	}
-	if err := r.client.Update(ctx, mutatingWebhookConfiguration); err != nil {
-		return err
+
+	if mutatingWebhookConfiguration != nil {
+		if err := r.client.Update(ctx, mutatingWebhookConfiguration); err != nil {
+			return err
+		}
 	}
-	if err := r.client.Update(ctx, validatingWebhookConfiguration); err != nil {
-		return err
+	if validatingWebhookConfiguration != nil {
+		if err := r.client.Update(ctx, validatingWebhookConfiguration); err != nil {
+			return err
+		}
 	}
+
 	log.Info("saved certificates into webhook configurations")
 	return nil
 }
@@ -241,17 +254,21 @@ func (r *ReconcileWebhookCertificates) checkMutatingWebhookConfigurations(
 	mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration,
 	validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration, expectedCert []byte) bool {
 
-	for _, mutatingWebhook := range mutatingWebhookConfiguration.Webhooks {
-		webhookCert := mutatingWebhook.ClientConfig.CABundle
-		if len(webhookCert) == 0 || !bytes.Equal(webhookCert, expectedCert) {
-			return false
+	if mutatingWebhookConfiguration != nil {
+		for _, mutatingWebhook := range mutatingWebhookConfiguration.Webhooks {
+			webhookCert := mutatingWebhook.ClientConfig.CABundle
+			if len(webhookCert) == 0 || !bytes.Equal(webhookCert, expectedCert) {
+				return false
+			}
 		}
 	}
 
-	for _, validatingWebhook := range validatingWebhookConfiguration.Webhooks {
-		webhookCert := validatingWebhook.ClientConfig.CABundle
-		if len(webhookCert) == 0 || !bytes.Equal(webhookCert, expectedCert) {
-			return false
+	if validatingWebhookConfiguration != nil {
+		for _, validatingWebhook := range validatingWebhookConfiguration.Webhooks {
+			webhookCert := validatingWebhook.ClientConfig.CABundle
+			if len(webhookCert) == 0 || !bytes.Equal(webhookCert, expectedCert) {
+				return false
+			}
 		}
 	}
 	return true
