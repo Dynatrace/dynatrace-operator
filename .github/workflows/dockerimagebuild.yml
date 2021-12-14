@@ -90,6 +90,7 @@ jobs:
           path: |
             ~/go/pkg/mod
             ~/.cache/go-build
+            ./third_party_licenses
           key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-build-
@@ -115,8 +116,11 @@ jobs:
           echo ::set-output name=labels::${LABELS}
           echo ::set-output name=docker_image::${DOCKER_IMAGE}
 
-          # Get licenses
-          go get github.com/google/go-licenses && go-licenses save ./... --save_path third_party_licenses --force
+          # Get licenses if no cache exists
+          if ! [ -d ./third_party_licenses ]; then
+            go get github.com/google/go-licenses && go-licenses save ./... --save_path third_party_licenses --force
+          fi
+
           # Get dependencies
           go get -d ./...
           ls -la $HOME/go/pkg/mod
