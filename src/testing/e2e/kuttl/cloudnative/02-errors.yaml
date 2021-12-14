@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: php-glibc
+  namespace: leave-alone
+spec:
+  initContainers: []

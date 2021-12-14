@@ -1,0 +1,6 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+- command: kubectl delete -k ../../../../../config/kubernetes-csi
+- command: kubectl delete ns dynatrace
+- script: sed -i "" "s|$APIURL|_APIURL_|g" ./01-dynakube.yaml
