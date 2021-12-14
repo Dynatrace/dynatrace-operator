@@ -1,0 +1,9 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnetcore-musl
+  namespace: already-present
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+

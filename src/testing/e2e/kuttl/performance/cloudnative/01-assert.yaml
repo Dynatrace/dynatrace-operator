@@ -1,0 +1,11 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 30
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    test: test
+    dynakube.internal.dynatrace.com/instance: dynakube
+  name: already-present

@@ -1,0 +1,32 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: dynakubes.dynatrace.com
+spec:
+  conversion:
+    webhook:
+      clientConfig:
+        CABundle: ""
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: dynatrace-webhook
+webhooks:
+  - name: webhook.pod.dynatrace.com
+    clientConfig:
+      CABundle: ""
+
+  - name: webhook.ns.dynatrace.com
+    clientConfig:
+      CABundle: ""
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: dynatrace-webhook
+webhooks:
+  - name: webhook.dynatrace.com
+    clientConfig:
+      CABundle: ""
+

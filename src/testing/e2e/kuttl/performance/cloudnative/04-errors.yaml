@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: already-present
+  labels:
+    app: dotnetcore
+spec:
+  initContainers: []
