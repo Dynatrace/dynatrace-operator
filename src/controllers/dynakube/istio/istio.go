@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
@@ -64,21 +62,7 @@ func buildObjectMeta(name string, namespace string) v1.ObjectMeta {
 	}
 }
 
-func mapErrorToObjectProbeResult(err error) (probeResult, error) {
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return probeObjectNotFound, err
-		} else if meta.IsNoMatchError(err) {
-			return probeTypeNotFound, err
-		}
-
-		return probeUnknown, err
-	}
-
-	return probeObjectFound, nil
-}
-
-func buildIstioLabels(name, role string) map[string]string {
+func BuildIstioLabels(name, role string) map[string]string {
 	return map[string]string{
 		"dynatrace":            "oneagent",
 		"oneagent":             name,
