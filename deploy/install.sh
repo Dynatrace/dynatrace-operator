@@ -5,6 +5,7 @@ set -e
 CLI="kubectl"
 SKIP_CERT_CHECK="false"
 ENABLE_VOLUME_STORAGE="false"
+CONFIG_OPTION="classicFullStack"
 CONNECTION_NAME=""
 CLUSTER_NAME=""
 CLUSTER_NAME_REGEX="^[-_a-zA-Z0-9][-_\.a-zA-Z0-9]*$"
@@ -34,6 +35,10 @@ while [ $# -gt 0 ]; do
     ;;
   --cluster-name)
     CLUSTER_NAME="$2"
+    shift 2
+    ;;
+  --config-option)
+    CONFIG_OPTION="$2"
     shift 2
     ;;
   --openshift)
@@ -95,6 +100,15 @@ checkIfNSExists() {
   fi
 }
 
+checkConfigOption() {
+  if [ "${CONFIG_OPTION}" != "classicFullStack" ] && [ "${CONFIG_OPTION}" != "applicationMonitoring" ] && [ "${CONFIG_OPTION}" != "cloudNativeFullStack" ]; then
+    echo "----------"
+    echo "Unsupported configuration option, defaulting to classicFullStack"
+    CONFIG_OPTION="classicFullStack"
+    echo "----------"
+  fi
+}
+
 isOCP311() {
   # Openshift 3.11 uses Kubernetes 1.11, and `oc version` returns the Kubernetes version and NOT the Openshift version
   "${CLI}" version -o json | tr -d '[[:space:]]'| grep '"serverVersion.*"' | grep -q '"major":"1","minor":"11.*"'
@@ -126,10 +140,32 @@ EOF
   fi
 }
 
+buildApplicationOnlySection() {
+  cat <<EOF
+  oneAgent:
+    applicationMonitoring:
+      useCSIDriver: false
+EOF
+}
+
 buildClassicFullStackSection() {
   cat <<EOF
   oneAgent:
     classicFullStack:
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Exists
+
+$(buildHostMonitoringArgsField)
+$(buildHostMonitoringEnvField)
+EOF
+}
+
+buildCloudNativeFullStackSection() {
+  cat <<EOF
+  oneAgent:
+    cloudNativeFullStack:
       tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/master
@@ -156,6 +192,16 @@ buildHostMonitoringEnvField() {
       - name: ONEAGENT_ENABLE_VOLUME_STORAGE
         value: "${ENABLE_VOLUME_STORAGE}"
 EOF
+  fi
+}
+
+buildConfigurationOptionSection() {
+  if [ "${CONFIG_OPTION}" = "classicFullStack" ]; then
+    buildClassicFullStackSection
+  elif [ "${CONFIG_OPTION}" = "applicationMonitoring" ]; then
+    buildApplicationOnlySection
+  elif [ "${CONFIG_OPTION}" = "cloudNativeFullStack" ]; then
+    buildCloudNativeFullStackSection
   fi
 }
 
@@ -187,7 +233,7 @@ metadata:
   namespace: dynatrace
 spec:
 $(buildGlobalSection)
-$(buildClassicFullStackSection)
+$(buildConfigurationOptionSection)
 $(buildActiveGateSection)
 EOF
   )"
