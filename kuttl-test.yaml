@@ -1,12 +1,13 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 startKIND: false
+kindConfig: kind.yaml
 skipDelete: false
 namespace: dynatrace
 parallel: 1
 testDirs:
 - src/testing/e2e/kuttl
-timeout: 120
+timeout: 300
 commands:
 - command: kubectl create ns dynatrace
 - command: kubectl apply -k config/kubernetes-csi

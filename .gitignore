@@ -93,3 +93,4 @@ config/deploy/kustomization.yaml
 .vscode
 
 kubeconfig
+kind-logs-*
