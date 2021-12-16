@@ -22,7 +22,7 @@ const (
 	MountPath  = "/var/lib/dynatrace/gateway/config_template/custom.properties"
 )
 
-type Reconciler struct {
+type CustomPropertiesReconciler struct {
 	client.Client
 	scheme                    *runtime.Scheme
 	customPropertiesSource    dynatracev1beta1.DynaKubeValueSource
@@ -30,8 +30,8 @@ type Reconciler struct {
 	instance                  *dynatracev1beta1.DynaKube
 }
 
-func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, customPropertiesSource dynatracev1beta1.DynaKubeValueSource, scheme *runtime.Scheme) *Reconciler {
-	return &Reconciler{
+func NewCustomPropertiesReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, customPropertiesOwnerName string, customPropertiesSource dynatracev1beta1.DynaKubeValueSource, scheme *runtime.Scheme) *CustomPropertiesReconciler {
+	return &CustomPropertiesReconciler{
 		Client:                    clt,
 		instance:                  instance,
 		scheme:                    scheme,
@@ -40,18 +40,18 @@ func NewReconciler(clt client.Client, instance *dynatracev1beta1.DynaKube, custo
 	}
 }
 
-func (r *Reconciler) Reconcile() error {
-	if r.hasCustomPropertiesValueOnly() {
-		mustNotUpdate, err := r.createCustomPropertiesIfNotExists()
+func (reconciler *CustomPropertiesReconciler) Reconcile() error {
+	if reconciler.hasCustomPropertiesValueOnly() {
+		mustNotUpdate, err := reconciler.createCustomPropertiesIfNotExists()
 		if err != nil {
-			log.Error(err, "could not create custom properties", "owner", r.customPropertiesOwnerName)
+			log.Error(err, "could not create custom properties", "owner", reconciler.customPropertiesOwnerName)
 			return errors.WithStack(err)
 		}
 
 		if !mustNotUpdate {
-			err = r.updateCustomPropertiesIfOutdated()
+			err = reconciler.updateCustomPropertiesIfOutdated()
 			if err != nil {
-				log.Error(err, "could not update custom properties", "owner", r.customPropertiesOwnerName)
+				log.Error(err, "could not update custom properties", "owner", reconciler.customPropertiesOwnerName)
 				return errors.WithStack(err)
 			}
 		}
@@ -60,58 +60,58 @@ func (r *Reconciler) Reconcile() error {
 	return nil
 }
 
-func (r *Reconciler) createCustomPropertiesIfNotExists() (bool, error) {
+func (reconciler *CustomPropertiesReconciler) createCustomPropertiesIfNotExists() (bool, error) {
 	var customPropertiesSecret corev1.Secret
-	err := r.Get(context.TODO(),
-		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: r.instance.Namespace}, &customPropertiesSecret)
+	err := reconciler.Get(context.TODO(),
+		client.ObjectKey{Name: reconciler.buildCustomPropertiesName(reconciler.instance.Name), Namespace: reconciler.instance.Namespace}, &customPropertiesSecret)
 	if err != nil && k8serrors.IsNotFound(err) {
-		return true, r.createCustomProperties()
+		return true, reconciler.createCustomProperties()
 	}
 	return false, errors.WithStack(err)
 }
 
-func (r *Reconciler) updateCustomPropertiesIfOutdated() error {
+func (reconciler *CustomPropertiesReconciler) updateCustomPropertiesIfOutdated() error {
 	var customPropertiesSecret corev1.Secret
-	err := r.Get(context.TODO(),
-		client.ObjectKey{Name: r.buildCustomPropertiesName(r.instance.Name), Namespace: r.instance.Namespace},
+	err := reconciler.Get(context.TODO(),
+		client.ObjectKey{Name: reconciler.buildCustomPropertiesName(reconciler.instance.Name), Namespace: reconciler.instance.Namespace},
 		&customPropertiesSecret)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	if r.isOutdated(&customPropertiesSecret) {
-		return r.updateCustomProperties(&customPropertiesSecret)
+	if reconciler.isOutdated(&customPropertiesSecret) {
+		return reconciler.updateCustomProperties(&customPropertiesSecret)
 	}
 	return nil
 }
 
-func (r *Reconciler) isOutdated(customProperties *corev1.Secret) bool {
-	return r.customPropertiesSource.Value != string(customProperties.Data[DataKey])
+func (reconciler *CustomPropertiesReconciler) isOutdated(customProperties *corev1.Secret) bool {
+	return reconciler.customPropertiesSource.Value != string(customProperties.Data[DataKey])
 }
 
-func (r *Reconciler) updateCustomProperties(customProperties *corev1.Secret) error {
-	customProperties.Data[DataKey] = []byte(r.customPropertiesSource.Value)
-	return r.Update(context.TODO(), customProperties)
+func (reconciler *CustomPropertiesReconciler) updateCustomProperties(customProperties *corev1.Secret) error {
+	customProperties.Data[DataKey] = []byte(reconciler.customPropertiesSource.Value)
+	return reconciler.Update(context.TODO(), customProperties)
 }
 
-func (r *Reconciler) createCustomProperties() error {
-	customPropertiesSecret := r.buildCustomPropertiesSecret(
-		r.buildCustomPropertiesName(r.instance.Name),
-		r.customPropertiesSource.Value,
+func (reconciler *CustomPropertiesReconciler) createCustomProperties() error {
+	customPropertiesSecret := reconciler.buildCustomPropertiesSecret(
+		reconciler.buildCustomPropertiesName(reconciler.instance.Name),
+		reconciler.customPropertiesSource.Value,
 	)
 
-	err := controllerutil.SetControllerReference(r.instance, customPropertiesSecret, r.scheme)
+	err := controllerutil.SetControllerReference(reconciler.instance, customPropertiesSecret, reconciler.scheme)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	return r.Create(context.TODO(), customPropertiesSecret)
+	return reconciler.Create(context.TODO(), customPropertiesSecret)
 }
 
-func (r *Reconciler) buildCustomPropertiesSecret(secretName string, data string) *corev1.Secret {
+func (reconciler *CustomPropertiesReconciler) buildCustomPropertiesSecret(secretName string, data string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
-			Namespace: r.instance.Namespace,
+			Namespace: reconciler.instance.Namespace,
 		},
 		Data: map[string][]byte{
 			DataKey: []byte(data),
@@ -119,11 +119,11 @@ func (r *Reconciler) buildCustomPropertiesSecret(secretName string, data string)
 	}
 }
 
-func (r *Reconciler) buildCustomPropertiesName(name string) string {
-	return fmt.Sprintf("%s-%s-%s", name, r.customPropertiesOwnerName, Suffix)
+func (reconciler *CustomPropertiesReconciler) buildCustomPropertiesName(name string) string {
+	return fmt.Sprintf("%s-%s-%s", name, reconciler.customPropertiesOwnerName, Suffix)
 }
 
-func (r *Reconciler) hasCustomPropertiesValueOnly() bool {
-	return r.customPropertiesSource.Value != "" &&
-		r.customPropertiesSource.ValueFrom == ""
+func (reconciler *CustomPropertiesReconciler) hasCustomPropertiesValueOnly() bool {
+	return reconciler.customPropertiesSource.Value != "" &&
+		reconciler.customPropertiesSource.ValueFrom == ""
 }

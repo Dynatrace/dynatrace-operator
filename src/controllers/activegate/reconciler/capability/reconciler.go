@@ -25,31 +25,31 @@ const (
 	dtDNSEntryPoint    = "DT_DNS_ENTRY_POINT"
 )
 
-type Reconciler struct {
-	*sts.Reconciler
+type ActiveGateCapabilityReconciler struct {
+	*sts.ActiveGateStatefulSetReconciler
 	capability.Capability
 }
 
-func NewReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme,
-	instance *dynatracev1beta1.DynaKube) *Reconciler {
-	baseReconciler := sts.NewReconciler(
+func NewActiveGateCapabilityReconciler(capability capability.Capability, clt client.Client, apiReader client.Reader, scheme *runtime.Scheme,
+	instance *dynatracev1beta1.DynaKube) *ActiveGateCapabilityReconciler {
+	statefulsetReconciler := sts.NewAGStatefulSetReconciler(
 		clt, apiReader, scheme, instance, capability)
 
 	if capability.Config().SetDnsEntryPoint {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.ShortName()))
+		statefulsetReconciler.AddOnAfterStatefulSetCreateListener(addDNSEntryPoint(instance, capability.ShortName()))
 	}
 
 	if capability.Config().SetCommunicationPort {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(setCommunicationsPort(instance))
+		statefulsetReconciler.AddOnAfterStatefulSetCreateListener(setCommunicationsPort(instance))
 	}
 
 	if capability.Config().SetReadinessPort {
-		baseReconciler.AddOnAfterStatefulSetCreateListener(setReadinessProbePort())
+		statefulsetReconciler.AddOnAfterStatefulSetCreateListener(setReadinessProbePort())
 	}
 
-	return &Reconciler{
-		Reconciler: baseReconciler,
-		Capability: capability,
+	return &ActiveGateCapabilityReconciler{
+		ActiveGateStatefulSetReconciler: statefulsetReconciler,
+		Capability:                      capability,
 	}
 }
 
@@ -74,8 +74,8 @@ func setCommunicationsPort(_ *dynatracev1beta1.DynaKube) events.StatefulSetEvent
 	}
 }
 
-func (r *Reconciler) calculateStatefulSetName() string {
-	return capability.CalculateStatefulSetName(r.Capability, r.Instance.Name)
+func (reconciler *ActiveGateCapabilityReconciler) calculateStatefulSetName() string {
+	return capability.CalculateStatefulSetName(reconciler.Capability, reconciler.Instance.Name)
 }
 
 func addDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) events.StatefulSetEvent {
@@ -92,29 +92,29 @@ func buildDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) 
 	return fmt.Sprintf("https://%s/communication", buildServiceHostName(instance.Name, moduleName))
 }
 
-func (r *Reconciler) Reconcile() (update bool, err error) {
-	if r.Config().CreateService {
-		update, err = r.createServiceIfNotExists()
+func (reconciler *ActiveGateCapabilityReconciler) Reconcile() (update bool, err error) {
+	if reconciler.Config().CreateService {
+		update, err = reconciler.createServiceIfNotExists()
 		if update || err != nil {
 			return update, errors.WithStack(err)
 		}
 	}
 
-	update, err = r.Reconciler.Reconcile()
+	update, err = reconciler.ActiveGateStatefulSetReconciler.Reconcile()
 	return update, errors.WithStack(err)
 }
 
-func (r *Reconciler) createServiceIfNotExists() (bool, error) {
-	service := createService(r.Instance, r.ShortName())
+func (reconciler *ActiveGateCapabilityReconciler) createServiceIfNotExists() (bool, error) {
+	service := createService(reconciler.Instance, reconciler.ShortName())
 
-	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
+	err := reconciler.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
 	if err != nil && k8serrors.IsNotFound(err) {
-		log.Info("creating service", "module", r.ShortName())
-		if err := controllerutil.SetControllerReference(r.Instance, service, r.Scheme()); err != nil {
+		log.Info("creating service", "module", reconciler.ShortName())
+		if err := controllerutil.SetControllerReference(reconciler.Instance, service, reconciler.Scheme()); err != nil {
 			return false, errors.WithStack(err)
 		}
 
-		err = r.Create(context.TODO(), service)
+		err = reconciler.Create(context.TODO(), service)
 		return true, errors.WithStack(err)
 	}
 	return false, errors.WithStack(err)

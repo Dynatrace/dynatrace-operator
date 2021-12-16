@@ -31,13 +31,13 @@ type tokenConfig struct {
 	Timestamp         **metav1.Time
 }
 
-func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dynatracev1beta1.DynaKube) (dtclient.Client, bool, error) {
-	now := r.Now
+func (reconciler *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dynatracev1beta1.DynaKube) (dtclient.Client, bool, error) {
+	now := reconciler.Now
 	if now.IsZero() {
 		now = metav1.Now()
 	}
 
-	dtf := r.DynatraceClientFunc
+	dtf := reconciler.DynatraceClientFunc
 	if dtf == nil {
 		dtf = BuildDynatraceClient
 	}
@@ -48,7 +48,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 
 	var tokens []*tokenConfig
 
-	if r.UpdatePaaSToken {
+	if reconciler.UpdatePaaSToken {
 		tokens = append(tokens, &tokenConfig{
 			Type:      dynatracev1beta1.PaaSTokenConditionType,
 			Key:       dtclient.DynatracePaasToken,
@@ -57,7 +57,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 		})
 	}
 
-	if r.UpdateAPIToken {
+	if reconciler.UpdateAPIToken {
 		tokens = append(tokens, &tokenConfig{
 			Type:      dynatracev1beta1.APITokenConditionType,
 			Key:       dtclient.DynatraceApiToken,
@@ -78,7 +78,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 
 	secretKey := ns + ":" + secretName
 	secret := &corev1.Secret{}
-	if err := r.Client.Get(ctx, client.ObjectKey{Name: secretName, Namespace: ns}, secret); k8serrors.IsNotFound(err) {
+	if err := reconciler.Client.Get(ctx, client.ObjectKey{Name: secretName, Namespace: ns}, secret); k8serrors.IsNotFound(err) {
 		message := fmt.Sprintf("Secret '%s' not found", secretKey)
 
 		for _, t := range tokens {
@@ -116,7 +116,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 	}
 
 	dtc, err := dtf(DynatraceClientProperties{
-		ApiReader:           r.Client,
+		ApiReader:           reconciler.Client,
 		Secret:              secret,
 		Proxy:               convertProxy(instance.Spec.Proxy),
 		ApiUrl:              instance.Spec.APIURL,

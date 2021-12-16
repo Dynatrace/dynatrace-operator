@@ -30,12 +30,12 @@ const (
 func TestGetSecret(t *testing.T) {
 	t.Run(`get nil if secret does not exists`, func(t *testing.T) {
 		clt := fake.NewClient()
-		r := &ReconcileWebhookCertificates{
+		controller := &WebhookCertController{
 			client:    clt,
 			apiReader: clt,
 			ctx:       context.TODO(),
 		}
-		secret, err := r.getSecret()
+		secret, err := controller.getSecret()
 		require.NoError(t, err)
 		assert.Nil(t, secret)
 	})
@@ -46,13 +46,13 @@ func TestGetSecret(t *testing.T) {
 				Namespace: testNamespace,
 			},
 		})
-		r := &ReconcileWebhookCertificates{
+		controller := &WebhookCertController{
 			client:    clt,
 			apiReader: clt,
 			ctx:       context.TODO(),
 			namespace: testNamespace,
 		}
-		secret, err := r.getSecret()
+		secret, err := controller.getSecret()
 		require.NoError(t, err)
 		assert.NotNil(t, secret)
 	})
@@ -60,9 +60,9 @@ func TestGetSecret(t *testing.T) {
 
 func TestReconcileCertificate_Create(t *testing.T) {
 	clt := prepareFakeClient(false, false)
-	rec, request := prepareReconcile(clt)
+	controller, request := prepareReconcile(clt)
 
-	res, err := rec.Reconcile(context.TODO(), request)
+	res, err := controller.Reconcile(context.TODO(), request)
 	require.NoError(t, err)
 	assert.NotNil(t, res)
 	assert.Equal(t, SuccessDuration, res.RequeueAfter)
@@ -82,7 +82,7 @@ func TestReconcileCertificate_Create(t *testing.T) {
 	assert.NotEmpty(t, secret.Data[RootCert])
 	assert.Empty(t, secret.Data[RootCertOld])
 
-	verifyCertificates(t, rec, secret, clt, false)
+	verifyCertificates(t, controller, secret, clt, false)
 }
 
 func TestReconcileCertificate_Update(t *testing.T) {
@@ -198,8 +198,8 @@ func prepareFakeClient(withSecret bool, generateValidSecret bool) client.Client 
 	return fake.NewClient(objs...)
 }
 
-func prepareReconcile(clt client.Client) (*ReconcileWebhookCertificates, reconcile.Request) {
-	rec := &ReconcileWebhookCertificates{
+func prepareReconcile(clt client.Client) (*WebhookCertController, reconcile.Request) {
+	controller := &WebhookCertController{
 		ctx:       context.TODO(),
 		client:    clt,
 		apiReader: clt,
@@ -213,7 +213,7 @@ func prepareReconcile(clt client.Client) (*ReconcileWebhookCertificates, reconci
 		},
 	}
 
-	return rec, request
+	return controller, request
 }
 
 func testWebhookClientConfig(
@@ -229,9 +229,9 @@ func testWebhookClientConfig(
 	assert.Equal(t, expectedCert, webhookClientConfig.CABundle)
 }
 
-func verifyCertificates(t *testing.T, rec *ReconcileWebhookCertificates, secret *corev1.Secret, clt client.Client, isUpdate bool) {
+func verifyCertificates(t *testing.T, controller *WebhookCertController, secret *corev1.Secret, clt client.Client, isUpdate bool) {
 	cert := Certs{
-		Domain:  rec.getDomain(),
+		Domain:  controller.getDomain(),
 		Data:    secret.Data,
 		SrcData: secret.Data,
 		Now:     time.Now(),

@@ -40,7 +40,7 @@ func TestNewReconiler(t *testing.T) {
 	createDefaultReconciler(t)
 }
 
-func createDefaultReconciler(t *testing.T) *Reconciler {
+func createDefaultReconciler(t *testing.T) *ActiveGateCapabilityReconciler {
 	clt := fake.NewClientBuilder().
 		WithScheme(scheme.Scheme).
 		WithObjects(&corev1.Namespace{
@@ -54,85 +54,85 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 		}}
-	r := NewReconciler(metricsCapability, clt, clt, scheme.Scheme, instance)
-	require.NotNil(t, r)
-	require.NotNil(t, r.Client)
-	require.NotNil(t, r.Instance)
+	reconciler := NewActiveGateCapabilityReconciler(metricsCapability, clt, clt, scheme.Scheme, instance)
+	require.NotNil(t, reconciler)
+	require.NotNil(t, reconciler.Client)
+	require.NotNil(t, reconciler.Instance)
 
-	return r
+	return reconciler
 }
 
 func TestReconcile(t *testing.T) {
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
-		r := createDefaultReconciler(t)
+		reconciler := createDefaultReconciler(t)
 
 		metricsCapability.Properties().CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
 			Value: testValue,
 		}
-		_, err := r.Reconcile()
+		_, err := reconciler.Reconcile()
 		assert.NoError(t, err)
 
 		// Reconcile twice since service is created before the stateful set is
-		_, err = r.Reconcile()
+		_, err = reconciler.Reconcile()
 		assert.NoError(t, err)
 
 		var customProperties corev1.Secret
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + metricsCapability.ShortName() + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
+		err = reconciler.Get(context.TODO(), client.ObjectKey{Name: reconciler.Instance.Name + "-" + metricsCapability.ShortName() + "-" + customproperties.Suffix, Namespace: reconciler.Instance.Namespace}, &customProperties)
 		assert.NoError(t, err)
 		assert.NotNil(t, customProperties)
 		assert.Contains(t, customProperties.Data, customproperties.DataKey)
 		assert.Equal(t, testValue, string(customProperties.Data[customproperties.DataKey]))
 	})
 	t.Run(`create stateful set`, func(t *testing.T) {
-		r := createDefaultReconciler(t)
-		update, err := r.Reconcile()
+		reconciler := createDefaultReconciler(t)
+		update, err := reconciler.Reconcile()
 
 		assert.True(t, update)
 		assert.NoError(t, err)
 
 		// Reconcile twice since service is created before the stateful set is
-		update, err = r.Reconcile()
+		update, err = reconciler.Reconcile()
 
 		assert.True(t, update)
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, statefulSet)
+		err = reconciler.Get(context.TODO(), client.ObjectKey{Name: reconciler.calculateStatefulSetName(), Namespace: reconciler.Instance.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
 			Name:  dtDNSEntryPoint,
-			Value: buildDNSEntryPoint(r.Instance, r.ShortName()),
+			Value: buildDNSEntryPoint(reconciler.Instance, reconciler.ShortName()),
 		})
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
-		r := createDefaultReconciler(t)
-		update, err := r.Reconcile()
+		reconciler := createDefaultReconciler(t)
+		update, err := reconciler.Reconcile()
 
 		assert.True(t, update)
 		assert.NoError(t, err)
 
 		// Reconcile twice since service is created before the stateful set is
-		update, err = r.Reconcile()
+		update, err = reconciler.Reconcile()
 
 		assert.True(t, update)
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, statefulSet)
+		err = reconciler.Get(context.TODO(), client.ObjectKey{Name: reconciler.calculateStatefulSetName(), Namespace: reconciler.Instance.Namespace}, statefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
 
-		r.Instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-		update, err = r.Reconcile()
+		reconciler.Instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+		update, err = reconciler.Reconcile()
 
 		assert.True(t, update)
 		assert.NoError(t, err)
 
 		newStatefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, newStatefulSet)
+		err = reconciler.Get(context.TODO(), client.ObjectKey{Name: reconciler.calculateStatefulSetName(), Namespace: reconciler.Instance.Namespace}, newStatefulSet)
 
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
@@ -147,30 +147,30 @@ func TestReconcile(t *testing.T) {
 		assert.True(t, found)
 	})
 	t.Run(`create service`, func(t *testing.T) {
-		r := createDefaultReconciler(t)
-		update, err := r.Reconcile()
+		reconciler := createDefaultReconciler(t)
+		update, err := reconciler.Reconcile()
 		assert.True(t, update)
 		assert.NoError(t, err)
 
 		svc := &corev1.Service{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(r.Instance.Name, r.ShortName()), Namespace: r.Instance.Namespace}, svc)
+		err = reconciler.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(reconciler.Instance.Name, reconciler.ShortName()), Namespace: reconciler.Instance.Namespace}, svc)
 		assert.NoError(t, err)
 		assert.NotNil(t, svc)
 
-		update, err = r.Reconcile()
+		update, err = reconciler.Reconcile()
 		assert.True(t, update)
 		assert.NoError(t, err)
 
 		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, statefulSet)
+		err = reconciler.Get(context.TODO(), client.ObjectKey{Name: reconciler.calculateStatefulSetName(), Namespace: reconciler.Instance.Namespace}, statefulSet)
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
 	})
 }
 
 func TestSetReadinessProbePort(t *testing.T) {
-	r := createDefaultReconciler(t)
-	stsProps := rsfs.NewStatefulSetProperties(r.Instance, metricsCapability.Properties(), "", "", "", "", "", nil, nil, nil)
+	reconciler := createDefaultReconciler(t)
+	stsProps := rsfs.NewStatefulSetProperties(reconciler.Instance, metricsCapability.Properties(), "", "", "", "", "", nil, nil, nil)
 	sts, err := rsfs.CreateStatefulSet(stsProps)
 
 	assert.NoError(t, err)
@@ -187,8 +187,8 @@ func TestSetReadinessProbePort(t *testing.T) {
 
 func TestReconciler_calculateStatefulSetName(t *testing.T) {
 	type fields struct {
-		Reconciler *rsfs.Reconciler
-		Capability *capability.RoutingCapability
+		ActiveGateStatefulSetReconciler *rsfs.ActiveGateStatefulSetReconciler
+		Capability                      *capability.RoutingCapability
 	}
 	tests := []struct {
 		name   string
@@ -198,7 +198,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 		{
 			name: "instance and module names are defined",
 			fields: fields{
-				Reconciler: &rsfs.Reconciler{
+				ActiveGateStatefulSetReconciler: &rsfs.ActiveGateStatefulSetReconciler{
 					Instance: &dynatracev1beta1.DynaKube{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "instanceName",
@@ -212,7 +212,7 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 		{
 			name: "empty instance name",
 			fields: fields{
-				Reconciler: &rsfs.Reconciler{
+				ActiveGateStatefulSetReconciler: &rsfs.ActiveGateStatefulSetReconciler{
 					Instance: &dynatracev1beta1.DynaKube{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "",
@@ -226,11 +226,11 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &Reconciler{
-				Reconciler: tt.fields.Reconciler,
-				Capability: tt.fields.Capability,
+			reconciler := &ActiveGateCapabilityReconciler{
+				ActiveGateStatefulSetReconciler: tt.fields.ActiveGateStatefulSetReconciler,
+				Capability:                      tt.fields.Capability,
 			}
-			if got := r.calculateStatefulSetName(); got != tt.want {
+			if got := reconciler.calculateStatefulSetName(); got != tt.want {
 				t.Errorf("Reconciler.calculateStatefulSetName() = %v, want %v", got, tt.want)
 			}
 		})

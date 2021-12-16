@@ -33,7 +33,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		c := fake.NewClient()
 		dtcMock := &dtclient.MockDynatraceClient{}
 
-		rec := &DynatraceClientReconciler{
+		reconciler := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
 			UpdatePaaSToken:     true,
@@ -41,7 +41,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), deepCopy)
+		dtc, ucr, err := reconciler.Reconcile(context.TODO(), deepCopy)
 		assert.Nil(t, dtc)
 		assert.True(t, ucr)
 		assert.Error(t, err)
@@ -59,7 +59,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		c := fake.NewClient(NewSecret(dynaKube, namespace, map[string]string{dtclient.DynatracePaasToken: ""}))
 		dtcMock := &dtclient.MockDynatraceClient{}
 
-		rec := &DynatraceClientReconciler{
+		reconciler := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
 			UpdatePaaSToken:     true,
@@ -67,7 +67,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		dtc, ucr, err := reconciler.Reconcile(context.TODO(), dk)
 		assert.Nil(t, dtc)
 		assert.True(t, ucr)
 		assert.Error(t, err)
@@ -88,7 +88,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes(nil), dtclient.ServerError{Code: 401, Message: "Token Authentication failed"})
 		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes(nil), fmt.Errorf("random error"))
 
-		rec := &DynatraceClientReconciler{
+		reconciler := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
 			UpdatePaaSToken:     true,
@@ -96,7 +96,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		dtc, ucr, err := reconciler.Reconcile(context.TODO(), dk)
 		assert.Equal(t, dtcMock, dtc)
 		assert.True(t, ucr)
 		assert.NoError(t, err)
@@ -116,7 +116,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		dtcMock := &dtclient.MockDynatraceClient{}
 		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 
-		rec := &DynatraceClientReconciler{
+		reconciler := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
 			UpdatePaaSToken:     true,
@@ -124,7 +124,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		dtc, ucr, err := reconciler.Reconcile(context.TODO(), dk)
 		assert.Equal(t, dtcMock, dtc)
 		assert.True(t, ucr)
 		assert.NoError(t, err)
@@ -145,7 +145,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 
-		rec := &DynatraceClientReconciler{
+		reconciler := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
 			UpdatePaaSToken:     true,
@@ -153,7 +153,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			Now:                 metav1.Now(),
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		dtc, ucr, err := reconciler.Reconcile(context.TODO(), dk)
 		assert.Equal(t, dtcMock, dtc)
 		assert.True(t, ucr)
 		assert.NoError(t, err)
@@ -200,7 +200,7 @@ func TestReconcileDynatraceClient_MigrateConditions(t *testing.T) {
 	c := fake.NewClient(NewSecret(dynaKubeName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}))
 	dtcMock := &dtclient.MockDynatraceClient{}
 
-	rec := &DynatraceClientReconciler{
+	reconciler := &DynatraceClientReconciler{
 		Client:              c,
 		DynatraceClientFunc: StaticDynatraceClient(dtcMock),
 		UpdatePaaSToken:     true,
@@ -208,7 +208,7 @@ func TestReconcileDynatraceClient_MigrateConditions(t *testing.T) {
 		Now:                 now,
 	}
 
-	dtc, ucr, err := rec.Reconcile(context.TODO(), &dk)
+	dtc, ucr, err := reconciler.Reconcile(context.TODO(), &dk)
 	assert.Equal(t, dtcMock, dtc)
 	assert.True(t, ucr)
 	assert.NoError(t, err)
@@ -260,7 +260,7 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 
 		dtcMock := &dtclient.MockDynatraceClient{}
 
-		rec := &DynatraceClientReconciler{
+		reconciler := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
 			UpdatePaaSToken:     true,
@@ -268,7 +268,7 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 			Now:                 now,
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		dtc, ucr, err := reconciler.Reconcile(context.TODO(), dk)
 		assert.Equal(t, dtcMock, dtc)
 		assert.False(t, ucr)
 		assert.NoError(t, err)
@@ -293,7 +293,7 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 
-		rec := &DynatraceClientReconciler{
+		reconciler := &DynatraceClientReconciler{
 			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
 			UpdatePaaSToken:     true,
@@ -301,7 +301,7 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 			Now:                 now,
 		}
 
-		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		dtc, ucr, err := reconciler.Reconcile(context.TODO(), dk)
 		assert.Equal(t, dtcMock, dtc)
 		assert.True(t, ucr)
 		assert.NoError(t, err)

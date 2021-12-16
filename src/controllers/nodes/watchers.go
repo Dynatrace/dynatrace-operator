@@ -11,8 +11,8 @@ import (
 )
 
 // watchDeletions returns a channel where Node deletion operations will be notified.
-func (r *ReconcileNodes) watchDeletions(stop <-chan struct{}) (chan string, error) {
-	ifm, err := r.cache.GetInformer(context.TODO(), &corev1.Node{})
+func (controller *NodesController) watchDeletions(stop <-chan struct{}) (chan string, error) {
+	ifm, err := controller.cache.GetInformer(context.TODO(), &corev1.Node{})
 	if err != nil {
 		return nil, err
 	}
@@ -34,8 +34,8 @@ func (r *ReconcileNodes) watchDeletions(stop <-chan struct{}) (chan string, erro
 	return chDels, nil
 }
 
-func (r *ReconcileNodes) watchUpdates() (chan string, error) {
-	informer, err := r.cache.GetInformer(context.TODO(), &corev1.Node{})
+func (controller *NodesController) watchUpdates() (chan string, error) {
+	informer, err := controller.cache.GetInformer(context.TODO(), &corev1.Node{})
 	if err != nil {
 		return nil, err
 	}
@@ -43,13 +43,13 @@ func (r *ReconcileNodes) watchUpdates() (chan string, error) {
 	chUpdates := make(chan string, 20)
 
 	informer.AddEventHandler(toolscache.ResourceEventHandlerFuncs{
-		UpdateFunc: r.handleUpdate(chUpdates),
+		UpdateFunc: controller.handleUpdate(chUpdates),
 	})
 
 	return chUpdates, nil
 }
 
-func (r *ReconcileNodes) handleUpdate(chUpdates chan string) func(oldObj, newObj interface{}) {
+func (controller *NodesController) handleUpdate(chUpdates chan string) func(oldObj, newObj interface{}) {
 	return func(oldObj, newObj interface{}) {
 		newMeta, err := meta.Accessor(newObj)
 		if err != nil {

@@ -41,11 +41,11 @@ const (
 
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
-		r := &ReconcileDynaKube{
+		controller := &DynakubeController{
 			client:    fake.NewClient(),
 			apiReader: fake.NewClient(),
 		}
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{})
+		result, err := controller.Reconcile(context.TODO(), reconcile.Request{})
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
@@ -101,7 +101,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					"paasToken": []byte(testPaasToken),
 				},
 			})
-		r := &ReconcileDynaKube{
+		controller := &DynakubeController{
 			client:    fakeClient,
 			apiReader: fakeClient,
 			scheme:    scheme.Scheme,
@@ -109,7 +109,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				return mockClient, nil
 			},
 		}
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{
+		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
 
@@ -142,7 +142,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					Name: kubesystem.Namespace,
 					UID:  testUID,
 				}})
-		r := &ReconcileDynaKube{
+		controller := &DynakubeController{
 			client:    fakeClient,
 			apiReader: fakeClient,
 			scheme:    scheme.Scheme,
@@ -176,7 +176,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
 
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{
+		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
 
@@ -220,7 +220,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 				Name: kubesystem.Namespace,
 				UID:  testUID,
 			}})
-	r := &ReconcileDynaKube{
+	controller := &DynakubeController{
 		client:    fakeClient,
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
@@ -257,18 +257,18 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
 
-	_, err := r.Reconcile(context.TODO(), request)
+	_, err := controller.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
 	// Reconcile twice since routing service is created before the stateful set
-	_, err = r.Reconcile(context.TODO(), request)
+	_, err = controller.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
 	routingCapability := capability.NewRoutingCapability(instance)
 	stsName := capability.CalculateStatefulSetName(routingCapability, testName)
 
 	routingSts := &appsv1.StatefulSet{}
-	err = r.client.Get(context.TODO(), client.ObjectKey{
+	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
 		Name:      stsName,
 	}, routingSts)
@@ -276,31 +276,31 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	assert.NotNil(t, routingSts)
 
 	routingSvc := &corev1.Service{}
-	err = r.client.Get(context.TODO(), client.ObjectKey{
+	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
 		Name:      rcap.BuildServiceName(testName, routingCapability.ShortName()),
 	}, routingSvc)
 	assert.NoError(t, err)
 	assert.NotNil(t, routingSvc)
 
-	err = r.client.Get(context.TODO(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
+	err = controller.client.Get(context.TODO(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
 	require.NoError(t, err)
 
 	instance.Spec.Routing.Enabled = false
-	err = r.client.Update(context.TODO(), instance)
+	err = controller.client.Update(context.TODO(), instance)
 	require.NoError(t, err)
 
-	_, err = r.Reconcile(context.TODO(), request)
+	_, err = controller.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
-	err = r.client.Get(context.TODO(), client.ObjectKey{
+	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
 		Name:      stsName,
 	}, routingSts)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
 
-	err = r.client.Get(context.TODO(), client.ObjectKey{
+	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
 		Name:      rcap.BuildServiceName(testName, routingCapability.ShortName()),
 	}, routingSvc)
@@ -338,7 +338,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 				Name: kubesystem.Namespace,
 				UID:  testUID,
 			}})
-	r := &ReconcileDynaKube{
+	controller := &DynakubeController{
 		client:    fakeClient,
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
@@ -375,18 +375,18 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
 
-	_, err := r.Reconcile(context.TODO(), request)
+	_, err := controller.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
 	// Reconcile twice since routing service is created before the stateful set
-	_, err = r.Reconcile(context.TODO(), request)
+	_, err = controller.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
 	multiCapability := capability.NewMultiCapability(instance)
 	stsName := capability.CalculateStatefulSetName(multiCapability, testName)
 
 	routingSts := &appsv1.StatefulSet{}
-	err = r.client.Get(context.TODO(), client.ObjectKey{
+	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
 		Name:      stsName,
 	}, routingSts)
@@ -394,31 +394,31 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	assert.NotNil(t, routingSts)
 
 	routingSvc := &corev1.Service{}
-	err = r.client.Get(context.TODO(), client.ObjectKey{
+	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
 		Name:      rcap.BuildServiceName(testName, multiCapability.ShortName()),
 	}, routingSvc)
 	assert.NoError(t, err)
 	assert.NotNil(t, routingSvc)
 
-	err = r.client.Get(context.TODO(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
+	err = controller.client.Get(context.TODO(), client.ObjectKey{Name: instance.Name, Namespace: instance.Namespace}, instance)
 	require.NoError(t, err)
 
 	instance.Spec.ActiveGate.Capabilities = []dynatracev1beta1.CapabilityDisplayName{}
-	err = r.client.Update(context.TODO(), instance)
+	err = controller.client.Update(context.TODO(), instance)
 	require.NoError(t, err)
 
-	_, err = r.Reconcile(context.TODO(), request)
+	_, err = controller.Reconcile(context.TODO(), request)
 	assert.NoError(t, err)
 
-	err = r.client.Get(context.TODO(), client.ObjectKey{
+	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
 		Name:      stsName,
 	}, routingSts)
 	assert.Error(t, err)
 	assert.True(t, k8serrors.IsNotFound(err))
 
-	err = r.client.Get(context.TODO(), client.ObjectKey{
+	err = controller.client.Get(context.TODO(), client.ObjectKey{
 		Namespace: testNamespace,
 		Name:      rcap.BuildServiceName(testName, multiCapability.ShortName()),
 	}, routingSvc)

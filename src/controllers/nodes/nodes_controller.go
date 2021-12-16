@@ -26,7 +26,7 @@ const (
 
 var unschedulableTaints = []string{"ToBeDeletedByClusterAutoscaler"}
 
-type ReconcileNodes struct {
+type NodesController struct {
 	podName      string
 	namespace    string
 	client       client.Client
@@ -39,7 +39,7 @@ type ReconcileNodes struct {
 // Add creates a new Nodes Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager, ns string) error {
-	return mgr.Add(&ReconcileNodes{
+	return mgr.Add(&NodesController{
 		podName:      os.Getenv("POD_NAME"),
 		namespace:    ns,
 		client:       mgr.GetClient(),
@@ -51,10 +51,10 @@ func Add(mgr manager.Manager, ns string) error {
 }
 
 // Start starts the Nodes Reconciler, and will block until a stop signal is sent.
-func (r *ReconcileNodes) Start(stop context.Context) error {
-	r.cache.WaitForCacheSync(stop)
+func (controller *NodesController) Start(stop context.Context) error {
+	controller.cache.WaitForCacheSync(stop)
 
-	chDels, err := r.watchDeletions(stop.Done())
+	chDels, err := controller.watchDeletions(stop.Done())
 	if err != nil {
 		// I've seen watchDeletions() fail because the Cache Informers weren't ready. WaitForCacheSync()
 		// should block until they are, however, but I believe I saw this not being true once.
@@ -64,7 +64,7 @@ func (r *ReconcileNodes) Start(stop context.Context) error {
 		log.Info("failed to initialize watcher for deleted nodes - disabled", "error", err)
 		chDels = make(chan string)
 	}
-	chUpdates, err := r.watchUpdates()
+	chUpdates, err := controller.watchUpdates()
 	if err != nil {
 		log.Info("failed to initialize watcher for updating nodes - disabled", "error", err)
 		chUpdates = make(chan string)
@@ -78,46 +78,46 @@ func (r *ReconcileNodes) Start(stop context.Context) error {
 			log.Info("stopping nodes controller")
 			return nil
 		case node := <-chDels:
-			if err := r.onDeletion(node); err != nil {
+			if err := controller.onDeletion(node); err != nil {
 				log.Error(err, "failed to reconcile deletion", "node", node)
 			}
 		case node := <-chUpdates:
-			if err := r.onUpdate(node); err != nil {
+			if err := controller.onUpdate(node); err != nil {
 				log.Error(err, "failed to reconcile updates", "node", node)
 			}
 		case <-chAll:
-			if err := r.reconcileAll(); err != nil {
+			if err := controller.reconcileAll(); err != nil {
 				log.Error(err, "failed to reconcile nodes")
 			}
 		}
 	}
 }
 
-func (r *ReconcileNodes) onUpdate(node string) error {
-	c, err := r.getCache()
+func (controller *NodesController) onUpdate(node string) error {
+	c, err := controller.getCache()
 	if err != nil {
 		return err
 	}
 
-	if err = r.updateNode(c, node); err != nil {
+	if err = controller.updateNode(c, node); err != nil {
 		return err
 	}
 
 	log.Info("updating nodes cache", "node", node)
-	return r.updateCache(c)
+	return controller.updateCache(c)
 }
 
-func (r *ReconcileNodes) onDeletion(node string) error {
+func (controller *NodesController) onDeletion(node string) error {
 	log.Info("node deletion notification received", "node", node)
 
-	c, err := r.getCache()
+	c, err := controller.getCache()
 	if err != nil {
 		return err
 	}
 
-	if err = r.removeNode(c, node, func(dkName string) (*dynatracev1beta1.DynaKube, error) {
+	if err = controller.removeNode(c, node, func(dkName string) (*dynatracev1beta1.DynaKube, error) {
 		var dynaKube dynatracev1beta1.DynaKube
-		if err := r.client.Get(context.TODO(), client.ObjectKey{Name: dkName, Namespace: r.namespace}, &dynaKube); err != nil {
+		if err := controller.client.Get(context.TODO(), client.ObjectKey{Name: dkName, Namespace: controller.namespace}, &dynaKube); err != nil {
 			return nil, err
 		}
 		return &dynaKube, nil
@@ -125,14 +125,14 @@ func (r *ReconcileNodes) onDeletion(node string) error {
 		return err
 	}
 
-	return r.updateCache(c)
+	return controller.updateCache(c)
 }
 
-func (r *ReconcileNodes) reconcileAll() error {
+func (controller *NodesController) reconcileAll() error {
 	log.Info("reconciling nodes")
 
 	var dkList dynatracev1beta1.DynaKubeList
-	if err := r.client.List(context.TODO(), &dkList, client.InNamespace(r.namespace)); err != nil {
+	if err := controller.client.List(context.TODO(), &dkList, client.InNamespace(controller.namespace)); err != nil {
 		return err
 	}
 
@@ -141,13 +141,13 @@ func (r *ReconcileNodes) reconcileAll() error {
 		dks[dkList.Items[i].Name] = &dkList.Items[i]
 	}
 
-	c, err := r.getCache()
+	c, err := controller.getCache()
 	if err != nil {
 		return err
 	}
 
 	var nodeLst corev1.NodeList
-	if err := r.client.List(context.TODO(), &nodeLst); err != nil {
+	if err := controller.client.List(context.TODO(), &nodeLst); err != nil {
 		return err
 	}
 
@@ -159,7 +159,7 @@ func (r *ReconcileNodes) reconcileAll() error {
 		// Sometimes Azure does not cordon off nodes before deleting them since they use taints,
 		// this case is handled in the update event handler
 		if isUnschedulable(&node) {
-			if err = r.reconcileUnschedulableNode(&node, c); err != nil {
+			if err = controller.reconcileUnschedulableNode(&node, c); err != nil {
 				return err
 			}
 		}
@@ -196,7 +196,7 @@ func (r *ReconcileNodes) reconcileAll() error {
 			continue
 		}
 
-		if err := r.removeNode(c, node, func(name string) (*dynatracev1beta1.DynaKube, error) {
+		if err := controller.removeNode(c, node, func(name string) (*dynatracev1beta1.DynaKube, error) {
 			if dk, ok := dks[name]; ok {
 				return dk, nil
 			}
@@ -210,13 +210,13 @@ func (r *ReconcileNodes) reconcileAll() error {
 		}
 	}
 
-	return r.updateCache(c)
+	return controller.updateCache(c)
 }
 
-func (r *ReconcileNodes) getCache() (*Cache, error) {
+func (controller *NodesController) getCache() (*Cache, error) {
 	var cm corev1.ConfigMap
 
-	err := r.client.Get(context.TODO(), client.ObjectKey{Name: cacheName, Namespace: r.namespace}, &cm)
+	err := controller.client.Get(context.TODO(), client.ObjectKey{Name: cacheName, Namespace: controller.namespace}, &cm)
 	if err == nil {
 		return &Cache{Obj: &cm}, nil
 	}
@@ -227,18 +227,18 @@ func (r *ReconcileNodes) getCache() (*Cache, error) {
 		cm := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cacheName,
-				Namespace: r.namespace,
+				Namespace: controller.namespace,
 			},
 			Data: map[string]string{},
 		}
 
-		if !r.local { // If running locally, don't set the controller.
-			deploy, err := kubeobjects.GetDeployment(r.client, r.podName, r.namespace)
+		if !controller.local { // If running locally, don't set the controller.
+			deploy, err := kubeobjects.GetDeployment(controller.client, controller.podName, controller.namespace)
 			if err != nil {
 				return nil, err
 			}
 
-			if err = controllerutil.SetControllerReference(deploy, cm, r.scheme); err != nil {
+			if err = controllerutil.SetControllerReference(deploy, cm, controller.scheme); err != nil {
 				return nil, err
 			}
 		}
@@ -249,19 +249,19 @@ func (r *ReconcileNodes) getCache() (*Cache, error) {
 	return nil, err
 }
 
-func (r *ReconcileNodes) updateCache(c *Cache) error {
+func (controller *NodesController) updateCache(c *Cache) error {
 	if !c.Changed() {
 		return nil
 	}
 
 	if c.Create {
-		return r.client.Create(context.TODO(), c.Obj)
+		return controller.client.Create(context.TODO(), c.Obj)
 	}
 
-	return r.client.Update(context.TODO(), c.Obj)
+	return controller.client.Update(context.TODO(), c.Obj)
 }
 
-func (r *ReconcileNodes) removeNode(c *Cache, node string, dkFunc func(name string) (*dynatracev1beta1.DynaKube, error)) error {
+func (controller *NodesController) removeNode(c *Cache, node string, dkFunc func(name string) (*dynatracev1beta1.DynaKube, error)) error {
 	logger := log.WithValues("node", node)
 
 	nodeInfo, err := c.Get(node)
@@ -287,7 +287,7 @@ func (r *ReconcileNodes) removeNode(c *Cache, node string, dkFunc func(name stri
 			return err
 		}
 
-		err = r.markForTermination(c, dk, nodeInfo.IPAddress, node)
+		err = controller.markForTermination(c, dk, nodeInfo.IPAddress, node)
 		if err != nil {
 			return err
 		}
@@ -297,9 +297,9 @@ func (r *ReconcileNodes) removeNode(c *Cache, node string, dkFunc func(name stri
 	return nil
 }
 
-func (r *ReconcileNodes) updateNode(c *Cache, nodeName string) error {
+func (controller *NodesController) updateNode(c *Cache, nodeName string) error {
 	node := &corev1.Node{}
-	err := r.client.Get(context.TODO(), client.ObjectKey{Name: nodeName}, node)
+	err := controller.client.Get(context.TODO(), client.ObjectKey{Name: nodeName}, node)
 	if err != nil {
 		return err
 	}
@@ -308,16 +308,16 @@ func (r *ReconcileNodes) updateNode(c *Cache, nodeName string) error {
 		return nil
 	}
 
-	return r.reconcileUnschedulableNode(node, c)
+	return controller.reconcileUnschedulableNode(node, c)
 }
 
-func (r *ReconcileNodes) sendMarkedForTermination(dk *dynatracev1beta1.DynaKube, nodeIP string, lastSeen time.Time) error {
-	dtp, err := dynakube.NewDynatraceClientProperties(context.TODO(), r.client, *dk)
+func (controller *NodesController) sendMarkedForTermination(dk *dynatracev1beta1.DynaKube, nodeIP string, lastSeen time.Time) error {
+	dtp, err := dynakube.NewDynatraceClientProperties(context.TODO(), controller.client, *dk)
 	if err != nil {
 		log.Error(err, err.Error())
 	}
 
-	dtc, err := r.dtClientFunc(*dtp)
+	dtc, err := controller.dtClientFunc(*dtp)
 	if err != nil {
 		return err
 	}
@@ -343,8 +343,8 @@ func (r *ReconcileNodes) sendMarkedForTermination(dk *dynatracev1beta1.DynaKube,
 	})
 }
 
-func (r *ReconcileNodes) reconcileUnschedulableNode(node *corev1.Node, c *Cache) error {
-	dynakube, err := r.determineDynakubeForNode(node.Name)
+func (controller *NodesController) reconcileUnschedulableNode(node *corev1.Node, c *Cache) error {
+	dynakube, err := controller.determineDynakubeForNode(node.Name)
 	if err != nil {
 		return err
 	}
@@ -370,10 +370,10 @@ func (r *ReconcileNodes) reconcileUnschedulableNode(node *corev1.Node, c *Cache)
 			return err
 		}
 	}
-	return r.markForTermination(c, dynakube, instance.IPAddress, node.Name)
+	return controller.markForTermination(c, dynakube, instance.IPAddress, node.Name)
 }
 
-func (r *ReconcileNodes) markForTermination(c *Cache, dk *dynatracev1beta1.DynaKube,
+func (controller *NodesController) markForTermination(c *Cache, dk *dynatracev1beta1.DynaKube,
 	ipAddress string, nodeName string) error {
 	cachedNode, err := c.Get(nodeName)
 	if err != nil {
@@ -391,7 +391,7 @@ func (r *ReconcileNodes) markForTermination(c *Cache, dk *dynatracev1beta1.DynaK
 	log.Info("sending mark for termination event to dynatrace server", "dynakube", dk.Name, "ip", ipAddress,
 		"node", nodeName)
 
-	return r.sendMarkedForTermination(dk, ipAddress, cachedNode.LastSeen)
+	return controller.sendMarkedForTermination(dk, ipAddress, cachedNode.LastSeen)
 }
 
 func isUnschedulable(node *corev1.Node) bool {

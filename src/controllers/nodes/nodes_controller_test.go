@@ -28,7 +28,7 @@ func TestNodesReconciler_CreateCache(t *testing.T) {
 	dtClient := &dtclient.MockDynatraceClient{}
 	defer mock.AssertExpectationsForObjects(t, dtClient)
 
-	ctrl := createDefaultReconciler(fakeClient, dtClient)
+	ctrl := createDefaultController(fakeClient, dtClient)
 
 	require.NoError(t, ctrl.reconcileAll())
 
@@ -53,7 +53,7 @@ func TestNodesReconciler_DeleteNode(t *testing.T) {
 	dtClient := createDTMockClient("1.2.3.4", "HOST-42")
 	defer mock.AssertExpectationsForObjects(t, dtClient)
 
-	ctrl := createDefaultReconciler(fakeClient, dtClient)
+	ctrl := createDefaultController(fakeClient, dtClient)
 
 	require.NoError(t, ctrl.reconcileAll())
 	require.NoError(t, ctrl.onDeletion("node1"))
@@ -77,7 +77,7 @@ func TestNodesReconciler_NodeNotFound(t *testing.T) {
 	dtClient := createDTMockClient("5.6.7.8", "HOST-84")
 	defer mock.AssertExpectationsForObjects(t, dtClient)
 
-	ctrl := createDefaultReconciler(fakeClient, dtClient)
+	ctrl := createDefaultController(fakeClient, dtClient)
 
 	require.NoError(t, ctrl.reconcileAll())
 	var node2 corev1.Node
@@ -101,7 +101,7 @@ func TestNodesReconciler_NodeNotFound(t *testing.T) {
 func TestNodeReconciler_NodeHasTaint(t *testing.T) {
 	fakeClient := createDefaultFakeClient()
 	dtClient := createDTMockClient("1.2.3.4", "HOST-42")
-	ctrl := createDefaultReconciler(fakeClient, dtClient)
+	ctrl := createDefaultController(fakeClient, dtClient)
 
 	// Get node 1
 	node1 := &corev1.Node{}
@@ -144,7 +144,7 @@ func Test_RemoveNode_ServerError(t *testing.T) {
 	dtClient := &dtclient.MockDynatraceClient{}
 	dtClient.On("GetEntityIDForIP", mock.Anything).Return("", ErrNotFound)
 
-	ctrl := createDefaultReconciler(fakeClient, dtClient)
+	ctrl := createDefaultController(fakeClient, dtClient)
 
 	err := ctrl.reconcileAll()
 	require.NoError(t, err)
@@ -153,8 +153,8 @@ func Test_RemoveNode_ServerError(t *testing.T) {
 	require.Error(t, err)
 }
 
-func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDynatraceClient) *ReconcileNodes {
-	return &ReconcileNodes{
+func createDefaultController(fakeClient client.Client, dtClient *dtclient.MockDynatraceClient) *NodesController {
+	return &NodesController{
 		namespace:    testNamespace,
 		client:       fakeClient,
 		scheme:       scheme.Scheme,
