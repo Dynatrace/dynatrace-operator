@@ -33,7 +33,7 @@ if [[ "${LOCALBUILD}" ]]; then
   rm -rf ./third_party_licenses
 else
   echo Saving licenses
-  mkdir third_party_licenses
+  mkdir -p third_party_licenses
   if ! command -v go-licenses &> /dev/null
   then
     go get github.com/google/go-licenses
