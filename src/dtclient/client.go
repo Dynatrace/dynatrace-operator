@@ -60,7 +60,11 @@ type Client interface {
 	// GetTenantInfo returns TenantInfo that holds UUID, Tenant Token and Endpoints
 	GetTenantInfo() (*TenantInfo, error)
 
-	CreateSetting(label string, kubeSystemUUID string) (string, error)
+	CreateKubernetesSetting(name, kubeSystemUUID, scope string) (string, error)
+
+	GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID string) ([]MonitoredEntity, error)
+
+	GetSettingsForMonitoredEntities(monitoredEntities []MonitoredEntity) (GetSettingsResponse, error)
 }
 
 // Known OS values.

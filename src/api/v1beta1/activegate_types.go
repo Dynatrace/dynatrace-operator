@@ -45,8 +45,6 @@ var ActiveGateDisplayNames = map[CapabilityDisplayName]bool{
 }
 
 type ActiveGateSpec struct {
-	// Enable self-registering of Activegate
-	EnableAutomaticApiMonitoring bool `json:"enableAutomaticApiMonitoring,omitempty"`
 
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, data-ingest)
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
