@@ -10,8 +10,4 @@ if [ ! -d "/usr/local/kubebuilder/bin" ]; then
     tar -zxvf kubebuilder.tar.gz --strip-components=1 -C /usr/local/kubebuilder
 fi
 
-########## Run tests ##########
-go test -cover -v ./...
-
-########## Run integration tests ##########
-go test -cover -tags integration,containers_image_storage_stub -v ./...
+go test -cover -tags integration,containers_image_storage_stub ./...

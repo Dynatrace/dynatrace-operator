@@ -43,12 +43,12 @@ test: generate fmt vet manifests
 
 # Build manager binary
 manager: generate fmt vet
-	go build -o bin/manager ./cmd/operator/
+	go build -o bin/manager ./src/cmd/operator/
 
 manager-amd64: export GOOS=linux
 manager-amd64: export GOARCH=amd64
 manager-amd64: generate fmt vet
-	go build -o bin/manager-amd64 ./cmd/operator/
+	go build -o bin/manager-amd64 ./src/cmd/operator/
 
 WEBHOOK_NS=dynatrace
 
@@ -73,7 +73,7 @@ debug-webhook-reset:
 run: export RUN_LOCAL=true
 run: export POD_NAMESPACE=dynatrace
 run: generate fmt vet manifests
-	go run ./cmd/operator/
+	go run ./src/cmd/operator/
 
 ## Run with delve against the configured Kubernetes cluster in ~/.kube/config
 #run-delve: export RUN_LOCAL=true
@@ -213,3 +213,10 @@ bundle-minimal: bundle
 .PHONY: bundle-build
 bundle-build:
 	docker build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
+
+setup-pre-commit:
+	$(info WARNING Make sure that golangci-lint is installed, for more info see https://golangci-lint.run/usage/install/")
+	GO111MODULE=off go get github.com/daixiang0/gci
+	GO111MODULE=off go get golang.org/x/tools/cmd/goimports
+	cp ./.github/pre-commit ./.git/hooks/pre-commit
+	chmod +x ./.git/hooks/pre-commit
