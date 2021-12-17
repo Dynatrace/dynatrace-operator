@@ -2,8 +2,6 @@ name: run tests & build docker images
 
 on:
   push:
-    branches-ignore:
-      - release/*
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ master ]
@@ -98,11 +96,13 @@ jobs:
         name: Prepare
         id: prep
         run: |
-          # https://blog.oddbit.com/post/2020-09-25-building-multi-architecture-im/ 
-          DOCKER_IMAGE=registry.gitlab.com/gabriel.krenn/test-private-registry/actions
           VERSION=latest
-          SHORTREF=${GITHUB_SHA::8}
           LABELS=""
+
+          branch="${GITHUB_REF#refs/heads/}"
+          if [[ "$branch" != "master" ]] && [[ ! "$branch" =~ release* ]]; then
+            LABELS="quay.expires-after=10d"
+          fi
 
           build_date="$(date -u +"%Y-%m-%d %H:%M:%S+00:00")"
 
@@ -114,7 +114,6 @@ jobs:
           # Set output parameters.
           echo ::set-output name=goargs::${go_build_args}
           echo ::set-output name=labels::${LABELS}
-          echo ::set-output name=docker_image::${DOCKER_IMAGE}
 
           # Get licenses if no cache exists
           if ! [ -d ./third_party_licenses ]; then
@@ -185,8 +184,6 @@ jobs:
       -
         name: Upload image to Quay
         run: |
-          VERSION=latest
-          SHORTREF=${GITHUB_SHA::8}
           LABELS=""
 
           branch="${GITHUB_REF#refs/heads/}"

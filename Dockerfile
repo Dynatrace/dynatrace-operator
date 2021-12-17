@@ -9,7 +9,7 @@ COPY . /app
 WORKDIR /app
 
 # move previously cached go modules to gopath
-RUN mkdir -p ${GOPATH}/pkg && mv ./mod ${GOPATH}/pkg
+RUN if [ -d ./mod ]; then mkdir -p ${GOPATH}/pkg && [ -d mod ] && mv ./mod ${GOPATH}/pkg; fi;
 
 RUN CGO_ENABLED=1 go build -ldflags "${GO_BUILD_ARGS:1:-1}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/operator/
 
