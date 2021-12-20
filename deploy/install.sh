@@ -111,7 +111,7 @@ applyDynatraceOperator() {
     fi
   fi
 
-  "${CLI}" -n dynatrace create secret generic dynakube --from-literal="apiToken=${API_TOKEN}" --from-literal="paasToken=${PAAS_TOKEN}" --dry-run -o yaml | "${CLI}" apply -f -
+  "${CLI}" -n dynatrace create secret generic dynakube --from-literal="apiToken=${API_TOKEN}" --from-literal="paasToken=${PAAS_TOKEN}" --dry-run=client -o yaml | "${CLI}" apply -f -
 }
 
 buildGlobalSection() {
