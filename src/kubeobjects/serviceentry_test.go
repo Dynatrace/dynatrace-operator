@@ -1,4 +1,4 @@
-package istio
+package kubeobjects
 
 import (
 	"strconv"
@@ -13,7 +13,6 @@ import (
 
 const (
 	testName        = "test-name"
-	testNamespace   = "test-namespace"
 	testPort1String = "1234"
 )
 
@@ -35,17 +34,17 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Hosts:    []string{testHost},
 				Location: istio.ServiceEntry_MESH_EXTERNAL,
 				Ports: []*istio.Port{{
-					Name:     protocolHttps + "-" + strconv.Itoa(testPort),
+					Name:     ProtocolHttps + "-" + strconv.Itoa(testPort),
 					Number:   testPort,
-					Protocol: strings.ToUpper(protocolHttps),
+					Protocol: strings.ToUpper(ProtocolHttps),
 				}},
 				Resolution: istio.ServiceEntry_DNS,
 			},
 		}
-		result := BuildServiceEntry(testName, DefaultTestNamespace, testHost, protocolHttps, testPort)
+		result := buildServiceEntry(testName, testNamespace, testHost, ProtocolHttps, testPort)
 		assert.EqualValues(t, expected, result)
 
-		result = BuildServiceEntry(testName, DefaultTestNamespace, testHost1, protocolHttps, testPort1)
+		result = buildServiceEntry(testName, testNamespace, testHost1, ProtocolHttps, testPort1)
 		assert.NotEqualValues(t, expected, result)
 	})
 	t.Run(`generate with Ip`, func(t *testing.T) {
@@ -56,31 +55,31 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: istio.ServiceEntry{
-				Hosts:     []string{ignoredSubdomain},
-				Addresses: []string{testIp + subnetMask},
+				Hosts:     []string{IgnoredSubdomain},
+				Addresses: []string{testIp + SubnetMask},
 				Location:  istio.ServiceEntry_MESH_EXTERNAL,
 				Ports: []*istio.Port{{
-					Name:     protocolTcp + "-" + strconv.Itoa(testPort),
+					Name:     ProtocolTcp + "-" + strconv.Itoa(testPort),
 					Number:   testPort,
-					Protocol: protocolTcp,
+					Protocol: ProtocolTcp,
 				}},
 				Resolution: istio.ServiceEntry_NONE,
 			},
 		}
-		result := BuildServiceEntry(testName, DefaultTestNamespace, testIp, protocolHttps, testPort)
+		result := buildServiceEntry(testName, testNamespace, testIp, ProtocolHttps, testPort)
 		assert.EqualValues(t, expected, result)
 
-		result = BuildServiceEntry(testName, DefaultTestNamespace, testIp, protocolHttps, testPort1)
+		result = buildServiceEntry(testName, testNamespace, testIp, ProtocolHttps, testPort1)
 		assert.NotEqualValues(t, expected, result)
 	})
 }
 
 func TestBuildServiceEntryForHostname(t *testing.T) {
 	expected := buildExpectedServiceEntryForHostname(t)
-	result := buildServiceEntryFQDN(testName, testNamespace, testHost1, protocolHttp, testPort1)
+	result := buildServiceEntryFQDN(testName, testNamespace, testHost1, ProtocolHttp, testPort1)
 	assert.EqualValues(t, expected, result)
 
-	result = buildServiceEntryFQDN(testName, testNamespace, testHost2, protocolHttp, testPort2)
+	result = buildServiceEntryFQDN(testName, testNamespace, testHost2, ProtocolHttp, testPort2)
 	assert.NotEqualValues(t, expected, result)
 }
 
@@ -102,9 +101,9 @@ func buildExpectedServiceEntryForHostname(_ *testing.T) *istiov1alpha3.ServiceEn
 		Spec: istio.ServiceEntry{
 			Hosts: []string{testHost1},
 			Ports: []*istio.Port{{
-				Name:     protocolHttp + "-" + testPort1String,
+				Name:     ProtocolHttp + "-" + testPort1String,
 				Number:   testPort1,
-				Protocol: strings.ToUpper(protocolHttp),
+				Protocol: strings.ToUpper(ProtocolHttp),
 			}},
 			Location:   istio.ServiceEntry_MESH_EXTERNAL,
 			Resolution: istio.ServiceEntry_DNS,
@@ -119,12 +118,12 @@ func buildExpectedServiceEntryForIp(_ *testing.T) *istiov1alpha3.ServiceEntry {
 			Namespace: testNamespace,
 		},
 		Spec: istio.ServiceEntry{
-			Hosts:     []string{ignoredSubdomain},
-			Addresses: []string{testHost1 + subnetMask},
+			Hosts:     []string{IgnoredSubdomain},
+			Addresses: []string{testHost1 + SubnetMask},
 			Ports: []*istio.Port{{
-				Name:     protocolTcp + "-" + testPort1String,
+				Name:     ProtocolTcp + "-" + testPort1String,
 				Number:   testPort1,
-				Protocol: protocolTcp,
+				Protocol: ProtocolTcp,
 			}},
 			Location:   istio.ServiceEntry_MESH_EXTERNAL,
 			Resolution: istio.ServiceEntry_NONE,

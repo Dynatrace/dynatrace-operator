@@ -1,4 +1,4 @@
-package istio
+package kubeobjects
 
 import (
 	"encoding/json"
