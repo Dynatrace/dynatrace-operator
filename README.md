@@ -18,7 +18,7 @@ With v0.3.0 the CRD structure has been changed to provide an easier and more und
 - added **hostMonitoring** for only monitoring the host in the cluster without app-only injection
 - (PREVIEW) added **cloudNativeFullStack** mode, which combines **hostMonitoring**, with the webhook based **applicationMonitoring**
 
-For more information please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples),
+For more information please have a look at [our DynaKube Custom Resource examples](config/samples),
 or our [official help page.](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/)
 
 
@@ -115,7 +115,7 @@ spec:
 ```
 
 This is the most basic configuration for the DynaKube object. We recommend you to use classic Fullstack injection to roll out Dynatrace to your cluster, as shown in the example above.
-In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples).
+In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](config/samples).
 Save one of the sample configurations, change the API url to your environment and apply it to your cluster.
 
 ```sh
@@ -217,7 +217,7 @@ spec:
 ```
 
 This is the most basic configuration for the DynaKube object. We recommend you to use classic Fullstack injection to roll out Dynatrace to your cluster, as shown in the example above.
-In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](https://github.com/Dynatrace/dynatrace-operator/tree/master/config/samples).
+In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](config/samples).
 Save one of the sample configurations, change the API url to your environment and apply it to your cluster.
 
 ```sh
