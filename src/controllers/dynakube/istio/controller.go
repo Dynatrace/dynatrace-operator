@@ -3,8 +3,9 @@ package istio
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"os"
+
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -52,7 +53,7 @@ func (c *Controller) initializeIstioClient(config *rest.Config) (istioclientset.
 // creating/deleting VS & SE for external communications
 func (c *Controller) ReconcileIstio(instance *dynatracev1beta1.DynaKube) (updated bool, err error) {
 
-	enabled, err := CheckIstioEnabled(c.config)
+	enabled, err := kubeobjects.CheckIstioEnabled(c.config)
 	if err != nil {
 		return false, fmt.Errorf("istio: failed to verify Istio availability: %w", err)
 	}
@@ -98,14 +99,14 @@ func (c *Controller) reconcileIstioConfigurations(instance *dynatracev1beta1.Dyn
 func (c *Controller) reconcileIstioRemoveConfigurations(instance *dynatracev1beta1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
-	labelSelector := labels.SelectorFromSet(BuildIstioLabels(instance.GetName(), role)).String()
+	labelSelector := labels.SelectorFromSet(kubeobjects.BuildIstioLabels(instance.GetName(), role)).String()
 	listOps := &metav1.ListOptions{
 		LabelSelector: labelSelector,
 	}
 
 	seen := map[string]bool{}
 	for _, ch := range comHosts {
-		seen[buildNameForEndpoint(instance.GetName(), ch.Protocol, ch.Host, ch.Port)] = true
+		seen[kubeobjects.BuildNameForEndpoint(instance.GetName(), ch.Protocol, ch.Host, ch.Port)] = true
 	}
 
 	vsUpd, err := c.removeIstioConfigurationForVirtualService(listOps, seen, instance.GetNamespace())
@@ -185,7 +186,7 @@ func (c *Controller) reconcileIstioCreateConfigurations(instance *dynatracev1bet
 
 	configurationUpdated := false
 	for _, commHost := range communicationHosts {
-		name := buildNameForEndpoint(instance.GetName(), commHost.Protocol, commHost.Host, commHost.Port)
+		name := kubeobjects.BuildNameForEndpoint(instance.GetName(), commHost.Protocol, commHost.Host, commHost.Port)
 
 		createdServiceEntry, err := kubeobjects.HandleIstioConfigurationForServiceEntry(instance, name, commHost,
 			role, c.config, c.namespace, c.istioClient, c.scheme)
