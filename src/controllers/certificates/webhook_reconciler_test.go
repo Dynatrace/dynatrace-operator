@@ -16,6 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 const (
@@ -25,38 +27,41 @@ const (
 	expectedSecretName = webhook.DeploymentName + secretPostfix
 
 	testBytes = 123
+
+	strategyWebhook = "webhook"
 )
 
-func TestGetSecret(t *testing.T) {
-	t.Run(`get nil if secret does not exists`, func(t *testing.T) {
-		clt := fake.NewClient()
-		r := &ReconcileWebhookCertificates{
-			client:    clt,
-			apiReader: clt,
-			ctx:       context.TODO(),
-		}
-		secret, err := r.getSecret()
-		require.NoError(t, err)
-		assert.Nil(t, secret)
-	})
-	t.Run(`get secret`, func(t *testing.T) {
-		clt := fake.NewClient(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      expectedSecretName,
-				Namespace: testNamespace,
-			},
-		})
-		r := &ReconcileWebhookCertificates{
-			client:    clt,
-			apiReader: clt,
-			ctx:       context.TODO(),
-			namespace: testNamespace,
-		}
-		secret, err := r.getSecret()
-		require.NoError(t, err)
-		assert.NotNil(t, secret)
-	})
-}
+//
+//func TestGetSecret(t *testing.T) {
+//	t.Run(`get nil if secret does not exists`, func(t *testing.T) {
+//		clt := fake.NewClient()
+//		r := &ReconcileWebhookCertificates{
+//			client:    clt,
+//			apiReader: clt,
+//			ctx:       context.TODO(),
+//		}
+//		secret, err := r.getSecret()
+//		require.NoError(t, err)
+//		assert.Nil(t, secret)
+//	})
+//	t.Run(`get secret`, func(t *testing.T) {
+//		clt := fake.NewClient(&corev1.Secret{
+//			ObjectMeta: metav1.ObjectMeta{
+//				Name:      expectedSecretName,
+//				Namespace: testNamespace,
+//			},
+//		})
+//		r := &ReconcileWebhookCertificates{
+//			client:    clt,
+//			apiReader: clt,
+//			ctx:       context.TODO(),
+//			namespace: testNamespace,
+//		}
+//		secret, err := r.getSecret()
+//		require.NoError(t, err)
+//		assert.NotNil(t, secret)
+//	})
+//}
 
 func TestReconcileCertificate_Create(t *testing.T) {
 	clt := prepareFakeClient(false, false)
@@ -128,6 +133,75 @@ func TestReconcileCertificate_ExistingSecretWithValidCertificate(t *testing.T) {
 	verifyCertificates(t, rec, secret, clt, false)
 }
 
+func TestReconcile(t *testing.T) {
+	crd := &apiv1.CustomResourceDefinition{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: crdName,
+		},
+		Spec: apiv1.CustomResourceDefinitionSpec{
+			Conversion: &apiv1.CustomResourceConversion{
+				Strategy: strategyWebhook,
+				Webhook: &apiv1.WebhookConversion{
+					ClientConfig: &apiv1.WebhookClientConfig{},
+				},
+			},
+		},
+	}
+
+	t.Run(`reconcile successfully without mutatingwebhookconfiguration`, func(t *testing.T) {
+		fakeClient := fake.NewClient(crd, &admissionregistrationv1.ValidatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhook.DeploymentName,
+			},
+			Webhooks: []admissionregistrationv1.ValidatingWebhook{
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+			},
+		})
+		reconciliation, request := prepareReconcile(fakeClient)
+		result, err := reconciliation.Reconcile(context.TODO(), request)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+	})
+
+	t.Run(`reconcile successfully without validatingwebhookconfiguration`, func(t *testing.T) {
+		fakeClient := fake.NewClient(crd, &admissionregistrationv1.MutatingWebhookConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: webhook.DeploymentName,
+			},
+			Webhooks: []admissionregistrationv1.MutatingWebhook{
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+				{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{},
+				},
+			},
+		})
+		reconciliation, request := prepareReconcile(fakeClient)
+		result, err := reconciliation.Reconcile(context.TODO(), request)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+	})
+
+	t.Run(`skip certificates generation if no configuration exists`, func(t *testing.T) {
+		fakeClient := fake.NewClient(crd)
+		reconciliation, request := prepareReconcile(fakeClient)
+		result, err := reconciliation.Reconcile(context.TODO(), request)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+
+		secret := &corev1.Secret{}
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
+		assert.Error(t, err)
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
+}
+
 func prepareFakeClient(withSecret bool, generateValidSecret bool) client.Client {
 	objs := []client.Object{
 		&admissionregistrationv1.MutatingWebhookConfiguration{
@@ -159,7 +233,7 @@ func prepareFakeClient(withSecret bool, generateValidSecret bool) client.Client 
 			},
 			Spec: apiv1.CustomResourceDefinitionSpec{
 				Conversion: &apiv1.CustomResourceConversion{
-					Strategy: "webhook",
+					Strategy: strategyWebhook,
 					Webhook: &apiv1.WebhookConversion{
 						ClientConfig: &apiv1.WebhookClientConfig{},
 					},
@@ -231,7 +305,7 @@ func testWebhookClientConfig(
 
 func verifyCertificates(t *testing.T, rec *ReconcileWebhookCertificates, secret *corev1.Secret, clt client.Client, isUpdate bool) {
 	cert := Certs{
-		Domain:  rec.getDomain(),
+		Domain:  getDomain(rec.namespace),
 		Data:    secret.Data,
 		SrcData: secret.Data,
 		Now:     time.Now(),

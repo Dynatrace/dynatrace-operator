@@ -123,17 +123,17 @@ func (cs *Certs) validateServerCerts(now time.Time) bool {
 
 func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 	// Generate CA root keys
-	log.Info("generating root certificate")
+	log.Info("generating root certificates")
 	privateKey, err := cs.generatePrivateKey(RootKey)
 	if err != nil {
 		return err
 	}
 	cs.rootPrivateKey = privateKey
 
-	// Generate CA root certificate
+	// Generate CA root certificates
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		return fmt.Errorf("failed to generate serial number for root certificate: %w", err)
+		return fmt.Errorf("failed to generate serial number for root certificates: %w", err)
 	}
 
 	cs.rootPublicCert = &x509.Certificate{
@@ -163,28 +163,28 @@ func (cs *Certs) generateRootCerts(domain string, now time.Time) error {
 		cs.rootPrivateKey.Public(),
 		cs.rootPrivateKey)
 	if err != nil {
-		return fmt.Errorf("failed to generate root certificate: %w", err)
+		return fmt.Errorf("failed to generate root certificates: %w", err)
 	}
 
 	cs.Data[RootCertOld] = cs.Data[RootCert]
 	cs.Data[RootCert] = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: rootPublicCertDER})
 
-	log.Info("root certificate generated")
+	log.Info("root certificates generated")
 	return nil
 }
 
 func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 	// Generate server keys
-	log.Info("generating server certificate")
+	log.Info("generating server certificates")
 	privateKey, err := cs.generatePrivateKey(ServerKey)
 	if err != nil {
 		return err
 	}
 
-	// Generate server certificate
+	// Generate server certificates
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		return fmt.Errorf("failed to generate serial number for server certificate: %w", err)
+		return fmt.Errorf("failed to generate serial number for server certificates: %w", err)
 	}
 
 	tpl := &x509.Certificate{
@@ -210,11 +210,11 @@ func (cs *Certs) generateServerCerts(domain string, now time.Time) error {
 
 	serverPublicCertDER, err := x509.CreateCertificate(rand.Reader, tpl, cs.rootPublicCert, privateKey.Public(), cs.rootPrivateKey)
 	if err != nil {
-		return fmt.Errorf("failed to generate server certificate: %w", err)
+		return fmt.Errorf("failed to generate server certificates: %w", err)
 	}
 
 	cs.Data[ServerCert] = pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: serverPublicCertDER})
-	log.Info("server certificate generated")
+	log.Info("server certificates generated")
 	return nil
 }
 
