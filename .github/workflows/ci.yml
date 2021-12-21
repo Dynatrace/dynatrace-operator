@@ -1,0 +1,189 @@
+name: CI
+
+on: push
+
+jobs:
+  tests:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Golang
+        uses: actions/setup-go@v2
+        with:
+          go-version: "^1.16"
+      - name: Setup cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-ut-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-ut-
+      - name: Download dependencies
+        id: depdownload
+        run: |
+          sudo apt-get install -y libdevmapper-dev libbtrfs-dev
+      - name: Run Unit tests
+        id: unittest
+        run: |
+          chmod +x ./build/test.sh
+          ./build/test.sh
+
+  linting:
+    name: Run linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download dependencies
+        id: depdownload
+        run: |
+          sudo apt-get install -y libdevmapper-dev libbtrfs-dev
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.43.0
+          args: --build-tags integration,containers_image_storage_stub --timeout 300s
+
+  builddockerimage:
+    name: Build docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+        with:
+          platforms: amd64
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Set up Golang
+        uses: actions/setup-go@v2
+        with:
+          go-version: "^1.16"
+      - name: Setup cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ./third_party_licenses
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-build-
+      - name: Prepare
+        id: prep
+        run: |
+          VERSION=latest
+          LABELS=""
+
+          branch="${GITHUB_REF#refs/heads/}"
+          if [[ "$branch" != "master" ]] && [[ ! "$branch" =~ release* ]]; then
+            LABELS="quay.expires-after=10d"
+          fi
+
+          build_date="$(date -u +"%Y-%m-%d %H:%M:%S+00:00")"
+
+          go_build_args="-linkmode external -extldflags '-static' -s -w \
+          -X 'github.com/Dynatrace/dynatrace-operator/version.Version=${VERSION}' \
+          -X 'github.com/Dynatrace/dynatrace-operator/version.Commit=${GITHUB_SHA}' \
+          -X 'github.com/Dynatrace/dynatrace-operator/version.BuildDate=${build_date}'"
+
+          # Set output parameters.
+          echo ::set-output name=goargs::${go_build_args}
+          echo ::set-output name=labels::${LABELS}
+
+          # Get licenses if no cache exists
+          if ! [ -d ./third_party_licenses ]; then
+            go get github.com/google/go-licenses && go-licenses save ./... --save_path third_party_licenses --force
+          fi
+
+          # Get dependencies
+          go get -d ./...
+          ls -la $HOME/go/pkg/mod
+          cp -r $HOME/go/pkg/mod .
+      - name: Build amd64
+        uses: docker/build-push-action@v2
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          build-args: |
+            GO_BUILD_ARGS='${{ steps.prep.outputs.goargs }}'
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: false
+          tags: operator-amd64:latest
+          labels: ${{ steps.prep.outputs.labels }}
+          outputs: type=docker,dest=/tmp/operator-amd64.tar
+      - name: Build arm64
+        uses: docker/build-push-action@v2
+        if: contains(github.ref, 'refs/heads/release')
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          build-args: |
+            GO_BUILD_ARGS='${{ steps.prep.outputs.goargs }}'
+          context: .
+          file: ./Dockerfile
+          platforms: linux/arm64
+          push: false
+          tags: operator-arm64:latest
+          labels: ${{ steps.prep.outputs.labels }}
+          outputs: type=docker,dest=/tmp/operator-arm64.tar
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: operator
+          path: /tmp/operator*.tar
+          retention-days: 1
+
+  uploaddockerimage:
+    name: Upload docker image to quay
+    runs-on: ubuntu-latest
+    needs: [tests, linting, builddockerimage]
+    env:
+      IMAGE_QUAY: quay.io/dynatrace/dynatrace-operator
+    steps:
+      - name: Login to Quay
+        uses: docker/login-action@v1
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: operator
+          path: /tmp
+      - name: Upload image to Quay
+        run: |
+          LABELS=""
+
+          branch="${GITHUB_REF#refs/heads/}"
+          if [ "$branch" = "master" ]; then
+              TAG="snapshot"
+          elif [ "$branch" = release* ]; then
+              TAG="snapshot-$(echo $branch | sed 's#[^a-zA-Z0-9_-]#-#g')"
+          else
+              TAG="snapshot-$(echo $branch | sed 's#[^a-zA-Z0-9_-]#-#g')"
+              LABELS="quay.expires-after=10d"
+          fi
+
+          docker load --input /tmp/operator-amd64.tar
+
+          if [[ -f "/tmp/operator-arm64.tar" ]]; then
+            echo "we build for arm too => combine images"
+            docker load --input /tmp/operator-arm64.tar
+            docker tag operator-arm64:latest ${IMAGE_QUAY}:${TAG}-arm64
+            docker tag operator-amd64:latest ${IMAGE_QUAY}:${TAG}-amd64
+            docker push ${IMAGE_QUAY}:${TAG}-arm64
+            docker push ${IMAGE_QUAY}:${TAG}-amd64
+
+            docker manifest create ${IMAGE_QUAY}:${TAG} ${IMAGE_QUAY}:${TAG}-arm64 ${IMAGE_QUAY}:${TAG}-amd64
+            docker manifest push ${IMAGE_QUAY}:${TAG}
+          else
+            docker tag operator-amd64:latest ${IMAGE_QUAY}:${TAG}
+            docker push ${IMAGE_QUAY}:${TAG}
+          fi
