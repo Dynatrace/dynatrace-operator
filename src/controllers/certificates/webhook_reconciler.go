@@ -76,7 +76,14 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 	}
 
-	certSecret, err := createCertificateSecret(r.apiReader, r.ctx, r.namespace)
+	certSecret := newCertificateSecret()
+
+	err = certSecret.setSecretFromReader(r.ctx, r.apiReader, r.namespace)
+	if err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
+	}
+
+	err = certSecret.validateCertificates(r.namespace)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
@@ -87,7 +94,7 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 	areMutatingWebhookConfigsValid := certSecret.areConfigsValid(mutatingWebhookConfigs)
 	areValidatingWebhookConfigsValid := certSecret.areConfigsValid(validatingWebhookConfigs)
 
-	if certSecret.isRecent &&
+	if certSecret.isRecent() &&
 		areMutatingWebhookConfigsValid &&
 		areValidatingWebhookConfigsValid {
 		log.Info("secret for certificates up to date, skipping update")

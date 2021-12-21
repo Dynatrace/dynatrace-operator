@@ -31,38 +31,6 @@ const (
 	strategyWebhook = "webhook"
 )
 
-//
-//func TestGetSecret(t *testing.T) {
-//	t.Run(`get nil if secret does not exists`, func(t *testing.T) {
-//		clt := fake.NewClient()
-//		r := &ReconcileWebhookCertificates{
-//			client:    clt,
-//			apiReader: clt,
-//			ctx:       context.TODO(),
-//		}
-//		secret, err := r.getSecret()
-//		require.NoError(t, err)
-//		assert.Nil(t, secret)
-//	})
-//	t.Run(`get secret`, func(t *testing.T) {
-//		clt := fake.NewClient(&corev1.Secret{
-//			ObjectMeta: metav1.ObjectMeta{
-//				Name:      expectedSecretName,
-//				Namespace: testNamespace,
-//			},
-//		})
-//		r := &ReconcileWebhookCertificates{
-//			client:    clt,
-//			apiReader: clt,
-//			ctx:       context.TODO(),
-//			namespace: testNamespace,
-//		}
-//		secret, err := r.getSecret()
-//		require.NoError(t, err)
-//		assert.NotNil(t, secret)
-//	})
-//}
-
 func TestReconcileCertificate_Create(t *testing.T) {
 	clt := prepareFakeClient(false, false)
 	rec, request := prepareReconcile(clt)
@@ -242,34 +210,45 @@ func prepareFakeClient(withSecret bool, generateValidSecret bool) client.Client 
 		},
 	}
 	if withSecret {
-		certData := map[string][]byte{
-			RootKey:    {testBytes},
-			RootCert:   {testBytes},
-			ServerKey:  {testBytes},
-			ServerCert: {testBytes},
-		}
+		certData := createInvalidTestCertData(nil)
 		if generateValidSecret {
-			cert := Certs{
-				Domain: testDomain,
-				Now:    time.Now(),
-			}
-			_ = cert.ValidateCerts()
-
-			certData = cert.Data
+			certData = createValidTestCertData(nil)
 		}
 
 		objs = append(objs,
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: testNamespace,
-					Name:      expectedSecretName,
-				},
-				Data: certData,
-			},
+			createTestSecret(nil, certData),
 		)
 	}
 
 	return fake.NewClient(objs...)
+}
+
+func createInvalidTestCertData(_ *testing.T) map[string][]byte {
+	return map[string][]byte{
+		RootKey:    {testBytes},
+		RootCert:   {testBytes},
+		ServerKey:  {testBytes},
+		ServerCert: {testBytes},
+	}
+}
+
+func createValidTestCertData(_ *testing.T) map[string][]byte {
+	cert := Certs{
+		Domain: testDomain,
+		Now:    time.Now(),
+	}
+	_ = cert.ValidateCerts()
+	return cert.Data
+}
+
+func createTestSecret(_ *testing.T, certData map[string][]byte) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testNamespace,
+			Name:      expectedSecretName,
+		},
+		Data: certData,
+	}
 }
 
 func prepareReconcile(clt client.Client) (*ReconcileWebhookCertificates, reconcile.Request) {
