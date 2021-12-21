@@ -12,7 +12,6 @@ import (
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -154,7 +153,9 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, result)
 	})
 
-	t.Run(`skip certificates generation if no configuration exists`, func(t *testing.T) {
+	// Generation must not be skipped because webhook startup routine listens for the secret
+	// See cmd/operator/manager.go and cmd/operator/watcher.go
+	t.Run(`do not skip certificates generation if no configuration exists`, func(t *testing.T) {
 		fakeClient := fake.NewClient(crd)
 		reconciliation, request := prepareReconcile(fakeClient)
 		result, err := reconciliation.Reconcile(context.TODO(), request)
@@ -164,8 +165,7 @@ func TestReconcile(t *testing.T) {
 
 		secret := &corev1.Secret{}
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: expectedSecretName, Namespace: testNamespace}, secret)
-		assert.Error(t, err)
-		assert.True(t, k8serrors.IsNotFound(err))
+		assert.NoError(t, err)
 	})
 }
 

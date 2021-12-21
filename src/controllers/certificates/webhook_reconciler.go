@@ -72,10 +72,6 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		log.Info("could not find validating webhook configuration, this is normal when deployed using OLM")
 	}
 
-	if mutatingWebhookConfiguration == nil && validatingWebhookConfiguration == nil {
-		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
-	}
-
 	certSecret := newCertificateSecret()
 
 	err = certSecret.setSecretFromReader(r.ctx, r.apiReader, r.namespace)
