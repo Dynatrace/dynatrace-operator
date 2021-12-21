@@ -123,6 +123,9 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	r.reconcileDynaKube(ctx, dkState, &dkMapper)
 
 	if dkState.Err != nil {
+		if !dkState.ValidTokens {
+			return reconcile.Result{}, fmt.Errorf("paas or api token not valid")
+		}
 		if dkState.Updated || instance.Status.SetPhaseOnError(dkState.Err) {
 			if errClient := r.updateCR(ctx, instance); errClient != nil {
 				return reconcile.Result{}, fmt.Errorf("failed to update CR after failure, original, %s, then: %w", dkState.Err, errClient)
@@ -156,6 +159,13 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 
 	dkState.Update(upd, defaultUpdateInterval, "Token conditions updated")
 	if dkState.Error(err) {
+		log.Error(err, "failed to check tokens")
+		return
+	}
+	dkState.ValidTokens = true
+	if !dtcReconciler.ValidTokens {
+		dkState.ValidTokens = false
+		log.Info("paas or api token not valid", "name", dkState.Instance.GetName())
 		return
 	}
 

@@ -132,8 +132,8 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 }
 
 func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
-	mockClient := createDTMockClient(dtclient.TokenScopes{},
-		dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeInstallerDownload})
+	mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
+		dtclient.TokenScopes{dtclient.TokenScopeDataExport})
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
@@ -200,8 +200,8 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 }
 
 func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
-	mockClient := createDTMockClient(dtclient.TokenScopes{},
-		dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeInstallerDownload})
+	mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
+		dtclient.TokenScopes{dtclient.TokenScopeDataExport})
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,

@@ -42,7 +42,8 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		dtc, ucr, err := rec.Reconcile(context.TODO(), deepCopy)
 		assert.Nil(t, dtc)
 		assert.True(t, ucr)
-		assert.Error(t, err)
+		assert.False(t, rec.ValidTokens)
+		assert.Nil(t, err)
 
 		AssertCondition(t, deepCopy, dynatracev1beta1.PaaSTokenConditionType, false, dynatracev1beta1.ReasonTokenSecretNotFound,
 			"Secret 'dynatrace:dynakube' not found")
