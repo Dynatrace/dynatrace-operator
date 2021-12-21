@@ -45,7 +45,7 @@ spec:
   # For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
   # For Managed, change the apiUrl address.
   # For instructions on how to determine the environment ID and how to configure the apiUrl address, see https://www.dynatrace.com/support/help/reference/dynatrace-concepts/environment-id/.
-  apiUrl: https://asj34817.dev.dynatracelabs.com/api
+  apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
   # Optional: Name of the secret holding the API and PaaS tokens.
   # If unset, Dynatrace Operator uses the name of the custom resource.
