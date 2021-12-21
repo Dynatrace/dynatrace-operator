@@ -76,6 +76,31 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
 
+	t.Run("PaaS token is empty, API token should be used", func(t *testing.T) {
+		dk := base.DeepCopy()
+		c := fake.NewClient(NewSecret(dynaKube, namespace, map[string]string{dtclient.DynatraceApiToken: "84"}))
+		dtcMock := &dtclient.MockDynatraceClient{}
+		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeInstallerDownload}, nil)
+
+		rec := &DynatraceClientReconciler{
+			Client:              c,
+			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+			Now:                 metav1.Now(),
+		}
+
+		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		assert.NotNil(t, dtc)
+		assert.True(t, ucr)
+		assert.Nil(t, err)
+
+		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, true, dynatracev1beta1.ReasonTokenReady,
+			"Ready")
+		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, true, dynatracev1beta1.ReasonTokenReady,
+			"Ready")
+
+		mock.AssertExpectationsForObjects(t, dtcMock)
+	})
+
 	t.Run("Unauthorized PaaS token, unexpected error for API token request", func(t *testing.T) {
 		dk := base.DeepCopy()
 		c := fake.NewClient(NewSecret(dynaKube, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}))

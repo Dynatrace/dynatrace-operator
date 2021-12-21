@@ -132,7 +132,6 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 }
 
 func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
-	// replacing is possible
 	mockClient := createDTMockClient(dtclient.TokenScopes{},
 		dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeInstallerDownload})
 	instance := &dynatracev1beta1.DynaKube{
@@ -201,7 +200,6 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 }
 
 func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
-	// replacing is possible
 	mockClient := createDTMockClient(dtclient.TokenScopes{},
 		dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeInstallerDownload})
 	instance := &dynatracev1beta1.DynaKube{

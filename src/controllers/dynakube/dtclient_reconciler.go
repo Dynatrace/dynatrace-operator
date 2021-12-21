@@ -69,7 +69,8 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 	}
 
 	secretKey := ns + ":" + secretName
-	secret, err := r.getTokensFromSecret(ctx, instance)
+	secret, err := r.getSecret(ctx, instance)
+	r.setTokens(secret)
 	if k8serrors.IsNotFound(err) {
 		message := fmt.Sprintf("Secret '%s' not found", secretKey)
 
@@ -219,17 +220,21 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 	return dtc, updateCR, nil
 }
 
-func (r *DynatraceClientReconciler) getTokensFromSecret(ctx context.Context, instance *dynatracev1beta1.DynaKube) (*corev1.Secret, error) {
+func (r *DynatraceClientReconciler) getSecret(ctx context.Context, instance *dynatracev1beta1.DynaKube) (*corev1.Secret, error) {
 	secretName := instance.Tokens()
 	ns := instance.GetNamespace()
 	secret := corev1.Secret{}
 	if err := r.Client.Get(ctx, client.ObjectKey{Name: secretName, Namespace: ns}, &secret); err != nil {
 		return nil, err
 	}
-
-	r.ApiToken = string(secret.Data[dtclient.DynatraceApiToken])
-	r.PaasToken = string(secret.Data[dtclient.DynatracePaasToken])
 	return &secret, nil
+}
+
+func (r *DynatraceClientReconciler) setTokens(secret *corev1.Secret) {
+	if secret != nil {
+		r.ApiToken = string(secret.Data[dtclient.DynatraceApiToken])
+		r.PaasToken = string(secret.Data[dtclient.DynatracePaasToken])
+	}
 }
 
 func setCondition(conditions *[]metav1.Condition, condition metav1.Condition) bool {

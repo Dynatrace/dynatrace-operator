@@ -133,14 +133,8 @@ func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaK
 
 func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) (*script, error) {
 	var tokens corev1.Secret
-	var paasToken []byte
 	if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
-	}
-	if len(tokens.Data[dtclient.DynatracePaasToken]) != 0 {
-		paasToken = tokens.Data[dtclient.DynatracePaasToken]
-	} else {
-		paasToken = tokens.Data[dtclient.DynatraceApiToken]
 	}
 
 	var proxy string
@@ -168,7 +162,7 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, 
 	return &script{
 		ApiUrl:        dk.Spec.APIURL,
 		SkipCertCheck: dk.Spec.SkipCertCheck,
-		PaaSToken:     string(paasToken),
+		PaaSToken:     string(getPaasToken(tokens)),
 		Proxy:         proxy,
 		TrustedCAs:    trustedCAs,
 		ClusterID:     string(kubeSystemUID),
@@ -176,6 +170,13 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, 
 		IMNodes:       infraMonitoringNodes,
 		HasHost:       dk.CloudNativeFullstackMode(),
 	}, nil
+}
+
+func getPaasToken(tokens corev1.Secret) []byte {
+	if len(tokens.Data[dtclient.DynatracePaasToken]) != 0 {
+		return tokens.Data[dtclient.DynatracePaasToken]
+	}
+	return tokens.Data[dtclient.DynatraceApiToken]
 }
 
 // getInfraMonitoringNodes creates a mapping between all the nodes and the tenantUID for the infra-monitoring dynakube on that node.
