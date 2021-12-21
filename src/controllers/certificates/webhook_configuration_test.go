@@ -1,9 +1,10 @@
 package certificates
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/admissionregistration/v1"
-	"testing"
 )
 
 func createTestMutatingWebhookConfig(_ *testing.T) *v1.MutatingWebhookConfiguration {
