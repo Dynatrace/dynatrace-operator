@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -102,15 +103,10 @@ func (dtc *dynatraceClient) CreateKubernetesSetting(name, kubeSystemUUID, scope 
 		return "", err
 	}
 
-	dtEndpoint := fmt.Sprintf("%s/v2/settings/objects?validateOnly=false", dtc.url)
-
-	req, err := http.NewRequest("POST", dtEndpoint, bytes.NewReader(bodyData))
+	req, err := createBaseRequest(fmt.Sprintf("%s/v2/settings/objects?validateOnly=false", dtc.url), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
 	if err != nil {
-		return "", fmt.Errorf("error initializing http request: %s", err.Error())
+		return "", err
 	}
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", dtc.apiToken))
 
 	res, err := dtc.httpClient.Do(req)
 	if err != nil {
@@ -145,14 +141,10 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 		return nil, errors.New("no kube-system namespace UUID given")
 	}
 
-	dtEndpoint := fmt.Sprintf("%s/v2/entities", dtc.url)
-
-	req, err := http.NewRequest("GET", dtEndpoint, nil)
+	req, err := createBaseRequest(fmt.Sprintf("%s/v2/entities", dtc.url), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error initializing http request: %s", err.Error())
+		return nil, err
 	}
-	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", dtc.apiToken))
 
 	q := req.URL.Query()
 	q.Add("pageSize", "500")
@@ -186,14 +178,10 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 		scopes = append(scopes, entity.EntityId)
 	}
 
-	dtEndpoint := fmt.Sprintf("%s/v2/settings/objects", dtc.url)
-
-	req, err := http.NewRequest("GET", dtEndpoint, nil)
+	req, err := createBaseRequest(fmt.Sprintf("%s/v2/settings/objects", dtc.url), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
-		return GetSettingsResponse{}, fmt.Errorf("error initializing http request: %s", err.Error())
+		return GetSettingsResponse{}, err
 	}
-	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", dtc.apiToken))
 
 	q := req.URL.Query()
 	q.Add("schemaIds", "builtin:cloud.kubernetes")
@@ -228,6 +216,21 @@ func (dtc *dynatraceClient) unmarshalToJson(res *http.Response, resDataJson inte
 	}
 
 	return nil
+}
+
+func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, fmt.Errorf("error initializing http request: %s", err.Error())
+	}
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", apiToken))
+
+	if method == http.MethodPost {
+		req.Header.Add("Content-Type", "application/json")
+	}
+
+	return req, nil
 }
 
 func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {

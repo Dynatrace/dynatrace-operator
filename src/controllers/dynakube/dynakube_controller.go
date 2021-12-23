@@ -317,7 +317,8 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *status.Dyna
 		dkState.Instance.Name != "" &&
 		dkState.Instance.FeatureAutomaticKubernetesApiMonitoring() &&
 		dkState.Instance.KubernetesMonitoringMode() {
-		err := automaticapimonitoring.NewReconciler(dtc).Reconcile(dkState)
+		err := automaticapimonitoring.NewReconciler(dtc, dkState.Instance.Name, dkState.Instance.Status.KubeSystemUUID).
+			Reconcile()
 		if err != nil {
 			log.Error(err, "could not create setting")
 		}

@@ -3,32 +3,28 @@ package automaticapimonitoring
 import (
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	testUID       = "test-uid"
-	testName      = "test-name"
-	testNamespace = "test-namespace"
-	testObjectID  = "test-objectid"
+	testUID      = "test-uid"
+	testName     = "test-name"
+	testObjectID = "test-objectid"
 )
 
 func TestNewDefaultReconiler(t *testing.T) {
 	createDefaultReconciler(t)
 }
 
-func createDefaultReconciler(t *testing.T) *Reconciler {
-	return createReconciler(t, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{TotalCount: 0}, "")
+func createDefaultReconciler(t *testing.T) *AutomaticApiMonitoringReconciler {
+	return createReconciler(t, testName, testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{TotalCount: 0}, "")
 }
 
-func createReconciler(t *testing.T, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string) *Reconciler {
+func createReconciler(t *testing.T, name, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string) *AutomaticApiMonitoringReconciler {
 	mockClient := &dtclient.MockDynatraceClient{}
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
 		Return(monitoredEntities, nil)
@@ -37,14 +33,14 @@ func createReconciler(t *testing.T, monitoredEntities []dtclient.MonitoredEntity
 	mockClient.On("CreateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
 		Return(objectID, nil)
 
-	r := NewReconciler(mockClient)
+	r := NewReconciler(mockClient, name, uid)
 	require.NotNil(t, r)
-	require.NotNil(t, r.Client)
+	require.NotNil(t, r.dtc)
 
 	return r
 }
 
-func createReconcilerWithError(t *testing.T, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error) *Reconciler {
+func createReconcilerWithError(t *testing.T, monitoredEntitiesError error, getSettingsResponseError error, createSettingsResponseError error) *AutomaticApiMonitoringReconciler {
 	mockClient := &dtclient.MockDynatraceClient{}
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
 		Return([]dtclient.MonitoredEntity{}, monitoredEntitiesError)
@@ -53,34 +49,11 @@ func createReconcilerWithError(t *testing.T, monitoredEntitiesError error, getSe
 	mockClient.On("CreateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
 		Return("", createSettingsResponseError)
 
-	r := NewReconciler(mockClient)
+	r := NewReconciler(mockClient, testName, testUID)
 	require.NotNil(t, r)
-	require.NotNil(t, r.Client)
+	require.NotNil(t, r.dtc)
 
 	return r
-}
-
-func createDkState(t *testing.T) *status.DynakubeState {
-	dk := dynatracev1beta1.DynaKube{
-		ObjectMeta: metav1.ObjectMeta{Name: testName, Namespace: testNamespace},
-		Spec: dynatracev1beta1.DynaKubeSpec{
-			KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
-				Enabled: true,
-			},
-			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
-			},
-		},
-		Status: dynatracev1beta1.DynaKubeStatus{
-			KubeSystemUUID: testUID,
-		},
-	}
-
-	dkState := status.NewDynakubeState(&dk)
-	require.NotNil(t, dkState)
-	require.NotNil(t, dkState.Instance)
-
-	return dkState
 }
 
 func createMonitoredEntities() []dtclient.MonitoredEntity {
@@ -96,7 +69,7 @@ func TestReconcile(t *testing.T) {
 		r := createDefaultReconciler(t)
 
 		// act
-		err := r.Reconcile(createDkState(t))
+		err := r.Reconcile()
 
 		// assert
 		assert.NoError(t, err)
@@ -104,10 +77,10 @@ func TestReconcile(t *testing.T) {
 
 	t.Run(`create setting when no monitored entities are existing`, func(t *testing.T) {
 		// arrange
-		r := createReconciler(t, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID)
+		r := createReconciler(t, testName, testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID)
 
 		// act
-		actual, err := r.ensureSettingExists(r.Client, testName, testUID)
+		actual, err := r.ensureSettingExists()
 
 		// assert
 		assert.NoError(t, err)
@@ -117,10 +90,10 @@ func TestReconcile(t *testing.T) {
 	t.Run(`create setting when no settings for the found monitored entities are existing`, func(t *testing.T) {
 		// arrange
 		entities := createMonitoredEntities()
-		r := createReconciler(t, entities, dtclient.GetSettingsResponse{}, testObjectID)
+		r := createReconciler(t, testName, testUID, entities, dtclient.GetSettingsResponse{}, testObjectID)
 
 		// act
-		actual, err := r.ensureSettingExists(r.Client, testName, testUID)
+		actual, err := r.ensureSettingExists()
 
 		// assert
 		assert.NoError(t, err)
@@ -130,10 +103,10 @@ func TestReconcile(t *testing.T) {
 	t.Run(`don't create setting when settings for the found monitored entities are existing`, func(t *testing.T) {
 		// arrange
 		entities := createMonitoredEntities()
-		r := createReconciler(t, entities, dtclient.GetSettingsResponse{TotalCount: 1}, testObjectID)
+		r := createReconciler(t, testName, testUID, entities, dtclient.GetSettingsResponse{TotalCount: 1}, testObjectID)
 
 		// act
-		actual, err := r.ensureSettingExists(r.Client, testName, testUID)
+		actual, err := r.ensureSettingExists()
 
 		// assert
 		assert.NoError(t, err)
@@ -144,10 +117,10 @@ func TestReconcile(t *testing.T) {
 func TestReconcileErrors(t *testing.T) {
 	t.Run(`don't create setting when no name is given`, func(t *testing.T) {
 		// arrange
-		r := createReconciler(t, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID)
+		r := createReconciler(t, "", testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID)
 
 		// act
-		actual, err := r.ensureSettingExists(r.Client, "", testUID)
+		actual, err := r.ensureSettingExists()
 
 		// assert
 		assert.Error(t, err)
@@ -156,10 +129,10 @@ func TestReconcileErrors(t *testing.T) {
 
 	t.Run(`don't create setting when no kube-system uuid is given`, func(t *testing.T) {
 		// arrange
-		r := createReconciler(t, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID)
+		r := createReconciler(t, testName, "", []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID)
 
 		// act
-		actual, err := r.ensureSettingExists(r.Client, testName, "")
+		actual, err := r.ensureSettingExists()
 
 		// assert
 		assert.Error(t, err)
@@ -171,7 +144,7 @@ func TestReconcileErrors(t *testing.T) {
 		r := createReconcilerWithError(t, errors.New("could not get monitored entities"), nil, nil)
 
 		// act
-		actual, err := r.ensureSettingExists(r.Client, testName, testUID)
+		actual, err := r.ensureSettingExists()
 
 		// assert
 		assert.Error(t, err)
@@ -183,7 +156,7 @@ func TestReconcileErrors(t *testing.T) {
 		r := createReconcilerWithError(t, nil, errors.New("could not get settings for monitored entities"), nil)
 
 		// act
-		actual, err := r.ensureSettingExists(r.Client, testName, testUID)
+		actual, err := r.ensureSettingExists()
 
 		// assert
 		assert.Error(t, err)
@@ -195,7 +168,7 @@ func TestReconcileErrors(t *testing.T) {
 		r := createReconcilerWithError(t, nil, nil, errors.New("could not create monitored entity"))
 
 		// act
-		actual, err := r.ensureSettingExists(r.Client, testName, testUID)
+		actual, err := r.ensureSettingExists()
 
 		// assert
 		assert.Error(t, err)

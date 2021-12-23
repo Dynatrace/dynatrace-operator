@@ -3,57 +3,58 @@ package automaticapimonitoring
 import (
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 )
 
-type Reconciler struct {
-	dtclient.Client
+type AutomaticApiMonitoringReconciler struct {
+	dtc            dtclient.Client
+	name           string
+	kubeSystemUUID string
 }
 
-func NewReconciler(clt dtclient.Client) *Reconciler {
-	return &Reconciler{
-		clt,
+func NewReconciler(dtc dtclient.Client, name, kubeSystemUUID string) *AutomaticApiMonitoringReconciler {
+	return &AutomaticApiMonitoringReconciler{
+		dtc,
+		name,
+		kubeSystemUUID,
 	}
 }
 
-func (r *Reconciler) Reconcile(dkState *status.DynakubeState) error {
-	name := dkState.Instance.Name
-	kubeSystemUUID := dkState.Instance.Status.KubeSystemUUID
-	objectID, err := r.ensureSettingExists(r.Client, name, kubeSystemUUID)
+func (r *AutomaticApiMonitoringReconciler) Reconcile() error {
+	objectID, err := r.ensureSettingExists()
 
 	if err != nil {
 		return err
 	}
 
 	if objectID != "" {
-		log.Info(fmt.Sprintf("created setting '%s' for Cluster '%s'. Settings object ID: %s", name, kubeSystemUUID, objectID))
+		log.Info(fmt.Sprintf("created setting '%s' for Cluster '%s'. Settings object ID: %s", r.name, r.kubeSystemUUID, objectID))
 	} else {
-		log.Info(fmt.Sprintf("setting '%s' for Cluster '%s' already exists.", name, kubeSystemUUID))
+		log.Info(fmt.Sprintf("setting '%s' for Cluster '%s' already exists.", r.name, r.kubeSystemUUID))
 	}
 
 	return nil
 }
 
-func (r *Reconciler) ensureSettingExists(dtc dtclient.Client, name string, kubeSystemUUID string) (string, error) {
-	if name == "" {
+func (r *AutomaticApiMonitoringReconciler) ensureSettingExists() (string, error) {
+	if r.name == "" {
 		return "", errors.New("no name given")
 	}
-	if kubeSystemUUID == "" {
+	if r.kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
 
 	// check if ME with UID exists
-	var monitoredEntities, err = dtc.GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID)
+	var monitoredEntities, err = r.dtc.GetMonitoredEntitiesForKubeSystemUUID(r.kubeSystemUUID)
 	if err != nil {
 		return "", fmt.Errorf("error while loading MEs: %s", err.Error())
 	}
 
 	// check if Setting for ME exists
-	settings, err := dtc.GetSettingsForMonitoredEntities(monitoredEntities)
+	settings, err := r.dtc.GetSettingsForMonitoredEntities(monitoredEntities)
 	if err != nil {
-		return "", fmt.Errorf("error trying to check if setting excists %s", err.Error())
+		return "", fmt.Errorf("error trying to check if setting exists %s", err.Error())
 	}
 
 	if settings.TotalCount > 0 {
@@ -64,9 +65,9 @@ func (r *Reconciler) ensureSettingExists(dtc dtclient.Client, name string, kubeS
 	if len(monitoredEntities) > 0 {
 		// determine newest me
 		meID := determineNewestMonitoredEntity(monitoredEntities)
-		objectID, err = dtc.CreateKubernetesSetting(name, kubeSystemUUID, meID)
+		objectID, err = r.dtc.CreateKubernetesSetting(r.name, r.kubeSystemUUID, meID)
 	} else {
-		objectID, err = dtc.CreateKubernetesSetting(name, kubeSystemUUID, "")
+		objectID, err = r.dtc.CreateKubernetesSetting(r.name, r.kubeSystemUUID, "")
 	}
 
 	if err != nil {
