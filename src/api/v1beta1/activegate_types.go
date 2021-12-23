@@ -36,17 +36,24 @@ var (
 		ShortName:    "metrics-ingest",
 		ArgumentName: "metrics_ingest",
 	}
+
+	DynatraceApiCapability = ActiveGateCapability{
+		DisplayName:  "dynatrace-api",
+		ShortName:    "dynatrace-api",
+		ArgumentName: "restInterface",
+	}
 )
 
-var ActiveGateDisplayNames = map[CapabilityDisplayName]bool{
-	RoutingCapability.DisplayName:       true,
-	KubeMonCapability.DisplayName:       true,
-	MetricsIngestCapability.DisplayName: true,
+var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
+	RoutingCapability.DisplayName:       struct{}{},
+	KubeMonCapability.DisplayName:       struct{}{},
+	MetricsIngestCapability.DisplayName: struct{}{},
+	DynatraceApiCapability.DisplayName:  struct{}{},
 }
 
 type ActiveGateSpec struct {
 
-	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest)
+	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 
 	CapabilityProperties `json:",inline"`
