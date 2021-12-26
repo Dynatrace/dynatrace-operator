@@ -40,6 +40,10 @@ while [ $# -gt 0 ]; do
     CLI="oc"
     shift
     ;;
+  --k8s-endpoint)
+    K8S_ENDPOINT="$2"
+    shift
+    ;;
   *)
     echo "Warning: skipping unsupported option: $1"
     shift
@@ -62,10 +66,13 @@ if [ -z "$PAAS_TOKEN" ]; then
   exit 1
 fi
 
-K8S_ENDPOINT="$("${CLI}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
 if [ -z "$K8S_ENDPOINT" ]; then
-  echo "Error: failed to get kubernetes endpoint!"
-  exit 1
+  echo "You should define --k8s-endpoint, going to try to get it with cli command"
+  K8S_ENDPOINT="$("${CLI}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
+  if [ -z "$K8S_ENDPOINT" ]; then
+    echo "Error: failed to get kubernetes endpoint!"
+    exit 1
+  fi
 fi
 
 if [ -n "$CLUSTER_NAME" ]; then
