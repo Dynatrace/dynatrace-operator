@@ -114,9 +114,10 @@ func TestNewTokens(t *testing.T) {
 			}}
 		tokens, err := NewTokens(&secret)
 
-		assert.Error(t, err)
-		assert.Nil(t, tokens)
-		assert.Contains(t, err.Error(), dtclient.DynatracePaasToken)
+		assert.NoError(t, err)
+		assert.NotNil(t, tokens)
+		assert.Equal(t, testValue1, tokens.ApiToken)
+		assert.Equal(t, testValue1, tokens.PaasToken)
 
 		secret = corev1.Secret{
 			Data: map[string][]byte{

@@ -18,17 +18,20 @@ import (
 )
 
 type DynatraceClientReconciler struct {
-	Client              client.Client
-	DynatraceClientFunc DynatraceClientFunc
-	Now                 metav1.Time
-	ApiToken, PaasToken string
-	ValidTokens         bool
+	Client                client.Client
+	DynatraceClientFunc   DynatraceClientFunc
+	Now                   metav1.Time
+	ApiToken, PaasToken   string
+	ValidTokens           bool
+	dkName, ns, secretKey string
+	status                *dynatracev1beta1.DynaKubeStatus
 }
 
 type tokenConfig struct {
-	Type              string
-	Key, Value, Scope string
-	Timestamp         **metav1.Time
+	Type       string
+	Key, Value string
+	Scopes     []string
+	Timestamp  **metav1.Time
 }
 
 func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dynatracev1beta1.DynaKube) (dtclient.Client, bool, error) {
@@ -42,89 +45,42 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 		dtf = BuildDynatraceClient
 	}
 
-	sts := &instance.Status
-	ns := instance.GetNamespace()
-	dkName := instance.GetName()
+	r.status = &instance.Status
+	r.ns = instance.GetNamespace()
+	r.dkName = instance.GetName()
 	secretName := instance.Tokens()
-
-	paasTokenConf := &tokenConfig{
-		Type:      dynatracev1beta1.PaaSTokenConditionType,
-		Key:       dtclient.DynatracePaasToken,
-		Scope:     dtclient.TokenScopeInstallerDownload,
-		Timestamp: &sts.LastPaaSTokenProbeTimestamp,
-	}
-	apiTokenConf := &tokenConfig{
-		Type:      dynatracev1beta1.APITokenConditionType,
-		Key:       dtclient.DynatraceApiToken,
-		Scope:     dtclient.TokenScopeDataExport,
-		Timestamp: &sts.LastAPITokenProbeTimestamp,
-	}
-	tokens := []*tokenConfig{apiTokenConf, paasTokenConf}
-
 	updateCR := false
 
-	// To migrate from our implementation for conditions on Operator v0.6-0.7 to operator-sdk's implementation.
-	for i := range sts.Conditions {
-		if sts.Conditions[i].LastTransitionTime.IsZero() {
-			sts.Conditions[i].LastTransitionTime = r.Now
-			updateCR = true
-		}
-	}
-
-	secretKey := ns + ":" + secretName
+	r.secretKey = r.ns + ":" + secretName
 	secret, err := r.getSecret(ctx, instance)
 	r.setTokens(secret)
 	if k8serrors.IsNotFound(err) {
-		message := fmt.Sprintf("Secret '%s' not found", secretKey)
+		message := fmt.Sprintf("Secret '%s' not found", r.secretKey)
 
-		for _, t := range tokens {
-			updateCR = r.setAndLogCondition(&sts.Conditions, metav1.Condition{
-				Type:    t.Type,
-				Status:  metav1.ConditionFalse,
-				Reason:  dynatracev1beta1.ReasonTokenSecretNotFound,
-				Message: message,
-			}, dkName) || updateCR
-		}
+		updateCR = r.setAndLogCondition(&r.status.Conditions, metav1.Condition{
+			Type:    dynatracev1beta1.APITokenConditionType,
+			Status:  metav1.ConditionFalse,
+			Reason:  dynatracev1beta1.ReasonTokenSecretNotFound,
+			Message: message,
+		}) || updateCR
+		updateCR = r.removePaaSTokenCondition() || updateCR
 
-		r.ValidTokens = false
 		return nil, updateCR, nil
 	} else if err != nil {
 		return nil, updateCR, err
 	}
 
-	valid := true
-	updateSecret := false
-
 	if r.ApiToken == "" {
-		updateCR = r.setAndLogCondition(&sts.Conditions, metav1.Condition{
-			Type:    apiTokenConf.Type,
+		msg := fmt.Sprintf("Token %s on secret %s missing", dtclient.DynatraceApiToken, r.secretKey)
+		updateCR = r.setAndLogCondition(&r.status.Conditions, metav1.Condition{
+			Type:    dynatracev1beta1.APITokenConditionType,
 			Status:  metav1.ConditionFalse,
 			Reason:  dynatracev1beta1.ReasonTokenMissing,
-			Message: fmt.Sprintf("Token %s on secret %s missing", apiTokenConf.Key, secretKey),
-		}, dkName) || updateCR
-		valid = false
-	} else if r.PaasToken == "" {
-		// if paas token is missing api token is paas token
-		r.PaasToken = r.ApiToken
-		secret.Data[dtclient.DynatracePaasToken] = []byte(r.PaasToken)
-		updateSecret = true
-	}
+			Message: msg,
+		}) || updateCR
+		updateCR = r.removePaaSTokenCondition() || updateCR
 
-	if r.PaasToken == "" {
-		updateCR = r.setAndLogCondition(&sts.Conditions, metav1.Condition{
-			Type:    paasTokenConf.Type,
-			Status:  metav1.ConditionFalse,
-			Reason:  dynatracev1beta1.ReasonTokenMissing,
-			Message: fmt.Sprintf("Token %s on secret %s missing", paasTokenConf.Key, secretKey),
-		}, dkName) || updateCR
-		valid = false
-	}
-
-	paasTokenConf.Value = r.PaasToken
-	apiTokenConf.Value = r.ApiToken
-
-	if !valid {
-		return nil, updateCR, fmt.Errorf("issues found with tokens, see status")
+		return nil, updateCR, nil
 	}
 
 	dtc, err := dtf(DynatraceClientProperties{
@@ -132,7 +88,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 		Secret:              secret,
 		Proxy:               convertProxy(instance.Spec.Proxy),
 		ApiUrl:              instance.Spec.APIURL,
-		Namespace:           ns,
+		Namespace:           r.ns,
 		NetworkZone:         instance.Spec.NetworkZone,
 		TrustedCerts:        instance.Spec.TrustedCAs,
 		SkipCertCheck:       instance.Spec.SkipCertCheck,
@@ -142,90 +98,128 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 	if err != nil {
 		message := fmt.Sprintf("Failed to create Dynatrace API Client: %s", err)
 
-		for _, t := range tokens {
-			updateCR = r.setAndLogCondition(&sts.Conditions, metav1.Condition{
-				Type:    t.Type,
-				Status:  metav1.ConditionFalse,
-				Reason:  dynatracev1beta1.ReasonTokenError,
-				Message: message,
-			}, dkName) || updateCR
-		}
+		updateCR = r.setAndLogCondition(&r.status.Conditions, metav1.Condition{
+			Type:    dynatracev1beta1.APITokenConditionType,
+			Status:  metav1.ConditionFalse,
+			Reason:  dynatracev1beta1.ReasonTokenMissing,
+			Message: message,
+		}) || updateCR
+		updateCR = r.removePaaSTokenCondition() || updateCR
 
 		return nil, updateCR, err
 	}
 
-	for _, t := range tokens {
-		if strings.TrimSpace(t.Value) != t.Value {
-			updateCR = r.setAndLogCondition(&sts.Conditions, metav1.Condition{
-				Type:    t.Type,
-				Status:  metav1.ConditionFalse,
-				Reason:  dynatracev1beta1.ReasonTokenUnauthorized,
-				Message: fmt.Sprintf("Token on secret %s has leading and/or trailing spaces", secretKey),
-			}, dkName) || updateCR
-			continue
-		}
-
-		// At this point, we can query the Dynatrace API to verify whether our tokens are correct. To avoid excessive requests,
-		// we wait at least 5 mins between proves.
-		if *t.Timestamp != nil && r.Now.Time.Before((*t.Timestamp).Add(5*time.Minute)) {
-			oldCondition := meta.FindStatusCondition(sts.Conditions, t.Type)
-			if oldCondition.Reason != dynatracev1beta1.ReasonTokenReady {
-				r.ValidTokens = false
-			}
-			continue
-		}
-
-		nowCopy := r.Now
-		*t.Timestamp = &nowCopy
-		updateCR = true
-		ss, err := dtc.GetTokenScopes(t.Value)
-
-		var serr dtclient.ServerError
-		if ok := errors.As(err, &serr); ok && serr.Code == http.StatusUnauthorized {
-			r.setAndLogCondition(&sts.Conditions, metav1.Condition{
-				Type:    t.Type,
-				Status:  metav1.ConditionFalse,
-				Reason:  dynatracev1beta1.ReasonTokenUnauthorized,
-				Message: fmt.Sprintf("Token on secret %s unauthorized", secretKey),
-			}, dkName)
-			continue
-		}
-
-		if err != nil {
-			r.setAndLogCondition(&sts.Conditions, metav1.Condition{
-				Type:    t.Type,
-				Status:  metav1.ConditionFalse,
-				Reason:  dynatracev1beta1.ReasonTokenError,
-				Message: fmt.Sprintf("error when querying token on secret %s: %v", secretKey, err),
-			}, dkName)
-			continue
-		}
-
-		if !ss.Contains(t.Scope) {
-			r.setAndLogCondition(&sts.Conditions, metav1.Condition{
-				Type:    t.Type,
-				Status:  metav1.ConditionFalse,
-				Reason:  dynatracev1beta1.ReasonTokenScopeMissing,
-				Message: fmt.Sprintf("Token on secret %s missing scope %s", secretKey, t.Scope),
-			}, dkName)
-			continue
-		}
-
-		r.setAndLogCondition(&sts.Conditions, metav1.Condition{
-			Type:    t.Type,
-			Status:  metav1.ConditionTrue,
-			Reason:  dynatracev1beta1.ReasonTokenReady,
-			Message: "Ready",
-		}, dkName)
+	var tokens []tokenConfig
+	if r.PaasToken == "" {
+		tokens = []tokenConfig{{
+			Type:      dynatracev1beta1.APITokenConditionType,
+			Key:       dtclient.DynatraceApiToken,
+			Value:     r.ApiToken,
+			Scopes:    []string{dtclient.TokenScopeDataExport, dtclient.TokenScopeInstallerDownload},
+			Timestamp: &r.status.LastAPITokenProbeTimestamp,
+		}}
+		updateCR = r.removePaaSTokenCondition() || updateCR
+	} else {
+		tokens = []tokenConfig{
+			{
+				Type:      dynatracev1beta1.APITokenConditionType,
+				Key:       dtclient.DynatraceApiToken,
+				Value:     r.ApiToken,
+				Scopes:    []string{dtclient.TokenScopeDataExport},
+				Timestamp: &r.status.LastAPITokenProbeTimestamp,
+			},
+			{
+				Type:      dynatracev1beta1.PaaSTokenConditionType,
+				Key:       dtclient.DynatracePaasToken,
+				Value:     r.PaasToken,
+				Scopes:    []string{dtclient.TokenScopeInstallerDownload},
+				Timestamp: &r.status.LastPaaSTokenProbeTimestamp,
+			}}
 	}
 
-	if updateSecret {
-		if err := r.Client.Update(ctx, secret); err != nil {
-			return dtc, updateCR, fmt.Errorf("failed to update secret: %s", err)
-		}
+	for _, token := range tokens {
+		updateCR = r.CheckToken(dtc, token) || updateCR
 	}
 
 	return dtc, updateCR, nil
+}
+
+func (r *DynatraceClientReconciler) CheckToken(dtc dtclient.Client, token tokenConfig) bool {
+	if strings.TrimSpace(token.Value) != token.Value {
+		return r.setAndLogCondition(&r.status.Conditions, metav1.Condition{
+			Type:    token.Type,
+			Status:  metav1.ConditionFalse,
+			Reason:  dynatracev1beta1.ReasonTokenUnauthorized,
+			Message: fmt.Sprintf("Token on secret %s has leading and/or trailing spaces", r.secretKey),
+		})
+	}
+
+	// At this point, we can query the Dynatrace API to verify whether our tokens are correct. To avoid excessive requests,
+	// we wait at least 5 mins between proves.
+	if *token.Timestamp != nil && r.Now.Time.Before((*token.Timestamp).Add(5*time.Minute)) {
+		oldCondition := meta.FindStatusCondition(r.status.Conditions, token.Type)
+		if oldCondition.Reason != dynatracev1beta1.ReasonTokenReady {
+			r.ValidTokens = false
+		}
+		return false
+	}
+
+	nowCopy := r.Now
+	*token.Timestamp = &nowCopy
+	ss, err := dtc.GetTokenScopes(token.Value)
+
+	var serr dtclient.ServerError
+	if ok := errors.As(err, &serr); ok && serr.Code == http.StatusUnauthorized {
+		r.setAndLogCondition(&r.status.Conditions, metav1.Condition{
+			Type:    token.Type,
+			Status:  metav1.ConditionFalse,
+			Reason:  dynatracev1beta1.ReasonTokenUnauthorized,
+			Message: fmt.Sprintf("Token on secret %s unauthorized", r.secretKey),
+		})
+		return true
+	}
+
+	if err != nil {
+		r.setAndLogCondition(&r.status.Conditions, metav1.Condition{
+			Type:    token.Type,
+			Status:  metav1.ConditionFalse,
+			Reason:  dynatracev1beta1.ReasonTokenError,
+			Message: fmt.Sprintf("error when querying token on secret %s: %v", r.secretKey, err),
+		})
+		return true
+	}
+
+	missingScopes := make([]string, 0)
+	for _, s := range token.Scopes {
+		if !ss.Contains(s) {
+			missingScopes = append(missingScopes, s)
+		}
+	}
+	if len(missingScopes) > 0 {
+		r.setAndLogCondition(&r.status.Conditions, metav1.Condition{
+			Type:    token.Type,
+			Status:  metav1.ConditionFalse,
+			Reason:  dynatracev1beta1.ReasonTokenScopeMissing,
+			Message: fmt.Sprintf("Token on secret %s missing scopes [%s]", r.secretKey, strings.Join(missingScopes, ", ")),
+		})
+		return true
+	}
+
+	r.setAndLogCondition(&r.status.Conditions, metav1.Condition{
+		Type:    token.Type,
+		Status:  metav1.ConditionTrue,
+		Reason:  dynatracev1beta1.ReasonTokenReady,
+		Message: "Ready",
+	})
+	return true
+}
+
+func (r *DynatraceClientReconciler) removePaaSTokenCondition() bool {
+	if meta.FindStatusCondition(r.status.Conditions, dynatracev1beta1.PaaSTokenConditionType) != nil {
+		meta.RemoveStatusCondition(&r.status.Conditions, dynatracev1beta1.PaaSTokenConditionType)
+		return true
+	}
+	return false
 }
 
 func (r *DynatraceClientReconciler) getSecret(ctx context.Context, instance *dynatracev1beta1.DynaKube) (*corev1.Secret, error) {
@@ -245,12 +239,12 @@ func (r *DynatraceClientReconciler) setTokens(secret *corev1.Secret) {
 	}
 }
 
-func (r *DynatraceClientReconciler) setAndLogCondition(conditions *[]metav1.Condition, condition metav1.Condition, dkName string) bool {
+func (r *DynatraceClientReconciler) setAndLogCondition(conditions *[]metav1.Condition, condition metav1.Condition) bool {
 	c := meta.FindStatusCondition(*conditions, condition.Type)
 
 	if condition.Reason != dynatracev1beta1.ReasonTokenReady {
 		r.ValidTokens = false
-		log.Info("problem with token detected", "dynakube", dkName, "token", condition.Type,
+		log.Info("problem with token detected", "dynakube", r.dkName, "token", condition.Type,
 			"msg", condition.Message)
 	}
 
@@ -258,6 +252,7 @@ func (r *DynatraceClientReconciler) setAndLogCondition(conditions *[]metav1.Cond
 		return false
 	}
 
+	condition.LastTransitionTime = r.Now
 	meta.SetStatusCondition(conditions, condition)
 	return true
 }

@@ -28,6 +28,9 @@ type Reconciler struct {
 }
 
 func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, apiToken, paasToken string) *Reconciler {
+	if paasToken == "" {
+		paasToken = apiToken
+	}
 	return &Reconciler{
 		Client:    clt,
 		apiReader: apiReader,

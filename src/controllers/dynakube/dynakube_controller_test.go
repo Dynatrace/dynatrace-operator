@@ -126,7 +126,6 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, secret)
-		assert.Equal(t, string(secret.Data[dtclient.DynatracePaasToken]), testAPIToken)
 		assert.Equal(t, string(secret.Data[dtclient.DynatraceApiToken]), testAPIToken)
 	})
 }

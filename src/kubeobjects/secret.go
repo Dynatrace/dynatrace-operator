@@ -83,8 +83,7 @@ func NewTokens(secret *corev1.Secret) (*Tokens, error) {
 
 func verifySecret(secret *corev1.Secret) error {
 	for _, token := range []string{
-		dtclient.DynatraceApiToken,
-		dtclient.DynatracePaasToken} {
+		dtclient.DynatraceApiToken} {
 		_, err := ExtractToken(secret, token)
 		if err != nil {
 			return errors.Errorf("invalid secret %s, %s", secret.Name, err)

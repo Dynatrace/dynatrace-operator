@@ -44,7 +44,11 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 	}
 
 	if r.paasToken == "" {
-		return nil, fmt.Errorf("token secret does not contain a paas token, cannot generate docker config")
+		if r.apiToken != "" {
+			r.paasToken = r.apiToken
+		} else {
+			return nil, fmt.Errorf("token secret does not contain a paas or api token, cannot generate docker config")
+		}
 	}
 
 	dockerConfig := newDockerConfigWithAuth(connectionInfo.TenantUUID,

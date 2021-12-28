@@ -5,9 +5,11 @@ import (
 	"sort"
 	"strconv"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 const (
@@ -40,10 +42,16 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 }
 
 func (dsInfo *builderInfo) setInstallerEnvs(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
+	var key string
+	if meta.FindStatusCondition(dsInfo.instance.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType) != nil {
+		key = dtclient.DynatracePaasToken
+	} else {
+		key = dtclient.DynatraceApiToken
+	}
 	envVarMap = setDefaultValueSource(envVarMap, oneagentDownloadToken, &corev1.EnvVarSource{
 		SecretKeyRef: &corev1.SecretKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{Name: dsInfo.instance.Tokens()},
-			Key:                  dtclient.DynatracePaasToken,
+			Key:                  key,
 		},
 	})
 	envVarMap = setDefaultValue(envVarMap, oneagentInstallScript, dsInfo.installerUrl())
