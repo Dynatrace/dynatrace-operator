@@ -82,31 +82,73 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 }
 
 func TestStatefulSet_TemplateSpec(t *testing.T) {
-	instance := buildTestInstance()
-	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-	templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties,
-		"", "", "", "", "", nil, nil, nil))
+	checkCoreProperties := func(instance *dynatracev1beta1.DynaKube, templateSpec *corev1.PodSpec) {
+		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 
-	assert.NotEqual(t, corev1.PodSpec{}, templateSpec)
-	assert.NotEmpty(t, templateSpec.Containers)
-	assert.Equal(t, capabilityProperties.NodeSelector, templateSpec.NodeSelector)
+		assert.NotEqual(t, corev1.PodSpec{}, templateSpec)
+		assert.NotEmpty(t, templateSpec.Containers)
+		assert.Equal(t, capabilityProperties.NodeSelector, templateSpec.NodeSelector)
 
-	assert.NotEmpty(t, templateSpec.Affinity)
-	assert.NotEmpty(t, templateSpec.Affinity.NodeAffinity)
-	assert.NotEmpty(t, templateSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
-	assert.NotEmpty(t, templateSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
-	assert.Contains(t, templateSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms,
-		corev1.NodeSelectorTerm{MatchExpressions: kubeobjects.AffinityNodeRequirement()})
+		assert.NotEmpty(t, templateSpec.Affinity)
+		assert.NotEmpty(t, templateSpec.Affinity.NodeAffinity)
+		assert.NotEmpty(t, templateSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
+		assert.NotEmpty(t, templateSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms)
+		assert.Contains(t, templateSpec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms,
+			corev1.NodeSelectorTerm{MatchExpressions: kubeobjects.AffinityNodeRequirement()})
 
-	assert.Equal(t, capabilityProperties.Tolerations, templateSpec.Tolerations)
-	assert.Equalf(t, instance.NeedsStatsd(), len(templateSpec.Volumes) > 0,
-		"Expected that there are no volumes iff StatsD is disabled",
-	)
-	assert.Equalf(t, instance.NeedsStatsd(), kubeobjects.VolumeIsDefined(templateSpec.Volumes, eecAuthToken),
-		"Expected that volume mount %s has a predefined pod volume", eecAuthToken,
-	)
-	assert.NotEmpty(t, templateSpec.ImagePullSecrets)
-	assert.Contains(t, templateSpec.ImagePullSecrets, corev1.LocalObjectReference{Name: instance.Name + dtpullsecret.PullSecretSuffix})
+		assert.Equal(t, capabilityProperties.Tolerations, templateSpec.Tolerations)
+
+		assert.NotEmpty(t, templateSpec.ImagePullSecrets)
+		assert.Contains(t, templateSpec.ImagePullSecrets, corev1.LocalObjectReference{Name: instance.Name + dtpullsecret.PullSecretSuffix})
+	}
+
+	checkVolumeMounts := func(expected bool, templateSpec *corev1.PodSpec) {
+		assert.Equalf(t, expected, len(templateSpec.Volumes) > 0,
+			"Expected that there are no volumes iff StatsD is disabled",
+		)
+		assert.Equalf(t, expected, kubeobjects.VolumeIsDefined(templateSpec.Volumes, "auth-tokens"),
+			"Expected that volume mount %s has a predefined pod volume", "auth-tokens",
+		)
+		assert.Equalf(t, expected, kubeobjects.VolumeIsDefined(templateSpec.Volumes, "ds-metadata"),
+			"Expected that volume mount %s has a predefined pod volume", "ds-metadata",
+		)
+		assert.Equalf(t, expected, kubeobjects.VolumeIsDefined(templateSpec.Volumes, "extensions-logs"),
+			"Expected that volume mount %s has a predefined pod volume", "extensions-logs",
+		)
+		assert.Equalf(t, expected, kubeobjects.VolumeIsDefined(templateSpec.Volumes, "statsd-logs"),
+			"Expected that volume mount %s has a predefined pod volume", "statsd-logs",
+		)
+	}
+
+	t.Run("DynaKube without StatsD", func(t *testing.T) {
+		instance := buildTestInstance()
+		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
+		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "test-feature", "", "", nil, nil, nil))
+
+		checkCoreProperties(instance, &templateSpec)
+
+		assert.False(t, instance.NeedsStatsd())
+		checkVolumeMounts(false, &templateSpec)
+	})
+
+	t.Run("DynaKube with StatsD enabled", func(t *testing.T) {
+		instance := buildTestInstance()
+		if !instance.NeedsStatsd() {
+			instance.Spec.ActiveGate.Capabilities = append(instance.Spec.ActiveGate.Capabilities,
+				dynatracev1beta1.StatsdIngestCapability.DisplayName,
+			)
+		}
+
+		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
+		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "test-feature", "", "", nil, nil, nil))
+
+		checkCoreProperties(instance, &templateSpec)
+
+		assert.True(t, instance.NeedsStatsd())
+		checkVolumeMounts(true, &templateSpec)
+	})
 }
 
 func TestStatefulSet_Container(t *testing.T) {
@@ -127,8 +169,14 @@ func TestStatefulSet_Container(t *testing.T) {
 	assert.Equalf(t, instance.NeedsStatsd(), len(activeGateContainer.VolumeMounts) > 0,
 		"Expected that there are no volume mounts iff StatsD is disabled",
 	)
-	assert.Equalf(t, instance.NeedsStatsd(), kubeobjects.MountPathIsIn(activeGateContainer.VolumeMounts, "/var/lib/dynatrace/gateway/config"),
-		"Expected that ActiveGate container defines mount point %s if and only if StatsD ingest is enabled", "/var/lib/dynatrace/gateway/config",
+	assert.Equalf(t, instance.NeedsStatsd(), kubeobjects.MountPathIsIn(activeGateContainer.VolumeMounts, activeGateConfigDir),
+		"Expected that ActiveGate container defines mount point %s if and only if StatsD ingest is enabled", activeGateConfigDir,
+	)
+	assert.Equalf(t, instance.NeedsStatsd(), kubeobjects.MountPathIsIn(activeGateContainer.VolumeMounts, extensionsLogsDir+"/eec"),
+		"Expected that ActiveGate container defines mount point %s if and only if StatsD ingest is enabled", extensionsLogsDir+"/eec",
+	)
+	assert.Equalf(t, instance.NeedsStatsd(), kubeobjects.MountPathIsIn(activeGateContainer.VolumeMounts, extensionsLogsDir+"/statsd"),
+		"Expected that ActiveGate container defines mount point %s if and only if StatsD ingest is enabled", extensionsLogsDir+"/statsd",
 	)
 	assert.NotNil(t, activeGateContainer.ReadinessProbe)
 }

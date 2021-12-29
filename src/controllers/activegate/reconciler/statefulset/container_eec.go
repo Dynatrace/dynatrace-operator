@@ -11,6 +11,7 @@ import (
 
 const eecIngestPortName = "eec-http"
 const eecIngestPort = 14599
+const extensionsLogsDir = "/var/lib/dynatrace/remotepluginmodule/log/extensions"
 
 const activeGateInternalCommunicationPort = 9999
 
@@ -78,6 +79,12 @@ func (eec *ExtensionController) BuildVolumes() []corev1.Volume {
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
+		{
+			Name: "extensions-logs",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
 	}
 }
 
@@ -105,10 +112,12 @@ func (eec *ExtensionController) buildCommand() []string {
 
 func (eec *ExtensionController) buildVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
-		{Name: eecAuthToken, MountPath: "/var/lib/dynatrace/gateway/config"},
+		{Name: eecAuthToken, MountPath: activeGateConfigDir},
 		{Name: dataSourceStartupArguments, MountPath: "/mnt/dsexecargs"},
 		{Name: dataSourceAuthToken, MountPath: "/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources"},
 		{Name: dataSourceMetadata, MountPath: "/opt/dynatrace/remotepluginmodule/agent/datasources/statsd", ReadOnly: true},
+		{Name: "extensions-logs", MountPath: extensionsLogsDir},
+		{Name: "statsd-logs", MountPath: statsDLogsDir, ReadOnly: true},
 	}
 }
 

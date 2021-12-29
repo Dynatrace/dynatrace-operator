@@ -30,6 +30,8 @@ const (
 	DTNetworkZone        = "DT_NETWORK_ZONE"
 	DTGroup              = "DT_GROUP"
 	DTDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
+
+	activeGateConfigDir = "/var/lib/dynatrace/gateway/config"
 )
 
 type statefulSetProperties struct {
@@ -254,7 +256,9 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 
 	if stsProperties.NeedsStatsd() {
 		volumeMounts = append(volumeMounts,
-			corev1.VolumeMount{Name: eecAuthToken, MountPath: "/var/lib/dynatrace/gateway/config"},
+			corev1.VolumeMount{Name: eecAuthToken, MountPath: activeGateConfigDir},
+			corev1.VolumeMount{Name: "extensions-logs", MountPath: extensionsLogsDir + "/eec", ReadOnly: true},
+			corev1.VolumeMount{Name: "statsd-logs", MountPath: extensionsLogsDir + "/statsd", ReadOnly: true},
 		)
 	}
 
