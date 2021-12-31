@@ -34,11 +34,12 @@ var activeGateCapabilities = map[dynatracev1beta1.CapabilityDisplayName]baseFunc
 }
 
 type Configuration struct {
-	SetDnsEntryPoint     bool
-	SetReadinessPort     bool
-	SetCommunicationPort bool
-	CreateService        bool
-	ServiceAccountOwner  string
+	SetDnsEntryPoint       bool
+	SetReadinessPort       bool
+	SetCommunicationPort   bool
+	CreateService          bool
+	CreateEecRuntimeConfig bool
+	ServiceAccountOwner    string
 }
 
 type Capability interface {
@@ -169,6 +170,9 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 		if !mc.CreateService {
 			mc.CreateService = capGen.CreateService
 		}
+		if !mc.CreateEecRuntimeConfig {
+			mc.CreateEecRuntimeConfig = capGen.CreateEecRuntimeConfig
+		}
 		if !mc.SetCommunicationPort {
 			mc.SetCommunicationPort = capGen.SetCommunicationPort
 		}
@@ -258,10 +262,11 @@ func routingBase() *capabilityBase {
 		shortName: dynatracev1beta1.RoutingCapability.ShortName,
 		argName:   dynatracev1beta1.RoutingCapability.ArgumentName,
 		Configuration: Configuration{
-			SetDnsEntryPoint:     true,
-			SetReadinessPort:     true,
-			SetCommunicationPort: true,
-			CreateService:        true,
+			SetDnsEntryPoint:       true,
+			SetReadinessPort:       true,
+			SetCommunicationPort:   true,
+			CreateService:          true,
+			CreateEecRuntimeConfig: false,
 		},
 	}
 	return &c
@@ -272,10 +277,11 @@ func metricsIngestBase() *capabilityBase {
 		shortName: dynatracev1beta1.MetricsIngestCapability.ShortName,
 		argName:   dynatracev1beta1.MetricsIngestCapability.ArgumentName,
 		Configuration: Configuration{
-			SetDnsEntryPoint:     true,
-			SetReadinessPort:     true,
-			SetCommunicationPort: true,
-			CreateService:        true,
+			SetDnsEntryPoint:       true,
+			SetReadinessPort:       true,
+			SetCommunicationPort:   true,
+			CreateService:          true,
+			CreateEecRuntimeConfig: false,
 		},
 	}
 	return &c
@@ -300,10 +306,11 @@ func statsdIngestBase() *capabilityBase {
 		shortName: dynatracev1beta1.StatsdIngestCapability.ShortName,
 		argName:   dynatracev1beta1.StatsdIngestCapability.ArgumentName,
 		Configuration: Configuration{
-			SetDnsEntryPoint:     true,
-			SetReadinessPort:     true,
-			SetCommunicationPort: true,
-			CreateService:        true,
+			SetDnsEntryPoint:       true,
+			SetReadinessPort:       true,
+			SetCommunicationPort:   true,
+			CreateService:          true,
+			CreateEecRuntimeConfig: true,
 		},
 	}
 	return &c

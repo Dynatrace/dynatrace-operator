@@ -2,6 +2,7 @@ package statefulset
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -88,7 +89,26 @@ func (eec *ExtensionController) BuildVolumes() []corev1.Volume {
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
+		{
+			Name: "eec-config",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: BuildEecConfigMapName(eec.stsProperties.Name, eec.stsProperties.feature),
+					},
+				},
+			},
+		},
 	}
+}
+
+func BuildEecConfigMapName(instanceName string, module string) string {
+	if len(instanceName) == 0 || len(module) == 0 {
+		err := fmt.Errorf("empty instance or module name not allowed (instance: %s, module: %s)", instanceName, module)
+		log.Error(err, "problem building EEC config map name")
+		return ""
+	}
+	return regexp.MustCompile(`[^\w\-]`).ReplaceAllString(instanceName+"-"+module+"-eec-config", "_")
 }
 
 func (eec *ExtensionController) image() string {
@@ -121,6 +141,7 @@ func (eec *ExtensionController) buildVolumeMounts() []corev1.VolumeMount {
 		{Name: dataSourceMetadata, MountPath: statsdMetadataMountPoint, ReadOnly: true},
 		{Name: eecLogs, MountPath: extensionsLogsDir},
 		{Name: dataSourceStatsdLogs, MountPath: statsDLogsDir, ReadOnly: true},
+		{Name: "eec-config", MountPath: "/var/lib/dynatrace/remotepluginmodule/agent/conf/runtime"},
 	}
 }
 
