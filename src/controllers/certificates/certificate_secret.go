@@ -10,7 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -76,7 +76,7 @@ func getDomain(namespace string) string {
 	return fmt.Sprintf("%s.%s.svc", webhook.DeploymentName, namespace)
 }
 
-func (certSecret *certificateSecret) areConfigsValid(configs []*v1.WebhookClientConfig) bool {
+func (certSecret *certificateSecret) areConfigsValid(configs []*admissionregistrationv1.WebhookClientConfig) bool {
 	for i := range configs {
 		if configs[i] != nil && !certSecret.isClientConfigValid(*configs[i]) {
 			return false
@@ -85,7 +85,7 @@ func (certSecret *certificateSecret) areConfigsValid(configs []*v1.WebhookClient
 	return true
 }
 
-func (certSecret *certificateSecret) isClientConfigValid(clientConfig v1.WebhookClientConfig) bool {
+func (certSecret *certificateSecret) isClientConfigValid(clientConfig admissionregistrationv1.WebhookClientConfig) bool {
 	return len(clientConfig.CABundle) != 0 && bytes.Equal(clientConfig.CABundle, certSecret.certificates.Data[RootCert])
 }
 
@@ -108,7 +108,7 @@ func (certSecret *certificateSecret) createOrUpdateIfNecessary(ctx context.Conte
 	return errors.WithStack(err)
 }
 
-func (certSecret *certificateSecret) updateClientConfigurations(ctx context.Context, clt client.Client, webhookClientConfigs []*v1.WebhookClientConfig, webhookConfig client.Object) error {
+func (certSecret *certificateSecret) updateClientConfigurations(ctx context.Context, clt client.Client, webhookClientConfigs []*admissionregistrationv1.WebhookClientConfig, webhookConfig client.Object) error {
 	if webhookConfig == nil || reflect.ValueOf(webhookConfig).IsNil() {
 		return nil
 	}

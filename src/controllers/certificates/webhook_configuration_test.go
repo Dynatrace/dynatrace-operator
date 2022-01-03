@@ -4,16 +4,16 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 )
 
-func createTestMutatingWebhookConfig(_ *testing.T) *v1.MutatingWebhookConfiguration {
-	return &v1.MutatingWebhookConfiguration{
-		Webhooks: []v1.MutatingWebhook{
+func createTestMutatingWebhookConfig(_ *testing.T) *admissionregistrationv1.MutatingWebhookConfiguration {
+	return &admissionregistrationv1.MutatingWebhookConfiguration{
+		Webhooks: []admissionregistrationv1.MutatingWebhook{
 			{},
-			{ClientConfig: v1.WebhookClientConfig{}},
+			{ClientConfig: admissionregistrationv1.WebhookClientConfig{}},
 			{
-				ClientConfig: v1.WebhookClientConfig{
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					CABundle: []byte{0, 1, 2, 3, 4},
 				},
 			},
@@ -21,13 +21,13 @@ func createTestMutatingWebhookConfig(_ *testing.T) *v1.MutatingWebhookConfigurat
 	}
 }
 
-func createTestValidatingWebhookConfig(_ *testing.T) *v1.ValidatingWebhookConfiguration {
-	return &v1.ValidatingWebhookConfiguration{
-		Webhooks: []v1.ValidatingWebhook{
+func createTestValidatingWebhookConfig(_ *testing.T) *admissionregistrationv1.ValidatingWebhookConfiguration {
+	return &admissionregistrationv1.ValidatingWebhookConfiguration{
+		Webhooks: []admissionregistrationv1.ValidatingWebhook{
 			{},
-			{ClientConfig: v1.WebhookClientConfig{}},
+			{ClientConfig: admissionregistrationv1.WebhookClientConfig{}},
 			{
-				ClientConfig: v1.WebhookClientConfig{
+				ClientConfig: admissionregistrationv1.WebhookClientConfig{
 					CABundle: []byte{0, 1, 2, 3, 4},
 				},
 			},

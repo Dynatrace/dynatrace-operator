@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,7 +50,7 @@ func TestIsRecent(t *testing.T) {
 	})
 	t.Run(`false if only one is nil`, func(t *testing.T) {
 		certSecret := newCertificateSecret()
-		certSecret.secret = &v1.Secret{}
+		certSecret.secret = &corev1.Secret{}
 
 		assert.False(t, certSecret.isRecent())
 
@@ -61,7 +61,7 @@ func TestIsRecent(t *testing.T) {
 	})
 	t.Run(`true if data is equal, false otherwise`, func(t *testing.T) {
 		certSecret := newCertificateSecret()
-		secret := v1.Secret{
+		secret := corev1.Secret{
 			Data: map[string][]byte{testKey: testValue1},
 		}
 		certs := Certs{
@@ -121,7 +121,7 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 
 		assert.NoError(t, err)
 
-		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: buildSecretName()}, &v1.Secret{})
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: buildSecretName()}, &corev1.Secret{})
 
 		assert.Error(t, err)
 		assert.True(t, k8serrors.IsNotFound(err))
@@ -129,7 +129,7 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 	t.Run(`create if secret does not exist`, func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		certSecret := newCertificateSecret()
-		certSecret.secret = &v1.Secret{
+		certSecret.secret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      buildSecretName(),
 				Namespace: testNamespace,
@@ -143,7 +143,7 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 
 		assert.NoError(t, err)
 
-		newSecret := v1.Secret{}
+		newSecret := corev1.Secret{}
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: buildSecretName(), Namespace: testNamespace}, &newSecret)
 
 		assert.NoError(t, err)
@@ -153,7 +153,7 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 	t.Run(`update if secret exists`, func(t *testing.T) {
 		fakeClient := fake.NewClient()
 		certSecret := newCertificateSecret()
-		certSecret.secret = &v1.Secret{
+		certSecret.secret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      buildSecretName(),
 				Namespace: testNamespace,
@@ -167,7 +167,7 @@ func TestCreateOrUpdateIfNecessary(t *testing.T) {
 
 		require.NoError(t, err)
 
-		newSecret := v1.Secret{}
+		newSecret := corev1.Secret{}
 		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: buildSecretName(), Namespace: testNamespace}, &newSecret)
 
 		require.NoError(t, err)
@@ -207,7 +207,7 @@ func TestUpdateClientConfigurations(t *testing.T) {
 			},
 		},
 	}
-	secret := v1.Secret{
+	secret := corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      buildSecretName(),
 			Namespace: testNamespace,
