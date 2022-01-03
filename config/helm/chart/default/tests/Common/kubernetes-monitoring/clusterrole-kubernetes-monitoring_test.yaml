@@ -1,0 +1,92 @@
+suite: test clusterrole for kubernetes monitoring
+templates:
+  - Common/kubernetes-monitoring/clusterrole-kubernetes-monitoring.yaml
+tests:
+  - it: should exist
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-kubernetes-monitoring
+      - isNotEmpty:
+          path: metadata.labels
+      - isNotEmpty:
+          path: rules
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - nodes
+              - pods
+              - namespaces
+              - replicationcontrollers
+              - events
+              - resourcequotas
+              - pods/proxy
+              - nodes/proxy
+              - services
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - batch
+            resources:
+              - jobs
+              - cronjobs
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - apps
+            resources:
+              - deployments
+              - replicasets
+              - statefulsets
+              - daemonsets
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - apps.openshift.io
+            resources:
+              - deploymentconfigs
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - config.openshift.io
+            resources:
+              - clusterversions
+            verbs:
+              - list
+              - watch
+              - get
+      - contains:
+          path: rules
+          content:
+            nonResourceURLs:
+              - /metrics
+              - /version
+              - /readyz
+              - /healthz
+            verbs:
+              - get

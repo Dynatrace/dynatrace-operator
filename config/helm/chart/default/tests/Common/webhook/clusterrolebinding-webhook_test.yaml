@@ -1,0 +1,27 @@
+suit: test clusterrolebinding for the webhook
+templates:
+  - Common/webhook/clusterrolebinding-webhook.yaml
+tests:
+  - it: should exist
+    set:
+      platform: kubernetes
+    asserts:
+      - isKind:
+          of: ClusterRoleBinding
+      - equal:
+          path: metadata.name
+          value: dynatrace-webhook
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: subjects
+          value:
+            - kind: ServiceAccount
+              name: dynatrace-webhook
+              namespace: NAMESPACE
+      - equal:
+          path: roleRef
+          value:
+            kind: ClusterRole
+            name: dynatrace-webhook
+            apiGroup: rbac.authorization.k8s.io
