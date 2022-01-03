@@ -33,7 +33,7 @@ To install the Dynatrace Operator via Helm run the following command:
 
 ### Adding Dynatrace Helm repository
 ```
-helm repo add dynatrace https://raw.githubusercontent.com/Dynatrace/helm-charts/master/repos/stable
+helm repo add dynatrace https://raw.githubusercontent.com/Dynatrace/dynatrace-operator/master/repos/stable
 ```
 
 ### Prepare tokens

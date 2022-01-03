@@ -26,4 +26,4 @@ maintainers:
   - name: mmayr-at
     email: michael.mayr@dynatrace.com
 sources:
-  - https://github.com/Dynatrace/helm-charts
+  - https://github.com/Dynatrace/dynatrace-operator
