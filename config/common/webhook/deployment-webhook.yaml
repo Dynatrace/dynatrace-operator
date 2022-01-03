@@ -57,6 +57,8 @@ spec:
               path: /healthz
               port: server-port
               scheme: HTTPS
+            initialDelaySeconds: 60
+            periodSeconds: 10
           ports:
             - name: metrics
               containerPort: 8383
