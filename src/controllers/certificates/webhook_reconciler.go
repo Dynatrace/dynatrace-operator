@@ -64,11 +64,15 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 
 	mutatingWebhookConfiguration, err := r.getMutatingWebhookConfiguration(ctx)
 	if err != nil {
+		// Generation must not be skipped because webhook startup routine listens for the secret
+		// See cmd/operator/manager.go and cmd/operator/watcher.go
 		log.Info("could not find mutating webhook configuration, this is normal when deployed using OLM")
 	}
 
 	validatingWebhookConfiguration, err := r.getValidatingWebhookConfiguration(ctx)
 	if err != nil {
+		// Generation must not be skipped because webhook startup routine listens for the secret
+		// See cmd/operator/manager.go and cmd/operator/watcher.go
 		log.Info("could not find validating webhook configuration, this is normal when deployed using OLM")
 	}
 
