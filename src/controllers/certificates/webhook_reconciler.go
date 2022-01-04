@@ -1,10 +1,7 @@
 package certificates
 
 import (
-	"bytes"
 	"context"
-	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/Dynatrace/dynatrace-operator/src/eventfilter"
@@ -14,8 +11,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -67,64 +62,62 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 	r.namespace = request.Namespace
 	r.ctx = ctx
 
-	secret, err := r.getSecret()
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	createSecret := false
-	if secret == nil {
-		createSecret = true
-		secret = &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      r.buildSecretName(),
-				Namespace: r.namespace,
-			},
-			Data: map[string][]byte{},
-		}
-	}
-
-	certs := Certs{
-		Domain:  r.getDomain(),
-		SrcData: secret.Data,
-		Now:     time.Now(),
-	}
-	if err = certs.ValidateCerts(); err != nil {
-		return reconcile.Result{}, err
-	}
-
 	mutatingWebhookConfiguration, err := r.getMutatingWebhookConfiguration(ctx)
 	if err != nil {
-		return reconcile.Result{}, err
+		// Generation must not be skipped because webhook startup routine listens for the secret
+		// See cmd/operator/manager.go and cmd/operator/watcher.go
+		log.Info("could not find mutating webhook configuration, this is normal when deployed using OLM")
 	}
+
 	validatingWebhookConfiguration, err := r.getValidatingWebhookConfiguration(ctx)
 	if err != nil {
-		return reconcile.Result{}, err
+		// Generation must not be skipped because webhook startup routine listens for the secret
+		// See cmd/operator/manager.go and cmd/operator/watcher.go
+		log.Info("could not find validating webhook configuration, this is normal when deployed using OLM")
 	}
 
-	isWebhookCertificateValid := r.checkMutatingWebhookConfigurations(
-		mutatingWebhookConfiguration, validatingWebhookConfiguration, certs.Data[RootCert])
+	certSecret := newCertificateSecret()
 
-	isSecretOutdated := false
-	if !reflect.DeepEqual(certs.Data, secret.Data) {
-		// certificate needs to be updated
-		secret.Data = certs.Data
-		isSecretOutdated = true
-	} else if isWebhookCertificateValid {
+	err = certSecret.setSecretFromReader(r.ctx, r.apiReader, r.namespace)
+	if err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
+	}
+
+	err = certSecret.validateCertificates(r.namespace)
+	if err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
+	}
+
+	mutatingWebhookConfigs := getClientConfigsFromMutatingWebhook(mutatingWebhookConfiguration)
+	validatingWebhookConfigs := getClientConfigsFromValidatingWebhook(validatingWebhookConfiguration)
+
+	areMutatingWebhookConfigsValid := certSecret.areConfigsValid(mutatingWebhookConfigs)
+	areValidatingWebhookConfigsValid := certSecret.areConfigsValid(validatingWebhookConfigs)
+
+	if certSecret.isRecent() &&
+		areMutatingWebhookConfigsValid &&
+		areValidatingWebhookConfigsValid {
 		log.Info("secret for certificates up to date, skipping update")
 		r.cancelMgr()
 		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 	}
 
-	if isSecretOutdated {
-		err = r.createOrUpdateSecret(ctx, secret, createSecret)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
+	if err = certSecret.createOrUpdateIfNecessary(r.ctx, r.client); err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
 	}
-	err = r.updateWebhookConfigurations(ctx, secret, mutatingWebhookConfiguration, validatingWebhookConfiguration)
+
+	if err = r.updateCRDConfiguration(certSecret.secret); err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
+	}
+
+	err = certSecret.updateClientConfigurations(r.ctx, r.client, mutatingWebhookConfigs, mutatingWebhookConfiguration)
 	if err != nil {
-		return reconcile.Result{}, err
+		return reconcile.Result{}, errors.WithStack(err)
+	}
+
+	err = certSecret.updateClientConfigurations(r.ctx, r.client, validatingWebhookConfigs, validatingWebhookConfiguration)
+	if err != nil {
+		return reconcile.Result{}, errors.WithStack(err)
 	}
 
 	r.cancelMgr()
@@ -133,58 +126,9 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 
 func (r *ReconcileWebhookCertificates) cancelMgr() {
 	if r.cancelMgrFunc != nil {
-		log.Info("stopping manager after certificate creation")
+		log.Info("stopping manager after certificates creation")
 		r.cancelMgrFunc()
 	}
-}
-
-func (r *ReconcileWebhookCertificates) createOrUpdateSecret(ctx context.Context, secret *corev1.Secret, createSecret bool) error {
-	if createSecret {
-		log.Info("creating certificates secret")
-		err := r.client.Create(ctx, secret)
-		if err != nil {
-			return err
-		}
-		log.Info("created certificates secret")
-	} else {
-		log.Info("updating certificates secret")
-		err := r.client.Update(ctx, secret)
-		if err != nil {
-			return err
-		}
-		log.Info("updated certificates secret")
-	}
-	return nil
-}
-
-func (r *ReconcileWebhookCertificates) updateWebhookConfigurations(ctx context.Context, secret *corev1.Secret,
-	mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration,
-	validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) error {
-
-	// update certificates for webhook configurations
-	log.Info("saving certificates into webhook configurations")
-	for i := range mutatingWebhookConfiguration.Webhooks {
-		if err := r.updateConfiguration(&mutatingWebhookConfiguration.Webhooks[i].ClientConfig, secret); err != nil {
-			return err
-		}
-	}
-	for i := range validatingWebhookConfiguration.Webhooks {
-		if err := r.updateConfiguration(&validatingWebhookConfiguration.Webhooks[i].ClientConfig, secret); err != nil {
-			return err
-		}
-	}
-
-	if err := r.updateCRDConfiguration(ctx, secret); err != nil {
-		return err
-	}
-	if err := r.client.Update(ctx, mutatingWebhookConfiguration); err != nil {
-		return err
-	}
-	if err := r.client.Update(ctx, validatingWebhookConfiguration); err != nil {
-		return err
-	}
-	log.Info("saved certificates into webhook configurations")
-	return nil
 }
 
 func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx context.Context) (
@@ -219,65 +163,10 @@ func (r *ReconcileWebhookCertificates) getValidatingWebhookConfiguration(ctx con
 	return &mutatingWebhook, nil
 }
 
-func (r *ReconcileWebhookCertificates) getSecret() (*corev1.Secret, error) {
-	var oldSecret corev1.Secret
-	err := r.apiReader.Get(r.ctx, client.ObjectKey{Name: r.buildSecretName(), Namespace: r.namespace}, &oldSecret)
-	if k8serrors.IsNotFound(err) {
-		return nil, nil
-	}
-	return &oldSecret, errors.WithStack(err)
-}
-
-func (r *ReconcileWebhookCertificates) buildSecretName() string {
-	return fmt.Sprintf("%s%s", webhook.DeploymentName, secretPostfix)
-}
-
-func (r *ReconcileWebhookCertificates) getDomain() string {
-	return fmt.Sprintf("%s.%s.svc", webhook.DeploymentName, r.namespace)
-}
-
-// checkMutatingWebhookConfigurations checks certificates exist and are valid
-func (r *ReconcileWebhookCertificates) checkMutatingWebhookConfigurations(
-	mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration,
-	validatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration, expectedCert []byte) bool {
-
-	for _, mutatingWebhook := range mutatingWebhookConfiguration.Webhooks {
-		webhookCert := mutatingWebhook.ClientConfig.CABundle
-		if len(webhookCert) == 0 || !bytes.Equal(webhookCert, expectedCert) {
-			return false
-		}
-	}
-
-	for _, validatingWebhook := range validatingWebhookConfiguration.Webhooks {
-		webhookCert := validatingWebhook.ClientConfig.CABundle
-		if len(webhookCert) == 0 || !bytes.Equal(webhookCert, expectedCert) {
-			return false
-		}
-	}
-	return true
-}
-
-func (r *ReconcileWebhookCertificates) updateConfiguration(
-	webhookConfiguration *admissionregistrationv1.WebhookClientConfig, secret *corev1.Secret) error {
-	data, hasData := secret.Data[RootCert]
-	if !hasData {
-		return errors.New(errorCertificatesSecretEmpty)
-	}
-
-	if oldData, hasOldData := secret.Data[RootCertOld]; hasOldData {
-		data = append(data, oldData...)
-	}
-
-	if webhookConfiguration != nil {
-		webhookConfiguration.CABundle = data
-	}
-	return nil
-}
-
-func (r *ReconcileWebhookCertificates) updateCRDConfiguration(ctx context.Context, secret *corev1.Secret) error {
+func (r *ReconcileWebhookCertificates) updateCRDConfiguration(secret *corev1.Secret) error {
 
 	var crd apiv1.CustomResourceDefinition
-	if err := r.apiReader.Get(ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
+	if err := r.apiReader.Get(r.ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
 		return err
 	}
 
@@ -297,7 +186,7 @@ func (r *ReconcileWebhookCertificates) updateCRDConfiguration(ctx context.Contex
 
 	// update crd
 	crd.Spec.Conversion.Webhook.ClientConfig.CABundle = data
-	if err := r.client.Update(ctx, &crd); err != nil {
+	if err := r.client.Update(r.ctx, &crd); err != nil {
 		return err
 	}
 	return nil

@@ -88,3 +88,4 @@ config/deploy/kustomization.yaml
 /config/deploy/openshift/openshift.yaml
 /config/deploy/openshift/openshift-csi.yaml
 /config/deploy/openshift/kustomization.yaml
+.vscode

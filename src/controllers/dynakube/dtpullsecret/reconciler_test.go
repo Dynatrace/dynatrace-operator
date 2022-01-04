@@ -27,15 +27,8 @@ func TestReconciler_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 				Name:      testName,
 			}}
-		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testName,
-			},
-			Data: map[string][]byte{dtclient.DynatracePaasToken: []byte(testPaasToken)},
-		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, secret)
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, "", testPaasToken)
 
 		mockDTC.
 			On("GetConnectionInfo").
@@ -65,7 +58,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				CustomPullSecret: testValue,
 			}}
-		r := NewReconciler(nil, nil, nil, instance, nil)
+		r := NewReconciler(nil, nil, nil, instance, "nil", "")
 		err := r.Reconcile()
 
 		assert.NoError(t, err)
@@ -87,12 +80,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance,
-			&corev1.Secret{
-				Data: map[string][]byte{
-					dtclient.DynatracePaasToken: []byte(testValue),
-				},
-			})
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, "", testValue)
 
 		err := r.Reconcile()
 
@@ -127,12 +115,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			},
 		}
 		fakeClient := fake.NewClient()
-		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance,
-			&corev1.Secret{
-				Data: map[string][]byte{
-					dtclient.DynatracePaasToken: []byte(testValue),
-				},
-			})
+		r := NewReconciler(fakeClient, fakeClient, scheme.Scheme, instance, "", testValue)
 
 		err := r.Reconcile()
 

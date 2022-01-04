@@ -9,6 +9,7 @@ CONNECTION_NAME=""
 CLUSTER_NAME=""
 CLUSTER_NAME_REGEX="^[-_a-zA-Z0-9][-_\.a-zA-Z0-9]*$"
 CLUSTER_NAME_LENGTH=256
+USES_API_AS_PAAS_TOKEN=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -58,8 +59,9 @@ if [ -z "$API_TOKEN" ]; then
 fi
 
 if [ -z "$PAAS_TOKEN" ]; then
-  echo "Error: paas-token not set!"
-  exit 1
+  # using api-token as paas-token
+  PAAS_TOKEN=$API_TOKEN
+  USES_API_AS_PAAS_TOKEN=true
 fi
 
 K8S_ENDPOINT="$("${CLI}" config view --minify -o jsonpath='{.clusters[0].cluster.server}')"
@@ -316,14 +318,16 @@ checkTokenScopes() {
 
   responsePaaS=$(apiRequest "POST" "/v1/tokens/lookup" "${jsonPaaS}")
 
-  if echo "$responsePaaS" | grep -Fq "Token does not exist"; then
-    echo "Error: PaaS token does not exist!"
-    exit 1
-  fi
+  if ! $USES_API_AS_PAAS_TOKEN; then
+    if echo "$responsePaaS" | grep -Fq "Token does not exist"; then
+      echo "Error: PaaS token does not exist!"
+      exit 1
+    fi
 
-  if echo "$responsePaaS" | grep -Fq '"revoked": true'; then
-    echo "Error: PaaS token has been revoked!"
-    exit 1
+    if echo "$responsePaaS" | grep -Fq '"revoked": true'; then
+      echo "Error: PaaS token has been revoked!"
+      exit 1
+    fi
   fi
 }
 
