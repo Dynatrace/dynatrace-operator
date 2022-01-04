@@ -123,6 +123,9 @@ func (r *ReconcileDynaKube) Reconcile(ctx context.Context, request reconcile.Req
 	r.reconcileDynaKube(ctx, dkState, &dkMapper)
 
 	if dkState.Err != nil {
+		if !dkState.ValidTokens {
+			return reconcile.Result{}, fmt.Errorf("paas or api token not valid")
+		}
 		if dkState.Updated || instance.Status.SetPhaseOnError(dkState.Err) {
 			if errClient := r.updateCR(ctx, instance); errClient != nil {
 				return reconcile.Result{}, fmt.Errorf("failed to update CR after failure, original, %s, then: %w", dkState.Err, errClient)
@@ -151,13 +154,18 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 	dtcReconciler := DynatraceClientReconciler{
 		Client:              r.client,
 		DynatraceClientFunc: r.dtcBuildFunc,
-		UpdateAPIToken:      true,
-		UpdatePaaSToken:     true,
 	}
 	dtc, upd, err := dtcReconciler.Reconcile(ctx, dkState.Instance)
 
 	dkState.Update(upd, defaultUpdateInterval, "Token conditions updated")
 	if dkState.Error(err) {
+		log.Error(err, "failed to check tokens")
+		return
+	}
+	dkState.ValidTokens = true
+	if !dtcReconciler.ValidTokens {
+		dkState.ValidTokens = false
+		log.Info("paas or api token not valid", "name", dkState.Instance.GetName())
 		return
 	}
 
@@ -167,13 +175,6 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 	})
 	if dkState.Error(err) {
 		log.Error(err, "could not set Dynakube status")
-		return
-	}
-
-	// Fetch api token secret
-	secret, err := r.getTokenSecret(ctx, dkState.Instance)
-	if err != nil {
-		log.Error(err, "could not find token secret")
 		return
 	}
 
@@ -187,7 +188,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 	}
 
 	err = dtpullsecret.
-		NewReconciler(r.client, r.apiReader, r.scheme, dkState.Instance, secret).
+		NewReconciler(r.client, r.apiReader, r.scheme, dkState.Instance, dtcReconciler.ApiToken, dtcReconciler.PaasToken).
 		Reconcile()
 	if dkState.Error(err) {
 		log.Error(err, "could not reconcile Dynatrace pull secret")
@@ -311,12 +312,6 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *status.Dyna
 	}
 
 	return true
-}
-
-func (r *ReconcileDynaKube) getTokenSecret(ctx context.Context, instance *dynatracev1beta1.DynaKube) (*corev1.Secret, error) {
-	var secret corev1.Secret
-	err := r.client.Get(ctx, client.ObjectKey{Name: instance.Tokens(), Namespace: instance.Namespace}, &secret)
-	return &secret, errors.WithStack(err)
 }
 
 func (r *ReconcileDynaKube) updateCR(ctx context.Context, instance *dynatracev1beta1.DynaKube) error {
