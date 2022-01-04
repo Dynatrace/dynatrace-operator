@@ -94,6 +94,8 @@ const (
 const (
 	TokenScopeInstallerDownload = "InstallerDownload"
 	TokenScopeDataExport        = "DataExport"
+	TokenScopeReadConfig        = "ReadConfig"
+	TokenScopeWriteConfig       = "WriteConfig"
 )
 
 // NewClient creates a REST client for the given API base URL and authentication tokens.
