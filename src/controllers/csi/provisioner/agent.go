@@ -216,10 +216,10 @@ func (installAgentCfg *installAgentConfig) unzip(file afero.File, version, tenan
 		return nil
 	}
 
-	sourceSymlink := installAgentCfg.path.RelativeSymlinkForVersion(version)
-	targetSymlink := installAgentCfg.path.InnerAgentBinaryDirForSymlinkForVersion(tenantUUID, version)
-	log.Info("creating symlink", "source", sourceSymlink, "target", targetSymlink)
-	if err := linker.SymlinkIfPossible(sourceSymlink, targetSymlink); err != nil {
+	relativeSymlinkPath := version
+	symlinkTargetPath := installAgentCfg.path.InnerAgentBinaryDirForSymlinkForVersion(tenantUUID, version)
+	log.Info("creating symlink", "points-to(relative)", relativeSymlinkPath, "location", symlinkTargetPath)
+	if err := linker.SymlinkIfPossible(relativeSymlinkPath, symlinkTargetPath); err != nil {
 		log.Error(err, "symlinking failed", "version", version)
 		return err
 	}
