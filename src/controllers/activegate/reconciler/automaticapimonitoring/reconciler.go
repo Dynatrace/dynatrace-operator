@@ -38,9 +38,6 @@ func (r *AutomaticApiMonitoringReconciler) Reconcile() error {
 }
 
 func (r *AutomaticApiMonitoringReconciler) ensureSettingExists() (string, error) {
-	if r.name == "" {
-		return "", errors.New("no name given")
-	}
 	if r.kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}

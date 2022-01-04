@@ -69,9 +69,6 @@ type constraintViolations []struct {
 }
 
 func (dtc *dynatraceClient) CreateKubernetesSetting(name, kubeSystemUUID, scope string) (string, error) {
-	if name == "" {
-		return "", errors.New("no name given")
-	}
 	if kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}

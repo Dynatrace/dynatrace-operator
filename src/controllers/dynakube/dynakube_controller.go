@@ -314,7 +314,6 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *status.Dyna
 
 	//start automatic config creation
 	if dkState.Instance.Status.KubeSystemUUID != "" &&
-		dkState.Instance.Name != "" &&
 		dkState.Instance.FeatureAutomaticKubernetesApiMonitoring() &&
 		dkState.Instance.KubernetesMonitoringMode() {
 		err := automaticapimonitoring.NewReconciler(dtc, dkState.Instance.Name, dkState.Instance.Status.KubeSystemUUID).
