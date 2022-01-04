@@ -21,10 +21,10 @@ func TestNewDefaultReconiler(t *testing.T) {
 }
 
 func createDefaultReconciler(t *testing.T) *AutomaticApiMonitoringReconciler {
-	return createReconciler(t, testName, testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{TotalCount: 0}, "")
+	return createReconciler(t, testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{TotalCount: 0}, "")
 }
 
-func createReconciler(t *testing.T, name, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string) *AutomaticApiMonitoringReconciler {
+func createReconciler(t *testing.T, uid string, monitoredEntities []dtclient.MonitoredEntity, getSettingsResponse dtclient.GetSettingsResponse, objectID string) *AutomaticApiMonitoringReconciler {
 	mockClient := &dtclient.MockDynatraceClient{}
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
 		Return(monitoredEntities, nil)
@@ -33,7 +33,7 @@ func createReconciler(t *testing.T, name, uid string, monitoredEntities []dtclie
 	mockClient.On("CreateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
 		Return(objectID, nil)
 
-	r := NewReconciler(mockClient, name, uid)
+	r := NewReconciler(mockClient, testName, uid)
 	require.NotNil(t, r)
 	require.NotNil(t, r.dtc)
 
@@ -77,7 +77,7 @@ func TestReconcile(t *testing.T) {
 
 	t.Run(`create setting when no monitored entities are existing`, func(t *testing.T) {
 		// arrange
-		r := createReconciler(t, testName, testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID)
+		r := createReconciler(t, testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID)
 
 		// act
 		actual, err := r.ensureSettingExists()
@@ -90,7 +90,7 @@ func TestReconcile(t *testing.T) {
 	t.Run(`create setting when no settings for the found monitored entities are existing`, func(t *testing.T) {
 		// arrange
 		entities := createMonitoredEntities()
-		r := createReconciler(t, testName, testUID, entities, dtclient.GetSettingsResponse{}, testObjectID)
+		r := createReconciler(t, testUID, entities, dtclient.GetSettingsResponse{}, testObjectID)
 
 		// act
 		actual, err := r.ensureSettingExists()
@@ -103,7 +103,7 @@ func TestReconcile(t *testing.T) {
 	t.Run(`don't create setting when settings for the found monitored entities are existing`, func(t *testing.T) {
 		// arrange
 		entities := createMonitoredEntities()
-		r := createReconciler(t, testName, testUID, entities, dtclient.GetSettingsResponse{TotalCount: 1}, testObjectID)
+		r := createReconciler(t, testUID, entities, dtclient.GetSettingsResponse{TotalCount: 1}, testObjectID)
 
 		// act
 		actual, err := r.ensureSettingExists()
@@ -115,21 +115,9 @@ func TestReconcile(t *testing.T) {
 }
 
 func TestReconcileErrors(t *testing.T) {
-	t.Run(`don't create setting when no name is given`, func(t *testing.T) {
-		// arrange
-		r := createReconciler(t, "", testUID, []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID)
-
-		// act
-		actual, err := r.ensureSettingExists()
-
-		// assert
-		assert.Error(t, err)
-		assert.Equal(t, "", actual)
-	})
-
 	t.Run(`don't create setting when no kube-system uuid is given`, func(t *testing.T) {
 		// arrange
-		r := createReconciler(t, testName, "", []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID)
+		r := createReconciler(t, "", []dtclient.MonitoredEntity{}, dtclient.GetSettingsResponse{}, testObjectID)
 
 		// act
 		actual, err := r.ensureSettingExists()

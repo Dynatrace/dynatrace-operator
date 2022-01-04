@@ -228,24 +228,6 @@ func TestDynatraceClient_CreateKubernetesSetting(t *testing.T) {
 		assert.EqualValues(t, testObjectID, actual)
 	})
 
-	t.Run(`don't create settings for the given monitored entity id because no name is provided`, func(t *testing.T) {
-		// arrange
-		dynatraceServer := httptest.NewServer(dynatraceServerSettingsHandler(1, testObjectID, false))
-		defer dynatraceServer.Close()
-
-		skipCert := SkipCertificateValidation(true)
-		dtc, err := NewClient(dynatraceServer.URL, apiToken, paasToken, skipCert)
-		require.NoError(t, err)
-		require.NotNil(t, dtc)
-
-		// act
-		actual, err := dtc.(*dynatraceClient).CreateKubernetesSetting("", testUID, testScope)
-
-		// assert
-		assert.Error(t, err)
-		assert.Len(t, actual, 0)
-	})
-
 	t.Run(`don't create settings for the given monitored entity id because no kube-system uuid is provided`, func(t *testing.T) {
 		// arrange
 		dynatraceServer := httptest.NewServer(dynatraceServerSettingsHandler(1, testObjectID, false))
