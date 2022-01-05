@@ -3,9 +3,7 @@ package initgeneration
 import (
 	"bytes"
 	"context"
-	_ "embed"
 	"fmt"
-	"text/template"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -18,20 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	notMappedIM              = "-"
-	trustedCASecretField     = "certs"
-	proxyInitSecretField     = "proxy"
-	trustedCAInitSecretField = "ca.pem"
-	initScriptSecretField    = "init.sh"
-)
-
-var (
-	//go:embed init.sh.tmpl
-	scriptContent string
-	scriptTmpl    = template.Must(template.New("initScript").Parse(scriptContent))
 )
 
 // InitGenerator manages the init secret generation for the user namespaces.
@@ -58,6 +42,7 @@ type script struct {
 	TenantUUID    string
 	IMNodes       map[string]string
 	HasHost       bool
+	TlsCert       string
 }
 
 func NewInitGenerator(client client.Client, apiReader client.Reader, ns string) *InitGenerator {
@@ -159,6 +144,15 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, 
 		trustedCAs = []byte(cam.Data[trustedCASecretField])
 	}
 
+	var tlsCert string
+	if dk.HasActiveGateTLS() {
+		var tlsSecret corev1.Secret
+		if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Spec.ActiveGate.TlsSecretName, Namespace: g.namespace}, &tlsSecret); err != nil {
+			return nil, fmt.Errorf("failed to query tls secret: %w", err)
+		}
+		tlsCert = string(tlsSecret.Data[tlsCertKey])
+	}
+
 	return &script{
 		ApiUrl:        dk.Spec.APIURL,
 		SkipCertCheck: dk.Spec.SkipCertCheck,
@@ -169,6 +163,7 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, 
 		TenantUUID:    dk.Status.ConnectionInfo.TenantUUID,
 		IMNodes:       infraMonitoringNodes,
 		HasHost:       dk.CloudNativeFullstackMode(),
+		TlsCert:       tlsCert,
 	}, nil
 }
 

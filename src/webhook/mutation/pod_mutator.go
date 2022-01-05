@@ -710,6 +710,15 @@ func updateContainerOneAgent(c *corev1.Container, dk *dynatracev1beta1.DynaKube,
 			SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
 		})
 
+	if dk.HasActiveGateTLS() {
+		c.VolumeMounts = append(c.VolumeMounts,
+			corev1.VolumeMount{
+				Name:      oneAgentShareVolumeName,
+				MountPath: "/var/lib/dynatrace/oneagent/agent/customkeys/custom.pem",
+				SubPath:   "custom.pem",
+			})
+	}
+
 	c.Env = append(c.Env,
 		corev1.EnvVar{
 			Name:  "LD_PRELOAD",

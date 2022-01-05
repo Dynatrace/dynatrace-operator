@@ -18,6 +18,7 @@ custom_ca="true"
 fail_code=0
 cluster_id="42"
 has_host="true"
+tls_cert="testing"
 
 declare -A im_nodes
 im_nodes=(
@@ -155,6 +156,12 @@ createConfigurationFilesDataIngest() {
 	writeConfEnrichmentTo "/var/lib/dynatrace/enrichment" "dt_metadata"
 }
 
+propagateTLSCert() {
+	if [[ "${tls_cert}" != "" ]]; then
+		echo "${tls_cert}" > "${share_dir}/custom.pem"
+	fi
+}
+
 ####### MAIN #######
 printf "\nSetting fail code\n"
 setFailCode
@@ -164,6 +171,7 @@ if [[ "${ONEAGENT_INJECTED}" == "true" ]]; then
   downloadOneAgentIfNecessary
   printf "\nCreating configuration files for containers\n"
   createConfigurationFilesOneAgent
+  propagateTLSCert
 fi
 
 if [[ "${DATA_INGEST_INJECTED}" == "true" ]]; then
