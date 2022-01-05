@@ -229,7 +229,7 @@ func (installAgentCfg *installAgentConfig) createSymlinkIfNotExists(version, ten
 
 	relativeSymlinkPath := version
 	symlinkTargetPath := installAgentCfg.path.InnerAgentBinaryDirForSymlinkForVersion(tenantUUID, version)
-	if fi, _ := fs.Stat(symlinkTargetPath); fi != nil {
+	if fileInfo, _ := fs.Stat(symlinkTargetPath); fileInfo != nil {
 		log.Info("symlink already exists", "location", symlinkTargetPath)
 		return nil
 	}
