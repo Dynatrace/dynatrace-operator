@@ -371,7 +371,7 @@ func createFakeClientAndReconcile(mockClient dtclient.Client, instance *dynatrac
 				UID:  testUID,
 			},
 		},
-		generateStatefulSet(testName, testNamespace, "activegate", testUID),
+		generateStatefulSetForTesting(testName, testNamespace, "activegate", testUID),
 	)
 	r := &ReconcileDynaKube{
 		client:    fakeClient,
@@ -385,8 +385,8 @@ func createFakeClientAndReconcile(mockClient dtclient.Client, instance *dynatrac
 	return r
 }
 
-// generateStatefulSet prepares an ActiveGate StatefulSet after a Reconciliation of the Dynakube with a specific feature enabled
-func generateStatefulSet(name, namespace, feature, kubeSystemUUID string) *appsv1.StatefulSet {
+// generateStatefulSetForTesting prepares an ActiveGate StatefulSet after a Reconciliation of the Dynakube with a specific feature enabled
+func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID string) *appsv1.StatefulSet {
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name + "-" + feature,

@@ -19,19 +19,12 @@ const (
 	testScope    = "test-scope"
 )
 
-func createMonitoredEntities() []MonitoredEntity {
-	return []MonitoredEntity{
-		{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085},
-		{EntityId: "KUBERNETES_CLUSTER-119C75CCDA94799F", DisplayName: "operator test entity 2", LastSeenTms: 1639034988126},
-	}
-}
-
 func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 	t.Run("monitored entities for this uuid exist", func(t *testing.T) {
 		// arrange
-		expected := createMonitoredEntities()
+		expected := createMonitoredEntitiesForTesting()
 
-		dynatraceServer := httptest.NewServer(dynatraceServerEntitiesHandler(expected, false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerEntitiesHandler(expected, false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -53,7 +46,7 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 		// arrange
 		expected := []MonitoredEntity{}
 
-		dynatraceServer := httptest.NewServer(dynatraceServerEntitiesHandler(expected, false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerEntitiesHandler(expected, false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -73,9 +66,9 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 
 	t.Run("no monitored entities found because no kube-system uuid is provided", func(t *testing.T) {
 		// arrange
-		expected := createMonitoredEntities()
+		expected := createMonitoredEntitiesForTesting()
 
-		dynatraceServer := httptest.NewServer(dynatraceServerEntitiesHandler(expected, true))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerEntitiesHandler(expected, true))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -94,9 +87,9 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 
 	t.Run("no monitored entities found because of an api error", func(t *testing.T) {
 		// arrange
-		expected := createMonitoredEntities()
+		expected := createMonitoredEntitiesForTesting()
 
-		dynatraceServer := httptest.NewServer(dynatraceServerEntitiesHandler(expected, true))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerEntitiesHandler(expected, true))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -117,10 +110,10 @@ func TestDynatraceClient_GetMonitoredEntitiesForKubeSystemUUID(t *testing.T) {
 func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 	t.Run(`settings for the given monitored entities exist`, func(t *testing.T) {
 		// arrange
-		expected := createMonitoredEntities()
+		expected := createMonitoredEntitiesForTesting()
 		totalCount := 2
 
-		dynatraceServer := httptest.NewServer(dynatraceServerSettingsHandler(totalCount, "", false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -140,10 +133,10 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 
 	t.Run(`no settings for the given monitored entities exist`, func(t *testing.T) {
 		// arrange
-		expected := createMonitoredEntities()
+		expected := createMonitoredEntitiesForTesting()
 		totalCount := 0
 
-		dynatraceServer := httptest.NewServer(dynatraceServerSettingsHandler(totalCount, "", false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -167,7 +160,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 		// monitored entities is empty, therefore also no settings will be returned
 		totalCount := 999
 
-		dynatraceServer := httptest.NewServer(dynatraceServerSettingsHandler(totalCount, "", false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -186,11 +179,11 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 
 	t.Run(`no settings found for because of an api error`, func(t *testing.T) {
 		// arrange
-		entities := createMonitoredEntities()
+		entities := createMonitoredEntitiesForTesting()
 		// it is immaterial what we put here since the http request is producing an error
 		totalCount := 999
 
-		dynatraceServer := httptest.NewServer(dynatraceServerSettingsHandler(totalCount, "", true))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(totalCount, "", true))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -210,7 +203,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 func TestDynatraceClient_CreateKubernetesSetting(t *testing.T) {
 	t.Run(`create settings for the given monitored entity id`, func(t *testing.T) {
 		// arrange
-		dynatraceServer := httptest.NewServer(dynatraceServerSettingsHandler(1, testObjectID, false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -230,7 +223,7 @@ func TestDynatraceClient_CreateKubernetesSetting(t *testing.T) {
 
 	t.Run(`don't create settings for the given monitored entity id because no kube-system uuid is provided`, func(t *testing.T) {
 		// arrange
-		dynatraceServer := httptest.NewServer(dynatraceServerSettingsHandler(1, testObjectID, false))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, false))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -248,7 +241,7 @@ func TestDynatraceClient_CreateKubernetesSetting(t *testing.T) {
 
 	t.Run(`don't create settings for the given monitored entity id because of api error`, func(t *testing.T) {
 		// arrange
-		dynatraceServer := httptest.NewServer(dynatraceServerSettingsHandler(1, testObjectID, true))
+		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, true))
 		defer dynatraceServer.Close()
 
 		skipCert := SkipCertificateValidation(true)
@@ -265,7 +258,14 @@ func TestDynatraceClient_CreateKubernetesSetting(t *testing.T) {
 	})
 }
 
-func handleEntitiesRequest(request *http.Request, writer http.ResponseWriter, entities []MonitoredEntity) {
+func createMonitoredEntitiesForTesting() []MonitoredEntity {
+	return []MonitoredEntity{
+		{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085},
+		{EntityId: "KUBERNETES_CLUSTER-119C75CCDA94799F", DisplayName: "operator test entity 2", LastSeenTms: 1639034988126},
+	}
+}
+
+func mockHandleEntitiesRequest(request *http.Request, writer http.ResponseWriter, entities []MonitoredEntity) {
 	if request.Method == http.MethodGet {
 		if !strings.Contains(request.Form.Get("entitySelector"), "type(KUBERNETES_CLUSTER)") {
 			writer.WriteHeader(http.StatusBadRequest)
@@ -291,7 +291,7 @@ func handleEntitiesRequest(request *http.Request, writer http.ResponseWriter, en
 	}
 }
 
-func handleSettingsRequest(request *http.Request, writer http.ResponseWriter, totalCount int, objectId string) {
+func mockHandleSettingsRequest(request *http.Request, writer http.ResponseWriter, totalCount int, objectId string) {
 	if request.Method == http.MethodGet {
 		if request.Form.Get("schemaIds") != "builtin:cloud.kubernetes" || request.Form.Get("scopes") == "" {
 			writer.WriteHeader(http.StatusBadRequest)
@@ -344,7 +344,7 @@ func handleSettingsRequest(request *http.Request, writer http.ResponseWriter, to
 
 }
 
-func dynatraceServerEntitiesHandler(entities []MonitoredEntity, isError bool) http.HandlerFunc {
+func mockDynatraceServerEntitiesHandler(entities []MonitoredEntity, isError bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if isError {
 			writeError(w, http.StatusBadRequest)
@@ -358,7 +358,7 @@ func dynatraceServerEntitiesHandler(entities []MonitoredEntity, isError bool) ht
 		} else {
 			switch r.URL.Path {
 			case "/v2/entities":
-				handleEntitiesRequest(r, w, entities)
+				mockHandleEntitiesRequest(r, w, entities)
 			default:
 				writeError(w, http.StatusBadRequest)
 			}
@@ -366,7 +366,7 @@ func dynatraceServerEntitiesHandler(entities []MonitoredEntity, isError bool) ht
 	}
 }
 
-func dynatraceServerSettingsHandler(totalCount int, objectId string, isError bool) http.HandlerFunc {
+func mockDynatraceServerSettingsHandler(totalCount int, objectId string, isError bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if isError {
 			writeError(w, http.StatusBadRequest)
@@ -380,7 +380,7 @@ func dynatraceServerSettingsHandler(totalCount int, objectId string, isError boo
 		} else {
 			switch r.URL.Path {
 			case "/v2/settings/objects":
-				handleSettingsRequest(r, w, totalCount, objectId)
+				mockHandleSettingsRequest(r, w, totalCount, objectId)
 			default:
 				writeError(w, http.StatusBadRequest)
 			}
