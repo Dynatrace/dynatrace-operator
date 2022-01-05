@@ -13,6 +13,10 @@ func prepareVolumeMounts(instance *dynatracev1beta1.DynaKube) []corev1.VolumeMou
 		volumeMounts = append(volumeMounts, getCertificateMount())
 	}
 
+	if instance.HasActiveGateTLS() {
+		volumeMounts = append(volumeMounts, getTLSMount())
+	}
+
 	volumeMounts = append(volumeMounts, rootMount)
 	return volumeMounts
 }
@@ -21,6 +25,13 @@ func getCertificateMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      "certs",
 		MountPath: "/mnt/dynatrace/certs",
+	}
+}
+
+func getTLSMount() corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      "tls",
+		MountPath: "/var/lib/dynatrace/oneagent/agent/customkeys",
 	}
 }
 
@@ -38,6 +49,10 @@ func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {
 		volumes = append(volumes, getCertificateVolume(instance))
 	}
 
+	if instance.HasActiveGateTLS() {
+		volumes = append(volumes, getTLSVolume(instance))
+	}
+
 	return volumes
 }
 
@@ -53,6 +68,23 @@ func getCertificateVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
 					{
 						Key:  "certs",
 						Path: "certs.pem",
+					},
+				},
+			},
+		},
+	}
+}
+
+func getTLSVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
+	return corev1.Volume{
+		Name: "tls",
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: instance.Spec.ActiveGate.TlsSecretName,
+				Items: []corev1.KeyToPath{
+					{
+						Key:  "server.crt",
+						Path: "custom.pem",
 					},
 				},
 			},
