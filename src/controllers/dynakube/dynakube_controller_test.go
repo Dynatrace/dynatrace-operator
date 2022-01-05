@@ -30,7 +30,8 @@ const (
 	testAPIToken  = "test-api-token"
 	testVersion   = "1.217-12345-678910"
 
-	testUUID = "test-uuid"
+	testUUID     = "test-uuid"
+	testObjectID = "test-object-id"
 
 	testHost     = "test-host"
 	testPort     = uint32(1234)
@@ -104,40 +105,11 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NotNil(t, statefulSet)
 	})
 	t.Run(`Reconcile reconciles automatic kubernetes api monitoring`, func(t *testing.T) {
-		mockClient := &dtclient.MockDynatraceClient{}
-
-		mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
-			Protocol: testProtocol,
-			Host:     testHost,
-			Port:     testPort,
-		}, nil)
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-			CommunicationHosts: []dtclient.CommunicationHost{
-				{
-					Protocol: testProtocol,
-					Host:     testHost,
-					Port:     testPort,
-				},
-				{
-					Protocol: testAnotherProtocol,
-					Host:     testAnotherHost,
-					Port:     testAnotherPort,
-				},
-			},
-			TenantUUID: testUUID,
-		}, nil)
-		mockClient.On("GetTokenScopes", testPaasToken).Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
-		mockClient.On("GetTokenScopes", testAPIToken).Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
-		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{TenantUUID: "abc123456"}, nil)
-		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
-		mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
-		mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
-			Return([]dtclient.MonitoredEntity{}, nil)
-		mockClient.On("GetSettingsForMonitoredEntities", []dtclient.MonitoredEntity{}).
-			Return(dtclient.GetSettingsResponse{}, nil)
-		mockClient.On("CreateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
-			Return("test-object-id", nil)
-
+		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
+			dtclient.TokenScopes{dtclient.TokenScopeDataExport,
+				dtclient.TokenScopeReadConfig,
+				dtclient.TokenScopeWriteConfig,
+			})
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -153,33 +125,8 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					},
 				},
 			}}
-		fakeClient := fake.NewClient(instance,
-			&corev1.Namespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: kubesystem.Namespace,
-					UID:  testUID,
-				},
-			},
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      testName,
-					Namespace: testNamespace,
-				},
-				Data: map[string][]byte{
-					"apiToken":  []byte(testAPIToken),
-					"paasToken": []byte(testPaasToken),
-				},
-			},
-			generateStatefulSet(testName, testNamespace, "activegate", testUID))
+		r := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
 
-		r := &ReconcileDynaKube{
-			client:    fakeClient,
-			apiReader: fakeClient,
-			scheme:    scheme.Scheme,
-			dtcBuildFunc: func(DynatraceClientProperties) (dtclient.Client, error) {
-				return mockClient, nil
-			},
-		}
 		result, err := r.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
@@ -393,7 +340,12 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{TenantUUID: "abc123456"}, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
-	mockClient.On("CreateSetting", testName, testUID).Return("", nil)
+	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
+		Return([]dtclient.MonitoredEntity{}, nil)
+	mockClient.On("GetSettingsForMonitoredEntities", []dtclient.MonitoredEntity{}).
+		Return(dtclient.GetSettingsResponse{}, nil)
+	mockClient.On("CreateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
+		Return(testObjectID, nil)
 
 	return mockClient
 }
@@ -417,7 +369,10 @@ func createFakeClientAndReconcile(mockClient dtclient.Client, instance *dynatrac
 			ObjectMeta: metav1.ObjectMeta{
 				Name: kubesystem.Namespace,
 				UID:  testUID,
-			}})
+			},
+		},
+		generateStatefulSet(testName, testNamespace, "activegate", testUID),
+	)
 	r := &ReconcileDynaKube{
 		client:    fakeClient,
 		apiReader: fakeClient,
