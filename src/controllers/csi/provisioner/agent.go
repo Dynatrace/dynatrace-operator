@@ -236,7 +236,7 @@ func (installAgentCfg *installAgentConfig) createSymlinkIfNotExists(version, ten
 
 	log.Info("creating symlink", "points-to(relative)", relativeSymlinkPath, "location", symlinkTargetPath)
 	if err := linker.SymlinkIfPossible(relativeSymlinkPath, symlinkTargetPath); err != nil {
-		log.Error(err, "symlinking failed", "version", version)
+		log.Info("symlinking failed", "version", version)
 		return err
 	}
 	return nil
