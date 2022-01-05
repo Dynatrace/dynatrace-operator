@@ -209,6 +209,20 @@ func (installAgentCfg *installAgentConfig) unzip(file afero.File, version, tenan
 			return err
 		}
 	}
+	// MemMapFs (used for testing) doesn't comply with the Linker interface
+	linker, ok := installAgentCfg.fs.(afero.Linker)
+	if !ok {
+		log.Info("symlinking not possible", "version", version, "fs", installAgentCfg.fs)
+		return nil
+	}
+
+	relativeSymlinkPath := version
+	symlinkTargetPath := installAgentCfg.path.InnerAgentBinaryDirForSymlinkForVersion(tenantUUID, version)
+	log.Info("creating symlink", "points-to(relative)", relativeSymlinkPath, "location", symlinkTargetPath)
+	if err := linker.SymlinkIfPossible(relativeSymlinkPath, symlinkTargetPath); err != nil {
+		log.Error(err, "symlinking failed", "version", version)
+		return err
+	}
 
 	return nil
 }

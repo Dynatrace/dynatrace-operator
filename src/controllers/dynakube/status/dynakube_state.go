@@ -23,6 +23,7 @@ type DynakubeState struct {
 	// If err is nil, then a reconciliation is requeued after requeueAfter.
 	Err          error
 	Updated      bool
+	ValidTokens  bool
 	RequeueAfter time.Duration
 }
 

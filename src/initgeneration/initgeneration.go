@@ -162,7 +162,7 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, 
 	return &script{
 		ApiUrl:        dk.Spec.APIURL,
 		SkipCertCheck: dk.Spec.SkipCertCheck,
-		PaaSToken:     string(tokens.Data[dtclient.DynatracePaasToken]),
+		PaaSToken:     string(getPaasToken(tokens)),
 		Proxy:         proxy,
 		TrustedCAs:    trustedCAs,
 		ClusterID:     string(kubeSystemUID),
@@ -170,6 +170,13 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, 
 		IMNodes:       infraMonitoringNodes,
 		HasHost:       dk.CloudNativeFullstackMode(),
 	}, nil
+}
+
+func getPaasToken(tokens corev1.Secret) []byte {
+	if len(tokens.Data[dtclient.DynatracePaasToken]) != 0 {
+		return tokens.Data[dtclient.DynatracePaasToken]
+	}
+	return tokens.Data[dtclient.DynatraceApiToken]
 }
 
 // getInfraMonitoringNodes creates a mapping between all the nodes and the tenantUID for the infra-monitoring dynakube on that node.
