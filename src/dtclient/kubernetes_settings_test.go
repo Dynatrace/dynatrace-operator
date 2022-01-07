@@ -200,7 +200,7 @@ func TestDynatraceClient_GetSettingsForMonitoredEntities(t *testing.T) {
 	})
 }
 
-func TestDynatraceClient_CreateKubernetesSetting(t *testing.T) {
+func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 	t.Run(`create settings for the given monitored entity id`, func(t *testing.T) {
 		// arrange
 		dynatraceServer := httptest.NewServer(mockDynatraceServerSettingsHandler(1, testObjectID, false))
@@ -212,7 +212,7 @@ func TestDynatraceClient_CreateKubernetesSetting(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.(*dynatraceClient).CreateKubernetesSetting(testName, testUID, testScope)
+		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesSetting(testName, testUID, testScope)
 
 		// assert
 		assert.NotNil(t, actual)
@@ -232,7 +232,7 @@ func TestDynatraceClient_CreateKubernetesSetting(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.(*dynatraceClient).CreateKubernetesSetting(testName, "", testScope)
+		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesSetting(testName, "", testScope)
 
 		// assert
 		assert.Error(t, err)
@@ -250,7 +250,7 @@ func TestDynatraceClient_CreateKubernetesSetting(t *testing.T) {
 		require.NotNil(t, dtc)
 
 		// act
-		actual, err := dtc.(*dynatraceClient).CreateKubernetesSetting(testName, testUID, testScope)
+		actual, err := dtc.(*dynatraceClient).CreateOrUpdateKubernetesSetting(testName, testUID, testScope)
 
 		// assert
 		assert.Error(t, err)

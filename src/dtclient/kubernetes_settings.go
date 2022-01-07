@@ -68,7 +68,7 @@ type constraintViolations []struct {
 	Path              string
 }
 
-func (dtc *dynatraceClient) CreateKubernetesSetting(name, kubeSystemUUID, scope string) (string, error) {
+func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(name, kubeSystemUUID, scope string) (string, error) {
 	if kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
@@ -152,7 +152,7 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 
 	res, err := dtc.httpClient.Do(req)
 	if err != nil {
-		log.Info(fmt.Sprintf("check if ME exists failed: %v", err.Error()))
+		log.Info("check if ME exists failed")
 		return nil, err
 	}
 
@@ -187,7 +187,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 
 	res, err := dtc.httpClient.Do(req)
 	if err != nil {
-		log.Info(fmt.Sprintf("failed to retrieve MEs: %v", err.Error()))
+		log.Info("failed to retrieve MEs")
 		return GetSettingsResponse{}, err
 	}
 

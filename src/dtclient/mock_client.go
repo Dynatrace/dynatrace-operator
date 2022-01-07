@@ -66,7 +66,7 @@ func (o *MockDynatraceClient) GetTokenScopes(token string) (TokenScopes, error) 
 	return args.Get(0).(TokenScopes), args.Error(1)
 }
 
-func (o *MockDynatraceClient) CreateKubernetesSetting(name string, kubeSystemUUID string, scope string) (string, error) {
+func (o *MockDynatraceClient) CreateOrUpdateKubernetesSetting(name string, kubeSystemUUID string, scope string) (string, error) {
 	args := o.Called(name, kubeSystemUUID, scope)
 	return args.String(0), args.Error(1)
 }

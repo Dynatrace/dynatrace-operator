@@ -30,7 +30,7 @@ func createReconciler(t *testing.T, uid string, monitoredEntities []dtclient.Mon
 		Return(monitoredEntities, nil)
 	mockClient.On("GetSettingsForMonitoredEntities", monitoredEntities).
 		Return(getSettingsResponse, nil)
-	mockClient.On("CreateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
+	mockClient.On("CreateOrUpdateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
 		Return(objectID, nil)
 
 	r := NewReconciler(mockClient, testName, uid)
@@ -46,7 +46,7 @@ func createReconcilerWithError(t *testing.T, monitoredEntitiesError error, getSe
 		Return([]dtclient.MonitoredEntity{}, monitoredEntitiesError)
 	mockClient.On("GetSettingsForMonitoredEntities", []dtclient.MonitoredEntity{}).
 		Return(dtclient.GetSettingsResponse{}, getSettingsResponseError)
-	mockClient.On("CreateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
+	mockClient.On("CreateOrUpdateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
 		Return("", createSettingsResponseError)
 
 	r := NewReconciler(mockClient, testName, testUID)

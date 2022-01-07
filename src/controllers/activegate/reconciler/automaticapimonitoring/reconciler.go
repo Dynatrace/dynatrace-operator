@@ -29,9 +29,9 @@ func (r *AutomaticApiMonitoringReconciler) Reconcile() error {
 	}
 
 	if objectID != "" {
-		log.Info(fmt.Sprintf("created setting '%s' for Cluster '%s'. Settings object ID: %s", r.name, r.kubeSystemUUID, objectID))
+		log.Info("created kubernetes cluster setting", "name", r.name, "cluster", r.kubeSystemUUID, "object id", objectID)
 	} else {
-		log.Info(fmt.Sprintf("setting '%s' for Cluster '%s' already exists.", r.name, r.kubeSystemUUID))
+		log.Info("kubernetes cluster setting already exists", "name", r.name, "cluster", r.kubeSystemUUID)
 	}
 
 	return nil
@@ -58,14 +58,9 @@ func (r *AutomaticApiMonitoringReconciler) ensureSettingExists() (string, error)
 		return "", nil
 	}
 
-	var objectID string
-	if len(monitoredEntities) > 0 {
-		// determine newest me
-		meID := determineNewestMonitoredEntity(monitoredEntities)
-		objectID, err = r.dtc.CreateKubernetesSetting(r.name, r.kubeSystemUUID, meID)
-	} else {
-		objectID, err = r.dtc.CreateKubernetesSetting(r.name, r.kubeSystemUUID, "")
-	}
+	// determine newest ME (can be empty string), and create or update a settings object accordingly
+	meID := determineNewestMonitoredEntity(monitoredEntities)
+	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(r.name, r.kubeSystemUUID, meID)
 
 	if err != nil {
 		return "", err
@@ -74,7 +69,12 @@ func (r *AutomaticApiMonitoringReconciler) ensureSettingExists() (string, error)
 	return objectID, nil
 }
 
+// determineNewestMonitoredEntity returns the ID of the newest entities; or empty string if the slice of entities is empty
 func determineNewestMonitoredEntity(entities []dtclient.MonitoredEntity) string {
+	if len(entities) == 0 {
+		return ""
+	}
+
 	var newestMe dtclient.MonitoredEntity
 	for _, entity := range entities {
 		if entity.LastSeenTms > newestMe.LastSeenTms {
