@@ -1,5 +1,7 @@
 SHELL = bash
 
+OLM = false
+
 # Current Operator version
 VERSION ?= 0.0.1
 # Default bundle image tag
@@ -125,24 +127,24 @@ manifests: controller-gen kustomize
 	mkdir -p config/deploy/openshift
 
 	# Generate kubernetes.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="kubernetes" --set autoCreateSecret=false --set operator.image="quay.io/dynatrace/dynatrace-operator:snapshot" > config/deploy/kubernetes/kubernetes.yaml
-	sed -i '/app.kubernetes.io/d' config/deploy/kubernetes/kubernetes.yaml
-	sed -i '/helm.sh/d' config/deploy/kubernetes/kubernetes.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="kubernetes" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="quay.io/dynatrace/dynatrace-operator:snapshot" > config/deploy/kubernetes/kubernetes.yaml
+	sed -i '.original' -e '/app.kubernetes.io/d' config/deploy/kubernetes/kubernetes.yaml
+	sed -i '.original' -e '/helm.sh/d' config/deploy/kubernetes/kubernetes.yaml
 
 	# Generate kubernetes-csi.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="kubernetes" --set autoCreateSecret=false --set operator.image="quay.io/dynatrace/dynatrace-operator:snapshot" --set classicFullStack.enabled=false --set cloudNativeFullStack.enabled=true > config/deploy/kubernetes/kubernetes-csi.yaml
-	sed -i '/app.kubernetes.io/d' config/deploy/kubernetes/kubernetes-csi.yaml
-	sed -i '/helm.sh/d' config/deploy/kubernetes/kubernetes-csi.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="kubernetes" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="quay.io/dynatrace/dynatrace-operator:snapshot" --set classicFullStack.enabled=false --set cloudNativeFullStack.enabled=true > config/deploy/kubernetes/kubernetes-csi.yaml
+	sed -i '.original' -e '/app.kubernetes.io/d' config/deploy/kubernetes/kubernetes-csi.yaml
+	sed -i '.original' -e '/helm.sh/d' config/deploy/kubernetes/kubernetes-csi.yaml
 
 	# Generate openshift.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" --set autoCreateSecret=false --set operator.image="quay.io/dynatrace/dynatrace-operator:snapshot" > config/deploy/openshift/openshift.yaml
-	sed -i '/app.kubernetes.io/d' config/deploy/openshift/openshift.yaml
-	sed -i '/helm.sh/d' config/deploy/openshift/openshift.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="quay.io/dynatrace/dynatrace-operator:snapshot" > config/deploy/openshift/openshift.yaml
+	sed -i '.original' -e '/app.kubernetes.io/d' config/deploy/openshift/openshift.yaml
+	sed -i '.original' -e '/helm.sh/d' config/deploy/openshift/openshift.yaml
 
 	# Generate openshift-csi.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" --set autoCreateSecret=false --set operator.image="quay.io/dynatrace/dynatrace-operator:snapshot" --set classicFullStack.enabled=false --set cloudNativeFullStack.enabled=true > config/deploy/openshift/openshift-csi.yaml
-	sed -i '/app.kubernetes.io/d' config/deploy/openshift/openshift-csi.yaml
-	sed -i '/helm.sh/d' config/deploy/openshift/openshift-csi.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="quay.io/dynatrace/dynatrace-operator:snapshot" --set classicFullStack.enabled=false --set cloudNativeFullStack.enabled=true > config/deploy/openshift/openshift-csi.yaml
+	sed -i '.original' -e '/app.kubernetes.io/d' config/deploy/openshift/openshift-csi.yaml
+	sed -i '.original' -e '/helm.sh/d' config/deploy/openshift/openshift-csi.yaml
 
 	$(KUSTOMIZE) build config/crd | cat - config/deploy/kubernetes/kubernetes.yaml > temp
 	mv temp config/deploy/kubernetes/kubernetes.yaml
@@ -214,10 +216,11 @@ SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-routing
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
+bundle: export OLM=true
 bundle: manifests kustomize
 	operator-sdk generate kustomize manifests -q
-	cd config/olm/$(PLATFORM) && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"="$(IMG)"
-	$(KUSTOMIZE) build config/olm/$(PLATFORM) | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
+	cd config/olm/$(PLATFORM)
+	cat config/deploy/openshift/openshift-csi.yaml | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
 	rm -rf ./config/olm/$(PLATFORM)/$(VERSION)
 	mkdir -p ./config/olm/$(PLATFORM)/$(VERSION)
