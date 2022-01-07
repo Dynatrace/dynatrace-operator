@@ -94,9 +94,9 @@ func main() {
 	exitOnError(mgr.Start(signalHandler), "problem running manager")
 }
 
-func exitOnError(err error, msg string, keysAndValues ...interface{}) {
+func exitOnError(err error, msg string) {
 	if err != nil {
-		log.Error(err, msg, keysAndValues)
+		log.Error(err, msg)
 		os.Exit(1)
 	}
 }
