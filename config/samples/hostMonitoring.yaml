@@ -53,7 +53,7 @@ spec:
       # Defaults to latest
       #
       # version:
-      
+
       # Optional: to use a custom OneAgent Docker image. Defaults to docker.io/dynatrace/oneagent in
       # Kubernetes and registry.connect.redhat.com/dynatrace/oneagent in OpenShift, if deployed via CSV
       image: ""
@@ -84,7 +84,7 @@ spec:
       #   limits:
       #     cpu: 300m
       #     memory: 1.5Gi
-      
+
       # Optional: disables automatic restarts of OneAgent pods in case a new version is available. True
       # by default.
       #
@@ -109,7 +109,7 @@ spec:
       # Limitations: https://www.dynatrace.com/support/help/shortlink/oneagent-docker#limitations
       #
       # args: []
-  
+
   # Configuration for ActiveGate instances.
   activeGate:
     # Enables listed ActiveGate capabilities
@@ -117,7 +117,7 @@ spec:
       - routing
       - kubernetes-monitoring
       - data-ingest
-    
+
     # Optional: to use a custom ActiveGate Docker image.
     image: ""
 
@@ -171,3 +171,8 @@ spec:
     #     [connectivity]
     #     networkZone=
     #   valueFrom: myCustomPropertiesConfigMap
+
+    # Optional: the name of a secret containing ActiveGate TLS cert+key and password. If not set, self-signed certificate is used.
+    # server.p12: certificate+key pair in pkcs12 format
+    #
+    # tlsSecretName: "my-tls-secret"
