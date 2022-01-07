@@ -62,11 +62,13 @@ func main() {
 	subCmd := getSubCommand()
 	switch subCmd {
 	case operatorCmd:
-		// setup manager only for certificates
-		bootstrapperCtx, done := context.WithCancel(context.TODO())
-		mgr, err = setupBootstrapper(namespace, cfg, done)
-		exitOnError(err, "bootstrapper setup failed")
-		exitOnError(mgr.Start(bootstrapperCtx), "problem running bootstrap manager")
+		if !deployedViaOLM() {
+			// setup manager only for certificates
+			bootstrapperCtx, done := context.WithCancel(context.TODO())
+			mgr, err = setupBootstrapper(namespace, cfg, done)
+			exitOnError(err, "bootstrapper setup failed")
+			exitOnError(mgr.Start(bootstrapperCtx), "problem running bootstrap manager")
+		}
 		// bootstrap manager stopped, starting full manager
 		mgr, err = setupOperator(namespace, cfg)
 		exitOnError(err, "operator setup failed")
@@ -106,4 +108,8 @@ func getSubCommand() string {
 		return args[0]
 	}
 	return operatorCmd
+}
+
+func deployedViaOLM() bool {
+	return os.Getenv("DEPLOYED_VIA_OLM") == "true"
 }
