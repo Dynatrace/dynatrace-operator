@@ -50,7 +50,9 @@ func setupOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 	funcs := []func(manager.Manager, string) error{
 		dynakube.Add,
 		nodes.Add,
-		certificates.Add,
+	}
+	if !deployedViaOLM() {
+		funcs = append(funcs, certificates.Add)
 	}
 
 	for _, f := range funcs {

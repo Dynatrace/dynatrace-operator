@@ -1,0 +1,244 @@
+suite: test dynakube customresource with kubemon
+templates:
+  - Common/customresource-dynakube.yaml
+tests:
+  - it: should add kubernetesMonitoring if set
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      kubernetesMonitoring:
+        enabled: true
+    asserts:
+      - isNotNull:
+          path: spec.kubernetesMonitoring
+      - isNotNull:
+          path: spec.kubernetesMonitoring.enabled
+      - equal:
+          path: spec.kubernetesMonitoring.enabled
+          value: true
+      - isNotNull:
+          path: spec.kubernetesMonitoring.replicas
+      - equal:
+          path: spec.kubernetesMonitoring.replicas
+          value: 1
+      - isNull:
+          path: spec.kubernetesMonitoring.image
+      - isNull:
+          path: spec.kubernetesMonitoring.resources
+      - isNull:
+          path: spec.kubernetesMonitoring.labels
+      - isNull:
+          path: spec.kubernetesMonitoring.args
+      - isNull:
+          path: spec.kubernetesMonitoring.env
+      - isNull:
+          path: spec.kubernetesMonitoring.group
+      - isNull:
+          path: spec.kubernetesMonitoring.customProperties
+
+  - it: should set image if set
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      kubernetesMonitoring:
+        enabled: true
+        image: test-image
+    asserts:
+      - isNotNull:
+          path: spec.kubernetesMonitoring
+      - isNotNull:
+          path: spec.kubernetesMonitoring.image
+      - equal:
+          path: spec.kubernetesMonitoring.image
+          value: test-image
+
+  - it: "should manipulate kubernetesMonitoring replicas if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      kubernetesMonitoring:
+        enabled: true
+        replicas: 3
+    asserts:
+      - isNotNull:
+          path: spec.kubernetesMonitoring.replicas
+      - equal:
+          path: spec.kubernetesMonitoring.replicas
+          value: 3
+
+  - it: "should add kubernetesMonitoring tolerations if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      kubernetesMonitoring:
+        enabled: true
+        tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
+    asserts:
+      - isNotNull:
+          path: spec.kubernetesMonitoring.tolerations
+      - contains:
+          path: spec.kubernetesMonitoring.tolerations
+          content:
+            effect: NoSchedule
+            key: node-role.kubernetes.io/master
+            operator: Exists
+          count: 1
+
+  - it: "should add kubernetesMonitoring nodeSelector if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      kubernetesMonitoring:
+        enabled: true
+        nodeSelector:
+          disktype: ssd
+    asserts:
+      - isNotNull:
+          path: spec.kubernetesMonitoring.nodeSelector
+      - equal:
+          path: spec.kubernetesMonitoring.nodeSelector.disktype
+          value: ssd
+
+  - it: "should add kubernetesMonitoring resource if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      kubernetesMonitoring:
+        enabled: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 150m
+            memory: 1Gi
+    asserts:
+      - isNotNull:
+          path: spec.kubernetesMonitoring.resources
+      - isNotNull:
+          path: spec.kubernetesMonitoring.resources.requests
+      - isNotNull:
+          path: spec.kubernetesMonitoring.resources.limits
+      - equal:
+          path: spec.kubernetesMonitoring.resources.requests.cpu
+          value: 100m
+      - equal:
+          path: spec.kubernetesMonitoring.resources.requests.memory
+          value: 512Mi
+      - equal:
+          path: spec.kubernetesMonitoring.resources.limits.cpu
+          value: 150m
+      - equal:
+          path: spec.kubernetesMonitoring.resources.limits.memory
+          value: 1Gi
+
+  - it: "should add kubernetesMonitoring labels if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      kubernetesMonitoring:
+        enabled: true
+        labels:
+          test-label: test-value
+    asserts:
+      - isNotNull:
+          path: spec.kubernetesMonitoring.labels
+      - equal:
+          path: spec.kubernetesMonitoring.labels.test-label
+          value: test-value
+
+  - it: "should add kubernetesMonitoring env if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      kubernetesMonitoring:
+        enabled: true
+        env:
+          test-env: test-value
+    asserts:
+      - isNotNull:
+          path: spec.kubernetesMonitoring.env
+      - equal:
+          path: spec.kubernetesMonitoring.env.test-env
+          value: test-value
+
+  - it: "should add kubernetesMonitoring group if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      kubernetesMonitoring:
+        enabled: true
+        group: test-group
+    asserts:
+      - isNotNull:
+          path: spec.kubernetesMonitoring.group
+      - equal:
+          path: spec.kubernetesMonitoring.group
+          value: test-group
+
+  - it: "should add kubernetesMonitoring customProperties value if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      kubernetesMonitoring:
+        enabled: true
+        customProperties:
+          value: test-value
+    asserts:
+      - isNotNull:
+          path: spec.kubernetesMonitoring.customProperties
+      - isNull:
+          path: spec.kubernetesMonitoring.customProperties.valueFrom
+      - equal:
+          path: spec.kubernetesMonitoring.customProperties.value
+          value: test-value
+
+  - it: "should add kubernetesMonitoring customProperties valueFrom if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      kubernetesMonitoring:
+        enabled: true
+        customProperties:
+          valueFrom: test-value
+    asserts:
+      - isNotNull:
+          path: spec.kubernetesMonitoring.customProperties
+      - isNull:
+          path: spec.kubernetesMonitoring.customProperties.value
+      - equal:
+          path: spec.kubernetesMonitoring.customProperties.valueFrom
+          value: test-value
+
+  - it: "should add kubernetesMonitoring customProperties value if value and valueFrom are set"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      kubernetesMonitoring:
+        enabled: true
+        customProperties:
+          value: test-value
+          valueFrom: test-value-from
+    asserts:
+      - isNotNull:
+          path: spec.kubernetesMonitoring.customProperties
+      - isNull:
+          path: spec.kubernetesMonitoring.customProperties.valueFrom
+      - equal:
+          path: spec.kubernetesMonitoring.customProperties.value
+          value: test-value

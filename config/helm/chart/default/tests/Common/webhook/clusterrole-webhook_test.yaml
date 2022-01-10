@@ -1,0 +1,101 @@
+suit: test clusterrole for webhook
+templates:
+  - Common/webhook/clusterrole-webhook.yaml
+tests:
+  - it: should exist
+    set:
+      platform: kubernetes
+    asserts:
+      - isKind:
+          of: ClusterRole
+      - equal:
+          path: metadata.name
+          value: dynatrace-webhook
+      - isNotEmpty:
+          path: metadata.labels
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - namespaces
+            verbs:
+              - get
+              - list
+              - watch
+              - update
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - events
+            verbs:
+              - create
+              - patch
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - secrets
+            verbs:
+              - create
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resourceNames:
+              - dynatrace-dynakube-config
+              - dynatrace-data-ingest-endpoint
+            resources:
+              - secrets
+            verbs:
+              - get
+              - list
+              - watch
+              - update
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - replicationcontrollers
+            verbs:
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - apps
+            resources:
+              - replicasets
+              - statefulsets
+              - daemonsets
+              - deployments
+            verbs:
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - batch
+            resources:
+              - jobs
+              - cronjobs
+            verbs:
+              - get
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - apps.openshift.io
+            resources:
+              - deploymentconfigs
+            verbs:
+              - get

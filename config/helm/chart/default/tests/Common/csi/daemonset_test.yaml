@@ -1,0 +1,45 @@
+suite: test deployment for csi DaemonSet
+templates:
+  - Common/csi/daemonset.yaml
+tests:
+  - it: should not exist by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should exist in case of cloudNativeFullStack mode
+    set:
+      operator.image: image-name
+      cloudNativeFullStack.enabled: true
+    asserts:
+      - isKind:
+          of: DaemonSet
+      - equal:
+          path: metadata.name
+          value: dynatrace-oneagent-csi-driver
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - isNotEmpty:
+          path: spec.template.metadata.labels
+
+  - it: should exist in case of applicationMonitoring mode with useCSIDriver enabled
+    set:
+      operator.image: image-name
+      applicationMonitoring.enabled: true
+      applicationMonitoring.useCSIDriver: true
+    asserts:
+      - isKind:
+          of: DaemonSet
+      - equal:
+          path: metadata.name
+          value: dynatrace-oneagent-csi-driver
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - isNotEmpty:
+          path: spec.template.metadata.labels
