@@ -9,6 +9,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/automaticapimonitoring"
 	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtversion"
@@ -199,7 +200,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 	dkState.Update(upd, defaultUpdateInterval, "Found updates")
 	dkState.Error(err)
 
-	if !r.reconcileActiveGateCapabilities(dkState) {
+	if !r.reconcileActiveGateCapabilities(dkState, dtc) {
 		return
 	}
 	if dkState.Instance.HostMonitoringMode() {
@@ -263,6 +264,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 			return
 		}
 	}
+
 }
 
 func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
@@ -272,7 +274,7 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 	return nil
 }
 
-func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *status.DynakubeState) bool {
+func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *status.DynakubeState, dtc dtclient.Client) bool {
 	var caps = []capability.Capability{
 		capability.NewKubeMonCapability(dkState.Instance),
 		capability.NewRoutingCapability(dkState.Instance),
@@ -308,6 +310,17 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *status.Dyna
 					return false
 				}
 			}
+		}
+	}
+
+	//start automatic config creation
+	if dkState.Instance.Status.KubeSystemUUID != "" &&
+		dkState.Instance.FeatureAutomaticKubernetesApiMonitoring() &&
+		dkState.Instance.KubernetesMonitoringMode() {
+		err := automaticapimonitoring.NewReconciler(dtc, dkState.Instance.Name, dkState.Instance.Status.KubeSystemUUID).
+			Reconcile()
+		if err != nil {
+			log.Error(err, "could not create setting")
 		}
 	}
 
