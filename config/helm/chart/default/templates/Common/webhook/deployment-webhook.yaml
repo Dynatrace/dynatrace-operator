@@ -66,13 +66,15 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            {{ if eq .Values.olm true}}
+            - name: DEPLOYED_VIA_OLM
+              value: "true"
+            {{ end }}
           readinessProbe:
             httpGet:
               path: /healthz
               port: server-port
               scheme: HTTPS
-            initialDelaySeconds: 60
-            periodSeconds: 10
           ports:
             - name: metrics
               containerPort: 8383
