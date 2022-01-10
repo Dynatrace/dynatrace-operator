@@ -96,12 +96,12 @@ uninstall: manifests kustomize
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
 	kubectl get namespace dynatrace || kubectl create namespace dynatrace
-	$(KUSTOMIZE) build config/deploy/kubernetes | kubectl apply -f -
+	kubectl apply -f config/deploy/kubernetes/kubernetes-csi.yaml
 
 # Deploy controller in the configured OpenShift cluster in ~/.kube/config
 deploy-ocp: manifests kustomize
 	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
-	$(KUSTOMIZE) build config/deploy/openshift | oc apply -f -
+	oc apply -f config/deploy/openshift/openshift-csi.yaml
 
 deploy-local:
 	./build/deploy_local.sh
@@ -154,15 +154,6 @@ manifests: controller-gen kustomize
 	$(KUSTOMIZE) build config/crd | cat - config/deploy/openshift/openshift-csi.yaml > temp
 	mv temp config/deploy/openshift/openshift-csi.yaml
 
-	rm -f config/deploy/kubernetes/kustomization.yaml
-	mkdir -p config/deploy/kubernetes
-	cd config/deploy/kubernetes && $(KUSTOMIZE) create
-	cd config/deploy/kubernetes && $(KUSTOMIZE) edit add base kubernetes-csi.yaml
-
-	rm -f config/deploy/openshift/kustomization.yaml
-	mkdir -p config/deploy/openshift
-	cd config/deploy/openshift && $(KUSTOMIZE) create
-	cd config/deploy/openshift && $(KUSTOMIZE) edit add base openshift-csi.yaml
 # Run go fmt against code
 fmt:
 	go fmt ./...
@@ -226,8 +217,7 @@ bundle: export OLM=true
 bundle: export IMG=registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
 bundle: manifests kustomize
 	operator-sdk generate kustomize manifests -q
-	cd config/olm/$(PLATFORM)
-	$(KUSTOMIZE) build config/olm/$(PLATFORM) | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
+	cat config/deploy/$(PLATFORM)/$(PLATFORM)-csi.yaml | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
 	rm -rf ./config/olm/$(PLATFORM)/$(VERSION)
 	mkdir -p ./config/olm/$(PLATFORM)/$(VERSION)
