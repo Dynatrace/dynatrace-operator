@@ -13,6 +13,7 @@
 # limitations under the License.
 
 {{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift" (include "dynatrace-operator.platformSet" .))}}
+{{ if eq (include "dynatrace-operator.partial" .) "false" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -109,3 +110,4 @@ spec:
       {{- if .Values.operator.tolerations }}
       tolerations: {{- toYaml .Values.operator.tolerations | nindent 8 }}
       {{- end -}}
+{{ end }}

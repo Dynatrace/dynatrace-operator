@@ -94,6 +94,17 @@ Check if we need the csi driver.
 	{{- end -}}
 {{- end -}}
 
+{{/*
+Check if we are generating only a part of the yamls
+*/}}
+{{- define "dynatrace-operator.partial" -}}
+	{{- if .Values.partial -}}
+		{{- printf "true" -}}
+	{{- else -}}
+	    {{- printf "false" -}}
+	{{- end -}}
+{{- end -}}
+
 
 {{/*
 Check if the old and new activeGate sections are used at the same time.
