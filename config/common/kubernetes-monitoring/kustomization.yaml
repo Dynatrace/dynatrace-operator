@@ -1,4 +1,0 @@
-resources:
-  - clusterrole-kubernetes-monitoring.yaml
-  - clusterrolebinding-kubernetes-monitoring.yaml
-  - serviceaccount-kubernetes-monitoring.yaml

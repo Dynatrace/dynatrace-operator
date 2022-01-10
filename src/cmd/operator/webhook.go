@@ -46,7 +46,9 @@ func setupWebhookServer(ns string, cfg *rest.Config) (manager.Manager, func(), e
 		return nil, cleanUp, err
 	}
 
-	waitForCertificates(newCertificateWatcher(mgr, ns, webhook.SecretCertsName))
+	if !deployedViaOLM() {
+		waitForCertificates(newCertificateWatcher(mgr, ns, webhook.SecretCertsName))
+	}
 
 	if err := mutation.AddNamespaceMutationWebhookToManager(mgr, ns); err != nil {
 		return nil, cleanUp, err

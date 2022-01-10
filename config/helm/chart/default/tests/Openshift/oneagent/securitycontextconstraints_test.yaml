@@ -1,0 +1,93 @@
+suit: test security context constraints on openshift
+templates:
+  - Openshift/oneagent/securitycontextconstraints.yaml
+tests:
+  - it: should not exist if platform is not openshift
+    set:
+      platform: kubernetes
+      createSecurityContextConstraints: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not exist if createSecurityContextConstraints is false
+    set:
+      platform: openshift
+      createSecurityContextConstraints: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should exist
+    set:
+      platform: openshift
+      createSecurityContextConstraints: true
+    asserts:
+      - equal:
+          path: metadata
+          value:
+            annotations:
+              kubernetes.io/description: "dynatrace-dynakube-oneagent-privileged allows access to all privileged and host features and the ability to run as any user, any group, any fsGroup, and with any SELinux context. This is a copy of privileged scc."
+            name: dynatrace-dynakube-oneagent-privileged
+      - equal:
+          path: allowHostDirVolumePlugin
+          value: true
+      - equal:
+          path: allowHostIPC
+          value: false
+      - equal:
+          path: allowHostNetwork
+          value: true
+      - equal:
+          path: allowHostPID
+          value: true
+      - equal:
+          path: allowHostPorts
+          value: true
+      - equal:
+          path: allowPrivilegedContainer
+          value: true
+      - equal:
+          path: allowedCapabilities
+          value:
+            - "*"
+      - isNull:
+          path: allowedFlexVolumes
+      - isEmpty:
+          path: defaultAddCapabilities
+      - equal:
+          path: fsGroup
+          value:
+            type: RunAsAny
+      - equal:
+          path: priority
+          value: 1
+      - equal:
+          path: readOnlyRootFilesystem
+          value: false
+      - isEmpty:
+          path: requiredDropCapabilities
+      - equal:
+          path: runAsUser
+          value:
+            type: RunAsAny
+      - equal:
+          path: seLinuxContext
+          value:
+            type: RunAsAny
+      - equal:
+          path: seccompProfiles
+          value:
+            - "*"
+      - equal:
+          path: supplementalGroups
+          value:
+            type: RunAsAny
+      - equal:
+          path: users
+          value:
+            - system:serviceaccount:NAMESPACE:dynatrace-dynakube-oneagent
+      - equal:
+          path: volumes
+          value:
+            - "*"
