@@ -1,0 +1,212 @@
+suit: test customresource values for classicFullStack spec
+templates:
+  - Common/customresource-dynakube.yaml
+tests:
+  - it: should be null if disabled
+    set:
+      apiUrl: test-url
+      apiToken: test-token
+      paasToken: test-token
+      classicFullStack.enabled: false
+    asserts:
+      - isNull:
+          path: spec.oneAgent
+
+  - it: should exist if enabled
+    set:
+      apiUrl: test-url
+      apiToken: test-token
+      paasToken: test-token
+      classicFullStack.enabled: true
+    asserts:
+      - isNotNull:
+          path: spec.oneAgent.classicFullStack
+
+  - it: should set image
+    set:
+      apiUrl: test-url
+      apiToken: test-token
+      paasToken: test-token
+      classicFullStack.enabled: true
+      classicFullStack.image: "test"
+    asserts:
+      - isNotNull:
+          path: spec.oneAgent.classicFullStack
+      - equal:
+          path: spec.oneAgent.classicFullStack.image
+          value: "test"
+
+  - it: should set version
+    set:
+      apiUrl: test-url
+      apiToken: test-token
+      paasToken: test-token
+      classicFullStack.enabled: true
+      classicFullStack.version: "v.1.2"
+    asserts:
+      - isNotNull:
+          path: spec.oneAgent.classicFullStack
+      - equal:
+          path: spec.oneAgent.classicFullStack.version
+          value: "v.1.2"
+
+  - it: should set autoUpdate
+    set:
+      apiUrl: test-url
+      apiToken: test-token
+      paasToken: test-token
+      classicFullStack.enabled: true
+      classicFullStack.autoUpdate: false
+    asserts:
+      - isNotNull:
+          path: spec.oneAgent.classicFullStack
+      - equal:
+          path: spec.oneAgent.classicFullStack.autoUpdate
+          value: false
+
+  - it: should set nodeSelectors
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        nodeSelector:
+          disktype: ssd
+    asserts:
+      - isNotNull:
+          path: spec.oneAgent.classicFullStack.nodeSelector
+      - equal:
+          path: spec.oneAgent.classicFullStack.nodeSelector.disktype
+          value: ssd
+
+  - it: should set tolerations
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        tolerations:
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/master
+            operator: Exists
+    asserts:
+      - isNotNull:
+          path: spec.oneAgent.classicFullStack.tolerations
+      - contains:
+          path: spec.oneAgent.classicFullStack.tolerations
+          content:
+            effect: NoSchedule
+            key: node-role.kubernetes.io/master
+            operator: Exists
+          count: 1
+
+  - it: should set oneAgentResources
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        oneAgentResources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 150m
+            memory: 1Gi
+    asserts:
+      - isNotNull:
+          path: spec.oneAgent.classicFullStack.oneAgentResources
+      - isNotNull:
+          path: spec.oneAgent.classicFullStack.oneAgentResources.requests
+      - isNotNull:
+          path: spec.oneAgent.classicFullStack.oneAgentResources.limits
+      - equal:
+          path: spec.oneAgent.classicFullStack.oneAgentResources.requests.cpu
+          value: 100m
+      - equal:
+          path: spec.oneAgent.classicFullStack.oneAgentResources.requests.memory
+          value: 512Mi
+      - equal:
+          path: spec.oneAgent.classicFullStack.oneAgentResources.limits.cpu
+          value: 150m
+      - equal:
+          path: spec.oneAgent.classicFullStack.oneAgentResources.limits.memory
+          value: 1Gi
+
+  - it: should set args
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      cloudNativeFullStack.enabled: false
+      classicFullStack:
+        enabled: true
+        args:
+          test-arg: test-value
+    asserts:
+      - isNotNull:
+          path: spec.oneAgent.classicFullStack.args
+      - equal:
+          path: spec.oneAgent.classicFullStack.args.test-arg
+          value: test-value
+
+  - it: should set envs
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        env:
+          test-env: test-value
+    asserts:
+      - isNotNull:
+          path: spec.oneAgent.classicFullStack.env
+      - equal:
+          path: spec.oneAgent.classicFullStack.env.test-env
+          value: test-value
+
+  - it: should set priorityClassName
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        priorityClassName: test-priority-class
+    asserts:
+      - equal:
+          path: spec.oneAgent.classicFullStack.priorityClassName
+          value: test-priority-class
+
+  - it: should set dnsPolicy
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        dnsPolicy: test-dns-policy
+    asserts:
+      - equal:
+          path: spec.oneAgent.classicFullStack.dnsPolicy
+          value: test-dns-policy
+
+  - it: should set labels
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      classicFullStack:
+        enabled: true
+        labels:
+          test-label: test-value
+    asserts:
+      - isNotNull:
+          path: spec.oneAgent.classicFullStack.labels
+      - equal:
+          path: spec.oneAgent.classicFullStack.labels.test-label
+          value: test-value

@@ -1,8 +1,0 @@
-resources:
-  - daemonset.yaml
-  - csidriver.yaml
-  - serviceaccount-csi.yaml
-  - clusterrole-csi.yaml
-  - clusterrolebinding-csi.yaml
-  - role-csi.yaml
-  - rolebinding-csi.yaml

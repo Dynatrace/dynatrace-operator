@@ -1,3 +1,0 @@
-resources:
-  - serviceaccount-oneagent.yaml
-  - serviceaccount-oneagent-unprivileged.yaml

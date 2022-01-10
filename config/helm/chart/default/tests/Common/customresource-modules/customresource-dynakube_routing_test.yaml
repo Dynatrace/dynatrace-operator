@@ -1,0 +1,256 @@
+suite: test dynakube customresource with routing
+templates:
+  - Common/customresource-dynakube.yaml
+tests:
+  - it: shoud not exist if disabled
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      routing:
+        enabled: false
+    asserts:
+      - isNull:
+          path: spec.routing
+
+  - it: should add routing if set
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      routing:
+        enabled: true
+    asserts:
+      - isNotNull:
+          path: spec.routing
+      - isNotNull:
+          path: spec.routing.enabled
+      - equal:
+          path: spec.routing.enabled
+          value: true
+      - isNotNull:
+          path: spec.routing.replicas
+      - equal:
+          path: spec.routing.replicas
+          value: 1
+      - isNull:
+          path: spec.routing.image
+      - isNull:
+          path: spec.routing.resources
+      - isNull:
+          path: spec.routing.labels
+      - isNull:
+          path: spec.routing.args
+      - isNull:
+          path: spec.routing.env
+      - isNull:
+          path: spec.routing.group
+      - isNull:
+          path: spec.routing.customProperties
+
+  - it: should set image if set
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      routing:
+        enabled: true
+        image: test-image
+    asserts:
+      - isNotNull:
+          path: spec.routing
+      - isNotNull:
+          path: spec.routing.image
+      - equal:
+          path: spec.routing.image
+          value: test-image
+
+  - it: should manipulate routing replicas if set and enabled
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      routing:
+        enabled: true
+        replicas: 3
+    asserts:
+      - isNotNull:
+          path: spec.routing.replicas
+      - equal:
+          path: spec.routing.replicas
+          value: 3
+
+  - it: "should add routing group if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      routing:
+        enabled: true
+        group: test-group
+    asserts:
+      - isNotNull:
+          path: spec.routing.group
+      - equal:
+          path: spec.routing.group
+          value: test-group
+
+  - it: "should add routing customProperties value if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      routing:
+        enabled: true
+        customProperties:
+          value: test-value
+    asserts:
+      - isNotNull:
+          path: spec.routing.customProperties
+      - isNull:
+          path: spec.routing.customProperties.valueFrom
+      - equal:
+          path: spec.routing.customProperties.value
+          value: test-value
+
+  - it: "should add routing customProperties valueFrom if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      routing:
+        enabled: true
+        customProperties:
+          valueFrom: test-value
+    asserts:
+      - isNotNull:
+          path: spec.routing.customProperties
+      - isNull:
+          path: spec.routing.customProperties.value
+      - equal:
+          path: spec.routing.customProperties.valueFrom
+          value: test-value
+
+  - it: "should add routing routing value if value and valueFrom are set"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      routing:
+        enabled: true
+        customProperties:
+          value: test-value
+          valueFrom: test-value-from
+    asserts:
+      - isNotNull:
+          path: spec.routing.customProperties
+      - isNull:
+          path: spec.routing.customProperties.valueFrom
+      - equal:
+          path: spec.routing.customProperties.value
+          value: test-value
+
+  - it: "should add routing resource if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      routing:
+        enabled: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 150m
+            memory: 1Gi
+    asserts:
+      - isNotNull:
+          path: spec.routing.resources
+      - isNotNull:
+          path: spec.routing.resources.requests
+      - isNotNull:
+          path: spec.routing.resources.limits
+      - equal:
+          path: spec.routing.resources.requests.cpu
+          value: 100m
+      - equal:
+          path: spec.routing.resources.requests.memory
+          value: 512Mi
+      - equal:
+          path: spec.routing.resources.limits.cpu
+          value: 150m
+      - equal:
+          path: spec.routing.resources.limits.memory
+          value: 1Gi
+
+  - it: "should add routing nodeSelector if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      routing:
+        enabled: true
+        nodeSelector:
+          disktype: ssd
+    asserts:
+      - isNotNull:
+          path: spec.routing.nodeSelector
+      - equal:
+          path: spec.routing.nodeSelector.disktype
+          value: ssd
+
+  - it: "should add routing tolerations if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      routing:
+        enabled: true
+        tolerations:
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/master
+            operator: Exists
+    asserts:
+      - isNotNull:
+          path: spec.routing.tolerations
+      - contains:
+          path: spec.routing.tolerations
+          content:
+            effect: NoSchedule
+            key: node-role.kubernetes.io/master
+            operator: Exists
+          count: 1
+
+  - it: "should add routing labels if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      routing:
+        enabled: true
+        labels:
+          test-label: test-value
+    asserts:
+      - isNotNull:
+          path: spec.routing.labels
+      - equal:
+          path: spec.routing.labels.test-label
+          value: test-value
+
+  - it: "should add routing env if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      routing:
+        enabled: true
+        env:
+          test-env: test-value
+    asserts:
+      - isNotNull:
+          path: spec.routing.env
+      - equal:
+          path: spec.routing.env.test-env
+          value: test-value
+

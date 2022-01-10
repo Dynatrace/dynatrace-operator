@@ -1,0 +1,123 @@
+suite: test dynakube customresource
+templates:
+  - Common/customresource-dynakube.yaml
+tests:
+  - it: is created if apiUrl, apiToken and paasToken are set
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+    asserts:
+      - isKind:
+          of: DynaKube
+      - isAPIVersion:
+          of: dynatrace.com/v1beta1
+      - equal:
+          path: metadata.name
+          value: dynakube
+      - isNotEmpty:
+          path: metadata.namespace
+      - equal:
+          path: spec.apiUrl
+          value: test-api-url
+      - equal:
+          path: spec.tokens
+          value: dynakube
+      - isNull:
+          path: spec.proxy
+      - isNull:
+          path: spec.trustedCAs
+      - isNull:
+          path: spec.networkZone
+
+  - it: should add skipCertCheck if enabled
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      skipCertCheck: true
+    asserts:
+      - isNotNull:
+          path: spec.skipCertCheck
+      - equal:
+          path: spec.skipCertCheck
+          value: true
+
+  - it: should add proxy if valueFrom is set
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      proxy: dynakube
+    asserts:
+      - isNotNull:
+          path: spec.proxy
+      - isNull:
+          path: spec.proxy.value
+      - isNotNull:
+          path: spec.proxy.valueFrom
+      - equal:
+          path: spec.proxy.valueFrom
+          value: dynakube
+
+  - it: should add trustedCAs if set
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      name: test-name
+      trustedCAs: test-ca
+    asserts:
+      - isNotNull:
+          path: spec.trustedCAs
+      - equal:
+          path: spec.trustedCAs
+          value: test-name
+
+  - it: should add networkZone if set
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      networkZone: test-network-zone
+    asserts:
+      - isNotNull:
+          path: spec.networkZone
+      - equal:
+          path: spec.networkZone
+          value: test-network-zone
+
+  - it: should add customPullSecret if set
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      customPullSecret: test-custom-pull-secret
+    asserts:
+      - isNotNull:
+          path: spec.customPullSecret
+      - equal:
+          path: spec.customPullSecret
+          value: test-custom-pull-secret
+
+  - it: should set namespaceSelector
+    set:
+      apiUrl: test-url
+      apiToken: test-token
+      paasToken: test-token
+      namespaceSelector:
+        matchLabels:
+          "key": "value"
+        matchExpression:
+          - {key: test, operator: In, values: [test]}
+    asserts:
+      - isNotNull:
+          path: spec.namespaceSelector
+      - equal:
+          path: spec.namespaceSelector.matchLabels
+          value:
+            "key": "value"
+      - equal:
+          path: spec.namespaceSelector.matchExpression
+          value:
+            - {key: test, operator: In, values: [test]}
