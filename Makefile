@@ -4,6 +4,8 @@ OLM = false
 
 # Current Operator version
 VERSION ?= 0.0.1
+# Default platform for bundles
+PLATFORM ?= openshift
 # Default bundle image tag
 BUNDLE_IMG ?= controller-bundle:$(VERSION)
 # Options for 'bundle-build'
@@ -94,21 +96,11 @@ uninstall: manifests kustomize
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
 	kubectl get namespace dynatrace || kubectl create namespace dynatrace
-	rm -f config/deploy/kubernetes/kustomization.yaml
-	mkdir -p config/deploy/kubernetes
-	cd config/deploy/kubernetes && $(KUSTOMIZE) create
-	cd config/deploy/kubernetes && $(KUSTOMIZE) edit add base kubernetes-csi.yaml
-	cd config/deploy/kubernetes && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
 	$(KUSTOMIZE) build config/deploy/kubernetes | kubectl apply -f -
 
 # Deploy controller in the configured OpenShift cluster in ~/.kube/config
 deploy-ocp: manifests kustomize
 	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
-	rm -f config/deploy/openshift/kustomization.yaml
-	mkdir -p config/deploy/openshift
-	cd config/deploy/openshift && $(KUSTOMIZE) create
-	cd config/deploy/openshift && $(KUSTOMIZE) edit add base openshift-csi.yaml
-	cd config/deploy/openshift && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=${IMG}
 	$(KUSTOMIZE) build config/deploy/openshift | oc apply -f -
 
 deploy-local:
@@ -127,25 +119,25 @@ manifests: controller-gen kustomize
 	mkdir -p config/deploy/openshift
 
 	# Generate kubernetes.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="kubernetes" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="quay.io/dynatrace/dynatrace-operator:snapshot" > config/deploy/kubernetes/kubernetes.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="kubernetes" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="$(IMG)" > config/deploy/kubernetes/kubernetes.yaml
 	grep -v 'app.kubernetes.io' config/deploy/kubernetes/kubernetes.yaml > config/deploy/kubernetes/tmp.yaml
 	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > config/deploy/kubernetes/kubernetes.yaml
 	rm config/deploy/kubernetes/tmp.yaml
 
 	# Generate kubernetes-csi.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="kubernetes" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="quay.io/dynatrace/dynatrace-operator:snapshot" --set classicFullStack.enabled=false --set cloudNativeFullStack.enabled=true > config/deploy/kubernetes/kubernetes-csi.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="kubernetes" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="$(IMG)" --set classicFullStack.enabled=false --set cloudNativeFullStack.enabled=true > config/deploy/kubernetes/kubernetes-csi.yaml
 	grep -v 'app.kubernetes.io' config/deploy/kubernetes/kubernetes-csi.yaml > config/deploy/kubernetes/tmp.yaml
 	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > config/deploy/kubernetes/kubernetes-csi.yaml
 	rm config/deploy/kubernetes/tmp.yaml
 
 	# Generate openshift.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="quay.io/dynatrace/dynatrace-operator:snapshot" > config/deploy/openshift/openshift.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="$(IMG)" > config/deploy/openshift/openshift.yaml
 	grep -v 'app.kubernetes.io' config/deploy/openshift/openshift.yaml > config/deploy/openshift/tmp.yaml
 	grep -v 'helm.sh' config/deploy/openshift/tmp.yaml > config/deploy/openshift/openshift.yaml
 	rm config/deploy/openshift/tmp.yaml
 
 	# Generate openshift-csi.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="quay.io/dynatrace/dynatrace-operator:snapshot" --set classicFullStack.enabled=false --set cloudNativeFullStack.enabled=true > config/deploy/openshift/openshift-csi.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="$(IMG)" --set classicFullStack.enabled=false --set cloudNativeFullStack.enabled=true > config/deploy/openshift/openshift-csi.yaml
 	grep -v 'app.kubernetes.io' config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/tmp.yaml
 	grep -v 'helm.sh' config/deploy/openshift/tmp.yaml > config/deploy/openshift/openshift-csi.yaml
 	rm config/deploy/openshift/tmp.yaml
@@ -161,6 +153,16 @@ manifests: controller-gen kustomize
 
 	$(KUSTOMIZE) build config/crd | cat - config/deploy/openshift/openshift-csi.yaml > temp
 	mv temp config/deploy/openshift/openshift-csi.yaml
+
+	rm -f config/deploy/kubernetes/kustomization.yaml
+	mkdir -p config/deploy/kubernetes
+	cd config/deploy/kubernetes && $(KUSTOMIZE) create
+	cd config/deploy/kubernetes && $(KUSTOMIZE) edit add base kubernetes-csi.yaml
+
+	rm -f config/deploy/openshift/kustomization.yaml
+	mkdir -p config/deploy/openshift
+	cd config/deploy/openshift && $(KUSTOMIZE) create
+	cd config/deploy/openshift && $(KUSTOMIZE) edit add base openshift-csi.yaml
 # Run go fmt against code
 fmt:
 	go fmt ./...
@@ -224,7 +226,6 @@ bundle: export OLM=true
 bundle: manifests kustomize
 	operator-sdk generate kustomize manifests -q
 	cd config/olm/$(PLATFORM)
-	cd config/olm/$(PLATFORM) && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"="$(IMG)"
 	$(KUSTOMIZE) build config/olm/$(PLATFORM) | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
 	rm -rf ./config/olm/$(PLATFORM)/$(VERSION)
