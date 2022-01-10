@@ -77,6 +77,10 @@ func (dk *DynaKube) IsActiveGateMode(mode string) bool {
 	return false
 }
 
+func (dk *DynaKube) KubernetesMonitoringMode() bool {
+	return dk.IsActiveGateMode(string(KubeMonCapability.DisplayName)) || dk.Spec.KubernetesMonitoring.Enabled
+}
+
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
 func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 	if dk.CloudNativeFullstackMode() {

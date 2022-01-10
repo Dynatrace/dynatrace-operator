@@ -59,6 +59,17 @@ type Client interface {
 
 	// GetTenantInfo returns TenantInfo that holds UUID, Tenant Token and Endpoints
 	GetTenantInfo() (*TenantInfo, error)
+
+	// CreateOrUpdateKubernetesSetting returns the object id of the created k8s settings if successful, or an api error otherwise
+	CreateOrUpdateKubernetesSetting(name, kubeSystemUUID, scope string) (string, error)
+
+	// GetMonitoredEntitiesForKubeSystemUUID returns a (possibly empty) list of k8s monitored entities for the given uuid,
+	// or an api error otherwise
+	GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID string) ([]MonitoredEntity, error)
+
+	// GetSettingsForMonitoredEntities returns the settings response with the number of settings objects,
+	// or an api error otherwise
+	GetSettingsForMonitoredEntities(monitoredEntities []MonitoredEntity) (GetSettingsResponse, error)
 }
 
 // Known OS values.
