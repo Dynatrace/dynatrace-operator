@@ -24,13 +24,14 @@ import (
 )
 
 const (
-	annotationFeaturePrefix                          = "alpha.operator.dynatrace.com/feature-"
-	annotationFeatureDisableActiveGateUpdates        = annotationFeaturePrefix + "disable-activegate-updates"
-	annotationFeatureDisableHostsRequests            = annotationFeaturePrefix + "disable-hosts-requests"
-	annotationFeatureOneAgentMaxUnavailable          = annotationFeaturePrefix + "oneagent-max-unavailable"
-	annotationFeatureEnableWebhookReinvocationPolicy = annotationFeaturePrefix + "enable-webhook-reinvocation-policy"
-	annotationFeatureIgnoreUnknownState              = annotationFeaturePrefix + "ignore-unknown-state"
-	annotationFeatureIgnoredNamespaces               = annotationFeaturePrefix + "ignored-namespaces"
+	annotationFeaturePrefix                           = "alpha.operator.dynatrace.com/feature-"
+	annotationFeatureDisableActiveGateUpdates         = annotationFeaturePrefix + "disable-activegate-updates"
+	annotationFeatureDisableHostsRequests             = annotationFeaturePrefix + "disable-hosts-requests"
+	annotationFeatureOneAgentMaxUnavailable           = annotationFeaturePrefix + "oneagent-max-unavailable"
+	annotationFeatureEnableWebhookReinvocationPolicy  = annotationFeaturePrefix + "enable-webhook-reinvocation-policy"
+	annotationFeatureIgnoreUnknownState               = annotationFeaturePrefix + "ignore-unknown-state"
+	annotationFeatureIgnoredNamespaces                = annotationFeaturePrefix + "ignored-namespaces"
+	annotationFeatureAutomaticKubernetesApiMonitoring = annotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
 )
 
 var (
@@ -99,4 +100,10 @@ func (dk *DynaKube) FeatureIgnoredNamespaces() []string {
 		return defaultIgnoredNamespaces
 	}
 	return *ignoredNamespaces
+}
+
+// FeatureAutomaticKubernetesApiMonitoring is a feature flag to enable automatic kubernetes api monitoring,
+// which ensures that settings for this kubernetes cluster exist in Dynatrace
+func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoring() bool {
+	return dk.Annotations[annotationFeatureAutomaticKubernetesApiMonitoring] == "true"
 }
