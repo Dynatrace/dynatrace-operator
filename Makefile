@@ -223,6 +223,7 @@ SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-routing
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
 bundle: export OLM=true
+bundle: export IMG=registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
 bundle: manifests kustomize
 	operator-sdk generate kustomize manifests -q
 	cd config/olm/$(PLATFORM)
