@@ -1,3 +1,7 @@
+{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google" (include "dynatrace-operator.platformSet" .))}}
+{{- $modeSet := printf "%s" (required "Only one onagent mode can be used per dynakube." (include "dynatrace-operator.modeSet" .))}}
+{{- $activeGateModeSet := printf "%s" (required "Deprecated activeGate mode and the new activaGate mode can't be used at the same time." (include "dynatrace-operator.activeGateModeSet" .))}}
+{{- if .Values.apiUrl }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,11 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google" (include "dynatrace-operator.platformSet" .))}}
-{{- $modeSet := printf "%s" (required "Only one onagent mode can be used per dynakube." (include "dynatrace-operator.modeSet" .))}}
-{{- $activeGateModeSet := printf "%s" (required "Deprecated activeGate mode and the new activaGate mode can't be used at the same time." (include "dynatrace-operator.activeGateModeSet" .))}}
-{{- if .Values.apiUrl }}
 apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
