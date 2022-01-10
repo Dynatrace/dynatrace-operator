@@ -21,19 +21,23 @@ const (
 
 type Reconciler struct {
 	client.Client
-	apiReader client.Reader
-	instance  *dynatracev1beta1.DynaKube
-	token     *corev1.Secret
-	scheme    *runtime.Scheme
+	apiReader           client.Reader
+	instance            *dynatracev1beta1.DynaKube
+	scheme              *runtime.Scheme
+	apiToken, paasToken string
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, token *corev1.Secret) *Reconciler {
+func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, apiToken, paasToken string) *Reconciler {
+	if paasToken == "" {
+		paasToken = apiToken
+	}
 	return &Reconciler{
 		Client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
 		instance:  instance,
-		token:     token,
+		apiToken:  apiToken,
+		paasToken: paasToken,
 	}
 }
 

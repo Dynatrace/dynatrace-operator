@@ -120,6 +120,11 @@ var (
 		Data:       map[string][]byte{"paasToken": []byte("42"), "apiToken": []byte("84")},
 	}
 
+	testSecretDynakubeComplexOnlyApi = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: testTokensName, Namespace: operatorNamespace},
+		Data:       map[string][]byte{"apiToken": []byte("42")},
+	}
+
 	testSecretDynakubeSimple = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
 		Data:       map[string][]byte{"paasToken": []byte("42"), "apiToken": []byte("84")},
@@ -320,33 +325,40 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 
 func TestPrepareScriptForDynaKube(t *testing.T) {
 	t.Run("Create init.sh with correct content", func(t *testing.T) {
-		dk := testDynakubeComplex.DeepCopy()
-		testNamespace := corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:   testNamespaceName,
-				Labels: map[string]string{mapper.InstanceLabel: testDynakubeComplex.Name},
-			},
-		}
-		clt := fake.NewClient(&testNamespace, testSecretDynakubeComplex, caConfigMap)
-		ig := NewInitGenerator(clt, clt, operatorNamespace)
-		imNodes := map[string]string{testNode1Name: testTenantUUID, testNode2Name: testTenantUUID}
-		sc, err := ig.prepareScriptForDynaKube(dk, kubesystemUID, imNodes)
-		assert.NoError(t, err)
-		expectedScript := script{
-			ApiUrl:        dk.Spec.APIURL,
-			SkipCertCheck: dk.Spec.SkipCertCheck,
-			PaaSToken:     "42",
-			Proxy:         testProxy,
-			TrustedCAs:    []byte(testCAValue),
-			ClusterID:     string(kubesystemUID),
-			TenantUUID:    dk.Status.ConnectionInfo.TenantUUID,
-			IMNodes:       imNodes,
-			HasHost:       true,
-		}
-		assert.Equal(t, &expectedScript, sc)
-
-		initSh, err := sc.generate()
-		assert.NoError(t, err)
-		assert.Equal(t, scriptSample, string(initSh[initScriptSecretField]))
+		testForCorrectContent(t, testSecretDynakubeComplex)
 	})
+	t.Run("Create init.sh with correct content, if only apiToken is provided", func(t *testing.T) {
+		testForCorrectContent(t, testSecretDynakubeComplexOnlyApi)
+	})
+}
+
+func testForCorrectContent(t *testing.T, secret *corev1.Secret) {
+	dk := testDynakubeComplex.DeepCopy()
+	testNamespace := corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   testNamespaceName,
+			Labels: map[string]string{mapper.InstanceLabel: testDynakubeComplex.Name},
+		},
+	}
+	clt := fake.NewClient(&testNamespace, secret, caConfigMap)
+	ig := NewInitGenerator(clt, clt, operatorNamespace)
+	imNodes := map[string]string{testNode1Name: testTenantUUID, testNode2Name: testTenantUUID}
+	sc, err := ig.prepareScriptForDynaKube(dk, kubesystemUID, imNodes)
+	assert.NoError(t, err)
+	expectedScript := script{
+		ApiUrl:        dk.Spec.APIURL,
+		SkipCertCheck: dk.Spec.SkipCertCheck,
+		PaaSToken:     "42",
+		Proxy:         testProxy,
+		TrustedCAs:    []byte(testCAValue),
+		ClusterID:     string(kubesystemUID),
+		TenantUUID:    dk.Status.ConnectionInfo.TenantUUID,
+		IMNodes:       imNodes,
+		HasHost:       true,
+	}
+	assert.Equal(t, &expectedScript, sc)
+
+	initSh, err := sc.generate()
+	assert.NoError(t, err)
+	assert.Equal(t, scriptSample, string(initSh[initScriptSecretField]))
 }

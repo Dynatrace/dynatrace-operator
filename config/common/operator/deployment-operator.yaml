@@ -53,14 +53,14 @@ spec:
               path: /healthz
               port: server-port
               scheme: HTTP
-            initialDelaySeconds: 15
+            initialDelaySeconds: 60
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /healthz
               port: server-port
               scheme: HTTP
-            initialDelaySeconds: 15
+            initialDelaySeconds: 60
             periodSeconds: 10
       affinity:
         nodeAffinity:

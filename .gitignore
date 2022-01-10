@@ -83,3 +83,4 @@ tags
 config/deploy/kustomization.yaml
 
 /.run/
+.vscode
