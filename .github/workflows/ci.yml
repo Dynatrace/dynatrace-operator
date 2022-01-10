@@ -25,6 +25,7 @@ jobs:
       - name: Download dependencies
         id: depdownload
         run: |
+          sudo apt-get update
           sudo apt-get install -y libdevmapper-dev libbtrfs-dev
       - name: Run Unit tests
         id: unittest
@@ -41,6 +42,7 @@ jobs:
       - name: Download dependencies
         id: depdownload
         run: |
+          sudo apt-get update
           sudo apt-get install -y libdevmapper-dev libbtrfs-dev
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
@@ -110,7 +112,7 @@ jobs:
         with:
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
-            GO_BUILD_ARGS='${{ steps.prep.outputs.goargs }}'
+            GO_BUILD_ARGS=${{ steps.prep.outputs.goargs }}
           context: .
           file: ./Dockerfile
           platforms: linux/amd64
@@ -124,7 +126,7 @@ jobs:
         with:
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
-            GO_BUILD_ARGS='${{ steps.prep.outputs.goargs }}'
+            GO_BUILD_ARGS=${{ steps.prep.outputs.goargs }}
           context: .
           file: ./Dockerfile
           platforms: linux/arm64
