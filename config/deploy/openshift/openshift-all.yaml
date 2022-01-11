@@ -2755,29 +2755,6 @@ metadata:
     dynatrace: operator
     operator: dynakube
 ---
-# Source: dynatrace-operator/templates/Common/csi/serviceaccount-csi.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: dynatrace-oneagent-csi-driver
-  namespace: dynatrace
-  labels:
-    dynatrace: operator
-    operator: dynakube
----
 # Source: dynatrace-operator/templates/Common/kubernetes-monitoring/serviceaccount-kubernetes-monitoring.yaml
 # Copyright 2021 Dynatrace LLC
 
@@ -2815,17 +2792,17 @@ metadata:
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: dynatrace-dynakube-oneagent-unprivileged
   namespace: dynatrace
   labels:
-    
     dynatrace: operator
     operator: dynakube
+imagePullSecrets:
+- name: redhat-connect
+- name: redhat-connect-sso
 ---
 # Source: dynatrace-operator/templates/Common/oneagent/serviceaccount-oneagent.yaml
 # Copyright 2021 Dynatrace LLC
@@ -2841,17 +2818,17 @@ metadata:
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: dynatrace-dynakube-oneagent
   namespace: dynatrace
   labels:
-    
     dynatrace: operator
     operator: dynakube
+imagePullSecrets:
+- name: redhat-connect
+- name: redhat-connect-sso
 ---
 # Source: dynatrace-operator/templates/Common/operator/serviceaccount-operator.yaml
 # Copyright 2021 Dynatrace LLC
@@ -2867,8 +2844,6 @@ metadata:
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -2878,6 +2853,11 @@ metadata:
     
     dynatrace: operator
     operator: dynakube
+
+
+imagePullSecrets:
+- name: redhat-connect
+- name: redhat-connect-sso
 ---
 # Source: dynatrace-operator/templates/Common/routing/serviceaccount-routing.yaml
 # Copyright 2021 Dynatrace LLC
@@ -2921,68 +2901,9 @@ kind: ServiceAccount
 metadata:
   name: dynatrace-webhook
   namespace: dynatrace
----
-# Source: dynatrace-operator/templates/Common/csi/clusterrole-csi.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: dynatrace-oneagent-csi-driver
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - namespaces
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - list
-      - watch
-      - create
-      - update
-      - patch
-  - apiGroups:
-      - storage.k8s.io
-    resources:
-      - csinodes
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - nodes
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - pods
-    verbs:
-      - get
-      - list
-      - watch
+imagePullSecrets:
+- name: redhat-connect
+- name: redhat-connect-sso
 ---
 # Source: dynatrace-operator/templates/Common/kubernetes-monitoring/clusterrole-kubernetes-monitoring.yaml
 # Copyright 2021 Dynatrace LLC
@@ -3243,7 +3164,7 @@ rules:
     verbs:
       - get
 ---
-# Source: dynatrace-operator/templates/Common/csi/clusterrolebinding-csi.yaml
+# Source: dynatrace-operator/templates/Openshift/oneagent/clusterrole-oneagent-unprivileged.yaml
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -3257,18 +3178,49 @@ rules:
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
-  name: dynatrace-oneagent-csi-driver
-subjects:
-  - kind: ServiceAccount
-    name: dynatrace-oneagent-csi-driver
-    namespace: dynatrace
-roleRef:
-  kind: ClusterRole
-  name: dynatrace-oneagent-csi-driver
-  apiGroup: rbac.authorization.k8s.io
+  name: dynatrace-dynakube-oneagent-unprivileged
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - host
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+---
+# Source: dynatrace-operator/templates/Openshift/oneagent/clusterrole-oneagent.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dynatrace-dynakube-oneagent
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - privileged
+      - host
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
 ---
 # Source: dynatrace-operator/templates/Common/kubernetes-monitoring/clusterrolebinding-kubernetes-monitoring.yaml
 # Copyright 2021 Dynatrace LLC
@@ -3360,7 +3312,7 @@ roleRef:
   name: dynatrace-webhook
   apiGroup: rbac.authorization.k8s.io
 ---
-# Source: dynatrace-operator/templates/Common/csi/role-csi.yaml
+# Source: dynatrace-operator/templates/Openshift/oneagent/clusterrolebinding-oneagent-unprivileged.yaml
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -3374,50 +3326,45 @@ roleRef:
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
-  name: dynatrace-oneagent-csi-driver
-  namespace: dynatrace
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - endpoints
-    verbs:
-      - get"
-      - watch
-      - list
-      - delete
-      - update
-      - create
-  - apiGroups:
-      - coordination.k8s.io
-    resources:
-      - leases
-    verbs:
-      - get
-      - watch
-      - list
-      - delete
-      - update
-      - create
-  - apiGroups:
-      - dynatrace.com
-    resources:
-      - dynakubes
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - get
-      - list
-      - watch
+  name: dynatrace-dynakube-oneagent-unprivileged
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-dynakube-oneagent-unprivileged
+    namespace: dynatrace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-dynakube-oneagent-unprivileged
+---
+# Source: dynatrace-operator/templates/Openshift/oneagent/clusterrolebinding-oneagent.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-dynakube-oneagent
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-dynakube-oneagent
+    namespace: dynatrace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-dynakube-oneagent
 ---
 # Source: dynatrace-operator/templates/Common/operator/role-operator.yaml
 # Copyright 2021 Dynatrace LLC
@@ -3650,34 +3597,6 @@ rules:
       - list
       - watch
 ---
-# Source: dynatrace-operator/templates/Common/csi/rolebinding-csi.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: dynatrace-oneagent-csi-driver
-  namespace: dynatrace
-subjects:
-  - kind: ServiceAccount
-    name: dynatrace-oneagent-csi-driver
-    namespace: dynatrace
-roleRef:
-  kind: Role
-  name: dynatrace-oneagent-csi-driver
-  apiGroup: rbac.authorization.k8s.io
----
 # Source: dynatrace-operator/templates/Common/operator/rolebinding-operator.yaml
 # Copyright 2021 Dynatrace LLC
 
@@ -3770,200 +3689,6 @@ spec:
       protocol: TCP
       targetPort: server-port
 ---
-# Source: dynatrace-operator/templates/Common/csi/daemonset.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  labels:
-    dynatrace: operator
-    operator: dynakube
-  name: dynatrace-oneagent-csi-driver
-  namespace: dynatrace
-spec:
-  revisionHistoryLimit: 10
-  selector:
-    matchLabels:
-      internal.oneagent.dynatrace.com/app: csi-driver
-      internal.oneagent.dynatrace.com/component: csi-driver
-  template:
-    metadata:
-      annotations:
-        kubectl.kubernetes.io/default-logs-container: driver
-      labels:
-        dynatrace: operator
-        operator: dynakube
-        internal.oneagent.dynatrace.com/app: csi-driver
-        internal.oneagent.dynatrace.com/component: csi-driver
-    spec:
-      containers:
-      - args:
-        - csi-driver
-        - --endpoint=unix://csi/csi.sock
-        - --node-id=$(KUBE_NODE_NAME)
-        - --health-probe-bind-address=:10080
-        env:
-        - name: POD_NAMESPACE
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: metadata.namespace
-        - name: KUBE_NODE_NAME
-          valueFrom:
-            fieldRef:
-              apiVersion: v1
-              fieldPath: spec.nodeName
-        image:
-            quay.io/dynatrace/dynatrace-operator:snapshot-feature-readd-manifests
-        imagePullPolicy: Always
-        livenessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /healthz
-            port: healthz
-            scheme: HTTP
-          initialDelaySeconds: 5
-          periodSeconds: 5
-          successThreshold: 1
-          timeoutSeconds: 1
-        name: driver
-        ports:
-        - containerPort: 10080
-          name: healthz
-          protocol: TCP
-        resources:
-          limits:
-            cpu: 300m
-            memory: 100M
-          requests:
-            cpu: 300m
-            memory: 100M
-        securityContext:
-          privileged: true
-          runAsUser: 0
-          seLinuxOptions:
-            level: s0
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-        volumeMounts:
-        - mountPath: /csi
-          name: plugin-dir
-        - mountPath: /var/lib/kubelet/plugins
-          mountPropagation: Bidirectional
-          name: plugins-dir
-        - mountPath: /var/lib/kubelet/pods
-          mountPropagation: Bidirectional
-          name: mountpoint-dir
-        - mountPath: /data
-          mountPropagation: Bidirectional
-          name: dynatrace-oneagent-data-dir
-      - args:
-        - --csi-address=/csi/csi.sock
-        - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
-        - --health-port=9809
-        command:
-        - csi-node-driver-registrar
-        image:
-            quay.io/dynatrace/dynatrace-operator:snapshot-feature-readd-manifests
-        imagePullPolicy: Always
-        livenessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /healthz
-            port: healthz
-            scheme: HTTP
-          initialDelaySeconds: 5
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 5
-        name: registrar
-        ports:
-        - containerPort: 9809
-          name: healthz
-          protocol: TCP
-        resources:
-          limits:
-            cpu: 10m
-            memory: 18M
-          requests:
-            cpu: 10m
-            memory: 18M
-        securityContext:
-          runAsUser: 0
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-        volumeMounts:
-        - mountPath: /csi
-          name: plugin-dir
-        - mountPath: /registration
-          name: registration-dir
-      - args:
-        - --csi-address=/csi/csi.sock
-        - --health-port=9898
-        command:
-        - livenessprobe
-        image:
-            quay.io/dynatrace/dynatrace-operator:snapshot-feature-readd-manifests
-        imagePullPolicy: Always
-        name: liveness-probe
-        resources:
-          limits:
-            cpu: 5m
-            memory: 18M
-          requests:
-            cpu: 5m
-            memory: 18M
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-        volumeMounts:
-        - mountPath: /csi
-          name: plugin-dir
-      dnsPolicy: ClusterFirst
-      restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext: {}
-      serviceAccount: dynatrace-oneagent-csi-driver
-      serviceAccountName: dynatrace-oneagent-csi-driver
-      terminationGracePeriodSeconds: 30
-      volumes:
-      - hostPath:
-          path: /var/lib/kubelet/plugins_registry/
-          type: Directory
-        name: registration-dir
-      - hostPath:
-          path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
-          type: DirectoryOrCreate
-        name: plugin-dir
-      - hostPath:
-          path: /var/lib/kubelet/plugins
-          type: Directory
-        name: plugins-dir
-      - hostPath:
-          path: /var/lib/kubelet/pods
-          type: DirectoryOrCreate
-        name: mountpoint-dir
-      - hostPath:
-          path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
-          type: DirectoryOrCreate
-        name: dynatrace-oneagent-data-dir
-  updateStrategy:
-    rollingUpdate:
-      maxUnavailable: 1
-    type: RollingUpdate
----
 # Source: dynatrace-operator/templates/Common/operator/deployment-operator.yaml
 # Copyright 2021 Dynatrace LLC
 
@@ -4007,7 +3732,7 @@ spec:
             - operator
           # Replace this with the built image name
           image:
-            quay.io/dynatrace/dynatrace-operator:snapshot-feature-readd-manifests
+            quay.io/dynatrace/dynatrace-operator:snapshot-refactor-separate-csi-yaml
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4018,8 +3743,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            
-            
+            - name: RELATED_IMAGE_DYNATRACE_ONEAGENT
+              value: registry.connect.redhat.com/dynatrace/oneagent
           ports:
             - containerPort: 8080
               name: metrics
@@ -4121,7 +3846,7 @@ spec:
           args:
             - webhook-server
           image:
-            quay.io/dynatrace/dynatrace-operator:snapshot-feature-readd-manifests
+            quay.io/dynatrace/dynatrace-operator:snapshot-refactor-separate-csi-yaml
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4153,193 +3878,6 @@ spec:
               cpu: 300m
               memory: 128Mi
       serviceAccountName: dynatrace-webhook
----
-# Source: dynatrace-operator/templates/Common/configmap.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
----
-# Source: dynatrace-operator/templates/Common/customresource-dynakube.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
----
-# Source: dynatrace-operator/templates/Common/secret.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
----
-# Source: dynatrace-operator/templates/Openshift/csi/securitycontextconstraints-csidriver.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
----
-# Source: dynatrace-operator/templates/Openshift/oneagent/clusterrole-oneagent-unprivileged.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
----
-# Source: dynatrace-operator/templates/Openshift/oneagent/clusterrole-oneagent.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
----
-# Source: dynatrace-operator/templates/Openshift/oneagent/clusterrolebinding-oneagent-unprivileged.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
----
-# Source: dynatrace-operator/templates/Openshift/oneagent/clusterrolebinding-oneagent.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
----
-# Source: dynatrace-operator/templates/Openshift/oneagent/securitycontextconstraints-unprivileged.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
----
-# Source: dynatrace-operator/templates/Openshift/oneagent/securitycontextconstraints.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
----
-# Source: dynatrace-operator/templates/application.yaml
-# Copyright 2020 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#     http://www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
----
-# Source: dynatrace-operator/templates/Common/csi/csidriver.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-apiVersion: storage.k8s.io/v1
-kind: CSIDriver
-metadata:
-  name: csi.oneagent.dynatrace.com
-spec:
-  attachRequired: false
-  podInfoOnMount: true
-  volumeLifecycleModes:
-    - Ephemeral
 ---
 # Source: dynatrace-operator/templates/Common/webhook/mutatingwebhookconfiguration.yaml
 # Copyright 2021 Dynatrace LLC
@@ -4402,6 +3940,117 @@ webhooks:
     admissionReviewVersions: [ "v1beta1", "v1" ]
     sideEffects: None
 ---
+# Source: dynatrace-operator/templates/Openshift/oneagent/securitycontextconstraints-unprivileged.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: "dynatrace-dynakube-oneagent-unprivileged allows access to all privileged and host features and the ability to run as any user, any group, any fsGroup, and with any SELinux context. This is a copy of privileged scc."
+  name: dynatrace-dynakube-oneagent-unprivileged
+allowHostDirVolumePlugin: true
+allowHostIPC: false
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: true
+allowPrivilegedContainer: false
+allowedCapabilities:
+  - CHOWN
+  - DAC_OVERRIDE
+  - DAC_READ_SEARCH
+  - FOWNER
+  - FSETID
+  - KILL
+  - NET_ADMIN
+  - NET_RAW
+  - SETFCAP
+  - SETGID
+  - SETUID
+  - SYS_ADMIN
+  - SYS_CHROOT
+  - SYS_PTRACE
+  - SYS_RESOURCE
+allowedFlexVolumes: null
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
+priority: 1
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+  - ALL
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - "*"
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:dynatrace:dynatrace-dynakube-oneagent-unprivileged
+volumes:
+  - "*"
+---
+# Source: dynatrace-operator/templates/Openshift/oneagent/securitycontextconstraints.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  annotations:
+    kubernetes.io/description: "dynatrace-dynakube-oneagent-privileged allows access to all privileged and host features and the ability to run as any user, any group, any fsGroup, and with any SELinux context. This is a copy of privileged scc."
+  name: dynatrace-dynakube-oneagent-privileged
+allowHostDirVolumePlugin: true
+allowHostIPC: false
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: true
+allowPrivilegedContainer: true
+allowedCapabilities:
+  - "*"
+allowedFlexVolumes: null
+defaultAddCapabilities: []
+fsGroup:
+  type: RunAsAny
+priority: 1
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - "*"
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:dynatrace:dynatrace-dynakube-oneagent
+volumes:
+  - "*"
+---
 # Source: dynatrace-operator/templates/Common/webhook/validatingwebhookconfiguration.yaml
 # Copyright 2021 Dynatrace LLC
 
@@ -4445,3 +4094,465 @@ webhooks:
     name: webhook.dynatrace.com
     timeoutSeconds: 2
     sideEffects: None
+---
+# Source: dynatrace-operator/templates/Common/csi/serviceaccount-csi.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dynatrace-oneagent-csi-driver
+  namespace: dynatrace
+  labels:
+    dynatrace: operator
+    operator: dynakube
+---
+# Source: dynatrace-operator/templates/Common/csi/clusterrole-csi.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dynatrace-oneagent-csi-driver
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - csinodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+---
+# Source: dynatrace-operator/templates/Common/csi/clusterrolebinding-csi.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dynatrace-oneagent-csi-driver
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-oneagent-csi-driver
+    namespace: dynatrace
+roleRef:
+  kind: ClusterRole
+  name: dynatrace-oneagent-csi-driver
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: dynatrace-operator/templates/Common/csi/role-csi.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dynatrace-oneagent-csi-driver
+  namespace: dynatrace
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - endpoints
+    verbs:
+      - get"
+      - watch
+      - list
+      - delete
+      - update
+      - create
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - watch
+      - list
+      - delete
+      - update
+      - create
+  - apiGroups:
+      - dynatrace.com
+    resources:
+      - dynakubes
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+---
+# Source: dynatrace-operator/templates/Common/csi/rolebinding-csi.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dynatrace-oneagent-csi-driver
+  namespace: dynatrace
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-oneagent-csi-driver
+    namespace: dynatrace
+roleRef:
+  kind: Role
+  name: dynatrace-oneagent-csi-driver
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: dynatrace-operator/templates/Common/csi/daemonset.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    dynatrace: operator
+    operator: dynakube
+  name: dynatrace-oneagent-csi-driver
+  namespace: dynatrace
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      internal.oneagent.dynatrace.com/app: csi-driver
+      internal.oneagent.dynatrace.com/component: csi-driver
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-logs-container: driver
+      labels:
+        dynatrace: operator
+        operator: dynakube
+        internal.oneagent.dynatrace.com/app: csi-driver
+        internal.oneagent.dynatrace.com/component: csi-driver
+    spec:
+      containers:
+      - args:
+        - csi-driver
+        - --endpoint=unix://csi/csi.sock
+        - --node-id=$(KUBE_NODE_NAME)
+        - --health-probe-bind-address=:10080
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: KUBE_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        image:
+            quay.io/dynatrace/dynatrace-operator:snapshot-refactor-separate-csi-yaml
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: healthz
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: driver
+        ports:
+        - containerPort: 10080
+          name: healthz
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 300m
+            memory: 100M
+          requests:
+            cpu: 300m
+            memory: 100M
+        securityContext:
+          privileged: true
+          runAsUser: 0
+          seLinuxOptions:
+            level: s0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /csi
+          name: plugin-dir
+        - mountPath: /var/lib/kubelet/plugins
+          mountPropagation: Bidirectional
+          name: plugins-dir
+        - mountPath: /var/lib/kubelet/pods
+          mountPropagation: Bidirectional
+          name: mountpoint-dir
+        - mountPath: /data
+          mountPropagation: Bidirectional
+          name: dynatrace-oneagent-data-dir
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
+        - --health-port=9809
+        command:
+        - csi-node-driver-registrar
+        image:
+            quay.io/dynatrace/dynatrace-operator:snapshot-refactor-separate-csi-yaml
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: healthz
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        name: registrar
+        ports:
+        - containerPort: 9809
+          name: healthz
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 10m
+            memory: 18M
+          requests:
+            cpu: 10m
+            memory: 18M
+        securityContext:
+          runAsUser: 0
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /csi
+          name: plugin-dir
+        - mountPath: /registration
+          name: registration-dir
+      - args:
+        - --csi-address=/csi/csi.sock
+        - --health-port=9898
+        command:
+        - livenessprobe
+        image:
+            quay.io/dynatrace/dynatrace-operator:snapshot-refactor-separate-csi-yaml
+        imagePullPolicy: Always
+        name: liveness-probe
+        resources:
+          limits:
+            cpu: 5m
+            memory: 18M
+          requests:
+            cpu: 5m
+            memory: 18M
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /csi
+          name: plugin-dir
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: dynatrace-oneagent-csi-driver
+      serviceAccountName: dynatrace-oneagent-csi-driver
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - hostPath:
+          path: /var/lib/kubelet/plugins_registry/
+          type: Directory
+        name: registration-dir
+      - hostPath:
+          path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
+          type: DirectoryOrCreate
+        name: plugin-dir
+      - hostPath:
+          path: /var/lib/kubelet/plugins
+          type: Directory
+        name: plugins-dir
+      - hostPath:
+          path: /var/lib/kubelet/pods
+          type: DirectoryOrCreate
+        name: mountpoint-dir
+      - hostPath:
+          path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
+          type: DirectoryOrCreate
+        name: dynatrace-oneagent-data-dir
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+---
+# Source: dynatrace-operator/templates/Common/csi/csidriver.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: csi.oneagent.dynatrace.com
+spec:
+  attachRequired: false
+  podInfoOnMount: true
+  volumeLifecycleModes:
+    - Ephemeral
+---
+# Source: dynatrace-operator/templates/Openshift/csi/securitycontextconstraints-csidriver.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: dynatrace-oneagent-csi-driver
+allowHostDirVolumePlugin: true
+allowHostIPC: true
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: true
+allowPrivilegedContainer: true
+allowedCapabilities:
+  - "*"
+allowedFlexVolumes: null
+defaultAddCapabilities: null
+fsGroup:
+  type: RunAsAny
+priority: null
+readOnlyRootFilesystem: false
+requiredDropCapabilities: null
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - "*"
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:dynatrace:dynatrace-oneagent-csi-driver
+volumes:
+  - "*"
