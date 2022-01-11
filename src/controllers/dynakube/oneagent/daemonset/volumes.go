@@ -5,6 +5,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const OneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
+
 func prepareVolumeMounts(instance *dynatracev1beta1.DynaKube) []corev1.VolumeMount {
 	rootMount := getRootMount()
 	var volumeMounts []corev1.VolumeMount
@@ -31,7 +33,7 @@ func getCertificateMount() corev1.VolumeMount {
 func getTLSMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      "tls",
-		MountPath: "/var/lib/dynatrace/oneagent/agent/customkeys",
+		MountPath: OneAgentCustomKeysPath,
 	}
 }
 
