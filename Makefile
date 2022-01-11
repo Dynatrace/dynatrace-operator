@@ -94,14 +94,14 @@ uninstall: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests kustomize
+deploy: manifests-dev
 	kubectl get namespace dynatrace || kubectl create namespace dynatrace
-	kubectl apply -f config/deploy/kubernetes/kubernetes-all.yaml
+	kubectl apply -f config/deploy/kubernetes/kubernetes-all-dev.yaml
 
 # Deploy controller in the configured OpenShift cluster in ~/.kube/config
-deploy-ocp: manifests kustomize
+deploy-ocp: manifests-dev
 	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
-	oc apply -f config/deploy/openshift/openshift-all.yaml
+	oc apply -f config/deploy/openshift/openshift-all-dev.yaml
 
 deploy-local:
 	./build/deploy_local.sh
@@ -109,6 +109,15 @@ deploy-local:
 deploy-local-easy: export TAG=snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
 deploy-local-easy:
 	./build/deploy_local.sh
+
+manifests-dev: manifests
+	cat config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/kubernetes-csi.yaml > config/deploy/kubernetes/kubernetes-all-dev.yaml
+	cat config/deploy/openshift/openshift.yaml config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/openshift-all-dev.yaml
+
+manifests-all: export IMG=quay.io/dynatrace/dynatrace-operator:snapshot
+manifests-all: manifests
+	cat config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/kubernetes-csi.yaml > config/deploy/kubernetes/kubernetes-all.yaml
+	cat config/deploy/openshift/openshift.yaml config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/openshift-all.yaml
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen kustomize
@@ -145,12 +154,8 @@ manifests: controller-gen kustomize
 	$(KUSTOMIZE) build config/crd | cat - config/deploy/kubernetes/kubernetes.yaml > temp
 	mv temp config/deploy/kubernetes/kubernetes.yaml
 
-	cat config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/kubernetes-csi.yaml > config/deploy/kubernetes/kubernetes-all.yaml
-
 	$(KUSTOMIZE) build config/crd | cat - config/deploy/openshift/openshift.yaml > temp
 	mv temp config/deploy/openshift/openshift.yaml
-
-	cat config/deploy/openshift/openshift.yaml config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/openshift-all.yaml
 
 # Run go fmt against code
 fmt:
