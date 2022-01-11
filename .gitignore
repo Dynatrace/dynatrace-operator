@@ -84,14 +84,6 @@ config/deploy/kustomization.yaml
 
 /.run/
 /config/deploy/kubernetes/kubernetes.yaml
-/config/deploy/kubernetes/kubernetes.yaml.original
-/config/deploy/kubernetes/kubernetes-csi.yaml
-/config/deploy/kubernetes/kubernetes-csi.yaml.original
 /config/deploy/openshift/openshift.yaml
-/config/deploy/openshift/openshift.yaml.original
-/config/deploy/openshift/openshift-csi.yaml
-/config/deploy/openshift/openshift-csi.yaml.original
-/config/deploy/openshift/kustomization.yaml
 
 .vscode
-/config/deploy/kubernetes/kustomization.yaml
