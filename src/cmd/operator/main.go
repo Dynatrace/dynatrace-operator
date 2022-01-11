@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
@@ -62,7 +63,7 @@ func main() {
 	subCmd := getSubCommand()
 	switch subCmd {
 	case operatorCmd:
-		if !deployedViaOLM() {
+		if !kubesystem.DeployedViaOLM() {
 			// setup manager only for certificates
 			bootstrapperCtx, done := context.WithCancel(context.TODO())
 			mgr, err = setupBootstrapper(namespace, cfg, done)
@@ -108,8 +109,4 @@ func getSubCommand() string {
 		return args[0]
 	}
 	return operatorCmd
-}
-
-func deployedViaOLM() bool {
-	return os.Getenv("DEPLOYED_VIA_OLM") == "true"
 }

@@ -50,10 +50,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            {{ if eq .Values.platform "openshift"}}
-            - name: RELATED_IMAGE_DYNATRACE_ONEAGENT
-              value: registry.connect.redhat.com/dynatrace/oneagent
-            {{ end }}
             {{ if eq .Values.olm true}}
             - name: DEPLOYED_VIA_OLM
               value: "true"

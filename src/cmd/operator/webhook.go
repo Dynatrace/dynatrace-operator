@@ -19,6 +19,7 @@ package main
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation"
 	"github.com/spf13/pflag"
@@ -46,7 +47,7 @@ func setupWebhookServer(ns string, cfg *rest.Config) (manager.Manager, func(), e
 		return nil, cleanUp, err
 	}
 
-	if !deployedViaOLM() {
+	if !kubesystem.DeployedViaOLM() {
 		waitForCertificates(newCertificateWatcher(mgr, ns, webhook.SecretCertsName))
 	}
 

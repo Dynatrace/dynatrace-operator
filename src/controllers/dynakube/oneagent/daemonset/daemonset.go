@@ -2,11 +2,10 @@ package daemonset
 
 import (
 	"fmt"
-	"os"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -27,7 +26,7 @@ const (
 
 	hostRootMount = "host-root"
 
-	relatedImageEnvVar = "RELATED_IMAGE_DYNATRACE_ONEAGENT"
+	relatedImage = "registry.connect.redhat.com/dynatrace/oneagent:latest"
 
 	podName = "dynatrace-oneagent"
 
@@ -68,7 +67,7 @@ func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string) Bu
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
 			clusterId:      clusterId,
-			relatedImage:   os.Getenv(relatedImageEnvVar),
+			relatedImage:   getRelatedImage(),
 			deploymentType: deploymentmetadata.DeploymentTypeHostMonitoring,
 		},
 		HostMonitoringFeature,
@@ -81,7 +80,7 @@ func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, clusterId stri
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
 			clusterId:      clusterId,
-			relatedImage:   os.Getenv(relatedImageEnvVar),
+			relatedImage:   getRelatedImage(),
 			deploymentType: deploymentmetadata.DeploymentTypeCloudNative,
 		},
 		CloudNativeFeature,
@@ -94,10 +93,17 @@ func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) 
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
 			clusterId:      clusterId,
-			relatedImage:   os.Getenv(relatedImageEnvVar),
+			relatedImage:   getRelatedImage(),
 			deploymentType: deploymentmetadata.DeploymentTypeFullStack,
 		},
 	}
+}
+
+func getRelatedImage() string {
+	if kubesystem.DeployedViaOLM() {
+		return relatedImage
+	}
+	return ""
 }
 
 func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {

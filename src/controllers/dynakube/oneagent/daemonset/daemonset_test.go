@@ -1,6 +1,7 @@
 package daemonset
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -11,7 +12,8 @@ import (
 )
 
 const (
-	testImage = "test-image"
+	testImage        = "test-image"
+	testRelatedImage = "test-related-image"
 )
 
 func TestUseImmutableImage(t *testing.T) {
@@ -50,6 +52,33 @@ func TestUseImmutableImage(t *testing.T) {
 		podSpecs := ds.Spec.Template.Spec
 		assert.NotNil(t, podSpecs)
 		assert.Equal(t, testImage, podSpecs.Containers[0].Image)
+	})
+	t.Run(`if related image is set, related image is used`, func(t *testing.T) {
+		instance := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
+						Image: testImage,
+					},
+				},
+			},
+		}
+		dsInfo := &ClassicFullStack{
+			builderInfo{
+				instance:       &instance,
+				hostInjectSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
+				clusterId:      testClusterID,
+				relatedImage:   testRelatedImage,
+				deploymentType: deploymentmetadata.DeploymentTypeFullStack,
+			},
+		}
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		podSpecs := ds.Spec.Template.Spec
+		assert.NotNil(t, podSpecs)
+		assert.Equal(t, testRelatedImage, podSpecs.Containers[0].Image)
 	})
 }
 

@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
@@ -51,7 +52,7 @@ func setupOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 		dynakube.Add,
 		nodes.Add,
 	}
-	if !deployedViaOLM() {
+	if !kubesystem.DeployedViaOLM() {
 		funcs = append(funcs, certificates.Add)
 	}
 
