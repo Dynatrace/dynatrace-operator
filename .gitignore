@@ -83,5 +83,7 @@ tags
 config/deploy/kustomization.yaml
 
 /.run/
+/config/deploy/kubernetes/kubernetes.yaml
+/config/deploy/openshift/openshift.yaml
 
 .vscode
