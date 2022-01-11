@@ -152,7 +152,7 @@ func buildContainer(stsProperties *statefulSetProperties) corev1.Container {
 		Env:             buildEnvs(stsProperties),
 		VolumeMounts:    buildVolumeMounts(stsProperties),
 		ReadinessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
+			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/rest/health",
 					Port:   intstr.IntOrString{IntVal: 9999},

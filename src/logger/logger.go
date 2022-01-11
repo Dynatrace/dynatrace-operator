@@ -9,6 +9,26 @@ import (
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
+func NewDTLogger() logr.Logger {
+	// todo exchange error logger with something that uses errorPrettify
+
+	cf := zap.NewProductionEncoderConfig()
+	cf.EncodeTime = zapcore.ISO8601TimeEncoder
+	logger := ctrlzap.New(ctrlzap.WriteTo(os.Stdout), ctrlzap.Encoder(zapcore.NewJSONEncoder(cf)))
+
+	return logger
+}
+
+/*
+import (
+	"os"
+
+	"github.com/go-logr/logr"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
+)
+
 type DTLogger struct {
 	infoLogger  logr.Logger
 	errorLogger logr.Logger
@@ -53,3 +73,4 @@ func (dtl DTLogger) WithName(name string) logr.Logger {
 		errorLogger: dtl.errorLogger.WithName(name),
 	}
 }
+*/
