@@ -251,7 +251,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{
 				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-					dynatracev1beta1.DataIngestCapability.DisplayName,
+					dynatracev1beta1.MetricsIngestCapability.DisplayName,
 					dynatracev1beta1.KubeMonCapability.DisplayName,
 					dynatracev1beta1.RoutingCapability.DisplayName,
 				},

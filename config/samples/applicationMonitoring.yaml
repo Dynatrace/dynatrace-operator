@@ -82,7 +82,7 @@ spec:
     capabilities:
       - routing
       - kubernetes-monitoring
-      - data-ingest
+      - metrics-ingest
 
     # Optional: to use a custom ActiveGate Docker image.
     image: ""

@@ -212,7 +212,6 @@ spec:
     capabilities:
       - routing
       - kubernetes-monitoring
-      - data-ingest
 
 ```
 
