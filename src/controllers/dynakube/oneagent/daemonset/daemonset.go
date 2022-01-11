@@ -2,6 +2,7 @@ package daemonset
 
 import (
 	"fmt"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"

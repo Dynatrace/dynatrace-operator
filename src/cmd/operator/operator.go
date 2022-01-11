@@ -18,11 +18,11 @@ package main
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/nodes"
+	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"

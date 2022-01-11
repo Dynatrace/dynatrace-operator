@@ -17,9 +17,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"os"
 
+	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/spf13/pflag"
