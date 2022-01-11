@@ -50,7 +50,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            {{ if eq .Values.olm true}}
+
+            {{ if eq (default false .Values.olm) true}}
             - name: DEPLOYED_VIA_OLM
               value: "true"
             {{ end }}
