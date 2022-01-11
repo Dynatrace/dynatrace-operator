@@ -125,7 +125,7 @@ manifests: controller-gen kustomize
 	rm config/deploy/kubernetes/tmp.yaml
 
 	# Generate kubernetes-csi.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set partial="true" --set platform="kubernetes" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="$(IMG)" --set classicFullStack.enabled=false --set cloudNativeFullStack.enabled=true > config/deploy/kubernetes/kubernetes-csi.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set partial="csi" --set platform="kubernetes" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="$(IMG)" > config/deploy/kubernetes/kubernetes-csi.yaml
 	grep -v 'app.kubernetes.io' config/deploy/kubernetes/kubernetes-csi.yaml > config/deploy/kubernetes/tmp.yaml
 	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > config/deploy/kubernetes/kubernetes-csi.yaml
 	rm config/deploy/kubernetes/tmp.yaml
@@ -137,7 +137,7 @@ manifests: controller-gen kustomize
 	rm config/deploy/openshift/tmp.yaml
 
 	# Generate openshift-csi.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set partial="true" --set platform="openshift" --set olm="${OLM}" --set autoCreateSecret=false --set createSecurityContextConstraints="true" --set operator.image="$(IMG)" --set classicFullStack.enabled=false --set cloudNativeFullStack.enabled=true > config/deploy/openshift/openshift-csi.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set partial="csi" --set platform="openshift" --set olm="${OLM}" --set autoCreateSecret=false --set createSecurityContextConstraints="true" --set operator.image="$(IMG)" > config/deploy/openshift/openshift-csi.yaml
 	grep -v 'app.kubernetes.io' config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/tmp.yaml
 	grep -v 'helm.sh' config/deploy/openshift/tmp.yaml > config/deploy/openshift/openshift-csi.yaml
 	rm config/deploy/openshift/tmp.yaml
