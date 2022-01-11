@@ -218,9 +218,9 @@ SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-routing
 .PHONY: bundle
 bundle: export OLM=true
 bundle: export IMG=registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
-bundle: manifests kustomize
+bundle: manifests-dev kustomize
 	operator-sdk generate kustomize manifests -q
-	cat config/deploy/$(PLATFORM)/$(PLATFORM)-all.yaml | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
+	cat config/deploy/$(PLATFORM)/$(PLATFORM)-all-dev.yaml | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
 	rm -rf ./config/olm/$(PLATFORM)/$(VERSION)
 	mkdir -p ./config/olm/$(PLATFORM)/$(VERSION)
