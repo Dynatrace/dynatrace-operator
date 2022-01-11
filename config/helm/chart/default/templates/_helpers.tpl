@@ -103,7 +103,7 @@ Check if we need the csi driver.
 Check if we are generating only a part of the yamls
 */}}
 {{- define "dynatrace-operator.partial" -}}
-	{{- if .Values.partial -}}
+	{{- if (default false .Values.partial) -}}
 		{{- printf "%s" .Values.partial -}}
 	{{- else -}}
 	    {{- printf "false" -}}

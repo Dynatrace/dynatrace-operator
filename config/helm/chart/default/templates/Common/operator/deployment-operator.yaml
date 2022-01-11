@@ -53,7 +53,7 @@ spec:
             {{- if eq .Values.platform "openshift"}}
             - name: RELATED_IMAGE_DYNATRACE_ONEAGENT
               value: registry.connect.redhat.com/dynatrace/oneagent
-            {{ end }}
+            {{- end }}
             {{- if eq (default false .Values.olm) true}}
             - name: DEPLOYED_VIA_OLM
               value: "true"
