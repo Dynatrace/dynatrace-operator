@@ -85,11 +85,11 @@ spec:
               containerPort: 8443
           resources:
             requests:
-              cpu: {{ .Values.webhook.requests.cpu }}
-              memory: {{ .Values.webhook.requests.memory }}
+              cpu: {{ default 300m .Values.webhook.requests.cpu }}
+              memory: {{ default 128Mi .Values.webhook.requests.memory }}
             limits:
-              cpu: {{ .Values.webhook.limits.cpu }}
-              memory: {{ .Values.webhook.limits.memory }}
+              cpu: {{ default 300m .Values.webhook.limits.cpu }}
+              memory: {{ default 128Mi .Values.webhook.limits.memory }}
       serviceAccountName: dynatrace-webhook
       {{- if .Values.operator.customPullSecret }}
       imagePullSecrets:
