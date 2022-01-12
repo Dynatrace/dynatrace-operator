@@ -1006,7 +1006,7 @@ spec:
                 properties:
                   capabilities:
                     description: Activegate capabilities enabled (routing, kubernetes-monitoring,
-                      data-ingest)
+                      metrics-ingest)
                     items:
                       type: string
                     type: array
@@ -4130,10 +4130,10 @@ spec:
         resources:
           limits:
             cpu: 300m
-            memory: 100M
+            memory: 100Mi
           requests:
             cpu: 300m
-            memory: 100M
+            memory: 100Mi
         securityContext:
           privileged: true
           runAsUser: 0
