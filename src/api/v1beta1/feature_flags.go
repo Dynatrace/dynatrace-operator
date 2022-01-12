@@ -32,6 +32,7 @@ const (
 	annotationFeatureIgnoreUnknownState               = annotationFeaturePrefix + "ignore-unknown-state"
 	annotationFeatureIgnoredNamespaces                = annotationFeaturePrefix + "ignored-namespaces"
 	annotationFeatureAutomaticKubernetesApiMonitoring = annotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
+	annotationFeatureDisableMetadataEnrichment        = annotationFeaturePrefix + "disable-metadata-enrichment"
 )
 
 var (
@@ -106,4 +107,9 @@ func (dk *DynaKube) FeatureIgnoredNamespaces() []string {
 // which ensures that settings for this kubernetes cluster exist in Dynatrace
 func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoring() bool {
 	return dk.Annotations[annotationFeatureAutomaticKubernetesApiMonitoring] == "true"
+}
+
+// FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,
+func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
+	return dk.Annotations[annotationFeatureDisableMetadataEnrichment] == "true"
 }

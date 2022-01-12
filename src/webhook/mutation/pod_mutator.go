@@ -224,6 +224,10 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return *dkResponse
 	}
 
+	if dk.FeatureDisableMetadataEnrichment() {
+		injectionInfo.features[DataIngest] = false
+	}
+
 	if !dk.NeedAppInjection() {
 		return emptyPatch
 	}
@@ -233,9 +237,13 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return *secretResponse
 	}
 
-	dataIngestFields, diResponse := m.ensureDataIngestSecret(ctx, ns, dkName, dk)
-	if diResponse != nil {
-		return *diResponse
+	dataIngestFields := map[string]string{}
+	if injectionInfo.enabled(DataIngest) {
+		var diResponse *admission.Response
+		dataIngestFields, diResponse = m.ensureDataIngestSecret(ctx, ns, dkName, dk)
+		if diResponse != nil {
+			return *diResponse
+		}
 	}
 
 	podLog.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
