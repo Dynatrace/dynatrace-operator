@@ -65,11 +65,11 @@ spec:
               name: server-port
           resources:
             requests:
-              cpu: {{ .Values.operator.requests.cpu }}
-              memory: {{ .Values.operator.requests.memory }}
+              cpu: {{ default "50m" .Values.operator.requests.cpu }}
+              memory: {{ default "64Mi" .Values.operator.requests.memory }}
             limits:
-              cpu: {{ .Values.operator.limits.cpu }}
-              memory: {{ .Values.operator.limits.memory }}
+              cpu: {{ default "100m" .Values.operator.limits.cpu }}
+              memory: {{ default "128Mi" .Values.operator.limits.memory }}
           readinessProbe:
             httpGet:
               path: /healthz
