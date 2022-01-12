@@ -80,7 +80,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 						dynatracev1beta1.RoutingCapability.DisplayName,
 						dynatracev1beta1.KubeMonCapability.DisplayName,
-						dynatracev1beta1.DataIngestCapability.DisplayName,
+						dynatracev1beta1.MetricsIngestCapability.DisplayName,
 					},
 				},
 				KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{

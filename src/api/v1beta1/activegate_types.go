@@ -31,22 +31,22 @@ var (
 		ArgumentName: "kubernetes_monitoring",
 	}
 
-	DataIngestCapability = ActiveGateCapability{
-		DisplayName:  "data-ingest",
-		ShortName:    "data-ingest",
+	MetricsIngestCapability = ActiveGateCapability{
+		DisplayName:  "metrics-ingest",
+		ShortName:    "metrics-ingest",
 		ArgumentName: "metrics_ingest",
 	}
 )
 
 var ActiveGateDisplayNames = map[CapabilityDisplayName]bool{
-	RoutingCapability.DisplayName:    true,
-	KubeMonCapability.DisplayName:    true,
-	DataIngestCapability.DisplayName: true,
+	RoutingCapability.DisplayName:       true,
+	KubeMonCapability.DisplayName:       true,
+	MetricsIngestCapability.DisplayName: true,
 }
 
 type ActiveGateSpec struct {
 
-	// Activegate capabilities enabled (routing, kubernetes-monitoring, data-ingest)
+	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest)
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 
 	CapabilityProperties `json:",inline"`

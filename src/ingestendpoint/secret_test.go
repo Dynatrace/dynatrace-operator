@@ -255,7 +255,7 @@ func updatedTestDynakubeWithDataIngestCapability() *dynatracev1beta1.DynaKube {
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{
 				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 					dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.KubeMonCapability.ShortName),
-					dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.DataIngestCapability.ShortName),
+					dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.MetricsIngestCapability.ShortName),
 				},
 			},
 			APIURL: testUpdatedApiUrl,
@@ -296,7 +296,7 @@ func buildTestDynakubeWithDataIngestCapability() *dynatracev1beta1.DynaKube {
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{
 				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 					dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.KubeMonCapability.ShortName),
-					dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.DataIngestCapability.ShortName),
+					dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.MetricsIngestCapability.ShortName),
 				},
 			},
 			APIURL: testApiUrl,
