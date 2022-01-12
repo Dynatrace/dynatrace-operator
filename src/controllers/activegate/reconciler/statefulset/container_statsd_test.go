@@ -3,7 +3,7 @@ package statefulset
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
+	statsdingest "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability/statsd-ingest"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,7 +26,7 @@ func TestStatsd_BuildContainerAndVolumes(t *testing.T) {
 		assertion.Empty(container.StartupProbe, "Expected there is no startup probe")
 
 		for _, port := range []int32{
-			consts.StatsdIngestPort, statsdProbesPort,
+			statsdingest.StatsdIngestPort, statsdProbesPort,
 		} {
 			assertion.Truef(kubeobjects.PortIsIn(container.Ports, port), "Expected that StatsD container defines port %d", port)
 		}

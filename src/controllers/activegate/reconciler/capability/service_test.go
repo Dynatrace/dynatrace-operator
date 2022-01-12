@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	statsdingest "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability/statsd-ingest"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/statefulset"
 	"github.com/stretchr/testify/assert"
@@ -57,17 +58,17 @@ func TestCreateService(t *testing.T) {
 	)
 	if instance.NeedsStatsd() {
 		assert.Contains(t, ports, corev1.ServicePort{
-			Name:       consts.StatsdIngestPortName,
+			Name:       statsdingest.StatsdIngestPortName,
 			Protocol:   corev1.ProtocolUDP,
-			Port:       consts.StatsdIngestPort,
-			TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
+			Port:       statsdingest.StatsdIngestPort,
+			TargetPort: intstr.FromString(statsdingest.StatsdIngestTargetPort),
 		})
 	} else {
 		assert.NotContains(t, ports, corev1.ServicePort{
-			Name:       consts.StatsdIngestPortName,
+			Name:       statsdingest.StatsdIngestPortName,
 			Protocol:   corev1.ProtocolUDP,
-			Port:       consts.StatsdIngestPort,
-			TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
+			Port:       statsdingest.StatsdIngestPort,
+			TargetPort: intstr.FromString(statsdingest.StatsdIngestTargetPort),
 		})
 	}
 }

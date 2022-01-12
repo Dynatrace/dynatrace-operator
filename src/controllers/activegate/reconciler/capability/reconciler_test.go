@@ -7,6 +7,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
+	statsdingest "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability/statsd-ingest"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	rsfs "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/statefulset"
@@ -122,10 +123,10 @@ func TestReconcile(t *testing.T) {
 		TargetPort: intstr.FromString(consts.HttpServicePortName),
 	}
 	statsdIngestServicePort := corev1.ServicePort{
-		Name:       consts.StatsdIngestPortName,
+		Name:       statsdingest.StatsdIngestPortName,
 		Protocol:   corev1.ProtocolUDP,
-		Port:       consts.StatsdIngestPort,
-		TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
+		Port:       statsdingest.StatsdIngestPort,
+		TargetPort: intstr.FromString(statsdingest.StatsdIngestTargetPort),
 	}
 
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
@@ -354,19 +355,19 @@ func TestGetContainerByName(t *testing.T) {
 		verify(t,
 			[]corev1.Container{
 				{Name: consts.ActiveGateContainerName},
-				{Name: consts.StatsdContainerName},
+				{Name: statsdingest.StatsdContainerName},
 			},
-			consts.EecContainerName,
-			fmt.Sprintf(`Cannot find container "%s" in the provided slice (len 2)`, consts.EecContainerName),
+			statsdingest.EecContainerName,
+			fmt.Sprintf(`Cannot find container "%s" in the provided slice (len 2)`, statsdingest.EecContainerName),
 		)
 	})
 
 	t.Run("happy path", func(t *testing.T) {
 		verify(t,
 			[]corev1.Container{
-				{Name: consts.StatsdContainerName},
+				{Name: statsdingest.StatsdContainerName},
 			},
-			consts.StatsdContainerName,
+			statsdingest.StatsdContainerName,
 			"",
 		)
 	})

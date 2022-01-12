@@ -9,6 +9,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	agcapability "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
+	statsdingest "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability/statsd-ingest"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -23,6 +24,7 @@ import (
 const (
 	UrlSecretField   = "DT_METRICS_INGEST_URL"
 	TokenSecretField = "DT_METRICS_INGEST_API_TOKEN"
+	StatsdIngestUrl  = "DT_STATSD_INGEST_URL"
 	configFile       = "endpoint.properties"
 )
 
@@ -117,6 +119,12 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 		return nil, errors.WithStack(err)
 	}
 
+	if dk.NeedsStatsd() {
+		if _, err := endpointBuf.WriteString(fmt.Sprintf("%s=%s\n", StatsdIngestUrl, fields[StatsdIngestUrl])); err != nil {
+			return nil, errors.WithStack(err)
+		}
+	}
+
 	data := map[string][]byte{
 		configFile:       endpointBuf.Bytes(),
 		TokenSecretField: []byte(fields[TokenSecretField]),
@@ -130,20 +138,27 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	dataIngestToken := ""
+	fields := make(map[string]string)
+
 	if token, ok := tokens.Data[dtclient.DynatraceDataIngestToken]; ok {
-		dataIngestToken = string(token)
+		fields[TokenSecretField] = string(token)
 	}
 
-	diUrl, err := dataIngestUrl(dk)
-	if err != nil {
+	if diUrl, err := dataIngestUrl(dk); err != nil {
 		return nil, err
+	} else {
+		fields[UrlSecretField] = diUrl
 	}
 
-	return map[string]string{
-		UrlSecretField:   diUrl,
-		TokenSecretField: dataIngestToken,
-	}, nil
+	if dk.NeedsStatsd() {
+		if statsdUrl, err := statsdIngestUrl(dk); err != nil {
+			return nil, err
+		} else {
+			fields[StatsdIngestUrl] = statsdUrl
+		}
+	}
+
+	return fields, nil
 }
 
 func dataIngestUrl(dk *dynatracev1beta1.DynaKube) (string, error) {
@@ -188,4 +203,9 @@ func extractTenant(url *url.URL) (string, error) {
 		return "", fmt.Errorf("failed to parse DynaKube.spec.apiUrl, unknown tenant")
 	}
 	return tenant, nil
+}
+
+func statsdIngestUrl(dk *dynatracev1beta1.DynaKube) (string, error) {
+	serviceName := capability.BuildServiceName(dk.Name, agcapability.MultiActiveGateName)
+	return fmt.Sprintf("%s.%s:%d", serviceName, dk.Namespace, statsdingest.StatsdIngestPort), nil
 }
