@@ -196,7 +196,7 @@ func assertAllowedResponseWithoutWarnings(t *testing.T, dynakube *dynatracev1bet
 
 func assertAllowedResponseWithWarnings(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) {
 	response := assertAllowedResponse(t, dynakube, other...)
-	assert.Equal(t, len(response.Warnings), 1)
+	assert.Greater(t, len(response.Warnings), 1)
 }
 
 func assertAllowedResponse(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) admission.Response {

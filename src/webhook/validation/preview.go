@@ -7,16 +7,26 @@ import (
 )
 
 const (
-	warningPreview = `%s mode is in PREVIEW. Please be aware that it is NOT production ready and you may run into bugs.`
+	oneAgentModePreviewWarningMessage  = `%s mode is in PREVIEW.`
+	metricsIngestPreviewWarningMessage = `metrics-ingest is in PREVIEW.`
+	basePreviewWarning                 = "PREVIEW features are NOT production ready and you may run into bugs."
 )
 
-func previewWarning(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+func oneAgentModePreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.CloudNativeFullstackMode() {
 		log.Info("DynaKube with cloudNativeFullStack was applied, warning was provided.")
-		return fmt.Sprintf(warningPreview, "cloudNativeFullStack")
+		return fmt.Sprintf(oneAgentModePreviewWarningMessage, "cloudNativeFullStack")
 	} else if dynakube.ApplicationMonitoringMode() && dynakube.NeedsCSIDriver() {
 		log.Info("DynaKube with applicationMonitoring was applied, warning was provided.")
-		return fmt.Sprintf(warningPreview, "applicationMonitoring")
+		return fmt.Sprintf(oneAgentModePreviewWarningMessage, "applicationMonitoring")
+	}
+	return ""
+}
+
+func metricIngestPreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	if dynakube.IsActiveGateMode(dynatracev1beta1.MetricsIngestCapability.DisplayName) {
+		log.Info("DynaKube with metrics-ingest was applied, warning was provided.")
+		return metricsIngestPreviewWarningMessage
 	}
 	return ""
 }
