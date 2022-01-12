@@ -7,11 +7,13 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	oneagent "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
@@ -687,7 +689,7 @@ func updateInstallContainerOneAgent(ic *corev1.Container, number int, name strin
 }
 
 // updateContainerOA sets missing preload Variables
-func updateContainerOneAgent(c *corev1.Container, oa *dynatracev1beta1.DynaKube, pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
+func updateContainerOneAgent(c *corev1.Container, dk *dynatracev1beta1.DynaKube, pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
 
 	podLog.Info("updating container with missing preload variables", "containerName", c.Name)
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
@@ -709,6 +711,14 @@ func updateContainerOneAgent(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
 			MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
 			SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
 		})
+	if dk.HasActiveGateTLS() {
+		c.VolumeMounts = append(c.VolumeMounts,
+			corev1.VolumeMount{
+				Name:      oneAgentShareVolumeName,
+				MountPath: filepath.Join(oneagent.OneAgentCustomKeysPath, "custom.pem"),
+				SubPath:   "custom.pem",
+			})
+	}
 
 	c.Env = append(c.Env,
 		corev1.EnvVar{
@@ -716,7 +726,7 @@ func updateContainerOneAgent(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
 			Value: installPath + "/agent/lib64/liboneagentproc.so",
 		})
 
-	if oa.Spec.Proxy != nil && (oa.Spec.Proxy.Value != "" || oa.Spec.Proxy.ValueFrom != "") {
+	if dk.Spec.Proxy != nil && (dk.Spec.Proxy.Value != "" || dk.Spec.Proxy.ValueFrom != "") {
 		c.Env = append(c.Env,
 			corev1.EnvVar{
 				Name: "DT_PROXY",
@@ -731,8 +741,8 @@ func updateContainerOneAgent(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
 			})
 	}
 
-	if oa.Spec.NetworkZone != "" {
-		c.Env = append(c.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: oa.Spec.NetworkZone})
+	if dk.Spec.NetworkZone != "" {
+		c.Env = append(c.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: dk.Spec.NetworkZone})
 	}
 
 }
