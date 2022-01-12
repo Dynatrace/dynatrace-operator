@@ -53,6 +53,12 @@ var (
 						},
 					},
 				}},
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+					dynatracev1beta1.KubeMonCapability.DisplayName,
+				},
+				TlsSecretName: "testing",
+			},
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
 			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
@@ -125,6 +131,11 @@ var (
 		Data:       map[string][]byte{"apiToken": []byte("42")},
 	}
 
+	testTlsSecretDynakubeComplex = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "testing", Namespace: operatorNamespace},
+		Data:       map[string][]byte{tlsCertKey: []byte("testing")},
+	}
+
 	testSecretDynakubeSimple = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeSimpleName, Namespace: operatorNamespace},
 		Data:       map[string][]byte{"paasToken": []byte("42"), "apiToken": []byte("84")},
@@ -158,7 +169,7 @@ func TestGenerateForNamespace(t *testing.T) {
 				Labels: map[string]string{mapper.InstanceLabel: testDynakubeComplex.Name},
 			},
 		}
-		clt := fake.NewClient(testDynakubeComplex, &testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testNode1, testNode2)
+		clt := fake.NewClient(testDynakubeComplex, &testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testTlsSecretDynakubeComplex, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		_, err := ig.GenerateForNamespace(context.TODO(), *testDynakubeComplex, testNamespace.Name)
@@ -210,7 +221,7 @@ func TestGenerateForDynakube(t *testing.T) {
 				Labels: map[string]string{mapper.InstanceLabel: testDynakubeComplex.Name},
 			},
 		}
-		clt := fake.NewClient(&testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testNode1, testNode2)
+		clt := fake.NewClient(&testNamespace, testSecretDynakubeComplex, kubeNamespace, caConfigMap, testTlsSecretDynakubeComplex, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 
 		updated, err := ig.GenerateForDynakube(context.TODO(), dk)
@@ -340,7 +351,7 @@ func testForCorrectContent(t *testing.T, secret *corev1.Secret) {
 			Labels: map[string]string{mapper.InstanceLabel: testDynakubeComplex.Name},
 		},
 	}
-	clt := fake.NewClient(&testNamespace, secret, caConfigMap)
+	clt := fake.NewClient(&testNamespace, secret, caConfigMap, testTlsSecretDynakubeComplex)
 	ig := NewInitGenerator(clt, clt, operatorNamespace)
 	imNodes := map[string]string{testNode1Name: testTenantUUID, testNode2Name: testTenantUUID}
 	sc, err := ig.prepareScriptForDynaKube(dk, kubesystemUID, imNodes)
@@ -355,6 +366,7 @@ func testForCorrectContent(t *testing.T, secret *corev1.Secret) {
 		TenantUUID:    dk.Status.ConnectionInfo.TenantUUID,
 		IMNodes:       imNodes,
 		HasHost:       true,
+		TlsCert:       "testing",
 	}
 	assert.Equal(t, &expectedScript, sc)
 

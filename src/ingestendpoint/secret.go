@@ -124,20 +124,20 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 }
 
 func dataIngestUrl(dk *dynatracev1beta1.DynaKube) (string, error) {
-	if dk.IsActiveGateMode(dynatracev1beta1.DataIngestCapability.ShortName) {
-		return dataIngestUrlForClusterActiveGate(dk)
+	if dk.IsActiveGateMode(dynatracev1beta1.MetricsIngestCapability.ShortName) {
+		return metricsIngestUrlForClusterActiveGate(dk)
 	} else if len(dk.Spec.APIURL) > 0 {
-		return dataIngestUrlForDynatraceActiveGate(dk)
+		return metricsIngestUrlForDynatraceActiveGate(dk)
 	} else {
 		return "", fmt.Errorf("failed to create data-ingest endpoint, DynaKube.spec.apiUrl is empty")
 	}
 }
 
-func dataIngestUrlForDynatraceActiveGate(dk *dynatracev1beta1.DynaKube) (string, error) {
+func metricsIngestUrlForDynatraceActiveGate(dk *dynatracev1beta1.DynaKube) (string, error) {
 	return fmt.Sprintf("%s/v2/metrics/ingest", dk.Spec.APIURL), nil
 }
 
-func dataIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string, error) {
+func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string, error) {
 	apiUrl, err := url.Parse(dk.Spec.APIURL)
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to parse DynaKube.spec.apiUrl")
