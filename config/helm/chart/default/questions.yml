@@ -421,7 +421,7 @@ questions:
       - Please edit as Yaml for the best experience
     default: |
       - routing
-      - data-ingest
+      - metrics-ingest
       - kubernetes-monitoring
     type: multiline
     group: "ActiveGate"

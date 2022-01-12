@@ -997,7 +997,7 @@ spec:
                 properties:
                   capabilities:
                     description: Activegate capabilities enabled (routing, kubernetes-monitoring,
-                      data-ingest)
+                      metrics-ingest)
                     items:
                       type: string
                     type: array
