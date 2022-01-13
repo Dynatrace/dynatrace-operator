@@ -224,6 +224,10 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return *dkResponse
 	}
 
+	if dk.FeatureDisableMetadataEnrichment() {
+		injectionInfo.features[DataIngest] = false
+	}
+
 	if !dk.NeedAppInjection() {
 		return emptyPatch
 	}
@@ -233,9 +237,13 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return *secretResponse
 	}
 
-	dataIngestFields, diResponse := m.ensureDataIngestSecret(ctx, ns, dkName, dk)
-	if diResponse != nil {
-		return *diResponse
+	dataIngestFields := map[string]string{}
+	if injectionInfo.enabled(DataIngest) {
+		var err error
+		dataIngestFields, err = m.ensureDataIngestSecret(ctx, ns, dkName, dk)
+		if err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
 	}
 
 	podLog.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
@@ -604,28 +612,24 @@ func (m *podMutator) getNsAndDkName(ctx context.Context, req admission.Request) 
 	return ns, dkName, nil
 }
 
-func (m *podMutator) ensureDataIngestSecret(ctx context.Context, ns corev1.Namespace, dkName string, dk dynatracev1beta1.DynaKube) (map[string]string, *admission.Response) {
-	var rsp admission.Response
+func (m *podMutator) ensureDataIngestSecret(ctx context.Context, ns corev1.Namespace, dkName string, dk dynatracev1beta1.DynaKube) (map[string]string, error) {
 	endpointGenerator := dtingestendpoint.NewEndpointSecretGenerator(m.client, m.apiReader, m.namespace)
 
 	var endpointSecret corev1.Secret
 	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtingestendpoint.SecretEndpointName, Namespace: ns.Name}, &endpointSecret); k8serrors.IsNotFound(err) {
 		if _, err := endpointGenerator.GenerateForNamespace(ctx, dkName, ns.Name); err != nil {
 			podLog.Error(err, "failed to create the data-ingest endpoint secret before pod injection")
-			rsp = admission.Errored(http.StatusBadRequest, err)
-			return nil, &rsp
+			return nil, err
 		}
 	} else if err != nil {
 		podLog.Error(err, "failed to query the data-ingest endpoint secret before pod injection")
-		rsp = admission.Errored(http.StatusBadRequest, err)
-		return nil, &rsp
+		return nil, err
 	}
 
 	dataIngestFields, err := endpointGenerator.PrepareFields(ctx, &dk)
 	if err != nil {
 		podLog.Error(err, "failed to query the data-ingest endpoint secret before pod injection")
-		rsp = admission.Errored(http.StatusBadRequest, err)
-		return nil, &rsp
+		return nil, err
 	}
 	return dataIngestFields, nil
 }

@@ -15,6 +15,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -79,6 +81,26 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 	}
 	log.Info("done updating data-ingest endpoint secrets")
 	return anyUpdate, nil
+}
+
+func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
+	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
+	if err != nil {
+		return err
+	}
+	for _, targetNs := range nsList {
+		endpointSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      SecretEndpointName,
+				Namespace: targetNs.GetName(),
+			},
+		}
+		if err := g.client.Delete(context.TODO(), endpointSecret); err != nil && !k8serrors.IsNotFound(err) {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
