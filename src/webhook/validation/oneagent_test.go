@@ -109,7 +109,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 				},
 			})
 
-		assertAllowedResponseWithWarnings(t,
+		assertAllowedResponseWithWarnings(t, 2,
 			&dynatracev1beta1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "conflict2",
