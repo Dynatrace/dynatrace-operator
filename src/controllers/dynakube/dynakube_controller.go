@@ -245,6 +245,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 		}
 	}
 
+	endpointSecretGenerator := dtingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, dkState.Instance.Namespace)
 	if dkState.Instance.NeedAppInjection() {
 		if err := dkMapper.MapFromDynakube(); err != nil {
 			log.Error(err, "update of a map of namespaces failed")
@@ -255,12 +256,12 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 		}
 
 		if !dkState.Instance.FeatureDisableMetadataEnrichment() {
-			upd, err = dtingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, dkState.Instance.Namespace).GenerateForDynakube(ctx, dkState.Instance)
+			upd, err = endpointSecretGenerator.GenerateForDynakube(ctx, dkState.Instance)
 			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "new data-ingest endpoint secret created") {
 				return
 			}
 		} else {
-			err = dtingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, dkState.Instance.Namespace).RemoveEndpointSecrets(ctx, dkState.Instance)
+			err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, dkState.Instance)
 			if dkState.Error(err) {
 				return
 			}
@@ -270,7 +271,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 			log.Error(err, "could not unmap dynakube from namespace")
 			return
 		}
-		err = dtingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, dkState.Instance.Namespace).RemoveEndpointSecrets(ctx, dkState.Instance)
+		err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, dkState.Instance)
 		if dkState.Error(err) {
 			return
 		}
