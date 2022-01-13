@@ -259,10 +259,19 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "new data-ingest endpoint secret created") {
 				return
 			}
+		} else {
+			err = dtingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, dkState.Instance.Namespace).RemoveEndpointSecrets(ctx, dkState.Instance)
+			if dkState.Error(err) {
+				return
+			}
 		}
 	} else {
 		if err := dkMapper.UnmapFromDynaKube(); err != nil {
 			log.Error(err, "could not unmap dynakube from namespace")
+			return
+		}
+		err = dtingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, dkState.Instance.Namespace).RemoveEndpointSecrets(ctx, dkState.Instance)
+		if dkState.Error(err) {
 			return
 		}
 	}
