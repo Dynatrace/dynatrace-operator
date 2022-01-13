@@ -68,9 +68,9 @@ func (dk *DynaKube) ActiveGateMode() bool {
 	return len(dk.Spec.ActiveGate.Capabilities) > 0
 }
 
-func (dk *DynaKube) IsActiveGateMode(mode string) bool {
+func (dk *DynaKube) IsActiveGateMode(mode CapabilityDisplayName) bool {
 	for _, capability := range dk.Spec.ActiveGate.Capabilities {
-		if string(capability) == mode {
+		if capability == mode {
 			return true
 		}
 	}
@@ -78,7 +78,7 @@ func (dk *DynaKube) IsActiveGateMode(mode string) bool {
 }
 
 func (dk *DynaKube) KubernetesMonitoringMode() bool {
-	return dk.IsActiveGateMode(string(KubeMonCapability.DisplayName)) || dk.Spec.KubernetesMonitoring.Enabled
+	return dk.IsActiveGateMode(KubeMonCapability.DisplayName) || dk.Spec.KubernetesMonitoring.Enabled
 }
 
 func (dk *DynaKube) HasActiveGateTLS() bool {

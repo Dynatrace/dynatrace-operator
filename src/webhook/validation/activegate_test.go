@@ -31,6 +31,17 @@ func TestConflictingActiveGateConfiguration(t *testing.T) {
 					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 						dynatracev1beta1.RoutingCapability.DisplayName,
 						dynatracev1beta1.KubeMonCapability.DisplayName,
+					},
+				},
+			},
+		})
+
+		assertAllowedResponseWithWarnings(t, 2, &dynatracev1beta1.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				ActiveGate: dynatracev1beta1.ActiveGateSpec{
+					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 						dynatracev1beta1.MetricsIngestCapability.DisplayName,
 					},
 				},
