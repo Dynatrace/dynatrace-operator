@@ -21,7 +21,7 @@ func TestPreviewWarning(t *testing.T) {
 
 	t.Run(`warning present`, func(t *testing.T) {
 		useCSIDriver := true
-		assertAllowedResponseWithWarnings(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithWarnings(t, 2, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
