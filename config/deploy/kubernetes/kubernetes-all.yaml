@@ -3025,6 +3025,7 @@ rules:
     resourceNames:
       - dynatrace-dynakube-config
       - dynatrace-data-ingest-endpoint
+      - dynatrace-activegate-internal-proxy
     verbs:
       - get
       - update
@@ -3844,6 +3845,7 @@ webhooks:
         path: /validate
     rules:
       - operations:
+          - CREATE
           - UPDATE
         apiGroups:
           - dynatrace.com
