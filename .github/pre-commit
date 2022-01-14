@@ -17,7 +17,7 @@ if [[ $STAGED_YAML_FILES == "" ]]; then
     echo "No Yaml Files to Update"
 ## otherwise we generate the manifests for master
 else
-    make manifests-all
+    make manifests
 fi
 
 ## this will retrieve all of the .go files that have been
