@@ -118,7 +118,7 @@ manifests: controller-gen kustomize
 	rm config/deploy/kubernetes/tmp.yaml
 
 	# Generate openshift.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" --set olm="${OLM}" --set autoCreateSecret=false --set createSecurityContextConstraints="true" --set operator.image="$(MASTER_IMAGE)" > config/deploy/openshift/openshift.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" --set olm="${OLM}" --set manifests=true --set autoCreateSecret=false --set createSecurityContextConstraints="true" --set operator.image="$(MASTER_IMAGE)" > config/deploy/openshift/openshift.yaml
 	grep -v 'app.kubernetes.io' config/deploy/openshift/openshift.yaml > config/deploy/openshift/tmp.yaml
 	grep -v 'helm.sh' config/deploy/openshift/tmp.yaml > config/deploy/openshift/openshift.yaml
 	rm config/deploy/openshift/tmp.yaml
