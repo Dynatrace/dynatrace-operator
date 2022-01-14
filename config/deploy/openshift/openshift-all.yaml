@@ -3733,7 +3733,7 @@ spec:
             - operator
           # Replace this with the built image name
           image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-4
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -3847,7 +3847,7 @@ spec:
           args:
             - webhook-server
           image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-4
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4351,7 +4351,7 @@ spec:
               apiVersion: v1
               fieldPath: spec.nodeName
         image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-4
         imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
@@ -4401,7 +4401,7 @@ spec:
         command:
         - csi-node-driver-registrar
         image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-4
         imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
@@ -4440,7 +4440,7 @@ spec:
         command:
         - livenessprobe
         image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-4
         imagePullPolicy: Always
         name: liveness-probe
         resources:
