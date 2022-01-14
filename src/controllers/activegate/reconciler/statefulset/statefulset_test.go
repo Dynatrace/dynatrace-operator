@@ -184,30 +184,6 @@ func TestStatefulSet_Env(t *testing.T) {
 			{Name: testKey, Value: testValue},
 		}, envVars)
 	})
-	t.Run(`with proxy from value`, func(t *testing.T) {
-		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", nil, nil, nil))
-
-		assert.Contains(t, envVars, corev1.EnvVar{
-			Name:  DTInternalProxy,
-			Value: testValue,
-		})
-	})
-	t.Run(`with proxy from value source`, func(t *testing.T) {
-		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}
-		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", nil, nil, nil))
-
-		assert.NotEmpty(t, envVars)
-
-		for _, envVar := range envVars {
-			if envVar.Name == DTInternalProxy {
-				assert.Equal(t, ProxySecretKey, envVar.ValueFrom.SecretKeyRef.Key)
-				assert.Equal(t, corev1.LocalObjectReference{Name: testName}, envVar.ValueFrom.SecretKeyRef.LocalObjectReference)
-			}
-		}
-	})
 	t.Run(`with networkzone`, func(t *testing.T) {
 		instance := buildTestInstance()
 		instance.Spec.NetworkZone = testName
@@ -258,6 +234,72 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 			Name:      customproperties.VolumeName,
 			MountPath: customproperties.MountPath,
 			SubPath:   customproperties.DataPath,
+		})
+	})
+	t.Run(`with proxy from value`, func(t *testing.T) {
+		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", "", nil, nil, nil))
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretHostMountPath,
+			SubPath:   InternalProxySecretHost,
+		})
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretPortMountPath,
+			SubPath:   InternalProxySecretPort,
+		})
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretUsernameMountPath,
+			SubPath:   InternalProxySecretUsername,
+		})
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretPasswordMountPath,
+			SubPath:   InternalProxySecretPassword,
+		})
+	})
+	t.Run(`with proxy from value source`, func(t *testing.T) {
+		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}
+		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", "", nil, nil, nil))
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretHostMountPath,
+			SubPath:   InternalProxySecretHost,
+		})
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretPortMountPath,
+			SubPath:   InternalProxySecretPort,
+		})
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretUsernameMountPath,
+			SubPath:   InternalProxySecretUsername,
+		})
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretPasswordMountPath,
+			SubPath:   InternalProxySecretPassword,
 		})
 	})
 }
