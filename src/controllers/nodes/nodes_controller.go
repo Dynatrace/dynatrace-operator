@@ -74,16 +74,12 @@ func (r *ReconcileNode) Reconcile(ctx context.Context, request reconcile.Request
 				}
 
 				// Only mark for termination if ipAddress is set and Node was seen last less than an hour ago
-				if time.Now().UTC().Sub(cachedNode.LastSeen).Hours() > 1 {
-					log.Info("removing stale node")
-				} else if cachedNode.IPAddress == "" {
-					log.Info("removing node with unknown IP")
-				} else if err := r.markForTermination(dk, nodeCache, cachedNode, nodeName); err != nil {
-					return reconcile.Result{}, err
+				if !r.isNodeDeleteable(cachedNode) {
+					if err := r.markForTermination(dk, nodeCache, cachedNode, nodeName); err != nil {
+						return reconcile.Result{}, err
+					}
 				}
-				if err := r.removeNodeFromCache(nodeCache, cachedNode, nodeName); err != nil {
-					return reconcile.Result{}, err
-				}
+				r.removeNodeFromCache(nodeCache, cachedNode, nodeName)
 			}
 			log.Info("node was not found in cluster", "node", nodeName)
 			return reconcile.Result{}, nil
@@ -179,10 +175,7 @@ func (r *ReconcileNode) handleOutdatedCache(nodeCache *Cache) error {
 					log.Error(err, "failed to get node", "node", cachedNodeName)
 					return err
 				}
-				if err := r.removeNodeFromCache(nodeCache, cachedNodeInfo, cachedNodeName); err != nil {
-					log.Error(err, "failed to remove node", "node", cachedNodeName)
-					return err
-				}
+				r.removeNodeFromCache(nodeCache, cachedNodeInfo, cachedNodeName)
 				break
 			}
 		}
@@ -190,16 +183,19 @@ func (r *ReconcileNode) handleOutdatedCache(nodeCache *Cache) error {
 	return nil
 }
 
-func (r *ReconcileNode) removeNodeFromCache(nodeCache *Cache, cachedNode CacheEntry, nodeName string) error {
-	if time.Now().UTC().Sub(cachedNode.LastSeen).Hours() > 1 {
-		log.Info("removing stale node")
-	} else if cachedNode.IPAddress == "" {
-		log.Info("removing node with unknown IP")
-	} else {
-		return nil
+func (r *ReconcileNode) removeNodeFromCache(nodeCache *Cache, cachedNode CacheEntry, nodeName string) {
+	if r.isNodeDeleteable(cachedNode) {
+		nodeCache.Delete(nodeName)
 	}
-	nodeCache.Delete(nodeName)
-	return nil
+}
+
+func (r *ReconcileNode) isNodeDeleteable(cachedNode CacheEntry) bool {
+	if time.Now().UTC().Sub(cachedNode.LastSeen).Hours() > 1 {
+		return true
+	} else if cachedNode.IPAddress == "" {
+		return true
+	}
+	return false
 }
 
 func (r *ReconcileNode) sendMarkedForTermination(dk *dynatracev1beta1.DynaKube, cachedNode CacheEntry) error {
