@@ -72,7 +72,13 @@ func (r *ReconcileNode) Reconcile(ctx context.Context, request reconcile.Request
 				if err != nil {
 					return reconcile.Result{}, err
 				}
-				if err := r.markForTermination(dk, nodeCache, cachedNode, nodeName); err != nil {
+
+				// Only mark for termination if ipAddress is set and Node was seen last less than an hour ago
+				if time.Now().UTC().Sub(cachedNode.LastSeen).Hours() > 1 {
+					log.Info("removing stale node")
+				} else if cachedNode.IPAddress == "" {
+					log.Info("removing node with unknown IP")
+				} else if err := r.markForTermination(dk, nodeCache, cachedNode, nodeName); err != nil {
 					return reconcile.Result{}, err
 				}
 				if err := r.removeNodeFromCache(nodeCache, cachedNode, nodeName); err != nil {
