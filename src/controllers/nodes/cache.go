@@ -1,13 +1,11 @@
 package nodes
 
 import (
-	"context"
 	"encoding/json"
 	"time"
 
 	err "github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -65,21 +63,6 @@ func (nodeCache *Cache) Set(node string, entry CacheEntry) error {
 	}
 	nodeCache.Obj.Data[node] = string(raw)
 	nodeCache.upd = true
-	return nil
-}
-
-func (nodeCache *Cache) updateCache(mgrClient client.Client, ctx context.Context) error {
-	if !nodeCache.Changed() {
-		return nil
-	}
-
-	if nodeCache.Create {
-		return mgrClient.Create(ctx, nodeCache.Obj)
-	}
-
-	if err := mgrClient.Update(ctx, nodeCache.Obj); err != nil {
-		return err
-	}
 	return nil
 }
 

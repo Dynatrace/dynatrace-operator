@@ -161,6 +161,21 @@ func (r *ReconcileNode) getCache() (*Cache, error) {
 	return nil, err
 }
 
+func (r *ReconcileNode) updateCache(nodeCache Cache, ctx context.Context) error {
+	if !nodeCache.Changed() {
+		return nil
+	}
+
+	if nodeCache.Create {
+		return r.client.Create(context.TODO(), nodeCache.Obj)
+	}
+
+	if err := r.client.Update(ctx, nodeCache.Obj); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *ReconcileNode) handleOutdatedCache(nodeCache *Cache) error {
 	var nodeLst corev1.NodeList
 	if err := r.client.List(context.TODO(), &nodeLst); err != nil {
