@@ -143,6 +143,18 @@ func (r *ReconcileNode) Reconcile(ctx context.Context, request reconcile.Request
 	return reconcile.Result{}, nodeCache.updateCache(r.client, ctx)
 }
 
+func (r *ReconcileNode) removeNodeFromCache(nodeCache *Cache, cachedNode CacheEntry, nodeName string) error {
+	if time.Now().UTC().Sub(cachedNode.LastSeen).Hours() > 1 {
+		log.Info("removing stale node")
+	} else if cachedNode.IPAddress == "" {
+		log.Info("removing node with unknown IP")
+	} else {
+		return nil
+	}
+	nodeCache.Delete(nodeName)
+	return nil
+}
+
 func getCache(mgrClient client.Client, scheme *runtime.Scheme) (*Cache, error) {
 	var cm corev1.ConfigMap
 	namespace := os.Getenv("POD_NAMESPACE")
@@ -161,9 +173,8 @@ func getCache(mgrClient client.Client, scheme *runtime.Scheme) (*Cache, error) {
 			},
 			Data: map[string]string{},
 		}
-		isLocal := os.Getenv("RUN_LOCAL") == "true"
 
-		if !isLocal { // If running locally, don't set the controller.
+		if os.Getenv("RUN_LOCAL") != "true" { // If running locally, don't set the controller.
 			deploy, err := kubeobjects.GetDeployment(mgrClient, podName, namespace)
 			if err != nil {
 				return nil, err
@@ -206,18 +217,6 @@ func (r *ReconcileNode) handleOutdatedCache(nodeCache *Cache) error {
 	return nil
 }
 
-func (r *ReconcileNode) removeNodeFromCache(nodeCache *Cache, cachedNode CacheEntry, nodeName string) error {
-	if time.Now().UTC().Sub(cachedNode.LastSeen).Hours() > 1 {
-		log.Info("removing stale node")
-	} else if cachedNode.IPAddress == "" {
-		log.Info("removing node with unknown IP")
-	} else {
-		return nil
-	}
-	nodeCache.Delete(nodeName)
-	return nil
-}
-
 func sendMarkedForTermination(opts MarkForTerminationOptions) error {
 	dtp, err := dynakube.NewDynatraceClientProperties(context.TODO(), opts.client, *opts.dynakube)
 	if err != nil {
@@ -255,7 +254,7 @@ func markForTermination(opts MarkForTerminationOptions) error {
 		return nil
 	}
 
-	if err := opts.nodeCache.updateLastMarkedForTerminationTimestamp(&opts.cachedNode, opts.nodeName); err != nil {
+	if err := opts.nodeCache.updateLastMarkedForTerminationTimestamp(opts.cachedNode, opts.nodeName); err != nil {
 		return err
 	}
 

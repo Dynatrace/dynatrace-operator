@@ -137,7 +137,7 @@ func (nodeCache *Cache) UpdateTimestamp() {
 	nodeCache.upd = true
 }
 
-func (nodeCache *Cache) updateLastMarkedForTerminationTimestamp(nodeInfo *CacheEntry, nodeName string) error {
+func (nodeCache *Cache) updateLastMarkedForTerminationTimestamp(nodeInfo CacheEntry, nodeName string) error {
 	nodeInfo.LastMarkedForTermination = time.Now().UTC()
-	return nodeCache.Set(nodeName, *nodeInfo)
+	return nodeCache.Set(nodeName, nodeInfo)
 }
