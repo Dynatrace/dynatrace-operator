@@ -72,29 +72,31 @@ func (r *ReconcileNodeDeletion) Reconcile(ctx context.Context, request reconcile
 
 	cachedNodeInfo, err := nodeCache.Get(nodeName)
 	if err != nil {
+		if err == ErrNotFound {
+			// uncached node -> igonoring
+			return reconcile.Result{}, nil
+		}
+
 		r.logger.Error(err, "error while getting cachedNode on deletion")
 		return reconcile.Result{}, err
 	}
 
-	// Node is found in the cluster and in cache, send mark for termination
-	if &cachedNodeInfo != nil {
-		if dk != nil {
-			err = markForTermination(MarkForTerminationOptions{
-				nodeCache:    nodeCache,
-				nodeName:     nodeName,
-				cachedNode:   cachedNodeInfo,
-				dynakube:     dk,
-				client:       r.client,
-				dtClientFunc: r.dtClientFunc,
-			})
+	// Node is found in the cluster and in cache, send mark for termination, not found node is handled in err check
+	if dk != nil {
+		err = markForTermination(MarkForTerminationOptions{
+			nodeCache:    nodeCache,
+			nodeName:     nodeName,
+			cachedNode:   cachedNodeInfo,
+			dynakube:     dk,
+			client:       r.client,
+			dtClientFunc: r.dtClientFunc,
+		})
 
-			if err != nil {
-				return reconcile.Result{}, err
-			}
+		if err != nil {
+			return reconcile.Result{}, err
 		}
-
-		nodeCache.Delete(nodeName)
 	}
 
+	nodeCache.Delete(nodeName)
 	return reconcile.Result{}, nodeCache.updateCache(r.client, ctx)
 }
