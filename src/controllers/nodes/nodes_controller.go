@@ -122,7 +122,7 @@ func (r *ReconcileNode) Reconcile(ctx context.Context, request reconcile.Request
 		}
 		nodeCache.UpdateTimestamp()
 	}
-	return reconcile.Result{}, nodeCache.updateCache(r.client, ctx)
+	return reconcile.Result{}, r.updateCache(nodeCache, ctx)
 }
 
 func (r *ReconcileNode) getCache() (*Cache, error) {
@@ -161,7 +161,7 @@ func (r *ReconcileNode) getCache() (*Cache, error) {
 	return nil, err
 }
 
-func (r *ReconcileNode) updateCache(nodeCache Cache, ctx context.Context) error {
+func (r *ReconcileNode) updateCache(nodeCache *Cache, ctx context.Context) error {
 	if !nodeCache.Changed() {
 		return nil
 	}
