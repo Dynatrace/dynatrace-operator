@@ -8,28 +8,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *ReconcileNodes) determineDynakubeForNode(nodeName string) (*dynatracev1beta1.DynaKube, error) {
-	dkList, err := r.getOneAgentList()
+func determineDynakubeForNode(nodeName string, mgrClient client.Client) (*dynatracev1beta1.DynaKube, error) {
+	dks, err := getDynakubeList(mgrClient)
 	if err != nil {
 		return nil, err
 	}
-
-	return r.filterOneAgentFromList(dkList, nodeName), nil
+	return filterOneAgentFromList(dks, nodeName), nil
 }
 
-func (r *ReconcileNodes) getOneAgentList() (*dynatracev1beta1.DynaKubeList, error) {
+func getDynakubeList(mgrClient client.Client) (*dynatracev1beta1.DynaKubeList, error) {
 	watchNamespace := os.Getenv("POD_NAMESPACE")
-
-	var dkList dynatracev1beta1.DynaKubeList
-	err := r.client.List(context.TODO(), &dkList, client.InNamespace(watchNamespace))
+	var dynakubeList dynatracev1beta1.DynaKubeList
+	err := mgrClient.List(context.TODO(), &dynakubeList, client.InNamespace(watchNamespace))
 	if err != nil {
 		return nil, err
 	}
-
-	return &dkList, nil
+	return &dynakubeList, nil
 }
 
-func (r *ReconcileNodes) filterOneAgentFromList(dkList *dynatracev1beta1.DynaKubeList,
+func filterOneAgentFromList(dkList *dynatracev1beta1.DynaKubeList,
 	nodeName string) *dynatracev1beta1.DynaKube {
 
 	for _, dynakube := range dkList.Items {

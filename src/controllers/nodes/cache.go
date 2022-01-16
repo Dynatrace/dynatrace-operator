@@ -1,14 +1,23 @@
 package nodes
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
 	"time"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ErrNotFound is returned when entry hasn't been found on the cache.
+const (
+	cacheName = "dynatrace-node-cache"
+)
+
+var cacheLifetime = 10 * time.Minute
+var lastUpdatedCacheTime = "DTOperatorLastUpdated"
+
+// ErrNotFound is returned when entry hasn't been found on the cache.Ø
 var ErrNotFound = errors.New("not found")
 
 // CacheEntry constains information about a Node.
@@ -27,12 +36,12 @@ type Cache struct {
 }
 
 // Get returns the information about node, or error if not found or failed to unmarshall the data.
-func (c *Cache) Get(node string) (CacheEntry, error) {
-	if c.Obj.Data == nil {
+func (nodeCache *Cache) Get(node string) (CacheEntry, error) {
+	if nodeCache.Obj.Data == nil {
 		return CacheEntry{}, ErrNotFound
 	}
 
-	raw, ok := c.Obj.Data[node]
+	raw, ok := nodeCache.Obj.Data[node]
 	if !ok {
 		return CacheEntry{}, ErrNotFound
 	}
@@ -46,41 +55,89 @@ func (c *Cache) Get(node string) (CacheEntry, error) {
 }
 
 // Set updates the information about node, or error if failed to marshall the data.
-func (c *Cache) Set(node string, entry CacheEntry) error {
+func (nodeCache *Cache) Set(node string, entry CacheEntry) error {
 	raw, err := json.Marshal(entry)
 	if err != nil {
 		return err
 	}
-	if c.Obj.Data == nil {
-		c.Obj.Data = map[string]string{}
+	if nodeCache.Obj.Data == nil {
+		nodeCache.Obj.Data = map[string]string{}
 	}
-	c.Obj.Data[node] = string(raw)
-	c.upd = true
+	nodeCache.Obj.Data[node] = string(raw)
+	nodeCache.upd = true
+	return nil
+}
+
+func (nodeCache *Cache) updateCache(mgrClient client.Client, ctx context.Context) error {
+	if !nodeCache.Changed() {
+		return nil
+	}
+
+	if nodeCache.Create {
+		return mgrClient.Create(ctx, nodeCache.Obj)
+	}
+
+	if err := mgrClient.Update(ctx, nodeCache.Obj); err != nil {
+		return err
+	}
 	return nil
 }
 
 // Delete removes the node from the cache.
-func (c *Cache) Delete(node string) {
-	if c.Obj.Data != nil {
-		delete(c.Obj.Data, node)
-		c.upd = true
+func (nodeCache *Cache) Delete(node string) {
+	if nodeCache.Obj.Data != nil {
+		delete(nodeCache.Obj.Data, node)
+		nodeCache.upd = true
 	}
 }
 
 // Keys returns a list of node names on the cache.
-func (c *Cache) Keys() []string {
-	if c.Obj.Data == nil {
+func (nodeCache *Cache) Keys() []string {
+	if nodeCache.Obj.Data == nil {
 		return []string{}
 	}
 
-	out := make([]string, 0, len(c.Obj.Data))
-	for k := range c.Obj.Data {
+	out := make([]string, 0, len(nodeCache.Obj.Data))
+	for k := range nodeCache.Obj.Data {
 		out = append(out, k)
 	}
 	return out
 }
 
 // Changed returns true if changes have been made to the cache instance.
-func (c *Cache) Changed() bool {
-	return c.Create || c.upd
+func (nodeCache *Cache) Changed() bool {
+	return nodeCache.Create || nodeCache.upd
+}
+
+func (nodeCache *Cache) ContainsKey(key string) bool {
+	for _, e := range nodeCache.Keys() {
+		if e == key {
+			return true
+		}
+	}
+	return false
+}
+
+func (nodeCache *Cache) IsCacheOutdated() bool {
+	if lastUpdated, ok := nodeCache.Obj.Annotations[lastUpdatedCacheTime]; ok {
+		if lastUpdatedTime, err := time.Parse(time.RFC3339, lastUpdated); err == nil {
+			return lastUpdatedTime.Add(cacheLifetime).Before(time.Now())
+		} else {
+			return false
+		}
+	}
+	return true // Cache is not annotated -> outdated
+}
+
+func (nodeCache *Cache) UpdateTimestamp() {
+	if nodeCache.Obj.Annotations == nil {
+		nodeCache.Obj.Annotations = make(map[string]string)
+	}
+	nodeCache.Obj.Annotations[lastUpdatedCacheTime] = time.Now().Format(time.RFC3339)
+	nodeCache.upd = true
+}
+
+func (nodeCache *Cache) updateLastMarkedForTerminationTimestamp(nodeInfo *CacheEntry, nodeName string) error {
+	nodeInfo.LastMarkedForTermination = time.Now().UTC()
+	return nodeCache.Set(nodeName, *nodeInfo)
 }
