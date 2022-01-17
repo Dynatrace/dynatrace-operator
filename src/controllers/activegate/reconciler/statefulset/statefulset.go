@@ -107,7 +107,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 }
 
 func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
-	return corev1.PodSpec{
+	podSpec := corev1.PodSpec{
 		Containers:         []corev1.Container{buildContainer(stsProperties)},
 		InitContainers:     buildInitContainers(stsProperties),
 		NodeSelector:       stsProperties.CapabilityProperties.NodeSelector,
@@ -119,6 +119,17 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 			{Name: stsProperties.PullSecret()},
 		},
 	}
+	if dnsPolicy := buildDNSPolicy(stsProperties); dnsPolicy != "" {
+		podSpec.DNSPolicy = dnsPolicy
+	}
+	return podSpec
+}
+
+func buildDNSPolicy(stsProperties *statefulSetProperties) corev1.DNSPolicy {
+	if stsProperties.ActiveGateMode() {
+		return stsProperties.Spec.ActiveGate.DNSPolicy
+	}
+	return ""
 }
 
 func buildInitContainers(stsProperties *statefulSetProperties) []corev1.Container {
