@@ -40,7 +40,6 @@ func TestArguments(t *testing.T) {
 			instance:       &instance,
 			hostInjectSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
 			clusterId:      testClusterID,
-			relatedImage:   testValue,
 		},
 	}
 	podSpecs := dsInfo.podSpec()
@@ -75,7 +74,6 @@ func TestPodSpec_Arguments(t *testing.T) {
 			instance:       instance,
 			hostInjectSpec: hostInjectSpecs,
 			clusterId:      testClusterID,
-			relatedImage:   testValue,
 			deploymentType: deploymentmetadata.DeploymentTypeFullStack,
 		},
 	}
@@ -122,7 +120,6 @@ func TestPodSpec_Arguments(t *testing.T) {
 				instance:       instance,
 				hostInjectSpec: hostInjectSpecs,
 				clusterId:      testClusterID,
-				relatedImage:   testValue,
 			},
 			HostMonitoringFeature,
 		}
