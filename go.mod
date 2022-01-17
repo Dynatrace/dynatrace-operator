@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/container-storage-interface/spec v1.5.0
 	github.com/containers/image/v5 v5.16.1
+	github.com/daixiang0/gci v0.2.9 // indirect
 	github.com/evanphx/json-patch v4.11.0+incompatible
 	github.com/go-logr/logr v0.4.0
 	github.com/klauspost/compress v1.13.6
