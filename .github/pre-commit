@@ -13,10 +13,8 @@ echo Shell: $SHELL
 STAGED_YAML_FILES=$(git diff --cached --name-only -- '*.yaml')
 
 ## we can check to see if this is empty
-if [[ $STAGED_YAML_FILES == "" ]]; then
-    echo "No Yaml Files to Update"
-## otherwise we generate the manifests for master
-else
+if [[ $STAGED_YAML_FILES != "" ]]; then
+    echo "YAML files have changed, generating manifests"
     make manifests
 fi
 
