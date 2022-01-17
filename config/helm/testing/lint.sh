@@ -12,7 +12,7 @@ for directory in "$(pwd)"; do
       exit 10
     fi
 
-    if ! helm lint --debug --set oapiToken="test-token",paasToken="test-token" . ; then
+    if ! helm lint --debug --set apiUrl="test-url",apiToken="test-token",paasToken="test-token" . ; then
         echo "linter returned with error. check yaml formatting in files of directory '$directory'." && exit 15
     fi
     else
