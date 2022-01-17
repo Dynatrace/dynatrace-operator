@@ -20,8 +20,7 @@ jobs:
       - name: Run Unit tests
         id: unittest
         run: |
-          chmod +x config/helm/testing/test.sh
-          cd config/helm && ./testing/test.sh
+          make helm-test
 
   helm-lint:
     runs-on: ubuntu-latest
@@ -35,8 +34,7 @@ jobs:
       - name: Run Linting
         id: unittest
         run: |
-          chmod +x config/helm/testing/lint.sh
-          cd config/helm && ./testing/lint.sh
+          make helm-lint
 
 
   tests:
