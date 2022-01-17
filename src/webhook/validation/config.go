@@ -21,5 +21,6 @@ var validators = []validator{
 }
 
 var warnings = []validator{
-	previewWarning,
+	oneAgentModePreviewWarning,
+	metricIngestPreviewWarning,
 }

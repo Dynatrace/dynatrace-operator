@@ -7,11 +7,13 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	oneagent "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
@@ -40,29 +42,11 @@ func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 		podLog.Info("no Pod name set for webhook container")
 	}
 
-	if podName == "" && debug == "true" {
-		registerDebugInjectEndpoint(mgr, ns)
-	} else {
-		if err := registerInjectEndpoint(mgr, ns, podName); err != nil {
-			return err
-		}
+	if err := registerInjectEndpoint(mgr, ns, podName); err != nil {
+		return err
 	}
 	registerHealthzEndpoint(mgr)
 	return nil
-}
-
-// registerDebugInjectEndpoint registers an endpoint at /inject with an empty image
-//
-// If the webhook runs in a non-debug environment, the webhook should exit if no
-// pod with a given POD_NAME is found. It needs this pod to set the image for the podInjector
-// When debugging, the Webhook should not exit in this scenario, but register the endpoint with an empty image
-// to allow further debugging steps.
-//
-// This behavior must only occur if the DEBUG_OPERATOR flag is set to true
-func registerDebugInjectEndpoint(mgr manager.Manager, ns string) {
-	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podMutator{
-		namespace: ns,
-	}})
 }
 
 func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) error {
@@ -222,6 +206,10 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return *dkResponse
 	}
 
+	if dk.FeatureDisableMetadataEnrichment() {
+		injectionInfo.features[DataIngest] = false
+	}
+
 	if !dk.NeedAppInjection() {
 		return emptyPatch
 	}
@@ -231,9 +219,13 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return *secretResponse
 	}
 
-	dataIngestFields, diResponse := m.ensureDataIngestSecret(ctx, ns, dkName, dk)
-	if diResponse != nil {
-		return *diResponse
+	dataIngestFields := map[string]string{}
+	if injectionInfo.enabled(DataIngest) {
+		var err error
+		dataIngestFields, err = m.ensureDataIngestSecret(ctx, ns, dkName, dk)
+		if err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
 	}
 
 	podLog.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
@@ -602,28 +594,24 @@ func (m *podMutator) getNsAndDkName(ctx context.Context, req admission.Request) 
 	return ns, dkName, nil
 }
 
-func (m *podMutator) ensureDataIngestSecret(ctx context.Context, ns corev1.Namespace, dkName string, dk dynatracev1beta1.DynaKube) (map[string]string, *admission.Response) {
-	var rsp admission.Response
+func (m *podMutator) ensureDataIngestSecret(ctx context.Context, ns corev1.Namespace, dkName string, dk dynatracev1beta1.DynaKube) (map[string]string, error) {
 	endpointGenerator := dtingestendpoint.NewEndpointSecretGenerator(m.client, m.apiReader, m.namespace)
 
 	var endpointSecret corev1.Secret
 	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtingestendpoint.SecretEndpointName, Namespace: ns.Name}, &endpointSecret); k8serrors.IsNotFound(err) {
 		if _, err := endpointGenerator.GenerateForNamespace(ctx, dkName, ns.Name); err != nil {
 			podLog.Error(err, "failed to create the data-ingest endpoint secret before pod injection")
-			rsp = admission.Errored(http.StatusBadRequest, err)
-			return nil, &rsp
+			return nil, err
 		}
 	} else if err != nil {
 		podLog.Error(err, "failed to query the data-ingest endpoint secret before pod injection")
-		rsp = admission.Errored(http.StatusBadRequest, err)
-		return nil, &rsp
+		return nil, err
 	}
 
 	dataIngestFields, err := endpointGenerator.PrepareFields(ctx, &dk)
 	if err != nil {
 		podLog.Error(err, "failed to query the data-ingest endpoint secret before pod injection")
-		rsp = admission.Errored(http.StatusBadRequest, err)
-		return nil, &rsp
+		return nil, err
 	}
 	return dataIngestFields, nil
 }
@@ -687,7 +675,7 @@ func updateInstallContainerOneAgent(ic *corev1.Container, number int, name strin
 }
 
 // updateContainerOA sets missing preload Variables
-func updateContainerOneAgent(c *corev1.Container, oa *dynatracev1beta1.DynaKube, pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
+func updateContainerOneAgent(c *corev1.Container, dk *dynatracev1beta1.DynaKube, pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
 
 	podLog.Info("updating container with missing preload variables", "containerName", c.Name)
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
@@ -709,6 +697,14 @@ func updateContainerOneAgent(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
 			MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
 			SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
 		})
+	if dk.HasActiveGateTLS() {
+		c.VolumeMounts = append(c.VolumeMounts,
+			corev1.VolumeMount{
+				Name:      oneAgentShareVolumeName,
+				MountPath: filepath.Join(oneagent.OneAgentCustomKeysPath, "custom.pem"),
+				SubPath:   "custom.pem",
+			})
+	}
 
 	c.Env = append(c.Env,
 		corev1.EnvVar{
@@ -716,7 +712,7 @@ func updateContainerOneAgent(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
 			Value: installPath + "/agent/lib64/liboneagentproc.so",
 		})
 
-	if oa.Spec.Proxy != nil && (oa.Spec.Proxy.Value != "" || oa.Spec.Proxy.ValueFrom != "") {
+	if dk.Spec.Proxy != nil && (dk.Spec.Proxy.Value != "" || dk.Spec.Proxy.ValueFrom != "") {
 		c.Env = append(c.Env,
 			corev1.EnvVar{
 				Name: "DT_PROXY",
@@ -731,8 +727,8 @@ func updateContainerOneAgent(c *corev1.Container, oa *dynatracev1beta1.DynaKube,
 			})
 	}
 
-	if oa.Spec.NetworkZone != "" {
-		c.Env = append(c.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: oa.Spec.NetworkZone})
+	if dk.Spec.NetworkZone != "" {
+		c.Env = append(c.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: dk.Spec.NetworkZone})
 	}
 
 }

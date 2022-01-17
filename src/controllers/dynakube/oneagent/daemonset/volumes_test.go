@@ -27,12 +27,33 @@ func TestPrepareVolumes(t *testing.T) {
 		assert.Contains(t, volumes, getRootVolume())
 		assert.Contains(t, volumes, getCertificateVolume(instance))
 	})
+	t.Run(`has tls volume`, func(t *testing.T) {
+		instance := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				TrustedCAs: testName,
+				ActiveGate: dynatracev1beta1.ActiveGateSpec{
+					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+						dynatracev1beta1.KubeMonCapability.DisplayName,
+					},
+					TlsSecretName: "testing",
+				},
+			},
+		}
+		volumes := prepareVolumes(instance)
+		assert.Contains(t, volumes, getTLSVolume(instance))
+	})
 	t.Run(`has all volumes`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				TrustedCAs: testName,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+				},
+				ActiveGate: dynatracev1beta1.ActiveGateSpec{
+					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+						dynatracev1beta1.KubeMonCapability.DisplayName,
+					},
+					TlsSecretName: "testing",
 				},
 			},
 		}
@@ -52,5 +73,6 @@ func TestPrepareVolumes(t *testing.T) {
 
 		assert.Contains(t, volumes, getRootVolume())
 		assert.Contains(t, volumes, getCertificateVolume(instance))
+		assert.Contains(t, volumes, getTLSVolume(instance))
 	})
 }

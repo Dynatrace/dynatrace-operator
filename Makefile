@@ -8,6 +8,13 @@ VERSION ?= 0.0.1
 PLATFORM ?= openshift
 # Default bundle image tag
 BUNDLE_IMG ?= controller-bundle:$(VERSION)
+
+MASTER_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot
+BRANCH_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
+OLM_IMAGE = registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
+
+OUT ?= all
+
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -19,14 +26,15 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # Image URL to use all building/pushing image targets
 ifeq ($(origin IMG),undefined)
-ifeq ($(shell git branch --show-current),master)
-IMG=quay.io/dynatrace/dynatrace-operator:snapshot
-else
-IMG=quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
-endif
+	ifneq ($(shell git branch --show-current | grep "^release-"),)
+	MASTER_IMAGE=$(BRANCH_IMAGE)
+	else ifeq ($(shell git branch --show-current), master)
+	BRANCH_IMAGE=$(MASTER_IMAGE)
+	else
+	IMG=$(BRANCH_IMAGE)
+	endif
 endif
 
-# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:preserveUnknownFields=false, crdVersions=v1"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -54,36 +62,11 @@ manager-amd64: export GOARCH=amd64
 manager-amd64: generate fmt vet
 	go build -o bin/manager-amd64 ./src/cmd/operator/
 
-WEBHOOK_NS=dynatrace
-
-debug-webhook-setup:
-	@echo Preparing webhook deployment for debugging
-	kubectl -n $(WEBHOOK_NS) patch deploy dynatrace-webhook -p '{"spec":{"template":{"spec":{"containers":[{"name":"webhook", "image":"quay.io/dynatrace/dynatrace-operator:operatorwithtar","command":["/bin/bash", "-c", "sleep infinity"]}]}}}}'
-	kubectl -n $(WEBHOOK_NS) patch deploy dynatrace-webhook --type json -p '[{"op": "remove", "path": "/spec/template/spec/containers/0/readinessProbe"}]'
-	kubectl -n $(WEBHOOK_NS) patch deploy dynatrace-webhook --type json -p '[{"op": "add", "path": "/spec/template/metadata/labels/webhookwithtar", "value": "provided"}]'
-	kubectl -n $(WEBHOOK_NS) wait --for=condition=ready pod -l webhookwithtar=provided
-
-debug-webhook: export WEBHOOK_POD=$(shell (kubectl -n $(WEBHOOK_NS) get pods | awk '/webhook/ && /Running/' | cut -d" " -f1))
-debug-webhook: manager-amd64
-	@echo Copying webhook to container $(WEBHOOK_POD) and run it there
-	kubectl -n $(WEBHOOK_NS) exec -it $(WEBHOOK_POD)  -- rm -f /tmp/manager-amd64 && kubectl -n $(WEBHOOK_NS) cp bin/manager-amd64 $(WEBHOOK_POD):/tmp/manager-amd64
-	kubectl -n $(WEBHOOK_NS) exec -it $(WEBHOOK_POD)  -- chmod +x /tmp/manager-amd64 && kubectl -n $(WEBHOOK_NS) exec -it $(WEBHOOK_POD) -- /tmp/manager-amd64 webhook-server
-
-debug-webhook-reset:
-	-kubectl -n $(WEBHOOK_NS) delete deploy dynatrace-webhook
-	kubectl -n $(WEBHOOK_NS) apply -f config/common/webhook/deployment-webhook.yaml
-
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: export RUN_LOCAL=true
 run: export POD_NAMESPACE=dynatrace
 run: generate fmt vet manifests
 	go run ./src/cmd/operator/
-
-## Run with delve against the configured Kubernetes cluster in ~/.kube/config
-#run-delve: export RUN_LOCAL=true
-#run-delve: export POD_NAMESPACE=dynatrace
-#run-delve: manager manifests
-#     dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./main
 
 # Install CRDs into a cluster
 install: manifests kustomize
@@ -96,12 +79,16 @@ uninstall: manifests kustomize
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests kustomize
 	kubectl get namespace dynatrace || kubectl create namespace dynatrace
-	kubectl apply -f config/deploy/kubernetes/kubernetes-csi.yaml
+	cd config/deploy/kubernetes && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(BRANCH_IMAGE)
+	$(KUSTOMIZE) build config/deploy/kubernetes | kubectl apply -f -
+	make reset-kustomization-files
 
 # Deploy controller in the configured OpenShift cluster in ~/.kube/config
 deploy-ocp: manifests kustomize
 	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
-	oc apply -f config/deploy/openshift/openshift-csi.yaml
+	cd config/deploy/openshift && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(BRANCH_IMAGE)
+	$(KUSTOMIZE) build config/deploy/openshift | oc apply -f -
+	make reset-kustomization-files
 
 deploy-local:
 	./build/deploy_local.sh
@@ -119,25 +106,25 @@ manifests: controller-gen kustomize
 	mkdir -p config/deploy/openshift
 
 	# Generate kubernetes.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="kubernetes" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="$(IMG)" > config/deploy/kubernetes/kubernetes.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="kubernetes" --set manifests=true --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="$(MASTER_IMAGE)" > config/deploy/kubernetes/kubernetes.yaml
 	grep -v 'app.kubernetes.io' config/deploy/kubernetes/kubernetes.yaml > config/deploy/kubernetes/tmp.yaml
 	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > config/deploy/kubernetes/kubernetes.yaml
 	rm config/deploy/kubernetes/tmp.yaml
 
 	# Generate kubernetes-csi.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="kubernetes" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="$(IMG)" --set classicFullStack.enabled=false --set cloudNativeFullStack.enabled=true > config/deploy/kubernetes/kubernetes-csi.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set partial="csi" --set platform="kubernetes" --set manifests=true --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="$(MASTER_IMAGE)" > config/deploy/kubernetes/kubernetes-csi.yaml
 	grep -v 'app.kubernetes.io' config/deploy/kubernetes/kubernetes-csi.yaml > config/deploy/kubernetes/tmp.yaml
 	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > config/deploy/kubernetes/kubernetes-csi.yaml
 	rm config/deploy/kubernetes/tmp.yaml
 
 	# Generate openshift.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="$(IMG)" > config/deploy/openshift/openshift.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" --set olm="${OLM}" --set manifests=true --set autoCreateSecret=false --set createSecurityContextConstraints="true" --set operator.image="$(MASTER_IMAGE)" > config/deploy/openshift/openshift.yaml
 	grep -v 'app.kubernetes.io' config/deploy/openshift/openshift.yaml > config/deploy/openshift/tmp.yaml
 	grep -v 'helm.sh' config/deploy/openshift/tmp.yaml > config/deploy/openshift/openshift.yaml
 	rm config/deploy/openshift/tmp.yaml
 
 	# Generate openshift-csi.yaml
-	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set platform="openshift" --set olm="${OLM}" --set autoCreateSecret=false --set operator.image="$(IMG)" --set classicFullStack.enabled=false --set cloudNativeFullStack.enabled=true > config/deploy/openshift/openshift-csi.yaml
+	helm template dynatrace-operator config/helm/chart/default --namespace dynatrace --set partial="csi" --set platform="openshift" --set olm="${OLM}" --set manifests=true --set autoCreateSecret=false --set createSecurityContextConstraints="true" --set operator.image="$(MASTER_IMAGE)" > config/deploy/openshift/openshift-csi.yaml
 	grep -v 'app.kubernetes.io' config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/tmp.yaml
 	grep -v 'helm.sh' config/deploy/openshift/tmp.yaml > config/deploy/openshift/openshift-csi.yaml
 	rm config/deploy/openshift/tmp.yaml
@@ -145,14 +132,25 @@ manifests: controller-gen kustomize
 	$(KUSTOMIZE) build config/crd | cat - config/deploy/kubernetes/kubernetes.yaml > temp
 	mv temp config/deploy/kubernetes/kubernetes.yaml
 
-	$(KUSTOMIZE) build config/crd | cat - config/deploy/kubernetes/kubernetes-csi.yaml > temp
-	mv temp config/deploy/kubernetes/kubernetes-csi.yaml
-
 	$(KUSTOMIZE) build config/crd | cat - config/deploy/openshift/openshift.yaml > temp
 	mv temp config/deploy/openshift/openshift.yaml
 
-	$(KUSTOMIZE) build config/crd | cat - config/deploy/openshift/openshift-csi.yaml > temp
-	mv temp config/deploy/openshift/openshift-csi.yaml
+	cat config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/kubernetes-csi.yaml > config/deploy/kubernetes/kubernetes-$(OUT).yaml
+	cat config/deploy/openshift/openshift.yaml config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/openshift-$(OUT).yaml
+
+	make reset-kustomization-files
+
+reset-kustomization-files: kustomize
+	rm -f config/deploy/kubernetes/kustomization.yaml
+	mkdir -p config/deploy/kubernetes
+	cd config/deploy/kubernetes && $(KUSTOMIZE) create
+	cd config/deploy/kubernetes && $(KUSTOMIZE) edit add base kubernetes-$(OUT).yaml
+
+	rm -f config/deploy/openshift/kustomization.yaml
+	mkdir -p config/deploy/openshift
+	cd config/deploy/openshift && $(KUSTOMIZE) create
+	cd config/deploy/openshift && $(KUSTOMIZE) edit add base openshift-$(OUT).yaml
+
 
 # Run go fmt against code
 fmt:
@@ -214,10 +212,12 @@ SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-routing
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
 bundle: export OLM=true
-bundle: export IMG=registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
+bundle: export OUT=olm
 bundle: manifests kustomize
 	operator-sdk generate kustomize manifests -q
-	cat config/deploy/$(PLATFORM)/$(PLATFORM)-csi.yaml | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
+	cd config/deploy/$(PLATFORM) && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(OLM_IMAGE)
+	$(KUSTOMIZE) build config/deploy/$(PLATFORM) | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
+	make OUT=all reset-kustomization-files
 	operator-sdk bundle validate ./bundle
 	rm -rf ./config/olm/$(PLATFORM)/$(VERSION)
 	mkdir -p ./config/olm/$(PLATFORM)/$(VERSION)

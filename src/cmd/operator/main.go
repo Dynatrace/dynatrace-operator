@@ -87,12 +87,6 @@ func main() {
 	}
 
 	signalHandler := ctrl.SetupSignalHandler()
-	startWebhookIfDebugFlagSet(startupInfo{
-		cfg:           cfg,
-		namespace:     namespace,
-		signalHandler: signalHandler,
-	})
-
 	log.Info("starting manager")
 	exitOnError(mgr.Start(signalHandler), "problem running manager")
 }

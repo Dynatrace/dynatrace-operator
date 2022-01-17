@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
@@ -134,6 +135,38 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 	})
+	t.Run(`Reconcile reconciles proxy secret`, func(t *testing.T) {
+		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
+			dtclient.TokenScopes{dtclient.TokenScopeDataExport,
+				dtclient.TokenScopeReadConfig,
+				dtclient.TokenScopeWriteConfig,
+			})
+		instance := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				Proxy: &dynatracev1beta1.DynaKubeProxy{
+					Value:     "https://proxy:1234",
+					ValueFrom: "",
+				}}}
+		r := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
+
+		result, err := r.Reconcile(context.TODO(), reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+		})
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+
+		var proxySecret corev1.Secret
+		name := agproxysecret.BuildProxySecretName()
+		err = r.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, proxySecret)
+	})
 }
 
 func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
@@ -251,7 +284,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{
 				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-					dynatracev1beta1.DataIngestCapability.DisplayName,
+					dynatracev1beta1.MetricsIngestCapability.DisplayName,
 					dynatracev1beta1.KubeMonCapability.DisplayName,
 					dynatracev1beta1.RoutingCapability.DisplayName,
 				},
