@@ -3744,8 +3744,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: RELATED_IMAGE_DYNATRACE_ONEAGENT
-              value: registry.connect.redhat.com/dynatrace/oneagent
           ports:
             - containerPort: 8080
               name: metrics
