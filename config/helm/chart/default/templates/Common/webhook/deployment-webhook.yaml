@@ -56,6 +56,10 @@ spec:
         - name: webhook
           args:
             - webhook-server
+            {{- if eq (default false .Values.olm) true }}
+            # OLM mounts the certificates to a different location
+            - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
+            {{- end}}
           image: {{- include "dynatrace-operator.image" . | nindent 12 }}
           imagePullPolicy: Always
           env:

@@ -11,7 +11,7 @@ BUNDLE_IMG ?= controller-bundle:$(VERSION)
 
 MASTER_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot
 BRANCH_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
-OLM_IMAGE = registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
+OLM_IMAGE ?= registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
 
 OUT ?= all
 
@@ -244,7 +244,7 @@ bundle: export OUT=olm
 bundle: manifests kustomize
 	operator-sdk generate kustomize manifests -q
 	cd config/deploy/$(PLATFORM) && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(OLM_IMAGE)
-	$(KUSTOMIZE) build config/deploy/$(PLATFORM) | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
+	$(KUSTOMIZE) build config/olm/$(PLATFORM) | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
 	make OUT=all reset-kustomization-files
 	operator-sdk bundle validate ./bundle
 	rm -rf ./config/olm/$(PLATFORM)/$(VERSION)
