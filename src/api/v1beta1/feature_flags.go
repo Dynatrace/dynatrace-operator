@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
@@ -37,12 +38,6 @@ const (
 
 var (
 	log = logger.NewDTLogger().WithName("dynakube-api")
-
-	defaultIgnoredNamespaces = []string{
-		"^dynatrace$",
-		"^kube-.*",
-		"^openshift(-.*)?",
-	}
 )
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
@@ -92,15 +87,24 @@ func (dk *DynaKube) FeatureIgnoreUnknownState() bool {
 func (dk *DynaKube) FeatureIgnoredNamespaces() []string {
 	raw, ok := dk.Annotations[annotationFeatureIgnoredNamespaces]
 	if !ok || raw == "" {
-		return defaultIgnoredNamespaces
+		return dk.getDefaultIgnoredNamespaces()
 	}
 	ignoredNamespaces := &[]string{}
 	err := json.Unmarshal([]byte(raw), ignoredNamespaces)
 	if err != nil {
 		log.Error(err, "failed to unmarshal ignoredNamespaces feature-flag")
-		return defaultIgnoredNamespaces
+		return dk.getDefaultIgnoredNamespaces()
 	}
 	return *ignoredNamespaces
+}
+
+func (dk *DynaKube) getDefaultIgnoredNamespaces() []string {
+	defaultIgnoredNamespaces := []string{
+		fmt.Sprintf("^%s$", dk.Namespace),
+		"^kube-.*",
+		"^openshift(-.*)?",
+	}
+	return defaultIgnoredNamespaces
 }
 
 // FeatureAutomaticKubernetesApiMonitoring is a feature flag to enable automatic kubernetes api monitoring,
