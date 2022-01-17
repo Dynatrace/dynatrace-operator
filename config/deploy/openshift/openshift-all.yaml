@@ -1020,6 +1020,9 @@ spec:
                       valueFrom:
                         type: string
                     type: object
+                  dnsPolicy:
+                    description: 'Optional: Sets DNS Policy for the ActiveGate pods'
+                    type: string
                   env:
                     description: 'Optional: List of environment variables to set for
                       the ActiveGate'
