@@ -85,7 +85,7 @@ func updateNamespace(operatorNs string, namespace *corev1.Namespace, dkList *dyn
 	conflict := ConflictChecker{}
 	for i := range dkList.Items {
 		dynakube := &dkList.Items[i]
-		if operatorNs == namespace.Name || isIgnoredNamespace(dynakube, namespace.Name) {
+		if isIgnoredNamespace(dynakube, namespace.Name) {
 			return false, nil
 		}
 		matches, err := match(dynakube, namespace)
