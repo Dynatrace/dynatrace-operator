@@ -176,5 +176,6 @@ spec:
     # server.p12: certificate+key pair in pkcs12 format
     #
     # tlsSecretName: "my-tls-secret"
+
     # Optional: Sets DNS Policy for the ActiveGate pods
     # dnsPolicy: "Default"

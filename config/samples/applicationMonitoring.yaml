@@ -144,4 +144,5 @@ spec:
     # tlsSecretName: "my-tls-secret"
 
     # Optional: Sets DNS Policy for the ActiveGate pods
+    #
     # dnsPolicy: "Default"
