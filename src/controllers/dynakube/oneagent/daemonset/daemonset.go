@@ -6,7 +6,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -26,8 +25,6 @@ const (
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
 
 	hostRootMount = "host-root"
-
-	relatedImage = "registry.connect.redhat.com/dynatrace/oneagent:latest"
 
 	podName = "dynatrace-oneagent"
 
@@ -54,7 +51,6 @@ type builderInfo struct {
 	instance       *dynatracev1beta1.DynaKube
 	hostInjectSpec *dynatracev1beta1.HostInjectSpec
 	clusterId      string
-	relatedImage   string
 	deploymentType string
 }
 
@@ -68,7 +64,6 @@ func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string) Bu
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
 			clusterId:      clusterId,
-			relatedImage:   getRelatedImage(),
 			deploymentType: deploymentmetadata.DeploymentTypeHostMonitoring,
 		},
 		HostMonitoringFeature,
@@ -81,7 +76,6 @@ func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, clusterId stri
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
 			clusterId:      clusterId,
-			relatedImage:   getRelatedImage(),
 			deploymentType: deploymentmetadata.DeploymentTypeCloudNative,
 		},
 		CloudNativeFeature,
@@ -94,17 +88,9 @@ func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) 
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
 			clusterId:      clusterId,
-			relatedImage:   getRelatedImage(),
 			deploymentType: deploymentmetadata.DeploymentTypeFullStack,
 		},
 	}
-}
-
-func getRelatedImage() string {
-	if kubesystem.DeployedViaOLM() {
-		return relatedImage
-	}
-	return ""
 }
 
 func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
@@ -196,7 +182,6 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	environmentVariables := dsInfo.environmentVariables()
 	volumeMounts := dsInfo.volumeMounts()
 	volumes := dsInfo.volumes()
-	image := dsInfo.image()
 	imagePullSecrets := dsInfo.imagePullSecrets()
 	affinity := dsInfo.affinity()
 
@@ -204,7 +189,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		Containers: []corev1.Container{{
 			Args:            arguments,
 			Env:             environmentVariables,
-			Image:           image,
+			Image:           dsInfo.instance.ImmutableOneAgentImage(),
 			ImagePullPolicy: corev1.PullAlways,
 			Name:            podName,
 			ReadinessProbe: &corev1.Probe{
@@ -269,13 +254,6 @@ func (dsInfo *builderInfo) volumeMounts() []corev1.VolumeMount {
 
 func (dsInfo *builderInfo) volumes() []corev1.Volume {
 	return prepareVolumes(dsInfo.instance)
-}
-
-func (dsInfo *builderInfo) image() string {
-	if dsInfo.relatedImage != "" {
-		return dsInfo.relatedImage
-	}
-	return dsInfo.instance.ImmutableOneAgentImage()
 }
 
 func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
