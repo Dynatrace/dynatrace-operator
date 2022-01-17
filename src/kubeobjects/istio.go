@@ -14,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -77,8 +76,8 @@ func BuildNameForEndpoint(name string, protocol string, host string, port uint32
 	return hex.EncodeToString(sum[:])
 }
 
-func buildObjectMeta(name string, namespace string) v1.ObjectMeta {
-	return v1.ObjectMeta{
+func buildObjectMeta(name string, namespace string) metav1.ObjectMeta {
+	return metav1.ObjectMeta{
 		Name:      name,
 		Namespace: namespace,
 	}
