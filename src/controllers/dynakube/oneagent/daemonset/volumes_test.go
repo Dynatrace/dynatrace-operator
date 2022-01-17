@@ -62,7 +62,6 @@ func TestPrepareVolumes(t *testing.T) {
 				instance:       instance,
 				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
 				clusterId:      "",
-				relatedImage:   "",
 			},
 			HostMonitoringFeature,
 		}

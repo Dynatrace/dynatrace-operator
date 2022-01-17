@@ -1,24 +1,16 @@
 package daemonset
 
 import (
-	"fmt"
 	"sort"
-	"strconv"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 )
 
 const (
 	dtNodeName  = "DT_K8S_NODE_NAME"
 	dtClusterId = "DT_K8S_CLUSTER_ID"
 
-	oneagentDownloadToken             = "ONEAGENT_INSTALLER_DOWNLOAD_TOKEN"
-	oneagentInstallScript             = "ONEAGENT_INSTALLER_SCRIPT_URL"
-	oneagentSkipCertCheck             = "ONEAGENT_INSTALLER_SKIP_CERT_CHECK"
 	oneagentDisableContainerInjection = "ONEAGENT_DISABLE_CONTAINER_INJECTION"
 
 	proxy = "https_proxy"
@@ -30,38 +22,11 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 	envVarMap = setDefaultValueSource(envVarMap, dtNodeName, &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}})
 	envVarMap = setDefaultValue(envVarMap, dtClusterId, dsInfo.clusterId)
 
-	if dsInfo.relatedImage != "" {
-		envVarMap = dsInfo.setInstallerEnvs(envVarMap)
-	}
-
 	if dsInfo.hasProxy() {
 		envVarMap = dsInfo.setDefaultProxy(envVarMap)
 	}
 
 	return mapToArray(envVarMap)
-}
-
-func (dsInfo *builderInfo) setInstallerEnvs(envVarMap map[string]corev1.EnvVar) map[string]corev1.EnvVar {
-	var key string
-	if meta.FindStatusCondition(dsInfo.instance.Status.Conditions, dynatracev1beta1.PaaSTokenConditionType) != nil {
-		key = dtclient.DynatracePaasToken
-	} else {
-		key = dtclient.DynatraceApiToken
-	}
-	envVarMap = setDefaultValueSource(envVarMap, oneagentDownloadToken, &corev1.EnvVarSource{
-		SecretKeyRef: &corev1.SecretKeySelector{
-			LocalObjectReference: corev1.LocalObjectReference{Name: dsInfo.instance.Tokens()},
-			Key:                  key,
-		},
-	})
-	envVarMap = setDefaultValue(envVarMap, oneagentInstallScript, dsInfo.installerUrl())
-	envVarMap = setDefaultValue(envVarMap, oneagentSkipCertCheck, strconv.FormatBool(dsInfo.instance.Spec.SkipCertCheck))
-
-	return envVarMap
-}
-
-func (dsInfo *builderInfo) installerUrl() string {
-	return fmt.Sprintf("%s/v1/deployment/installer/agent/unix/default/latest?arch=x86&flavor=default", dsInfo.instance.Spec.APIURL)
 }
 
 func (dsInfo *HostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
