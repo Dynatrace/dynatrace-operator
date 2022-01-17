@@ -6,8 +6,7 @@ for directory in "$(pwd)"; do
     cd "$directory/chart/default" || exit 5
     if [ -f "Chart.yml" ] || [ -f "Chart.yaml" ]; then
       echo "Unit-testing $directory"
-
-      if ! helm unittest --helm3 -f './tests/*/*/*.yaml' -f './tests/*/*.yaml' -f './tests/*.yaml' . ; then
+      if ! helm unittest --helm3 -f './tests/*/*/*.yaml' -f './tests/*/*.yaml' -f './tests/*.yaml' .; then
         echo "some tests failed in directory '$directory'"
         exit 10
       fi
