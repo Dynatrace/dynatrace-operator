@@ -30,7 +30,7 @@ const (
 	probeObjectFound probeResult = iota
 	probeObjectNotFound
 	ProbeTypeFound
-	probeTypeNotFound
+	ProbeTypeNotFound
 	probeUnknown
 )
 
@@ -100,12 +100,12 @@ func VerifyIstioCrdAvailability(instance *dynatracev1beta1.DynaKube, config *res
 	var probe probeResult
 
 	probe, _ = kubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), "", config)
-	if probe == probeTypeNotFound {
+	if probe == ProbeTypeNotFound {
 		return probe
 	}
 
 	probe, _ = kubernetesObjectProbe(VirtualServiceGVK, instance.GetNamespace(), "", config)
-	if probe == probeTypeNotFound {
+	if probe == ProbeTypeNotFound {
 		return probe
 	}
 
@@ -138,7 +138,7 @@ func mapErrorToObjectProbeResult(err error) (probeResult, error) {
 		if errors.IsNotFound(err) {
 			return probeObjectNotFound, err
 		} else if meta.IsNoMatchError(err) {
-			return probeTypeNotFound, err
+			return ProbeTypeNotFound, err
 		}
 
 		return probeUnknown, err

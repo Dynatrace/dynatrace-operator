@@ -111,7 +111,7 @@ func TestMapErrorToObjectProbeResult(t *testing.T) {
 	}{
 		{"no error returns probeObjectFound", nil, probeObjectFound, false},
 		{"object not found error returns probeObjectNotFound", errorObjectNotFound, probeObjectNotFound, true},
-		{"type not found error returns probeTypeNotFound", errorTypeNotFound, probeTypeNotFound, true},
+		{"type not found error returns probeTypeNotFound", errorTypeNotFound, ProbeTypeNotFound, true},
 		{"unknown error returns probeUnknown", errorUnknown, probeUnknown, true},
 	}
 	for _, tt := range tests {
