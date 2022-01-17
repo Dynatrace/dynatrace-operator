@@ -11,9 +11,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
