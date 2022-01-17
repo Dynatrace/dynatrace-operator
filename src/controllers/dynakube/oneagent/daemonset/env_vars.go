@@ -1,7 +1,6 @@
 package daemonset
 
 import (
-	"fmt"
 	"sort"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -28,10 +27,6 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 	}
 
 	return mapToArray(envVarMap)
-}
-
-func (dsInfo *builderInfo) installerUrl() string {
-	return fmt.Sprintf("%s/v1/deployment/installer/agent/unix/default/latest?arch=x86&flavor=default", dsInfo.instance.Spec.APIURL)
 }
 
 func (dsInfo *HostMonitoring) appendInfraMonEnvVars(daemonset *appsv1.DaemonSet) {
