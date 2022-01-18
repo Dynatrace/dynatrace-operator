@@ -141,6 +141,15 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 
 	if instance.KubernetesMonitoringMode() &&
 		instance.FeatureAutomaticKubernetesApiMonitoring() {
+		tokens[0].Scopes = append(tokens[0].Scopes, dtclient.TokenScopeEntitiesRead, dtclient.TokenScopeEntitiesWrite)
+	}
+
+	if instance.IsActiveGateMode(dynatracev1beta1.MetricsIngestCapability.DisplayName) {
+		tokens[0].Scopes = append(tokens[0].Scopes, dtclient.TokenScopeMetricsIngest)
+	}
+
+	if instance.KubernetesMonitoringMode() &&
+		instance.FeatureAutomaticKubernetesApiMonitoring() {
 		tokens[0].Scopes = append(tokens[0].Scopes,
 			dtclient.TokenScopeEntitiesRead,
 			dtclient.TokenScopeSettingsRead,
