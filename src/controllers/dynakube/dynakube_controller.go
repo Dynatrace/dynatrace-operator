@@ -178,7 +178,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	}
 
 	if dkState.Instance.Spec.EnableIstio {
-		if upd, err = istio.NewController(controller.config, controller.scheme).ReconcileIstio(dkState.Instance); err != nil {
+		if upd, err = istio.NewIstioReconciler(controller.config, controller.scheme).ReconcileIstio(dkState.Instance); err != nil {
 			// If there are errors log them, but move on.
 			log.Info("Istio: failed to reconcile objects", "error", err)
 		} else if upd {
