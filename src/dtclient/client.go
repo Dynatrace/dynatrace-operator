@@ -107,6 +107,9 @@ const (
 	TokenScopeDataExport        = "DataExport"
 	TokenScopeReadConfig        = "ReadConfig"
 	TokenScopeWriteConfig       = "WriteConfig"
+	TokenScopeMetricsIngest     = "metrics.ingest"
+	TokenScopeEntitiesRead      = "entities.read"
+	TokenScopeEntitiesWrite     = "entities.write"
 )
 
 // NewClient creates a REST client for the given API base URL and authentication tokens.

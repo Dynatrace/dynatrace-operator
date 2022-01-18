@@ -34,11 +34,7 @@ func (dtc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
 
 	data, err := dtc.getServerResponseData(response)
 	if err != nil {
-		err = dtc.handleErrorResponseFromAPI(data, response.StatusCode)
-		if err != nil {
-			log.Error(err, err.Error())
-		}
-		return nil, errors.WithStack(err)
+		return nil, errors.WithStack(dtc.handleErrorResponseFromAPI(data, response.StatusCode))
 	}
 
 	tenantInfo, err := dtc.readResponseForTenantInfo(data)

@@ -275,6 +275,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 		dtclient.TokenScopes{dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeReadConfig,
 			dtclient.TokenScopeWriteConfig,
+			dtclient.TokenScopeMetricsIngest,
 		})
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
