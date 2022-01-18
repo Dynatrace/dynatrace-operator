@@ -221,6 +221,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		dk.Annotations = map[string]string{
 			"alpha.operator.dynatrace.com/feature-automatic-kubernetes-api-monitoring": "true",
 		}
+		dk.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{
+			Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName},
+		}
 		c := fake.NewClient(NewSecret(dynaKube, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}))
 
 		dtcMock := &dtclient.MockDynatraceClient{}
