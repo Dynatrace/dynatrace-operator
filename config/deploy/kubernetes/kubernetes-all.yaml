@@ -1020,6 +1020,9 @@ spec:
                       valueFrom:
                         type: string
                     type: object
+                  dnsPolicy:
+                    description: 'Optional: Sets DNS Policy for the ActiveGate pods'
+                    type: string
                   env:
                     description: 'Optional: List of environment variables to set for
                       the ActiveGate'
@@ -3025,6 +3028,7 @@ rules:
     resourceNames:
       - dynatrace-dynakube-config
       - dynatrace-data-ingest-endpoint
+      - dynatrace-activegate-internal-proxy
     verbs:
       - get
       - update
@@ -3844,6 +3848,7 @@ webhooks:
         path: /validate
     rules:
       - operations:
+          - CREATE
           - UPDATE
         apiGroups:
           - dynatrace.com

@@ -106,14 +106,13 @@ func TestReconcile(t *testing.T) {
 		assert.NotNil(t, statefulSet)
 		assert.NoError(t, err)
 
-		found := false
-		for _, env := range newStatefulSet.Spec.Template.Spec.Containers[0].Env {
-			if env.Name == DTInternalProxy {
-				found = true
-				assert.Equal(t, testValue, env.Value)
+		found := 0
+		for _, vm := range newStatefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
+			if vm.Name == InternalProxySecretVolumeName {
+				found = found + 1
 			}
 		}
-		assert.True(t, found)
+		assert.Equal(t, 4, found)
 	})
 }
 

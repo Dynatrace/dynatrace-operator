@@ -60,7 +60,7 @@ var dummyNamespace2 = corev1.Namespace{
 func TestDynakubeValidator_Handle(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
 
-		assertAllowedResponseWithWarnings(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithWarnings(t, 3, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
@@ -194,9 +194,9 @@ func assertAllowedResponseWithoutWarnings(t *testing.T, dynakube *dynatracev1bet
 	assert.Equal(t, len(response.Warnings), 0)
 }
 
-func assertAllowedResponseWithWarnings(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) {
+func assertAllowedResponseWithWarnings(t *testing.T, warningAmount int, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) {
 	response := assertAllowedResponse(t, dynakube, other...)
-	assert.Equal(t, len(response.Warnings), 1)
+	assert.Equal(t, len(response.Warnings), warningAmount)
 }
 
 func assertAllowedResponse(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) admission.Response {

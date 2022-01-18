@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/automaticapimonitoring"
@@ -200,7 +201,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 	dkState.Update(upd, defaultUpdateInterval, "Found updates")
 	dkState.Error(err)
 
-	if !r.reconcileActiveGateCapabilities(dkState, dtc) {
+	if !r.reconcileActiveGate(ctx, dkState, dtc) {
 		return
 	}
 	if dkState.Instance.HostMonitoringMode() {
@@ -245,6 +246,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 		}
 	}
 
+	endpointSecretGenerator := dtingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, dkState.Instance.Namespace)
 	if dkState.Instance.NeedAppInjection() {
 		if err := dkMapper.MapFromDynakube(); err != nil {
 			log.Error(err, "update of a map of namespaces failed")
@@ -254,17 +256,27 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 			return
 		}
 
-		upd, err = dtingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, dkState.Instance.Namespace).GenerateForDynakube(ctx, dkState.Instance)
-		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "new data-ingest endpoint secret created") {
-			return
+		if !dkState.Instance.FeatureDisableMetadataEnrichment() {
+			upd, err = endpointSecretGenerator.GenerateForDynakube(ctx, dkState.Instance)
+			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "new data-ingest endpoint secret created") {
+				return
+			}
+		} else {
+			err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, dkState.Instance)
+			if dkState.Error(err) {
+				return
+			}
 		}
 	} else {
 		if err := dkMapper.UnmapFromDynaKube(); err != nil {
 			log.Error(err, "could not unmap dynakube from namespace")
 			return
 		}
+		err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, dkState.Instance)
+		if dkState.Error(err) {
+			return
+		}
 	}
-
 }
 
 func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
@@ -274,39 +286,61 @@ func (r *ReconcileDynaKube) ensureDeleted(obj client.Object) error {
 	return nil
 }
 
-func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *status.DynakubeState, dtc dtclient.Client) bool {
+func (r *ReconcileDynaKube) reconcileActiveGate(ctx context.Context, dynakubeState *status.DynakubeState, dtc dtclient.Client) bool {
+	if !r.reconcileActiveGateProxySecret(ctx, dynakubeState) {
+		return false
+	}
+	return r.reconcileActiveGateCapabilities(dynakubeState, dtc)
+}
+
+func (r *ReconcileDynaKube) reconcileActiveGateProxySecret(ctx context.Context, dynakubeState *status.DynakubeState) bool {
+	gen := agproxysecret.NewActiveGateProxySecretGenerator(r.client, r.apiReader, dynakubeState.Instance.Namespace, log)
+	if dynakubeState.Instance.HasProxy() {
+		upd, err := gen.GenerateForDynakube(ctx, dynakubeState.Instance)
+		if dynakubeState.Error(err) || dynakubeState.Update(upd, defaultUpdateInterval, "new ActiveGate proxy secret created") {
+			return false
+		}
+	} else {
+		if err := gen.EnsureDeleted(ctx, dynakubeState.Instance); dynakubeState.Error(err) {
+			return false
+		}
+	}
+	return true
+}
+
+func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dynakubeState *status.DynakubeState, dtc dtclient.Client) bool {
 	var caps = []capability.Capability{
-		capability.NewKubeMonCapability(dkState.Instance),
-		capability.NewRoutingCapability(dkState.Instance),
-		capability.NewMultiCapability(dkState.Instance),
+		capability.NewKubeMonCapability(dynakubeState.Instance),
+		capability.NewRoutingCapability(dynakubeState.Instance),
+		capability.NewMultiCapability(dynakubeState.Instance),
 	}
 
 	for _, c := range caps {
 		if c.Enabled() {
 			upd, err := rcap.NewReconciler(
-				c, r.client, r.apiReader, r.scheme, dkState.Instance).Reconcile()
-			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, c.ShortName()+" reconciled") {
+				c, r.client, r.apiReader, r.scheme, dynakubeState.Instance).Reconcile()
+			if dynakubeState.Error(err) || dynakubeState.Update(upd, defaultUpdateInterval, c.ShortName()+" reconciled") {
 				return false
 			}
 		} else {
 			sts := appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      capability.CalculateStatefulSetName(c, dkState.Instance.Name),
-					Namespace: dkState.Instance.Namespace,
+					Name:      capability.CalculateStatefulSetName(c, dynakubeState.Instance.Name),
+					Namespace: dynakubeState.Instance.Namespace,
 				},
 			}
-			if err := r.ensureDeleted(&sts); dkState.Error(err) {
+			if err := r.ensureDeleted(&sts); dynakubeState.Error(err) {
 				return false
 			}
 
 			if c.Config().CreateService {
 				svc := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      rcap.BuildServiceName(dkState.Instance.Name, c.ShortName()),
-						Namespace: dkState.Instance.Namespace,
+						Name:      rcap.BuildServiceName(dynakubeState.Instance.Name, c.ShortName()),
+						Namespace: dynakubeState.Instance.Namespace,
 					},
 				}
-				if err := r.ensureDeleted(&svc); dkState.Error(err) {
+				if err := r.ensureDeleted(&svc); dynakubeState.Error(err) {
 					return false
 				}
 			}
@@ -314,10 +348,10 @@ func (r *ReconcileDynaKube) reconcileActiveGateCapabilities(dkState *status.Dyna
 	}
 
 	//start automatic config creation
-	if dkState.Instance.Status.KubeSystemUUID != "" &&
-		dkState.Instance.FeatureAutomaticKubernetesApiMonitoring() &&
-		dkState.Instance.KubernetesMonitoringMode() {
-		err := automaticapimonitoring.NewReconciler(dtc, dkState.Instance.Name, dkState.Instance.Status.KubeSystemUUID).
+	if dynakubeState.Instance.Status.KubeSystemUUID != "" &&
+		dynakubeState.Instance.FeatureAutomaticKubernetesApiMonitoring() &&
+		dynakubeState.Instance.KubernetesMonitoringMode() {
+		err := automaticapimonitoring.NewReconciler(dtc, dynakubeState.Instance.Name, dynakubeState.Instance.Status.KubeSystemUUID).
 			Reconcile()
 		if err != nil {
 			log.Error(err, "could not create setting")

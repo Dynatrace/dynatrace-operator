@@ -24,6 +24,7 @@ const (
 	testUID                  = "test-uid"
 	routingStatefulSetSuffix = "-router"
 	testFeature              = "router"
+	testDNSPolicy            = corev1.DNSPolicy("dns")
 )
 
 func TestNewStatefulSetBuilder(t *testing.T) {
@@ -39,7 +40,7 @@ func TestNewStatefulSetBuilder(t *testing.T) {
 
 func TestStatefulSetBuilder_Build(t *testing.T) {
 	instance := buildTestInstance()
-	capabilityProperties := &instance.Spec.Routing.CapabilityProperties
+	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 	sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties,
 		"", "", testFeature, "", "", nil, nil, nil))
 
@@ -52,7 +53,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 		KeyActiveGate: instance.Name,
 		KeyFeature:    testFeature,
 	}, sts.Labels)
-	assert.Equal(t, instance.Spec.Routing.Replicas, sts.Spec.Replicas)
+	assert.Equal(t, instance.Spec.ActiveGate.Replicas, sts.Spec.Replicas)
 	assert.Equal(t, appsv1.ParallelPodManagement, sts.Spec.PodManagementPolicy)
 	assert.Equal(t, metav1.LabelSelector{
 		MatchLabels: BuildLabelsFromInstance(instance, testFeature),
@@ -81,7 +82,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 
 func TestStatefulSet_TemplateSpec(t *testing.T) {
 	instance := buildTestInstance()
-	capabilityProperties := &instance.Spec.Routing.CapabilityProperties
+	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 	templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties,
 		"", "", "", "", "", nil, nil, nil))
 
@@ -104,7 +105,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 
 func TestStatefulSet_Container(t *testing.T) {
 	instance := buildTestInstance()
-	capabilityProperties := &instance.Spec.Routing.CapabilityProperties
+	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 	container := buildContainer(NewStatefulSetProperties(instance, capabilityProperties,
 		"", "", "", "", "", nil, nil, nil))
 
@@ -120,7 +121,7 @@ func TestStatefulSet_Container(t *testing.T) {
 
 func TestStatefulSet_Volumes(t *testing.T) {
 	instance := buildTestInstance()
-	capabilityProperties := &instance.Spec.Routing.CapabilityProperties
+	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 
 	t.Run(`without custom properties`, func(t *testing.T) {
 		volumes := buildVolumes(NewStatefulSetProperties(instance, capabilityProperties,
@@ -170,7 +171,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 
 func TestStatefulSet_Env(t *testing.T) {
 	instance := buildTestInstance()
-	capabilityProperties := &instance.Spec.Routing.CapabilityProperties
+	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(testUID), deploymentmetadata.DeploymentTypeActiveGate)
 
 	t.Run(`without proxy`, func(t *testing.T) {
@@ -184,34 +185,10 @@ func TestStatefulSet_Env(t *testing.T) {
 			{Name: testKey, Value: testValue},
 		}, envVars)
 	})
-	t.Run(`with proxy from value`, func(t *testing.T) {
-		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", nil, nil, nil))
-
-		assert.Contains(t, envVars, corev1.EnvVar{
-			Name:  DTInternalProxy,
-			Value: testValue,
-		})
-	})
-	t.Run(`with proxy from value source`, func(t *testing.T) {
-		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}
-		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", nil, nil, nil))
-
-		assert.NotEmpty(t, envVars)
-
-		for _, envVar := range envVars {
-			if envVar.Name == DTInternalProxy {
-				assert.Equal(t, ProxySecretKey, envVar.ValueFrom.SecretKeyRef.Key)
-				assert.Equal(t, corev1.LocalObjectReference{Name: testName}, envVar.ValueFrom.SecretKeyRef.LocalObjectReference)
-			}
-		}
-	})
 	t.Run(`with networkzone`, func(t *testing.T) {
 		instance := buildTestInstance()
 		instance.Spec.NetworkZone = testName
-		capabilityProperties := &instance.Spec.Routing.CapabilityProperties
+		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", "", nil, nil, nil))
 
@@ -224,8 +201,8 @@ func TestStatefulSet_Env(t *testing.T) {
 	})
 	t.Run(`with group`, func(t *testing.T) {
 		instance := buildTestInstance()
-		instance.Spec.Routing.Group = testValue
-		capabilityProperties := &instance.Spec.Routing.CapabilityProperties
+		instance.Spec.ActiveGate.Group = testValue
+		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", "", nil, nil, nil))
 
@@ -240,7 +217,7 @@ func TestStatefulSet_Env(t *testing.T) {
 
 func TestStatefulSet_VolumeMounts(t *testing.T) {
 	instance := buildTestInstance()
-	capabilityProperties := &instance.Spec.Routing.CapabilityProperties
+	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 
 	t.Run(`without custom properties`, func(t *testing.T) {
 		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
@@ -260,18 +237,84 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 			SubPath:   customproperties.DataPath,
 		})
 	})
+	t.Run(`with proxy from value`, func(t *testing.T) {
+		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", "", nil, nil, nil))
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretHostMountPath,
+			SubPath:   InternalProxySecretHost,
+		})
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretPortMountPath,
+			SubPath:   InternalProxySecretPort,
+		})
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretUsernameMountPath,
+			SubPath:   InternalProxySecretUsername,
+		})
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretPasswordMountPath,
+			SubPath:   InternalProxySecretPassword,
+		})
+	})
+	t.Run(`with proxy from value source`, func(t *testing.T) {
+		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}
+		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", "", nil, nil, nil))
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretHostMountPath,
+			SubPath:   InternalProxySecretHost,
+		})
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretPortMountPath,
+			SubPath:   InternalProxySecretPort,
+		})
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretUsernameMountPath,
+			SubPath:   InternalProxySecretUsername,
+		})
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretPasswordMountPath,
+			SubPath:   InternalProxySecretPassword,
+		})
+	})
 }
 
 func TestStatefulSet_Resources(t *testing.T) {
 	instance := buildTestInstance()
-	capabilityProperties := &instance.Spec.Routing.CapabilityProperties
+	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 
 	quantityCpuLimit := resource.NewScaledQuantity(700, resource.Milli)
 	quantityMemoryLimit := resource.NewScaledQuantity(7, resource.Giga)
 	quantityCpuRequest := resource.NewScaledQuantity(500, resource.Milli)
 	quantityMemoryRequest := resource.NewScaledQuantity(5, resource.Giga)
 
-	instance.Spec.Routing.Resources = corev1.ResourceRequirements{
+	instance.Spec.ActiveGate.Resources = corev1.ResourceRequirements{
 		Limits: corev1.ResourceList{
 			corev1.ResourceCPU:    *quantityCpuLimit,
 			corev1.ResourceMemory: *quantityMemoryLimit,
@@ -290,16 +333,28 @@ func TestStatefulSet_Resources(t *testing.T) {
 	assert.True(t, quantityMemoryRequest.Equal(container.Resources.Requests[corev1.ResourceMemory]))
 }
 
+func TestStatefulSet_DNSPolicy(t *testing.T) {
+	instance := buildTestInstance()
+	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
+
+	podSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil))
+
+	assert.Equal(t, testDNSPolicy, podSpec.DNSPolicy)
+}
+
 func buildTestInstance() *dynatracev1beta1.DynaKube {
 	replicas := int32(3)
-
 	return &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: testNamespace,
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
-			Routing: dynatracev1beta1.RoutingSpec{
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+					dynatracev1beta1.RoutingCapability.DisplayName,
+				},
+				DNSPolicy: testDNSPolicy,
 				CapabilityProperties: dynatracev1beta1.CapabilityProperties{
 					Replicas:    &replicas,
 					Tolerations: []corev1.Toleration{{Value: testValue}},
@@ -309,7 +364,8 @@ func buildTestInstance() *dynatracev1beta1.DynaKube {
 					Env: []corev1.EnvVar{
 						{Name: testKey, Value: testValue},
 					},
-				}},
+				},
+			},
 		},
 	}
 }
