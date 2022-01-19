@@ -14,6 +14,24 @@ For those just getting started, consult this  [guide](https://help.github.com/ar
 - Avoid using `client.Client` for 'getting' resources, use `client.Reader` (also known as `apiReader`) instead.
   - `client.Client` uses a cache (or tries to) that requires more permissions than normally, and can also give you outdated results.
 
+
+
+### Reconciler vs Controller
+#### A **Controller** is a struct that **DIRECTLY** handles the reconcile Requests.
+
+Important characteristics:
+- We pass it to `ctrl.NewControllerManagedBy(mgr)`
+- Has a `Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error)` function.
+- Calls other Reconcilers when needed
+- Examples: DynakubeController, WebhookCertController, NodesController, OneAgentProvisioner CSIGarbageCollector
+#### A **Reconciler** is a struct that **INDIRECTLY** handles the reconcile Requests.
+
+Important characteristics:
+- Has a `Reconcile(<whatever is necessary>)` function
+- Is called/used BY a Controller
+- Examples: OneAgentReconciler, IstioReconciler...
+
+
 ### Logging
 
 #### Do's
