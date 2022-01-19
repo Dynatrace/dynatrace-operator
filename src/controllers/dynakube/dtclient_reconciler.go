@@ -149,7 +149,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 		tokens[0].Scopes = append(tokens[0].Scopes, dtclient.TokenScopeEntitiesRead)
 	}
 
-	if instance.IsActiveGateMode(dynatracev1beta1.MetricsIngestCapability.DisplayName) && r.DataIngestToken != "" {
+	if r.DataIngestToken != "" {
 		tokens = append(tokens, tokenConfig{
 			Type:      dynatracev1beta1.DataIngestTokenConditionType,
 			Key:       dtclient.DynatraceDataIngestToken,
