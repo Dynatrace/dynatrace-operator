@@ -26,8 +26,8 @@ type CSIGarbageCollector struct {
 	path         metadata.PathResolver
 }
 
-// NewController returns a new CSIGarbageCollector
-func NewController(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
+// NewCSIGarbageCollector returns a new CSIGarbageCollector
+func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		apiReader:    apiReader,
 		opts:         opts,

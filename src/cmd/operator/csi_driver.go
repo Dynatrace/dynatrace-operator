@@ -95,7 +95,7 @@ func setupCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error
 		return nil, cleanUp, err
 	}
 
-	if err := csiprovisioner.NewController(mgr, csiOpts, access).SetupWithManager(mgr); err != nil {
+	if err := csiprovisioner.NewOneAgentProvisioner(mgr, csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Provisioner")
 		return nil, cleanUp, err
 	}
@@ -105,7 +105,7 @@ func setupCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error
 		return nil, cleanUp, err
 	}
 
-	if err := csigc.NewController(mgr.GetClient(), csiOpts, access).SetupWithManager(mgr); err != nil {
+	if err := csigc.NewCSIGarbageCollector(mgr.GetClient(), csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Garbage Collector")
 		return nil, cleanUp, err
 	}

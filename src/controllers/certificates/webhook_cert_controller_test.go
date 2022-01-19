@@ -250,8 +250,8 @@ func createTestSecret(_ *testing.T, certData map[string][]byte) *corev1.Secret {
 	}
 }
 
-func prepareController(clt client.Client) (*WebhookCertController, reconcile.Request) {
-	rec := &WebhookCertController{
+func prepareController(clt client.Client) (*WebhookCertificateController, reconcile.Request) {
+	rec := &WebhookCertificateController{
 		ctx:       context.TODO(),
 		client:    clt,
 		apiReader: clt,
@@ -281,7 +281,7 @@ func testWebhookClientConfig(
 	assert.Equal(t, expectedCert, webhookClientConfig.CABundle)
 }
 
-func verifyCertificates(t *testing.T, rec *WebhookCertController, secret *corev1.Secret, clt client.Client, isUpdate bool) {
+func verifyCertificates(t *testing.T, rec *WebhookCertificateController, secret *corev1.Secret, clt client.Client, isUpdate bool) {
 	cert := Certs{
 		Domain:  getDomain(rec.namespace),
 		Data:    secret.Data,

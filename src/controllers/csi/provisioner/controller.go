@@ -55,8 +55,8 @@ type OneAgentProvisioner struct {
 	path         metadata.PathResolver
 }
 
-// NewController returns a new OneAgentProvisioner
-func NewController(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
+// NewOneAgentProvisioner returns a new OneAgentProvisioner
+func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
 		client:       mgr.GetClient(),
 		apiReader:    mgr.GetAPIReader(),

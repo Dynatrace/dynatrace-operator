@@ -23,7 +23,7 @@ Important characteristics:
 - We pass it to `ctrl.NewControllerManagedBy(mgr)`
 - Has a `Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error)` function.
 - Calls other Reconcilers when needed
-- Examples: DynakubeController, WebhookCertController, NodesController, OneAgentProvisioner CSIGarbageCollector
+- Examples: DynakubeController, WebhookCertController, NodesController, OneAgentProvisioner, CSIGarbageCollector
 #### A **Reconciler** is a struct that **INDIRECTLY** handles the reconcile Requests.
 
 Important characteristics:
