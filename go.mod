@@ -7,6 +7,7 @@ require (
 	github.com/containers/image/v5 v5.19.0
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-logr/logr v1.2.2
+	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/klauspost/compress v1.14.1
 	github.com/mattn/go-sqlite3 v1.14.10
 	github.com/opencontainers/go-digest v1.0.0
@@ -59,7 +60,6 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/go-intervals v0.0.2 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -101,7 +101,7 @@ require (
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 // indirect
+	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce // indirect
 	golang.org/x/net v0.0.0-20211209124913-491a49abca63 // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
