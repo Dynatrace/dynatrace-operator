@@ -8,6 +8,11 @@ metadata:
     containerImage: registry.connect.redhat.com/dynatrace/dynatrace-operator
     repository: https://github.com/Dynatrace/dynatrace-operator
     support: Dynatrace
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.arm64: supported
+    operatorframework.io/arch.ppc64le: supported
+    operatorframework.io/arch.s390x: supported
   name: dynatrace-operator.v0.0.0
   namespace: placeholder
 spec:
