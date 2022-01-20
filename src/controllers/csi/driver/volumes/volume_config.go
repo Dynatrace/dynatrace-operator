@@ -1,4 +1,4 @@
-package csidriver
+package csivolumes
 
 import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -7,18 +7,22 @@ import (
 )
 
 const (
-	podNameContextKey      = "csi.storage.k8s.io/pod.name"
-	podNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
+	PodNameContextKey      = "csi.storage.k8s.io/pod.name"
+	PodNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
 )
 
-type volumeConfig struct {
-	volumeId   string
-	targetPath string
-	namespace  string
-	podName    string
+type VolumeInfo struct {
+	VolumeId   string
+	TargetPath string
 }
 
-func parsePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*volumeConfig, error) {
+type VolumeConfig struct {
+	VolumeInfo
+	Namespace string
+	PodName   string
+}
+
+func ParsePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeConfig, error) {
 	if req.GetVolumeCapability() == nil {
 		return nil, status.Error(codes.InvalidArgument, "Volume capability missing in request")
 	}
@@ -46,20 +50,36 @@ func parsePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*volumeConfig
 		return nil, status.Error(codes.InvalidArgument, "Publish context missing in request")
 	}
 
-	nsName := volCtx[podNamespaceContextKey]
+	nsName := volCtx[PodNamespaceContextKey]
 	if nsName == "" {
 		return nil, status.Error(codes.InvalidArgument, "No namespace included with request")
 	}
 
-	podName := volCtx[podNameContextKey]
+	podName := volCtx[PodNameContextKey]
 	if podName == "" {
 		return nil, status.Error(codes.InvalidArgument, "No Pod Name included with request")
 	}
 
-	return &volumeConfig{
-		volumeId:   volID,
-		targetPath: targetPath,
-		namespace:  nsName,
-		podName:    podName,
+	return &VolumeConfig{
+		VolumeInfo: VolumeInfo{
+			VolumeId:   volID,
+			TargetPath: targetPath,
+		},
+		Namespace: nsName,
+		PodName:   podName,
 	}, nil
+}
+
+func ParseNodeUnpublishVolumeRequest(req *csi.NodeUnpublishVolumeRequest) (*VolumeInfo, error) {
+	volumeID := req.GetVolumeId()
+	if volumeID == "" {
+		return nil, status.Error(codes.InvalidArgument, "Volume ID missing in request")
+	}
+
+	targetPath := req.GetTargetPath()
+	if targetPath == "" {
+		return nil, status.Error(codes.InvalidArgument, "Target path missing in request")
+	}
+
+	return &VolumeInfo{volumeID, targetPath}, nil
 }
