@@ -231,7 +231,6 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeReadConfig,
 			dtclient.TokenScopeWriteConfig,
-			dtclient.TokenScopeEntitiesWrite,
 		}, nil)
 
 		rec := &DynatraceClientReconciler{
@@ -258,14 +257,15 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 				dynatracev1beta1.MetricsIngestCapability.DisplayName,
 			},
 		}
-		c := fake.NewClient(NewSecret(dynaKube, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}))
+		c := fake.NewClient(NewSecret(dynaKube, namespace, map[string]string{dtclient.DynatraceApiToken: "84", dtclient.DynatraceDataIngestToken: "69"}))
 
 		dtcMock := &dtclient.MockDynatraceClient{}
-		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
 		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeReadConfig,
 			dtclient.TokenScopeWriteConfig,
+			dtclient.TokenScopeInstallerDownload,
 		}, nil)
+		dtcMock.On("GetTokenScopes", "69").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 
 		rec := &DynatraceClientReconciler{
 			Client:              c,
@@ -279,9 +279,8 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		assert.NoError(t, err)
 		assert.False(t, rec.ValidTokens)
 
-		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, true, dynatracev1beta1.ReasonTokenReady, "Ready")
-		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, false, dynatracev1beta1.ReasonTokenScopeMissing,
-			"Token on secret dynatrace:dynakube missing scopes [metrics.ingest]")
+		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, true, dynatracev1beta1.ReasonTokenReady, "Ready")
+		AssertCondition(t, dk, dynatracev1beta1.DataIngestTokenConditionType, false, dynatracev1beta1.ReasonTokenScopeMissing, "Token on secret dynatrace:dynakube missing scopes [metrics.ingest]")
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
 }
