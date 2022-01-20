@@ -123,8 +123,8 @@ tests:
             test-key: test-value
 
   - it: should have imagePullSecrets defined in spec
-    set: 
-      operator: 
+    set:
+      operator:
         customPullSecret: pull-secret
     asserts:
       - equal:
@@ -187,8 +187,6 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                  - name: RELATED_IMAGE_DYNATRACE_ONEAGENT
-                    value: registry.connect.redhat.com/dynatrace/oneagent
                 ports:
                   - containerPort: 8080
                     name: metrics
@@ -258,7 +256,7 @@ tests:
             test-key: test-value
 
   - it: should have imagePullSecrets defined in spec
-    set: 
+    set:
       platform: openshift
       operator.customPullSecret: pull-secret
     asserts:
@@ -267,7 +265,7 @@ tests:
           value: pull-secret
 
   - it: should not have imagePullSecrets defined in spec
-    set: 
+    set:
       platform: openshift
     asserts:
       - isNull:

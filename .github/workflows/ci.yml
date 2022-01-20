@@ -3,6 +3,42 @@ name: CI
 on: push
 
 jobs:
+
+  helm-test:
+    name: Run helm unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.7.1
+      - name: Download dependencies
+        id: helm-unittest-download
+        run: |
+          helm plugin install https://github.com/quintush/helm-unittest --version 0.2.6
+      - name: Run Unit tests
+        id: helm-unittest
+        run: |
+          make helm-test
+
+  helm-lint:
+    name: Run helm linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.7.1
+      - name: Run Linting
+        id: helm-linting
+        run: |
+          make helm-lint
+
+
   tests:
     name: Run unit tests
     runs-on: ubuntu-latest
