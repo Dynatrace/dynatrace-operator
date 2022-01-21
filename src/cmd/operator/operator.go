@@ -22,6 +22,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/nodes"
+	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
@@ -51,7 +52,7 @@ func setupOperator(ns string, cfg *rest.Config) (manager.Manager, error) {
 		dynakube.Add,
 		nodes.Add,
 	}
-	if !deployedViaOLM() {
+	if !kubesystem.DeployedViaOLM() {
 		funcs = append(funcs, certificates.Add)
 	}
 

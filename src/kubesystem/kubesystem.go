@@ -2,6 +2,7 @@ package kubesystem
 
 import (
 	"context"
+	"os"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -17,4 +18,8 @@ func GetUID(clt client.Reader) (types.UID, error) {
 		return "", err
 	}
 	return kubeSystemNamespace.UID, nil
+}
+
+func DeployedViaOLM() bool {
+	return os.Getenv("DEPLOYED_VIA_OLM") == "true"
 }
