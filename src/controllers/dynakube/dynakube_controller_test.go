@@ -515,7 +515,7 @@ func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID stri
 								},
 							},
 							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: "/rest/health",
 										Port: intstr.IntOrString{
