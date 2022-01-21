@@ -18,13 +18,13 @@ import (
 )
 
 type DynatraceClientReconciler struct {
-	Client                client.Client
-	DynatraceClientFunc   DynatraceClientFunc
-	Now                   metav1.Time
-	ApiToken, PaasToken   string
-	ValidTokens           bool
-	dkName, ns, secretKey string
-	status                *dynatracev1beta1.DynaKubeStatus
+	Client                               client.Client
+	DynatraceClientFunc                  DynatraceClientFunc
+	Now                                  metav1.Time
+	ApiToken, PaasToken, DataIngestToken string
+	ValidTokens                          bool
+	dkName, ns, secretKey                string
+	status                               *dynatracev1beta1.DynaKubeStatus
 }
 
 type tokenConfig struct {
@@ -144,6 +144,21 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 			}}
 	}
 
+	if instance.KubernetesMonitoringMode() &&
+		instance.FeatureAutomaticKubernetesApiMonitoring() {
+		tokens[0].Scopes = append(tokens[0].Scopes, dtclient.TokenScopeEntitiesRead)
+	}
+
+	if r.DataIngestToken != "" {
+		tokens = append(tokens, tokenConfig{
+			Type:      dynatracev1beta1.DataIngestTokenConditionType,
+			Key:       dtclient.DynatraceDataIngestToken,
+			Value:     r.DataIngestToken,
+			Scopes:    []string{dtclient.TokenScopeMetricsIngest},
+			Timestamp: &r.status.LastDataIngestTokenProbeTimestamp,
+		})
+	}
+
 	for _, token := range tokens {
 		updateCR = r.CheckToken(dtc, token) || updateCR
 	}
@@ -243,6 +258,7 @@ func (r *DynatraceClientReconciler) setTokens(secret *corev1.Secret) {
 	if secret != nil {
 		r.ApiToken = string(secret.Data[dtclient.DynatraceApiToken])
 		r.PaasToken = string(secret.Data[dtclient.DynatracePaasToken])
+		r.DataIngestToken = string(secret.Data[dtclient.DynatraceDataIngestToken])
 	}
 }
 

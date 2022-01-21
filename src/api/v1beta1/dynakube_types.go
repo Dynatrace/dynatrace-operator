@@ -11,6 +11,9 @@ const (
 	// PaaSTokenConditionType identifies the PaaS Token validity condition
 	PaaSTokenConditionType string = "PaaSToken"
 
+	// DataIngestTokenConditionType identifies the DataIngest Token validity condition
+	DataIngestTokenConditionType string = "DataIngestToken"
+
 	OperatorName = "dynatrace-operator"
 )
 

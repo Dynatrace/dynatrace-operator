@@ -2655,6 +2655,11 @@ spec:
                   version was last checked
                 format: date-time
                 type: string
+              lastDataIngestTokenProbeTimestamp:
+                description: LastDataIngestTokenProbeTimestamp tracks when the last
+                  request for the DataIngest token validity was sent
+                format: date-time
+                type: string
               lastPaaSTokenProbeTimestamp:
                 description: LastPaaSTokenProbeTimestamp tracks when the last request
                   for the PaaS token validity was sent
