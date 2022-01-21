@@ -33,6 +33,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 		dst.Spec.ClassicFullStack.Tolerations = src.Spec.OneAgent.ClassicFullStack.Tolerations
 		dst.Spec.ClassicFullStack.Resources = src.Spec.OneAgent.ClassicFullStack.OneAgentResources
 		dst.Spec.ClassicFullStack.Args = src.Spec.OneAgent.ClassicFullStack.Args
+		dst.Spec.ClassicFullStack.Env = src.Spec.OneAgent.ClassicFullStack.Env
 		dst.Spec.ClassicFullStack.DNSPolicy = src.Spec.OneAgent.ClassicFullStack.DNSPolicy
 		dst.Spec.ClassicFullStack.Labels = src.Spec.OneAgent.ClassicFullStack.Labels
 	}
@@ -135,6 +136,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 		dst.Spec.OneAgent.ClassicFullStack.Tolerations = src.Spec.ClassicFullStack.Tolerations
 		dst.Spec.OneAgent.ClassicFullStack.OneAgentResources = src.Spec.ClassicFullStack.Resources
 		dst.Spec.OneAgent.ClassicFullStack.Args = src.Spec.ClassicFullStack.Args
+		dst.Spec.OneAgent.ClassicFullStack.Env = src.Spec.ClassicFullStack.Env
 		dst.Spec.OneAgent.ClassicFullStack.DNSPolicy = src.Spec.ClassicFullStack.DNSPolicy
 		dst.Spec.OneAgent.ClassicFullStack.Labels = src.Spec.ClassicFullStack.Labels
 	}
