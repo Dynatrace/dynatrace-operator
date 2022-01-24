@@ -83,7 +83,7 @@ func (dk *DynaKube) FeatureIgnoreUnknownState() bool {
 }
 
 // FeatureIgnoredNamespaces is a feature flag for ignoring certain namespaces.
-// defaults to "[ \"^dynatrace$\", \"^kube-.*\", \"openshift(-.*)?\" ]"
+// defaults to "[ \"dynatrace\", \"^kube-.*\", \"openshift(-.*)?\" ]"
 func (dk *DynaKube) FeatureIgnoredNamespaces() []string {
 	raw, ok := dk.Annotations[annotationFeatureIgnoredNamespaces]
 	if !ok || raw == "" {
