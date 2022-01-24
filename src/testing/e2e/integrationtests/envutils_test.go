@@ -33,7 +33,7 @@ func init() {
 type ControllerTestEnvironment struct {
 	CommunicationHosts []string
 	Client             client.Client
-	Reconciler         *dynakube.ReconcileDynaKube
+	Reconciler         *dynakube.DynakubeController
 
 	server *envtest.Environment
 }
@@ -93,7 +93,7 @@ func newTestEnvironment() (*ControllerTestEnvironment, error) {
 		Client:             kubernetesClient,
 		CommunicationHosts: communicationHosts,
 	}
-	testEnvironment.Reconciler = dynakube.NewDynaKubeReconciler(
+	testEnvironment.Reconciler = dynakube.NewDynaKubeController(
 		kubernetesClient, kubernetesClient, scheme.Scheme,
 		mockDynatraceClientFunc(&testEnvironment.CommunicationHosts), cfg)
 
