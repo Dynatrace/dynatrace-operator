@@ -193,7 +193,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 			ImagePullPolicy: corev1.PullAlways,
 			Name:            podName,
 			ReadinessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					Exec: &corev1.ExecAction{
 						Command: []string{
 							"/bin/sh", "-c", "grep -q oneagentwatchdo /proc/[0-9]*/stat",

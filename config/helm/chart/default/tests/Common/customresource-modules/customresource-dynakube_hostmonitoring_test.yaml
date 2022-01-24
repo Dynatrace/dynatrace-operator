@@ -10,7 +10,7 @@ tests:
       hostMonitoring.enabled: false
     asserts:
       - isNull:
-          path: spec.oneAgent.hostMonitoring
+          path: spec.oneAgent
 
   - it: should exist if enabled
     set:
