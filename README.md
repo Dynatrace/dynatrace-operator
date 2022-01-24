@@ -2,25 +2,20 @@
 
 # Dynatrace Operator
 
-The Dynatrace Operator supports rollout and lifecycle of various Dynatrace components in Kubernetes and OpenShift.
+The Dynatrace Operator supports rollout and lifecycle management of various Dynatrace components in Kubernetes and OpenShift.
 
-As of launch, the Dynatrace Operator can be used to deploy a containerized ActiveGate for Kubernetes API monitoring. New
-capabilities will be added to the Dynatrace Operator over time including metric routing, and API monitoring for AWS,
-Azure, GCP, and vSphere.
+* OneAgent
+  * `classicFullStack` rolls out a OneAgent pod per node to monitor pods on it and the node itself
+  * `applicationMonitoring` is webhook based injection mechanism for automatic-app-only injection
+  * `hostMonitoring` is only monitoring the host in the cluster without app-only injection
+  * (PREVIEW) `cloudNativeFullStack` is a combination of `applicationMonitoring` with CSI driver and `hostMonitoring`
+* ActiveGate
+  * `routing` routes OneAgent traffic through the ActiveGate
+  * `kubernetes-monitoring` allows monitoring of the Kubernetes API
+  * (PREVIEW) `metrics-ingest` routes enriched metrics through ActiveGate
 
-With v0.2.0 we added the classicFullStack functionality which allows rolling out the OneAgent to your Kubernetes
-cluster. Furthermore, the Dynatrace Operator is now capable of rolling out a containerized ActiveGate for routing the
-OneAgent traffic.
-
-With v0.3.0 the CRD structure has been changed to provide an easier and more understandable way to deploy Dynatrace in your environment.
-- **routing** and **kubernetesMonitoring** within the Dynakube spec are deprecated now and moved to the **activeGate** section.
-- (combination with 'useCSIDriver' is still in PREVIEW) added **applicationMonitoring** mode, a webhook based injection mechanism for automatic-app-only injection
-- added **hostMonitoring** for only monitoring the host in the cluster without app-only injection
-- (PREVIEW) added **cloudNativeFullStack** mode, which combines **hostMonitoring**, with the webhook based **applicationMonitoring**
-
-For more information please have a look at [our DynaKube Custom Resource examples](config/samples),
-or our [official help page.](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/)
-
+For more information please have a look at [our DynaKube Custom Resource examples](config/samples) and
+our [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/).
 
 ## Supported platforms
 
@@ -29,7 +24,7 @@ Depending on the version of the Dynatrace Operator, it supports the following pl
 | Dynatrace Operator version | Kubernetes | OpenShift Container Platform |
 |----------------------------|------------|------------------------------|
 | master                     | 1.21+      | 4.7+                         |
-| v0.4.0                     | 1.20+      | 4.7+                         |
+| v0.4.0                     | 1.21+      | 4.7+                         |
 | v0.3.0                     | 1.20+      | 4.7+                         |
 | v0.2.2                     | 1.18+      | 3.11.188+, 4.5+              |
 | v0.1.0                     | 1.18+      | 3.11.188+, 4.4+              |
@@ -41,7 +36,8 @@ objects like permissions, custom resources and corresponding StatefulSets.
 
 ### Installation
 
-> For install instructions on Openshift, head to the [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/openshift/set-up-ocp-monitoring#set-up-openshift-monitoring)!
+> For install instructions on Openshift, head to the
+> [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/openshift/set-up-ocp-monitoring#set-up-openshift-monitoring)!
 
 To create the namespace and apply the operator run the following commands
 
@@ -61,7 +57,6 @@ assistance please refer
 to [Create user-generated access tokens](https://www.dynatrace.com/support/help/get-started/access-tokens#create-api-token).
 
 Make sure the tokens have the following permissions:
-
 * API Token
   * Read Configuration
   * Write Configuration
