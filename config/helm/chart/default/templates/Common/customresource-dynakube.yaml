@@ -21,7 +21,7 @@ metadata:
   annotations:
     {{- if ne .Values.platform "google"}}
     "helm.sh/hook": post-install,post-upgrade
-    {{ end }}
+    {{- end }}
   name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
   labels:
