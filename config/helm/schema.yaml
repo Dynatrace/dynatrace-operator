@@ -15,10 +15,10 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: "0.3.0"
+  publishedVersion: "0.4.0"
   publishedVersionMetadata:
     releaseNote: >-
-      v0.3.0
+      v0.4.0
 
       Features
       * applicationMonitoring - The Dynatrace Operator now supports a webhook based injection mechanism for automatic-app-only injection
