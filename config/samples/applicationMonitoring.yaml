@@ -3,6 +3,8 @@ kind: DynaKube
 metadata:
   name: dynakube
   namespace: dynatrace
+  annotations:
+    alpha.operator.dynatrace.com/feature-automatic-kubernetes-api-monitoring: "true"
 spec:
   # Dynatrace apiUrl including the `/api` path at the end.
   # For SaaS, set `YOUR_ENVIRONMENT_ID` to your environment ID.
