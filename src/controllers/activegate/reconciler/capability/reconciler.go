@@ -3,6 +3,7 @@ package capability
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
@@ -55,7 +56,11 @@ func NewReconciler(capability capability.Capability, clt client.Client, apiReade
 
 func setReadinessProbePort() events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
-		sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HttpsServicePortName)
+		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
+			activeGateContainer.ReadinessProbe.HTTPGet.Port = intstr.FromString(consts.HttpsServicePortName)
+		} else {
+			log.Error(err, "Cannot find container in the StatefulSet", "container name", consts.ActiveGateContainerName)
+		}
 	}
 }
 
@@ -70,10 +75,14 @@ func getContainerByName(containers []corev1.Container, containerName string) (*c
 	)
 }
 
+func getActiveGateContainer(sts *appsv1.StatefulSet) (*corev1.Container, error) {
+	return getContainerByName(sts.Spec.Template.Spec.Containers, consts.ActiveGateContainerName)
+}
+
 func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
 		{
-			activeGateContainer, err := getContainerByName(sts.Spec.Template.Spec.Containers, consts.ActiveGateContainerName)
+			activeGateContainer, err := getActiveGateContainer(sts)
 			if err == nil {
 				activeGateContainer.Ports = []corev1.ContainerPort{
 					{
@@ -85,8 +94,9 @@ func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) events.StatefulSetEven
 						ContainerPort: httpContainerPort,
 					},
 				}
+			} else {
+				log.Error(err, "Cannot find container in the StatefulSet", "container name", consts.ActiveGateContainerName)
 			}
-			// TODO How to report an error?
 		}
 		if dk.FeatureEnableStatsDIngest() {
 			statsdContainer, err := getContainerByName(sts.Spec.Template.Spec.Containers, consts.StatsDContainerName)
@@ -98,8 +108,9 @@ func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) events.StatefulSetEven
 						Protocol:      corev1.ProtocolUDP,
 					},
 				}
+			} else {
+				log.Error(err, "Cannot find container in the StatefulSet", "container name", consts.StatsDContainerName)
 			}
-			// TODO How to report error?
 		}
 	}
 }
@@ -110,11 +121,15 @@ func (r *Reconciler) calculateStatefulSetName() string {
 
 func addDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
-		sts.Spec.Template.Spec.Containers[0].Env = append(sts.Spec.Template.Spec.Containers[0].Env,
-			corev1.EnvVar{
-				Name:  dtDNSEntryPoint,
-				Value: buildDNSEntryPoint(instance, moduleName),
-			})
+		if activeGateContainer, err := getActiveGateContainer(sts); err == nil {
+			activeGateContainer.Env = append(activeGateContainer.Env,
+				corev1.EnvVar{
+					Name:  dtDNSEntryPoint,
+					Value: buildDNSEntryPoint(instance, moduleName),
+				})
+		} else {
+			log.Error(err, "Cannot find container in the StatefulSet", "container name", consts.ActiveGateContainerName)
+		}
 	}
 }
 
@@ -164,7 +179,7 @@ func (r *Reconciler) updateServiceIfOutdated() (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	if r.isOutdated(installedService, desiredService) {
+	if r.portsAreOutdated(installedService, desiredService) {
 		desiredService.Spec.ClusterIP = installedService.Spec.ClusterIP
 		desiredService.ObjectMeta.ResourceVersion = installedService.ObjectMeta.ResourceVersion
 		updateErr := r.updateService(desiredService)
@@ -176,8 +191,8 @@ func (r *Reconciler) updateServiceIfOutdated() (bool, error) {
 	return false, nil
 }
 
-func (r *Reconciler) isOutdated(installedService, desiredService *corev1.Service) bool {
-	return !dynatracev1beta1.IsInternalFlagsEqual(installedService, desiredService)
+func (r *Reconciler) portsAreOutdated(installedService, desiredService *corev1.Service) bool {
+	return !reflect.DeepEqual(installedService.Spec.Ports, desiredService.Spec.Ports)
 }
 
 func (r *Reconciler) updateService(service *corev1.Service) error {

@@ -10,9 +10,9 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 	assertion := assert.New(t)
 
 	instance := buildTestInstance()
-	capabilityProperties := &instance.Spec.Routing.CapabilityProperties
+	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 	stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
-		"", "", "", "", "",
+		"", "", "test-feature", "", "",
 		nil, nil, nil,
 	)
 

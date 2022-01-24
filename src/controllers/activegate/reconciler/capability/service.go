@@ -12,8 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const AnnotationEnableStatsD = dynatracev1beta1.InternalFlagPrefix + "enable-statsd"
-
 func createService(instance *dynatracev1beta1.DynaKube, feature string) *corev1.Service {
 	enableStatsD := instance.FeatureEnableStatsDIngest()
 	ports := []corev1.ServicePort{
@@ -44,9 +42,6 @@ func createService(instance *dynatracev1beta1.DynaKube, feature string) *corev1.
 			Name:      BuildServiceName(instance.Name, feature),
 			Namespace: instance.Namespace,
 			Labels:    statefulset.BuildLabelsFromInstance(instance, feature),
-			Annotations: map[string]string{
-				AnnotationEnableStatsD: fmt.Sprintf("%t", enableStatsD),
-			},
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
