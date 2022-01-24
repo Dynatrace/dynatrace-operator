@@ -6,8 +6,9 @@ The Dynatrace Operator supports rollout and lifecycle management of various Dyna
 
 * OneAgent
   * `classicFullStack` rolls out a OneAgent pod per node to monitor pods on it and the node itself
-  * `applicationMonitoring` is webhook based injection mechanism for automatic-app-only injection
-  * `hostMonitoring` is only monitoring the host in the cluster without app-only injection
+  * `applicationMonitoring` is a webhook based injection mechanism for automatic app-only injection
+    * (PREVIEW) CSI Driver can be enabled to cache OneAgent downloads per node
+  * `hostMonitoring` is only monitoring the hosts (i.e. nodes) in the cluster without app-only injection
   * (PREVIEW) `cloudNativeFullStack` is a combination of `applicationMonitoring` with CSI driver and `hostMonitoring`
 * ActiveGate
   * `routing` routes OneAgent traffic through the ActiveGate
