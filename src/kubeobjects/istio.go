@@ -9,6 +9,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/go-logr/logr"
 	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -148,7 +149,7 @@ func mapErrorToObjectProbeResult(err error) (probeResult, error) {
 
 func HandleIstioConfigurationForServiceEntry(instance *dynatracev1beta1.DynaKube,
 	name string, communicationHost dtclient.CommunicationHost, role string, config *rest.Config, namespace string,
-	istioClient istioclientset.Interface, scheme *runtime.Scheme) (bool, error) {
+	istioClient istioclientset.Interface, scheme *runtime.Scheme, log logr.Logger) (bool, error) {
 
 	probe, err := kubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), name, config)
 	if probe == probeObjectFound {
@@ -164,14 +165,14 @@ func HandleIstioConfigurationForServiceEntry(instance *dynatracev1beta1.DynaKube
 		//log.Error(err, "istio: failed to create ServiceEntry")
 		return false, err
 	}
-	//log.Info("istio: ServiceEntry created", "objectName", name, "host", communicationHost.Host, "port", communicationHost.Port)
+	log.Info("istio: ServiceEntry created", "objectName", name, "host", communicationHost.Host, "port", communicationHost.Port)
 
 	return true, nil
 }
 
 func HandleIstioConfigurationForVirtualService(instance *dynatracev1beta1.DynaKube,
 	name string, communicationHost dtclient.CommunicationHost, role string, config *rest.Config, namespace string,
-	istioClient istioclientset.Interface, scheme *runtime.Scheme) (bool, error) {
+	istioClient istioclientset.Interface, scheme *runtime.Scheme, log logr.Logger) (bool, error) {
 
 	probe, err := kubernetesObjectProbe(VirtualServiceGVK, instance.GetNamespace(), name, config)
 	if probe == probeObjectFound {
@@ -192,8 +193,8 @@ func HandleIstioConfigurationForVirtualService(instance *dynatracev1beta1.DynaKu
 		//log.Error(err, "istio: failed to create VirtualService")
 		return false, err
 	}
-	//log.Info("istio: VirtualService created", "objectName", name, "host", communicationHost.Host,
-	//	"port", communicationHost.Port, "protocol", communicationHost.Protocol)
+	log.Info("istio: VirtualService created", "objectName", name, "host", communicationHost.Host,
+		"port", communicationHost.Port, "protocol", communicationHost.Protocol)
 
 	return true, nil
 }

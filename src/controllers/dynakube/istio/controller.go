@@ -188,12 +188,12 @@ func (c *Controller) reconcileIstioCreateConfigurations(instance *dynatracev1bet
 		name := kubeobjects.BuildNameForEndpoint(instance.GetName(), commHost.Protocol, commHost.Host, commHost.Port)
 
 		createdServiceEntry, err := kubeobjects.HandleIstioConfigurationForServiceEntry(instance, name, commHost,
-			role, c.config, c.namespace, c.istioClient, c.scheme)
+			role, c.config, c.namespace, c.istioClient, c.scheme, log)
 		if err != nil {
 			return false, err
 		}
 		createdVirtualService, err := kubeobjects.HandleIstioConfigurationForVirtualService(instance, name, commHost,
-			role, c.config, c.namespace, c.istioClient, c.scheme)
+			role, c.config, c.namespace, c.istioClient, c.scheme, log)
 		if err != nil {
 			return false, err
 		}
