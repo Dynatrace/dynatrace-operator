@@ -93,6 +93,8 @@ func (dk *DynaKube) HasProxy() bool {
 func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 	if dk.CloudNativeFullstackMode() {
 		return dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate
+	} else if dk.HostMonitoringMode() {
+		return dk.Spec.OneAgent.HostMonitoring.AutoUpdate == nil || *dk.Spec.OneAgent.HostMonitoring.AutoUpdate
 	} else if dk.ClassicFullStackMode() {
 		return dk.Spec.OneAgent.ClassicFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.ClassicFullStack.AutoUpdate
 	}
