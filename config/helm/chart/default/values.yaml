@@ -32,6 +32,7 @@ namespaceSelector: {}
 autoCreateSecret: true
 apiToken: ""
 paasToken: ""
+dataIngestToken: ""
 
 operator:
   image: ""
@@ -66,7 +67,7 @@ createSecurityContextConstraints: true # Only applicable for Openshift
 ### module properties
 
 classicFullStack:
-  enabled: true
+  enabled: false
   image: ""
   version: ""
   nodeSelector: {}
