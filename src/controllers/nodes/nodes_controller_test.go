@@ -153,8 +153,8 @@ func Test_RemoveNode_ServerError(t *testing.T) {
 	require.Error(t, err)
 }
 
-func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDynatraceClient) *ReconcileNodes {
-	return &ReconcileNodes{
+func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDynatraceClient) *NodesController {
+	return &NodesController{
 		namespace:    testNamespace,
 		client:       fakeClient,
 		scheme:       scheme.Scheme,
