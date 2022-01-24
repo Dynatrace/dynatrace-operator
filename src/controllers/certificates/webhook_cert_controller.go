@@ -30,25 +30,25 @@ func Add(mgr manager.Manager, ns string) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
 		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, ns)).
-		Complete(newWebhookReconciler(mgr, nil))
+		Complete(newWebhookCertificateController(mgr, nil))
 }
 
 func AddBootstrap(mgr manager.Manager, ns string, cancelMgr context.CancelFunc) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
 		WithEventFilter(eventfilter.ForObjectNameAndNamespace(webhook.DeploymentName, ns)).
-		Complete(newWebhookReconciler(mgr, cancelMgr))
+		Complete(newWebhookCertificateController(mgr, cancelMgr))
 }
 
-func newWebhookReconciler(mgr manager.Manager, cancelMgr context.CancelFunc) *ReconcileWebhookCertificates {
-	return &ReconcileWebhookCertificates{
+func newWebhookCertificateController(mgr manager.Manager, cancelMgr context.CancelFunc) *WebhookCertificateController {
+	return &WebhookCertificateController{
 		cancelMgrFunc: cancelMgr,
 		client:        mgr.GetClient(),
 		apiReader:     mgr.GetAPIReader(),
 	}
 }
 
-type ReconcileWebhookCertificates struct {
+type WebhookCertificateController struct {
 	ctx           context.Context
 	client        client.Client
 	apiReader     client.Reader
@@ -56,20 +56,20 @@ type ReconcileWebhookCertificates struct {
 	cancelMgrFunc context.CancelFunc
 }
 
-func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (controller *WebhookCertificateController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling webhook certificates",
 		"namespace", request.Namespace, "name", request.Name)
-	r.namespace = request.Namespace
-	r.ctx = ctx
+	controller.namespace = request.Namespace
+	controller.ctx = ctx
 
-	mutatingWebhookConfiguration, err := r.getMutatingWebhookConfiguration(ctx)
+	mutatingWebhookConfiguration, err := controller.getMutatingWebhookConfiguration(ctx)
 	if err != nil {
 		// Generation must not be skipped because webhook startup routine listens for the secret
 		// See cmd/operator/manager.go and cmd/operator/watcher.go
 		log.Info("could not find mutating webhook configuration, this is normal when deployed using OLM")
 	}
 
-	validatingWebhookConfiguration, err := r.getValidatingWebhookConfiguration(ctx)
+	validatingWebhookConfiguration, err := controller.getValidatingWebhookConfiguration(ctx)
 	if err != nil {
 		// Generation must not be skipped because webhook startup routine listens for the secret
 		// See cmd/operator/manager.go and cmd/operator/watcher.go
@@ -78,12 +78,12 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 
 	certSecret := newCertificateSecret()
 
-	err = certSecret.setSecretFromReader(r.ctx, r.apiReader, r.namespace)
+	err = certSecret.setSecretFromReader(controller.ctx, controller.apiReader, controller.namespace)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	err = certSecret.validateCertificates(r.namespace)
+	err = certSecret.validateCertificates(controller.namespace)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
@@ -98,43 +98,43 @@ func (r *ReconcileWebhookCertificates) Reconcile(ctx context.Context, request re
 		areMutatingWebhookConfigsValid &&
 		areValidatingWebhookConfigsValid {
 		log.Info("secret for certificates up to date, skipping update")
-		r.cancelMgr()
+		controller.cancelMgr()
 		return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 	}
 
-	if err = certSecret.createOrUpdateIfNecessary(r.ctx, r.client); err != nil {
+	if err = certSecret.createOrUpdateIfNecessary(controller.ctx, controller.client); err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	if err = r.updateCRDConfiguration(certSecret.secret); err != nil {
+	if err = controller.updateCRDConfiguration(certSecret.secret); err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	err = certSecret.updateClientConfigurations(r.ctx, r.client, mutatingWebhookConfigs, mutatingWebhookConfiguration)
+	err = certSecret.updateClientConfigurations(controller.ctx, controller.client, mutatingWebhookConfigs, mutatingWebhookConfiguration)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	err = certSecret.updateClientConfigurations(r.ctx, r.client, validatingWebhookConfigs, validatingWebhookConfiguration)
+	err = certSecret.updateClientConfigurations(controller.ctx, controller.client, validatingWebhookConfigs, validatingWebhookConfiguration)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
-	r.cancelMgr()
+	controller.cancelMgr()
 	return reconcile.Result{RequeueAfter: SuccessDuration}, nil
 }
 
-func (r *ReconcileWebhookCertificates) cancelMgr() {
-	if r.cancelMgrFunc != nil {
+func (controller *WebhookCertificateController) cancelMgr() {
+	if controller.cancelMgrFunc != nil {
 		log.Info("stopping manager after certificates creation")
-		r.cancelMgrFunc()
+		controller.cancelMgrFunc()
 	}
 }
 
-func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx context.Context) (
+func (controller *WebhookCertificateController) getMutatingWebhookConfiguration(ctx context.Context) (
 	*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 	var mutatingWebhook admissionregistrationv1.MutatingWebhookConfiguration
-	err := r.apiReader.Get(ctx, client.ObjectKey{
+	err := controller.apiReader.Get(ctx, client.ObjectKey{
 		Name: webhook.DeploymentName,
 	}, &mutatingWebhook)
 	if err != nil {
@@ -147,10 +147,10 @@ func (r *ReconcileWebhookCertificates) getMutatingWebhookConfiguration(ctx conte
 	return &mutatingWebhook, nil
 }
 
-func (r *ReconcileWebhookCertificates) getValidatingWebhookConfiguration(ctx context.Context) (
+func (controller *WebhookCertificateController) getValidatingWebhookConfiguration(ctx context.Context) (
 	*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 	var mutatingWebhook admissionregistrationv1.ValidatingWebhookConfiguration
-	err := r.apiReader.Get(ctx, client.ObjectKey{
+	err := controller.apiReader.Get(ctx, client.ObjectKey{
 		Name: webhook.DeploymentName,
 	}, &mutatingWebhook)
 	if err != nil {
@@ -163,10 +163,10 @@ func (r *ReconcileWebhookCertificates) getValidatingWebhookConfiguration(ctx con
 	return &mutatingWebhook, nil
 }
 
-func (r *ReconcileWebhookCertificates) updateCRDConfiguration(secret *corev1.Secret) error {
+func (controller *WebhookCertificateController) updateCRDConfiguration(secret *corev1.Secret) error {
 
 	var crd apiv1.CustomResourceDefinition
-	if err := r.apiReader.Get(r.ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
+	if err := controller.apiReader.Get(controller.ctx, types.NamespacedName{Name: crdName}, &crd); err != nil {
 		return err
 	}
 
@@ -186,7 +186,7 @@ func (r *ReconcileWebhookCertificates) updateCRDConfiguration(secret *corev1.Sec
 
 	// update crd
 	crd.Spec.Conversion.Webhook.ClientConfig.CABundle = data
-	if err := r.client.Update(r.ctx, &crd); err != nil {
+	if err := controller.client.Update(controller.ctx, &crd); err != nil {
 		return err
 	}
 	return nil

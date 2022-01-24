@@ -26,8 +26,8 @@ type CSIGarbageCollector struct {
 	path         metadata.PathResolver
 }
 
-// NewReconciler returns a new CSIGarbageCollector
-func NewReconciler(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
+// NewCSIGarbageCollector returns a new CSIGarbageCollector
+func NewCSIGarbageCollector(apiReader client.Reader, opts dtcsi.CSIOptions, db metadata.Access) *CSIGarbageCollector {
 	return &CSIGarbageCollector{
 		apiReader:    apiReader,
 		opts:         opts,
@@ -43,8 +43,6 @@ func (gc *CSIGarbageCollector) SetupWithManager(mgr ctrl.Manager) error {
 		For(&dynatracev1beta1.DynaKube{}).
 		Complete(gc)
 }
-
-var _ reconcile.Reconciler = &CSIGarbageCollector{}
 
 func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)

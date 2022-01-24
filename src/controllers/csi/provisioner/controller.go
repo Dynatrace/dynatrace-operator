@@ -55,8 +55,8 @@ type OneAgentProvisioner struct {
 	path         metadata.PathResolver
 }
 
-// NewReconciler returns a new OneAgentProvisioner
-func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
+// NewOneAgentProvisioner returns a new OneAgentProvisioner
+func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
 		client:       mgr.GetClient(),
 		apiReader:    mgr.GetAPIReader(),
@@ -69,21 +69,19 @@ func NewReconciler(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Acces
 	}
 }
 
-func (r *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
+func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&dynatracev1beta1.DynaKube{}).
-		Complete(r)
+		Complete(provisioner)
 }
 
-var _ reconcile.Reconciler = &OneAgentProvisioner{}
-
-func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
-	dk, err := r.getDynaKube(ctx, request.NamespacedName)
+	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			return reconcile.Result{}, r.db.DeleteDynakube(request.Name)
+			return reconcile.Result{}, provisioner.db.DeleteDynakube(request.Name)
 		}
 		return reconcile.Result{}, err
 	}
@@ -98,12 +96,12 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	// creates a dt client and checks tokens exist for the given dynakube
-	dtc, err := buildDtc(r, ctx, dk)
+	dtc, err := buildDtc(provisioner, ctx, dk)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	dynakube, err := r.db.GetDynakube(dk.Name)
+	dynakube, err := provisioner.db.GetDynakube(dk.Name)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
@@ -120,20 +118,20 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	dynakube.Name = dk.Name
 	dynakube.TenantUUID = dk.ConnectionInfo().TenantUUID
 
-	if err = r.createCSIDirectories(r.path.EnvDir(dynakube.TenantUUID)); err != nil {
-		log.Error(err, "error when creating csi directories", "path", r.path.EnvDir(dynakube.TenantUUID))
+	if err = provisioner.createCSIDirectories(provisioner.path.EnvDir(dynakube.TenantUUID)); err != nil {
+		log.Error(err, "error when creating csi directories", "path", provisioner.path.EnvDir(dynakube.TenantUUID))
 		return reconcile.Result{}, errors.WithStack(err)
 	}
-	log.Info("csi directories exist", "path", r.path.EnvDir(dynakube.TenantUUID))
+	log.Info("csi directories exist", "path", provisioner.path.EnvDir(dynakube.TenantUUID))
 
-	latestProcessModuleConfig, storedHash, err := r.getProcessModuleConfig(dtc, dynakube.TenantUUID)
+	latestProcessModuleConfig, storedHash, err := provisioner.getProcessModuleConfig(dtc, dynakube.TenantUUID)
 	if err != nil {
 		log.Error(err, "error when getting the latest ruxitagentproc.conf")
 		return reconcile.Result{}, err
 	}
 	latestProcessModuleConfigCache := newProcessModuleConfigCache(addHostGroup(dk, latestProcessModuleConfig))
 
-	installAgentCfg := newInstallAgentConfig(dtc, r.path, r.fs, r.recorder, dk)
+	installAgentCfg := newInstallAgentConfig(dtc, provisioner.path, provisioner.fs, provisioner.recorder, dk)
 	if updatedVersion, err := installAgentCfg.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID, storedHash, latestProcessModuleConfigCache); err != nil {
 		log.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
@@ -142,12 +140,12 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 		dynakube.LatestVersion = updatedVersion
 	}
 
-	err = r.createOrUpdateDynakube(oldDynakube, dynakube)
+	err = provisioner.createOrUpdateDynakube(oldDynakube, dynakube)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	err = r.writeProcessModuleConfigCache(dynakube.TenantUUID, latestProcessModuleConfigCache)
+	err = provisioner.writeProcessModuleConfigCache(dynakube.TenantUUID, latestProcessModuleConfigCache)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -155,29 +153,29 @@ func (r *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.R
 	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 }
 
-func (r *OneAgentProvisioner) createOrUpdateDynakube(oldDynakube metadata.Dynakube, dynakube *metadata.Dynakube) error {
+func (provisioner *OneAgentProvisioner) createOrUpdateDynakube(oldDynakube metadata.Dynakube, dynakube *metadata.Dynakube) error {
 	if oldDynakube != *dynakube {
 		log.Info("dynakube has changed",
 			"name", dynakube.Name, "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
 		if oldDynakube == (metadata.Dynakube{}) {
 			log.Info("adding dynakube to db", "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
-			return r.db.InsertDynakube(dynakube)
+			return provisioner.db.InsertDynakube(dynakube)
 		} else {
 			log.Info("updating dynakube in db",
 				"old version", oldDynakube.LatestVersion, "new version", dynakube.LatestVersion,
 				"old tenantUUID", oldDynakube.TenantUUID, "new tenantUUID", dynakube.TenantUUID)
-			return r.db.UpdateDynakube(dynakube)
+			return provisioner.db.UpdateDynakube(dynakube)
 		}
 	}
 	return nil
 }
 
-func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
-	dtp, err := dynakube.NewDynatraceClientProperties(ctx, r.apiReader, *dk)
+func buildDtc(provisioner *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.DynaKube) (dtclient.Client, error) {
+	dtp, err := dynakube.NewDynatraceClientProperties(ctx, provisioner.apiReader, *dk)
 	if err != nil {
 		return nil, err
 	}
-	dtc, err := r.dtcBuildFunc(*dtp)
+	dtc, err := provisioner.dtcBuildFunc(*dtp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Dynatrace client: %w", err)
 	}
@@ -185,15 +183,15 @@ func buildDtc(r *OneAgentProvisioner, ctx context.Context, dk *dynatracev1beta1.
 	return dtc, nil
 }
 
-func (r *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1beta1.DynaKube, error) {
+func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name types.NamespacedName) (*dynatracev1beta1.DynaKube, error) {
 	var dk dynatracev1beta1.DynaKube
-	err := r.apiReader.Get(ctx, name, &dk)
+	err := provisioner.apiReader.Get(ctx, name, &dk)
 
 	return &dk, err
 }
 
-func (r *OneAgentProvisioner) createCSIDirectories(envDir string) error {
-	if err := r.fs.MkdirAll(envDir, 0755); err != nil {
+func (provisioner *OneAgentProvisioner) createCSIDirectories(envDir string) error {
+	if err := provisioner.fs.MkdirAll(envDir, 0755); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", envDir, err)
 	}
 

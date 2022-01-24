@@ -33,9 +33,9 @@ func newProcessModuleConfigCache(pmc *dtclient.ProcessModuleConfig) *processModu
 
 // getProcessModuleConfig gets the latest `RuxitProcResponse`, it can come from the tenant if we don't have the latest revision saved locally,
 // otherwise we use the locally cached response
-func (r *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Client, tenantUUID string) (*dtclient.ProcessModuleConfig, string, error) {
+func (provisioner *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Client, tenantUUID string) (*dtclient.ProcessModuleConfig, string, error) {
 	var storedHash string
-	storedProcessModuleConfig, err := r.readProcessModuleConfigCache(tenantUUID)
+	storedProcessModuleConfig, err := provisioner.readProcessModuleConfigCache(tenantUUID)
 	if os.IsNotExist(err) {
 		latestProcessModuleConfig, err := dtc.GetProcessModuleConfig(0)
 		if err != nil {
@@ -56,9 +56,9 @@ func (r *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Client, tenant
 	return storedProcessModuleConfig.ProcessModuleConfig, storedHash, nil
 }
 
-func (r *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID string) (*processModuleConfigCache, error) {
+func (provisioner *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID string) (*processModuleConfigCache, error) {
 	var processModuleConfig processModuleConfigCache
-	processModuleConfigCache, err := r.fs.Open(r.path.AgentRuxitProcResponseCache(tenantUUID))
+	processModuleConfigCache, err := provisioner.fs.Open(provisioner.path.AgentRuxitProcResponseCache(tenantUUID))
 	if err != nil {
 		return nil, err
 	}
@@ -74,8 +74,8 @@ func (r *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID string) (*
 	return &processModuleConfig, nil
 }
 
-func (r *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID string, processModuleConfig *processModuleConfigCache) error {
-	processModuleConfigCache, err := r.fs.OpenFile(r.path.AgentRuxitProcResponseCache(tenantUUID), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+func (provisioner *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID string, processModuleConfig *processModuleConfigCache) error {
+	processModuleConfigCache, err := provisioner.fs.OpenFile(provisioner.path.AgentRuxitProcResponseCache(tenantUUID), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
