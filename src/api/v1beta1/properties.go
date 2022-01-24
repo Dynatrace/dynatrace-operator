@@ -251,7 +251,11 @@ func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
 	return communicationHosts
 }
 
-func TenantUUID(apiUrl string) (string, error) {
+func (dk *DynaKube) TenantUUID() (string, error) {
+	return tenantUUID(dk.Spec.APIURL)
+}
+
+func tenantUUID(apiUrl string) (string, error) {
 	if !strings.HasSuffix(apiUrl, "/api") {
 		return "", fmt.Errorf("api url %s does not end with /api", apiUrl)
 	}

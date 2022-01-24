@@ -120,7 +120,7 @@ func TestTenantUUID(t *testing.T) {
 		apiUrl := "https://demo.dev.dynatracelabs.com/api"
 		expectedTenantId := "demo"
 
-		actualTenantId, err := TenantUUID(apiUrl)
+		actualTenantId, err := tenantUUID(apiUrl)
 
 		assert.NoErrorf(t, err, "Expected that getting tenant id from '%s' will be successful", apiUrl)
 		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
@@ -133,7 +133,7 @@ func TestTenantUUID(t *testing.T) {
 		expectedTenantId := ""
 		expectedError := "problem getting tenant id from fqdn ''"
 
-		actualTenantId, err := TenantUUID(apiUrl)
+		actualTenantId, err := tenantUUID(apiUrl)
 
 		assert.EqualErrorf(t, err, expectedError, "Expected that getting tenant id from '%s' will result in: '%v'",
 			apiUrl, expectedError,
@@ -148,7 +148,7 @@ func TestTenantUUID(t *testing.T) {
 		expectedTenantId := ""
 		expectedError := "api url https://google.com does not end with /api"
 
-		actualTenantId, err := TenantUUID(apiUrl)
+		actualTenantId, err := tenantUUID(apiUrl)
 
 		assert.EqualErrorf(t, err, expectedError, "Expected that getting tenant id from '%s' will result in: '%v'",
 			apiUrl, expectedError,
@@ -163,7 +163,7 @@ func TestTenantUUID(t *testing.T) {
 		expectedTenantId := ""
 		expectedError := "problem getting tenant id from fqdn ''"
 
-		actualTenantId, err := TenantUUID(apiUrl)
+		actualTenantId, err := tenantUUID(apiUrl)
 
 		assert.EqualErrorf(t, err, expectedError, "Expected that getting tenant id from '%s' will result in: '%v'",
 			apiUrl, expectedError,

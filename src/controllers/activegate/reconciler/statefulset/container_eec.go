@@ -3,7 +3,6 @@ package statefulset
 import (
 	"fmt"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -99,7 +98,7 @@ func (eec *ExtensionController) buildVolumeMounts() []corev1.VolumeMount {
 }
 
 func (eec *ExtensionController) buildEnvs() []corev1.EnvVar {
-	tenantId, err := dynatracev1beta1.TenantUUID(eec.StsProperties.Spec.APIURL)
+	tenantId, err := eec.StsProperties.TenantUUID()
 	if err != nil {
 		eec.StsProperties.log.Error(err, "Problem getting tenant id from api url")
 	}
