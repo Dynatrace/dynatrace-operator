@@ -8,6 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -17,17 +18,19 @@ import (
 type dynakubeValidator struct {
 	clt       client.Client
 	apiReader client.Reader
+	cfg       *rest.Config
 }
 
-func newDynakubeValidator(apiReader client.Reader) admission.Handler {
+func newDynakubeValidator(apiReader client.Reader, cfg *rest.Config) admission.Handler {
 	return &dynakubeValidator{
 		apiReader: apiReader,
+		cfg:       cfg,
 	}
 }
 
 func AddDynakubeValidationWebhookToManager(manager ctrl.Manager) error {
 	manager.GetWebhookServer().Register("/validate", &webhook.Admission{
-		Handler: newDynakubeValidator(manager.GetAPIReader()),
+		Handler: newDynakubeValidator(manager.GetAPIReader(), manager.GetConfig()),
 	})
 	return nil
 }

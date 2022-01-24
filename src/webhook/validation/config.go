@@ -19,6 +19,7 @@ var validators = []validator{
 	conflictingNodeSelector,
 	conflictingNamespaceSelector,
 	noResourcesAvailable,
+	istioCRDNotAvailable,
 }
 
 var warnings = []validator{
