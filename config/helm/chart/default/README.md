@@ -19,6 +19,7 @@ Depending on the version of the Dynatrace Operator, it supports the following pl
 
 | Dynatrace Operator Helm Chart version | Kubernetes | OpenShift Container Platform |
 | ------------------------------------- | ---------- | ---------------------------- |
+| v0.4.0                                | 1.21+      | 4.7+                         |
 | v0.3.0                                | 1.20+      | 4.7+                         |
 | v0.2.2                                | 1.18+      | 3.11.188+, 4.5+              |
 | v0.1.0                                | 1.18+      | 3.11.188+, 4.4+              |
@@ -122,13 +123,6 @@ helm upgrade dynatrace-operator dynatrace/dynatrace-operator -n dynatrace --reus
 oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/dynatrace.com_dynakubes.yaml
 helm upgrade dynatrace-operator dynatrace/dynatrace-operator -n dynatrace --reuse-values
 ```
-
-##### OpenShift 3.11
-```console
-oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/dynatrace.com_dynakubes-v1beta1.yaml
-helm upgrade dynatrace-operator dynatrace/dynatrace-operator -n dynatrace --reuse-values
-```
-
 
 ## Uninstall dynatrace-operator
 Remove DynaKube custom resources and clean-up all remaining Dynatrace Operator specific objects:
