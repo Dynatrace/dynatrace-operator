@@ -81,7 +81,7 @@ func TestController_ReconcileIstio(t *testing.T) {
 
 	virtualService := buildVirtualService(testVirtualServiceName, DefaultTestNamespace, "localhost", serverUrl.Scheme, uint32(port))
 	instance := &dynatracev1beta1.DynaKube{}
-	controller := Controller{
+	reconciler := IstioReconciler{
 		istioClient: fakeistio.NewSimpleClientset(virtualService),
 		scheme:      scheme.Scheme,
 		config: &rest.Config{
@@ -90,7 +90,7 @@ func TestController_ReconcileIstio(t *testing.T) {
 		},
 	}
 
-	updated, err := controller.ReconcileIstio(instance)
+	updated, err := reconciler.ReconcileIstio(instance)
 
 	assert.NoError(t, err)
 	assert.False(t, updated)
