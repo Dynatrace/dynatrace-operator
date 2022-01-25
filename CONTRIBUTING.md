@@ -13,7 +13,8 @@ For those just getting started, consult this  [guide](https://help.github.com/ar
 - Use descriptive names (`namespace` is better than `ns`, `dynakube` is better than `dk`, etc.)
 - Avoid using `client.Client` for 'getting' resources, use `client.Reader` (also known as `apiReader`) instead.
   - `client.Client` uses a cache (or tries to) that requires more permissions than normally, and can also give you outdated results.
-
+- Do not create procedures or functions with more than two parameters. Structs and interfaces exist for a reason.
+- Avoid returning responses (e.g., reconcile.Result, admission.Patched) in anything but Reconcile or Handle functions.
 
 
 ### Reconciler vs Controller
