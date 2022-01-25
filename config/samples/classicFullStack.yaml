@@ -54,8 +54,8 @@ spec:
       #
       # version:
 
-      # Optional: to use a custom OneAgent Docker image. Defaults to docker.io/dynatrace/oneagent in
-      # Kubernetes and registry.connect.redhat.com/dynatrace/oneagent in OpenShift, if deployed via CSV
+      # Optional: to use a custom OneAgent Docker image. Defaults to the image from
+      # the Dynatrace cluster
       image: ""
 
       # Optional: node selector to control on which nodes the OneAgent will be deployed.
