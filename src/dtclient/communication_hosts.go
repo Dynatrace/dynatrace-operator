@@ -3,7 +3,6 @@ package dtclient
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/url"
 	"strconv"
 )
@@ -26,8 +25,7 @@ func (dtc *dynatraceClient) GetCommunicationHostForClient() (CommunicationHost, 
 }
 
 func (dtc *dynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
-	connectionInfoURL := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dtc.url)
-	resp, err := dtc.makeRequest(connectionInfoURL, dynatracePaaSToken)
+	resp, err := dtc.makeRequest(dtc.getConnectionInfoUrl(), dynatracePaaSToken)
 	if err != nil {
 		return ConnectionInfo{}, err
 	}
