@@ -38,7 +38,7 @@ objects like permissions, custom resources and corresponding StatefulSets.
 ### Installation
 
 > For install instructions on Openshift, head to the
-> [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/openshift/set-up-ocp-monitoring#set-up-openshift-monitoring)!
+> [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/openshift/set-up-ocp-monitoring#set-up-openshift-monitoring)
 
 To create the namespace and apply the operator run the following commands
 
@@ -94,7 +94,7 @@ our [official help page](https://www.dynatrace.com/support/help/setup-and-config
 
 ## Uninstall dynatrace-operator
 
-> For instructions on how to uninstall the dynatrace-operator on Openshift, head to the [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/openshift/set-up-ocp-monitoring#uninstall-dynatrace-operator)!
+> For instructions on how to uninstall the dynatrace-operator on Openshift, head to the [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/openshift/set-up-ocp-monitoring#uninstall-dynatrace-operator)
 
 Clean-up all Dynatrace Operator specific objects:
 ```sh
