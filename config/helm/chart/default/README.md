@@ -19,7 +19,7 @@ Depending on the version of the Dynatrace Operator, it supports the following pl
 
 | Dynatrace Operator Helm Chart version | Kubernetes | OpenShift Container Platform |
 | ------------------------------------- | ---------- | ---------------------------- |
-| v0.4.0                                | 1.20+      | 4.7+                         |
+| v0.4.0                                | 1.21+      | 4.7+                         |
 | v0.3.0                                | 1.20+      | 4.7+                         |
 | v0.2.2                                | 1.18+      | 3.11.188+, 4.5+              |
 | v0.1.0                                | 1.18+      | 3.11.188+, 4.4+              |
