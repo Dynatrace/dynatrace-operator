@@ -22,7 +22,7 @@ type VolumeConfig struct {
 	PodName   string
 }
 
-func ParsePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeConfig, error) {
+func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeConfig, error) {
 	if req.GetVolumeCapability() == nil {
 		return nil, status.Error(codes.InvalidArgument, "Volume capability missing in request")
 	}

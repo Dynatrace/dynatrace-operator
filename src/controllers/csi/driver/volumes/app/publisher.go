@@ -52,52 +52,52 @@ type Publisher struct {
 	path    metadata.PathResolver
 }
 
-func (pub *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	bindCfg, err := newBindConfig(ctx, pub, volumeCfg)
+func (publisher *Publisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	bindCfg, err := newBindConfig(ctx, publisher, volumeCfg)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := pub.mountOneAgent(bindCfg, volumeCfg); err != nil {
+	if err := publisher.mountOneAgent(bindCfg, volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}
 
-	if err := pub.storeVolume(bindCfg, volumeCfg); err != nil {
+	if err := publisher.storeVolume(bindCfg, volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to store volume info: %s", err))
 	}
 	agentsVersionsMetric.WithLabelValues(bindCfg.version).Inc()
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
-func (pub *Publisher) UnpublishVolume(_ context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
-	volume, err := pub.loadVolume(volumeInfo.VolumeId)
+func (publisher *Publisher) UnpublishVolume(_ context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
+	volume, err := publisher.loadVolume(volumeInfo.VolumeId)
 	if err != nil {
 		log.Info("failed to load volume info", "error", err.Error())
 	}
 
-	overlayFSPath := pub.path.AgentRunDirForVolume(volume.TenantUUID, volumeInfo.VolumeId)
+	overlayFSPath := publisher.path.AgentRunDirForVolume(volume.TenantUUID, volumeInfo.VolumeId)
 
-	if err = pub.umountOneAgent(volumeInfo.TargetPath, overlayFSPath); err != nil {
+	if err = publisher.umountOneAgent(volumeInfo.TargetPath, overlayFSPath); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount oneagent volume: %s", err.Error()))
 	}
 
-	if err = pub.db.DeleteVolume(volume.VolumeID); err != nil {
+	if err = publisher.db.DeleteVolume(volume.VolumeID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	log.Info("deleted volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 
-	if err = pub.fs.RemoveAll(volumeInfo.TargetPath); err != nil {
+	if err = publisher.fs.RemoveAll(volumeInfo.TargetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	log.Info("volume has been unpublished", "targetPath", volumeInfo.TargetPath)
 
-	pub.fireVolumeUnpublishedMetric(*volume)
+	publisher.fireVolumeUnpublishedMetric(*volume)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func (pub *Publisher) fireVolumeUnpublishedMetric(volume metadata.Volume) {
+func (publisher *Publisher) fireVolumeUnpublishedMetric(volume metadata.Volume) {
 	if len(volume.Version) > 0 {
 		agentsVersionsMetric.WithLabelValues(volume.Version).Dec()
 		var m = &dto.Metric{}
@@ -110,45 +110,45 @@ func (pub *Publisher) fireVolumeUnpublishedMetric(volume metadata.Volume) {
 	}
 }
 
-func (pub *Publisher) mountOneAgent(bindCfg *bindConfig, volumeCfg *csivolumes.VolumeConfig) error {
-	mappedDir := pub.path.OverlayMappedDir(bindCfg.tenantUUID, volumeCfg.VolumeId)
-	_ = pub.fs.MkdirAll(mappedDir, os.ModePerm)
+func (publisher *Publisher) mountOneAgent(bindCfg *bindConfig, volumeCfg *csivolumes.VolumeConfig) error {
+	mappedDir := publisher.path.OverlayMappedDir(bindCfg.tenantUUID, volumeCfg.VolumeId)
+	_ = publisher.fs.MkdirAll(mappedDir, os.ModePerm)
 
-	upperDir := pub.path.OverlayVarDir(bindCfg.tenantUUID, volumeCfg.VolumeId)
-	_ = pub.fs.MkdirAll(upperDir, os.ModePerm)
+	upperDir := publisher.path.OverlayVarDir(bindCfg.tenantUUID, volumeCfg.VolumeId)
+	_ = publisher.fs.MkdirAll(upperDir, os.ModePerm)
 
-	workDir := pub.path.OverlayWorkDir(bindCfg.tenantUUID, volumeCfg.VolumeId)
-	_ = pub.fs.MkdirAll(workDir, os.ModePerm)
+	workDir := publisher.path.OverlayWorkDir(bindCfg.tenantUUID, volumeCfg.VolumeId)
+	_ = publisher.fs.MkdirAll(workDir, os.ModePerm)
 
 	overlayOptions := []string{
-		"lowerdir=" + pub.path.AgentBinaryDirForVersion(bindCfg.tenantUUID, bindCfg.version),
+		"lowerdir=" + publisher.path.AgentBinaryDirForVersion(bindCfg.tenantUUID, bindCfg.version),
 		"upperdir=" + upperDir,
 		"workdir=" + workDir,
 	}
 
-	if err := pub.fs.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
+	if err := publisher.fs.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
 		return err
 	}
 
-	if err := pub.mounter.Mount("overlay", mappedDir, "overlay", overlayOptions); err != nil {
+	if err := publisher.mounter.Mount("overlay", mappedDir, "overlay", overlayOptions); err != nil {
 		return err
 	}
-	if err := pub.mounter.Mount(mappedDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
-		_ = pub.mounter.Unmount(mappedDir)
+	if err := publisher.mounter.Mount(mappedDir, volumeCfg.TargetPath, "", []string{"bind"}); err != nil {
+		_ = publisher.mounter.Unmount(mappedDir)
 		return err
 	}
 
 	return nil
 }
 
-func (pub *Publisher) umountOneAgent(targetPath string, overlayFSPath string) error {
-	if err := pub.mounter.Unmount(targetPath); err != nil {
+func (publisher *Publisher) umountOneAgent(targetPath string, overlayFSPath string) error {
+	if err := publisher.mounter.Unmount(targetPath); err != nil {
 		log.Error(err, "Unmount failed", "path", targetPath)
 	}
 
 	if filepath.IsAbs(overlayFSPath) {
 		agentDirectoryForPod := filepath.Join(overlayFSPath, dtcsi.OverlayMappedDirPath)
-		if err := pub.mounter.Unmount(agentDirectoryForPod); err != nil {
+		if err := publisher.mounter.Unmount(agentDirectoryForPod); err != nil {
 			log.Error(err, "Unmount failed", "path", agentDirectoryForPod)
 		}
 	}
@@ -156,14 +156,14 @@ func (pub *Publisher) umountOneAgent(targetPath string, overlayFSPath string) er
 	return nil
 }
 
-func (pub *Publisher) storeVolume(bindCfg *bindConfig, volumeCfg *csivolumes.VolumeConfig) error {
+func (publisher *Publisher) storeVolume(bindCfg *bindConfig, volumeCfg *csivolumes.VolumeConfig) error {
 	volume := metadata.NewVolume(volumeCfg.VolumeId, volumeCfg.PodName, bindCfg.version, bindCfg.tenantUUID)
 	log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
-	return pub.db.InsertVolume(volume)
+	return publisher.db.InsertVolume(volume)
 }
 
-func (pub *Publisher) loadVolume(volumeID string) (*metadata.Volume, error) {
-	volume, err := pub.db.GetVolume(volumeID)
+func (publisher *Publisher) loadVolume(volumeID string) (*metadata.Volume, error) {
+	volume, err := publisher.db.GetVolume(volumeID)
 	if err != nil {
 		return nil, err
 	}

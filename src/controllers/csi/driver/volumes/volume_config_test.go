@@ -16,7 +16,7 @@ const (
 
 func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 	t.Run(`No volume capability`, func(t *testing.T) {
-		volumeCfg, err := ParsePublishVolumeRequest(&csi.NodePublishVolumeRequest{})
+		volumeCfg, err := ParseNodePublishVolumeRequest(&csi.NodePublishVolumeRequest{})
 
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = Volume capability missing in request")
 		assert.Nil(t, volumeCfg)
@@ -25,7 +25,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{},
 		}
-		volumeCfg, err := ParsePublishVolumeRequest(request)
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = Volume ID missing in request")
 		assert.Nil(t, volumeCfg)
@@ -35,7 +35,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeCapability: &csi.VolumeCapability{},
 			VolumeId:         testVolumeId,
 		}
-		volumeCfg, err := ParsePublishVolumeRequest(request)
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = Target path missing in request")
 		assert.Nil(t, volumeCfg)
@@ -50,7 +50,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
 		}
-		volumeCfg, err := ParsePublishVolumeRequest(request)
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = cannot have block access type")
 		assert.Nil(t, volumeCfg)
@@ -61,7 +61,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:         testVolumeId,
 			TargetPath:       testTargetPath,
 		}
-		volumeCfg, err := ParsePublishVolumeRequest(request)
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = expecting to have mount access type")
 		assert.Nil(t, volumeCfg)
@@ -76,7 +76,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
 		}
-		volumeCfg, err := ParsePublishVolumeRequest(request)
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = Publish context missing in request")
 		assert.Nil(t, volumeCfg)
@@ -92,7 +92,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			TargetPath:    testTargetPath,
 			VolumeContext: map[string]string{},
 		}
-		volumeCfg, err := ParsePublishVolumeRequest(request)
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = No namespace included with request")
 		assert.Nil(t, volumeCfg)
@@ -110,7 +110,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 				PodNamespaceContextKey: testNamespace,
 			},
 		}
-		volumeCfg, err := ParsePublishVolumeRequest(request)
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		assert.Error(t, err)
 		assert.Nil(t, volumeCfg)
@@ -129,7 +129,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 				PodNameContextKey:      testPodUID,
 			},
 		}
-		volumeCfg, err := ParsePublishVolumeRequest(request)
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, volumeCfg)

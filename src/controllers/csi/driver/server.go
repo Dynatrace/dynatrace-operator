@@ -38,7 +38,6 @@ import (
 	"k8s.io/utils/mount"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 type CSIDriverServer struct {
@@ -52,7 +51,6 @@ type CSIDriverServer struct {
 	publishers map[string]csivolumes.Publisher
 }
 
-var _ manager.Runnable = &CSIDriverServer{}
 var _ csi.IdentityServer = &CSIDriverServer{}
 var _ csi.NodeServer = &CSIDriverServer{}
 
@@ -136,7 +134,7 @@ func (svr *CSIDriverServer) GetPluginCapabilities(context.Context, *csi.GetPlugi
 }
 
 func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
-	volumeCfg, err := csivolumes.ParsePublishVolumeRequest(req)
+	volumeCfg, err := csivolumes.ParseNodePublishVolumeRequest(req)
 	if err != nil {
 		return nil, err
 	}

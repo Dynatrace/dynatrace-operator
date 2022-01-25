@@ -29,16 +29,16 @@ const (
 
 func TestPublishVolume(t *testing.T) {
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
-	server := newPublisherForTesting(t, mounter)
+	publisher := newPublisherForTesting(t, mounter)
 
-	mockOneAgent(t, &server)
+	mockOneAgent(t, &publisher)
 
-	response, err := server.PublishVolume(context.TODO(), createTestVolumeConfig())
+	response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
 
 	assert.NoError(t, err)
 	assert.NotNil(t, response)
 	assert.NotEmpty(t, mounter.MountPoints)
-	assertReferencesForPublishedVolume(t, &server, mounter)
+	assertReferencesForPublishedVolume(t, &publisher, mounter)
 }
 
 func TestUnpublishVolume(t *testing.T) {
@@ -48,13 +48,13 @@ func TestUnpublishVolume(t *testing.T) {
 			{Path: testTargetPath},
 			{Path: fmt.Sprintf("/%s/run/%s/mapped", testTenantUUID, testVolumeId)},
 		})
-		server := newPublisherForTesting(t, mounter)
-		mockPublishedVolume(t, &server)
+		publisher := newPublisherForTesting(t, mounter)
+		mockPublishedVolume(t, &publisher)
 
 		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
 		assert.Equal(t, float64(1), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
 
-		response, err := server.UnpublishVolume(context.TODO(), createTestVolumeInfo())
+		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
 
 		assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
@@ -62,7 +62,7 @@ func TestUnpublishVolume(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
 		assert.Empty(t, mounter.MountPoints)
-		assertNoReferencesForUnpublishedVolume(t, &server)
+		assertNoReferencesForUnpublishedVolume(t, &publisher)
 	})
 
 	t.Run(`invalid metadata`, func(t *testing.T) {
@@ -71,9 +71,9 @@ func TestUnpublishVolume(t *testing.T) {
 			{Path: testTargetPath},
 			{Path: fmt.Sprintf("/%s/run/%s/mapped", testTenantUUID, testVolumeId)},
 		})
-		server := newPublisherForTesting(t, mounter)
+		publisher := newPublisherForTesting(t, mounter)
 
-		response, err := server.UnpublishVolume(context.TODO(), createTestVolumeInfo())
+		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
 
 		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
@@ -81,17 +81,17 @@ func TestUnpublishVolume(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
-		assertNoReferencesForUnpublishedVolume(t, &server)
+		assertNoReferencesForUnpublishedVolume(t, &publisher)
 	})
 }
 
-func TestCSIDriverServer_NodePublishAndUnpublishVolume(t *testing.T) {
+func TestNodePublishAndUnpublishVolume(t *testing.T) {
 	resetMetrics()
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
-	server := newPublisherForTesting(t, mounter)
-	mockOneAgent(t, &server)
+	publisher := newPublisherForTesting(t, mounter)
+	mockOneAgent(t, &publisher)
 
-	publishResponse, err := server.PublishVolume(context.TODO(), createTestVolumeConfig())
+	publishResponse, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
 
 	assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
 	assert.Equal(t, float64(1), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
@@ -99,9 +99,9 @@ func TestCSIDriverServer_NodePublishAndUnpublishVolume(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, publishResponse)
 	assert.NotEmpty(t, mounter.MountPoints)
-	assertReferencesForPublishedVolume(t, &server, mounter)
+	assertReferencesForPublishedVolume(t, &publisher, mounter)
 
-	unpublishResponse, err := server.UnpublishVolume(context.TODO(), createTestVolumeInfo())
+	unpublishResponse, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
 
 	assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
 	assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
@@ -109,7 +109,7 @@ func TestCSIDriverServer_NodePublishAndUnpublishVolume(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, unpublishResponse)
 	assert.Empty(t, mounter.MountPoints)
-	assertNoReferencesForUnpublishedVolume(t, &server)
+	assertNoReferencesForUnpublishedVolume(t, &publisher)
 }
 
 func TestStoreAndLoadPodInfo(t *testing.T) {
@@ -136,9 +136,9 @@ func TestStoreAndLoadPodInfo(t *testing.T) {
 
 func TestLoadPodInfo_Empty(t *testing.T) {
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
-	server := newPublisherForTesting(t, mounter)
+	publisher := newPublisherForTesting(t, mounter)
 
-	volume, err := server.loadVolume(testVolumeId)
+	volume, err := publisher.loadVolume(testVolumeId)
 	assert.NoError(t, err)
 	assert.NotNil(t, volume)
 	assert.Equal(t, &metadata.Volume{}, volume)
@@ -149,12 +149,12 @@ func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) Publisher 
 		&v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   testNamespace,
-				Labels: map[string]string{webhook.LabelInstance: testDkName},
+				Labels: map[string]string{webhook.LabelInstance: testDynakubeName},
 			},
 		},
 		&dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: testDkName,
+				Name: testDynakubeName,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
@@ -164,7 +164,7 @@ func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) Publisher 
 		},
 		&v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: testDkName,
+				Name: testDynakubeName,
 			},
 		},
 	}
@@ -182,21 +182,21 @@ func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) Publisher 
 	}
 }
 
-func mockPublishedVolume(t *testing.T, server *Publisher) {
-	mockOneAgent(t, server)
-	err := server.db.InsertVolume(metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID))
+func mockPublishedVolume(t *testing.T, publisher *Publisher) {
+	mockOneAgent(t, publisher)
+	err := publisher.db.InsertVolume(metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID))
 	require.NoError(t, err)
 	agentsVersionsMetric.WithLabelValues(testAgentVersion).Inc()
 }
 
-func mockOneAgent(t *testing.T, server *Publisher) {
-	err := server.db.InsertDynakube(metadata.NewDynakube(testDkName, testTenantUUID, testAgentVersion))
+func mockOneAgent(t *testing.T, publisher *Publisher) {
+	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion))
 	require.NoError(t, err)
 }
 
-func assertReferencesForPublishedVolume(t *testing.T, server *Publisher, mounter *mount.FakeMounter) {
+func assertReferencesForPublishedVolume(t *testing.T, publisher *Publisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
-	volume, err := server.loadVolume(testVolumeId)
+	volume, err := publisher.loadVolume(testVolumeId)
 	assert.NoError(t, err)
 	assert.Equal(t, volume.VolumeID, testVolumeId)
 	assert.Equal(t, volume.PodName, testPodUID)
@@ -204,8 +204,8 @@ func assertReferencesForPublishedVolume(t *testing.T, server *Publisher, mounter
 	assert.Equal(t, volume.TenantUUID, testTenantUUID)
 }
 
-func assertNoReferencesForUnpublishedVolume(t *testing.T, server *Publisher) {
-	volume, err := server.loadVolume(testVolumeId)
+func assertNoReferencesForUnpublishedVolume(t *testing.T, publisher *Publisher) {
+	volume, err := publisher.loadVolume(testVolumeId)
 	assert.NoError(t, err)
 	assert.Equal(t, &metadata.Volume{}, volume)
 }
