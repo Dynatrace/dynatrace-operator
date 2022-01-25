@@ -100,7 +100,7 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(name, kubeSystemUUID
 		return "", err
 	}
 
-	req, err := createBaseRequest(fmt.Sprintf("%s/v2/settings/objects?validateOnly=false", dtc.url), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
+	req, err := createBaseRequest(dtc.getSettingsUrl(false), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
 	if err != nil {
 		return "", err
 	}
@@ -138,7 +138,7 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 		return nil, errors.New("no kube-system namespace UUID given")
 	}
 
-	req, err := createBaseRequest(fmt.Sprintf("%s/v2/entities", dtc.url), http.MethodGet, dtc.apiToken, nil)
+	req, err := createBaseRequest(dtc.getEntitiesUrl(), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 		scopes = append(scopes, entity.EntityId)
 	}
 
-	req, err := createBaseRequest(fmt.Sprintf("%s/v2/settings/objects", dtc.url), http.MethodGet, dtc.apiToken, nil)
+	req, err := createBaseRequest(dtc.getSettingsUrl(true), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
 		return GetSettingsResponse{}, err
 	}
