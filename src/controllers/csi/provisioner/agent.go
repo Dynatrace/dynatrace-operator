@@ -104,11 +104,6 @@ func (installAgentCfg *installAgentConfig) installAgent(version, tenantUUID stri
 	dtc := installAgentCfg.dtc
 	fs := installAgentCfg.fs
 
-	arch := dtclient.ArchX86
-	if runtime.GOARCH == "arm64" {
-		arch = dtclient.ArchARM
-	}
-
 	tmpFile, err := afero.TempFile(fs, "", "download")
 	if err != nil {
 		return fmt.Errorf("failed to create temporary file for download: %w", err)
@@ -120,11 +115,18 @@ func (installAgentCfg *installAgentConfig) installAgent(version, tenantUUID stri
 		}
 	}()
 
-	log.Info("downloading OneAgent package", "architecture", arch)
-	err = dtc.GetAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch, version, tmpFile)
+	arch := dtclient.ArchX86
+	flavor := dtclient.FlavorMultidistro
+	if runtime.GOARCH == "arm64" {
+		arch = dtclient.ArchARM
+		flavor = dtclient.FlavorDefault
+	}
+
+	log.Info("downloading OneAgent package", "architecture", arch, "flavor", flavor)
+	err = dtc.GetAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, flavor, arch, version, tmpFile)
 
 	if err != nil {
-		availableVersions, getVersionsError := dtc.GetAgentVersions(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch)
+		availableVersions, getVersionsError := dtc.GetAgentVersions(dtclient.OsUnix, dtclient.InstallerTypePaaS, flavor, arch)
 		if getVersionsError != nil {
 			return fmt.Errorf("failed to fetch OneAgent version: %w", err)
 		}
