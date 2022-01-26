@@ -36,6 +36,7 @@ var (
 const (
 	operatorCmd      = "operator"
 	csiDriverCmd     = "csi-driver"
+	standaloneCmd    = "standalone-init"
 	webhookServerCmd = "webhook-server"
 )
 
@@ -81,6 +82,10 @@ func main() {
 		mgr, cleanUp, err = setupWebhookServer(namespace, cfg)
 		exitOnError(err, "webhook-server setup failed")
 		defer cleanUp()
+	case standaloneCmd:
+		err = startStandAloneInit()
+		exitOnError(err, "initContainer command failed")
+		os.Exit(0)
 	default:
 		log.Error(errBadSubcmd, "unknown subcommand", "command", subCmd)
 		os.Exit(1)
