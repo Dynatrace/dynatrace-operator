@@ -209,7 +209,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 			return
 		}
 	} else {
-		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.HostMonitoringFeature, Namespace: dkState.Instance.Namespace}}
+		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.PodNameOSAgent, Namespace: dkState.Instance.Namespace}}
 		if err := controller.ensureDeleted(&ds); dkState.Error(err) {
 			return
 		}
@@ -223,7 +223,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 			return
 		}
 	} else {
-		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.CloudNativeFeature, Namespace: dkState.Instance.Namespace}}
+		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.PodNameOSAgent, Namespace: dkState.Instance.Namespace}}
 		if err := controller.ensureDeleted(&ds); dkState.Error(err) {
 			return
 		}
@@ -237,7 +237,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 			return
 		}
 	} else {
-		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.ClassicFeature, Namespace: dkState.Instance.Namespace}}
+		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.PodNameOSAgent, Namespace: dkState.Instance.Namespace}}
 		if err := controller.ensureDeleted(&ds); dkState.Error(err) {
 			return
 		}
