@@ -204,6 +204,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 	if !r.reconcileActiveGate(ctx, dkState, dtc) {
 		return
 	}
+
 	if dkState.Instance.HostMonitoringMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
 			r.client, r.apiReader, r.scheme, dkState.Instance, daemonset.HostMonitoringFeature,
@@ -211,28 +212,14 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
 			return
 		}
-	} else {
-		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.HostMonitoringFeature, Namespace: dkState.Instance.Namespace}}
-		if err := r.ensureDeleted(&ds); dkState.Error(err) {
-			return
-		}
-	}
-
-	if dkState.Instance.CloudNativeFullstackMode() {
+	} else if dkState.Instance.CloudNativeFullstackMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
 			r.client, r.apiReader, r.scheme, dkState.Instance, daemonset.CloudNativeFeature,
 		).Reconcile(ctx, dkState)
 		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "cloud native infra monitoring reconciled") {
 			return
 		}
-	} else {
-		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.CloudNativeFeature, Namespace: dkState.Instance.Namespace}}
-		if err := r.ensureDeleted(&ds); dkState.Error(err) {
-			return
-		}
-	}
-
-	if dkState.Instance.ClassicFullStackMode() {
+	} else if dkState.Instance.ClassicFullStackMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
 			r.client, r.apiReader, r.scheme, dkState.Instance, daemonset.ClassicFeature,
 		).Reconcile(ctx, dkState)
@@ -240,10 +227,7 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 			return
 		}
 	} else {
-		ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.ClassicFeature, Namespace: dkState.Instance.Namespace}}
-		if err := r.ensureDeleted(&ds); dkState.Error(err) {
-			return
-		}
+		r.removeOneAgentDaemonSet(dkState)
 	}
 
 	endpointSecretGenerator := dtingestendpoint.NewEndpointSecretGenerator(r.client, r.apiReader, dkState.Instance.Namespace)
@@ -276,6 +260,13 @@ func (r *ReconcileDynaKube) reconcileDynaKube(ctx context.Context, dkState *stat
 		if dkState.Error(err) {
 			return
 		}
+	}
+}
+
+func (r *ReconcileDynaKube) removeOneAgentDaemonSet(dkState *status.DynakubeState) {
+	ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.PodNameOSAgent, Namespace: dkState.Instance.Namespace}}
+	if err := r.ensureDeleted(&ds); dkState.Error(err) {
+		return
 	}
 }
 
