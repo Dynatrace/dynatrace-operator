@@ -154,7 +154,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
 	)
 
-	response, err := svr.publishers["app"].PublishVolume(ctx, volumeCfg)
+	response, err := svr.publishers[appvolumes.Mode].PublishVolume(ctx, volumeCfg)
 	if err != nil {
 		return nil, err
 	}
