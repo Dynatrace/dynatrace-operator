@@ -8,6 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -196,6 +197,67 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, secret)
 		assert.Equal(t, string(secret.Data[dtclient.DynatraceApiToken]), testAPIToken)
+	})
+}
+
+func TestRemoveOneAgentDaemonset(t *testing.T) {
+	t.Run(`Reconcile validates apiToken correctly if apiToken with "InstallerDownload"-scope is provided`, func(t *testing.T) {
+		mockClient := createDTMockClient(dtclient.TokenScopes{},
+			dtclient.TokenScopes{
+				dtclient.TokenScopeDataExport,
+				dtclient.TokenScopeInstallerDownload,
+				dtclient.TokenScopeReadConfig,
+				dtclient.TokenScopeWriteConfig})
+		instance := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{}}
+		data := map[string][]byte{
+			dtclient.DynatraceApiToken: []byte(testAPIToken),
+		}
+		fakeClient := fake.NewClient(instance,
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: testNamespace,
+				},
+				Data: data},
+			&corev1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: kubesystem.Namespace,
+					UID:  testUID,
+				},
+			},
+			&appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName + "-" + daemonset.PodNameOSAgent,
+					Namespace: testNamespace,
+				},
+			},
+		)
+		controller := &DynakubeController{
+			client:    fakeClient,
+			apiReader: fakeClient,
+			scheme:    scheme.Scheme,
+			dtcBuildFunc: func(DynatraceClientProperties) (dtclient.Client, error) {
+				return mockClient, nil
+			},
+		}
+
+		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+		})
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+
+		var daemonSet appsv1.DaemonSet
+
+		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: (testName + "-" + daemonset.PodNameOSAgent), Namespace: testNamespace}, &daemonSet)
+
+		assert.Error(t, err)
 	})
 }
 
