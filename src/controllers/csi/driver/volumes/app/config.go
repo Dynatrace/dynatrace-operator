@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	log                  = logger.NewDTLogger().WithName("csi-driver-app")
+	log                  = logger.NewDTLogger().WithName("csi-driver.app")
 	agentsVersionsMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "dynatrace",
 		Subsystem: "csi_driver",
@@ -15,6 +15,8 @@ var (
 		Help:      "Number of an agent version currently mounted by the CSI driver",
 	}, []string{"version"})
 )
+
+const Mode = "app"
 
 func init() {
 	metrics.Registry.MustRegister(agentsVersionsMetric)

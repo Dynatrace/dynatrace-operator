@@ -82,7 +82,7 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 	}
 
 	svr.publishers = map[string]csivolumes.Publisher{
-		"app": appvolumes.NewPublisher(svr.client, svr.fs, svr.mounter, svr.db, svr.path),
+		appvolumes.Mode: appvolumes.NewPublisher(svr.client, svr.fs, svr.mounter, svr.db, svr.path),
 	}
 
 	log.Info("starting listener", "protocol", proto, "address", addr)
@@ -167,7 +167,7 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.No
 	if err != nil {
 		return nil, err
 	}
-	response, err := svr.publishers["app"].UnpublishVolume(ctx, volumeInfo)
+	response, err := svr.publishers[appvolumes.Mode].UnpublishVolume(ctx, volumeInfo)
 	if err != nil {
 		return nil, err
 	}

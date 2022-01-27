@@ -11,17 +11,20 @@ const (
 	PodNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
 )
 
+// Represents the basic information about a volume
 type VolumeInfo struct {
 	VolumeId   string
 	TargetPath string
 }
 
+// Represents the config needed to mount a volume
 type VolumeConfig struct {
 	VolumeInfo
 	Namespace string
 	PodName   string
 }
 
+// Transforms the NodePublishVolumeRequest into a VolumeConfig
 func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeConfig, error) {
 	if req.GetVolumeCapability() == nil {
 		return nil, status.Error(codes.InvalidArgument, "Volume capability missing in request")
@@ -70,6 +73,7 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeCo
 	}, nil
 }
 
+// Transforms the NodeUnpublishVolumeRequest into a VolumeInfo
 func ParseNodeUnpublishVolumeRequest(req *csi.NodeUnpublishVolumeRequest) (*VolumeInfo, error) {
 	volumeID := req.GetVolumeId()
 	if volumeID == "" {
