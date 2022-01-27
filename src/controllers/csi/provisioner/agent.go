@@ -5,11 +5,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/provisioner/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/klauspost/compress/zip"
 	"github.com/spf13/afero"
@@ -115,18 +115,11 @@ func (installAgentCfg *installAgentConfig) installAgent(version, tenantUUID stri
 		}
 	}()
 
-	arch := dtclient.ArchX86
-	flavor := dtclient.FlavorMultidistro
-	if runtime.GOARCH == "arm64" {
-		arch = dtclient.ArchARM
-		flavor = dtclient.FlavorDefault
-	}
-
-	log.Info("downloading OneAgent package", "architecture", arch, "flavor", flavor)
-	err = dtc.GetAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, flavor, arch, version, tmpFile)
+	log.Info("downloading OneAgent package", "architecture", arch.Arch, "flavor", arch.Flavor)
+	err = dtc.GetAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.Flavor, arch.Arch, version, tmpFile)
 
 	if err != nil {
-		availableVersions, getVersionsError := dtc.GetAgentVersions(dtclient.OsUnix, dtclient.InstallerTypePaaS, flavor, arch)
+		availableVersions, getVersionsError := dtc.GetAgentVersions(dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.Flavor, arch.Arch)
 		if getVersionsError != nil {
 			return fmt.Errorf("failed to fetch OneAgent version: %w", err)
 		}
