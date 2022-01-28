@@ -58,7 +58,7 @@ type getSettingsErrorResponse struct {
 type getSettingsError struct {
 	Code                 int
 	Message              string
-	ConstraintViolations constraintViolations
+	ConstraintViolations constraintViolations `json:"constraintViolations,omitempty"`
 }
 
 type constraintViolations []struct {
@@ -231,21 +231,29 @@ func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Requ
 }
 
 func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {
-	var se []getSettingsErrorResponse
-	if err := json.Unmarshal(response, &se); err != nil {
-		return fmt.Errorf("response error: %d, can't unmarshal json response: %w", statusCode, err)
-	}
-
-	var sb strings.Builder
-	sb.WriteString("[Settings Creation]: could not create the Kubernetes setting for the following reason:\n")
-
-	for _, errorResponse := range se {
-		sb.WriteString(fmt.Sprintf("[%s; Code: %d\n", errorResponse.ErrorMessage.Message, errorResponse.ErrorMessage.Code))
-		for _, constraintViolation := range errorResponse.ErrorMessage.ConstraintViolations {
-			sb.WriteString(fmt.Sprintf("\t- %s\n", constraintViolation.Message))
+	if statusCode == http.StatusForbidden || statusCode == http.StatusUnauthorized {
+		var se getSettingsErrorResponse
+		if err := json.Unmarshal(response, &se); err != nil {
+			return fmt.Errorf("response error: %d, can't unmarshal json response: %w", statusCode, err)
 		}
-		sb.WriteString("]\n")
-	}
+		return fmt.Errorf("response error: %d, %s", statusCode, se.ErrorMessage.Message)
+	} else {
+		var se []getSettingsErrorResponse
+		if err := json.Unmarshal(response, &se); err != nil {
+			return fmt.Errorf("response error: %d, can't unmarshal json response: %w", statusCode, err)
+		}
 
-	return fmt.Errorf(sb.String())
+		var sb strings.Builder
+		sb.WriteString("[Settings Creation]: could not create the Kubernetes setting for the following reason:\n")
+
+		for _, errorResponse := range se {
+			sb.WriteString(fmt.Sprintf("[%s; Code: %d\n", errorResponse.ErrorMessage.Message, errorResponse.ErrorMessage.Code))
+			for _, constraintViolation := range errorResponse.ErrorMessage.ConstraintViolations {
+				sb.WriteString(fmt.Sprintf("\t- %s\n", constraintViolation.Message))
+			}
+			sb.WriteString("]\n")
+		}
+
+		return fmt.Errorf(sb.String())
+	}
 }
