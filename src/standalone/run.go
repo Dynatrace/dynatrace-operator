@@ -17,6 +17,7 @@ var (
 	BinDirMount    = filepath.Join("mnt", "bin")
 	ShareDirMount  = filepath.Join("mnt", "share")
 	ConfigDirMount = filepath.Join("mnt", "config")
+	EnrichmentPath = filepath.Join("var", "lib", "dynatrace", "enrichment")
 )
 
 type Runner struct {
@@ -98,9 +99,29 @@ func (runner *Runner) installOneAgent() error {
 func (runner *Runner) configureInstallation() error {
 	log.Info("configuring standalone OneAgent")
 
+	if runner.env.oneAgentInjected {
+		if err := runner.createContainerConfigurationFiles(); err != nil {
+			return err
+		}
+		if runner.config.TlsCert != "" {
+			if err := runner.propagateTLSCert(); err != nil {
+				return err
+			}
+		}
+	}
+	if runner.env.dataIngestInjected {
+		if err := runner.enrichMetadata(); err != nil {
+			return err
+		}
+	}
+	// TODO: processconfig stuff
+	return nil
+}
+
+func (runner *Runner) createContainerConfigurationFiles() error {
 	for _, container := range runner.env.containers {
 		confFilePath := filepath.Join(ShareDirMount, fmt.Sprintf("container_%s.conf", container.name))
-		content := runner.getBaseConfContent()
+		content := runner.getBaseConfContent(container)
 		if runner.hostTenant != noHostTenant {
 			if runner.config.TenantUUID == runner.hostTenant {
 				content += runner.getK8ConfContent()
@@ -111,28 +132,19 @@ func (runner *Runner) configureInstallation() error {
 			return err
 		}
 	}
-
-	// TODO: Do dataingest/tls/processconfig stuff
-
 	return nil
 }
 
-func (runner *Runner) getBaseConfContent() string {
-	// TODO: Do stuff
-	return ""
-}
-
-func (runner *Runner) getK8ConfContent() string {
-	// TODO: Do stuff
-	return ""
-}
-
-func (runner *Runner) getHostConfContent() string {
-	// TODO: Do stuff
-	return ""
-}
-
-func createConfFile(path string, content string) error {
-	// TODO: create conf file
+func (runner *Runner) enrichMetadata() error {
+	if err := runner.createPropsEnrichmentFile(); err != nil {
+		return err
+	}
+	if err := runner.createJsonEnrichmentFile(); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (runner *Runner) propagateTLSCert() error {
+	return createConfFile(filepath.Join(ShareDirMount, "custom.pem"), runner.config.TlsCert)
 }
