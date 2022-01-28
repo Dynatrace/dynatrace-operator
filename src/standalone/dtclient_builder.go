@@ -9,14 +9,14 @@ type dtclientBuilder struct {
 	options []dtclient.Option
 }
 
-func NewDTClientBuilder(config *SecretConfig) *dtclientBuilder {
+func newDTClientBuilder(config *SecretConfig) *dtclientBuilder {
 	return &dtclientBuilder{
 		config:  config,
 		options: []dtclient.Option{},
 	}
 }
 
-func (builder *dtclientBuilder) CreateClient() (dtclient.Client, error) {
+func (builder *dtclientBuilder) createClient() (dtclient.Client, error) {
 	builder.setOptions()
 	client, err := dtclient.NewClient(
 		builder.config.ApiUrl,
