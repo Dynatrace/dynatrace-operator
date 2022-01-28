@@ -5,5 +5,5 @@ package arch
 
 import "github.com/Dynatrace/dynatrace-operator/src/dtclient"
 
-const Flavor = dtclient.FlavorDefault
 const Arch = dtclient.ArchARM
+const Flavor = dtclient.FlavorDefault
