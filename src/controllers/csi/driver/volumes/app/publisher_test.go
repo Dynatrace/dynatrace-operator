@@ -144,7 +144,7 @@ func TestLoadPodInfo_Empty(t *testing.T) {
 	assert.Equal(t, &metadata.Volume{}, volume)
 }
 
-func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) Publisher {
+func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) AppVolumePublisher {
 	objects := []client.Object{
 		&v1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
@@ -173,7 +173,7 @@ func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) Publisher 
 
 	tmpFs := afero.NewMemMapFs()
 
-	return Publisher{
+	return AppVolumePublisher{
 		client:  fake.NewClient(objects...),
 		fs:      afero.Afero{Fs: tmpFs},
 		mounter: mounter,
@@ -182,19 +182,19 @@ func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) Publisher 
 	}
 }
 
-func mockPublishedVolume(t *testing.T, publisher *Publisher) {
+func mockPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	mockOneAgent(t, publisher)
 	err := publisher.db.InsertVolume(metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID))
 	require.NoError(t, err)
 	agentsVersionsMetric.WithLabelValues(testAgentVersion).Inc()
 }
 
-func mockOneAgent(t *testing.T, publisher *Publisher) {
+func mockOneAgent(t *testing.T, publisher *AppVolumePublisher) {
 	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion))
 	require.NoError(t, err)
 }
 
-func assertReferencesForPublishedVolume(t *testing.T, publisher *Publisher, mounter *mount.FakeMounter) {
+func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
 	volume, err := publisher.loadVolume(testVolumeId)
 	assert.NoError(t, err)
@@ -204,7 +204,7 @@ func assertReferencesForPublishedVolume(t *testing.T, publisher *Publisher, moun
 	assert.Equal(t, volume.TenantUUID, testTenantUUID)
 }
 
-func assertNoReferencesForUnpublishedVolume(t *testing.T, publisher *Publisher) {
+func assertNoReferencesForUnpublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	volume, err := publisher.loadVolume(testVolumeId)
 	assert.NoError(t, err)
 	assert.Equal(t, &metadata.Volume{}, volume)

@@ -17,7 +17,7 @@ type bindConfig struct {
 	version    string
 }
 
-func newBindConfig(ctx context.Context, svr *Publisher, volumeCfg *csivolumes.VolumeConfig) (*bindConfig, error) {
+func newBindConfig(ctx context.Context, svr *AppVolumePublisher, volumeCfg *csivolumes.VolumeConfig) (*bindConfig, error) {
 	var ns corev1.Namespace
 	if err := svr.client.Get(ctx, client.ObjectKey{Name: volumeCfg.Namespace}, &ns); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("failed to query namespace %s: %s", volumeCfg.Namespace, err.Error()))

@@ -27,7 +27,7 @@ const (
 func TestNewBindConfig(t *testing.T) {
 	t.Run(`no namespace`, func(t *testing.T) {
 		client := fake.NewClient()
-		publisher := &Publisher{
+		publisher := &AppVolumePublisher{
 			client: client,
 			db:     metadata.FakeMemoryDB(),
 		}
@@ -43,7 +43,7 @@ func TestNewBindConfig(t *testing.T) {
 	t.Run(`no dynakube instance label`, func(t *testing.T) {
 		client := fake.NewClient(
 			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}})
-		publisher := &Publisher{
+		publisher := &AppVolumePublisher{
 			client: client,
 			db:     metadata.FakeMemoryDB(),
 		}
@@ -63,7 +63,7 @@ func TestNewBindConfig(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: testDynakubeName},
 			},
 		)
-		publisher := &Publisher{
+		publisher := &AppVolumePublisher{
 			client: client,
 			db:     metadata.FakeMemoryDB(),
 		}
@@ -79,7 +79,7 @@ func TestNewBindConfig(t *testing.T) {
 	t.Run(`failed to create directories`, func(t *testing.T) {
 		client := fake.NewClient(
 			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace, Labels: map[string]string{webhook.LabelInstance: testDynakubeName}}})
-		publisher := &Publisher{
+		publisher := &AppVolumePublisher{
 			client: client,
 			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
 			db:     metadata.FakeMemoryDB(),
@@ -96,7 +96,7 @@ func TestNewBindConfig(t *testing.T) {
 	t.Run(`failed to read version file`, func(t *testing.T) {
 		client := fake.NewClient(
 			&v1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace, Labels: map[string]string{webhook.LabelInstance: testDynakubeName}}})
-		publisher := &Publisher{
+		publisher := &AppVolumePublisher{
 			client: client,
 			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
 			db:     metadata.FakeMemoryDB(),
@@ -118,7 +118,7 @@ func TestNewBindConfig(t *testing.T) {
 			},
 		)
 		options := dtcsi.CSIOptions{RootDir: "/"}
-		publisher := &Publisher{
+		publisher := &AppVolumePublisher{
 			client: client,
 			fs:     afero.Afero{Fs: afero.NewMemMapFs()},
 			db:     metadata.FakeMemoryDB(),

@@ -82,7 +82,7 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 	}
 
 	svr.publishers = map[string]csivolumes.Publisher{
-		appvolumes.Mode: appvolumes.NewPublisher(svr.client, svr.fs, svr.mounter, svr.db, svr.path),
+		appvolumes.Mode: appvolumes.NewAppVolumePublisher(svr.client, svr.fs, svr.mounter, svr.db, svr.path),
 	}
 
 	log.Info("starting listener", "protocol", proto, "address", addr)
