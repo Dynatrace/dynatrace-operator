@@ -33,7 +33,7 @@ func (dtc *dynatraceClient) GetTokenScopes(token string) (TokenScopes, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/tokens/lookup", dtc.url), bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest("POST", dtc.getTokensLookupUrl(), bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}

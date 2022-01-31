@@ -41,8 +41,7 @@ func (dtc *dynatraceClient) SendEvent(eventData *EventData) error {
 		return errors.WithStack(err)
 	}
 
-	url := fmt.Sprintf("%s/v1/events", dtc.url)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	req, err := http.NewRequest("POST", dtc.getEventsUrl(), bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return fmt.Errorf("error initializing http request: %s", err.Error())
 	}

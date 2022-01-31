@@ -153,8 +153,7 @@ func (dtc *dynatraceClient) buildHostCache() error {
 		return nil
 	}
 
-	url := fmt.Sprintf("%s/v1/entity/infrastructure/hosts?includeDetails=false", dtc.url)
-	resp, err := dtc.makeRequest(url, dynatraceApiToken)
+	resp, err := dtc.makeRequest(dtc.getHostsUrl(), dynatraceApiToken)
 	if err != nil {
 		return errors.WithStack(err)
 	}
