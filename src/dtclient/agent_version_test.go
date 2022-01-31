@@ -214,7 +214,7 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 			paasToken:  paasToken,
 		}
 		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
-		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", readWriter)
+		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", "", readWriter)
 
 		assert.NoError(t, err)
 		assert.Equal(t, versionedAgentResponse, string(readWriter.data))
@@ -229,7 +229,7 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 			paasToken:  paasToken,
 		}
 		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
-		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", readWriter)
+		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", "", readWriter)
 
 		assert.EqualError(t, err, "dynatrace server error 400: test-error")
 	})

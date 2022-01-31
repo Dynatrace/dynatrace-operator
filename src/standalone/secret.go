@@ -37,6 +37,7 @@ type SecretConfig struct {
 	HasHost         bool              `json:"hasHost"`
 	MonitoringNodes map[string]string `json:"monitoringNodes"`
 	TlsCert         string            `json:"tlsCert"`
+	HostGroup       string            `json:"hostGroup"`
 
 	// For the enrichment
 	ClusterID string `json:"clusterID"`

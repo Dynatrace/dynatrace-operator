@@ -129,10 +129,11 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		log.Error(err, "error when getting the latest ruxitagentproc.conf")
 		return reconcile.Result{}, err
 	}
-	latestProcessModuleConfigCache := newProcessModuleConfigCache(addHostGroup(dk, latestProcessModuleConfig))
+	latestProcessModuleConfig = latestProcessModuleConfig.AddHostGroup(dk.HostGroup())
+	latestProcessModuleConfigCache := newProcessModuleConfigCache(latestProcessModuleConfig)
 
-	installAgentCfg := newInstallAgentConfig(dtc, provisioner.path, provisioner.fs, provisioner.recorder, dk)
-	if updatedVersion, err := installAgentCfg.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID, storedHash, latestProcessModuleConfigCache); err != nil {
+	agentUpdater := newAgentUpdater(dtc, provisioner.path, provisioner.fs, provisioner.recorder, dk)
+	if updatedVersion, err := agentUpdater.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID, storedHash, latestProcessModuleConfigCache); err != nil {
 		log.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil

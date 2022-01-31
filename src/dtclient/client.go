@@ -33,7 +33,7 @@ type Client interface {
 	GetLatestAgent(os, installerType, flavor, arch string, writer io.Writer) error
 
 	// GetAgent downloads a specific agent version and writes it to the given io.Writer
-	GetAgent(os, installerType, flavor, arch, version string, writer io.Writer) error
+	GetAgent(os, installerType, flavor, arch, version, technologies string, writer io.Writer) error
 
 	// GetAgentVersions on success returns an array of versions that can be used with GetAgent to
 	// download a specific agent version

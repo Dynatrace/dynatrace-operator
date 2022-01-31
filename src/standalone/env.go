@@ -19,6 +19,7 @@ const (
 
 	InstallerFlavorEnv = "FLAVOR"
 	InstallerTechEnv   = "TECHNOLOGIES"
+	InstallerArchEnv   = "ARCH"
 
 	K8NodeNameEnv    = "K8_NODENAME"
 	K8PodNameEnv     = "K8_PODNAME"
@@ -49,6 +50,7 @@ type environment struct {
 
 	installerFlavor string
 	installerTech   string
+	installerArch   string
 	installPath     string
 	containers      []containerInfo
 
@@ -83,6 +85,7 @@ func (env *environment) setRequiredFields() error {
 		env.addInstallerFlavor,
 		env.addInstallerTech,
 		env.addInstallPath,
+		env.addInstallerArch,
 		env.addContainers,
 		env.addK8NodeName,
 		env.addK8PodName,
@@ -146,6 +149,15 @@ func (env *environment) addInstallerTech() error {
 		return err
 	}
 	env.installerTech = technologies
+	return nil
+}
+
+func (env *environment) addInstallerArch() error {
+	arch, err := checkEnvVar(InstallerArchEnv)
+	if err != nil {
+		return err
+	}
+	env.installerArch = arch
 	return nil
 }
 

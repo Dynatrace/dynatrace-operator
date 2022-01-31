@@ -96,12 +96,12 @@ func (dtc *dynatraceClient) GetAgentVersions(os, installerType, flavor, arch str
 	return response.AvailableVersions, errors.WithStack(err)
 }
 
-func (dtc *dynatraceClient) GetAgent(os, installerType, flavor, arch, version string, writer io.Writer) error {
+func (dtc *dynatraceClient) GetAgent(os, installerType, flavor, arch, version, technologies string, writer io.Writer) error {
 	if len(os) == 0 || len(installerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
 
-	url := dtc.getAgentUrl(os, installerType, flavor, arch, version)
+	url := dtc.getAgentUrl(os, installerType, flavor, arch, version, technologies)
 	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
 	if err == nil {
 		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "md5", md5)

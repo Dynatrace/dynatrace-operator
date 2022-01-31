@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -16,19 +15,19 @@ import (
 
 const agentConfPath = "agent/conf/"
 
+type InstallerProperties struct {
+	Os           string
+	Arch         string
+	Type         string
+	Flavor       string
+	Version      string
+	Technologies string
+}
+
 type OneAgentInstaller struct {
 	fs    afero.Fs
 	dtc   dtclient.Client
 	props InstallerProperties
-}
-
-type InstallerProperties struct {
-	Os      string
-	Arch    string
-	Type    string
-	Flavor  string
-	Version string
-	// TODO: Technologies string
 }
 
 func NewOneAgentInstaller(
@@ -58,11 +57,6 @@ func (installer *OneAgentInstaller) installAgent(targetDir string) error {
 	fs := installer.fs
 	dtc := installer.dtc
 
-	arch := dtclient.ArchX86
-	if runtime.GOARCH == "arm64" {
-		arch = dtclient.ArchARM
-	}
-
 	tmpFile, err := afero.TempFile(fs, "", "download")
 	if err != nil {
 		return fmt.Errorf("failed to create temporary file for download: %w", err)
@@ -74,11 +68,28 @@ func (installer *OneAgentInstaller) installAgent(targetDir string) error {
 		}
 	}()
 
-	log.Info("downloading OneAgent package", "architecture", arch)
-	err = dtc.GetAgent(installer.props.Os, installer.props.Type, installer.props.Flavor, installer.props.Arch, installer.props.Version, tmpFile)
+	if installer.props.Version == "" {
+		installer.props.Version = "latest"
+	}
+
+	log.Info("downloading OneAgent package", "props", installer.props)
+	err = dtc.GetAgent(
+		installer.props.Os,
+		installer.props.Type,
+		installer.props.Flavor,
+		installer.props.Arch,
+		installer.props.Version,
+		installer.props.Technologies,
+		tmpFile,
+	)
 
 	if err != nil {
-		availableVersions, getVersionsError := dtc.GetAgentVersions(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch)
+		availableVersions, getVersionsError := dtc.GetAgentVersions(
+			installer.props.Os,
+			installer.props.Type,
+			installer.props.Flavor,
+			installer.props.Arch,
+		)
 		if getVersionsError != nil {
 			return fmt.Errorf("failed to fetch OneAgent version: %w", err)
 		}

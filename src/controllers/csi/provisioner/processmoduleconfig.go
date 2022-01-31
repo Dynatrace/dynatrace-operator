@@ -2,14 +2,11 @@ package csiprovisioner
 
 import (
 	"encoding/json"
-	"io"
 	"io/ioutil"
 	"os"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 )
 
 type processModuleConfigCache struct {
@@ -87,80 +84,4 @@ func (provisioner *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID
 	_, err = processModuleConfigCache.Write(jsonBytes)
 	processModuleConfigCache.Close()
 	return err
-}
-
-func (installAgentCfg *installAgentConfig) updateProcessModuleConfig(version, tenantUUID string, processModuleConfig *dtclient.ProcessModuleConfig) error {
-	if processModuleConfig != nil {
-		log.Info("updating ruxitagentproc.conf", "agentVersion", version, "tenantUUID", tenantUUID)
-		usedProcessModuleConfigPath := installAgentCfg.path.AgentProcessModuleConfigForVersion(tenantUUID, version)
-		sourceProcessModuleConfigPath := installAgentCfg.path.SourceAgentProcessModuleConfigForVersion(tenantUUID, version)
-		if err := installAgentCfg.checkProcessModuleConfigCopy(sourceProcessModuleConfigPath, usedProcessModuleConfigPath); err != nil {
-			return err
-		}
-		return processmoduleconfig.Update(installAgentCfg.fs, sourceProcessModuleConfigPath, usedProcessModuleConfigPath, processModuleConfig.ToMap())
-	}
-	log.Info("no changes to ruxitagentproc.conf, skipping update")
-	return nil
-}
-
-// checkProcessModuleConfigCopy checks if we already made a copy of the original ruxitagentproc.conf file.
-// After the initial install of a version we copy the ruxitagentproc.conf to _ruxitagentproc.conf and we use the _ruxitagentproc.conf + the api response to re-create the ruxitagentproc.conf
-// so its easier to update
-func (installAgentCfg *installAgentConfig) checkProcessModuleConfigCopy(sourcePath, destPath string) error {
-	if _, err := installAgentCfg.fs.Open(sourcePath); os.IsNotExist(err) {
-		log.Info("saving original ruxitagentproc.conf to _ruxitagentproc.conf")
-		fileInfo, err := installAgentCfg.fs.Stat(destPath)
-		if err != nil {
-			return err
-		}
-
-		sourceProcessModuleConfigFile, err := installAgentCfg.fs.OpenFile(sourcePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, fileInfo.Mode())
-		if err != nil {
-			return err
-		}
-
-		usedProcessModuleConfigFile, err := installAgentCfg.fs.Open(destPath)
-		if err != nil {
-			return err
-		}
-		_, err = io.Copy(sourceProcessModuleConfigFile, usedProcessModuleConfigFile)
-		if err != nil {
-			sourceProcessModuleConfigFile.Close()
-			usedProcessModuleConfigFile.Close()
-			return err
-		}
-		if err = sourceProcessModuleConfigFile.Close(); err != nil {
-			return err
-		}
-		return usedProcessModuleConfigFile.Close()
-	}
-	return nil
-}
-
-func addHostGroup(dk *dynatracev1beta1.DynaKube, pmc *dtclient.ProcessModuleConfig) *dtclient.ProcessModuleConfig {
-	if pmc == nil {
-		pmc = &dtclient.ProcessModuleConfig{}
-	}
-	hostGroup := dk.HostGroup()
-	newProps := []dtclient.ProcessModuleProperty{}
-	hasHostGroup := false
-	for _, prop := range pmc.Properties {
-		if prop.Key != "hostGroup" {
-			newProps = append(newProps, prop)
-		} else {
-			hasHostGroup = true
-			if hostGroup == "" {
-				continue
-			} else if hostGroup == prop.Value {
-				newProps = append(newProps, prop)
-			} else {
-				newProps = append(pmc.Properties, dtclient.ProcessModuleProperty{Section: "general", Key: "hostGroup", Value: hostGroup})
-			}
-		}
-	}
-	if !hasHostGroup && hostGroup != "" {
-		newProps = append(pmc.Properties, dtclient.ProcessModuleProperty{Section: "general", Key: "hostGroup", Value: hostGroup})
-	}
-	pmc.Properties = newProps
-	return pmc
 }

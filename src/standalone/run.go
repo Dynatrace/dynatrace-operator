@@ -97,11 +97,12 @@ func (runner *Runner) installOneAgent() error {
 		runner.fs,
 		runner.client,
 		installer.InstallerProperties{
-			Os:      dtclient.OsUnix,
-			Type:    dtclient.InstallerTypePaaS,
-			Flavor:  runner.env.installerFlavor,
-			Arch:    "TODO",
-			Version: "TODO",
+			Os:           dtclient.OsUnix,
+			Type:         dtclient.InstallerTypePaaS,
+			Flavor:       runner.env.installerFlavor,
+			Arch:         runner.env.installerArch,
+			Technologies: runner.env.installerTech,
+			Version:      "latest",
 		},
 	)
 	return oneAgentInstaller.InstallAgent(BinDirMount)

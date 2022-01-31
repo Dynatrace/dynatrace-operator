@@ -2,17 +2,17 @@ package dtclient
 
 import "fmt"
 
-func (dtc *dynatraceClient) getAgentUrl(os, installerType, flavor, arch, version string) string {
-	return fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/version/%s?flavor=%s&arch=%s&bitness=64",
-		dtc.url, os, installerType, version, flavor, arch)
+func (dtc *dynatraceClient) getAgentUrl(os, installerType, flavor, arch, version, technologies string) string {
+	return fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/version/%s?flavor=%s&arch=%s&include=%s&bitness=64",
+		dtc.url, os, installerType, version, flavor, technologies, arch)
 }
 
-func (dtc *dynatraceClient) getLatestAgentUrl(os string, installerType string, flavor string, arch string) string {
+func (dtc *dynatraceClient) getLatestAgentUrl(os, installerType, flavor, arch string) string {
 	return fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest?bitness=64&flavor=%s&arch=%s",
 		dtc.url, os, installerType, flavor, arch)
 }
 
-func (dtc *dynatraceClient) getAgentVersionsUrl(os string, installerType string, flavor string, arch string) string {
+func (dtc *dynatraceClient) getAgentVersionsUrl(os, installerType, flavor, arch string) string {
 	return fmt.Sprintf("%s/v1/deployment/installer/agent/versions/%s/%s?flavor=%s&arch=%s",
 		dtc.url, os, installerType, flavor, arch)
 }
