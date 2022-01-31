@@ -64,99 +64,54 @@ func TestReadResponseForProcessModuleConfig(t *testing.T) {
 	assert.Equal(t, "b", processConfig.Properties[1].Value)
 }
 
-// TODO: Make it work
-// func TestAddHostGroup(t *testing.T) {
-// 	t.Run(`dk with hostGroup, no api`, func(t *testing.T) {
-// 		dk := &dynatracev1beta1.DynaKube{
-// 			Spec: dynatracev1beta1.DynaKubeSpec{
-// 				OneAgent: dynatracev1beta1.OneAgentSpec{
-// 					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-// 						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
-// 							Args: []string{
-// 								"--set-host-group=test",
-// 							},
-// 						},
-// 					},
-// 				},
-// 			},
-// 		}
-// 		emptyResponse := dtclient.ProcessModuleConfig{}
-// 		result := addHostGroup(dk, &emptyResponse)
-// 		assert.NotNil(t, result)
-// 		assert.Equal(t, "test", result.ToMap()["general"]["hostGroup"])
-// 	})
-// 	t.Run(`dk with hostGroup, api present`, func(t *testing.T) {
-// 		dk := &dynatracev1beta1.DynaKube{
-// 			Spec: dynatracev1beta1.DynaKubeSpec{
-// 				OneAgent: dynatracev1beta1.OneAgentSpec{
-// 					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-// 						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
-// 							Args: []string{
-// 								"--set-host-group=test",
-// 							},
-// 						},
-// 					},
-// 				},
-// 			},
-// 		}
-// 		pmc := dtclient.ProcessModuleConfig{
-// 			Properties: []dtclient.ProcessModuleProperty{
-// 				{
-// 					Section: "general",
-// 					Key:     "other",
-// 					Value:   "other",
-// 				},
-// 			},
-// 		}
-// 		result := addHostGroup(dk, &pmc)
-// 		assert.NotNil(t, result)
-// 		assert.Len(t, result.ToMap()["general"], 2)
-// 		assert.Equal(t, "test", result.ToMap()["general"]["hostGroup"])
-// 	})
-// 	t.Run(`dk without hostGroup`, func(t *testing.T) {
-// 		dk := &dynatracev1beta1.DynaKube{
-// 			Spec: dynatracev1beta1.DynaKubeSpec{
-// 				OneAgent: dynatracev1beta1.OneAgentSpec{
-// 					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-// 						HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
-// 					},
-// 				},
-// 			},
-// 		}
-// 		pmc := dtclient.ProcessModuleConfig{
-// 			Properties: []dtclient.ProcessModuleProperty{
-// 				{
-// 					Section: "general",
-// 					Key:     "other",
-// 					Value:   "other",
-// 				},
-// 			},
-// 		}
-// 		result := addHostGroup(dk, &pmc)
-// 		assert.NotNil(t, result)
-// 		assert.Equal(t, *result, pmc)
-// 	})
-// 	t.Run(`dk without hostGroup, remove previous hostgroup`, func(t *testing.T) {
-// 		dk := &dynatracev1beta1.DynaKube{
-// 			Spec: dynatracev1beta1.DynaKubeSpec{
-// 				OneAgent: dynatracev1beta1.OneAgentSpec{
-// 					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-// 						HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
-// 					},
-// 				},
-// 			},
-// 		}
-// 		pmc := dtclient.ProcessModuleConfig{
-// 			Properties: []dtclient.ProcessModuleProperty{
-// 				{
-// 					Section: "general",
-// 					Key:     "hostGroup",
-// 					Value:   "other",
-// 				},
-// 			},
-// 		}
-// 		result := addHostGroup(dk, &pmc)
-// 		assert.NotNil(t, result)
-// 		assert.Len(t, pmc.Properties, 0)
-// 	})
-// }
+func TestAddHostGroup(t *testing.T) {
+	t.Run(`hostGroup, no api`, func(t *testing.T) {
+		emptyResponse := ProcessModuleConfig{}
+		result := emptyResponse.AddHostGroup("test")
+		assert.NotNil(t, result)
+		assert.Equal(t, "test", result.ToMap()["general"]["hostGroup"])
+	})
+	t.Run(`hostGroup, api present`, func(t *testing.T) {
+		pmc := ProcessModuleConfig{
+			Properties: []ProcessModuleProperty{
+				{
+					Section: "general",
+					Key:     "other",
+					Value:   "other",
+				},
+			},
+		}
+		result := pmc.AddHostGroup("test")
+		assert.NotNil(t, result)
+		assert.Len(t, result.ToMap()["general"], 2)
+		assert.Equal(t, "test", result.ToMap()["general"]["hostGroup"])
+	})
+	t.Run(`empty hostGroup`, func(t *testing.T) {
+		pmc := ProcessModuleConfig{
+			Properties: []ProcessModuleProperty{
+				{
+					Section: "general",
+					Key:     "other",
+					Value:   "other",
+				},
+			},
+		}
+		result := pmc.AddHostGroup("")
+		assert.NotNil(t, result)
+		assert.Equal(t, *result, pmc)
+	})
+	t.Run(`empty hostGroup, remove previous hostgroup`, func(t *testing.T) {
+		pmc := ProcessModuleConfig{
+			Properties: []ProcessModuleProperty{
+				{
+					Section: "general",
+					Key:     "hostGroup",
+					Value:   "other",
+				},
+			},
+		}
+		result := pmc.AddHostGroup("")
+		assert.NotNil(t, result)
+		assert.Len(t, pmc.Properties, 0)
+	})
+}

@@ -1,277 +1,291 @@
 package installer
 
-// TODO: MAKE THESE WORK
-// import (
-// 	"encoding/base64"
-// 	"fmt"
-// 	"io"
-// 	"os"
-// 	"path/filepath"
-// 	"testing"
+import (
+	"encoding/base64"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"testing"
 
-// 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
-// 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-// 	"github.com/spf13/afero"
-// 	"github.com/stretchr/testify/assert"
-// 	"github.com/stretchr/testify/mock"
-// 	"github.com/stretchr/testify/require"
-// )
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/spf13/afero"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+)
 
-// const (
-// 	testZip      = `UEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAAIABwAdGVzdC50eHRVVAkAA3w0lWATB55gdXgLAAEE6AMAAAToAwAAeW91IGZvdW5kIHRoZSBlYXN0ZXIgZWdnClBLAwQKAAAAAADAOa5SAAAAAAAAAAAAAAAABQAcAHRlc3QvVVQJAAMXB55gHQeeYHV4CwABBOgDAAAE6AMAAFBLAwQKAAAAAACodKdSbC0hZxkAAAAZAAAADQAcAHRlc3QvdGVzdC50eHRVVAkAA3w0lWATB55gdXgLAAEE6AMAAAToAwAAeW91IGZvdW5kIHRoZSBlYXN0ZXIgZWdnClBLAwQKAAAAAADCOa5SAAAAAAAAAAAAAAAACgAcAHRlc3QvdGVzdC9VVAkAAxwHnmAgB55gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAASABwAdGVzdC90ZXN0L3Rlc3QudHh0VVQJAAN8NJVgHAeeYHV4CwABBOgDAAAE6AMAAHlvdSBmb3VuZCB0aGUgZWFzdGVyIGVnZwpQSwMECgAAAAAA2zquUgAAAAAAAAAAAAAAAAYAHABhZ2VudC9VVAkAAy4JnmAxCZ5gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAOI6rlIAAAAAAAAAAAAAAAALABwAYWdlbnQvY29uZi9VVAkAAzgJnmA+CZ5gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAATABwAYWdlbnQvY29uZi90ZXN0LnR4dFVUCQADfDSVYDgJnmB1eAsAAQToAwAABOgDAAB5b3UgZm91bmQgdGhlIGVhc3RlciBlZ2cKUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAAAgAGAAAAAAAAQAAAKSBAAAAAHRlc3QudHh0VVQFAAN8NJVgdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAwDmuUgAAAAAAAAAAAAAAAAUAGAAAAAAAAAAQAO1BWwAAAHRlc3QvVVQFAAMXB55gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAAA0AGAAAAAAAAQAAAKSBmgAAAHRlc3QvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwECHgMKAAAAAADCOa5SAAAAAAAAAAAAAAAACgAYAAAAAAAAABAA7UH6AAAAdGVzdC90ZXN0L1VUBQADHAeeYHV4CwABBOgDAAAE6AMAAFBLAQIeAwoAAAAAAKh0p1JsLSFnGQAAABkAAAASABgAAAAAAAEAAACkgT4BAAB0ZXN0L3Rlc3QvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwECHgMKAAAAAADbOq5SAAAAAAAAAAAAAAAABgAYAAAAAAAAABAA7UGjAQAAYWdlbnQvVVQFAAMuCZ5gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAA4jquUgAAAAAAAAAAAAAAAAsAGAAAAAAAAAAQAO1B4wEAAGFnZW50L2NvbmYvVVQFAAM4CZ5gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAABMAGAAAAAAAAQAAAKSBKAIAAGFnZW50L2NvbmYvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwUGAAAAAAgACACKAgAAjgIAAAAA`
-// 	testDir      = "test"
-// 	testFilename = "test.txt"
-//  testRuxitConf = `
-// [general]
-// key value
-// `
-// )
+const (
+	testZip          = `UEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAAIABwAdGVzdC50eHRVVAkAA3w0lWATB55gdXgLAAEE6AMAAAToAwAAeW91IGZvdW5kIHRoZSBlYXN0ZXIgZWdnClBLAwQKAAAAAADAOa5SAAAAAAAAAAAAAAAABQAcAHRlc3QvVVQJAAMXB55gHQeeYHV4CwABBOgDAAAE6AMAAFBLAwQKAAAAAACodKdSbC0hZxkAAAAZAAAADQAcAHRlc3QvdGVzdC50eHRVVAkAA3w0lWATB55gdXgLAAEE6AMAAAToAwAAeW91IGZvdW5kIHRoZSBlYXN0ZXIgZWdnClBLAwQKAAAAAADCOa5SAAAAAAAAAAAAAAAACgAcAHRlc3QvdGVzdC9VVAkAAxwHnmAgB55gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAASABwAdGVzdC90ZXN0L3Rlc3QudHh0VVQJAAN8NJVgHAeeYHV4CwABBOgDAAAE6AMAAHlvdSBmb3VuZCB0aGUgZWFzdGVyIGVnZwpQSwMECgAAAAAA2zquUgAAAAAAAAAAAAAAAAYAHABhZ2VudC9VVAkAAy4JnmAxCZ5gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAOI6rlIAAAAAAAAAAAAAAAALABwAYWdlbnQvY29uZi9VVAkAAzgJnmA+CZ5gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAATABwAYWdlbnQvY29uZi90ZXN0LnR4dFVUCQADfDSVYDgJnmB1eAsAAQToAwAABOgDAAB5b3UgZm91bmQgdGhlIGVhc3RlciBlZ2cKUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAAAgAGAAAAAAAAQAAAKSBAAAAAHRlc3QudHh0VVQFAAN8NJVgdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAwDmuUgAAAAAAAAAAAAAAAAUAGAAAAAAAAAAQAO1BWwAAAHRlc3QvVVQFAAMXB55gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAAA0AGAAAAAAAAQAAAKSBmgAAAHRlc3QvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwECHgMKAAAAAADCOa5SAAAAAAAAAAAAAAAACgAYAAAAAAAAABAA7UH6AAAAdGVzdC90ZXN0L1VUBQADHAeeYHV4CwABBOgDAAAE6AMAAFBLAQIeAwoAAAAAAKh0p1JsLSFnGQAAABkAAAASABgAAAAAAAEAAACkgT4BAAB0ZXN0L3Rlc3QvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwECHgMKAAAAAADbOq5SAAAAAAAAAAAAAAAABgAYAAAAAAAAABAA7UGjAQAAYWdlbnQvVVQFAAMuCZ5gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAA4jquUgAAAAAAAAAAAAAAAAsAGAAAAAAAAAAQAO1B4wEAAGFnZW50L2NvbmYvVVQFAAM4CZ5gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAABMAGAAAAAAAAQAAAKSBKAIAAGFnZW50L2NvbmYvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwUGAAAAAAgACACKAgAAjgIAAAAA`
+	testDir          = "test"
+	testFilename     = "test.txt"
+	testErrorMessage = "BOOM"
+	testRuxitConf    = `
+[general]
+key value
+`
+)
 
-// type failFs struct {
-// 	afero.Fs
-// }
+var testProcessModuleConfig = dtclient.ProcessModuleConfig{
+	Revision: 3,
+	Properties: []dtclient.ProcessModuleProperty{
+		{
+			Section: "test",
+			Key:     "test",
+			Value:   "test3",
+		},
+	},
+}
 
-// func (fs failFs) OpenFile(string, int, os.FileMode) (afero.File, error) {
-// 	return nil, fmt.Errorf(errorMsg)
-// }
+type failFs struct {
+	afero.Fs
+}
 
-// func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
-// 	t.Run(`error when creating temp file`, func(t *testing.T) {
-// 		fs := failFs{
-// 			Fs: afero.NewMemMapFs(),
-// 		}
-// 		installAgentCfg := &installAgentConfig{
-// 			fs: fs,
-// 		}
+func (fs failFs) OpenFile(string, int, os.FileMode) (afero.File, error) {
+	return nil, fmt.Errorf(testErrorMessage)
+}
 
-// 		err := installAgentCfg.installAgent("", "")
-// 		assert.EqualError(t, err, "failed to create temporary file for download: "+errorMsg)
-// 	})
-// 	t.Run(`error when downloading latest agent`, func(t *testing.T) {
-// 		fs := afero.NewMemMapFs()
-// 		dtc := &dtclient.MockDynatraceClient{}
-// 		dtc.
-// 			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
-// 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
-// 			Return(fmt.Errorf(errorMsg))
-// 		dtc.
-// 			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, mock.AnythingOfType("string")).
-// 			Return([]string{}, fmt.Errorf(errorMsg))
-// 		installAgentCfg := &installAgentConfig{
-// 			fs:  fs,
-// 			dtc: dtc,
-// 		}
+func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
+	t.Run(`error when creating temp file`, func(t *testing.T) {
+		fs := failFs{
+			Fs: afero.NewMemMapFs(),
+		}
+		installer := &OneAgentInstaller{
+			fs: fs,
+		}
 
-// 		err := installAgentCfg.installAgent("", "")
-// 		assert.EqualError(t, err, "failed to fetch OneAgent version: "+errorMsg)
-// 	})
-// 	t.Run(`error unzipping file`, func(t *testing.T) {
-// 		fs := afero.NewMemMapFs()
+		err := installer.installAgent("")
+		assert.EqualError(t, err, "failed to create temporary file for download: "+testErrorMessage)
+	})
+	t.Run(`error when downloading latest agent`, func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		dtc := &dtclient.MockDynatraceClient{}
+		dtc.
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
+			Return(fmt.Errorf(testErrorMessage))
+		dtc.
+			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, mock.AnythingOfType("string")).
+			Return([]string{}, fmt.Errorf(testErrorMessage))
+		installer := &OneAgentInstaller{
+			fs:  fs,
+			dtc: dtc,
+			props: InstallerProperties{
+				Os:     dtclient.OsUnix,
+				Type:   dtclient.InstallerTypePaaS,
+				Flavor: dtclient.FlavorMultidistro,
+			},
+		}
 
-// 		dtc := &dtclient.MockDynatraceClient{}
-// 		dtc.
-// 			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
-// 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
-// 			Run(func(args mock.Arguments) {
-// 				writer := args.Get(5).(io.Writer)
+		err := installer.installAgent("")
+		assert.EqualError(t, err, "failed to fetch OneAgent version: "+testErrorMessage)
+	})
+	t.Run(`error unzipping file`, func(t *testing.T) {
+		fs := afero.NewMemMapFs()
 
-// 				zipFile := setupInavlidTestZip(t, fs)
-// 				defer func() { _ = zipFile.Close() }()
+		dtc := &dtclient.MockDynatraceClient{}
+		dtc.
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
+			Run(func(args mock.Arguments) {
+				writer := args.Get(6).(io.Writer)
 
-// 				_, err := io.Copy(writer, zipFile)
-// 				require.NoError(t, err)
-// 			}).
-// 			Return(nil)
-// 		installAgentCfg := &installAgentConfig{
-// 			fs:  fs,
-// 			dtc: dtc,
-// 		}
+				zipFile := setupInavlidTestZip(t, fs)
+				defer func() { _ = zipFile.Close() }()
 
-// 		err := installAgentCfg.installAgent("", "")
-// 		assert.Error(t, err)
-// 	})
-// 	t.Run(`downloading and unzipping agent`, func(t *testing.T) {
-// 		fs := afero.NewMemMapFs()
-// 		pathResolver := metadata.PathResolver{
-// 			RootDir: testDir,
-// 		}
-// 		dtc := &dtclient.MockDynatraceClient{}
-// 		dtc.
-// 			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
-// 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
-// 			Run(func(args mock.Arguments) {
-// 				writer := args.Get(5).(io.Writer)
+				_, err := io.Copy(writer, zipFile)
+				require.NoError(t, err)
+			}).
+			Return(nil)
+		installer := &OneAgentInstaller{
+			fs:  fs,
+			dtc: dtc,
+			props: InstallerProperties{
+				Os:     dtclient.OsUnix,
+				Type:   dtclient.InstallerTypePaaS,
+				Flavor: dtclient.FlavorMultidistro,
+			},
+		}
 
-// 				zipFile := setupTestZip(t, fs)
-// 				defer func() { _ = zipFile.Close() }()
+		err := installer.installAgent("")
+		assert.Error(t, err)
+	})
+	t.Run(`downloading and unzipping agent`, func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		dtc := &dtclient.MockDynatraceClient{}
+		dtc.
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
+			Run(func(args mock.Arguments) {
+				writer := args.Get(6).(io.Writer)
 
-// 				_, err := io.Copy(writer, zipFile)
-// 				require.NoError(t, err)
-// 			}).
-// 			Return(nil)
-// 		installAgentCfg := &installAgentConfig{
-// 			fs:   fs,
-// 			dtc:  dtc,
-// 			path: pathResolver,
-// 		}
+				zipFile := setupTestZip(t, fs)
+				defer func() { _ = zipFile.Close() }()
 
-// 		err := installAgentCfg.installAgent("", "")
-// 		require.NoError(t, err)
+				_, err := io.Copy(writer, zipFile)
+				require.NoError(t, err)
+			}).
+			Return(nil)
+		installer := &OneAgentInstaller{
+			fs:  fs,
+			dtc: dtc,
+			props: InstallerProperties{
+				Os:     dtclient.OsUnix,
+				Type:   dtclient.InstallerTypePaaS,
+				Flavor: dtclient.FlavorMultidistro,
+			},
+		}
 
-// 		info, err := fs.Stat(filepath.Join(pathResolver.AgentBinaryDir(""), testFilename))
-// 		require.NoError(t, err)
-// 		assert.NotNil(t, info)
-// 		assert.False(t, info.IsDir())
-// 		assert.Equal(t, int64(25), info.Size())
-// 	})
-// }
+		err := installer.installAgent(testDir)
+		require.NoError(t, err)
 
-// func TestOneAgentProvisioner_Unzip(t *testing.T) {
-// 	t.Run(`file nil`, func(t *testing.T) {
-// 		fs := afero.NewMemMapFs()
-// 		installAgentCfg := &installAgentConfig{
-// 			path: metadata.PathResolver{RootDir: testDir},
-// 			fs:   fs,
-// 		}
-// 		err := installAgentCfg.unzip(nil, "", "")
-// 		require.EqualError(t, err, "file is nil")
-// 	})
-// 	t.Run(`unzip test zip file`, func(t *testing.T) {
-// 		fs := afero.NewMemMapFs()
-// 		pathResolver := metadata.PathResolver{RootDir: testDir}
-// 		installAgentCfg := &installAgentConfig{
-// 			path: pathResolver,
-// 			fs:   fs,
-// 		}
-// 		zipFile := setupTestZip(t, fs)
-// 		defer func() { _ = zipFile.Close() }()
+		info, err := fs.Stat(filepath.Join(testDir, testFilename))
+		require.NoError(t, err)
+		assert.NotNil(t, info)
+		assert.False(t, info.IsDir())
+		assert.Equal(t, int64(25), info.Size())
+	})
+}
 
-// 		err := installAgentCfg.unzip(zipFile, "", "")
-// 		require.NoError(t, err)
+func TestOneAgentProvisioner_Unzip(t *testing.T) {
+	t.Run(`file nil`, func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		installer := &OneAgentInstaller{
+			fs: fs,
+		}
+		err := installer.unzip(nil, "")
+		require.EqualError(t, err, "file is nil")
+	})
+	t.Run(`unzip test zip file`, func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		installer := &OneAgentInstaller{
+			fs: fs,
+		}
+		zipFile := setupTestZip(t, fs)
+		defer func() { _ = zipFile.Close() }()
 
-// 		binaryDir := pathResolver.AgentBinaryDir("")
-// 		exists, err := afero.Exists(fs, filepath.Join(binaryDir, testFilename))
-// 		require.NoError(t, err)
-// 		assert.True(t, exists)
+		err := installer.unzip(zipFile, testDir)
+		require.NoError(t, err)
 
-// 		exists, err = afero.Exists(fs, filepath.Join(binaryDir, testDir, testFilename))
-// 		require.NoError(t, err)
-// 		assert.True(t, exists)
+		exists, err := afero.Exists(fs, filepath.Join(testDir, testFilename))
+		require.NoError(t, err)
+		assert.True(t, exists)
 
-// 		exists, err = afero.Exists(fs, filepath.Join(binaryDir, testDir, testDir, testFilename))
-// 		require.NoError(t, err)
-// 		assert.True(t, exists)
+		exists, err = afero.Exists(fs, filepath.Join(testDir, testDir, testFilename))
+		require.NoError(t, err)
+		assert.True(t, exists)
 
-// 		exists, err = afero.Exists(fs, filepath.Join(binaryDir, agentConfPath, testFilename))
-// 		require.NoError(t, err)
-// 		assert.True(t, exists)
+		exists, err = afero.Exists(fs, filepath.Join(testDir, testDir, testDir, testFilename))
+		require.NoError(t, err)
+		assert.True(t, exists)
 
-// 		info, err := fs.Stat(filepath.Join(binaryDir, testFilename))
-// 		require.NoError(t, err)
-// 		require.NotNil(t, info)
-// 		assert.False(t, info.IsDir())
-// 		assert.Equal(t, int64(25), info.Size())
+		exists, err = afero.Exists(fs, filepath.Join(testDir, agentConfPath, testFilename))
+		require.NoError(t, err)
+		assert.True(t, exists)
 
-// 		info, err = fs.Stat(filepath.Join(binaryDir, testDir, testFilename))
-// 		require.NoError(t, err)
-// 		require.NotNil(t, info)
-// 		assert.False(t, info.IsDir())
-// 		assert.Equal(t, int64(25), info.Size())
+		info, err := fs.Stat(filepath.Join(testDir, testFilename))
+		require.NoError(t, err)
+		require.NotNil(t, info)
+		assert.False(t, info.IsDir())
+		assert.Equal(t, int64(25), info.Size())
 
-// 		info, err = fs.Stat(filepath.Join(binaryDir, testDir, testDir, testFilename))
-// 		require.NoError(t, err)
-// 		require.NotNil(t, info)
-// 		assert.False(t, info.IsDir())
-// 		assert.Equal(t, int64(25), info.Size())
+		info, err = fs.Stat(filepath.Join(testDir, testDir, testFilename))
+		require.NoError(t, err)
+		require.NotNil(t, info)
+		assert.False(t, info.IsDir())
+		assert.Equal(t, int64(25), info.Size())
 
-// 		info, err = fs.Stat(filepath.Join(binaryDir, agentConfPath, testFilename))
-// 		require.NoError(t, err)
-// 		require.NotNil(t, info)
-// 		assert.False(t, info.IsDir())
-// 		assert.Equal(t, int64(25), info.Size())
+		info, err = fs.Stat(filepath.Join(testDir, testDir, testDir, testFilename))
+		require.NoError(t, err)
+		require.NotNil(t, info)
+		assert.False(t, info.IsDir())
+		assert.Equal(t, int64(25), info.Size())
 
-// 		mode := info.Mode().Perm() & 020
-// 		// Assert file is group writeable
-// 		assert.NotEqual(t, mode, os.FileMode(0))
-// 	})
-// }
+		info, err = fs.Stat(filepath.Join(testDir, agentConfPath, testFilename))
+		require.NoError(t, err)
+		require.NotNil(t, info)
+		assert.False(t, info.IsDir())
+		assert.Equal(t, int64(25), info.Size())
 
-// func setupTestZip(t *testing.T, fs afero.Fs) afero.File {
-// 	zipf, err := base64.StdEncoding.DecodeString(testZip)
-// 	require.NoError(t, err)
+		mode := info.Mode().Perm() & 020
+		// Assert file is group writeable
+		assert.NotEqual(t, mode, os.FileMode(0))
+	})
+}
 
-// 	zipFile, err := afero.TempFile(fs, "", "")
-// 	require.NoError(t, err)
+func setupTestZip(t *testing.T, fs afero.Fs) afero.File {
+	zipf, err := base64.StdEncoding.DecodeString(testZip)
+	require.NoError(t, err)
 
-// 	_, err = zipFile.Write(zipf)
-// 	require.NoError(t, err)
+	zipFile, err := afero.TempFile(fs, "", "")
+	require.NoError(t, err)
 
-// 	err = zipFile.Sync()
-// 	require.NoError(t, err)
+	_, err = zipFile.Write(zipf)
+	require.NoError(t, err)
 
-// 	_, err = zipFile.Seek(0, io.SeekStart)
-// 	require.NoError(t, err)
+	err = zipFile.Sync()
+	require.NoError(t, err)
 
-// 	return zipFile
-// }
+	_, err = zipFile.Seek(0, io.SeekStart)
+	require.NoError(t, err)
 
-// func setupInavlidTestZip(t *testing.T, fs afero.Fs) afero.File {
-// 	zipFile := setupTestZip(t, fs)
+	return zipFile
+}
 
-// 	_, err := zipFile.Seek(8, io.SeekStart)
-// 	require.NoError(t, err)
+func setupInavlidTestZip(t *testing.T, fs afero.Fs) afero.File {
+	zipFile := setupTestZip(t, fs)
 
-// 	return zipFile
-// }
+	_, err := zipFile.Seek(8, io.SeekStart)
+	require.NoError(t, err)
 
-// func TestUpdateProcessModuleConfig(t *testing.T) {
-// 	path := metadata.PathResolver{}
-// 	memFs := afero.NewMemMapFs()
-// 	prepTestConfFs(memFs)
-// 	agentConfig := &installAgentConfig{
-// 		fs: memFs,
-// 		dk: &dynatracev1beta1.DynaKube{},
-// 	}
-// 	expectedUsed := `
-// [general]
-// key value
+	return zipFile
+}
 
-// [test]
-// test test3
-// `
+func TestUpdateProcessModuleConfig(t *testing.T) {
+	memFs := afero.NewMemMapFs()
+	prepTestConfFs(memFs)
+	installer := &OneAgentInstaller{
+		fs: memFs,
+	}
+	expectedUsed := `
+[general]
+key value
 
-// 	agentConfig.updateProcessModuleConfig(testVersion, testTenantUUID, &testProcessModuleConfig)
+[test]
+test test3
+`
 
-// 	assertTestConf(t, memFs, path.AgentProcessModuleConfigForVersion(testTenantUUID, testVersion), expectedUsed)
-// 	assertTestConf(t, memFs, path.SourceAgentProcessModuleConfigForVersion(testTenantUUID, testVersion), testRuxitConf)
-// }
+	installer.UpdateProcessModuleConfig("", &testProcessModuleConfig)
 
-// func TestCheckProcessModuleConfigCopy(t *testing.T) {
-// 	memFs := afero.NewMemMapFs()
-// 	path := metadata.PathResolver{}
-// 	prepTestConfFs(memFs)
-// 	agentConfig := &installAgentConfig{
-// 		fs: memFs,
-// 	}
-// 	sourcePath := path.SourceAgentProcessModuleConfigForVersion(testTenantUUID, testVersion)
-// 	destPath := path.AgentProcessModuleConfigForVersion(testTenantUUID, testVersion)
+	assertTestConf(t, memFs, ruxitAgentProcPath, expectedUsed)
+	assertTestConf(t, memFs, sourceRuxitAgentProcPath, testRuxitConf)
+}
 
-// 	agentConfig.checkProcessModuleConfigCopy(sourcePath, destPath)
+func TestCheckProcessModuleConfigCopy(t *testing.T) {
+	memFs := afero.NewMemMapFs()
+	prepTestConfFs(memFs)
+	installer := &OneAgentInstaller{
+		fs: memFs,
+	}
+	sourcePath := sourceRuxitAgentProcPath
+	destPath := ruxitAgentProcPath
 
-// 	assertTestConf(t, memFs, sourcePath, testRuxitConf)
-// }
-//
-// func prepTestConfFs(fs afero.Fs) {
-// 	path := metadata.PathResolver{}
-// 	fs.MkdirAll(filepath.Base(path.AgentProcessModuleConfigForVersion(testTenantUUID, testVersion)), 0755)
-// 	usedConf, _ := fs.OpenFile(path.AgentProcessModuleConfigForVersion(testTenantUUID, testVersion), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-// 	usedConf.WriteString(testRuxitConf)
-// }
+	installer.checkProcessModuleConfigCopy(sourcePath, destPath)
 
-// func assertTestConf(t *testing.T, fs afero.Fs, path, expected string) {
-// 	file, err := fs.Open(path)
-// 	require.Nil(t, err)
-// 	content, err := ioutil.ReadAll(file)
-// 	require.Nil(t, err)
-// 	assert.Equal(t, expected, string(content))
-// }
+	assertTestConf(t, memFs, sourcePath, testRuxitConf)
+}
+
+func prepTestConfFs(fs afero.Fs) {
+	fs.MkdirAll(filepath.Base(sourceRuxitAgentProcPath), 0755)
+	usedConf, _ := fs.OpenFile(ruxitAgentProcPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	usedConf.WriteString(testRuxitConf)
+}
+
+func assertTestConf(t *testing.T, fs afero.Fs, path, expected string) {
+	file, err := fs.Open(path)
+	require.Nil(t, err)
+	content, err := ioutil.ReadAll(file)
+	require.Nil(t, err)
+	assert.Equal(t, expected, string(content))
+}

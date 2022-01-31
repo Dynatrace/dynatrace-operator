@@ -13,7 +13,14 @@ import (
 	"github.com/spf13/afero"
 )
 
-const agentConfPath = "agent/conf/"
+const (
+	agentConfPath = "agent/conf/"
+)
+
+var (
+	ruxitAgentProcPath       = filepath.Join("agent", "conf", "ruxitagentproc.conf")
+	sourceRuxitAgentProcPath = filepath.Join("agent", "conf", "_ruxitagentproc.conf")
+)
 
 type InstallerProperties struct {
 	Os           string
@@ -209,8 +216,8 @@ func (installer *OneAgentInstaller) createSymlinkIfNotExists(targetDir string) e
 func (installer *OneAgentInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
 	if processModuleConfig != nil {
 		log.Info("updating ruxitagentproc.conf", "agentVersion", installer.props.Version)
-		usedProcessModuleConfigPath := filepath.Join(targetDir, "agent", "conf", "ruxitagentproc.conf")
-		sourceProcessModuleConfigPath := filepath.Join(targetDir, "agent", "conf", "_ruxitagentproc.conf")
+		usedProcessModuleConfigPath := filepath.Join(targetDir, ruxitAgentProcPath)
+		sourceProcessModuleConfigPath := filepath.Join(targetDir, sourceRuxitAgentProcPath)
 		if err := installer.checkProcessModuleConfigCopy(sourceProcessModuleConfigPath, usedProcessModuleConfigPath); err != nil {
 			return err
 		}
