@@ -234,13 +234,13 @@ func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {
 	if statusCode == http.StatusForbidden || statusCode == http.StatusUnauthorized {
 		var se getSettingsErrorResponse
 		if err := json.Unmarshal(response, &se); err != nil {
-			return fmt.Errorf("response error: %d, can't unmarshal json response: %w", statusCode, err)
+			return fmt.Errorf("response error: %d, can't unmarshal json response", statusCode)
 		}
 		return fmt.Errorf("response error: %d, %s", statusCode, se.ErrorMessage.Message)
 	} else {
 		var se []getSettingsErrorResponse
 		if err := json.Unmarshal(response, &se); err != nil {
-			return fmt.Errorf("response error: %d, can't unmarshal json response: %w", statusCode, err)
+			return fmt.Errorf("response error: %d, can't unmarshal json response", statusCode)
 		}
 
 		var sb strings.Builder
