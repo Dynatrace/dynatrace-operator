@@ -8,13 +8,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-const (
-	cacheName = "dynatrace-node-cache"
-)
-
-var cacheLifetime = 10 * time.Minute
-var lastUpdatedCacheTime = "DTOperatorLastUpdated"
-
 // ErrNotFound is returned when entry hasn't been found on the cache.Ø
 var ErrNotFound = err.New("not found")
 
@@ -102,7 +95,7 @@ func (nodeCache *Cache) ContainsKey(key string) bool {
 }
 
 func (nodeCache *Cache) IsCacheOutdated() bool {
-	if lastUpdated, ok := nodeCache.Obj.Annotations[lastUpdatedCacheTime]; ok {
+	if lastUpdated, ok := nodeCache.Obj.Annotations[lastUpdatedCacheAnnotiation]; ok {
 		if lastUpdatedTime, err := time.Parse(time.RFC3339, lastUpdated); err == nil {
 			return lastUpdatedTime.Add(cacheLifetime).Before(time.Now())
 		} else {
@@ -116,7 +109,7 @@ func (nodeCache *Cache) UpdateTimestamp() {
 	if nodeCache.Obj.Annotations == nil {
 		nodeCache.Obj.Annotations = make(map[string]string)
 	}
-	nodeCache.Obj.Annotations[lastUpdatedCacheTime] = time.Now().Format(time.RFC3339)
+	nodeCache.Obj.Annotations[lastUpdatedCacheAnnotiation] = time.Now().Format(time.RFC3339)
 	nodeCache.upd = true
 }
 

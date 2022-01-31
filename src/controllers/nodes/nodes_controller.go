@@ -22,8 +22,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-var unschedulableTaints = []string{"ToBeDeletedByClusterAutoscaler"}
-
 func Add(mgr manager.Manager, _ string) error {
 	return NewReconciler(mgr).SetupWithManager(mgr)
 }
@@ -144,14 +142,14 @@ func (r *ReconcileNode) reconcileNodeDeletion(nodeName string) error {
 
 	dynakube, err := r.determineDynakubeForNode(nodeName)
 	if err != nil {
-		log.Error(err, "error while getting Dynakube for Node")
+		log.Error(err, "error while getting Dynakube for Node on deletion")
 	}
 
 	cachedNodeInfo, err := nodeCache.Get(nodeName)
 	if err != nil {
 		if err == ErrNotFound {
 			// uncached node -> igonoring
-			log.Error(err, "ignoring uncached node onDeletion", "node", nodeName)
+			log.Error(err, "ignoring uncached node on deletion", "node", nodeName)
 			return nil
 		}
 		log.Error(err, "error while getting cachedNode on deletion")
