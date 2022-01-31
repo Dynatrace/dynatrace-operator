@@ -5,11 +5,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/provisioner/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/klauspost/compress/zip"
 	"github.com/spf13/afero"
@@ -104,11 +104,6 @@ func (installAgentCfg *installAgentConfig) installAgent(version, tenantUUID stri
 	dtc := installAgentCfg.dtc
 	fs := installAgentCfg.fs
 
-	arch := dtclient.ArchX86
-	if runtime.GOARCH == "arm64" {
-		arch = dtclient.ArchARM
-	}
-
 	tmpFile, err := afero.TempFile(fs, "", "download")
 	if err != nil {
 		return fmt.Errorf("failed to create temporary file for download: %w", err)
@@ -120,11 +115,11 @@ func (installAgentCfg *installAgentConfig) installAgent(version, tenantUUID stri
 		}
 	}()
 
-	log.Info("downloading OneAgent package", "architecture", arch)
-	err = dtc.GetAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch, version, tmpFile)
+	log.Info("downloading OneAgent package", "architecture", arch.Arch, "flavor", arch.Flavor)
+	err = dtc.GetAgent(dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.Flavor, arch.Arch, version, tmpFile)
 
 	if err != nil {
-		availableVersions, getVersionsError := dtc.GetAgentVersions(dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, arch)
+		availableVersions, getVersionsError := dtc.GetAgentVersions(dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.Flavor, arch.Arch)
 		if getVersionsError != nil {
 			return fmt.Errorf("failed to fetch OneAgent version: %w", err)
 		}
