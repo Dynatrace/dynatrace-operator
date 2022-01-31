@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/installer"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
@@ -92,8 +93,18 @@ func (runner *Runner) setHostTenant() error {
 
 func (runner *Runner) installOneAgent() error {
 	log.Info("downloading OneAgent zip")
-	// TODO: try to use the implementation from the csi driver
-	return nil
+	oneAgentInstaller := installer.NewOneAgentInstaller(
+		runner.fs,
+		runner.client,
+		installer.InstallerProperties{
+			Os:      dtclient.OsUnix,
+			Type:    dtclient.InstallerTypePaaS,
+			Flavor:  runner.env.installerFlavor,
+			Arch:    "TODO",
+			Version: "TODO",
+		},
+	)
+	return oneAgentInstaller.InstallAgent(BinDirMount)
 }
 
 func (runner *Runner) configureInstallation() error {
