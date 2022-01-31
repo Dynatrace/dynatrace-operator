@@ -26,6 +26,7 @@ type Runner struct {
 	env        *environment
 	client     dtclient.Client
 	config     *SecretConfig
+	installer  *installer.OneAgentInstaller
 	hostTenant string
 }
 
@@ -43,11 +44,24 @@ func NewRunner() (*Runner, error) {
 	if err != nil {
 		return nil, err
 	}
+	oneAgentInstaller := installer.NewOneAgentInstaller(
+		fs,
+		client,
+		installer.InstallerProperties{
+			Os:           dtclient.OsUnix,
+			Type:         dtclient.InstallerTypePaaS,
+			Flavor:       env.installerFlavor,
+			Arch:         env.installerArch,
+			Technologies: env.installerTech,
+			Version:      "latest",
+		},
+	)
 	return &Runner{
-		fs:     fs,
-		env:    env,
-		client: client,
-		config: config,
+		fs:        fs,
+		env:       env,
+		client:    client,
+		config:    config,
+		installer: oneAgentInstaller,
 	}, nil
 }
 
@@ -93,19 +107,7 @@ func (runner *Runner) setHostTenant() error {
 
 func (runner *Runner) installOneAgent() error {
 	log.Info("downloading OneAgent zip")
-	oneAgentInstaller := installer.NewOneAgentInstaller(
-		runner.fs,
-		runner.client,
-		installer.InstallerProperties{
-			Os:           dtclient.OsUnix,
-			Type:         dtclient.InstallerTypePaaS,
-			Flavor:       runner.env.installerFlavor,
-			Arch:         runner.env.installerArch,
-			Technologies: runner.env.installerTech,
-			Version:      "latest",
-		},
-	)
-	return oneAgentInstaller.InstallAgent(BinDirMount)
+	return runner.installer.InstallAgent(BinDirMount)
 }
 
 func (runner *Runner) configureInstallation() error {
@@ -120,13 +122,19 @@ func (runner *Runner) configureInstallation() error {
 				return err
 			}
 		}
+		processModuleConfig, err := runner.client.GetProcessModuleConfig(0)
+		if err != nil {
+			return err
+		}
+		if err := runner.installer.UpdateProcessModuleConfig(BinDirMount, processModuleConfig); err != nil {
+			return err
+		}
 	}
 	if runner.env.dataIngestInjected {
 		if err := runner.enrichMetadata(); err != nil {
 			return err
 		}
 	}
-	// TODO: processconfig stuff
 	return nil
 }
 
@@ -140,7 +148,7 @@ func (runner *Runner) createContainerConfigurationFiles() error {
 			}
 			content += runner.getHostConfContent()
 		}
-		if err := createConfFile(confFilePath, content); err != nil {
+		if err := runner.createConfFile(confFilePath, content); err != nil {
 			return err
 		}
 	}
@@ -158,5 +166,5 @@ func (runner *Runner) enrichMetadata() error {
 }
 
 func (runner *Runner) propagateTLSCert() error {
-	return createConfFile(filepath.Join(ShareDirMount, "custom.pem"), runner.config.TlsCert)
+	return runner.createConfFile(filepath.Join(ShareDirMount, "custom.pem"), runner.config.TlsCert)
 }

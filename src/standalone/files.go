@@ -2,6 +2,7 @@ package standalone
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 )
 
@@ -63,7 +64,7 @@ func (runner *Runner) createJsonEnrichmentFile() error {
 		runner.config.ClusterID,
 	)
 	jsonPath := filepath.Join(EnrichmentPath, "dt_metadata.json")
-	return createConfFile(jsonPath, jsonContent)
+	return runner.createConfFile(jsonPath, jsonContent)
 
 }
 
@@ -84,10 +85,19 @@ dt.kubernetes.cluster.id=%s
 		runner.config.ClusterID,
 	)
 	propsPath := filepath.Join(EnrichmentPath, "dt_metadata.properties")
-	return createConfFile(propsPath, propsContent)
+	return runner.createConfFile(propsPath, propsContent)
 }
 
-func createConfFile(path string, content string) error {
-	// TODO: create conf file
+func (runner *Runner) createConfFile(path string, content string) error {
+	if err := runner.fs.MkdirAll(filepath.Dir(path), 0770); err != nil {
+		return err
+	}
+	file, err := runner.fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
+	if err != nil {
+		return err
+	}
+	if _, err := file.Write([]byte(content)); err != nil {
+		return err
+	}
 	return nil
 }

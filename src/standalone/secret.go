@@ -2,6 +2,7 @@ package standalone
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"path/filepath"
 
 	"github.com/spf13/afero"
@@ -26,7 +27,7 @@ type SecretConfig struct {
 	// For the client
 	ApiUrl        string `json:"apiUrl"`
 	ApiToken      string `json:"apiToken"`
-	PaasToken     string `json:"passToken"`
+	PaasToken     string `json:"paasToken"`
 	Proxy         string `json:"proxy"`
 	NetworkZone   string `json:"networkZone"`
 	TrustedCAs    string `json:"trustedCAs"`
@@ -48,12 +49,13 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	var rawJson []byte
-	_, err = file.Read(rawJson)
+	rawJson, err := ioutil.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}
-	var config *SecretConfig
-	json.Unmarshal(rawJson, config)
-	return config, nil
+	var config SecretConfig
+	if err := json.Unmarshal(rawJson, &config); err != nil {
+		return nil, err
+	}
+	return &config, nil
 }
