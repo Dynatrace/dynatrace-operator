@@ -7,7 +7,7 @@ if [[ ! "${TAG}" ]]; then
 fi
 
 commit=$(git rev-parse HEAD)
-build_date="$(date -u +"%Y-%m-%d %H:%M:%S+00:00")"
+build_date="$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")"
 go_build_args=(
   "-ldflags=-X 'github.com/Dynatrace/dynatrace-operator/src/version.Version=${TAG}'"
   "-X 'github.com/Dynatrace/dynatrace-operator/src/version.Commit=${commit}'"
