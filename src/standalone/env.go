@@ -8,11 +8,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-type installMode string
+type InstallMode string
 
 const (
-	installerMode installMode = "installer"
-	// csiMode       installMode = "csi"
+	InstallerMode InstallMode = "installer"
+	CsiMode       InstallMode = "csi"
 
 	ModeEnv    = "MODE"
 	CanFailEnv = "FAIL_POLICY"
@@ -45,7 +45,7 @@ type containerInfo struct {
 }
 
 type environment struct {
-	mode    installMode
+	mode    InstallMode
 	canFail bool
 
 	installerFlavor string
@@ -117,7 +117,7 @@ func (env *environment) addMode() error {
 	if err != nil {
 		return err
 	}
-	env.mode = installMode(mode)
+	env.mode = InstallMode(mode)
 	return nil
 }
 

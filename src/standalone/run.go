@@ -30,8 +30,7 @@ type Runner struct {
 	hostTenant string
 }
 
-func NewRunner() (*Runner, error) {
-	fs := afero.Afero{Fs: afero.NewOsFs()}
+func NewRunner(fs afero.Fs) (*Runner, error) {
 	config, err := newSecretConfigViaFs(fs)
 	if err != nil {
 		return nil, err
@@ -76,7 +75,7 @@ func (runner *Runner) Run() error {
 		return err
 	}
 
-	if runner.env.mode != installerMode {
+	if runner.env.mode != InstallerMode {
 		if err = runner.installOneAgent(); err != nil {
 			return err
 		}

@@ -46,7 +46,7 @@ func (fs failFs) OpenFile(string, int, os.FileMode) (afero.File, error) {
 	return nil, fmt.Errorf(testErrorMessage)
 }
 
-func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
+func TestInstallAgent(t *testing.T) {
 	t.Run(`error when creating temp file`, func(t *testing.T) {
 		fs := failFs{
 			Fs: afero.NewMemMapFs(),
@@ -148,7 +148,7 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 	})
 }
 
-func TestOneAgentProvisioner_Unzip(t *testing.T) {
+func TestUnzip(t *testing.T) {
 	t.Run(`file nil`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		installer := &OneAgentInstaller{
