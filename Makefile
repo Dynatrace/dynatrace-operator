@@ -9,8 +9,8 @@ PLATFORM ?= openshift
 # Default bundle image tag
 BUNDLE_IMG ?= controller-bundle:$(VERSION)
 
-MASTER_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot
-BRANCH_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
+MASTER_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot
+BRANCH_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
 OLM_IMAGE ?= registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
 
 OUT ?= all
@@ -111,6 +111,7 @@ manifests: controller-gen kustomize
 	mkdir -p config/deploy/kubernetes
 	mkdir -p config/deploy/openshift
 
+ifeq ($(PLATFORM), kubernetes)
 	# Generate kubernetes.yaml
 	helm template dynatrace-operator config/helm/chart/default \
 		--namespace dynatrace \
@@ -136,6 +137,12 @@ manifests: controller-gen kustomize
 	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > config/deploy/kubernetes/kubernetes-csi.yaml
 	rm config/deploy/kubernetes/tmp.yaml
 
+	$(KUSTOMIZE) build config/crd | cat - config/deploy/kubernetes/kubernetes.yaml > temp
+	mv temp config/deploy/kubernetes/kubernetes.yaml
+
+	cat config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/kubernetes-csi.yaml > config/deploy/kubernetes/kubernetes-$(OUT).yaml
+endif
+ifeq ($(PLATFORM), openshift)
 	# Generate openshift.yaml
 	helm template dynatrace-operator config/helm/chart/default \
 		--namespace dynatrace \
@@ -163,15 +170,11 @@ manifests: controller-gen kustomize
 	grep -v 'helm.sh' config/deploy/openshift/tmp.yaml > config/deploy/openshift/openshift-csi.yaml
 	rm config/deploy/openshift/tmp.yaml
 
-	$(KUSTOMIZE) build config/crd | cat - config/deploy/kubernetes/kubernetes.yaml > temp
-	mv temp config/deploy/kubernetes/kubernetes.yaml
-
 	$(KUSTOMIZE) build config/crd | cat - config/deploy/openshift/openshift.yaml > temp
 	mv temp config/deploy/openshift/openshift.yaml
 
-	cat config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/kubernetes-csi.yaml > config/deploy/kubernetes/kubernetes-$(OUT).yaml
 	cat config/deploy/openshift/openshift.yaml config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/openshift-$(OUT).yaml
-
+endif
 	make reset-kustomization-files
 
 reset-kustomization-files: kustomize
@@ -273,8 +276,13 @@ bundle: manifests kustomize
 	mv ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile.output ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile
 ifeq ($(PLATFORM), openshift)
 	sed 's/\bkubectl\b/oc/g' ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml > ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output
-	mv ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml
+	sed 's|registry.connect.redhat.com/dynatrace/dynatrace-operator|registry.connect.redhat.com/dynatrace/dynatrace-operator:v$(VERSION)|' ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output > ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml
+	rm ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output
 	echo '  com.redhat.openshift.versions: v4.7-v4.9' >> ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml
+endif
+ifeq ($(PLATFORM), kubernetes)
+	sed 's|registry.connect.redhat.com/dynatrace/dynatrace-operator|docker.io/dynatrace/dynatrace-operator:v$(VERSION)|' ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml > ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output
+	mv  ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml
 endif
 	grep -v 'scorecard' ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml > ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml.output
 	grep -v '  # Annotations for testing.' ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml.output > ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml
