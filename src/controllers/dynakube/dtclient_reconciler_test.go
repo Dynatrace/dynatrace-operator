@@ -231,6 +231,8 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeReadConfig,
 			dtclient.TokenScopeWriteConfig,
+			dtclient.TokenScopeSettingsRead,
+			dtclient.TokenScopeSettingsWrite,
 		}, nil)
 
 		rec := &DynatraceClientReconciler{
