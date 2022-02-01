@@ -123,15 +123,17 @@ jobs:
             LABELS="quay.expires-after=10d"
           fi
 
-          build_date="$(date -u +"%Y-%m-%d %H:%M:%S+00:00")"
+          build_date="$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")"
 
-          go_build_args="-linkmode external -extldflags '-static' -s -w \
-          -X 'github.com/Dynatrace/dynatrace-operator/version.Version=${VERSION}' \
-          -X 'github.com/Dynatrace/dynatrace-operator/version.Commit=${GITHUB_SHA}' \
-          -X 'github.com/Dynatrace/dynatrace-operator/version.BuildDate=${build_date}'"
+          go_build_args=(
+            "-ldflags=-X 'github.com/Dynatrace/dynatrace-operator/src/version.Version=${VERSION}'"
+            "-X 'github.com/Dynatrace/dynatrace-operator/src/version.Commit=${GITHUB_SHA}'"
+            "-X 'github.com/Dynatrace/dynatrace-operator/src/version.BuildDate=${build_date}'"
+            "-linkmode external -extldflags '-static' -s -w"
+          )
 
           # Set output parameters.
-          echo ::set-output name=goargs::${go_build_args}
+          echo ::set-output name=goargs::"${go_build_args[@]}"
           echo ::set-output name=labels::${LABELS}
 
           # Get licenses if no cache exists
