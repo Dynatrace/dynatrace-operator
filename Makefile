@@ -178,16 +178,18 @@ endif
 	make reset-kustomization-files
 
 reset-kustomization-files: kustomize
+ifeq ($(PLATFORM), kubernetes)
 	rm -f config/deploy/kubernetes/kustomization.yaml
 	mkdir -p config/deploy/kubernetes
 	cd config/deploy/kubernetes && $(KUSTOMIZE) create
 	cd config/deploy/kubernetes && $(KUSTOMIZE) edit add base kubernetes-$(OUT).yaml
-
+endif
+ifeq ($(PLATFORM), openshift)
 	rm -f config/deploy/openshift/kustomization.yaml
 	mkdir -p config/deploy/openshift
 	cd config/deploy/openshift && $(KUSTOMIZE) create
 	cd config/deploy/openshift && $(KUSTOMIZE) edit add base openshift-$(OUT).yaml
-
+endif
 
 # Run go fmt against code
 fmt:
@@ -276,13 +278,14 @@ bundle: manifests kustomize
 	mv ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile.output ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile
 ifeq ($(PLATFORM), openshift)
 	sed 's/\bkubectl\b/oc/g' ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml > ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output
-	sed 's|registry.connect.redhat.com/dynatrace/dynatrace-operator|registry.connect.redhat.com/dynatrace/dynatrace-operator:v$(VERSION)|' ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output > ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml
+	sed 's|containerImage: registry.connect.redhat.com/dynatrace/dynatrace-operator|containerImage: registry.connect.redhat.com/dynatrace/dynatrace-operator:v$(VERSION)|' ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output > ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml
 	rm ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output
 	echo '  com.redhat.openshift.versions: v4.7-v4.9' >> ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml
 endif
 ifeq ($(PLATFORM), kubernetes)
-	sed 's|registry.connect.redhat.com/dynatrace/dynatrace-operator|docker.io/dynatrace/dynatrace-operator:v$(VERSION)|' ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml > ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output
-	mv  ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml
+	sed 's|registry.connect.redhat.com/dynatrace/dynatrace-operator:v$(VERSION)|docker.io/dynatrace/dynatrace-operator:v$(VERSION)|' ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml > ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output
+	sed 's|containerImage: registry.connect.redhat.com/dynatrace/dynatrace-operator|containerImage: docker.io/dynatrace/dynatrace-operator:v$(VERSION)|' ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output > ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml
+	rm  ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output
 endif
 	grep -v 'scorecard' ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml > ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml.output
 	grep -v '  # Annotations for testing.' ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml.output > ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml
