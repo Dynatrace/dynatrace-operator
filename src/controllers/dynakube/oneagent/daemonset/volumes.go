@@ -1,6 +1,8 @@
 package daemonset
 
 import (
+	"path/filepath"
+
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -33,7 +35,7 @@ func getCertificateMount() corev1.VolumeMount {
 func getTLSMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      "tls",
-		MountPath: OneAgentCustomKeysPath,
+		MountPath: filepath.Join("/mnt/root", OneAgentCustomKeysPath),
 	}
 }
 
