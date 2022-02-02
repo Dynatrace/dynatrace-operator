@@ -143,21 +143,6 @@ func TestTenantUUID(t *testing.T) {
 		)
 	})
 
-	t.Run("missing /api suffix in an API URL", func(t *testing.T) {
-		apiUrl := "https://google.com"
-		expectedTenantId := ""
-		expectedError := "api url https://google.com does not end with /api"
-
-		actualTenantId, err := tenantUUID(apiUrl)
-
-		assert.EqualErrorf(t, err, expectedError, "Expected that getting tenant id from '%s' will result in: '%v'",
-			apiUrl, expectedError,
-		)
-		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
-			apiUrl, expectedTenantId, actualTenantId,
-		)
-	})
-
 	t.Run("suffix-only, relative API URL", func(t *testing.T) {
 		apiUrl := "/api"
 		expectedTenantId := ""

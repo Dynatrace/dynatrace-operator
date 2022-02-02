@@ -256,10 +256,6 @@ func (dk *DynaKube) TenantUUID() (string, error) {
 }
 
 func tenantUUID(apiUrl string) (string, error) {
-	if !strings.HasSuffix(apiUrl, "/api") {
-		return "", fmt.Errorf("api url %s does not end with /api", apiUrl)
-	}
-
 	parsedUrl, err := url.Parse(apiUrl)
 	if err != nil {
 		return "", errors.WithMessagef(err, "problem parsing tenant id from url %s", apiUrl)
