@@ -115,7 +115,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          VERSION=""
+          VERSION="snapshot"
           LABELS=""
 
           branch="${GITHUB_REF#refs/heads/}"
