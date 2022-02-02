@@ -20,7 +20,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -345,6 +345,10 @@ func (in *DynaKubeStatus) DeepCopyInto(out *DynaKubeStatus) {
 	}
 	if in.LastPaaSTokenProbeTimestamp != nil {
 		in, out := &in.LastPaaSTokenProbeTimestamp, &out.LastPaaSTokenProbeTimestamp
+		*out = (*in).DeepCopy()
+	}
+	if in.LastDataIngestTokenProbeTimestamp != nil {
+		in, out := &in.LastDataIngestTokenProbeTimestamp, &out.LastDataIngestTokenProbeTimestamp
 		*out = (*in).DeepCopy()
 	}
 	if in.LastClusterVersionProbeTimestamp != nil {

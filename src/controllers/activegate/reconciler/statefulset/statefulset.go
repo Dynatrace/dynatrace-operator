@@ -45,11 +45,12 @@ type statefulSetProperties struct {
 	initContainersTemplates []corev1.Container
 	containerVolumeMounts   []corev1.VolumeMount
 	volumes                 []corev1.Volume
+	tenantUUID              string
+	tenantToken             string
+	communicationURLs       string
 }
 
-func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties,
-	kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string,
-	initContainers []corev1.Container, containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume) *statefulSetProperties {
+func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties, kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string, initContainers []corev1.Container, containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume, tenantToken string, tenantUUID string, communicationURLs string) *statefulSetProperties {
 	if serviceAccountOwner == "" {
 		serviceAccountOwner = feature
 	}
@@ -66,6 +67,9 @@ func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityPro
 		initContainersTemplates: initContainers,
 		containerVolumeMounts:   containerVolumeMounts,
 		volumes:                 volumes,
+		tenantUUID:              tenantUUID,
+		tenantToken:             tenantToken,
+		communicationURLs:       communicationURLs,
 	}
 }
 
@@ -265,6 +269,9 @@ func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
 	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(stsProperties.kubeSystemUID), deploymentmetadata.DeploymentTypeActiveGate)
 
 	envs := []corev1.EnvVar{
+		{Name: "DT_SERVER", Value: stsProperties.communicationURLs},
+		{Name: "DT_TOKEN", Value: stsProperties.tenantToken},
+		{Name: "DT_TENANT", Value: stsProperties.tenantUUID},
 		{Name: DTCapabilities, Value: stsProperties.capabilityName},
 		{Name: DTIdSeedNamespace, Value: stsProperties.Namespace},
 		{Name: DTIdSeedClusterId, Value: string(stsProperties.kubeSystemUID)},

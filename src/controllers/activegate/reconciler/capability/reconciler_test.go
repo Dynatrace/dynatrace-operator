@@ -169,7 +169,7 @@ func TestReconcile(t *testing.T) {
 
 func TestSetReadinessProbePort(t *testing.T) {
 	r := createDefaultReconciler(t)
-	stsProps := rsfs.NewStatefulSetProperties(r.Instance, metricsCapability.Properties(), "", "", "", "", "", nil, nil, nil)
+	stsProps := rsfs.NewStatefulSetProperties(r.Instance, metricsCapability.Properties(), "", "", "", "", "", nil, nil, nil, "", "", "")
 	sts, err := rsfs.CreateStatefulSet(stsProps)
 
 	assert.NoError(t, err)
