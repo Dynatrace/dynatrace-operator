@@ -32,10 +32,11 @@ func newAgentUpdater(
 		fs,
 		dtc,
 		installer.InstallerProperties{
-			Os:     dtclient.OsUnix,
-			Type:   dtclient.InstallerTypePaaS,
-			Arch:   arch.Arch,
-			Flavor: arch.Flavor,
+			Os:           dtclient.OsUnix,
+			Type:         dtclient.InstallerTypePaaS,
+			Arch:         arch.Arch,
+			Flavor:       arch.Flavor,
+			Technologies: []string{"all"},
 		},
 	)
 	return &agentUpdater{
@@ -55,6 +56,7 @@ func (updater *agentUpdater) updateAgent(version, tenantUUID string, previousHas
 	if _, err := updater.fs.Stat(targetDir); currentVersion != version || os.IsNotExist(err) {
 		log.Info("updating agent", "version", currentVersion, "previous version", version)
 
+		updater.installer.SetVersion(currentVersion)
 		if err := updater.installer.InstallAgent(targetDir); err != nil {
 			updater.recorder.Eventf(dk,
 				corev1.EventTypeWarning,

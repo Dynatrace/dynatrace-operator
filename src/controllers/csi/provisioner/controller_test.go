@@ -256,7 +256,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string"),
-			mock.AnythingOfType("string"),
+			mock.AnythingOfType("[]string"),
 			mock.AnythingOfType("*mem.File")).Return(fmt.Errorf(errorMsg))
 		mockClient.
 			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, mock.AnythingOfType("string")).
@@ -367,7 +367,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			mock.AnythingOfType("string")).Return(agentVersion, nil)
 		mockClient.
 			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
-				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
+				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
 				writer := args.Get(6).(io.Writer)
 

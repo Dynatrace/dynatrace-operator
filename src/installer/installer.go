@@ -15,6 +15,7 @@ import (
 
 const (
 	agentConfPath = "agent/conf/"
+	VersionLatest = "latest"
 )
 
 var (
@@ -28,12 +29,20 @@ type InstallerProperties struct {
 	Type         string
 	Flavor       string
 	Version      string
-	Technologies string
+	Technologies []string
+	Url          string // if this is set all others will be ignored
+}
+
+func (props *InstallerProperties) fillEmptyWithDefaults() {
+	if props.Technologies == nil || len(props.Technologies) == 0 {
+		props.Technologies = []string{"all"}
+	}
 }
 
 type Installer interface {
 	InstallAgent(targetDir string) error
 	UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error
+	SetVersion(version string)
 }
 
 var _ Installer = &OneAgentInstaller{}
@@ -58,6 +67,7 @@ func NewOneAgentInstaller(
 
 func (installer *OneAgentInstaller) InstallAgent(targetDir string) error {
 	log.Info("installing agent", "target dir", targetDir)
+	installer.props.fillEmptyWithDefaults()
 	if err := installer.installAgent(targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
 
@@ -67,10 +77,12 @@ func (installer *OneAgentInstaller) InstallAgent(targetDir string) error {
 	return nil
 }
 
+func (installer *OneAgentInstaller) SetVersion(version string) {
+	installer.props.Version = version
+}
+
 func (installer *OneAgentInstaller) installAgent(targetDir string) error {
 	fs := installer.fs
-	dtc := installer.dtc
-
 	tmpFile, err := afero.TempFile(fs, "", "download")
 	if err != nil {
 		return fmt.Errorf("failed to create temporary file for download: %w", err)
@@ -82,32 +94,18 @@ func (installer *OneAgentInstaller) installAgent(targetDir string) error {
 		}
 	}()
 
-	if installer.props.Version == "" {
-		installer.props.Version = "latest"
-	}
-
-	log.Info("downloading OneAgent package", "props", installer.props)
-	err = dtc.GetAgent(
-		installer.props.Os,
-		installer.props.Type,
-		installer.props.Flavor,
-		installer.props.Arch,
-		installer.props.Version,
-		installer.props.Technologies,
-		tmpFile,
-	)
-
-	if err != nil {
-		availableVersions, getVersionsError := dtc.GetAgentVersions(
-			installer.props.Os,
-			installer.props.Type,
-			installer.props.Flavor,
-			installer.props.Arch,
-		)
-		if getVersionsError != nil {
-			return fmt.Errorf("failed to fetch OneAgent version: %w", err)
+	if installer.props.Url != "" {
+		if err := installer.downloadOneAgentViaInstallerUrl(tmpFile); err != nil {
+			return err
 		}
-		return fmt.Errorf("failed to fetch OneAgent version: %w, available versions are: %s", err, "[ "+strings.Join(availableVersions, " , ")+" ]")
+	} else if installer.props.Version == VersionLatest {
+		if err := installer.downloadLatestOneAgent(tmpFile); err != nil {
+			return err
+		}
+	} else {
+		if err := installer.downloadOneAgentWithVersion(tmpFile); err != nil {
+			return err
+		}
 	}
 
 	var fileSize int64
@@ -127,6 +125,50 @@ func (installer *OneAgentInstaller) installAgent(targetDir string) error {
 	}
 
 	return nil
+}
+
+func (installer *OneAgentInstaller) downloadLatestOneAgent(tmpFile afero.File) error {
+	log.Info("downloading latest OneAgent package", "props", installer.props)
+	return installer.dtc.GetLatestAgent(
+		installer.props.Os,
+		installer.props.Type,
+		installer.props.Flavor,
+		installer.props.Arch,
+		installer.props.Technologies,
+		tmpFile,
+	)
+}
+
+func (installer *OneAgentInstaller) downloadOneAgentWithVersion(tmpFile afero.File) error {
+	log.Info("downloading specific OneAgent package", "version", installer.props.Version)
+	err := installer.dtc.GetAgent(
+		installer.props.Os,
+		installer.props.Type,
+		installer.props.Flavor,
+		installer.props.Arch,
+		installer.props.Version,
+		installer.props.Technologies,
+		tmpFile,
+	)
+
+	if err != nil {
+		availableVersions, getVersionsError := installer.dtc.GetAgentVersions(
+			installer.props.Os,
+			installer.props.Type,
+			installer.props.Flavor,
+			installer.props.Arch,
+		)
+		if getVersionsError != nil {
+			return fmt.Errorf("failed to fetch OneAgent version: %w", err)
+		}
+		return fmt.Errorf("failed to fetch OneAgent version: %w, available versions are: %s", err, "[ "+strings.Join(availableVersions, " , ")+" ]")
+	}
+	return nil
+}
+
+func (installer *OneAgentInstaller) downloadOneAgentViaInstallerUrl(tmpFile afero.File) error {
+	log.Info("downloading OneAgent package using provided url", "url", installer.props.Url)
+	return installer.dtc.GetAgentViaInstallerUrl(installer.props.Url, tmpFile)
 }
 
 func (installer *OneAgentInstaller) unzip(file afero.File, targetDir string) error {

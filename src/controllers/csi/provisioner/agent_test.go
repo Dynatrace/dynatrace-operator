@@ -79,6 +79,9 @@ func TestUpdateAgent(t *testing.T) {
 		previousHash := ""
 		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
 		updater.installer.(*installer.InstallerMock).
+			On("SetVersion", testVersion).
+			Return()
+		updater.installer.(*installer.InstallerMock).
 			On("InstallAgent", targetDir).
 			Return(nil)
 		updater.installer.(*installer.InstallerMock).
@@ -118,6 +121,9 @@ func TestUpdateAgent(t *testing.T) {
 		previousHash := "1"
 		processModuleCache := createTestProcessModuleConfigCache(previousHash)
 		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+		updater.installer.(*installer.InstallerMock).
+			On("SetVersion", testVersion).
+			Return()
 		updater.installer.(*installer.InstallerMock).
 			On("InstallAgent", targetDir).
 			Return(nil)
@@ -213,6 +219,9 @@ func TestUpdateAgent(t *testing.T) {
 		processModuleCache := createTestProcessModuleConfigCache("1")
 		previousHash := ""
 		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+		updater.installer.(*installer.InstallerMock).
+			On("SetVersion", testVersion).
+			Return()
 		updater.installer.(*installer.InstallerMock).
 			On("InstallAgent", targetDir).
 			Return(fmt.Errorf("BOOM"))

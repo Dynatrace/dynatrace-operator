@@ -21,13 +21,18 @@ func (o *MockDynatraceClient) GetLatestAgentVersion(os, installerType string) (s
 	return args.String(0), args.Error(1)
 }
 
-func (o *MockDynatraceClient) GetLatestAgent(os, installerType, flavor, arch string, writer io.Writer) error {
-	args := o.Called(os, installerType, flavor, arch, writer)
+func (o *MockDynatraceClient) GetLatestAgent(os, installerType, flavor, arch string, technologies []string, writer io.Writer) error {
+	args := o.Called(os, installerType, flavor, arch, technologies, writer)
 	return args.Error(0)
 }
 
-func (o *MockDynatraceClient) GetAgent(os, installerType, flavor, arch, version, technologies string, writer io.Writer) error {
+func (o *MockDynatraceClient) GetAgent(os, installerType, flavor, arch, version string, technologies []string, writer io.Writer) error {
 	args := o.Called(os, installerType, flavor, arch, version, technologies, writer)
+	return args.Error(0)
+}
+
+func (o *MockDynatraceClient) GetAgentViaInstallerUrl(url string, writer io.Writer) error {
+	args := o.Called(url, writer)
 	return args.Error(0)
 }
 

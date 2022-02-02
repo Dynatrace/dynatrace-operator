@@ -12,15 +12,17 @@ import (
 
 const (
 	noHostTenant = "-"
+
+	enrichmentFilenameTemplate    = "dt_metadata.%s"
+	containerConfFilenameTemplate = "container_%s.conf"
+	ldPreloadFilename             = "ld.so.preload"
 )
 
 var (
-	BinDirMount                   = filepath.Join("mnt", "bin")
-	ShareDirMount                 = filepath.Join("mnt", "share")
-	ConfigDirMount                = filepath.Join("mnt", "config")
-	EnrichmentPath                = filepath.Join("var", "lib", "dynatrace", "enrichment")
-	EnrichmentFilenameTemplate    = "dt_metadata.%s"
-	ContainerConfFilenameTemplate = "container_%s.conf"
+	BinDirMount    = filepath.Join("mnt", "bin")
+	ShareDirMount  = filepath.Join("mnt", "share")
+	ConfigDirMount = filepath.Join("mnt", "config")
+	EnrichmentPath = filepath.Join("var", "lib", "dynatrace", "enrichment")
 )
 
 type Runner struct {
@@ -54,7 +56,8 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 			Flavor:       env.installerFlavor,
 			Arch:         env.installerArch,
 			Technologies: env.installerTech,
-			Version:      "latest",
+			Version:      installer.VersionLatest,
+			Url:          env.installerUrl,
 		},
 	)
 	return &Runner{
@@ -70,14 +73,12 @@ func (runner *Runner) Run() error {
 	log.Info("standalone init started")
 	var err error
 	defer runner.consumeErrorIfNecessary(&err)
-	log.Info("%+v", runner.config)
-	log.Info("%+v", runner.env)
 
 	if err = runner.setHostTenant(); err != nil {
 		return err
 	}
 
-	if runner.env.mode != InstallerMode {
+	if runner.env.mode == InstallerMode {
 		if err = runner.installOneAgent(); err != nil {
 			return err
 		}
@@ -115,6 +116,9 @@ func (runner *Runner) configureInstallation() error {
 	log.Info("configuring standalone OneAgent")
 
 	if runner.env.oneAgentInjected {
+		if err := runner.setLDPreload(); err != nil {
+			return err
+		}
 		if err := runner.createContainerConfigurationFiles(); err != nil {
 			return err
 		}
@@ -139,9 +143,13 @@ func (runner *Runner) configureInstallation() error {
 	return nil
 }
 
+func (runner *Runner) setLDPreload() error {
+	return runner.createConfFile(filepath.Join(ShareDirMount, ldPreloadFilename), fmt.Sprintf("%s/agent/lib64/liboneagentproc.so", runner.env.installPath))
+}
+
 func (runner *Runner) createContainerConfigurationFiles() error {
 	for _, container := range runner.env.containers {
-		confFilePath := filepath.Join(ShareDirMount, fmt.Sprintf(ContainerConfFilenameTemplate, container.name))
+		confFilePath := filepath.Join(ShareDirMount, fmt.Sprintf(containerConfFilenameTemplate, container.name))
 		content := runner.getBaseConfContent(container)
 		if runner.hostTenant != noHostTenant {
 			if runner.config.TenantUUID == runner.hostTenant {

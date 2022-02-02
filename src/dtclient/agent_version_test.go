@@ -186,7 +186,7 @@ func TestGetLatestAgent(t *testing.T) {
 		file, err := afero.TempFile(fs, "client", "installer")
 		require.NoError(t, err)
 
-		err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, FlavorMultidistro, "arch", file)
+		err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, FlavorMultidistro, "arch", nil, file)
 		require.NoError(t, err)
 
 		resp, err := afero.ReadFile(fs, file.Name())
@@ -198,7 +198,7 @@ func TestGetLatestAgent(t *testing.T) {
 		file, err := afero.TempFile(fs, "client", "installer")
 		require.NoError(t, err)
 
-		err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, FlavorMultidistro, "invalid", file)
+		err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, FlavorMultidistro, "invalid", nil, file)
 		require.Error(t, err)
 	})
 }
@@ -214,7 +214,7 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 			paasToken:  paasToken,
 		}
 		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
-		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", "", readWriter)
+		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", nil, readWriter)
 
 		assert.NoError(t, err)
 		assert.Equal(t, versionedAgentResponse, string(readWriter.data))
@@ -229,7 +229,7 @@ func TestDynatraceClient_GetAgent(t *testing.T) {
 			paasToken:  paasToken,
 		}
 		readWriter := &memoryReadWriter{data: make([]byte, len(versionedAgentResponse))}
-		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", "", readWriter)
+		err := dtc.GetAgent(OsUnix, InstallerTypePaaS, "", "", "", nil, readWriter)
 
 		assert.EqualError(t, err, "dynatrace server error 400: test-error")
 	})

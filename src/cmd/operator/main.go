@@ -36,11 +36,11 @@ var (
 const (
 	operatorCmd      = "operator"
 	csiDriverCmd     = "csi-driver"
-	standaloneCmd    = "standalone-init"
+	standaloneCmd    = "init"
 	webhookServerCmd = "webhook-server"
 )
 
-var errBadSubcmd = fmt.Errorf("subcommand must be %s, %s or %s", operatorCmd, csiDriverCmd, webhookServerCmd)
+var errBadSubcmd = fmt.Errorf("subcommand must be %s, %s, %s or %s", operatorCmd, csiDriverCmd, webhookServerCmd, standaloneCmd)
 
 func main() {
 	pflag.CommandLine.AddFlagSet(webhookServerFlags())

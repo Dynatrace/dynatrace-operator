@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 )
 
@@ -14,18 +16,19 @@ const (
 	InstallerMode InstallMode = "installer"
 	CsiMode       InstallMode = "csi"
 
-	ModeEnv    = "MODE"
-	CanFailEnv = "FAIL_POLICY"
+	ModeEnv         = "MODE"
+	CanFailEnv      = "FAIL_POLICY"
+	InstallerUrlEnv = "INSTALLER_URL"
 
 	InstallerFlavorEnv = "FLAVOR"
 	InstallerTechEnv   = "TECHNOLOGIES"
 	InstallerArchEnv   = "ARCH"
 
-	K8NodeNameEnv    = "K8_NODENAME"
-	K8PodNameEnv     = "K8_PODNAME"
-	K8PodUIDEnv      = "K8_PODUID"
-	K8BasePodNameEnv = "K8_BASEPODNAME"
-	K8NamespaceEnv   = "K8_NAMESPACE"
+	K8NodeNameEnv    = "K8S_NODE_NAME"
+	K8PodNameEnv     = "K8S_PODNAME"
+	K8PodUIDEnv      = "K8S_PODUID"
+	K8BasePodNameEnv = "K8S_BASEPODNAME"
+	K8NamespaceEnv   = "K8S_NAMESPACE"
 
 	WorkloadKindEnv = "DT_WORKLOAD_KIND"
 	WorkloadNameEnv = "DT_WORKLOAD_NAME"
@@ -45,11 +48,12 @@ type containerInfo struct {
 }
 
 type environment struct {
-	mode    InstallMode
-	canFail bool
+	mode         InstallMode
+	canFail      bool
+	installerUrl string
 
 	installerFlavor string
-	installerTech   string
+	installerTech   []string
 	installerArch   string
 	installPath     string
 	containers      []containerInfo
@@ -85,7 +89,6 @@ func (env *environment) setRequiredFields() error {
 		env.addInstallerFlavor,
 		env.addInstallerTech,
 		env.addInstallPath,
-		env.addInstallerArch,
 		env.addContainers,
 		env.addK8NodeName,
 		env.addK8PodName,
@@ -110,6 +113,8 @@ func (env *environment) setRequiredFields() error {
 func (env *environment) setOptionalFields() {
 	env.addWorkloadKind()
 	env.addWorkloadName()
+	env.addInstallerUrl()
+	env.addInstallerArch()
 }
 
 func (env *environment) addMode() error {
@@ -148,17 +153,18 @@ func (env *environment) addInstallerTech() error {
 	if err != nil {
 		return err
 	}
-	env.installerTech = technologies
+	env.installerTech = strings.Split(technologies, ",")
 	return nil
 }
 
-func (env *environment) addInstallerArch() error {
+func (env *environment) addInstallerArch() {
 	arch, err := checkEnvVar(InstallerArchEnv)
 	if err != nil {
-		return err
+		env.installerArch = dtclient.ArchX86
+	} else {
+		env.installerArch = arch
 	}
-	env.installerArch = arch
-	return nil
+
 }
 
 func (env *environment) addInstallPath() error {
@@ -254,6 +260,11 @@ func (env *environment) addWorkloadKind() {
 func (env *environment) addWorkloadName() {
 	workloadName, _ := checkEnvVar(WorkloadNameEnv)
 	env.workloadName = workloadName
+}
+
+func (env *environment) addInstallerUrl() {
+	url, _ := checkEnvVar(InstallerUrlEnv)
+	env.installerUrl = url
 }
 
 func (env *environment) addOneAgentInjected() error {
