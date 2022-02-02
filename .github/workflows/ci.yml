@@ -115,11 +115,13 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          VERSION="snapshot"
           LABELS=""
 
           branch="${GITHUB_REF#refs/heads/}"
-          if [[ "$branch" != "master" ]] && [[ ! "$branch" =~ release* ]]; then
+          if [[ "$branch" == "master" ]]; then
+            VERSION="snapshot"
+          elif [[ ! "$branch" =~ release* ]]; then
+            VERSION="snapshot-${branch}"
             LABELS="quay.expires-after=10d"
           fi
 
