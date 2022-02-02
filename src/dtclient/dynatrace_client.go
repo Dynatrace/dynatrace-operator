@@ -41,6 +41,7 @@ type tokenType int
 const (
 	dynatraceApiToken tokenType = iota
 	dynatracePaaSToken
+	installerUrlToken // in this case we don't care about the token
 )
 
 // makeRequest does an HTTP request by formatting the URL from the given arguments and returns the response.
@@ -64,6 +65,8 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 			return nil, fmt.Errorf("not able to set token since paas token is empty for request: %s", url)
 		}
 		authHeader = fmt.Sprintf("Api-Token %s", dtc.paasToken)
+	case installerUrlToken:
+		return dtc.httpClient.Do(req)
 	default:
 		return nil, errors.New("unable to determine token to set in headers")
 	}

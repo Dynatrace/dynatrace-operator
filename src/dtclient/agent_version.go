@@ -110,7 +110,7 @@ func (dtc *dynatraceClient) GetAgent(os, installerType, flavor, arch, version st
 }
 
 func (dtc *dynatraceClient) GetAgentViaInstallerUrl(url string, writer io.Writer) error {
-	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
+	md5, err := dtc.makeRequestForBinary(url, installerUrlToken, writer)
 	if err == nil {
 		log.Info("downloaded agent file using given url", "url", url, "md5", md5)
 	}
