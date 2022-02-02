@@ -10,7 +10,7 @@ tests:
       cloudNativeFullStack.enabled: false
     asserts:
       - isNull:
-          path: spec.oneAgent.cloudNativeFullStack
+          path: spec.oneAgent
 
   - it: should exist if enabled
     set:

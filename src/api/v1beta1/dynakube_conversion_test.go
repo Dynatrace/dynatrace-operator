@@ -209,6 +209,7 @@ func TestConversion_ConvertFrom(t *testing.T) {
 	assert.Equal(t, oldDynakube.Spec.ClassicFullStack.Tolerations, convertedDynakube.Spec.OneAgent.ClassicFullStack.Tolerations)
 	assert.Equal(t, oldDynakube.Spec.ClassicFullStack.Resources, convertedDynakube.Spec.OneAgent.ClassicFullStack.OneAgentResources)
 	assert.Equal(t, oldDynakube.Spec.ClassicFullStack.Args, convertedDynakube.Spec.OneAgent.ClassicFullStack.Args)
+	assert.Equal(t, oldDynakube.Spec.ClassicFullStack.Env, convertedDynakube.Spec.OneAgent.ClassicFullStack.Env)
 	assert.Equal(t, oldDynakube.Spec.ClassicFullStack.DNSPolicy, convertedDynakube.Spec.OneAgent.ClassicFullStack.DNSPolicy)
 	assert.Equal(t, oldDynakube.Spec.ClassicFullStack.Labels, convertedDynakube.Spec.OneAgent.ClassicFullStack.Labels)
 
@@ -432,6 +433,7 @@ func TestConversion_ConvertTo(t *testing.T) {
 	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.Tolerations, convertedDynakube.Spec.ClassicFullStack.Tolerations)
 	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.OneAgentResources, convertedDynakube.Spec.ClassicFullStack.Resources)
 	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.Args, convertedDynakube.Spec.ClassicFullStack.Args)
+	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.Env, convertedDynakube.Spec.ClassicFullStack.Env)
 	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.DNSPolicy, convertedDynakube.Spec.ClassicFullStack.DNSPolicy)
 	assert.Equal(t, oldDynakube.Spec.OneAgent.ClassicFullStack.Labels, convertedDynakube.Spec.ClassicFullStack.Labels)
 

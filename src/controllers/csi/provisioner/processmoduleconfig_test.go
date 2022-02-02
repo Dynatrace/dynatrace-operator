@@ -63,11 +63,11 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetProcessModuleConfig", uint(0)).
 			Return(&testProcessModuleConfig, nil)
-		r := &OneAgentProvisioner{
+		provisioner := &OneAgentProvisioner{
 			fs: memFs,
 		}
 
-		response, storedHash, err := r.getProcessModuleConfig(mockClient, testTenantUUID)
+		response, storedHash, err := provisioner.getProcessModuleConfig(mockClient, testTenantUUID)
 
 		require.Nil(t, err)
 		assert.Equal(t, testProcessModuleConfig, *response)
@@ -79,11 +79,11 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetProcessModuleConfig", testProcessModuleConfigCache.Revision).
 			Return(emptyResponse, nil)
-		r := &OneAgentProvisioner{
+		provisioner := &OneAgentProvisioner{
 			fs: memFs,
 		}
 
-		response, storedHash, err := r.getProcessModuleConfig(mockClient, testTenantUUID)
+		response, storedHash, err := provisioner.getProcessModuleConfig(mockClient, testTenantUUID)
 
 		require.Nil(t, err)
 		assert.Equal(t, testProcessModuleConfigCache.ProcessModuleConfig, response)
@@ -95,11 +95,11 @@ func TestGetProcessModuleConfig(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetProcessModuleConfig", testProcessModuleConfigCache.Revision).
 			Return(&testProcessModuleConfig, nil)
-		r := &OneAgentProvisioner{
+		provisioner := &OneAgentProvisioner{
 			fs: memFs,
 		}
 
-		response, storedHash, err := r.getProcessModuleConfig(mockClient, testTenantUUID)
+		response, storedHash, err := provisioner.getProcessModuleConfig(mockClient, testTenantUUID)
 
 		require.Nil(t, err)
 		assert.Equal(t, testProcessModuleConfig, *response)
@@ -110,25 +110,25 @@ func TestGetProcessModuleConfig(t *testing.T) {
 func TestReadProcessModuleConfigCache(t *testing.T) {
 	memFs := afero.NewMemMapFs()
 	prepTestFsCache(memFs)
-	r := &OneAgentProvisioner{
+	provisioner := &OneAgentProvisioner{
 		fs: memFs,
 	}
 
-	cache, err := r.readProcessModuleConfigCache(testTenantUUID)
+	cache, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
 	require.Nil(t, err)
 	assert.Equal(t, testProcessModuleConfigCache, *cache)
 }
 
 func TestWriteProcessModuleConfigCache(t *testing.T) {
 	memFs := afero.NewMemMapFs()
-	r := &OneAgentProvisioner{
+	provisioner := &OneAgentProvisioner{
 		fs: memFs,
 	}
 
-	err := r.writeProcessModuleConfigCache(testTenantUUID, &testProcessModuleConfigCache)
+	err := provisioner.writeProcessModuleConfigCache(testTenantUUID, &testProcessModuleConfigCache)
 
 	require.Nil(t, err)
-	cache, err := r.readProcessModuleConfigCache(testTenantUUID)
+	cache, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
 	require.Nil(t, err)
 	assert.Equal(t, testProcessModuleConfigCache, *cache)
 }

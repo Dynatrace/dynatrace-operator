@@ -10,7 +10,7 @@ tests:
       applicationMonitoring.enabled: false
     asserts:
       - isNull:
-          path: spec.oneAgent.applicationMonitoring
+          path: spec.oneAgent
 
   - it: should exist if enabled
     set:

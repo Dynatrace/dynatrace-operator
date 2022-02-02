@@ -92,6 +92,8 @@ const (
 
 // Known flavors.
 const (
+	FlavorDefault     = "default"
+	FlavorMusl        = "musl"
 	FlavorMultidistro = "multidistro"
 )
 
@@ -109,7 +111,8 @@ const (
 	TokenScopeWriteConfig       = "WriteConfig"
 	TokenScopeMetricsIngest     = "metrics.ingest"
 	TokenScopeEntitiesRead      = "entities.read"
-	TokenScopeEntitiesWrite     = "entities.write"
+	TokenScopeSettingsRead      = "settings.read"
+	TokenScopeSettingsWrite     = "settings.write"
 )
 
 // NewClient creates a REST client for the given API base URL and authentication tokens.
