@@ -1,9 +1,10 @@
-package csidriver
+package appvolumes
 
 import (
 	"context"
 	"fmt"
 
+	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -16,15 +17,15 @@ type bindConfig struct {
 	version    string
 }
 
-func newBindConfig(ctx context.Context, svr *CSIDriverServer, volumeCfg *volumeConfig) (*bindConfig, error) {
+func newBindConfig(ctx context.Context, svr *AppVolumePublisher, volumeCfg *csivolumes.VolumeConfig) (*bindConfig, error) {
 	var ns corev1.Namespace
-	if err := svr.client.Get(ctx, client.ObjectKey{Name: volumeCfg.namespace}, &ns); err != nil {
-		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("failed to query namespace %s: %s", volumeCfg.namespace, err.Error()))
+	if err := svr.client.Get(ctx, client.ObjectKey{Name: volumeCfg.Namespace}, &ns); err != nil {
+		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("failed to query namespace %s: %s", volumeCfg.Namespace, err.Error()))
 	}
 
 	dkName := ns.Labels[webhook.LabelInstance]
 	if dkName == "" {
-		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("namespace '%s' doesn't have DynaKube assigned", volumeCfg.namespace))
+		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("namespace '%s' doesn't have DynaKube assigned", volumeCfg.Namespace))
 	}
 
 	dynakube, err := svr.db.GetDynakube(dkName)
