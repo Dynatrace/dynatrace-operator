@@ -115,7 +115,7 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          VERSION=latest
+          VERSION=""
           LABELS=""
 
           branch="${GITHUB_REF#refs/heads/}"
