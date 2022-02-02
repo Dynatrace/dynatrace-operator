@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -13,22 +14,29 @@ const eecIngestPort = 14599
 
 const activeGateInternalCommunicationPort = 9999
 
-var _ ContainerBuilder = (*ExtensionController)(nil)
+const (
+	eecAuthToken = "auth-tokens"
+
+	dataSourceStartupArguments = "eec-ds-shared"
+	dataSourceAuthToken        = "dsauthtokendir"
+)
+
+var _ kubeobjects.ContainerBuilder = (*ExtensionController)(nil)
 
 type ExtensionController struct {
-	GenericContainer
+	stsProperties *statefulSetProperties
 }
 
 func NewExtensionController(stsProperties *statefulSetProperties) *ExtensionController {
 	return &ExtensionController{
-		GenericContainer: *NewGenericContainer(stsProperties),
+		stsProperties: stsProperties,
 	}
 }
 
 func (eec *ExtensionController) BuildContainer() corev1.Container {
 	return corev1.Container{
 		Name:            consts.EecContainerName,
-		Image:           eec.StsProperties.DynaKube.ActiveGateImage(),
+		Image:           eec.stsProperties.DynaKube.ActiveGateImage(),
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             eec.buildEnvs(),
 		VolumeMounts:    eec.buildVolumeMounts(),
@@ -53,19 +61,19 @@ func (eec *ExtensionController) BuildContainer() corev1.Container {
 func (eec *ExtensionController) BuildVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: "auth-tokens",
+			Name: eecAuthToken,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
 		{
-			Name: "eec-ds-shared",
+			Name: dataSourceStartupArguments,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
 		{
-			Name: "dsauthtokendir",
+			Name: dataSourceAuthToken,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
@@ -80,7 +88,7 @@ func (eec *ExtensionController) buildPorts() []corev1.ContainerPort {
 }
 
 func (eec *ExtensionController) buildCommand() []string {
-	if eec.StsProperties.DynaKube.FeatureUseActiveGateImageForStatsD() {
+	if eec.stsProperties.DynaKube.FeatureUseActiveGateImageForStatsD() {
 		return []string{
 			"/bin/bash", "/dt/eec/entrypoint.sh",
 		}
@@ -90,17 +98,17 @@ func (eec *ExtensionController) buildCommand() []string {
 
 func (eec *ExtensionController) buildVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
-		{Name: "auth-tokens", MountPath: "/var/lib/dynatrace/gateway/config"},
-		{Name: "eec-ds-shared", MountPath: "/mnt/dsexecargs"},
-		{Name: "dsauthtokendir", MountPath: "/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources"},
-		{Name: "ds-metadata", MountPath: "/opt/dynatrace/remotepluginmodule/agent/datasources/statsd", ReadOnly: true},
+		{Name: eecAuthToken, MountPath: "/var/lib/dynatrace/gateway/config"},
+		{Name: dataSourceStartupArguments, MountPath: "/mnt/dsexecargs"},
+		{Name: dataSourceAuthToken, MountPath: "/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources"},
+		{Name: dataSourceMetadata, MountPath: "/opt/dynatrace/remotepluginmodule/agent/datasources/statsd", ReadOnly: true},
 	}
 }
 
 func (eec *ExtensionController) buildEnvs() []corev1.EnvVar {
-	tenantId, err := eec.StsProperties.TenantUUID()
+	tenantId, err := eec.stsProperties.TenantUUID()
 	if err != nil {
-		eec.StsProperties.log.Error(err, "Problem getting tenant id from api url")
+		log.Error(err, "Problem getting tenant id from api url")
 	}
 	return []corev1.EnvVar{
 		{Name: "TenantId", Value: tenantId},

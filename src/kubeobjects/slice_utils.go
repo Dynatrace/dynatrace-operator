@@ -1,8 +1,8 @@
-package statefulset
+package kubeobjects
 
-import v1 "k8s.io/api/core/v1"
+import corev1 "k8s.io/api/core/v1"
 
-func mountPathIsIn(volumeMounts []v1.VolumeMount, mountPathToCheck string) bool {
+func MountPathIsIn(volumeMounts []corev1.VolumeMount, mountPathToCheck string) bool {
 	for _, volMount := range volumeMounts {
 		if volMount.MountPath == mountPathToCheck {
 			return true
@@ -11,7 +11,7 @@ func mountPathIsIn(volumeMounts []v1.VolumeMount, mountPathToCheck string) bool 
 	return false
 }
 
-func volumeIsDefined(volumes []v1.Volume, volumeMountNameToCheck string) bool {
+func VolumeIsDefined(volumes []corev1.Volume, volumeMountNameToCheck string) bool {
 	for _, vol := range volumes {
 		if vol.Name == volumeMountNameToCheck {
 			return true
@@ -20,7 +20,7 @@ func volumeIsDefined(volumes []v1.Volume, volumeMountNameToCheck string) bool {
 	return false
 }
 
-func portIsIn(ports []v1.ContainerPort, portToCheck int32) bool {
+func PortIsIn(ports []corev1.ContainerPort, portToCheck int32) bool {
 	for _, port := range ports {
 		if port.ContainerPort == portToCheck {
 			return true
@@ -29,7 +29,7 @@ func portIsIn(ports []v1.ContainerPort, portToCheck int32) bool {
 	return false
 }
 
-func envVarIsIn(envVars []v1.EnvVar, envVarToCheck string) bool {
+func EnvVarIsIn(envVars []corev1.EnvVar, envVarToCheck string) bool {
 	for _, envVar := range envVars {
 		if envVar.Name == envVarToCheck {
 			return true

@@ -102,8 +102,8 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 	assert.Equalf(t, instance.FeatureEnableStatsDIngest(), len(templateSpec.Volumes) > 0,
 		"Expected that there are no volumes iff StatsD is disabled",
 	)
-	assert.Equalf(t, instance.FeatureEnableStatsDIngest(), volumeIsDefined(templateSpec.Volumes, "auth-tokens"),
-		"Expected that volume mount %s has a predefined pod volume", "auth-tokens",
+	assert.Equalf(t, instance.FeatureEnableStatsDIngest(), kubeobjects.VolumeIsDefined(templateSpec.Volumes, eecAuthToken),
+		"Expected that volume mount %s has a predefined pod volume", eecAuthToken,
 	)
 	assert.NotEmpty(t, templateSpec.ImagePullSecrets)
 	assert.Contains(t, templateSpec.ImagePullSecrets, corev1.LocalObjectReference{Name: instance.Name + dtpullsecret.PullSecretSuffix})
@@ -127,7 +127,7 @@ func TestStatefulSet_Container(t *testing.T) {
 	assert.Equalf(t, instance.FeatureEnableStatsDIngest(), len(activeGateContainer.VolumeMounts) > 0,
 		"Expected that there are no volume mounts iff StatsD is disabled",
 	)
-	assert.Equalf(t, instance.FeatureEnableStatsDIngest(), mountPathIsIn(activeGateContainer.VolumeMounts, "/var/lib/dynatrace/gateway/config"),
+	assert.Equalf(t, instance.FeatureEnableStatsDIngest(), kubeobjects.MountPathIsIn(activeGateContainer.VolumeMounts, "/var/lib/dynatrace/gateway/config"),
 		"Expected that ActiveGate container defines mount point %s if and only if StatsD ingest is enabled", "/var/lib/dynatrace/gateway/config",
 	)
 	assert.NotNil(t, activeGateContainer.ReadinessProbe)
@@ -143,7 +143,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 			nil, nil, nil,
 		)
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
-		assert.Falsef(t, volumeIsDefined(volumes, customproperties.VolumeName),
+		assert.Falsef(t, kubeobjects.VolumeIsDefined(volumes, customproperties.VolumeName),
 			"Expected that volume %s is not defined if there are no custom properties", customproperties.VolumeName,
 		)
 	})
@@ -254,7 +254,7 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 			"", "", "", "", "",
 			nil, nil, nil,
 		))
-		assert.Falsef(t, mountPathIsIn(volumeMounts, customproperties.MountPath),
+		assert.Falsef(t, kubeobjects.MountPathIsIn(volumeMounts, customproperties.MountPath),
 			"Expected that there is no mount point %s if there are no custom properties", customproperties.MountPath,
 		)
 	})

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -11,22 +12,26 @@ import (
 const statsDProbesPortName = "statsd-probes"
 const statsDProbesPort = 14999
 
-var _ ContainerBuilder = (*StatsD)(nil)
+const (
+	dataSourceMetadata = "ds-metadata"
+)
+
+var _ kubeobjects.ContainerBuilder = (*StatsD)(nil)
 
 type StatsD struct {
-	GenericContainer
+	stsProperties *statefulSetProperties
 }
 
 func NewStatsD(stsProperties *statefulSetProperties) *StatsD {
 	return &StatsD{
-		GenericContainer: *NewGenericContainer(stsProperties),
+		stsProperties: stsProperties,
 	}
 }
 
 func (statsd *StatsD) BuildContainer() corev1.Container {
 	return corev1.Container{
 		Name:            consts.StatsDContainerName,
-		Image:           statsd.StsProperties.DynaKube.ActiveGateImage(),
+		Image:           statsd.stsProperties.DynaKube.ActiveGateImage(),
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             statsd.buildEnvs(),
 		VolumeMounts:    statsd.buildVolumeMounts(),
@@ -64,7 +69,7 @@ func (statsd *StatsD) BuildContainer() corev1.Container {
 func (statsd *StatsD) BuildVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
-			Name: "ds-metadata",
+			Name: dataSourceMetadata,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
@@ -73,7 +78,7 @@ func (statsd *StatsD) BuildVolumes() []corev1.Volume {
 }
 
 func (statsd *StatsD) buildCommand() []string {
-	if statsd.StsProperties.DynaKube.FeatureUseActiveGateImageForStatsD() {
+	if statsd.stsProperties.DynaKube.FeatureUseActiveGateImageForStatsD() {
 		return []string{
 			"/bin/bash", "/dt/statsd/entrypoint.sh",
 		}
@@ -90,9 +95,9 @@ func (statsd *StatsD) buildPorts() []corev1.ContainerPort {
 
 func (statsd *StatsD) buildVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
-		{Name: "eec-ds-shared", MountPath: "/mnt/dsexecargs"},
-		{Name: "dsauthtokendir", MountPath: "/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources"},
-		{Name: "ds-metadata", MountPath: "/mnt/dsmetadata"},
+		{Name: dataSourceStartupArguments, MountPath: "/mnt/dsexecargs"},
+		{Name: dataSourceAuthToken, MountPath: "/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources"},
+		{Name: dataSourceMetadata, MountPath: "/mnt/dsmetadata"},
 	}
 }
 

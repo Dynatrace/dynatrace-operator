@@ -116,7 +116,7 @@ func TestTokens(t *testing.T) {
 }
 
 func TestTenantUUID(t *testing.T) {
-	t.Run("", func(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
 		apiUrl := "https://demo.dev.dynatracelabs.com/api"
 		expectedTenantId := "demo"
 
@@ -128,7 +128,7 @@ func TestTenantUUID(t *testing.T) {
 		)
 	})
 
-	t.Run("", func(t *testing.T) {
+	t.Run("missing API URL protocol", func(t *testing.T) {
 		apiUrl := "demo.dev.dynatracelabs.com/api"
 		expectedTenantId := ""
 		expectedError := "problem getting tenant id from fqdn ''"
@@ -143,7 +143,7 @@ func TestTenantUUID(t *testing.T) {
 		)
 	})
 
-	t.Run("", func(t *testing.T) {
+	t.Run("missing /api suffix in an API URL", func(t *testing.T) {
 		apiUrl := "https://google.com"
 		expectedTenantId := ""
 		expectedError := "api url https://google.com does not end with /api"
@@ -158,7 +158,7 @@ func TestTenantUUID(t *testing.T) {
 		)
 	})
 
-	t.Run("", func(t *testing.T) {
+	t.Run("suffix-only, relative API URL", func(t *testing.T) {
 		apiUrl := "/api"
 		expectedTenantId := ""
 		expectedError := "problem getting tenant id from fqdn ''"

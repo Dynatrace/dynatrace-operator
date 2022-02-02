@@ -95,7 +95,7 @@ func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) events.StatefulSetEven
 					},
 				}
 			} else {
-				log.Error(err, "Cannot find container in the StatefulSet", "container name", consts.ActiveGateContainerName)
+				log.Info("Cannot find container in the StatefulSet", "container name", consts.ActiveGateContainerName)
 			}
 		}
 		if dk.FeatureEnableStatsDIngest() {
@@ -109,7 +109,7 @@ func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) events.StatefulSetEven
 					},
 				}
 			} else {
-				log.Error(err, "Cannot find container in the StatefulSet", "container name", consts.StatsDContainerName)
+				log.Info("Cannot find container in the StatefulSet", "container name", consts.StatsDContainerName)
 			}
 		}
 	}
@@ -174,17 +174,20 @@ func (r *Reconciler) updateServiceIfOutdated() (bool, error) {
 	desiredService := createService(r.Instance, r.ShortName())
 	installedService := &corev1.Service{}
 
-	err := r.Get(context.TODO(), client.ObjectKey{Name: desiredService.Name, Namespace: desiredService.Namespace}, installedService)
-	if err != nil {
+	if err := r.Get(
+		context.TODO(),
+		client.ObjectKey{Name: desiredService.Name, Namespace: desiredService.Namespace},
+		installedService,
+	); err != nil {
 		return false, errors.WithStack(err)
 	}
 
 	if r.portsAreOutdated(installedService, desiredService) {
 		desiredService.Spec.ClusterIP = installedService.Spec.ClusterIP
 		desiredService.ObjectMeta.ResourceVersion = installedService.ObjectMeta.ResourceVersion
-		updateErr := r.updateService(desiredService)
-		if updateErr != nil {
-			return false, updateErr
+		err := r.Update(context.TODO(), desiredService)
+		if err != nil {
+			return false, err
 		}
 		return true, nil
 	}
@@ -193,8 +196,4 @@ func (r *Reconciler) updateServiceIfOutdated() (bool, error) {
 
 func (r *Reconciler) portsAreOutdated(installedService, desiredService *corev1.Service) bool {
 	return !reflect.DeepEqual(installedService.Spec.Ports, desiredService.Spec.Ports)
-}
-
-func (r *Reconciler) updateService(service *corev1.Service) error {
-	return r.Update(context.TODO(), service)
 }

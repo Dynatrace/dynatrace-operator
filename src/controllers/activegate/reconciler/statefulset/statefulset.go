@@ -10,7 +10,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/events"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -31,9 +30,6 @@ const (
 	DTNetworkZone        = "DT_NETWORK_ZONE"
 	DTGroup              = "DT_GROUP"
 	DTDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
-
-	ActivegateContainerName = "activegate"
-	ProxySecretKey          = "proxy"
 )
 
 type statefulSetProperties struct {
@@ -48,7 +44,6 @@ type statefulSetProperties struct {
 	initContainersTemplates []corev1.Container
 	containerVolumeMounts   []corev1.VolumeMount
 	volumes                 []corev1.Volume
-	log                     logr.Logger
 }
 
 func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties,
@@ -110,9 +105,9 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 	return sts, nil
 }
 
-func getContainerBuilders(stsProperties *statefulSetProperties) []ContainerBuilder {
+func getContainerBuilders(stsProperties *statefulSetProperties) []kubeobjects.ContainerBuilder {
 	if stsProperties.DynaKube.FeatureEnableStatsDIngest() {
-		return []ContainerBuilder{
+		return []kubeobjects.ContainerBuilder{
 			NewExtensionController(stsProperties),
 			NewStatsD(stsProperties),
 		}
@@ -158,7 +153,7 @@ func buildInitContainers(stsProperties *statefulSetProperties) []corev1.Containe
 	return ics
 }
 
-func buildContainers(stsProperties *statefulSetProperties, extraContainerBuilders []ContainerBuilder) []corev1.Container {
+func buildContainers(stsProperties *statefulSetProperties, extraContainerBuilders []kubeobjects.ContainerBuilder) []corev1.Container {
 	containers := []corev1.Container{
 		buildActiveGateContainer(stsProperties),
 	}
@@ -194,7 +189,7 @@ func buildActiveGateContainer(stsProperties *statefulSetProperties) corev1.Conta
 	}
 }
 
-func buildVolumes(stsProperties *statefulSetProperties, extraContainerBuilders []ContainerBuilder) []corev1.Volume {
+func buildVolumes(stsProperties *statefulSetProperties, extraContainerBuilders []kubeobjects.ContainerBuilder) []corev1.Volume {
 	var volumes []corev1.Volume
 
 	if !isCustomPropertiesNilOrEmpty(stsProperties.CustomProperties) {
@@ -259,7 +254,7 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 
 	if stsProperties.DynaKube.FeatureEnableStatsDIngest() {
 		volumeMounts = append(volumeMounts,
-			corev1.VolumeMount{Name: "auth-tokens", MountPath: "/var/lib/dynatrace/gateway/config"},
+			corev1.VolumeMount{Name: eecAuthToken, MountPath: "/var/lib/dynatrace/gateway/config"},
 		)
 	}
 
