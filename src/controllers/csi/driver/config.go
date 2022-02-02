@@ -16,16 +16,9 @@ var (
 		Name:      "memory_usage",
 		Help:      "Memory usage of the csi driver in bytes",
 	})
-	agentsVersionsMetric = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "dynatrace",
-		Subsystem: "csi_driver",
-		Name:      "agent_versions",
-		Help:      "Number of an agent version currently mounted by the CSI driver",
-	}, []string{"version"})
 	memoryMetricTick = 5000 * time.Millisecond
 )
 
 func init() {
 	metrics.Registry.MustRegister(memoryUsageMetric)
-	metrics.Registry.MustRegister(agentsVersionsMetric)
 }
