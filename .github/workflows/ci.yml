@@ -208,8 +208,8 @@ jobs:
           path: /tmp
       - name: Upload image to Quay
         env:
-          LABELS: ${{ steps.builddockerimage.outputs.labels }}
-          TAG: ${{ steps.builddockerimage.outputs.version }}
+          LABELS: ${{ needs.builddockerimage.outputs.labels }}
+          TAG: ${{ needs.builddockerimage.outputs.version }}
         run: |
           docker load --input /tmp/operator-amd64.tar
 
