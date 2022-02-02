@@ -120,8 +120,11 @@ jobs:
           branch="${GITHUB_REF#refs/heads/}"
           if [[ "$branch" == "master" ]]; then
             VERSION="snapshot"
-          elif [[ ! "$branch" =~ release* ]]; then
-            VERSION="snapshot-${branch}"
+          else
+            VERSION="snapshot-$(echo $branch | sed 's#[^a-zA-Z0-9_-]#-#g')"
+          fi
+
+          if [[ ! "$branch" =~ "release-*" ]]; then
             LABELS="quay.expires-after=10d"
           fi
 
@@ -137,6 +140,7 @@ jobs:
           # Set output parameters.
           echo ::set-output name=goargs::"${go_build_args[@]}"
           echo ::set-output name=labels::${LABELS}
+          echo ::set-output name=version::${VERSION}
 
           # Get licenses if no cache exists
           if ! [ -d ./third_party_licenses ]; then
@@ -180,6 +184,9 @@ jobs:
           name: operator
           path: /tmp/operator*.tar
           retention-days: 1
+    outputs:
+      labels: ${{ steps.prep.outputs.labels }}
+      version: ${{ steps.prep.outputs.version }}
 
   uploaddockerimage:
     name: Upload docker image to quay
@@ -200,19 +207,10 @@ jobs:
           name: operator
           path: /tmp
       - name: Upload image to Quay
+        env:
+          LABELS: ${{ steps.builddockerimage.outputs.labels }}
+          TAG: ${{ steps.builddockerimage.outputs.version }}
         run: |
-          LABELS=""
-
-          branch="${GITHUB_REF#refs/heads/}"
-          if [ "$branch" = "master" ]; then
-              TAG="snapshot"
-          elif [ "$branch" = release* ]; then
-              TAG="snapshot-$(echo $branch | sed 's#[^a-zA-Z0-9_-]#-#g')"
-          else
-              TAG="snapshot-$(echo $branch | sed 's#[^a-zA-Z0-9_-]#-#g')"
-              LABELS="quay.expires-after=10d"
-          fi
-
           docker load --input /tmp/operator-amd64.tar
 
           if [[ -f "/tmp/operator-arm64.tar" ]]; then
