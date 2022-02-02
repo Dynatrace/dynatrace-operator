@@ -196,7 +196,7 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(_ context.Context, req *csi.Node
 	if err = svr.db.DeleteVolume(volume.VolumeID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	log.Info("deleted volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	log.Info("deleted volume info", "UUID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 
 	if err = svr.fs.RemoveAll(targetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -294,7 +294,7 @@ func (svr *CSIDriverServer) umountOneAgent(targetPath string, overlayFSPath stri
 
 func (svr *CSIDriverServer) storeVolumeInfo(bindCfg *bindConfig, volumeCfg *volumeConfig) error {
 	volume := metadata.NewVolume(volumeCfg.volumeId, volumeCfg.podName, bindCfg.version, bindCfg.tenantUUID)
-	log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
+	log.Info("inserting volume info", "UUID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 	return svr.db.InsertVolume(volume)
 }
 
@@ -346,7 +346,7 @@ func parseEndpoint(ep string) (string, string, error) {
 func parseNodeUnpublishVolumeRequest(req *csi.NodeUnpublishVolumeRequest) (string, string, error) {
 	volumeID := req.GetVolumeId()
 	if volumeID == "" {
-		return "", "", status.Error(codes.InvalidArgument, "Volume ID missing in request")
+		return "", "", status.Error(codes.InvalidArgument, "Volume UUID missing in request")
 	}
 
 	targetPath := req.GetTargetPath()

@@ -84,7 +84,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 }
 
 func (r *Reconciler) manageStatefulSet() (bool, error) {
-	desiredSts, err := r.buildDesiredStatefulSet()
+	desiredSts, err := r.buildDesiredStatefulSet(r.Instance.Status.TenantInfo)
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
@@ -111,7 +111,7 @@ func (r *Reconciler) manageStatefulSet() (bool, error) {
 	return false, nil
 }
 
-func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
+func (r *Reconciler) buildDesiredStatefulSet(tenantInfo dynatracev1beta1.TenantInfoStatus) (*appsv1.StatefulSet, error) {
 	kubeUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -122,7 +122,7 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	stsProperties := NewStatefulSetProperties(r.Instance, r.capability, kubeUID, cpHash, r.feature, r.capabilityName, r.serviceAccountOwner, r.initContainersTemplates, r.containerVolumeMounts, r.volumes, "", "", "")
+	stsProperties := NewStatefulSetProperties(r.Instance, r.capability, kubeUID, cpHash, r.feature, r.capabilityName, r.serviceAccountOwner, r.initContainersTemplates, r.containerVolumeMounts, r.volumes, tenantInfo.Token, tenantInfo.UUID, tenantInfo.Endpoints)
 	stsProperties.OnAfterCreateListener = r.onAfterStatefulSetCreateListener
 
 	desiredSts, err := CreateStatefulSet(stsProperties)

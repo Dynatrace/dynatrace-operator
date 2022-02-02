@@ -27,7 +27,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		}
 		volumeCfg, err := parsePublishVolumeRequest(request)
 
-		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = Volume ID missing in request")
+		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = Volume UUID missing in request")
 		assert.Nil(t, volumeCfg)
 	})
 	t.Run(`No target path`, func(t *testing.T) {

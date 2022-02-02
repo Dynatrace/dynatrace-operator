@@ -76,6 +76,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 
 		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersionPaas, nil)
+		dtc.On("GetTenantInfo").Return(&dtclient.TenantInfo{}, nil)
 
 		err := SetDynakubeStatus(instance, options)
 

@@ -30,7 +30,7 @@ func TestTenant(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, tenantInfo)
 
-		assert.Equal(t, tenantResponse.TenantUUID, tenantInfo.ID)
+		assert.Equal(t, tenantResponse.TenantUUID, tenantInfo.UUID)
 		assert.Equal(t, tenantResponse.TenantToken, tenantInfo.Token)
 		assert.Equal(t, tenantResponse.CommunicationEndpoints, tenantInfo.Endpoints)
 		assert.Equal(t,

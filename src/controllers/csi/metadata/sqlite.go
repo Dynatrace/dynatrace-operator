@@ -22,11 +22,11 @@ const (
 	volumesTableName       = "volumes"
 	volumesCreateStatement = `
 	CREATE TABLE IF NOT EXISTS volumes (
-		ID VARCHAR NOT NULL,
+		UUID VARCHAR NOT NULL,
 		PodName VARCHAR NOT NULL,
 		Version VARCHAR NOT NULL,
 		TenantUUID VARCHAR NOT NULL,
-		PRIMARY KEY (ID)
+		PRIMARY KEY (UUID)
 	);`
 
 	insertDynakubeStatement = `
@@ -46,17 +46,17 @@ const (
 	`
 
 	insertVolumeStatement = `
-	INSERT INTO volumes (ID, PodName, Version, TenantUUID)
+	INSERT INTO volumes (UUID, PodName, Version, TenantUUID)
 	VALUES (?,?,?,?);
 	`
 
 	getVolumeStatement = `
 	SELECT PodName, Version, TenantUUID
 	FROM volumes
-	WHERE ID = ?;
+	WHERE UUID = ?;
 	`
 
-	deleteVolumeStatement = "DELETE FROM volumes WHERE ID = ?;"
+	deleteVolumeStatement = "DELETE FROM volumes WHERE UUID = ?;"
 
 	deleteDynakubeStatement = "DELETE FROM dynakubes WHERE Name = ?;"
 
@@ -67,7 +67,7 @@ const (
 	`
 
 	getPodNamesStatement = `
-	SELECT ID, PodName
+	SELECT UUID, PodName
 	FROM volumes;
 	`
 
@@ -184,7 +184,7 @@ func (a *SqliteAccess) InsertVolume(volume *Volume) error {
 	return err
 }
 
-// GetVolume gets Volume by its ID
+// GetVolume gets Volume by its UUID
 func (a *SqliteAccess) GetVolume(volumeID string) (*Volume, error) {
 	var PodName string
 	var version string
@@ -196,7 +196,7 @@ func (a *SqliteAccess) GetVolume(volumeID string) (*Volume, error) {
 	return NewVolume(volumeID, PodName, version, tenantUUID), err
 }
 
-// DeleteVolume deletes a Volume by its ID
+// DeleteVolume deletes a Volume by its UUID
 func (a *SqliteAccess) DeleteVolume(volumeID string) error {
 	err := a.executeStatement(deleteVolumeStatement, volumeID)
 	if err != nil {

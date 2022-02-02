@@ -8,7 +8,7 @@ import (
 )
 
 type TenantInfo struct {
-	ID                    string
+	UUID                  string
 	Token                 string
 	Endpoints             []string
 	CommunicationEndpoint string
@@ -63,7 +63,7 @@ func (dtc *dynatraceClient) readResponseForTenantInfo(response []byte) (*TenantI
 	}
 
 	return &TenantInfo{
-		ID:        jr.TenantUUID,
+		UUID:      jr.TenantUUID,
 		Token:     jr.TenantToken,
 		Endpoints: jr.CommunicationEndpoints,
 	}, nil
@@ -91,7 +91,7 @@ func (tenantInfo *TenantInfo) findCommunicationEndpointIndex() int {
 		return -1
 	}
 	for i, endpoint := range tenantInfo.Endpoints {
-		if strings.Contains(endpoint, tenantInfo.ID) {
+		if strings.Contains(endpoint, tenantInfo.UUID) {
 			return i
 		}
 	}

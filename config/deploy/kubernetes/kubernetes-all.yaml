@@ -71,7 +71,7 @@ spec:
                 type: object
               apiUrl:
                 description: Location of the Dynatrace API to connect to, including
-                  your specific environment ID
+                  your specific environment UUID
                 type: string
               classicFullStack:
                 description: Configuration for ClassicFullStack Monitoring
@@ -895,7 +895,7 @@ spec:
                   type: object
                 type: array
               environmentID:
-                description: EnvironmentID contains the environment ID corresponding
+                description: EnvironmentID contains the environment UUID corresponding
                   to the API URL
                 type: string
               lastAPITokenProbeTimestamp:
@@ -1235,7 +1235,7 @@ spec:
                 type: object
               apiUrl:
                 description: Location of the Dynatrace API to connect to, including
-                  your specific environment ID
+                  your specific environment UUID
                 type: string
               customPullSecret:
                 description: 'Optional: Pull secret for your private registry'
@@ -2718,6 +2718,17 @@ spec:
                 description: Defines the current state (Running, Updating, Error,
                   ...)
                 type: string
+              tenantInfo:
+                description: TenantInfo contains tenant, token and communication endpoints
+                  for ActiveGates to connect to the cluster
+                properties:
+                  Endpoints:
+                    type: string
+                  Token:
+                    type: string
+                  UUID:
+                    type: string
+                type: object
               tokens:
                 description: Credentials used to connect back to Dynatrace.
                 type: string

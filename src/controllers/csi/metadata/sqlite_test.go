@@ -158,7 +158,7 @@ func TestInsertVolume(t *testing.T) {
 
 	err := db.InsertVolume(&testVolume1)
 	assert.NoError(t, err)
-	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE ID = ?;", volumesTableName), testVolume1.VolumeID)
+	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE UUID = ?;", volumesTableName), testVolume1.VolumeID)
 	var id string
 	var puid string
 	var ver string

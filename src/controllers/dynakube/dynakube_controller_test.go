@@ -442,6 +442,7 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 		Return(dtclient.GetSettingsResponse{}, nil)
 	mockClient.On("CreateOrUpdateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
 		Return(testObjectID, nil)
+	mockClient.On("GetTenantInfo").Return(&dtclient.TenantInfo{}, nil)
 
 	return mockClient
 }
@@ -469,6 +470,7 @@ func createFakeClientAndReconcile(mockClient dtclient.Client, instance *dynatrac
 		},
 		generateStatefulSetForTesting(testName, testNamespace, "activegate", testUID),
 	)
+
 	controller := &DynakubeController{
 		client:    fakeClient,
 		apiReader: fakeClient,

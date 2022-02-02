@@ -31,6 +31,9 @@ type DynaKubeStatus struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors.x-descriptors="urn:alm:descriptor:text"
 	Tokens string `json:"tokens,omitempty"`
 
+	// TenantInfo contains tenant, token and communication endpoints for ActiveGates to connect to the cluster
+	TenantInfo TenantInfoStatus `json:"tenantInfo,omitempty"`
+
 	// LastClusterVersionProbeTimestamp indicates when the cluster's version was last checked
 	LastClusterVersionProbeTimestamp *metav1.Time `json:"lastClusterVersionProbeTimestamp,omitempty"`
 
@@ -53,8 +56,13 @@ type DynaKubeStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 
 	ActiveGate ActiveGateStatus `json:"activeGate,omitempty"`
+	OneAgent   OneAgentStatus   `json:"oneAgent,omitempty"`
+}
 
-	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
+type TenantInfoStatus struct {
+	UUID      string `json:"UUID,omitempty"`
+	Token     string `json:"Token,omitempty"`
+	Endpoints string `json:"Endpoints,omitempty"`
 }
 
 type ConnectionInfoStatus struct {
