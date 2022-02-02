@@ -31,6 +31,13 @@ type InstallerProperties struct {
 	Technologies string
 }
 
+type Installer interface {
+	InstallAgent(targetDir string) error
+	UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error
+}
+
+var _ Installer = &OneAgentInstaller{}
+
 type OneAgentInstaller struct {
 	fs    afero.Fs
 	dtc   dtclient.Client

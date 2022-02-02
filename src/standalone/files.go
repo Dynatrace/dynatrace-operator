@@ -63,7 +63,7 @@ func (runner *Runner) createJsonEnrichmentFile() error {
 		runner.env.workloadName,
 		runner.config.ClusterID,
 	)
-	jsonPath := filepath.Join(EnrichmentPath, "dt_metadata.json")
+	jsonPath := filepath.Join(EnrichmentPath, fmt.Sprintf(EnrichmentFilenameTemplate, "json"))
 	return runner.createConfFile(jsonPath, jsonContent)
 
 }
@@ -84,7 +84,7 @@ dt.kubernetes.cluster.id=%s
 		runner.env.workloadName,
 		runner.config.ClusterID,
 	)
-	propsPath := filepath.Join(EnrichmentPath, "dt_metadata.properties")
+	propsPath := filepath.Join(EnrichmentPath, fmt.Sprintf(EnrichmentFilenameTemplate, "properties"))
 	return runner.createConfFile(propsPath, propsContent)
 }
 

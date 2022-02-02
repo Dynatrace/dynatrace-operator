@@ -10,33 +10,35 @@ import (
 )
 
 func TestNewEnv(t *testing.T) {
-	resetEnv := prepTestEnv(t)
+	t.Run(`create new env`, func(t *testing.T) {
+		resetEnv := prepTestEnv(t)
 
-	env, err := newEnv()
-	resetEnv()
+		env, err := newEnv()
+		resetEnv()
 
-	require.NoError(t, err)
-	require.NotNil(t, env)
+		require.NoError(t, err)
+		require.NotNil(t, env)
 
-	assert.Equal(t, CsiMode, env.mode)
-	assert.True(t, env.canFail)
-	assert.NotEmpty(t, env.installerFlavor)
-	assert.NotEmpty(t, env.installerTech)
-	assert.NotEmpty(t, env.installerArch)
-	assert.NotEmpty(t, env.installPath)
-	assert.Len(t, env.containers, 5)
+		assert.Equal(t, CsiMode, env.mode)
+		assert.True(t, env.canFail)
+		assert.NotEmpty(t, env.installerFlavor)
+		assert.NotEmpty(t, env.installerTech)
+		assert.NotEmpty(t, env.installerArch)
+		assert.NotEmpty(t, env.installPath)
+		assert.Len(t, env.containers, 5)
 
-	assert.NotEmpty(t, env.k8NodeName)
-	assert.NotEmpty(t, env.k8PodName)
-	assert.NotEmpty(t, env.k8PodUID)
-	assert.NotEmpty(t, env.k8BasePodName)
-	assert.NotEmpty(t, env.k8Namespace)
+		assert.NotEmpty(t, env.k8NodeName)
+		assert.NotEmpty(t, env.k8PodName)
+		assert.NotEmpty(t, env.k8PodUID)
+		assert.NotEmpty(t, env.k8BasePodName)
+		assert.NotEmpty(t, env.k8Namespace)
 
-	assert.NotEmpty(t, env.workloadKind)
-	assert.NotEmpty(t, env.workloadName)
+		assert.NotEmpty(t, env.workloadKind)
+		assert.NotEmpty(t, env.workloadName)
 
-	assert.True(t, env.oneAgentInjected)
-	assert.True(t, env.dataIngestInjected)
+		assert.True(t, env.oneAgentInjected)
+		assert.True(t, env.dataIngestInjected)
+	})
 }
 
 func prepTestEnv(t *testing.T) func() {

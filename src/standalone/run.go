@@ -15,18 +15,20 @@ const (
 )
 
 var (
-	BinDirMount    = filepath.Join("mnt", "bin")
-	ShareDirMount  = filepath.Join("mnt", "share")
-	ConfigDirMount = filepath.Join("mnt", "config")
-	EnrichmentPath = filepath.Join("var", "lib", "dynatrace", "enrichment")
+	BinDirMount                   = filepath.Join("mnt", "bin")
+	ShareDirMount                 = filepath.Join("mnt", "share")
+	ConfigDirMount                = filepath.Join("mnt", "config")
+	EnrichmentPath                = filepath.Join("var", "lib", "dynatrace", "enrichment")
+	EnrichmentFilenameTemplate    = "dt_metadata.%s"
+	ContainerConfFilenameTemplate = "container_%s.conf"
 )
 
 type Runner struct {
 	fs         afero.Fs
 	env        *environment
-	client     dtclient.Client
 	config     *SecretConfig
-	installer  *installer.OneAgentInstaller
+	dtclient   dtclient.Client
+	installer  installer.Installer
 	hostTenant string
 }
 
@@ -58,8 +60,8 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 	return &Runner{
 		fs:        fs,
 		env:       env,
-		client:    client,
 		config:    config,
+		dtclient:  client,
 		installer: oneAgentInstaller,
 	}, nil
 }
@@ -121,7 +123,7 @@ func (runner *Runner) configureInstallation() error {
 				return err
 			}
 		}
-		processModuleConfig, err := runner.client.GetProcessModuleConfig(0)
+		processModuleConfig, err := runner.dtclient.GetProcessModuleConfig(0)
 		if err != nil {
 			return err
 		}
@@ -139,7 +141,7 @@ func (runner *Runner) configureInstallation() error {
 
 func (runner *Runner) createContainerConfigurationFiles() error {
 	for _, container := range runner.env.containers {
-		confFilePath := filepath.Join(ShareDirMount, fmt.Sprintf("container_%s.conf", container.name))
+		confFilePath := filepath.Join(ShareDirMount, fmt.Sprintf(ContainerConfFilenameTemplate, container.name))
 		content := runner.getBaseConfContent(container)
 		if runner.hostTenant != noHostTenant {
 			if runner.config.TenantUUID == runner.hostTenant {

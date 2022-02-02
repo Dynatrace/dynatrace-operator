@@ -14,9 +14,10 @@ import (
 )
 
 type agentUpdater struct {
+	fs        afero.Fs
 	dk        *dynatracev1beta1.DynaKube
 	path      metadata.PathResolver
-	installer *installer.OneAgentInstaller
+	installer installer.Installer
 	recorder  record.EventRecorder
 }
 
@@ -38,6 +39,7 @@ func newAgentUpdater(
 		},
 	)
 	return &agentUpdater{
+		fs:        fs,
 		path:      path,
 		recorder:  recorder,
 		dk:        dk,
@@ -50,7 +52,7 @@ func (updater *agentUpdater) updateAgent(version, tenantUUID string, previousHas
 	currentVersion := updater.getOneAgentVersionFromInstance()
 	targetDir := updater.path.AgentBinaryDirForVersion(tenantUUID, currentVersion)
 
-	if _, err := os.Stat(targetDir); currentVersion != version || os.IsNotExist(err) {
+	if _, err := updater.fs.Stat(targetDir); currentVersion != version || os.IsNotExist(err) {
 		log.Info("updating agent", "version", currentVersion, "previous version", version)
 
 		if err := updater.installer.InstallAgent(targetDir); err != nil {

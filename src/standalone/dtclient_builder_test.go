@@ -7,16 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	testApiUrl    = "test.com"
-	testApiToken  = "testy"
-	testPaasToken = "testz"
-
-	testProxy       = "proxy"
-	testNetworkZone = "zone"
-	testTrustedCA   = "secret"
-)
-
 func TestCreateClient(t *testing.T) {
 	t.Run(`no options`, func(t *testing.T) {
 		config := basicTestSecretConfigForClient()
