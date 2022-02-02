@@ -123,7 +123,7 @@ jobs:
           fi
 
           LABELS=""
-          if [[ ! "$branch" =~ "release-*" ]]; then
+          if [[ ! "$branch" =~ ^release-* ]]; then
             LABELS="quay.expires-after=10d"
           fi
 
