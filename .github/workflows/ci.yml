@@ -115,8 +115,6 @@ jobs:
       - name: Prepare
         id: prep
         run: |
-          LABELS=""
-
           branch="${GITHUB_REF#refs/heads/}"
           if [[ "$branch" == "master" ]]; then
             VERSION="snapshot"
@@ -124,6 +122,7 @@ jobs:
             VERSION="snapshot-$(echo $branch | sed 's#[^a-zA-Z0-9_-]#-#g')"
           fi
 
+          LABELS=""
           if [[ ! "$branch" =~ "release-*" ]]; then
             LABELS="quay.expires-after=10d"
           fi
@@ -161,7 +160,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64
           push: false
-          tags: operator-amd64:latest
+          tags: operator-amd64:${{ steps.prep.outputs.version }}
           labels: ${{ steps.prep.outputs.labels }}
           outputs: type=docker,dest=/tmp/operator-amd64.tar
       - name: Build arm64
@@ -175,7 +174,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/arm64
           push: false
-          tags: operator-arm64:latest
+          tags: operator-arm64:${{ steps.prep.outputs.version }}
           labels: ${{ steps.prep.outputs.labels }}
           outputs: type=docker,dest=/tmp/operator-arm64.tar
       - name: Upload artifact
@@ -208,6 +207,7 @@ jobs:
           path: /tmp
       - name: Upload image to Quay
         env:
+          # reuse variables defined during build job
           LABELS: ${{ needs.builddockerimage.outputs.labels }}
           TAG: ${{ needs.builddockerimage.outputs.version }}
         run: |
@@ -216,14 +216,14 @@ jobs:
           if [[ -f "/tmp/operator-arm64.tar" ]]; then
             echo "we build for arm too => combine images"
             docker load --input /tmp/operator-arm64.tar
-            docker tag operator-arm64:latest ${IMAGE_QUAY}:${TAG}-arm64
-            docker tag operator-amd64:latest ${IMAGE_QUAY}:${TAG}-amd64
+            docker tag operator-arm64:${TAG} ${IMAGE_QUAY}:${TAG}-arm64
+            docker tag operator-amd64:${TAG} ${IMAGE_QUAY}:${TAG}-amd64
             docker push ${IMAGE_QUAY}:${TAG}-arm64
             docker push ${IMAGE_QUAY}:${TAG}-amd64
 
             docker manifest create ${IMAGE_QUAY}:${TAG} ${IMAGE_QUAY}:${TAG}-arm64 ${IMAGE_QUAY}:${TAG}-amd64
             docker manifest push ${IMAGE_QUAY}:${TAG}
           else
-            docker tag operator-amd64:latest ${IMAGE_QUAY}:${TAG}
+            docker tag operator-amd64:${TAG} ${IMAGE_QUAY}:${TAG}
             docker push ${IMAGE_QUAY}:${TAG}
           fi
