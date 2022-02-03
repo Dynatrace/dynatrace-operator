@@ -155,8 +155,8 @@ func createReconcileRequest(nodeName string) reconcile.Request {
 	}
 }
 
-func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDynatraceClient) *ReconcileNode {
-	return &ReconcileNode{
+func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDynatraceClient) *NodesController {
+	return &NodesController{
 		client:       fakeClient,
 		scheme:       scheme.Scheme,
 		dtClientFunc: dynakube.StaticDynatraceClient(dtClient),
@@ -174,7 +174,7 @@ func createDTMockClient(ip, host string) *dtclient.MockDynatraceClient {
 	return dtClient
 }
 
-func reconcileAllNodes(t *testing.T, ctrl *ReconcileNode, fakeClient client.Client) {
+func reconcileAllNodes(t *testing.T, ctrl *NodesController, fakeClient client.Client) {
 	var nodeList corev1.NodeList
 	fakeClient.List(context.TODO(), &nodeList)
 

@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"time"
 
-	err "github.com/pkg/errors"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 )
 
 // ErrNotFound is returned when entry hasn't been found on the cache.Ø
-var ErrNotFound = err.New("not found")
+var ErrNotFound = errors.New("not found")
 
 // CacheEntry constains information about a Node.
 type CacheEntry struct {
@@ -27,12 +27,12 @@ type Cache struct {
 }
 
 // Get returns the information about node, or error if not found or failed to unmarshall the data.
-func (nodeCache *Cache) Get(node string) (CacheEntry, error) {
-	if nodeCache.Obj.Data == nil {
+func (cache *Cache) Get(node string) (CacheEntry, error) {
+	if cache.Obj.Data == nil {
 		return CacheEntry{}, ErrNotFound
 	}
 
-	raw, ok := nodeCache.Obj.Data[node]
+	raw, ok := cache.Obj.Data[node]
 	if !ok {
 		return CacheEntry{}, ErrNotFound
 	}
@@ -46,47 +46,47 @@ func (nodeCache *Cache) Get(node string) (CacheEntry, error) {
 }
 
 // Set updates the information about node, or error if failed to marshall the data.
-func (nodeCache *Cache) Set(node string, entry CacheEntry) error {
+func (cache *Cache) Set(node string, entry CacheEntry) error {
 	raw, err := json.Marshal(entry)
 	if err != nil {
 		return err
 	}
-	if nodeCache.Obj.Data == nil {
-		nodeCache.Obj.Data = map[string]string{}
+	if cache.Obj.Data == nil {
+		cache.Obj.Data = map[string]string{}
 	}
-	nodeCache.Obj.Data[node] = string(raw)
-	nodeCache.upd = true
+	cache.Obj.Data[node] = string(raw)
+	cache.upd = true
 	return nil
 }
 
 // Delete removes the node from the cache.
-func (nodeCache *Cache) Delete(node string) {
-	if nodeCache.Obj.Data != nil {
-		delete(nodeCache.Obj.Data, node)
-		nodeCache.upd = true
+func (cache *Cache) Delete(node string) {
+	if cache.Obj.Data != nil {
+		delete(cache.Obj.Data, node)
+		cache.upd = true
 	}
 }
 
 // Keys returns a list of node names on the cache.
-func (nodeCache *Cache) Keys() []string {
-	if nodeCache.Obj.Data == nil {
+func (cache *Cache) Keys() []string {
+	if cache.Obj.Data == nil {
 		return []string{}
 	}
 
-	out := make([]string, 0, len(nodeCache.Obj.Data))
-	for k := range nodeCache.Obj.Data {
+	out := make([]string, 0, len(cache.Obj.Data))
+	for k := range cache.Obj.Data {
 		out = append(out, k)
 	}
 	return out
 }
 
 // Changed returns true if changes have been made to the cache instance.
-func (nodeCache *Cache) Changed() bool {
-	return nodeCache.Create || nodeCache.upd
+func (cache *Cache) Changed() bool {
+	return cache.Create || cache.upd
 }
 
-func (nodeCache *Cache) ContainsKey(key string) bool {
-	for _, e := range nodeCache.Keys() {
+func (cache *Cache) ContainsKey(key string) bool {
+	for _, e := range cache.Keys() {
 		if e == key {
 			return true
 		}
@@ -94,8 +94,8 @@ func (nodeCache *Cache) ContainsKey(key string) bool {
 	return false
 }
 
-func (nodeCache *Cache) IsCacheOutdated() bool {
-	if lastUpdated, ok := nodeCache.Obj.Annotations[lastUpdatedCacheAnnotiation]; ok {
+func (cache *Cache) IsCacheOutdated() bool {
+	if lastUpdated, ok := cache.Obj.Annotations[lastUpdatedCacheAnnotiation]; ok {
 		if lastUpdatedTime, err := time.Parse(time.RFC3339, lastUpdated); err == nil {
 			return lastUpdatedTime.Add(cacheLifetime).Before(time.Now())
 		} else {
@@ -105,15 +105,15 @@ func (nodeCache *Cache) IsCacheOutdated() bool {
 	return true // Cache is not annotated -> outdated
 }
 
-func (nodeCache *Cache) UpdateTimestamp() {
-	if nodeCache.Obj.Annotations == nil {
-		nodeCache.Obj.Annotations = make(map[string]string)
+func (cache *Cache) UpdateTimestamp() {
+	if cache.Obj.Annotations == nil {
+		cache.Obj.Annotations = make(map[string]string)
 	}
-	nodeCache.Obj.Annotations[lastUpdatedCacheAnnotiation] = time.Now().Format(time.RFC3339)
-	nodeCache.upd = true
+	cache.Obj.Annotations[lastUpdatedCacheAnnotiation] = time.Now().Format(time.RFC3339)
+	cache.upd = true
 }
 
-func (nodeCache *Cache) updateLastMarkedForTerminationTimestamp(nodeInfo CacheEntry, nodeName string) error {
+func (cache *Cache) updateLastMarkedForTerminationTimestamp(nodeInfo CacheEntry, nodeName string) error {
 	nodeInfo.LastMarkedForTermination = time.Now().UTC()
-	return nodeCache.Set(nodeName, nodeInfo)
+	return cache.Set(nodeName, nodeInfo)
 }
