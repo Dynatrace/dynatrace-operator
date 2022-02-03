@@ -73,7 +73,6 @@ func (controller *NodesController) Reconcile(ctx context.Context, request reconc
 	nodeName := request.NamespacedName.Name
 	dynakube, err := controller.determineDynakubeForNode(nodeName)
 	if err != nil {
-		log.Error(err, "error while getting Dynakube for Node")
 		return reconcile.Result{}, err
 	}
 
