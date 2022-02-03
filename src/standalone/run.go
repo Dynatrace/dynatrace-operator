@@ -70,7 +70,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 }
 
 func (runner *Runner) Run() error {
-	log.Info("standalone init started")
+	log.Info("standalone agent init started")
 	var err error
 	defer runner.consumeErrorIfNecessary(&err)
 
@@ -78,12 +78,15 @@ func (runner *Runner) Run() error {
 		return err
 	}
 
-	if runner.env.mode == InstallerMode {
+	if runner.env.mode == InstallerMode && runner.env.oneAgentInjected {
 		if err = runner.installOneAgent(); err != nil {
 			return err
 		}
 	}
 	err = runner.configureInstallation()
+	if err == nil {
+		log.Info("standalone agent init completed")
+	}
 	return err
 }
 
@@ -104,11 +107,12 @@ func (runner *Runner) setHostTenant() error {
 		}
 		runner.hostTenant = hostTenant
 	}
+	log.Info("successfully set host tenant", "hostTenant", runner.hostTenant)
 	return nil
 }
 
 func (runner *Runner) installOneAgent() error {
-	log.Info("downloading OneAgent zip")
+	log.Info("downloading OneAgent")
 	return runner.installer.InstallAgent(BinDirMount)
 }
 
@@ -116,13 +120,16 @@ func (runner *Runner) configureInstallation() error {
 	log.Info("configuring standalone OneAgent")
 
 	if runner.env.oneAgentInjected {
+		log.Info("setting ld.so.preload")
 		if err := runner.setLDPreload(); err != nil {
 			return err
 		}
+		log.Info("creating container configuration files")
 		if err := runner.createContainerConfigurationFiles(); err != nil {
 			return err
 		}
 		if runner.config.TlsCert != "" {
+			log.Info("propagating tls cert to agent")
 			if err := runner.propagateTLSCert(); err != nil {
 				return err
 			}
@@ -136,6 +143,7 @@ func (runner *Runner) configureInstallation() error {
 		}
 	}
 	if runner.env.dataIngestInjected {
+		log.Info("creating enrichment files")
 		if err := runner.enrichMetadata(); err != nil {
 			return err
 		}

@@ -17,7 +17,7 @@ const (
 	CsiMode       InstallMode = "csi"
 
 	ModeEnv         = "MODE"
-	CanFailEnv      = "FAIL_POLICY"
+	CanFailEnv      = "FAILURE_POLICY"
 	InstallerUrlEnv = "INSTALLER_URL"
 
 	InstallerFlavorEnv = "FLAVOR"
@@ -34,7 +34,7 @@ const (
 	WorkloadNameEnv = "DT_WORKLOAD_NAME"
 
 	InstallPathEnv            = "INSTALLPATH"
-	ContainerCountEnv         = "CONTAINER_COUNT"
+	ContainerCountEnv         = "CONTAINERS_COUNT"
 	ContainerNameEnvTemplate  = "CONTAINER_%d_NAME"
 	ContainerImageEnvTemplate = "CONTAINER_%d_IMAGE"
 
