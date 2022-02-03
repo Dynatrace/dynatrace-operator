@@ -1,8 +1,17 @@
 package consts
 
 const (
-	HttpsServicePort       = 443
-	HttpsServiceTargetPort = "ag-https"
-	HttpServicePort        = 80
-	HttpServiceTargetPort  = "ag-http"
+	ActiveGateContainerName = "activegate"
+
+	HttpsServicePortName = "https"
+	HttpsServicePort     = 443
+	HttpServicePortName  = "http"
+	HttpServicePort      = 80
+
+	EecContainerName = ActiveGateContainerName + "-eec"
+
+	StatsDContainerName    = ActiveGateContainerName + "-statsd"
+	StatsDIngestPortName   = "statsd"
+	StatsDIngestPort       = 18125
+	StatsDIngestTargetPort = "statsd-port"
 )

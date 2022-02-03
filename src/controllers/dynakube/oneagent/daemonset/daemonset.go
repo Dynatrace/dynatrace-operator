@@ -20,7 +20,7 @@ const (
 
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
-	annotationVersion           = "internal.operator.dynatrace.com/version"
+	annotationVersion           = dynatracev1beta1.InternalFlagPrefix + "version"
 
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
 
