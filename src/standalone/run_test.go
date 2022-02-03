@@ -70,7 +70,7 @@ func TestSetHostTenant(t *testing.T) {
 		err := runner.setHostTenant()
 
 		require.NoError(t, err)
-		assert.Equal(t, testNodeIP, runner.hostTenant)
+		assert.Equal(t, testTenantUUID, runner.hostTenant)
 	})
 	t.Run(`set hostTenant to empty`, func(t *testing.T) {
 		runner.config.HasHost = false

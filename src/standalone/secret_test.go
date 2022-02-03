@@ -22,7 +22,6 @@ const (
 
 	testTenantUUID = "test"
 	testNodeName   = "node1"
-	testNodeIP     = "123"
 	testTlsCert    = "tls"
 	testHostGroup  = "group"
 	testClusterID  = "id"
@@ -39,7 +38,7 @@ var testSecretConfig = SecretConfig{
 	TenantUUID:    testTenantUUID,
 	HasHost:       true,
 	MonitoringNodes: map[string]string{
-		testNodeName: testNodeIP,
+		testNodeName: testTenantUUID,
 	},
 	TlsCert:   testTlsCert,
 	HostGroup: testHostGroup,
