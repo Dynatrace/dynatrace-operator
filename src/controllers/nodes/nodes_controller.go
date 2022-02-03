@@ -23,7 +23,7 @@ import (
 )
 
 func Add(mgr manager.Manager, _ string) error {
-	return NewReconciler(mgr).SetupWithManager(mgr)
+	return NewController(mgr).SetupWithManager(mgr)
 }
 
 func (controller *NodesController) SetupWithManager(mgr ctrl.Manager) error {
@@ -41,11 +41,8 @@ func nodeDeletionPredicate(controller *NodesController) predicate.Predicate {
 	}
 }
 
-// blank assignment to verify that NodesController implements reconcile.Reconciler
-var _ reconcile.Reconciler = &NodesController{}
-
 // NewReconciler returns a new ReconcileDynaKube
-func NewReconciler(mgr manager.Manager) *NodesController {
+func NewController(mgr manager.Manager) *NodesController {
 	return &NodesController{
 		client:       mgr.GetClient(),
 		scheme:       mgr.GetScheme(),
@@ -83,7 +80,6 @@ func (controller *NodesController) Reconcile(ctx context.Context, request reconc
 
 	var node corev1.Node
 	if err := controller.client.Get(ctx, client.ObjectKey{Name: nodeName}, &node); err != nil {
-		// handle deletion of Node
 		if k8serrors.IsNotFound(err) {
 			log.Info("node was not found in cluster", "node", nodeName)
 			return reconcile.Result{}, nil
@@ -155,7 +151,6 @@ func (controller *NodesController) reconcileNodeDeletion(nodeName string) error 
 		return err
 	}
 
-	// Node is found in the cluster and in cache, send mark for termination, not found node is handled in err check
 	if dynakube != nil {
 		cachedNodeData := CachedNodeInfo{
 			cachedNode: cachedNodeInfo,
@@ -164,6 +159,7 @@ func (controller *NodesController) reconcileNodeDeletion(nodeName string) error 
 		}
 
 		if err := controller.markForTermination(dynakube, cachedNodeData); err != nil {
+			//handle not found node
 			log.Error(err, "error while sending mark for termination for node:", "node", nodeName)
 			return err
 		}

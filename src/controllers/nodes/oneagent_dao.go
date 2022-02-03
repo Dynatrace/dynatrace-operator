@@ -12,7 +12,7 @@ func (controller *NodesController) determineDynakubeForNode(nodeName string) (*d
 	if err != nil {
 		return nil, err
 	}
-	return controller.filterOneAgentFromList(dks, nodeName), nil
+	return controller.filterDynakubeFromList(dks, nodeName), nil
 }
 
 func (controller *NodesController) getDynakubeList() (*dynatracev1beta1.DynaKubeList, error) {
@@ -24,7 +24,7 @@ func (controller *NodesController) getDynakubeList() (*dynatracev1beta1.DynaKube
 	return &dynakubeList, nil
 }
 
-func (controller *NodesController) filterOneAgentFromList(dkList *dynatracev1beta1.DynaKubeList,
+func (controller *NodesController) filterDynakubeFromList(dkList *dynatracev1beta1.DynaKubeList,
 	nodeName string) *dynatracev1beta1.DynaKube {
 
 	for _, dynakube := range dkList.Items {
