@@ -5,12 +5,14 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestConflictingActiveGateConfiguration(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
 
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithWarnings(t, 1, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
@@ -23,7 +25,7 @@ func TestConflictingActiveGateConfiguration(t *testing.T) {
 			},
 		})
 
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithWarnings(t, 1, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
@@ -36,7 +38,7 @@ func TestConflictingActiveGateConfiguration(t *testing.T) {
 			},
 		})
 
-		assertAllowedResponseWithWarnings(t, 2, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithWarnings(t, 3, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
@@ -100,6 +102,109 @@ func TestInvalidActiveGateCapabilities(t *testing.T) {
 					ActiveGate: dynatracev1beta1.ActiveGateSpec{
 						Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 							"invalid-capability",
+						},
+					},
+				},
+			})
+	})
+}
+
+func TestMissingActiveGateMemoryLimit(t *testing.T) {
+	t.Run(`memory warning in activeGate mode`, func(t *testing.T) {
+		assertAllowedResponseWithWarnings(t, 1,
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					ActiveGate: dynatracev1beta1.ActiveGateSpec{
+						Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+							dynatracev1beta1.RoutingCapability.DisplayName,
+						},
+						CapabilityProperties: dynatracev1beta1.CapabilityProperties{
+							Resources: v1.ResourceRequirements{},
+						},
+					},
+				},
+			})
+	})
+	t.Run(`memory warning in deprecated kubemon mode`, func(t *testing.T) {
+		assertAllowedResponseWithWarnings(t, 1,
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
+						Enabled: true,
+					},
+				},
+			})
+	})
+	t.Run(`memory warning in deprecated routing mode`, func(t *testing.T) {
+		assertAllowedResponseWithWarnings(t, 1,
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					Routing: dynatracev1beta1.RoutingSpec{
+						Enabled: true,
+					},
+				},
+			})
+	})
+	t.Run(`no memory warning in activeGate mode with memory limit`, func(t *testing.T) {
+		assertAllowedResponseWithoutWarnings(t,
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					ActiveGate: dynatracev1beta1.ActiveGateSpec{
+						Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+							dynatracev1beta1.RoutingCapability.DisplayName,
+						},
+						CapabilityProperties: dynatracev1beta1.CapabilityProperties{
+							Resources: v1.ResourceRequirements{
+								Limits: v1.ResourceList{
+									v1.ResourceLimitsMemory: *resource.NewMilliQuantity(1, ""),
+								},
+							},
+						},
+					},
+				},
+			})
+	})
+	t.Run(`no memory warning in deprecated kubemon mode with memory limit`, func(t *testing.T) {
+		assertAllowedResponseWithoutWarnings(t,
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
+						Enabled: true,
+						CapabilityProperties: dynatracev1beta1.CapabilityProperties{
+							Resources: v1.ResourceRequirements{
+								Limits: v1.ResourceList{
+									v1.ResourceLimitsMemory: *resource.NewMilliQuantity(1, ""),
+								},
+							},
+						},
+					},
+				},
+			})
+	})
+	t.Run(`no memory warning in deprecated routing mode with memory limit`, func(t *testing.T) {
+		assertAllowedResponseWithoutWarnings(t,
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					Routing: dynatracev1beta1.RoutingSpec{
+						Enabled: true,
+						CapabilityProperties: dynatracev1beta1.CapabilityProperties{
+							Resources: v1.ResourceRequirements{
+								Limits: v1.ResourceList{
+									v1.ResourceLimitsMemory: *resource.NewMilliQuantity(1, ""),
+								},
+							},
 						},
 					},
 				},

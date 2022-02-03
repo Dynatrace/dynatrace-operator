@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -17,6 +18,7 @@ Make sure you correctly specify the ActiveGate capabilities in your custom resou
 	errorDuplicateActiveGateCapability = `The DynaKube's specification tries to specify duplicate capabilities in the ActiveGate section, duplicate capability=%s.
 Make sure you don't duplicate an Activegate capability in your custom resource.
 `
+	warningMissingActiveGateMemoryLimit = `ActiveGate specification missing memory limits. Can cause excess memory usage.`
 )
 
 func conflictingActiveGateConfiguration(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
@@ -53,4 +55,28 @@ func invalidActiveGateCapabilities(dv *dynakubeValidator, dynakube *dynatracev1b
 		}
 	}
 	return ""
+}
+
+func missingActiveGateMemoryLimit(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	if dynakube.ActiveGateMode() {
+		if !memoryLimitSet(dynakube.Spec.ActiveGate.Resources) {
+			return warningMissingActiveGateMemoryLimit
+		}
+	} else if dynakube.DeprecatedActiveGateMode() {
+		if dynakube.Spec.KubernetesMonitoring.Enabled {
+			if !memoryLimitSet(dynakube.Spec.KubernetesMonitoring.Resources) {
+				return warningMissingActiveGateMemoryLimit
+			}
+		}
+		if dynakube.Spec.Routing.Enabled {
+			if !memoryLimitSet(dynakube.Spec.Routing.Resources) {
+				return warningMissingActiveGateMemoryLimit
+			}
+		}
+	}
+	return ""
+}
+
+func memoryLimitSet(resources corev1.ResourceRequirements) bool {
+	return resources.Limits != nil && resources.Limits.Memory() != nil
 }
