@@ -167,7 +167,7 @@ func (installer *OneAgentInstaller) downloadOneAgentWithVersion(tmpFile afero.Fi
 }
 
 func (installer *OneAgentInstaller) downloadOneAgentViaInstallerUrl(tmpFile afero.File) error {
-	log.Info("downloading OneAgent package using provided url", "url", installer.props.Url)
+	log.Info("downloading OneAgent package using provided url, all other properties are ignored", "url", installer.props.Url)
 	return installer.dtc.GetAgentViaInstallerUrl(installer.props.Url, tmpFile)
 }
 

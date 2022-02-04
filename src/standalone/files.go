@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 )
 
-func (runner *Runner) getBaseConfContent(container containerInfo) string {
-	formatString := `[container]
+var (
+	baseConfContentFormatString = `[container]
 containerName %s
 imageName %s
 k8s_fullpodname %s
@@ -16,7 +16,33 @@ k8s_containername %s
 k8s_basepodname %s
 k8s_namespace %s
 `
-	return fmt.Sprintf(formatString,
+	k8ConfContentFormatString = `k8s_node_name %s
+k8s_cluster_id %s
+`
+	hostConfContentFormatString = `[host]
+tenant %s
+isCloudNativeFullStack true"
+`
+
+	jsonEnrichmentContentFormatString = `"k8s.pod.uid": "%s",
+"k8s.pod.name": "%s",
+"k8s.namespace.name": "%s",
+"dt.kubernetes.workload.kind": "%s",
+"dt.kubernetes.workload.name": "%s",
+"dt.kubernetes.cluster.id": "%s"
+`
+
+	propsEnrichmentContentFormatString = `k8s.pod.uid=%s
+k8s.pod.name=%s
+k8s.namespace.name=%s
+dt.kubernetes.workload.kind=%s
+dt.kubernetes.workload.name=%s
+dt.kubernetes.cluster.id=%s
+`
+)
+
+func (runner *Runner) getBaseConfContent(container containerInfo) string {
+	return fmt.Sprintf(baseConfContentFormatString,
 		container.name,
 		container.image,
 		runner.env.k8PodName,
@@ -28,34 +54,20 @@ k8s_namespace %s
 }
 
 func (runner *Runner) getK8ConfContent() string {
-	formatString := `k8s_node_name %s
-k8s_cluster_id %s
-`
-	return fmt.Sprintf(formatString,
+	return fmt.Sprintf(k8ConfContentFormatString,
 		runner.env.k8NodeName,
 		runner.config.ClusterID,
 	)
 }
 
 func (runner *Runner) getHostConfContent() string {
-	formatString := `[host]
-tenant %s
-isCloudNativeFullStack true"
-`
-	return fmt.Sprintf(formatString,
+	return fmt.Sprintf(hostConfContentFormatString,
 		runner.hostTenant,
 	)
 }
 
 func (runner *Runner) createJsonEnrichmentFile() error {
-	jsonFormat := `"k8s.pod.uid": "%s",
-"k8s.pod.name": "%s",
-"k8s.namespace.name": "%s",
-"dt.kubernetes.workload.kind": "%s",
-"dt.kubernetes.workload.name": "%s",
-"dt.kubernetes.cluster.id": "%s"
-`
-	jsonContent := fmt.Sprintf(jsonFormat,
+	jsonContent := fmt.Sprintf(jsonEnrichmentContentFormatString,
 		runner.env.k8PodUID,
 		runner.env.k8PodName,
 		runner.env.k8Namespace,
@@ -69,14 +81,7 @@ func (runner *Runner) createJsonEnrichmentFile() error {
 }
 
 func (runner *Runner) createPropsEnrichmentFile() error {
-	propsFormat := `k8s.pod.uid=%s
-k8s.pod.name=%s
-k8s.namespace.name=%s
-dt.kubernetes.workload.kind=%s
-dt.kubernetes.workload.name=%s
-dt.kubernetes.cluster.id=%s
-`
-	propsContent := fmt.Sprintf(propsFormat,
+	propsContent := fmt.Sprintf(propsEnrichmentContentFormatString,
 		runner.env.k8PodUID,
 		runner.env.k8PodName,
 		runner.env.k8Namespace,

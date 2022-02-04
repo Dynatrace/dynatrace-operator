@@ -70,13 +70,15 @@ func prepTestEnv(t *testing.T) func() {
 	require.NoError(t, err)
 
 	// Mode Env
+	envs = append(envs, CanFailEnv)
+	err = os.Setenv(CanFailEnv, "fail")
+	require.NoError(t, err)
 	envs = append(envs, ModeEnv)
 	err = os.Setenv(ModeEnv, string(CsiMode))
 	require.NoError(t, err)
 
 	// Bool envs
 	boolEnvs := []string{
-		CanFailEnv,
 		OneAgentInjectedEnv,
 		DataIngestInjectedEnv,
 	}

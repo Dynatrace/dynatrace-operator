@@ -131,11 +131,7 @@ func (env *environment) addCanFail() error {
 	if err != nil {
 		return err
 	}
-	if canFail == "true" {
-		env.canFail = true
-	} else {
-		env.canFail = false
-	}
+	env.canFail = canFail == "fail"
 	return nil
 }
 
@@ -272,11 +268,7 @@ func (env *environment) addOneAgentInjected() error {
 	if err != nil {
 		return err
 	}
-	if oneAgentInjected == "true" {
-		env.oneAgentInjected = true
-	} else {
-		env.oneAgentInjected = false
-	}
+	env.oneAgentInjected = oneAgentInjected == "true"
 	return nil
 }
 
@@ -285,11 +277,7 @@ func (env *environment) addDataIngestInjected() error {
 	if err != nil {
 		return err
 	}
-	if dataIngestInjected == "true" {
-		env.dataIngestInjected = true
-	} else {
-		env.dataIngestInjected = false
-	}
+	env.dataIngestInjected = dataIngestInjected == "true"
 	return nil
 }
 
