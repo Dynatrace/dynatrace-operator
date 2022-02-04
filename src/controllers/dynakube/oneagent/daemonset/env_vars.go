@@ -12,6 +12,7 @@ const (
 	dtClusterId = "DT_K8S_CLUSTER_ID"
 
 	oneagentDisableContainerInjection = "ONEAGENT_DISABLE_CONTAINER_INJECTION"
+	oneagentReadOnlyMode              = "ONEAGENT_READ_ONLY_MODE"
 
 	proxy = "https_proxy"
 )
@@ -24,6 +25,10 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 
 	if dsInfo.hasProxy() {
 		envVarMap = dsInfo.setDefaultProxy(envVarMap)
+	}
+
+	if dsInfo.instance.FeatureReadOnlyOneAgent() {
+		envVarMap = setDefaultValue(envVarMap, oneagentReadOnlyMode, "true")
 	}
 
 	return mapToArray(envVarMap)
