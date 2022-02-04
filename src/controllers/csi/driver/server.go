@@ -145,21 +145,19 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	log.Info("publishing app volume",
-		"target", volumeCfg.TargetPath,
-		"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
-		"readonly", req.GetReadonly(),
-		"volumeID", volumeCfg.VolumeId,
-		"attributes", req.GetVolumeContext(),
-		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
-	)
-
-	response, err := svr.publishers[appvolumes.Mode].PublishVolume(ctx, volumeCfg)
-	if err != nil {
-		return nil, err
+	volumeAttributes := req.GetVolumeContext()
+	if volumeAttributes[CSIVolumeAttributeName] == appvolumes.Mode {
+		log.Info("publishing app volume",
+			"target", volumeCfg.TargetPath,
+			"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
+			"readonly", req.GetReadonly(),
+			"volumeID", volumeCfg.VolumeId,
+			"attributes", req.GetVolumeContext(),
+			"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
+		)
+		return svr.publishers[appvolumes.Mode].PublishVolume(ctx, volumeCfg)
 	}
-
-	return response, nil
+	return &csi.NodePublishVolumeResponse{}, nil
 }
 
 func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
