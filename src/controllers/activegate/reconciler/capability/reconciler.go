@@ -80,7 +80,7 @@ func getActiveGateContainer(sts *appsv1.StatefulSet) (*corev1.Container, error) 
 
 func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
-		{
+		if dk.NeedsMetricsIngest() {
 			activeGateContainer, err := getActiveGateContainer(sts)
 			if err == nil {
 				activeGateContainer.Ports = []corev1.ContainerPort{

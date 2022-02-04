@@ -111,12 +111,15 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 	}
 
 	var endpointBuf bytes.Buffer
+
+	//if dk.NeedsMetricsIngest() {
 	if _, err := endpointBuf.WriteString(fmt.Sprintf("%s=%s\n", UrlSecretField, fields[UrlSecretField])); err != nil {
 		return nil, errors.WithStack(err)
 	}
 	if _, err := endpointBuf.WriteString(fmt.Sprintf("%s=%s\n", TokenSecretField, fields[TokenSecretField])); err != nil {
 		return nil, errors.WithStack(err)
 	}
+	//}
 
 	if dk.NeedsStatsd() {
 		if _, err := endpointBuf.WriteString(fmt.Sprintf("%s=%s\n", StatsdIngestUrl, fields[StatsdIngestUrl])); err != nil {
@@ -132,12 +135,13 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 }
 
 func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
+	fields := make(map[string]string)
+
+	//if dk.NeedsMetricsIngest() {
 	var tokens corev1.Secret
 	if err := g.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
-
-	fields := make(map[string]string)
 
 	if token, ok := tokens.Data[dtclient.DynatraceDataIngestToken]; ok {
 		fields[TokenSecretField] = string(token)
@@ -148,6 +152,7 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 	} else {
 		fields[UrlSecretField] = diUrl
 	}
+	//}
 
 	if dk.NeedsStatsd() {
 		if statsdUrl, err := statsdIngestUrl(dk); err != nil {
@@ -189,6 +194,7 @@ func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string
 	return fmt.Sprintf("https://%s.%s/e/%s/api/v2/metrics/ingest", serviceName, dk.Namespace, tenant), nil
 }
 
+// TODO: Merge with DynaKube.TenantUUID()?
 func extractTenant(url *url.URL) (string, error) {
 	tenant := ""
 	subdomains := strings.Split(url.Hostname(), ".")

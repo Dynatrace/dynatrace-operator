@@ -13,29 +13,40 @@ import (
 )
 
 func createService(instance *dynatracev1beta1.DynaKube, feature string) *corev1.Service {
-	enableStatsd := instance.NeedsStatsd()
-	ports := []corev1.ServicePort{
-		{
-			Name:       capability.HttpsServicePortName,
-			Protocol:   corev1.ProtocolTCP,
-			Port:       capability.HttpsServicePort,
-			TargetPort: intstr.FromString(capability.HttpsServicePortName),
-		},
-		{
-			Name:       capability.HttpServicePortName,
-			Protocol:   corev1.ProtocolTCP,
-			Port:       capability.HttpServicePort,
-			TargetPort: intstr.FromString(capability.HttpServicePortName),
-		},
+	var ports []corev1.ServicePort
+
+	if instance.NeedsMetricsIngest() {
+		ports = append(ports,
+			corev1.ServicePort{
+				Name:       capability.HttpsServicePortName,
+				Protocol:   corev1.ProtocolTCP,
+				Port:       capability.HttpsServicePort,
+				TargetPort: intstr.FromString(capability.HttpsServicePortName),
+			},
+			corev1.ServicePort{
+				Name:       capability.HttpServicePortName,
+				Protocol:   corev1.ProtocolTCP,
+				Port:       capability.HttpServicePort,
+				TargetPort: intstr.FromString(capability.HttpServicePortName),
+			},
+		)
 	}
-	if enableStatsd {
-		ports = append(ports, corev1.ServicePort{
-			Name:       capability.StatsdIngestPortName,
-			Protocol:   corev1.ProtocolUDP,
-			Port:       capability.StatsdIngestPort,
-			TargetPort: intstr.FromString(capability.StatsdIngestTargetPort),
-		})
+
+	if instance.NeedsStatsd() {
+		ports = append(ports,
+			corev1.ServicePort{
+				Name:       capability.StatsdIngestPortName,
+				Protocol:   corev1.ProtocolUDP,
+				Port:       capability.StatsdIngestPort,
+				TargetPort: intstr.FromString(capability.StatsdIngestTargetPort),
+			},
+		)
 	}
+
+	// TODO Return nil instead of empty Service if it's not needed
+	//if len(ports) == 0 {
+	//	return nil
+	//}
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
