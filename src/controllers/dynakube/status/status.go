@@ -1,8 +1,6 @@
 package status
 
 import (
-	"strings"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
@@ -44,11 +42,6 @@ func SetDynakubeStatus(instance *dynatracev1beta1.DynaKube, opts Options) error 
 		return errors.WithStack(err)
 	}
 
-	tenantInfo, err := dtc.GetTenantInfo()
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
 	communicationHostStatus := dynatracev1beta1.CommunicationHostStatus(communicationHost)
 
 	connectionInfoStatus := dynatracev1beta1.ConnectionInfoStatus{
@@ -61,11 +54,6 @@ func SetDynakubeStatus(instance *dynatracev1beta1.DynaKube, opts Options) error 
 	instance.Status.ConnectionInfo = connectionInfoStatus
 	instance.Status.LatestAgentVersionUnixDefault = latestAgentVersionUnixDefault
 	instance.Status.LatestAgentVersionUnixPaas = latestAgentVersionUnixPaas
-	instance.Status.TenantInfo = dynatracev1beta1.TenantInfoStatus{
-		UUID:      tenantInfo.UUID,
-		Token:     tenantInfo.Token,
-		Endpoints: strings.Join(tenantInfo.Endpoints, ","),
-	}
 
 	return nil
 }

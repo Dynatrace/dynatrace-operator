@@ -1184,6 +1184,9 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                  tenantSecret:
+                    description: 'Optional: Sets ...'
+                    type: string
                   tlsSecretName:
                     description: 'Optional: the name of a secret containing ActiveGate
                       TLS cert+key and password. If not set, self-signed certificate
@@ -2718,17 +2721,6 @@ spec:
                 description: Defines the current state (Running, Updating, Error,
                   ...)
                 type: string
-              tenantInfo:
-                description: TenantInfo contains tenant, token and communication endpoints
-                  for ActiveGates to connect to the cluster
-                properties:
-                  Endpoints:
-                    type: string
-                  Token:
-                    type: string
-                  UUID:
-                    type: string
-                type: object
               tokens:
                 description: Credentials used to connect back to Dynatrace.
                 type: string

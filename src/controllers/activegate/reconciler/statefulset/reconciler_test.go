@@ -122,7 +122,7 @@ func TestReconcile_GetStatefulSet(t *testing.T) {
 	assert.True(t, update)
 	assert.NoError(t, err)
 
-	desiredSts, err := r.buildDesiredStatefulSet(dynatracev1beta1.TenantInfoStatus{})
+	desiredSts, err := r.buildDesiredStatefulSet()
 	assert.NoError(t, err)
 	assert.NotNil(t, desiredSts)
 
@@ -139,7 +139,7 @@ func TestReconcile_GetStatefulSet(t *testing.T) {
 
 func TestReconcile_CreateStatefulSetIfNotExists(t *testing.T) {
 	r := createDefaultReconciler(t)
-	desiredSts, err := r.buildDesiredStatefulSet(dynatracev1beta1.TenantInfoStatus{})
+	desiredSts, err := r.buildDesiredStatefulSet()
 	require.NoError(t, err)
 	require.NotNil(t, desiredSts)
 
@@ -154,7 +154,7 @@ func TestReconcile_CreateStatefulSetIfNotExists(t *testing.T) {
 
 func TestReconcile_UpdateStatefulSetIfOutdated(t *testing.T) {
 	r := createDefaultReconciler(t)
-	desiredSts, err := r.buildDesiredStatefulSet(dynatracev1beta1.TenantInfoStatus{})
+	desiredSts, err := r.buildDesiredStatefulSet()
 	require.NoError(t, err)
 	require.NotNil(t, desiredSts)
 
@@ -172,7 +172,7 @@ func TestReconcile_UpdateStatefulSetIfOutdated(t *testing.T) {
 	assert.False(t, updated)
 
 	r.Instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-	desiredSts, err = r.buildDesiredStatefulSet(dynatracev1beta1.TenantInfoStatus{})
+	desiredSts, err = r.buildDesiredStatefulSet()
 	require.NoError(t, err)
 
 	updated, err = r.updateStatefulSetIfOutdated(desiredSts)
@@ -182,7 +182,7 @@ func TestReconcile_UpdateStatefulSetIfOutdated(t *testing.T) {
 
 func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 	r := createDefaultReconciler(t)
-	desiredSts, err := r.buildDesiredStatefulSet(dynatracev1beta1.TenantInfoStatus{})
+	desiredSts, err := r.buildDesiredStatefulSet()
 	require.NoError(t, err)
 	require.NotNil(t, desiredSts)
 
@@ -200,7 +200,7 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 	assert.False(t, deleted)
 
 	r.Instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-	desiredSts, err = r.buildDesiredStatefulSet(dynatracev1beta1.TenantInfoStatus{})
+	desiredSts, err = r.buildDesiredStatefulSet()
 	require.NoError(t, err)
 	correctLabels := desiredSts.Labels
 	desiredSts.Labels = map[string]string{"activegate": "dynakube"}

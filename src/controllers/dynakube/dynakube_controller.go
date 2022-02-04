@@ -195,12 +195,14 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		return
 	}
 
-	err = activegate.
-		NewReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtcReconciler.ApiToken, dtc).
-		Reconcile()
-	if dkState.Error(err) {
-		log.Error(err, "could not reconcile Dynatrace ActiveGate Tenant secrets")
-		return
+	if dkState.Instance.NeedsActiveGate() {
+		err = activegate.
+			NewReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtcReconciler.ApiToken, dtc).
+			Reconcile()
+		if dkState.Error(err) {
+			log.Error(err, "could not reconcile Dynatrace ActiveGate Tenant secrets")
+			return
+		}
 	}
 
 	upd, err = updates.ReconcileVersions(ctx, dkState, controller.client, dtversion.GetImageVersion)

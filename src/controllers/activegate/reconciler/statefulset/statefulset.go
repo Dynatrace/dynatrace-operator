@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/events"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
@@ -18,19 +19,22 @@ import (
 )
 
 const (
-	serviceAccountPrefix = "dynatrace-"
+	serviceAccountPrefix   = "dynatrace-"
+	tenantSecretVolumeName = "ag-tenant-secret"
 
-	AnnotationVersion         = "internal.operator.dynatrace.com/version"
-	AnnotationCustomPropsHash = "internal.operator.dynatrace.com/custom-properties-hash"
+	annotationVersion         = "internal.operator.dynatrace.com/version"
+	annotationCustomPropsHash = "internal.operator.dynatrace.com/custom-properties-hash"
 
-	DTCapabilities       = "DT_CAPABILITIES"
-	DTIdSeedNamespace    = "DT_ID_SEED_NAMESPACE"
-	DTIdSeedClusterId    = "DT_ID_SEED_K8S_CLUSTER_ID"
-	DTNetworkZone        = "DT_NETWORK_ZONE"
-	DTGroup              = "DT_GROUP"
-	DTDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
+	dtServer             = "DT_SERVER"
+	dtTenant             = "DT_TENANT"
+	dtCapabilities       = "DT_CAPABILITIES"
+	dtIdSeedNamespace    = "DT_ID_SEED_NAMESPACE"
+	dtIdSeedClusterId    = "DT_ID_SEED_K8S_CLUSTER_ID"
+	dtNetworkZone        = "DT_NETWORK_ZONE"
+	dtGroup              = "DT_GROUP"
+	dtDeploymentMetadata = "DT_DEPLOYMENT_METADATA"
 
-	ActivegateContainerName = "activegate"
+	activegateContainerName = "activegate"
 )
 
 type statefulSetProperties struct {
@@ -45,12 +49,12 @@ type statefulSetProperties struct {
 	initContainersTemplates []corev1.Container
 	containerVolumeMounts   []corev1.VolumeMount
 	volumes                 []corev1.Volume
-	tenantUUID              string
-	tenantToken             string
-	communicationURLs       string
 }
 
-func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties, kubeSystemUID types.UID, customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string, initContainers []corev1.Container, containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume, tenantToken string, tenantUUID string, communicationURLs string) *statefulSetProperties {
+func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties, kubeSystemUID types.UID,
+	customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string,
+	initContainers []corev1.Container, containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume) *statefulSetProperties {
+
 	if serviceAccountOwner == "" {
 		serviceAccountOwner = feature
 	}
@@ -67,9 +71,6 @@ func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityPro
 		initContainersTemplates: initContainers,
 		containerVolumeMounts:   containerVolumeMounts,
 		volumes:                 volumes,
-		tenantUUID:              tenantUUID,
-		tenantToken:             tenantToken,
-		communicationURLs:       communicationURLs,
 	}
 }
 
@@ -89,8 +90,8 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: buildLabels(stsProperties.DynaKube, stsProperties.feature, stsProperties.CapabilityProperties),
 					Annotations: map[string]string{
-						AnnotationVersion:         stsProperties.Status.ActiveGate.Version,
-						AnnotationCustomPropsHash: stsProperties.customPropertiesHash,
+						annotationVersion:         stsProperties.Status.ActiveGate.Version,
+						annotationCustomPropsHash: stsProperties.customPropertiesHash,
 					},
 				},
 				Spec: buildTemplateSpec(stsProperties),
@@ -149,7 +150,7 @@ func buildInitContainers(stsProperties *statefulSetProperties) []corev1.Containe
 
 func buildContainer(stsProperties *statefulSetProperties) corev1.Container {
 	return corev1.Container{
-		Name:            ActivegateContainerName,
+		Name:            activegateContainerName,
 		Image:           stsProperties.DynaKube.ActiveGateImage(),
 		Resources:       stsProperties.CapabilityProperties.Resources,
 		ImagePullPolicy: corev1.PullAlways,
@@ -171,31 +172,42 @@ func buildContainer(stsProperties *statefulSetProperties) corev1.Container {
 }
 
 func buildVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
-	var volumes []corev1.Volume
+	volumes := []corev1.Volume{
+		{
+			Name: tenantSecretVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: stsProperties.AGTenantSecret(),
+				},
+			},
+		},
+	}
 
 	if !isCustomPropertiesNilOrEmpty(stsProperties.CustomProperties) {
 		valueFrom := determineCustomPropertiesSource(stsProperties)
-		volumes = append(volumes, corev1.Volume{
-			Name: customproperties.VolumeName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: valueFrom,
-					Items: []corev1.KeyToPath{
-						{Key: customproperties.DataKey, Path: customproperties.DataPath},
-					}}}},
+		volumes = append(volumes,
+			corev1.Volume{
+				Name: customproperties.VolumeName,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: valueFrom,
+						Items: []corev1.KeyToPath{
+							{Key: customproperties.DataKey, Path: customproperties.DataPath},
+						}}},
+			},
 		)
 	}
 
 	volumes = append(volumes, stsProperties.volumes...)
 
 	if stsProperties.HasProxy() {
-		volumes = append(volumes, buildProxyVolumes(stsProperties)...)
+		volumes = append(volumes, buildProxyVolumes()...)
 	}
 
 	return volumes
 }
 
-func buildProxyVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
+func buildProxyVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: InternalProxySecretVolumeName,
@@ -233,6 +245,14 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 		volumeMounts = append(volumeMounts, buildProxyMounts()...)
 	}
 
+	volumeMounts = append(volumeMounts, corev1.VolumeMount{
+		Name:      tenantSecretVolumeName,
+		ReadOnly:  true,
+		MountPath: "/var/lib/dynatrace/secrets/tokens/tenant-token",
+		SubPath:   activegate.TenantTokenName,
+	},
+	)
+
 	return volumeMounts
 }
 
@@ -269,21 +289,40 @@ func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
 	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(stsProperties.kubeSystemUID), deploymentmetadata.DeploymentTypeActiveGate)
 
 	envs := []corev1.EnvVar{
-		{Name: "DT_SERVER", Value: stsProperties.communicationURLs},
-		{Name: "DT_TOKEN", Value: stsProperties.tenantToken},
-		{Name: "DT_TENANT", Value: stsProperties.tenantUUID},
-		{Name: DTCapabilities, Value: stsProperties.capabilityName},
-		{Name: DTIdSeedNamespace, Value: stsProperties.Namespace},
-		{Name: DTIdSeedClusterId, Value: string(stsProperties.kubeSystemUID)},
-		{Name: DTDeploymentMetadata, Value: deploymentMetadata.AsString()},
+		{
+			Name: dtServer,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: stsProperties.AGTenantSecret(),
+					},
+					Key: activegate.CommunicationEndpointsName,
+				},
+			},
+		},
+		{
+			Name: dtTenant,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: stsProperties.AGTenantSecret(),
+					},
+					Key: activegate.TenantUuidName,
+				},
+			},
+		},
+		{Name: dtCapabilities, Value: stsProperties.capabilityName},
+		{Name: dtIdSeedNamespace, Value: stsProperties.Namespace},
+		{Name: dtIdSeedClusterId, Value: string(stsProperties.kubeSystemUID)},
+		{Name: dtDeploymentMetadata, Value: deploymentMetadata.AsString()},
 	}
 	envs = append(envs, stsProperties.Env...)
 
 	if stsProperties.Group != "" {
-		envs = append(envs, corev1.EnvVar{Name: DTGroup, Value: stsProperties.Group})
+		envs = append(envs, corev1.EnvVar{Name: dtGroup, Value: stsProperties.Group})
 	}
 	if stsProperties.Spec.NetworkZone != "" {
-		envs = append(envs, corev1.EnvVar{Name: DTNetworkZone, Value: stsProperties.Spec.NetworkZone})
+		envs = append(envs, corev1.EnvVar{Name: dtNetworkZone, Value: stsProperties.Spec.NetworkZone})
 	}
 
 	return envs

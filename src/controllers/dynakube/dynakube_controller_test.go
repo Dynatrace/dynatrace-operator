@@ -442,7 +442,8 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 		Return(dtclient.GetSettingsResponse{}, nil)
 	mockClient.On("CreateOrUpdateKubernetesSetting", testName, testUID, mock.AnythingOfType("string")).
 		Return(testObjectID, nil)
-	mockClient.On("GetTenantInfo").Return(&dtclient.TenantInfo{}, nil)
+	mockClient.On("GetAgentTenantInfo").Return(&dtclient.AgentTenantInfo{}, nil)
+	mockClient.On("GetActiveGateTenantInfo", true).Return(&dtclient.ActiveGateTenantInfo{}, nil)
 
 	return mockClient
 }

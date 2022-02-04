@@ -70,6 +70,13 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 
 	req.Header.Add("Authorization", authHeader)
 
+	if dtc.networkZone != "" {
+		query := req.URL.Query()
+		query.Set("networkZone", dtc.networkZone)
+		req.URL.RawQuery = query.Encode()
+	}
+
+	log.Info("!!! req", "url", req.URL)
 	return dtc.httpClient.Do(req)
 }
 
