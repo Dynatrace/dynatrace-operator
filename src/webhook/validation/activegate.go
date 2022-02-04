@@ -62,17 +62,6 @@ func missingActiveGateMemoryLimit(dv *dynakubeValidator, dynakube *dynatracev1be
 		if !memoryLimitSet(dynakube.Spec.ActiveGate.Resources) {
 			return warningMissingActiveGateMemoryLimit
 		}
-	} else if dynakube.DeprecatedActiveGateMode() {
-		if dynakube.Spec.KubernetesMonitoring.Enabled {
-			if !memoryLimitSet(dynakube.Spec.KubernetesMonitoring.Resources) {
-				return warningMissingActiveGateMemoryLimit
-			}
-		}
-		if dynakube.Spec.Routing.Enabled {
-			if !memoryLimitSet(dynakube.Spec.Routing.Resources) {
-				return warningMissingActiveGateMemoryLimit
-			}
-		}
 	}
 	return ""
 }
