@@ -201,6 +201,7 @@ func Certs(certs []byte) Option {
 func NetworkZone(networkZone string) Option {
 	return func(c *dynatraceClient) {
 		c.networkZone = networkZone
+		c.useNetworkZone = true
 	}
 }
 

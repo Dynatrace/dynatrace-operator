@@ -82,7 +82,7 @@ func TestResponseForLatestVersion(t *testing.T) {
 }
 
 func TestGetEntityIDForIP(t *testing.T) {
-	dynatraceServer, _ := createTestDynatraceClient(t, &ipHandler{})
+	dynatraceServer, _ := createTestDynatraceClient(t, &ipHandler{}, "")
 	defer dynatraceServer.Close()
 
 	dtc := dynatraceClient{
@@ -172,7 +172,7 @@ func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client)
 func TestGetLatestAgent(t *testing.T) {
 	fs := afero.NewMemMapFs()
 
-	dynatraceServer, _ := createTestDynatraceClient(t, &ipHandler{fs})
+	dynatraceServer, _ := createTestDynatraceClient(t, &ipHandler{fs}, "")
 	defer dynatraceServer.Close()
 
 	dtc := dynatraceClient{

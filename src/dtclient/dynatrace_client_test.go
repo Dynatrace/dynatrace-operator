@@ -226,11 +226,12 @@ func TestIgnoreNonCurrentlySeenHosts(t *testing.T) {
 	require.Equal(t, "1.195.0.20200515-045253", info.version)
 }
 
-func createTestDynatraceClient(t *testing.T, handler http.Handler) (*httptest.Server, Client) {
+func createTestDynatraceClient(t *testing.T, handler http.Handler, networkzoneName string) (*httptest.Server, Client) {
 	faultyDynatraceServer := httptest.NewServer(handler)
 
 	skipCert := SkipCertificateValidation(true)
-	faultyDynatraceClient, err := NewClient(faultyDynatraceServer.URL, apiToken, paasToken, skipCert)
+	networkzone := NetworkZone(networkzoneName)
+	faultyDynatraceClient, err := NewClient(faultyDynatraceServer.URL, apiToken, paasToken, skipCert, networkzone)
 
 	require.NoError(t, err)
 	require.NotNil(t, faultyDynatraceClient)

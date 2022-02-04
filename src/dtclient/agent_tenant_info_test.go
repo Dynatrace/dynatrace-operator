@@ -21,7 +21,7 @@ var agentTenantResponse = struct {
 
 func TestTenant(t *testing.T) {
 	t.Run("GetAgentTenantInfo", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, tenantServerHandler(agentConnectionInfoEndpoint, agentTenantResponse))
+		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, tenantServerHandler(agentConnectionInfoEndpoint, agentTenantResponse), "")
 		defer dynatraceServer.Close()
 
 		tenantInfo, err := dynatraceClient.GetAgentTenantInfo()
@@ -36,7 +36,7 @@ func TestTenant(t *testing.T) {
 			tenantInfo.CommunicationEndpoint)
 	})
 	t.Run("GetAgentTenantInfo handle internal server error", func(t *testing.T) {
-		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantInternalServerError(agentConnectionInfoEndpoint))
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantInternalServerError(agentConnectionInfoEndpoint), "")
 		defer faultyDynatraceServer.Close()
 
 		tenantInfo, err := faultyDynatraceClient.GetAgentTenantInfo()
@@ -46,7 +46,7 @@ func TestTenant(t *testing.T) {
 		assert.Equal(t, "dynatrace server error 500: error retrieving tenant info", err.Error())
 	})
 	t.Run("GetAgentTenantInfo handle malformed json", func(t *testing.T) {
-		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantMalformedJson(agentConnectionInfoEndpoint))
+		faultyDynatraceServer, faultyDynatraceClient := createTestDynatraceClient(t, tenantMalformedJson(agentConnectionInfoEndpoint), "")
 		defer faultyDynatraceServer.Close()
 
 		tenantInfo, err := faultyDynatraceClient.GetAgentTenantInfo()

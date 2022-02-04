@@ -77,7 +77,7 @@ func (dtc *dynatraceClient) makeRequest(url string, tokenType tokenType) (*http.
 		req.URL.RawQuery = query.Encode()
 	}
 
-	log.Info("!!! req", "url", req.URL)
+	log.Info("Request", "url", req.URL.String())
 	return dtc.httpClient.Do(req)
 }
 
