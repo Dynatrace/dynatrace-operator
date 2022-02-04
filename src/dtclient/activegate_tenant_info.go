@@ -13,17 +13,11 @@ type ActiveGateTenantInfo struct {
 	Endpoints string
 }
 
-func (dtc *dynatraceClient) GetActiveGateTenantInfo(retryNoNetworkzone bool) (*ActiveGateTenantInfo, error) {
-	log.Info("!!! GetActiveGateTenantInfo", "nz", dtc.networkZone)
-
+func getActiveGateTenantInfoWithinNetworkzone(dtc dynatraceClient, retryNoNetworkzone bool) (*ActiveGateTenantInfo, error) {
 	response, err := dtc.makeRequest(
 		dtc.getActiveGateConnectionInfoUrl(),
 		dynatracePaaSToken,
 	)
-
-	defer func() {
-		log.Info("!!!!! return", "ret", response.StatusCode)
-	}()
 
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -59,23 +53,20 @@ func (dtc *dynatraceClient) GetActiveGateTenantInfo(retryNoNetworkzone bool) (*A
 	return tenantInfo, nil
 }
 
-func (dtc *dynatraceClient) readResponseForActiveGateTenantInfo(response []byte) (*ActiveGateTenantInfo, error) {
-	type jsonResponse struct {
-		TenantUUID             string
-		TenantToken            string
-		CommunicationEndpoints string
-	}
+func (dtc *dynatraceClient) GetActiveGateTenantInfo(retryNoNetworkzone bool) (*ActiveGateTenantInfo, error) {
+	dtcWithNz := *dtc
+	dtcWithNz.useNetworkZone = true
+	return getActiveGateTenantInfoWithinNetworkzone(dtcWithNz, retryNoNetworkzone)
 
-	jr := &jsonResponse{}
-	err := json.Unmarshal(response, jr)
+}
+
+func (dtc *dynatraceClient) readResponseForActiveGateTenantInfo(response []byte) (*ActiveGateTenantInfo, error) {
+	agTenantInfo := &ActiveGateTenantInfo{}
+	err := json.Unmarshal(response, agTenantInfo)
 	if err != nil {
 		log.Error(err, "error unmarshalling json response")
 		return nil, errors.WithStack(err)
 	}
 
-	return &ActiveGateTenantInfo{
-		UUID:      jr.TenantUUID,
-		Token:     jr.TenantToken,
-		Endpoints: jr.CommunicationEndpoints,
-	}, nil
+	return agTenantInfo, nil
 }
