@@ -36,6 +36,7 @@ const (
 	annotationFeatureDisableMetadataEnrichment        = annotationFeaturePrefix + "disable-metadata-enrichment"
 	annotationFeatureEnableStatsDIngest               = annotationFeaturePrefix + "enable-statsd"
 	annotationFeatureUseActiveGateImageForStatsD      = annotationFeaturePrefix + "use-activegate-image-for-statsd"
+	AnnotationFeatureReadOnlyOneAgent                 = annotationFeaturePrefix + "oneagent-readonly-host-fs"
 )
 
 var (
@@ -130,4 +131,9 @@ func (dk *DynaKube) FeatureEnableStatsDIngest() bool {
 // (using special predefined entry points).
 func (dk *DynaKube) FeatureUseActiveGateImageForStatsD() bool {
 	return dk.Annotations[annotationFeatureUseActiveGateImageForStatsD] == "true"
+}
+
+// FeatureReadOnlyOneAgent is a feature flag that makes the operator deploy the oneagents in a readonly mode, where the csi-driver provides the volume for logs and such,
+func (dk *DynaKube) FeatureReadOnlyOneAgent() bool {
+	return dk.Annotations[AnnotationFeatureReadOnlyOneAgent] == "true"
 }

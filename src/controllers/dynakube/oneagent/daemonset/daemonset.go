@@ -2,6 +2,7 @@ package daemonset
 
 import (
 	"fmt"
+	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
@@ -24,7 +25,17 @@ const (
 
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
 
-	hostRootMount = "host-root"
+	hostRootVolumeName  = "host-root"
+	hostRootVolumeMount = "/mnt/root"
+
+	certVolumeName  = "certs"
+	certVolumeMount = "/mnt/dynatrace/certs"
+
+	OneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
+	tlsVolumeName          = "tls"
+
+	csiStorageVolumeName  = "csi-storage"
+	csiStorageVolumeMount = "/mnt/volume_storage_mount"
 
 	podName = "dynatrace-oneagent"
 
@@ -36,6 +47,10 @@ const (
 	ClassicFeature        = "classic"
 	HostMonitoringFeature = "inframon"
 	CloudNativeFeature    = "cloud-native"
+)
+
+var (
+	tlsVolumeMount = filepath.Join(hostRootVolumeMount, OneAgentCustomKeysPath)
 )
 
 type HostMonitoring struct {
