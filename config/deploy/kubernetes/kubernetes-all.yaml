@@ -1006,7 +1006,7 @@ spec:
                 properties:
                   capabilities:
                     description: Activegate capabilities enabled (routing, kubernetes-monitoring,
-                      metrics-ingest)
+                      metrics-ingest, dynatrace-api)
                     items:
                       type: string
                     type: array
@@ -1020,6 +1020,9 @@ spec:
                       valueFrom:
                         type: string
                     type: object
+                  dnsPolicy:
+                    description: 'Optional: Sets DNS Policy for the ActiveGate pods'
+                    type: string
                   env:
                     description: 'Optional: List of environment variables to set for
                       the ActiveGate'
@@ -2662,6 +2665,11 @@ spec:
               lastClusterVersionProbeTimestamp:
                 description: LastClusterVersionProbeTimestamp indicates when the cluster's
                   version was last checked
+                format: date-time
+                type: string
+              lastDataIngestTokenProbeTimestamp:
+                description: LastDataIngestTokenProbeTimestamp tracks when the last
+                  request for the DataIngest token validity was sent
                 format: date-time
                 type: string
               lastPaaSTokenProbeTimestamp:

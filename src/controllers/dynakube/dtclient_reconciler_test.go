@@ -216,6 +216,75 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 			"Token on secret dynatrace:dynakube missing scopes [WriteConfig]")
 		mock.AssertExpectationsForObjects(t, dtcMock)
 	})
+	t.Run("API token has missing scope for automatic kubernetes api monitoring", func(t *testing.T) {
+		dk := base.DeepCopy()
+		dk.Annotations = map[string]string{
+			"alpha.operator.dynatrace.com/feature-automatic-kubernetes-api-monitoring": "true",
+		}
+		dk.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{
+			Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName},
+		}
+		c := fake.NewClient(NewSecret(dynaKube, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}))
+
+		dtcMock := &dtclient.MockDynatraceClient{}
+		dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
+		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport,
+			dtclient.TokenScopeReadConfig,
+			dtclient.TokenScopeWriteConfig,
+			dtclient.TokenScopeSettingsRead,
+			dtclient.TokenScopeSettingsWrite,
+		}, nil)
+
+		rec := &DynatraceClientReconciler{
+			Client:              c,
+			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+			Now:                 metav1.Now(),
+		}
+
+		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		assert.Equal(t, dtcMock, dtc)
+		assert.True(t, ucr)
+		assert.NoError(t, err)
+		assert.False(t, rec.ValidTokens)
+
+		AssertCondition(t, dk, dynatracev1beta1.PaaSTokenConditionType, true, dynatracev1beta1.ReasonTokenReady, "Ready")
+		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, false, dynatracev1beta1.ReasonTokenScopeMissing,
+			"Token on secret dynatrace:dynakube missing scopes [entities.read]")
+		mock.AssertExpectationsForObjects(t, dtcMock)
+	})
+	t.Run("API token has missing scope for metrics ingest", func(t *testing.T) {
+		dk := base.DeepCopy()
+		dk.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{
+			Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+				dynatracev1beta1.MetricsIngestCapability.DisplayName,
+			},
+		}
+		c := fake.NewClient(NewSecret(dynaKube, namespace, map[string]string{dtclient.DynatraceApiToken: "84", dtclient.DynatraceDataIngestToken: "69"}))
+
+		dtcMock := &dtclient.MockDynatraceClient{}
+		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport,
+			dtclient.TokenScopeReadConfig,
+			dtclient.TokenScopeWriteConfig,
+			dtclient.TokenScopeInstallerDownload,
+		}, nil)
+		dtcMock.On("GetTokenScopes", "69").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
+
+		rec := &DynatraceClientReconciler{
+			Client:              c,
+			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
+			Now:                 metav1.Now(),
+		}
+
+		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
+		assert.Equal(t, dtcMock, dtc)
+		assert.True(t, ucr)
+		assert.NoError(t, err)
+		assert.False(t, rec.ValidTokens)
+
+		AssertCondition(t, dk, dynatracev1beta1.APITokenConditionType, true, dynatracev1beta1.ReasonTokenReady, "Ready")
+		AssertCondition(t, dk, dynatracev1beta1.DataIngestTokenConditionType, false, dynatracev1beta1.ReasonTokenScopeMissing, "Token on secret dynatrace:dynakube missing scopes [metrics.ingest]")
+		mock.AssertExpectationsForObjects(t, dtcMock)
+	})
 }
 
 func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {

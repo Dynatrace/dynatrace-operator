@@ -42,29 +42,11 @@ func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 		podLog.Info("no Pod name set for webhook container")
 	}
 
-	if podName == "" && debug == "true" {
-		registerDebugInjectEndpoint(mgr, ns)
-	} else {
-		if err := registerInjectEndpoint(mgr, ns, podName); err != nil {
-			return err
-		}
+	if err := registerInjectEndpoint(mgr, ns, podName); err != nil {
+		return err
 	}
 	registerHealthzEndpoint(mgr)
 	return nil
-}
-
-// registerDebugInjectEndpoint registers an endpoint at /inject with an empty image
-//
-// If the webhook runs in a non-debug environment, the webhook should exit if no
-// pod with a given POD_NAME is found. It needs this pod to set the image for the podInjector
-// When debugging, the Webhook should not exit in this scenario, but register the endpoint with an empty image
-// to allow further debugging steps.
-//
-// This behavior must only occur if the DEBUG_OPERATOR flag is set to true
-func registerDebugInjectEndpoint(mgr manager.Manager, ns string) {
-	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podMutator{
-		namespace: ns,
-	}})
 }
 
 func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) error {
@@ -260,7 +242,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return *workloadResponse
 	}
 
-	technologies, installPath, installerURL, failurePolicy, image := m.getBasicData(pod)
+	flavor, technologies, installPath, installerURL, failurePolicy, image := m.getBasicData(pod)
 
 	dkVol, mode := ensureDynakubeVolume(dk)
 
@@ -274,7 +256,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 
 	installContainer := createInstallInitContainerBase(image, pod, failurePolicy, basePodName, sc, dk)
 
-	decorateInstallContainerWithOneAgent(&installContainer, injectionInfo, technologies, installPath, installerURL, mode)
+	decorateInstallContainerWithOneAgent(&installContainer, injectionInfo, flavor, technologies, installPath, installerURL, mode)
 	decorateInstallContainerWithDataIngest(&installContainer, injectionInfo, workloadKind, workloadName)
 
 	updateContainers(pod, injectionInfo, &installContainer, dk, deploymentMetadata, dataIngestFields)
@@ -338,10 +320,10 @@ func decorateInstallContainerWithDataIngest(ic *corev1.Container, injectionInfo 
 	}
 }
 
-func decorateInstallContainerWithOneAgent(ic *corev1.Container, injectionInfo *InjectionInfo, technologies string, installPath string, installerURL string, mode string) {
+func decorateInstallContainerWithOneAgent(ic *corev1.Container, injectionInfo *InjectionInfo, flavor string, technologies string, installPath string, installerURL string, mode string) {
 	if injectionInfo.enabled(OneAgent) {
 		ic.Env = append(ic.Env,
-			corev1.EnvVar{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
+			corev1.EnvVar{Name: "FLAVOR", Value: flavor},
 			corev1.EnvVar{Name: "TECHNOLOGIES", Value: technologies},
 			corev1.EnvVar{Name: "INSTALLPATH", Value: installPath},
 			corev1.EnvVar{Name: "INSTALLER_URL", Value: installerURL},
@@ -469,12 +451,14 @@ func setupInjectionConfigVolume(pod *corev1.Pod) {
 }
 
 func (m *podMutator) getBasicData(pod *corev1.Pod) (
+	flavor string,
 	technologies string,
 	installPath string,
 	installerURL string,
 	failurePolicy string,
 	image string,
 ) {
+	flavor = kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFlavor, dtclient.FlavorMultidistro)
 	technologies = url.QueryEscape(kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
 	installPath = kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 	installerURL = kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, "")

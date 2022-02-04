@@ -15,15 +15,40 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: "0.3.0"
+  publishedVersion: "0.4.0"
   publishedVersionMetadata:
     releaseNote: >-
-      v0.3.0
+      v0.4.0
 
-      Features
-      * applicationMonitoring - The Dynatrace Operator now supports a webhook based injection mechanism for automatic-app-only injection
-      * hostMonitoring - The Dynatrace Operator now supports only monitoring the host in the cluster without app-only injection
-      * cloudNativeFullStack - combination of applicationMonitoring and hostMonitoring
+      Self registering ActiveGate to no longer require manually adding Kubernetes API
+      enable by setting following feature flag on a Dynakube with kubernetes-monitoring capability:
+
+      annotations:
+        ...
+        alpha.operator.dynatrace.com/feature-automatic-kubernetes-api-monitoring: "true"
+      To be able to read and update the settings on the Dynatrace tenant, the apiToken needs additional scopes
+      additional Scopes for apiToken: Read Entities
+
+
+      When OneAgent is injected, the file required for metadata enrichment is automatically created on each instrumented pod
+      enabled by default (when applicationMonitoring or cloudNativeFullStack is used)
+      can be disabled by setting the following feature flag on the Dynakube:
+
+      annotations:
+        ...
+        alpha.operator.dynatrace.com/feature-disable-metadata-enrichment: "true"
+      To be able to send the metrics to the Dynatrace tenant, the dataIngestToken has to be added to the tokens secret
+      required scopes for dataIngestToken: Ingest metrics
+
+
+      paasToken is no longer required
+      additional scopes for apiToken: Installer download
+      existing installations with both apiToken and paasToken will continue to work as before
+
+
+      PREVIEW: ActiveGate has a new capability metrics-ingest that can be used to route enriched metrics over ActiveGate instead of directly to Dynatrace tenant
+      enabled by adding the capability to the ActiveGate
+
     releaseTypes:
       - Feature
     recommended: true
@@ -137,6 +162,12 @@ properties:
     title: PaaS Token
     x-google-marketplace:
       type: MASKED_FIELD
+  dataIngestToken:
+    type: string
+    description: The DataIngest token from your Dynatrace environment
+    title: DataIngest Token
+    x-google-marketplace:
+      type: MASKED_FIELD
   crdApplied:
     type: boolean
     description: "Please make sure you have applied the latest CRD by following the instructions in the Github Repository."
@@ -157,5 +188,4 @@ required:
   - namespace
   - apiUrl
   - apiToken
-  - paasToken
   - crdApplied

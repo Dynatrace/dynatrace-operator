@@ -50,10 +50,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            {{- if eq .Values.platform "openshift"}}
-            - name: RELATED_IMAGE_DYNATRACE_ONEAGENT
-              value: registry.connect.redhat.com/dynatrace/oneagent
-            {{- end }}
             {{- if eq (default false .Values.olm) true}}
             - name: DEPLOYED_VIA_OLM
               value: "true"
@@ -65,11 +61,11 @@ spec:
               name: server-port
           resources:
             requests:
-              cpu: {{ default "50m" .Values.operator.requests.cpu }}
-              memory: {{ default "64Mi" .Values.operator.requests.memory }}
+              cpu: {{ default "50m" ((.Values.operator).requests).cpu }}
+              memory: {{ default "64Mi" ((.Values.operator).requests).memory }}
             limits:
-              cpu: {{ default "100m" .Values.operator.limits.cpu }}
-              memory: {{ default "128Mi" .Values.operator.limits.memory }}
+              cpu: {{ default "100m" ((.Values.operator).limits).cpu }}
+              memory: {{ default "128Mi" ((.Values.operator).limits).memory }}
           readinessProbe:
             httpGet:
               path: /healthz

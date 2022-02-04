@@ -56,6 +56,10 @@ spec:
         - name: webhook
           args:
             - webhook-server
+            {{- if eq (default false .Values.olm) true }}
+            # OLM mounts the certificates to a different location
+            - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
+            {{- end}}
           image: {{- include "dynatrace-operator.image" . | nindent 12 }}
           imagePullPolicy: Always
           env:
@@ -85,11 +89,11 @@ spec:
               containerPort: 8443
           resources:
             requests:
-              cpu: {{ default "300m" .Values.webhook.requests.cpu }}
-              memory: {{ default "128Mi" .Values.webhook.requests.memory }}
+              cpu: {{ default "300m" ((.Values.webhook).requests).cpu }}
+              memory: {{ default "128Mi" ((.Values.webhook).requests).memory }}
             limits:
-              cpu: {{ default "300m" .Values.webhook.limits.cpu }}
-              memory: {{ default "128Mi" .Values.webhook.limits.memory }}
+              cpu: {{ default "300m" ((.Values.webhook).limits).cpu }}
+              memory: {{ default "128Mi" ((.Values.webhook).limits).memory }}
       serviceAccountName: dynatrace-webhook
       {{- if .Values.operator.customPullSecret }}
       imagePullSecrets:

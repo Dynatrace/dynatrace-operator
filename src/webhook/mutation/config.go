@@ -1,8 +1,6 @@
 package mutation
 
 import (
-	"os"
-
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 )
 
@@ -33,6 +31,5 @@ const (
 )
 
 var (
-	log   = logger.NewDTLogger().WithName("mutation-webhook")
-	debug = os.Getenv("DEBUG_OPERATOR")
+	log = logger.NewDTLogger().WithName("mutation-webhook")
 )

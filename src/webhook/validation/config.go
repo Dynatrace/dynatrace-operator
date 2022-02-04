@@ -11,6 +11,7 @@ type validator func(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) 
 
 var validators = []validator{
 	noApiUrl,
+	isInvalidApiUrl,
 	missingCSIDaemonSet,
 	conflictingActiveGateConfiguration,
 	invalidActiveGateCapabilities,

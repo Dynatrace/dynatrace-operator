@@ -58,7 +58,7 @@ type getSettingsErrorResponse struct {
 type getSettingsError struct {
 	Code                 int
 	Message              string
-	ConstraintViolations constraintViolations
+	ConstraintViolations constraintViolations `json:"constraintViolations,omitempty"`
 }
 
 type constraintViolations []struct {
@@ -100,7 +100,7 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(name, kubeSystemUUID
 		return "", err
 	}
 
-	req, err := createBaseRequest(fmt.Sprintf("%s/v2/settings/objects?validateOnly=false", dtc.url), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
+	req, err := createBaseRequest(dtc.getSettingsUrl(false), http.MethodPost, dtc.apiToken, bytes.NewReader(bodyData))
 	if err != nil {
 		return "", err
 	}
@@ -138,7 +138,7 @@ func (dtc *dynatraceClient) GetMonitoredEntitiesForKubeSystemUUID(kubeSystemUUID
 		return nil, errors.New("no kube-system namespace UUID given")
 	}
 
-	req, err := createBaseRequest(fmt.Sprintf("%s/v2/entities", dtc.url), http.MethodGet, dtc.apiToken, nil)
+	req, err := createBaseRequest(dtc.getEntitiesUrl(), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (dtc *dynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities []
 		scopes = append(scopes, entity.EntityId)
 	}
 
-	req, err := createBaseRequest(fmt.Sprintf("%s/v2/settings/objects", dtc.url), http.MethodGet, dtc.apiToken, nil)
+	req, err := createBaseRequest(dtc.getSettingsUrl(true), http.MethodGet, dtc.apiToken, nil)
 	if err != nil {
 		return GetSettingsResponse{}, err
 	}
@@ -231,21 +231,29 @@ func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Requ
 }
 
 func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {
-	var se []getSettingsErrorResponse
-	if err := json.Unmarshal(response, &se); err != nil {
-		return fmt.Errorf("response error: %d, can't unmarshal json response: %w", statusCode, err)
-	}
-
-	var sb strings.Builder
-	sb.WriteString("[Settings Creation]: could not create the Kubernetes setting for the following reason:\n")
-
-	for _, errorResponse := range se {
-		sb.WriteString(fmt.Sprintf("[%s; Code: %d\n", errorResponse.ErrorMessage.Message, errorResponse.ErrorMessage.Code))
-		for _, constraintViolation := range errorResponse.ErrorMessage.ConstraintViolations {
-			sb.WriteString(fmt.Sprintf("\t- %s\n", constraintViolation.Message))
+	if statusCode == http.StatusForbidden || statusCode == http.StatusUnauthorized {
+		var se getSettingsErrorResponse
+		if err := json.Unmarshal(response, &se); err != nil {
+			return fmt.Errorf("response error: %d, can't unmarshal json response", statusCode)
 		}
-		sb.WriteString("]\n")
-	}
+		return fmt.Errorf("response error: %d, %s", statusCode, se.ErrorMessage.Message)
+	} else {
+		var se []getSettingsErrorResponse
+		if err := json.Unmarshal(response, &se); err != nil {
+			return fmt.Errorf("response error: %d, can't unmarshal json response", statusCode)
+		}
 
-	return fmt.Errorf(sb.String())
+		var sb strings.Builder
+		sb.WriteString("[Settings Creation]: could not create the Kubernetes setting for the following reason:\n")
+
+		for _, errorResponse := range se {
+			sb.WriteString(fmt.Sprintf("[%s; Code: %d\n", errorResponse.ErrorMessage.Message, errorResponse.ErrorMessage.Code))
+			for _, constraintViolation := range errorResponse.ErrorMessage.ConstraintViolations {
+				sb.WriteString(fmt.Sprintf("\t- %s\n", constraintViolation.Message))
+			}
+			sb.WriteString("]\n")
+		}
+
+		return fmt.Errorf(sb.String())
+	}
 }

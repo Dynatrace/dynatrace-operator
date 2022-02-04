@@ -2,7 +2,6 @@ package dtclient
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 
 	"github.com/pkg/errors"
@@ -14,7 +13,7 @@ func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (str
 		return "", errors.New("os or installerType is empty")
 	}
 
-	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest/metainfo", dtc.url, os, installerType)
+	url := dtc.getLatestAgentVersionUrl(os, installerType)
 	resp, err := dtc.makeRequest(url, dynatracePaaSToken)
 	if err != nil {
 		return "", err
@@ -75,8 +74,7 @@ func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch strin
 		return errors.New("os or installerType is empty")
 	}
 
-	url := fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest?bitness=64&flavor=%s&arch=%s",
-		dtc.url, os, installerType, flavor, arch)
+	url := dtc.getLatestAgentUrl(os, installerType, flavor, arch)
 	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
 	if err == nil {
 		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "md5", md5)
@@ -98,11 +96,6 @@ func (dtc *dynatraceClient) GetAgentVersions(os, installerType, flavor, arch str
 	return response.AvailableVersions, errors.WithStack(err)
 }
 
-func (dtc *dynatraceClient) getAgentVersionsUrl(os string, installerType string, flavor string, arch string) string {
-	return fmt.Sprintf("%s/v1/deployment/installer/agent/versions/%s/%s?flavor=%s&arch=%s",
-		dtc.url, os, installerType, flavor, arch)
-}
-
 func (dtc *dynatraceClient) GetAgent(os, installerType, flavor, arch, version string, writer io.Writer) error {
 	if len(os) == 0 || len(installerType) == 0 {
 		return errors.New("os or installerType is empty")
@@ -114,9 +107,4 @@ func (dtc *dynatraceClient) GetAgent(os, installerType, flavor, arch, version st
 		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "md5", md5)
 	}
 	return err
-}
-
-func (dtc *dynatraceClient) getAgentUrl(os, installerType, flavor, arch, version string) string {
-	return fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/version/%s?flavor=%s&arch=%s&bitness=64",
-		dtc.url, os, installerType, version, flavor, arch)
 }

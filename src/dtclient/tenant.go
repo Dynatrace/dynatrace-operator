@@ -2,7 +2,6 @@ package dtclient
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -16,9 +15,8 @@ type TenantInfo struct {
 }
 
 func (dtc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
-	url := fmt.Sprintf("%s/v1/deployment/installer/agent/connectioninfo", dtc.url)
 	response, err := dtc.makeRequest(
-		url,
+		dtc.getConnectionInfoUrl(),
 		dynatracePaaSToken,
 	)
 
@@ -34,11 +32,7 @@ func (dtc *dynatraceClient) GetTenantInfo() (*TenantInfo, error) {
 
 	data, err := dtc.getServerResponseData(response)
 	if err != nil {
-		err = dtc.handleErrorResponseFromAPI(data, response.StatusCode)
-		if err != nil {
-			log.Error(err, err.Error())
-		}
-		return nil, errors.WithStack(err)
+		return nil, errors.WithStack(dtc.handleErrorResponseFromAPI(data, response.StatusCode))
 	}
 
 	tenantInfo, err := dtc.readResponseForTenantInfo(data)
