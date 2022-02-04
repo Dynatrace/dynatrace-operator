@@ -35,7 +35,11 @@ func (controller *NodesController) SetupWithManager(mgr ctrl.Manager) error {
 func nodeDeletionPredicate(controller *NodesController) predicate.Predicate {
 	return predicate.Funcs{
 		DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
-			controller.reconcileNodeDeletion(deleteEvent.Object.GetName())
+			node := deleteEvent.Object.GetName()
+			err := controller.reconcileNodeDeletion(node)
+			if err != nil {
+				log.Error(err, "error while deleting node", "node", node)
+			}
 			return false
 		},
 	}
@@ -136,7 +140,6 @@ func (controller *NodesController) reconcileNodeDeletion(nodeName string) error 
 
 	dynakube, err := controller.determineDynakubeForNode(nodeName)
 	if err != nil {
-		log.Error(err, "error while getting Dynakube for Node on deletion")
 		return err
 	}
 
@@ -144,10 +147,8 @@ func (controller *NodesController) reconcileNodeDeletion(nodeName string) error 
 	if err != nil {
 		if err == ErrNotFound {
 			// uncached node -> igonoring
-			log.Info("ignoring uncached node on deletion", "node", nodeName)
 			return nil
 		}
-		log.Error(err, "error while getting cachedNode on deletion")
 		return err
 	}
 
@@ -159,15 +160,12 @@ func (controller *NodesController) reconcileNodeDeletion(nodeName string) error 
 		}
 
 		if err := controller.markForTermination(dynakube, cachedNodeData); err != nil {
-			//handle not found node
-			log.Error(err, "error while sending mark for termination for node:", "node", nodeName)
 			return err
 		}
 	}
 
 	nodeCache.Delete(nodeName)
 	if err := controller.updateCache(nodeCache, context.TODO()); err != nil {
-		log.Error(err, "error while updating node cache after deletion:", "node", nodeName)
 		return err
 	}
 	return nil
