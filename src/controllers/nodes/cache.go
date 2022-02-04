@@ -8,7 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ErrNotFound is returned when entry hasn't been found on the cache.Ø
+// ErrNotFound is returned when entry hasn't been found on the cache.
 var ErrNotFound = errors.New("not found")
 
 // CacheEntry constains information about a Node.
