@@ -86,12 +86,27 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, updateExpected, update)
 	}
-	setStatsDFeatureFlags := func(r *Reconciler, enabled bool) {
-		if r.Instance.Annotations == nil {
-			r.Instance.Annotations = make(map[string]string)
+	type DtCapability = dynatracev1beta1.CapabilityDisplayName
+	removeCapability := func(capabilities []DtCapability, removeMe DtCapability) []DtCapability {
+		for i, capability := range capabilities {
+			if capability == removeMe {
+				return append(capabilities[:i], capabilities[i+1:]...)
+			}
 		}
-		r.Instance.Annotations["alpha.operator.dynatrace.com/feature-enable-statsd"] = fmt.Sprintf("%t", enabled)
-		r.Instance.Annotations["alpha.operator.dynatrace.com/feature-use-activegate-image-for-statsd"] = fmt.Sprintf("%t", enabled)
+		return capabilities
+	}
+	setStatsDCapability := func(r *Reconciler, wantEnabled bool) {
+		statsdIngest := dynatracev1beta1.StatsDIngestCapability.DisplayName
+		hasEnabled := r.Instance.IsActiveGateMode(statsdIngest)
+		capabilities := &r.Instance.Spec.ActiveGate.Capabilities
+
+		if wantEnabled && !hasEnabled {
+			*capabilities = append(*capabilities, statsdIngest)
+		}
+
+		if !wantEnabled && hasEnabled {
+			*capabilities = removeCapability(*capabilities, statsdIngest)
+		}
 	}
 
 	agIngestServicePort := corev1.ServicePort{
@@ -202,7 +217,7 @@ func TestReconcile(t *testing.T) {
 		}
 		reconcileAndExpectUpdate(r, false)
 
-		setStatsDFeatureFlags(r, true)
+		setStatsDCapability(r, true)
 		reconcileAndExpectUpdate(r, true)
 		{
 			service := assertServiceExists(r)
@@ -228,7 +243,7 @@ func TestReconcile(t *testing.T) {
 		reconcileAndExpectUpdate(r, false)
 		reconcileAndExpectUpdate(r, false)
 
-		setStatsDFeatureFlags(r, false)
+		setStatsDCapability(r, false)
 		reconcileAndExpectUpdate(r, true)
 		reconcileAndExpectUpdate(r, true)
 		reconcileAndExpectUpdate(r, false)

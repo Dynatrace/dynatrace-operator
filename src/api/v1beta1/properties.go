@@ -83,6 +83,10 @@ func (dk *DynaKube) KubernetesMonitoringMode() bool {
 	return dk.IsActiveGateMode(KubeMonCapability.DisplayName) || dk.Spec.KubernetesMonitoring.Enabled
 }
 
+func (dk *DynaKube) NeedsStatsD() bool {
+	return dk.IsActiveGateMode(StatsDIngestCapability.DisplayName)
+}
+
 func (dk *DynaKube) HasActiveGateTLS() bool {
 	return dk.ActiveGateMode() && dk.Spec.ActiveGate.TlsSecretName != ""
 }
@@ -294,16 +298,4 @@ func splitArg(arg string) (key, value string) {
 	key = split[0]
 	value = split[1]
 	return
-}
-
-func (dk *DynaKube) NeedsStatsD() bool {
-	if dk.FeatureEnableStatsDIngest() {
-		return true
-	}
-	for _, capability := range dk.Spec.ActiveGate.Capabilities {
-		if capability == StatsDIngestCapability.DisplayName {
-			return true
-		}
-	}
-	return false
 }
