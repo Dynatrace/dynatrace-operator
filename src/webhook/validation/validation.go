@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -53,7 +54,9 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 	}
 	warningMessages := validator.runValidators(warnings, dynakube)
 	if len(warningMessages) > 0 {
-		warningMessages = append(warningMessages, basePreviewWarning)
+		if hasPreviewWarning(warningMessages) {
+			warningMessages = append(warningMessages, basePreviewWarning)
+		}
 		response = response.WithWarnings(warningMessages...)
 	}
 	return response
@@ -88,4 +91,13 @@ func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1bet
 		return errors.WithStack(err)
 	}
 	return nil
+}
+
+func hasPreviewWarning(warnings []string) bool {
+	for _, warning := range warnings {
+		if strings.Contains(warning, "PREVIEW") {
+			return true
+		}
+	}
+	return false
 }

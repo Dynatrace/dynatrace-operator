@@ -9,6 +9,8 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	csidriver "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver"
+	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
@@ -705,7 +707,8 @@ func addCSIVolumeSource(expected *corev1.Pod) {
 	if idx < len(expected.Spec.Volumes) {
 		expected.Spec.Volumes[idx].VolumeSource = corev1.VolumeSource{
 			CSI: &corev1.CSIVolumeSource{
-				Driver: dtcsi.DriverName,
+				Driver:           dtcsi.DriverName,
+				VolumeAttributes: map[string]string{csidriver.CSIVolumeAttributeName: appvolumes.Mode},
 			},
 		}
 	}
@@ -1307,7 +1310,8 @@ func buildResultPod(_ *testing.T, oneAgentFf FeatureFlag, dataIngestFf FeatureFl
 				Name: oneAgentBinVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					CSI: &corev1.CSIVolumeSource{
-						Driver: dtcsi.DriverName,
+						Driver:           dtcsi.DriverName,
+						VolumeAttributes: map[string]string{csidriver.CSIVolumeAttributeName: appvolumes.Mode},
 					},
 				},
 			},
