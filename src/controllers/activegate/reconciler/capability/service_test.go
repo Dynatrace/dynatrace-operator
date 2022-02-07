@@ -55,19 +55,19 @@ func TestCreateService(t *testing.T) {
 			TargetPort: intstr.FromString(consts.HttpServicePortName),
 		},
 	)
-	if instance.NeedsStatsD() {
+	if instance.NeedsStatsd() {
 		assert.Contains(t, ports, corev1.ServicePort{
-			Name:       consts.StatsDIngestPortName,
+			Name:       consts.StatsdIngestPortName,
 			Protocol:   corev1.ProtocolUDP,
-			Port:       consts.StatsDIngestPort,
-			TargetPort: intstr.FromString(consts.StatsDIngestTargetPort),
+			Port:       consts.StatsdIngestPort,
+			TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
 		})
 	} else {
 		assert.NotContains(t, ports, corev1.ServicePort{
-			Name:       consts.StatsDIngestPortName,
+			Name:       consts.StatsdIngestPortName,
 			Protocol:   corev1.ProtocolUDP,
-			Port:       consts.StatsDIngestPort,
-			TargetPort: intstr.FromString(consts.StatsDIngestTargetPort),
+			Port:       consts.StatsdIngestPort,
+			TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
 		})
 	}
 }

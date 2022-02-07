@@ -106,10 +106,10 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 }
 
 func getContainerBuilders(stsProperties *statefulSetProperties) []kubeobjects.ContainerBuilder {
-	if stsProperties.NeedsStatsD() {
+	if stsProperties.NeedsStatsd() {
 		return []kubeobjects.ContainerBuilder{
 			NewExtensionController(stsProperties),
-			NewStatsD(stsProperties),
+			NewStatsd(stsProperties),
 		}
 	}
 	return nil
@@ -252,7 +252,7 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 		})
 	}
 
-	if stsProperties.NeedsStatsD() {
+	if stsProperties.NeedsStatsd() {
 		volumeMounts = append(volumeMounts,
 			corev1.VolumeMount{Name: eecAuthToken, MountPath: "/var/lib/dynatrace/gateway/config"},
 		)

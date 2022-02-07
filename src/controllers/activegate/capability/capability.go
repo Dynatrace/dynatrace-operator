@@ -30,7 +30,7 @@ var activeGateCapabilities = map[dynatracev1beta1.CapabilityDisplayName]baseFunc
 	dynatracev1beta1.RoutingCapability.DisplayName:       routingBase,
 	dynatracev1beta1.MetricsIngestCapability.DisplayName: metricsIngestBase,
 	dynatracev1beta1.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
-	dynatracev1beta1.StatsDIngestCapability.DisplayName:  statsDIngestBase,
+	dynatracev1beta1.StatsdIngestCapability.DisplayName:  statsdIngestBase,
 }
 
 type Configuration struct {
@@ -295,10 +295,10 @@ func dynatraceApiBase() *capabilityBase {
 	return &c
 }
 
-func statsDIngestBase() *capabilityBase {
+func statsdIngestBase() *capabilityBase {
 	c := capabilityBase{
-		shortName: dynatracev1beta1.StatsDIngestCapability.ShortName,
-		argName:   dynatracev1beta1.StatsDIngestCapability.ArgumentName,
+		shortName: dynatracev1beta1.StatsdIngestCapability.ShortName,
+		argName:   dynatracev1beta1.StatsdIngestCapability.ArgumentName,
 		Configuration: Configuration{
 			SetDnsEntryPoint:     true,
 			SetReadinessPort:     true,

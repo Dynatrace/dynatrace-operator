@@ -10,8 +10,8 @@ const (
 
 	EecContainerName = ActiveGateContainerName + "-eec"
 
-	StatsDContainerName    = ActiveGateContainerName + "-statsd"
-	StatsDIngestPortName   = "statsd"
-	StatsDIngestPort       = 18125
-	StatsDIngestTargetPort = "statsd-port"
+	StatsdContainerName    = ActiveGateContainerName + "-statsd"
+	StatsdIngestPortName   = "statsd"
+	StatsdIngestPort       = 18125
+	StatsdIngestTargetPort = "statsd-port"
 )

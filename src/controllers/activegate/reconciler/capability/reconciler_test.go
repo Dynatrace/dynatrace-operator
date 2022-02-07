@@ -95,8 +95,8 @@ func TestReconcile(t *testing.T) {
 		}
 		return capabilities
 	}
-	setStatsDCapability := func(r *Reconciler, wantEnabled bool) {
-		statsdIngest := dynatracev1beta1.StatsDIngestCapability.DisplayName
+	setStatsdCapability := func(r *Reconciler, wantEnabled bool) {
+		statsdIngest := dynatracev1beta1.StatsdIngestCapability.DisplayName
 		hasEnabled := r.Instance.IsActiveGateMode(statsdIngest)
 		capabilities := &r.Instance.Spec.ActiveGate.Capabilities
 
@@ -121,11 +121,11 @@ func TestReconcile(t *testing.T) {
 		Port:       consts.HttpServicePort,
 		TargetPort: intstr.FromString(consts.HttpServicePortName),
 	}
-	statsDIngestServicePort := corev1.ServicePort{
-		Name:       consts.StatsDIngestPortName,
+	statsdIngestServicePort := corev1.ServicePort{
+		Name:       consts.StatsdIngestPortName,
 		Protocol:   corev1.ProtocolUDP,
-		Port:       consts.StatsDIngestPort,
-		TargetPort: intstr.FromString(consts.StatsDIngestTargetPort),
+		Port:       consts.StatsdIngestPort,
+		TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
 	}
 
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
@@ -217,13 +217,13 @@ func TestReconcile(t *testing.T) {
 		}
 		reconcileAndExpectUpdate(r, false)
 
-		setStatsDCapability(r, true)
+		setStatsdCapability(r, true)
 		reconcileAndExpectUpdate(r, true)
 		{
 			service := assertServiceExists(r)
 			assert.Len(t, service.Spec.Ports, 3)
 			assert.ElementsMatch(t, service.Spec.Ports, []corev1.ServicePort{
-				agIngestServicePort, agIngestHttpServicePort, statsDIngestServicePort,
+				agIngestServicePort, agIngestHttpServicePort, statsdIngestServicePort,
 			})
 
 			statefulSet := assertStatefulSetExists(r)
@@ -234,7 +234,7 @@ func TestReconcile(t *testing.T) {
 		{
 			service := assertServiceExists(r)
 			assert.ElementsMatch(t, service.Spec.Ports, []corev1.ServicePort{
-				agIngestServicePort, agIngestHttpServicePort, statsDIngestServicePort,
+				agIngestServicePort, agIngestHttpServicePort, statsdIngestServicePort,
 			})
 
 			statefulSet := assertStatefulSetExists(r)
@@ -243,7 +243,7 @@ func TestReconcile(t *testing.T) {
 		reconcileAndExpectUpdate(r, false)
 		reconcileAndExpectUpdate(r, false)
 
-		setStatsDCapability(r, false)
+		setStatsdCapability(r, false)
 		reconcileAndExpectUpdate(r, true)
 		reconcileAndExpectUpdate(r, true)
 		reconcileAndExpectUpdate(r, false)
@@ -354,7 +354,7 @@ func TestGetContainerByName(t *testing.T) {
 		verify(t,
 			[]corev1.Container{
 				{Name: consts.ActiveGateContainerName},
-				{Name: consts.StatsDContainerName},
+				{Name: consts.StatsdContainerName},
 			},
 			consts.EecContainerName,
 			fmt.Sprintf(`Cannot find container "%s" in the provided slice (len 2)`, consts.EecContainerName),
@@ -364,9 +364,9 @@ func TestGetContainerByName(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		verify(t,
 			[]corev1.Container{
-				{Name: consts.StatsDContainerName},
+				{Name: consts.StatsdContainerName},
 			},
-			consts.StatsDContainerName,
+			consts.StatsdContainerName,
 			"",
 		)
 	})

@@ -34,7 +34,7 @@ const (
 	annotationFeatureIgnoredNamespaces                = annotationFeaturePrefix + "ignored-namespaces"
 	annotationFeatureAutomaticKubernetesApiMonitoring = annotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
 	annotationFeatureDisableMetadataEnrichment        = annotationFeaturePrefix + "disable-metadata-enrichment"
-	annotationFeatureUseActiveGateImageForStatsD      = annotationFeaturePrefix + "use-activegate-image-for-statsd"
+	annotationFeatureUseActiveGateImageForStatsd      = annotationFeaturePrefix + "use-activegate-image-for-statsd"
 	AnnotationFeatureReadOnlyOneAgent                 = annotationFeaturePrefix + "oneagent-readonly-host-fs"
 )
 
@@ -120,10 +120,10 @@ func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
 	return dk.Annotations[annotationFeatureDisableMetadataEnrichment] == "true"
 }
 
-// FeatureUseActiveGateImageForStatsD is a feature flag that makes the operator use ActiveGate image when initializing Extension Controller and StatsD containers
+// FeatureUseActiveGateImageForStatsd is a feature flag that makes the operator use ActiveGate image when initializing Extension Controller and Statsd containers
 // (using special predefined entry points).
-func (dk *DynaKube) FeatureUseActiveGateImageForStatsD() bool {
-	return dk.Annotations[annotationFeatureUseActiveGateImageForStatsD] == "true"
+func (dk *DynaKube) FeatureUseActiveGateImageForStatsd() bool {
+	return dk.Annotations[annotationFeatureUseActiveGateImageForStatsd] == "true"
 }
 
 // FeatureReadOnlyOneAgent is a feature flag that makes the operator deploy the oneagents in a readonly mode, where the csi-driver provides the volume for logs and such,

@@ -43,7 +43,7 @@ var (
 		ArgumentName: "restInterface",
 	}
 
-	StatsDIngestCapability = ActiveGateCapability{
+	StatsdIngestCapability = ActiveGateCapability{
 		DisplayName:  "statsd-ingest",
 		ShortName:    "statsd-ingest",
 		ArgumentName: "extension_controller",
@@ -55,7 +55,7 @@ var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
 	KubeMonCapability.DisplayName:       {},
 	MetricsIngestCapability.DisplayName: {},
 	DynatraceApiCapability.DisplayName:  {},
-	StatsDIngestCapability.DisplayName:  {},
+	StatsdIngestCapability.DisplayName:  {},
 }
 
 type ActiveGateSpec struct {
