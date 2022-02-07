@@ -8,6 +8,16 @@
 
 echo Shell: $SHELL
 
+## this will retrieve all of the .yaml files that have been
+## changed since the last commit
+STAGED_YAML_FILES=$(git diff --cached --name-only -- '*.yaml')
+
+## we can check to see if this is empty
+if [[ $STAGED_YAML_FILES != "" ]]; then
+    echo "YAML files have changed, generating manifests"
+    make manifests
+fi
+
 ## this will retrieve all of the .go files that have been
 ## changed since the last commit
 STAGED_GO_FILES=$(git diff --cached --name-only -- '*.go')

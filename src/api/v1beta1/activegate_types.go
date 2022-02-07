@@ -22,7 +22,7 @@ var (
 	RoutingCapability = ActiveGateCapability{
 		DisplayName:  "routing",
 		ShortName:    "routing",
-		ArgumentName: "MSGrouter",
+		ArgumentName: "MSGrouter,extension_controller",
 	}
 
 	KubeMonCapability = ActiveGateCapability{
@@ -45,10 +45,10 @@ var (
 )
 
 var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
-	RoutingCapability.DisplayName:       struct{}{},
-	KubeMonCapability.DisplayName:       struct{}{},
-	MetricsIngestCapability.DisplayName: struct{}{},
-	DynatraceApiCapability.DisplayName:  struct{}{},
+	RoutingCapability.DisplayName:       {},
+	KubeMonCapability.DisplayName:       {},
+	MetricsIngestCapability.DisplayName: {},
+	DynatraceApiCapability.DisplayName:  {},
 }
 
 type ActiveGateSpec struct {
