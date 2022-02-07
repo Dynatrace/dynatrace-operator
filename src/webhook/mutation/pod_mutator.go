@@ -13,6 +13,8 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	csidriver "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver"
+	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
 	oneagent "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -472,7 +474,8 @@ func ensureDynakubeVolume(dk dynatracev1beta1.DynaKube) (corev1.VolumeSource, st
 	mode := ""
 	if dk.NeedsCSIDriver() {
 		dkVol.CSI = &corev1.CSIVolumeSource{
-			Driver: dtcsi.DriverName,
+			Driver:           dtcsi.DriverName,
+			VolumeAttributes: map[string]string{csidriver.CSIVolumeAttributeName: appvolumes.Mode},
 		}
 		mode = provisionedVolumeMode
 	} else {
