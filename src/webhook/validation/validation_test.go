@@ -25,7 +25,6 @@ const (
 	testName      = "test-name"
 	testNamespace = "test-namespace"
 	testApiUrl    = "https://f.q.d.n/api"
-	testHost      = "test-host"
 )
 
 var defaultDynakubeObjectMeta = metav1.ObjectMeta{
