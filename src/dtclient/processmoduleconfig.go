@@ -21,6 +21,33 @@ type ProcessModuleProperty struct {
 	Value   string `json:"value"`
 }
 
+func (pmc *ProcessModuleConfig) AddHostGroup(hostGroup string) *ProcessModuleConfig {
+	if pmc == nil {
+		pmc = &ProcessModuleConfig{}
+	}
+	newProps := []ProcessModuleProperty{}
+	hasHostGroup := false
+	for _, prop := range pmc.Properties {
+		if prop.Key != "hostGroup" {
+			newProps = append(newProps, prop)
+		} else {
+			hasHostGroup = true
+			if hostGroup == "" {
+				continue
+			} else if hostGroup == prop.Value {
+				newProps = append(newProps, prop)
+			} else {
+				newProps = append(pmc.Properties, ProcessModuleProperty{Section: "general", Key: "hostGroup", Value: hostGroup})
+			}
+		}
+	}
+	if !hasHostGroup && hostGroup != "" {
+		newProps = append(pmc.Properties, ProcessModuleProperty{Section: "general", Key: "hostGroup", Value: hostGroup})
+	}
+	pmc.Properties = newProps
+	return pmc
+}
+
 func (pmc ProcessModuleConfig) ToMap() processmoduleconfig.ConfMap {
 	sections := map[string]map[string]string{}
 	for _, prop := range pmc.Properties {

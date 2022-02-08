@@ -1,220 +1,269 @@
 package csiprovisioner
 
 import (
-	"encoding/base64"
 	"fmt"
-	"io"
-	"os"
-	"path/filepath"
 	"testing"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/installer"
+	t_utils "github.com/Dynatrace/dynatrace-operator/src/testing"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/tools/record"
 )
 
 const (
-	testZip      = `UEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAAIABwAdGVzdC50eHRVVAkAA3w0lWATB55gdXgLAAEE6AMAAAToAwAAeW91IGZvdW5kIHRoZSBlYXN0ZXIgZWdnClBLAwQKAAAAAADAOa5SAAAAAAAAAAAAAAAABQAcAHRlc3QvVVQJAAMXB55gHQeeYHV4CwABBOgDAAAE6AMAAFBLAwQKAAAAAACodKdSbC0hZxkAAAAZAAAADQAcAHRlc3QvdGVzdC50eHRVVAkAA3w0lWATB55gdXgLAAEE6AMAAAToAwAAeW91IGZvdW5kIHRoZSBlYXN0ZXIgZWdnClBLAwQKAAAAAADCOa5SAAAAAAAAAAAAAAAACgAcAHRlc3QvdGVzdC9VVAkAAxwHnmAgB55gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAASABwAdGVzdC90ZXN0L3Rlc3QudHh0VVQJAAN8NJVgHAeeYHV4CwABBOgDAAAE6AMAAHlvdSBmb3VuZCB0aGUgZWFzdGVyIGVnZwpQSwMECgAAAAAA2zquUgAAAAAAAAAAAAAAAAYAHABhZ2VudC9VVAkAAy4JnmAxCZ5gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAOI6rlIAAAAAAAAAAAAAAAALABwAYWdlbnQvY29uZi9VVAkAAzgJnmA+CZ5gdXgLAAEE6AMAAAToAwAAUEsDBAoAAAAAAKh0p1JsLSFnGQAAABkAAAATABwAYWdlbnQvY29uZi90ZXN0LnR4dFVUCQADfDSVYDgJnmB1eAsAAQToAwAABOgDAAB5b3UgZm91bmQgdGhlIGVhc3RlciBlZ2cKUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAAAgAGAAAAAAAAQAAAKSBAAAAAHRlc3QudHh0VVQFAAN8NJVgdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAwDmuUgAAAAAAAAAAAAAAAAUAGAAAAAAAAAAQAO1BWwAAAHRlc3QvVVQFAAMXB55gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAAA0AGAAAAAAAAQAAAKSBmgAAAHRlc3QvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwECHgMKAAAAAADCOa5SAAAAAAAAAAAAAAAACgAYAAAAAAAAABAA7UH6AAAAdGVzdC90ZXN0L1VUBQADHAeeYHV4CwABBOgDAAAE6AMAAFBLAQIeAwoAAAAAAKh0p1JsLSFnGQAAABkAAAASABgAAAAAAAEAAACkgT4BAAB0ZXN0L3Rlc3QvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwECHgMKAAAAAADbOq5SAAAAAAAAAAAAAAAABgAYAAAAAAAAABAA7UGjAQAAYWdlbnQvVVQFAAMuCZ5gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAA4jquUgAAAAAAAAAAAAAAAAsAGAAAAAAAAAAQAO1B4wEAAGFnZW50L2NvbmYvVVQFAAM4CZ5gdXgLAAEE6AMAAAToAwAAUEsBAh4DCgAAAAAAqHSnUmwtIWcZAAAAGQAAABMAGAAAAAAAAQAAAKSBKAIAAGFnZW50L2NvbmYvdGVzdC50eHRVVAUAA3w0lWB1eAsAAQToAwAABOgDAABQSwUGAAAAAAgACACKAgAAjgIAAAAA`
-	testDir      = "test"
-	testFilename = "test.txt"
+	testVersion = "test"
 )
 
-type failFs struct {
-	afero.Fs
+func TestNewAgentUpdater(t *testing.T) {
+	t.Run(`create`, func(t *testing.T) {
+		createTestAgentUpdater(t, nil)
+	})
 }
 
-func (fs failFs) OpenFile(string, int, os.FileMode) (afero.File, error) {
-	return nil, fmt.Errorf(errorMsg)
+func TestGetOneAgentVersionFromInstance(t *testing.T) {
+	t.Run(`use status`, func(t *testing.T) {
+		dk := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				LatestAgentVersionUnixPaas: testVersion,
+			},
+		}
+		updater := createTestAgentUpdater(t, &dk)
+
+		version := updater.getOneAgentVersionFromInstance()
+		assert.Equal(t, testVersion, version)
+	})
+	t.Run(`use version `, func(t *testing.T) {
+		dk := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						Version: testVersion,
+					},
+				},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				LatestAgentVersionUnixPaas: "other",
+			},
+		}
+		updater := createTestAgentUpdater(t, &dk)
+
+		version := updater.getOneAgentVersionFromInstance()
+		assert.Equal(t, testVersion, version)
+	})
 }
 
-func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
-	t.Run(`error when creating temp file`, func(t *testing.T) {
-		fs := failFs{
-			Fs: afero.NewMemMapFs(),
+func TestUpdateAgent(t *testing.T) {
+	t.Run(`fresh install`, func(t *testing.T) {
+		dk := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						Version: testVersion,
+					},
+				},
+			},
 		}
-		installAgentCfg := &installAgentConfig{
-			fs: fs,
-		}
-
-		err := installAgentCfg.installAgent("", "")
-		assert.EqualError(t, err, "failed to create temporary file for download: "+errorMsg)
-	})
-	t.Run(`error when downloading latest agent`, func(t *testing.T) {
-		fs := afero.NewMemMapFs()
-		dtc := &dtclient.MockDynatraceClient{}
-		dtc.
-			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
-				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
-			Return(fmt.Errorf(errorMsg))
-		dtc.
-			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, mock.AnythingOfType("string")).
-			Return([]string{}, fmt.Errorf(errorMsg))
-		installAgentCfg := &installAgentConfig{
-			fs:  fs,
-			dtc: dtc,
-		}
-
-		err := installAgentCfg.installAgent("", "")
-		assert.EqualError(t, err, "failed to fetch OneAgent version: "+errorMsg)
-	})
-	t.Run(`error unzipping file`, func(t *testing.T) {
-		fs := afero.NewMemMapFs()
-
-		dtc := &dtclient.MockDynatraceClient{}
-		dtc.
-			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
-				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
-			Run(func(args mock.Arguments) {
-				writer := args.Get(5).(io.Writer)
-
-				zipFile := setupInavlidTestZip(t, fs)
-				defer func() { _ = zipFile.Close() }()
-
-				_, err := io.Copy(writer, zipFile)
-				require.NoError(t, err)
-			}).
+		updater := createTestAgentUpdater(t, &dk)
+		processModuleCache := createTestProcessModuleConfigCache("1")
+		previousHash := ""
+		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+		updater.installer.(*installer.InstallerMock).
+			On("SetVersion", testVersion).
+			Return()
+		updater.installer.(*installer.InstallerMock).
+			On("InstallAgent", targetDir).
 			Return(nil)
-		installAgentCfg := &installAgentConfig{
-			fs:  fs,
-			dtc: dtc,
-		}
-
-		err := installAgentCfg.installAgent("", "")
-		assert.Error(t, err)
-	})
-	t.Run(`downloading and unzipping agent`, func(t *testing.T) {
-		fs := afero.NewMemMapFs()
-		pathResolver := metadata.PathResolver{
-			RootDir: testDir,
-		}
-		dtc := &dtclient.MockDynatraceClient{}
-		dtc.
-			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
-				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
-			Run(func(args mock.Arguments) {
-				writer := args.Get(5).(io.Writer)
-
-				zipFile := setupTestZip(t, fs)
-				defer func() { _ = zipFile.Close() }()
-
-				_, err := io.Copy(writer, zipFile)
-				require.NoError(t, err)
-			}).
+		updater.installer.(*installer.InstallerMock).
+			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
 			Return(nil)
-		installAgentCfg := &installAgentConfig{
-			fs:   fs,
-			dtc:  dtc,
-			path: pathResolver,
+
+		currentVersion, err := updater.updateAgent(
+			testVersion,
+			testTenantUUID,
+			previousHash,
+			&processModuleCache)
+
+		require.NoError(t, err)
+		assert.Equal(t, testVersion, currentVersion)
+		t_utils.AssertEvents(t,
+			updater.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				t_utils.Event{
+					EventType: corev1.EventTypeNormal,
+					Reason:    installAgentVersionEvent,
+				},
+			},
+		)
+	})
+	t.Run(`update`, func(t *testing.T) {
+		dk := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				LatestAgentVersionUnixPaas: testVersion,
+			},
 		}
+		updater := createTestAgentUpdater(t, &dk)
+		previousHash := "1"
+		processModuleCache := createTestProcessModuleConfigCache(previousHash)
+		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+		updater.installer.(*installer.InstallerMock).
+			On("SetVersion", testVersion).
+			Return()
+		updater.installer.(*installer.InstallerMock).
+			On("InstallAgent", targetDir).
+			Return(nil)
+		updater.installer.(*installer.InstallerMock).
+			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
+			Return(nil)
+		updater.fs.MkdirAll(targetDir, 0755)
 
-		err := installAgentCfg.installAgent("", "")
-		require.NoError(t, err)
+		currentVersion, err := updater.updateAgent(
+			"other",
+			testTenantUUID,
+			previousHash,
+			&processModuleCache)
 
-		info, err := fs.Stat(filepath.Join(pathResolver.AgentBinaryDir(""), testFilename))
 		require.NoError(t, err)
-		assert.NotNil(t, info)
-		assert.False(t, info.IsDir())
-		assert.Equal(t, int64(25), info.Size())
+		assert.Equal(t, testVersion, currentVersion)
+		t_utils.AssertEvents(t,
+			updater.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				t_utils.Event{
+					EventType: corev1.EventTypeNormal,
+					Reason:    installAgentVersionEvent,
+				},
+			},
+		)
+	})
+	t.Run(`only process module config update`, func(t *testing.T) {
+		dk := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				LatestAgentVersionUnixPaas: testVersion,
+			},
+		}
+		updater := createTestAgentUpdater(t, &dk)
+		processModuleCache := createTestProcessModuleConfigCache("other")
+		previousHash := "1"
+		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+		updater.installer.(*installer.InstallerMock).
+			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
+			Return(nil)
+		updater.fs.MkdirAll(targetDir, 0755)
+
+		currentVersion, err := updater.updateAgent(
+			testVersion,
+			testTenantUUID,
+			previousHash,
+			&processModuleCache)
+
+		require.NoError(t, err)
+		assert.Equal(t, "", currentVersion)
+	})
+	t.Run(`do nothing`, func(t *testing.T) {
+		dk := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				LatestAgentVersionUnixPaas: testVersion,
+			},
+		}
+		updater := createTestAgentUpdater(t, &dk)
+		previousHash := "1"
+		processModuleCache := createTestProcessModuleConfigCache(previousHash)
+		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+		updater.fs.MkdirAll(targetDir, 0755)
+
+		currentVersion, err := updater.updateAgent(
+			testVersion,
+			testTenantUUID,
+			previousHash,
+			&processModuleCache)
+
+		require.NoError(t, err)
+		assert.Equal(t, "", currentVersion)
+	})
+	t.Run(`failed install`, func(t *testing.T) {
+		dk := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						Version: testVersion,
+					},
+				},
+			},
+		}
+		updater := createTestAgentUpdater(t, &dk)
+		processModuleCache := createTestProcessModuleConfigCache("1")
+		previousHash := ""
+		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+		updater.installer.(*installer.InstallerMock).
+			On("SetVersion", testVersion).
+			Return()
+		updater.installer.(*installer.InstallerMock).
+			On("InstallAgent", targetDir).
+			Return(fmt.Errorf("BOOM"))
+
+		currentVersion, err := updater.updateAgent(
+			testVersion,
+			testTenantUUID,
+			previousHash,
+			&processModuleCache)
+
+		require.Error(t, err)
+		assert.Equal(t, "", currentVersion)
+		t_utils.AssertEvents(t,
+			updater.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				t_utils.Event{
+					EventType: corev1.EventTypeWarning,
+					Reason:    failedInstallAgentVersionEvent,
+				},
+			},
+		)
 	})
 }
 
-func TestOneAgentProvisioner_Unzip(t *testing.T) {
-	t.Run(`file nil`, func(t *testing.T) {
-		fs := afero.NewMemMapFs()
-		installAgentCfg := &installAgentConfig{
-			path: metadata.PathResolver{RootDir: testDir},
-			fs:   fs,
-		}
-		err := installAgentCfg.unzip(nil, "", "")
-		require.EqualError(t, err, "file is nil")
-	})
-	t.Run(`unzip test zip file`, func(t *testing.T) {
-		fs := afero.NewMemMapFs()
-		pathResolver := metadata.PathResolver{RootDir: testDir}
-		installAgentCfg := &installAgentConfig{
-			path: pathResolver,
-			fs:   fs,
-		}
-		zipFile := setupTestZip(t, fs)
-		defer func() { _ = zipFile.Close() }()
+func createTestAgentUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube) *agentUpdater {
+	client := dtclient.MockDynatraceClient{}
+	path := metadata.PathResolver{RootDir: "test"}
+	fs := afero.NewMemMapFs()
+	rec := record.NewFakeRecorder(10)
 
-		err := installAgentCfg.unzip(zipFile, "", "")
-		require.NoError(t, err)
+	updater := newAgentUpdater(&client, path, fs, rec, dk)
+	require.NotNil(t, updater)
+	assert.NotNil(t, updater.installer)
 
-		binaryDir := pathResolver.AgentBinaryDir("")
-		exists, err := afero.Exists(fs, filepath.Join(binaryDir, testFilename))
-		require.NoError(t, err)
-		assert.True(t, exists)
+	updater.installer = &installer.InstallerMock{}
 
-		exists, err = afero.Exists(fs, filepath.Join(binaryDir, testDir, testFilename))
-		require.NoError(t, err)
-		assert.True(t, exists)
-
-		exists, err = afero.Exists(fs, filepath.Join(binaryDir, testDir, testDir, testFilename))
-		require.NoError(t, err)
-		assert.True(t, exists)
-
-		exists, err = afero.Exists(fs, filepath.Join(binaryDir, agentConfPath, testFilename))
-		require.NoError(t, err)
-		assert.True(t, exists)
-
-		info, err := fs.Stat(filepath.Join(binaryDir, testFilename))
-		require.NoError(t, err)
-		require.NotNil(t, info)
-		assert.False(t, info.IsDir())
-		assert.Equal(t, int64(25), info.Size())
-
-		info, err = fs.Stat(filepath.Join(binaryDir, testDir, testFilename))
-		require.NoError(t, err)
-		require.NotNil(t, info)
-		assert.False(t, info.IsDir())
-		assert.Equal(t, int64(25), info.Size())
-
-		info, err = fs.Stat(filepath.Join(binaryDir, testDir, testDir, testFilename))
-		require.NoError(t, err)
-		require.NotNil(t, info)
-		assert.False(t, info.IsDir())
-		assert.Equal(t, int64(25), info.Size())
-
-		info, err = fs.Stat(filepath.Join(binaryDir, agentConfPath, testFilename))
-		require.NoError(t, err)
-		require.NotNil(t, info)
-		assert.False(t, info.IsDir())
-		assert.Equal(t, int64(25), info.Size())
-
-		mode := info.Mode().Perm() & 020
-		// Assert file is group writeable
-		assert.NotEqual(t, mode, os.FileMode(0))
-	})
+	return updater
 }
 
-func setupTestZip(t *testing.T, fs afero.Fs) afero.File {
-	zipf, err := base64.StdEncoding.DecodeString(testZip)
-	require.NoError(t, err)
-
-	zipFile, err := afero.TempFile(fs, "", "")
-	require.NoError(t, err)
-
-	_, err = zipFile.Write(zipf)
-	require.NoError(t, err)
-
-	err = zipFile.Sync()
-	require.NoError(t, err)
-
-	_, err = zipFile.Seek(0, io.SeekStart)
-	require.NoError(t, err)
-
-	return zipFile
-}
-
-func setupInavlidTestZip(t *testing.T, fs afero.Fs) afero.File {
-	zipFile := setupTestZip(t, fs)
-
-	_, err := zipFile.Seek(8, io.SeekStart)
-	require.NoError(t, err)
-
-	return zipFile
+func createTestProcessModuleConfigCache(hash string) processModuleConfigCache {
+	return processModuleConfigCache{
+		ProcessModuleConfig: &testProcessModuleConfig,
+		Hash:                hash,
+	}
 }

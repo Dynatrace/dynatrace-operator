@@ -36,10 +36,11 @@ var (
 const (
 	operatorCmd      = "operator"
 	csiDriverCmd     = "csi-driver"
+	standaloneCmd    = "init"
 	webhookServerCmd = "webhook-server"
 )
 
-var errBadSubcmd = fmt.Errorf("subcommand must be %s, %s or %s", operatorCmd, csiDriverCmd, webhookServerCmd)
+var errBadSubcmd = fmt.Errorf("subcommand must be %s, %s, %s or %s", operatorCmd, csiDriverCmd, webhookServerCmd, standaloneCmd)
 
 func main() {
 	pflag.CommandLine.AddFlagSet(webhookServerFlags())
@@ -81,6 +82,10 @@ func main() {
 		mgr, cleanUp, err = setupWebhookServer(namespace, cfg)
 		exitOnError(err, "webhook-server setup failed")
 		defer cleanUp()
+	case standaloneCmd:
+		err = startStandAloneInit()
+		exitOnError(err, "initContainer command failed")
+		os.Exit(0)
 	default:
 		log.Error(errBadSubcmd, "unknown subcommand", "command", subCmd)
 		os.Exit(1)
