@@ -165,7 +165,7 @@ function checkDynakube {
   --namespace "${selected_namespace}" \
   --template="{{.data.paasToken}}")
   if [[ "$paas_token" == "" || "$paas_token" == "$missing_value" ]]; then
-    log "secret token paasToken doesn't exists using apiToken instead"
+    log "secret token paasToken doesn't exist; using apiToken instead"
     # save paas token for api check
     paas_token=$(echo "$api_token" | base64 -d)
   else
