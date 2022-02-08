@@ -1,4 +1,4 @@
-package kubeobjects
+package istio
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,7 +54,6 @@ func TestIstioEnabled(t *testing.T) {
 	server := initMockServer(t, list)
 	defer server.Close()
 	cfg := &restclient.Config{Host: server.URL}
-
 	r, e := CheckIstioEnabled(cfg)
 	if r != true {
 		t.Error(e)
@@ -76,7 +76,6 @@ func TestIstioDisabled(t *testing.T) {
 	server := initMockServer(t, list)
 	defer server.Close()
 	cfg := &restclient.Config{Host: server.URL}
-
 	r, e := CheckIstioEnabled(cfg)
 	if r != false && e == nil {
 		t.Errorf("expected false, got true, %v", e)
@@ -106,17 +105,17 @@ func TestMapErrorToObjectProbeResult(t *testing.T) {
 	tests := []struct {
 		name     string
 		argument error
-		want     probeResult
+		want     kubeobjects.ProbeResult
 		wantErr  bool
 	}{
-		{"no error returns probeObjectFound", nil, probeObjectFound, false},
-		{"object not found error returns probeObjectNotFound", errorObjectNotFound, probeObjectNotFound, true},
-		{"type not found error returns probeTypeNotFound", errorTypeNotFound, ProbeTypeNotFound, true},
-		{"unknown error returns probeUnknown", errorUnknown, probeUnknown, true},
+		{"no error returns probeObjectFound", nil, kubeobjects.ProbeObjectFound, false},
+		{"object not found error returns probeObjectNotFound", errorObjectNotFound, kubeobjects.ProbeObjectNotFound, true},
+		{"type not found error returns probeTypeNotFound", errorTypeNotFound, kubeobjects.ProbeTypeNotFound, true},
+		{"unknown error returns probeUnknown", errorUnknown, kubeobjects.ProbeUnknown, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := mapErrorToObjectProbeResult(tt.argument)
+			got, err := kubeobjects.MapErrorToObjectProbeResult(tt.argument)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("mapErrorToObjectProbeResult() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -58,7 +57,7 @@ func TestIstioClient_BuildDynatraceVirtualService(t *testing.T) {
 		t.Error("Failed to set environment variable")
 	}
 
-	vs := kubeobjects.BuildVirtualService(testVirtualServiceName, DefaultTestNamespace, testVirtualServiceHost, testVirtualServiceProtocol, testVirtualServicePort)
+	vs := buildVirtualService(testVirtualServiceName, DefaultTestNamespace, testVirtualServiceHost, testVirtualServiceProtocol, testVirtualServicePort)
 	ic := fakeistio.NewSimpleClientset(vs)
 	vsList, err := ic.NetworkingV1alpha3().VirtualServices(DefaultTestNamespace).List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
@@ -80,7 +79,7 @@ func TestController_ReconcileIstio(t *testing.T) {
 	port, err := strconv.ParseUint(serverUrl.Port(), 10, 32)
 	require.NoError(t, err)
 
-	virtualService := kubeobjects.BuildVirtualService(testVirtualServiceName, DefaultTestNamespace, "localhost", serverUrl.Scheme, uint32(port))
+	virtualService := buildVirtualService(testVirtualServiceName, DefaultTestNamespace, "localhost", serverUrl.Scheme, uint32(port))
 	instance := &dynatracev1beta1.DynaKube{}
 	controller := Controller{
 		istioClient: fakeistio.NewSimpleClientset(virtualService),
@@ -116,7 +115,7 @@ func sendApiGroupList(w http.ResponseWriter) {
 	apiGroupList := metav1.APIGroupList{
 		Groups: []metav1.APIGroup{
 			{
-				Name: kubeobjects.IstioGVRName,
+				Name: IstioGVRName,
 			},
 		},
 	}

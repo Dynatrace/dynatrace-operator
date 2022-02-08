@@ -1,4 +1,4 @@
-package kubeobjects
+package istio
 
 import (
 	"reflect"
@@ -46,7 +46,7 @@ func TestVirtualServiceGeneration(t *testing.T) {
 					},
 				}}},
 		}
-		result := BuildVirtualService(testName, testNamespace, testHost, ProtocolHttps, testPort)
+		result := buildVirtualService(testName, testNamespace, testHost, protocolHttps, testPort)
 
 		assert.EqualValues(t, expected, result)
 	})
@@ -70,13 +70,13 @@ func TestVirtualServiceGeneration(t *testing.T) {
 					},
 				}}},
 		}
-		result := BuildVirtualService(testName, testNamespace, testHost, ProtocolHttp, testPort)
+		result := buildVirtualService(testName, testNamespace, testHost, protocolHttp, testPort)
 
 		assert.EqualValues(t, expected, result)
 	})
 	t.Run("generate for invalid protocol", func(t *testing.T) {
 		const invalidHost = "42.42.42.42"
-		assert.Nil(t, BuildVirtualService(testName, testNamespace, invalidHost, ProtocolHttp, testPort))
+		assert.Nil(t, buildVirtualService(testName, testNamespace, invalidHost, protocolHttp, testPort))
 	})
 }
 
@@ -109,21 +109,21 @@ func TestVirtualServiceTLSRoute(t *testing.T) {
 func TestBuildVirtualServiceSpec(t *testing.T) {
 	t.Run(`is http route correctly set if protocol is "http"`, func(t *testing.T) {
 		expected := buildExpectedVirtualServiceSpecHttp(t)
-		result := buildVirtualServiceSpec(testHost1, ProtocolHttp, testPort1)
+		result := buildVirtualServiceSpec(testHost1, protocolHttp, testPort1)
 
 		assert.True(t, reflect.DeepEqual(expected, result))
 
-		result = buildVirtualServiceSpec(testHost2, ProtocolHttp, testPort2)
+		result = buildVirtualServiceSpec(testHost2, protocolHttp, testPort2)
 
 		assert.False(t, reflect.DeepEqual(expected, result))
 	})
 	t.Run(`is TLS route correctly set if protocol is "https"`, func(t *testing.T) {
 		expected := buildExpectedVirtualServiceSpecTls(t)
-		result := buildVirtualServiceSpec(testHost1, ProtocolHttps, testPort1)
+		result := buildVirtualServiceSpec(testHost1, protocolHttps, testPort1)
 
 		assert.True(t, reflect.DeepEqual(expected, result))
 
-		result = buildVirtualServiceSpec(testHost2, ProtocolHttps, testPort2)
+		result = buildVirtualServiceSpec(testHost2, protocolHttps, testPort2)
 
 		assert.False(t, reflect.DeepEqual(expected, result))
 	})
