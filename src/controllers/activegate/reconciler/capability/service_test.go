@@ -19,7 +19,12 @@ const (
 
 func TestCreateService(t *testing.T) {
 	instance := &dynatracev1beta1.DynaKube{
-		ObjectMeta: v1.ObjectMeta{Namespace: testNamespace, Name: testName},
+		ObjectMeta: v1.ObjectMeta{
+			Namespace: testNamespace, Name: testName,
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: "https://testing.dev.dynatracelabs.com/api",
+		},
 	}
 	service := createService(instance, testFeature)
 
@@ -38,18 +43,33 @@ func TestCreateService(t *testing.T) {
 	ports := serviceSpec.Ports
 	assert.Contains(t, ports,
 		corev1.ServicePort{
-			Name:       consts.HttpsServiceTargetPort,
+			Name:       consts.HttpsServicePortName,
 			Protocol:   corev1.ProtocolTCP,
 			Port:       consts.HttpsServicePort,
-			TargetPort: intstr.FromString(consts.HttpsServiceTargetPort),
+			TargetPort: intstr.FromString(consts.HttpsServicePortName),
 		},
 		corev1.ServicePort{
-			Name:       consts.HttpServiceTargetPort,
+			Name:       consts.HttpServicePortName,
 			Protocol:   corev1.ProtocolTCP,
 			Port:       consts.HttpServicePort,
-			TargetPort: intstr.FromString(consts.HttpServiceTargetPort),
+			TargetPort: intstr.FromString(consts.HttpServicePortName),
 		},
 	)
+	if instance.NeedsStatsd() {
+		assert.Contains(t, ports, corev1.ServicePort{
+			Name:       consts.StatsdIngestPortName,
+			Protocol:   corev1.ProtocolUDP,
+			Port:       consts.StatsdIngestPort,
+			TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
+		})
+	} else {
+		assert.NotContains(t, ports, corev1.ServicePort{
+			Name:       consts.StatsdIngestPortName,
+			Protocol:   corev1.ProtocolUDP,
+			Port:       consts.StatsdIngestPort,
+			TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
+		})
+	}
 }
 
 func TestBuildServiceNameForDNSEntryPoint(t *testing.T) {

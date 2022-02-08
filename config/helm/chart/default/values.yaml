@@ -47,6 +47,7 @@ operator:
     memory: 128Mi
 
 webhook:
+  hostNetwork: false
   requests:
     cpu: 300m
     memory: 128Mi

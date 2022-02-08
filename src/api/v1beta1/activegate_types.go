@@ -42,13 +42,20 @@ var (
 		ShortName:    "dynatrace-api",
 		ArgumentName: "restInterface",
 	}
+
+	StatsdIngestCapability = ActiveGateCapability{
+		DisplayName:  "statsd-ingest",
+		ShortName:    "statsd-ingest",
+		ArgumentName: "extension_controller",
+	}
 )
 
 var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
-	RoutingCapability.DisplayName:       struct{}{},
-	KubeMonCapability.DisplayName:       struct{}{},
-	MetricsIngestCapability.DisplayName: struct{}{},
-	DynatraceApiCapability.DisplayName:  struct{}{},
+	RoutingCapability.DisplayName:       {},
+	KubeMonCapability.DisplayName:       {},
+	MetricsIngestCapability.DisplayName: {},
+	DynatraceApiCapability.DisplayName:  {},
+	StatsdIngestCapability.DisplayName:  {},
 }
 
 type ActiveGateSpec struct {

@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"strings"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -14,6 +15,13 @@ func TestHasApiUrl(t *testing.T) {
 	instance.Spec.APIURL = testApiUrl
 	assert.Empty(t, noApiUrl(nil, instance))
 
+	t.Run(`happy path`, func(t *testing.T) {
+		assertAllowedResponse(t, &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: "https://tenantid.doma.in/api",
+			},
+		})
+	})
 	t.Run(`missing API URL`, func(t *testing.T) {
 		assertDeniedResponse(t, []string{errorNoApiUrl}, &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -21,10 +29,38 @@ func TestHasApiUrl(t *testing.T) {
 			},
 		})
 	})
-	t.Run(`invalid API URL`, func(t *testing.T) {
+	t.Run(`example API URL`, func(t *testing.T) {
 		assertDeniedResponse(t, []string{errorNoApiUrl}, &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: exampleApiUrl,
+			},
+		})
+	})
+	t.Run(`invalid API URL (without /api suffix)`, func(t *testing.T) {
+		assertDeniedResponse(t, []string{errorInvalidApiUrl}, &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: strings.TrimSuffix(exampleApiUrl, "/api"),
+			},
+		})
+	})
+	t.Run(`invalid API URL (not a Dynatrace environment)`, func(t *testing.T) {
+		assertDeniedResponse(t, []string{errorInvalidApiUrl}, &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: "https://www.google.com",
+			},
+		})
+	})
+	t.Run(`invalid API URL (empty tenant ID)`, func(t *testing.T) {
+		assertDeniedResponse(t, []string{errorInvalidApiUrl}, &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: "/api",
+			},
+		})
+	})
+	t.Run(`invalid API URL (missing domain)`, func(t *testing.T) {
+		assertDeniedResponse(t, []string{errorInvalidApiUrl}, &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: "https://...tenantid/api",
 			},
 		})
 	})
