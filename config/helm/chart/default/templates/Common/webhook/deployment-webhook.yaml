@@ -94,6 +94,9 @@ spec:
             limits:
               cpu: {{ default "300m" ((.Values.webhook).limits).cpu }}
               memory: {{ default "128Mi" ((.Values.webhook).limits).memory }}
+      {{- if (.Values.webhook).hostNetwork }}
+      hostNetwork: true
+      {{- end }}
       serviceAccountName: dynatrace-webhook
       {{- if .Values.operator.customPullSecret }}
       imagePullSecrets:

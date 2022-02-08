@@ -13,7 +13,7 @@ import (
 )
 
 func createService(instance *dynatracev1beta1.DynaKube, feature string) *corev1.Service {
-	enableStatsD := instance.FeatureEnableStatsDIngest()
+	enableStatsd := instance.NeedsStatsd()
 	ports := []corev1.ServicePort{
 		{
 			Name:       consts.HttpsServicePortName,
@@ -28,12 +28,12 @@ func createService(instance *dynatracev1beta1.DynaKube, feature string) *corev1.
 			TargetPort: intstr.FromString(consts.HttpServicePortName),
 		},
 	}
-	if enableStatsD {
+	if enableStatsd {
 		ports = append(ports, corev1.ServicePort{
-			Name:       consts.StatsDIngestPortName,
+			Name:       consts.StatsdIngestPortName,
 			Protocol:   corev1.ProtocolUDP,
-			Port:       consts.StatsDIngestPort,
-			TargetPort: intstr.FromString(consts.StatsDIngestTargetPort),
+			Port:       consts.StatsdIngestPort,
+			TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
 		})
 	}
 

@@ -9,28 +9,28 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const statsDProbesPortName = "statsd-probes"
-const statsDProbesPort = 14999
+const statsdProbesPortName = "statsd-probes"
+const statsdProbesPort = 14999
 
 const (
 	dataSourceMetadata = "ds-metadata"
 )
 
-var _ kubeobjects.ContainerBuilder = (*StatsD)(nil)
+var _ kubeobjects.ContainerBuilder = (*Statsd)(nil)
 
-type StatsD struct {
+type Statsd struct {
 	stsProperties *statefulSetProperties
 }
 
-func NewStatsD(stsProperties *statefulSetProperties) *StatsD {
-	return &StatsD{
+func NewStatsd(stsProperties *statefulSetProperties) *Statsd {
+	return &Statsd{
 		stsProperties: stsProperties,
 	}
 }
 
-func (statsd *StatsD) BuildContainer() corev1.Container {
+func (statsd *Statsd) BuildContainer() corev1.Container {
 	return corev1.Container{
-		Name:            consts.StatsDContainerName,
+		Name:            consts.StatsdContainerName,
 		Image:           statsd.stsProperties.DynaKube.ActiveGateImage(),
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             statsd.buildEnvs(),
@@ -41,7 +41,7 @@ func (statsd *StatsD) BuildContainer() corev1.Container {
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path: "/readyz",
-					Port: intstr.IntOrString{IntVal: statsDProbesPort},
+					Port: intstr.IntOrString{IntVal: statsdProbesPort},
 				},
 			},
 			InitialDelaySeconds: 10,
@@ -54,7 +54,7 @@ func (statsd *StatsD) BuildContainer() corev1.Container {
 			ProbeHandler: corev1.ProbeHandler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path: "/livez",
-					Port: intstr.IntOrString{IntVal: statsDProbesPort},
+					Port: intstr.IntOrString{IntVal: statsdProbesPort},
 				},
 			},
 			InitialDelaySeconds: 10,
@@ -66,7 +66,7 @@ func (statsd *StatsD) BuildContainer() corev1.Container {
 	}
 }
 
-func (statsd *StatsD) BuildVolumes() []corev1.Volume {
+func (statsd *Statsd) BuildVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: dataSourceMetadata,
@@ -77,8 +77,8 @@ func (statsd *StatsD) BuildVolumes() []corev1.Volume {
 	}
 }
 
-func (statsd *StatsD) buildCommand() []string {
-	if statsd.stsProperties.DynaKube.FeatureUseActiveGateImageForStatsD() {
+func (statsd *Statsd) buildCommand() []string {
+	if statsd.stsProperties.DynaKube.FeatureUseActiveGateImageForStatsd() {
 		return []string{
 			"/bin/bash", "/dt/statsd/entrypoint.sh",
 		}
@@ -86,14 +86,14 @@ func (statsd *StatsD) buildCommand() []string {
 	return nil
 }
 
-func (statsd *StatsD) buildPorts() []corev1.ContainerPort {
+func (statsd *Statsd) buildPorts() []corev1.ContainerPort {
 	return []corev1.ContainerPort{
-		{Name: consts.StatsDIngestTargetPort, ContainerPort: consts.StatsDIngestPort},
-		{Name: statsDProbesPortName, ContainerPort: statsDProbesPort},
+		{Name: consts.StatsdIngestTargetPort, ContainerPort: consts.StatsdIngestPort},
+		{Name: statsdProbesPortName, ContainerPort: statsdProbesPort},
 	}
 }
 
-func (statsd *StatsD) buildVolumeMounts() []corev1.VolumeMount {
+func (statsd *Statsd) buildVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{Name: dataSourceStartupArguments, MountPath: "/mnt/dsexecargs"},
 		{Name: dataSourceAuthToken, MountPath: "/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources"},
@@ -101,10 +101,10 @@ func (statsd *StatsD) buildVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-func (statsd *StatsD) buildEnvs() []corev1.EnvVar {
+func (statsd *Statsd) buildEnvs() []corev1.EnvVar {
 	return []corev1.EnvVar{
-		{Name: "StatsDExecArgsPath", Value: "/mnt/dsexecargs/statsd.process.json"},
-		{Name: "ProbeServerPort", Value: fmt.Sprintf("%d", statsDProbesPort)},
-		{Name: "StatsDMetadataDir", Value: "/mnt/dsmetadata"},
+		{Name: "StatsdExecArgsPath", Value: "/mnt/dsexecargs/statsd.process.json"},
+		{Name: "ProbeServerPort", Value: fmt.Sprintf("%d", statsdProbesPort)},
+		{Name: "StatsdMetadataDir", Value: "/mnt/dsmetadata"},
 	}
 }

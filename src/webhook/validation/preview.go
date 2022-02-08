@@ -29,3 +29,11 @@ func metricIngestPreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1beta
 	}
 	return ""
 }
+
+func statsdIngestPreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	if dynakube.IsActiveGateMode(dynatracev1beta1.StatsdIngestCapability.DisplayName) {
+		log.Info("DynaKube with statsd-ingest was applied, warning was provided.")
+		return fmt.Sprintf(featurePreviewWarningMessage, "statsd-ingest")
+	}
+	return ""
+}

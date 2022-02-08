@@ -83,6 +83,10 @@ func (dk *DynaKube) KubernetesMonitoringMode() bool {
 	return dk.IsActiveGateMode(KubeMonCapability.DisplayName) || dk.Spec.KubernetesMonitoring.Enabled
 }
 
+func (dk *DynaKube) NeedsStatsd() bool {
+	return dk.IsActiveGateMode(StatsdIngestCapability.DisplayName)
+}
+
 func (dk *DynaKube) HasActiveGateTLS() bool {
 	return dk.ActiveGateMode() && dk.Spec.ActiveGate.TlsSecretName != ""
 }

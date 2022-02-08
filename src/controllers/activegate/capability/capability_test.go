@@ -408,6 +408,35 @@ func TestNewMultiCapability(t *testing.T) {
 			},
 		},
 		{
+			name: "just statsd-ingest",
+			args: args{
+				dynakube: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						ActiveGate: dynatracev1beta1.ActiveGateSpec{
+							Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+								dynatracev1beta1.StatsdIngestCapability.DisplayName,
+							},
+						},
+					},
+				},
+			},
+			want: &MultiCapability{
+				capabilityBase: capabilityBase{
+					enabled:    true,
+					shortName:  MultiActiveGateName,
+					argName:    dynatracev1beta1.StatsdIngestCapability.ArgumentName,
+					properties: props,
+					Configuration: Configuration{
+						SetDnsEntryPoint:     true,
+						SetReadinessPort:     true,
+						SetCommunicationPort: true,
+						CreateService:        true,
+						ServiceAccountOwner:  "",
+					},
+				},
+			},
+		},
+		{
 			name: "just kubemon",
 			args: args{
 				dynakube: &dynatracev1beta1.DynaKube{
@@ -469,6 +498,7 @@ func TestNewMultiCapability(t *testing.T) {
 							Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 								dynatracev1beta1.KubeMonCapability.DisplayName,
 								dynatracev1beta1.MetricsIngestCapability.DisplayName,
+								dynatracev1beta1.StatsdIngestCapability.DisplayName,
 								dynatracev1beta1.RoutingCapability.DisplayName,
 								dynatracev1beta1.DynatraceApiCapability.DisplayName,
 							},
@@ -483,6 +513,7 @@ func TestNewMultiCapability(t *testing.T) {
 					argName: strings.Join([]string{
 						dynatracev1beta1.KubeMonCapability.ArgumentName,
 						dynatracev1beta1.MetricsIngestCapability.ArgumentName,
+						dynatracev1beta1.StatsdIngestCapability.ArgumentName,
 						dynatracev1beta1.RoutingCapability.ArgumentName,
 						dynatracev1beta1.DynatraceApiCapability.ArgumentName},
 						","),
