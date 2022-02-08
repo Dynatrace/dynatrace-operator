@@ -75,10 +75,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	})
 	t.Run(`Reconcile reconciles Kubernetes Monitoring if enabled`, func(t *testing.T) {
 		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-			dtclient.TokenScopes{dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeReadConfig,
-				dtclient.TokenScopeWriteConfig,
-			})
+			dtclient.TokenScopes{dtclient.TokenScopeDataExport})
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -108,10 +105,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	})
 	t.Run(`Reconcile reconciles automatic kubernetes api monitoring`, func(t *testing.T) {
 		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-			dtclient.TokenScopes{dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeReadConfig,
-				dtclient.TokenScopeWriteConfig,
-			})
+			dtclient.TokenScopes{dtclient.TokenScopeDataExport})
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -138,10 +132,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	})
 	t.Run(`Reconcile reconciles proxy secret`, func(t *testing.T) {
 		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-			dtclient.TokenScopes{dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeReadConfig,
-				dtclient.TokenScopeWriteConfig,
-			})
+			dtclient.TokenScopes{dtclient.TokenScopeDataExport})
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -205,9 +196,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 		mockClient := createDTMockClient(dtclient.TokenScopes{},
 			dtclient.TokenScopes{
 				dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeInstallerDownload,
-				dtclient.TokenScopeReadConfig,
-				dtclient.TokenScopeWriteConfig})
+				dtclient.TokenScopeInstallerDownload})
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -263,10 +252,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 
 func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 	mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-		dtclient.TokenScopes{dtclient.TokenScopeDataExport,
-			dtclient.TokenScopeReadConfig,
-			dtclient.TokenScopeWriteConfig,
-		})
+		dtclient.TokenScopes{dtclient.TokenScopeDataExport})
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
@@ -334,9 +320,8 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 
 func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 	mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-		dtclient.TokenScopes{dtclient.TokenScopeDataExport,
-			dtclient.TokenScopeReadConfig,
-			dtclient.TokenScopeWriteConfig,
+		dtclient.TokenScopes{
+			dtclient.TokenScopeDataExport,
 			dtclient.TokenScopeMetricsIngest,
 		})
 	instance := &dynatracev1beta1.DynaKube{

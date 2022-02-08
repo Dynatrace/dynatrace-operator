@@ -145,10 +145,7 @@ func mockDynatraceClientFunc(communicationHosts *[]string) dynakube.DynatraceCli
 			Port:     443,
 		}, nil)
 		dtc.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload}, nil)
-		dtc.On("GetTokenScopes", "43").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport,
-			dtclient.TokenScopeReadConfig,
-			dtclient.TokenScopeWriteConfig,
-		}, nil)
+		dtc.On("GetTokenScopes", "43").Return(dtclient.TokenScopes{dtclient.TokenScopeDataExport}, nil)
 
 		return dtc, nil
 	}
