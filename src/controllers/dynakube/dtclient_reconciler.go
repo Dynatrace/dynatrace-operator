@@ -117,8 +117,6 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 			Value: r.ApiToken,
 			Scopes: []string{dtclient.TokenScopeDataExport,
 				dtclient.TokenScopeInstallerDownload,
-				dtclient.TokenScopeReadConfig,
-				dtclient.TokenScopeWriteConfig,
 			},
 			Timestamp: &r.status.LastAPITokenProbeTimestamp,
 		}}
@@ -126,13 +124,10 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 	} else {
 		tokens = []tokenConfig{
 			{
-				Type:  dynatracev1beta1.APITokenConditionType,
-				Key:   dtclient.DynatraceApiToken,
-				Value: r.ApiToken,
-				Scopes: []string{dtclient.TokenScopeDataExport,
-					dtclient.TokenScopeReadConfig,
-					dtclient.TokenScopeWriteConfig,
-				},
+				Type:      dynatracev1beta1.APITokenConditionType,
+				Key:       dtclient.DynatraceApiToken,
+				Value:     r.ApiToken,
+				Scopes:    []string{dtclient.TokenScopeDataExport},
 				Timestamp: &r.status.LastAPITokenProbeTimestamp,
 			},
 			{

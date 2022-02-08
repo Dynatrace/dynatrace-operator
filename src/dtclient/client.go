@@ -105,8 +105,6 @@ const (
 const (
 	TokenScopeInstallerDownload = "InstallerDownload"
 	TokenScopeDataExport        = "DataExport"
-	TokenScopeReadConfig        = "ReadConfig"
-	TokenScopeWriteConfig       = "WriteConfig"
 	TokenScopeMetricsIngest     = "metrics.ingest"
 	TokenScopeEntitiesRead      = "entities.read"
 	TokenScopeSettingsRead      = "settings.read"
