@@ -1,8 +1,8 @@
 package initgeneration
 
 import (
-	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
+	"github.com/Dynatrace/dynatrace-operator/src/standalone"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -29,20 +30,6 @@ type InitGenerator struct {
 type nodeInfo struct {
 	nodes   []corev1.Node
 	imNodes map[string]string
-}
-
-// script holds all the values to be passed to the init script template.
-type script struct {
-	ApiUrl        string
-	SkipCertCheck bool
-	PaaSToken     string
-	Proxy         string
-	TrustedCAs    []byte
-	ClusterID     string
-	TenantUUID    string
-	IMNodes       map[string]string
-	HasHost       bool
-	TlsCert       string
 }
 
 func NewInitGenerator(client client.Client, apiReader client.Reader, ns string) *InitGenerator {
@@ -103,20 +90,19 @@ func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaK
 		return nil, err
 	}
 
-	script, err := g.prepareScriptForDynaKube(dk, kubeSystemUID, infraMonitoringNodes)
+	secretConfig, err := g.prepareSecretConfigForDynaKube(dk, kubeSystemUID, infraMonitoringNodes)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := script.generate()
+	data, err := g.createSecretData(secretConfig)
 	if err != nil {
 		return nil, err
 	}
-
 	return data, nil
 }
 
-func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) (*script, error) {
+func (g *InitGenerator) prepareSecretConfigForDynaKube(dk *dynatracev1beta1.DynaKube, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) (*standalone.SecretConfig, error) {
 	var tokens corev1.Secret
 	if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
@@ -153,17 +139,20 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, 
 		tlsCert = string(tlsSecret.Data[tlsCertKey])
 	}
 
-	return &script{
-		ApiUrl:        dk.Spec.APIURL,
-		SkipCertCheck: dk.Spec.SkipCertCheck,
-		PaaSToken:     string(getPaasToken(tokens)),
-		Proxy:         proxy,
-		TrustedCAs:    trustedCAs,
-		ClusterID:     string(kubeSystemUID),
-		TenantUUID:    dk.Status.ConnectionInfo.TenantUUID,
-		IMNodes:       infraMonitoringNodes,
-		HasHost:       dk.CloudNativeFullstackMode(),
-		TlsCert:       tlsCert,
+	return &standalone.SecretConfig{
+		ApiUrl:          dk.Spec.APIURL,
+		ApiToken:        string(getAPIToken(tokens)),
+		PaasToken:       string(getPaasToken(tokens)),
+		Proxy:           proxy,
+		NetworkZone:     dk.Spec.NetworkZone,
+		TrustedCAs:      string(trustedCAs),
+		SkipCertCheck:   dk.Spec.SkipCertCheck,
+		TenantUUID:      dk.Status.ConnectionInfo.TenantUUID,
+		HasHost:         dk.CloudNativeFullstackMode(),
+		MonitoringNodes: infraMonitoringNodes,
+		TlsCert:         tlsCert,
+		HostGroup:       dk.HostGroup(),
+		ClusterID:       string(kubeSystemUID),
 	}, nil
 }
 
@@ -171,6 +160,10 @@ func getPaasToken(tokens corev1.Secret) []byte {
 	if len(tokens.Data[dtclient.DynatracePaasToken]) != 0 {
 		return tokens.Data[dtclient.DynatracePaasToken]
 	}
+	return tokens.Data[dtclient.DynatraceApiToken]
+}
+
+func getAPIToken(tokens corev1.Secret) []byte {
 	return tokens.Data[dtclient.DynatraceApiToken]
 }
 
@@ -224,29 +217,17 @@ func (g *InitGenerator) initIMNodes() (nodeInfo, error) {
 	}
 	imNodes := map[string]string{}
 	for _, node := range nodeList.Items {
-		imNodes[node.Name] = notMappedIM
+		imNodes[node.Name] = standalone.NoHostTenant
 	}
 	return nodeInfo{nodeList.Items, imNodes}, nil
 }
 
-func (s *script) generate() (map[string][]byte, error) {
-	var buf bytes.Buffer
-
-	if err := scriptTmpl.Execute(&buf, s); err != nil {
+func (g *InitGenerator) createSecretData(config *standalone.SecretConfig) (map[string][]byte, error) {
+	jsonContent, err := json.Marshal(*config)
+	if err != nil {
 		return nil, err
 	}
-
-	data := map[string][]byte{
-		initScriptSecretField: buf.Bytes(),
-	}
-
-	if s.TrustedCAs != nil {
-		data[trustedCAInitSecretField] = s.TrustedCAs
-	}
-
-	if s.Proxy != "" {
-		data[proxyInitSecretField] = []byte(s.Proxy)
-	}
-
-	return data, nil
+	return map[string][]byte{
+		standalone.SecretConfigFieldName: jsonContent,
+	}, nil
 }
