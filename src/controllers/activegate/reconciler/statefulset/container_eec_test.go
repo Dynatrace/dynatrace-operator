@@ -48,7 +48,7 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 
 	t.Run("volumes vs volume mounts", func(t *testing.T) {
 		eec := NewExtensionController(stsProperties)
-		statsd := NewStatsD(stsProperties)
+		statsd := NewStatsd(stsProperties)
 		volumes := buildVolumes(stsProperties, []kubeobjects.ContainerBuilder{eec, statsd})
 
 		container := eec.BuildContainer()

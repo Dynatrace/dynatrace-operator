@@ -88,7 +88,7 @@ func (eec *ExtensionController) buildPorts() []corev1.ContainerPort {
 }
 
 func (eec *ExtensionController) buildCommand() []string {
-	if eec.stsProperties.DynaKube.FeatureUseActiveGateImageForStatsD() {
+	if eec.stsProperties.DynaKube.FeatureUseActiveGateImageForStatsd() {
 		return []string{
 			"/bin/bash", "/dt/eec/entrypoint.sh",
 		}
