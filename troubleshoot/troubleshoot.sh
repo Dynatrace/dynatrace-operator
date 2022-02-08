@@ -151,22 +151,27 @@ function checkDynakube {
 
   # check secret has required tokens
   token_names="apiToken paasToken"
-  for token_name in $token_names; do
-    # check token exists in secret
-    token=$("${cli}" get secret "$secret_name" \
-      --namespace "${selected_namespace}" \
-      --template="{{.data.${token_name}}}")
-    if [[ "$token" == "" || "$token" == "$missing_value" ]]; then
-      error "token '${token_name}' does not exist in secret '${secret_name}'"
-    else
-      log "secret token '${token_name}' exists"
-    fi
+  # check token exists in secret
+  api_token=$("${cli}" get secret "$secret_name" \
+    --namespace "${selected_namespace}" \
+    --template="{{.data.apiToken}}")
+  if [[ "$api_token" == "" || "$api_token" == "$missing_value" ]]; then
+    error "token apiToken does not exist in secret '${secret_name}'"
+  else
+    log "secret token apiToken exists"
+  fi
 
+  paas_token=$("${cli}" get secret "$secret_name" \
+  --namespace "${selected_namespace}" \
+  --template="{{.data.paasToken}}")
+  if [[ "$paas_token" == "" || "$paas_token" == "$missing_value" ]]; then
+    log "secret token paasToken doesn't exists using apiToken instead"
     # save paas token for api check
-    if [[ "$token_name" == "paasToken" ]]; then
-      paas_token=$(echo "$token" | base64 -d)
-    fi
-  done
+    paas_token=$(echo "$api_token" | base64 -d)
+  else
+    paas_token=$(echo "$paas_token" | base64 -d)
+    log "secret token paasToken exists"
+  fi
 
   # check custom pull secret
   pull_secret_name=$("${cli}" get dynakube "${selected_dynakube}" \
