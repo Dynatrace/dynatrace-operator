@@ -245,7 +245,10 @@ func (controller *NodesController) handleOutdatedCache(nodeCache *Cache) error {
 		// if node is not in cluster -> probably deleted
 		if !cachedNodeInCluster {
 			log.Info("Removing unfound cached node from cluster", "node", cachedNodeName)
-			return controller.reconcileNodeDeletion(cachedNodeName)
+			err := controller.reconcileNodeDeletion(cachedNodeName)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
