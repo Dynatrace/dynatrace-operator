@@ -34,7 +34,7 @@ const (
 	OneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
 	tlsVolumeName          = "tls"
 
-	csiStorageVolumeName  = "csi-storage"
+	csiStorageVolumeName  = "osagent-storage"
 	csiStorageVolumeMount = "/mnt/volume_storage_mount"
 
 	podName = "dynatrace-oneagent"
@@ -282,7 +282,11 @@ func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
 }
 
 func unprivilegedSecurityContext() *corev1.SecurityContext {
+	unprivilegedUser := int64(1001)
+	unprivilegedGroup := int64(2001)
 	return &corev1.SecurityContext{
+		RunAsUser:  &unprivilegedUser,
+		RunAsGroup: &unprivilegedGroup,
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",

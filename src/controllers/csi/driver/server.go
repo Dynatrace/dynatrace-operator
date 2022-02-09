@@ -28,6 +28,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
+	hostvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/host"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -82,7 +83,8 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 	}
 
 	svr.publishers = map[string]csivolumes.Publisher{
-		appvolumes.Mode: appvolumes.NewAppVolumePublisher(svr.client, svr.fs, svr.mounter, svr.db, svr.path),
+		appvolumes.Mode:  appvolumes.NewAppVolumePublisher(svr.client, svr.fs, svr.mounter, svr.db, svr.path),
+		hostvolumes.Mode: hostvolumes.NewHostVolumePublisher(svr.client, svr.fs, svr.mounter, svr.db, svr.path),
 	}
 
 	log.Info("starting listener", "protocol", proto, "address", addr)
@@ -145,19 +147,22 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	volumeAttributes := req.GetVolumeContext()
-	if volumeAttributes[CSIVolumeAttributeName] == appvolumes.Mode {
-		log.Info("publishing app volume",
-			"target", volumeCfg.TargetPath,
-			"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
-			"readonly", req.GetReadonly(),
-			"volumeID", volumeCfg.VolumeId,
-			"attributes", req.GetVolumeContext(),
-			"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
-		)
-		return svr.publishers[appvolumes.Mode].PublishVolume(ctx, volumeCfg)
+	volumeContext := req.GetVolumeContext()
+	mode := volumeContext[CSIVolumeAttributeName]
+	publisher, ok := svr.publishers[mode]
+	if !ok {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("unknown csi mode provided, mode=%s", mode))
 	}
-	return &csi.NodePublishVolumeResponse{}, nil
+	log.Info("publishing volume",
+		"csiMode", mode,
+		"target", volumeCfg.TargetPath,
+		"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
+		"readonly", req.GetReadonly(),
+		"volumeID", volumeCfg.VolumeId,
+		"attributes", volumeContext,
+		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
+	)
+	return publisher.PublishVolume(ctx, volumeCfg)
 }
 
 func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {

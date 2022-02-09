@@ -3,6 +3,8 @@ package daemonset
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	csidriver "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver"
+	hostvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/host"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -105,7 +107,7 @@ func getCSIStorageVolume() corev1.Volume {
 			CSI: &corev1.CSIVolumeSource{
 				Driver: dtcsi.DriverName,
 				VolumeAttributes: map[string]string{
-					"mode": "osagent", // TODO: Finalize in later PR
+					csidriver.CSIVolumeAttributeName: hostvolumes.Mode,
 				},
 			},
 		},
