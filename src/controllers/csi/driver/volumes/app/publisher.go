@@ -53,7 +53,7 @@ type AppVolumePublisher struct {
 }
 
 func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	bindCfg, err := newBindConfig(ctx, publisher, volumeCfg)
+	bindCfg, err := csivolumes.NewBindConfig(ctx, publisher.client, publisher.db, volumeCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 	if err := publisher.storeVolume(bindCfg, volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to store volume info: %s", err))
 	}
-	agentsVersionsMetric.WithLabelValues(bindCfg.version).Inc()
+	agentsVersionsMetric.WithLabelValues(bindCfg.Version).Inc()
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
@@ -110,18 +110,18 @@ func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volume metadata
 	}
 }
 
-func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *bindConfig, volumeCfg *csivolumes.VolumeConfig) error {
-	mappedDir := publisher.path.OverlayMappedDir(bindCfg.tenantUUID, volumeCfg.VolumeId)
+func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
+	mappedDir := publisher.path.OverlayMappedDir(bindCfg.TenantUUID, volumeCfg.VolumeId)
 	_ = publisher.fs.MkdirAll(mappedDir, os.ModePerm)
 
-	upperDir := publisher.path.OverlayVarDir(bindCfg.tenantUUID, volumeCfg.VolumeId)
+	upperDir := publisher.path.OverlayVarDir(bindCfg.TenantUUID, volumeCfg.VolumeId)
 	_ = publisher.fs.MkdirAll(upperDir, os.ModePerm)
 
-	workDir := publisher.path.OverlayWorkDir(bindCfg.tenantUUID, volumeCfg.VolumeId)
+	workDir := publisher.path.OverlayWorkDir(bindCfg.TenantUUID, volumeCfg.VolumeId)
 	_ = publisher.fs.MkdirAll(workDir, os.ModePerm)
 
 	overlayOptions := []string{
-		"lowerdir=" + publisher.path.AgentBinaryDirForVersion(bindCfg.tenantUUID, bindCfg.version),
+		"lowerdir=" + publisher.path.AgentBinaryDirForVersion(bindCfg.TenantUUID, bindCfg.Version),
 		"upperdir=" + upperDir,
 		"workdir=" + workDir,
 	}
@@ -156,8 +156,8 @@ func (publisher *AppVolumePublisher) umountOneAgent(targetPath string, overlayFS
 	return nil
 }
 
-func (publisher *AppVolumePublisher) storeVolume(bindCfg *bindConfig, volumeCfg *csivolumes.VolumeConfig) error {
-	volume := metadata.NewVolume(volumeCfg.VolumeId, volumeCfg.PodName, bindCfg.version, bindCfg.tenantUUID)
+func (publisher *AppVolumePublisher) storeVolume(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
+	volume := metadata.NewVolume(volumeCfg.VolumeId, volumeCfg.PodName, bindCfg.Version, bindCfg.TenantUUID)
 	log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 	return publisher.db.InsertVolume(volume)
 }

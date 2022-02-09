@@ -1,10 +1,10 @@
-package appvolumes
+package csivolumes
 
 import (
 	"context"
 	"fmt"
 
-	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -12,14 +12,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type bindConfig struct {
-	tenantUUID string
-	version    string
+type BindConfig struct {
+	TenantUUID string
+	Version    string
 }
 
-func newBindConfig(ctx context.Context, svr *AppVolumePublisher, volumeCfg *csivolumes.VolumeConfig) (*bindConfig, error) {
+func NewBindConfig(ctx context.Context,
+	_client client.Client,
+	access metadata.Access,
+	volumeCfg *VolumeConfig) (*BindConfig, error) {
 	var ns corev1.Namespace
-	if err := svr.client.Get(ctx, client.ObjectKey{Name: volumeCfg.Namespace}, &ns); err != nil {
+	if err := _client.Get(ctx, client.ObjectKey{Name: volumeCfg.Namespace}, &ns); err != nil {
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("failed to query namespace %s: %s", volumeCfg.Namespace, err.Error()))
 	}
 
@@ -28,15 +31,15 @@ func newBindConfig(ctx context.Context, svr *AppVolumePublisher, volumeCfg *csiv
 		return nil, status.Error(codes.FailedPrecondition, fmt.Sprintf("namespace '%s' doesn't have DynaKube assigned", volumeCfg.Namespace))
 	}
 
-	dynakube, err := svr.db.GetDynakube(dkName)
+	dynakube, err := access.GetDynakube(dkName)
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("failed to extract tenant for DynaKube %s: %s", dkName, err.Error()))
 	}
 	if dynakube == nil {
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("dynakube (%s) is missing from metadata database", dkName))
 	}
-	return &bindConfig{
-		tenantUUID: dynakube.TenantUUID,
-		version:    dynakube.LatestVersion,
+	return &BindConfig{
+		TenantUUID: dynakube.TenantUUID,
+		Version:    dynakube.LatestVersion,
 	}, nil
 }

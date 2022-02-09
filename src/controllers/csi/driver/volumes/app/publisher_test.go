@@ -22,9 +22,13 @@ import (
 )
 
 const (
-	testPodUID     = "a-pod"
-	testVolumeId   = "a-volume"
-	testTargetPath = "/path/to/container/filesystem/opt/dynatrace/oneagent-paas"
+	testPodUID       = "a-pod"
+	testVolumeId     = "a-volume"
+	testTargetPath   = "/path/to/container/filesystem/opt/dynatrace/oneagent-paas"
+	testTenantUUID   = "a-tenant-uuid"
+	testAgentVersion = "1.2-3"
+	testNamespace    = "test"
+	testDynakubeName = "a-dynakube"
 )
 
 func TestPublishVolume(t *testing.T) {
@@ -116,9 +120,9 @@ func TestStoreAndLoadPodInfo(t *testing.T) {
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
 	publisher := newPublisherForTesting(t, mounter)
 
-	bindCfg := &bindConfig{
-		version:    testAgentVersion,
-		tenantUUID: testTenantUUID,
+	bindCfg := &csivolumes.BindConfig{
+		Version:    testAgentVersion,
+		TenantUUID: testTenantUUID,
 	}
 
 	volumeCfg := createTestVolumeConfig()
