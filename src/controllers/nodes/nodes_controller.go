@@ -227,6 +227,7 @@ func (controller *NodesController) handleOutdatedCache(nodeCache *Cache) error {
 	}
 
 	for _, cachedNodeName := range nodeCache.Keys() {
+		var cachedNodeInCluster = false
 		for _, clusterNode := range nodeLst.Items {
 			if clusterNode.Name == cachedNodeName {
 				cachedNodeInfo, err := nodeCache.Get(cachedNodeName)
@@ -234,9 +235,17 @@ func (controller *NodesController) handleOutdatedCache(nodeCache *Cache) error {
 					log.Error(err, "failed to get node", "node", cachedNodeName)
 					return err
 				}
+				cachedNodeInCluster = true
+				// Check if node was seen less than an hour ago, otherwise do not remove from cache
 				controller.removeNodeFromCache(nodeCache, cachedNodeInfo, cachedNodeName)
 				break
 			}
+		}
+
+		// if node is not in cluster -> probably deleted
+		if !cachedNodeInCluster {
+			log.Info("Removing unfound cached node from cluster", "node", cachedNodeName)
+			controller.reconcileNodeDeletion(cachedNodeName)
 		}
 	}
 	return nil
