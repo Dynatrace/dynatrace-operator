@@ -115,7 +115,7 @@ func (g *InitGenerator) prepareSecretConfigForDynaKube(dk *dynatracev1beta1.Dyna
 			if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Spec.Proxy.ValueFrom, Namespace: g.namespace}, &ps); err != nil {
 				return nil, fmt.Errorf("failed to query proxy: %w", err)
 			}
-			proxy = string(ps.Data[proxyInitSecretField])
+			proxy = string(ps.Data[proxyKey])
 		} else if dk.Spec.Proxy.Value != "" {
 			proxy = dk.Spec.Proxy.Value
 		}
@@ -127,7 +127,7 @@ func (g *InitGenerator) prepareSecretConfigForDynaKube(dk *dynatracev1beta1.Dyna
 		if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Spec.TrustedCAs, Namespace: g.namespace}, &cam); err != nil {
 			return nil, fmt.Errorf("failed to query ca: %w", err)
 		}
-		trustedCAs = []byte(cam.Data[trustedCASecretField])
+		trustedCAs = []byte(cam.Data[trustedCAKey])
 	}
 
 	var tlsCert string

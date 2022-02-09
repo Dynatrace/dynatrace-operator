@@ -115,7 +115,7 @@ var (
 	caConfigMap = &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: testtrustCAsCM, Namespace: operatorNamespace},
 		Data: map[string]string{
-			trustedCASecretField: testCAValue,
+			trustedCAKey: testCAValue,
 		},
 	}
 

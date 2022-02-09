@@ -9,7 +9,7 @@ var (
 )
 
 const (
-	trustedCASecretField = "certs"
-	proxyInitSecretField = "proxy"
-	tlsCertKey           = "server.crt"
+	trustedCAKey = "certs"
+	proxyKey     = "proxy"
+	tlsCertKey   = "server.crt"
 )

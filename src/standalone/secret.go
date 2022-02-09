@@ -13,16 +13,6 @@ var (
 	SecretConfigFieldName = "config"
 )
 
-const (
-	ApiUrlFile        = "apiurl"
-	ApiTokenFile      = "apitoken"
-	PaasTokenFile     = "paastoken"
-	ProxyFile         = "proxy"
-	NetworkZoneFile   = "networkzone"
-	TrustedCAsFile    = "trustedcas"
-	SkipCertCheckFile = "skipcertcheck"
-)
-
 type SecretConfig struct {
 	// For the client
 	ApiUrl        string `json:"apiUrl"`
