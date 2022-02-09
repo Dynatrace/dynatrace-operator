@@ -227,7 +227,7 @@ func (controller *NodesController) handleOutdatedCache(nodeCache *Cache) error {
 	}
 
 	for _, cachedNodeName := range nodeCache.Keys() {
-		var cachedNodeInCluster = false
+		cachedNodeInCluster := false
 		for _, clusterNode := range nodeLst.Items {
 			if clusterNode.Name == cachedNodeName {
 				cachedNodeInfo, err := nodeCache.Get(cachedNodeName)
