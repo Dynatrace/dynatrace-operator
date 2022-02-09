@@ -3,6 +3,7 @@ package metadata
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -10,6 +11,7 @@ import (
 const (
 	sqliteDriverName = "sqlite3"
 
+	// CREATE
 	dynakubesTableName       = "dynakubes"
 	dynakubesCreateStatement = `
 	CREATE TABLE IF NOT EXISTS dynakubes (
@@ -29,25 +31,50 @@ const (
 		PRIMARY KEY (ID)
 	);`
 
+	storagesTableName       = "storages"
+	storagesCreateStatement = `
+	CREATE TABLE IF NOT EXISTS storages (
+		TenantUUID VARCHAR NOT NULL,
+		VolumeID VARCHAR NOT NULL,
+		Mounted BOOLEAN NOT NULL,
+		LastModified DATETIME NOT NULL,
+		PRIMARY KEY (TenantUUID)
+	);`
+
+	// INSERT
 	insertDynakubeStatement = `
 	INSERT INTO dynakubes (Name, TenantUUID, LatestVersion)
 	VALUES (?,?,?);
 	`
+
+	insertVolumeStatement = `
+	INSERT INTO volumes (ID, PodName, Version, TenantUUID)
+	VALUES (?,?,?,?);
+	`
+
+	insertStorageStatement = `
+	INSERT INTO storages (TenantUUID, VolumeID, Mounted, LastModified)
+	VALUES (?,?,?,?);
+	`
+
+	// UPDATE
 	updateDynakubeStatement = `
 	UPDATE dynakubes
 	SET LatestVersion = ?, TenantUUID = ?
 	WHERE Name = ?;
 	`
 
+	updateStorageStatement = `
+	UPDATE storages
+	SET VolumeID = ?, Mounted = ?, LastModified = ?
+	WHERE TenantUUID = ?;
+	`
+
+	// GET
 	getDynakubeStatement = `
 	SELECT TenantUUID, LatestVersion
 	FROM dynakubes
 	WHERE Name = ?;
-	`
-
-	insertVolumeStatement = `
-	INSERT INTO volumes (ID, PodName, Version, TenantUUID)
-	VALUES (?,?,?,?);
 	`
 
 	getVolumeStatement = `
@@ -56,10 +83,18 @@ const (
 	WHERE ID = ?;
 	`
 
+	getStorageViaVolumeIDStatement = `
+	SELECT TenantUUID, Mounted, LastModified
+	FROM storages
+	WHERE VolumeID = ?;
+	`
+
+	// DELETE
 	deleteVolumeStatement = "DELETE FROM volumes WHERE ID = ?;"
 
 	deleteDynakubeStatement = "DELETE FROM dynakubes WHERE Name = ?;"
 
+	// SPECIAL
 	getUsedVersionsStatement = `
 	SELECT Version
 	FROM volumes
@@ -109,6 +144,9 @@ func (a *SqliteAccess) createTables() error {
 	}
 	if _, err := a.conn.Exec(volumesCreateStatement); err != nil {
 		return fmt.Errorf("couldn't create the table %s, err: %s", volumesTableName, err)
+	}
+	if _, err := a.conn.Exec(storagesCreateStatement); err != nil {
+		return fmt.Errorf("couldn't create the table %s, err: %s", storagesTableName, err)
 	}
 	return nil
 }
@@ -203,6 +241,46 @@ func (a *SqliteAccess) DeleteVolume(volumeID string) error {
 		err = fmt.Errorf("couldn't delete volume for volume id '%s', err: %s", volumeID, err)
 	}
 	return err
+}
+
+// InsertVolume inserts a new Volume
+func (a *SqliteAccess) InsertStorage(storage *Storage) error {
+	err := a.executeStatement(insertStorageStatement, storage.TenantUUID, storage.VolumeID, storage.Mounted, storage.LastModified)
+	if err != nil {
+		err = fmt.Errorf("couldn't insert storage info, volume id '%s', tenant UUID '%s', mounted '%t', last modified '%s', err: %s",
+			storage.VolumeID,
+			storage.TenantUUID,
+			storage.Mounted,
+			storage.LastModified,
+			err)
+	}
+	return err
+}
+
+// UpdateDynakube updates an existing Dynakube by matching the name
+func (a *SqliteAccess) UpdateStorage(storage *Storage) error {
+	err := a.executeStatement(updateStorageStatement, storage.VolumeID, storage.Mounted, storage.LastModified, storage.TenantUUID)
+	if err != nil {
+		err = fmt.Errorf("couldn't update storage info, tenantUUID '%s', mounted '%t', last modified '%s', volume id %s, err: %s",
+			storage.TenantUUID,
+			storage.Mounted,
+			storage.LastModified,
+			storage.VolumeID,
+			err)
+	}
+	return err
+}
+
+// GetVolume gets Volume by its ID
+func (a *SqliteAccess) GetStorageViaVolumeId(volumeID string) (*Storage, error) {
+	var tenantUUID string
+	var mounted bool
+	var lastModified time.Time
+	err := a.querySimpleStatement(getStorageViaVolumeIDStatement, volumeID, &tenantUUID, &mounted, &lastModified)
+	if err != nil {
+		err = fmt.Errorf("couldn't get storage info for volume id '%s', err: %s", volumeID, err)
+	}
+	return NewStorage(volumeID, tenantUUID, mounted, &lastModified), err
 }
 
 // GetUsedVersions gets all UNIQUE versions present in the `volumes` database in map.

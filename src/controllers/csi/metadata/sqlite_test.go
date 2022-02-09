@@ -3,8 +3,10 @@ package metadata
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewAccess(t *testing.T) {
@@ -170,6 +172,81 @@ func TestInsertVolume(t *testing.T) {
 	assert.Equal(t, ver, testVolume1.Version)
 	assert.Equal(t, tuid, testVolume1.TenantUUID)
 
+}
+
+func TestInsertStorage(t *testing.T) {
+	db := FakeMemoryDB()
+
+	now := time.Now()
+	storage := Storage{
+		VolumeID:     "vol-4",
+		TenantUUID:   testDynakube1.TenantUUID,
+		Mounted:      true,
+		LastModified: &now,
+	}
+
+	err := db.InsertStorage(&storage)
+	require.NoError(t, err)
+	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE TenantUUID = ?;", storagesTableName), storage.TenantUUID)
+	var volumeID string
+	var tenantUUID string
+	var mounted bool
+	var lastModified time.Time
+	err = row.Scan(&tenantUUID, &volumeID, &mounted, &lastModified)
+	assert.NoError(t, err)
+	assert.Equal(t, volumeID, storage.VolumeID)
+	assert.Equal(t, tenantUUID, storage.TenantUUID)
+	assert.Equal(t, mounted, storage.Mounted)
+	assert.True(t, storage.LastModified.Equal(lastModified))
+}
+
+func TestGetStorage(t *testing.T) {
+	db := FakeMemoryDB()
+
+	now := time.Now()
+	expected := Storage{
+		VolumeID:     "vol-4",
+		TenantUUID:   testDynakube1.TenantUUID,
+		Mounted:      true,
+		LastModified: &now,
+	}
+
+	err := db.InsertStorage(&expected)
+	require.NoError(t, err)
+	actual, err := db.GetStorageViaVolumeId(expected.VolumeID)
+	require.NoError(t, err)
+	assert.NoError(t, err)
+	assert.Equal(t, expected.VolumeID, actual.VolumeID)
+	assert.Equal(t, expected.TenantUUID, actual.TenantUUID)
+	assert.Equal(t, expected.Mounted, actual.Mounted)
+	assert.True(t, expected.LastModified.Equal(*actual.LastModified))
+}
+
+func TestUpdateStorage(t *testing.T) {
+	db := FakeMemoryDB()
+
+	now := time.Now()
+	old := Storage{
+		VolumeID:     "vol-4",
+		TenantUUID:   testDynakube1.TenantUUID,
+		Mounted:      true,
+		LastModified: &now,
+	}
+
+	err := db.InsertStorage(&old)
+	require.NoError(t, err)
+	new := old
+	new.Mounted = false
+	err = db.UpdateStorage(&new)
+	require.NoError(t, err)
+
+	actual, err := db.GetStorageViaVolumeId(old.VolumeID)
+	require.NoError(t, err)
+	assert.NoError(t, err)
+	assert.Equal(t, old.VolumeID, actual.VolumeID)
+	assert.Equal(t, old.TenantUUID, actual.TenantUUID)
+	assert.NotEqual(t, old.Mounted, actual.Mounted)
+	assert.True(t, old.LastModified.Equal(*actual.LastModified))
 }
 
 func TestGetVolume(t *testing.T) {

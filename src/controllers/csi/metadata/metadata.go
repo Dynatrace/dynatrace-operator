@@ -1,5 +1,7 @@
 package metadata
 
+import "time"
+
 // Stores the necessary info from the Dynakube that is needed to be used during volume mount/unmount.
 type Dynakube struct {
 	Name          string
@@ -28,6 +30,21 @@ func NewVolume(id, podUID, version, tenantUUID string) *Volume {
 		return nil
 	}
 	return &Volume{id, podUID, version, tenantUUID}
+}
+
+type Storage struct {
+	VolumeID     string
+	TenantUUID   string
+	Mounted      bool
+	LastModified *time.Time
+}
+
+// NewStorage returns a new Storage if all fields are set.
+func NewStorage(volumeID, tenantUUID string, mounted bool, timeStamp *time.Time) *Storage {
+	if volumeID == "" || tenantUUID == "" || timeStamp == nil {
+		return nil
+	}
+	return &Storage{volumeID, tenantUUID, mounted, timeStamp}
 }
 
 type Access interface {
