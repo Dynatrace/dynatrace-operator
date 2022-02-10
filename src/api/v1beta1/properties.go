@@ -140,8 +140,9 @@ func (dk *DynaKube) ActiveGateImage() string {
 // EecImage returns the Extension Controller image to be used with the dk DynaKube instance.
 func (dk *DynaKube) EecImage() string {
 	if dk.ActiveGateMode() {
-		if dk.Spec.ActiveGate.ExtensionControllerImage != "" {
-			return dk.Spec.ActiveGate.ExtensionControllerImage
+		eecImage := dk.FeatureCustomEecImage()
+		if len(eecImage) > 0 {
+			return eecImage
 		}
 	}
 
@@ -156,8 +157,9 @@ func (dk *DynaKube) EecImage() string {
 // StatsdImage returns the StatsD data source image to be used with the dk DynaKube instance.
 func (dk *DynaKube) StatsdImage() string {
 	if dk.ActiveGateMode() {
-		if dk.Spec.ActiveGate.StatsdImage != "" {
-			return dk.Spec.ActiveGate.StatsdImage
+		statsdImage := dk.FeatureCustomStatsdImage()
+		if len(statsdImage) > 0 {
+			return statsdImage
 		}
 	}
 

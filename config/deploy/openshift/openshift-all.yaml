@@ -1023,11 +1023,6 @@ spec:
                   dnsPolicy:
                     description: 'Optional: Sets DNS Policy for the ActiveGate pods'
                     type: string
-                  eecImage:
-                    description: 'Optional: the Extension Framework 2.0 controller
-                      image. Defaults to the latest image provided by the Docker Registry
-                      implementation from the Dynatrace environment set as API URL.'
-                    type: string
                   env:
                     description: 'Optional: List of environment variables to set for
                       the ActiveGate'
@@ -1190,11 +1185,6 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
-                  statsdImage:
-                    description: 'Optional: the StatsD data source container image.
-                      Defaults to the latest image provided by the Docker Registry
-                      implementation from the Dynatrace environment set as API URL.'
-                    type: string
                   tlsSecretName:
                     description: 'Optional: the name of a secret containing ActiveGate
                       TLS cert+key and password. If not set, self-signed certificate
@@ -1268,11 +1258,6 @@ spec:
                       valueFrom:
                         type: string
                     type: object
-                  eecImage:
-                    description: 'Optional: the Extension Framework 2.0 controller
-                      image. Defaults to the latest image provided by the Docker Registry
-                      implementation from the Dynatrace environment set as API URL.'
-                    type: string
                   enabled:
                     description: Enables Capability
                     type: boolean
@@ -1438,11 +1423,6 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
-                  statsdImage:
-                    description: 'Optional: the StatsD data source container image.
-                      Defaults to the latest image provided by the Docker Registry
-                      implementation from the Dynatrace environment set as API URL.'
-                    type: string
                   tolerations:
                     description: 'Optional: set tolerations for the ActiveGatePods
                       pods'
@@ -2331,11 +2311,6 @@ spec:
                       valueFrom:
                         type: string
                     type: object
-                  eecImage:
-                    description: 'Optional: the Extension Framework 2.0 controller
-                      image. Defaults to the latest image provided by the Docker Registry
-                      implementation from the Dynatrace environment set as API URL.'
-                    type: string
                   enabled:
                     description: Enables Capability
                     type: boolean
@@ -2501,11 +2476,6 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
-                  statsdImage:
-                    description: 'Optional: the StatsD data source container image.
-                      Defaults to the latest image provided by the Docker Registry
-                      implementation from the Dynatrace environment set as API URL.'
-                    type: string
                   tolerations:
                     description: 'Optional: set tolerations for the ActiveGatePods
                       pods'
