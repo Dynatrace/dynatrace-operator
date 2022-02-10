@@ -191,14 +191,14 @@ func (registry *fakeRegistry) GetImageVersionExt(imagePath string, _ *dtversion.
 	return registry.GetImageVersion(imagePath)
 }
 
-func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imagePath string, timePoint metav1.Time, verStatuser dynatracev1beta1.NamedVersionStatuser) {
+func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imagePath string, timePoint metav1.Time, versionStatusNamer dynatracev1beta1.VersionStatusNamer) {
 	expectedVersion, err := registry.GetImageVersion(imagePath)
 
 	assert.NoError(t, err, "Image version is unexpectedly unknown for '%s'", imagePath)
-	assert.Equalf(t, expectedVersion.Version, verStatuser.GetVersion(), "Unexpected version for versioned component %s", verStatuser.GetName())
-	assert.Equalf(t, expectedVersion.Hash, verStatuser.GetImageHash(), "Unexpected image hash for versioned component %s", verStatuser.GetName())
-	if ts := verStatuser.GetLastUpdateProbeTimestamp(); assert.NotNilf(t, ts, "Unexpectedly missing update timestamp for versioned component %s", verStatuser.GetName()) {
-		assert.Equalf(t, timePoint, *ts, "Unexpected update timestamp for versioned component %s", verStatuser.GetName())
+	assert.Equalf(t, expectedVersion.Version, versionStatusNamer.Status().Version, "Unexpected version for versioned component %s", versionStatusNamer.Name())
+	assert.Equalf(t, expectedVersion.Hash, versionStatusNamer.Status().ImageHash, "Unexpected image hash for versioned component %s", versionStatusNamer.Name())
+	if ts := versionStatusNamer.Status().LastUpdateProbeTimestamp; assert.NotNilf(t, ts, "Unexpectedly missing update timestamp for versioned component %s", versionStatusNamer.Name()) {
+		assert.Equalf(t, timePoint, *ts, "Unexpected update timestamp for versioned component %s", versionStatusNamer.Name())
 	}
 }
 

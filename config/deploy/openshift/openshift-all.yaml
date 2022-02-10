@@ -1191,7 +1191,7 @@ spec:
                         type: object
                     type: object
                   statsdImage:
-                    description: 'Optional: the Statsd data source container image.
+                    description: 'Optional: the StatsD data source container image.
                       Defaults to the latest image provided by the Docker Registry
                       implementation from the Dynatrace environment set as API URL.'
                     type: string
@@ -1439,7 +1439,7 @@ spec:
                         type: object
                     type: object
                   statsdImage:
-                    description: 'Optional: the Statsd data source container image.
+                    description: 'Optional: the StatsD data source container image.
                       Defaults to the latest image provided by the Docker Registry
                       implementation from the Dynatrace environment set as API URL.'
                     type: string
@@ -2502,7 +2502,7 @@ spec:
                         type: object
                     type: object
                   statsdImage:
-                    description: 'Optional: the Statsd data source container image.
+                    description: 'Optional: the StatsD data source container image.
                       Defaults to the latest image provided by the Docker Registry
                       implementation from the Dynatrace environment set as API URL.'
                     type: string

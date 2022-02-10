@@ -71,19 +71,10 @@ type CommunicationHostStatus struct {
 }
 
 // +kubebuilder:object:generate=false
-type VersionStatuser interface {
-	GetImageHash() string
-	GetVersion() string
-	GetLastUpdateProbeTimestamp() *metav1.Time
+type VersionStatusNamer interface {
+	Status() VersionStatus
+	Name() string
 }
-
-// +kubebuilder:object:generate=false
-type NamedVersionStatuser interface {
-	VersionStatuser
-	GetName() string
-}
-
-var _ VersionStatuser = (*ActiveGateStatus)(nil)
 
 type VersionStatus struct {
 	// ImageHash contains the last image hash seen.
@@ -96,49 +87,41 @@ type VersionStatus struct {
 	LastUpdateProbeTimestamp *metav1.Time `json:"lastUpdateProbeTimestamp,omitempty"`
 }
 
-func (verStatus *VersionStatus) GetImageHash() string {
-	return verStatus.ImageHash
+func (verStatus *VersionStatus) Status() VersionStatus {
+	return *verStatus.DeepCopy()
 }
 
-func (verStatus *VersionStatus) GetVersion() string {
-	return verStatus.Version
-}
-
-func (verStatus *VersionStatus) GetLastUpdateProbeTimestamp() *metav1.Time {
-	return verStatus.LastUpdateProbeTimestamp
-}
-
-var _ NamedVersionStatuser = (*ActiveGateStatus)(nil)
+var _ VersionStatusNamer = (*ActiveGateStatus)(nil)
 
 type ActiveGateStatus struct {
 	VersionStatus `json:",inline"`
 }
 
-func (agStatus *ActiveGateStatus) GetName() string {
+func (agStatus *ActiveGateStatus) Name() string {
 	return "ActiveGate"
 }
 
-var _ NamedVersionStatuser = (*EecStatus)(nil)
+var _ VersionStatusNamer = (*EecStatus)(nil)
 
 type EecStatus struct {
 	VersionStatus `json:",inline"`
 }
 
-func (eecStatus *EecStatus) GetName() string {
+func (eecStatus *EecStatus) Name() string {
 	return "Extension Controller"
 }
 
-var _ NamedVersionStatuser = (*StatsdStatus)(nil)
+var _ VersionStatusNamer = (*StatsdStatus)(nil)
 
 type StatsdStatus struct {
 	VersionStatus `json:",inline"`
 }
 
-func (statsdStatus *StatsdStatus) GetName() string {
+func (statsdStatus *StatsdStatus) Name() string {
 	return "StatsD data source"
 }
 
-var _ NamedVersionStatuser = (*OneAgentStatus)(nil)
+var _ VersionStatusNamer = (*OneAgentStatus)(nil)
 
 type OneAgentStatus struct {
 	VersionStatus `json:",inline"`
@@ -149,7 +132,7 @@ type OneAgentStatus struct {
 	LastHostsRequestTimestamp *metav1.Time `json:"lastHostsRequestTimestamp,omitempty"`
 }
 
-func (oneAgentStatus *OneAgentStatus) GetName() string {
+func (oneAgentStatus *OneAgentStatus) Name() string {
 	return "OneAgent"
 }
 
