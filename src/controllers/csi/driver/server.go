@@ -146,20 +146,17 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 	} else if isMounted {
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
-
-	volumeContext := req.GetVolumeContext()
-	mode := volumeContext[CSIVolumeAttributeName]
-	publisher, ok := svr.publishers[mode]
+	publisher, ok := svr.publishers[volumeCfg.Mode]
 	if !ok {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("unknown csi mode provided, mode=%s", mode))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("unknown csi mode provided, mode=%s", volumeCfg.Mode))
 	}
 	log.Info("publishing volume",
-		"csiMode", mode,
+		"csiMode", volumeCfg.Mode,
 		"target", volumeCfg.TargetPath,
 		"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
 		"readonly", req.GetReadonly(),
 		"volumeID", volumeCfg.VolumeId,
-		"attributes", volumeContext,
+		"attributes", req.GetVolumeContext(),
 		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
 	)
 	return publisher.PublishVolume(ctx, volumeCfg)
@@ -170,11 +167,17 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.No
 	if err != nil {
 		return nil, err
 	}
-	response, err := svr.publishers[appvolumes.Mode].UnpublishVolume(ctx, volumeInfo)
-	if err != nil {
-		return nil, err
+	for _, publisher := range svr.publishers {
+		response, err := publisher.UnpublishVolume(ctx, volumeInfo)
+		if err != nil {
+			return nil, err
+		}
+		if response != nil {
+			return response, nil
+		}
 	}
-	return response, nil
+	log.Info("VolumeID not present in the database", "volumeID", volumeInfo.VolumeId, "targetPath", volumeInfo.TargetPath)
+	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
 func (svr *CSIDriverServer) NodeStageVolume(context.Context, *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {

@@ -115,6 +115,46 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, volumeCfg)
 	})
+	t.Run(`mode missing from requests volume context`, func(t *testing.T) {
+		request := &csi.NodePublishVolumeRequest{
+			VolumeCapability: &csi.VolumeCapability{
+				AccessType: &csi.VolumeCapability_Mount{
+					Mount: &csi.VolumeCapability_MountVolume{},
+				},
+			},
+			VolumeId:   testVolumeId,
+			TargetPath: testTargetPath,
+			VolumeContext: map[string]string{
+				PodNamespaceContextKey:          testNamespace,
+				PodNameContextKey:               testPodUID,
+				CSIVolumeAttributeDynakubeField: testDynakubeName,
+			},
+		}
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
+
+		assert.Error(t, err)
+		assert.Nil(t, volumeCfg)
+	})
+	t.Run(`dynakube missing from requests volume context`, func(t *testing.T) {
+		request := &csi.NodePublishVolumeRequest{
+			VolumeCapability: &csi.VolumeCapability{
+				AccessType: &csi.VolumeCapability_Mount{
+					Mount: &csi.VolumeCapability_MountVolume{},
+				},
+			},
+			VolumeId:   testVolumeId,
+			TargetPath: testTargetPath,
+			VolumeContext: map[string]string{
+				PodNamespaceContextKey:      testNamespace,
+				PodNameContextKey:           testPodUID,
+				CSIVolumeAttributeModeField: "test",
+			},
+		}
+		volumeCfg, err := ParseNodePublishVolumeRequest(request)
+
+		assert.Error(t, err)
+		assert.Nil(t, volumeCfg)
+	})
 	t.Run(`request is parsed correctly`, func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{
@@ -125,8 +165,10 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
-				PodNamespaceContextKey: testNamespace,
-				PodNameContextKey:      testPodUID,
+				PodNamespaceContextKey:          testNamespace,
+				PodNameContextKey:               testPodUID,
+				CSIVolumeAttributeDynakubeField: testDynakubeName,
+				CSIVolumeAttributeModeField:     "test",
 			},
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
@@ -137,5 +179,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		assert.Equal(t, testVolumeId, volumeCfg.VolumeId)
 		assert.Equal(t, testTargetPath, volumeCfg.TargetPath)
 		assert.Equal(t, testPodUID, volumeCfg.PodName)
+		assert.Equal(t, "test", volumeCfg.Mode)
+		assert.Equal(t, testDynakubeName, volumeCfg.DynakubeName)
 	})
 }

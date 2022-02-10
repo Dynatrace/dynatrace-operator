@@ -53,7 +53,7 @@ type AppVolumePublisher struct {
 }
 
 func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	bindCfg, err := csivolumes.NewBindConfig(ctx, publisher.client, publisher.db, volumeCfg)
+	bindCfg, err := csivolumes.NewBindConfig(ctx, publisher.db, volumeCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -74,6 +74,10 @@ func (publisher *AppVolumePublisher) UnpublishVolume(_ context.Context, volumeIn
 	if err != nil {
 		log.Info("failed to load volume info", "error", err.Error())
 	}
+	if volume == nil {
+		return nil, nil
+	}
+	log.Info("loaded volume info", "id", volume.VolumeID, "pod name", volume.PodName, "version", volume.Version, "dynakube", volume.TenantUUID)
 
 	overlayFSPath := publisher.path.AgentRunDirForVolume(volume.TenantUUID, volumeInfo.VolumeId)
 
@@ -167,9 +171,5 @@ func (publisher *AppVolumePublisher) loadVolume(volumeID string) (*metadata.Volu
 	if err != nil {
 		return nil, err
 	}
-	if volume == nil {
-		return &metadata.Volume{}, nil
-	}
-	log.Info("loaded volume info", "id", volume.VolumeID, "pod name", volume.PodName, "version", volume.Version, "dynakube", volume.TenantUUID)
 	return volume, nil
 }

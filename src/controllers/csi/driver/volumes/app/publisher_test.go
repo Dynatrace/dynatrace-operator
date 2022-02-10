@@ -10,7 +10,6 @@ import (
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -83,7 +82,7 @@ func TestUnpublishVolume(t *testing.T) {
 		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
 
 		assert.NoError(t, err)
-		assert.NotNil(t, response)
+		assert.Nil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
 		assertNoReferencesForUnpublishedVolume(t, &publisher)
 	})
@@ -144,18 +143,11 @@ func TestLoadPodInfo_Empty(t *testing.T) {
 
 	volume, err := publisher.loadVolume(testVolumeId)
 	assert.NoError(t, err)
-	assert.NotNil(t, volume)
-	assert.Equal(t, &metadata.Volume{}, volume)
+	assert.Nil(t, volume)
 }
 
 func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) AppVolumePublisher {
 	objects := []client.Object{
-		&v1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:   testNamespace,
-				Labels: map[string]string{webhook.LabelInstance: testDynakubeName},
-			},
-		},
 		&dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: testDynakubeName,
@@ -211,7 +203,7 @@ func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublis
 func assertNoReferencesForUnpublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	volume, err := publisher.loadVolume(testVolumeId)
 	assert.NoError(t, err)
-	assert.Equal(t, &metadata.Volume{}, volume)
+	assert.Nil(t, volume)
 }
 
 func resetMetrics() {
@@ -220,9 +212,11 @@ func resetMetrics() {
 
 func createTestVolumeConfig() *csivolumes.VolumeConfig {
 	return &csivolumes.VolumeConfig{
-		VolumeInfo: *createTestVolumeInfo(),
-		Namespace:  testNamespace,
-		PodName:    testPodUID,
+		VolumeInfo:   *createTestVolumeInfo(),
+		Namespace:    testNamespace,
+		PodName:      testPodUID,
+		Mode:         Mode,
+		DynakubeName: testDynakubeName,
 	}
 }
 

@@ -15,7 +15,7 @@ func (pr PathResolver) EnvDir(tenantUUID string) string {
 }
 
 func (pr PathResolver) OsAgentDir(tenantUUID string) string {
-	return filepath.Join(pr.EnvDir(tenantUUID), "osagent")
+	return filepath.Join(pr.EnvDir(tenantUUID), "host")
 }
 
 func (pr PathResolver) AgentBinaryDir(tenantUUID string) string {

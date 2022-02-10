@@ -56,6 +56,10 @@ type Access interface {
 	GetDynakube(dynakubeName string) (*Dynakube, error)
 	GetDynakubes() (map[string]string, error)
 
+	InsertStorage(storage *Storage) error
+	GetStorageViaVolumeId(volumeID string) (*Storage, error)
+	UpdateStorage(storage *Storage) error
+
 	InsertVolume(volume *Volume) error
 	DeleteVolume(volumeID string) error
 	GetVolume(volumeID string) (*Volume, error)

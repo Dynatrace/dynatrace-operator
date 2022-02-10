@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
@@ -30,8 +31,6 @@ import (
 	"k8s.io/utils/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-const oneAgentHostDir = "host"
 
 func NewHostVolumePublisher(client client.Client, fs afero.Afero, mounter mount.Interface, db metadata.Access, path metadata.PathResolver) csivolumes.Publisher {
 	return &HostVolumePublisher{
@@ -52,21 +51,61 @@ type HostVolumePublisher struct {
 }
 
 func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	if err := publisher.mountOneAgent(volumeCfg); err != nil {
+	bindCfg, err := csivolumes.NewBindConfig(ctx, publisher.db, volumeCfg)
+	if err != nil {
+		return nil, err
+	}
+	if err := publisher.mountOneAgent(bindCfg.TenantUUID, volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount host agent volume: %s", err.Error()))
+	}
+
+	storage, err := publisher.db.GetStorageViaVolumeId(volumeCfg.VolumeId)
+	if err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get host agent volume info from database: %s", err.Error()))
+	}
+
+	timestamp := time.Now()
+	if storage == nil {
+		storage := metadata.Storage{
+			VolumeID:     volumeCfg.VolumeId,
+			TenantUUID:   bindCfg.TenantUUID,
+			Mounted:      true,
+			LastModified: &timestamp,
+		}
+		if err := publisher.db.InsertStorage(&storage); err != nil {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to insert host agent volume info to database. info: %v err: %s", storage, err.Error()))
+		}
+	} else {
+		storage.VolumeID = volumeCfg.VolumeId
+		storage.Mounted = true
+		storage.LastModified = &timestamp
+		if err := publisher.db.UpdateStorage(storage); err != nil {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update host agent volume info to database. info: %v err: %s", storage, err.Error()))
+		}
 	}
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
 func (publisher *HostVolumePublisher) UnpublishVolume(_ context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
-	hostDir := publisher.path.EnvDir(oneAgentHostDir)
 
-	if err := publisher.umountOneAgent(volumeInfo.TargetPath, hostDir); err != nil {
+	storage, err := publisher.db.GetStorageViaVolumeId(volumeInfo.VolumeId)
+	if err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get host agent volume info from database: %s", err.Error()))
+	}
+	if storage == nil {
+		return nil, nil
+	}
+
+	if err := publisher.umountOneAgent(volumeInfo.TargetPath); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount host agent volume: %s", err.Error()))
 	}
 
-	if err := publisher.fs.RemoveAll(volumeInfo.TargetPath); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+	timestamp := time.Now()
+	storage.Mounted = false
+	storage.LastModified = &timestamp
+
+	if err := publisher.db.UpdateStorage(storage); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update host agent volume info to database. info: %v err: %s", storage, err.Error()))
 	}
 
 	log.Info("host agent volume has been unpublished", "targetPath", volumeInfo.TargetPath)
@@ -74,8 +113,8 @@ func (publisher *HostVolumePublisher) UnpublishVolume(_ context.Context, volumeI
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-func (publisher *HostVolumePublisher) mountOneAgent(volumeCfg *csivolumes.VolumeConfig) error {
-	hostDir := publisher.path.EnvDir(oneAgentHostDir)
+func (publisher *HostVolumePublisher) mountOneAgent(tenantUUID string, volumeCfg *csivolumes.VolumeConfig) error {
+	hostDir := publisher.path.OsAgentDir(tenantUUID)
 	_ = publisher.fs.MkdirAll(hostDir, os.ModePerm)
 
 	if err := publisher.fs.MkdirAll(volumeCfg.TargetPath, os.ModePerm); err != nil {
@@ -90,7 +129,7 @@ func (publisher *HostVolumePublisher) mountOneAgent(volumeCfg *csivolumes.Volume
 	return nil
 }
 
-func (publisher *HostVolumePublisher) umountOneAgent(targetPath string, hostDir string) error {
+func (publisher *HostVolumePublisher) umountOneAgent(targetPath string) error {
 	if err := publisher.mounter.Unmount(targetPath); err != nil {
 		log.Error(err, "Unmount failed", "path", targetPath)
 	}
