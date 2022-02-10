@@ -70,7 +70,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		dk, fakeClient, now, registry := dkTemplate.DeepCopy(), fake.NewClient(), metav1.Now(), newEmptyFakeRegistry()
 		dkState := &status.DynakubeState{Instance: dk, Now: now}
 
-		upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.GetImageVersionExt)
+		upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
 
 		assert.Error(t, err)
 		assert.False(t, upd)
@@ -88,7 +88,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		})
 
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.GetImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.True(t, upd)
 			assertVersionStatusEquals(t, registry, agImagePath, now, &status.ActiveGate)
@@ -97,7 +97,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 			assertVersionStatusEquals(t, registry, statsdImagePath, now, &status.Statsd)
 		}
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.GetImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.False(t, upd)
 		}
@@ -115,7 +115,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		})
 
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.GetImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.True(t, upd)
 
@@ -127,7 +127,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 
 		registry.SetVersion(eecImagePath, "1.0.1")
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.GetImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.False(t, upd)
 
@@ -141,7 +141,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 
 		now = testChangeTime(t, dkState, 15*time.Minute+1*time.Second)
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.GetImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.True(t, upd)
 
@@ -176,7 +176,7 @@ func (registry *fakeRegistry) SetVersion(imagePath, version string) *fakeRegistr
 	return registry
 }
 
-func (registry *fakeRegistry) GetImageVersion(imagePath string) (dtversion.ImageVersion, error) {
+func (registry *fakeRegistry) ImageVersion(imagePath string) (dtversion.ImageVersion, error) {
 	if version, exists := registry.imageVersions[imagePath]; !exists {
 		return dtversion.ImageVersion{}, fmt.Errorf(`cannot provide version for image: "%s"`, imagePath)
 	} else {
@@ -187,12 +187,12 @@ func (registry *fakeRegistry) GetImageVersion(imagePath string) (dtversion.Image
 	}
 }
 
-func (registry *fakeRegistry) GetImageVersionExt(imagePath string, _ *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
-	return registry.GetImageVersion(imagePath)
+func (registry *fakeRegistry) ImageVersionExt(imagePath string, _ *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
+	return registry.ImageVersion(imagePath)
 }
 
 func assertVersionStatusEquals(t *testing.T, registry *fakeRegistry, imagePath string, timePoint metav1.Time, versionStatusNamer dynatracev1beta1.VersionStatusNamer) {
-	expectedVersion, err := registry.GetImageVersion(imagePath)
+	expectedVersion, err := registry.ImageVersion(imagePath)
 
 	assert.NoError(t, err, "Image version is unexpectedly unknown for '%s'", imagePath)
 	assert.Equalf(t, expectedVersion.Version, versionStatusNamer.Status().Version, "Unexpected version for versioned component %s", versionStatusNamer.Name())
