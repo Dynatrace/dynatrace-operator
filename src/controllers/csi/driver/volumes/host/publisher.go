@@ -112,6 +112,14 @@ func (publisher *HostVolumePublisher) UnpublishVolume(_ context.Context, volumeI
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
+func (publisher *HostVolumePublisher) CanUnpublishVolume(volumeInfo *csivolumes.VolumeInfo) (bool, error) {
+	volume, err := publisher.db.GetOsAgentVolume(volumeInfo.VolumeID)
+	if err != nil {
+		return false, status.Error(codes.Internal, fmt.Sprintf("failed to get osagent volume info from database: %s", err.Error()))
+	}
+	return volume != nil, nil
+}
+
 func (publisher *HostVolumePublisher) mountOneAgent(tenantUUID string, volumeCfg *csivolumes.VolumeConfig) error {
 	hostDir := publisher.path.OsAgentDir(tenantUUID)
 	_ = publisher.fs.MkdirAll(hostDir, os.ModePerm)

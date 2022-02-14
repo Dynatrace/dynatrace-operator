@@ -101,6 +101,14 @@ func (publisher *AppVolumePublisher) UnpublishVolume(_ context.Context, volumeIn
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
+func (publisher *AppVolumePublisher) CanUnpublishVolume(volumeInfo *csivolumes.VolumeInfo) (bool, error) {
+	volume, err := publisher.loadVolume(volumeInfo.VolumeID)
+	if err != nil {
+		return false, status.Error(codes.Internal, fmt.Sprintf("failed to get volume info from database: %s", err.Error()))
+	}
+	return volume != nil, nil
+}
+
 func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volume metadata.Volume) {
 	if len(volume.Version) > 0 {
 		agentsVersionsMetric.WithLabelValues(volume.Version).Dec()

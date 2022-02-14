@@ -168,11 +168,15 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.No
 		return nil, err
 	}
 	for _, publisher := range svr.publishers {
-		response, err := publisher.UnpublishVolume(ctx, volumeInfo)
+		canUnpublish, err := publisher.CanUnpublishVolume(volumeInfo)
 		if err != nil {
-			return nil, err
+			log.Error(err, "couldn't determine if volume can be unpublished", "publisher", publisher)
 		}
-		if response != nil {
+		if canUnpublish {
+			response, err := publisher.UnpublishVolume(ctx, volumeInfo)
+			if err != nil {
+				return nil, err
+			}
 			return response, nil
 		}
 	}
