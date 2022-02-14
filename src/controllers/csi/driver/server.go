@@ -155,7 +155,7 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 		"target", volumeCfg.TargetPath,
 		"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
 		"readonly", req.GetReadonly(),
-		"volumeID", volumeCfg.VolumeId,
+		"volumeID", volumeCfg.VolumeID,
 		"attributes", req.GetVolumeContext(),
 		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
 	)
@@ -176,7 +176,7 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.No
 			return response, nil
 		}
 	}
-	log.Info("VolumeID not present in the database", "volumeID", volumeInfo.VolumeId, "targetPath", volumeInfo.TargetPath)
+	log.Info("VolumeID not present in the database", "volumeID", volumeInfo.VolumeID, "targetPath", volumeInfo.TargetPath)
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 

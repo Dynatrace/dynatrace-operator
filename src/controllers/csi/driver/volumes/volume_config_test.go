@@ -176,7 +176,7 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, volumeCfg)
 		assert.Equal(t, testNamespace, volumeCfg.Namespace)
-		assert.Equal(t, testVolumeId, volumeCfg.VolumeId)
+		assert.Equal(t, testVolumeId, volumeCfg.VolumeID)
 		assert.Equal(t, testTargetPath, volumeCfg.TargetPath)
 		assert.Equal(t, testPodUID, volumeCfg.PodName)
 		assert.Equal(t, "test", volumeCfg.Mode)

@@ -62,9 +62,9 @@ func TestUnpublishVolume(t *testing.T) {
 		assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
 
-		assert.NoError(t, err)
-		assert.NotNil(t, response)
-		assert.Empty(t, mounter.MountPoints)
+		require.NoError(t, err)
+		require.NotNil(t, response)
+		require.Empty(t, mounter.MountPoints)
 		assertNoReferencesForUnpublishedVolume(t, &publisher)
 	})
 
@@ -81,9 +81,9 @@ func TestUnpublishVolume(t *testing.T) {
 		assert.Equal(t, 1, testutil.CollectAndCount(agentsVersionsMetric))
 		assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
 
-		assert.NoError(t, err)
-		assert.Nil(t, response)
-		assert.NotEmpty(t, mounter.MountPoints)
+		require.NoError(t, err)
+		require.Nil(t, response)
+		require.NotEmpty(t, mounter.MountPoints)
 		assertNoReferencesForUnpublishedVolume(t, &publisher)
 	})
 }
@@ -109,9 +109,9 @@ func TestNodePublishAndUnpublishVolume(t *testing.T) {
 	assert.Equal(t, 0, testutil.CollectAndCount(agentsVersionsMetric))
 	assert.Equal(t, float64(0), testutil.ToFloat64(agentsVersionsMetric.WithLabelValues(testAgentVersion)))
 
-	assert.NoError(t, err)
-	assert.NotNil(t, unpublishResponse)
-	assert.Empty(t, mounter.MountPoints)
+	require.NoError(t, err)
+	require.NotNil(t, unpublishResponse)
+	require.Empty(t, mounter.MountPoints)
 	assertNoReferencesForUnpublishedVolume(t, &publisher)
 }
 
@@ -127,10 +127,10 @@ func TestStoreAndLoadPodInfo(t *testing.T) {
 	volumeCfg := createTestVolumeConfig()
 
 	err := publisher.storeVolume(bindCfg, volumeCfg)
-	assert.NoError(t, err)
-	volume, err := publisher.loadVolume(volumeCfg.VolumeId)
-	assert.NoError(t, err)
-	assert.NotNil(t, volume)
+	require.NoError(t, err)
+	volume, err := publisher.loadVolume(volumeCfg.VolumeID)
+	require.NoError(t, err)
+	require.NotNil(t, volume)
 	assert.Equal(t, testVolumeId, volume.VolumeID)
 	assert.Equal(t, testPodUID, volume.PodName)
 	assert.Equal(t, testAgentVersion, volume.Version)
@@ -142,8 +142,8 @@ func TestLoadPodInfo_Empty(t *testing.T) {
 	publisher := newPublisherForTesting(t, mounter)
 
 	volume, err := publisher.loadVolume(testVolumeId)
-	assert.NoError(t, err)
-	assert.Nil(t, volume)
+	require.NoError(t, err)
+	require.Nil(t, volume)
 }
 
 func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) AppVolumePublisher {
@@ -193,7 +193,7 @@ func mockOneAgent(t *testing.T, publisher *AppVolumePublisher) {
 func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
 	volume, err := publisher.loadVolume(testVolumeId)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, volume.VolumeID, testVolumeId)
 	assert.Equal(t, volume.PodName, testPodUID)
 	assert.Equal(t, volume.Version, testAgentVersion)
@@ -202,8 +202,8 @@ func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublis
 
 func assertNoReferencesForUnpublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 	volume, err := publisher.loadVolume(testVolumeId)
-	assert.NoError(t, err)
-	assert.Nil(t, volume)
+	require.NoError(t, err)
+	require.Nil(t, volume)
 }
 
 func resetMetrics() {
@@ -222,7 +222,7 @@ func createTestVolumeConfig() *csivolumes.VolumeConfig {
 
 func createTestVolumeInfo() *csivolumes.VolumeInfo {
 	return &csivolumes.VolumeInfo{
-		VolumeId:   testVolumeId,
+		VolumeID:   testVolumeId,
 		TargetPath: testTargetPath,
 	}
 }

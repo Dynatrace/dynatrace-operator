@@ -58,8 +58,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	if err := publisher.mountOneAgent(bindCfg.TenantUUID, volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount host agent volume: %s", err.Error()))
 	}
-
-	storage, err := publisher.db.GetStorageViaVolumeId(volumeCfg.VolumeId)
+	storage, err := publisher.db.GetStorageViaVolumeId(volumeCfg.VolumeID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get host agent volume info from database: %s", err.Error()))
 	}
@@ -67,7 +66,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	timestamp := time.Now()
 	if storage == nil {
 		storage := metadata.Storage{
-			VolumeID:     volumeCfg.VolumeId,
+			VolumeID:     volumeCfg.VolumeID,
 			TenantUUID:   bindCfg.TenantUUID,
 			Mounted:      true,
 			LastModified: &timestamp,
@@ -76,7 +75,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to insert host agent volume info to database. info: %v err: %s", storage, err.Error()))
 		}
 	} else {
-		storage.VolumeID = volumeCfg.VolumeId
+		storage.VolumeID = volumeCfg.VolumeID
 		storage.Mounted = true
 		storage.LastModified = &timestamp
 		if err := publisher.db.UpdateStorage(storage); err != nil {
@@ -88,7 +87,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 
 func (publisher *HostVolumePublisher) UnpublishVolume(_ context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
 
-	storage, err := publisher.db.GetStorageViaVolumeId(volumeInfo.VolumeId)
+	storage, err := publisher.db.GetStorageViaVolumeId(volumeInfo.VolumeID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get host agent volume info from database: %s", err.Error()))
 	}

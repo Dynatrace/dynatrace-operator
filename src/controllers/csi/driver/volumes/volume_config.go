@@ -17,7 +17,7 @@ const (
 
 // Represents the basic information about a volume
 type VolumeInfo struct {
-	VolumeId   string
+	VolumeID   string
 	TargetPath string
 }
 
@@ -81,7 +81,7 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeCo
 
 	return &VolumeConfig{
 		VolumeInfo: VolumeInfo{
-			VolumeId:   volID,
+			VolumeID:   volID,
 			TargetPath: targetPath,
 		},
 		Namespace:    nsName,

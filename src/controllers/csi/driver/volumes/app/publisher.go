@@ -70,7 +70,7 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 }
 
 func (publisher *AppVolumePublisher) UnpublishVolume(_ context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
-	volume, err := publisher.loadVolume(volumeInfo.VolumeId)
+	volume, err := publisher.loadVolume(volumeInfo.VolumeID)
 	if err != nil {
 		log.Info("failed to load volume info", "error", err.Error())
 	}
@@ -79,7 +79,7 @@ func (publisher *AppVolumePublisher) UnpublishVolume(_ context.Context, volumeIn
 	}
 	log.Info("loaded volume info", "id", volume.VolumeID, "pod name", volume.PodName, "version", volume.Version, "dynakube", volume.TenantUUID)
 
-	overlayFSPath := publisher.path.AgentRunDirForVolume(volume.TenantUUID, volumeInfo.VolumeId)
+	overlayFSPath := publisher.path.AgentRunDirForVolume(volume.TenantUUID, volumeInfo.VolumeID)
 
 	if err = publisher.umountOneAgent(volumeInfo.TargetPath, overlayFSPath); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount oneagent volume: %s", err.Error()))
@@ -115,13 +115,13 @@ func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volume metadata
 }
 
 func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
-	mappedDir := publisher.path.OverlayMappedDir(bindCfg.TenantUUID, volumeCfg.VolumeId)
+	mappedDir := publisher.path.OverlayMappedDir(bindCfg.TenantUUID, volumeCfg.VolumeID)
 	_ = publisher.fs.MkdirAll(mappedDir, os.ModePerm)
 
-	upperDir := publisher.path.OverlayVarDir(bindCfg.TenantUUID, volumeCfg.VolumeId)
+	upperDir := publisher.path.OverlayVarDir(bindCfg.TenantUUID, volumeCfg.VolumeID)
 	_ = publisher.fs.MkdirAll(upperDir, os.ModePerm)
 
-	workDir := publisher.path.OverlayWorkDir(bindCfg.TenantUUID, volumeCfg.VolumeId)
+	workDir := publisher.path.OverlayWorkDir(bindCfg.TenantUUID, volumeCfg.VolumeID)
 	_ = publisher.fs.MkdirAll(workDir, os.ModePerm)
 
 	overlayOptions := []string{
@@ -161,7 +161,7 @@ func (publisher *AppVolumePublisher) umountOneAgent(targetPath string, overlayFS
 }
 
 func (publisher *AppVolumePublisher) storeVolume(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
-	volume := metadata.NewVolume(volumeCfg.VolumeId, volumeCfg.PodName, bindCfg.Version, bindCfg.TenantUUID)
+	volume := metadata.NewVolume(volumeCfg.VolumeID, volumeCfg.PodName, bindCfg.Version, bindCfg.TenantUUID)
 	log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 	return publisher.db.InsertVolume(volume)
 }
