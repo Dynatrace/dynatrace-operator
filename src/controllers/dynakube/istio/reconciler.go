@@ -3,6 +3,7 @@ package istio
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -19,16 +20,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-type probeResult int
-
-const (
-	probeObjectFound probeResult = iota
-	probeObjectNotFound
-	probeTypeFound
-	probeTypeNotFound
-	probeUnknown
-)
-
 // IstioReconciler - manager istioclientset and config
 type IstioReconciler struct {
 	istioClient istioclientset.Interface
@@ -39,18 +30,18 @@ type IstioReconciler struct {
 
 // NewIstioReconciler - creates new instance of istio controller
 func NewIstioReconciler(config *rest.Config, scheme *runtime.Scheme) *IstioReconciler {
-	c := &IstioReconciler{
+	r := &IstioReconciler{
 		config:    config,
 		scheme:    scheme,
 		namespace: os.Getenv("POD_NAMESPACE"),
 	}
-	istioClient, err := c.initializeIstioClient(config)
+	istioClient, err := r.initializeIstioClient(config)
 	if err != nil {
 		return nil
 	}
-	c.istioClient = istioClient
+	r.istioClient = istioClient
 
-	return c
+	return r
 }
 
 func (r *IstioReconciler) initializeIstioClient(config *rest.Config) (istioclientset.Interface, error) {
@@ -112,14 +103,14 @@ func (r *IstioReconciler) reconcileIstioConfigurations(instance *dynatracev1beta
 func (r *IstioReconciler) reconcileIstioRemoveConfigurations(instance *dynatracev1beta1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
-	labelSelector := labels.SelectorFromSet(buildIstioLabels(instance.GetName(), role)).String()
+	labelSelector := labels.SelectorFromSet(BuildIstioLabels(instance.GetName(), role)).String()
 	listOps := &metav1.ListOptions{
 		LabelSelector: labelSelector,
 	}
 
 	seen := map[string]bool{}
 	for _, ch := range comHosts {
-		seen[buildNameForEndpoint(instance.GetName(), ch.Protocol, ch.Host, ch.Port)] = true
+		seen[BuildNameForEndpoint(instance.GetName(), ch.Protocol, ch.Host, ch.Port)] = true
 	}
 
 	vsUpd, err := r.removeIstioConfigurationForVirtualService(listOps, seen, instance.GetNamespace())
@@ -191,15 +182,15 @@ func (r *IstioReconciler) removeIstioConfigurationForVirtualService(listOps *met
 func (r *IstioReconciler) reconcileIstioCreateConfigurations(instance *dynatracev1beta1.DynaKube,
 	communicationHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
-	crdProbe := r.verifyIstioCrdAvailability(instance)
-	if crdProbe != probeTypeFound {
+	crdProbe := VerifyIstioCrdAvailability(instance, r.config)
+	if crdProbe != kubeobjects.ProbeTypeFound {
 		log.Info("istio: failed to lookup CRD for ServiceEntry/VirtualService: Did you install Istio recently? Please restart the Operator.")
 		return false, nil
 	}
 
 	configurationUpdated := false
 	for _, commHost := range communicationHosts {
-		name := buildNameForEndpoint(instance.GetName(), commHost.Protocol, commHost.Host, commHost.Port)
+		name := BuildNameForEndpoint(instance.GetName(), commHost.Protocol, commHost.Host, commHost.Port)
 
 		createdServiceEntry, err := r.handleIstioConfigurationForServiceEntry(instance, name, commHost, role)
 		if err != nil {
@@ -216,29 +207,13 @@ func (r *IstioReconciler) reconcileIstioCreateConfigurations(instance *dynatrace
 	return configurationUpdated, nil
 }
 
-func (r *IstioReconciler) verifyIstioCrdAvailability(instance *dynatracev1beta1.DynaKube) probeResult {
-	var probe probeResult
-
-	probe, _ = r.kubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), "")
-	if probe == probeTypeNotFound {
-		return probe
-	}
-
-	probe, _ = r.kubernetesObjectProbe(VirtualServiceGVK, instance.GetNamespace(), "")
-	if probe == probeTypeNotFound {
-		return probe
-	}
-
-	return probeTypeFound
-}
-
 func (r *IstioReconciler) handleIstioConfigurationForVirtualService(instance *dynatracev1beta1.DynaKube,
 	name string, communicationHost dtclient.CommunicationHost, role string) (bool, error) {
 
 	probe, err := r.kubernetesObjectProbe(VirtualServiceGVK, instance.GetNamespace(), name)
-	if probe == probeObjectFound {
+	if probe == kubeobjects.ProbeObjectFound {
 		return false, nil
-	} else if probe == probeUnknown {
+	} else if probe == kubeobjects.ProbeUnknown {
 		log.Error(err, "istio: failed to query VirtualService")
 		return false, err
 	}
@@ -264,9 +239,9 @@ func (r *IstioReconciler) handleIstioConfigurationForServiceEntry(instance *dyna
 	name string, communicationHost dtclient.CommunicationHost, role string) (bool, error) {
 
 	probe, err := r.kubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), name)
-	if probe == probeObjectFound {
+	if probe == kubeobjects.ProbeObjectFound {
 		return false, nil
-	} else if probe == probeUnknown {
+	} else if probe == kubeobjects.ProbeUnknown {
 		log.Error(err, "istio: failed to query ServiceEntry")
 		return false, err
 	}
@@ -285,7 +260,7 @@ func (r *IstioReconciler) handleIstioConfigurationForServiceEntry(instance *dyna
 func (r *IstioReconciler) createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube,
 	serviceEntry *istiov1alpha3.ServiceEntry, role string) error {
 
-	serviceEntry.Labels = buildIstioLabels(dynaKube.GetName(), role)
+	serviceEntry.Labels = BuildIstioLabels(dynaKube.GetName(), role)
 	if err := controllerutil.SetControllerReference(dynaKube, serviceEntry, r.scheme); err != nil {
 		return err
 	}
@@ -302,7 +277,7 @@ func (r *IstioReconciler) createIstioConfigurationForServiceEntry(dynaKube *dyna
 func (r *IstioReconciler) createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKube,
 	virtualService *istiov1alpha3.VirtualService, role string) error {
 
-	virtualService.Labels = buildIstioLabels(dynaKube.GetName(), role)
+	virtualService.Labels = BuildIstioLabels(dynaKube.GetName(), role)
 	if err := controllerutil.SetControllerReference(dynaKube, virtualService, r.scheme); err != nil {
 		return err
 	}
@@ -318,7 +293,7 @@ func (r *IstioReconciler) createIstioConfigurationForVirtualService(dynaKube *dy
 }
 
 func (r *IstioReconciler) kubernetesObjectProbe(gvk schema.GroupVersionKind,
-	namespace string, name string) (probeResult, error) {
+	namespace string, name string) (kubeobjects.ProbeResult, error) {
 
 	var objQuery unstructured.Unstructured
 	objQuery.Object = make(map[string]interface{})
@@ -327,7 +302,7 @@ func (r *IstioReconciler) kubernetesObjectProbe(gvk schema.GroupVersionKind,
 
 	runtimeClient, err := client.New(r.config, client.Options{})
 	if err != nil {
-		return probeUnknown, err
+		return kubeobjects.ProbeUnknown, err
 	}
 	if name == "" {
 		err = runtimeClient.List(context.TODO(), &objQuery, client.InNamespace(namespace))
@@ -335,5 +310,5 @@ func (r *IstioReconciler) kubernetesObjectProbe(gvk schema.GroupVersionKind,
 		err = runtimeClient.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: name}, &objQuery)
 	}
 
-	return mapErrorToObjectProbeResult(err)
+	return kubeobjects.MapErrorToObjectProbeResult(err)
 }
