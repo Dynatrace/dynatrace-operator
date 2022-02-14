@@ -2644,6 +2644,20 @@ spec:
                   tenantUUID:
                     type: string
                 type: object
+              eec:
+                properties:
+                  imageHash:
+                    description: ImageHash contains the last image hash seen.
+                    type: string
+                  lastUpdateProbeTimestamp:
+                    description: LastUpdateProbeTimestamp defines the last timestamp
+                      when the querying for updates have been done
+                    format: date-time
+                    type: string
+                  version:
+                    description: Version contains the version to be deployed.
+                    type: string
+                type: object
               kubeSystemUUID:
                 description: KubeSystemUUID contains the UUID of the current Kubernetes
                   cluster
@@ -2710,6 +2724,20 @@ spec:
                 description: Defines the current state (Running, Updating, Error,
                   ...)
                 type: string
+              statsd:
+                properties:
+                  imageHash:
+                    description: ImageHash contains the last image hash seen.
+                    type: string
+                  lastUpdateProbeTimestamp:
+                    description: LastUpdateProbeTimestamp defines the last timestamp
+                      when the querying for updates have been done
+                    format: date-time
+                    type: string
+                  version:
+                    description: Version contains the version to be deployed.
+                    type: string
+                type: object
               tokens:
                 description: Credentials used to connect back to Dynatrace.
                 type: string

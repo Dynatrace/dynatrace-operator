@@ -117,24 +117,17 @@ func (dk *DynaKube) PullSecret() string {
 
 // ActiveGateImage returns the ActiveGate image to be used with the dk DynaKube instance.
 func (dk *DynaKube) ActiveGateImage() string {
-	if dk.DeprecatedActiveGateMode() {
-		if dk.Spec.KubernetesMonitoring.Image != "" {
-			return dk.Spec.KubernetesMonitoring.Image
-		} else if dk.Spec.Routing.Image != "" {
-			return dk.Spec.Routing.Image
-		}
-	} else if dk.ActiveGateMode() {
-		if dk.Spec.ActiveGate.Image != "" {
-			return dk.Spec.ActiveGate.Image
-		}
-	}
+	return resolveImagePath(newActiveGateImagePath(dk))
+}
 
-	if dk.Spec.APIURL == "" {
-		return ""
-	}
+// EecImage returns the Extension Controller image to be used with the dk DynaKube instance.
+func (dk *DynaKube) EecImage() string {
+	return resolveImagePath(newEecImagePath(dk))
+}
 
-	registry := buildImageRegistry(dk.Spec.APIURL)
-	return fmt.Sprintf("%s/linux/activegate:latest", registry)
+// StatsdImage returns the StatsD data source image to be used with the dk DynaKube instance.
+func (dk *DynaKube) StatsdImage() string {
+	return resolveImagePath(newStatsdImagePath(dk))
 }
 
 func (dk *DynaKube) NeedsCSIDriver() bool {
@@ -219,13 +212,6 @@ func (dk *DynaKube) ImmutableOneAgentImage() string {
 
 	registry := buildImageRegistry(dk.Spec.APIURL)
 	return fmt.Sprintf("%s/linux/oneagent:%s", registry, tag)
-}
-
-func buildImageRegistry(apiURL string) string {
-	registry := strings.TrimPrefix(apiURL, "https://")
-	registry = strings.TrimPrefix(registry, "http://")
-	registry = strings.TrimSuffix(registry, "/api")
-	return registry
 }
 
 // Tokens returns the name of the Secret to be used for tokens.

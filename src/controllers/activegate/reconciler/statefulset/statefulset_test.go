@@ -100,7 +100,7 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 
 	assert.Equal(t, capabilityProperties.Tolerations, templateSpec.Tolerations)
 	assert.Equalf(t, instance.NeedsStatsd(), len(templateSpec.Volumes) > 0,
-		"Expected that there are no volumes iff Statsd is disabled",
+		"Expected that there are no volumes iff StatsD is disabled",
 	)
 	assert.Equalf(t, instance.NeedsStatsd(), kubeobjects.VolumeIsDefined(templateSpec.Volumes, eecAuthToken),
 		"Expected that volume mount %s has a predefined pod volume", eecAuthToken,
@@ -125,10 +125,10 @@ func TestStatefulSet_Container(t *testing.T) {
 	assert.NotEmpty(t, activeGateContainer.Env)
 	assert.Empty(t, activeGateContainer.Args)
 	assert.Equalf(t, instance.NeedsStatsd(), len(activeGateContainer.VolumeMounts) > 0,
-		"Expected that there are no volume mounts iff Statsd is disabled",
+		"Expected that there are no volume mounts iff StatsD is disabled",
 	)
 	assert.Equalf(t, instance.NeedsStatsd(), kubeobjects.MountPathIsIn(activeGateContainer.VolumeMounts, "/var/lib/dynatrace/gateway/config"),
-		"Expected that ActiveGate container defines mount point %s if and only if Statsd ingest is enabled", "/var/lib/dynatrace/gateway/config",
+		"Expected that ActiveGate container defines mount point %s if and only if StatsD ingest is enabled", "/var/lib/dynatrace/gateway/config",
 	)
 	assert.NotNil(t, activeGateContainer.ReadinessProbe)
 }

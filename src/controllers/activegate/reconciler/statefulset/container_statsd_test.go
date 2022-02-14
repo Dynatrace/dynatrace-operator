@@ -31,7 +31,7 @@ func TestStatsd_BuildContainerAndVolumes(t *testing.T) {
 		for _, port := range []int32{
 			consts.StatsdIngestPort, statsdProbesPort,
 		} {
-			assertion.Truef(kubeobjects.PortIsIn(container.Ports, port), "Expected that Statsd container defines port %d", port)
+			assertion.Truef(kubeobjects.PortIsIn(container.Ports, port), "Expected that StatsD container defines port %d", port)
 		}
 
 		for _, mountPath := range []string{
@@ -39,13 +39,13 @@ func TestStatsd_BuildContainerAndVolumes(t *testing.T) {
 			"/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources",
 			"/mnt/dsmetadata",
 		} {
-			assertion.Truef(kubeobjects.MountPathIsIn(container.VolumeMounts, mountPath), "Expected that Statsd container defines mount point %s", mountPath)
+			assertion.Truef(kubeobjects.MountPathIsIn(container.VolumeMounts, mountPath), "Expected that StatsD container defines mount point %s", mountPath)
 		}
 
 		for _, envVar := range []string{
 			"StatsdExecArgsPath", "ProbeServerPort", "StatsdMetadataDir",
 		} {
-			assertion.Truef(kubeobjects.EnvVarIsIn(container.Env, envVar), "Expected that Statsd container defined environment variable %s", envVar)
+			assertion.Truef(kubeobjects.EnvVarIsIn(container.Env, envVar), "Expected that StatsD container defined environment variable %s", envVar)
 		}
 	})
 
