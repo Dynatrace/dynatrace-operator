@@ -2,6 +2,7 @@ package capability
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -16,6 +17,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -53,7 +55,11 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
-		}}
+		},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: "https://testing.dev.dynatracelabs.com/api",
+		},
+	}
 	r := NewReconciler(metricsCapability, clt, clt, scheme.Scheme, instance)
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
@@ -63,21 +69,77 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 }
 
 func TestReconcile(t *testing.T) {
+	assertStatefulSetExists := func(r *Reconciler) *appsv1.StatefulSet {
+		statefulSet := new(appsv1.StatefulSet)
+		assert.NoError(t, r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, statefulSet))
+		assert.NotNil(t, statefulSet)
+		return statefulSet
+	}
+	assertServiceExists := func(r *Reconciler) *corev1.Service {
+		svc := new(corev1.Service)
+		assert.NoError(t, r.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(r.Instance.Name, r.ShortName()), Namespace: r.Instance.Namespace}, svc))
+		assert.NotNil(t, svc)
+		return svc
+	}
+	reconcileAndExpectUpdate := func(r *Reconciler, updateExpected bool) {
+		update, err := r.Reconcile()
+		assert.NoError(t, err)
+		assert.Equal(t, updateExpected, update)
+	}
+	type DtCapability = dynatracev1beta1.CapabilityDisplayName
+	removeCapability := func(capabilities []DtCapability, removeMe DtCapability) []DtCapability {
+		for i, capability := range capabilities {
+			if capability == removeMe {
+				return append(capabilities[:i], capabilities[i+1:]...)
+			}
+		}
+		return capabilities
+	}
+	setStatsdCapability := func(r *Reconciler, wantEnabled bool) {
+		statsdIngest := dynatracev1beta1.StatsdIngestCapability.DisplayName
+		hasEnabled := r.Instance.IsActiveGateMode(statsdIngest)
+		capabilities := &r.Instance.Spec.ActiveGate.Capabilities
+
+		if wantEnabled && !hasEnabled {
+			*capabilities = append(*capabilities, statsdIngest)
+		}
+
+		if !wantEnabled && hasEnabled {
+			*capabilities = removeCapability(*capabilities, statsdIngest)
+		}
+	}
+
+	agIngestServicePort := corev1.ServicePort{
+		Name:       consts.HttpsServicePortName,
+		Protocol:   corev1.ProtocolTCP,
+		Port:       consts.HttpsServicePort,
+		TargetPort: intstr.FromString(consts.HttpsServicePortName),
+	}
+	agIngestHttpServicePort := corev1.ServicePort{
+		Name:       consts.HttpServicePortName,
+		Protocol:   corev1.ProtocolTCP,
+		Port:       consts.HttpServicePort,
+		TargetPort: intstr.FromString(consts.HttpServicePortName),
+	}
+	statsdIngestServicePort := corev1.ServicePort{
+		Name:       consts.StatsdIngestPortName,
+		Protocol:   corev1.ProtocolUDP,
+		Port:       consts.StatsdIngestPort,
+		TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
+	}
+
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
 
 		metricsCapability.Properties().CustomProperties = &dynatracev1beta1.DynaKubeValueSource{
 			Value: testValue,
 		}
-		_, err := r.Reconcile()
-		assert.NoError(t, err)
-
 		// Reconcile twice since service is created before the stateful set is
-		_, err = r.Reconcile()
-		assert.NoError(t, err)
+		reconcileAndExpectUpdate(r, true)
+		reconcileAndExpectUpdate(r, true)
 
 		var customProperties corev1.Secret
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + metricsCapability.ShortName() + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
+		err := r.Get(context.TODO(), client.ObjectKey{Name: r.Instance.Name + "-" + metricsCapability.ShortName() + "-" + customproperties.Suffix, Namespace: r.Instance.Namespace}, &customProperties)
 		assert.NoError(t, err)
 		assert.NotNil(t, customProperties)
 		assert.Contains(t, customProperties.Data, customproperties.DataKey)
@@ -85,22 +147,11 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run(`create stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		update, err := r.Reconcile()
-
-		assert.True(t, update)
-		assert.NoError(t, err)
-
 		// Reconcile twice since service is created before the stateful set is
-		update, err = r.Reconcile()
+		reconcileAndExpectUpdate(r, true)
+		reconcileAndExpectUpdate(r, true)
 
-		assert.True(t, update)
-		assert.NoError(t, err)
-
-		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, statefulSet)
-
-		assert.NotNil(t, statefulSet)
-		assert.NoError(t, err)
+		statefulSet := assertStatefulSetExists(r)
 		assert.Contains(t, statefulSet.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
 			Name:  dtDNSEntryPoint,
 			Value: buildDNSEntryPoint(r.Instance, r.ShortName()),
@@ -108,69 +159,111 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run(`update stateful set`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		update, err := r.Reconcile()
-
-		assert.True(t, update)
-		assert.NoError(t, err)
-
 		// Reconcile twice since service is created before the stateful set is
-		update, err = r.Reconcile()
-
-		assert.True(t, update)
-		assert.NoError(t, err)
-
-		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, statefulSet)
-
-		assert.NotNil(t, statefulSet)
-		assert.NoError(t, err)
+		reconcileAndExpectUpdate(r, true)
+		reconcileAndExpectUpdate(r, true)
+		{
+			statefulSet := assertStatefulSetExists(r)
+			found := 0
+			for _, vm := range statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
+				if vm.Name == rsfs.InternalProxySecretVolumeName {
+					found = found + 1
+				}
+			}
+			assert.Equal(t, 0, found)
+		}
 
 		r.Instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-		update, err = r.Reconcile()
-
-		assert.True(t, update)
-		assert.NoError(t, err)
-
-		newStatefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, newStatefulSet)
-
-		assert.NotNil(t, statefulSet)
-		assert.NoError(t, err)
-
-		found := false
-		for _, env := range newStatefulSet.Spec.Template.Spec.Containers[0].Env {
-			if env.Name == rsfs.DTInternalProxy {
-				found = true
-				assert.Equal(t, testValue, env.Value)
+		reconcileAndExpectUpdate(r, true)
+		{
+			statefulSet := assertStatefulSetExists(r)
+			found := 0
+			for _, vm := range statefulSet.Spec.Template.Spec.Containers[0].VolumeMounts {
+				if vm.Name == rsfs.InternalProxySecretVolumeName {
+					found = found + 1
+				}
 			}
+			assert.Equal(t, 4, found)
 		}
-		assert.True(t, found)
 	})
 	t.Run(`create service`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
-		update, err := r.Reconcile()
-		assert.True(t, update)
-		assert.NoError(t, err)
+		reconcileAndExpectUpdate(r, true)
+		assertServiceExists(r)
 
-		svc := &corev1.Service{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: BuildServiceName(r.Instance.Name, r.ShortName()), Namespace: r.Instance.Namespace}, svc)
-		assert.NoError(t, err)
-		assert.NotNil(t, svc)
+		reconcileAndExpectUpdate(r, true)
+		assertStatefulSetExists(r)
+	})
+	t.Run(`update service`, func(t *testing.T) {
+		r := createDefaultReconciler(t)
+		reconcileAndExpectUpdate(r, true)
+		{
+			service := assertServiceExists(r)
+			assert.Len(t, service.Spec.Ports, 2)
 
-		update, err = r.Reconcile()
-		assert.True(t, update)
-		assert.NoError(t, err)
+			assert.Error(t, r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, &appsv1.StatefulSet{}))
+		}
 
-		statefulSet := &appsv1.StatefulSet{}
-		err = r.Get(context.TODO(), client.ObjectKey{Name: r.calculateStatefulSetName(), Namespace: r.Instance.Namespace}, statefulSet)
-		assert.NotNil(t, statefulSet)
-		assert.NoError(t, err)
+		reconcileAndExpectUpdate(r, true)
+		{
+			service := assertServiceExists(r)
+			assert.Len(t, service.Spec.Ports, 2)
+			assert.ElementsMatch(t, service.Spec.Ports, []corev1.ServicePort{
+				agIngestServicePort, agIngestHttpServicePort,
+			})
+
+			statefulSet := assertStatefulSetExists(r)
+			assert.Len(t, statefulSet.Spec.Template.Spec.Containers, 1)
+		}
+		reconcileAndExpectUpdate(r, false)
+
+		setStatsdCapability(r, true)
+		reconcileAndExpectUpdate(r, true)
+		{
+			service := assertServiceExists(r)
+			assert.Len(t, service.Spec.Ports, 3)
+			assert.ElementsMatch(t, service.Spec.Ports, []corev1.ServicePort{
+				agIngestServicePort, agIngestHttpServicePort, statsdIngestServicePort,
+			})
+
+			statefulSet := assertStatefulSetExists(r)
+			assert.Len(t, statefulSet.Spec.Template.Spec.Containers, 1)
+		}
+
+		reconcileAndExpectUpdate(r, true)
+		{
+			service := assertServiceExists(r)
+			assert.ElementsMatch(t, service.Spec.Ports, []corev1.ServicePort{
+				agIngestServicePort, agIngestHttpServicePort, statsdIngestServicePort,
+			})
+
+			statefulSet := assertStatefulSetExists(r)
+			assert.Len(t, statefulSet.Spec.Template.Spec.Containers, 3)
+		}
+		reconcileAndExpectUpdate(r, false)
+		reconcileAndExpectUpdate(r, false)
+
+		setStatsdCapability(r, false)
+		reconcileAndExpectUpdate(r, true)
+		reconcileAndExpectUpdate(r, true)
+		reconcileAndExpectUpdate(r, false)
+		{
+			service := assertServiceExists(r)
+			assert.ElementsMatch(t, service.Spec.Ports, []corev1.ServicePort{
+				agIngestServicePort, agIngestHttpServicePort,
+			})
+
+			statefulSet := assertStatefulSetExists(r)
+			assert.Len(t, statefulSet.Spec.Template.Spec.Containers, 1)
+		}
 	})
 }
 
 func TestSetReadinessProbePort(t *testing.T) {
 	r := createDefaultReconciler(t)
-	stsProps := rsfs.NewStatefulSetProperties(r.Instance, metricsCapability.Properties(), "", "", "", "", "", nil, nil, nil)
+	stsProps := rsfs.NewStatefulSetProperties(r.Instance, metricsCapability.Properties(), "", "", "", "", "",
+		nil, nil, nil,
+	)
 	sts, err := rsfs.CreateStatefulSet(stsProps)
 
 	assert.NoError(t, err)
@@ -182,7 +275,7 @@ func TestSetReadinessProbePort(t *testing.T) {
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe)
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet)
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port)
-	assert.Equal(t, consts.HttpsServiceTargetPort, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port.String())
+	assert.Equal(t, consts.HttpsServicePortName, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port.String())
 }
 
 func TestReconciler_calculateStatefulSetName(t *testing.T) {
@@ -235,4 +328,46 @@ func TestReconciler_calculateStatefulSetName(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetContainerByName(t *testing.T) {
+	verify := func(t *testing.T, containers []corev1.Container, lookingForContainer string, errorMessage string) {
+		container, err := getContainerByName(containers, lookingForContainer)
+		if errorMessage == "" {
+			assert.NoError(t, err)
+			assert.NotNil(t, container)
+			assert.Equal(t, lookingForContainer, container.Name)
+		} else {
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), errorMessage)
+			assert.Nil(t, container)
+		}
+	}
+
+	t.Run("empty slice test cases", func(t *testing.T) {
+		verify(t, nil, "", `Cannot find container "" in the provided slice (len 0)`)
+		verify(t, []corev1.Container{}, "", `Cannot find container "" in the provided slice (len 0)`)
+		verify(t, []corev1.Container{}, "something", `Cannot find container "something" in the provided slice (len 0)`)
+	})
+
+	t.Run("non-empty collection but cannot match name", func(t *testing.T) {
+		verify(t,
+			[]corev1.Container{
+				{Name: consts.ActiveGateContainerName},
+				{Name: consts.StatsdContainerName},
+			},
+			consts.EecContainerName,
+			fmt.Sprintf(`Cannot find container "%s" in the provided slice (len 2)`, consts.EecContainerName),
+		)
+	})
+
+	t.Run("happy path", func(t *testing.T) {
+		verify(t,
+			[]corev1.Container{
+				{Name: consts.StatsdContainerName},
+			},
+			consts.StatsdContainerName,
+			"",
+		)
+	})
 }

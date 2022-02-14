@@ -350,13 +350,13 @@ func TestNewMultiCapability(t *testing.T) {
 			},
 		},
 		{
-			name: "just data-ingest",
+			name: "just metrics-ingest",
 			args: args{
 				dynakube: &dynatracev1beta1.DynaKube{
 					Spec: dynatracev1beta1.DynaKubeSpec{
 						ActiveGate: dynatracev1beta1.ActiveGateSpec{
 							Capabilities: []dynatracev1beta1.CapabilityDisplayName{
-								dynatracev1beta1.DataIngestCapability.DisplayName,
+								dynatracev1beta1.MetricsIngestCapability.DisplayName,
 							},
 						},
 					},
@@ -366,7 +366,65 @@ func TestNewMultiCapability(t *testing.T) {
 				capabilityBase: capabilityBase{
 					enabled:    true,
 					shortName:  MultiActiveGateName,
-					argName:    dynatracev1beta1.DataIngestCapability.ArgumentName,
+					argName:    dynatracev1beta1.MetricsIngestCapability.ArgumentName,
+					properties: props,
+					Configuration: Configuration{
+						SetDnsEntryPoint:     true,
+						SetReadinessPort:     true,
+						SetCommunicationPort: true,
+						CreateService:        true,
+						ServiceAccountOwner:  "",
+					},
+				},
+			},
+		},
+		{
+			name: "just dynatrace-api",
+			args: args{
+				dynakube: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						ActiveGate: dynatracev1beta1.ActiveGateSpec{
+							Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+								dynatracev1beta1.DynatraceApiCapability.DisplayName,
+							},
+						},
+					},
+				},
+			},
+			want: &MultiCapability{
+				capabilityBase: capabilityBase{
+					enabled:    true,
+					shortName:  MultiActiveGateName,
+					argName:    dynatracev1beta1.DynatraceApiCapability.ArgumentName,
+					properties: props,
+					Configuration: Configuration{
+						SetDnsEntryPoint:     true,
+						SetReadinessPort:     true,
+						SetCommunicationPort: true,
+						CreateService:        true,
+						ServiceAccountOwner:  "",
+					},
+				},
+			},
+		},
+		{
+			name: "just statsd-ingest",
+			args: args{
+				dynakube: &dynatracev1beta1.DynaKube{
+					Spec: dynatracev1beta1.DynaKubeSpec{
+						ActiveGate: dynatracev1beta1.ActiveGateSpec{
+							Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+								dynatracev1beta1.StatsdIngestCapability.DisplayName,
+							},
+						},
+					},
+				},
+			},
+			want: &MultiCapability{
+				capabilityBase: capabilityBase{
+					enabled:    true,
+					shortName:  MultiActiveGateName,
+					argName:    dynatracev1beta1.StatsdIngestCapability.ArgumentName,
 					properties: props,
 					Configuration: Configuration{
 						SetDnsEntryPoint:     true,
@@ -439,8 +497,10 @@ func TestNewMultiCapability(t *testing.T) {
 						ActiveGate: dynatracev1beta1.ActiveGateSpec{
 							Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 								dynatracev1beta1.KubeMonCapability.DisplayName,
-								dynatracev1beta1.DataIngestCapability.DisplayName,
+								dynatracev1beta1.MetricsIngestCapability.DisplayName,
+								dynatracev1beta1.StatsdIngestCapability.DisplayName,
 								dynatracev1beta1.RoutingCapability.DisplayName,
+								dynatracev1beta1.DynatraceApiCapability.DisplayName,
 							},
 						},
 					},
@@ -448,9 +508,15 @@ func TestNewMultiCapability(t *testing.T) {
 			},
 			want: &MultiCapability{
 				capabilityBase: capabilityBase{
-					enabled:    true,
-					shortName:  MultiActiveGateName,
-					argName:    strings.Join([]string{dynatracev1beta1.KubeMonCapability.ArgumentName, dynatracev1beta1.DataIngestCapability.ArgumentName, dynatracev1beta1.RoutingCapability.ArgumentName}, ","),
+					enabled:   true,
+					shortName: MultiActiveGateName,
+					argName: strings.Join([]string{
+						dynatracev1beta1.KubeMonCapability.ArgumentName,
+						dynatracev1beta1.MetricsIngestCapability.ArgumentName,
+						dynatracev1beta1.StatsdIngestCapability.ArgumentName,
+						dynatracev1beta1.RoutingCapability.ArgumentName,
+						dynatracev1beta1.DynatraceApiCapability.ArgumentName},
+						","),
 					properties: props,
 					Configuration: Configuration{
 						SetDnsEntryPoint:     true,

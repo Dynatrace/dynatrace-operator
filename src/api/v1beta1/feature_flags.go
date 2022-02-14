@@ -18,6 +18,7 @@ package v1beta1
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
@@ -32,16 +33,13 @@ const (
 	annotationFeatureIgnoreUnknownState               = annotationFeaturePrefix + "ignore-unknown-state"
 	annotationFeatureIgnoredNamespaces                = annotationFeaturePrefix + "ignored-namespaces"
 	annotationFeatureAutomaticKubernetesApiMonitoring = annotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
+	annotationFeatureDisableMetadataEnrichment        = annotationFeaturePrefix + "disable-metadata-enrichment"
+	annotationFeatureUseActiveGateImageForStatsd      = annotationFeaturePrefix + "use-activegate-image-for-statsd"
+	AnnotationFeatureReadOnlyOneAgent                 = annotationFeaturePrefix + "oneagent-readonly-host-fs"
 )
 
 var (
 	log = logger.NewDTLogger().WithName("dynakube-api")
-
-	defaultIgnoredNamespaces = []string{
-		"^dynatrace$",
-		"^kube-.*",
-		"^openshift(-.*)?",
-	}
 )
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
@@ -91,19 +89,44 @@ func (dk *DynaKube) FeatureIgnoreUnknownState() bool {
 func (dk *DynaKube) FeatureIgnoredNamespaces() []string {
 	raw, ok := dk.Annotations[annotationFeatureIgnoredNamespaces]
 	if !ok || raw == "" {
-		return defaultIgnoredNamespaces
+		return dk.getDefaultIgnoredNamespaces()
 	}
 	ignoredNamespaces := &[]string{}
 	err := json.Unmarshal([]byte(raw), ignoredNamespaces)
 	if err != nil {
 		log.Error(err, "failed to unmarshal ignoredNamespaces feature-flag")
-		return defaultIgnoredNamespaces
+		return dk.getDefaultIgnoredNamespaces()
 	}
 	return *ignoredNamespaces
+}
+
+func (dk *DynaKube) getDefaultIgnoredNamespaces() []string {
+	defaultIgnoredNamespaces := []string{
+		fmt.Sprintf("^%s$", dk.Namespace),
+		"^kube-.*",
+		"^openshift(-.*)?",
+	}
+	return defaultIgnoredNamespaces
 }
 
 // FeatureAutomaticKubernetesApiMonitoring is a feature flag to enable automatic kubernetes api monitoring,
 // which ensures that settings for this kubernetes cluster exist in Dynatrace
 func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoring() bool {
 	return dk.Annotations[annotationFeatureAutomaticKubernetesApiMonitoring] == "true"
+}
+
+// FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,
+func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
+	return dk.Annotations[annotationFeatureDisableMetadataEnrichment] == "true"
+}
+
+// FeatureUseActiveGateImageForStatsd is a feature flag that makes the operator use ActiveGate image when initializing Extension Controller and Statsd containers
+// (using special predefined entry points).
+func (dk *DynaKube) FeatureUseActiveGateImageForStatsd() bool {
+	return dk.Annotations[annotationFeatureUseActiveGateImageForStatsd] == "true"
+}
+
+// FeatureReadOnlyOneAgent is a feature flag that makes the operator deploy the oneagents in a readonly mode, where the csi-driver provides the volume for logs and such,
+func (dk *DynaKube) FeatureReadOnlyOneAgent() bool {
+	return dk.Annotations[AnnotationFeatureReadOnlyOneAgent] == "true"
 }

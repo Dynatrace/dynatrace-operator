@@ -2,7 +2,7 @@ package daemonset
 
 import (
 	"fmt"
-	"os"
+	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
@@ -21,13 +21,21 @@ const (
 
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
-	annotationVersion           = "internal.operator.dynatrace.com/version"
+	annotationVersion           = dynatracev1beta1.InternalFlagPrefix + "version"
 
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
 
-	hostRootMount = "host-root"
+	hostRootVolumeName  = "host-root"
+	hostRootVolumeMount = "/mnt/root"
 
-	relatedImageEnvVar = "RELATED_IMAGE_DYNATRACE_ONEAGENT"
+	certVolumeName  = "certs"
+	certVolumeMount = "/mnt/dynatrace/certs"
+
+	OneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
+	tlsVolumeName          = "tls"
+
+	csiStorageVolumeName  = "csi-storage"
+	csiStorageVolumeMount = "/mnt/volume_storage_mount"
 
 	podName = "dynatrace-oneagent"
 
@@ -39,6 +47,10 @@ const (
 	ClassicFeature        = "classic"
 	HostMonitoringFeature = "inframon"
 	CloudNativeFeature    = "cloud-native"
+)
+
+var (
+	tlsVolumeMount = filepath.Join(hostRootVolumeMount, OneAgentCustomKeysPath)
 )
 
 type HostMonitoring struct {
@@ -54,7 +66,6 @@ type builderInfo struct {
 	instance       *dynatracev1beta1.DynaKube
 	hostInjectSpec *dynatracev1beta1.HostInjectSpec
 	clusterId      string
-	relatedImage   string
 	deploymentType string
 }
 
@@ -68,7 +79,6 @@ func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string) Bu
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
 			clusterId:      clusterId,
-			relatedImage:   os.Getenv(relatedImageEnvVar),
 			deploymentType: deploymentmetadata.DeploymentTypeHostMonitoring,
 		},
 		HostMonitoringFeature,
@@ -81,7 +91,6 @@ func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, clusterId stri
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
 			clusterId:      clusterId,
-			relatedImage:   os.Getenv(relatedImageEnvVar),
 			deploymentType: deploymentmetadata.DeploymentTypeCloudNative,
 		},
 		CloudNativeFeature,
@@ -94,7 +103,6 @@ func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) 
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
 			clusterId:      clusterId,
-			relatedImage:   os.Getenv(relatedImageEnvVar),
 			deploymentType: deploymentmetadata.DeploymentTypeFullStack,
 		},
 	}
@@ -189,7 +197,6 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	environmentVariables := dsInfo.environmentVariables()
 	volumeMounts := dsInfo.volumeMounts()
 	volumes := dsInfo.volumes()
-	image := dsInfo.image()
 	imagePullSecrets := dsInfo.imagePullSecrets()
 	affinity := dsInfo.affinity()
 
@@ -197,11 +204,11 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		Containers: []corev1.Container{{
 			Args:            arguments,
 			Env:             environmentVariables,
-			Image:           image,
+			Image:           dsInfo.instance.ImmutableOneAgentImage(),
 			ImagePullPolicy: corev1.PullAlways,
 			Name:            podName,
 			ReadinessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					Exec: &corev1.ExecAction{
 						Command: []string{
 							"/bin/sh", "-c", "grep -q oneagentwatchdo /proc/[0-9]*/stat",
@@ -262,13 +269,6 @@ func (dsInfo *builderInfo) volumeMounts() []corev1.VolumeMount {
 
 func (dsInfo *builderInfo) volumes() []corev1.Volume {
 	return prepareVolumes(dsInfo.instance)
-}
-
-func (dsInfo *builderInfo) image() string {
-	if dsInfo.relatedImage != "" {
-		return dsInfo.relatedImage
-	}
-	return dsInfo.instance.ImmutableOneAgentImage()
 }
 
 func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {

@@ -32,6 +32,7 @@ namespaceSelector: {}
 autoCreateSecret: true
 apiToken: ""
 paasToken: ""
+dataIngestToken: ""
 
 operator:
   image: ""
@@ -46,6 +47,7 @@ operator:
     memory: 128Mi
 
 webhook:
+  hostNetwork: false
   requests:
     cpu: 300m
     memory: 128Mi
@@ -53,12 +55,20 @@ webhook:
     cpu: 300m
     memory: 128Mi
 
+csi:
+  requests:
+    cpu: 300m
+    memory: 100Mi
+  limits:
+    cpu: 300m
+    memory: 100Mi
+
 createSecurityContextConstraints: true # Only applicable for Openshift
 
 ### module properties
 
 classicFullStack:
-  enabled: true
+  enabled: false
   image: ""
   version: ""
   nodeSelector: {}

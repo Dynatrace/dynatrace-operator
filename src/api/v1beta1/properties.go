@@ -18,9 +18,11 @@ package v1beta1
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -68,9 +70,9 @@ func (dk *DynaKube) ActiveGateMode() bool {
 	return len(dk.Spec.ActiveGate.Capabilities) > 0
 }
 
-func (dk *DynaKube) IsActiveGateMode(mode string) bool {
+func (dk *DynaKube) IsActiveGateMode(mode CapabilityDisplayName) bool {
 	for _, capability := range dk.Spec.ActiveGate.Capabilities {
-		if string(capability) == mode {
+		if capability == mode {
 			return true
 		}
 	}
@@ -78,13 +80,27 @@ func (dk *DynaKube) IsActiveGateMode(mode string) bool {
 }
 
 func (dk *DynaKube) KubernetesMonitoringMode() bool {
-	return dk.IsActiveGateMode(string(KubeMonCapability.DisplayName)) || dk.Spec.KubernetesMonitoring.Enabled
+	return dk.IsActiveGateMode(KubeMonCapability.DisplayName) || dk.Spec.KubernetesMonitoring.Enabled
+}
+
+func (dk *DynaKube) NeedsStatsd() bool {
+	return dk.IsActiveGateMode(StatsdIngestCapability.DisplayName)
+}
+
+func (dk *DynaKube) HasActiveGateTLS() bool {
+	return dk.ActiveGateMode() && dk.Spec.ActiveGate.TlsSecretName != ""
+}
+
+func (dk *DynaKube) HasProxy() bool {
+	return dk.Spec.Proxy != nil && (dk.Spec.Proxy.Value != "" || dk.Spec.Proxy.ValueFrom != "")
 }
 
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
 func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 	if dk.CloudNativeFullstackMode() {
 		return dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.CloudNativeFullStack.AutoUpdate
+	} else if dk.HostMonitoringMode() {
+		return dk.Spec.OneAgent.HostMonitoring.AutoUpdate == nil || *dk.Spec.OneAgent.HostMonitoring.AutoUpdate
 	} else if dk.ClassicFullStackMode() {
 		return dk.Spec.OneAgent.ClassicFullStack.AutoUpdate == nil || *dk.Spec.OneAgent.ClassicFullStack.AutoUpdate
 	}
@@ -237,6 +253,27 @@ func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
 		communicationHosts = append(communicationHosts, dtclient.CommunicationHost(communicationHost))
 	}
 	return communicationHosts
+}
+
+func (dk *DynaKube) TenantUUID() (string, error) {
+	return tenantUUID(dk.Spec.APIURL)
+}
+
+func tenantUUID(apiUrl string) (string, error) {
+	parsedUrl, err := url.Parse(apiUrl)
+	if err != nil {
+		return "", errors.WithMessagef(err, "problem parsing tenant id from url %s", apiUrl)
+	}
+
+	fqdn := parsedUrl.Hostname()
+	hostnameWithDomains := strings.FieldsFunc(fqdn,
+		func(r rune) bool { return r == '.' },
+	)
+	if len(hostnameWithDomains) < 1 {
+		return "", fmt.Errorf("problem getting tenant id from fqdn '%s'", fqdn)
+	}
+
+	return hostnameWithDomains[0], nil
 }
 
 func (dk *DynaKube) HostGroup() string {

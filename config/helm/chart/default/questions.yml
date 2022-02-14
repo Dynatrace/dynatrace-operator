@@ -28,6 +28,7 @@ questions:
     description: "Your Dynatrace API token - You can generate this token in your Dynatrace environment"
     default: ""
     type: string
+    required: true
     group: "Global Configuration"
     show_if: "crdApplied=yes"
 
@@ -36,7 +37,14 @@ questions:
     description: "Your Dynatrace Platform as a Service token - You can generate this token in your Dynatrace environment"
     default: ""
     type: string
-    required: true
+    group: "Global Configuration"
+    show_if: "crdApplied=yes"
+
+  - variable: dataIngestToken
+    label: "Dynatrace DataIngest Token"
+    description: "Your Dynatrace DataIngest token - You can generate this token in your Dynatrace environment"
+    default: ""
+    type: string
     group: "Global Configuration"
     show_if: "crdApplied=yes"
 
@@ -421,7 +429,7 @@ questions:
       - Please edit as Yaml for the best experience
     default: |
       - routing
-      - data-ingest
+      - metrics-ingest
       - kubernetes-monitoring
     type: multiline
     group: "ActiveGate"

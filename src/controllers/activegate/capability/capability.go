@@ -26,9 +26,11 @@ const (
 type baseFunc func() *capabilityBase
 
 var activeGateCapabilities = map[dynatracev1beta1.CapabilityDisplayName]baseFunc{
-	dynatracev1beta1.KubeMonCapability.DisplayName:    kubeMonBase,
-	dynatracev1beta1.RoutingCapability.DisplayName:    routingBase,
-	dynatracev1beta1.DataIngestCapability.DisplayName: dataIngestBase,
+	dynatracev1beta1.KubeMonCapability.DisplayName:       kubeMonBase,
+	dynatracev1beta1.RoutingCapability.DisplayName:       routingBase,
+	dynatracev1beta1.MetricsIngestCapability.DisplayName: metricsIngestBase,
+	dynatracev1beta1.DynatraceApiCapability.DisplayName:  dynatraceApiBase,
+	dynatracev1beta1.StatsdIngestCapability.DisplayName:  statsdIngestBase,
 }
 
 type Configuration struct {
@@ -157,30 +159,30 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 		if !ok {
 			continue
 		}
-		cap := capabilityGenerator()
+		capGen := capabilityGenerator()
 
-		capabilityNames = append(capabilityNames, cap.argName)
-		mc.initContainersTemplates = append(mc.initContainersTemplates, cap.initContainersTemplates...)
-		mc.containerVolumeMounts = append(mc.containerVolumeMounts, cap.containerVolumeMounts...)
-		mc.volumes = append(mc.volumes, cap.volumes...)
+		capabilityNames = append(capabilityNames, capGen.argName)
+		mc.initContainersTemplates = append(mc.initContainersTemplates, capGen.initContainersTemplates...)
+		mc.containerVolumeMounts = append(mc.containerVolumeMounts, capGen.containerVolumeMounts...)
+		mc.volumes = append(mc.volumes, capGen.volumes...)
 
 		if !mc.CreateService {
-			mc.CreateService = cap.CreateService
+			mc.CreateService = capGen.CreateService
 		}
 		if !mc.SetCommunicationPort {
-			mc.SetCommunicationPort = cap.SetCommunicationPort
+			mc.SetCommunicationPort = capGen.SetCommunicationPort
 		}
 		if !mc.SetDnsEntryPoint {
-			mc.SetDnsEntryPoint = cap.SetDnsEntryPoint
+			mc.SetDnsEntryPoint = capGen.SetDnsEntryPoint
 		}
 		if !mc.SetReadinessPort {
-			mc.SetReadinessPort = cap.SetReadinessPort
+			mc.SetReadinessPort = capGen.SetReadinessPort
 		}
 		if mc.ServiceAccountOwner == "" {
-			mc.ServiceAccountOwner = cap.ServiceAccountOwner
+			mc.ServiceAccountOwner = capGen.ServiceAccountOwner
 		}
 	}
-	mc.argName = strings.Join(capabilityNames[:], ",")
+	mc.argName = strings.Join(capabilityNames, ",")
 	mc.setTlsConfig(&dk.Spec.ActiveGate)
 	return &mc
 
@@ -265,10 +267,38 @@ func routingBase() *capabilityBase {
 	return &c
 }
 
-func dataIngestBase() *capabilityBase {
+func metricsIngestBase() *capabilityBase {
 	c := capabilityBase{
-		shortName: dynatracev1beta1.DataIngestCapability.ShortName,
-		argName:   dynatracev1beta1.DataIngestCapability.ArgumentName,
+		shortName: dynatracev1beta1.MetricsIngestCapability.ShortName,
+		argName:   dynatracev1beta1.MetricsIngestCapability.ArgumentName,
+		Configuration: Configuration{
+			SetDnsEntryPoint:     true,
+			SetReadinessPort:     true,
+			SetCommunicationPort: true,
+			CreateService:        true,
+		},
+	}
+	return &c
+}
+
+func dynatraceApiBase() *capabilityBase {
+	c := capabilityBase{
+		shortName: dynatracev1beta1.DynatraceApiCapability.ShortName,
+		argName:   dynatracev1beta1.DynatraceApiCapability.ArgumentName,
+		Configuration: Configuration{
+			SetDnsEntryPoint:     true,
+			SetReadinessPort:     true,
+			SetCommunicationPort: true,
+			CreateService:        true,
+		},
+	}
+	return &c
+}
+
+func statsdIngestBase() *capabilityBase {
+	c := capabilityBase{
+		shortName: dynatracev1beta1.StatsdIngestCapability.ShortName,
+		argName:   dynatracev1beta1.StatsdIngestCapability.ArgumentName,
 		Configuration: Configuration{
 			SetDnsEntryPoint:     true,
 			SetReadinessPort:     true,

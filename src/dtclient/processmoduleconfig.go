@@ -62,9 +62,7 @@ func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessM
 }
 
 func (dtc *dynatraceClient) createProcessModuleConfigRequest(prevRevision uint) (*http.Request, error) {
-	processModuleConfigURL := fmt.Sprintf("%s/v1/deployment/installer/agent/processmoduleconfig", dtc.url)
-
-	req, err := http.NewRequest(http.MethodGet, processModuleConfigURL, nil)
+	req, err := http.NewRequest(http.MethodGet, dtc.getProcessModuleConfigUrl(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing http request: %w", err)
 	}

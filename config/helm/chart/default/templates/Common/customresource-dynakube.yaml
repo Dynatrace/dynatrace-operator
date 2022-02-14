@@ -1,3 +1,7 @@
+{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google" (include "dynatrace-operator.platformSet" .))}}
+{{- $modeSet := printf "%s" (required "Only one onagent mode can be used per dynakube." (include "dynatrace-operator.modeSet" .))}}
+{{- $activeGateModeSet := printf "%s" (required "Deprecated activeGate mode and the new activaGate mode can't be used at the same time." (include "dynatrace-operator.activeGateModeSet" .))}}
+{{- if .Values.apiUrl }}
 # Copyright 2021 Dynatrace LLC
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,18 +15,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google" (include "dynatrace-operator.platformSet" .))}}
-{{- $modeSet := printf "%s" (required "Only one onagent mode can be used per dynakube." (include "dynatrace-operator.modeSet" .))}}
-{{- $activeGateModeSet := printf "%s" (required "Deprecated activeGate mode and the new activaGate mode can't be used at the same time." (include "dynatrace-operator.activeGateModeSet" .))}}
-{{- if .Values.apiUrl }}
 apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
   annotations:
     {{- if ne .Values.platform "google"}}
     "helm.sh/hook": post-install,post-upgrade
-    {{ end }}
+    {{- end }}
   name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
   labels:
@@ -61,8 +60,7 @@ spec:
   namespaceSelector: {{ .Values.namespaceSelector | toYaml | nindent 4 }}
   {{- end }}
 
-  {{- if .Values.activeGate }}
-  {{- if .Values.activeGate.capabilities }} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
+  {{- if (.Values.activeGate).capabilities }}
   {{- if ge (len .Values.activeGate.capabilities) 1 }}
   activeGate:
 
@@ -115,11 +113,9 @@ spec:
     {{- end }}
   {{- end }}
   {{- end }}
-  {{- end }}
 
   oneAgent:
-    {{- if .Values.cloudNativeFullStack }} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
-    {{- if.Values.cloudNativeFullStack.enabled }}
+    {{- if (.Values.cloudNativeFullStack).enabled }}
     cloudNativeFullStack:
       {{- if .Values.cloudNativeFullStack.version }}
       version: {{.Values.cloudNativeFullStack.version}}
@@ -163,10 +159,8 @@ spec:
       initResources: {{ .Values.cloudNativeFullStack.initResources | toYaml | nindent 10 }}
       {{- end }}
     {{- end }}
-    {{- end }}
 
-    {{- if .Values.applicationMonitoring }} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
-    {{- if .Values.applicationMonitoring.enabled }}
+    {{- if (.Values.applicationMonitoring).enabled }}
     applicationMonitoring:
       {{- if .Values.applicationMonitoring.image }}
       image: {{.Values.applicationMonitoring.image}}
@@ -182,10 +176,8 @@ spec:
       initResources: {{ .Values.applicationMonitoring.initResources | toYaml | nindent 10 }}
       {{- end }}
     {{- end }}
-    {{- end }}
 
-    {{- if .Values.hostMonitoring }} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
-    {{- if .Values.hostMonitoring.enabled }}
+    {{- if (.Values.hostMonitoring).enabled }}
     hostMonitoring:
       {{- if .Values.hostMonitoring.image }}
       image: {{.Values.hostMonitoring.image}}
@@ -229,22 +221,21 @@ spec:
       labels: {{ .Values.hostMonitoring.labels | toYaml | nindent 8 }}
       {{- end }}
     {{- end }}
-    {{- end }}
 
   {{- if .Values.classicFullStack.enabled }}
     classicFullStack:
 
-      {{ if .Values.oneAgent }} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
+      {{- if .Values.oneAgent }} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
       image: {{.Values.oneAgent.image | default "" | quote}}
       {{ else if .Values.classicFullStack.image }}
       image: {{.Values.classicFullStack.image}}
-      {{ end }}
+      {{- end }}
 
-      {{ if .Values.oneAgent}} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
+      {{- if .Values.oneAgent}} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
       version: {{.Values.oneAgent.version | default "" | quote}}
       {{ else if .Values.classicFullStack.version }}
       version: {{.Values.classicFullStack.version}}
-      {{ end }}
+      {{- end }}
 
       {{- if .Values.classicFullStack.nodeSelector }}
       nodeSelector: {{ .Values.classicFullStack.nodeSelector | toYaml | nindent 10 }}
@@ -254,7 +245,7 @@ spec:
       tolerations: {{ .Values.classicFullStack.tolerations | toYaml | nindent 10 }}
       {{- end }}
 
-      {{ if .Values.classicFullStack.resources }} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
+      {{- if .Values.classicFullStack.resources }} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
       oneAgentResources: {{.Values.classicFullStack.resources | toYaml | nindent 10 }}
       {{- else if .Values.classicFullStack.oneAgentResources }}
       oneAgentResources: {{ .Values.classicFullStack.oneAgentResources | toYaml | nindent 10}}
@@ -272,7 +263,7 @@ spec:
       priorityClassName: {{ .Values.classicFullStack.priorityClassName }}
       {{- end }}
 
-      {{ if .Values.oneAgent }} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
+      {{- if .Values.oneAgent }} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
       autoUpdate: {{.Values.oneAgent.autoUpdate | default "false"}}
       {{ else }}
       autoUpdate: {{.Values.classicFullStack.autoUpdate | default "false" }}
@@ -292,11 +283,11 @@ spec:
   kubernetesMonitoring:
     enabled: {{ .Values.kubernetesMonitoring.enabled }}
 
-    {{ if .Values.activeGate.image }} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
+    {{- if .Values.activeGate.image }} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
     image: {{.Values.activeGate.image | default "" }}
     {{ else if .Values.kubernetesMonitoring.image }}
     image: {{.Values.kubernetesMonitoring.image}}
-    {{ end }}
+    {{- end }}
 
     {{- if .Values.kubernetesMonitoring.replicas }}
     replicas: {{ .Values.kubernetesMonitoring.replicas }}
@@ -341,11 +332,11 @@ spec:
   routing:
     enabled: {{ .Values.routing.enabled }}
 
-    {{ if .Values.activeGate.image }} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
+    {{- if .Values.activeGate.image }} {{/* For compatibility between 0.2.3 and 0.3.0 */}}
     image: {{.Values.activeGate.image | default "" }}
     {{ else if .Values.routing.image }}
     image: {{.Values.routing.image}}
-    {{ end }}
+    {{- end }}
 
     {{- if .Values.routing.replicas }}
     replicas: {{ .Values.routing.replicas }}

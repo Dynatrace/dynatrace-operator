@@ -82,7 +82,7 @@ spec:
     capabilities:
       - routing
       - kubernetes-monitoring
-      - data-ingest
+      - metrics-ingest
 
     # Optional: to use a custom ActiveGate Docker image.
     image: ""
@@ -142,3 +142,7 @@ spec:
     # server.p12: certificate+key pair in pkcs12 format
     #
     # tlsSecretName: "my-tls-secret"
+
+    # Optional: Sets DNS Policy for the ActiveGate pods
+    #
+    # dnsPolicy: "Default"

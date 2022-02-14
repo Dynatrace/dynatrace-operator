@@ -31,22 +31,36 @@ var (
 		ArgumentName: "kubernetes_monitoring",
 	}
 
-	DataIngestCapability = ActiveGateCapability{
-		DisplayName:  "data-ingest",
-		ShortName:    "data-ingest",
+	MetricsIngestCapability = ActiveGateCapability{
+		DisplayName:  "metrics-ingest",
+		ShortName:    "metrics-ingest",
 		ArgumentName: "metrics_ingest",
+	}
+
+	DynatraceApiCapability = ActiveGateCapability{
+		DisplayName:  "dynatrace-api",
+		ShortName:    "dynatrace-api",
+		ArgumentName: "restInterface",
+	}
+
+	StatsdIngestCapability = ActiveGateCapability{
+		DisplayName:  "statsd-ingest",
+		ShortName:    "statsd-ingest",
+		ArgumentName: "extension_controller",
 	}
 )
 
-var ActiveGateDisplayNames = map[CapabilityDisplayName]bool{
-	RoutingCapability.DisplayName:    true,
-	KubeMonCapability.DisplayName:    true,
-	DataIngestCapability.DisplayName: true,
+var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
+	RoutingCapability.DisplayName:       {},
+	KubeMonCapability.DisplayName:       {},
+	MetricsIngestCapability.DisplayName: {},
+	DynatraceApiCapability.DisplayName:  {},
+	StatsdIngestCapability.DisplayName:  {},
 }
 
 type ActiveGateSpec struct {
 
-	// Activegate capabilities enabled (routing, kubernetes-monitoring, data-ingest)
+	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 
 	CapabilityProperties `json:",inline"`
@@ -56,6 +70,10 @@ type ActiveGateSpec struct {
 	// password: passphrase to read server.p12
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TlsSecretName",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	TlsSecretName string `json:"tlsSecretName,omitempty"`
+
+	// Optional: Sets DNS Policy for the ActiveGate pods
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="DNS Policy",order=24,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	DNSPolicy corev1.DNSPolicy `json:"dnsPolicy,omitempty"`
 }
 
 // CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
