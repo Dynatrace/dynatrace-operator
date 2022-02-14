@@ -1343,7 +1343,17 @@ func buildResultPod(_ *testing.T, oneAgentFf FeatureFlag, dataIngestFf FeatureFl
 
 		pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env,
 			corev1.EnvVar{Name: dtingestendpoint.UrlSecretField, Value: "https://tenant.test-api-url.com/api/v2/metrics/ingest"},
-			corev1.EnvVar{Name: dtingestendpoint.TokenSecretField, Value: dataIngestToken},
+			corev1.EnvVar{
+				Name: dtingestendpoint.TokenSecretField,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: dtingestendpoint.SecretEndpointName,
+						},
+						Key: dtingestendpoint.TokenSecretField,
+					},
+				},
+			},
 		)
 
 		pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts,
