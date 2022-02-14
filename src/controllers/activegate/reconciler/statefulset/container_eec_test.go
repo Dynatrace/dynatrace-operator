@@ -32,9 +32,9 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 
 		for _, mountPath := range []string{
 			activeGateConfigDir,
-			"/mnt/dsexecargs",
-			"/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources",
-			"/opt/dynatrace/remotepluginmodule/agent/datasources/statsd",
+			dataSourceStartupArgsMountPoint,
+			dataSourceAuthTokenMountPoint,
+			statsdMetadataMountPoint,
 			extensionsLogsDir,
 			statsDLogsDir,
 		} {

@@ -109,14 +109,14 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 		assert.Equalf(t, expected, kubeobjects.VolumeIsDefined(templateSpec.Volumes, "auth-tokens"),
 			"Expected that volume mount %s has a predefined pod volume", "auth-tokens",
 		)
-		assert.Equalf(t, expected, kubeobjects.VolumeIsDefined(templateSpec.Volumes, "ds-metadata"),
-			"Expected that volume mount %s has a predefined pod volume", "ds-metadata",
+		assert.Equalf(t, expected, kubeobjects.VolumeIsDefined(templateSpec.Volumes, dataSourceMetadata),
+			"Expected that volume mount %s has a predefined pod volume", dataSourceMetadata,
 		)
-		assert.Equalf(t, expected, kubeobjects.VolumeIsDefined(templateSpec.Volumes, "extensions-logs"),
-			"Expected that volume mount %s has a predefined pod volume", "extensions-logs",
+		assert.Equalf(t, expected, kubeobjects.VolumeIsDefined(templateSpec.Volumes, eecLogs),
+			"Expected that volume mount %s has a predefined pod volume", eecLogs,
 		)
-		assert.Equalf(t, expected, kubeobjects.VolumeIsDefined(templateSpec.Volumes, "statsd-logs"),
-			"Expected that volume mount %s has a predefined pod volume", "statsd-logs",
+		assert.Equalf(t, expected, kubeobjects.VolumeIsDefined(templateSpec.Volumes, dataSourceStatsdLogs),
+			"Expected that volume mount %s has a predefined pod volume", dataSourceStatsdLogs,
 		)
 	}
 
