@@ -169,10 +169,11 @@ properties:
     x-google-marketplace:
       type: MASKED_FIELD
   crdApplied:
-    type: boolean
+    type: enum
     description: "Please make sure you have applied the latest CRD by following the instructions in the Github Repository."
     title: "CRD manually applied"
-    default: false
+    required: true
+    default: ""
   platform:
     type: string
     title: The platform you are deploying on
