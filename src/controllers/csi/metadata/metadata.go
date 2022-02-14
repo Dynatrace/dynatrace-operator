@@ -32,19 +32,19 @@ func NewVolume(id, podUID, version, tenantUUID string) *Volume {
 	return &Volume{id, podUID, version, tenantUUID}
 }
 
-type Storage struct {
+type OsAgentVolume struct {
 	VolumeID     string
 	TenantUUID   string
 	Mounted      bool
 	LastModified *time.Time
 }
 
-// NewStorage returns a new Storage if all fields are set.
-func NewStorage(volumeID, tenantUUID string, mounted bool, timeStamp *time.Time) *Storage {
+// NewOsAgentVolume returns a new volume if all fields are set.
+func NewOsAgentVolume(volumeID, tenantUUID string, mounted bool, timeStamp *time.Time) *OsAgentVolume {
 	if volumeID == "" || tenantUUID == "" || timeStamp == nil {
 		return nil
 	}
-	return &Storage{volumeID, tenantUUID, mounted, timeStamp}
+	return &OsAgentVolume{volumeID, tenantUUID, mounted, timeStamp}
 }
 
 type Access interface {
@@ -56,9 +56,9 @@ type Access interface {
 	GetDynakube(dynakubeName string) (*Dynakube, error)
 	GetDynakubes() (map[string]string, error)
 
-	InsertStorage(storage *Storage) error
-	GetStorageViaVolumeId(volumeID string) (*Storage, error)
-	UpdateStorage(storage *Storage) error
+	InsertOsAgentVolume(volume *OsAgentVolume) error
+	GetOsAgentVolume(volumeID string) (*OsAgentVolume, error)
+	UpdateOsAgentVolume(volume *OsAgentVolume) error
 
 	InsertVolume(volume *Volume) error
 	DeleteVolume(volumeID string) error

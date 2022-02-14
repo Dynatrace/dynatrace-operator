@@ -26,7 +26,6 @@ const (
 	testTargetPath   = "/path/to/container/filesystem/opt/dynatrace/oneagent-paas"
 	testTenantUUID   = "a-tenant-uuid"
 	testAgentVersion = "1.2-3"
-	testNamespace    = "test"
 	testDynakubeName = "a-dynakube"
 )
 
@@ -213,7 +212,6 @@ func resetMetrics() {
 func createTestVolumeConfig() *csivolumes.VolumeConfig {
 	return &csivolumes.VolumeConfig{
 		VolumeInfo:   *createTestVolumeInfo(),
-		Namespace:    testNamespace,
 		PodName:      testPodUID,
 		Mode:         Mode,
 		DynakubeName: testDynakubeName,

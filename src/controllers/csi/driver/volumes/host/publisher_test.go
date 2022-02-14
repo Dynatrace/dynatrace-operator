@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/mount"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,7 +37,7 @@ func TestPublishVolume(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, response)
 	assert.NotEmpty(t, mounter.MountPoints)
-	assertReferencesForPublishedStorage(t, &publisher, mounter)
+	assertReferencesForPublishedVolume(t, &publisher, mounter)
 }
 
 func TestUnpublishVolume(t *testing.T) {
@@ -46,14 +46,14 @@ func TestUnpublishVolume(t *testing.T) {
 			{Path: testTargetPath},
 		})
 		publisher := newPublisherForTesting(t, mounter)
-		mockPublishedStorage(t, &publisher)
+		mockPublishedvolume(t, &publisher)
 
 		response, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
 		assert.Empty(t, mounter.MountPoints)
-		assertReferencesForUnpublishedStorage(t, &publisher)
+		assertReferencesForUnpublishedVolume(t, &publisher)
 	})
 
 	t.Run(`invalid metadata`, func(t *testing.T) {
@@ -67,9 +67,9 @@ func TestUnpublishVolume(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Nil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
-		storage, err := publisher.db.GetStorageViaVolumeId(testVolumeId)
+		volume, err := publisher.db.GetOsAgentVolume(testVolumeId)
 		assert.NoError(t, err)
-		assert.Nil(t, storage)
+		assert.Nil(t, volume)
 	})
 }
 
@@ -83,14 +83,14 @@ func TestNodePublishAndUnpublishVolume(t *testing.T) {
 
 	assert.NotNil(t, publishResponse)
 	assert.NotEmpty(t, mounter.MountPoints)
-	assertReferencesForPublishedStorage(t, &publisher, mounter)
+	assertReferencesForPublishedVolume(t, &publisher, mounter)
 
 	unpublishResponse, err := publisher.UnpublishVolume(context.TODO(), createTestVolumeInfo())
 
 	assert.NoError(t, err)
 	assert.NotNil(t, unpublishResponse)
 	assert.Empty(t, mounter.MountPoints)
-	assertReferencesForUnpublishedStorage(t, &publisher)
+	assertReferencesForUnpublishedVolume(t, &publisher)
 }
 
 func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) HostVolumePublisher {
@@ -105,7 +105,7 @@ func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) HostVolume
 				},
 			},
 		},
-		&v1.Secret{
+		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: testDynakubeName,
 			},
@@ -125,10 +125,10 @@ func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) HostVolume
 	}
 }
 
-func mockPublishedStorage(t *testing.T, publisher *HostVolumePublisher) {
+func mockPublishedvolume(t *testing.T, publisher *HostVolumePublisher) {
 	mockDynakube(t, publisher)
 	now := time.Now()
-	err := publisher.db.InsertStorage(metadata.NewStorage(testVolumeId, testTenantUUID, true, &now))
+	err := publisher.db.InsertOsAgentVolume(metadata.NewOsAgentVolume(testVolumeId, testTenantUUID, true, &now))
 	require.NoError(t, err)
 }
 
@@ -137,20 +137,20 @@ func mockDynakube(t *testing.T, publisher *HostVolumePublisher) {
 	require.NoError(t, err)
 }
 
-func assertReferencesForPublishedStorage(t *testing.T, publisher *HostVolumePublisher, mounter *mount.FakeMounter) {
+func assertReferencesForPublishedVolume(t *testing.T, publisher *HostVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
-	storage, err := publisher.db.GetStorageViaVolumeId(testVolumeId)
+	volume, err := publisher.db.GetOsAgentVolume(testVolumeId)
 	assert.NoError(t, err)
-	assert.Equal(t, storage.VolumeID, testVolumeId)
-	assert.Equal(t, storage.TenantUUID, testTenantUUID)
-	assert.True(t, storage.Mounted)
+	assert.Equal(t, volume.VolumeID, testVolumeId)
+	assert.Equal(t, volume.TenantUUID, testTenantUUID)
+	assert.True(t, volume.Mounted)
 }
 
-func assertReferencesForUnpublishedStorage(t *testing.T, publisher *HostVolumePublisher) {
-	storage, err := publisher.db.GetStorageViaVolumeId(testVolumeId)
+func assertReferencesForUnpublishedVolume(t *testing.T, publisher *HostVolumePublisher) {
+	volume, err := publisher.db.GetOsAgentVolume(testVolumeId)
 	assert.NoError(t, err)
-	assert.NotNil(t, storage)
-	assert.False(t, storage.Mounted)
+	assert.NotNil(t, volume)
+	assert.False(t, volume.Mounted)
 }
 
 func createTestVolumeConfig() *csivolumes.VolumeConfig {

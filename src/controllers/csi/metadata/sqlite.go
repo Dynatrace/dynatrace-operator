@@ -31,9 +31,9 @@ const (
 		PRIMARY KEY (ID)
 	);`
 
-	storagesTableName       = "storages"
-	storagesCreateStatement = `
-	CREATE TABLE IF NOT EXISTS storages (
+	osAgentVolumesTableName       = "osagent_volumes"
+	osAgentVolumesCreateStatement = `
+	CREATE TABLE IF NOT EXISTS osagent_volumes (
 		TenantUUID VARCHAR NOT NULL,
 		VolumeID VARCHAR NOT NULL,
 		Mounted BOOLEAN NOT NULL,
@@ -52,8 +52,8 @@ const (
 	VALUES (?,?,?,?);
 	`
 
-	insertStorageStatement = `
-	INSERT INTO storages (TenantUUID, VolumeID, Mounted, LastModified)
+	insertOsAgentVolumeStatement = `
+	INSERT INTO osagent_volumes (TenantUUID, VolumeID, Mounted, LastModified)
 	VALUES (?,?,?,?);
 	`
 
@@ -64,8 +64,8 @@ const (
 	WHERE Name = ?;
 	`
 
-	updateStorageStatement = `
-	UPDATE storages
+	updateOsAgentVolumeStatement = `
+	UPDATE osagent_volumes
 	SET VolumeID = ?, Mounted = ?, LastModified = ?
 	WHERE TenantUUID = ?;
 	`
@@ -83,9 +83,9 @@ const (
 	WHERE ID = ?;
 	`
 
-	getStorageViaVolumeIDStatement = `
+	getOsAgentVolumeViaVolumeIDStatement = `
 	SELECT TenantUUID, Mounted, LastModified
-	FROM storages
+	FROM osagent_volumes
 	WHERE VolumeID = ?;
 	`
 
@@ -145,8 +145,8 @@ func (a *SqliteAccess) createTables() error {
 	if _, err := a.conn.Exec(volumesCreateStatement); err != nil {
 		return fmt.Errorf("couldn't create the table %s, err: %s", volumesTableName, err)
 	}
-	if _, err := a.conn.Exec(storagesCreateStatement); err != nil {
-		return fmt.Errorf("couldn't create the table %s, err: %s", storagesTableName, err)
+	if _, err := a.conn.Exec(osAgentVolumesCreateStatement); err != nil {
+		return fmt.Errorf("couldn't create the table %s, err: %s", osAgentVolumesTableName, err)
 	}
 	return nil
 }
@@ -243,44 +243,44 @@ func (a *SqliteAccess) DeleteVolume(volumeID string) error {
 	return err
 }
 
-// InsertVolume inserts a new Volume
-func (a *SqliteAccess) InsertStorage(storage *Storage) error {
-	err := a.executeStatement(insertStorageStatement, storage.TenantUUID, storage.VolumeID, storage.Mounted, storage.LastModified)
+// InsertOsAgentVolume inserts a new OsAgentVolume
+func (a *SqliteAccess) InsertOsAgentVolume(volume *OsAgentVolume) error {
+	err := a.executeStatement(insertOsAgentVolumeStatement, volume.TenantUUID, volume.VolumeID, volume.Mounted, volume.LastModified)
 	if err != nil {
 		err = fmt.Errorf("couldn't insert storage info, volume id '%s', tenant UUID '%s', mounted '%t', last modified '%s', err: %s",
-			storage.VolumeID,
-			storage.TenantUUID,
-			storage.Mounted,
-			storage.LastModified,
+			volume.VolumeID,
+			volume.TenantUUID,
+			volume.Mounted,
+			volume.LastModified,
 			err)
 	}
 	return err
 }
 
-// UpdateDynakube updates an existing Dynakube by matching the name
-func (a *SqliteAccess) UpdateStorage(storage *Storage) error {
-	err := a.executeStatement(updateStorageStatement, storage.VolumeID, storage.Mounted, storage.LastModified, storage.TenantUUID)
+// UpdateOsAgentVolume updates an existing OsAgentVolume by matching the tenantUUID
+func (a *SqliteAccess) UpdateOsAgentVolume(volume *OsAgentVolume) error {
+	err := a.executeStatement(updateOsAgentVolumeStatement, volume.VolumeID, volume.Mounted, volume.LastModified, volume.TenantUUID)
 	if err != nil {
 		err = fmt.Errorf("couldn't update storage info, tenantUUID '%s', mounted '%t', last modified '%s', volume id %s, err: %s",
-			storage.TenantUUID,
-			storage.Mounted,
-			storage.LastModified,
-			storage.VolumeID,
+			volume.TenantUUID,
+			volume.Mounted,
+			volume.LastModified,
+			volume.VolumeID,
 			err)
 	}
 	return err
 }
 
-// GetVolume gets Volume by its ID
-func (a *SqliteAccess) GetStorageViaVolumeId(volumeID string) (*Storage, error) {
+// GetOsAgentVolume gets an OsAgentVolume by its VolumeID
+func (a *SqliteAccess) GetOsAgentVolume(volumeID string) (*OsAgentVolume, error) {
 	var tenantUUID string
 	var mounted bool
 	var lastModified time.Time
-	err := a.querySimpleStatement(getStorageViaVolumeIDStatement, volumeID, &tenantUUID, &mounted, &lastModified)
+	err := a.querySimpleStatement(getOsAgentVolumeViaVolumeIDStatement, volumeID, &tenantUUID, &mounted, &lastModified)
 	if err != nil {
 		err = fmt.Errorf("couldn't get storage info for volume id '%s', err: %s", volumeID, err)
 	}
-	return NewStorage(volumeID, tenantUUID, mounted, &lastModified), err
+	return NewOsAgentVolume(volumeID, tenantUUID, mounted, &lastModified), err
 }
 
 // GetUsedVersions gets all UNIQUE versions present in the `volumes` database in map.

@@ -174,46 +174,46 @@ func TestInsertVolume(t *testing.T) {
 
 }
 
-func TestInsertStorage(t *testing.T) {
+func TestInsertOsAgentVolume(t *testing.T) {
 	db := FakeMemoryDB()
 
 	now := time.Now()
-	storage := Storage{
+	volume := OsAgentVolume{
 		VolumeID:     "vol-4",
 		TenantUUID:   testDynakube1.TenantUUID,
 		Mounted:      true,
 		LastModified: &now,
 	}
 
-	err := db.InsertStorage(&storage)
+	err := db.InsertOsAgentVolume(&volume)
 	require.NoError(t, err)
-	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE TenantUUID = ?;", storagesTableName), storage.TenantUUID)
+	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE TenantUUID = ?;", osAgentVolumesTableName), volume.TenantUUID)
 	var volumeID string
 	var tenantUUID string
 	var mounted bool
 	var lastModified time.Time
 	err = row.Scan(&tenantUUID, &volumeID, &mounted, &lastModified)
 	assert.NoError(t, err)
-	assert.Equal(t, volumeID, storage.VolumeID)
-	assert.Equal(t, tenantUUID, storage.TenantUUID)
-	assert.Equal(t, mounted, storage.Mounted)
-	assert.True(t, storage.LastModified.Equal(lastModified))
+	assert.Equal(t, volumeID, volume.VolumeID)
+	assert.Equal(t, tenantUUID, volume.TenantUUID)
+	assert.Equal(t, mounted, volume.Mounted)
+	assert.True(t, volume.LastModified.Equal(lastModified))
 }
 
-func TestGetStorage(t *testing.T) {
+func TestGetOsAgentVolume(t *testing.T) {
 	db := FakeMemoryDB()
 
 	now := time.Now()
-	expected := Storage{
+	expected := OsAgentVolume{
 		VolumeID:     "vol-4",
 		TenantUUID:   testDynakube1.TenantUUID,
 		Mounted:      true,
 		LastModified: &now,
 	}
 
-	err := db.InsertStorage(&expected)
+	err := db.InsertOsAgentVolume(&expected)
 	require.NoError(t, err)
-	actual, err := db.GetStorageViaVolumeId(expected.VolumeID)
+	actual, err := db.GetOsAgentVolume(expected.VolumeID)
 	require.NoError(t, err)
 	assert.NoError(t, err)
 	assert.Equal(t, expected.VolumeID, actual.VolumeID)
@@ -222,25 +222,25 @@ func TestGetStorage(t *testing.T) {
 	assert.True(t, expected.LastModified.Equal(*actual.LastModified))
 }
 
-func TestUpdateStorage(t *testing.T) {
+func TestUpdateOsAgentVolume(t *testing.T) {
 	db := FakeMemoryDB()
 
 	now := time.Now()
-	old := Storage{
+	old := OsAgentVolume{
 		VolumeID:     "vol-4",
 		TenantUUID:   testDynakube1.TenantUUID,
 		Mounted:      true,
 		LastModified: &now,
 	}
 
-	err := db.InsertStorage(&old)
+	err := db.InsertOsAgentVolume(&old)
 	require.NoError(t, err)
 	new := old
 	new.Mounted = false
-	err = db.UpdateStorage(&new)
+	err = db.UpdateOsAgentVolume(&new)
 	require.NoError(t, err)
 
-	actual, err := db.GetStorageViaVolumeId(old.VolumeID)
+	actual, err := db.GetOsAgentVolume(old.VolumeID)
 	require.NoError(t, err)
 	assert.NoError(t, err)
 	assert.Equal(t, old.VolumeID, actual.VolumeID)

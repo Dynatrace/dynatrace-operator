@@ -7,8 +7,7 @@ import (
 )
 
 const (
-	PodNameContextKey      = "csi.storage.k8s.io/pod.name"
-	PodNamespaceContextKey = "csi.storage.k8s.io/pod.namespace"
+	PodNameContextKey = "csi.storage.k8s.io/pod.name"
 
 	// CSIVolumeAttributeModeField used for identifying the origin of the NodePublishVolume request
 	CSIVolumeAttributeModeField     = "mode"
@@ -24,7 +23,6 @@ type VolumeInfo struct {
 // Represents the config needed to mount a volume
 type VolumeConfig struct {
 	VolumeInfo
-	Namespace    string // not really necessary anymore
 	PodName      string
 	Mode         string
 	DynakubeName string
@@ -59,11 +57,6 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeCo
 		return nil, status.Error(codes.InvalidArgument, "Publish context missing in request")
 	}
 
-	nsName := volCtx[PodNamespaceContextKey]
-	if nsName == "" {
-		return nil, status.Error(codes.InvalidArgument, "No namespace included with request")
-	}
-
 	podName := volCtx[PodNameContextKey]
 	if podName == "" {
 		return nil, status.Error(codes.InvalidArgument, "No Pod Name included with request")
@@ -84,7 +77,6 @@ func ParseNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) (*VolumeCo
 			VolumeID:   volID,
 			TargetPath: targetPath,
 		},
-		Namespace:    nsName,
 		PodName:      podName,
 		Mode:         mode,
 		DynakubeName: dynakubeName,

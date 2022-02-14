@@ -9,7 +9,6 @@ import (
 
 const (
 	testVolumeId   = "a-volume-id"
-	testNamespace  = "a-namespace"
 	testTargetPath = "a-target-path"
 	testPodUID     = "a-pod-uid"
 )
@@ -81,22 +80,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = Publish context missing in request")
 		assert.Nil(t, volumeCfg)
 	})
-	t.Run(`Pod namespace missing from requests volume context`, func(t *testing.T) {
-		request := &csi.NodePublishVolumeRequest{
-			VolumeCapability: &csi.VolumeCapability{
-				AccessType: &csi.VolumeCapability_Mount{
-					Mount: &csi.VolumeCapability_MountVolume{},
-				},
-			},
-			VolumeId:      testVolumeId,
-			TargetPath:    testTargetPath,
-			VolumeContext: map[string]string{},
-		}
-		volumeCfg, err := ParseNodePublishVolumeRequest(request)
-
-		assert.EqualError(t, err, "rpc error: code = InvalidArgument desc = No namespace included with request")
-		assert.Nil(t, volumeCfg)
-	})
 	t.Run(`Pod name missing from requests volume context`, func(t *testing.T) {
 		request := &csi.NodePublishVolumeRequest{
 			VolumeCapability: &csi.VolumeCapability{
@@ -106,9 +89,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			},
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
-			VolumeContext: map[string]string{
-				PodNamespaceContextKey: testNamespace,
-			},
 		}
 		volumeCfg, err := ParseNodePublishVolumeRequest(request)
 
@@ -125,7 +105,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
-				PodNamespaceContextKey:          testNamespace,
 				PodNameContextKey:               testPodUID,
 				CSIVolumeAttributeDynakubeField: testDynakubeName,
 			},
@@ -145,7 +124,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
-				PodNamespaceContextKey:      testNamespace,
 				PodNameContextKey:           testPodUID,
 				CSIVolumeAttributeModeField: "test",
 			},
@@ -165,7 +143,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 			VolumeId:   testVolumeId,
 			TargetPath: testTargetPath,
 			VolumeContext: map[string]string{
-				PodNamespaceContextKey:          testNamespace,
 				PodNameContextKey:               testPodUID,
 				CSIVolumeAttributeDynakubeField: testDynakubeName,
 				CSIVolumeAttributeModeField:     "test",
@@ -175,7 +152,6 @@ func TestCSIDriverServer_ParsePublishVolumeRequest(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, volumeCfg)
-		assert.Equal(t, testNamespace, volumeCfg.Namespace)
 		assert.Equal(t, testVolumeId, volumeCfg.VolumeID)
 		assert.Equal(t, testTargetPath, volumeCfg.TargetPath)
 		assert.Equal(t, testPodUID, volumeCfg.PodName)

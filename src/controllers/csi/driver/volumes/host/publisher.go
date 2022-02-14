@@ -56,30 +56,30 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 		return nil, err
 	}
 	if err := publisher.mountOneAgent(bindCfg.TenantUUID, volumeCfg); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount host agent volume: %s", err.Error()))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount osagent volume: %s", err.Error()))
 	}
-	storage, err := publisher.db.GetStorageViaVolumeId(volumeCfg.VolumeID)
+	volume, err := publisher.db.GetOsAgentVolume(volumeCfg.VolumeID)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get host agent volume info from database: %s", err.Error()))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get osagent volume info from database: %s", err.Error()))
 	}
 
 	timestamp := time.Now()
-	if storage == nil {
-		storage := metadata.Storage{
+	if volume == nil {
+		storage := metadata.OsAgentVolume{
 			VolumeID:     volumeCfg.VolumeID,
 			TenantUUID:   bindCfg.TenantUUID,
 			Mounted:      true,
 			LastModified: &timestamp,
 		}
-		if err := publisher.db.InsertStorage(&storage); err != nil {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to insert host agent volume info to database. info: %v err: %s", storage, err.Error()))
+		if err := publisher.db.InsertOsAgentVolume(&storage); err != nil {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to insert osagent volume info to database. info: %v err: %s", storage, err.Error()))
 		}
 	} else {
-		storage.VolumeID = volumeCfg.VolumeID
-		storage.Mounted = true
-		storage.LastModified = &timestamp
-		if err := publisher.db.UpdateStorage(storage); err != nil {
-			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update host agent volume info to database. info: %v err: %s", storage, err.Error()))
+		volume.VolumeID = volumeCfg.VolumeID
+		volume.Mounted = true
+		volume.LastModified = &timestamp
+		if err := publisher.db.UpdateOsAgentVolume(volume); err != nil {
+			return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update osagent volume info to database. info: %v err: %s", volume, err.Error()))
 		}
 	}
 	return &csi.NodePublishVolumeResponse{}, nil
@@ -87,27 +87,27 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 
 func (publisher *HostVolumePublisher) UnpublishVolume(_ context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
 
-	storage, err := publisher.db.GetStorageViaVolumeId(volumeInfo.VolumeID)
+	volume, err := publisher.db.GetOsAgentVolume(volumeInfo.VolumeID)
 	if err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get host agent volume info from database: %s", err.Error()))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get osagent volume info from database: %s", err.Error()))
 	}
-	if storage == nil {
+	if volume == nil {
 		return nil, nil
 	}
 
 	if err := publisher.umountOneAgent(volumeInfo.TargetPath); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount host agent volume: %s", err.Error()))
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to unmount osagent volume: %s", err.Error()))
 	}
 
 	timestamp := time.Now()
-	storage.Mounted = false
-	storage.LastModified = &timestamp
+	volume.Mounted = false
+	volume.LastModified = &timestamp
 
-	if err := publisher.db.UpdateStorage(storage); err != nil {
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update host agent volume info to database. info: %v err: %s", storage, err.Error()))
+	if err := publisher.db.UpdateOsAgentVolume(volume); err != nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to update osagent volume info to database. info: %v err: %s", volume, err.Error()))
 	}
 
-	log.Info("host agent volume has been unpublished", "targetPath", volumeInfo.TargetPath)
+	log.Info("osagent volume has been unpublished", "targetPath", volumeInfo.TargetPath)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
