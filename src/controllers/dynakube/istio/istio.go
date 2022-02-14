@@ -11,37 +11,37 @@ import (
 )
 
 var (
-	IstioGVRName = "networking.istio.io"
+	istioGVRName = "networking.istio.io"
 
 	// VirtualServiceGVK => definition of virtual service GVK for oneagent
 	VirtualServiceGVK = schema.GroupVersionKind{
-		Group:   IstioGVRName,
+		Group:   istioGVRName,
 		Version: "v1alpha3",
 		Kind:    "VirtualService",
 	}
 
 	// ServiceEntryGVK => definition of virtual service GVK for oneagent
 	ServiceEntryGVK = schema.GroupVersionKind{
-		Group:   IstioGVRName,
+		Group:   istioGVRName,
 		Version: "v1alpha3",
 		Kind:    "ServiceEntry",
 	}
 )
 
 // BuildNameForEndpoint returns a name to be used as a base to identify Istio objects.
-func BuildNameForEndpoint(name string, protocol string, host string, port uint32) string {
+func buildNameForEndpoint(name string, protocol string, host string, port uint32) string {
 	sum := sha256.Sum256([]byte(fmt.Sprintf("%s-%s-%s-%d", name, protocol, host, port)))
 	return hex.EncodeToString(sum[:])
 }
 
-func BuildObjectMeta(name string, namespace string) metav1.ObjectMeta {
+func buildObjectMeta(name string, namespace string) metav1.ObjectMeta {
 	return metav1.ObjectMeta{
 		Name:      name,
 		Namespace: namespace,
 	}
 }
 
-func BuildIstioLabels(name, role string) map[string]string {
+func buildIstioLabels(name, role string) map[string]string {
 	return map[string]string{
 		"dynatrace":            "oneagent",
 		"oneagent":             name,
@@ -49,6 +49,6 @@ func BuildIstioLabels(name, role string) map[string]string {
 	}
 }
 
-func IsIp(host string) bool {
+func isIp(host string) bool {
 	return net.ParseIP(host) != nil
 }

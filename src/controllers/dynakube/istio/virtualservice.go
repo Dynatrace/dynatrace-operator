@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/go-logr/logr"
 	istio "istio.io/api/networking/v1alpha3"
@@ -13,7 +12,6 @@ import (
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -23,12 +21,12 @@ const (
 )
 
 func buildVirtualService(name, namespace, host, protocol string, port uint32) *istiov1alpha3.VirtualService {
-	if IsIp(host) {
+	if isIp(host) {
 		return nil
 	}
 
 	return &istiov1alpha3.VirtualService{
-		ObjectMeta: BuildObjectMeta(name, namespace),
+		ObjectMeta: buildObjectMeta(name, namespace),
 		Spec:       buildVirtualServiceSpec(host, protocol, port),
 	}
 }
@@ -79,11 +77,9 @@ func buildVirtualServiceTLSRoute(host string, port uint32) []*istio.TLSRoute {
 	}}
 }
 
-func handleIstioConfigurationForVirtualService(instance *dynatracev1beta1.DynaKube,
-	name string, communicationHost dtclient.CommunicationHost, role string, config *rest.Config, namespace string,
-	istioClient istioclientset.Interface, scheme *runtime.Scheme, log logr.Logger) (bool, error) {
+func handleIstioConfigurationForVirtualService(istioConfig *istioConfiguration, log logr.Logger) (bool, error) {
 
-	probe, err := kubeobjects.KubernetesObjectProbe(VirtualServiceGVK, instance.GetNamespace(), name, config)
+	probe, err := kubeobjects.KubernetesObjectProbe(VirtualServiceGVK, istioConfig.instance.GetNamespace(), istioConfig.name, istioConfig.reconciler.config)
 	if probe == kubeobjects.ProbeObjectFound {
 		return false, nil
 	} else if probe == kubeobjects.ProbeUnknown {
@@ -91,19 +87,19 @@ func handleIstioConfigurationForVirtualService(instance *dynatracev1beta1.DynaKu
 		return false, err
 	}
 
-	virtualService := buildVirtualService(name, namespace, communicationHost.Host, communicationHost.Protocol,
-		communicationHost.Port)
+	virtualService := buildVirtualService(istioConfig.name, istioConfig.instance.GetNamespace(), istioConfig.commHost.Host, istioConfig.commHost.Protocol,
+		istioConfig.commHost.Port)
 	if virtualService == nil {
 		return false, nil
 	}
 
-	err = createIstioConfigurationForVirtualService(instance, virtualService, role, istioClient, scheme)
+	err = createIstioConfigurationForVirtualService(istioConfig.instance, virtualService, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
 	if err != nil {
 		log.Error(err, "istio: failed to create VirtualService")
 		return false, err
 	}
-	log.Info("istio: VirtualService created", "objectName", name, "host", communicationHost.Host,
-		"port", communicationHost.Port, "protocol", communicationHost.Protocol)
+	log.Info("istio: VirtualService created", "objectName", istioConfig.name, "host", istioConfig.commHost.Host,
+		"port", istioConfig.commHost.Port, "protocol", istioConfig.commHost.Protocol)
 
 	return true, nil
 }
@@ -112,15 +108,15 @@ func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKu
 	virtualService *istiov1alpha3.VirtualService, role string,
 	istioClient istioclientset.Interface, scheme *runtime.Scheme) error {
 
-	virtualService.Labels = BuildIstioLabels(dynaKube.GetName(), role)
+	virtualService.Labels = buildIstioLabels(dynaKube.GetName(), role)
 	if err := controllerutil.SetControllerReference(dynaKube, virtualService, scheme); err != nil {
 		return err
 	}
-	vs, err := istioClient.NetworkingV1alpha3().VirtualServices(dynaKube.GetNamespace()).Create(context.TODO(), virtualService, metav1.CreateOptions{})
+	createdVirtualService, err := istioClient.NetworkingV1alpha3().VirtualServices(dynaKube.GetNamespace()).Create(context.TODO(), virtualService, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
-	if vs == nil {
+	if createdVirtualService == nil {
 		return fmt.Errorf("could not create virtual service with spec %v", virtualService.Spec)
 	}
 

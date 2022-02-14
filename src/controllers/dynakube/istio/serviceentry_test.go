@@ -14,14 +14,14 @@ import (
 const (
 	testName        = "test-name"
 	testPort1String = "1234"
+	testNamespace   = "dynatrace"
 )
 
 func TestServiceEntryGeneration(t *testing.T) {
 	const (
-		testName      = "com1"
-		testNamespace = "dynatrace"
-		testHost      = "comtest.com"
-		testPort      = 9999
+		testName = "com1"
+		testHost = "comtest.com"
+		testPort = 9999
 	)
 
 	t.Run(`generate with hostname`, func(t *testing.T) {
@@ -75,7 +75,6 @@ func TestServiceEntryGeneration(t *testing.T) {
 }
 
 func TestBuildServiceEntryForHostname(t *testing.T) {
-	const testNamespace = "dynatrace"
 	expected := buildExpectedServiceEntryForHostname(t)
 	result := buildServiceEntryFQDN(testName, testNamespace, testHost1, protocolHttp, testPort1)
 	assert.EqualValues(t, expected, result)
@@ -85,7 +84,6 @@ func TestBuildServiceEntryForHostname(t *testing.T) {
 }
 
 func TestBuildServiceEntryIp(t *testing.T) {
-	const testNamespace = "dynatrace"
 	expected := buildExpectedServiceEntryForIp(t)
 	result := buildServiceEntryIP(testName, testNamespace, testHost1, testPort1)
 	assert.EqualValues(t, expected, result)
@@ -95,7 +93,6 @@ func TestBuildServiceEntryIp(t *testing.T) {
 }
 
 func buildExpectedServiceEntryForHostname(_ *testing.T) *istiov1alpha3.ServiceEntry {
-	const testNamespace = "dynatrace"
 	return &istiov1alpha3.ServiceEntry{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
@@ -115,7 +112,6 @@ func buildExpectedServiceEntryForHostname(_ *testing.T) *istiov1alpha3.ServiceEn
 }
 
 func buildExpectedServiceEntryForIp(_ *testing.T) *istiov1alpha3.ServiceEntry {
-	const testNamespace = "dynatrace"
 	return &istiov1alpha3.ServiceEntry{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,

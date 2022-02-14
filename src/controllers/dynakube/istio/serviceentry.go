@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/go-logr/logr"
 	istio "istio.io/api/networking/v1alpha3"
@@ -16,7 +15,6 @@ import (
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
@@ -39,7 +37,7 @@ func buildServiceEntryFQDN(name, namespace, host, protocol string, port uint32) 
 	protocolStr := strings.ToUpper(protocol)
 
 	return &istiov1alpha3.ServiceEntry{
-		ObjectMeta: BuildObjectMeta(name, namespace),
+		ObjectMeta: buildObjectMeta(name, namespace),
 		Spec: istio.ServiceEntry{
 			Hosts: []string{host},
 			Ports: []*istio.Port{{
@@ -57,7 +55,7 @@ func buildServiceEntryIP(name, namespace, host string, port uint32) *istiov1alph
 	portStr := strconv.Itoa(int(port))
 
 	return &istiov1alpha3.ServiceEntry{
-		ObjectMeta: BuildObjectMeta(name, namespace),
+		ObjectMeta: buildObjectMeta(name, namespace),
 		Spec: istio.ServiceEntry{
 			Hosts:     []string{ignoredSubdomain},
 			Addresses: []string{host + subnetMask},
@@ -72,11 +70,9 @@ func buildServiceEntryIP(name, namespace, host string, port uint32) *istiov1alph
 	}
 }
 
-func handleIstioConfigurationForServiceEntry(instance *dynatracev1beta1.DynaKube,
-	name string, communicationHost dtclient.CommunicationHost, role string, config *rest.Config, namespace string,
-	istioClient istioclientset.Interface, scheme *runtime.Scheme, log logr.Logger) (bool, error) {
+func handleIstioConfigurationForServiceEntry(istioConfig *istioConfiguration, log logr.Logger) (bool, error) {
 
-	probe, err := kubeobjects.KubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), name, config)
+	probe, err := kubeobjects.KubernetesObjectProbe(ServiceEntryGVK, istioConfig.instance.GetNamespace(), istioConfig.name, istioConfig.reconciler.config)
 	if probe == kubeobjects.ProbeObjectFound {
 		return false, nil
 	} else if probe == kubeobjects.ProbeUnknown {
@@ -84,13 +80,13 @@ func handleIstioConfigurationForServiceEntry(instance *dynatracev1beta1.DynaKube
 		return false, err
 	}
 
-	serviceEntry := buildServiceEntry(name, namespace, communicationHost.Host, communicationHost.Protocol, communicationHost.Port)
-	err = createIstioConfigurationForServiceEntry(instance, serviceEntry, role, istioClient, scheme)
+	serviceEntry := buildServiceEntry(istioConfig.name, istioConfig.instance.GetNamespace(), istioConfig.commHost.Host, istioConfig.commHost.Protocol, istioConfig.commHost.Port)
+	err = createIstioConfigurationForServiceEntry(istioConfig.instance, serviceEntry, istioConfig.role, istioConfig.reconciler.istioClient, istioConfig.reconciler.scheme)
 	if err != nil {
 		log.Error(err, "istio: failed to create ServiceEntry")
 		return false, err
 	}
-	log.Info("istio: ServiceEntry created", "objectName", name, "host", communicationHost.Host, "port", communicationHost.Port)
+	log.Info("istio: ServiceEntry created", "objectName", istioConfig.name, "host", istioConfig.commHost.Host, "port", istioConfig.commHost.Port)
 
 	return true, nil
 }
@@ -99,7 +95,7 @@ func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube
 	serviceEntry *istiov1alpha3.ServiceEntry, role string,
 	istioClient istioclientset.Interface, scheme *runtime.Scheme) error {
 
-	serviceEntry.Labels = BuildIstioLabels(dynaKube.GetName(), role)
+	serviceEntry.Labels = buildIstioLabels(dynaKube.GetName(), role)
 	if err := controllerutil.SetControllerReference(dynaKube, serviceEntry, scheme); err != nil {
 		return err
 	}

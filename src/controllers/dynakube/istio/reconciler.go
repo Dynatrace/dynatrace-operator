@@ -28,23 +28,31 @@ type IstioReconciler struct {
 	namespace   string
 }
 
+type istioConfiguration struct {
+	instance   *dynatracev1beta1.DynaKube
+	reconciler *IstioReconciler
+	name       string
+	commHost   *dtclient.CommunicationHost
+	role       string
+}
+
 // NewIstioReconciler - creates new instance of istio controller
 func NewIstioReconciler(config *rest.Config, scheme *runtime.Scheme) *IstioReconciler {
-	r := &IstioReconciler{
+	reconciler := &IstioReconciler{
 		config:    config,
 		scheme:    scheme,
 		namespace: os.Getenv("POD_NAMESPACE"),
 	}
-	istioClient, err := r.initializeIstioClient(config)
+	istioClient, err := reconciler.initializeIstioClient(config)
 	if err != nil {
 		return nil
 	}
-	r.istioClient = istioClient
+	reconciler.istioClient = istioClient
 
-	return r
+	return reconciler
 }
 
-func (r *IstioReconciler) initializeIstioClient(config *rest.Config) (istioclientset.Interface, error) {
+func (reconciler *IstioReconciler) initializeIstioClient(config *rest.Config) (istioclientset.Interface, error) {
 	ic, err := istioclientset.NewForConfig(config)
 	if err != nil {
 		log.Error(err, "istio: failed to initialize client")
@@ -55,9 +63,9 @@ func (r *IstioReconciler) initializeIstioClient(config *rest.Config) (istioclien
 
 // ReconcileIstio - runs the istio's reconcile workflow,
 // creating/deleting VS & SE for external communications
-func (r *IstioReconciler) ReconcileIstio(instance *dynatracev1beta1.DynaKube) (updated bool, err error) {
+func (reconciler *IstioReconciler) ReconcileIstio(instance *dynatracev1beta1.DynaKube) (updated bool, err error) {
 
-	enabled, err := CheckIstioEnabled(r.config)
+	enabled, err := CheckIstioEnabled(reconciler.config)
 	if err != nil {
 		return false, fmt.Errorf("istio: failed to verify Istio availability: %w", err)
 	}
@@ -68,7 +76,7 @@ func (r *IstioReconciler) ReconcileIstio(instance *dynatracev1beta1.DynaKube) (u
 	}
 
 	apiHost := instance.CommunicationHostForClient()
-	if upd, err := r.reconcileIstioConfigurations(instance, []dtclient.CommunicationHost{apiHost}, "api-url"); err != nil {
+	if upd, err := reconciler.reconcileIstioConfigurations(instance, []dtclient.CommunicationHost{apiHost}, "api-url"); err != nil {
 		return false, fmt.Errorf("istio: error reconciling config for Dynatrace API URL: %w", err)
 	} else if upd {
 		return true, nil
@@ -76,7 +84,7 @@ func (r *IstioReconciler) ReconcileIstio(instance *dynatracev1beta1.DynaKube) (u
 
 	// Fetch endpoints via Dynatrace client
 	ci := instance.ConnectionInfo()
-	if upd, err := r.reconcileIstioConfigurations(instance, ci.CommunicationHosts, "communication-endpoint"); err != nil {
+	if upd, err := reconciler.reconcileIstioConfigurations(instance, ci.CommunicationHosts, "communication-endpoint"); err != nil {
 		return false, fmt.Errorf("istio: error reconciling config for Dynatrace communication endpoints: %w", err)
 	} else if upd {
 		return true, nil
@@ -85,14 +93,14 @@ func (r *IstioReconciler) ReconcileIstio(instance *dynatracev1beta1.DynaKube) (u
 	return false, nil
 }
 
-func (r *IstioReconciler) reconcileIstioConfigurations(instance *dynatracev1beta1.DynaKube,
+func (reconciler *IstioReconciler) reconcileIstioConfigurations(instance *dynatracev1beta1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
-	add, err := r.reconcileIstioCreateConfigurations(instance, comHosts, role)
+	add, err := reconciler.reconcileIstioCreateConfigurations(instance, comHosts, role)
 	if err != nil {
 		return false, err
 	}
-	rem, err := r.reconcileIstioRemoveConfigurations(instance, comHosts, role)
+	rem, err := reconciler.reconcileIstioRemoveConfigurations(instance, comHosts, role)
 	if err != nil {
 		return false, err
 	}
@@ -100,24 +108,24 @@ func (r *IstioReconciler) reconcileIstioConfigurations(instance *dynatracev1beta
 	return add || rem, nil
 }
 
-func (r *IstioReconciler) reconcileIstioRemoveConfigurations(instance *dynatracev1beta1.DynaKube,
+func (reconciler *IstioReconciler) reconcileIstioRemoveConfigurations(instance *dynatracev1beta1.DynaKube,
 	comHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
-	labelSelector := labels.SelectorFromSet(BuildIstioLabels(instance.GetName(), role)).String()
+	labelSelector := labels.SelectorFromSet(buildIstioLabels(instance.GetName(), role)).String()
 	listOps := &metav1.ListOptions{
 		LabelSelector: labelSelector,
 	}
 
-	seen := map[string]bool{}
-	for _, ch := range comHosts {
-		seen[BuildNameForEndpoint(instance.GetName(), ch.Protocol, ch.Host, ch.Port)] = true
+	seenComHosts := map[string]bool{}
+	for _, comHost := range comHosts {
+		seenComHosts[buildNameForEndpoint(instance.GetName(), comHost.Protocol, comHost.Host, comHost.Port)] = true
 	}
 
-	vsUpd, err := r.removeIstioConfigurationForVirtualService(listOps, seen, instance.GetNamespace())
+	vsUpd, err := reconciler.removeIstioConfigurationForVirtualService(listOps, seenComHosts, instance.GetNamespace())
 	if err != nil {
 		return false, err
 	}
-	seUpd, err := r.removeIstioConfigurationForServiceEntry(listOps, seen, instance.GetNamespace())
+	seUpd, err := reconciler.removeIstioConfigurationForServiceEntry(listOps, seenComHosts, instance.GetNamespace())
 	if err != nil {
 		return false, err
 	}
@@ -125,10 +133,10 @@ func (r *IstioReconciler) reconcileIstioRemoveConfigurations(instance *dynatrace
 	return vsUpd || seUpd, nil
 }
 
-func (r *IstioReconciler) removeIstioConfigurationForServiceEntry(listOps *metav1.ListOptions,
+func (reconciler *IstioReconciler) removeIstioConfigurationForServiceEntry(listOps *metav1.ListOptions,
 	seen map[string]bool, namespace string) (bool, error) {
 
-	list, err := r.istioClient.NetworkingV1alpha3().ServiceEntries(namespace).List(context.TODO(), *listOps)
+	list, err := reconciler.istioClient.NetworkingV1alpha3().ServiceEntries(namespace).List(context.TODO(), *listOps)
 	if err != nil {
 		log.Error(err, "istio: error listing service entries")
 		return false, err
@@ -138,7 +146,7 @@ func (r *IstioReconciler) removeIstioConfigurationForServiceEntry(listOps *metav
 	for _, se := range list.Items {
 		if _, inUse := seen[se.GetName()]; !inUse {
 			log.Info("istio: removing", "kind", se.Kind, "name", se.GetName())
-			err = r.istioClient.NetworkingV1alpha3().
+			err = reconciler.istioClient.NetworkingV1alpha3().
 				ServiceEntries(namespace).
 				Delete(context.TODO(), se.GetName(), metav1.DeleteOptions{})
 			if err != nil {
@@ -152,10 +160,10 @@ func (r *IstioReconciler) removeIstioConfigurationForServiceEntry(listOps *metav
 	return del, nil
 }
 
-func (r *IstioReconciler) removeIstioConfigurationForVirtualService(listOps *metav1.ListOptions,
+func (reconciler *IstioReconciler) removeIstioConfigurationForVirtualService(listOps *metav1.ListOptions,
 	seen map[string]bool, namespace string) (bool, error) {
 
-	list, err := r.istioClient.NetworkingV1alpha3().VirtualServices(namespace).List(context.TODO(), *listOps)
+	list, err := reconciler.istioClient.NetworkingV1alpha3().VirtualServices(namespace).List(context.TODO(), *listOps)
 	if err != nil {
 		log.Error(err, "istio: error listing virtual service")
 		return false, err
@@ -165,7 +173,7 @@ func (r *IstioReconciler) removeIstioConfigurationForVirtualService(listOps *met
 	for _, vs := range list.Items {
 		if _, inUse := seen[vs.GetName()]; !inUse {
 			log.Info("istio: removing", "kind", vs.Kind, "name", vs.GetName())
-			err = r.istioClient.NetworkingV1alpha3().
+			err = reconciler.istioClient.NetworkingV1alpha3().
 				VirtualServices(namespace).
 				Delete(context.TODO(), vs.GetName(), metav1.DeleteOptions{})
 			if err != nil {
@@ -179,10 +187,10 @@ func (r *IstioReconciler) removeIstioConfigurationForVirtualService(listOps *met
 	return del, nil
 }
 
-func (r *IstioReconciler) reconcileIstioCreateConfigurations(instance *dynatracev1beta1.DynaKube,
+func (reconciler *IstioReconciler) reconcileIstioCreateConfigurations(instance *dynatracev1beta1.DynaKube,
 	communicationHosts []dtclient.CommunicationHost, role string) (bool, error) {
 
-	crdProbe := VerifyIstioCrdAvailability(instance, r.config)
+	crdProbe := verifyIstioCrdAvailability(instance, reconciler.config)
 	if crdProbe != kubeobjects.ProbeTypeFound {
 		log.Info("istio: failed to lookup CRD for ServiceEntry/VirtualService: Did you install Istio recently? Please restart the Operator.")
 		return false, nil
@@ -190,13 +198,21 @@ func (r *IstioReconciler) reconcileIstioCreateConfigurations(instance *dynatrace
 
 	configurationUpdated := false
 	for _, commHost := range communicationHosts {
-		name := BuildNameForEndpoint(instance.GetName(), commHost.Protocol, commHost.Host, commHost.Port)
+		name := buildNameForEndpoint(instance.GetName(), commHost.Protocol, commHost.Host, commHost.Port)
 
-		createdServiceEntry, err := r.handleIstioConfigurationForServiceEntry(instance, name, commHost, role)
+		istioConfig := &istioConfiguration{
+			instance:   instance,
+			reconciler: reconciler,
+			name:       name,
+			commHost:   &commHost,
+			role:       role,
+		}
+
+		createdServiceEntry, err := handleIstioConfigurationForServiceEntry(istioConfig, log)
 		if err != nil {
 			return false, err
 		}
-		createdVirtualService, err := r.handleIstioConfigurationForVirtualService(instance, name, commHost, role)
+		createdVirtualService, err := handleIstioConfigurationForVirtualService(istioConfig, log)
 		if err != nil {
 			return false, err
 		}
@@ -207,64 +223,14 @@ func (r *IstioReconciler) reconcileIstioCreateConfigurations(instance *dynatrace
 	return configurationUpdated, nil
 }
 
-func (r *IstioReconciler) handleIstioConfigurationForVirtualService(instance *dynatracev1beta1.DynaKube,
-	name string, communicationHost dtclient.CommunicationHost, role string) (bool, error) {
-
-	probe, err := r.kubernetesObjectProbe(VirtualServiceGVK, instance.GetNamespace(), name)
-	if probe == kubeobjects.ProbeObjectFound {
-		return false, nil
-	} else if probe == kubeobjects.ProbeUnknown {
-		log.Error(err, "istio: failed to query VirtualService")
-		return false, err
-	}
-
-	virtualService := buildVirtualService(name, r.namespace, communicationHost.Host, communicationHost.Protocol,
-		communicationHost.Port)
-	if virtualService == nil {
-		return false, nil
-	}
-
-	err = r.createIstioConfigurationForVirtualService(instance, virtualService, role)
-	if err != nil {
-		log.Error(err, "istio: failed to create VirtualService")
-		return false, err
-	}
-	log.Info("istio: VirtualService created", "objectName", name, "host", communicationHost.Host,
-		"port", communicationHost.Port, "protocol", communicationHost.Protocol)
-
-	return true, nil
-}
-
-func (r *IstioReconciler) handleIstioConfigurationForServiceEntry(instance *dynatracev1beta1.DynaKube,
-	name string, communicationHost dtclient.CommunicationHost, role string) (bool, error) {
-
-	probe, err := r.kubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), name)
-	if probe == kubeobjects.ProbeObjectFound {
-		return false, nil
-	} else if probe == kubeobjects.ProbeUnknown {
-		log.Error(err, "istio: failed to query ServiceEntry")
-		return false, err
-	}
-
-	serviceEntry := buildServiceEntry(name, r.namespace, communicationHost.Host, communicationHost.Protocol, communicationHost.Port)
-	err = r.createIstioConfigurationForServiceEntry(instance, serviceEntry, role)
-	if err != nil {
-		log.Error(err, "istio: failed to create ServiceEntry")
-		return false, err
-	}
-	log.Info("istio: ServiceEntry created", "objectName", name, "host", communicationHost.Host, "port", communicationHost.Port)
-
-	return true, nil
-}
-
-func (r *IstioReconciler) createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube,
+func (reconciler *IstioReconciler) createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube,
 	serviceEntry *istiov1alpha3.ServiceEntry, role string) error {
 
-	serviceEntry.Labels = BuildIstioLabels(dynaKube.GetName(), role)
-	if err := controllerutil.SetControllerReference(dynaKube, serviceEntry, r.scheme); err != nil {
+	serviceEntry.Labels = buildIstioLabels(dynaKube.GetName(), role)
+	if err := controllerutil.SetControllerReference(dynaKube, serviceEntry, reconciler.scheme); err != nil {
 		return err
 	}
-	sve, err := r.istioClient.NetworkingV1alpha3().ServiceEntries(dynaKube.GetNamespace()).Create(context.TODO(), serviceEntry, metav1.CreateOptions{})
+	sve, err := reconciler.istioClient.NetworkingV1alpha3().ServiceEntries(dynaKube.GetNamespace()).Create(context.TODO(), serviceEntry, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -274,14 +240,14 @@ func (r *IstioReconciler) createIstioConfigurationForServiceEntry(dynaKube *dyna
 	return nil
 }
 
-func (r *IstioReconciler) createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKube,
+func (reconciler *IstioReconciler) createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKube,
 	virtualService *istiov1alpha3.VirtualService, role string) error {
 
-	virtualService.Labels = BuildIstioLabels(dynaKube.GetName(), role)
-	if err := controllerutil.SetControllerReference(dynaKube, virtualService, r.scheme); err != nil {
+	virtualService.Labels = buildIstioLabels(dynaKube.GetName(), role)
+	if err := controllerutil.SetControllerReference(dynaKube, virtualService, reconciler.scheme); err != nil {
 		return err
 	}
-	vs, err := r.istioClient.NetworkingV1alpha3().VirtualServices(dynaKube.GetNamespace()).Create(context.TODO(), virtualService, metav1.CreateOptions{})
+	vs, err := reconciler.istioClient.NetworkingV1alpha3().VirtualServices(dynaKube.GetNamespace()).Create(context.TODO(), virtualService, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -292,22 +258,21 @@ func (r *IstioReconciler) createIstioConfigurationForVirtualService(dynaKube *dy
 	return nil
 }
 
-func (r *IstioReconciler) kubernetesObjectProbe(gvk schema.GroupVersionKind,
-	namespace string, name string) (kubeobjects.ProbeResult, error) {
+func (reconciler *IstioReconciler) kubernetesObjectProbe(gvk schema.GroupVersionKind, config *istioConfiguration) (kubeobjects.ProbeResult, error) {
 
 	var objQuery unstructured.Unstructured
 	objQuery.Object = make(map[string]interface{})
 
 	objQuery.SetGroupVersionKind(gvk)
 
-	runtimeClient, err := client.New(r.config, client.Options{})
+	runtimeClient, err := client.New(reconciler.config, client.Options{})
 	if err != nil {
 		return kubeobjects.ProbeUnknown, err
 	}
-	if name == "" {
-		err = runtimeClient.List(context.TODO(), &objQuery, client.InNamespace(namespace))
+	if config.name == "" {
+		err = runtimeClient.List(context.TODO(), &objQuery, client.InNamespace(config.instance.GetNamespace()))
 	} else {
-		err = runtimeClient.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: name}, &objQuery)
+		err = runtimeClient.Get(context.TODO(), client.ObjectKey{Namespace: config.instance.GetNamespace(), Name: config.name}, &objQuery)
 	}
 
 	return kubeobjects.MapErrorToObjectProbeResult(err)

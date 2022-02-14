@@ -19,14 +19,14 @@ func CheckIstioEnabled(cfg *rest.Config) (bool, error) {
 	}
 
 	for _, apiGroup := range apiGroupList.Groups {
-		if apiGroup.Name == IstioGVRName {
+		if apiGroup.Name == istioGVRName {
 			return true, nil
 		}
 	}
 	return false, nil
 }
 
-func VerifyIstioCrdAvailability(instance *dynatracev1beta1.DynaKube, config *rest.Config) kubeobjects.ProbeResult {
+func verifyIstioCrdAvailability(instance *dynatracev1beta1.DynaKube, config *rest.Config) kubeobjects.ProbeResult {
 	var probe kubeobjects.ProbeResult
 
 	probe, _ = kubeobjects.KubernetesObjectProbe(ServiceEntryGVK, instance.GetNamespace(), "", config)
