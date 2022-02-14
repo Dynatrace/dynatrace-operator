@@ -63,6 +63,11 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 			OneAgent: dynatracev1beta1.OneAgentSpec{
 				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
 			},
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+					dynatracev1beta1.CapabilityDisplayName(dynatracev1beta1.StatsdIngestCapability.ShortName),
+				},
+			},
 		},
 	}
 
@@ -78,6 +83,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 
 	t.Run("all image versions were updated", func(t *testing.T) {
 		dk := dkTemplate.DeepCopy()
+
 		dkState, fakeClient, now := testInitDynakubeState(t, dk)
 		status := &dkState.Instance.Status
 		registry := newFakeRegistry(map[string]string{

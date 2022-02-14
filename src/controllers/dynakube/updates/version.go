@@ -36,11 +36,11 @@ func ReconcileVersions(
 		!dk.FeatureDisableActiveGateUpdates() &&
 		dkState.IsOutdated(dk.Status.ActiveGate.LastUpdateProbeTimestamp, ProbeThreshold)
 
-	needsEecUpdate := dk.NeedsActiveGate() &&
+	needsEecUpdate := dk.NeedsStatsd() &&
 		!dk.FeatureDisableActiveGateUpdates() &&
 		dkState.IsOutdated(dk.Status.ExtensionController.LastUpdateProbeTimestamp, ProbeThreshold)
 
-	needsStatsdUpdate := dk.NeedsActiveGate() &&
+	needsStatsdUpdate := dk.NeedsStatsd() &&
 		!dk.FeatureDisableActiveGateUpdates() &&
 		dkState.IsOutdated(dk.Status.Statsd.LastUpdateProbeTimestamp, ProbeThreshold)
 

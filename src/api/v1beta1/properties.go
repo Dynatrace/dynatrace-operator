@@ -117,58 +117,17 @@ func (dk *DynaKube) PullSecret() string {
 
 // ActiveGateImage returns the ActiveGate image to be used with the dk DynaKube instance.
 func (dk *DynaKube) ActiveGateImage() string {
-	if dk.DeprecatedActiveGateMode() {
-		if dk.Spec.KubernetesMonitoring.Image != "" {
-			return dk.Spec.KubernetesMonitoring.Image
-		} else if dk.Spec.Routing.Image != "" {
-			return dk.Spec.Routing.Image
-		}
-	} else if dk.ActiveGateMode() {
-		if dk.Spec.ActiveGate.Image != "" {
-			return dk.Spec.ActiveGate.Image
-		}
-	}
-
-	if dk.Spec.APIURL == "" {
-		return ""
-	}
-
-	registry := buildImageRegistry(dk.Spec.APIURL)
-	return fmt.Sprintf("%s/linux/activegate:latest", registry)
+	return resolveImagePath(newActiveGateImagePath(dk))
 }
 
 // EecImage returns the Extension Controller image to be used with the dk DynaKube instance.
 func (dk *DynaKube) EecImage() string {
-	if dk.ActiveGateMode() {
-		eecImage := dk.FeatureCustomEecImage()
-		if len(eecImage) > 0 {
-			return eecImage
-		}
-	}
-
-	if dk.Spec.APIURL == "" {
-		return ""
-	}
-
-	registry := buildImageRegistry(dk.Spec.APIURL)
-	return fmt.Sprintf("%s/linux/dynatrace-eec:latest", registry)
+	return resolveImagePath(newEecImagePath(dk))
 }
 
 // StatsdImage returns the StatsD data source image to be used with the dk DynaKube instance.
 func (dk *DynaKube) StatsdImage() string {
-	if dk.ActiveGateMode() {
-		statsdImage := dk.FeatureCustomStatsdImage()
-		if len(statsdImage) > 0 {
-			return statsdImage
-		}
-	}
-
-	if dk.Spec.APIURL == "" {
-		return ""
-	}
-
-	registry := buildImageRegistry(dk.Spec.APIURL)
-	return fmt.Sprintf("%s/linux/dynatrace-datasource-statsd:latest", registry)
+	return resolveImagePath(newStatsdImagePath(dk))
 }
 
 func (dk *DynaKube) NeedsCSIDriver() bool {
@@ -253,13 +212,6 @@ func (dk *DynaKube) ImmutableOneAgentImage() string {
 
 	registry := buildImageRegistry(dk.Spec.APIURL)
 	return fmt.Sprintf("%s/linux/oneagent:%s", registry, tag)
-}
-
-func buildImageRegistry(apiURL string) string {
-	registry := strings.TrimPrefix(apiURL, "https://")
-	registry = strings.TrimPrefix(registry, "http://")
-	registry = strings.TrimSuffix(registry, "/api")
-	return registry
 }
 
 // Tokens returns the name of the Secret to be used for tokens.
