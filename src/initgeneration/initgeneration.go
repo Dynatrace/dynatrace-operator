@@ -85,12 +85,12 @@ func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaK
 		return nil, err
 	}
 
-	infraMonitoringNodes, err := g.getInfraMonitoringNodes(dk)
+	hostMonitoringNodes, err := g.getHostMonitoringNodes(dk)
 	if err != nil {
 		return nil, err
 	}
 
-	secretConfig, err := g.prepareSecretConfigForDynaKube(dk, kubeSystemUID, infraMonitoringNodes)
+	secretConfig, err := g.prepareSecretConfigForDynaKube(dk, kubeSystemUID, hostMonitoringNodes)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaK
 	return data, nil
 }
 
-func (g *InitGenerator) prepareSecretConfigForDynaKube(dk *dynatracev1beta1.DynaKube, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) (*standalone.SecretConfig, error) {
+func (g *InitGenerator) prepareSecretConfigForDynaKube(dk *dynatracev1beta1.DynaKube, kubeSystemUID types.UID, hostMonitoringNodes map[string]string) (*standalone.SecretConfig, error) {
 	var tokens corev1.Secret
 	if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
@@ -141,40 +141,40 @@ func (g *InitGenerator) prepareSecretConfigForDynaKube(dk *dynatracev1beta1.Dyna
 
 	return &standalone.SecretConfig{
 		ApiUrl:          dk.Spec.APIURL,
-		ApiToken:        string(getAPIToken(tokens)),
-		PaasToken:       string(getPaasToken(tokens)),
+		ApiToken:        getAPIToken(tokens),
+		PaasToken:       getPaasToken(tokens),
 		Proxy:           proxy,
 		NetworkZone:     dk.Spec.NetworkZone,
 		TrustedCAs:      string(trustedCAs),
 		SkipCertCheck:   dk.Spec.SkipCertCheck,
 		TenantUUID:      dk.Status.ConnectionInfo.TenantUUID,
 		HasHost:         dk.CloudNativeFullstackMode(),
-		MonitoringNodes: infraMonitoringNodes,
+		MonitoringNodes: hostMonitoringNodes,
 		TlsCert:         tlsCert,
 		HostGroup:       dk.HostGroup(),
 		ClusterID:       string(kubeSystemUID),
 	}, nil
 }
 
-func getPaasToken(tokens corev1.Secret) []byte {
+func getPaasToken(tokens corev1.Secret) string {
 	if len(tokens.Data[dtclient.DynatracePaasToken]) != 0 {
-		return tokens.Data[dtclient.DynatracePaasToken]
+		return string(tokens.Data[dtclient.DynatracePaasToken])
 	}
-	return tokens.Data[dtclient.DynatraceApiToken]
+	return string(tokens.Data[dtclient.DynatraceApiToken])
 }
 
-func getAPIToken(tokens corev1.Secret) []byte {
-	return tokens.Data[dtclient.DynatraceApiToken]
+func getAPIToken(tokens corev1.Secret) string {
+	return string(tokens.Data[dtclient.DynatraceApiToken])
 }
 
-// getInfraMonitoringNodes creates a mapping between all the nodes and the tenantUID for the infra-monitoring dynakube on that node.
+// getHostMonitoringNodes creates a mapping between all the nodes and the tenantUID for the host-monitoring dynakube on that node.
 // Possible mappings:
-// - mapped: there is a infra-monitoring agent on the node, and the dynakube has the tenantUID set => user processes will be grouped to the hosts  (["node.Name"] = "dynakube.tenantUID")
-// - not-mapped: there is NO infra-monitoring agent on the node => user processes will show up as individual 'fake' hosts (["node.Name"] = "-")
-// - unknown: there SHOULD be a infra-monitoring agent on the node, but dynakube has NO tenantUID set => user processes will restart until this is fixed (node.Name not present in the map)
+// - mapped: there is a host-monitoring agent on the node, and the dynakube has the tenantUID set => user processes will be grouped to the hosts  (["node.Name"] = "dynakube.tenantUID")
+// - not-mapped: there is NO host-monitoring agent on the node => user processes will show up as individual 'fake' hosts (["node.Name"] = "-")
+// - unknown: there SHOULD be a host-monitoring agent on the node, but dynakube has NO tenantUID set => user processes will restart until this is fixed (node.Name not present in the map)
 //
-// Checks all the dynakubes with infra-monitoring against all the nodes (using the nodeSelector), creating the above mentioned mapping.
-func (g *InitGenerator) getInfraMonitoringNodes(dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
+// Checks all the dynakubes with host-monitoring against all the nodes (using the nodeSelector), creating the above mentioned mapping.
+func (g *InitGenerator) getHostMonitoringNodes(dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
 
 	imNodes := map[string]string{}
 	if !dk.CloudNativeFullstackMode() {

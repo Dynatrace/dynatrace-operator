@@ -8,10 +8,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-var (
-	SecretConfigMount     = filepath.Join("mnt", "config")
-	SecretConfigFieldName = "config"
-)
+var ()
 
 type SecretConfig struct {
 	// For the client
@@ -35,7 +32,7 @@ type SecretConfig struct {
 }
 
 func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
-	file, err := fs.Open(filepath.Join(SecretConfigMount, SecretConfigFieldName))
+	file, err := fs.Open(filepath.Join(ConfigDirMount, SecretConfigFieldName))
 	if err != nil {
 		return nil, err
 	}

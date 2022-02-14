@@ -293,7 +293,7 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		clt := fake.NewClient(testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 		ig.canWatchNodes = true
-		imNodes, err := ig.getInfraMonitoringNodes(testDynakubeSimple)
+		imNodes, err := ig.getHostMonitoringNodes(testDynakubeSimple)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(imNodes))
 		assert.Equal(t, testTenantUUID, imNodes[testNode1Name])
@@ -303,7 +303,7 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		clt := fake.NewClient()
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 		ig.canWatchNodes = false
-		imNodes, err := ig.getInfraMonitoringNodes(testDynakubeSimple)
+		imNodes, err := ig.getHostMonitoringNodes(testDynakubeSimple)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(imNodes))
 		assert.Equal(t, testTenantUUID, imNodes[testNode2Name])
@@ -312,7 +312,7 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		clt := fake.NewClient(testNodeWithLabels, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 		ig.canWatchNodes = true
-		imNodes, err := ig.getInfraMonitoringNodes(testDynakubeWithSelector)
+		imNodes, err := ig.getHostMonitoringNodes(testDynakubeWithSelector)
 		assert.NoError(t, err)
 		assert.Equal(t, 3, len(imNodes))
 		assert.Equal(t, standalone.NoHostTenant, imNodes[testNode1Name])

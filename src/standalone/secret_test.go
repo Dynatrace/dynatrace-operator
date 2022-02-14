@@ -72,9 +72,9 @@ func TestNewSecretConfigViaFs(t *testing.T) {
 
 func prepTestFs(t *testing.T) afero.Fs {
 	fs := afero.NewMemMapFs()
-	require.NoError(t, fs.MkdirAll(SecretConfigMount, 0770))
+	require.NoError(t, fs.MkdirAll(ConfigDirMount, 0770))
 
-	file, err := fs.OpenFile(filepath.Join(SecretConfigMount, SecretConfigFieldName), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
+	file, err := fs.OpenFile(filepath.Join(ConfigDirMount, SecretConfigFieldName), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
 	require.NoError(t, err)
 	require.NotNil(t, file)
 

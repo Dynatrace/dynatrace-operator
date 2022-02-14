@@ -10,21 +10,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-const (
-	NoHostTenant = "-"
-
-	enrichmentFilenameTemplate    = "dt_metadata.%s"
-	ContainerConfFilenameTemplate = "container_%s.conf"
-	ldPreloadFilename             = "ld.so.preload"
-)
-
-var (
-	BinDirMount    = filepath.Join("mnt", "bin")
-	ShareDirMount  = filepath.Join("mnt", "share")
-	ConfigDirMount = filepath.Join("mnt", "config")
-	EnrichmentPath = filepath.Join("var", "lib", "dynatrace", "enrichment")
-)
-
 type Runner struct {
 	fs         afero.Fs
 	env        *environment
