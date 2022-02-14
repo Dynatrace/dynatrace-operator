@@ -108,3 +108,29 @@ func createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube
 	}
 	return nil
 }
+
+func removeIstioConfigurationForServiceEntry(istioConfig *istioConfiguration, seen map[string]bool) (bool, error) {
+
+	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().ServiceEntries(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
+	if err != nil {
+		log.Error(err, "istio: error listing service entries")
+		return false, err
+	}
+
+	del := false
+	for _, se := range list.Items {
+		if _, inUse := seen[se.GetName()]; !inUse {
+			log.Info("istio: removing", "kind", se.Kind, "name", se.GetName())
+			err = istioConfig.reconciler.istioClient.NetworkingV1alpha3().
+				ServiceEntries(istioConfig.instance.GetNamespace()).
+				Delete(context.TODO(), se.GetName(), metav1.DeleteOptions{})
+			if err != nil {
+				log.Error(err, "istio: error deleting service entry", "name", se.GetName())
+				continue
+			}
+			del = true
+		}
+	}
+
+	return del, nil
+}

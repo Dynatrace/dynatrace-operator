@@ -1,23 +1,17 @@
 package istio
 
 import (
-	"context"
 	"fmt"
 	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	istiov1alpha3 "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // IstioReconciler - manager istioclientset and config
@@ -34,6 +28,7 @@ type istioConfiguration struct {
 	name       string
 	commHost   *dtclient.CommunicationHost
 	role       string
+	listOps    *metav1.ListOptions
 }
 
 // NewIstioReconciler - creates new instance of istio controller
@@ -121,70 +116,22 @@ func (reconciler *IstioReconciler) reconcileIstioRemoveConfigurations(instance *
 		seenComHosts[buildNameForEndpoint(instance.GetName(), comHost.Protocol, comHost.Host, comHost.Port)] = true
 	}
 
-	vsUpd, err := reconciler.removeIstioConfigurationForVirtualService(listOps, seenComHosts, instance.GetNamespace())
+	istioConfig := &istioConfiguration{
+		reconciler: reconciler,
+		listOps:    listOps,
+		instance:   instance,
+	}
+
+	vsUpd, err := removeIstioConfigurationForVirtualService(istioConfig, seenComHosts)
 	if err != nil {
 		return false, err
 	}
-	seUpd, err := reconciler.removeIstioConfigurationForServiceEntry(listOps, seenComHosts, instance.GetNamespace())
+	seUpd, err := removeIstioConfigurationForServiceEntry(istioConfig, seenComHosts)
 	if err != nil {
 		return false, err
 	}
 
 	return vsUpd || seUpd, nil
-}
-
-func (reconciler *IstioReconciler) removeIstioConfigurationForServiceEntry(listOps *metav1.ListOptions,
-	seen map[string]bool, namespace string) (bool, error) {
-
-	list, err := reconciler.istioClient.NetworkingV1alpha3().ServiceEntries(namespace).List(context.TODO(), *listOps)
-	if err != nil {
-		log.Error(err, "istio: error listing service entries")
-		return false, err
-	}
-
-	del := false
-	for _, se := range list.Items {
-		if _, inUse := seen[se.GetName()]; !inUse {
-			log.Info("istio: removing", "kind", se.Kind, "name", se.GetName())
-			err = reconciler.istioClient.NetworkingV1alpha3().
-				ServiceEntries(namespace).
-				Delete(context.TODO(), se.GetName(), metav1.DeleteOptions{})
-			if err != nil {
-				log.Error(err, "istio: error deleting service entry", "name", se.GetName())
-				continue
-			}
-			del = true
-		}
-	}
-
-	return del, nil
-}
-
-func (reconciler *IstioReconciler) removeIstioConfigurationForVirtualService(listOps *metav1.ListOptions,
-	seen map[string]bool, namespace string) (bool, error) {
-
-	list, err := reconciler.istioClient.NetworkingV1alpha3().VirtualServices(namespace).List(context.TODO(), *listOps)
-	if err != nil {
-		log.Error(err, "istio: error listing virtual service")
-		return false, err
-	}
-
-	del := false
-	for _, vs := range list.Items {
-		if _, inUse := seen[vs.GetName()]; !inUse {
-			log.Info("istio: removing", "kind", vs.Kind, "name", vs.GetName())
-			err = reconciler.istioClient.NetworkingV1alpha3().
-				VirtualServices(namespace).
-				Delete(context.TODO(), vs.GetName(), metav1.DeleteOptions{})
-			if err != nil {
-				log.Error(err, "istio: error deleting virtual service", "name", vs.GetName())
-				continue
-			}
-			del = true
-		}
-	}
-
-	return del, nil
 }
 
 func (reconciler *IstioReconciler) reconcileIstioCreateConfigurations(instance *dynatracev1beta1.DynaKube,
@@ -221,59 +168,4 @@ func (reconciler *IstioReconciler) reconcileIstioCreateConfigurations(instance *
 	}
 
 	return configurationUpdated, nil
-}
-
-func (reconciler *IstioReconciler) createIstioConfigurationForServiceEntry(dynaKube *dynatracev1beta1.DynaKube,
-	serviceEntry *istiov1alpha3.ServiceEntry, role string) error {
-
-	serviceEntry.Labels = buildIstioLabels(dynaKube.GetName(), role)
-	if err := controllerutil.SetControllerReference(dynaKube, serviceEntry, reconciler.scheme); err != nil {
-		return err
-	}
-	sve, err := reconciler.istioClient.NetworkingV1alpha3().ServiceEntries(dynaKube.GetNamespace()).Create(context.TODO(), serviceEntry, metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-	if sve == nil {
-		return fmt.Errorf("could not create service entry with spec %v", serviceEntry.Spec)
-	}
-	return nil
-}
-
-func (reconciler *IstioReconciler) createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKube,
-	virtualService *istiov1alpha3.VirtualService, role string) error {
-
-	virtualService.Labels = buildIstioLabels(dynaKube.GetName(), role)
-	if err := controllerutil.SetControllerReference(dynaKube, virtualService, reconciler.scheme); err != nil {
-		return err
-	}
-	vs, err := reconciler.istioClient.NetworkingV1alpha3().VirtualServices(dynaKube.GetNamespace()).Create(context.TODO(), virtualService, metav1.CreateOptions{})
-	if err != nil {
-		return err
-	}
-	if vs == nil {
-		return fmt.Errorf("could not create virtual service with spec %v", virtualService.Spec)
-	}
-
-	return nil
-}
-
-func (reconciler *IstioReconciler) kubernetesObjectProbe(gvk schema.GroupVersionKind, config *istioConfiguration) (kubeobjects.ProbeResult, error) {
-
-	var objQuery unstructured.Unstructured
-	objQuery.Object = make(map[string]interface{})
-
-	objQuery.SetGroupVersionKind(gvk)
-
-	runtimeClient, err := client.New(reconciler.config, client.Options{})
-	if err != nil {
-		return kubeobjects.ProbeUnknown, err
-	}
-	if config.name == "" {
-		err = runtimeClient.List(context.TODO(), &objQuery, client.InNamespace(config.instance.GetNamespace()))
-	} else {
-		err = runtimeClient.Get(context.TODO(), client.ObjectKey{Namespace: config.instance.GetNamespace(), Name: config.name}, &objQuery)
-	}
-
-	return kubeobjects.MapErrorToObjectProbeResult(err)
 }

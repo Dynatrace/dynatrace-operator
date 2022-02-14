@@ -122,3 +122,29 @@ func createIstioConfigurationForVirtualService(dynaKube *dynatracev1beta1.DynaKu
 
 	return nil
 }
+
+func removeIstioConfigurationForVirtualService(istioConfig *istioConfiguration, seen map[string]bool) (bool, error) {
+
+	list, err := istioConfig.reconciler.istioClient.NetworkingV1alpha3().VirtualServices(istioConfig.instance.GetNamespace()).List(context.TODO(), *istioConfig.listOps)
+	if err != nil {
+		log.Error(err, "istio: error listing virtual service")
+		return false, err
+	}
+
+	del := false
+	for _, vs := range list.Items {
+		if _, inUse := seen[vs.GetName()]; !inUse {
+			log.Info("istio: removing", "kind", vs.Kind, "name", vs.GetName())
+			err = istioConfig.reconciler.istioClient.NetworkingV1alpha3().
+				VirtualServices(istioConfig.instance.GetNamespace()).
+				Delete(context.TODO(), vs.GetName(), metav1.DeleteOptions{})
+			if err != nil {
+				log.Error(err, "istio: error deleting virtual service", "name", vs.GetName())
+				continue
+			}
+			del = true
+		}
+	}
+
+	return del, nil
+}
