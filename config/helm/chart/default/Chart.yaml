@@ -18,14 +18,14 @@ description: The Dynatrace Operator Helm chart for Kubernetes and OpenShift
 icon: https://assets.dynatrace.com/global/resources/Signet_Logo_RGB_CP_512x512px.png
 home: https://www.dynatrace.com/
 type: application
-version: 0.4.0
-appVersion: 0.4.0
+version: 0.4.2
+appVersion: 0.4.2
 maintainers:
-  - name: 0sewa0
-    email: marcell.sevcsik@dynatrace.com
-  - name: chrismuellner
-    email: christoph.muellner@dynatrace.com
-  - name: luhi-DT
-    email: lukas.hinterreiter@dynatrace.com
+- name: 0sewa0
+  email: marcell.sevcsik@dynatrace.com
+- name: chrismuellner
+  email: christoph.muellner@dynatrace.com
+- name: luhi-DT
+  email: lukas.hinterreiter@dynatrace.com
 sources:
-  - https://github.com/Dynatrace/dynatrace-operator
+- https://github.com/Dynatrace/dynatrace-operator
