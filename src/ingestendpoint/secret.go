@@ -118,8 +118,7 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 	}
 
 	data := map[string][]byte{
-		configFile:       endpointBuf.Bytes(),
-		TokenSecretField: []byte(fields[TokenSecretField]),
+		configFile: endpointBuf.Bytes(),
 	}
 	return data, nil
 }

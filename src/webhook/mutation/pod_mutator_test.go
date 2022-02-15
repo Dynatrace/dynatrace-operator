@@ -36,8 +36,6 @@ const (
 	dataIngestToken             = "data-ingest-token"
 )
 
-var defaultInjection = NewInjectionInfo()
-
 func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	require.NoError(t, err)
@@ -89,7 +87,7 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	)
 }
 
-func createPodInjector(_ *testing.T, decoder *admission.Decoder, injectionInfo *InjectionInfo) (*podMutator, *dynatracev1beta1.DynaKube) {
+func createPodInjector(_ *testing.T, decoder *admission.Decoder) (*podMutator, *dynatracev1beta1.DynaKube) {
 	dynakube := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      dynakubeName,
@@ -227,7 +225,7 @@ func impl(t *testing.T, injectionInfo *InjectionInfo) {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	require.NoError(t, err)
 
-	inj, instance := createPodInjector(t, decoder, injectionInfo)
+	inj, instance := createPodInjector(t, decoder)
 	err = inj.client.Update(context.TODO(), instance)
 	require.NoError(t, err)
 
@@ -329,7 +327,7 @@ func TestPodInjection(t *testing.T) {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	require.NoError(t, err)
 
-	inj, instance := createPodInjector(t, decoder, defaultInjection)
+	inj, instance := createPodInjector(t, decoder)
 	err = inj.client.Update(context.TODO(), instance)
 	require.NoError(t, err)
 
@@ -411,7 +409,7 @@ func TestPodInjectionWithCSI(t *testing.T) {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	require.NoError(t, err)
 
-	inj, _ := createPodInjector(t, decoder, defaultInjection)
+	inj, _ := createPodInjector(t, decoder)
 
 	basePod := corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
@@ -1341,21 +1339,6 @@ func buildResultPod(_ *testing.T, oneAgentFf FeatureFlag, dataIngestFf FeatureFl
 			corev1.VolumeMount{Name: dataIngestVolumeName, MountPath: "/var/lib/dynatrace/enrichment"},
 		)
 
-		pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env,
-			corev1.EnvVar{Name: dtingestendpoint.UrlSecretField, Value: "https://tenant.test-api-url.com/api/v2/metrics/ingest"},
-			corev1.EnvVar{
-				Name: dtingestendpoint.TokenSecretField,
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: dtingestendpoint.SecretEndpointName,
-						},
-						Key: dtingestendpoint.TokenSecretField,
-					},
-				},
-			},
-		)
-
 		pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts,
 			corev1.VolumeMount{Name: dataIngestVolumeName, MountPath: "/var/lib/dynatrace/enrichment"},
 			corev1.VolumeMount{Name: dataIngestEndpointVolumeName, MountPath: "/var/lib/dynatrace/enrichment/endpoint"},
@@ -1406,7 +1389,7 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 	decoder, err := admission.NewDecoder(scheme.Scheme)
 	require.NoError(t, err)
 
-	inj, instance := createPodInjector(t, decoder, defaultInjection)
+	inj, instance := createPodInjector(t, decoder)
 
 	// enable feature
 	instance.Annotations = map[string]string{}

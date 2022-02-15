@@ -219,18 +219,9 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return *secretResponse
 	}
 
-	dataIngestFields := map[string]string{}
-	if injectionInfo.enabled(DataIngest) {
-		var err error
-		dataIngestFields, err = m.ensureDataIngestSecret(ctx, ns, dkName, dk)
-		if err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-	}
-
 	podLog.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
-	response := m.handleAlreadyInjectedPod(pod, dk, injectionInfo, dataIngestFields, req)
+	response := m.handleAlreadyInjectedPod(pod, dk, injectionInfo, req)
 	if response != nil {
 		return *response
 	}
@@ -259,7 +250,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	decorateInstallContainerWithOneAgent(&installContainer, injectionInfo, flavor, technologies, installPath, installerURL, mode)
 	decorateInstallContainerWithDataIngest(&installContainer, injectionInfo, workloadKind, workloadName)
 
-	updateContainers(pod, injectionInfo, &installContainer, dk, deploymentMetadata, dataIngestFields)
+	updateContainers(pod, injectionInfo, &installContainer, dk, deploymentMetadata)
 
 	addToInitContainers(pod, installContainer)
 
@@ -271,11 +262,11 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	return getResponseForPod(pod, &req)
 }
 
-func (m *podMutator) handleAlreadyInjectedPod(pod *corev1.Pod, dk dynatracev1beta1.DynaKube, injectionInfo *InjectionInfo, dataIngestFields map[string]string, req admission.Request) *admission.Response {
+func (m *podMutator) handleAlreadyInjectedPod(pod *corev1.Pod, dk dynatracev1beta1.DynaKube, injectionInfo *InjectionInfo, req admission.Request) *admission.Response {
 	// are there any injections already?
 	if len(pod.Annotations[dtwebhook.AnnotationDynatraceInjected]) > 0 {
 		if dk.FeatureEnableWebhookReinvocationPolicy() {
-			rsp := m.applyReinvocationPolicy(pod, dk, injectionInfo, dataIngestFields, req)
+			rsp := m.applyReinvocationPolicy(pod, dk, injectionInfo, req)
 			return &rsp
 		}
 		rsp := admission.Patched("")
@@ -288,7 +279,7 @@ func addToInitContainers(pod *corev1.Pod, installContainer corev1.Container) {
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, installContainer)
 }
 
-func updateContainers(pod *corev1.Pod, injectionInfo *InjectionInfo, ic *corev1.Container, dk dynatracev1beta1.DynaKube, deploymentMetadata *deploymentmetadata.DeploymentMetadata, dataIngestFields map[string]string) {
+func updateContainers(pod *corev1.Pod, injectionInfo *InjectionInfo, ic *corev1.Container, dk dynatracev1beta1.DynaKube, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
 	for i := range pod.Spec.Containers {
 		c := &pod.Spec.Containers[i]
 
@@ -297,7 +288,7 @@ func updateContainers(pod *corev1.Pod, injectionInfo *InjectionInfo, ic *corev1.
 			updateContainerOneAgent(c, &dk, pod, deploymentMetadata)
 		}
 		if injectionInfo.enabled(DataIngest) {
-			updateContainerDataIngest(c, pod, deploymentMetadata, dataIngestFields)
+			updateContainerDataIngest(c, deploymentMetadata)
 		}
 	}
 }
@@ -496,7 +487,7 @@ func (m *podMutator) retrieveWorkload(ctx context.Context, req admission.Request
 	return workloadName, workloadKind, nil
 }
 
-func (m *podMutator) applyReinvocationPolicy(pod *corev1.Pod, dk dynatracev1beta1.DynaKube, injectionInfo *InjectionInfo, dataIngestFields map[string]string, req admission.Request) admission.Response {
+func (m *podMutator) applyReinvocationPolicy(pod *corev1.Pod, dk dynatracev1beta1.DynaKube, injectionInfo *InjectionInfo, req admission.Request) admission.Response {
 	var needsUpdate = false
 	var installContainer *corev1.Container
 	for i := range pod.Spec.Containers {
@@ -551,7 +542,7 @@ func (m *podMutator) applyReinvocationPolicy(pod *corev1.Pod, dk dynatracev1beta
 			podLog.Info("instrumenting missing container", "injectable", "data-ingest", "name", c.Name)
 
 			deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
-			updateContainerDataIngest(c, pod, deploymentMetadata, dataIngestFields)
+			updateContainerDataIngest(c, deploymentMetadata)
 
 			needsUpdate = true
 		}
@@ -749,7 +740,7 @@ func addMetadataIfMissing(c *corev1.Container, deploymentMetadata *deploymentmet
 		})
 }
 
-func updateContainerDataIngest(c *corev1.Container, pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata, dataIngestFields map[string]string) {
+func updateContainerDataIngest(c *corev1.Container, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
 	podLog.Info("updating container with missing data ingest enrichment", "containerName", c.Name)
 
 	addMetadataIfMissing(c, deploymentMetadata)
@@ -762,24 +753,6 @@ func updateContainerDataIngest(c *corev1.Container, pod *corev1.Pod, deploymentM
 		corev1.VolumeMount{
 			Name:      dataIngestEndpointVolumeName,
 			MountPath: "/var/lib/dynatrace/enrichment/endpoint",
-		},
-	)
-
-	c.Env = append(c.Env,
-		corev1.EnvVar{
-			Name:  dtingestendpoint.UrlSecretField,
-			Value: dataIngestFields[dtingestendpoint.UrlSecretField],
-		},
-		corev1.EnvVar{
-			Name: dtingestendpoint.TokenSecretField,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: dtingestendpoint.SecretEndpointName,
-					},
-					Key: dtingestendpoint.TokenSecretField,
-				},
-			},
 		},
 	)
 }
