@@ -19,9 +19,9 @@ tests:
           path: metadata.labels
           content:
             app.kubernetes.io/instance: RELEASE-NAME
-              app.kubernetes.io/name: RELEASE-NAME
-              dynatrace.com/operator: dynakube
-              internal.dynatrace.com/component: webhook
+            app.kubernetes.io/name: RELEASE-NAME
+            dynatrace.com/operator: dynakube
+            internal.dynatrace.com/component: webhook
           count: 5
       - equal:
           path: spec
