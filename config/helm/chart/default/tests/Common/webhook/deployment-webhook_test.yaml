@@ -18,7 +18,6 @@ tests:
               app.kubernetes.io/instance: RELEASE-NAME
               app.kubernetes.io/name: RELEASE-NAME
               dynatrace.com/operator: dynakube
-              helm.sh/chart: dynatrace-operator-0.4.0
               internal.dynatrace.com/component: webhook
       - equal:
           path: spec
