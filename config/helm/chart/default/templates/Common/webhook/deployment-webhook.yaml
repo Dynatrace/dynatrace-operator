@@ -33,6 +33,7 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: webhook
+        container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
       labels:
         dynatrace.com/operator: oneagent
         internal.dynatrace.com/component: webhook
@@ -94,6 +95,15 @@ spec:
             limits:
               cpu: {{ default "300m" ((.Values.webhook).limits).cpu }}
               memory: {{ default "128Mi" ((.Values.webhook).limits).memory }}
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["all"]
       {{- if (.Values.webhook).hostNetwork }}
       hostNetwork: true
       {{- end }}
