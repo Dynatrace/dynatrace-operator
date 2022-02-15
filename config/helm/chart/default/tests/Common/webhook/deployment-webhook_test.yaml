@@ -15,14 +15,20 @@ tests:
       - equal:
           path: metadata.namespace
           value: NAMESPACE
-      - contains:
-          path: metadata.labels
-          content:
-            app.kubernetes.io/instance: RELEASE-NAME
-            app.kubernetes.io/name: RELEASE-NAME
-            dynatrace.com/operator: dynakube
-            internal.dynatrace.com/component: webhook
-          count: 5
+      - equal:
+          path: metadata.labels.app.kubernetes.io/instance
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.labels.app.kubernetes.io/name
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.labels.dynatrace.com/operator
+          value: dynakube
+      - equal:
+          path: metadata.labels.internal.dynatrace.com/component
+          value: webhook
+      - isNotNull:
+          path: metadata.labels.helm.sh/chart
       - equal:
           path: spec
           value:
