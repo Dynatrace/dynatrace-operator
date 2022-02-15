@@ -76,6 +76,10 @@ func (dtc *dynatraceClient) createProcessModuleConfigRequest(prevRevision uint) 
 }
 
 func (dtc *dynatraceClient) specialProcessModuleConfigRequestStatus(resp *http.Response) bool {
+	if resp == nil {
+		return false
+	}
+
 	if resp.StatusCode == http.StatusNotModified {
 		return true
 	}
