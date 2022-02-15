@@ -16,19 +16,19 @@ tests:
           path: metadata.namespace
           value: NAMESPACE
       - equal:
-          path: metadata.labels.app.kubernetes.io/instance
+          path: metadata.labels.[app.kubernetes.io/instance]
           value: RELEASE-NAME
       - equal:
-          path: metadata.labels.app.kubernetes.io/name
+          path: metadata.labels.[app.kubernetes.io/name]
           value: RELEASE-NAME
       - equal:
-          path: metadata.labels.dynatrace.com/operator
+          path: metadata.labels.[dynatrace.com/operator]
           value: dynakube
       - equal:
-          path: metadata.labels.internal.dynatrace.com/component
+          path: metadata.labels.[internal.dynatrace.com/component]
           value: webhook
-      - isNotNull:
-          path: metadata.labels.helm.sh/chart
+      - isNotEmpty:
+          path: metadata.labels.[helm.sh/chart]
       - equal:
           path: spec
           value:
