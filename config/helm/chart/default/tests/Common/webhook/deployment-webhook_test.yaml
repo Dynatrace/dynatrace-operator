@@ -10,15 +10,19 @@ tests:
       - isKind:
           of: Deployment
       - equal:
-          path: metadata
-          value:
-            name: dynatrace-webhook
-            namespace: NAMESPACE
-            labels:
-              app.kubernetes.io/instance: RELEASE-NAME
+          path: metadata.name
+          value: dynatrace-webhook
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - contains:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/instance: RELEASE-NAME
               app.kubernetes.io/name: RELEASE-NAME
               dynatrace.com/operator: dynakube
               internal.dynatrace.com/component: webhook
+          count: 5
       - equal:
           path: spec
           value:
