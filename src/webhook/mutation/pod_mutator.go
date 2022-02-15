@@ -771,8 +771,15 @@ func updateContainerDataIngest(c *corev1.Container, pod *corev1.Pod, deploymentM
 			Value: dataIngestFields[dtingestendpoint.UrlSecretField],
 		},
 		corev1.EnvVar{
-			Name:  dtingestendpoint.TokenSecretField,
-			Value: dataIngestFields[dtingestendpoint.TokenSecretField],
+			Name: dtingestendpoint.TokenSecretField,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: dtingestendpoint.SecretEndpointName,
+					},
+					Key: dtingestendpoint.TokenSecretField,
+				},
+			},
 		},
 	)
 }
