@@ -219,6 +219,13 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 		return *secretResponse
 	}
 
+	if injectionInfo.enabled(DataIngest) {
+		err := m.ensureDataIngestSecret(ctx, ns, dkName)
+		if err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+	}
+
 	podLog.Info("injecting into Pod", "name", pod.Name, "generatedName", pod.GenerateName, "namespace", req.Namespace)
 
 	response := m.handleAlreadyInjectedPod(pod, dk, injectionInfo, req)
@@ -587,26 +594,21 @@ func (m *podMutator) getNsAndDkName(ctx context.Context, req admission.Request) 
 	return ns, dkName, nil
 }
 
-func (m *podMutator) ensureDataIngestSecret(ctx context.Context, ns corev1.Namespace, dkName string, dk dynatracev1beta1.DynaKube) (map[string]string, error) {
+func (m *podMutator) ensureDataIngestSecret(ctx context.Context, ns corev1.Namespace, dkName string) error {
 	endpointGenerator := dtingestendpoint.NewEndpointSecretGenerator(m.client, m.apiReader, m.namespace)
 
 	var endpointSecret corev1.Secret
 	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtingestendpoint.SecretEndpointName, Namespace: ns.Name}, &endpointSecret); k8serrors.IsNotFound(err) {
 		if _, err := endpointGenerator.GenerateForNamespace(ctx, dkName, ns.Name); err != nil {
 			podLog.Error(err, "failed to create the data-ingest endpoint secret before pod injection")
-			return nil, err
+			return err
 		}
 	} else if err != nil {
 		podLog.Error(err, "failed to query the data-ingest endpoint secret before pod injection")
-		return nil, err
+		return err
 	}
 
-	dataIngestFields, err := endpointGenerator.PrepareFields(ctx, &dk)
-	if err != nil {
-		podLog.Error(err, "failed to query the data-ingest endpoint secret before pod injection")
-		return nil, err
-	}
-	return dataIngestFields, nil
+	return nil
 }
 
 func (m *podMutator) getDynakube(ctx context.Context, req admission.Request, dkName string) (dynatracev1beta1.DynaKube, *admission.Response) {
