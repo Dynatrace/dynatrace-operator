@@ -17,41 +17,14 @@ x-google-marketplace:
   applicationApiVersion: v1beta1
   publishedVersion: 0.4.2
   publishedVersionMetadata:
-    releaseNote: '<!-- Release notes generated using configuration in .github/release.yml
-      at v0.4.2 -->
-
-
-      ## What''s Changed
+    releaseNote: >-
+      ## What's Changed
 
       ### Bugfixes
 
-      * Removes unnecessary scopes for API Token by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/551
+      * Removes unnecessary scopes for API Token
+      * Remove dataingest environment variable from pod injection
 
-      ### Other Changes
-
-      * Fix daemonset deletion issue by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/515
-
-      * Add flavor pod annotation by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/516
-
-      * Update required scopes for automatic api monitoring by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/520
-
-      * Moves the tls in the correct postion for oneagent daemonset  by @chrismuellner
-      in https://github.com/Dynatrace/dynatrace-operator/pull/521
-
-      * Include build information in image by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/522
-
-      * Update dependencies by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/523
-
-      * setting correct release image by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/524
-
-      * Remove dataingest environment variable from pod injection by @chrismuellner
-      in https://github.com/Dynatrace/dynatrace-operator/pull/566
-
-      * Build arm image on tag by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/568
-
-
-
-      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.4.0...v0.4.2'
     releaseTypes:
     - Feature
     recommended: true
