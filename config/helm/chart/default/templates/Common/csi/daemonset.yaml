@@ -36,7 +36,14 @@ spec:
         internal.oneagent.dynatrace.com/component: csi-driver
     spec:
       containers:
-      - args:
+        # Used to receive/execute gRPC requests (NodePublishVolume/NodeUnpublishVolume) from kubelet to mount/unmount volumes for a pod
+        # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
+        # - Needs access to the filesystem of pods on the node, and mount stuff to it,needs to read/write to it, needs root permissions to do so
+        # - Needs access to a dedicated folder on the node to persist data, needs to read/write to it, needs root permissions to do so.
+      - name: driver
+        image: {{- include "dynatrace-operator.image" . | nindent 12 }}
+        imagePullPolicy: Always
+        args:
         - csi-driver
         - --endpoint=unix://csi/csi.sock
         - --node-id=$(KUBE_NODE_NAME)
@@ -52,8 +59,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        image: {{- include "dynatrace-operator.image" . | nindent 12 }}
-        imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -64,7 +69,6 @@ spec:
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 1
-        name: driver
         ports:
         - containerPort: 10080
           name: healthz
@@ -86,23 +90,25 @@ spec:
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
-        - mountPath: /var/lib/kubelet/plugins
-          mountPropagation: Bidirectional
-          name: plugins-dir
         - mountPath: /var/lib/kubelet/pods
           mountPropagation: Bidirectional
           name: mountpoint-dir
         - mountPath: /data
           mountPropagation: Bidirectional
           name: dynatrace-oneagent-data-dir
-      - args:
+        # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
+        # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
+        # Used for registering the driver with kubelet
+        # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
+      - name: registrar
+        image: {{- include "dynatrace-operator.image" . | nindent 12 }}
+        imagePullPolicy: Always
+        args:
         - --csi-address=/csi/csi.sock
         - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
         - --health-port=9809
         command:
         - csi-node-driver-registrar
-        image: {{- include "dynatrace-operator.image" . | nindent 12 }}
-        imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -113,7 +119,6 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 5
-        name: registrar
         ports:
         - containerPort: 9809
           name: healthz
@@ -134,14 +139,16 @@ spec:
           name: plugin-dir
         - mountPath: /registration
           name: registration-dir
-      - args:
+        # Used to make a gRPC request (Probe()) to the driver to check if its running
+        # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
+      - name: liveness-probe
+        image: {{- include "dynatrace-operator.image" . | nindent 12 }}
+        imagePullPolicy: Always
+        args:
         - --csi-address=/csi/csi.sock
         - --health-port=9898
         command:
         - livenessprobe
-        image: {{- include "dynatrace-operator.image" . | nindent 12 }}
-        imagePullPolicy: Always
-        name: liveness-probe
         resources:
           limits:
             cpu: 5m
@@ -162,22 +169,22 @@ spec:
       serviceAccountName: dynatrace-oneagent-csi-driver
       terminationGracePeriodSeconds: 30
       volumes:
+      # This volume is where the registrar registers the plugin with kubelet
       - hostPath:
           path: /var/lib/kubelet/plugins_registry/
           type: Directory
         name: registration-dir
+        # This volume is where the socket for kubelet->driver communication is done
       - hostPath:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
           type: DirectoryOrCreate
         name: plugin-dir
-      - hostPath:
-          path: /var/lib/kubelet/plugins
-          type: Directory
-        name: plugins-dir
+        # This volume is where the driver mounts volumes
       - hostPath:
           path: /var/lib/kubelet/pods
           type: DirectoryOrCreate
         name: mountpoint-dir
+        # This volume is where the driver persists data on the node
       - hostPath:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
           type: DirectoryOrCreate

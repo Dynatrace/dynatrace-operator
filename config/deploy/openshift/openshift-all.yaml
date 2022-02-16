@@ -4216,7 +4216,11 @@ spec:
         internal.oneagent.dynatrace.com/component: csi-driver
     spec:
       containers:
-      - args:
+      - name: driver
+        image:
+            quay.io/dynatrace/dynatrace-operator:snapshot
+        imagePullPolicy: Always
+        args:
         - csi-driver
         - --endpoint=unix://csi/csi.sock
         - --node-id=$(KUBE_NODE_NAME)
@@ -4232,9 +4236,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
-        imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -4245,7 +4246,6 @@ spec:
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 1
-        name: driver
         ports:
         - containerPort: 10080
           name: healthz
@@ -4267,24 +4267,25 @@ spec:
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
-        - mountPath: /var/lib/kubelet/plugins
-          mountPropagation: Bidirectional
-          name: plugins-dir
+        # - mountPath: /var/lib/kubelet/plugins
+        #   mountPropagation: Bidirectional
+        #   name: plugins-dir
         - mountPath: /var/lib/kubelet/pods
           mountPropagation: Bidirectional
           name: mountpoint-dir
         - mountPath: /data
           mountPropagation: Bidirectional
           name: dynatrace-oneagent-data-dir
-      - args:
+      - name: registrar
+        image:
+            quay.io/dynatrace/dynatrace-operator:snapshot
+        imagePullPolicy: Always
+        args:
         - --csi-address=/csi/csi.sock
         - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
         - --health-port=9809
         command:
         - csi-node-driver-registrar
-        image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
-        imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -4295,7 +4296,6 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 5
-        name: registrar
         ports:
         - containerPort: 9809
           name: healthz
@@ -4316,15 +4316,15 @@ spec:
           name: plugin-dir
         - mountPath: /registration
           name: registration-dir
-      - args:
+      - name: liveness-probe
+        image:
+            quay.io/dynatrace/dynatrace-operator:snapshot
+        imagePullPolicy: Always
+        args:
         - --csi-address=/csi/csi.sock
         - --health-port=9898
         command:
         - livenessprobe
-        image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
-        imagePullPolicy: Always
-        name: liveness-probe
         resources:
           limits:
             cpu: 5m
@@ -4345,10 +4345,12 @@ spec:
       serviceAccountName: dynatrace-oneagent-csi-driver
       terminationGracePeriodSeconds: 30
       volumes:
+      # This volume is where the registrar registers the plugin with kubelet
       - hostPath:
           path: /var/lib/kubelet/plugins_registry/
           type: Directory
         name: registration-dir
+        # This volume is where the socket for kubelet->driver communication is done
       - hostPath:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
           type: DirectoryOrCreate
@@ -4357,6 +4359,7 @@ spec:
           path: /var/lib/kubelet/plugins
           type: Directory
         name: plugins-dir
+        # This volume is where the driver mounts volumes
       - hostPath:
           path: /var/lib/kubelet/pods
           type: DirectoryOrCreate
