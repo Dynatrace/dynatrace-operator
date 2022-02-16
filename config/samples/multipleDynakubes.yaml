@@ -11,7 +11,7 @@ spec:
   # For instructions on how to determine the environment ID and how to configure the apiUrl address, see https://www.dynatrace.com/support/help/reference/dynatrace-concepts/environment-id/.
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
-  # Optional: Name of the secret holding all the credentials in order to be able to connect to the Dynatrace cluster
+  # Optional: Name of the secret holding the credentials required to connect to the Dynatrace tenant
   # If unset, Dynatrace Operator uses the name of the custom resource.
   # For multiple Dynakube setup, each Dynakube can point to the same secret
   #
@@ -47,7 +47,7 @@ spec:
   # For instructions on how to determine the environment ID and how to configure the apiUrl address, see https://www.dynatrace.com/support/help/reference/dynatrace-concepts/environment-id/.
   apiUrl: https://ENVIRONMENTID.live.dynatrace.com/api
 
-  # Optional: Name of the secret holding all the credentials in order to be able to connect to the Dynatrace tenant
+  # Optional: Name of the secret holding the credentials required to connect to the Dynatrace tenant
   # If unset, Dynatrace Operator uses the name of the custom resource.
   # For a multiple Dynakube setup, each Dynakube can point to the same secret as it is reused
   #
