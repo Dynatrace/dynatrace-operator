@@ -39,6 +39,9 @@ spec:
         internal.dynatrace.com/component: webhook
         internal.dynatrace.com/app: webhook
     spec:
+      volumes:
+      - emptyDir: {}
+        name: certs-dir
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -60,7 +63,9 @@ spec:
             {{- if eq (default false .Values.olm) true }}
             # OLM mounts the certificates to a different location
             - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
-            {{- end}}
+            {{- else }}
+            - --certs-dir=/tmp/webhook-certs/
+            {{- end }}
           image: {{- include "dynatrace-operator.image" . | nindent 12 }}
           imagePullPolicy: Always
           env:
@@ -95,6 +100,13 @@ spec:
             limits:
               cpu: {{ default "300m" ((.Values.webhook).limits).cpu }}
               memory: {{ default "128Mi" ((.Values.webhook).limits).memory }}
+          volumeMounts:
+            - name: certs-dir
+            {{- if eq (default false .Values.olm) true}}
+              mountPath: /tmp/k8s-webhook-server/serving-certs/
+            {{- else}}
+              mountPath: /tmp/webhook-certs/
+            {{- end}}
           securityContext:
             seccompProfile:
               type: RuntimeDefault

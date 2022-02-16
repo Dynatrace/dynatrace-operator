@@ -3776,6 +3776,9 @@ spec:
         internal.dynatrace.com/component: webhook
         internal.dynatrace.com/app: webhook
     spec:
+      volumes:
+      - emptyDir: {}
+        name: certs-dir
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -3794,6 +3797,7 @@ spec:
         - name: webhook
           args:
             - webhook-server
+            - --certs-dir=/tmp/webhook-certs/
           image:
             quay.io/dynatrace/dynatrace-operator:snapshot
           imagePullPolicy: Always
@@ -3825,6 +3829,9 @@ spec:
             limits:
               cpu: 300m
               memory: 128Mi
+          volumeMounts:
+            - name: certs-dir
+              mountPath: /tmp/webhook-certs/
           securityContext:
             seccompProfile:
               type: RuntimeDefault
