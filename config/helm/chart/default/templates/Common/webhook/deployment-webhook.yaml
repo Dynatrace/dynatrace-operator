@@ -116,10 +116,10 @@ spec:
             runAsNonRoot: true
             capabilities:
               drop: ["all"]
+      serviceAccountName: dynatrace-webhook
       {{- if (.Values.webhook).hostNetwork }}
       hostNetwork: true
       {{- end }}
-      serviceAccountName: dynatrace-webhook
       {{- if .Values.operator.customPullSecret }}
       imagePullSecrets:
         - name: {{ .Values.operator.customPullSecret }}
