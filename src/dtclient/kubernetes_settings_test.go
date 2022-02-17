@@ -264,9 +264,10 @@ func TestDynatraceClient_generateKubernetesMEIdentifier(t *testing.T) {
 		var expected = "KUBERNETES_CLUSTER-4FA1F797E44DFBC0"
 
 		// act
-		var actual = generateKubernetesMEIdentifier("b51a38b1-2619-436a-9c0a-b0fb214a0fa9")
+		var actual, err = generateKubernetesMEIdentifier("b51a38b1-2619-436a-9c0a-b0fb214a0fa9")
 
 		// assert
+		assert.NoError(t, err)
 		assert.EqualValues(t, expected, actual)
 	})
 }

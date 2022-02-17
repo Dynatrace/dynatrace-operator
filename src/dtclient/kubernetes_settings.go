@@ -95,7 +95,10 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(name, kubeSystemUUID
 	}
 
 	if scope == "" {
-		var meID = generateKubernetesMEIdentifier(kubeSystemUUID)
+		var meID, err = generateKubernetesMEIdentifier(kubeSystemUUID)
+		if err != nil {
+			return "", err
+		}
 		if meID != "" {
 			body[0].Scope = meID
 		}
@@ -266,14 +269,14 @@ func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {
 	}
 }
 
-func generateKubernetesMEIdentifier(kubeSystemUUID string) string {
+func generateKubernetesMEIdentifier(kubeSystemUUID string) (string, error) {
 	var hasher = fnv.New64()
 	_, err := hasher.Write([]byte(kubeSystemUUID))
 	if err != nil {
-		return ""
+		return "", err
 	}
 	var hash = hasher.Sum64()
 	byteHash := make([]byte, 8)
 	binary.LittleEndian.PutUint64(byteHash, hash)
-	return "KUBERNETES_CLUSTER-" + strings.ToUpper(hex.EncodeToString(byteHash))
+	return "KUBERNETES_CLUSTER-" + strings.ToUpper(hex.EncodeToString(byteHash)), nil
 }
