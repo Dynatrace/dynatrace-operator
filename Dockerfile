@@ -13,12 +13,12 @@ RUN if [ -d ./mod ]; then mkdir -p ${GOPATH}/pkg && [ -d mod ] && mv ./mod ${GOP
 
 RUN CGO_ENABLED=1 go build "${GO_BUILD_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/operator/
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
+FROM registry.access.redhat.com/ubi8-micro:latest
 
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 
-LABEL name="Dynatrace ActiveGate Operator" \
+LABEL name="Dynatrace Operator" \
       vendor="Dynatrace LLC" \
       maintainer="Dynatrace LLC" \
       version="1.x" \
@@ -31,7 +31,6 @@ ENV OPERATOR=dynatrace-operator \
     USER_UID=1001 \
     USER_NAME=dynatrace-operator
 
-RUN  microdnf install unzip util-linux && microdnf clean all
 COPY LICENSE /licenses/
 COPY build/bin /usr/local/bin
 
