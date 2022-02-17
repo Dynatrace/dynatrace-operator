@@ -138,7 +138,7 @@ func (dk *DynaKube) FeatureCustomStatsdImage() string {
 	return dk.Annotations[annotationFeatureCustomStatsdImage]
 }
 
-// FeatureDisableReadOnlyOneAgent is a feature flag that makes the operator deploy the oneagents in a readonly mode, where the csi-driver provides the volume for logs and such,
+// FeatureDisableReadOnlyOneAgent is a feature flag that makes the operator NOT deploy the oneagents in a readonly mode, where the csi-driver would provide the volume for logs and such,
 func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
 	return dk.Annotations[AnnotationFeatureDisableReadOnlyOneAgent] == "true"
 }
