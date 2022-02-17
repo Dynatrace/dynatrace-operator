@@ -20,6 +20,10 @@ metadata:
     {{- include "dynatrace-operator.labels" . | nindent 4 }}
   name: dynatrace-oneagent-csi-driver
   namespace: {{ .Release.Namespace }}
+  annotations:
+    container.apparmor.security.beta.kubernetes.io/driver: runtime/default
+    container.apparmor.security.beta.kubernetes.io/registrar: runtime/default
+    container.apparmor.security.beta.kubernetes.io/liveness-probe: runtime/default
 spec:
   revisionHistoryLimit: 10
   selector:
