@@ -4216,6 +4216,10 @@ spec:
         internal.oneagent.dynatrace.com/component: csi-driver
     spec:
       containers:
+        # Used to receive/execute gRPC requests (NodePublishVolume/NodeUnpublishVolume) from kubelet to mount/unmount volumes for a pod
+        # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
+        # - Needs access to the filesystem of pods on the node, and mount stuff to it,needs to read/write to it, needs root permissions to do so
+        # - Needs access to a dedicated folder on the node to persist data, needs to read/write to it.
       - name: driver
         image:
             quay.io/dynatrace/dynatrace-operator:snapshot
@@ -4258,8 +4262,13 @@ spec:
             cpu: 300m
             memory: 100Mi
         securityContext:
-          privileged: true
           runAsUser: 0
+          privileged: true # Needed for mountPropagation
+          allowPrivilegeEscalation: true # Needed for privileged
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          seccompProfile:
+            type: RuntimeDefault
           seLinuxOptions:
             level: s0
         terminationMessagePath: /dev/termination-log
@@ -4267,15 +4276,16 @@ spec:
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
-        # - mountPath: /var/lib/kubelet/plugins
-        #   mountPropagation: Bidirectional
-        #   name: plugins-dir
         - mountPath: /var/lib/kubelet/pods
           mountPropagation: Bidirectional
           name: mountpoint-dir
         - mountPath: /data
           mountPropagation: Bidirectional
           name: dynatrace-oneagent-data-dir
+        # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
+        # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
+        # Used for registering the driver with kubelet
+        # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
       - name: registrar
         image:
             quay.io/dynatrace/dynatrace-operator:snapshot
@@ -4309,6 +4319,11 @@ spec:
             memory: 18M
         securityContext:
           runAsUser: 0
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          seccompProfile:
+            type: RuntimeDefault
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -4316,6 +4331,8 @@ spec:
           name: plugin-dir
         - mountPath: /registration
           name: registration-dir
+        # Used to make a gRPC request (Probe()) to the driver to check if its running
+        # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
       - name: liveness-probe
         image:
             quay.io/dynatrace/dynatrace-operator:snapshot
@@ -4334,6 +4351,14 @@ spec:
             memory: 18M
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
+        securityContext:
+          runAsUser: 0
+          privileged: false
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
@@ -4344,6 +4369,7 @@ spec:
       serviceAccount: dynatrace-oneagent-csi-driver
       serviceAccountName: dynatrace-oneagent-csi-driver
       terminationGracePeriodSeconds: 30
+      securityContext: {}
       volumes:
       # This volume is where the registrar registers the plugin with kubelet
       - hostPath:
@@ -4355,15 +4381,12 @@ spec:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
           type: DirectoryOrCreate
         name: plugin-dir
-      - hostPath:
-          path: /var/lib/kubelet/plugins
-          type: Directory
-        name: plugins-dir
         # This volume is where the driver mounts volumes
       - hostPath:
           path: /var/lib/kubelet/pods
           type: DirectoryOrCreate
         name: mountpoint-dir
+        # This volume is where the driver persists data on the node
       - hostPath:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
           type: DirectoryOrCreate
