@@ -306,7 +306,7 @@ func (dsInfo *builderInfo) unprivilegedSecurityContext() *corev1.SecurityContext
 			},
 		},
 	}
-	if !dsInfo.instance.FeatureDisableReadOnlyOneAgent() {
+	if dsInfo.instance.NeedsReadOnlyOneAgents() {
 		unprivilegedUser := int64(1000)
 		unprivilegedGroup := int64(1000)
 		securityContext.RunAsUser = &unprivilegedUser

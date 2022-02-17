@@ -11,7 +11,13 @@ import (
 
 func TestPrepareVolumes(t *testing.T) {
 	t.Run(`has root volume`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{}
+		instance := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+				},
+			},
+		}
 		volumes := prepareVolumes(instance)
 
 		assert.Contains(t, volumes, getRootVolume())
@@ -21,6 +27,9 @@ func TestPrepareVolumes(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				TrustedCAs: testName,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+				},
 			},
 		}
 		volumes := prepareVolumes(instance)
@@ -38,6 +47,9 @@ func TestPrepareVolumes(t *testing.T) {
 					},
 					TlsSecretName: "testing",
 				},
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+				},
 			},
 		}
 		volumes := prepareVolumes(instance)
@@ -48,6 +60,22 @@ func TestPrepareVolumes(t *testing.T) {
 			ObjectMeta: corev1.ObjectMeta{
 				Annotations: map[string]string{
 					dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent: "true",
+				},
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+				},
+			},
+		}
+		volumes := prepareVolumes(instance)
+		assert.NotContains(t, volumes, getCSIStorageVolume(instance))
+	})
+	t.Run(`csi volume not supported on classicFullStack`, func(t *testing.T) {
+		instance := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
 				},
 			},
 		}
@@ -91,7 +119,13 @@ func TestPrepareVolumes(t *testing.T) {
 
 func TestPrepareVolumeMounts(t *testing.T) {
 	t.Run(`has root volume mount`, func(t *testing.T) {
-		instance := &dynatracev1beta1.DynaKube{}
+		instance := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+				},
+			},
+		}
 		volumeMounts := prepareVolumeMounts(instance)
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
@@ -100,6 +134,9 @@ func TestPrepareVolumeMounts(t *testing.T) {
 	t.Run(`has certificate volume mount`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+				},
 				TrustedCAs: testName,
 			},
 		}
@@ -111,6 +148,9 @@ func TestPrepareVolumeMounts(t *testing.T) {
 	t.Run(`has tls volume mount`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+				},
 				TrustedCAs: testName,
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
 					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
@@ -133,8 +173,26 @@ func TestPrepareVolumeMounts(t *testing.T) {
 					dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent: "true",
 				},
 			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+				},
+			},
 		}
 
+		volumeMounts := prepareVolumeMounts(instance)
+
+		assert.Contains(t, volumeMounts, getRootMount())
+		assert.NotContains(t, volumeMounts, getCSIStorageMount())
+	})
+	t.Run(`readonly volume not supported on classicFullStack`, func(t *testing.T) {
+		instance := &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+				},
+			},
+		}
 		volumeMounts := prepareVolumeMounts(instance)
 
 		assert.Contains(t, volumeMounts, getRootMount())
