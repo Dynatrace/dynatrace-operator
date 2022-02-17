@@ -41,6 +41,8 @@ const (
 	AnnotationFeatureDisableReadOnlyOneAgent          = annotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
 	AnnotationFeatureEnableActivegateRawImage         = annotationFeaturePrefix + "enable-activegate-raw-image"
 	AnnotationFeatureEnableMultipleOsAgentsOnNode     = annotationFeaturePrefix + "multiple-osagents-on-node"
+	AnnotationFeatureAgReadOnlyFilesystem             = annotationFeaturePrefix + "activegate-readonly-fs"
+	AnnotationFeatureAgAppArmor                       = annotationFeaturePrefix + "activegate-apparmor"
 )
 
 var (
@@ -159,4 +161,14 @@ func (dk *DynaKube) FeatureEnableActivegateRawImage() bool {
 // FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
 func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
 	return dk.Annotations[AnnotationFeatureEnableMultipleOsAgentsOnNode] == "true"
+}
+
+// FeatureAgReadOnlyFilesystem is a feature flag to enable RO mounted filesystem in ActiveGate container
+func (dk *DynaKube) FeatureAgReadOnlyFilesystem() bool {
+	return dk.Annotations[AnnotationFeatureAgReadOnlyFilesystem] == "true"
+}
+
+// FeatureAgAppArmor is a feature flag to enable AppArmor in ActiveGate container
+func (dk *DynaKube) FeatureAgAppArmor() bool {
+	return dk.Annotations[AnnotationFeatureAgAppArmor] == "true"
 }

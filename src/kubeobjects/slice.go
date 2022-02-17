@@ -2,9 +2,23 @@ package kubeobjects
 
 import corev1 "k8s.io/api/core/v1"
 
+const (
+	ReadOnlyMountPath  = true
+	ReadWriteMountPath = false
+)
+
 func MountPathIsIn(volumeMounts []corev1.VolumeMount, mountPathToCheck string) bool {
 	for _, volMount := range volumeMounts {
 		if volMount.MountPath == mountPathToCheck {
+			return true
+		}
+	}
+	return false
+}
+
+func MountPathIs(volumeMounts []corev1.VolumeMount, mountPathToCheck string, readOnly bool) bool {
+	for _, volMount := range volumeMounts {
+		if volMount.MountPath == mountPathToCheck && volMount.ReadOnly == readOnly {
 			return true
 		}
 	}
