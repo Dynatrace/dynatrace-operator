@@ -19,9 +19,6 @@ var (
 	memoryMetricTick = 5000 * time.Millisecond
 )
 
-// CSIVolumeAttributeName used for identifying the origin of the NodePublishVolume request
-const CSIVolumeAttributeName = "mode"
-
 func init() {
 	metrics.Registry.MustRegister(memoryUsageMetric)
 }
