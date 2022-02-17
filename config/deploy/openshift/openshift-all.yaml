@@ -4314,7 +4314,7 @@ spec:
         - containerPort: 9809
           name: healthz
           protocol: TCP
-          resources:
+        resources:
             limits:
               cpu: 100m
               memory: 100Mi
