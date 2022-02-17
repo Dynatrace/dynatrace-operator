@@ -52,7 +52,7 @@ func TestPrepareVolumes(t *testing.T) {
 			},
 		}
 		volumes := prepareVolumes(instance)
-		assert.Contains(t, volumes, getCSIStorageVolume())
+		assert.Contains(t, volumes, getCSIStorageVolume(instance))
 	})
 	t.Run(`has all volumes`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
@@ -90,7 +90,7 @@ func TestPrepareVolumes(t *testing.T) {
 		assert.Contains(t, volumes, getRootVolume())
 		assert.Contains(t, volumes, getCertificateVolume(instance))
 		assert.Contains(t, volumes, getTLSVolume(instance))
-		assert.Contains(t, volumes, getCSIStorageVolume())
+		assert.Contains(t, volumes, getCSIStorageVolume(instance))
 	})
 }
 
