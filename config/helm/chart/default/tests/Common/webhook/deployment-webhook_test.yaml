@@ -10,16 +10,25 @@ tests:
       - isKind:
           of: Deployment
       - equal:
-          path: metadata
-          value:
-            name: dynatrace-webhook
-            namespace: NAMESPACE
-            labels:
-              app.kubernetes.io/instance: RELEASE-NAME
-              app.kubernetes.io/name: RELEASE-NAME
-              dynatrace.com/operator: dynakube
-              helm.sh/chart: dynatrace-operator-0.4.0
-              internal.dynatrace.com/component: webhook
+          path: metadata.name
+          value: dynatrace-webhook
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - equal:
+          path: metadata.labels.[app.kubernetes.io/instance]
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.labels.[app.kubernetes.io/name]
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.labels.[dynatrace.com/operator]
+          value: dynakube
+      - equal:
+          path: metadata.labels.[internal.dynatrace.com/component]
+          value: webhook
+      - isNotEmpty:
+          path: metadata.labels.[helm.sh/chart]
       - equal:
           path: spec
           value:

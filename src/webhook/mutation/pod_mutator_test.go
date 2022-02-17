@@ -16,6 +16,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/standalone"
 	t_utils "github.com/Dynatrace/dynatrace-operator/src/testing"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	jsonpatch "github.com/evanphx/json-patch"
@@ -1256,19 +1257,18 @@ func buildResultPod(_ *testing.T, oneAgentFf FeatureFlag, dataIngestFf FeatureFl
 			Name:            dtwebhook.InstallContainerName,
 			Image:           "test-image",
 			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command:         []string{"/usr/bin/env"},
-			Args:            []string{"bash", "/mnt/config/init.sh"},
+			Args:            []string{"init"},
 			Env: []corev1.EnvVar{
-				{Name: "FAILURE_POLICY", Value: "silent"},
-				{Name: "CONTAINERS_COUNT", Value: "1"},
-				{Name: "K8S_PODNAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
-				{Name: "K8S_PODUID", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
-				{Name: "K8S_BASEPODNAME", Value: "test-pod"},
-				{Name: "K8S_NAMESPACE", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
-				{Name: "K8S_NODE_NAME", ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
+				{Name: standalone.CanFailEnv, Value: "silent"},
+				{Name: standalone.ContainerCountEnv, Value: "1"},
+				{Name: standalone.K8PodNameEnv, ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.name"}}},
+				{Name: standalone.K8PodUIDEnv, ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.uid"}}},
+				{Name: standalone.K8BasePodNameEnv, Value: "test-pod"},
+				{Name: standalone.K8NamespaceEnv, ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},
+				{Name: standalone.K8NodeNameEnv, ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "spec.nodeName"}}},
 			},
 			VolumeMounts: []corev1.VolumeMount{
-				{Name: injectionConfigVolumeName, MountPath: "/mnt/config"},
+				{Name: injectionConfigVolumeName, MountPath: standalone.ConfigDirMount},
 			},
 		}}
 
@@ -1280,18 +1280,18 @@ func buildResultPod(_ *testing.T, oneAgentFf FeatureFlag, dataIngestFf FeatureFl
 	if oaEnabled {
 		pod.Spec.InitContainers[0].Env = append(pod.Spec.InitContainers[0].Env,
 			corev1.EnvVar{Name: oneAgentInjectedEnvVarName, Value: "true"},
-			corev1.EnvVar{Name: "FLAVOR", Value: dtclient.FlavorMultidistro},
-			corev1.EnvVar{Name: "TECHNOLOGIES", Value: "all"},
-			corev1.EnvVar{Name: "INSTALLPATH", Value: "/opt/dynatrace/oneagent-paas"},
-			corev1.EnvVar{Name: "INSTALLER_URL", Value: ""},
-			corev1.EnvVar{Name: "MODE", Value: provisionedVolumeMode},
-			corev1.EnvVar{Name: "CONTAINER_1_NAME", Value: "test-container"},
-			corev1.EnvVar{Name: "CONTAINER_1_IMAGE", Value: "alpine"},
+			corev1.EnvVar{Name: standalone.InstallerFlavorEnv, Value: dtclient.FlavorMultidistro},
+			corev1.EnvVar{Name: standalone.InstallerTechEnv, Value: "all"},
+			corev1.EnvVar{Name: standalone.InstallPathEnv, Value: "/opt/dynatrace/oneagent-paas"},
+			corev1.EnvVar{Name: standalone.InstallerUrlEnv, Value: ""},
+			corev1.EnvVar{Name: standalone.ModeEnv, Value: provisionedVolumeMode},
+			corev1.EnvVar{Name: fmt.Sprintf(standalone.ContainerNameEnvTemplate, 1), Value: "test-container"},
+			corev1.EnvVar{Name: fmt.Sprintf(standalone.ContainerImageEnvTemplate, 1), Value: "alpine"},
 		)
 
 		pod.Spec.InitContainers[0].VolumeMounts = append(pod.Spec.InitContainers[0].VolumeMounts,
-			corev1.VolumeMount{Name: oneAgentBinVolumeName, MountPath: "/mnt/bin"},
-			corev1.VolumeMount{Name: oneAgentShareVolumeName, MountPath: "/mnt/share"},
+			corev1.VolumeMount{Name: oneAgentBinVolumeName, MountPath: standalone.BinDirMount},
+			corev1.VolumeMount{Name: oneAgentShareVolumeName, MountPath: standalone.ShareDirMount},
 		)
 
 		pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts,
@@ -1348,16 +1348,26 @@ func buildResultPod(_ *testing.T, oneAgentFf FeatureFlag, dataIngestFf FeatureFl
 		)
 
 		pod.Spec.InitContainers[0].VolumeMounts = append(pod.Spec.InitContainers[0].VolumeMounts,
-			corev1.VolumeMount{Name: dataIngestVolumeName, MountPath: "/var/lib/dynatrace/enrichment"},
+			corev1.VolumeMount{Name: dataIngestVolumeName, MountPath: standalone.EnrichmentPath},
 		)
 
 		pod.Spec.Containers[0].Env = append(pod.Spec.Containers[0].Env,
 			corev1.EnvVar{Name: dtingestendpoint.UrlSecretField, Value: "https://tenant.test-api-url.com/api/v2/metrics/ingest"},
-			corev1.EnvVar{Name: dtingestendpoint.TokenSecretField, Value: dataIngestToken},
+			corev1.EnvVar{
+				Name: dtingestendpoint.TokenSecretField,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: dtingestendpoint.SecretEndpointName,
+						},
+						Key: dtingestendpoint.TokenSecretField,
+					},
+				},
+			},
 		)
 
 		pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts,
-			corev1.VolumeMount{Name: dataIngestVolumeName, MountPath: "/var/lib/dynatrace/enrichment"},
+			corev1.VolumeMount{Name: dataIngestVolumeName, MountPath: standalone.EnrichmentPath},
 			corev1.VolumeMount{Name: dataIngestEndpointVolumeName, MountPath: "/var/lib/dynatrace/enrichment/endpoint"},
 		)
 

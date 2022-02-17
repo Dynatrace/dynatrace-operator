@@ -8,15 +8,13 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/standalone"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
-
-//go:embed init.sh.test-sample
-var scriptSample string
 
 var (
 	operatorNamespace        = "dynatrace"
@@ -117,7 +115,7 @@ var (
 	caConfigMap = &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{Name: testtrustCAsCM, Namespace: operatorNamespace},
 		Data: map[string]string{
-			trustedCASecretField: testCAValue,
+			trustedCAKey: testCAValue,
 		},
 	}
 
@@ -178,16 +176,10 @@ func TestGenerateForNamespace(t *testing.T) {
 		var initSecret corev1.Secret
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
-		assert.Equal(t, 3, len(initSecret.Data))
-		initSh, ok := initSecret.Data[initScriptSecretField]
+		assert.Equal(t, 1, len(initSecret.Data))
+		sercetConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
 		assert.True(t, ok)
-		assert.NotNil(t, initSh)
-		proxy, ok := initSecret.Data[proxyInitSecretField]
-		assert.True(t, ok)
-		assert.Equal(t, testProxy, string(proxy))
-		ca, ok := initSecret.Data[trustedCAInitSecretField]
-		assert.True(t, ok)
-		assert.Equal(t, testCAValue, string(ca))
+		assert.NotNil(t, sercetConfig)
 	})
 	t.Run("Add secret for namespace (simple dynakube)", func(t *testing.T) {
 		testNamespace := corev1.Namespace{
@@ -206,9 +198,9 @@ func TestGenerateForNamespace(t *testing.T) {
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(initSecret.Data))
-		initSh, ok := initSecret.Data[initScriptSecretField]
+		sercetConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
 		assert.True(t, ok)
-		assert.NotNil(t, initSh)
+		assert.NotNil(t, sercetConfig)
 	})
 }
 
@@ -231,16 +223,10 @@ func TestGenerateForDynakube(t *testing.T) {
 		var initSecret corev1.Secret
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
-		assert.Equal(t, 3, len(initSecret.Data))
-		initSh, ok := initSecret.Data[initScriptSecretField]
+		assert.Equal(t, 1, len(initSecret.Data))
+		sercetConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
 		assert.True(t, ok)
-		assert.NotNil(t, initSh)
-		proxy, ok := initSecret.Data[proxyInitSecretField]
-		assert.True(t, ok)
-		assert.Equal(t, testProxy, string(proxy))
-		ca, ok := initSecret.Data[trustedCAInitSecretField]
-		assert.True(t, ok)
-		assert.Equal(t, testCAValue, string(ca))
+		assert.NotNil(t, sercetConfig)
 	})
 	t.Run("Add secret for namespace (simple dynakube)", func(t *testing.T) {
 		dk := testDynakubeSimple.DeepCopy()
@@ -261,9 +247,9 @@ func TestGenerateForDynakube(t *testing.T) {
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(initSecret.Data))
-		initSh, ok := initSecret.Data[initScriptSecretField]
+		sercetConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
 		assert.True(t, ok)
-		assert.NotNil(t, initSh)
+		assert.NotNil(t, sercetConfig)
 	})
 	t.Run("Add secret to multiple namespaces (simple dynakube)", func(t *testing.T) {
 		dk := testDynakubeSimple.DeepCopy()
@@ -290,15 +276,15 @@ func TestGenerateForDynakube(t *testing.T) {
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(initSecret.Data))
-		initSh, ok := initSecret.Data[initScriptSecretField]
+		sercetConfig, ok := initSecret.Data[standalone.SecretConfigFieldName]
 		assert.True(t, ok)
-		assert.NotNil(t, initSh)
+		assert.NotNil(t, sercetConfig)
 		err = clt.Get(context.TODO(), types.NamespacedName{Name: webhook.SecretConfigName, Namespace: testOtherNamespace.Name}, &initSecret)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(initSecret.Data))
-		initSh, ok = initSecret.Data[initScriptSecretField]
+		sercetConfig, ok = initSecret.Data[standalone.SecretConfigFieldName]
 		assert.True(t, ok)
-		assert.NotNil(t, initSh)
+		assert.NotNil(t, sercetConfig)
 	})
 }
 
@@ -307,7 +293,7 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		clt := fake.NewClient(testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 		ig.canWatchNodes = true
-		imNodes, err := ig.getInfraMonitoringNodes(testDynakubeSimple)
+		imNodes, err := ig.getHostMonitoringNodes(testDynakubeSimple)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(imNodes))
 		assert.Equal(t, testTenantUUID, imNodes[testNode1Name])
@@ -317,7 +303,7 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		clt := fake.NewClient()
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 		ig.canWatchNodes = false
-		imNodes, err := ig.getInfraMonitoringNodes(testDynakubeSimple)
+		imNodes, err := ig.getHostMonitoringNodes(testDynakubeSimple)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, len(imNodes))
 		assert.Equal(t, testTenantUUID, imNodes[testNode2Name])
@@ -326,19 +312,19 @@ func TestGetInfraMonitoringNodes(t *testing.T) {
 		clt := fake.NewClient(testNodeWithLabels, testNode1, testNode2)
 		ig := NewInitGenerator(clt, clt, operatorNamespace)
 		ig.canWatchNodes = true
-		imNodes, err := ig.getInfraMonitoringNodes(testDynakubeWithSelector)
+		imNodes, err := ig.getHostMonitoringNodes(testDynakubeWithSelector)
 		assert.NoError(t, err)
 		assert.Equal(t, 3, len(imNodes))
-		assert.Equal(t, notMappedIM, imNodes[testNode1Name])
-		assert.Equal(t, notMappedIM, imNodes[testNode2Name])
+		assert.Equal(t, standalone.NoHostTenant, imNodes[testNode1Name])
+		assert.Equal(t, standalone.NoHostTenant, imNodes[testNode2Name])
 	})
 }
 
-func TestPrepareScriptForDynaKube(t *testing.T) {
-	t.Run("Create init.sh with correct content", func(t *testing.T) {
+func TestPrepareSecretConfigForDynaKube(t *testing.T) {
+	t.Run("Create SecretConfig with correct content", func(t *testing.T) {
 		testForCorrectContent(t, testSecretDynakubeComplex)
 	})
-	t.Run("Create init.sh with correct content, if only apiToken is provided", func(t *testing.T) {
+	t.Run("Create SecretConfig with correct content, if only apiToken is provided", func(t *testing.T) {
 		testForCorrectContent(t, testSecretDynakubeComplexOnlyApi)
 	})
 }
@@ -354,23 +340,24 @@ func testForCorrectContent(t *testing.T, secret *corev1.Secret) {
 	clt := fake.NewClient(&testNamespace, secret, caConfigMap, testTlsSecretDynakubeComplex)
 	ig := NewInitGenerator(clt, clt, operatorNamespace)
 	imNodes := map[string]string{testNode1Name: testTenantUUID, testNode2Name: testTenantUUID}
-	sc, err := ig.prepareScriptForDynaKube(dk, kubesystemUID, imNodes)
+	secretConfig, err := ig.prepareSecretConfigForDynaKube(dk, kubesystemUID, imNodes)
 	assert.NoError(t, err)
-	expectedScript := script{
-		ApiUrl:        dk.Spec.APIURL,
-		SkipCertCheck: dk.Spec.SkipCertCheck,
-		PaaSToken:     "42",
-		Proxy:         testProxy,
-		TrustedCAs:    []byte(testCAValue),
-		ClusterID:     string(kubesystemUID),
-		TenantUUID:    dk.Status.ConnectionInfo.TenantUUID,
-		IMNodes:       imNodes,
-		HasHost:       true,
-		TlsCert:       "testing",
+	expectedConfig := standalone.SecretConfig{
+		ApiUrl:          dk.Spec.APIURL,
+		ApiToken:        string(secret.Data["apiToken"]),
+		SkipCertCheck:   dk.Spec.SkipCertCheck,
+		Proxy:           testProxy,
+		TrustedCAs:      testCAValue,
+		ClusterID:       string(kubesystemUID),
+		TenantUUID:      dk.Status.ConnectionInfo.TenantUUID,
+		MonitoringNodes: imNodes,
+		HasHost:         true,
+		TlsCert:         "testing",
 	}
-	assert.Equal(t, &expectedScript, sc)
-
-	initSh, err := sc.generate()
-	assert.NoError(t, err)
-	assert.Equal(t, scriptSample, string(initSh[initScriptSecretField]))
+	if content, ok := secret.Data["paasToken"]; ok {
+		expectedConfig.PaasToken = string(content)
+	} else {
+		expectedConfig.PaasToken = expectedConfig.ApiToken
+	}
+	assert.Equal(t, &expectedConfig, secretConfig)
 }
