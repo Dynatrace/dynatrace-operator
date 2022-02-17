@@ -4310,13 +4310,13 @@ spec:
         - containerPort: 9809
           name: healthz
           protocol: TCP
-        resources:
-          limits:
-            cpu: 10m
-            memory: 18M
-          requests:
-            cpu: 10m
-            memory: 18M
+          resources:
+            limits:
+              cpu: 100m
+              memory: 100Mi
+            requests:
+              cpu: 10m
+              memory: 20Mi
         securityContext:
           runAsUser: 0
           privileged: false
@@ -4344,11 +4344,11 @@ spec:
         - livenessprobe
         resources:
           limits:
-            cpu: 5m
-            memory: 18M
+            cpu: 100m
+            memory: 100Mi
           requests:
-            cpu: 5m
-            memory: 18M
+            cpu: 10m
+            memory: 20Mi
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         securityContext:
