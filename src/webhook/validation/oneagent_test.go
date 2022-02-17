@@ -32,7 +32,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 			},
 		})
 
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithWarnings(t, 2, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
@@ -41,7 +41,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 					HostMonitoring:   &dynatracev1beta1.HostMonitoringSpec{},
 				},
 			},
-		})
+		}, &defaultCSIDaemonSet)
 	})
 	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
 		assertDeniedResponse(t,
@@ -55,7 +55,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 						HostMonitoring:   &dynatracev1beta1.HostMonitoringSpec{},
 					},
 				},
-			})
+			}, &defaultCSIDaemonSet)
 
 		assertDeniedResponse(t,
 			[]string{errorConflictingOneagentMode},
@@ -68,13 +68,13 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 						HostMonitoring:        &dynatracev1beta1.HostMonitoringSpec{},
 					},
 				},
-			})
+			}, &defaultCSIDaemonSet)
 	})
 }
 
 func TestConflictingNodeSelector(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
-		assertAllowedResponseWithoutWarnings(t,
+		assertAllowedResponseWithWarnings(t, 2,
 			&dynatracev1beta1.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynatracev1beta1.DynaKubeSpec{
@@ -107,7 +107,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 						},
 					},
 				},
-			})
+			}, &defaultCSIDaemonSet)
 
 		assertAllowedResponseWithWarnings(t, 2,
 			&dynatracev1beta1.DynaKube{

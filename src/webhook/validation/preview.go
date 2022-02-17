@@ -18,6 +18,9 @@ func oneAgentModePreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1beta
 	} else if dynakube.ApplicationMonitoringMode() && dynakube.NeedsCSIDriver() {
 		log.Info("DynaKube with applicationMonitoring was applied, warning was provided.")
 		return fmt.Sprintf(featurePreviewWarningMessage, "applicationMonitoring")
+	} else if dynakube.HostMonitoringMode() && dynakube.NeedsCSIDriver() {
+		log.Info("DynaKube with hostMonitoring + readonly via csi was applied, warning was provided.")
+		return fmt.Sprintf(featurePreviewWarningMessage, "readonly hostMonitoring")
 	}
 	return ""
 }
