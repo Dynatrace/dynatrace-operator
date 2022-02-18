@@ -71,7 +71,7 @@ tests:
                   - name: webhook
                     args:
                       - webhook-server
-                      - --certs-dir=/tmp/webhook-certs/
+                      - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
                     image: image-name
                     imagePullPolicy: Always
                     env:
@@ -104,7 +104,7 @@ tests:
                         memory: 128Mi
                     volumeMounts:
                       - name: certs-dir
-                        mountPath: /tmp/webhook-certs/
+                        mountPath: /tmp/k8s-webhook-server/serving-certs/
                     securityContext:
                       seccompProfile:
                         type: RuntimeDefault
