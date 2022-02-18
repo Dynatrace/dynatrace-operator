@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -65,6 +66,7 @@ func (statsd *Statsd) BuildContainer() corev1.Container {
 			SuccessThreshold:    1,
 			TimeoutSeconds:      1,
 		},
+		SecurityContext: statsd.buildSecurityContext(),
 	}
 }
 
@@ -123,5 +125,23 @@ func (statsd *Statsd) buildEnvs() []corev1.EnvVar {
 		{Name: "ProbeServerPort", Value: fmt.Sprintf("%d", statsdProbesPort)},
 		{Name: "StatsdMetadataDir", Value: dataSourceMetadataMountPoint},
 		{Name: "DsLogFile", Value: statsDLogsDir + "/dynatracesourcestatsd.log"},
+	}
+}
+
+func (statsd *Statsd) buildSecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		Privileged:               address_of.Bool(false),
+		AllowPrivilegeEscalation: address_of.Bool(false),
+		ReadOnlyRootFilesystem:   address_of.Bool(true),
+
+		RunAsNonRoot: address_of.Bool(true),
+		RunAsUser:    address_of.Int64(kubeobjects.UnprivilegedUser),
+		RunAsGroup:   address_of.Int64(kubeobjects.UnprivilegedGroup),
+
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{
+				"all",
+			},
+		},
 	}
 }
