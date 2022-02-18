@@ -3,8 +3,10 @@ package metadata
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewAccess(t *testing.T) {
@@ -170,6 +172,81 @@ func TestInsertVolume(t *testing.T) {
 	assert.Equal(t, ver, testVolume1.Version)
 	assert.Equal(t, tuid, testVolume1.TenantUUID)
 
+}
+
+func TestInsertOsAgentVolume(t *testing.T) {
+	db := FakeMemoryDB()
+
+	now := time.Now()
+	volume := OsAgentVolume{
+		VolumeID:     "vol-4",
+		TenantUUID:   testDynakube1.TenantUUID,
+		Mounted:      true,
+		LastModified: &now,
+	}
+
+	err := db.InsertOsAgentVolume(&volume)
+	require.NoError(t, err)
+	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE TenantUUID = ?;", osAgentVolumesTableName), volume.TenantUUID)
+	var volumeID string
+	var tenantUUID string
+	var mounted bool
+	var lastModified time.Time
+	err = row.Scan(&tenantUUID, &volumeID, &mounted, &lastModified)
+	assert.NoError(t, err)
+	assert.Equal(t, volumeID, volume.VolumeID)
+	assert.Equal(t, tenantUUID, volume.TenantUUID)
+	assert.Equal(t, mounted, volume.Mounted)
+	assert.True(t, volume.LastModified.Equal(lastModified))
+}
+
+func TestGetOsAgentVolume(t *testing.T) {
+	db := FakeMemoryDB()
+
+	now := time.Now()
+	expected := OsAgentVolume{
+		VolumeID:     "vol-4",
+		TenantUUID:   testDynakube1.TenantUUID,
+		Mounted:      true,
+		LastModified: &now,
+	}
+
+	err := db.InsertOsAgentVolume(&expected)
+	require.NoError(t, err)
+	actual, err := db.GetOsAgentVolume(expected.VolumeID)
+	require.NoError(t, err)
+	assert.NoError(t, err)
+	assert.Equal(t, expected.VolumeID, actual.VolumeID)
+	assert.Equal(t, expected.TenantUUID, actual.TenantUUID)
+	assert.Equal(t, expected.Mounted, actual.Mounted)
+	assert.True(t, expected.LastModified.Equal(*actual.LastModified))
+}
+
+func TestUpdateOsAgentVolume(t *testing.T) {
+	db := FakeMemoryDB()
+
+	now := time.Now()
+	old := OsAgentVolume{
+		VolumeID:     "vol-4",
+		TenantUUID:   testDynakube1.TenantUUID,
+		Mounted:      true,
+		LastModified: &now,
+	}
+
+	err := db.InsertOsAgentVolume(&old)
+	require.NoError(t, err)
+	new := old
+	new.Mounted = false
+	err = db.UpdateOsAgentVolume(&new)
+	require.NoError(t, err)
+
+	actual, err := db.GetOsAgentVolume(old.VolumeID)
+	require.NoError(t, err)
+	assert.NoError(t, err)
+	assert.Equal(t, old.VolumeID, actual.VolumeID)
+	assert.Equal(t, old.TenantUUID, actual.TenantUUID)
+	assert.NotEqual(t, old.Mounted, actual.Mounted)
+	assert.True(t, old.LastModified.Equal(*actual.LastModified))
 }
 
 func TestGetVolume(t *testing.T) {
