@@ -40,7 +40,7 @@ func TestCreateEecConfigMap(t *testing.T) {
 			"internal.operator.dynatrace.com/extensions.debugExtensionDSstatsdlogoutboundminttraffic":   "true",
 			"internal.operator.dynatrace.com/extensions.debugExtensionDSstatsdcustomloglevel":           "trace",
 		})
-		runtimeConfig := make(map[string]interface{})
+		runtimeConfig := NewEecRuntimeConfig()
 
 		eecConfigMap := CreateEecConfigMap(instance, "activegate")
 		runtimeConfigJson := eecConfigMap.Data["runtimeConfiguration"]
@@ -49,11 +49,11 @@ func TestCreateEecConfigMap(t *testing.T) {
 
 		require.NotEmpty(t, eecConfigMap.Data)
 		require.NoError(t, json.Unmarshal([]byte(runtimeConfigJson), &runtimeConfig))
-		assert.Equal(t, 1., runtimeConfig["revision"])
-		assert.True(t, runtimeConfig["booleanMap"].(map[string]interface{})["debugExtensionDSstatsdlogoutboundminttraffic"].(bool))
-		assert.False(t, runtimeConfig["booleanMap"].(map[string]interface{})["debugExtensionDSstatsddisablenamedalivesignals"].(bool))
-		assert.Equal(t, "trace", runtimeConfig["stringMap"].(map[string]interface{})["debugExtensionDSstatsdcustomloglevel"])
-		assert.Empty(t, runtimeConfig["longMap"].(map[string]interface{}))
+		assert.Equal(t, 1, runtimeConfig.Revision)
+		assert.True(t, runtimeConfig.BooleanMap["debugExtensionDSstatsdlogoutboundminttraffic"])
+		assert.False(t, runtimeConfig.BooleanMap["debugExtensionDSstatsddisablenamedalivesignals"])
+		assert.Equal(t, "trace", runtimeConfig.StringMap["debugExtensionDSstatsdcustomloglevel"])
+		assert.Empty(t, runtimeConfig.LongMap)
 	})
 
 	t.Run("no valid EEC runtime properties, StatsD enabled", func(t *testing.T) {
@@ -61,7 +61,7 @@ func TestCreateEecConfigMap(t *testing.T) {
 			"internal.operator.dynatrace.com/debugExtensionDSstatsdlogoutboundminttraffic": "true",
 			"debugExtensionDSstatsdcustomloglevel":                                         "info",
 		})
-		runtimeConfig := make(map[string]interface{})
+		runtimeConfig := NewEecRuntimeConfig()
 
 		eecConfigMap := CreateEecConfigMap(instance, "activegate")
 		runtimeConfigJson := eecConfigMap.Data["runtimeConfiguration"]
@@ -70,10 +70,10 @@ func TestCreateEecConfigMap(t *testing.T) {
 
 		require.NotEmpty(t, eecConfigMap.Data)
 		require.NoError(t, json.Unmarshal([]byte(runtimeConfigJson), &runtimeConfig))
-		assert.Equal(t, 1., runtimeConfig["revision"])
-		assert.Empty(t, runtimeConfig["booleanMap"].(map[string]interface{}))
-		assert.Empty(t, runtimeConfig["stringMap"].(map[string]interface{}))
-		assert.Empty(t, runtimeConfig["longMap"].(map[string]interface{}))
+		assert.Equal(t, 1, runtimeConfig.Revision)
+		assert.Empty(t, runtimeConfig.BooleanMap)
+		assert.Empty(t, runtimeConfig.StringMap)
+		assert.Empty(t, runtimeConfig.LongMap)
 	})
 
 	t.Run("valid EEC runtime properties but StatsD disabled", func(t *testing.T) {

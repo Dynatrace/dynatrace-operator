@@ -13,6 +13,22 @@ import (
 
 const extensionsRuntimeProperties = dynatracev1beta1.InternalFlagPrefix + "extensions."
 
+type EecRuntimeConfig struct {
+	Revision   int               `json:"revision"`
+	BooleanMap map[string]bool   `json:"booleanMap"`
+	StringMap  map[string]string `json:"stringMap"`
+	LongMap    map[string]int64  `json:"longMap"`
+}
+
+func NewEecRuntimeConfig() *EecRuntimeConfig {
+	return &EecRuntimeConfig{
+		Revision:   1,
+		BooleanMap: make(map[string]bool),
+		StringMap:  make(map[string]string),
+		LongMap:    make(map[string]int64),
+	}
+}
+
 func getExtensionsFlagsFromAnnotations(instance *dynatracev1beta1.DynaKube) map[string]string {
 	extensionsFlags := make(map[string]string)
 	for flag, val := range dynatracev1beta1.GetInternalFlags(instance) {
@@ -24,27 +40,20 @@ func getExtensionsFlagsFromAnnotations(instance *dynatracev1beta1.DynaKube) map[
 	return extensionsFlags
 }
 
-func buildEecRuntimeConfig(instance *dynatracev1beta1.DynaKube) map[string]interface{} {
-	booleanMap := make(map[string]bool)
-	stringMap := make(map[string]string)
-	longMap := make(map[string]int64)
+func buildEecRuntimeConfig(instance *dynatracev1beta1.DynaKube) *EecRuntimeConfig {
+	eecRuntimeConfig := NewEecRuntimeConfig()
 
 	for runtimeProp, val := range getExtensionsFlagsFromAnnotations(instance) {
 		if parsedLongInt, err := strconv.ParseInt(val, 10, 64); err == nil {
-			longMap[runtimeProp] = parsedLongInt
+			eecRuntimeConfig.LongMap[runtimeProp] = parsedLongInt
 		} else if parsedBool, err := strconv.ParseBool(val); err == nil {
-			booleanMap[runtimeProp] = parsedBool
+			eecRuntimeConfig.BooleanMap[runtimeProp] = parsedBool
 		} else {
-			stringMap[runtimeProp] = val
+			eecRuntimeConfig.StringMap[runtimeProp] = val
 		}
 	}
 
-	return map[string]interface{}{
-		"revision":   1,
-		"booleanMap": booleanMap,
-		"stringMap":  stringMap,
-		"longMap":    longMap,
-	}
+	return eecRuntimeConfig
 }
 
 func buildEecRuntimeConfigJson(instance *dynatracev1beta1.DynaKube) (string, error) {
