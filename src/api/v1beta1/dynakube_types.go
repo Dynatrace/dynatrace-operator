@@ -82,7 +82,7 @@ type DynaKubeSpec struct {
 	APIURL string `json:"apiUrl"`
 
 	// Credentials for the DynaKube to connect back to Dynatrace.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="API and PaaS Tokens",order=2,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tenant specific secrets",order=2,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	Tokens string `json:"tokens,omitempty"`
 
 	// Optional: Pull secret for your private registry
