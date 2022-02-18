@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
@@ -34,8 +35,7 @@ type DynatraceClientProxy struct {
 }
 
 const (
-	proxy        = "proxy"
-	certificates = "certs"
+	proxy = "proxy"
 )
 
 func NewDynatraceClientProperties(ctx context.Context, apiReader client.Reader, dk dynatracev1beta1.DynaKube) (*DynatraceClientProperties, error) {
@@ -140,10 +140,10 @@ func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts st
 		if err := apiReader.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
 			return fmt.Errorf("failed to get certificate configmap: %w", err)
 		}
-		if certs.Data[certificates] == "" {
+		if certs.Data[dtversion.CustomCertificatesConfigMapKey] == "" {
 			return fmt.Errorf("failed to extract certificate configmap field: missing field certs")
 		}
-		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[certificates])))
+		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[dtversion.CustomCertificatesConfigMapKey])))
 	}
 	return nil
 }
