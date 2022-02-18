@@ -56,7 +56,8 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) EnsureDeleted(ctx 
 	secret := corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: dynakube.Namespace}}
 	if err := agProxySecretGenerator.client.Delete(ctx, &secret); err != nil && !k8serrors.IsNotFound(err) {
 		return err
-	} else if err != nil {
+	} else if err == nil {
+		// If the secret is deleted the error is nil, otherwise err is notFound, then we should log nothing
 		agProxySecretGenerator.logger.Info("removed secret", "namespace", dynakube.Namespace, "secret", secretName)
 	}
 	return nil

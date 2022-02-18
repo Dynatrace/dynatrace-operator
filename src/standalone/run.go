@@ -10,21 +10,6 @@ import (
 	"github.com/spf13/afero"
 )
 
-const (
-	noHostTenant = "-"
-
-	enrichmentFilenameTemplate    = "dt_metadata.%s"
-	containerConfFilenameTemplate = "container_%s.conf"
-	ldPreloadFilename             = "ld.so.preload"
-)
-
-var (
-	BinDirMount    = filepath.Join("mnt", "bin")
-	ShareDirMount  = filepath.Join("mnt", "share")
-	ConfigDirMount = filepath.Join("mnt", "config")
-	EnrichmentPath = filepath.Join("var", "lib", "dynatrace", "enrichment")
-)
-
 type Runner struct {
 	fs         afero.Fs
 	env        *environment
@@ -99,7 +84,7 @@ func (runner *Runner) consumeErrorIfNecessary(err *error) {
 
 func (runner *Runner) setHostTenant() error {
 	log.Info("setting host tenant")
-	runner.hostTenant = noHostTenant
+	runner.hostTenant = NoHostTenant
 	if runner.config.HasHost {
 		hostTenant, ok := runner.config.MonitoringNodes[runner.env.k8NodeName]
 		if !ok {
@@ -157,9 +142,9 @@ func (runner *Runner) setLDPreload() error {
 
 func (runner *Runner) createContainerConfigurationFiles() error {
 	for _, container := range runner.env.containers {
-		confFilePath := filepath.Join(ShareDirMount, fmt.Sprintf(containerConfFilenameTemplate, container.name))
+		confFilePath := filepath.Join(ShareDirMount, fmt.Sprintf(ContainerConfFilenameTemplate, container.name))
 		content := runner.getBaseConfContent(container)
-		if runner.hostTenant != noHostTenant {
+		if runner.hostTenant != NoHostTenant {
 			if runner.config.TenantUUID == runner.hostTenant {
 				content += runner.getK8ConfContent()
 			}

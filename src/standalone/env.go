@@ -10,38 +10,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type InstallMode string
-
-const (
-	InstallerMode InstallMode = "installer"
-	CsiMode       InstallMode = "csi"
-
-	ModeEnv         = "MODE"
-	CanFailEnv      = "FAILURE_POLICY"
-	InstallerUrlEnv = "INSTALLER_URL"
-
-	InstallerFlavorEnv = "FLAVOR"
-	InstallerTechEnv   = "TECHNOLOGIES"
-	InstallerArchEnv   = "ARCH"
-
-	K8NodeNameEnv    = "K8S_NODE_NAME"
-	K8PodNameEnv     = "K8S_PODNAME"
-	K8PodUIDEnv      = "K8S_PODUID"
-	K8BasePodNameEnv = "K8S_BASEPODNAME"
-	K8NamespaceEnv   = "K8S_NAMESPACE"
-
-	WorkloadKindEnv = "DT_WORKLOAD_KIND"
-	WorkloadNameEnv = "DT_WORKLOAD_NAME"
-
-	InstallPathEnv            = "INSTALLPATH"
-	ContainerCountEnv         = "CONTAINERS_COUNT"
-	ContainerNameEnvTemplate  = "CONTAINER_%d_NAME"
-	ContainerImageEnvTemplate = "CONTAINER_%d_IMAGE"
-
-	OneAgentInjectedEnv   = "ONEAGENT_INJECTED"
-	DataIngestInjectedEnv = "DATA_INGEST_INJECTED"
-)
-
 type containerInfo struct {
 	name  string
 	image string

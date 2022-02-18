@@ -15,127 +15,106 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: "0.4.0"
+  publishedVersion: 0.4.2
   publishedVersionMetadata:
     releaseNote: >-
-      v0.4.0
+      ## What's Changed
 
-      Self registering ActiveGate to no longer require manually adding Kubernetes API
-      enable by setting following feature flag on a Dynakube with kubernetes-monitoring capability:
+      ### Bugfixes
 
-      annotations:
-        ...
-        alpha.operator.dynatrace.com/feature-automatic-kubernetes-api-monitoring: "true"
-      To be able to read and update the settings on the Dynatrace tenant, the apiToken needs additional scopes
-      additional Scopes for apiToken: Read Entities
-
-
-      When OneAgent is injected, the file required for metadata enrichment is automatically created on each instrumented pod
-      enabled by default (when applicationMonitoring or cloudNativeFullStack is used)
-      can be disabled by setting the following feature flag on the Dynakube:
-
-      annotations:
-        ...
-        alpha.operator.dynatrace.com/feature-disable-metadata-enrichment: "true"
-      To be able to send the metrics to the Dynatrace tenant, the dataIngestToken has to be added to the tokens secret
-      required scopes for dataIngestToken: Ingest metrics
-
-
-      paasToken is no longer required
-      additional scopes for apiToken: Installer download
-      existing installations with both apiToken and paasToken will continue to work as before
-
-
-      PREVIEW: ActiveGate has a new capability metrics-ingest that can be used to route enriched metrics over ActiveGate instead of directly to Dynatrace tenant
-      enabled by adding the capability to the ActiveGate
+      * Removes unnecessary scopes for API Token
+      * Remove dataingest environment variable from pod injection
 
     releaseTypes:
-      - Feature
+    - Feature
     recommended: true
-
   managedUpdates:
     kalmSupported: true
-
   images:
-    "":
-      properties:
+    ? ''
+    : properties:
         operator.image:
           type: FULL
   deployerServiceAccount:
-    description: >
-      Service account used to configure the Dynatrace Operator
-    roles:
-      - type: ClusterRole
-        rulesType: CUSTOM
-        rules:
-          - apiGroups:
-              - admissionregistration.k8s.io
-            resources:
-              - mutatingwebhookconfigurations
-            verbs:
-              - get
-              - create
-              - list
-              - patch
-          - apiGroups:
-              - dynatrace.com
-            resources:
-              - dynakubes
-            verbs:
-              - get
-              - list
-              - create
-              - patch
-          - apiGroups:
-              - apiextensions.k8s.io
-            resources:
-              - customresourcedefinitions
-            verbs:
-              - get
-              - list
-              - create
-              - patch
-          - apiGroups:
-              - dynatrace.com
-            resources:
-              - dynakubes
-            verbs:
-              - get
-              - list
-              - watch
-              - update
-              - patch
-          - apiGroups:
-              - app.k8s.io
-            resources:
-              - applications
-            verbs:
-              - get
-              - list
-          - apiGroups:
-              - storage.k8s.io
-            resources:
-              - csidrivers
-            verbs: ["*"]
-          - apiGroups: [""]
-            resources:
-              - services
-              - serviceaccounts
-            verbs: ["*"]
-          - apiGroups:
-              - rbac.authorization.k8s.io
-            resources:
-              - role
-              - rolebinding
-              - clusterroles
-              - clusterrolebindings
-            verbs: ["*"]
-          - apiGroups:
-              - admissionregistration.k8s.io
-            resources:
-              - validatingwebhookconfigurations
-            verbs: ["*"]
+    description: 'Service account used to configure the Dynatrace Operator
 
+      '
+    roles:
+    - type: ClusterRole
+      rulesType: CUSTOM
+      rules:
+      - apiGroups:
+        - admissionregistration.k8s.io
+        resources:
+        - mutatingwebhookconfigurations
+        verbs:
+        - get
+        - create
+        - list
+        - patch
+      - apiGroups:
+        - dynatrace.com
+        resources:
+        - dynakubes
+        verbs:
+        - get
+        - list
+        - create
+        - patch
+      - apiGroups:
+        - apiextensions.k8s.io
+        resources:
+        - customresourcedefinitions
+        verbs:
+        - get
+        - list
+        - create
+        - patch
+      - apiGroups:
+        - dynatrace.com
+        resources:
+        - dynakubes
+        verbs:
+        - get
+        - list
+        - watch
+        - update
+        - patch
+      - apiGroups:
+        - app.k8s.io
+        resources:
+        - applications
+        verbs:
+        - get
+        - list
+      - apiGroups:
+        - storage.k8s.io
+        resources:
+        - csidrivers
+        verbs:
+        - '*'
+      - apiGroups:
+        - ''
+        resources:
+        - services
+        - serviceaccounts
+        verbs:
+        - '*'
+      - apiGroups:
+        - rbac.authorization.k8s.io
+        resources:
+        - role
+        - rolebinding
+        - clusterroles
+        - clusterrolebindings
+        verbs:
+        - '*'
+      - apiGroups:
+        - admissionregistration.k8s.io
+        resources:
+        - validatingwebhookconfigurations
+        verbs:
+        - '*'
 properties:
   name:
     type: string
@@ -170,8 +149,9 @@ properties:
       type: MASKED_FIELD
   crdApplied:
     type: boolean
-    description: "Please make sure you have applied the latest CRD by following the instructions in the Github Repository."
-    title: "CRD manually applied"
+    description: Please make sure you have applied the latest CRD by following the
+      instructions in the Github Repository.
+    title: CRD manually applied
     default: false
   platform:
     type: string
@@ -182,10 +162,9 @@ properties:
     type: string
     x-google-marketplace:
       type: DEPLOYER_IMAGE
-
 required:
-  - name
-  - namespace
-  - apiUrl
-  - apiToken
-  - crdApplied
+- name
+- namespace
+- apiUrl
+- apiToken
+- crdApplied

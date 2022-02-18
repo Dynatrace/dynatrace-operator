@@ -9,4 +9,5 @@ import (
 type Publisher interface {
 	PublishVolume(ctx context.Context, volumeCfg *VolumeConfig) (*csi.NodePublishVolumeResponse, error)
 	UnpublishVolume(ctx context.Context, volumeInfo *VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error)
+	CanUnpublishVolume(volumeInfo *VolumeInfo) (bool, error)
 }

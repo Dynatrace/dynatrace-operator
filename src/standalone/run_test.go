@@ -78,7 +78,7 @@ func TestSetHostTenant(t *testing.T) {
 		err := runner.setHostTenant()
 
 		require.NoError(t, err)
-		assert.Equal(t, noHostTenant, runner.hostTenant)
+		assert.Equal(t, NoHostTenant, runner.hostTenant)
 	})
 }
 
@@ -207,7 +207,7 @@ func TestCreateContainerConfigurationFiles(t *testing.T) {
 				runner.fs,
 				filepath.Join(
 					ShareDirMount,
-					fmt.Sprintf(containerConfFilenameTemplate, container.name)))
+					fmt.Sprintf(ContainerConfFilenameTemplate, container.name)))
 		}
 		// TODO: Check content ?
 	})
@@ -287,7 +287,7 @@ func assertIfAgentFilesExists(t *testing.T, runner Runner) {
 			runner.fs,
 			filepath.Join(
 				ShareDirMount,
-				fmt.Sprintf(containerConfFilenameTemplate, container.name)))
+				fmt.Sprintf(ContainerConfFilenameTemplate, container.name)))
 	}
 	// ld.so.preload
 	assertIfFileExists(t,
@@ -321,7 +321,7 @@ func assertIfAgentFilesNotExists(t *testing.T, runner Runner) {
 			runner.fs,
 			filepath.Join(
 				ShareDirMount,
-				fmt.Sprintf(containerConfFilenameTemplate, container.name)))
+				fmt.Sprintf(ContainerConfFilenameTemplate, container.name)))
 	}
 	// ld.so.preload
 	assertIfFileNotExists(t,
