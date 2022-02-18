@@ -83,7 +83,10 @@ func (f *FakeFailDB) GetDynakube(dynakubeName string) (*Dynakube, error) { retur
 func (f *FakeFailDB) GetDynakubes() (map[string]string, error)           { return nil, sql.ErrTxDone }
 
 func (f *FakeFailDB) InsertOsAgentVolume(volume *OsAgentVolume) error { return sql.ErrTxDone }
-func (f *FakeFailDB) GetOsAgentVolume(volumeID string) (*OsAgentVolume, error) {
+func (f *FakeFailDB) GetOsAgentVolumeViaVolumeID(volumeID string) (*OsAgentVolume, error) {
+	return nil, sql.ErrTxDone
+}
+func (f *FakeFailDB) GetOsAgentVolumeViaTenantUUID(volumeID string) (*OsAgentVolume, error) {
 	return nil, sql.ErrTxDone
 }
 func (f *FakeFailDB) UpdateOsAgentVolume(volume *OsAgentVolume) error { return sql.ErrTxDone }
