@@ -5,6 +5,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -57,6 +58,7 @@ func (eec *ExtensionController) BuildContainer() corev1.Container {
 			SuccessThreshold:    1,
 			TimeoutSeconds:      1,
 		},
+		SecurityContext: eec.buildSecurityContext(),
 	}
 }
 
@@ -131,5 +133,19 @@ func (eec *ExtensionController) buildEnvs() []corev1.EnvVar {
 		{Name: "TenantId", Value: tenantId},
 		{Name: "ServerUrl", Value: fmt.Sprintf("https://localhost:%d/communication", activeGateInternalCommunicationPort)},
 		{Name: "EecIngestPort", Value: fmt.Sprintf("%d", eecIngestPort)},
+	}
+}
+
+func (eec *ExtensionController) buildSecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		Privileged:               address_of.Bool(false),
+		AllowPrivilegeEscalation: address_of.Bool(false),
+		ReadOnlyRootFilesystem:   address_of.Bool(false),
+
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{
+				"all",
+			},
+		},
 	}
 }

@@ -5,10 +5,12 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 	assertion := assert.New(t)
+	requirement := require.New(t)
 
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
@@ -46,6 +48,17 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 		} {
 			assertion.Truef(kubeobjects.EnvVarIsIn(container.Env, envVar), "Expected that EEC container defined environment variable %s", envVar)
 		}
+	})
+
+	t.Run("hardened container security context", func(t *testing.T) {
+		container := NewExtensionController(stsProperties).BuildContainer()
+
+		requirement.NotNil(container.SecurityContext)
+		securityContext := container.SecurityContext
+
+		assertion.False(*securityContext.Privileged)
+		assertion.False(*securityContext.AllowPrivilegeEscalation)
+		assertion.False(*securityContext.ReadOnlyRootFilesystem)
 	})
 
 	t.Run("volumes vs volume mounts", func(t *testing.T) {
