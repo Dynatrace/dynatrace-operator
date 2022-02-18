@@ -132,10 +132,7 @@ func (dk *DynaKube) StatsdImage() string {
 
 func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
 	inSupportedMode := dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()
-	if inSupportedMode && !dk.FeatureDisableReadOnlyOneAgent() {
-		return true
-	}
-	return false
+	return inSupportedMode && !dk.FeatureDisableReadOnlyOneAgent()
 }
 
 func (dk *DynaKube) NeedsCSIDriver() bool {
