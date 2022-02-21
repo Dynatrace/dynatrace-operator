@@ -152,11 +152,11 @@ func (statsd *Statsd) buildSecurityContext() *corev1.SecurityContext {
 var _ v1beta1.ResourceRequirementer = (*Statsd)(nil)
 
 func (statsd *Statsd) Limits(resourceName corev1.ResourceName) *resource.Quantity {
-	return statsd.stsProperties.FeatureEecResourcesLimits(resourceName)
+	return statsd.stsProperties.FeatureStatsdResourcesLimits(resourceName)
 }
 
 func (statsd *Statsd) Requests(resourceName corev1.ResourceName) *resource.Quantity {
-	return statsd.stsProperties.FeatureEecResourcesRequests(resourceName)
+	return statsd.stsProperties.FeatureStatsdResourcesRequests(resourceName)
 }
 
 func (statsd *Statsd) buildResourceRequirements() corev1.ResourceRequirements {
