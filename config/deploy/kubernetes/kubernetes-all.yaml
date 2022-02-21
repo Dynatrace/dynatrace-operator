@@ -3593,6 +3593,9 @@ spec:
             limits:
               cpu: 100m
               memory: 128Mi
+          volumeMounts:
+            - name: tmp-cert-dir
+              mountPath: /tmp/dynatrace-operator
           readinessProbe:
             httpGet:
               path: /healthz
@@ -3621,6 +3624,9 @@ spec:
                     operator: In
                     values:
                       - linux
+      volumes:
+        - emptyDir: { }
+          name: tmp-cert-dir
       serviceAccountName: dynatrace-operator
 ---
 # Source: dynatrace-operator/templates/Common/webhook/deployment-webhook.yaml
