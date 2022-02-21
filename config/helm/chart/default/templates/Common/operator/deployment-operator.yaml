@@ -67,7 +67,7 @@ spec:
               cpu: {{ default "100m" ((.Values.operator).limits).cpu }}
               memory: {{ default "128Mi" ((.Values.operator).limits).memory }}
           volumeMounts:
-            - name: tmp-dir
+            - name: tmp-cert-dir
               mountPath: /tmp/dynatrace-operator
           readinessProbe:
             httpGet:
@@ -99,7 +99,7 @@ spec:
                       - linux
       volumes:
         - emptyDir: { }
-          name: tmp-dir
+          name: tmp-cert-dir
       serviceAccountName: {{ .Release.Name }}
       {{- if .Values.operator.customPullSecret }}
       imagePullSecrets:

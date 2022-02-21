@@ -14,10 +14,9 @@ import (
 
 // VersionLabel is the name of the label used on ActiveGate-provided images.
 const (
-	VersionLabel                   = "com.dynatrace.build-version"
-	TmpCAPath                      = "/tmp/dynatrace-operator"
-	TmpCAName                      = "dynatraceCustomCA.crt"
-	CustomCertificatesConfigMapKey = "certs"
+	VersionLabel = "com.dynatrace.build-version"
+	TmpCAPath    = "/tmp/dynatrace-operator"
+	TmpCAName    = "dynatraceCustomCA.crt"
 )
 
 // ImageVersion includes information for a given image. Version can be empty if the corresponding label isn't set.
