@@ -1,4 +1,4 @@
-FROM golang:1.17-alpine AS operator-build
+FROM golang:1.17.7-alpine AS operator-build
 
 RUN apk update --no-cache && \
     apk add --no-cache gcc musl-dev btrfs-progs-dev lvm2-dev device-mapper-static && \
@@ -13,7 +13,7 @@ RUN if [ -d ./mod ]; then mkdir -p ${GOPATH}/pkg && [ -d mod ] && mv ./mod ${GOP
 
 RUN CGO_ENABLED=1 go build "${GO_BUILD_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/operator/
 
-FROM registry.access.redhat.com/ubi8-micro:latest
+FROM registry.access.redhat.com/ubi8-micro:8.5-744
 
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
