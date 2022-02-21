@@ -31,47 +31,6 @@ func (dk *DynaKube) FeatureStatsdResourcesLimits(resourceName corev1.ResourceNam
 	return statsdResourceRequirements(dk, "limits-"+resourceName)
 }
 
-//
-//// FeatureResourcesActiveGateEecRequestsCpu is a feature flag to define CPU requests for the EEC container
-//func (dk *DynaKube) FeatureResourcesActiveGateEecRequestsCpu() *resource.Quantity {
-//	return eecResourceRequirements(dk, corev1.ResourceRequestsCPU)
-//}
-//
-//// FeatureResourcesActiveGateEecRequestsMemory is a feature flag to define memory requests for the EEC container
-//func (dk *DynaKube) FeatureResourcesActiveGateEecRequestsMemory() *resource.Quantity {
-//	return eecResourceRequirements(dk, corev1.ResourceRequestsMemory)
-//}
-//
-//// FeatureResourcesActiveGateEecLimitsCpu is a feature flag to define CPU limits for the EEC container
-//func (dk *DynaKube) FeatureResourcesActiveGateEecLimitsCpu() *resource.Quantity {
-//	return eecResourceRequirements(dk, corev1.ResourceLimitsCPU)
-//}
-//
-//// FeatureResourcesActiveGateEecLimitsMemory is a feature flag to define memory limits for the EEC container
-//func (dk *DynaKube) FeatureResourcesActiveGateEecLimitsMemory() *resource.Quantity {
-//	return eecResourceRequirements(dk, corev1.ResourceLimitsMemory)
-//}
-//
-//// FeatureResourcesActiveGateStatsdRequestsCpu is a feature flag to define CPU requests for the StatsD container
-//func (dk *DynaKube) FeatureResourcesActiveGateStatsdRequestsCpu() *resource.Quantity {
-//	return statsdResourceRequirements(dk, corev1.ResourceRequestsCPU)
-//}
-//
-//// FeatureResourcesActiveGateStatsdRequestsMemory is a feature flag to define memory requests for the StatsD container
-//func (dk *DynaKube) FeatureResourcesActiveGateStatsdRequestsMemory() *resource.Quantity {
-//	return statsdResourceRequirements(dk, corev1.ResourceRequestsMemory)
-//}
-//
-//// FeatureResourcesActiveGateStatsdLimitsCpu is a feature flag to define CPU limits for the StatsD container
-//func (dk *DynaKube) FeatureResourcesActiveGateStatsdLimitsCpu() *resource.Quantity {
-//	return statsdResourceRequirements(dk, corev1.ResourceLimitsCPU)
-//}
-//
-//// FeatureResourcesActiveGateStatsdLimitsMemory is a feature flag to define memory limits for the StatsD container
-//func (dk *DynaKube) FeatureResourcesActiveGateStatsdLimitsMemory() *resource.Quantity {
-//	return statsdResourceRequirements(dk, corev1.ResourceLimitsMemory)
-//}
-
 // E.g. "alpha.operator.dynatrace.com/feature-activegate-eec-resources-limits-cpu": "100m"
 func formatResourceName(resourceName corev1.ResourceName) string {
 	return "resources-" + string(resourceName)
