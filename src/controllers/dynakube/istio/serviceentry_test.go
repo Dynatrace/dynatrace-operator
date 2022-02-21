@@ -13,16 +13,15 @@ import (
 
 const (
 	testName        = "test-name"
-	testNamespace   = "test-namespace"
 	testPort1String = "1234"
+	testNamespace   = "dynatrace"
 )
 
 func TestServiceEntryGeneration(t *testing.T) {
 	const (
-		testName      = "com1"
-		testNamespace = "dynatrace"
-		testHost      = "comtest.com"
-		testPort      = 9999
+		testName = "com1"
+		testHost = "comtest.com"
+		testPort = 9999
 	)
 
 	t.Run(`generate with hostname`, func(t *testing.T) {
@@ -42,10 +41,10 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_DNS,
 			},
 		}
-		result := buildServiceEntry(testName, DefaultTestNamespace, testHost, protocolHttps, testPort)
+		result := buildServiceEntry(testName, testNamespace, testHost, protocolHttps, testPort)
 		assert.EqualValues(t, expected, result)
 
-		result = buildServiceEntry(testName, DefaultTestNamespace, testHost1, protocolHttps, testPort1)
+		result = buildServiceEntry(testName, testNamespace, testHost1, protocolHttps, testPort1)
 		assert.NotEqualValues(t, expected, result)
 	})
 	t.Run(`generate with Ip`, func(t *testing.T) {
@@ -67,10 +66,10 @@ func TestServiceEntryGeneration(t *testing.T) {
 				Resolution: istio.ServiceEntry_NONE,
 			},
 		}
-		result := buildServiceEntry(testName, DefaultTestNamespace, testIp, protocolHttps, testPort)
+		result := buildServiceEntry(testName, testNamespace, testIp, protocolHttps, testPort)
 		assert.EqualValues(t, expected, result)
 
-		result = buildServiceEntry(testName, DefaultTestNamespace, testIp, protocolHttps, testPort1)
+		result = buildServiceEntry(testName, testNamespace, testIp, protocolHttps, testPort1)
 		assert.NotEqualValues(t, expected, result)
 	})
 }
