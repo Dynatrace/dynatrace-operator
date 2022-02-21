@@ -6,4 +6,9 @@ cat <<EOF | kubectl apply -f -
     namespace: dynatrace
   spec:
     apiUrl: ${APIURL}
+    oneAgent:
+      hostMonitoring: null
+      classicFullStack: null
+      applicationMonitoring: null
+      cloudNativeFullStack: null
 EOF

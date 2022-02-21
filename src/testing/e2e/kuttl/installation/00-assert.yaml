@@ -34,7 +34,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
-    dynatrace.com/operator: dynatrace
+    dynatrace: operator
   name: dynatrace-oneagent-csi-driver
   namespace: dynatrace
 spec:
@@ -42,11 +42,8 @@ spec:
     spec:
       serviceAccountName: dynatrace-oneagent-csi-driver
 status:
- # TODO: this is not nice
-  currentNumberScheduled: 2
-  desiredNumberScheduled: 2
-  numberAvailable: 2
-  numberReady: 2
+  numberAvailable: 3
+  numberReady: 3
 ---
 apiVersion: apps/v1
 kind: Deployment

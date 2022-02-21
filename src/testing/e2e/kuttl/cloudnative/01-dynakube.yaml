@@ -1,9 +1,3 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-- script: sh ../dk.sh
-- script: kubectl -n dynatrace create secret generic dynakube --from-literal="apiToken=${APITOKEN}" --from-literal="paasToken=${PAASTOKEN}"
----
 apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
@@ -12,7 +6,7 @@ metadata:
 spec:
   namespaceSelector:
     matchLabels:
-      test: test
+      dk-mode: cloud-native
 
   oneAgent:
     cloudNativeFullStack:
@@ -25,10 +19,10 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    test: test
-  name: inject-into
+    dk-mode: cloud-native
+  name: inject-into-cloud-native
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: leave-alone
+  name: leave-alone-cloud-native

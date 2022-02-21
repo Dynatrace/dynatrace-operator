@@ -3,4 +3,4 @@ kind: Namespace
 metadata:
   labels:
     dynakube.internal.dynatrace.com/instance: dynakube
-  name: leave-alone
+  name: leave-alone-cloud-native

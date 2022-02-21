@@ -1,0 +1,13 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 240
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: php-glibc
+  namespace: already-present-host-monitoring
+spec:
+  initContainers: []
+status:
+  phase: Running

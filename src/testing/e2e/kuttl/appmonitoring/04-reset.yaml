@@ -1,0 +1,20 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+timeout: 120
+commands:
+- command: kubectl delete ns inject-into-app-monitoring
+- command: kubectl delete ns leave-alone-app-monitoring
+- command: kubectl delete ns already-present-app-monitoring
+
+---
+
+apiVersion: dynatrace.com/v1beta1
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+spec:
+  namespaceSelector: {}
+
+  oneAgent:
+    applicationMonitoring: null

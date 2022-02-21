@@ -6,6 +6,4 @@ commands:
 apiVersion: v1
 kind: Namespace
 metadata:
-  labels:
-    dk-mode: cloud-native
-  name: already-present-cloud-native
+  name: already-present-classic

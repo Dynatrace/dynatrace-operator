@@ -7,7 +7,5 @@ namespace: dynatrace
 parallel: 1
 testDirs:
 - src/testing/e2e/kuttl
-timeout: 300
 commands:
-- command: kubectl create ns dynatrace
-- command: kubectl apply -k config/kubernetes-csi
+- command: sh ./hack/e2e/install-manifests.sh
