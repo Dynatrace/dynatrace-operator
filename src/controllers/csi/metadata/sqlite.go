@@ -289,7 +289,7 @@ func (a *SqliteAccess) GetOsAgentVolumeViaVolumeID(volumeID string) (*OsAgentVol
 	return NewOsAgentVolume(volumeID, tenantUUID, mounted, &lastModified), err
 }
 
-// GetOsAgentVolumeViaTenantUUID gets an OsAgentVolume by its VolumeID
+// GetOsAgentVolumeViaTenantUUID gets an OsAgentVolume by its tenantUUID
 func (a *SqliteAccess) GetOsAgentVolumeViaTenantUUID(tenantUUID string) (*OsAgentVolume, error) {
 	var volumeID string
 	var mounted bool

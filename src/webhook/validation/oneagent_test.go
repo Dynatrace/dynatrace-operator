@@ -32,7 +32,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 			},
 		})
 
-		assertAllowedResponseWithWarnings(t, 2, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
@@ -74,7 +74,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 
 func TestConflictingNodeSelector(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
-		assertAllowedResponseWithWarnings(t, 2,
+		assertAllowedResponseWithoutWarnings(t,
 			&dynatracev1beta1.DynaKube{
 				ObjectMeta: defaultDynakubeObjectMeta,
 				Spec: dynatracev1beta1.DynaKubeSpec{
