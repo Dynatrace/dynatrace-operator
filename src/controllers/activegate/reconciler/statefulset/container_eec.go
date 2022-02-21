@@ -14,6 +14,7 @@ import (
 const eecIngestPortName = "eec-http"
 const eecIngestPort = 14599
 const extensionsLogsDir = "/var/lib/dynatrace/remotepluginmodule/log/extensions"
+const extensionsRuntimeDir = "/var/lib/dynatrace/remotepluginmodule/agent/conf/runtime"
 
 const activeGateInternalCommunicationPort = 9999
 
@@ -23,6 +24,7 @@ const (
 	dataSourceStartupArguments = "eec-ds-shared"
 	dataSourceAuthToken        = "dsauthtokendir"
 	eecLogs                    = "extensions-logs"
+	eecConfig                  = "eec-config"
 )
 
 var _ kubeobjects.ContainerBuilder = (*ExtensionController)(nil)
@@ -64,7 +66,7 @@ func (eec *ExtensionController) BuildContainer() corev1.Container {
 }
 
 func (eec *ExtensionController) BuildVolumes() []corev1.Volume {
-	return []corev1.Volume{
+	volumes := []corev1.Volume{
 		{
 			Name: eecAuthToken,
 			VolumeSource: corev1.VolumeSource{
@@ -89,8 +91,11 @@ func (eec *ExtensionController) BuildVolumes() []corev1.Volume {
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
-		{
-			Name: "eec-config",
+	}
+
+	if len(eec.stsProperties.Name) > 0 && len(eec.stsProperties.feature) > 0 {
+		eecConfigMap := corev1.Volume{
+			Name: eecConfig,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
@@ -98,16 +103,17 @@ func (eec *ExtensionController) BuildVolumes() []corev1.Volume {
 					},
 				},
 			},
-		},
+		}
+		volumes = append(volumes, eecConfigMap)
+	} else {
+		err := fmt.Errorf("empty instance or module name not allowed (instance: %s, module: %s)", eec.stsProperties.Name, eec.stsProperties.feature)
+		log.Info("problem building EEC config map name", err, err.Error())
 	}
+
+	return volumes
 }
 
 func BuildEecConfigMapName(instanceName string, module string) string {
-	if len(instanceName) == 0 || len(module) == 0 {
-		err := fmt.Errorf("empty instance or module name not allowed (instance: %s, module: %s)", instanceName, module)
-		log.Error(err, "problem building EEC config map name")
-		return ""
-	}
 	return regexp.MustCompile(`[^\w\-]`).ReplaceAllString(instanceName+"-"+module+"-eec-config", "_")
 }
 
@@ -141,7 +147,7 @@ func (eec *ExtensionController) buildVolumeMounts() []corev1.VolumeMount {
 		{Name: dataSourceMetadata, MountPath: statsdMetadataMountPoint, ReadOnly: true},
 		{Name: eecLogs, MountPath: extensionsLogsDir},
 		{Name: dataSourceStatsdLogs, MountPath: statsDLogsDir, ReadOnly: true},
-		{Name: "eec-config", MountPath: "/var/lib/dynatrace/remotepluginmodule/agent/conf/runtime"},
+		{Name: eecConfig, MountPath: extensionsRuntimeDir},
 	}
 }
 

@@ -2,57 +2,42 @@ package capability
 
 import (
 	"context"
-	"reflect"
 
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *Reconciler) createEecConfigMapIfNotExists() (bool, error) {
-	eecConfigMap := CreateEecConfigMap(r.Instance, r.ShortName())
-
-	getErr := r.Get(context.TODO(), client.ObjectKey{Name: eecConfigMap.Name, Namespace: eecConfigMap.Namespace}, eecConfigMap)
-	if getErr != nil && k8serrors.IsNotFound(getErr) {
-		log.Info("creating EEC config map", "module", r.ShortName())
-		if err := controllerutil.SetControllerReference(r.Instance, eecConfigMap, r.Scheme()); err != nil {
-			return false, errors.WithStack(err)
-		}
-
-		err := r.Create(context.TODO(), eecConfigMap)
-		return true, errors.WithStack(err)
-	}
-	return false, errors.WithStack(getErr)
-}
-
-func (r *Reconciler) updateEecConfigMapIfOutdated() (bool, error) {
-	desiredConfigMap := CreateEecConfigMap(r.Instance, r.ShortName())
-	installedConfigMap := &corev1.ConfigMap{}
-
-	err := r.Get(context.TODO(), client.ObjectKey{Name: desiredConfigMap.Name, Namespace: desiredConfigMap.Namespace}, installedConfigMap)
+func (r *Reconciler) createOrUpdateEecConfigMap() (bool, error) {
+	desired, err := CreateEecConfigMap(r.Instance, r.ShortName())
 	if err != nil {
 		return false, errors.WithStack(err)
 	}
 
-	if r.isEecConfigMapOutdated(installedConfigMap, desiredConfigMap) {
-		desiredConfigMap.ObjectMeta.ResourceVersion = installedConfigMap.ObjectMeta.ResourceVersion
-		updateErr := r.updateEecConfigMap(desiredConfigMap)
-		if updateErr != nil {
-			return false, updateErr
+	installed := &corev1.ConfigMap{}
+	err = r.Get(context.TODO(), kubeobjects.Key(desired), installed)
+	if k8serrors.IsNotFound(err) {
+		log.Info("creating EEC config map", "module", r.ShortName())
+		if err = controllerutil.SetControllerReference(r.Instance, desired, r.Scheme()); err != nil {
+			return false, errors.WithStack(err)
 		}
-		return true, nil
+
+		err = r.Create(context.TODO(), desired)
+		return true, errors.WithStack(err)
 	}
-	return false, nil
-}
 
-func (r *Reconciler) isEecConfigMapOutdated(installedConfigMap, desiredConfigMap *corev1.ConfigMap) bool {
-	configMapsEqual := reflect.DeepEqual(installedConfigMap.Data, desiredConfigMap.Data) &&
-		reflect.DeepEqual(installedConfigMap.BinaryData, desiredConfigMap.BinaryData)
-	return !configMapsEqual
-}
+	if err == nil {
+		if !kubeobjects.ConfigMapDataEqual(installed, desired) {
+			desired.ObjectMeta.ResourceVersion = installed.ObjectMeta.ResourceVersion
 
-func (r *Reconciler) updateEecConfigMap(eecConfigMap *corev1.ConfigMap) error {
-	return r.Update(context.TODO(), eecConfigMap)
+			if err = r.Update(context.TODO(), desired); err != nil {
+				return false, err
+			}
+			return true, nil
+		}
+	}
+
+	return false, errors.WithStack(err)
 }

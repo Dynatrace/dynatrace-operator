@@ -36,13 +36,14 @@ func testBuildDynaKubeWithAnnotations(instanceName string, statsdEnabled bool, a
 func TestCreateEecConfigMap(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		instance := testBuildDynaKubeWithAnnotations("dynakube", true, map[string]string{
-			"internal.operator.dynatrace.com/extensions.debugExtensionDSstatsddisablenamedalivesignals": "false",
-			"internal.operator.dynatrace.com/extensions.debugExtensionDSstatsdlogoutboundminttraffic":   "true",
-			"internal.operator.dynatrace.com/extensions.debugExtensionDSstatsdcustomloglevel":           "trace",
+			"alpha.operator.dynatrace.com/extensions.debugExtensionDSstatsddisablenamedalivesignals": "false",
+			"alpha.operator.dynatrace.com/extensions.debugExtensionDSstatsdlogoutboundminttraffic":   "true",
+			"alpha.operator.dynatrace.com/extensions.debugExtensionDSstatsdcustomloglevel":           "trace",
 		})
 		runtimeConfig := NewEecRuntimeConfig()
 
-		eecConfigMap := CreateEecConfigMap(instance, "activegate")
+		eecConfigMap, err := CreateEecConfigMap(instance, "activegate")
+		require.NoError(t, err)
 		runtimeConfigJson := eecConfigMap.Data["runtimeConfiguration"]
 
 		assert.Equal(t, "dynakube-activegate-eec-config", eecConfigMap.Name)
@@ -58,18 +59,19 @@ func TestCreateEecConfigMap(t *testing.T) {
 
 	t.Run("no valid EEC runtime properties, StatsD enabled", func(t *testing.T) {
 		instance := testBuildDynaKubeWithAnnotations("dynakube", true, map[string]string{
-			"internal.operator.dynatrace.com/debugExtensionDSstatsdlogoutboundminttraffic": "true",
-			"debugExtensionDSstatsdcustomloglevel":                                         "info",
+			"alpha.operator.dynatrace.com/debugExtensionDSstatsdlogoutboundminttraffic": "true",
+			"debugExtensionDSstatsdcustomloglevel":                                      "info",
 		})
 		runtimeConfig := NewEecRuntimeConfig()
 
-		eecConfigMap := CreateEecConfigMap(instance, "activegate")
-		runtimeConfigJson := eecConfigMap.Data["runtimeConfiguration"]
+		eecConfigMap, err := CreateEecConfigMap(instance, "activegate")
+		require.NoError(t, err)
 
 		assert.Equal(t, "dynakube-activegate-eec-config", eecConfigMap.Name)
 
 		require.NotEmpty(t, eecConfigMap.Data)
-		require.NoError(t, json.Unmarshal([]byte(runtimeConfigJson), &runtimeConfig))
+		require.NoError(t, json.Unmarshal([]byte(eecConfigMap.Data["runtimeConfiguration"]), &runtimeConfig))
+
 		assert.Equal(t, 1, runtimeConfig.Revision)
 		assert.Empty(t, runtimeConfig.BooleanMap)
 		assert.Empty(t, runtimeConfig.StringMap)
@@ -78,12 +80,22 @@ func TestCreateEecConfigMap(t *testing.T) {
 
 	t.Run("valid EEC runtime properties but StatsD disabled", func(t *testing.T) {
 		instance := testBuildDynaKubeWithAnnotations("dynakube", false, map[string]string{
-			"internal.operator.dynatrace.com/extensions.debugExtensionDSstatsddisablenamedalivesignals": "false",
-			"internal.operator.dynatrace.com/extensions.debugExtensionDSstatsdlogoutboundminttraffic":   "true",
-			"internal.operator.dynatrace.com/extensions.debugExtensionDSstatsdcustomloglevel":           "trace",
+			"alpha.operator.dynatrace.com/extensions.debugExtensiondummylongflag": "17",
 		})
+		runtimeConfig := NewEecRuntimeConfig()
 
-		eecConfigMap := CreateEecConfigMap(instance, "activegate")
-		assert.Nil(t, eecConfigMap)
+		eecConfigMap, err := CreateEecConfigMap(instance, "activegate")
+		require.NoError(t, err)
+		assert.NotNil(t, eecConfigMap)
+
+		assert.Equal(t, "dynakube-activegate-eec-config", eecConfigMap.Name)
+
+		require.NotEmpty(t, eecConfigMap.Data)
+		require.NoError(t, json.Unmarshal([]byte(eecConfigMap.Data["runtimeConfiguration"]), &runtimeConfig))
+
+		assert.Equal(t, 1, runtimeConfig.Revision)
+		assert.Empty(t, runtimeConfig.BooleanMap)
+		assert.Empty(t, runtimeConfig.StringMap)
+		assert.Equal(t, int64(17), runtimeConfig.LongMap["debugExtensiondummylongflag"])
 	})
 }

@@ -151,12 +151,7 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 	}
 
 	if r.Config().CreateEecRuntimeConfig {
-		update, err = r.createEecConfigMapIfNotExists()
-		if update || err != nil {
-			return update, errors.WithStack(err)
-		}
-
-		update, err = r.updateEecConfigMapIfOutdated()
+		update, err = r.createOrUpdateEecConfigMap()
 		if update || err != nil {
 			return update, errors.WithStack(err)
 		}

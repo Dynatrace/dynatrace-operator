@@ -86,7 +86,7 @@ func TestBuildEecConfigMapName(t *testing.T) {
 
 	t.Run("empty module", func(t *testing.T) {
 		eecConfigMapName := BuildEecConfigMapName("DynaKube", "")
-		assert.Equal(t, "", eecConfigMapName)
+		assert.Equal(t, "DynaKube--eec-config", eecConfigMapName)
 	})
 
 	t.Run("whitespace-only module", func(t *testing.T) {
