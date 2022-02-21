@@ -66,6 +66,9 @@ spec:
             limits:
               cpu: {{ default "100m" ((.Values.operator).limits).cpu }}
               memory: {{ default "128Mi" ((.Values.operator).limits).memory }}
+          volumeMounts:
+            - name: tmp-cert-dir
+              mountPath: /tmp/dynatrace-operator
           readinessProbe:
             httpGet:
               path: /healthz
@@ -94,6 +97,9 @@ spec:
                     operator: In
                     values:
                       - linux
+      volumes:
+        - emptyDir: { }
+          name: tmp-cert-dir
       serviceAccountName: {{ .Release.Name }}
       {{- if .Values.operator.customPullSecret }}
       imagePullSecrets:
