@@ -5,12 +5,14 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const eecIngestPortName = "eec-http"
 const eecIngestPort = 14599
+const extensionsLogsDir = "/var/lib/dynatrace/remotepluginmodule/log/extensions"
 
 const activeGateInternalCommunicationPort = 9999
 
@@ -19,6 +21,7 @@ const (
 
 	dataSourceStartupArguments = "eec-ds-shared"
 	dataSourceAuthToken        = "dsauthtokendir"
+	eecLogs                    = "extensions-logs"
 )
 
 var _ kubeobjects.ContainerBuilder = (*ExtensionController)(nil)
@@ -36,7 +39,7 @@ func NewExtensionController(stsProperties *statefulSetProperties) *ExtensionCont
 func (eec *ExtensionController) BuildContainer() corev1.Container {
 	return corev1.Container{
 		Name:            consts.EecContainerName,
-		Image:           eec.stsProperties.DynaKube.ActiveGateImage(),
+		Image:           eec.image(),
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             eec.buildEnvs(),
 		VolumeMounts:    eec.buildVolumeMounts(),
@@ -55,6 +58,7 @@ func (eec *ExtensionController) BuildContainer() corev1.Container {
 			SuccessThreshold:    1,
 			TimeoutSeconds:      1,
 		},
+		SecurityContext: eec.buildSecurityContext(),
 	}
 }
 
@@ -78,7 +82,20 @@ func (eec *ExtensionController) BuildVolumes() []corev1.Volume {
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
+		{
+			Name: eecLogs,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
 	}
+}
+
+func (eec *ExtensionController) image() string {
+	if eec.stsProperties.FeatureUseActiveGateImageForStatsd() {
+		return eec.stsProperties.ActiveGateImage()
+	}
+	return eec.stsProperties.EecImage()
 }
 
 func (eec *ExtensionController) buildPorts() []corev1.ContainerPort {
@@ -98,10 +115,12 @@ func (eec *ExtensionController) buildCommand() []string {
 
 func (eec *ExtensionController) buildVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
-		{Name: eecAuthToken, MountPath: "/var/lib/dynatrace/gateway/config"},
-		{Name: dataSourceStartupArguments, MountPath: "/mnt/dsexecargs"},
-		{Name: dataSourceAuthToken, MountPath: "/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources"},
-		{Name: dataSourceMetadata, MountPath: "/opt/dynatrace/remotepluginmodule/agent/datasources/statsd", ReadOnly: true},
+		{Name: eecAuthToken, MountPath: activeGateConfigDir},
+		{Name: dataSourceStartupArguments, MountPath: dataSourceStartupArgsMountPoint},
+		{Name: dataSourceAuthToken, MountPath: dataSourceAuthTokenMountPoint},
+		{Name: dataSourceMetadata, MountPath: statsdMetadataMountPoint, ReadOnly: true},
+		{Name: eecLogs, MountPath: extensionsLogsDir},
+		{Name: dataSourceStatsdLogs, MountPath: statsDLogsDir, ReadOnly: true},
 	}
 }
 
@@ -114,5 +133,19 @@ func (eec *ExtensionController) buildEnvs() []corev1.EnvVar {
 		{Name: "TenantId", Value: tenantId},
 		{Name: "ServerUrl", Value: fmt.Sprintf("https://localhost:%d/communication", activeGateInternalCommunicationPort)},
 		{Name: "EecIngestPort", Value: fmt.Sprintf("%d", eecIngestPort)},
+	}
+}
+
+func (eec *ExtensionController) buildSecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		Privileged:               address_of.Bool(false),
+		AllowPrivilegeEscalation: address_of.Bool(false),
+		ReadOnlyRootFilesystem:   address_of.Bool(false),
+
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{
+				"all",
+			},
+		},
 	}
 }

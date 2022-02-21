@@ -5,15 +5,18 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const statsdProbesPortName = "statsd-probes"
 const statsdProbesPort = 14999
+const statsDLogsDir = extensionsLogsDir + "/datasources-statsd"
 
 const (
-	dataSourceMetadata = "ds-metadata"
+	dataSourceMetadata   = "ds-metadata"
+	dataSourceStatsdLogs = "statsd-logs"
 )
 
 var _ kubeobjects.ContainerBuilder = (*Statsd)(nil)
@@ -31,7 +34,7 @@ func NewStatsd(stsProperties *statefulSetProperties) *Statsd {
 func (statsd *Statsd) BuildContainer() corev1.Container {
 	return corev1.Container{
 		Name:            consts.StatsdContainerName,
-		Image:           statsd.stsProperties.DynaKube.ActiveGateImage(),
+		Image:           statsd.image(),
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             statsd.buildEnvs(),
 		VolumeMounts:    statsd.buildVolumeMounts(),
@@ -63,6 +66,7 @@ func (statsd *Statsd) BuildContainer() corev1.Container {
 			SuccessThreshold:    1,
 			TimeoutSeconds:      1,
 		},
+		SecurityContext: statsd.buildSecurityContext(),
 	}
 }
 
@@ -74,7 +78,20 @@ func (statsd *Statsd) BuildVolumes() []corev1.Volume {
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
+		{
+			Name: dataSourceStatsdLogs,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
 	}
+}
+
+func (statsd *Statsd) image() string {
+	if statsd.stsProperties.FeatureUseActiveGateImageForStatsd() {
+		return statsd.stsProperties.ActiveGateImage()
+	}
+	return statsd.stsProperties.StatsdImage()
 }
 
 func (statsd *Statsd) buildCommand() []string {
@@ -95,16 +112,36 @@ func (statsd *Statsd) buildPorts() []corev1.ContainerPort {
 
 func (statsd *Statsd) buildVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
-		{Name: dataSourceStartupArguments, MountPath: "/mnt/dsexecargs"},
-		{Name: dataSourceAuthToken, MountPath: "/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources"},
-		{Name: dataSourceMetadata, MountPath: "/mnt/dsmetadata"},
+		{Name: dataSourceStartupArguments, MountPath: dataSourceStartupArgsMountPoint},
+		{Name: dataSourceAuthToken, MountPath: dataSourceAuthTokenMountPoint},
+		{Name: dataSourceMetadata, MountPath: dataSourceMetadataMountPoint},
+		{Name: dataSourceStatsdLogs, MountPath: statsDLogsDir},
 	}
 }
 
 func (statsd *Statsd) buildEnvs() []corev1.EnvVar {
 	return []corev1.EnvVar{
-		{Name: "StatsdExecArgsPath", Value: "/mnt/dsexecargs/statsd.process.json"},
+		{Name: "StatsdExecArgsPath", Value: dataSourceStartupArgsMountPoint + "/statsd.process.json"},
 		{Name: "ProbeServerPort", Value: fmt.Sprintf("%d", statsdProbesPort)},
-		{Name: "StatsdMetadataDir", Value: "/mnt/dsmetadata"},
+		{Name: "StatsdMetadataDir", Value: dataSourceMetadataMountPoint},
+		{Name: "DsLogFile", Value: statsDLogsDir + "/dynatracesourcestatsd.log"},
+	}
+}
+
+func (statsd *Statsd) buildSecurityContext() *corev1.SecurityContext {
+	return &corev1.SecurityContext{
+		Privileged:               address_of.Bool(false),
+		AllowPrivilegeEscalation: address_of.Bool(false),
+		ReadOnlyRootFilesystem:   address_of.Bool(true),
+
+		RunAsNonRoot: address_of.Bool(true),
+		RunAsUser:    address_of.Int64(kubeobjects.UnprivilegedUser),
+		RunAsGroup:   address_of.Int64(kubeobjects.UnprivilegedGroup),
+
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{
+				"all",
+			},
+		},
 	}
 }

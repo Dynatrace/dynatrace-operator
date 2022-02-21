@@ -6,10 +6,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStatsd_BuildContainerAndVolumes(t *testing.T) {
 	assertion := assert.New(t)
+	requirement := require.New(t)
 
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
@@ -31,22 +33,38 @@ func TestStatsd_BuildContainerAndVolumes(t *testing.T) {
 		for _, port := range []int32{
 			consts.StatsdIngestPort, statsdProbesPort,
 		} {
-			assertion.Truef(kubeobjects.PortIsIn(container.Ports, port), "Expected that Statsd container defines port %d", port)
+			assertion.Truef(kubeobjects.PortIsIn(container.Ports, port), "Expected that StatsD container defines port %d", port)
 		}
 
 		for _, mountPath := range []string{
-			"/mnt/dsexecargs",
-			"/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources",
-			"/mnt/dsmetadata",
+			dataSourceStartupArgsMountPoint,
+			dataSourceAuthTokenMountPoint,
+			dataSourceMetadataMountPoint,
+			statsDLogsDir,
 		} {
-			assertion.Truef(kubeobjects.MountPathIsIn(container.VolumeMounts, mountPath), "Expected that Statsd container defines mount point %s", mountPath)
+			assertion.Truef(kubeobjects.MountPathIsIn(container.VolumeMounts, mountPath), "Expected that StatsD container defines mount point %s", mountPath)
 		}
 
 		for _, envVar := range []string{
-			"StatsdExecArgsPath", "ProbeServerPort", "StatsdMetadataDir",
+			"StatsdExecArgsPath", "ProbeServerPort", "StatsdMetadataDir", "DsLogFile",
 		} {
-			assertion.Truef(kubeobjects.EnvVarIsIn(container.Env, envVar), "Expected that Statsd container defined environment variable %s", envVar)
+			assertion.Truef(kubeobjects.EnvVarIsIn(container.Env, envVar), "Expected that StatsD container defined environment variable %s", envVar)
 		}
+	})
+
+	t.Run("hardened container security context", func(t *testing.T) {
+		container := NewStatsd(stsProperties).BuildContainer()
+
+		requirement.NotNil(container.SecurityContext)
+		securityContext := container.SecurityContext
+
+		assertion.False(*securityContext.Privileged)
+		assertion.False(*securityContext.AllowPrivilegeEscalation)
+		assertion.True(*securityContext.ReadOnlyRootFilesystem)
+
+		assertion.True(*securityContext.RunAsNonRoot)
+		assertion.Equal(kubeobjects.UnprivilegedUser, *securityContext.RunAsUser)
+		assertion.Equal(kubeobjects.UnprivilegedGroup, *securityContext.RunAsGroup)
 	})
 
 	t.Run("volumes vs volume mounts", func(t *testing.T) {

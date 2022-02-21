@@ -12,9 +12,11 @@ import (
 )
 
 const (
-	DynatracePaasToken       = "paasToken"
-	DynatraceApiToken        = "apiToken"
-	DynatraceDataIngestToken = "dataIngestToken"
+	DynatracePaasToken             = "paasToken"
+	DynatraceApiToken              = "apiToken"
+	DynatraceDataIngestToken       = "dataIngestToken"
+	CustomCertificatesConfigMapKey = "certs"
+	CustomProxySecretKey           = "proxy"
 )
 
 // Client is the interface for the Dynatrace REST API client.
@@ -30,10 +32,13 @@ type Client interface {
 	GetLatestAgentVersion(os, installerType string) (string, error)
 
 	// GetLatestAgent returns a reader with the contents of the download. Must be closed by caller.
-	GetLatestAgent(os, installerType, flavor, arch string, writer io.Writer) error
+	GetLatestAgent(os, installerType, flavor, arch string, technologies []string, writer io.Writer) error
 
 	// GetAgent downloads a specific agent version and writes it to the given io.Writer
-	GetAgent(os, installerType, flavor, arch, version string, writer io.Writer) error
+	GetAgent(os, installerType, flavor, arch, version string, technologies []string, writer io.Writer) error
+
+	// GetAgentViaInstallerUrl downloads the agent from the user specified URL and writes it to the given io.Writer
+	GetAgentViaInstallerUrl(url string, writer io.Writer) error
 
 	// GetAgentVersions on success returns an array of versions that can be used with GetAgent to
 	// download a specific agent version
@@ -107,8 +112,6 @@ const (
 const (
 	TokenScopeInstallerDownload = "InstallerDownload"
 	TokenScopeDataExport        = "DataExport"
-	TokenScopeReadConfig        = "ReadConfig"
-	TokenScopeWriteConfig       = "WriteConfig"
 	TokenScopeMetricsIngest     = "metrics.ingest"
 	TokenScopeEntitiesRead      = "entities.read"
 	TokenScopeSettingsRead      = "settings.read"

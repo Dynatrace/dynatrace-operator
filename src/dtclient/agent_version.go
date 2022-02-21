@@ -69,15 +69,15 @@ func (dtc *dynatraceClient) readResponseForLatestVersion(response []byte) (strin
 }
 
 // GetLatestAgent gets the latest agent package for the given OS and installer type.
-func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch string, writer io.Writer) error {
+func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch string, technologies []string, writer io.Writer) error {
 	if len(os) == 0 || len(installerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
 
-	url := dtc.getLatestAgentUrl(os, installerType, flavor, arch)
+	url := dtc.getLatestAgentUrl(os, installerType, flavor, arch, technologies)
 	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
 	if err == nil {
-		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "md5", md5)
+		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "technologies", technologies, "md5", md5)
 	}
 	return err
 }
@@ -96,15 +96,23 @@ func (dtc *dynatraceClient) GetAgentVersions(os, installerType, flavor, arch str
 	return response.AvailableVersions, errors.WithStack(err)
 }
 
-func (dtc *dynatraceClient) GetAgent(os, installerType, flavor, arch, version string, writer io.Writer) error {
+func (dtc *dynatraceClient) GetAgent(os, installerType, flavor, arch, version string, technologies []string, writer io.Writer) error {
 	if len(os) == 0 || len(installerType) == 0 {
 		return errors.New("os or installerType is empty")
 	}
 
-	url := dtc.getAgentUrl(os, installerType, flavor, arch, version)
+	url := dtc.getAgentUrl(os, installerType, flavor, arch, version, technologies)
 	md5, err := dtc.makeRequestForBinary(url, dynatracePaaSToken, writer)
 	if err == nil {
-		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "md5", md5)
+		log.Info("downloaded agent file", "os", os, "type", installerType, "flavor", flavor, "arch", arch, "technologies", technologies, "md5", md5)
+	}
+	return err
+}
+
+func (dtc *dynatraceClient) GetAgentViaInstallerUrl(url string, writer io.Writer) error {
+	md5, err := dtc.makeRequestForBinary(url, installerUrlToken, writer)
+	if err == nil {
+		log.Info("downloaded agent file using given url", "url", url, "md5", md5)
 	}
 	return err
 }

@@ -17,7 +17,6 @@ const (
 	workloadNameEnvVarName = "DT_WORKLOAD_NAME"
 
 	dataIngestVolumeName = "data-ingest-enrichment"
-	dataIngestMountPath  = "/var/lib/dynatrace/enrichment"
 
 	dataIngestEndpointVolumeName = "data-ingest-endpoint"
 

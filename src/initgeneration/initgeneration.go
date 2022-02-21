@@ -1,8 +1,8 @@
 package initgeneration
 
 import (
-	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
+	"github.com/Dynatrace/dynatrace-operator/src/standalone"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -29,20 +30,6 @@ type InitGenerator struct {
 type nodeInfo struct {
 	nodes   []corev1.Node
 	imNodes map[string]string
-}
-
-// script holds all the values to be passed to the init script template.
-type script struct {
-	ApiUrl        string
-	SkipCertCheck bool
-	PaaSToken     string
-	Proxy         string
-	TrustedCAs    []byte
-	ClusterID     string
-	TenantUUID    string
-	IMNodes       map[string]string
-	HasHost       bool
-	TlsCert       string
 }
 
 func NewInitGenerator(client client.Client, apiReader client.Reader, ns string) *InitGenerator {
@@ -98,25 +85,24 @@ func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaK
 		return nil, err
 	}
 
-	infraMonitoringNodes, err := g.getInfraMonitoringNodes(dk)
+	hostMonitoringNodes, err := g.getHostMonitoringNodes(dk)
 	if err != nil {
 		return nil, err
 	}
 
-	script, err := g.prepareScriptForDynaKube(dk, kubeSystemUID, infraMonitoringNodes)
+	secretConfig, err := g.prepareSecretConfigForDynaKube(dk, kubeSystemUID, hostMonitoringNodes)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := script.generate()
+	data, err := g.createSecretData(secretConfig)
 	if err != nil {
 		return nil, err
 	}
-
 	return data, nil
 }
 
-func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, kubeSystemUID types.UID, infraMonitoringNodes map[string]string) (*script, error) {
+func (g *InitGenerator) prepareSecretConfigForDynaKube(dk *dynatracev1beta1.DynaKube, kubeSystemUID types.UID, hostMonitoringNodes map[string]string) (*standalone.SecretConfig, error) {
 	var tokens corev1.Secret
 	if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
@@ -129,7 +115,7 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, 
 			if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Spec.Proxy.ValueFrom, Namespace: g.namespace}, &ps); err != nil {
 				return nil, fmt.Errorf("failed to query proxy: %w", err)
 			}
-			proxy = string(ps.Data[proxyInitSecretField])
+			proxy = string(ps.Data[proxyKey])
 		} else if dk.Spec.Proxy.Value != "" {
 			proxy = dk.Spec.Proxy.Value
 		}
@@ -141,7 +127,7 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, 
 		if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Spec.TrustedCAs, Namespace: g.namespace}, &cam); err != nil {
 			return nil, fmt.Errorf("failed to query ca: %w", err)
 		}
-		trustedCAs = []byte(cam.Data[trustedCASecretField])
+		trustedCAs = []byte(cam.Data[trustedCAKey])
 	}
 
 	var tlsCert string
@@ -153,35 +139,42 @@ func (g *InitGenerator) prepareScriptForDynaKube(dk *dynatracev1beta1.DynaKube, 
 		tlsCert = string(tlsSecret.Data[tlsCertKey])
 	}
 
-	return &script{
-		ApiUrl:        dk.Spec.APIURL,
-		SkipCertCheck: dk.Spec.SkipCertCheck,
-		PaaSToken:     string(getPaasToken(tokens)),
-		Proxy:         proxy,
-		TrustedCAs:    trustedCAs,
-		ClusterID:     string(kubeSystemUID),
-		TenantUUID:    dk.Status.ConnectionInfo.TenantUUID,
-		IMNodes:       infraMonitoringNodes,
-		HasHost:       dk.CloudNativeFullstackMode(),
-		TlsCert:       tlsCert,
+	return &standalone.SecretConfig{
+		ApiUrl:          dk.Spec.APIURL,
+		ApiToken:        getAPIToken(tokens),
+		PaasToken:       getPaasToken(tokens),
+		Proxy:           proxy,
+		NetworkZone:     dk.Spec.NetworkZone,
+		TrustedCAs:      string(trustedCAs),
+		SkipCertCheck:   dk.Spec.SkipCertCheck,
+		TenantUUID:      dk.Status.ConnectionInfo.TenantUUID,
+		HasHost:         dk.CloudNativeFullstackMode(),
+		MonitoringNodes: hostMonitoringNodes,
+		TlsCert:         tlsCert,
+		HostGroup:       dk.HostGroup(),
+		ClusterID:       string(kubeSystemUID),
 	}, nil
 }
 
-func getPaasToken(tokens corev1.Secret) []byte {
+func getPaasToken(tokens corev1.Secret) string {
 	if len(tokens.Data[dtclient.DynatracePaasToken]) != 0 {
-		return tokens.Data[dtclient.DynatracePaasToken]
+		return string(tokens.Data[dtclient.DynatracePaasToken])
 	}
-	return tokens.Data[dtclient.DynatraceApiToken]
+	return string(tokens.Data[dtclient.DynatraceApiToken])
 }
 
-// getInfraMonitoringNodes creates a mapping between all the nodes and the tenantUID for the infra-monitoring dynakube on that node.
+func getAPIToken(tokens corev1.Secret) string {
+	return string(tokens.Data[dtclient.DynatraceApiToken])
+}
+
+// getHostMonitoringNodes creates a mapping between all the nodes and the tenantUID for the host-monitoring dynakube on that node.
 // Possible mappings:
-// - mapped: there is a infra-monitoring agent on the node, and the dynakube has the tenantUID set => user processes will be grouped to the hosts  (["node.Name"] = "dynakube.tenantUID")
-// - not-mapped: there is NO infra-monitoring agent on the node => user processes will show up as individual 'fake' hosts (["node.Name"] = "-")
-// - unknown: there SHOULD be a infra-monitoring agent on the node, but dynakube has NO tenantUID set => user processes will restart until this is fixed (node.Name not present in the map)
+// - mapped: there is a host-monitoring agent on the node, and the dynakube has the tenantUID set => user processes will be grouped to the hosts  (["node.Name"] = "dynakube.tenantUID")
+// - not-mapped: there is NO host-monitoring agent on the node => user processes will show up as individual 'fake' hosts (["node.Name"] = "-")
+// - unknown: there SHOULD be a host-monitoring agent on the node, but dynakube has NO tenantUID set => user processes will restart until this is fixed (node.Name not present in the map)
 //
-// Checks all the dynakubes with infra-monitoring against all the nodes (using the nodeSelector), creating the above mentioned mapping.
-func (g *InitGenerator) getInfraMonitoringNodes(dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
+// Checks all the dynakubes with host-monitoring against all the nodes (using the nodeSelector), creating the above mentioned mapping.
+func (g *InitGenerator) getHostMonitoringNodes(dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
 
 	imNodes := map[string]string{}
 	if !dk.CloudNativeFullstackMode() {
@@ -224,29 +217,17 @@ func (g *InitGenerator) initIMNodes() (nodeInfo, error) {
 	}
 	imNodes := map[string]string{}
 	for _, node := range nodeList.Items {
-		imNodes[node.Name] = notMappedIM
+		imNodes[node.Name] = standalone.NoHostTenant
 	}
 	return nodeInfo{nodeList.Items, imNodes}, nil
 }
 
-func (s *script) generate() (map[string][]byte, error) {
-	var buf bytes.Buffer
-
-	if err := scriptTmpl.Execute(&buf, s); err != nil {
+func (g *InitGenerator) createSecretData(config *standalone.SecretConfig) (map[string][]byte, error) {
+	jsonContent, err := json.Marshal(*config)
+	if err != nil {
 		return nil, err
 	}
-
-	data := map[string][]byte{
-		initScriptSecretField: buf.Bytes(),
-	}
-
-	if s.TrustedCAs != nil {
-		data[trustedCAInitSecretField] = s.TrustedCAs
-	}
-
-	if s.Proxy != "" {
-		data[proxyInitSecretField] = []byte(s.Proxy)
-	}
-
-	return data, nil
+	return map[string][]byte{
+		standalone.SecretConfigFieldName: jsonContent,
+	}, nil
 }

@@ -13,7 +13,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
-	csidriver "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver"
+	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
 	oneagent "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
@@ -23,6 +23,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
+	"github.com/Dynatrace/dynatrace-operator/src/standalone"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -307,17 +308,17 @@ func updateContainers(pod *corev1.Pod, injectionInfo *InjectionInfo, ic *corev1.
 func decorateInstallContainerWithDataIngest(ic *corev1.Container, injectionInfo *InjectionInfo, workloadKind string, workloadName string) {
 	if injectionInfo.enabled(DataIngest) {
 		ic.Env = append(ic.Env,
-			corev1.EnvVar{Name: workloadKindEnvVarName, Value: workloadKind},
-			corev1.EnvVar{Name: workloadNameEnvVarName, Value: workloadName},
-			corev1.EnvVar{Name: dataIngestInjectedEnvVarName, Value: "true"},
+			corev1.EnvVar{Name: standalone.WorkloadKindEnv, Value: workloadKind},
+			corev1.EnvVar{Name: standalone.WorkloadNameEnv, Value: workloadName},
+			corev1.EnvVar{Name: standalone.DataIngestInjectedEnv, Value: "true"},
 		)
 
 		ic.VolumeMounts = append(ic.VolumeMounts, corev1.VolumeMount{
 			Name:      dataIngestVolumeName,
-			MountPath: dataIngestMountPath})
+			MountPath: standalone.EnrichmentPath})
 	} else {
 		ic.Env = append(ic.Env,
-			corev1.EnvVar{Name: dataIngestInjectedEnvVarName, Value: "false"},
+			corev1.EnvVar{Name: standalone.DataIngestInjectedEnv, Value: "false"},
 		)
 	}
 }
@@ -325,21 +326,21 @@ func decorateInstallContainerWithDataIngest(ic *corev1.Container, injectionInfo 
 func decorateInstallContainerWithOneAgent(ic *corev1.Container, injectionInfo *InjectionInfo, flavor string, technologies string, installPath string, installerURL string, mode string) {
 	if injectionInfo.enabled(OneAgent) {
 		ic.Env = append(ic.Env,
-			corev1.EnvVar{Name: "FLAVOR", Value: flavor},
-			corev1.EnvVar{Name: "TECHNOLOGIES", Value: technologies},
-			corev1.EnvVar{Name: "INSTALLPATH", Value: installPath},
-			corev1.EnvVar{Name: "INSTALLER_URL", Value: installerURL},
-			corev1.EnvVar{Name: "MODE", Value: mode},
-			corev1.EnvVar{Name: oneAgentInjectedEnvVarName, Value: "true"},
+			corev1.EnvVar{Name: standalone.InstallerFlavorEnv, Value: flavor},
+			corev1.EnvVar{Name: standalone.InstallerTechEnv, Value: technologies},
+			corev1.EnvVar{Name: standalone.InstallPathEnv, Value: installPath},
+			corev1.EnvVar{Name: standalone.InstallerUrlEnv, Value: installerURL},
+			corev1.EnvVar{Name: standalone.ModeEnv, Value: mode},
+			corev1.EnvVar{Name: standalone.OneAgentInjectedEnv, Value: "true"},
 		)
 
 		ic.VolumeMounts = append(ic.VolumeMounts,
-			corev1.VolumeMount{Name: oneAgentBinVolumeName, MountPath: "/mnt/bin"},
-			corev1.VolumeMount{Name: oneAgentShareVolumeName, MountPath: "/mnt/share"},
+			corev1.VolumeMount{Name: oneAgentBinVolumeName, MountPath: standalone.BinDirMount},
+			corev1.VolumeMount{Name: oneAgentShareVolumeName, MountPath: standalone.ShareDirMount},
 		)
 	} else {
 		ic.Env = append(ic.Env,
-			corev1.EnvVar{Name: oneAgentInjectedEnvVarName, Value: "false"},
+			corev1.EnvVar{Name: standalone.OneAgentInjectedEnv, Value: "false"},
 		)
 	}
 }
@@ -349,20 +350,19 @@ func createInstallInitContainerBase(image string, pod *corev1.Pod, failurePolicy
 		Name:            dtwebhook.InstallContainerName,
 		Image:           image,
 		ImagePullPolicy: corev1.PullIfNotPresent,
-		Command:         []string{"/usr/bin/env"},
-		Args:            []string{"bash", "/mnt/config/init.sh"},
+		Args:            []string{"init"},
 		Env: []corev1.EnvVar{
-			{Name: "CONTAINERS_COUNT", Value: strconv.Itoa(len(pod.Spec.Containers))},
-			{Name: "FAILURE_POLICY", Value: failurePolicy},
-			{Name: "K8S_PODNAME", ValueFrom: fieldEnvVar("metadata.name")},
-			{Name: "K8S_PODUID", ValueFrom: fieldEnvVar("metadata.uid")},
-			{Name: "K8S_BASEPODNAME", Value: basePodName},
-			{Name: "K8S_NAMESPACE", ValueFrom: fieldEnvVar("metadata.namespace")},
-			{Name: "K8S_NODE_NAME", ValueFrom: fieldEnvVar("spec.nodeName")},
+			{Name: standalone.ContainerCountEnv, Value: strconv.Itoa(len(pod.Spec.Containers))},
+			{Name: standalone.CanFailEnv, Value: failurePolicy},
+			{Name: standalone.K8PodNameEnv, ValueFrom: fieldEnvVar("metadata.name")},
+			{Name: standalone.K8PodUIDEnv, ValueFrom: fieldEnvVar("metadata.uid")},
+			{Name: standalone.K8BasePodNameEnv, Value: basePodName},
+			{Name: standalone.K8NamespaceEnv, ValueFrom: fieldEnvVar("metadata.namespace")},
+			{Name: standalone.K8NodeNameEnv, ValueFrom: fieldEnvVar("spec.nodeName")},
 		},
 		SecurityContext: sc,
 		VolumeMounts: []corev1.VolumeMount{
-			{Name: injectionConfigVolumeName, MountPath: "/mnt/config"},
+			{Name: injectionConfigVolumeName, MountPath: standalone.ConfigDirMount},
 		},
 		Resources: *dk.InitResources(),
 	}
@@ -474,8 +474,11 @@ func ensureDynakubeVolume(dk dynatracev1beta1.DynaKube) (corev1.VolumeSource, st
 	mode := ""
 	if dk.NeedsCSIDriver() {
 		dkVol.CSI = &corev1.CSIVolumeSource{
-			Driver:           dtcsi.DriverName,
-			VolumeAttributes: map[string]string{csidriver.CSIVolumeAttributeName: appvolumes.Mode},
+			Driver: dtcsi.DriverName,
+			VolumeAttributes: map[string]string{
+				csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,
+				csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
+			},
 		}
 		mode = provisionedVolumeMode
 	} else {
@@ -700,7 +703,7 @@ func updateContainerOneAgent(c *corev1.Container, dk *dynatracev1beta1.DynaKube,
 		corev1.VolumeMount{
 			Name:      oneAgentShareVolumeName,
 			MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-			SubPath:   fmt.Sprintf("container_%s.conf", c.Name),
+			SubPath:   fmt.Sprintf(standalone.ContainerConfFilenameTemplate, c.Name),
 		})
 	if dk.HasActiveGateTLS() {
 		c.VolumeMounts = append(c.VolumeMounts,
@@ -760,7 +763,7 @@ func updateContainerDataIngest(c *corev1.Container, pod *corev1.Pod, deploymentM
 	c.VolumeMounts = append(c.VolumeMounts,
 		corev1.VolumeMount{
 			Name:      dataIngestVolumeName,
-			MountPath: "/var/lib/dynatrace/enrichment",
+			MountPath: standalone.EnrichmentPath,
 		},
 		corev1.VolumeMount{
 			Name:      dataIngestEndpointVolumeName,
@@ -774,8 +777,15 @@ func updateContainerDataIngest(c *corev1.Container, pod *corev1.Pod, deploymentM
 			Value: dataIngestFields[dtingestendpoint.UrlSecretField],
 		},
 		corev1.EnvVar{
-			Name:  dtingestendpoint.TokenSecretField,
-			Value: dataIngestFields[dtingestendpoint.TokenSecretField],
+			Name: dtingestendpoint.TokenSecretField,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: dtingestendpoint.SecretEndpointName,
+					},
+					Key: dtingestendpoint.TokenSecretField,
+				},
+			},
 		},
 	)
 }
