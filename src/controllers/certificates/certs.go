@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"math/big"
 	"time"
+
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 )
 
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), 128)
@@ -51,21 +53,21 @@ func (cs *Certs) ValidateCerts() error {
 		now = cs.Now
 	}
 
-	renewRootCerts := cs.validateRootCerts(now)
+	renewRootCerts := cs.validateRootCerts()
 	if renewRootCerts {
 		if err := cs.generateRootCerts(cs.Domain, now); err != nil {
 			return err
 		}
 	}
 
-	if renewRootCerts || cs.validateServerCerts(now) {
+	if renewRootCerts || cs.validateServerCerts() {
 		return cs.generateServerCerts(cs.Domain, now)
 	}
 
 	return nil
 }
 
-func (cs *Certs) validateRootCerts(now time.Time) bool {
+func (cs *Certs) validateRootCerts() bool {
 	if cs.Data[RootKey] == nil || cs.Data[RootCert] == nil {
 		log.Info("no root certificates found, creating")
 		return true
@@ -73,14 +75,9 @@ func (cs *Certs) validateRootCerts(now time.Time) bool {
 
 	var err error
 
-	if block, _ := pem.Decode(cs.Data[RootCert]); block == nil {
-		log.Info("failed to parse root certificates, renewing", "error", "can't decode PEM file")
-		return true
-	} else if cs.rootPublicCert, err = x509.ParseCertificate(block.Bytes); err != nil {
-		log.Info("failed to parse root certificates, renewing", "error", err)
-		return true
-	} else if now.After(cs.rootPublicCert.NotAfter.Add(-renewalThreshold)) {
-		log.Info("root certificates are about to expire, renewing", "current", now, "expiration", cs.rootPublicCert.NotAfter)
+	isValid, err := kubeobjects.ValidateCertificateExpiration(cs.Data[RootCert], renewalThreshold, log)
+	if !isValid || err != nil {
+		log.Info("root key failed to parse or is outdated")
 		return true
 	}
 
@@ -95,29 +92,17 @@ func (cs *Certs) validateRootCerts(now time.Time) bool {
 	return false
 }
 
-func (cs *Certs) validateServerCerts(now time.Time) bool {
+func (cs *Certs) validateServerCerts() bool {
 	if cs.Data[ServerKey] == nil || cs.Data[ServerCert] == nil {
 		log.Info("no server certificates found, creating")
 		return true
 	}
 
-	block, _ := pem.Decode(cs.Data[ServerCert])
-	if block == nil {
-		log.Info("failed to parse server certificates, renewing", "error", "can't decode PEM file")
+	isValid, err := kubeobjects.ValidateCertificateExpiration(cs.Data[ServerCert], renewalThreshold, log)
+	if err != nil || !isValid {
+		log.Info("server certificate failed to parse or is outdated")
 		return true
 	}
-
-	cert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		log.Info("failed to parse server certificates, renewing", "error", err)
-		return true
-	}
-
-	if now.After(cert.NotAfter.Add(-renewalThreshold)) {
-		log.Info("server certificates are about to expire, renewing", "current", now, "expiration", cert.NotAfter)
-		return true
-	}
-
 	return false
 }
 
