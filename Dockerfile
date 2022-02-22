@@ -15,7 +15,7 @@ RUN CGO_ENABLED=1 go build "${GO_BUILD_ARGS}" -o ./build/_output/bin/dynatrace-o
 
 FROM registry.access.redhat.com/ubi8-micro:8.5-744
 
-COPY --from=operator-build /etc/ssl/certs.pem /etc/ssl/certs.pem
+COPY --from=operator-build /etc/ssl/cert.pem /etc/ssl/cert.pem
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 
