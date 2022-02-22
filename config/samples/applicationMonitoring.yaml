@@ -83,6 +83,7 @@ spec:
       - routing
       - kubernetes-monitoring
       - metrics-ingest
+      - dynatrace-api
 
     # Optional: to use a custom ActiveGate Docker image.
     image: ""
