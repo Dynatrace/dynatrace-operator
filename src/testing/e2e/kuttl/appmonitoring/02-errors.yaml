@@ -1,7 +1,9 @@
+# With appMonitoring enabled, apps in none labeled namespaces ==> apps left alone
 apiVersion: v1
 kind: Pod
 metadata:
   name: php-glibc
   namespace: leave-alone-app-monitoring
 spec:
-  initContainers: []
+    initContainers:
+    - name: install-oneagent

@@ -1,6 +1,8 @@
+# With cloudNative enabled, namespaces matching namespaceSelector ==> namespaces get labeled
+# With cloudNative enabled => oneagent daemonset is deployed with envvar ONEAGENT_DISABLE_CONTAINER_INJECTION
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
-timeout: 130
+timeout: 240
 ---
 apiVersion: v1
 kind: Namespace
@@ -46,6 +48,12 @@ spec:
       containers:
       - name: dynatrace-oneagent
         env:
+        - name: DT_K8S_CLUSTER_ID
+        - name: DT_K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
         - name: ONEAGENT_DISABLE_CONTAINER_INJECTION
           value: "true"
 status:

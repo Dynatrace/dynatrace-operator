@@ -1,3 +1,4 @@
+# Oneagent Daemonset should be deleted if cloudNative is disabled
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:

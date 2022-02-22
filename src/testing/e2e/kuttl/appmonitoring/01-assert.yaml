@@ -1,3 +1,4 @@
+# With appMonitoring enabled, namespaces matching namespaceSelector ==> namespaces get labeled
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: 90

@@ -1,3 +1,4 @@
+# Deploy sample apps in created namespace
 apiVersion: v1
 kind: Pod
 metadata:
@@ -9,7 +10,6 @@ metadata:
   labels:
     app: php-glibc
 spec:
-  initContainers: []
   containers:
     - image: docker.io/php:fpm-stretch
       imagePullPolicy: Always

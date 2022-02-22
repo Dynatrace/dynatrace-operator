@@ -1,3 +1,4 @@
+# Deploy sample apps in created namespaces
 apiVersion: v1
 kind: Pod
 metadata:

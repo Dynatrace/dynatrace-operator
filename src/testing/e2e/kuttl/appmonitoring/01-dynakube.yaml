@@ -1,3 +1,5 @@
+# Updates dynakube to enable appMonitoring
+# Creates namespaces to monitor
 apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
@@ -10,6 +12,9 @@ spec:
 
   oneAgent:
     applicationMonitoring: {}
+    hostMonitoring: null
+    classicFullStack: null
+    cloudNativeFullStack: null
 ---
 apiVersion: v1
 kind: Namespace

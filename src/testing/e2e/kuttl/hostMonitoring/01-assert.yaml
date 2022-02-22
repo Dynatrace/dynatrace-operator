@@ -1,6 +1,7 @@
+# With hostMonitoring enabled => oneagent daemonset is deployed with envvar ONEAGENT_DISABLE_CONTAINER_INJECTION
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
-timeout: 90
+timeout: 240
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -30,6 +31,12 @@ spec:
       containers:
       - name: dynatrace-oneagent
         env:
+        - name: DT_K8S_CLUSTER_ID
+        - name: DT_K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
         - name: ONEAGENT_DISABLE_CONTAINER_INJECTION
           value: "true"
 status:

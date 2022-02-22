@@ -1,15 +1,15 @@
+# Deploy sample apps in created namespace
 apiVersion: v1
 kind: Pod
 metadata:
   name: php-glibc
-  namespace: already-present-classic
+  namespace: already-present-host-monitoring
   annotations:
     oneagent.dynatrace.com/technologies: php
     oneagent.dynatrace.com/failure-policy: fail
   labels:
     app: php-glibc
 spec:
-  initContainers: []
   containers:
     - image: docker.io/php:fpm-stretch
       imagePullPolicy: Always

@@ -1,6 +1,6 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
-timeout: 120
+timeout: 220
 commands:
 - command: kubectl delete ns inject-into-app-monitoring
 - command: kubectl delete ns leave-alone-app-monitoring

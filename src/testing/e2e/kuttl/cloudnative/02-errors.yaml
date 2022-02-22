@@ -1,7 +1,9 @@
+# With cloudNative enabled, apps in none labeled namespaces ==> apps left alone
 apiVersion: v1
 kind: Pod
 metadata:
   name: php-glibc
   namespace: leave-alone-cloud-native
 spec:
-  initContainers: []
+    initContainers:
+    - name: install-oneagent

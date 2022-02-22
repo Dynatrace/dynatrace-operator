@@ -1,3 +1,5 @@
+# Creates dynakube without any mode set
+# Creates namespace before cloudNative mode is enabled
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:

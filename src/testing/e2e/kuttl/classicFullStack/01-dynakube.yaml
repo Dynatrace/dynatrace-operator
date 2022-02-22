@@ -1,3 +1,4 @@
+# Updates dynakube to enable classicFullStack
 apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
@@ -10,4 +11,8 @@ spec:
         - effect: NoSchedule
           key: node-role.kubernetes.io/master
           operator: Exists
+
+    hostMonitoring: null
+    applicationMonitoring: null
+    cloudNativeFullStack: null
 

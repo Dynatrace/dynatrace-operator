@@ -1,3 +1,5 @@
+# Updates dynakube to enable cloudNative
+# Creates namespaces to monitor
 apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
@@ -14,6 +16,9 @@ spec:
         - effect: NoSchedule
           key: node-role.kubernetes.io/master
           operator: Exists
+    hostMonitoring: null
+    classicFullStack: null
+    applicationMonitoring: null
 ---
 apiVersion: v1
 kind: Namespace

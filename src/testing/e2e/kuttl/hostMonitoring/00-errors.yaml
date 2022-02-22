@@ -1,3 +1,4 @@
+# Namespaces should be labeled during hostMonitoring
 apiVersion: v1
 kind: Namespace
 metadata:

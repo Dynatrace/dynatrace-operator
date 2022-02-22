@@ -1,0 +1,11 @@
+# Apps shouldn't get initContainer in classicFullStack mode
+apiVersion: v1
+kind: Pod
+metadata:
+  name: php-glibc
+  namespace: already-present-classic
+spec:
+  initContainers:
+    - name: install-oneagent
+status:
+  phase: Running
