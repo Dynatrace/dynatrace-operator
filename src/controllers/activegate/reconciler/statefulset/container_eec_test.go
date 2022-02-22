@@ -92,3 +92,25 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 		assert.True(t, container.Resources.Limits.Memory().IsZero())
 	})
 }
+
+func TestBuildEecConfigMapName(t *testing.T) {
+	t.Run("happy case", func(t *testing.T) {
+		eecConfigMapName := BuildEecConfigMapName("dynakube", "activegate")
+		assert.Equal(t, "dynakube-activegate-eec-config", eecConfigMapName)
+	})
+
+	t.Run("happy case, capitalized and with spaces", func(t *testing.T) {
+		eecConfigMapName := BuildEecConfigMapName("DynaKube", "Active Gate")
+		assert.Equal(t, "DynaKube-Active_Gate-eec-config", eecConfigMapName)
+	})
+
+	t.Run("empty module", func(t *testing.T) {
+		eecConfigMapName := BuildEecConfigMapName("DynaKube", "")
+		assert.Equal(t, "DynaKube--eec-config", eecConfigMapName)
+	})
+
+	t.Run("whitespace-only module", func(t *testing.T) {
+		eecConfigMapName := BuildEecConfigMapName("DynaKube", " 		")
+		assert.Equal(t, "DynaKube-___-eec-config", eecConfigMapName)
+	})
+}
