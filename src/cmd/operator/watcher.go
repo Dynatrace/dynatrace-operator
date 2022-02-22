@@ -82,7 +82,7 @@ func (watcher *certificateWatcher) updateCertificatesFromSecret() (bool, error) 
 			return false, err
 		}
 	}
-	isValid, err := kubeobjects.ValidateCertificateExpiration(secret.Data["tls.crt"], certificateRenewalInterval, log)
+	isValid, err := kubeobjects.ValidateCertificateExpiration(secret.Data["tls.crt"], certificateRenewalInterval, time.Now(), log)
 	if err != nil {
 		return false, err
 	} else if !isValid {
