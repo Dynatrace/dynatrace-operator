@@ -433,8 +433,9 @@ func buildTestInstance() *dynatracev1beta1.DynaKube {
 	replicas := int32(3)
 	return &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      testName,
-			Namespace: testNamespace,
+			Name:        testName,
+			Namespace:   testNamespace,
+			Annotations: make(map[string]string),
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://testing.dev.dynatracelabs.com/api",

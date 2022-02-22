@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"regexp"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -62,6 +64,7 @@ func (eec *ExtensionController) BuildContainer() corev1.Container {
 			TimeoutSeconds:      1,
 		},
 		SecurityContext: eec.buildSecurityContext(),
+		Resources:       eec.buildResourceRequirements(),
 	}
 }
 
@@ -175,4 +178,18 @@ func (eec *ExtensionController) buildSecurityContext() *corev1.SecurityContext {
 			},
 		},
 	}
+}
+
+var _ dynatracev1beta1.ResourceRequirementer = (*ExtensionController)(nil)
+
+func (eec *ExtensionController) Limits(resourceName corev1.ResourceName) *resource.Quantity {
+	return eec.stsProperties.FeatureEecResourcesLimits(resourceName)
+}
+
+func (eec *ExtensionController) Requests(resourceName corev1.ResourceName) *resource.Quantity {
+	return eec.stsProperties.FeatureEecResourcesRequests(resourceName)
+}
+
+func (eec *ExtensionController) buildResourceRequirements() corev1.ResourceRequirements {
+	return dynatracev1beta1.BuildResourceRequirements(eec)
 }
