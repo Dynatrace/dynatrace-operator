@@ -3,7 +3,7 @@ package statefulset
 import (
 	"fmt"
 
-	"github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
@@ -149,7 +149,7 @@ func (statsd *Statsd) buildSecurityContext() *corev1.SecurityContext {
 	}
 }
 
-var _ v1beta1.ResourceRequirementer = (*Statsd)(nil)
+var _ dynatracev1beta1.ResourceRequirementer = (*Statsd)(nil)
 
 func (statsd *Statsd) Limits(resourceName corev1.ResourceName) *resource.Quantity {
 	return statsd.stsProperties.FeatureStatsdResourcesLimits(resourceName)
@@ -160,5 +160,5 @@ func (statsd *Statsd) Requests(resourceName corev1.ResourceName) *resource.Quant
 }
 
 func (statsd *Statsd) buildResourceRequirements() corev1.ResourceRequirements {
-	return v1beta1.BuildResourceRequirements(statsd)
+	return dynatracev1beta1.BuildResourceRequirements(statsd)
 }
