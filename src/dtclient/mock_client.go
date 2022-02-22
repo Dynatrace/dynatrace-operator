@@ -11,9 +11,14 @@ type MockDynatraceClient struct {
 	mock.Mock
 }
 
-func (o *MockDynatraceClient) GetTenantInfo() (*TenantInfo, error) {
+func (o *MockDynatraceClient) GetAgentTenantInfo() (*AgentTenantInfo, error) {
 	args := o.Called()
-	return args.Get(0).(*TenantInfo), args.Error(1)
+	return args.Get(0).(*AgentTenantInfo), args.Error(1)
+}
+
+func (o *MockDynatraceClient) GetActiveGateTenantInfo() (*ActiveGateTenantInfo, error) {
+	args := o.Called()
+	return args.Get(0).(*ActiveGateTenantInfo), args.Error(1)
 }
 
 func (o *MockDynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {

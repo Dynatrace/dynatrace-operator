@@ -74,6 +74,9 @@ type ActiveGateSpec struct {
 	// Optional: Sets DNS Policy for the ActiveGate pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="DNS Policy",order=24,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	DNSPolicy corev1.DNSPolicy `json:"dnsPolicy,omitempty"`
+
+	// Optional: Sets name of secret containing: tenant-uuid, tenant-token, communication-endpoints
+	AGTenantSecret string `json:"tenantSecret,omitempty"`
 }
 
 // CapabilityProperties is a struct which can be embedded by ActiveGate capabilities

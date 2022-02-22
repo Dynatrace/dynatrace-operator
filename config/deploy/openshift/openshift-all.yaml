@@ -3,7 +3,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
-  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -72,7 +71,7 @@ spec:
                 type: object
               apiUrl:
                 description: Location of the Dynatrace API to connect to, including
-                  your specific environment ID
+                  your specific environment UUID
                 type: string
               classicFullStack:
                 description: Configuration for ClassicFullStack Monitoring
@@ -896,7 +895,7 @@ spec:
                   type: object
                 type: array
               environmentID:
-                description: EnvironmentID contains the environment ID corresponding
+                description: EnvironmentID contains the environment UUID corresponding
                   to the API URL
                 type: string
               lastAPITokenProbeTimestamp:
@@ -1185,6 +1184,10 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
+                  tenantSecret:
+                    description: 'Optional: Sets name of secret containing: tenant-uuid,
+                      tenant-token, communication-endpoints'
+                    type: string
                   tlsSecretName:
                     description: 'Optional: the name of a secret containing ActiveGate
                       TLS cert+key and password. If not set, self-signed certificate
@@ -1236,7 +1239,7 @@ spec:
                 type: object
               apiUrl:
                 description: Location of the Dynatrace API to connect to, including
-                  your specific environment ID
+                  your specific environment UUID
                 type: string
               customPullSecret:
                 description: 'Optional: Pull secret for your private registry'
