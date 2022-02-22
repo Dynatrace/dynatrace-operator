@@ -194,7 +194,7 @@ fmt:
 vet:
 	go vet ./...
 
-tidy: fmt vet
+lint: fmt vet
 	gci -w .
 	golangci-lint run --build-tags integration,containers_image_storage_stub --timeout 300s
 
