@@ -19,6 +19,7 @@ var validators = []validator{
 	conflictingOneAgentConfiguration,
 	conflictingNodeSelector,
 	conflictingNamespaceSelector,
+	noResourcesAvailable,
 }
 
 var warnings = []validator{

@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	annotationFeaturePrefix                           = "alpha.operator.dynatrace.com/feature-"
+	PublicAnnotationPrefix                            = "alpha.operator.dynatrace.com/"
+	annotationFeaturePrefix                           = PublicAnnotationPrefix + "feature-"
 	annotationFeatureDisableActiveGateUpdates         = annotationFeaturePrefix + "disable-activegate-updates"
 	annotationFeatureDisableHostsRequests             = annotationFeaturePrefix + "disable-hosts-requests"
 	annotationFeatureOneAgentMaxUnavailable           = annotationFeaturePrefix + "oneagent-max-unavailable"

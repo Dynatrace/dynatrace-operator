@@ -33,11 +33,6 @@ type DynatraceClientProxy struct {
 	ValueFrom string
 }
 
-const (
-	proxy        = "proxy"
-	certificates = "certs"
-)
-
 func NewDynatraceClientProperties(ctx context.Context, apiReader client.Reader, dk dynatracev1beta1.DynaKube) (*DynatraceClientProperties, error) {
 	var tokens corev1.Secret
 	var err error
@@ -122,7 +117,7 @@ func (opts *options) appendProxySettings(apiReader client.Reader, proxyEntry *Dy
 				return fmt.Errorf("failed to get proxy secret: %w", err)
 			}
 
-			proxyURL, err := kubeobjects.ExtractToken(proxySecret, proxy)
+			proxyURL, err := kubeobjects.ExtractToken(proxySecret, dtclient.CustomProxySecretKey)
 			if err != nil {
 				return fmt.Errorf("failed to extract proxy secret field: %w", err)
 			}
@@ -140,10 +135,10 @@ func (opts *options) appendTrustedCerts(apiReader client.Reader, trustedCerts st
 		if err := apiReader.Get(context.TODO(), client.ObjectKey{Namespace: namespace, Name: trustedCerts}, certs); err != nil {
 			return fmt.Errorf("failed to get certificate configmap: %w", err)
 		}
-		if certs.Data[certificates] == "" {
+		if certs.Data[dtclient.CustomCertificatesConfigMapKey] == "" {
 			return fmt.Errorf("failed to extract certificate configmap field: missing field certs")
 		}
-		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[certificates])))
+		opts.Opts = append(opts.Opts, dtclient.Certs([]byte(certs.Data[dtclient.CustomCertificatesConfigMapKey])))
 	}
 	return nil
 }
