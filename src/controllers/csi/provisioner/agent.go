@@ -53,7 +53,7 @@ func (updater *agentUpdater) updateAgent(version, tenantUUID string, previousHas
 	currentVersion := updater.getOneAgentVersionFromInstance()
 	targetDir := updater.path.AgentBinaryDirForVersion(tenantUUID, currentVersion)
 
-	if _, err := updater.fs.Stat(targetDir); currentVersion != version || os.IsNotExist(err) {
+	if _, err := updater.fs.Stat(targetDir); os.IsNotExist(err) {
 		log.Info("updating agent", "version", currentVersion, "previous version", version)
 
 		updater.installer.SetVersion(currentVersion)
@@ -72,6 +72,21 @@ func (updater *agentUpdater) updateAgent(version, tenantUUID string, previousHas
 			corev1.EventTypeNormal,
 			installAgentVersionEvent,
 			"Installed agent version: %s to tenant: %s", currentVersion, tenantUUID)
+		return currentVersion, nil
+	}
+	if currentVersion != version {
+		log.Info("updating agent, installer was already present",
+			"version", currentVersion,
+			"previous version", version,
+			"target directory", targetDir)
+		updater.recorder.Eventf(dk,
+			corev1.EventTypeNormal,
+			installAgentVersionEvent,
+			"Set new agent version: %s to tenant: %s", currentVersion, tenantUUID)
+		log.Info("updating ruxitagentproc.conf on new version")
+		if err := updater.installer.UpdateProcessModuleConfig(targetDir, latestProcessModuleConfigCache.ProcessModuleConfig); err != nil {
+			return "", err
+		}
 		return currentVersion, nil
 	}
 	if latestProcessModuleConfigCache != nil && previousHash != latestProcessModuleConfigCache.Hash {
