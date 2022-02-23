@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
@@ -155,7 +155,7 @@ func TestStatefulSet_Container(t *testing.T) {
 	containers := buildContainers(stsProperties, extraContainerBuilders)
 	activeGateContainer := containers[0]
 
-	assert.Equal(t, consts.ActiveGateContainerName, activeGateContainer.Name)
+	assert.Equal(t, capability.ActiveGateContainerName, activeGateContainer.Name)
 	assert.Equal(t, instance.ActiveGateImage(), activeGateContainer.Image)
 	assert.Empty(t, activeGateContainer.Resources)
 	assert.Equal(t, corev1.PullAlways, activeGateContainer.ImagePullPolicy)
