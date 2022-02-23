@@ -121,3 +121,7 @@ func CreateEmptySecret(name string, namespace string) *corev1.Secret {
 		Data: map[string][]byte{},
 	}
 }
+
+func IsSecretEqual(currentSecret *corev1.Secret, desired map[string][]byte) bool {
+	return reflect.DeepEqual(desired, currentSecret.Data)
+}
