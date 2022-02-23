@@ -14,11 +14,16 @@ import (
 
 const statsdProbesPortName = "statsd-probes"
 const statsdProbesPort = 14999
-const statsDLogsDir = extensionsLogsDir + "/datasources-statsd"
+const statsdLogsDir = extensionsLogsDir + "/datasources-statsd"
 
 const (
 	dataSourceMetadata   = "ds-metadata"
 	dataSourceStatsdLogs = "statsd-logs"
+
+	envStatsdMetadata            = "StatsdMetadataDir"
+	envDataSourceProbeServerPort = "ProbeServerPort"
+	envDataSourceLogFile         = "DsLogFile"
+	envStatsdStartupArgsPath     = "StatsdExecArgsPath"
 )
 
 var _ kubeobjects.ContainerBuilder = (*Statsd)(nil)
@@ -118,16 +123,16 @@ func (statsd *Statsd) buildVolumeMounts() []corev1.VolumeMount {
 		{Name: dataSourceStartupArguments, MountPath: dataSourceStartupArgsMountPoint},
 		{Name: dataSourceAuthToken, MountPath: dataSourceAuthTokenMountPoint},
 		{Name: dataSourceMetadata, MountPath: dataSourceMetadataMountPoint},
-		{Name: dataSourceStatsdLogs, MountPath: statsDLogsDir},
+		{Name: dataSourceStatsdLogs, MountPath: statsdLogsDir},
 	}
 }
 
 func (statsd *Statsd) buildEnvs() []corev1.EnvVar {
 	return []corev1.EnvVar{
-		{Name: "StatsdExecArgsPath", Value: dataSourceStartupArgsMountPoint + "/statsd.process.json"},
-		{Name: "ProbeServerPort", Value: fmt.Sprintf("%d", statsdProbesPort)},
-		{Name: "StatsdMetadataDir", Value: dataSourceMetadataMountPoint},
-		{Name: "DsLogFile", Value: statsDLogsDir + "/dynatracesourcestatsd.log"},
+		{Name: envStatsdStartupArgsPath, Value: dataSourceStartupArgsMountPoint + "/statsd.process.json"},
+		{Name: envDataSourceProbeServerPort, Value: fmt.Sprintf("%d", statsdProbesPort)},
+		{Name: envStatsdMetadata, Value: dataSourceMetadataMountPoint},
+		{Name: envDataSourceLogFile, Value: statsdLogsDir + "/dynatracesourcestatsd.log"},
 	}
 }
 
