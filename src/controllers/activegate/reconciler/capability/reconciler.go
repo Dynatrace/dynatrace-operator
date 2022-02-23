@@ -150,6 +150,13 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 		}
 	}
 
+	if r.Config().CreateEecRuntimeConfig {
+		update, err = r.createOrUpdateEecConfigMap()
+		if update || err != nil {
+			return update, errors.WithStack(err)
+		}
+	}
+
 	update, err = r.Reconciler.Reconcile()
 	return update, errors.WithStack(err)
 }

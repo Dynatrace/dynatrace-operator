@@ -9,8 +9,9 @@ import (
 )
 
 type DockerConfig struct {
-	Auths         map[string]DockerAuth
-	SkipCertCheck bool
+	Auths           map[string]DockerAuth
+	SkipCertCheck   bool
+	UseTrustedCerts bool
 }
 
 type DockerAuth struct {

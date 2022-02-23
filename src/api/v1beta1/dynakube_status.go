@@ -55,8 +55,7 @@ type DynaKubeStatus struct {
 	ActiveGate          ActiveGateStatus `json:"activeGate,omitempty"`
 	ExtensionController EecStatus        `json:"eec,omitempty"`
 	Statsd              StatsdStatus     `json:"statsd,omitempty"`
-
-	OneAgent OneAgentStatus `json:"oneAgent,omitempty"`
+	OneAgent            OneAgentStatus   `json:"oneAgent,omitempty"`
 }
 
 type ConnectionInfoStatus struct {
