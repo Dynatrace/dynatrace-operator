@@ -17,13 +17,12 @@ import (
 )
 
 const (
-	AGSecretSuffix             = "-activegate-tenant-secret"
 	CommunicationEndpointsName = "communication-endpoints"
 	TenantTokenName            = "tenant-token"
 	TenantUuidName             = "tenant-uuid"
 )
 
-type Reconciler struct {
+type TenantSecretReconciler struct {
 	client.Client
 	apiReader client.Reader
 	instance  *dynatracev1beta1.DynaKube
@@ -32,8 +31,8 @@ type Reconciler struct {
 	dtc       dtclient.Client
 }
 
-func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, apiToken string, dtc dtclient.Client) *Reconciler {
-	return &Reconciler{
+func NewTenantSecretReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, apiToken string, dtc dtclient.Client) *TenantSecretReconciler {
+	return &TenantSecretReconciler{
 		Client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
@@ -43,33 +42,31 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 	}
 }
 
-func (r *Reconciler) Reconcile() error {
-	if r.instance.Spec.ActiveGate.TenantSecret == "" {
-		err := r.reconcileActiveGateSecret()
-		if err != nil {
-			log.Error(err, "could not reconcile ActiveGate tenant secret")
-			return errors.WithStack(err)
-		}
+func (r *TenantSecretReconciler) Reconcile() error {
+	err := r.reconcileSecret()
+	if err != nil {
+		log.Error(err, "could not reconcile ActiveGate tenant secret")
+		return errors.WithStack(err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) reconcileActiveGateSecret() error {
+func (r *TenantSecretReconciler) reconcileSecret() error {
 	agSecretData, err := r.getActiveGateTenantInfo()
 	if err != nil {
-		return fmt.Errorf("could not generate ag secret data: %w", err)
+		return fmt.Errorf("failed to fetch ActiveGate tenant info: %w", err)
 	}
 
-	agSecret, err := r.createAGSecretIfNotExists(agSecretData)
+	agSecret, err := r.createSecretIfNotExists(agSecretData)
 	if err != nil {
 		return fmt.Errorf("failed to create or update secret: %w", err)
 	}
 
-	return r.updateAGSecretIfOutdated(agSecret, agSecretData)
+	return r.updateSecretIfOutdated(agSecret, agSecretData)
 }
 
-func (r *Reconciler) getActiveGateTenantInfo() (map[string][]byte, error) {
+func (r *TenantSecretReconciler) getActiveGateTenantInfo() (map[string][]byte, error) {
 	tenantInfo, err := r.dtc.GetActiveGateTenantInfo()
 
 	if err != nil {
@@ -83,38 +80,40 @@ func (r *Reconciler) getActiveGateTenantInfo() (map[string][]byte, error) {
 	}, nil
 }
 
-func (r *Reconciler) createAGSecretIfNotExists(agSecretData map[string][]byte) (*corev1.Secret, error) {
+func (r *TenantSecretReconciler) createSecretIfNotExists(agSecretData map[string][]byte) (*corev1.Secret, error) {
 	var config corev1.Secret
-	err := r.apiReader.Get(context.TODO(), client.ObjectKey{Name: extendWithAGSecretSuffix(r.instance.Name), Namespace: r.instance.Namespace}, &config)
+	err := r.apiReader.Get(context.TODO(),
+		client.ObjectKey{Name: extendWithAGSecretSuffix(r.instance.Name), Namespace: r.instance.Namespace},
+		&config)
 	if k8serrors.IsNotFound(err) {
 		log.Info("creating ag secret")
-		return r.createAGSecret(agSecretData)
+		return r.createSecret(agSecretData)
 	}
 	return &config, err
 }
 
-func (r *Reconciler) updateAGSecretIfOutdated(agSecret *corev1.Secret, desiredAGSecretData map[string][]byte) error {
-	if !kubeobjects.IsSecretEqual(agSecret, desiredAGSecretData) {
-		return r.updateAGSecret(agSecret, desiredAGSecretData)
+func (r *TenantSecretReconciler) updateSecretIfOutdated(secret *corev1.Secret, desiredSecret map[string][]byte) error {
+	if !kubeobjects.IsSecretEqual(secret, desiredSecret) {
+		return r.updateSecret(secret, desiredSecret)
 	}
 	return nil
 }
 
-func (r *Reconciler) createAGSecret(agSecretData map[string][]byte) (*corev1.Secret, error) {
-	agSecret := BuildAGSecret(r.instance, agSecretData)
+func (r *TenantSecretReconciler) createSecret(secretData map[string][]byte) (*corev1.Secret, error) {
+	secret := BuildAGSecret(r.instance, secretData)
 
-	if err := controllerutil.SetControllerReference(r.instance, agSecret, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(r.instance, secret, r.scheme); err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	err := r.Create(context.TODO(), agSecret)
+	err := r.Create(context.TODO(), secret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create secret '%s': %w", extendWithAGSecretSuffix(r.instance.Name), err)
 	}
-	return agSecret, nil
+	return secret, nil
 }
 
-func (r *Reconciler) updateAGSecret(agSecret *corev1.Secret, desiredAGSecretData map[string][]byte) error {
+func (r *TenantSecretReconciler) updateSecret(agSecret *corev1.Secret, desiredAGSecretData map[string][]byte) error {
 	log.Info("updating secret", "name", agSecret.Name)
 	agSecret.Data = desiredAGSecretData
 	if err := r.Update(context.TODO(), agSecret); err != nil {
@@ -135,5 +134,5 @@ func BuildAGSecret(instance *dynatracev1beta1.DynaKube, agSecretData map[string]
 }
 
 func extendWithAGSecretSuffix(name string) string {
-	return name + AGSecretSuffix
+	return name + dynatracev1beta1.TenantSecretSuffix
 }

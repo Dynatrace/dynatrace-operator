@@ -1176,10 +1176,6 @@ spec:
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                         type: object
                     type: object
-                  tenantSecret:
-                    description: 'Optional: Sets name of secret containing: tenant-uuid,
-                      tenant-token, communication-endpoints'
-                    type: string
                   tlsSecretName:
                     description: 'Optional: the name of a secret containing ActiveGate
                       TLS cert+key and password. If not set, self-signed certificate

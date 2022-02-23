@@ -29,8 +29,8 @@ import (
 
 const (
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
-	PullSecretSuffix     = "-pull-secret"
-	AGTenantSecretSuffix = "-activegate-tenant-secret"
+	PullSecretSuffix   = "-pull-secret"
+	TenantSecretSuffix = "-activegate-tenant-secret"
 )
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
@@ -110,10 +110,7 @@ func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 
 // AGTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate
 func (dk *DynaKube) AGTenantSecret() string {
-	if dk.Spec.ActiveGate.TenantSecret != "" {
-		return dk.Spec.ActiveGate.TenantSecret
-	}
-	return dk.Name + AGTenantSecretSuffix
+	return dk.Name + TenantSecretSuffix
 }
 
 // PullSecret returns the name of the pull secret to be used for immutable images.

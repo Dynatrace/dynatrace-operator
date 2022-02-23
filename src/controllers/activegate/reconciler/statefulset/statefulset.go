@@ -40,6 +40,7 @@ const (
 	dataSourceAuthTokenMountPoint   = "/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources"
 	dataSourceMetadataMountPoint    = "/mnt/dsmetadata"
 	statsdMetadataMountPoint        = "/opt/dynatrace/remotepluginmodule/agent/datasources/statsd"
+	tenantTokenMountPoint           = "/var/lib/dynatrace/secrets/tokens/tenant-token"
 )
 
 type statefulSetProperties struct {
@@ -291,7 +292,7 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 	volumeMounts = append(volumeMounts, corev1.VolumeMount{
 		Name:      tenantSecretVolumeName,
 		ReadOnly:  true,
-		MountPath: "/var/lib/dynatrace/secrets/tokens/tenant-token",
+		MountPath: tenantTokenMountPoint,
 		SubPath:   activegate.TenantTokenName,
 	},
 	)

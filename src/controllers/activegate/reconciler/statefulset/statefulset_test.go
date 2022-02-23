@@ -251,7 +251,7 @@ func TestStatefulSet_Env(t *testing.T) {
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: instance.Name + dynatracev1beta1.AGTenantSecretSuffix,
+							Name: instance.Name + dynatracev1beta1.TenantSecretSuffix,
 						},
 						Key: activegate.CommunicationEndpointsName,
 					},
@@ -262,7 +262,7 @@ func TestStatefulSet_Env(t *testing.T) {
 				ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: instance.Name + dynatracev1beta1.AGTenantSecretSuffix,
+							Name: instance.Name + dynatracev1beta1.TenantSecretSuffix,
 						},
 						Key: activegate.TenantUuidName,
 					},
