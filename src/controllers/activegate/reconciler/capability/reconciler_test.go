@@ -7,9 +7,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
-	statsdingest "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability/statsd-ingest"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	rsfs "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -111,22 +109,22 @@ func TestReconcile(t *testing.T) {
 	}
 
 	agIngestServicePort := corev1.ServicePort{
-		Name:       consts.HttpsServicePortName,
+		Name:       capability.HttpsServicePortName,
 		Protocol:   corev1.ProtocolTCP,
-		Port:       consts.HttpsServicePort,
-		TargetPort: intstr.FromString(consts.HttpsServicePortName),
+		Port:       capability.HttpsServicePort,
+		TargetPort: intstr.FromString(capability.HttpsServicePortName),
 	}
 	agIngestHttpServicePort := corev1.ServicePort{
-		Name:       consts.HttpServicePortName,
+		Name:       capability.HttpServicePortName,
 		Protocol:   corev1.ProtocolTCP,
-		Port:       consts.HttpServicePort,
-		TargetPort: intstr.FromString(consts.HttpServicePortName),
+		Port:       capability.HttpServicePort,
+		TargetPort: intstr.FromString(capability.HttpServicePortName),
 	}
 	statsdIngestServicePort := corev1.ServicePort{
-		Name:       statsdingest.StatsdIngestPortName,
+		Name:       capability.StatsdIngestPortName,
 		Protocol:   corev1.ProtocolUDP,
-		Port:       statsdingest.StatsdIngestPort,
-		TargetPort: intstr.FromString(statsdingest.StatsdIngestTargetPort),
+		Port:       capability.StatsdIngestPort,
+		TargetPort: intstr.FromString(capability.StatsdIngestTargetPort),
 	}
 
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
@@ -276,7 +274,7 @@ func TestSetReadinessProbePort(t *testing.T) {
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe)
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet)
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port)
-	assert.Equal(t, consts.HttpsServicePortName, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port.String())
+	assert.Equal(t, capability.HttpsServicePortName, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port.String())
 }
 
 func TestReconciler_calculateStatefulSetName(t *testing.T) {
@@ -354,20 +352,20 @@ func TestGetContainerByName(t *testing.T) {
 	t.Run("non-empty collection but cannot match name", func(t *testing.T) {
 		verify(t,
 			[]corev1.Container{
-				{Name: consts.ActiveGateContainerName},
-				{Name: statsdingest.StatsdContainerName},
+				{Name: capability.ActiveGateContainerName},
+				{Name: capability.StatsdContainerName},
 			},
-			statsdingest.EecContainerName,
-			fmt.Sprintf(`Cannot find container "%s" in the provided slice (len 2)`, statsdingest.EecContainerName),
+			capability.EecContainerName,
+			fmt.Sprintf(`Cannot find container "%s" in the provided slice (len 2)`, capability.EecContainerName),
 		)
 	})
 
 	t.Run("happy path", func(t *testing.T) {
 		verify(t,
 			[]corev1.Container{
-				{Name: statsdingest.StatsdContainerName},
+				{Name: capability.StatsdContainerName},
 			},
-			statsdingest.StatsdContainerName,
+			capability.StatsdContainerName,
 			"",
 		)
 	})

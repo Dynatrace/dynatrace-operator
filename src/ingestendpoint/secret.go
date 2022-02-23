@@ -9,7 +9,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	agcapability "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
-	statsdingest "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability/statsd-ingest"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -207,5 +206,5 @@ func extractTenant(url *url.URL) (string, error) {
 
 func statsdIngestUrl(dk *dynatracev1beta1.DynaKube) (string, error) {
 	serviceName := capability.BuildServiceName(dk.Name, agcapability.MultiActiveGateName)
-	return fmt.Sprintf("%s.%s:%d", serviceName, dk.Namespace, statsdingest.StatsdIngestPort), nil
+	return fmt.Sprintf("%s.%s:%d", serviceName, dk.Namespace, agcapability.StatsdIngestPort), nil
 }

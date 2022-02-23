@@ -4,8 +4,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	statsdingest "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability/statsd-ingest"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/statefulset"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -44,31 +43,31 @@ func TestCreateService(t *testing.T) {
 	ports := serviceSpec.Ports
 	assert.Contains(t, ports,
 		corev1.ServicePort{
-			Name:       consts.HttpsServicePortName,
+			Name:       capability.HttpsServicePortName,
 			Protocol:   corev1.ProtocolTCP,
-			Port:       consts.HttpsServicePort,
-			TargetPort: intstr.FromString(consts.HttpsServicePortName),
+			Port:       capability.HttpsServicePort,
+			TargetPort: intstr.FromString(capability.HttpsServicePortName),
 		},
 		corev1.ServicePort{
-			Name:       consts.HttpServicePortName,
+			Name:       capability.HttpServicePortName,
 			Protocol:   corev1.ProtocolTCP,
-			Port:       consts.HttpServicePort,
-			TargetPort: intstr.FromString(consts.HttpServicePortName),
+			Port:       capability.HttpServicePort,
+			TargetPort: intstr.FromString(capability.HttpServicePortName),
 		},
 	)
 	if instance.NeedsStatsd() {
 		assert.Contains(t, ports, corev1.ServicePort{
-			Name:       statsdingest.StatsdIngestPortName,
+			Name:       capability.StatsdIngestPortName,
 			Protocol:   corev1.ProtocolUDP,
-			Port:       statsdingest.StatsdIngestPort,
-			TargetPort: intstr.FromString(statsdingest.StatsdIngestTargetPort),
+			Port:       capability.StatsdIngestPort,
+			TargetPort: intstr.FromString(capability.StatsdIngestTargetPort),
 		})
 	} else {
 		assert.NotContains(t, ports, corev1.ServicePort{
-			Name:       statsdingest.StatsdIngestPortName,
+			Name:       capability.StatsdIngestPortName,
 			Protocol:   corev1.ProtocolUDP,
-			Port:       statsdingest.StatsdIngestPort,
-			TargetPort: intstr.FromString(statsdingest.StatsdIngestTargetPort),
+			Port:       capability.StatsdIngestPort,
+			TargetPort: intstr.FromString(capability.StatsdIngestTargetPort),
 		})
 	}
 }
