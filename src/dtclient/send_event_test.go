@@ -40,7 +40,7 @@ func TestSendEvent(t *testing.T) {
 	}
 
 	t.Run("SendEvent no event data", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, sendEventHandlerStub())
+		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, sendEventHandlerStub(), "")
 		defer dynatraceServer.Close()
 
 		err := dynatraceClient.SendEvent(nil)
@@ -48,7 +48,7 @@ func TestSendEvent(t *testing.T) {
 		assert.Equal(t, "no data found in eventData payload", err.Error())
 	})
 	t.Run("SendEvent incomplete event data", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, sendEventHandlerStub())
+		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, sendEventHandlerStub(), "")
 		defer dynatraceServer.Close()
 
 		err := dynatraceClient.SendEvent(&empty)
@@ -59,7 +59,7 @@ func TestSendEvent(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("SendEvent request error", func(t *testing.T) {
-		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, sendEventHandlerError())
+		dynatraceServer, dynatraceClient := createTestDynatraceClient(t, sendEventHandlerError(), "")
 
 		err := dynatraceClient.SendEvent(&empty)
 		assert.Error(t, err)

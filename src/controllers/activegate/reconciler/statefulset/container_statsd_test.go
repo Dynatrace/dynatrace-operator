@@ -35,13 +35,13 @@ func TestStatsd_BuildContainerAndVolumes(t *testing.T) {
 			dataSourceStartupArgsMountPoint,
 			dataSourceAuthTokenMountPoint,
 			dataSourceMetadataMountPoint,
-			statsDLogsDir,
+			statsdLogsDir,
 		} {
 			assertion.Truef(kubeobjects.MountPathIsIn(container.VolumeMounts, mountPath), "Expected that StatsD container defines mount point %s", mountPath)
 		}
 
 		for _, envVar := range []string{
-			"StatsdExecArgsPath", "ProbeServerPort", "StatsdMetadataDir", "DsLogFile",
+			envStatsdStartupArgsPath, envDataSourceProbeServerPort, envStatsdMetadata, envDataSourceLogFile,
 		} {
 			assertion.Truef(kubeobjects.EnvVarIsIn(container.Env, envVar), "Expected that StatsD container defined environment variable %s", envVar)
 		}

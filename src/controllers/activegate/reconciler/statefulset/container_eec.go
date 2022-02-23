@@ -27,6 +27,10 @@ const (
 	dataSourceAuthToken        = "dsauthtokendir"
 	eecLogs                    = "extensions-logs"
 	eecConfig                  = "eec-config"
+
+	envTenantId      = "TenantId"
+	envServerUrl     = "ServerUrl"
+	envEecIngestPort = "EecIngestPort"
 )
 
 var _ kubeobjects.ContainerBuilder = (*ExtensionController)(nil)
@@ -149,7 +153,7 @@ func (eec *ExtensionController) buildVolumeMounts() []corev1.VolumeMount {
 		{Name: dataSourceAuthToken, MountPath: dataSourceAuthTokenMountPoint},
 		{Name: dataSourceMetadata, MountPath: statsdMetadataMountPoint, ReadOnly: true},
 		{Name: eecLogs, MountPath: extensionsLogsDir},
-		{Name: dataSourceStatsdLogs, MountPath: statsDLogsDir, ReadOnly: true},
+		{Name: dataSourceStatsdLogs, MountPath: statsdLogsDir, ReadOnly: true},
 		{Name: eecConfig, MountPath: extensionsRuntimeDir},
 	}
 }
@@ -160,9 +164,9 @@ func (eec *ExtensionController) buildEnvs() []corev1.EnvVar {
 		log.Error(err, "Problem getting tenant id from api url")
 	}
 	return []corev1.EnvVar{
-		{Name: "TenantId", Value: tenantId},
-		{Name: "ServerUrl", Value: fmt.Sprintf("https://localhost:%d/communication", activeGateInternalCommunicationPort)},
-		{Name: "EecIngestPort", Value: fmt.Sprintf("%d", eecIngestPort)},
+		{Name: envTenantId, Value: tenantId},
+		{Name: envServerUrl, Value: fmt.Sprintf("https://localhost:%d/communication", activeGateInternalCommunicationPort)},
+		{Name: envEecIngestPort, Value: fmt.Sprintf("%d", eecIngestPort)},
 	}
 }
 
