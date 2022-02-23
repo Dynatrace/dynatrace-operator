@@ -44,7 +44,7 @@ func NewReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.S
 }
 
 func (r *Reconciler) Reconcile() error {
-	if r.instance.Spec.ActiveGate.AGTenantSecret == "" {
+	if r.instance.Spec.ActiveGate.TenantSecret == "" {
 		err := r.reconcileActiveGateSecret()
 		if err != nil {
 			log.Error(err, "could not reconcile ActiveGate tenant secret")

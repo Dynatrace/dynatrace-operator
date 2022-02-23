@@ -110,8 +110,8 @@ func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 
 // AGTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate
 func (dk *DynaKube) AGTenantSecret() string {
-	if dk.Spec.ActiveGate.AGTenantSecret != "" {
-		return dk.Spec.ActiveGate.AGTenantSecret
+	if dk.Spec.ActiveGate.TenantSecret != "" {
+		return dk.Spec.ActiveGate.TenantSecret
 	}
 	return dk.Name + AGTenantSecretSuffix
 }

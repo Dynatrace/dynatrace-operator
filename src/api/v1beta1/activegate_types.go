@@ -76,7 +76,7 @@ type ActiveGateSpec struct {
 	DNSPolicy corev1.DNSPolicy `json:"dnsPolicy,omitempty"`
 
 	// Optional: Sets name of secret containing: tenant-uuid, tenant-token, communication-endpoints
-	AGTenantSecret string `json:"tenantSecret,omitempty"`
+	TenantSecret string `json:"tenantSecret,omitempty"`
 }
 
 // CapabilityProperties is a struct which can be embedded by ActiveGate capabilities
