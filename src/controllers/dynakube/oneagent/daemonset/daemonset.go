@@ -25,6 +25,8 @@ const (
 	annotationVersion           = dynatracev1beta1.InternalFlagPrefix + "version"
 
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
+	// normal oneagent shutdown scenario with some extra time
+	defaultTerminationGracePeriod = 80
 
 	hostRootVolumeName  = "host-root"
 	hostRootVolumeMount = "/mnt/root"
@@ -235,7 +237,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		DNSPolicy:                     dnsPolicy,
 		Volumes:                       volumes,
 		Affinity:                      affinity,
-		TerminationGracePeriodSeconds: address_of.Int64(80),
+		TerminationGracePeriodSeconds: address_of.Int64(defaultTerminationGracePeriod),
 	}
 }
 
