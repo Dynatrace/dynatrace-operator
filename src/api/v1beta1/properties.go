@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/util"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -273,15 +274,19 @@ func tenantUUID(apiUrl string) (string, error) {
 		return "", errors.WithMessagef(err, "problem parsing tenant id from url %s", apiUrl)
 	}
 
-	fqdn := parsedUrl.Hostname()
-	hostnameWithDomains := strings.FieldsFunc(fqdn,
-		func(r rune) bool { return r == '.' },
-	)
-	if len(hostnameWithDomains) < 1 {
-		return "", fmt.Errorf("problem getting tenant id from fqdn '%s'", fqdn)
+	// Path = "/e/<token>/api" -> ["e",  "<tenant>", "api"]
+	subPaths := util.Tokenize(parsedUrl.Path, '/')
+	if len(subPaths) >= 3 && subPaths[0] == "e" && subPaths[2] == "api" {
+		return subPaths[1], nil
 	}
 
-	return hostnameWithDomains[0], nil
+	hostnameWithDomains := util.Tokenize(parsedUrl.Hostname(), '.')
+	if len(hostnameWithDomains) >= 1 {
+		return hostnameWithDomains[0], nil
+
+	}
+
+	return "", fmt.Errorf("problem getting tenant id from API URL '%s'", apiUrl)
 }
 
 func (dk *DynaKube) HostGroup() string {

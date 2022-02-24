@@ -43,11 +43,6 @@ func createService(instance *dynatracev1beta1.DynaKube, feature string) *corev1.
 		)
 	}
 
-	// TODO Return nil instead of empty Service if it's not needed
-	//if len(ports) == 0 {
-	//	return nil
-	//}
-
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      BuildServiceName(instance.Name, feature),
