@@ -3,6 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -3990,7 +3991,7 @@ rules:
     resources:
       - endpoints
     verbs:
-      - get"
+      - get
       - watch
       - list
       - delete
@@ -4247,7 +4248,6 @@ spec:
       securityContext: {}
       serviceAccountName: dynatrace-oneagent-csi-driver
       terminationGracePeriodSeconds: 30
-      securityContext: {}
       volumes:
       # This volume is where the registrar registers the plugin with kubelet
       - hostPath:
