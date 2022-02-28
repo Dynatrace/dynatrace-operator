@@ -37,7 +37,7 @@ const (
 	annotationFeatureUseActiveGateImageForStatsd      = annotationFeaturePrefix + "use-activegate-image-for-statsd"
 	annotationFeatureCustomEecImage                   = annotationFeaturePrefix + "custom-eec-image"
 	annotationFeatureCustomStatsdImage                = annotationFeaturePrefix + "custom-statsd-image"
-	AnnotationFeatureReadOnlyOneAgent                 = annotationFeaturePrefix + "oneagent-readonly-host-fs"
+	AnnotationFeatureDisableReadOnlyOneAgent          = annotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
 )
 
 var (
@@ -138,9 +138,9 @@ func (dk *DynaKube) FeatureCustomStatsdImage() string {
 	return dk.Annotations[annotationFeatureCustomStatsdImage]
 }
 
-// FeatureReadOnlyOneAgent is a feature flag to specify if the operator needs to deploy the oneagents in a readonly mode,
+// FeatureDisableReadOnlyOneAgent is a feature flag to specify if the operator needs to deploy the oneagents in a readonly mode,
 // where the csi-driver would provide the volume for logs and such
-// Defaults to true
-func (dk *DynaKube) FeatureReadOnlyOneAgent() bool {
-	return dk.Annotations[AnnotationFeatureReadOnlyOneAgent] != "false"
+// Defaults to false
+func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
+	return dk.Annotations[AnnotationFeatureDisableReadOnlyOneAgent] == "true"
 }

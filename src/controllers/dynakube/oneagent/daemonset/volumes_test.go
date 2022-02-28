@@ -59,7 +59,7 @@ func TestPrepareVolumes(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: corev1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent: "false",
+					dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent: "true",
 				},
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -170,7 +170,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: corev1.ObjectMeta{
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent: "false",
+					dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent: "true",
 				},
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{

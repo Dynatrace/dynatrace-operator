@@ -180,11 +180,15 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.No
 			return response, nil
 		}
 	}
+	svr.unmountUnknownVolume(*volumeInfo)
+	return &csi.NodeUnpublishVolumeResponse{}, nil
+}
+
+func (svr *CSIDriverServer) unmountUnknownVolume(volumeInfo csivolumes.VolumeInfo) {
 	log.Info("VolumeID not present in the database", "volumeID", volumeInfo.VolumeID, "targetPath", volumeInfo.TargetPath)
-	if err != svr.mounter.Unmount(volumeInfo.TargetPath) {
+	if err := svr.mounter.Unmount(volumeInfo.TargetPath); err != nil {
 		log.Error(err, "Tried to unmount unknown volume", "volumeID", volumeInfo.VolumeID)
 	}
-	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
 func (svr *CSIDriverServer) NodeStageVolume(context.Context, *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
