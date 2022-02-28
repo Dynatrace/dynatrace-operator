@@ -63,7 +63,7 @@ spec:
                 type: object
               apiUrl:
                 description: Location of the Dynatrace API to connect to, including
-                  your specific environment ID
+                  your specific environment UUID
                 type: string
               classicFullStack:
                 description: Configuration for ClassicFullStack Monitoring
@@ -887,7 +887,7 @@ spec:
                   type: object
                 type: array
               environmentID:
-                description: EnvironmentID contains the environment ID corresponding
+                description: EnvironmentID contains the environment UUID corresponding
                   to the API URL
                 type: string
               lastAPITokenProbeTimestamp:
@@ -1227,7 +1227,7 @@ spec:
                 type: object
               apiUrl:
                 description: Location of the Dynatrace API to connect to, including
-                  your specific environment ID
+                  your specific environment UUID
                 type: string
               customPullSecret:
                 description: 'Optional: Pull secret for your private registry'

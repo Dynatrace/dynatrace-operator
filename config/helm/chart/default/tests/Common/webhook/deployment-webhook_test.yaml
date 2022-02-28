@@ -44,11 +44,15 @@ tests:
               metadata:
                 annotations:
                   kubectl.kubernetes.io/default-container: webhook
+                  container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
                 labels:
                   dynatrace.com/operator: oneagent
                   internal.dynatrace.com/component: webhook
                   internal.dynatrace.com/app: webhook
               spec:
+                volumes:
+                  - emptyDir: {}
+                    name: certs-dir
                 affinity:
                   nodeAffinity:
                     requiredDuringSchedulingIgnoredDuringExecution:
@@ -67,6 +71,7 @@ tests:
                   - name: webhook
                     args:
                       - webhook-server
+                      - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
                     image: image-name
                     imagePullPolicy: Always
                     env:
@@ -97,6 +102,18 @@ tests:
                       limits:
                         cpu: 300m
                         memory: 128Mi
+                    volumeMounts:
+                      - name: certs-dir
+                        mountPath: /tmp/k8s-webhook-server/serving-certs/
+                    securityContext:
+                      seccompProfile:
+                        type: RuntimeDefault
+                      privileged: false
+                      allowPrivilegeEscalation: false
+                      readOnlyRootFilesystem: true
+                      runAsNonRoot: true
+                      capabilities:
+                        drop: ["all"]
                 serviceAccountName: dynatrace-webhook
 
   - it: should have imagePullSecrets defined in spec
@@ -112,3 +129,108 @@ tests:
     asserts:
       - isNull:
           path: spec.template.spec.imagePullSecrets
+
+
+  - it: should exist on olm (but different)
+    set:
+      olm: true
+      operator.image: image-name
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: dynatrace-webhook
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - isNotEmpty:
+          path: metadata.labels
+      - equal:
+          path: spec
+          value:
+            replicas: 1
+            revisionHistoryLimit: 1
+            selector:
+              matchLabels:
+                internal.dynatrace.com/component: webhook
+                internal.dynatrace.com/app: webhook
+            strategy:
+              type: RollingUpdate
+            template:
+              metadata:
+                annotations:
+                  kubectl.kubernetes.io/default-container: webhook
+                  container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
+                labels:
+                  dynatrace.com/operator: oneagent
+                  internal.dynatrace.com/component: webhook
+                  internal.dynatrace.com/app: webhook
+              spec:
+                volumes:
+                  - emptyDir: {}
+                    name: certs-dir
+                affinity:
+                  nodeAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      nodeSelectorTerms:
+                        - matchExpressions:
+                            - key: kubernetes.io/arch
+                              operator: In
+                              values:
+                                - amd64
+                                - arm64
+                            - key: kubernetes.io/os
+                              operator: In
+                              values:
+                                - linux
+                containers:
+                  - name: webhook
+                    args:
+                      - webhook-server
+                      - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
+                    image: image-name
+                    imagePullPolicy: Always
+                    env:
+                      - name: POD_NAMESPACE
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.namespace
+                      - name: POD_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: metadata.name
+                      - name: DEPLOYED_VIA_OLM
+                        value: "true"
+                    readinessProbe:
+                      httpGet:
+                        path: /healthz
+                        port: server-port
+                        scheme: HTTPS
+                    ports:
+                    - name: metrics
+                      containerPort: 8383
+                    - name: validation
+                      containerPort: 8384
+                    - name: server-port
+                      containerPort: 8443
+                    resources:
+                      requests:
+                        cpu: 300m
+                        memory: 128Mi
+                      limits:
+                        cpu: 300m
+                        memory: 128Mi
+                    volumeMounts:
+                      - name: certs-dir
+                        mountPath: /tmp/k8s-webhook-server/serving-certs/
+                    securityContext:
+                      seccompProfile:
+                        type: RuntimeDefault
+                      privileged: false
+                      allowPrivilegeEscalation: false
+                      readOnlyRootFilesystem: true
+                      runAsNonRoot: true
+                      capabilities:
+                        drop: ["all"]
+                serviceAccountName: dynatrace-webhook

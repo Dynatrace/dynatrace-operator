@@ -5,7 +5,7 @@ import (
 	"regexp"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +27,10 @@ const (
 	dataSourceAuthToken        = "dsauthtokendir"
 	eecLogs                    = "extensions-logs"
 	eecConfig                  = "eec-config"
+
+	envTenantId      = "TenantId"
+	envServerUrl     = "ServerUrl"
+	envEecIngestPort = "EecIngestPort"
 )
 
 var _ kubeobjects.ContainerBuilder = (*ExtensionController)(nil)
@@ -43,7 +47,7 @@ func NewExtensionController(stsProperties *statefulSetProperties) *ExtensionCont
 
 func (eec *ExtensionController) BuildContainer() corev1.Container {
 	return corev1.Container{
-		Name:            consts.EecContainerName,
+		Name:            capability.EecContainerName,
 		Image:           eec.image(),
 		ImagePullPolicy: corev1.PullAlways,
 		Env:             eec.buildEnvs(),
@@ -149,7 +153,7 @@ func (eec *ExtensionController) buildVolumeMounts() []corev1.VolumeMount {
 		{Name: dataSourceAuthToken, MountPath: dataSourceAuthTokenMountPoint},
 		{Name: dataSourceMetadata, MountPath: statsdMetadataMountPoint, ReadOnly: true},
 		{Name: eecLogs, MountPath: extensionsLogsDir},
-		{Name: dataSourceStatsdLogs, MountPath: statsDLogsDir, ReadOnly: true},
+		{Name: dataSourceStatsdLogs, MountPath: statsdLogsDir, ReadOnly: true},
 		{Name: eecConfig, MountPath: extensionsRuntimeDir},
 	}
 }
@@ -160,9 +164,9 @@ func (eec *ExtensionController) buildEnvs() []corev1.EnvVar {
 		log.Error(err, "Problem getting tenant id from api url")
 	}
 	return []corev1.EnvVar{
-		{Name: "TenantId", Value: tenantId},
-		{Name: "ServerUrl", Value: fmt.Sprintf("https://localhost:%d/communication", activeGateInternalCommunicationPort)},
-		{Name: "EecIngestPort", Value: fmt.Sprintf("%d", eecIngestPort)},
+		{Name: envTenantId, Value: tenantId},
+		{Name: envServerUrl, Value: fmt.Sprintf("https://localhost:%d/communication", activeGateInternalCommunicationPort)},
+		{Name: envEecIngestPort, Value: fmt.Sprintf("%d", eecIngestPort)},
 	}
 }
 

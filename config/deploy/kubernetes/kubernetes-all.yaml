@@ -72,7 +72,7 @@ spec:
                 type: object
               apiUrl:
                 description: Location of the Dynatrace API to connect to, including
-                  your specific environment ID
+                  your specific environment UUID
                 type: string
               classicFullStack:
                 description: Configuration for ClassicFullStack Monitoring
@@ -896,7 +896,7 @@ spec:
                   type: object
                 type: array
               environmentID:
-                description: EnvironmentID contains the environment ID corresponding
+                description: EnvironmentID contains the environment UUID corresponding
                   to the API URL
                 type: string
               lastAPITokenProbeTimestamp:
@@ -1236,7 +1236,7 @@ spec:
                 type: object
               apiUrl:
                 description: Location of the Dynatrace API to connect to, including
-                  your specific environment ID
+                  your specific environment UUID
                 type: string
               customPullSecret:
                 description: 'Optional: Pull secret for your private registry'
@@ -3574,6 +3574,8 @@ kind: Deployment
 metadata:
   name: dynatrace-operator
   namespace: dynatrace
+  annotations:
+    container.apparmor.security.beta.kubernetes.io/dynatrace-operator: runtime/default
   labels:
     dynatrace: operator
     operator: dynakube
@@ -3638,6 +3640,15 @@ spec:
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 10
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["all"]
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -3692,11 +3703,15 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: webhook
+        container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
       labels:
         dynatrace.com/operator: oneagent
         internal.dynatrace.com/component: webhook
         internal.dynatrace.com/app: webhook
     spec:
+      volumes:
+      - emptyDir: {}
+        name: certs-dir
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -3715,6 +3730,8 @@ spec:
         - name: webhook
           args:
             - webhook-server
+            # OLM mounts the certificates here, so we reuse it for simplicity
+            - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
           image:
             quay.io/dynatrace/dynatrace-operator:snapshot
           imagePullPolicy: Always
@@ -3746,6 +3763,18 @@ spec:
             limits:
               cpu: 300m
               memory: 128Mi
+          volumeMounts:
+            - name: certs-dir
+              mountPath: /tmp/k8s-webhook-server/serving-certs/
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["all"]
       serviceAccountName: dynatrace-webhook
 ---
 # Source: dynatrace-operator/templates/Common/webhook/mutatingwebhookconfiguration.yaml
@@ -3991,7 +4020,7 @@ rules:
     resources:
       - endpoints
     verbs:
-      - get"
+      - get
       - watch
       - list
       - delete
@@ -4248,7 +4277,6 @@ spec:
       securityContext: {}
       serviceAccountName: dynatrace-oneagent-csi-driver
       terminationGracePeriodSeconds: 30
-      securityContext: {}
       volumes:
       # This volume is where the registrar registers the plugin with kubelet
       - hostPath:

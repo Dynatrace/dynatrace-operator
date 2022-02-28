@@ -14,7 +14,7 @@ const (
 type DynaKubeSpec struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	// Location of the Dynatrace API to connect to, including your specific environment ID
+	// Location of the Dynatrace API to connect to, including your specific environment UUID
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="API URL",order=1,xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	APIURL string `json:"apiUrl"`
@@ -256,7 +256,7 @@ type DynaKubeStatus struct {
 	// LastClusterVersionProbeTimestamp indicates when the cluster's version was last checked
 	LastClusterVersionProbeTimestamp *metav1.Time `json:"lastClusterVersionProbeTimestamp,omitempty"`
 
-	// EnvironmentID contains the environment ID corresponding to the API URL
+	// EnvironmentID contains the environment UUID corresponding to the API URL
 	EnvironmentID string `json:"environmentID,omitempty"`
 
 	// Conditions includes status about the current state of the instance
