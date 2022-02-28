@@ -18,8 +18,6 @@ kind: SecurityContextConstraints
 metadata:
   name: dynatrace-webhook
 allowPrivilegedContainer: false
-requiredDropCapabilities:
-  - ALL
 fsGroup:
   type: RunAsAny
 priority: 1
@@ -41,7 +39,9 @@ volumes:
 
 allowHostDirVolumePlugin: false
 allowHostIPC: false
-allowHostNetwork: false
+allowHostNetwork: true
 allowHostPID: false
-allowHostPorts: false
+allowHostPorts: true
+allowedFlexVolumes: null
+defaultAddCapabilities: []
 {{ end }}

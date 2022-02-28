@@ -18,8 +18,6 @@ kind: SecurityContextConstraints
 metadata:
   name: {{ .Release.Name }}
 allowPrivilegedContainer: false
-requiredDropCapabilities:
-  - ALL
 fsGroup:
   type: RunAsAny
 priority: 1
@@ -44,4 +42,6 @@ allowHostIPC: false
 allowHostNetwork: false
 allowHostPID: false
 allowHostPorts: false
+allowedFlexVolumes: null
+defaultAddCapabilities: []
 {{ end }}
