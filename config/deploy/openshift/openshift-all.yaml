@@ -3655,7 +3655,6 @@ spec:
   template:
     metadata:
       annotations:
-        container.seccomp.security.alpha.kubernetes.io/dynatrace-operator: runtime/default
       labels:
         name: dynatrace-operator
         dynatrace: operator
@@ -3770,7 +3769,6 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: webhook
-        container.seccomp.security.alpha.kubernetes.io/dynatrace-operator: runtime/default
       labels:
         dynatrace.com/operator: oneagent
         internal.dynatrace.com/component: webhook
