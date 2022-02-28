@@ -194,6 +194,10 @@ fmt:
 vet:
 	go vet ./...
 
+lint: fmt vet
+	gci -w .
+	golangci-lint run --build-tags integration,containers_image_storage_stub --timeout 300s
+
 # Generate code
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."

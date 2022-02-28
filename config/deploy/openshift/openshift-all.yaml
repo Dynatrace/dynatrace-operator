@@ -72,7 +72,7 @@ spec:
                 type: object
               apiUrl:
                 description: Location of the Dynatrace API to connect to, including
-                  your specific environment ID
+                  your specific environment UUID
                 type: string
               classicFullStack:
                 description: Configuration for ClassicFullStack Monitoring
@@ -896,7 +896,7 @@ spec:
                   type: object
                 type: array
               environmentID:
-                description: EnvironmentID contains the environment ID corresponding
+                description: EnvironmentID contains the environment UUID corresponding
                   to the API URL
                 type: string
               lastAPITokenProbeTimestamp:
@@ -1236,7 +1236,7 @@ spec:
                 type: object
               apiUrl:
                 description: Location of the Dynatrace API to connect to, including
-                  your specific environment ID
+                  your specific environment UUID
                 type: string
               customPullSecret:
                 description: 'Optional: Pull secret for your private registry'
@@ -3641,6 +3641,8 @@ kind: Deployment
 metadata:
   name: dynatrace-operator
   namespace: dynatrace
+  annotations:
+    container.apparmor.security.beta.kubernetes.io/dynatrace-operator: runtime/default
   labels:
     dynatrace: operator
     operator: dynakube
@@ -3688,6 +3690,9 @@ spec:
             limits:
               cpu: 100m
               memory: 128Mi
+          volumeMounts:
+            - name: tmp-cert-dir
+              mountPath: /tmp/dynatrace-operator
           readinessProbe:
             httpGet:
               path: /healthz
@@ -3702,6 +3707,15 @@ spec:
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 10
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["all"]
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -3716,6 +3730,9 @@ spec:
                     operator: In
                     values:
                       - linux
+      volumes:
+        - emptyDir: { }
+          name: tmp-cert-dir
       serviceAccountName: dynatrace-operator
 ---
 # Source: dynatrace-operator/templates/Common/webhook/deployment-webhook.yaml
@@ -3753,11 +3770,15 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: webhook
+        container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
       labels:
         dynatrace.com/operator: oneagent
         internal.dynatrace.com/component: webhook
         internal.dynatrace.com/app: webhook
     spec:
+      volumes:
+      - emptyDir: {}
+        name: certs-dir
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -3776,6 +3797,8 @@ spec:
         - name: webhook
           args:
             - webhook-server
+            # OLM mounts the certificates here, so we reuse it for simplicity
+            - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
           image:
             quay.io/dynatrace/dynatrace-operator:snapshot
           imagePullPolicy: Always
@@ -3807,6 +3830,18 @@ spec:
             limits:
               cpu: 300m
               memory: 128Mi
+          volumeMounts:
+            - name: certs-dir
+              mountPath: /tmp/k8s-webhook-server/serving-certs/
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["all"]
       serviceAccountName: dynatrace-webhook
 ---
 # Source: dynatrace-operator/templates/Common/webhook/mutatingwebhookconfiguration.yaml
@@ -4115,7 +4150,7 @@ rules:
     resources:
       - endpoints
     verbs:
-      - get"
+      - get
       - watch
       - list
       - delete
@@ -4199,6 +4234,10 @@ metadata:
     operator: dynakube
   name: dynatrace-oneagent-csi-driver
   namespace: dynatrace
+  annotations:
+    container.apparmor.security.beta.kubernetes.io/driver: runtime/default
+    container.apparmor.security.beta.kubernetes.io/registrar: runtime/default
+    container.apparmor.security.beta.kubernetes.io/liveness-probe: runtime/default
 spec:
   revisionHistoryLimit: 10
   selector:
@@ -4216,7 +4255,15 @@ spec:
         internal.oneagent.dynatrace.com/component: csi-driver
     spec:
       containers:
-      - args:
+        # Used to receive/execute gRPC requests (NodePublishVolume/NodeUnpublishVolume) from kubelet to mount/unmount volumes for a pod
+        # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
+        # - Needs access to the filesystem of pods on the node, and mount stuff to it,needs to read/write to it, needs root permissions to do so
+        # - Needs access to a dedicated folder on the node to persist data, needs to read/write to it.
+      - name: driver
+        image:
+            quay.io/dynatrace/dynatrace-operator:snapshot
+        imagePullPolicy: Always
+        args:
         - csi-driver
         - --endpoint=unix://csi/csi.sock
         - --node-id=$(KUBE_NODE_NAME)
@@ -4232,9 +4279,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
-        image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
-        imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -4245,7 +4289,6 @@ spec:
           periodSeconds: 5
           successThreshold: 1
           timeoutSeconds: 1
-        name: driver
         ports:
         - containerPort: 10080
           name: healthz
@@ -4258,8 +4301,13 @@ spec:
             cpu: 300m
             memory: 100Mi
         securityContext:
-          privileged: true
           runAsUser: 0
+          privileged: true # Needed for mountPropagation
+          allowPrivilegeEscalation: true # Needed for privileged
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          seccompProfile:
+            type: RuntimeDefault
           seLinuxOptions:
             level: s0
         terminationMessagePath: /dev/termination-log
@@ -4267,24 +4315,26 @@ spec:
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
-        - mountPath: /var/lib/kubelet/plugins
-          mountPropagation: Bidirectional
-          name: plugins-dir
         - mountPath: /var/lib/kubelet/pods
           mountPropagation: Bidirectional
           name: mountpoint-dir
         - mountPath: /data
           mountPropagation: Bidirectional
           name: dynatrace-oneagent-data-dir
-      - args:
+        # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
+        # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
+        # Used for registering the driver with kubelet
+        # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
+      - name: registrar
+        image:
+            quay.io/dynatrace/dynatrace-operator:snapshot
+        imagePullPolicy: Always
+        args:
         - --csi-address=/csi/csi.sock
         - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
         - --health-port=9809
         command:
         - csi-node-driver-registrar
-        image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
-        imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -4295,20 +4345,24 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           timeoutSeconds: 5
-        name: registrar
         ports:
         - containerPort: 9809
           name: healthz
           protocol: TCP
         resources:
-          limits:
-            cpu: 10m
-            memory: 18M
-          requests:
-            cpu: 10m
-            memory: 18M
+            limits:
+              cpu: 100m
+              memory: 100Mi
+            requests:
+              cpu: 10m
+              memory: 20Mi
         securityContext:
           runAsUser: 0
+          privileged: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          seccompProfile:
+            type: RuntimeDefault
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
         volumeMounts:
@@ -4316,24 +4370,34 @@ spec:
           name: plugin-dir
         - mountPath: /registration
           name: registration-dir
-      - args:
+        # Used to make a gRPC request (Probe()) to the driver to check if its running
+        # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
+      - name: liveness-probe
+        image:
+            quay.io/dynatrace/dynatrace-operator:snapshot
+        imagePullPolicy: Always
+        args:
         - --csi-address=/csi/csi.sock
         - --health-port=9898
         command:
         - livenessprobe
-        image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
-        imagePullPolicy: Always
-        name: liveness-probe
         resources:
           limits:
-            cpu: 5m
-            memory: 18M
+            cpu: 100m
+            memory: 100Mi
           requests:
-            cpu: 5m
-            memory: 18M
+            cpu: 10m
+            memory: 20Mi
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
+        securityContext:
+          runAsUser: 0
+          privileged: false
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+          seccompProfile:
+            type: RuntimeDefault
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
@@ -4341,26 +4405,25 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
-      serviceAccount: dynatrace-oneagent-csi-driver
       serviceAccountName: dynatrace-oneagent-csi-driver
       terminationGracePeriodSeconds: 30
       volumes:
+      # This volume is where the registrar registers the plugin with kubelet
       - hostPath:
           path: /var/lib/kubelet/plugins_registry/
           type: Directory
         name: registration-dir
+        # This volume is where the socket for kubelet->driver communication is done
       - hostPath:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
           type: DirectoryOrCreate
         name: plugin-dir
-      - hostPath:
-          path: /var/lib/kubelet/plugins
-          type: Directory
-        name: plugins-dir
+        # This volume is where the driver mounts volumes
       - hostPath:
           path: /var/lib/kubelet/pods
           type: DirectoryOrCreate
         name: mountpoint-dir
+        # This volume is where the driver persists data on the node
       - hostPath:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
           type: DirectoryOrCreate

@@ -5,19 +5,25 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
-	assertion := assert.New(t)
-
+func testBuildStsProperties() *statefulSetProperties {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-	stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
+	return NewStatefulSetProperties(instance, capabilityProperties,
 		"", "", "test-feature", "", "",
 		nil, nil, nil,
 	)
+}
+
+func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
+	assertion := assert.New(t)
+	requirement := require.New(t)
 
 	t.Run("happy path", func(t *testing.T) {
+		stsProperties := testBuildStsProperties()
 		eec := NewExtensionController(stsProperties)
 		container := eec.BuildContainer()
 
@@ -36,19 +42,32 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 			dataSourceAuthTokenMountPoint,
 			statsdMetadataMountPoint,
 			extensionsLogsDir,
-			statsDLogsDir,
+			statsdLogsDir,
 		} {
 			assertion.Truef(kubeobjects.MountPathIsIn(container.VolumeMounts, mountPath), "Expected that EEC container defines mount point %s", mountPath)
 		}
 
 		for _, envVar := range []string{
-			"TenantId", "ServerUrl", "EecIngestPort",
+			envTenantId, envServerUrl, envEecIngestPort,
 		} {
 			assertion.Truef(kubeobjects.EnvVarIsIn(container.Env, envVar), "Expected that EEC container defined environment variable %s", envVar)
 		}
 	})
 
+	t.Run("hardened container security context", func(t *testing.T) {
+		stsProperties := testBuildStsProperties()
+		container := NewExtensionController(stsProperties).BuildContainer()
+
+		requirement.NotNil(container.SecurityContext)
+		securityContext := container.SecurityContext
+
+		assertion.False(*securityContext.Privileged)
+		assertion.False(*securityContext.AllowPrivilegeEscalation)
+		assertion.False(*securityContext.ReadOnlyRootFilesystem)
+	})
+
 	t.Run("volumes vs volume mounts", func(t *testing.T) {
+		stsProperties := testBuildStsProperties()
 		eec := NewExtensionController(stsProperties)
 		statsd := NewStatsd(stsProperties)
 		volumes := buildVolumes(stsProperties, []kubeobjects.ContainerBuilder{eec, statsd})
@@ -57,5 +76,41 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 		for _, volumeMount := range container.VolumeMounts {
 			assertion.Truef(kubeobjects.VolumeIsDefined(volumes, volumeMount.Name), "Expected that volume mount %s has a predefined pod volume", volumeMount.Name)
 		}
+	})
+
+	t.Run("resource requirements from feature flags", func(t *testing.T) {
+		stsProperties := testBuildStsProperties()
+		stsProperties.ObjectMeta.Annotations["alpha.operator.dynatrace.com/feature-activegate-eec-resources-limits-cpu"] = "200m"
+		eec := NewExtensionController(stsProperties)
+
+		container := eec.BuildContainer()
+
+		require.Empty(t, container.Resources.Requests)
+		require.NotEmpty(t, container.Resources.Limits)
+
+		assert.Equal(t, resource.NewScaledQuantity(200, resource.Milli).String(), container.Resources.Limits.Cpu().String())
+		assert.True(t, container.Resources.Limits.Memory().IsZero())
+	})
+}
+
+func TestBuildEecConfigMapName(t *testing.T) {
+	t.Run("happy case", func(t *testing.T) {
+		eecConfigMapName := BuildEecConfigMapName("dynakube", "activegate")
+		assert.Equal(t, "dynakube-activegate-eec-config", eecConfigMapName)
+	})
+
+	t.Run("happy case, capitalized and with spaces", func(t *testing.T) {
+		eecConfigMapName := BuildEecConfigMapName("DynaKube", "Active Gate")
+		assert.Equal(t, "DynaKube-Active_Gate-eec-config", eecConfigMapName)
+	})
+
+	t.Run("empty module", func(t *testing.T) {
+		eecConfigMapName := BuildEecConfigMapName("DynaKube", "")
+		assert.Equal(t, "DynaKube--eec-config", eecConfigMapName)
+	})
+
+	t.Run("whitespace-only module", func(t *testing.T) {
+		eecConfigMapName := BuildEecConfigMapName("DynaKube", " 		")
+		assert.Equal(t, "DynaKube-___-eec-config", eecConfigMapName)
 	})
 }

@@ -341,7 +341,7 @@ function checkImagePullable {
     image_response_code=$(eval "${check_image}")
     if [[ "$image_response_code" == "200" ]] ; then
       log "image '$oneagent_image' with version '$oneagent_version' exists on registry '$registry'"
-      if [[ "$registry" == "$oneagent_registry" ]] ; then
+      if [[ "$oneagent_registry" == *"$registry"* ]] ; then
         oneagent_image_works=true
       fi
     else
@@ -355,7 +355,7 @@ function checkImagePullable {
     image_response_code=$(eval "${check_image}")
     if [[ "$image_response_code" == "200" ]] ; then
       log "image '$activegate_image' exists on registry '$registry'"
-      if [[ "$registry" == "$activegate_registry" ]] ; then
+      if [[ "$activegate_registry" == *"$registry"* ]] ; then
         activegate_image_works=true
       fi
     else

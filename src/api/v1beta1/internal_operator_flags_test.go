@@ -14,7 +14,7 @@ func TestGetInternalFlags(t *testing.T) {
 		annotatedObject := &corev1.Pod{}
 		expectedMapContents := "map[]"
 
-		assert.Equal(t, expectedMapContents, fmt.Sprint(GetInternalFlags(annotatedObject)))
+		assert.Equal(t, expectedMapContents, fmt.Sprint(InternalFlags(annotatedObject)))
 	})
 
 	t.Run("Only internal flags should be returned (1)", func(t *testing.T) {
@@ -27,7 +27,7 @@ func TestGetInternalFlags(t *testing.T) {
 		}
 		expectedMapContents := "map[]"
 
-		assert.Equal(t, expectedMapContents, fmt.Sprint(GetInternalFlags(annotatedObject)))
+		assert.Equal(t, expectedMapContents, fmt.Sprint(InternalFlags(annotatedObject)))
 	})
 
 	t.Run("Only internal flags should be returned (2)", func(t *testing.T) {
@@ -42,7 +42,7 @@ func TestGetInternalFlags(t *testing.T) {
 		}
 		expectedMapContents := "map[internal.operator.dynatrace.com/other-flag:nothing internal.operator.dynatrace.com/some-flag:something]"
 
-		assert.Equal(t, expectedMapContents, fmt.Sprint(GetInternalFlags(annotatedObject)))
+		assert.Equal(t, expectedMapContents, fmt.Sprint(InternalFlags(annotatedObject)))
 	})
 }
 

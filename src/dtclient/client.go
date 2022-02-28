@@ -12,9 +12,11 @@ import (
 )
 
 const (
-	DynatracePaasToken       = "paasToken"
-	DynatraceApiToken        = "apiToken"
-	DynatraceDataIngestToken = "dataIngestToken"
+	DynatracePaasToken             = "paasToken"
+	DynatraceApiToken              = "apiToken"
+	DynatraceDataIngestToken       = "dataIngestToken"
+	CustomCertificatesConfigMapKey = "certs"
+	CustomProxySecretKey           = "proxy"
 )
 
 // Client is the interface for the Dynatrace REST API client.
@@ -60,8 +62,11 @@ type Client interface {
 	// GetTokenScopes returns the list of scopes assigned to a token if successful.
 	GetTokenScopes(token string) (TokenScopes, error)
 
-	// GetTenantInfo returns TenantInfo that holds UUID, Tenant Token and Endpoints
-	GetTenantInfo() (*TenantInfo, error)
+	// GetAgentTenantInfo returns AgentTenantInfo for OneAgents that holds UUID, Tenant Token and Endpoints
+	GetAgentTenantInfo() (*AgentTenantInfo, error)
+
+	// GetActiveGateTenantInfo returns AgentTenantInfo for ActiveGate that holds UUID, Tenant Token and Endpoints
+	GetActiveGateTenantInfo() (*ActiveGateTenantInfo, error)
 
 	// CreateOrUpdateKubernetesSetting returns the object id of the created k8s settings if successful, or an api error otherwise
 	CreateOrUpdateKubernetesSetting(name, kubeSystemUUID, scope string) (string, error)
@@ -148,6 +153,7 @@ func NewClient(url, apiToken, paasToken string, opts ...Option) (Client, error) 
 	for _, opt := range opts {
 		opt(dc)
 	}
+
 	return dc, nil
 }
 
