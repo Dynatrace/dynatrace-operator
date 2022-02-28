@@ -117,8 +117,8 @@ func TestTokens(t *testing.T) {
 
 func TestTenantUUID(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		const apiUrl = "https://demo.dev.dynatracelabs.com/api"
-		const expectedTenantId = "demo"
+		apiUrl := "https://demo.dev.dynatracelabs.com/api"
+		expectedTenantId := "demo"
 
 		actualTenantId, err := tenantUUID(apiUrl)
 
@@ -129,8 +129,8 @@ func TestTenantUUID(t *testing.T) {
 	})
 
 	t.Run("happy path (alternative)", func(t *testing.T) {
-		const apiUrl = "https://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest"
-		const expectedTenantId = "tenant"
+		apiUrl := "https://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest"
+		expectedTenantId := "tenant"
 
 		actualTenantId, err := tenantUUID(apiUrl)
 
@@ -141,9 +141,9 @@ func TestTenantUUID(t *testing.T) {
 	})
 
 	t.Run("missing API URL protocol", func(t *testing.T) {
-		const apiUrl = "demo.dev.dynatracelabs.com/api"
-		const expectedTenantId = ""
-		const expectedError = "problem getting tenant id from API URL 'demo.dev.dynatracelabs.com/api'"
+		apiUrl := "demo.dev.dynatracelabs.com/api"
+		expectedTenantId := ""
+		expectedError := "problem getting tenant id from API URL 'demo.dev.dynatracelabs.com/api'"
 
 		actualTenantId, err := tenantUUID(apiUrl)
 
@@ -156,9 +156,9 @@ func TestTenantUUID(t *testing.T) {
 	})
 
 	t.Run("suffix-only, relative API URL", func(t *testing.T) {
-		const apiUrl = "/api"
-		const expectedTenantId = ""
-		const expectedError = "problem getting tenant id from API URL '/api'"
+		apiUrl := "/api"
+		expectedTenantId := ""
+		expectedError := "problem getting tenant id from API URL '/api'"
 
 		actualTenantId, err := tenantUUID(apiUrl)
 

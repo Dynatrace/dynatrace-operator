@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/util"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -268,6 +267,12 @@ func (dk *DynaKube) TenantUUID() (string, error) {
 	return tenantUUID(dk.Spec.APIURL)
 }
 
+func runeIs(wanted rune) func(rune) bool {
+	return func(actual rune) bool {
+		return actual == wanted
+	}
+}
+
 func tenantUUID(apiUrl string) (string, error) {
 	parsedUrl, err := url.Parse(apiUrl)
 	if err != nil {
@@ -275,12 +280,12 @@ func tenantUUID(apiUrl string) (string, error) {
 	}
 
 	// Path = "/e/<token>/api" -> ["e",  "<tenant>", "api"]
-	subPaths := util.Tokenize(parsedUrl.Path, '/')
+	subPaths := strings.FieldsFunc(parsedUrl.Path, runeIs('/'))
 	if len(subPaths) >= 3 && subPaths[0] == "e" && subPaths[2] == "api" {
 		return subPaths[1], nil
 	}
 
-	hostnameWithDomains := util.Tokenize(parsedUrl.Hostname(), '.')
+	hostnameWithDomains := strings.FieldsFunc(parsedUrl.Hostname(), runeIs('.'))
 	if len(hostnameWithDomains) >= 1 {
 		return hostnameWithDomains[0], nil
 
