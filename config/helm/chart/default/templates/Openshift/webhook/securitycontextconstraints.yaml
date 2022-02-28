@@ -41,7 +41,7 @@ allowHostDirVolumePlugin: false
 allowHostIPC: false
 allowHostNetwork: true
 allowHostPID: false
-allowHostPorts: true
+allowHostPorts: false
 allowedFlexVolumes: null
 defaultAddCapabilities: []
 {{ end }}
