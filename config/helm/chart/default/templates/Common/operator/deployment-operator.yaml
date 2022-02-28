@@ -18,6 +18,8 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
+  annotations:
+    container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
   labels:
     {{- include "dynatrace-operator.labels" . | nindent 4 }}
 spec:
@@ -83,6 +85,15 @@ spec:
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 10
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["all"]
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
