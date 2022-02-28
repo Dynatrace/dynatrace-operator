@@ -13,5 +13,5 @@ Please include some guiding steps on how to test this change during a review.
 
 ## Checklist
 - [ ] Unit tests have been updated/added
-- [ ] Labeled the PR accordingly
+- [ ] PR is labeled accordingly
 
