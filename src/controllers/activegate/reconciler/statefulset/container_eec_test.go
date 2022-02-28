@@ -42,13 +42,13 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 			dataSourceAuthTokenMountPoint,
 			statsdMetadataMountPoint,
 			extensionsLogsDir,
-			statsDLogsDir,
+			statsdLogsDir,
 		} {
 			assertion.Truef(kubeobjects.MountPathIsIn(container.VolumeMounts, mountPath), "Expected that EEC container defines mount point %s", mountPath)
 		}
 
 		for _, envVar := range []string{
-			"TenantId", "ServerUrl", "EecIngestPort",
+			envTenantId, envServerUrl, envEecIngestPort,
 		} {
 			assertion.Truef(kubeobjects.EnvVarIsIn(container.Env, envVar), "Expected that EEC container defined environment variable %s", envVar)
 		}

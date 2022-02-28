@@ -69,7 +69,7 @@ func (r *AutomaticApiMonitoringReconciler) ensureSettingExists() (string, error)
 	return objectID, nil
 }
 
-// determineNewestMonitoredEntity returns the ID of the newest entities; or empty string if the slice of entities is empty
+// determineNewestMonitoredEntity returns the UUID of the newest entities; or empty string if the slice of entities is empty
 func determineNewestMonitoredEntity(entities []dtclient.MonitoredEntity) string {
 	if len(entities) == 0 {
 		return ""

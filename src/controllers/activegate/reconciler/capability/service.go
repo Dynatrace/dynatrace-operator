@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/statefulset"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,24 +16,24 @@ func createService(instance *dynatracev1beta1.DynaKube, feature string) *corev1.
 	enableStatsd := instance.NeedsStatsd()
 	ports := []corev1.ServicePort{
 		{
-			Name:       consts.HttpsServicePortName,
+			Name:       capability.HttpsServicePortName,
 			Protocol:   corev1.ProtocolTCP,
-			Port:       consts.HttpsServicePort,
-			TargetPort: intstr.FromString(consts.HttpsServicePortName),
+			Port:       capability.HttpsServicePort,
+			TargetPort: intstr.FromString(capability.HttpsServicePortName),
 		},
 		{
-			Name:       consts.HttpServicePortName,
+			Name:       capability.HttpServicePortName,
 			Protocol:   corev1.ProtocolTCP,
-			Port:       consts.HttpServicePort,
-			TargetPort: intstr.FromString(consts.HttpServicePortName),
+			Port:       capability.HttpServicePort,
+			TargetPort: intstr.FromString(capability.HttpServicePortName),
 		},
 	}
 	if enableStatsd {
 		ports = append(ports, corev1.ServicePort{
-			Name:       consts.StatsdIngestPortName,
+			Name:       capability.StatsdIngestPortName,
 			Protocol:   corev1.ProtocolUDP,
-			Port:       consts.StatsdIngestPort,
-			TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
+			Port:       capability.StatsdIngestPort,
+			TargetPort: intstr.FromString(capability.StatsdIngestTargetPort),
 		})
 	}
 

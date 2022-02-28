@@ -3,7 +3,7 @@ package statefulset
 import (
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,7 +26,7 @@ func TestStatsd_BuildContainerAndVolumes(t *testing.T) {
 		assertion.Empty(container.StartupProbe, "Expected there is no startup probe")
 
 		for _, port := range []int32{
-			consts.StatsdIngestPort, statsdProbesPort,
+			capability.StatsdIngestPort, statsdProbesPort,
 		} {
 			assertion.Truef(kubeobjects.PortIsIn(container.Ports, port), "Expected that StatsD container defines port %d", port)
 		}
@@ -35,13 +35,13 @@ func TestStatsd_BuildContainerAndVolumes(t *testing.T) {
 			dataSourceStartupArgsMountPoint,
 			dataSourceAuthTokenMountPoint,
 			dataSourceMetadataMountPoint,
-			statsDLogsDir,
+			statsdLogsDir,
 		} {
 			assertion.Truef(kubeobjects.MountPathIsIn(container.VolumeMounts, mountPath), "Expected that StatsD container defines mount point %s", mountPath)
 		}
 
 		for _, envVar := range []string{
-			"StatsdExecArgsPath", "ProbeServerPort", "StatsdMetadataDir", "DsLogFile",
+			envStatsdStartupArgsPath, envDataSourceProbeServerPort, envStatsdMetadata, envDataSourceLogFile,
 		} {
 			assertion.Truef(kubeobjects.EnvVarIsIn(container.Env, envVar), "Expected that StatsD container defined environment variable %s", envVar)
 		}
