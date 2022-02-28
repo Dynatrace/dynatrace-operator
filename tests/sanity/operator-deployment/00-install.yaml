@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynatrace-operator
+  labels:
+    app: dynatrace-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dynatrace-operator
+  template:
+    metadata:
+      labels:
+        app: dynatrace-operator
+    spec:
+      containers:
+      - name: dynatrace-operator
+        image: quay.io/dynatrace/dynatrace-operator:snapshot-feature-statsd-ingest--edge

@@ -1,0 +1,14 @@
+apiVersion: dynatrace.com/v1beta1
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+
+spec:
+  apiUrl: https://xnl32808.dev.dynatracelabs.com/api
+  activeGate:
+    capabilities:
+      - statsd-ingest
+
+  oneAgent:
+    applicationMonitoring: {}

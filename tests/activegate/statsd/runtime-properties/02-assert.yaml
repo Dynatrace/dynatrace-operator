@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+data:
+  runtimeConfiguration: '{"revision":1,"booleanMap":{"debugExtensionDSstatsdlogoutboundminttraffic":true},"stringMap":{},"longMap":{}}'
+metadata:
+  name: dynakube-activegate-eec-config
+  namespace: dynatrace

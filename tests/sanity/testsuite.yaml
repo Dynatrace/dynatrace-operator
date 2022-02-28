@@ -1,0 +1,9 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+startKIND: true
+kindConfig: tests/config/kind-config.yaml
+kindContainers:
+  - quay.io/dynatrace/dynatrace-operator:snapshot-feature-statsd-ingest--edge
+testDirs:
+  - tests/sanity
+timeout: 60

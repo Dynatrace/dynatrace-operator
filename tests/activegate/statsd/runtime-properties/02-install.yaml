@@ -1,0 +1,16 @@
+apiVersion: dynatrace.com/v1beta1
+kind: DynaKube
+metadata:
+  annotations:
+    alpha.operator.dynatrace.com/extensions.debugExtensionDSstatsdlogoutboundminttraffic: "true"
+  name: dynakube
+  namespace: dynatrace
+
+spec:
+  apiUrl: https://xnl32808.dev.dynatracelabs.com/api
+  activeGate:
+    capabilities:
+      - statsd-ingest
+
+  oneAgent:
+    applicationMonitoring: {}
