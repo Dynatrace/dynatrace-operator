@@ -16,7 +16,7 @@
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
-  name: {{ .Release.Name }}
+  name: dynatrace-webhook
 allowPrivilegedContainer: false
 requiredDropCapabilities:
   - ALL
@@ -35,7 +35,7 @@ seccompProfiles:
 supplementalGroups:
   type: RunAsAny
 users:
-  - system:serviceaccount:{{ .Release.Namespace }}:{{ .Release.Name }}
+  - system:serviceaccount:{{ .Release.Namespace }}:dynatrace-webhook
 volumes:
   - "*"
 
