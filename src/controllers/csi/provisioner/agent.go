@@ -55,8 +55,8 @@ func (updater *agentUpdater) updateAgent(installedVersion, tenantUUID string, pr
 
 	if _, err := updater.fs.Stat(targetDir); os.IsNotExist(err) {
 		log.Info("updating agent",
-			"targetVersion", targetVersion,
-			"installedVersion", installedVersion,
+			"target version", targetVersion,
+			"installed version", installedVersion,
 			"target directory", targetDir)
 
 		updater.installer.SetVersion(targetVersion)
@@ -79,8 +79,8 @@ func (updater *agentUpdater) updateAgent(installedVersion, tenantUUID string, pr
 	}
 	if targetVersion != installedVersion {
 		log.Info("updating agent, installer was already present",
-			"targetVersion", targetVersion,
-			"installedVersion", installedVersion,
+			"target version", targetVersion,
+			"installed version", installedVersion,
 			"target directory", targetDir)
 		updater.recorder.Eventf(dk,
 			corev1.EventTypeNormal,
