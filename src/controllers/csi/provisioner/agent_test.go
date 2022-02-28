@@ -11,6 +11,7 @@ import (
 	t_utils "github.com/Dynatrace/dynatrace-operator/src/testing"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
@@ -121,15 +122,70 @@ func TestUpdateAgent(t *testing.T) {
 		previousHash := "1"
 		processModuleCache := createTestProcessModuleConfigCache(previousHash)
 		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+		installerCalled := false
 		updater.installer.(*installer.InstallerMock).
 			On("SetVersion", testVersion).
 			Return()
 		updater.installer.(*installer.InstallerMock).
 			On("InstallAgent", targetDir).
+			Run(func(args mock.Arguments) {
+				installerCalled = true
+			}).
 			Return(nil)
 		updater.installer.(*installer.InstallerMock).
 			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
 			Return(nil)
+
+		currentVersion, err := updater.updateAgent(
+			"other",
+			testTenantUUID,
+			previousHash,
+			&processModuleCache)
+
+		require.NoError(t, err)
+		assert.Equal(t, testVersion, currentVersion)
+		assert.True(t, installerCalled)
+		t_utils.AssertEvents(t,
+			updater.recorder.(*record.FakeRecorder).Events,
+			t_utils.Events{
+				t_utils.Event{
+					EventType: corev1.EventTypeNormal,
+					Reason:    installAgentVersionEvent,
+				},
+			},
+		)
+	})
+	t.Run(`update to already installed version`, func(t *testing.T) {
+		// on already existing versions installed should not be called
+		dk := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				LatestAgentVersionUnixPaas: testVersion,
+			},
+		}
+		updater := createTestAgentUpdater(t, &dk)
+		previousHash := "1"
+		processModuleCache := createTestProcessModuleConfigCache(previousHash)
+		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+		installerCalled := false
+		updater.installer.(*installer.InstallerMock).
+			On("SetVersion", testVersion).
+			Return()
+		updater.installer.(*installer.InstallerMock).
+			On("InstallAgent", targetDir).
+			Run(func(args mock.Arguments) {
+				installerCalled = true
+			}).
+			Return(nil)
+		updater.installer.(*installer.InstallerMock).
+			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
+			Return(nil)
+
+		// add directory to assume installer was already there
 		updater.fs.MkdirAll(targetDir, 0755)
 
 		currentVersion, err := updater.updateAgent(
@@ -140,6 +196,7 @@ func TestUpdateAgent(t *testing.T) {
 
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
+		assert.False(t, installerCalled)
 		t_utils.AssertEvents(t,
 			updater.recorder.(*record.FakeRecorder).Events,
 			t_utils.Events{
