@@ -3574,8 +3574,6 @@ kind: Deployment
 metadata:
   name: dynatrace-operator
   namespace: dynatrace
-  annotations:
-    container.apparmor.security.beta.kubernetes.io/dynatrace-operator: runtime/default
   labels:
     dynatrace: operator
     operator: dynakube
@@ -3589,6 +3587,8 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
+        container.apparmor.security.beta.kubernetes.io/dynatrace-operator: runtime/default
       labels:
         name: dynatrace-operator
         dynatrace: operator
@@ -3703,7 +3703,7 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: webhook
-        container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
+        container.apparmor.security.beta.kubernetes.io/dynatrace-operator: runtime/default
       labels:
         dynatrace.com/operator: oneagent
         internal.dynatrace.com/component: webhook
