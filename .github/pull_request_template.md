@@ -1,7 +1,9 @@
 # Description
 
-Please include a summary of the change and which issue is fixed.
-Please also include relevant motivation and context.
+Please include the following:
+- a summary of the change
+- which issue is fixed (if there is one)
+- relevant motivation and context
 
 ## How can this be tested?
 Please include some guiding steps on how to test this change during a review.
