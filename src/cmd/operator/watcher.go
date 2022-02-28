@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
@@ -77,12 +78,12 @@ func (watcher *certificateWatcher) updateCertificatesFromSecret() (bool, error) 
 		}
 	}
 
-	for _, filename := range []string{"tls.crt", "tls.key"} {
+	for _, filename := range []string{certificates.ServerCert, certificates.ServerKey} {
 		if _, err = watcher.ensureCertificateFile(secret, filename); err != nil {
 			return false, err
 		}
 	}
-	isValid, err := kubeobjects.ValidateCertificateExpiration(secret.Data["tls.crt"], certificateRenewalInterval, time.Now(), log)
+	isValid, err := kubeobjects.ValidateCertificateExpiration(secret.Data[certificates.ServerCert], certificateRenewalInterval, time.Now(), log)
 	if err != nil {
 		return false, err
 	} else if !isValid {
