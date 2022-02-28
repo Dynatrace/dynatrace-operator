@@ -108,104 +108,10 @@ func TestUpdateAgent(t *testing.T) {
 		)
 	})
 	t.Run(`update`, func(t *testing.T) {
-		dk := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
-				},
-			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				LatestAgentVersionUnixPaas: testVersion,
-			},
-		}
-		updater := createTestAgentUpdater(t, &dk)
-		previousHash := "1"
-		processModuleCache := createTestProcessModuleConfigCache(previousHash)
-		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
-		installerCalled := false
-		updater.installer.(*installer.InstallerMock).
-			On("SetVersion", testVersion).
-			Return()
-		updater.installer.(*installer.InstallerMock).
-			On("InstallAgent", targetDir).
-			Run(func(args mock.Arguments) {
-				installerCalled = true
-			}).
-			Return(nil)
-		updater.installer.(*installer.InstallerMock).
-			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
-			Return(nil)
-
-		currentVersion, err := updater.updateAgent(
-			"other",
-			testTenantUUID,
-			previousHash,
-			&processModuleCache)
-
-		require.NoError(t, err)
-		assert.Equal(t, testVersion, currentVersion)
-		assert.True(t, installerCalled)
-		t_utils.AssertEvents(t,
-			updater.recorder.(*record.FakeRecorder).Events,
-			t_utils.Events{
-				t_utils.Event{
-					EventType: corev1.EventTypeNormal,
-					Reason:    installAgentVersionEvent,
-				},
-			},
-		)
+		updateOneagent(t, false)
 	})
 	t.Run(`update to already installed version`, func(t *testing.T) {
-		// on already existing versions installed should not be called
-		dk := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
-				},
-			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				LatestAgentVersionUnixPaas: testVersion,
-			},
-		}
-		updater := createTestAgentUpdater(t, &dk)
-		previousHash := "1"
-		processModuleCache := createTestProcessModuleConfigCache(previousHash)
-		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
-		installerCalled := false
-		updater.installer.(*installer.InstallerMock).
-			On("SetVersion", testVersion).
-			Return()
-		updater.installer.(*installer.InstallerMock).
-			On("InstallAgent", targetDir).
-			Run(func(args mock.Arguments) {
-				installerCalled = true
-			}).
-			Return(nil)
-		updater.installer.(*installer.InstallerMock).
-			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
-			Return(nil)
-
-		// add directory to assume installer was already there
-		updater.fs.MkdirAll(targetDir, 0755)
-
-		currentVersion, err := updater.updateAgent(
-			"other",
-			testTenantUUID,
-			previousHash,
-			&processModuleCache)
-
-		require.NoError(t, err)
-		assert.Equal(t, testVersion, currentVersion)
-		assert.False(t, installerCalled)
-		t_utils.AssertEvents(t,
-			updater.recorder.(*record.FakeRecorder).Events,
-			t_utils.Events{
-				t_utils.Event{
-					EventType: corev1.EventTypeNormal,
-					Reason:    installAgentVersionEvent,
-				},
-			},
-		)
+		updateOneagent(t, true)
 	})
 	t.Run(`only process module config update`, func(t *testing.T) {
 		dk := dynatracev1beta1.DynaKube{
@@ -301,6 +207,59 @@ func TestUpdateAgent(t *testing.T) {
 			},
 		)
 	})
+}
+
+func updateOneagent(t *testing.T, alreadyInstalled bool) {
+	dk := dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+			},
+		},
+		Status: dynatracev1beta1.DynaKubeStatus{
+			LatestAgentVersionUnixPaas: testVersion,
+		},
+	}
+	updater := createTestAgentUpdater(t, &dk)
+	previousHash := "1"
+	processModuleCache := createTestProcessModuleConfigCache(previousHash)
+	targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+	installerCalled := false
+	updater.installer.(*installer.InstallerMock).
+		On("SetVersion", testVersion).
+		Return()
+	updater.installer.(*installer.InstallerMock).
+		On("InstallAgent", targetDir).
+		Run(func(args mock.Arguments) {
+			installerCalled = true
+		}).
+		Return(nil)
+	updater.installer.(*installer.InstallerMock).
+		On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
+		Return(nil)
+	if alreadyInstalled {
+		_ = updater.fs.MkdirAll(targetDir, 0755)
+	}
+
+	currentVersion, err := updater.updateAgent(
+		"other",
+		testTenantUUID,
+		previousHash,
+		&processModuleCache)
+
+	require.NoError(t, err)
+	assert.Equal(t, testVersion, currentVersion)
+	assert.Equal(t, !alreadyInstalled, installerCalled)
+	t_utils.AssertEvents(t,
+		updater.recorder.(*record.FakeRecorder).Events,
+		t_utils.Events{
+			t_utils.Event{
+				EventType: corev1.EventTypeNormal,
+				Reason:    installAgentVersionEvent,
+			},
+		},
+	)
+
 }
 
 func createTestAgentUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube) *agentUpdater {
