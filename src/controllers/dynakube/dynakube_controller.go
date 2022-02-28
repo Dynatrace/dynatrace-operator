@@ -124,6 +124,7 @@ func (controller *DynakubeController) Reconcile(ctx context.Context, request rec
 
 	if dkState.Err != nil {
 		if !dkState.ValidTokens {
+			instance.Status.SetPhase(dynatracev1beta1.Error)
 			return reconcile.Result{}, fmt.Errorf("paas or api token not valid")
 		}
 		if dkState.Updated || instance.Status.SetPhaseOnError(dkState.Err) {
