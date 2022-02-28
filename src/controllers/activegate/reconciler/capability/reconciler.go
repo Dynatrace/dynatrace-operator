@@ -80,23 +80,22 @@ func getActiveGateContainer(sts *appsv1.StatefulSet) (*corev1.Container, error) 
 
 func setCommunicationsPort(dk *dynatracev1beta1.DynaKube) events.StatefulSetEvent {
 	return func(sts *appsv1.StatefulSet) {
-		if dk.NeedsMetricsIngest() {
-			activeGateContainer, err := getActiveGateContainer(sts)
-			if err == nil {
-				activeGateContainer.Ports = []corev1.ContainerPort{
-					{
-						Name:          capability.HttpsServicePortName,
-						ContainerPort: httpsContainerPort,
-					},
-					{
-						Name:          capability.HttpServicePortName,
-						ContainerPort: httpContainerPort,
-					},
-				}
-			} else {
-				log.Info("Cannot find container in the StatefulSet", "container name", capability.ActiveGateContainerName)
+		activeGateContainer, err := getActiveGateContainer(sts)
+		if err == nil {
+			activeGateContainer.Ports = []corev1.ContainerPort{
+				{
+					Name:          capability.HttpsServicePortName,
+					ContainerPort: httpsContainerPort,
+				},
+				{
+					Name:          capability.HttpServicePortName,
+					ContainerPort: httpContainerPort,
+				},
 			}
+		} else {
+			log.Info("Cannot find container in the StatefulSet", "container name", capability.ActiveGateContainerName)
 		}
+
 		if dk.NeedsStatsd() {
 			statsdContainer, err := getContainerByName(sts.Spec.Template.Spec.Containers, capability.StatsdContainerName)
 			if err == nil {
