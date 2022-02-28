@@ -173,7 +173,6 @@ properties:
     description: Please make sure you have applied the latest CRD by following the instructions in the Github Repository.
     title: CRD manually applied
     required: true
-    default: ""
     enum:
     - 'yes'
   platform:
