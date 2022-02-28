@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	annotationFeaturePrefix                           = "alpha.operator.dynatrace.com/feature-"
+	PublicAnnotationPrefix                            = "alpha.operator.dynatrace.com/"
+	annotationFeaturePrefix                           = PublicAnnotationPrefix + "feature-"
 	annotationFeatureDisableActiveGateUpdates         = annotationFeaturePrefix + "disable-activegate-updates"
 	annotationFeatureDisableHostsRequests             = annotationFeaturePrefix + "disable-hosts-requests"
 	annotationFeatureOneAgentMaxUnavailable           = annotationFeaturePrefix + "oneagent-max-unavailable"
@@ -35,7 +36,9 @@ const (
 	annotationFeatureAutomaticKubernetesApiMonitoring = annotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
 	annotationFeatureDisableMetadataEnrichment        = annotationFeaturePrefix + "disable-metadata-enrichment"
 	annotationFeatureUseActiveGateImageForStatsd      = annotationFeaturePrefix + "use-activegate-image-for-statsd"
-	AnnotationFeatureReadOnlyOneAgent                 = annotationFeaturePrefix + "oneagent-readonly-host-fs"
+	annotationFeatureCustomEecImage                   = annotationFeaturePrefix + "custom-eec-image"
+	annotationFeatureCustomStatsdImage                = annotationFeaturePrefix + "custom-statsd-image"
+	AnnotationFeatureDisableReadOnlyOneAgent          = annotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
 )
 
 var (
@@ -126,7 +129,19 @@ func (dk *DynaKube) FeatureUseActiveGateImageForStatsd() bool {
 	return dk.Annotations[annotationFeatureUseActiveGateImageForStatsd] == "true"
 }
 
-// FeatureReadOnlyOneAgent is a feature flag that makes the operator deploy the oneagents in a readonly mode, where the csi-driver provides the volume for logs and such,
-func (dk *DynaKube) FeatureReadOnlyOneAgent() bool {
-	return dk.Annotations[AnnotationFeatureReadOnlyOneAgent] == "true"
+// FeatureCustomEecImage is a feature flag to specify custom Extension Controller Docker image path
+func (dk *DynaKube) FeatureCustomEecImage() string {
+	return dk.Annotations[annotationFeatureCustomEecImage]
+}
+
+// FeatureCustomStatsdImage is a feature flag to specify custom StatsD Docker image path
+func (dk *DynaKube) FeatureCustomStatsdImage() string {
+	return dk.Annotations[annotationFeatureCustomStatsdImage]
+}
+
+// FeatureDisableReadOnlyOneAgent is a feature flag to specify if the operator needs to deploy the oneagents in a readonly mode,
+// where the csi-driver would provide the volume for logs and such
+// Defaults to false
+func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
+	return dk.Annotations[AnnotationFeatureDisableReadOnlyOneAgent] == "true"
 }

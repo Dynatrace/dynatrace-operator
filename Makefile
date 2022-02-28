@@ -194,6 +194,10 @@ fmt:
 vet:
 	go vet ./...
 
+lint: fmt vet
+	gci -w .
+	golangci-lint run --build-tags integration,containers_image_storage_stub --timeout 300s
+
 # Generate code
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
@@ -241,7 +245,7 @@ endif
 SERVICE_ACCOUNTS=--extra-service-accounts dynatrace-dynakube-oneagent
 SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-dynakube-oneagent-unprivileged
 SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-kubernetes-monitoring
-SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-routing
+SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-activegate
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle

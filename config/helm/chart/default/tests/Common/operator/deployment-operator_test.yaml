@@ -65,6 +65,9 @@ tests:
                   limits:
                     cpu: 100m
                     memory: 128Mi
+                volumeMounts:
+                  - name: tmp-cert-dir
+                    mountPath: /tmp/dynatrace-operator
                 readinessProbe:
                   httpGet:
                     path: /healthz
@@ -79,6 +82,15 @@ tests:
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  capabilities:
+                    drop: ["all"]
             affinity:
               nodeAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:
@@ -93,6 +105,9 @@ tests:
                           operator: In
                           values:
                             - linux
+            volumes:
+              - emptyDir: { }
+                name: tmp-cert-dir
             serviceAccountName: RELEASE-NAME
       - isNull:
           path: spec.template.spec.tolerations
@@ -199,6 +214,9 @@ tests:
                   limits:
                     cpu: 100m
                     memory: 128Mi
+                volumeMounts:
+                  - name: tmp-cert-dir
+                    mountPath: /tmp/dynatrace-operator
                 readinessProbe:
                   httpGet:
                     path: /healthz
@@ -213,6 +231,15 @@ tests:
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  capabilities:
+                    drop: ["all"]
             affinity:
               nodeAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:
@@ -227,6 +254,9 @@ tests:
                           operator: In
                           values:
                             - linux
+            volumes:
+              - emptyDir: { }
+                name: tmp-cert-dir
             serviceAccountName: RELEASE-NAME
       - isNull:
           path: spec.template.spec.tolerations

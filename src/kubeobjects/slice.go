@@ -11,8 +11,17 @@ func MountPathIsIn(volumeMounts []corev1.VolumeMount, mountPathToCheck string) b
 	return false
 }
 
-func VolumeIsDefined(volumes []corev1.Volume, volumeMountNameToCheck string) bool {
+func VolumeIsDefined(volumes []corev1.Volume, volumeNameToCheck string) bool {
 	for _, vol := range volumes {
+		if vol.Name == volumeNameToCheck {
+			return true
+		}
+	}
+	return false
+}
+
+func VolumeMountIsDefined(volumeMounts []corev1.VolumeMount, volumeMountNameToCheck string) bool {
+	for _, vol := range volumeMounts {
 		if vol.Name == volumeMountNameToCheck {
 			return true
 		}

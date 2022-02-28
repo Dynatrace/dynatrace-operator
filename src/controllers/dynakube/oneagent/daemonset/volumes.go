@@ -3,13 +3,15 @@ package daemonset
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
+	hostvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/host"
 	corev1 "k8s.io/api/core/v1"
 )
 
 func prepareVolumeMounts(instance *dynatracev1beta1.DynaKube) []corev1.VolumeMount {
 	var volumeMounts []corev1.VolumeMount
 
-	if instance.FeatureReadOnlyOneAgent() {
+	if instance.NeedsReadOnlyOneAgents() {
 		volumeMounts = append(volumeMounts, getReadOnlyRootMount())
 		volumeMounts = append(volumeMounts, getCSIStorageMount())
 
@@ -64,8 +66,8 @@ func getCSIStorageMount() corev1.VolumeMount {
 func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {
 	volumes := []corev1.Volume{getRootVolume()}
 
-	if instance.FeatureReadOnlyOneAgent() {
-		volumes = append(volumes, getCSIStorageVolume())
+	if instance.NeedsReadOnlyOneAgents() {
+		volumes = append(volumes, getCSIStorageVolume(instance))
 	}
 
 	if instance.Spec.TrustedCAs != "" {
@@ -98,14 +100,15 @@ func getCertificateVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
 	}
 }
 
-func getCSIStorageVolume() corev1.Volume {
+func getCSIStorageVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
 	return corev1.Volume{
 		Name: csiStorageVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			CSI: &corev1.CSIVolumeSource{
 				Driver: dtcsi.DriverName,
 				VolumeAttributes: map[string]string{
-					"mode": "osagent", // TODO: Finalize in later PR
+					csivolumes.CSIVolumeAttributeModeField:     hostvolumes.Mode,
+					csivolumes.CSIVolumeAttributeDynakubeField: instance.Name,
 				},
 			},
 		},

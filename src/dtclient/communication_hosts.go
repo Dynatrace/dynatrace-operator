@@ -25,7 +25,7 @@ func (dtc *dynatraceClient) GetCommunicationHostForClient() (CommunicationHost, 
 }
 
 func (dtc *dynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
-	resp, err := dtc.makeRequest(dtc.getConnectionInfoUrl(), dynatracePaaSToken)
+	resp, err := dtc.makeRequest(dtc.getOneAgentConnectionInfoUrl(), dynatracePaaSToken)
 	if err != nil {
 		return ConnectionInfo{}, err
 	}

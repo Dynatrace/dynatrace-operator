@@ -29,7 +29,8 @@ import (
 
 const (
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
-	PullSecretSuffix = "-pull-secret"
+	PullSecretSuffix   = "-pull-secret"
+	TenantSecretSuffix = "-activegate-tenant-secret"
 )
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
@@ -107,6 +108,11 @@ func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 	return false
 }
 
+// AGTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate
+func (dk *DynaKube) AGTenantSecret() string {
+	return dk.Name + TenantSecretSuffix
+}
+
 // PullSecret returns the name of the pull secret to be used for immutable images.
 func (dk *DynaKube) PullSecret() string {
 	if dk.Spec.CustomPullSecret != "" {
@@ -117,28 +123,33 @@ func (dk *DynaKube) PullSecret() string {
 
 // ActiveGateImage returns the ActiveGate image to be used with the dk DynaKube instance.
 func (dk *DynaKube) ActiveGateImage() string {
-	if dk.DeprecatedActiveGateMode() {
-		if dk.Spec.KubernetesMonitoring.Image != "" {
-			return dk.Spec.KubernetesMonitoring.Image
-		} else if dk.Spec.Routing.Image != "" {
-			return dk.Spec.Routing.Image
-		}
-	} else if dk.ActiveGateMode() {
-		if dk.Spec.ActiveGate.Image != "" {
-			return dk.Spec.ActiveGate.Image
-		}
-	}
+	return resolveImagePath(newActiveGateImagePath(dk))
+}
 
-	if dk.Spec.APIURL == "" {
-		return ""
-	}
+// EecImage returns the Extension Controller image to be used with the dk DynaKube instance.
+func (dk *DynaKube) EecImage() string {
+	return resolveImagePath(newEecImagePath(dk))
+}
 
-	registry := buildImageRegistry(dk.Spec.APIURL)
-	return fmt.Sprintf("%s/linux/activegate:latest", registry)
+// StatsdImage returns the StatsD data source image to be used with the dk DynaKube instance.
+func (dk *DynaKube) StatsdImage() string {
+	return resolveImagePath(newStatsdImagePath(dk))
+}
+
+func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
+	inSupportedMode := dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()
+	return inSupportedMode && !dk.FeatureDisableReadOnlyOneAgent()
 }
 
 func (dk *DynaKube) NeedsCSIDriver() bool {
-	return dk.CloudNativeFullstackMode() || (dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil && *dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver)
+	isAppMonitoringWithCSI := dk.ApplicationMonitoringMode() &&
+		dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil &&
+		*dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
+
+	isReadOnlyHostMonitoring := dk.HostMonitoringMode() &&
+		!dk.FeatureDisableReadOnlyOneAgent()
+
+	return dk.CloudNativeFullstackMode() || isAppMonitoringWithCSI || isReadOnlyHostMonitoring
 }
 
 func (dk *DynaKube) NeedAppInjection() bool {
@@ -219,13 +230,6 @@ func (dk *DynaKube) ImmutableOneAgentImage() string {
 
 	registry := buildImageRegistry(dk.Spec.APIURL)
 	return fmt.Sprintf("%s/linux/oneagent:%s", registry, tag)
-}
-
-func buildImageRegistry(apiURL string) string {
-	registry := strings.TrimPrefix(apiURL, "https://")
-	registry = strings.TrimPrefix(registry, "http://")
-	registry = strings.TrimSuffix(registry, "/api")
-	return registry
 }
 
 // Tokens returns the name of the Secret to be used for tokens.
