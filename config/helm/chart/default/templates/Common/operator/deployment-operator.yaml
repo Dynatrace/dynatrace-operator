@@ -31,9 +31,7 @@ spec:
   template:
     metadata:
       annotations:
-      {{- if and (eq .Values.platform "openshift") ( eq (default true .Values.apparmor) true) }}
-        container.seccomp.security.alpha.kubernetes.io/{{ .Release.Name }}: runtime/default
-      {{- else if eq (default true .Values.apparmor) true }}
+      {{- if eq (default false .Values.apparmor) true }}
         container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
       {{- end }}
       labels:
