@@ -82,6 +82,15 @@ tests:
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  capabilities:
+                    drop: ["all"]
             affinity:
               nodeAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:
@@ -222,6 +231,15 @@ tests:
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  capabilities:
+                    drop: ["all"]
             affinity:
               nodeAffinity:
                 requiredDuringSchedulingIgnoredDuringExecution:
