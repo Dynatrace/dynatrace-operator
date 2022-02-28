@@ -111,7 +111,6 @@ func TestCreateService(t *testing.T) {
 		require.True(t, !instance.NeedsMetricsIngest() && !instance.NeedsStatsd())
 
 		service := createService(instance, testFeature)
-		//assert.Empty(t, service) // TODO Uncomment if nil is returned instead of a no-port service
 		ports := service.Spec.Ports
 
 		assert.NotContains(t, ports, agHttpsPort, agHttpPort, statsdPort)
