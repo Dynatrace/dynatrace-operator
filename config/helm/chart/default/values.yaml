@@ -95,6 +95,7 @@ cloudNativeFullStack:
   priorityClassName: ""
   dnsPolicy: ""
   labels: {}
+  disableReadOnly: false
 
 applicationMonitoring:
   enabled: false
@@ -116,6 +117,7 @@ hostMonitoring:
   priorityClassName: ""
   dnsPolicy: ""
   labels: {}
+  disableReadOnly: false
 
 
 activeGate:

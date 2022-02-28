@@ -67,7 +67,7 @@ func TestUnpublishVolume(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Nil(t, response)
 		assert.NotEmpty(t, mounter.MountPoints)
-		volume, err := publisher.db.GetOsAgentVolume(testVolumeId)
+		volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(testVolumeId)
 		assert.NoError(t, err)
 		assert.Nil(t, volume)
 	})
@@ -139,7 +139,7 @@ func mockDynakube(t *testing.T, publisher *HostVolumePublisher) {
 
 func assertReferencesForPublishedVolume(t *testing.T, publisher *HostVolumePublisher, mounter *mount.FakeMounter) {
 	assert.NotEmpty(t, mounter.MountPoints)
-	volume, err := publisher.db.GetOsAgentVolume(testVolumeId)
+	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(testVolumeId)
 	assert.NoError(t, err)
 	assert.Equal(t, volume.VolumeID, testVolumeId)
 	assert.Equal(t, volume.TenantUUID, testTenantUUID)
@@ -147,7 +147,7 @@ func assertReferencesForPublishedVolume(t *testing.T, publisher *HostVolumePubli
 }
 
 func assertReferencesForUnpublishedVolume(t *testing.T, publisher *HostVolumePublisher) {
-	volume, err := publisher.db.GetOsAgentVolume(testVolumeId)
+	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(testVolumeId)
 	assert.NoError(t, err)
 	assert.NotNil(t, volume)
 	assert.False(t, volume.Mounted)

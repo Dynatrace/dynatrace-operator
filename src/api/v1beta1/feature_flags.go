@@ -34,7 +34,7 @@ const (
 	annotationFeatureIgnoredNamespaces                = annotationFeaturePrefix + "ignored-namespaces"
 	annotationFeatureAutomaticKubernetesApiMonitoring = annotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
 	annotationFeatureDisableMetadataEnrichment        = annotationFeaturePrefix + "disable-metadata-enrichment"
-	AnnotationFeatureReadOnlyOneAgent                 = annotationFeaturePrefix + "oneagent-readonly-host-fs"
+	AnnotationFeatureDisableReadOnlyOneAgent          = annotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
 )
 
 var (
@@ -119,7 +119,9 @@ func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
 	return dk.Annotations[annotationFeatureDisableMetadataEnrichment] == "true"
 }
 
-// FeatureReadOnlyOneAgent is a feature flag that makes the operator deploy the oneagents in a readonly mode, where the csi-driver provides the volume for logs and such,
-func (dk *DynaKube) FeatureReadOnlyOneAgent() bool {
-	return dk.Annotations[AnnotationFeatureReadOnlyOneAgent] == "true"
+// FeatureDisableReadOnlyOneAgent is a feature flag to specify if the operator needs to deploy the oneagents in a readonly mode,
+// where the csi-driver would provide the volume for logs and such
+// Defaults to false
+func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
+	return dk.Annotations[AnnotationFeatureDisableReadOnlyOneAgent] == "true"
 }
