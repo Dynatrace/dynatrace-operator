@@ -57,7 +57,8 @@ type Access interface {
 	GetDynakubes() (map[string]string, error)
 
 	InsertOsAgentVolume(volume *OsAgentVolume) error
-	GetOsAgentVolume(volumeID string) (*OsAgentVolume, error)
+	GetOsAgentVolumeViaVolumeID(volumeID string) (*OsAgentVolume, error)
+	GetOsAgentVolumeViaTenantUUID(volumeID string) (*OsAgentVolume, error)
 	UpdateOsAgentVolume(volume *OsAgentVolume) error
 
 	InsertVolume(volume *Volume) error
