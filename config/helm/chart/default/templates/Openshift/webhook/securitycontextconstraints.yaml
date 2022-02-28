@@ -38,4 +38,10 @@ users:
   - system:serviceaccount:{{ .Release.Namespace }}:{{ .Release.Name }}
 volumes:
   - "*"
+
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
 {{ end }}
