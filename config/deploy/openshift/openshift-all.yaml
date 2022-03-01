@@ -3641,8 +3641,6 @@ kind: Deployment
 metadata:
   name: dynatrace-operator
   namespace: dynatrace
-  annotations:
-    container.apparmor.security.beta.kubernetes.io/dynatrace-operator: runtime/default
   labels:
     dynatrace: operator
     operator: dynakube
@@ -3656,6 +3654,7 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
       labels:
         name: dynatrace-operator
         dynatrace: operator
@@ -3770,7 +3769,6 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: webhook
-        container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
       labels:
         dynatrace.com/operator: oneagent
         internal.dynatrace.com/component: webhook
@@ -3967,6 +3965,98 @@ users:
   - system:serviceaccount:dynatrace:dynatrace-dynakube-oneagent-unprivileged
 volumes:
   - "*"
+---
+# Source: dynatrace-operator/templates/Openshift/operator/securitycontextconstraints.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: dynatrace-operator
+allowPrivilegedContainer: false
+fsGroup:
+  type: RunAsAny
+priority: 1
+readOnlyRootFilesystem: true
+requiredDropCapabilities:
+  - ALL
+runAsUser:
+  type: MustRunAsNonRoot
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - "*"
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:dynatrace:dynatrace-operator
+volumes:
+  - "*"
+
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowedFlexVolumes: null
+defaultAddCapabilities: []
+---
+# Source: dynatrace-operator/templates/Openshift/webhook/securitycontextconstraints.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: dynatrace-webhook
+allowPrivilegedContainer: false
+fsGroup:
+  type: RunAsAny
+priority: 1
+readOnlyRootFilesystem: true
+requiredDropCapabilities:
+  - ALL
+runAsUser:
+  type: MustRunAsNonRoot
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - "*"
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:dynatrace:dynatrace-webhook
+volumes:
+  - "*"
+
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: true
+allowHostPID: false
+allowHostPorts: false
+allowedFlexVolumes: null
+defaultAddCapabilities: []
 ---
 # Source: dynatrace-operator/templates/Common/webhook/validatingwebhookconfiguration.yaml
 # Copyright 2021 Dynatrace LLC
@@ -4234,10 +4324,6 @@ metadata:
     operator: dynakube
   name: dynatrace-oneagent-csi-driver
   namespace: dynatrace
-  annotations:
-    container.apparmor.security.beta.kubernetes.io/driver: runtime/default
-    container.apparmor.security.beta.kubernetes.io/registrar: runtime/default
-    container.apparmor.security.beta.kubernetes.io/liveness-probe: runtime/default
 spec:
   revisionHistoryLimit: 10
   selector:

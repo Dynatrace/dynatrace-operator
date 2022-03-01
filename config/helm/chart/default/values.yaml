@@ -25,6 +25,7 @@ proxy: ""
 trustedCAs: ""
 networkZone: ""
 enableIstio: false
+apparmor: false
 
 # Only works for applicationMonitoring and cloudNativeFullStack
 namespaceSelector: {}
