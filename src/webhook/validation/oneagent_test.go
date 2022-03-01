@@ -41,7 +41,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 					HostMonitoring:   &dynatracev1beta1.HostMonitoringSpec{},
 				},
 			},
-		})
+		}, &defaultCSIDaemonSet)
 	})
 	t.Run(`conflicting dynakube specs`, func(t *testing.T) {
 		assertDeniedResponse(t,
@@ -55,7 +55,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 						HostMonitoring:   &dynatracev1beta1.HostMonitoringSpec{},
 					},
 				},
-			})
+			}, &defaultCSIDaemonSet)
 
 		assertDeniedResponse(t,
 			[]string{errorConflictingOneagentMode},
@@ -68,7 +68,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 						HostMonitoring:        &dynatracev1beta1.HostMonitoringSpec{},
 					},
 				},
-			})
+			}, &defaultCSIDaemonSet)
 	})
 }
 
@@ -107,7 +107,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 						},
 					},
 				},
-			})
+			}, &defaultCSIDaemonSet)
 
 		assertAllowedResponseWithWarnings(t, 2,
 			&dynatracev1beta1.DynaKube{

@@ -200,7 +200,7 @@ func TestInsertOsAgentVolume(t *testing.T) {
 	assert.True(t, volume.LastModified.Equal(lastModified))
 }
 
-func TestGetOsAgentVolume(t *testing.T) {
+func TestGetOsAgentVolumeViaVolumeID(t *testing.T) {
 	db := FakeMemoryDB()
 
 	now := time.Now()
@@ -213,7 +213,29 @@ func TestGetOsAgentVolume(t *testing.T) {
 
 	err := db.InsertOsAgentVolume(&expected)
 	require.NoError(t, err)
-	actual, err := db.GetOsAgentVolume(expected.VolumeID)
+	actual, err := db.GetOsAgentVolumeViaVolumeID(expected.VolumeID)
+	require.NoError(t, err)
+	assert.NoError(t, err)
+	assert.Equal(t, expected.VolumeID, actual.VolumeID)
+	assert.Equal(t, expected.TenantUUID, actual.TenantUUID)
+	assert.Equal(t, expected.Mounted, actual.Mounted)
+	assert.True(t, expected.LastModified.Equal(*actual.LastModified))
+}
+
+func TestGetOsAgentVolumeViaTennatUUID(t *testing.T) {
+	db := FakeMemoryDB()
+
+	now := time.Now()
+	expected := OsAgentVolume{
+		VolumeID:     "vol-4",
+		TenantUUID:   testDynakube1.TenantUUID,
+		Mounted:      true,
+		LastModified: &now,
+	}
+
+	err := db.InsertOsAgentVolume(&expected)
+	require.NoError(t, err)
+	actual, err := db.GetOsAgentVolumeViaTenantUUID(expected.TenantUUID)
 	require.NoError(t, err)
 	assert.NoError(t, err)
 	assert.Equal(t, expected.VolumeID, actual.VolumeID)
@@ -240,7 +262,7 @@ func TestUpdateOsAgentVolume(t *testing.T) {
 	err = db.UpdateOsAgentVolume(&new)
 	require.NoError(t, err)
 
-	actual, err := db.GetOsAgentVolume(old.VolumeID)
+	actual, err := db.GetOsAgentVolumeViaVolumeID(old.VolumeID)
 	require.NoError(t, err)
 	assert.NoError(t, err)
 	assert.Equal(t, old.VolumeID, actual.VolumeID)

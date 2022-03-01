@@ -136,8 +136,20 @@ func (dk *DynaKube) StatsdImage() string {
 	return resolveImagePath(newStatsdImagePath(dk))
 }
 
+func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
+	inSupportedMode := dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()
+	return inSupportedMode && !dk.FeatureDisableReadOnlyOneAgent()
+}
+
 func (dk *DynaKube) NeedsCSIDriver() bool {
-	return dk.CloudNativeFullstackMode() || (dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil && *dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver)
+	isAppMonitoringWithCSI := dk.ApplicationMonitoringMode() &&
+		dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil &&
+		*dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
+
+	isReadOnlyHostMonitoring := dk.HostMonitoringMode() &&
+		!dk.FeatureDisableReadOnlyOneAgent()
+
+	return dk.CloudNativeFullstackMode() || isAppMonitoringWithCSI || isReadOnlyHostMonitoring
 }
 
 func (dk *DynaKube) NeedAppInjection() bool {
