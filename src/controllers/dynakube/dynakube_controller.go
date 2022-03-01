@@ -125,7 +125,8 @@ func (controller *DynakubeController) Reconcile(ctx context.Context, request rec
 	if dkState.Err != nil {
 		if !dkState.ValidTokens {
 			instance.Status.SetPhase(dynatracev1beta1.Error)
-			return reconcile.Result{}, fmt.Errorf("paas or api token not valid")
+			_ = controller.updateCR(ctx, instance)
+			return reconcile.Result{RequeueAfter: defaultUpdateInterval}, nil
 		}
 		if dkState.Updated || instance.Status.SetPhaseOnError(dkState.Err) {
 			if errClient := controller.updateCR(ctx, instance); errClient != nil {
@@ -166,7 +167,9 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	dkState.ValidTokens = true
 	if !dtcReconciler.ValidTokens {
 		dkState.ValidTokens = false
-		log.Info("paas or api token not valid", "name", dkState.Instance.GetName())
+		errMsg := "paas or api token not valid"
+		log.Info(errMsg, "name", dkState.Instance.GetName())
+		dkState.Err = fmt.Errorf(errMsg)
 		return
 	}
 
@@ -225,9 +228,10 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		upd, err = oneagent.NewOneAgentReconciler(
 			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.CloudNativeFeature,
 		).Reconcile(ctx, dkState)
-		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "cloud native infra monitoring reconciled") {
+		if dkState.Error(err) {
 			return
 		}
+		dkState.Update(upd, defaultUpdateInterval, "cloud native infra monitoring reconciled")
 	} else if dkState.Instance.ClassicFullStackMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
 			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.ClassicFeature,
@@ -245,20 +249,26 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 			log.Error(err, "update of a map of namespaces failed")
 		}
 		upd, err := initgeneration.NewInitGenerator(controller.client, controller.apiReader, dkState.Instance.Namespace).GenerateForDynakube(ctx, dkState.Instance)
-		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "new init script created") {
+		if dkState.Error(err) {
 			return
 		}
+		dkState.Update(upd, defaultUpdateInterval, "new init script created")
 
 		if !dkState.Instance.FeatureDisableMetadataEnrichment() {
 			upd, err = endpointSecretGenerator.GenerateForDynakube(ctx, dkState.Instance)
-			if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "new data-ingest endpoint secret created") {
+			if dkState.Error(err) {
 				return
 			}
+			dkState.Update(upd, defaultUpdateInterval, "new data-ingest endpoint secret created")
 		} else {
 			err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, dkState.Instance)
 			if dkState.Error(err) {
 				return
 			}
+		}
+		if dkState.Instance.ApplicationMonitoringMode() {
+			dkState.Instance.Status.SetPhase(dynatracev1beta1.Running)
+			dkState.Update(true, defaultUpdateInterval, "application only reconciled")
 		}
 	} else {
 		if err := dkMapper.UnmapFromDynaKube(); err != nil {

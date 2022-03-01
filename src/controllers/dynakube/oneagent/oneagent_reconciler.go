@@ -91,10 +91,10 @@ func (r *OneAgentReconciler) Reconcile(ctx context.Context, rec *status.Dynakube
 	}
 
 	// Finally we have to determine the correct non error phase
-	_, err = r.determineDynaKubePhase(r.instance)
+	phaseChanged, err := r.determineDynaKubePhase(r.instance)
 	rec.Error(err)
 
-	return upd, nil
+	return upd || phaseChanged, nil
 }
 
 func (r *OneAgentReconciler) reconcileRollout(dkState *status.DynakubeState) (bool, error) {
