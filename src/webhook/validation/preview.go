@@ -12,10 +12,7 @@ const (
 )
 
 func oneAgentModePreviewWarning(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	if dynakube.CloudNativeFullstackMode() {
-		log.Info("DynaKube with cloudNativeFullStack was applied, warning was provided.")
-		return fmt.Sprintf(featurePreviewWarningMessage, "cloudNativeFullStack")
-	} else if dynakube.ApplicationMonitoringMode() && dynakube.NeedsCSIDriver() {
+	if dynakube.ApplicationMonitoringMode() && !dynakube.NeedsCSIDriver() {
 		log.Info("DynaKube with applicationMonitoring was applied, warning was provided.")
 		return fmt.Sprintf(featurePreviewWarningMessage, "applicationMonitoring")
 	}
