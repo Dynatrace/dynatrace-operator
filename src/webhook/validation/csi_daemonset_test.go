@@ -8,7 +8,7 @@ import (
 
 func TestMissingCSIDaemonSet(t *testing.T) {
 	t.Run(`valid cloud-native dynakube specs`, func(t *testing.T) {
-		assertAllowedResponseWithWarnings(t, 2, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
@@ -33,7 +33,7 @@ func TestMissingCSIDaemonSet(t *testing.T) {
 
 	t.Run(`valid application-monitoring via csi dynakube specs`, func(t *testing.T) {
 		useCSIDriver := true
-		assertAllowedResponseWithWarnings(t, 2, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
