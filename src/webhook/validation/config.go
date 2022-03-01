@@ -22,7 +22,6 @@ var validators = []validator{
 }
 
 var warnings = []validator{
-	oneAgentModePreviewWarning,
 	metricIngestPreviewWarning,
 	missingActiveGateMemoryLimit,
 }

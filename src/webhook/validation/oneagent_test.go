@@ -109,7 +109,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 				},
 			}, &defaultCSIDaemonSet)
 
-		assertAllowedResponseWithWarnings(t, 2,
+		assertAllowedResponseWithoutWarnings(t,
 			&dynatracev1beta1.DynaKube{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "conflict2",
