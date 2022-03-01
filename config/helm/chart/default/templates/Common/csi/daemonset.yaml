@@ -20,10 +20,6 @@ metadata:
     {{- include "dynatrace-operator.labels" . | nindent 4 }}
   name: dynatrace-oneagent-csi-driver
   namespace: {{ .Release.Namespace }}
-  annotations:
-    container.apparmor.security.beta.kubernetes.io/driver: runtime/default
-    container.apparmor.security.beta.kubernetes.io/registrar: runtime/default
-    container.apparmor.security.beta.kubernetes.io/liveness-probe: runtime/default
 spec:
   revisionHistoryLimit: 10
   selector:
@@ -34,6 +30,11 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-logs-container: driver
+        {{- if and (eq (default false .Values.apparmor) true) (ne .Values.platform "openshift") }}
+        container.apparmor.security.beta.kubernetes.io/driver: runtime/default
+        container.apparmor.security.beta.kubernetes.io/registrar: runtime/default
+        container.apparmor.security.beta.kubernetes.io/liveness-probe: runtime/default
+        {{- end}}
       labels:
         {{- include "dynatrace-operator.labels" . | nindent 8 }}
         internal.oneagent.dynatrace.com/app: csi-driver
