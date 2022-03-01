@@ -48,20 +48,23 @@ func newAgentUpdater(
 	}
 }
 
-func (updater *agentUpdater) updateAgent(version, tenantUUID string, previousHash string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
+func (updater *agentUpdater) updateAgent(installedVersion, tenantUUID string, previousHash string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
 	dk := updater.dk
-	currentVersion := updater.getOneAgentVersionFromInstance()
-	targetDir := updater.path.AgentBinaryDirForVersion(tenantUUID, currentVersion)
+	targetVersion := updater.getOneAgentVersionFromInstance()
+	targetDir := updater.path.AgentBinaryDirForVersion(tenantUUID, targetVersion)
 
-	if _, err := updater.fs.Stat(targetDir); currentVersion != version || os.IsNotExist(err) {
-		log.Info("updating agent", "version", currentVersion, "previous version", version)
+	if _, err := updater.fs.Stat(targetDir); os.IsNotExist(err) {
+		log.Info("updating agent",
+			"target version", targetVersion,
+			"installed version", installedVersion,
+			"target directory", targetDir)
 
-		updater.installer.SetVersion(currentVersion)
+		updater.installer.SetVersion(targetVersion)
 		if err := updater.installer.InstallAgent(targetDir); err != nil {
 			updater.recorder.Eventf(dk,
 				corev1.EventTypeWarning,
 				failedInstallAgentVersionEvent,
-				"Failed to install agent version: %s to tenant: %s, err: %s", currentVersion, tenantUUID, err)
+				"Failed to install agent version: %s to tenant: %s, err: %s", targetVersion, tenantUUID, err)
 			return "", err
 		}
 		log.Info("updating ruxitagentproc.conf on new version")
@@ -71,8 +74,23 @@ func (updater *agentUpdater) updateAgent(version, tenantUUID string, previousHas
 		updater.recorder.Eventf(dk,
 			corev1.EventTypeNormal,
 			installAgentVersionEvent,
-			"Installed agent version: %s to tenant: %s", currentVersion, tenantUUID)
-		return currentVersion, nil
+			"Installed agent version: %s to tenant: %s", targetVersion, tenantUUID)
+		return targetVersion, nil
+	}
+	if targetVersion != installedVersion {
+		log.Info("updating agent, installer was already present",
+			"target version", targetVersion,
+			"installed version", installedVersion,
+			"target directory", targetDir)
+		updater.recorder.Eventf(dk,
+			corev1.EventTypeNormal,
+			installAgentVersionEvent,
+			"Set new agent version: %s to tenant: %s", targetVersion, tenantUUID)
+		log.Info("updating ruxitagentproc.conf on new set version")
+		if err := updater.installer.UpdateProcessModuleConfig(targetDir, latestProcessModuleConfigCache.ProcessModuleConfig); err != nil {
+			return "", err
+		}
+		return targetVersion, nil
 	}
 	if latestProcessModuleConfigCache != nil && previousHash != latestProcessModuleConfigCache.Hash {
 		log.Info("updating ruxitagentproc.conf on latest installed version")
