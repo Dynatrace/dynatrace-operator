@@ -4324,10 +4324,6 @@ metadata:
     operator: dynakube
   name: dynatrace-oneagent-csi-driver
   namespace: dynatrace
-  annotations:
-    container.apparmor.security.beta.kubernetes.io/driver: runtime/default
-    container.apparmor.security.beta.kubernetes.io/registrar: runtime/default
-    container.apparmor.security.beta.kubernetes.io/liveness-probe: runtime/default
 spec:
   revisionHistoryLimit: 10
   selector:
