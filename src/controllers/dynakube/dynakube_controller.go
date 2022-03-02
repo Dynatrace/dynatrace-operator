@@ -222,9 +222,10 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		upd, err = oneagent.NewOneAgentReconciler(
 			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.HostMonitoringFeature,
 		).Reconcile(ctx, dkState)
-		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "infra monitoring reconciled") {
+		if dkState.Error(err) {
 			return
 		}
+		dkState.Update(upd, defaultUpdateInterval, "infra monitoring reconciled")
 	} else if dkState.Instance.CloudNativeFullstackMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
 			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.CloudNativeFeature,
@@ -237,9 +238,10 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		upd, err = oneagent.NewOneAgentReconciler(
 			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.ClassicFeature,
 		).Reconcile(ctx, dkState)
-		if dkState.Error(err) || dkState.Update(upd, defaultUpdateInterval, "classic fullstack reconciled") {
+		if dkState.Error(err) {
 			return
 		}
+		dkState.Update(upd, defaultUpdateInterval, "classic fullstack reconciled")
 	} else {
 		controller.removeOneAgentDaemonSet(dkState)
 	}
@@ -297,6 +299,10 @@ func (controller *DynakubeController) determineDynaKubePhase(instance *dynatrace
 			log.Info("activegate sts is still deploying", "dynakube", instance.Name)
 			return updatePhaseIfChanged(instance, dynatracev1beta1.Deploying)
 		}
+		if agPods < 0 {
+			log.Info("activegate sts not yet available", "dynakube", instance.Name)
+			return updatePhaseIfChanged(instance, dynatracev1beta1.Deploying)
+		}
 	}
 
 	if instance.CloudNativeFullstackMode() || instance.ClassicFullStackMode() || instance.HostMonitoringMode() {
@@ -309,6 +315,10 @@ func (controller *DynakubeController) determineDynaKubePhase(instance *dynatrace
 			log.Info("oneagent daemonset is still deploying", "dynakube", instance.Name)
 			return updatePhaseIfChanged(instance, dynatracev1beta1.Deploying)
 		}
+		if oaPods < 0 {
+			log.Info("oneagent daemonset not yet available", "dynakube", instance.Name)
+			return updatePhaseIfChanged(instance, dynatracev1beta1.Deploying)
+		}
 	}
 
 	return updatePhaseIfChanged(instance, dynatracev1beta1.Running)
@@ -319,6 +329,9 @@ func (controller *DynakubeController) numberOfMissingOneagentPods(instance *dyna
 	instanceName := fmt.Sprintf("%s-%s", instance.Name, daemonset.PodNameOSAgent)
 	err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: instance.Namespace}, dsActual)
 
+	if k8serrors.IsNotFound(err) {
+		return -1, nil
+	}
 	if err != nil {
 		return -1, err
 	}
@@ -347,7 +360,7 @@ func (controller *DynakubeController) numberOfMissingActiveGatePods(instance *dy
 	}
 
 	if !found {
-		return -1, fmt.Errorf("no active gate daemonset found")
+		return -1, nil
 	}
 
 	return sum, nil
@@ -357,6 +370,7 @@ func updatePhaseIfChanged(instance *dynatracev1beta1.DynaKube, newPhase dynatrac
 	if instance.Status.Phase == newPhase {
 		return false
 	}
+	instance.Status.Phase = newPhase
 	return true
 }
 
@@ -411,9 +425,11 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 		if c.Enabled() {
 			upd, err := rcap.NewReconciler(
 				c, controller.client, controller.apiReader, controller.scheme, dynakubeState.Instance).Reconcile()
-			if dynakubeState.Error(err) || dynakubeState.Update(upd, defaultUpdateInterval, c.ShortName()+" reconciled") {
+			if dynakubeState.Error(err) {
 				return false
 			}
+			dynakubeState.Update(upd, defaultUpdateInterval, c.ShortName()+" reconciled")
+			return true
 		} else {
 			sts := appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{

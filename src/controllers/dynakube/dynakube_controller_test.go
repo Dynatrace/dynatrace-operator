@@ -2,6 +2,7 @@ package dynakube
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
@@ -43,6 +44,45 @@ const (
 	testAnotherPort     = uint32(5678)
 	testAnotherProtocol = "test-another-protocol"
 )
+
+func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
+	deploymentModes := map[string]dynatracev1beta1.OneAgentSpec{
+		"host":            {HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{}},
+		"fullstack":       {ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{}},
+		"cloudnative":     {CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
+		"applicationOnly": {ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{}},
+	}
+
+	for mode := range deploymentModes {
+		t.Run(fmt.Sprintf(`Reconcile dynakube with %s-monitoring mode`, mode), func(t *testing.T) {
+			mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
+				dtclient.TokenScopes{dtclient.TokenScopeDataExport})
+
+			instance := &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: testNamespace,
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL:   testHost,
+					OneAgent: deploymentModes[mode],
+				},
+			}
+			controller := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
+
+			result, err := controller.Reconcile(context.TODO(), reconcile.Request{
+				NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+			})
+
+			assert.NoError(t, err)
+			assert.NotNil(t, result)
+
+			err = controller.client.Get(context.TODO(), types.NamespacedName{Namespace: testNamespace, Name: testName}, instance)
+			require.NoError(t, err)
+			assert.Equal(t, dynatracev1beta1.Running, instance.Status.Phase)
+		})
+	}
+}
 
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
