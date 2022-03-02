@@ -977,6 +977,9 @@ spec:
     - jsonPath: .status.tokens
       name: Tokens
       type: string
+    - jsonPath: .status.phase
+      name: Status
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
