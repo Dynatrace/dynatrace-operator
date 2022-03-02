@@ -73,6 +73,28 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 }
 
 func TestConflictingNodeSelector(t *testing.T) {
+	newCloudNativeDynakube := func(name string, annotations map[string]string, nodeSelectorValue string) *dynatracev1beta1.DynaKube {
+		return &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        name,
+				Namespace:   testNamespace,
+				Annotations: annotations,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+							NodeSelector: map[string]string{
+								"node": nodeSelectorValue,
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
 		assertAllowedResponseWithoutWarnings(t,
 			&dynatracev1beta1.DynaKube{
@@ -144,6 +166,25 @@ func TestConflictingNodeSelector(t *testing.T) {
 				},
 			}, &defaultCSIDaemonSet)
 	})
+	t.Run(`valid dynakube specs with multitenant hostMonitoring`, func(t *testing.T) {
+		assertAllowedResponseWithWarnings(t, 2,
+			newCloudNativeDynakube("dk1", map[string]string{
+				dynatracev1beta1.AnnotationFeatureEnableMultipleOsAgentsOnNode: "true",
+			}, "1"),
+			newCloudNativeDynakube("dk2", map[string]string{
+				dynatracev1beta1.AnnotationFeatureEnableMultipleOsAgentsOnNode: "true",
+			}, "2"),
+			&defaultCSIDaemonSet)
+
+		assertAllowedResponseWithWarnings(t, 2,
+			newCloudNativeDynakube("dk1", map[string]string{
+				dynatracev1beta1.AnnotationFeatureEnableMultipleOsAgentsOnNode: "true",
+			}, "1"),
+			newCloudNativeDynakube("dk2", map[string]string{
+				dynatracev1beta1.AnnotationFeatureEnableMultipleOsAgentsOnNode: "true",
+			}, "1"),
+			&defaultCSIDaemonSet)
+	})
 	t.Run(`invalid dynakube specs`, func(t *testing.T) {
 		assertDeniedResponse(t,
 			[]string{fmt.Sprintf(errorNodeSelectorConflict, "conflicting-dk")},
@@ -180,5 +221,39 @@ func TestConflictingNodeSelector(t *testing.T) {
 					},
 				},
 			}, &defaultCSIDaemonSet)
+	})
+	t.Run(`invalid dynakube specs with multitenant hostMonitoring`, func(t *testing.T) {
+		assertDeniedResponse(t, nil,
+			newCloudNativeDynakube("dk1", map[string]string{
+				dynatracev1beta1.AnnotationFeatureEnableMultipleOsAgentsOnNode: "true",
+				dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent:      "true",
+			}, "1"),
+			newCloudNativeDynakube("dk2", map[string]string{
+				dynatracev1beta1.AnnotationFeatureEnableMultipleOsAgentsOnNode: "true",
+			}, "1"),
+			&defaultCSIDaemonSet)
+
+		assertDeniedResponse(t, nil,
+			newCloudNativeDynakube("dk1", map[string]string{
+				dynatracev1beta1.AnnotationFeatureEnableMultipleOsAgentsOnNode: "false",
+			}, "1"),
+			newCloudNativeDynakube("dk2", map[string]string{
+				dynatracev1beta1.AnnotationFeatureEnableMultipleOsAgentsOnNode: "true",
+			}, "1"),
+			&defaultCSIDaemonSet)
+
+		assertDeniedResponse(t, nil,
+			newCloudNativeDynakube("dk1", map[string]string{
+				dynatracev1beta1.AnnotationFeatureEnableMultipleOsAgentsOnNode: "false",
+			}, "1"),
+			newCloudNativeDynakube("dk2", map[string]string{
+				dynatracev1beta1.AnnotationFeatureEnableMultipleOsAgentsOnNode: "false",
+			}, "1"),
+			&defaultCSIDaemonSet)
+
+		assertDeniedResponse(t, nil,
+			newCloudNativeDynakube("dk1", map[string]string{}, "1"),
+			newCloudNativeDynakube("dk2", map[string]string{}, "1"),
+			&defaultCSIDaemonSet)
 	})
 }

@@ -148,7 +148,6 @@ func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
 }
 
 // FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
-// note: it requires volumes enabled
 func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
 	return dk.Annotations[AnnotationFeatureEnableMultipleOsAgentsOnNode] == "true"
 }
