@@ -601,7 +601,11 @@ func (m *podMutator) getNsAndDkName(ctx context.Context, req admission.Request) 
 
 	dkName, ok := ns.Labels[mapper.InstanceLabel]
 	if !ok {
-		rsp = silentErrorResponse(m.currentPodName, fmt.Errorf("no DynaKube instance set for namespace: %s", req.Namespace))
+		if kubesystem.DeployedViaOLM() {
+			rsp = admission.Patched("")
+		} else {
+			rsp = silentErrorResponse(m.currentPodName, fmt.Errorf("no DynaKube instance set for namespace: %s", req.Namespace))
+		}
 		return corev1.Namespace{}, "", &rsp
 	}
 	return ns, dkName, nil
