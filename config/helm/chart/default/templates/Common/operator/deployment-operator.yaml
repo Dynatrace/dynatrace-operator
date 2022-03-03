@@ -31,7 +31,7 @@ spec:
   template:
     metadata:
       annotations:
-      {{- if and (eq (default false (.Values.operator).apparmor) true)}}
+      {{- if (.Values.operator).apparmor}}
         container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
       {{- end }}
       labels:
