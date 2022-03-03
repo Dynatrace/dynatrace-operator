@@ -16,7 +16,7 @@ func deprecatedFeatureFlagFormat(dv *dynakubeValidator, dynakube *dynatracev1bet
 		return ""
 	}
 	for annotation := range dynakube.Annotations {
-		if strings.HasPrefix(annotation, dynatracev1beta1.DeprecatedFeatureFlagPrefix) {
+		if strings.HasPrefix(annotation, dynatracev1beta1.DeprecatedFeatureFlagPrefix+dynatracev1beta1.FeatureFlagAnnotationPrefix) {
 			return fmt.Sprintf(featureDeprecatedWarningMessage, "feature flags with 'alpha-' prefix")
 		}
 	}

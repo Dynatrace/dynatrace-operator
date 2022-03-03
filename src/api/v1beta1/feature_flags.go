@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	DeprecatedFeatureFlagPrefix                       = "alpha-"
+	DeprecatedFeatureFlagPrefix                       = "alpha."
 	FeatureFlagAnnotationPrefix                       = "operator.dynatrace.com/"
 	annotationFeaturePrefix                           = FeatureFlagAnnotationPrefix + "feature-"
 	annotationFeatureDisableActiveGateUpdates         = annotationFeaturePrefix + "disable-activegate-updates"

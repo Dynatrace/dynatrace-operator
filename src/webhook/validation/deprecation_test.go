@@ -4,35 +4,37 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDeprecationWarning(t *testing.T) {
 	t.Run(`no warning`, func(t *testing.T) {
 		dynakubeMeta := defaultDynakubeObjectMeta
 		dynakubeMeta.Annotations = map[string]string{
-			dynatracev1beta1.AnnotationFeatureEnableWebhookReinvocationPolicy: "test",
+			dynatracev1beta1.AnnotationFeatureEnableWebhookReinvocationPolicy: "true",
 		}
-		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: dynakubeMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
 			},
-		})
+		}
+		assertAllowedResponseWithoutWarnings(t, dynakube)
+		assert.True(t, dynakube.FeatureEnableWebhookReinvocationPolicy())
 	})
 
 	t.Run(`warning present`, func(t *testing.T) {
 		dynakubeMeta := defaultDynakubeObjectMeta
 		dynakubeMeta.Annotations = map[string]string{
-			dynatracev1beta1.DeprecatedFeatureFlagPrefix + dynatracev1beta1.AnnotationFeatureEnableWebhookReinvocationPolicy: "test",
+			dynatracev1beta1.DeprecatedFeatureFlagPrefix + dynatracev1beta1.AnnotationFeatureEnableWebhookReinvocationPolicy: "true",
 		}
-		assertAllowedResponseWithWarnings(t, 1, &dynatracev1beta1.DynaKube{
+		dynakube := &dynatracev1beta1.DynaKube{
 			ObjectMeta: dynakubeMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
-				},
 			},
-		}, &defaultCSIDaemonSet)
+		}
+		assertAllowedResponseWithWarnings(t, 1, dynakube)
+		assert.True(t, dynakube.FeatureEnableWebhookReinvocationPolicy())
 	})
 }
