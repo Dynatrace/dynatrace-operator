@@ -3422,6 +3422,7 @@ rules:
       - services
     verbs:
       - create
+      - update
       - delete
       - get
       - list
