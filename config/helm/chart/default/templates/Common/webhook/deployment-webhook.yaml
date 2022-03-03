@@ -33,9 +33,9 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: webhook
-       {{- if and (eq (default false .Values.apparmor) true) (ne .Values.platform "openshift") }}
+        {{- if and (eq (default false (.Values.webhook).apparmor) true)}}
         container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
-      {{- end }}
+        {{- end }}
       labels:
         dynatrace.com/operator: oneagent
         internal.dynatrace.com/component: webhook
