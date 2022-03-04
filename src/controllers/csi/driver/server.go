@@ -28,6 +28,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
+	hostvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/host"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -82,7 +83,8 @@ func (svr *CSIDriverServer) Start(ctx context.Context) error {
 	}
 
 	svr.publishers = map[string]csivolumes.Publisher{
-		appvolumes.Mode: appvolumes.NewAppVolumePublisher(svr.client, svr.fs, svr.mounter, svr.db, svr.path),
+		appvolumes.Mode:  appvolumes.NewAppVolumePublisher(svr.client, svr.fs, svr.mounter, svr.db, svr.path),
+		hostvolumes.Mode: hostvolumes.NewHostVolumePublisher(svr.client, svr.fs, svr.mounter, svr.db, svr.path),
 	}
 
 	log.Info("starting listener", "protocol", proto, "address", addr)
@@ -144,20 +146,20 @@ func (svr *CSIDriverServer) NodePublishVolume(ctx context.Context, req *csi.Node
 	} else if isMounted {
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
-
-	volumeAttributes := req.GetVolumeContext()
-	if volumeAttributes[CSIVolumeAttributeName] == appvolumes.Mode {
-		log.Info("publishing app volume",
-			"target", volumeCfg.TargetPath,
-			"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
-			"readonly", req.GetReadonly(),
-			"volumeID", volumeCfg.VolumeId,
-			"attributes", req.GetVolumeContext(),
-			"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
-		)
-		return svr.publishers[appvolumes.Mode].PublishVolume(ctx, volumeCfg)
+	publisher, ok := svr.publishers[volumeCfg.Mode]
+	if !ok {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("unknown csi mode provided, mode=%s", volumeCfg.Mode))
 	}
-	return &csi.NodePublishVolumeResponse{}, nil
+	log.Info("publishing volume",
+		"csiMode", volumeCfg.Mode,
+		"target", volumeCfg.TargetPath,
+		"fstype", req.GetVolumeCapability().GetMount().GetFsType(),
+		"readonly", req.GetReadonly(),
+		"volumeID", volumeCfg.VolumeID,
+		"attributes", req.GetVolumeContext(),
+		"mountflags", req.GetVolumeCapability().GetMount().GetMountFlags(),
+	)
+	return publisher.PublishVolume(ctx, volumeCfg)
 }
 
 func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
@@ -165,11 +167,28 @@ func (svr *CSIDriverServer) NodeUnpublishVolume(ctx context.Context, req *csi.No
 	if err != nil {
 		return nil, err
 	}
-	response, err := svr.publishers[appvolumes.Mode].UnpublishVolume(ctx, volumeInfo)
-	if err != nil {
-		return nil, err
+	for _, publisher := range svr.publishers {
+		canUnpublish, err := publisher.CanUnpublishVolume(volumeInfo)
+		if err != nil {
+			log.Error(err, "couldn't determine if volume can be unpublished", "publisher", publisher)
+		}
+		if canUnpublish {
+			response, err := publisher.UnpublishVolume(ctx, volumeInfo)
+			if err != nil {
+				return nil, err
+			}
+			return response, nil
+		}
 	}
-	return response, nil
+	svr.unmountUnknownVolume(*volumeInfo)
+	return &csi.NodeUnpublishVolumeResponse{}, nil
+}
+
+func (svr *CSIDriverServer) unmountUnknownVolume(volumeInfo csivolumes.VolumeInfo) {
+	log.Info("VolumeID not present in the database", "volumeID", volumeInfo.VolumeID, "targetPath", volumeInfo.TargetPath)
+	if err := svr.mounter.Unmount(volumeInfo.TargetPath); err != nil {
+		log.Error(err, "Tried to unmount unknown volume", "volumeID", volumeInfo.VolumeID)
+	}
 }
 
 func (svr *CSIDriverServer) NodeStageVolume(context.Context, *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {

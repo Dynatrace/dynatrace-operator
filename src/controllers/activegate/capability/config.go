@@ -1,4 +1,4 @@
-package consts
+package capability
 
 const (
 	ActiveGateContainerName = "activegate"
@@ -8,8 +8,7 @@ const (
 	HttpServicePortName  = "http"
 	HttpServicePort      = 80
 
-	EecContainerName = ActiveGateContainerName + "-eec"
-
+	EecContainerName       = ActiveGateContainerName + "-eec"
 	StatsdContainerName    = ActiveGateContainerName + "-statsd"
 	StatsdIngestPortName   = "statsd"
 	StatsdIngestPort       = 18125

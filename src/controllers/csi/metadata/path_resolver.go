@@ -14,6 +14,10 @@ func (pr PathResolver) EnvDir(tenantUUID string) string {
 	return filepath.Join(pr.RootDir, tenantUUID)
 }
 
+func (pr PathResolver) OsAgentDir(tenantUUID string) string {
+	return filepath.Join(pr.EnvDir(tenantUUID), "osagent")
+}
+
 func (pr PathResolver) AgentBinaryDir(tenantUUID string) string {
 	return filepath.Join(pr.EnvDir(tenantUUID), dtcsi.AgentBinaryDir)
 }

@@ -1,5 +1,7 @@
 package metadata
 
+import "time"
+
 // Stores the necessary info from the Dynakube that is needed to be used during volume mount/unmount.
 type Dynakube struct {
 	Name          string
@@ -30,6 +32,21 @@ func NewVolume(id, podUID, version, tenantUUID string) *Volume {
 	return &Volume{id, podUID, version, tenantUUID}
 }
 
+type OsAgentVolume struct {
+	VolumeID     string
+	TenantUUID   string
+	Mounted      bool
+	LastModified *time.Time
+}
+
+// NewOsAgentVolume returns a new volume if all fields are set.
+func NewOsAgentVolume(volumeID, tenantUUID string, mounted bool, timeStamp *time.Time) *OsAgentVolume {
+	if volumeID == "" || tenantUUID == "" || timeStamp == nil {
+		return nil
+	}
+	return &OsAgentVolume{volumeID, tenantUUID, mounted, timeStamp}
+}
+
 type Access interface {
 	Setup(path string) error
 
@@ -38,6 +55,11 @@ type Access interface {
 	DeleteDynakube(dynakubeName string) error
 	GetDynakube(dynakubeName string) (*Dynakube, error)
 	GetDynakubes() (map[string]string, error)
+
+	InsertOsAgentVolume(volume *OsAgentVolume) error
+	GetOsAgentVolumeViaVolumeID(volumeID string) (*OsAgentVolume, error)
+	GetOsAgentVolumeViaTenantUUID(volumeID string) (*OsAgentVolume, error)
+	UpdateOsAgentVolume(volume *OsAgentVolume) error
 
 	InsertVolume(volume *Volume) error
 	DeleteVolume(volumeID string) error

@@ -76,13 +76,13 @@ type DynaKube struct {
 type DynaKubeSpec struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	// Location of the Dynatrace API to connect to, including your specific environment ID
+	// Location of the Dynatrace API to connect to, including your specific environment UUID
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="API URL",order=1,xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	APIURL string `json:"apiUrl"`
 
 	// Credentials for the DynaKube to connect back to Dynatrace.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="API and PaaS Tokens",order=2,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Tenant specific secrets",order=2,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	Tokens string `json:"tokens,omitempty"`
 
 	// Optional: Pull secret for your private registry

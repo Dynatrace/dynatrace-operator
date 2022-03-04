@@ -3,6 +3,7 @@ package metadata
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -10,6 +11,7 @@ import (
 const (
 	sqliteDriverName = "sqlite3"
 
+	// CREATE
 	dynakubesTableName       = "dynakubes"
 	dynakubesCreateStatement = `
 	CREATE TABLE IF NOT EXISTS dynakubes (
@@ -29,25 +31,50 @@ const (
 		PRIMARY KEY (ID)
 	);`
 
+	osAgentVolumesTableName       = "osagent_volumes"
+	osAgentVolumesCreateStatement = `
+	CREATE TABLE IF NOT EXISTS osagent_volumes (
+		TenantUUID VARCHAR NOT NULL,
+		VolumeID VARCHAR NOT NULL,
+		Mounted BOOLEAN NOT NULL,
+		LastModified DATETIME NOT NULL,
+		PRIMARY KEY (TenantUUID)
+	);`
+
+	// INSERT
 	insertDynakubeStatement = `
 	INSERT INTO dynakubes (Name, TenantUUID, LatestVersion)
 	VALUES (?,?,?);
 	`
+
+	insertVolumeStatement = `
+	INSERT INTO volumes (ID, PodName, Version, TenantUUID)
+	VALUES (?,?,?,?);
+	`
+
+	insertOsAgentVolumeStatement = `
+	INSERT INTO osagent_volumes (TenantUUID, VolumeID, Mounted, LastModified)
+	VALUES (?,?,?,?);
+	`
+
+	// UPDATE
 	updateDynakubeStatement = `
 	UPDATE dynakubes
 	SET LatestVersion = ?, TenantUUID = ?
 	WHERE Name = ?;
 	`
 
+	updateOsAgentVolumeStatement = `
+	UPDATE osagent_volumes
+	SET VolumeID = ?, Mounted = ?, LastModified = ?
+	WHERE TenantUUID = ?;
+	`
+
+	// GET
 	getDynakubeStatement = `
 	SELECT TenantUUID, LatestVersion
 	FROM dynakubes
 	WHERE Name = ?;
-	`
-
-	insertVolumeStatement = `
-	INSERT INTO volumes (ID, PodName, Version, TenantUUID)
-	VALUES (?,?,?,?);
 	`
 
 	getVolumeStatement = `
@@ -56,10 +83,24 @@ const (
 	WHERE ID = ?;
 	`
 
+	getOsAgentVolumeViaVolumeIDStatement = `
+	SELECT TenantUUID, Mounted, LastModified
+	FROM osagent_volumes
+	WHERE VolumeID = ?;
+	`
+
+	getOsAgentVolumeViaTenantUUIDStatement = `
+	SELECT VolumeID, Mounted, LastModified
+	FROM osagent_volumes
+	WHERE TenantUUID = ?;
+	`
+
+	// DELETE
 	deleteVolumeStatement = "DELETE FROM volumes WHERE ID = ?;"
 
 	deleteDynakubeStatement = "DELETE FROM dynakubes WHERE Name = ?;"
 
+	// SPECIAL
 	getUsedVersionsStatement = `
 	SELECT Version
 	FROM volumes
@@ -109,6 +150,9 @@ func (a *SqliteAccess) createTables() error {
 	}
 	if _, err := a.conn.Exec(volumesCreateStatement); err != nil {
 		return fmt.Errorf("couldn't create the table %s, err: %s", volumesTableName, err)
+	}
+	if _, err := a.conn.Exec(osAgentVolumesCreateStatement); err != nil {
+		return fmt.Errorf("couldn't create the table %s, err: %s", osAgentVolumesTableName, err)
 	}
 	return nil
 }
@@ -203,6 +247,58 @@ func (a *SqliteAccess) DeleteVolume(volumeID string) error {
 		err = fmt.Errorf("couldn't delete volume for volume id '%s', err: %s", volumeID, err)
 	}
 	return err
+}
+
+// InsertOsAgentVolume inserts a new OsAgentVolume
+func (a *SqliteAccess) InsertOsAgentVolume(volume *OsAgentVolume) error {
+	err := a.executeStatement(insertOsAgentVolumeStatement, volume.TenantUUID, volume.VolumeID, volume.Mounted, volume.LastModified)
+	if err != nil {
+		err = fmt.Errorf("couldn't insert osAgentVolume info, volume id '%s', tenant UUID '%s', mounted '%t', last modified '%s', err: %s",
+			volume.VolumeID,
+			volume.TenantUUID,
+			volume.Mounted,
+			volume.LastModified,
+			err)
+	}
+	return err
+}
+
+// UpdateOsAgentVolume updates an existing OsAgentVolume by matching the tenantUUID
+func (a *SqliteAccess) UpdateOsAgentVolume(volume *OsAgentVolume) error {
+	err := a.executeStatement(updateOsAgentVolumeStatement, volume.VolumeID, volume.Mounted, volume.LastModified, volume.TenantUUID)
+	if err != nil {
+		err = fmt.Errorf("couldn't update osAgentVolume info, tenantUUID '%s', mounted '%t', last modified '%s', volume id %s, err: %s",
+			volume.TenantUUID,
+			volume.Mounted,
+			volume.LastModified,
+			volume.VolumeID,
+			err)
+	}
+	return err
+}
+
+// GetOsAgentVolumeViaVolumeID gets an OsAgentVolume by its VolumeID
+func (a *SqliteAccess) GetOsAgentVolumeViaVolumeID(volumeID string) (*OsAgentVolume, error) {
+	var tenantUUID string
+	var mounted bool
+	var lastModified time.Time
+	err := a.querySimpleStatement(getOsAgentVolumeViaVolumeIDStatement, volumeID, &tenantUUID, &mounted, &lastModified)
+	if err != nil {
+		err = fmt.Errorf("couldn't get osAgentVolume info for volume id '%s', err: %s", volumeID, err)
+	}
+	return NewOsAgentVolume(volumeID, tenantUUID, mounted, &lastModified), err
+}
+
+// GetOsAgentVolumeViaTenantUUID gets an OsAgentVolume by its tenantUUID
+func (a *SqliteAccess) GetOsAgentVolumeViaTenantUUID(tenantUUID string) (*OsAgentVolume, error) {
+	var volumeID string
+	var mounted bool
+	var lastModified time.Time
+	err := a.querySimpleStatement(getOsAgentVolumeViaTenantUUIDStatement, tenantUUID, &volumeID, &mounted, &lastModified)
+	if err != nil {
+		err = fmt.Errorf("couldn't get osAgentVolume info for tenant uuid '%s', err: %s", tenantUUID, err)
+	}
+	return NewOsAgentVolume(volumeID, tenantUUID, mounted, &lastModified), err
 }
 
 // GetUsedVersions gets all UNIQUE versions present in the `volumes` database in map.
