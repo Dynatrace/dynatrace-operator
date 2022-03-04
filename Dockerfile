@@ -22,11 +22,6 @@ FROM registry.access.redhat.com/ubi8-micro:8.5-744
 COPY --from=operator-build /etc/ssl/cert.pem /etc/ssl/cert.pem
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
-COPY --from=operator-build /bin/busybox /bin/busybox
-COPY --from=operator-build /lib/ld-musl-x86_64.so.1 /lib/ld-musl-x86_64.so.1
-
-COPY --from=dependency-src /bin/mount /bin/umount /bin/
-COPY --from=dependency-src /lib64/libmount.so.1 /lib64/libblkid.so.1 /lib64/libuuid.so.1 /lib64/
 
 LABEL name="Dynatrace Operator" \
       vendor="Dynatrace LLC" \
@@ -46,6 +41,8 @@ COPY build/bin /usr/local/bin
 
 COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.0 /csi-node-driver-registrar /usr/local/bin
 COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.6.0 /livenessprobe /usr/local/bin
+COPY --from=dependency-src /bin/mount /bin/umount /bin/
+COPY --from=dependency-src /lib64/libmount.so.1 /lib64/libblkid.so.1 /lib64/libuuid.so.1 /lib64/
 
 RUN  /usr/local/bin/user_setup
 
