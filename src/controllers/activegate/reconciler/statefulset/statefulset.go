@@ -105,7 +105,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 			},
 		}}
 
-	if stsProperties.DynaKube.FeatureAgAppArmor() {
+	if stsProperties.DynaKube.FeatureActiveGateAppArmor() {
 		sts.Spec.Template.ObjectMeta.Annotations[annotationActiveGateContainerAppArmor] = "runtime/default"
 	}
 
@@ -184,10 +184,7 @@ func buildContainers(stsProperties *statefulSetProperties, extraContainerBuilder
 }
 
 func buildActiveGateContainer(stsProperties *statefulSetProperties) corev1.Container {
-	readOnlyFs := false
-	if stsProperties.FeatureAgReadOnlyFilesystem() {
-		readOnlyFs = true
-	}
+	readOnlyFs := stsProperties.FeatureActiveGateReadOnlyFilesystem()
 
 	return corev1.Container{
 		Name:            capability.ActiveGateContainerName,
@@ -267,43 +264,48 @@ func buildVolumes(stsProperties *statefulSetProperties, extraContainerBuilders [
 		volumes = append(volumes, buildProxyVolumes()...)
 	}
 
-	volumes = append(volumes, buildActiveGateVolumes()...)
+	volumes = append(volumes, buildActiveGateVolumes(stsProperties)...)
 
 	return volumes
 }
 
-func buildActiveGateVolumes() []corev1.Volume {
-	volumes := []corev1.Volume{
-		{
+func buildActiveGateVolumes(stsProperties *statefulSetProperties) []corev1.Volume {
+	var volumes []corev1.Volume
+	if stsProperties.FeatureActiveGateReadOnlyFilesystem() || stsProperties.NeedsStatsd() {
+		volumes = append(volumes, corev1.Volume{
 			Name: capability.ActiveGateGatewayConfigVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
-		},
-		{
-			Name: capability.ActiveGateGatewayTempVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+		})
+	}
+	if stsProperties.FeatureActiveGateReadOnlyFilesystem() {
+		volumes = append(volumes,
+			corev1.Volume{
+				Name: capability.ActiveGateGatewayTempVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
 			},
-		},
-		{
-			Name: capability.ActiveGateGatewayDataVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			corev1.Volume{
+				Name: capability.ActiveGateGatewayDataVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
 			},
-		},
-		{
-			Name: capability.ActiveGateLogVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			corev1.Volume{
+				Name: capability.ActiveGateLogVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
 			},
-		},
-		{
-			Name: capability.ActiveGateTmpVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			corev1.Volume{
+				Name: capability.ActiveGateTmpVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
 			},
-		},
+		)
 	}
 	return volumes
 }
@@ -363,38 +365,42 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 		)
 	}
 
-	volumeMounts = append(volumeMounts, buildActiveGateVolumeMounts()...)
+	volumeMounts = append(volumeMounts, buildActiveGateVolumeMounts(stsProperties)...)
 
 	return volumeMounts
 }
 
-func buildActiveGateVolumeMounts() []corev1.VolumeMount {
-	volumeMounts := []corev1.VolumeMount{
-		{
+func buildActiveGateVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMount {
+	var volumeMounts []corev1.VolumeMount
+	if stsProperties.FeatureActiveGateReadOnlyFilesystem() || stsProperties.NeedsStatsd() {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			ReadOnly:  false,
 			Name:      capability.ActiveGateGatewayConfigVolumeName,
 			MountPath: capability.ActiveGateGatewayConfigMountPoint,
-		},
-		{
-			ReadOnly:  false,
-			Name:      capability.ActiveGateGatewayTempVolumeName,
-			MountPath: capability.ActiveGateGatewayTempMountPoint,
-		},
-		{
-			ReadOnly:  false,
-			Name:      capability.ActiveGateGatewayDataVolumeName,
-			MountPath: capability.ActiveGateGatewayDataMountPoint,
-		},
-		{
-			ReadOnly:  false,
-			Name:      capability.ActiveGateLogVolumeName,
-			MountPath: capability.ActiveGateLogMountPoint,
-		},
-		{
-			ReadOnly:  false,
-			Name:      capability.ActiveGateTmpVolumeName,
-			MountPath: capability.ActiveGateTmpMountPoint,
-		},
+		})
+	}
+	if stsProperties.FeatureActiveGateReadOnlyFilesystem() {
+		volumeMounts = append(volumeMounts,
+			corev1.VolumeMount{
+				ReadOnly:  false,
+				Name:      capability.ActiveGateGatewayTempVolumeName,
+				MountPath: capability.ActiveGateGatewayTempMountPoint,
+			},
+			corev1.VolumeMount{
+				ReadOnly:  false,
+				Name:      capability.ActiveGateGatewayDataVolumeName,
+				MountPath: capability.ActiveGateGatewayDataMountPoint,
+			},
+			corev1.VolumeMount{
+				ReadOnly:  false,
+				Name:      capability.ActiveGateLogVolumeName,
+				MountPath: capability.ActiveGateLogMountPoint,
+			},
+			corev1.VolumeMount{
+				ReadOnly:  false,
+				Name:      capability.ActiveGateTmpVolumeName,
+				MountPath: capability.ActiveGateTmpMountPoint,
+			})
 	}
 	return volumeMounts
 }

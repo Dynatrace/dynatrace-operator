@@ -163,12 +163,12 @@ func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
 	return dk.Annotations[AnnotationFeatureEnableMultipleOsAgentsOnNode] == "true"
 }
 
-// FeatureAgReadOnlyFilesystem is a feature flag to enable RO mounted filesystem in ActiveGate container
-func (dk *DynaKube) FeatureAgReadOnlyFilesystem() bool {
+// FeatureActiveGateReadOnlyFilesystem is a feature flag to enable RO mounted filesystem in ActiveGate container
+func (dk *DynaKube) FeatureActiveGateReadOnlyFilesystem() bool {
 	return dk.Annotations[AnnotationFeatureAgReadOnlyFilesystem] == "true"
 }
 
-// FeatureAgAppArmor is a feature flag to enable AppArmor in ActiveGate container
-func (dk *DynaKube) FeatureAgAppArmor() bool {
+// FeatureActiveGateAppArmor is a feature flag to enable AppArmor in ActiveGate container
+func (dk *DynaKube) FeatureActiveGateAppArmor() bool {
 	return dk.Annotations[AnnotationFeatureAgAppArmor] == "true"
 }

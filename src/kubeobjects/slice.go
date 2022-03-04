@@ -16,9 +16,9 @@ func MountPathIsIn(volumeMounts []corev1.VolumeMount, mountPathToCheck string) b
 	return false
 }
 
-func MountPathIs(volumeMounts []corev1.VolumeMount, mountPathToCheck string, readOnly bool) bool {
+func MountPathIsReadOnlyOrReadWrite(volumeMounts []corev1.VolumeMount, mountPathToCheck string, mode bool) bool {
 	for _, volMount := range volumeMounts {
-		if volMount.MountPath == mountPathToCheck && volMount.ReadOnly == readOnly {
+		if volMount.MountPath == mountPathToCheck && volMount.ReadOnly == mode {
 			return true
 		}
 	}

@@ -153,22 +153,22 @@ func TestStatefulSet_Container(t *testing.T) {
 		assert.Empty(t, activeGateContainer.Args)
 	}
 
-	checkSecurityProperties := func(activeGateContainer *corev1.Container, readOnlyFs bool) {
+	checkSecurityProperties := func(activeGateContainer *corev1.Container, dynakube *dynatracev1beta1.DynaKube) {
 		assert.Equal(t, *activeGateContainer.SecurityContext.Privileged, false)
 		assert.Equal(t, *activeGateContainer.SecurityContext.AllowPrivilegeEscalation, false)
-		assert.Equal(t, *activeGateContainer.SecurityContext.ReadOnlyRootFilesystem, readOnlyFs)
+		assert.Equal(t, *activeGateContainer.SecurityContext.ReadOnlyRootFilesystem, dynakube.FeatureActiveGateReadOnlyFilesystem())
 		assert.Equal(t, *activeGateContainer.SecurityContext.RunAsNonRoot, true)
 		assert.Equal(t, activeGateContainer.SecurityContext.SeccompProfile.Type, corev1.SeccompProfileTypeRuntimeDefault)
 		assert.Equal(t, len(activeGateContainer.SecurityContext.Capabilities.Drop), 1)
 		assert.Equal(t, activeGateContainer.SecurityContext.Capabilities.Drop[0], corev1.Capability("all"))
 	}
 
-	checkVolumes := func(activeGateContainer *corev1.Container, dynakube *dynatracev1beta1.DynaKube, directories []string) {
-		for _, directory := range directories {
+	checkVolumes := func(activeGateContainer *corev1.Container, dynakube *dynatracev1beta1.DynaKube) {
+		for _, directory := range buildActiveGateMountPoints(dynakube.NeedsStatsd(), dynakube.FeatureActiveGateReadOnlyFilesystem()) {
 			assert.Truef(t, kubeobjects.MountPathIsIn(activeGateContainer.VolumeMounts, directory),
 				"Expected that ActiveGate container defines mount point %s", directory,
 			)
-			assert.Truef(t, kubeobjects.MountPathIs(activeGateContainer.VolumeMounts, directory, kubeobjects.ReadWriteMountPath),
+			assert.Truef(t, kubeobjects.MountPathIsReadOnlyOrReadWrite(activeGateContainer.VolumeMounts, directory, kubeobjects.ReadWriteMountPath),
 				"Expected that ActiveGate container mount point %s is mounted ReadWrite", directory,
 			)
 		}
@@ -181,8 +181,8 @@ func TestStatefulSet_Container(t *testing.T) {
 		)
 	}
 
-	checkAnnotations := func(sts *appsv1.StatefulSet, exists bool) {
-		if exists {
+	checkAnnotations := func(sts *appsv1.StatefulSet, dynakube *dynatracev1beta1.DynaKube) {
+		if dynakube.FeatureActiveGateAppArmor() {
 			assert.Truef(t, sts.Spec.Template.ObjectMeta.Annotations[annotationActiveGateContainerAppArmor] == "runtime/default",
 				"'%s' is invalid (%s)", annotationActiveGateContainerAppArmor, sts.Spec.Template.ObjectMeta.Annotations[annotationActiveGateContainerAppArmor])
 		} else {
@@ -191,8 +191,14 @@ func TestStatefulSet_Container(t *testing.T) {
 		}
 	}
 
-	t.Run("DynaKube with RW filesystem and AppArmor disabled", func(t *testing.T) {
+	test := func(ro bool, statsd bool) {
 		instance := buildTestInstance()
+		if ro {
+			instance.Annotations[dynatracev1beta1.AnnotationFeatureAgReadOnlyFilesystem] = "true"
+		}
+		if statsd {
+			instance.Spec.ActiveGate.Capabilities = append(instance.Spec.ActiveGate.Capabilities, dynatracev1beta1.StatsdIngestCapability.DisplayName)
+		}
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", "", nil, nil, nil)
@@ -203,13 +209,29 @@ func TestStatefulSet_Container(t *testing.T) {
 		activeGateContainer := containers[0]
 
 		checkCoreProperties(&activeGateContainer, instance)
-		checkSecurityProperties(&activeGateContainer, false)
-		checkVolumes(&activeGateContainer, instance, buildActiveGateVolumeDirectories(false))
-		checkAnnotations(sts, false)
+		checkSecurityProperties(&activeGateContainer, instance)
+		checkVolumes(&activeGateContainer, instance)
+		checkAnnotations(sts, instance)
 		assert.NotNil(t, activeGateContainer.ReadinessProbe)
+	}
+
+	t.Run("DynaKube with RW filesystem and StatsD disabled", func(t *testing.T) {
+		test(false, false)
 	})
 
-	t.Run("DynaKube with RW filesystem and AppArmor enabled", func(t *testing.T) {
+	t.Run("DynaKube with RW filesystem and StatsD enabled", func(t *testing.T) {
+		test(false, true)
+	})
+
+	t.Run("DynaKube with RO filesystem and StatsD disabled", func(t *testing.T) {
+		test(true, false)
+	})
+
+	t.Run("DynaKube with RO filesystem and StatsD enabled", func(t *testing.T) {
+		test(true, true)
+	})
+
+	t.Run("DynaKube with AppArmor enabled", func(t *testing.T) {
 		instance := buildTestInstance()
 		instance.Annotations[dynatracev1beta1.AnnotationFeatureAgAppArmor] = "true"
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
@@ -221,49 +243,7 @@ func TestStatefulSet_Container(t *testing.T) {
 		containers := buildContainers(stsProperties, extraContainerBuilders)
 		activeGateContainer := containers[0]
 
-		checkCoreProperties(&activeGateContainer, instance)
-		checkSecurityProperties(&activeGateContainer, false)
-		checkVolumes(&activeGateContainer, instance, buildActiveGateVolumeDirectories(false))
-		checkAnnotations(sts, true)
-		assert.NotNil(t, activeGateContainer.ReadinessProbe)
-	})
-
-	t.Run("DynaKube with RO filesystem and AppArmor disabled", func(t *testing.T) {
-		instance := buildTestInstance()
-		instance.Annotations[dynatracev1beta1.AnnotationFeatureAgReadOnlyFilesystem] = "true"
-		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", nil, nil, nil)
-		sts, err := CreateStatefulSet(stsProperties)
-		assert.Nil(t, err)
-		extraContainerBuilders := getContainerBuilders(stsProperties)
-		containers := buildContainers(stsProperties, extraContainerBuilders)
-		activeGateContainer := containers[0]
-
-		checkCoreProperties(&activeGateContainer, instance)
-		checkSecurityProperties(&activeGateContainer, true)
-		checkVolumes(&activeGateContainer, instance, buildActiveGateVolumeDirectories(true))
-		checkAnnotations(sts, false)
-		assert.NotNil(t, activeGateContainer.ReadinessProbe)
-	})
-
-	t.Run("DynaKube with RO filesystem and AppArmor enabled", func(t *testing.T) {
-		instance := buildTestInstance()
-		instance.Annotations[dynatracev1beta1.AnnotationFeatureAgReadOnlyFilesystem] = "true"
-		instance.Annotations[dynatracev1beta1.AnnotationFeatureAgAppArmor] = "true"
-		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", "", "", "", nil, nil, nil)
-		sts, err := CreateStatefulSet(stsProperties)
-		assert.Nil(t, err)
-		extraContainerBuilders := getContainerBuilders(stsProperties)
-		containers := buildContainers(stsProperties, extraContainerBuilders)
-		activeGateContainer := containers[0]
-
-		checkCoreProperties(&activeGateContainer, instance)
-		checkSecurityProperties(&activeGateContainer, true)
-		checkVolumes(&activeGateContainer, instance, buildActiveGateVolumeDirectories(true))
-		checkAnnotations(sts, true)
+		checkAnnotations(sts, instance)
 		assert.NotNil(t, activeGateContainer.ReadinessProbe)
 	})
 }
@@ -309,6 +289,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 		expectedSecretName := instance.Name + "-router-" + customproperties.Suffix
 
+		require.Equal(t, 2, len(volumes))
 		require.Equal(t, 1, len(volumes))
 
 		customPropertiesVolume, err := kubeobjects.GetVolumeByName(volumes, customproperties.VolumeName)
@@ -331,6 +312,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 		expectedSecretName := testKey
 
+		require.Equal(t, 2, len(volumes))
 		require.Equal(t, 1, len(volumes))
 
 		customPropertiesVolume, err := kubeobjects.GetVolumeByName(volumes, customproperties.VolumeName)
@@ -606,18 +588,17 @@ func buildTestInstance() *dynatracev1beta1.DynaKube {
 	}
 }
 
-func buildActiveGateVolumeDirectories(readOnly bool) []string {
+func buildActiveGateMountPoints(statsd bool, readOnly bool) []string {
+	var mountPoints []string
+	if readOnly || statsd {
+		mountPoints = append(mountPoints, capability.ActiveGateGatewayConfigMountPoint)
+	}
 	if readOnly {
-		return []string{
-			capability.ActiveGateGatewayConfigMountPoint,
+		mountPoints = append(mountPoints,
 			capability.ActiveGateGatewayTempMountPoint,
 			capability.ActiveGateGatewayDataMountPoint,
 			capability.ActiveGateLogMountPoint,
-			capability.ActiveGateTmpMountPoint,
-		}
-	} else {
-		return []string{
-			capability.ActiveGateGatewayConfigMountPoint,
-		}
+			capability.ActiveGateTmpMountPoint)
 	}
+	return mountPoints
 }

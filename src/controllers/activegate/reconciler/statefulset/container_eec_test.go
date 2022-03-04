@@ -3,6 +3,7 @@ package statefulset
 import (
 	"testing"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
@@ -48,7 +49,7 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 			assertion.Truef(kubeobjects.MountPathIsIn(container.VolumeMounts, mountPath), "Expected that EEC container defines mount point %s", mountPath)
 		}
 
-		assert.Truef(t, kubeobjects.MountPathIs(container.VolumeMounts, capability.ActiveGateGatewayConfigMountPoint, kubeobjects.ReadOnlyMountPath),
+		assert.Truef(t, kubeobjects.MountPathIsReadOnlyOrReadWrite(container.VolumeMounts, capability.ActiveGateGatewayConfigMountPoint, kubeobjects.ReadOnlyMountPath),
 			"Expected that ActiveGate container mount point %s is mounted ReadOnly", capability.ActiveGateGatewayConfigMountPoint,
 		)
 
@@ -73,6 +74,7 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 
 	t.Run("volumes vs volume mounts", func(t *testing.T) {
 		stsProperties := testBuildStsProperties()
+		stsProperties.Spec.ActiveGate.Capabilities = append(stsProperties.Spec.ActiveGate.Capabilities, dynatracev1beta1.StatsdIngestCapability.DisplayName)
 		eec := NewExtensionController(stsProperties)
 		statsd := NewStatsd(stsProperties)
 		volumes := buildVolumes(stsProperties, []kubeobjects.ContainerBuilder{eec, statsd})

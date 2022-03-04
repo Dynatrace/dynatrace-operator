@@ -25,10 +25,10 @@ metadata:
     {{- if or (and (.Values.hostMonitoring).enabled (.Values.hostMonitoring).disableReadOnly) (and (.Values.cloudNativeFullStack).enabled (.Values.cloudNativeFullStack).disableReadOnly) }}
     alpha.operator.dynatrace.com/feature-disable-oneagent-readonly-host-fs: "true"
     {{- end }}
-    {{- if (eq (default false .Values.activeGate.apparmor) true) }}
+    {{- if (.Values.activeGate).apparmor }}
     alpha.operator.dynatrace.com/feature-activegate-apparmor: "true"
     {{- end }}
-    {{- if (eq (default false .Values.activeGate.readOnlyFs) true) }}
+    {{- if (.Values.activeGate).readOnlyFs }}
     alpha.operator.dynatrace.com/feature-activegate-readonly-fs: "true"
     {{- end }}
   name: {{ .Values.name }}
