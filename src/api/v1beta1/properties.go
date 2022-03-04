@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -61,6 +62,10 @@ func (dk *DynaKube) ClassicFullStackMode() bool {
 // NeedsOneAgent returns true when a feature requires OneAgent instances.
 func (dk *DynaKube) NeedsOneAgent() bool {
 	return dk.ClassicFullStackMode() || dk.CloudNativeFullstackMode() || dk.HostMonitoringMode()
+}
+
+func (dk *DynaKube) OneAgentDaemonsetName() string {
+	return fmt.Sprintf("%s-%s", dk.Name, daemonset.PodNameOSAgent)
 }
 
 func (dk *DynaKube) DeprecatedActiveGateMode() bool {

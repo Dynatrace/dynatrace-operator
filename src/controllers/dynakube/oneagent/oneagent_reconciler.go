@@ -224,7 +224,7 @@ func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1beta1.OneAgen
 func (r *OneAgentReconciler) determineDynaKubePhase(instance *dynatracev1beta1.DynaKube) (bool, error) {
 	var phaseChanged bool
 	dsActual := &appsv1.DaemonSet{}
-	instanceName := fmt.Sprintf("%s-%s", instance.Name, r.feature)
+	instanceName := fmt.Sprintf("%s-%s", instance.OneAgentDaemonsetName())
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: instance.Namespace}, dsActual)
 
 	if k8serrors.IsNotFound(err) {
