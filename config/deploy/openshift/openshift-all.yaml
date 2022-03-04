@@ -4302,23 +4302,19 @@ spec:
         args:
         - --csi-address=/csi/csi.sock
         - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
-        - --health-port=9809
         command:
         - csi-node-driver-registrar
         livenessProbe:
+          exec:
+            command:
+              - csi-node-driver-registrar
+              - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
+              - --mode=kubelet-registration-probe
           failureThreshold: 3
-          httpGet:
-            path: /healthz
-            port: healthz
-            scheme: HTTP
-          initialDelaySeconds: 5
+          initialDelaySeconds: 30
           periodSeconds: 10
           successThreshold: 1
-          timeoutSeconds: 5
-        ports:
-        - containerPort: 9809
-          name: healthz
-          protocol: TCP
+          timeoutSeconds: 15
         resources:
             limits:
               cpu: 100m
