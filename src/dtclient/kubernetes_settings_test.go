@@ -258,20 +258,6 @@ func TestDynatraceClient_CreateOrUpdateKubernetesSetting(t *testing.T) {
 	})
 }
 
-func TestDynatraceClient_generateKubernetesMEIdentifier(t *testing.T) {
-	t.Run(`Generate monitored entity id from kube-system uid`, func(t *testing.T) {
-		// arrange
-		var expected = "KUBERNETES_CLUSTER-4FA1F797E44DFBC0"
-
-		// act
-		var actual, err = generateKubernetesMEIdentifier("b51a38b1-2619-436a-9c0a-b0fb214a0fa9")
-
-		// assert
-		assert.NoError(t, err)
-		assert.EqualValues(t, expected, actual)
-	})
-}
-
 func createMonitoredEntitiesForTesting() []MonitoredEntity {
 	return []MonitoredEntity{
 		{EntityId: "KUBERNETES_CLUSTER-0E30FE4BF2007587", DisplayName: "operator test entity 1", LastSeenTms: 1639483869085},
