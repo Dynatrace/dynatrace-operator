@@ -21,7 +21,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -32,6 +31,8 @@ const (
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
 	PullSecretSuffix   = "-pull-secret"
 	TenantSecretSuffix = "-activegate-tenant-secret"
+
+	PodNameOSAgent = "oneagent"
 )
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
@@ -65,7 +66,7 @@ func (dk *DynaKube) NeedsOneAgent() bool {
 }
 
 func (dk *DynaKube) OneAgentDaemonsetName() string {
-	return fmt.Sprintf("%s-%s", dk.Name, daemonset.PodNameOSAgent)
+	return fmt.Sprintf("%s-%s", dk.Name, PodNameOSAgent)
 }
 
 func (dk *DynaKube) DeprecatedActiveGateMode() bool {

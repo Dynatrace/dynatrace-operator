@@ -44,8 +44,6 @@ const (
 	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
 	classicHostIdSource  = "--set-host-id-source=auto"
 
-	PodNameOSAgent = "oneagent"
-
 	ClassicFeature        = "classic"
 	HostMonitoringFeature = "inframon"
 	CloudNativeFeature    = "cloud-native"

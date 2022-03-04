@@ -8,7 +8,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -221,7 +220,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 			},
 			&appsv1.DaemonSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      testName + "-" + daemonset.PodNameOSAgent,
+					Name:      testName + "-" + dynatracev1beta1.PodNameOSAgent,
 					Namespace: testNamespace,
 				},
 			},
@@ -244,7 +243,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 
 		var daemonSet appsv1.DaemonSet
 
-		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: (testName + "-" + daemonset.PodNameOSAgent), Namespace: testNamespace}, &daemonSet)
+		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: (testName + "-" + dynatracev1beta1.PodNameOSAgent), Namespace: testNamespace}, &daemonSet)
 
 		assert.Error(t, err)
 	})
