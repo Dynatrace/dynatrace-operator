@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	annotationFeatureActiveGate = annotationFeaturePrefix + "activegate-"
+	annotationFeatureActiveGate = AnnotationFeaturePrefix + "activegate-"
 	annotationFeatureEec        = annotationFeatureActiveGate + "eec-"
 	annotationFeatureStatsd     = annotationFeatureActiveGate + "statsd-"
 )
