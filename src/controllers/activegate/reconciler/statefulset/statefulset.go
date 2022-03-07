@@ -202,8 +202,10 @@ func buildActiveGateContainer(stsProperties *statefulSetProperties) corev1.Conta
 }
 
 func buildVolumes(stsProperties *statefulSetProperties, extraContainerBuilders []kubeobjects.ContainerBuilder) []corev1.Volume {
-	volumes := []corev1.Volume{
-		{
+	var volumes []corev1.Volume
+
+	if stsProperties.DynaKube.FeatureEnableActivegateRawImage() {
+		volumes = append(volumes, corev1.Volume{
 			Name: tenantSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
@@ -211,6 +213,7 @@ func buildVolumes(stsProperties *statefulSetProperties, extraContainerBuilders [
 				},
 			},
 		},
+		)
 	}
 
 	if !isCustomPropertiesNilOrEmpty(stsProperties.CustomProperties) {
@@ -289,13 +292,15 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 		volumeMounts = append(volumeMounts, buildProxyMounts()...)
 	}
 
-	volumeMounts = append(volumeMounts, corev1.VolumeMount{
-		Name:      tenantSecretVolumeName,
-		ReadOnly:  true,
-		MountPath: tenantTokenMountPoint,
-		SubPath:   activegate.TenantTokenName,
-	},
-	)
+	if stsProperties.DynaKube.FeatureEnableActivegateRawImage() {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      tenantSecretVolumeName,
+			ReadOnly:  true,
+			MountPath: tenantTokenMountPoint,
+			SubPath:   activegate.TenantTokenName,
+		},
+		)
+	}
 
 	return volumeMounts
 }
@@ -333,33 +338,38 @@ func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
 	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(stsProperties.kubeSystemUID), deploymentmetadata.DeploymentTypeActiveGate)
 
 	envs := []corev1.EnvVar{
-		{
-			Name: dtServer,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: stsProperties.AGTenantSecret(),
-					},
-					Key: activegate.CommunicationEndpointsName,
-				},
-			},
-		},
-		{
-			Name: dtTenant,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: stsProperties.AGTenantSecret(),
-					},
-					Key: activegate.TenantUuidName,
-				},
-			},
-		},
 		{Name: dtCapabilities, Value: stsProperties.capabilityName},
 		{Name: dtIdSeedNamespace, Value: stsProperties.Namespace},
 		{Name: dtIdSeedClusterId, Value: string(stsProperties.kubeSystemUID)},
 		{Name: dtDeploymentMetadata, Value: deploymentMetadata.AsString()},
 	}
+
+	if stsProperties.DynaKube.FeatureEnableActivegateRawImage() {
+		envs = append(envs,
+			corev1.EnvVar{
+				Name: dtServer,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: stsProperties.AGTenantSecret(),
+						},
+						Key: activegate.CommunicationEndpointsName,
+					},
+				},
+			},
+			corev1.EnvVar{
+				Name: dtTenant,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: stsProperties.AGTenantSecret(),
+						},
+						Key: activegate.TenantUuidName,
+					},
+				},
+			})
+	}
+
 	envs = append(envs, stsProperties.Env...)
 
 	if stsProperties.Group != "" {

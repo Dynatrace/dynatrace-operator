@@ -195,7 +195,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		return
 	}
 
-	if dkState.Instance.NeedsActiveGate() {
+	if dkState.Instance.FeatureEnableActivegateRawImage() && dkState.Instance.NeedsActiveGate() {
 		err = activegate.
 			NewTenantSecretReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtcReconciler.ApiToken, dtc).
 			Reconcile()
