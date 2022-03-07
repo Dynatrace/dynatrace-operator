@@ -20,7 +20,10 @@ kind: DynaKube
 metadata:
   annotations:
     {{- if ne .Values.platform "google"}}
-    "helm.sh/hook": post-install,post-upgrade
+    helm.sh/hook: post-install,post-upgrade
+    {{- end }}
+    {{- if or (and (.Values.hostMonitoring).enabled (.Values.hostMonitoring).disableReadOnly) (and (.Values.cloudNativeFullStack).enabled (.Values.cloudNativeFullStack).disableReadOnly) }}
+    alpha.operator.dynatrace.com/feature-disable-oneagent-readonly-host-fs: "true"
     {{- end }}
   name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}

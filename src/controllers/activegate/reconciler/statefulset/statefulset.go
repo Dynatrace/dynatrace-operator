@@ -5,8 +5,8 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/events"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
@@ -180,7 +180,7 @@ func buildContainers(stsProperties *statefulSetProperties, extraContainerBuilder
 
 func buildActiveGateContainer(stsProperties *statefulSetProperties) corev1.Container {
 	return corev1.Container{
-		Name:            consts.ActiveGateContainerName,
+		Name:            capability.ActiveGateContainerName,
 		Image:           stsProperties.DynaKube.ActiveGateImage(),
 		Resources:       stsProperties.CapabilityProperties.Resources,
 		ImagePullPolicy: corev1.PullAlways,

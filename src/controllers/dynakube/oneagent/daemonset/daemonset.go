@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -24,6 +25,8 @@ const (
 	annotationVersion           = dynatracev1beta1.InternalFlagPrefix + "version"
 
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
+	// normal oneagent shutdown scenario with some extra time
+	defaultTerminationGracePeriod = 80
 
 	hostRootVolumeName  = "host-root"
 	hostRootVolumeMount = "/mnt/root"
@@ -223,17 +226,18 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 			SecurityContext: dsInfo.unprivilegedSecurityContext(),
 			VolumeMounts:    volumeMounts,
 		}},
-		ImagePullSecrets:   imagePullSecrets,
-		HostNetwork:        true,
-		HostPID:            true,
-		HostIPC:            false,
-		NodeSelector:       dsInfo.hostInjectSpec.NodeSelector,
-		PriorityClassName:  dsInfo.hostInjectSpec.PriorityClassName,
-		ServiceAccountName: defaultUnprivilegedServiceAccountName,
-		Tolerations:        dsInfo.hostInjectSpec.Tolerations,
-		DNSPolicy:          dnsPolicy,
-		Volumes:            volumes,
-		Affinity:           affinity,
+		ImagePullSecrets:              imagePullSecrets,
+		HostNetwork:                   true,
+		HostPID:                       true,
+		HostIPC:                       false,
+		NodeSelector:                  dsInfo.hostInjectSpec.NodeSelector,
+		PriorityClassName:             dsInfo.hostInjectSpec.PriorityClassName,
+		ServiceAccountName:            defaultUnprivilegedServiceAccountName,
+		Tolerations:                   dsInfo.hostInjectSpec.Tolerations,
+		DNSPolicy:                     dnsPolicy,
+		Volumes:                       volumes,
+		Affinity:                      affinity,
+		TerminationGracePeriodSeconds: address_of.Int64(defaultTerminationGracePeriod),
 	}
 }
 
@@ -306,7 +310,7 @@ func (dsInfo *builderInfo) unprivilegedSecurityContext() *corev1.SecurityContext
 			},
 		},
 	}
-	if dsInfo.instance.FeatureReadOnlyOneAgent() {
+	if dsInfo.instance.NeedsReadOnlyOneAgents() {
 		unprivilegedUser := int64(1000)
 		unprivilegedGroup := int64(1000)
 		securityContext.RunAsUser = &unprivilegedUser

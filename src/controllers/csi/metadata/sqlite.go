@@ -49,7 +49,11 @@ const (
 
 	insertVolumeStatement = `
 	INSERT INTO volumes (ID, PodName, Version, TenantUUID)
-	VALUES (?,?,?,?);
+	VALUES (?,?,?,?)
+	ON CONFLICT(ID) DO UPDATE SET
+	  PodName=excluded.PodName,
+	  Version=excluded.Version,
+	  TenantUUID=excluded.TenantUUID;
 	`
 
 	insertOsAgentVolumeStatement = `
@@ -87,6 +91,12 @@ const (
 	SELECT TenantUUID, Mounted, LastModified
 	FROM osagent_volumes
 	WHERE VolumeID = ?;
+	`
+
+	getOsAgentVolumeViaTenantUUIDStatement = `
+	SELECT VolumeID, Mounted, LastModified
+	FROM osagent_volumes
+	WHERE TenantUUID = ?;
 	`
 
 	// DELETE
@@ -247,7 +257,7 @@ func (a *SqliteAccess) DeleteVolume(volumeID string) error {
 func (a *SqliteAccess) InsertOsAgentVolume(volume *OsAgentVolume) error {
 	err := a.executeStatement(insertOsAgentVolumeStatement, volume.TenantUUID, volume.VolumeID, volume.Mounted, volume.LastModified)
 	if err != nil {
-		err = fmt.Errorf("couldn't insert storage info, volume id '%s', tenant UUID '%s', mounted '%t', last modified '%s', err: %s",
+		err = fmt.Errorf("couldn't insert osAgentVolume info, volume id '%s', tenant UUID '%s', mounted '%t', last modified '%s', err: %s",
 			volume.VolumeID,
 			volume.TenantUUID,
 			volume.Mounted,
@@ -261,7 +271,7 @@ func (a *SqliteAccess) InsertOsAgentVolume(volume *OsAgentVolume) error {
 func (a *SqliteAccess) UpdateOsAgentVolume(volume *OsAgentVolume) error {
 	err := a.executeStatement(updateOsAgentVolumeStatement, volume.VolumeID, volume.Mounted, volume.LastModified, volume.TenantUUID)
 	if err != nil {
-		err = fmt.Errorf("couldn't update storage info, tenantUUID '%s', mounted '%t', last modified '%s', volume id %s, err: %s",
+		err = fmt.Errorf("couldn't update osAgentVolume info, tenantUUID '%s', mounted '%t', last modified '%s', volume id %s, err: %s",
 			volume.TenantUUID,
 			volume.Mounted,
 			volume.LastModified,
@@ -271,14 +281,26 @@ func (a *SqliteAccess) UpdateOsAgentVolume(volume *OsAgentVolume) error {
 	return err
 }
 
-// GetOsAgentVolume gets an OsAgentVolume by its VolumeID
-func (a *SqliteAccess) GetOsAgentVolume(volumeID string) (*OsAgentVolume, error) {
+// GetOsAgentVolumeViaVolumeID gets an OsAgentVolume by its VolumeID
+func (a *SqliteAccess) GetOsAgentVolumeViaVolumeID(volumeID string) (*OsAgentVolume, error) {
 	var tenantUUID string
 	var mounted bool
 	var lastModified time.Time
 	err := a.querySimpleStatement(getOsAgentVolumeViaVolumeIDStatement, volumeID, &tenantUUID, &mounted, &lastModified)
 	if err != nil {
-		err = fmt.Errorf("couldn't get storage info for volume id '%s', err: %s", volumeID, err)
+		err = fmt.Errorf("couldn't get osAgentVolume info for volume id '%s', err: %s", volumeID, err)
+	}
+	return NewOsAgentVolume(volumeID, tenantUUID, mounted, &lastModified), err
+}
+
+// GetOsAgentVolumeViaTenantUUID gets an OsAgentVolume by its tenantUUID
+func (a *SqliteAccess) GetOsAgentVolumeViaTenantUUID(tenantUUID string) (*OsAgentVolume, error) {
+	var volumeID string
+	var mounted bool
+	var lastModified time.Time
+	err := a.querySimpleStatement(getOsAgentVolumeViaTenantUUIDStatement, tenantUUID, &volumeID, &mounted, &lastModified)
+	if err != nil {
+		err = fmt.Errorf("couldn't get osAgentVolume info for tenant uuid '%s', err: %s", tenantUUID, err)
 	}
 	return NewOsAgentVolume(volumeID, tenantUUID, mounted, &lastModified), err
 }

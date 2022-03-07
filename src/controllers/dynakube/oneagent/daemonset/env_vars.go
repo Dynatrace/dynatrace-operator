@@ -27,7 +27,7 @@ func (dsInfo *builderInfo) environmentVariables() []corev1.EnvVar {
 		envVarMap = dsInfo.setDefaultProxy(envVarMap)
 	}
 
-	if dsInfo.instance.FeatureReadOnlyOneAgent() {
+	if dsInfo.instance.NeedsReadOnlyOneAgents() {
 		envVarMap = setDefaultValue(envVarMap, oneagentReadOnlyMode, "true")
 	}
 

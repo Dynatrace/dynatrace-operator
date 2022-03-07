@@ -8,7 +8,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/consts"
 	rsfs "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -38,6 +37,30 @@ var metricsCapability = capability.NewRoutingCapability(
 	},
 )
 
+type DtCapability = dynatracev1beta1.CapabilityDisplayName
+
+func testRemoveCapability(capabilities []DtCapability, removeMe DtCapability) []DtCapability {
+	for i, capability := range capabilities {
+		if capability == removeMe {
+			return append(capabilities[:i], capabilities[i+1:]...)
+		}
+	}
+	return capabilities
+}
+
+func testSetCapability(instance *dynatracev1beta1.DynaKube, capability dynatracev1beta1.ActiveGateCapability, wantEnabled bool) {
+	hasEnabled := instance.IsActiveGateMode(capability.DisplayName)
+	capabilities := &instance.Spec.ActiveGate.Capabilities
+
+	if wantEnabled && !hasEnabled {
+		*capabilities = append(*capabilities, capability.DisplayName)
+	}
+
+	if !wantEnabled && hasEnabled {
+		*capabilities = testRemoveCapability(*capabilities, capability.DisplayName)
+	}
+}
+
 func TestNewReconiler(t *testing.T) {
 	createDefaultReconciler(t)
 }
@@ -55,6 +78,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
+			Name:      testName,
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://testing.dev.dynatracelabs.com/api",
@@ -64,6 +88,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.Instance)
+	require.NotEmpty(t, r.Instance.ObjectMeta.Name)
 
 	return r
 }
@@ -86,46 +111,30 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, updateExpected, update)
 	}
-	type DtCapability = dynatracev1beta1.CapabilityDisplayName
-	removeCapability := func(capabilities []DtCapability, removeMe DtCapability) []DtCapability {
-		for i, capability := range capabilities {
-			if capability == removeMe {
-				return append(capabilities[:i], capabilities[i+1:]...)
-			}
-		}
-		return capabilities
-	}
 	setStatsdCapability := func(r *Reconciler, wantEnabled bool) {
-		statsdIngest := dynatracev1beta1.StatsdIngestCapability.DisplayName
-		hasEnabled := r.Instance.IsActiveGateMode(statsdIngest)
-		capabilities := &r.Instance.Spec.ActiveGate.Capabilities
-
-		if wantEnabled && !hasEnabled {
-			*capabilities = append(*capabilities, statsdIngest)
-		}
-
-		if !wantEnabled && hasEnabled {
-			*capabilities = removeCapability(*capabilities, statsdIngest)
-		}
+		testSetCapability(r.Instance, dynatracev1beta1.StatsdIngestCapability, wantEnabled)
+	}
+	setMetricsIngestCapability := func(r *Reconciler, wantEnabled bool) {
+		testSetCapability(r.Instance, dynatracev1beta1.MetricsIngestCapability, wantEnabled)
 	}
 
 	agIngestServicePort := corev1.ServicePort{
-		Name:       consts.HttpsServicePortName,
+		Name:       capability.HttpsServicePortName,
 		Protocol:   corev1.ProtocolTCP,
-		Port:       consts.HttpsServicePort,
-		TargetPort: intstr.FromString(consts.HttpsServicePortName),
+		Port:       capability.HttpsServicePort,
+		TargetPort: intstr.FromString(capability.HttpsServicePortName),
 	}
 	agIngestHttpServicePort := corev1.ServicePort{
-		Name:       consts.HttpServicePortName,
+		Name:       capability.HttpServicePortName,
 		Protocol:   corev1.ProtocolTCP,
-		Port:       consts.HttpServicePort,
-		TargetPort: intstr.FromString(consts.HttpServicePortName),
+		Port:       capability.HttpServicePort,
+		TargetPort: intstr.FromString(capability.HttpServicePortName),
 	}
 	statsdIngestServicePort := corev1.ServicePort{
-		Name:       consts.StatsdIngestPortName,
+		Name:       capability.StatsdIngestPortName,
 		Protocol:   corev1.ProtocolUDP,
-		Port:       consts.StatsdIngestPort,
-		TargetPort: intstr.FromString(consts.StatsdIngestTargetPort),
+		Port:       capability.StatsdIngestPort,
+		TargetPort: intstr.FromString(capability.StatsdIngestTargetPort),
 	}
 
 	t.Run(`reconcile custom properties`, func(t *testing.T) {
@@ -196,6 +205,7 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run(`update service`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
+		setMetricsIngestCapability(r, true)
 		reconcileAndExpectUpdate(r, true)
 		{
 			service := assertServiceExists(r)
@@ -275,7 +285,7 @@ func TestSetReadinessProbePort(t *testing.T) {
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe)
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet)
 	assert.NotNil(t, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port)
-	assert.Equal(t, consts.HttpsServicePortName, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port.String())
+	assert.Equal(t, capability.HttpsServicePortName, sts.Spec.Template.Spec.Containers[0].ReadinessProbe.HTTPGet.Port.String())
 }
 
 func TestReconciler_calculateStatefulSetName(t *testing.T) {
@@ -353,20 +363,20 @@ func TestGetContainerByName(t *testing.T) {
 	t.Run("non-empty collection but cannot match name", func(t *testing.T) {
 		verify(t,
 			[]corev1.Container{
-				{Name: consts.ActiveGateContainerName},
-				{Name: consts.StatsdContainerName},
+				{Name: capability.ActiveGateContainerName},
+				{Name: capability.StatsdContainerName},
 			},
-			consts.EecContainerName,
-			fmt.Sprintf(`Cannot find container "%s" in the provided slice (len 2)`, consts.EecContainerName),
+			capability.EecContainerName,
+			fmt.Sprintf(`Cannot find container "%s" in the provided slice (len 2)`, capability.EecContainerName),
 		)
 	})
 
 	t.Run("happy path", func(t *testing.T) {
 		verify(t,
 			[]corev1.Container{
-				{Name: consts.StatsdContainerName},
+				{Name: capability.StatsdContainerName},
 			},
-			consts.StatsdContainerName,
+			capability.StatsdContainerName,
 			"",
 		)
 	})

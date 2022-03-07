@@ -86,15 +86,14 @@ Check if we need the csi driver.
 		{{- printf "true" -}}
 	{{- end -}}
 	{{- if eq (include "dynatrace-operator.partial" .) "false" -}}
-		{{- if .Values.cloudNativeFullStack -}}
-		{{- if .Values.cloudNativeFullStack.enabled -}}
+		{{- if (.Values.cloudNativeFullStack).enabled -}}
 			{{- printf "true" -}}
 		{{- end -}}
-		{{- end -}}
-		{{- if .Values.applicationMonitoring -}}
-		{{- if and .Values.applicationMonitoring.enabled .Values.applicationMonitoring.useCSIDriver -}}
+		{{- if and (.Values.applicationMonitoring).enabled (.Values.applicationMonitoring).useCSIDriver -}}
 			{{- printf "true" -}}
 		{{- end -}}
+		{{- if and (.Values.hostMonitoring).enabled (not (.Values.hostMonitoring).disableReadOnly) -}}
+			{{- printf "true" -}}
 		{{- end -}}
 	{{- end -}}
 {{- end -}}

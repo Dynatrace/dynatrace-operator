@@ -58,7 +58,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	if err := publisher.mountOneAgent(bindCfg.TenantUUID, volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount osagent volume: %s", err.Error()))
 	}
-	volume, err := publisher.db.GetOsAgentVolume(volumeCfg.VolumeID)
+	volume, err := publisher.db.GetOsAgentVolumeViaTenantUUID(bindCfg.TenantUUID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get osagent volume info from database: %s", err.Error()))
 	}
@@ -87,7 +87,7 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 
 func (publisher *HostVolumePublisher) UnpublishVolume(_ context.Context, volumeInfo *csivolumes.VolumeInfo) (*csi.NodeUnpublishVolumeResponse, error) {
 
-	volume, err := publisher.db.GetOsAgentVolume(volumeInfo.VolumeID)
+	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(volumeInfo.VolumeID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get osagent volume info from database: %s", err.Error()))
 	}
@@ -113,7 +113,7 @@ func (publisher *HostVolumePublisher) UnpublishVolume(_ context.Context, volumeI
 }
 
 func (publisher *HostVolumePublisher) CanUnpublishVolume(volumeInfo *csivolumes.VolumeInfo) (bool, error) {
-	volume, err := publisher.db.GetOsAgentVolume(volumeInfo.VolumeID)
+	volume, err := publisher.db.GetOsAgentVolumeViaVolumeID(volumeInfo.VolumeID)
 	if err != nil {
 		return false, status.Error(codes.Internal, fmt.Sprintf("failed to get osagent volume info from database: %s", err.Error()))
 	}

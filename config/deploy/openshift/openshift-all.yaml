@@ -3,6 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -3421,6 +3422,7 @@ rules:
       - services
     verbs:
       - create
+      - update
       - delete
       - get
       - list
@@ -3653,6 +3655,7 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
       labels:
         name: dynatrace-operator
         dynatrace: operator
@@ -3704,6 +3707,15 @@ spec:
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 10
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["all"]
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -3763,6 +3775,9 @@ spec:
         internal.dynatrace.com/component: webhook
         internal.dynatrace.com/app: webhook
     spec:
+      volumes:
+      - emptyDir: {}
+        name: certs-dir
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -3781,6 +3796,8 @@ spec:
         - name: webhook
           args:
             - webhook-server
+            # OLM mounts the certificates here, so we reuse it for simplicity
+            - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
           image:
             quay.io/dynatrace/dynatrace-operator:snapshot
           imagePullPolicy: Always
@@ -3812,6 +3829,18 @@ spec:
             limits:
               cpu: 300m
               memory: 128Mi
+          volumeMounts:
+            - name: certs-dir
+              mountPath: /tmp/k8s-webhook-server/serving-certs/
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["all"]
       serviceAccountName: dynatrace-webhook
 ---
 # Source: dynatrace-operator/templates/Common/webhook/mutatingwebhookconfiguration.yaml
@@ -3937,6 +3966,98 @@ users:
   - system:serviceaccount:dynatrace:dynatrace-dynakube-oneagent-unprivileged
 volumes:
   - "*"
+---
+# Source: dynatrace-operator/templates/Openshift/operator/securitycontextconstraints.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: dynatrace-operator
+allowPrivilegedContainer: false
+fsGroup:
+  type: RunAsAny
+priority: 1
+readOnlyRootFilesystem: true
+requiredDropCapabilities:
+  - ALL
+runAsUser:
+  type: MustRunAsNonRoot
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - "*"
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:dynatrace:dynatrace-operator
+volumes:
+  - "*"
+
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowedFlexVolumes: null
+defaultAddCapabilities: []
+---
+# Source: dynatrace-operator/templates/Openshift/webhook/securitycontextconstraints.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: dynatrace-webhook
+allowPrivilegedContainer: false
+fsGroup:
+  type: RunAsAny
+priority: 1
+readOnlyRootFilesystem: true
+requiredDropCapabilities:
+  - ALL
+runAsUser:
+  type: MustRunAsNonRoot
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - "*"
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:dynatrace:dynatrace-webhook
+volumes:
+  - "*"
+
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: true
+allowHostPID: false
+allowHostPorts: false
+allowedFlexVolumes: null
+defaultAddCapabilities: []
 ---
 # Source: dynatrace-operator/templates/Common/webhook/validatingwebhookconfiguration.yaml
 # Copyright 2021 Dynatrace LLC
@@ -4120,7 +4241,7 @@ rules:
     resources:
       - endpoints
     verbs:
-      - get"
+      - get
       - watch
       - list
       - delete
@@ -4204,10 +4325,6 @@ metadata:
     operator: dynakube
   name: dynatrace-oneagent-csi-driver
   namespace: dynatrace
-  annotations:
-    container.apparmor.security.beta.kubernetes.io/driver: runtime/default
-    container.apparmor.security.beta.kubernetes.io/registrar: runtime/default
-    container.apparmor.security.beta.kubernetes.io/liveness-probe: runtime/default
 spec:
   revisionHistoryLimit: 10
   selector:
@@ -4373,7 +4490,6 @@ spec:
       securityContext: {}
       serviceAccountName: dynatrace-oneagent-csi-driver
       terminationGracePeriodSeconds: 30
-      securityContext: {}
       volumes:
       # This volume is where the registrar registers the plugin with kubelet
       - hostPath:

@@ -30,6 +30,10 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
+      {{- if (.Values.operator).apparmor}}
+        container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
+      {{- end }}
       labels:
         name: {{ .Release.Name }}
         {{- include "dynatrace-operator.labels" . | nindent 8 }}
@@ -83,6 +87,15 @@ spec:
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 10
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["all"]
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

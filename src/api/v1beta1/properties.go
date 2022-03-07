@@ -88,6 +88,10 @@ func (dk *DynaKube) NeedsStatsd() bool {
 	return dk.IsActiveGateMode(StatsdIngestCapability.DisplayName)
 }
 
+func (dk *DynaKube) NeedsMetricsIngest() bool {
+	return dk.IsActiveGateMode(MetricsIngestCapability.DisplayName)
+}
+
 func (dk *DynaKube) HasActiveGateTLS() bool {
 	return dk.ActiveGateMode() && dk.Spec.ActiveGate.TlsSecretName != ""
 }
@@ -136,8 +140,20 @@ func (dk *DynaKube) StatsdImage() string {
 	return resolveImagePath(newStatsdImagePath(dk))
 }
 
+func (dk *DynaKube) NeedsReadOnlyOneAgents() bool {
+	inSupportedMode := dk.HostMonitoringMode() || dk.CloudNativeFullstackMode()
+	return inSupportedMode && !dk.FeatureDisableReadOnlyOneAgent()
+}
+
 func (dk *DynaKube) NeedsCSIDriver() bool {
-	return dk.CloudNativeFullstackMode() || (dk.ApplicationMonitoringMode() && dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil && *dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver)
+	isAppMonitoringWithCSI := dk.ApplicationMonitoringMode() &&
+		dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver != nil &&
+		*dk.Spec.OneAgent.ApplicationMonitoring.UseCSIDriver
+
+	isReadOnlyHostMonitoring := dk.HostMonitoringMode() &&
+		!dk.FeatureDisableReadOnlyOneAgent()
+
+	return dk.CloudNativeFullstackMode() || isAppMonitoringWithCSI || isReadOnlyHostMonitoring
 }
 
 func (dk *DynaKube) NeedAppInjection() bool {
@@ -251,21 +267,31 @@ func (dk *DynaKube) TenantUUID() (string, error) {
 	return tenantUUID(dk.Spec.APIURL)
 }
 
+func runeIs(wanted rune) func(rune) bool {
+	return func(actual rune) bool {
+		return actual == wanted
+	}
+}
+
 func tenantUUID(apiUrl string) (string, error) {
 	parsedUrl, err := url.Parse(apiUrl)
 	if err != nil {
 		return "", errors.WithMessagef(err, "problem parsing tenant id from url %s", apiUrl)
 	}
 
-	fqdn := parsedUrl.Hostname()
-	hostnameWithDomains := strings.FieldsFunc(fqdn,
-		func(r rune) bool { return r == '.' },
-	)
-	if len(hostnameWithDomains) < 1 {
-		return "", fmt.Errorf("problem getting tenant id from fqdn '%s'", fqdn)
+	// Path = "/e/<token>/api" -> ["e",  "<tenant>", "api"]
+	subPaths := strings.FieldsFunc(parsedUrl.Path, runeIs('/'))
+	if len(subPaths) >= 3 && subPaths[0] == "e" && subPaths[2] == "api" {
+		return subPaths[1], nil
 	}
 
-	return hostnameWithDomains[0], nil
+	hostnameWithDomains := strings.FieldsFunc(parsedUrl.Hostname(), runeIs('.'))
+	if len(hostnameWithDomains) >= 1 {
+		return hostnameWithDomains[0], nil
+
+	}
+
+	return "", fmt.Errorf("problem getting tenant id from API URL '%s'", apiUrl)
 }
 
 func (dk *DynaKube) HostGroup() string {
