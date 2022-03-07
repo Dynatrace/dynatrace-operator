@@ -39,6 +39,7 @@ const (
 	annotationFeatureCustomEecImage                   = annotationFeaturePrefix + "custom-eec-image"
 	annotationFeatureCustomStatsdImage                = annotationFeaturePrefix + "custom-statsd-image"
 	AnnotationFeatureDisableReadOnlyOneAgent          = annotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
+	AnnotationFeatureEnableMultipleOsAgentsOnNode     = annotationFeaturePrefix + "multiple-osagents-on-node"
 )
 
 var (
@@ -144,4 +145,9 @@ func (dk *DynaKube) FeatureCustomStatsdImage() string {
 // Defaults to false
 func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
 	return dk.Annotations[AnnotationFeatureDisableReadOnlyOneAgent] == "true"
+}
+
+// FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
+func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
+	return dk.Annotations[AnnotationFeatureEnableMultipleOsAgentsOnNode] == "true"
 }
