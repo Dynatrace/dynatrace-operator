@@ -48,13 +48,13 @@ func isInvalidApiUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube)
 		return errorInvalidApiUrl
 	}
 
-	fqdn := parsedUrl.Hostname()
-	hostnameWithDomains := strings.FieldsFunc(fqdn,
+	hostname := parsedUrl.Hostname()
+	hostnameWithDomains := strings.FieldsFunc(hostname,
 		func(r rune) bool { return r == '.' },
 	)
 
-	if len(hostnameWithDomains) < 2 || len(hostnameWithDomains[0]) == 0 {
-		log.Info("problem getting tenant id from fqdn", "fqdn", fqdn)
+	if len(hostnameWithDomains) < 1 || len(hostnameWithDomains[0]) == 0 {
+		log.Info("invalid hostname in the api url", "hostname", hostname)
 		return errorInvalidApiUrl
 	}
 
