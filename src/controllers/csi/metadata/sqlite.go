@@ -95,6 +95,22 @@ const (
 	WHERE TenantUUID = ?;
 	`
 
+	// Dump
+	dumpDynakubesStatement = `
+		SELECT Name, TenantUUID, LatestVersion
+		FROM dynakubes;
+		`
+
+	dumpVolumesStatement = `
+		SELECT ID, PodName, Version, TenantUUID
+		FROM volumes;
+		`
+
+	dumpOsAgentVolumes = `
+		SELECT TenantUUID, VolumeID, Mounted, LastModified
+		FROM osagent_volumes;
+		`
+
 	// DELETE
 	deleteVolumeStatement = "DELETE FROM volumes WHERE ID = ?;"
 
@@ -230,14 +246,14 @@ func (a *SqliteAccess) InsertVolume(volume *Volume) error {
 
 // GetVolume gets Volume by its ID
 func (a *SqliteAccess) GetVolume(volumeID string) (*Volume, error) {
-	var PodName string
+	var podName string
 	var version string
 	var tenantUUID string
-	err := a.querySimpleStatement(getVolumeStatement, volumeID, &PodName, &version, &tenantUUID)
+	err := a.querySimpleStatement(getVolumeStatement, volumeID, &podName, &version, &tenantUUID)
 	if err != nil {
 		err = fmt.Errorf("couldn't get volume field for volume id '%s', err: %s", volumeID, err)
 	}
-	return NewVolume(volumeID, PodName, version, tenantUUID), err
+	return NewVolume(volumeID, podName, version, tenantUUID), err
 }
 
 // DeleteVolume deletes a Volume by its ID
@@ -299,6 +315,71 @@ func (a *SqliteAccess) GetOsAgentVolumeViaTenantUUID(tenantUUID string) (*OsAgen
 		err = fmt.Errorf("couldn't get osAgentVolume info for tenant uuid '%s', err: %s", tenantUUID, err)
 	}
 	return NewOsAgentVolume(volumeID, tenantUUID, mounted, &lastModified), err
+}
+
+// GetAllVolumes gets all the Volumes from the database
+func (a *SqliteAccess) GetAllVolumes() ([]*Volume, error) {
+	rows, err := a.conn.Query(dumpVolumesStatement)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get all the volumes, err: %s", err)
+	}
+	volumes := []*Volume{}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var id string
+		var podName string
+		var version string
+		var tenantUUID string
+		err := rows.Scan(&id, &podName, &version, &tenantUUID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan from database for volumes, err: %s", err)
+		}
+		volumes = append(volumes, NewVolume(id, podName, version, tenantUUID))
+	}
+	return volumes, nil
+}
+
+// GetAllDynakubes gets all the Dynakubes from the database
+func (a *SqliteAccess) GetAllDynakubes() ([]*Dynakube, error) {
+	rows, err := a.conn.Query(dumpDynakubesStatement)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get all the volumes, err: %s", err)
+	}
+	dynakubes := []*Dynakube{}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var name string
+		var version string
+		var tenantUUID string
+		err := rows.Scan(&name, &tenantUUID, &version)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan from database for volumes, err: %s", err)
+		}
+		dynakubes = append(dynakubes, NewDynakube(name, tenantUUID, version))
+	}
+	return dynakubes, nil
+}
+
+// GetAllOsAgentVolumes gets all the OsAgentVolume from the database
+func (a *SqliteAccess) GetAllOsAgentVolumes() ([]*OsAgentVolume, error) {
+	rows, err := a.conn.Query(dumpOsAgentVolumes)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get all the volumes, err: %s", err)
+	}
+	osVolumes := []*OsAgentVolume{}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var volumeID string
+		var tenantUUID string
+		var mounted bool
+		var timeStamp time.Time
+		err := rows.Scan(&tenantUUID, &volumeID, &mounted, &timeStamp)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan from database for volumes, err: %s", err)
+		}
+		osVolumes = append(osVolumes, NewOsAgentVolume(volumeID, tenantUUID, mounted, &timeStamp))
+	}
+	return osVolumes, nil
 }
 
 // GetUsedVersions gets all UNIQUE versions present in the `volumes` database in map.
