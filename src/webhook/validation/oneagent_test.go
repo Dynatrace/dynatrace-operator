@@ -167,7 +167,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 			}, &defaultCSIDaemonSet)
 	})
 	t.Run(`valid dynakube specs with multitenant hostMonitoring`, func(t *testing.T) {
-		assertAllowedResponseWithWarnings(t, 2,
+		assertAllowedResponseWithWarnings(t, 0,
 			newCloudNativeDynakube("dk1", map[string]string{
 				dynatracev1beta1.AnnotationFeatureEnableMultipleOsAgentsOnNode: "true",
 			}, "1"),
@@ -176,7 +176,7 @@ func TestConflictingNodeSelector(t *testing.T) {
 			}, "2"),
 			&defaultCSIDaemonSet)
 
-		assertAllowedResponseWithWarnings(t, 2,
+		assertAllowedResponseWithWarnings(t, 0,
 			newCloudNativeDynakube("dk1", map[string]string{
 				dynatracev1beta1.AnnotationFeatureEnableMultipleOsAgentsOnNode: "true",
 			}, "1"),
