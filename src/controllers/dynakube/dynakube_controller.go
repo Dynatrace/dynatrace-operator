@@ -332,7 +332,7 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 				return false
 			}
 
-			if c.Config().CreateService {
+			if c.CreateService() {
 				svc := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      rcap.BuildServiceName(dynakubeState.Instance.Name, c.ShortName()),

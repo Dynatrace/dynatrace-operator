@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/events"
 	sts "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -136,13 +137,9 @@ func buildDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) 
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
-	if r.Config().CreateService {
-		update, err = r.createServiceIfNotExists()
-		if update || err != nil {
-			return update, errors.WithStack(err)
-		}
-
-		update, err = r.updateServiceIfOutdated()
+	if r.CreateService() {
+		multiCapability := capability.NewMultiCapability(r.Instance)
+		update, err = r.createOrUpdateService(multiCapability.ServicePorts)
 		if update || err != nil {
 			return update, errors.WithStack(err)
 		}
@@ -159,44 +156,41 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 	return update, errors.WithStack(err)
 }
 
-func (r *Reconciler) createServiceIfNotExists() (bool, error) {
-	service := createService(r.Instance, r.ShortName())
+func (r *Reconciler) createOrUpdateService(desiredServicePorts capability.AgServicePorts) (bool, error) {
+	desired := createService(r.Instance, r.ShortName(), desiredServicePorts)
+	installed := &corev1.Service{}
 
-	err := r.Get(context.TODO(), client.ObjectKey{Name: service.Name, Namespace: service.Namespace}, service)
-	if err != nil && k8serrors.IsNotFound(err) {
-		log.Info("creating service", "module", r.ShortName())
-		if err := controllerutil.SetControllerReference(r.Instance, service, r.Scheme()); err != nil {
+	err := r.Get(context.TODO(), kubeobjects.Key(desired), installed)
+	if k8serrors.IsNotFound(err) && desiredServicePorts.AtLeastOneEnabled() {
+		log.Info("creating AG service", "module", r.ShortName())
+		if err = controllerutil.SetControllerReference(r.Instance, desired, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)
 		}
 
-		err = r.Create(context.TODO(), service)
+		err = r.Create(context.TODO(), desired)
 		return true, errors.WithStack(err)
 	}
-	return false, errors.WithStack(err)
-}
 
-func (r *Reconciler) updateServiceIfOutdated() (bool, error) {
-	desiredService := createService(r.Instance, r.ShortName())
-	installedService := &corev1.Service{}
+	if err == nil {
+		if r.portsAreOutdated(installed, desired) {
+			desired.Spec.ClusterIP = installed.Spec.ClusterIP
+			desired.ObjectMeta.ResourceVersion = installed.ObjectMeta.ResourceVersion
 
-	if err := r.Get(
-		context.TODO(),
-		client.ObjectKey{Name: desiredService.Name, Namespace: desiredService.Namespace},
-		installedService,
-	); err != nil {
-		return false, errors.WithStack(err)
-	}
-
-	if r.portsAreOutdated(installedService, desiredService) {
-		desiredService.Spec.ClusterIP = installedService.Spec.ClusterIP
-		desiredService.ObjectMeta.ResourceVersion = installedService.ObjectMeta.ResourceVersion
-		err := r.Update(context.TODO(), desiredService)
-		if err != nil {
-			return false, err
+			switch desiredServicePorts.AtLeastOneEnabled() {
+			case true:
+				if err := r.Update(context.TODO(), desired); err != nil {
+					return false, err
+				}
+			case false:
+				if err := r.Delete(context.TODO(), desired); err != nil {
+					return false, err
+				}
+			}
+			return true, nil
 		}
-		return true, nil
 	}
-	return false, nil
+
+	return false, errors.WithStack(err)
 }
 
 func (r *Reconciler) portsAreOutdated(installedService, desiredService *corev1.Service) bool {

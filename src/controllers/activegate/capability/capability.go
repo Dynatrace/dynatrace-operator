@@ -33,11 +33,20 @@ var activeGateCapabilities = map[dynatracev1beta1.CapabilityDisplayName]baseFunc
 	dynatracev1beta1.StatsdIngestCapability.DisplayName:  statsdIngestBase,
 }
 
+type AgServicePorts struct {
+	HttpsAndHttp bool
+	Statsd       bool
+}
+
+func (ports AgServicePorts) AtLeastOneEnabled() bool {
+	return ports.HttpsAndHttp || ports.Statsd
+}
+
 type Configuration struct {
 	SetDnsEntryPoint       bool
 	SetReadinessPort       bool
 	SetCommunicationPort   bool
-	CreateService          bool
+	ServicePorts           AgServicePorts
 	CreateEecRuntimeConfig bool
 	ServiceAccountOwner    string
 }
@@ -51,6 +60,7 @@ type Capability interface {
 	InitContainersTemplates() []corev1.Container
 	ContainerVolumeMounts() []corev1.VolumeMount
 	Volumes() []corev1.Volume
+	CreateService() bool
 }
 
 type capabilityBase struct {
@@ -82,6 +92,10 @@ func (c *capabilityBase) ShortName() string {
 
 func (c *capabilityBase) ArgName() string {
 	return c.argName
+}
+
+func (c *capabilityBase) CreateService() bool {
+	return c.ServicePorts.AtLeastOneEnabled()
 }
 
 // Note:
@@ -149,7 +163,7 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 		},
 	}
 	if dk == nil || !dk.ActiveGateMode() {
-		mc.CreateService = true // necessary for cleaning up service if created
+		mc.ServicePorts.HttpsAndHttp = true // necessary for cleaning up service if created
 		return &mc
 	}
 	mc.enabled = true
@@ -167,8 +181,11 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 		mc.containerVolumeMounts = append(mc.containerVolumeMounts, capGen.containerVolumeMounts...)
 		mc.volumes = append(mc.volumes, capGen.volumes...)
 
-		if !mc.CreateService {
-			mc.CreateService = capGen.CreateService
+		if !mc.ServicePorts.HttpsAndHttp {
+			mc.ServicePorts.HttpsAndHttp = capGen.ServicePorts.HttpsAndHttp
+		}
+		if !mc.ServicePorts.Statsd {
+			mc.ServicePorts.Statsd = capGen.ServicePorts.Statsd
 		}
 		if !mc.CreateEecRuntimeConfig {
 			mc.CreateEecRuntimeConfig = capGen.CreateEecRuntimeConfig
@@ -262,10 +279,12 @@ func routingBase() *capabilityBase {
 		shortName: dynatracev1beta1.RoutingCapability.ShortName,
 		argName:   dynatracev1beta1.RoutingCapability.ArgumentName,
 		Configuration: Configuration{
-			SetDnsEntryPoint:       true,
-			SetReadinessPort:       true,
-			SetCommunicationPort:   true,
-			CreateService:          true,
+			SetDnsEntryPoint:     true,
+			SetReadinessPort:     true,
+			SetCommunicationPort: true,
+			ServicePorts: AgServicePorts{
+				HttpsAndHttp: true,
+			},
 			CreateEecRuntimeConfig: false,
 		},
 	}
@@ -277,10 +296,12 @@ func metricsIngestBase() *capabilityBase {
 		shortName: dynatracev1beta1.MetricsIngestCapability.ShortName,
 		argName:   dynatracev1beta1.MetricsIngestCapability.ArgumentName,
 		Configuration: Configuration{
-			SetDnsEntryPoint:       true,
-			SetReadinessPort:       true,
-			SetCommunicationPort:   true,
-			CreateService:          true,
+			SetDnsEntryPoint:     true,
+			SetReadinessPort:     true,
+			SetCommunicationPort: true,
+			ServicePorts: AgServicePorts{
+				HttpsAndHttp: true,
+			},
 			CreateEecRuntimeConfig: false,
 		},
 	}
@@ -295,7 +316,9 @@ func dynatraceApiBase() *capabilityBase {
 			SetDnsEntryPoint:     true,
 			SetReadinessPort:     true,
 			SetCommunicationPort: true,
-			CreateService:        true,
+			ServicePorts: AgServicePorts{
+				HttpsAndHttp: true,
+			},
 		},
 	}
 	return &c
@@ -306,10 +329,12 @@ func statsdIngestBase() *capabilityBase {
 		shortName: dynatracev1beta1.StatsdIngestCapability.ShortName,
 		argName:   dynatracev1beta1.StatsdIngestCapability.ArgumentName,
 		Configuration: Configuration{
-			SetDnsEntryPoint:       true,
-			SetReadinessPort:       true,
-			SetCommunicationPort:   true,
-			CreateService:          true,
+			SetDnsEntryPoint:     true,
+			SetReadinessPort:     true,
+			SetCommunicationPort: true,
+			ServicePorts: AgServicePorts{
+				Statsd: true,
+			},
 			CreateEecRuntimeConfig: true,
 		},
 	}
