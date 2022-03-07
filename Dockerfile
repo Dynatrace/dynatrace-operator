@@ -1,4 +1,4 @@
-FROM golang:1.17.8-alpine AS operator-build
+FROM golang:1.17-alpine AS operator-build
 
 RUN apk update --no-cache && \
     apk add --no-cache gcc musl-dev btrfs-progs-dev lvm2-dev device-mapper-static && \
@@ -13,11 +13,11 @@ RUN if [ -d ./mod ]; then mkdir -p ${GOPATH}/pkg && [ -d mod ] && mv ./mod ${GOP
 
 RUN CGO_ENABLED=1 go build "${GO_BUILD_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/operator/
 
-FROM registry.access.redhat.com/ubi8-minimal:8.5-230 as dependency-src
+FROM registry.access.redhat.com/ubi8-minimal:8.5 as dependency-src
 
 RUN  microdnf install util-linux && microdnf clean all
 
-FROM registry.access.redhat.com/ubi8-micro:8.5-744
+FROM registry.access.redhat.com/ubi8-micro:8.5
 
 COPY --from=operator-build /etc/ssl/cert.pem /etc/ssl/cert.pem
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
