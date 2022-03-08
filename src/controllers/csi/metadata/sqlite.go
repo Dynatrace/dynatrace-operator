@@ -71,7 +71,7 @@ const (
 	`
 
 	// GET
-	GetTenantsToDynakubestatement = `
+	GetDynakubeStatement = `
 	SELECT TenantUUID, LatestVersion
 	FROM dynakubes
 	WHERE Name = ?;
@@ -223,7 +223,7 @@ func (a *SqliteAccess) DeleteDynakube(dynakubeName string) error {
 func (a *SqliteAccess) GetDynakube(dynakubeName string) (*Dynakube, error) {
 	var tenantUUID string
 	var latestVersion string
-	err := a.querySimpleStatement(GetTenantsToDynakubestatement, dynakubeName, &tenantUUID, &latestVersion)
+	err := a.querySimpleStatement(GetDynakubeStatement, dynakubeName, &tenantUUID, &latestVersion)
 	if err != nil {
 		err = fmt.Errorf("couldn't get dynakube, name '%s', err: %s", dynakubeName, err)
 	}
