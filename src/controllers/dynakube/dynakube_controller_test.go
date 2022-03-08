@@ -220,7 +220,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 			},
 			&appsv1.DaemonSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      testName + "-" + dynatracev1beta1.PodNameOSAgent,
+					Name:      instance.OneAgentDaemonsetName(),
 					Namespace: testNamespace,
 				},
 			},
@@ -243,7 +243,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 
 		var daemonSet appsv1.DaemonSet
 
-		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: (testName + "-" + dynatracev1beta1.PodNameOSAgent), Namespace: testNamespace}, &daemonSet)
+		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: (instance.OneAgentDaemonsetName()), Namespace: testNamespace}, &daemonSet)
 
 		assert.Error(t, err)
 	})

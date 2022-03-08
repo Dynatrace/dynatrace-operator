@@ -104,14 +104,16 @@ func (e *ControllerTestEnvironment) Stop() error {
 	return e.server.Stop()
 }
 
-func (e *ControllerTestEnvironment) AddOneAgent(n string, s *dynatracev1beta1.DynaKubeSpec) error {
-	return e.Client.Create(context.TODO(), &dynatracev1beta1.DynaKube{
+func (e *ControllerTestEnvironment) AddOneAgent(n string, s *dynatracev1beta1.DynaKubeSpec) (*dynatracev1beta1.DynaKube, error) {
+	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      n,
 			Namespace: DefaultTestNamespace,
 		},
 		Spec: *s,
-	})
+	}
+
+	return instance, e.Client.Create(context.TODO(), instance)
 }
 
 func newReconciliationRequest(oaName string) reconcile.Request {

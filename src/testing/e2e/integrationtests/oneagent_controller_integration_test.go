@@ -22,13 +22,14 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironment(t *testing.T) {
 
 	defer e.Stop()
 
-	e.AddOneAgent(oaName, &dynatracev1beta1.DynaKubeSpec{
+	instance, err := e.AddOneAgent(oaName, &dynatracev1beta1.DynaKubeSpec{
 		APIURL: DefaultTestAPIURL,
 		Tokens: "token-test",
 		OneAgent: dynatracev1beta1.OneAgentSpec{
 			ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
 		},
 	})
+	assert.NoError(t, err)
 
 	_, err = e.Reconciler.Reconcile(context.TODO(), newReconciliationRequest(oaName))
 	assert.NoError(t, err, "error reconciling")
@@ -36,10 +37,10 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironment(t *testing.T) {
 	// Check if deamonset has been created and has correct namespace and name.
 	dsActual := &appsv1.DaemonSet{}
 
-	err = e.Client.Get(context.TODO(), types.NamespacedName{Name: oaName + "-" + dynatracev1beta1.PodNameOSAgent, Namespace: DefaultTestNamespace}, dsActual)
+	err = e.Client.Get(context.TODO(), types.NamespacedName{Name: instance.OneAgentDaemonsetName(), Namespace: DefaultTestNamespace}, dsActual)
 	assert.NoError(t, err, "failed to get daemonset")
 
 	assert.Equal(t, DefaultTestNamespace, dsActual.Namespace, "wrong namespace")
-	assert.Equal(t, oaName+"-"+dynatracev1beta1.PodNameOSAgent, dsActual.GetObjectMeta().GetName(), "wrong name")
+	assert.Equal(t, instance.OneAgentDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
 	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "DNS policy should ClusterFirst by default")
 }

@@ -32,7 +32,7 @@ const (
 	PullSecretSuffix   = "-pull-secret"
 	TenantSecretSuffix = "-activegate-tenant-secret"
 
-	PodNameOSAgent = "oneagent"
+	PodNameOsAgent = "oneagent"
 )
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
@@ -66,7 +66,7 @@ func (dk *DynaKube) NeedsOneAgent() bool {
 }
 
 func (dk *DynaKube) OneAgentDaemonsetName() string {
-	return fmt.Sprintf("%s-%s", dk.Name, PodNameOSAgent)
+	return fmt.Sprintf("%s-%s", dk.Name, PodNameOsAgent)
 }
 
 func (dk *DynaKube) DeprecatedActiveGateMode() bool {
