@@ -46,11 +46,11 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, mock.AnythingOfType("string"),
 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
 			Return(fmt.Errorf(errorMsg))
 		dtc.
-			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, mock.AnythingOfType("string")).
+			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, mock.AnythingOfType("string"), mock.AnythingOfType("string")).
 			Return([]string{}, fmt.Errorf(errorMsg))
 		installAgentCfg := &installAgentConfig{
 			fs:  fs,
@@ -65,7 +65,7 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, mock.AnythingOfType("string"),
 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
 				writer := args.Get(5).(io.Writer)
@@ -92,7 +92,7 @@ func TestOneAgentProvisioner_InstallAgent(t *testing.T) {
 		}
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, mock.AnythingOfType("string"),
 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
 				writer := args.Get(5).(io.Writer)
