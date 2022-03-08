@@ -46,7 +46,7 @@ func correctVolumes(cl client.Client, access Access) error {
 
 // Removes dynakube entries if their Dynakube instance no longer exists in the cluster
 func correctDynakubes(cl client.Client, access Access) error {
-	dynakubes, err := access.GetDynakubes()
+	dynakubes, err := access.GetTenantsToDynakubes()
 	if err != nil {
 		return err
 	}

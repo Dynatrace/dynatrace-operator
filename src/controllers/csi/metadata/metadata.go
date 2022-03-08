@@ -58,7 +58,7 @@ type Access interface {
 	UpdateDynakube(dynakube *Dynakube) error
 	DeleteDynakube(dynakubeName string) error
 	GetDynakube(dynakubeName string) (*Dynakube, error)
-	GetDynakubes() (map[string]string, error)
+	GetTenantsToDynakubes() (map[string]string, error)
 	GetAllDynakubes() ([]*Dynakube, error)
 
 	InsertOsAgentVolume(volume *OsAgentVolume) error

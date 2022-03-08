@@ -71,7 +71,7 @@ const (
 	`
 
 	// GET
-	getDynakubeStatement = `
+	GetTenantsToDynakubestatement = `
 	SELECT TenantUUID, LatestVersion
 	FROM dynakubes
 	WHERE Name = ?;
@@ -95,18 +95,18 @@ const (
 	WHERE TenantUUID = ?;
 	`
 
-	// Dump
-	dumpDynakubesStatement = `
+	// GET ALL
+	getAllDynakubesStatement = `
 		SELECT Name, TenantUUID, LatestVersion
 		FROM dynakubes;
 		`
 
-	dumpVolumesStatement = `
+	getAllVolumesStatement = `
 		SELECT ID, PodName, Version, TenantUUID
 		FROM volumes;
 		`
 
-	dumpOsAgentVolumes = `
+	getAllOsAgentVolumes = `
 		SELECT TenantUUID, VolumeID, Mounted, LastModified
 		FROM osagent_volumes;
 		`
@@ -128,7 +128,7 @@ const (
 	FROM volumes;
 	`
 
-	getDynakubesStatement = `
+	getTenantsToDynakubesStatement = `
 	SELECT tenantUUID, Name
 	FROM dynakubes;
 	`
@@ -223,7 +223,7 @@ func (a *SqliteAccess) DeleteDynakube(dynakubeName string) error {
 func (a *SqliteAccess) GetDynakube(dynakubeName string) (*Dynakube, error) {
 	var tenantUUID string
 	var latestVersion string
-	err := a.querySimpleStatement(getDynakubeStatement, dynakubeName, &tenantUUID, &latestVersion)
+	err := a.querySimpleStatement(GetTenantsToDynakubestatement, dynakubeName, &tenantUUID, &latestVersion)
 	if err != nil {
 		err = fmt.Errorf("couldn't get dynakube, name '%s', err: %s", dynakubeName, err)
 	}
@@ -319,7 +319,7 @@ func (a *SqliteAccess) GetOsAgentVolumeViaTenantUUID(tenantUUID string) (*OsAgen
 
 // GetAllVolumes gets all the Volumes from the database
 func (a *SqliteAccess) GetAllVolumes() ([]*Volume, error) {
-	rows, err := a.conn.Query(dumpVolumesStatement)
+	rows, err := a.conn.Query(getAllVolumesStatement)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get all the volumes, err: %s", err)
 	}
@@ -341,7 +341,7 @@ func (a *SqliteAccess) GetAllVolumes() ([]*Volume, error) {
 
 // GetAllDynakubes gets all the Dynakubes from the database
 func (a *SqliteAccess) GetAllDynakubes() ([]*Dynakube, error) {
-	rows, err := a.conn.Query(dumpDynakubesStatement)
+	rows, err := a.conn.Query(getAllDynakubesStatement)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get all the volumes, err: %s", err)
 	}
@@ -362,7 +362,7 @@ func (a *SqliteAccess) GetAllDynakubes() ([]*Dynakube, error) {
 
 // GetAllOsAgentVolumes gets all the OsAgentVolume from the database
 func (a *SqliteAccess) GetAllOsAgentVolumes() ([]*OsAgentVolume, error) {
-	rows, err := a.conn.Query(dumpOsAgentVolumes)
+	rows, err := a.conn.Query(getAllOsAgentVolumes)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get all the volumes, err: %s", err)
 	}
@@ -425,9 +425,9 @@ func (a *SqliteAccess) GetPodNames() (map[string]string, error) {
 	return podNames, nil
 }
 
-// GetDynakubes gets all Dynakubes and maps their name to the corresponding TenantUUID.
-func (a *SqliteAccess) GetDynakubes() (map[string]string, error) {
-	rows, err := a.conn.Query(getDynakubesStatement)
+// GetTenantsToDynakubes gets all Dynakubes and maps their name to the corresponding TenantUUID.
+func (a *SqliteAccess) GetTenantsToDynakubes() (map[string]string, error) {
+	rows, err := a.conn.Query(getTenantsToDynakubesStatement)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get dynakubes, err: %s", err)
 	}
