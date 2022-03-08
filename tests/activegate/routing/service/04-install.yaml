@@ -1,0 +1,7 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+delete:
+  - apiVersion: dynatrace.com/v1beta1
+    kind: DynaKube
+    name: dynakube
+    namespace: dynatrace

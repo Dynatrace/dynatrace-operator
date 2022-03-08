@@ -816,7 +816,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-          image: quay.io/dynatrace/dynatrace-operator:snapshot-feature-statsd-ingest--edge
+          image: quay.io/dynatrace/dynatrace-operator:snapshot-feature-statsd-ingest--kuttl-tests
           imagePullPolicy: Always
           livenessProbe:
             httpGet:
@@ -899,7 +899,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-          image: quay.io/dynatrace/dynatrace-operator:snapshot-feature-statsd-ingest--edge
+          image: quay.io/dynatrace/dynatrace-operator:snapshot-feature-statsd-ingest--kuttl-tests
           imagePullPolicy: Always
           name: webhook
           ports:
@@ -964,7 +964,7 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.nodeName
-          image: quay.io/dynatrace/dynatrace-operator:snapshot-feature-statsd-ingest--edge
+          image: quay.io/dynatrace/dynatrace-operator:snapshot-feature-statsd-ingest--kuttl-tests
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3
@@ -1013,7 +1013,7 @@ spec:
             - --health-port=9809
           command:
             - csi-node-driver-registrar
-          image: quay.io/dynatrace/dynatrace-operator:snapshot-feature-statsd-ingest--edge
+          image: quay.io/dynatrace/dynatrace-operator:snapshot-feature-statsd-ingest--kuttl-tests
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3
@@ -1051,7 +1051,7 @@ spec:
             - --health-port=9898
           command:
             - livenessprobe
-          image: quay.io/dynatrace/dynatrace-operator:snapshot-feature-statsd-ingest--edge
+          image: quay.io/dynatrace/dynatrace-operator:snapshot-feature-statsd-ingest--kuttl-tests
           imagePullPolicy: Always
           name: liveness-probe
           resources:

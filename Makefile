@@ -104,7 +104,7 @@ deploy-local-easy:
 	./build/deploy_local.sh
 
 kuttl: deploy
-	#kubectl kuttl test --config ./tests/sanity/testsuite.yaml
+	kubectl kuttl test --config ./tests/sanity/testsuite.yaml
 	kubectl kuttl test --config ./tests/activegate/testsuite.yaml
 
 kuttl-clean:

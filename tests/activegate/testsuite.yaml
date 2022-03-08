@@ -3,9 +3,7 @@ kind: TestSuite
 startKIND: true
 kindConfig: tests/config/kind-config.yaml
 kindContainers:
-  - quay.io/dynatrace/dynatrace-operator:snapshot-feature-statsd-ingest--edge
-#  - registry.lab.dynatrace.org/eec/dynatrace-eec:latest
-#  - registry.lab.dynatrace.org/datasource/dynatrace-datasource-statsd:latest
+  - quay.io/dynatrace/dynatrace-operator:snapshot-feature-statsd-ingest--kuttl-tests
 
 namespace: dynatrace
 artifactsDir: tests/logs/
@@ -14,6 +12,7 @@ manifestDirs:
   - tests/config/manifests
 
 testDirs:
+  - tests/activegate/routing/
   - tests/activegate/statsd/
 
 commands:

@@ -24,12 +24,12 @@ metadata:
     operator.dynatrace.com/instance: dynakube
   name: dynakube-activegate
   namespace: dynatrace
-  ownerReferences:
-    - apiVersion: dynatrace.com/v1beta1
-      blockOwnerDeletion: true
-      controller: true
-      kind: DynaKube
-      name: dynakube
+#  ownerReferences:
+#    - apiVersion: dynatrace.com/v1beta1
+#      blockOwnerDeletion: true
+#      controller: true
+#      kind: DynaKube
+#      name: dynakube
 spec:
   ports:
     - name: statsd

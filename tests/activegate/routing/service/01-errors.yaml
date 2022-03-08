@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    dynatrace.com/component: activegate
+    operator.dynatrace.com/feature: activegate
+    operator.dynatrace.com/instance: dynakube
+  name: dynakube-activegate
+  namespace: dynatrace
+spec:
+  selector:
+    dynatrace.com/component: activegate
+    operator.dynatrace.com/feature: activegate
+    operator.dynatrace.com/instance: dynakube
+  sessionAffinity: None
+  type: ClusterIP
