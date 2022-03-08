@@ -149,6 +149,18 @@ func TestTenantUUID(t *testing.T) {
 		)
 	})
 
+	t.Run("happy path (alternative, no domain)", func(t *testing.T) {
+		apiUrl := "https://dynakube-activegate/e/tenant/api/v2/metrics/ingest"
+		expectedTenantId := "tenant"
+
+		actualTenantId, err := tenantUUID(apiUrl)
+
+		assert.NoErrorf(t, err, "Expected that getting tenant id from '%s' will be successful", apiUrl)
+		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
+			apiUrl, expectedTenantId, actualTenantId,
+		)
+	})
+
 	t.Run("missing API URL protocol", func(t *testing.T) {
 		apiUrl := "demo.dev.dynatracelabs.com/api"
 		expectedTenantId := ""

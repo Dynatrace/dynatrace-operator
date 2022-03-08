@@ -22,11 +22,15 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
+
+const certificateRenewalInterval = 6 * time.Hour
 
 type certificateWatcher struct {
 	apiReader             client.Reader
@@ -48,7 +52,7 @@ func newCertificateWatcher(mgr manager.Manager, namespace string, secretName str
 
 func (watcher *certificateWatcher) watchForCertificatesSecret() {
 	for {
-		<-time.After(6 * time.Hour)
+		<-time.After(certificateRenewalInterval)
 		log.Info("checking for new certificates")
 		if updated, err := watcher.updateCertificatesFromSecret(); err != nil {
 			log.Info("failed to update certificates", "error", err)
@@ -74,19 +78,30 @@ func (watcher *certificateWatcher) updateCertificatesFromSecret() (bool, error) 
 		}
 	}
 
-	for _, filename := range []string{"tls.crt", "tls.key"} {
-		f := filepath.Join(watcher.certificateDirectory, filename)
-
-		data, err := afero.ReadFile(watcher.fs, f)
-
-		if os.IsNotExist(err) || !bytes.Equal(data, secret.Data[filename]) {
-			if err := afero.WriteFile(watcher.fs, f, secret.Data[filename], 0666); err != nil {
-				return false, err
-			}
-		} else {
+	for _, filename := range []string{certificates.ServerCert, certificates.ServerKey} {
+		if _, err = watcher.ensureCertificateFile(secret, filename); err != nil {
 			return false, err
 		}
 	}
+	isValid, err := kubeobjects.ValidateCertificateExpiration(secret.Data[certificates.ServerCert], certificateRenewalInterval, time.Now(), log)
+	if err != nil {
+		return false, err
+	} else if !isValid {
+		return false, fmt.Errorf("certificate is outdated")
+	}
+	return true, nil
+}
 
+func (watcher *certificateWatcher) ensureCertificateFile(secret corev1.Secret, filename string) (bool, error) {
+	f := filepath.Join(watcher.certificateDirectory, filename)
+
+	data, err := afero.ReadFile(watcher.fs, f)
+	if os.IsNotExist(err) || !bytes.Equal(data, secret.Data[filename]) {
+		if err := afero.WriteFile(watcher.fs, f, secret.Data[filename], 0666); err != nil {
+			return false, err
+		}
+	} else {
+		return false, err
+	}
 	return true, nil
 }

@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"math/big"
 	"time"
+
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 )
 
 var serialNumberLimit = new(big.Int).Lsh(big.NewInt(1), 128)
@@ -101,23 +103,11 @@ func (cs *Certs) validateServerCerts(now time.Time) bool {
 		return true
 	}
 
-	block, _ := pem.Decode(cs.Data[ServerCert])
-	if block == nil {
-		log.Info("failed to parse server certificates, renewing", "error", "can't decode PEM file")
+	isValid, err := kubeobjects.ValidateCertificateExpiration(cs.Data[ServerCert], renewalThreshold, now, log)
+	if err != nil || !isValid {
+		log.Info("server certificate failed to parse or is outdated")
 		return true
 	}
-
-	cert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		log.Info("failed to parse server certificates, renewing", "error", err)
-		return true
-	}
-
-	if now.After(cert.NotAfter.Add(-renewalThreshold)) {
-		log.Info("server certificates are about to expire, renewing", "current", now, "expiration", cert.NotAfter)
-		return true
-	}
-
 	return false
 }
 

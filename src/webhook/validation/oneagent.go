@@ -38,8 +38,15 @@ func conflictingOneAgentConfiguration(dv *dynakubeValidator, dynakube *dynatrace
 	return ""
 }
 
+func conflictingReadOnlyFilesystemAndMultipleOsAgentsOnNode(_ *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	if dynakube.FeatureDisableReadOnlyOneAgent() && dynakube.FeatureEnableMultipleOsAgentsOnNode() {
+		return "Multiple OsAgents require readonly host filesystem"
+	}
+	return ""
+}
+
 func conflictingNodeSelector(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
-	if !dynakube.NeedsOneAgent() {
+	if !dynakube.NeedsOneAgent() || dynakube.FeatureEnableMultipleOsAgentsOnNode() {
 		return ""
 	}
 	validDynakubes := &dynatracev1beta1.DynaKubeList{}
