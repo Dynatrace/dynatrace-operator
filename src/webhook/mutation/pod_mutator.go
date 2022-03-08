@@ -814,7 +814,6 @@ func fieldEnvVar(key string) *corev1.EnvVarSource {
 
 func silentErrorResponse(podName string, err error) admission.Response {
 	rsp := admission.Patched("")
-	message := fmt.Sprintf("Failed to inject into pod: %s because %s", podName, err.Error())
-	rsp.Result.Message = message
+	rsp.Result.Message = fmt.Sprintf("Failed to inject into pod: %s because %s", podName, err.Error())
 	return rsp
 }
