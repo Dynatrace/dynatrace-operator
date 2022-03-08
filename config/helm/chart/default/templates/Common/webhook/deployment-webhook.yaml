@@ -33,7 +33,9 @@ spec:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: webhook
-        container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
+        {{- if (.Values.webhook).apparmor}}
+        container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
+        {{- end }}
       labels:
         dynatrace.com/operator: oneagent
         internal.dynatrace.com/component: webhook

@@ -61,7 +61,7 @@ var dummyNamespace2 = corev1.Namespace{
 func TestDynakubeValidator_Handle(t *testing.T) {
 	t.Run(`valid dynakube specs`, func(t *testing.T) {
 
-		assertAllowedResponseWithWarnings(t, 4, &dynatracev1beta1.DynaKube{
+		assertAllowedResponseWithWarnings(t, 3, &dynatracev1beta1.DynaKube{
 			ObjectMeta: defaultDynakubeObjectMeta,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,

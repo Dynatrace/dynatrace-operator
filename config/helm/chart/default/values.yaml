@@ -39,6 +39,7 @@ operator:
   customPullSecret: ""
   nodeSelector: {}
   tolerations: []
+  apparmor: false
   requests:
     cpu: 50m
     memory: 64Mi
@@ -48,6 +49,7 @@ operator:
 
 webhook:
   hostNetwork: false
+  apparmor: false
   requests:
     cpu: 300m
     memory: 128Mi
