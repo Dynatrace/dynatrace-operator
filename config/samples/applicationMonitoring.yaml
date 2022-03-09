@@ -62,7 +62,6 @@ spec:
       #
       # version:
 
-      # ENABLING 'useCSIDriver' IS STILL IN PREVIEW AND SHOULD NOT BE USED IN A PRODUCTION ENVIRONMENT
       # Optional: If you want to use CSIDriver; disable if your cluster does not have 'nodes' to fall back to the volume approach.
       # Defaults to false
       #
