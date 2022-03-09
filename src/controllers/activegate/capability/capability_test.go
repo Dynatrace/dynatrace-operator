@@ -45,8 +45,10 @@ func Test_capabilityBase_Configuration(t *testing.T) {
 		SetDnsEntryPoint:     false,
 		SetReadinessPort:     false,
 		SetCommunicationPort: true,
-		CreateService:        true,
-		ServiceAccountOwner:  "accowner",
+		ServicePorts: AgServicePorts{
+			Webserver: true,
+		},
+		ServiceAccountOwner: "accowner",
 	}
 
 	type fields struct {
@@ -275,8 +277,10 @@ func TestNewRoutingCapability(t *testing.T) {
 						SetDnsEntryPoint:     true,
 						SetReadinessPort:     true,
 						SetCommunicationPort: true,
-						CreateService:        true,
 						ServiceAccountOwner:  "",
+						ServicePorts: AgServicePorts{
+							Webserver: true,
+						},
 					},
 				},
 			},
@@ -315,7 +319,9 @@ func TestNewMultiCapability(t *testing.T) {
 					enabled:   false,
 					shortName: MultiActiveGateName,
 					Configuration: Configuration{
-						CreateService: true,
+						ServicePorts: AgServicePorts{
+							Webserver: true,
+						},
 					},
 				},
 			},
@@ -343,8 +349,10 @@ func TestNewMultiCapability(t *testing.T) {
 						SetDnsEntryPoint:     true,
 						SetReadinessPort:     true,
 						SetCommunicationPort: true,
-						CreateService:        true,
 						ServiceAccountOwner:  "",
+						ServicePorts: AgServicePorts{
+							Webserver: true,
+						},
 					},
 				},
 			},
@@ -372,8 +380,10 @@ func TestNewMultiCapability(t *testing.T) {
 						SetDnsEntryPoint:     true,
 						SetReadinessPort:     true,
 						SetCommunicationPort: true,
-						CreateService:        true,
 						ServiceAccountOwner:  "",
+						ServicePorts: AgServicePorts{
+							Webserver: true,
+						},
 					},
 				},
 			},
@@ -401,8 +411,10 @@ func TestNewMultiCapability(t *testing.T) {
 						SetDnsEntryPoint:     true,
 						SetReadinessPort:     true,
 						SetCommunicationPort: true,
-						CreateService:        true,
 						ServiceAccountOwner:  "",
+						ServicePorts: AgServicePorts{
+							Webserver: true,
+						},
 					},
 				},
 			},
@@ -430,9 +442,11 @@ func TestNewMultiCapability(t *testing.T) {
 						SetDnsEntryPoint:       true,
 						SetReadinessPort:       true,
 						SetCommunicationPort:   true,
-						CreateService:          true,
 						CreateEecRuntimeConfig: true,
 						ServiceAccountOwner:    "",
+						ServicePorts: AgServicePorts{
+							Statsd: true,
+						},
 					},
 				},
 			},
@@ -523,9 +537,12 @@ func TestNewMultiCapability(t *testing.T) {
 						SetDnsEntryPoint:       true,
 						SetReadinessPort:       true,
 						SetCommunicationPort:   true,
-						CreateService:          true,
 						CreateEecRuntimeConfig: true,
 						ServiceAccountOwner:    "kubernetes-monitoring",
+						ServicePorts: AgServicePorts{
+							Webserver: true,
+							Statsd:    true,
+						},
 					},
 					initContainersTemplates: []v1.Container{
 						{
