@@ -2,6 +2,7 @@ package daemonset
 
 import (
 	"fmt"
+	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
@@ -23,8 +24,20 @@ const (
 	annotationVersion           = "internal.operator.dynatrace.com/version"
 
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
+	// normal oneagent shutdown scenario with some extra time
+	defaultTerminationGracePeriod int64 = 80
 
-	hostRootMount = "host-root"
+	hostRootVolumeName  = "host-root"
+	hostRootVolumeMount = "/mnt/root"
+
+	certVolumeName  = "certs"
+	certVolumeMount = "/mnt/dynatrace/certs"
+
+	OneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
+	tlsVolumeName          = "tls"
+
+	csiStorageVolumeName  = "osagent-storage"
+	csiStorageVolumeMount = "/mnt/volume_storage_mount"
 
 	podName = "dynatrace-oneagent"
 
@@ -36,6 +49,10 @@ const (
 	ClassicFeature        = "classic"
 	HostMonitoringFeature = "inframon"
 	CloudNativeFeature    = "cloud-native"
+)
+
+var (
+	tlsVolumeMount = filepath.Join(hostRootVolumeMount, OneAgentCustomKeysPath)
 )
 
 type HostMonitoring struct {
@@ -184,6 +201,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 	volumes := dsInfo.volumes()
 	imagePullSecrets := dsInfo.imagePullSecrets()
 	affinity := dsInfo.affinity()
+	terminationPeriodSeconds := defaultTerminationGracePeriod
 
 	return corev1.PodSpec{
 		Containers: []corev1.Container{{
@@ -205,20 +223,21 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 				TimeoutSeconds:      1,
 			},
 			Resources:       resources,
-			SecurityContext: unprivilegedSecurityContext(),
+			SecurityContext: dsInfo.unprivilegedSecurityContext(),
 			VolumeMounts:    volumeMounts,
 		}},
-		ImagePullSecrets:   imagePullSecrets,
-		HostNetwork:        true,
-		HostPID:            true,
-		HostIPC:            false,
-		NodeSelector:       dsInfo.hostInjectSpec.NodeSelector,
-		PriorityClassName:  dsInfo.hostInjectSpec.PriorityClassName,
-		ServiceAccountName: defaultUnprivilegedServiceAccountName,
-		Tolerations:        dsInfo.hostInjectSpec.Tolerations,
-		DNSPolicy:          dnsPolicy,
-		Volumes:            volumes,
-		Affinity:           affinity,
+		ImagePullSecrets:              imagePullSecrets,
+		HostNetwork:                   true,
+		HostPID:                       true,
+		HostIPC:                       false,
+		NodeSelector:                  dsInfo.hostInjectSpec.NodeSelector,
+		PriorityClassName:             dsInfo.hostInjectSpec.PriorityClassName,
+		ServiceAccountName:            defaultUnprivilegedServiceAccountName,
+		Tolerations:                   dsInfo.hostInjectSpec.Tolerations,
+		DNSPolicy:                     dnsPolicy,
+		Volumes:                       volumes,
+		Affinity:                      affinity,
+		TerminationGracePeriodSeconds: &terminationPeriodSeconds,
 	}
 }
 
@@ -266,8 +285,8 @@ func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
 	return pullSecrets
 }
 
-func unprivilegedSecurityContext() *corev1.SecurityContext {
-	return &corev1.SecurityContext{
+func (dsInfo *builderInfo) unprivilegedSecurityContext() *corev1.SecurityContext {
+	securityContext := &corev1.SecurityContext{
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
@@ -291,4 +310,11 @@ func unprivilegedSecurityContext() *corev1.SecurityContext {
 			},
 		},
 	}
+	if dsInfo.instance.NeedsReadOnlyOneAgents() {
+		unprivilegedUser := int64(1000)
+		unprivilegedGroup := int64(1000)
+		securityContext.RunAsUser = &unprivilegedUser
+		securityContext.RunAsGroup = &unprivilegedGroup
+	}
+	return securityContext
 }

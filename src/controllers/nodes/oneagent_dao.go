@@ -2,34 +2,29 @@ package nodes
 
 import (
 	"context"
-	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *ReconcileNodes) determineDynakubeForNode(nodeName string) (*dynatracev1beta1.DynaKube, error) {
-	dkList, err := r.getOneAgentList()
+func (controller *NodesController) determineDynakubeForNode(nodeName string) (*dynatracev1beta1.DynaKube, error) {
+	dks, err := controller.getDynakubeList()
 	if err != nil {
 		return nil, err
 	}
-
-	return r.filterOneAgentFromList(dkList, nodeName), nil
+	return controller.filterDynakubeFromList(dks, nodeName), nil
 }
 
-func (r *ReconcileNodes) getOneAgentList() (*dynatracev1beta1.DynaKubeList, error) {
-	watchNamespace := os.Getenv("POD_NAMESPACE")
-
-	var dkList dynatracev1beta1.DynaKubeList
-	err := r.client.List(context.TODO(), &dkList, client.InNamespace(watchNamespace))
+func (controller *NodesController) getDynakubeList() (*dynatracev1beta1.DynaKubeList, error) {
+	var dynakubeList dynatracev1beta1.DynaKubeList
+	err := controller.client.List(context.TODO(), &dynakubeList, client.InNamespace(controller.podNamespace))
 	if err != nil {
 		return nil, err
 	}
-
-	return &dkList, nil
+	return &dynakubeList, nil
 }
 
-func (r *ReconcileNodes) filterOneAgentFromList(dkList *dynatracev1beta1.DynaKubeList,
+func (controller *NodesController) filterDynakubeFromList(dkList *dynatracev1beta1.DynaKubeList,
 	nodeName string) *dynatracev1beta1.DynaKube {
 
 	for _, dynakube := range dkList.Items {
@@ -38,6 +33,5 @@ func (r *ReconcileNodes) filterOneAgentFromList(dkList *dynatracev1beta1.DynaKub
 			return &dynakube
 		}
 	}
-
 	return nil
 }

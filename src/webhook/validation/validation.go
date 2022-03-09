@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -17,17 +19,19 @@ import (
 type dynakubeValidator struct {
 	clt       client.Client
 	apiReader client.Reader
+	cfg       *rest.Config
 }
 
-func newDynakubeValidator(apiReader client.Reader) admission.Handler {
+func newDynakubeValidator(apiReader client.Reader, cfg *rest.Config) admission.Handler {
 	return &dynakubeValidator{
 		apiReader: apiReader,
+		cfg:       cfg,
 	}
 }
 
 func AddDynakubeValidationWebhookToManager(manager ctrl.Manager) error {
 	manager.GetWebhookServer().Register("/validate", &webhook.Admission{
-		Handler: newDynakubeValidator(manager.GetAPIReader()),
+		Handler: newDynakubeValidator(manager.GetAPIReader(), manager.GetConfig()),
 	})
 	return nil
 }
@@ -53,7 +57,9 @@ func (validator *dynakubeValidator) Handle(_ context.Context, request admission.
 	}
 	warningMessages := validator.runValidators(warnings, dynakube)
 	if len(warningMessages) > 0 {
-		warningMessages = append(warningMessages, basePreviewWarning)
+		if hasPreviewWarning(warningMessages) {
+			warningMessages = append(warningMessages, basePreviewWarning)
+		}
 		response = response.WithWarnings(warningMessages...)
 	}
 	return response
@@ -88,4 +94,13 @@ func decodeRequestToDynakube(request admission.Request, dynakube *dynatracev1bet
 		return errors.WithStack(err)
 	}
 	return nil
+}
+
+func hasPreviewWarning(warnings []string) bool {
+	for _, warning := range warnings {
+		if strings.Contains(warning, "PREVIEW") {
+			return true
+		}
+	}
+	return false
 }

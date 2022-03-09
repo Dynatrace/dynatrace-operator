@@ -30,6 +30,10 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      {{- if (.Values.operator).apparmor}}
+      annotations:
+        container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
+      {{- end }}
       labels:
         name: {{ .Release.Name }}
         {{- include "dynatrace-operator.labels" . | nindent 8 }}
@@ -66,6 +70,9 @@ spec:
             limits:
               cpu: {{ default "100m" ((.Values.operator).limits).cpu }}
               memory: {{ default "128Mi" ((.Values.operator).limits).memory }}
+          volumeMounts:
+            - name: tmp-cert-dir
+              mountPath: /tmp/dynatrace-operator
           readinessProbe:
             httpGet:
               path: /healthz
@@ -80,6 +87,15 @@ spec:
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 10
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop: ["all"]
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -94,6 +110,9 @@ spec:
                     operator: In
                     values:
                       - linux
+      volumes:
+        - emptyDir: { }
+          name: tmp-cert-dir
       serviceAccountName: {{ .Release.Name }}
       {{- if .Values.operator.customPullSecret }}
       imagePullSecrets:

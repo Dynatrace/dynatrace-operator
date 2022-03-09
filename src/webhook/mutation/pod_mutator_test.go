@@ -9,6 +9,8 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
+	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
@@ -74,8 +76,8 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	}
 	resp := inj.Handle(context.TODO(), req)
 	require.NoError(t, resp.Complete(req))
-	require.False(t, resp.Allowed)
-	require.Equal(t, resp.Result.Message, "namespace 'test-namespace' is assigned to DynaKube instance 'dynakube' but doesn't exist")
+	require.True(t, resp.Allowed)
+	require.Equal(t, resp.Result.Message, "Failed to inject into pod: test-pod-123456 because namespace 'test-namespace' is assigned to DynaKube instance 'dynakube' but doesn't exist")
 	t_utils.AssertEvents(t,
 		inj.recorder.(*record.FakeRecorder).Events,
 		t_utils.Events{
@@ -704,6 +706,10 @@ func addCSIVolumeSource(expected *corev1.Pod) {
 		expected.Spec.Volumes[idx].VolumeSource = corev1.VolumeSource{
 			CSI: &corev1.CSIVolumeSource{
 				Driver: dtcsi.DriverName,
+				VolumeAttributes: map[string]string{
+					csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,
+					csivolumes.CSIVolumeAttributeDynakubeField: dynakubeName,
+				},
 			},
 		}
 	}
@@ -1306,6 +1312,10 @@ func buildResultPod(_ *testing.T, oneAgentFf FeatureFlag, dataIngestFf FeatureFl
 				VolumeSource: corev1.VolumeSource{
 					CSI: &corev1.CSIVolumeSource{
 						Driver: dtcsi.DriverName,
+						VolumeAttributes: map[string]string{
+							csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,
+							csivolumes.CSIVolumeAttributeDynakubeField: dynakubeName,
+						},
 					},
 				},
 			},

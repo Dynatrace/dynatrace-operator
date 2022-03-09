@@ -13,6 +13,8 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
+	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
+	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
 	oneagent "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -101,15 +103,16 @@ func registerHealthzEndpoint(mgr manager.Manager) {
 
 // podMutator injects the OneAgent into Pods
 type podMutator struct {
-	client     client.Client
-	metaClient client.Client
-	apiReader  client.Reader
-	decoder    *admission.Decoder
-	image      string
-	namespace  string
-	apmExists  bool
-	clusterID  string
-	recorder   record.EventRecorder
+	client         client.Client
+	metaClient     client.Client
+	apiReader      client.Reader
+	decoder        *admission.Decoder
+	image          string
+	namespace      string
+	apmExists      bool
+	clusterID      string
+	currentPodName string
+	recorder       record.EventRecorder
 }
 
 func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod, namespace string) (string, string, error) {
@@ -190,6 +193,10 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	if rsp != nil {
 		return *rsp
 	}
+	m.currentPodName = pod.Name
+	defer func() {
+		m.currentPodName = ""
+	}()
 
 	injectionInfo := NewInjectionInfoForPod(pod)
 	if !injectionInfo.anyEnabled() {
@@ -222,7 +229,7 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 	if injectionInfo.enabled(DataIngest) {
 		err := m.ensureDataIngestSecret(ctx, ns, dkName)
 		if err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
+			return silentErrorResponse(m.currentPodName, err)
 		}
 	}
 
@@ -471,6 +478,10 @@ func ensureDynakubeVolume(dk dynatracev1beta1.DynaKube) (corev1.VolumeSource, st
 	if dk.NeedsCSIDriver() {
 		dkVol.CSI = &corev1.CSIVolumeSource{
 			Driver: dtcsi.DriverName,
+			VolumeAttributes: map[string]string{
+				csivolumes.CSIVolumeAttributeModeField:     appvolumes.Mode,
+				csivolumes.CSIVolumeAttributeDynakubeField: dk.Name,
+			},
 		}
 		mode = provisionedVolumeMode
 	} else {
@@ -487,7 +498,7 @@ func (m *podMutator) retrieveWorkload(ctx context.Context, req admission.Request
 		var err error
 		workloadName, workloadKind, err = findRootOwnerOfPod(ctx, m.metaClient, pod, req.Namespace)
 		if err != nil {
-			rsp = admission.Errored(http.StatusInternalServerError, err)
+			rsp = silentErrorResponse(m.currentPodName, err)
 			return "", "", &rsp
 		}
 	}
@@ -571,7 +582,7 @@ func (m *podMutator) getPod(req admission.Request) (*corev1.Pod, *admission.Resp
 	err := m.decoder.Decode(req, pod)
 	if err != nil {
 		podLog.Error(err, "Failed to decode the request for pod injection")
-		rsp := admission.Errored(http.StatusBadRequest, err)
+		rsp := silentErrorResponse(req.Name, err)
 		return nil, &rsp
 	}
 	return pod, nil
@@ -582,13 +593,17 @@ func (m *podMutator) getNsAndDkName(ctx context.Context, req admission.Request) 
 
 	if err := m.client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
 		podLog.Error(err, "Failed to query the namespace before pod injection")
-		rsp = admission.Errored(http.StatusInternalServerError, err)
+		rsp = silentErrorResponse(m.currentPodName, err)
 		return corev1.Namespace{}, "", &rsp
 	}
 
 	dkName, ok := ns.Labels[mapper.InstanceLabel]
 	if !ok {
-		rsp = admission.Errored(http.StatusInternalServerError, fmt.Errorf("no DynaKube instance set for namespace: %s", req.Namespace))
+		if kubesystem.DeployedViaOLM() {
+			rsp = admission.Patched("")
+		} else {
+			rsp = silentErrorResponse(m.currentPodName, fmt.Errorf("no DynaKube instance set for namespace: %s", req.Namespace))
+		}
 		return corev1.Namespace{}, "", &rsp
 	}
 	return ns, dkName, nil
@@ -621,11 +636,11 @@ func (m *podMutator) getDynakube(ctx context.Context, req admission.Request, dkN
 			corev1.EventTypeWarning,
 			missingDynakubeEvent,
 			template, req.Namespace, dkName)
-		rsp = admission.Errored(http.StatusBadRequest, fmt.Errorf(
+		rsp = silentErrorResponse(m.currentPodName, fmt.Errorf(
 			template, req.Namespace, dkName))
 		return dynatracev1beta1.DynaKube{}, &rsp
 	} else if err != nil {
-		rsp = admission.Errored(http.StatusInternalServerError, err)
+		rsp = silentErrorResponse(m.currentPodName, err)
 		return dynatracev1beta1.DynaKube{}, &rsp
 	}
 	return dk, nil
@@ -638,12 +653,12 @@ func (m *podMutator) ensureInitSecret(ctx context.Context, ns corev1.Namespace, 
 	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtwebhook.SecretConfigName, Namespace: ns.Name}, &initSecret); k8serrors.IsNotFound(err) {
 		if _, err := initgeneration.NewInitGenerator(m.client, m.apiReader, m.namespace).GenerateForNamespace(ctx, dk, ns.Name); err != nil {
 			podLog.Error(err, "Failed to create the init secret before pod injection")
-			rsp = admission.Errored(http.StatusBadRequest, err)
+			rsp = silentErrorResponse(m.currentPodName, err)
 			return &rsp
 		}
 	} else if err != nil {
 		podLog.Error(err, "failed to query the init secret before pod injection")
-		rsp = admission.Errored(http.StatusBadRequest, err)
+		rsp = silentErrorResponse(m.currentPodName, err)
 		return &rsp
 	}
 	return nil
@@ -763,11 +778,17 @@ func updateContainerDataIngest(c *corev1.Container, deploymentMetadata *deployme
 func getResponseForPod(pod *corev1.Pod, req *admission.Request) admission.Response {
 	marshaledPod, err := json.MarshalIndent(pod, "", "  ")
 	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
+		return silentErrorResponse(pod.Name, err)
 	}
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 }
 
 func fieldEnvVar(key string) *corev1.EnvVarSource {
 	return &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: key}}
+}
+
+func silentErrorResponse(podName string, err error) admission.Response {
+	rsp := admission.Patched("")
+	rsp.Result.Message = fmt.Sprintf("Failed to inject into pod: %s because %s", podName, err.Error())
+	return rsp
 }

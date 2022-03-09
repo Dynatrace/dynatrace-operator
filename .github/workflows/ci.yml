@@ -49,15 +49,6 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: "^1.16"
-      - name: Setup cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ runner.os }}-go-ut-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-ut-
       - name: Download dependencies
         id: depdownload
         run: |

@@ -16,6 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -191,12 +192,12 @@ func assertDeniedResponse(t *testing.T, errMessages []string, dynakube *dynatrac
 
 func assertAllowedResponseWithoutWarnings(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) {
 	response := assertAllowedResponse(t, dynakube, other...)
-	assert.Equal(t, len(response.Warnings), 0)
+	assert.Equal(t, 0, len(response.Warnings))
 }
 
 func assertAllowedResponseWithWarnings(t *testing.T, warningAmount int, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) {
 	response := assertAllowedResponse(t, dynakube, other...)
-	assert.Equal(t, len(response.Warnings), warningAmount)
+	assert.Equal(t, warningAmount, len(response.Warnings))
 }
 
 func assertAllowedResponse(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...client.Object) admission.Response {
@@ -213,6 +214,7 @@ func handleRequest(t *testing.T, dynakube *dynatracev1beta1.DynaKube, other ...c
 	validator := &dynakubeValidator{
 		clt:       clt,
 		apiReader: clt,
+		cfg:       &rest.Config{},
 	}
 
 	data, err := json.Marshal(*dynakube)

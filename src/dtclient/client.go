@@ -12,9 +12,11 @@ import (
 )
 
 const (
-	DynatracePaasToken       = "paasToken"
-	DynatraceApiToken        = "apiToken"
-	DynatraceDataIngestToken = "dataIngestToken"
+	DynatracePaasToken             = "paasToken"
+	DynatraceApiToken              = "apiToken"
+	DynatraceDataIngestToken       = "dataIngestToken"
+	CustomCertificatesConfigMapKey = "certs"
+	CustomProxySecretKey           = "proxy"
 )
 
 // Client is the interface for the Dynatrace REST API client.
@@ -92,6 +94,8 @@ const (
 
 // Known flavors.
 const (
+	FlavorDefault     = "default"
+	FlavorMusl        = "musl"
 	FlavorMultidistro = "multidistro"
 )
 
@@ -105,10 +109,10 @@ const (
 const (
 	TokenScopeInstallerDownload = "InstallerDownload"
 	TokenScopeDataExport        = "DataExport"
-	TokenScopeMetricsIngest     = "metrics.ingest"
-	TokenScopeEntitiesRead      = "entities.read"
 	TokenScopeSettingsRead      = "settings.read"
 	TokenScopeSettingsWrite     = "settings.write"
+	TokenScopeMetricsIngest     = "metrics.ingest"
+	TokenScopeEntitiesRead      = "entities.read"
 )
 
 // NewClient creates a REST client for the given API base URL and authentication tokens.

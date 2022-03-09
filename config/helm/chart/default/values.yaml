@@ -39,6 +39,7 @@ operator:
   customPullSecret: ""
   nodeSelector: {}
   tolerations: []
+  apparmor: false
   requests:
     cpu: 50m
     memory: 64Mi
@@ -47,6 +48,8 @@ operator:
     memory: 128Mi
 
 webhook:
+  hostNetwork: false
+  apparmor: false
   requests:
     cpu: 300m
     memory: 128Mi
@@ -93,6 +96,7 @@ cloudNativeFullStack:
   priorityClassName: ""
   dnsPolicy: ""
   labels: {}
+  disableReadOnly: false
 
 applicationMonitoring:
   enabled: false
@@ -114,6 +118,7 @@ hostMonitoring:
   priorityClassName: ""
   dnsPolicy: ""
   labels: {}
+  disableReadOnly: false
 
 
 activeGate:

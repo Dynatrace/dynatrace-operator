@@ -34,8 +34,8 @@ func NewOneAgentReconciler(
 	apiReader client.Reader,
 	scheme *runtime.Scheme,
 	instance *dynatracev1beta1.DynaKube,
-	feature string) *ReconcileOneAgent {
-	return &ReconcileOneAgent{
+	feature string) *OneAgentReconciler {
+	return &OneAgentReconciler{
 		client:    client,
 		apiReader: apiReader,
 		scheme:    scheme,
@@ -44,7 +44,7 @@ func NewOneAgentReconciler(
 	}
 }
 
-type ReconcileOneAgent struct {
+type OneAgentReconciler struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client    client.Client
@@ -59,7 +59,7 @@ type ReconcileOneAgent struct {
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *status.DynakubeState) (bool, error) {
+func (r *OneAgentReconciler) Reconcile(ctx context.Context, rec *status.DynakubeState) (bool, error) {
 	log.Info("reconciling OneAgent")
 
 	upd, err := r.reconcileRollout(rec)
@@ -97,7 +97,7 @@ func (r *ReconcileOneAgent) Reconcile(ctx context.Context, rec *status.DynakubeS
 	return upd, nil
 }
 
-func (r *ReconcileOneAgent) reconcileRollout(dkState *status.DynakubeState) (bool, error) {
+func (r *OneAgentReconciler) reconcileRollout(dkState *status.DynakubeState) (bool, error) {
 	updateCR := false
 
 	// Define a new DaemonSet object
@@ -140,7 +140,7 @@ func (r *ReconcileOneAgent) reconcileRollout(dkState *status.DynakubeState) (boo
 	return updateCR, nil
 }
 
-func (r *ReconcileOneAgent) getDesiredDaemonSet(dkState *status.DynakubeState) (*appsv1.DaemonSet, error) {
+func (r *OneAgentReconciler) getDesiredDaemonSet(dkState *status.DynakubeState) (*appsv1.DaemonSet, error) {
 	kubeSysUID, err := kubesystem.GetUID(r.apiReader)
 	if err != nil {
 		return nil, err
@@ -153,7 +153,7 @@ func (r *ReconcileOneAgent) getDesiredDaemonSet(dkState *status.DynakubeState) (
 	return dsDesired, nil
 }
 
-func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1beta1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
+func (r *OneAgentReconciler) getPods(ctx context.Context, instance *dynatracev1beta1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
 		client.InNamespace((*instance).GetNamespace()),
@@ -163,7 +163,7 @@ func (r *ReconcileOneAgent) getPods(ctx context.Context, instance *dynatracev1be
 	return podList.Items, listOps, err
 }
 
-func (r *ReconcileOneAgent) newDaemonSetForCR(dkState *status.DynakubeState, clusterID string) (*appsv1.DaemonSet, error) {
+func (r *OneAgentReconciler) newDaemonSetForCR(dkState *status.DynakubeState, clusterID string) (*appsv1.DaemonSet, error) {
 	var ds *appsv1.DaemonSet
 	var err error
 
@@ -187,7 +187,7 @@ func (r *ReconcileOneAgent) newDaemonSetForCR(dkState *status.DynakubeState, clu
 	return ds, nil
 }
 
-func (r *ReconcileOneAgent) reconcileInstanceStatuses(ctx context.Context, instance *dynatracev1beta1.DynaKube) (bool, error) {
+func (r *OneAgentReconciler) reconcileInstanceStatuses(ctx context.Context, instance *dynatracev1beta1.DynaKube) (bool, error) {
 	pods, listOpts, err := r.getPods(ctx, instance, r.feature)
 	if err != nil {
 		handlePodListError(err, listOpts)
@@ -221,7 +221,7 @@ func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1beta1.OneAgen
 	return instanceStatuses, nil
 }
 
-func (r *ReconcileOneAgent) determineDynaKubePhase(instance *dynatracev1beta1.DynaKube) (bool, error) {
+func (r *OneAgentReconciler) determineDynaKubePhase(instance *dynatracev1beta1.DynaKube) (bool, error) {
 	var phaseChanged bool
 	dsActual := &appsv1.DaemonSet{}
 	instanceName := fmt.Sprintf("%s-%s", instance.Name, r.feature)

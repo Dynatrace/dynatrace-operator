@@ -43,11 +43,11 @@ func (fs *mkDirAllErrorFs) MkdirAll(_ string, _ os.FileMode) error {
 
 func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`no dynakube instance`, func(t *testing.T) {
-		r := &OneAgentProvisioner{
+		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        metadata.FakeMemoryDB(),
 		}
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{})
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
@@ -57,11 +57,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		db := metadata.FakeMemoryDB()
 		dynakube := metadata.Dynakube{TenantUUID: tenantUUID, LatestVersion: agentVersion, Name: dkName}
 		_ = db.InsertDynakube(&dynakube)
-		r := &OneAgentProvisioner{
+		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        db,
 		}
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
@@ -72,7 +72,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.Nil(t, ten)
 	})
 	t.Run(`application monitoring disabled`, func(t *testing.T) {
-		r := &OneAgentProvisioner{
+		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					Spec: dynatracev1beta1.DynaKubeSpec{
@@ -81,14 +81,14 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 			),
 		}
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{})
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{RequeueAfter: 30 * time.Minute}, result)
 	})
 	t.Run(`csi driver disabled`, func(t *testing.T) {
-		r := &OneAgentProvisioner{
+		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					Spec: dynatracev1beta1.DynaKubeSpec{
@@ -101,14 +101,14 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 			),
 		}
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{})
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{RequeueAfter: 30 * time.Minute}, result)
 	})
 	t.Run(`no tokens`, func(t *testing.T) {
-		r := &OneAgentProvisioner{
+		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
@@ -127,14 +127,14 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				},
 			),
 		}
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		assert.EqualError(t, err, `failed to query tokens: secrets "`+dkName+`" not found`)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
 	})
 	t.Run(`error when creating dynatrace client`, func(t *testing.T) {
-		r := &OneAgentProvisioner{
+		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
@@ -161,7 +161,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				return nil, fmt.Errorf(errorMsg)
 			},
 		}
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		assert.EqualError(t, err, "failed to create Dynatrace client: "+errorMsg)
 		assert.NotNil(t, result)
@@ -171,7 +171,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{}, fmt.Errorf(errorMsg))
 
-		r := &OneAgentProvisioner{
+		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
@@ -193,7 +193,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				return mockClient, nil
 			},
 		}
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
@@ -207,7 +207,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: tenantUUID,
 		}, nil)
-		r := &OneAgentProvisioner{
+		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
@@ -236,7 +236,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			fs: errorfs,
 			db: metadata.FakeMemoryDB(),
 		}
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		assert.EqualError(t, err, "failed to create directory "+filepath.Join(tenantUUID)+": "+errorMsg)
 		assert.NotNil(t, result)
@@ -256,10 +256,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("*mem.File")).Return(fmt.Errorf(errorMsg))
 		mockClient.
-			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, mock.AnythingOfType("string")).
+			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, mock.AnythingOfType("string"), mock.AnythingOfType("string")).
 			Return(make([]string, 0), fmt.Errorf(errorMsg))
 		mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("uint")).Return(&testProcessModuleConfig, nil)
-		r := &OneAgentProvisioner{
+		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
@@ -290,7 +290,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			recorder: &record.FakeRecorder{},
 		}
 
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		// "go test" breaks if the output does not end with a newline
 		// making sure one is printed here
@@ -313,7 +313,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		mockClient.On("GetLatestAgentVersion",
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return(agentVersion, nil)
-		r := &OneAgentProvisioner{
+		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
 				&dynatracev1beta1.DynaKube{
 					ObjectMeta: metav1.ObjectMeta{
@@ -343,7 +343,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			db: &metadata.FakeFailDB{},
 		}
 
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
+		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
 
 		assert.Error(t, err)
 		assert.Empty(t, result)
@@ -363,7 +363,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return(agentVersion, nil)
 		mockClient.
-			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, mock.AnythingOfType("string"),
 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
 				writer := args.Get(5).(io.Writer)
@@ -477,14 +477,14 @@ func TestProvisioner_CreateDynakube(t *testing.T) {
 	db := metadata.FakeMemoryDB()
 	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1")
 	db.InsertDynakube(expectedOtherDynakube)
-	r := &OneAgentProvisioner{
+	provisioner := &OneAgentProvisioner{
 		db: db,
 	}
 
 	oldDynakube := metadata.Dynakube{}
 	newDynakube := metadata.NewDynakube(dkName, tenantUUID, "v1")
 
-	err := r.createOrUpdateDynakube(oldDynakube, newDynakube)
+	err := provisioner.createOrUpdateDynakube(oldDynakube, newDynakube)
 	require.NoError(t, err)
 
 	dynakube, err := db.GetDynakube(dkName)
@@ -505,12 +505,12 @@ func TestProvisioner_UpdateDynakube(t *testing.T) {
 	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1")
 	db.InsertDynakube(expectedOtherDynakube)
 
-	r := &OneAgentProvisioner{
+	provisioner := &OneAgentProvisioner{
 		db: db,
 	}
 	newDynakube := metadata.NewDynakube(dkName, "new-uuid", "v2")
 
-	err := r.createOrUpdateDynakube(*oldDynakube, newDynakube)
+	err := provisioner.createOrUpdateDynakube(*oldDynakube, newDynakube)
 	require.NoError(t, err)
 
 	dynakube, err := db.GetDynakube(dkName)
