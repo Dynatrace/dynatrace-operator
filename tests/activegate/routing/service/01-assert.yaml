@@ -14,3 +14,32 @@ spec:
   apiUrl: https://xnl32808.dev.dynatracelabs.com/api
   oneAgent:
     applicationMonitoring: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    dynatrace.com/component: activegate
+    operator.dynatrace.com/feature: activegate
+    operator.dynatrace.com/instance: dynakube
+  name: dynakube-activegate
+  namespace: dynatrace
+
+spec:
+  ports:
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: https
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: http
+  selector:
+    dynatrace.com/component: activegate
+    operator.dynatrace.com/feature: activegate
+    operator.dynatrace.com/instance: dynakube
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
