@@ -34,12 +34,12 @@ var activeGateCapabilities = map[dynatracev1beta1.CapabilityDisplayName]baseFunc
 }
 
 type AgServicePorts struct {
-	HttpsAndHttp bool
-	Statsd       bool
+	Webserver bool
+	Statsd    bool
 }
 
 func (ports AgServicePorts) AtLeastOneEnabled() bool {
-	return ports.HttpsAndHttp || ports.Statsd
+	return ports.Webserver || ports.Statsd
 }
 
 type Configuration struct {
@@ -163,7 +163,7 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 		},
 	}
 	if dk == nil || !dk.ActiveGateMode() {
-		mc.ServicePorts.HttpsAndHttp = true // necessary for cleaning up service if created
+		mc.ServicePorts.Webserver = true // necessary for cleaning up service if created
 		return &mc
 	}
 	mc.enabled = true
@@ -181,8 +181,8 @@ func NewMultiCapability(dk *dynatracev1beta1.DynaKube) *MultiCapability {
 		mc.containerVolumeMounts = append(mc.containerVolumeMounts, capGen.containerVolumeMounts...)
 		mc.volumes = append(mc.volumes, capGen.volumes...)
 
-		if !mc.ServicePorts.HttpsAndHttp {
-			mc.ServicePorts.HttpsAndHttp = capGen.ServicePorts.HttpsAndHttp
+		if !mc.ServicePorts.Webserver {
+			mc.ServicePorts.Webserver = capGen.ServicePorts.Webserver
 		}
 		if !mc.ServicePorts.Statsd {
 			mc.ServicePorts.Statsd = capGen.ServicePorts.Statsd
@@ -283,7 +283,7 @@ func routingBase() *capabilityBase {
 			SetReadinessPort:     true,
 			SetCommunicationPort: true,
 			ServicePorts: AgServicePorts{
-				HttpsAndHttp: true,
+				Webserver: true,
 			},
 			CreateEecRuntimeConfig: false,
 		},
@@ -300,7 +300,7 @@ func metricsIngestBase() *capabilityBase {
 			SetReadinessPort:     true,
 			SetCommunicationPort: true,
 			ServicePorts: AgServicePorts{
-				HttpsAndHttp: true,
+				Webserver: true,
 			},
 			CreateEecRuntimeConfig: false,
 		},
@@ -317,7 +317,7 @@ func dynatraceApiBase() *capabilityBase {
 			SetReadinessPort:     true,
 			SetCommunicationPort: true,
 			ServicePorts: AgServicePorts{
-				HttpsAndHttp: true,
+				Webserver: true,
 			},
 		},
 	}

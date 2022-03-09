@@ -52,7 +52,7 @@ func TestCreateService(t *testing.T) {
 	t.Run("check service name and selector", func(t *testing.T) {
 		instance := testCreateInstance()
 		service := createService(instance, testFeature, capability.AgServicePorts{
-			HttpsAndHttp: true,
+			Webserver: true,
 		})
 
 		assert.NotNil(t, service)
@@ -71,7 +71,7 @@ func TestCreateService(t *testing.T) {
 	t.Run("check AG service if metrics ingest enabled, but not StatsD", func(t *testing.T) {
 		instance := testCreateInstance()
 		desiredPorts := capability.AgServicePorts{
-			HttpsAndHttp: true,
+			Webserver: true,
 		}
 		testSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
 		testSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
@@ -88,8 +88,8 @@ func TestCreateService(t *testing.T) {
 	t.Run("check AG service if metrics ingest and StatsD enabled", func(t *testing.T) {
 		instance := testCreateInstance()
 		desiredPorts := capability.AgServicePorts{
-			HttpsAndHttp: true,
-			Statsd:       true,
+			Webserver: true,
+			Statsd:    true,
 		}
 		testSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
 		testSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, desiredPorts.Statsd)

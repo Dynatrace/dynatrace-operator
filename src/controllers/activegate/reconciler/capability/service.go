@@ -15,7 +15,7 @@ import (
 func createService(instance *dynatracev1beta1.DynaKube, feature string, servicePorts capability.AgServicePorts) *corev1.Service {
 	var ports []corev1.ServicePort
 
-	if servicePorts.HttpsAndHttp {
+	if servicePorts.Webserver {
 		ports = append(ports,
 			corev1.ServicePort{
 				Name:       capability.HttpsServicePortName,

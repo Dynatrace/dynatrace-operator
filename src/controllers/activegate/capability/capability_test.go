@@ -46,7 +46,7 @@ func Test_capabilityBase_Configuration(t *testing.T) {
 		SetReadinessPort:     false,
 		SetCommunicationPort: true,
 		ServicePorts: AgServicePorts{
-			HttpsAndHttp: true,
+			Webserver: true,
 		},
 		ServiceAccountOwner: "accowner",
 	}
@@ -279,7 +279,7 @@ func TestNewRoutingCapability(t *testing.T) {
 						SetCommunicationPort: true,
 						ServiceAccountOwner:  "",
 						ServicePorts: AgServicePorts{
-							HttpsAndHttp: true,
+							Webserver: true,
 						},
 					},
 				},
@@ -320,7 +320,7 @@ func TestNewMultiCapability(t *testing.T) {
 					shortName: MultiActiveGateName,
 					Configuration: Configuration{
 						ServicePorts: AgServicePorts{
-							HttpsAndHttp: true,
+							Webserver: true,
 						},
 					},
 				},
@@ -351,7 +351,7 @@ func TestNewMultiCapability(t *testing.T) {
 						SetCommunicationPort: true,
 						ServiceAccountOwner:  "",
 						ServicePorts: AgServicePorts{
-							HttpsAndHttp: true,
+							Webserver: true,
 						},
 					},
 				},
@@ -382,7 +382,7 @@ func TestNewMultiCapability(t *testing.T) {
 						SetCommunicationPort: true,
 						ServiceAccountOwner:  "",
 						ServicePorts: AgServicePorts{
-							HttpsAndHttp: true,
+							Webserver: true,
 						},
 					},
 				},
@@ -413,7 +413,7 @@ func TestNewMultiCapability(t *testing.T) {
 						SetCommunicationPort: true,
 						ServiceAccountOwner:  "",
 						ServicePorts: AgServicePorts{
-							HttpsAndHttp: true,
+							Webserver: true,
 						},
 					},
 				},
@@ -540,8 +540,8 @@ func TestNewMultiCapability(t *testing.T) {
 						CreateEecRuntimeConfig: true,
 						ServiceAccountOwner:    "kubernetes-monitoring",
 						ServicePorts: AgServicePorts{
-							HttpsAndHttp: true,
-							Statsd:       true,
+							Webserver: true,
+							Statsd:    true,
 						},
 					},
 					initContainersTemplates: []v1.Container{
