@@ -91,3 +91,6 @@ config/deploy/kustomization.yaml
 /config/deploy/openshift/openshift-olm.yaml
 
 .vscode
+
+# Tokens or secrets
+secrets/
