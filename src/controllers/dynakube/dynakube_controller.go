@@ -261,7 +261,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 }
 
 func (controller *DynakubeController) removeOneAgentDaemonSet(dkState *status.DynakubeState) {
-	ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.PodNameOSAgent, Namespace: dkState.Instance.Namespace}}
+	ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.OneAgentDaemonsetName(), Namespace: dkState.Instance.Namespace}}
 	if err := controller.ensureDeleted(&ds); dkState.Error(err) {
 		return
 	}

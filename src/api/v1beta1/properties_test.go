@@ -98,6 +98,15 @@ func TestOneAgentImage(t *testing.T) {
 	})
 }
 
+func TestOneAgentDaemonsetName(t *testing.T) {
+	instance := &DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testName,
+		},
+	}
+	assert.Equal(t, "test-name-oneagent", instance.OneAgentDaemonsetName())
+}
+
 func TestTokens(t *testing.T) {
 	testName := "test-name"
 	testValue := "test-value"
