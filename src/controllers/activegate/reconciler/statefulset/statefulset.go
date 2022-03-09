@@ -346,28 +346,8 @@ func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
 
 	if stsProperties.DynaKube.FeatureEnableActivegateRawImage() {
 		envs = append(envs,
-			corev1.EnvVar{
-				Name: dtServer,
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: stsProperties.AGTenantSecret(),
-						},
-						Key: activegate.CommunicationEndpointsName,
-					},
-				},
-			},
-			corev1.EnvVar{
-				Name: dtTenant,
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: stsProperties.AGTenantSecret(),
-						},
-						Key: activegate.TenantUuidName,
-					},
-				},
-			})
+			communicationEndpointEnvVar(stsProperties),
+			tenantUuidNameEnvVar(stsProperties))
 	}
 
 	envs = append(envs, stsProperties.Env...)
@@ -380,6 +360,34 @@ func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
 	}
 
 	return envs
+}
+
+func tenantUuidNameEnvVar(stsProperties *statefulSetProperties) corev1.EnvVar {
+	return corev1.EnvVar{
+		Name: dtTenant,
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: stsProperties.AGTenantSecret(),
+				},
+				Key: activegate.TenantUuidName,
+			},
+		},
+	}
+}
+
+func communicationEndpointEnvVar(stsProperties *statefulSetProperties) corev1.EnvVar {
+	return corev1.EnvVar{
+		Name: dtServer,
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: stsProperties.AGTenantSecret(),
+				},
+				Key: activegate.CommunicationEndpointsName,
+			},
+		},
+	}
 }
 
 func determineServiceAccountName(stsProperties *statefulSetProperties) string {
