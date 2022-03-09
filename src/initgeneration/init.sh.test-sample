@@ -20,6 +20,10 @@ cluster_id="42"
 has_host="true"
 tls_cert="testing"
 
+if [[ "${K8S_NODE_NAME}" == "" ]]; then
+	K8S_NODE_NAME="EMPTY"
+fi
+
 declare -A im_nodes
 im_nodes=(
   ["node1"]="abc12345"
