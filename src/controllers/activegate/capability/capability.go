@@ -60,7 +60,7 @@ type Capability interface {
 	InitContainersTemplates() []corev1.Container
 	ContainerVolumeMounts() []corev1.VolumeMount
 	Volumes() []corev1.Volume
-	CreateService() bool
+	ShouldCreateService() bool
 }
 
 type capabilityBase struct {
@@ -94,7 +94,7 @@ func (c *capabilityBase) ArgName() string {
 	return c.argName
 }
 
-func (c *capabilityBase) CreateService() bool {
+func (c *capabilityBase) ShouldCreateService() bool {
 	return c.ServicePorts.AtLeastOneEnabled()
 }
 

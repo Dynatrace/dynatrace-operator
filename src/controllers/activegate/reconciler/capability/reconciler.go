@@ -137,7 +137,7 @@ func buildDNSEntryPoint(instance *dynatracev1beta1.DynaKube, moduleName string) 
 }
 
 func (r *Reconciler) Reconcile() (update bool, err error) {
-	if r.CreateService() {
+	if r.ShouldCreateService() {
 		multiCapability := capability.NewMultiCapability(r.Instance)
 		update, err = r.createOrUpdateService(multiCapability.ServicePorts)
 		if update || err != nil {
