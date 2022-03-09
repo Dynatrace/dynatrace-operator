@@ -47,7 +47,7 @@ func (provisioner *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Clie
 	if err != nil {
 		return nil, storedHash, err
 	}
-	if latestProcessModuleConfig != nil {
+	if latestProcessModuleConfig != nil && !latestProcessModuleConfig.IsEmpty() {
 		return latestProcessModuleConfig, storedHash, nil
 	}
 	return storedProcessModuleConfig.ProcessModuleConfig, storedHash, nil

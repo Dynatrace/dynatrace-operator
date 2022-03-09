@@ -42,10 +42,11 @@ func TestSpecialProcessModuleConfigRequestStatus(t *testing.T) {
 	dc := &dynatraceClient{}
 	require.NotNil(t, dc)
 
-	assert.True(t, dc.specialProcessModuleConfigRequestStatus(&http.Response{StatusCode: http.StatusNotModified}))
-	assert.True(t, dc.specialProcessModuleConfigRequestStatus(&http.Response{StatusCode: http.StatusNotFound}))
-	assert.False(t, dc.specialProcessModuleConfigRequestStatus(&http.Response{StatusCode: http.StatusOK}))
-	assert.False(t, dc.specialProcessModuleConfigRequestStatus(&http.Response{StatusCode: http.StatusInternalServerError}))
+	assert.True(t, dc.checkProcessModuleConfigRequestStatus(nil))
+	assert.True(t, dc.checkProcessModuleConfigRequestStatus(&http.Response{StatusCode: http.StatusNotModified}))
+	assert.True(t, dc.checkProcessModuleConfigRequestStatus(&http.Response{StatusCode: http.StatusNotFound}))
+	assert.False(t, dc.checkProcessModuleConfigRequestStatus(&http.Response{StatusCode: http.StatusOK}))
+	assert.False(t, dc.checkProcessModuleConfigRequestStatus(&http.Response{StatusCode: http.StatusInternalServerError}))
 }
 
 func TestReadResponseForProcessModuleConfig(t *testing.T) {
