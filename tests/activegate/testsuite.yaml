@@ -19,7 +19,7 @@ commands:
   - command: kubectl -n dynatrace create secret generic dynakube --from-file=apiToken=secrets/apitoken.secret --from-file=paasToken=secrets/paastoken.secret
 
 parallel: 1
-timeout: 120
+timeout: 300
 
 # Debug
 #skipClusterDelete: true
