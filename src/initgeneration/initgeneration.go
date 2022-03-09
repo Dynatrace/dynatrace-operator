@@ -197,20 +197,22 @@ func (g *InitGenerator) getInfraMonitoringNodes(dk *dynatracev1beta1.DynaKube) (
 		for _, node := range nodeInf.nodes {
 			nodeLabels := labels.Set(node.Labels)
 			if nodeSelector.Matches(nodeLabels) {
+				key := handleEmptyNodeName(node.Name)
 				if tenantUUID != "" {
-					nodeInf.imNodes[node.Name] = tenantUUID
+					nodeInf.imNodes[key] = tenantUUID
 				} else if !dk.FeatureIgnoreUnknownState() {
-					delete(nodeInf.imNodes, node.Name)
+					delete(nodeInf.imNodes, key)
 				}
 			}
 		}
 		imNodes = nodeInf.imNodes
 	} else {
 		for nodeName := range dk.Status.OneAgent.Instances {
+			key := handleEmptyNodeName(nodeName)
 			if tenantUUID != "" {
-				imNodes[nodeName] = tenantUUID
+				imNodes[key] = tenantUUID
 			} else if !dk.FeatureIgnoreUnknownState() {
-				delete(imNodes, nodeName)
+				delete(imNodes, key)
 			}
 		}
 	}
@@ -249,4 +251,11 @@ func (s *script) generate() (map[string][]byte, error) {
 	}
 
 	return data, nil
+}
+
+func handleEmptyNodeName(nodeName string) string {
+	if nodeName == "" {
+		return "EMPTY"
+	}
+	return nodeName
 }

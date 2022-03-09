@@ -20,6 +20,10 @@ cluster_id="{{.ClusterID}}"
 has_host="{{.HasHost}}"
 tls_cert="{{.TlsCert}}"
 
+if [[ "${K8S_NODE_NAME}" == "" ]]; then
+	K8S_NODE_NAME="EMPTY"
+fi
+
 declare -A im_nodes
 im_nodes=(
   {{- range $node, $tenant := .IMNodes}}
