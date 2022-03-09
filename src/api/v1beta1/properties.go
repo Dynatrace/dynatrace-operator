@@ -31,6 +31,8 @@ const (
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
 	PullSecretSuffix   = "-pull-secret"
 	TenantSecretSuffix = "-activegate-tenant-secret"
+
+	PodNameOsAgent = "oneagent"
 )
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
@@ -63,6 +65,10 @@ func (dk *DynaKube) NeedsOneAgent() bool {
 	return dk.ClassicFullStackMode() || dk.CloudNativeFullstackMode() || dk.HostMonitoringMode()
 }
 
+func (dk *DynaKube) OneAgentDaemonsetName() string {
+	return fmt.Sprintf("%s-%s", dk.Name, PodNameOsAgent)
+}
+
 func (dk *DynaKube) DeprecatedActiveGateMode() bool {
 	return dk.Spec.KubernetesMonitoring.Enabled || dk.Spec.Routing.Enabled
 }
@@ -86,10 +92,6 @@ func (dk *DynaKube) KubernetesMonitoringMode() bool {
 
 func (dk *DynaKube) NeedsStatsd() bool {
 	return dk.IsActiveGateMode(StatsdIngestCapability.DisplayName)
-}
-
-func (dk *DynaKube) NeedsMetricsIngest() bool {
-	return dk.IsActiveGateMode(MetricsIngestCapability.DisplayName)
 }
 
 func (dk *DynaKube) HasActiveGateTLS() bool {
