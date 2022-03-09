@@ -30,8 +30,8 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      annotations:
       {{- if (.Values.operator).apparmor}}
+      annotations:
         container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
       {{- end }}
       labels:

@@ -3327,6 +3327,7 @@ rules:
       - services
     verbs:
       - create
+      - update
       - delete
       - get
       - list
@@ -3559,7 +3560,6 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      annotations:
       labels:
         name: dynatrace-operator
         dynatrace: operator
@@ -3571,7 +3571,7 @@ spec:
             - operator
           # Replace this with the built image name
           image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-5
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -3703,7 +3703,7 @@ spec:
             # OLM mounts the certificates here, so we reuse it for simplicity
             - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
           image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-5
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4097,7 +4097,7 @@ spec:
         # - Needs access to a dedicated folder on the node to persist data, needs to read/write to it.
       - name: driver
         image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-5
         imagePullPolicy: Always
         args:
         - csi-driver
@@ -4163,7 +4163,7 @@ spec:
         # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
       - name: registrar
         image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-5
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock
@@ -4210,7 +4210,7 @@ spec:
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
       - name: liveness-probe
         image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-5
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock
