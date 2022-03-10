@@ -2,6 +2,11 @@ suite: test role for csi Driver
 templates:
   - Common/csi/role-csi.yaml
 tests:
+  - it: should not exist by default
+    asserts:
+      - hasDocuments:
+          count: 0
+
   - it: should be built correctly with applicationMonitoring enabled
     set:
       operator.image: image-name
