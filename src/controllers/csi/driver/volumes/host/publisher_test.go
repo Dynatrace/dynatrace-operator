@@ -27,17 +27,30 @@ const (
 )
 
 func TestPublishVolume(t *testing.T) {
-	mounter := mount.NewFakeMounter([]mount.MountPoint{})
-	publisher := newPublisherForTesting(t, mounter)
+	t.Run(`ready dynakube`, func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		publisher := newPublisherForTesting(t, mounter)
 
-	mockDynakube(t, &publisher)
+		mockDynakube(t, &publisher)
 
-	response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
+		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
 
-	assert.NoError(t, err)
-	assert.NotNil(t, response)
-	assert.NotEmpty(t, mounter.MountPoints)
-	assertReferencesForPublishedVolume(t, &publisher, mounter)
+		require.NoError(t, err)
+		assert.NotNil(t, response)
+		assert.NotEmpty(t, mounter.MountPoints)
+		assertReferencesForPublishedVolume(t, &publisher, mounter)
+	})
+	t.Run(`not ready dynakube`, func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		publisher := newPublisherForTesting(t, mounter)
+
+		mockNotReadyDynakube(t, &publisher)
+
+		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
+
+		assert.Error(t, err)
+		assert.Nil(t, response)
+	})
 }
 
 func TestUnpublishVolume(t *testing.T) {
@@ -133,7 +146,12 @@ func mockPublishedvolume(t *testing.T, publisher *HostVolumePublisher) {
 }
 
 func mockDynakube(t *testing.T, publisher *HostVolumePublisher) {
-	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, "doesnt-matter"))
+	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, "some-version"))
+	require.NoError(t, err)
+}
+
+func mockNotReadyDynakube(t *testing.T, publisher *HostVolumePublisher) {
+	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, ""))
 	require.NoError(t, err)
 }
 
