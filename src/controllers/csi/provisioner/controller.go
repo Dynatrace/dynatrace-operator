@@ -118,6 +118,13 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	dynakube.Name = dk.Name
 	dynakube.TenantUUID = dk.ConnectionInfo().TenantUUID
 
+	// Create/update the dynakube entry while `LatestVersion` is not necessarily set
+	// so the host oneagent-storages can be mounted before the standalone agent binaries are ready to be mounted
+	err = provisioner.createOrUpdateDynakube(oldDynakube, dynakube)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	if err = provisioner.createCSIDirectories(provisioner.path.EnvDir(dynakube.TenantUUID)); err != nil {
 		log.Error(err, "error when creating csi directories", "path", provisioner.path.EnvDir(dynakube.TenantUUID))
 		return reconcile.Result{}, errors.WithStack(err)
@@ -140,6 +147,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		dynakube.LatestVersion = updatedVersion
 	}
 
+	// Set/Update the `LatestVersion` field in the database entry
 	err = provisioner.createOrUpdateDynakube(oldDynakube, dynakube)
 	if err != nil {
 		return reconcile.Result{}, err
