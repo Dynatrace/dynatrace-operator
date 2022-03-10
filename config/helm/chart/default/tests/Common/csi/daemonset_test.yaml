@@ -43,3 +43,13 @@ tests:
           path: metadata.labels
       - isNotEmpty:
           path: spec.template.metadata.labels
+
+  - it: should create only a single empty securitycontext
+    set:
+      operator.image: image-name
+      applicationMonitoring.enabled: true
+      applicationMonitoring.useCSIDriver: true
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value: {}
