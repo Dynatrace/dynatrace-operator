@@ -1,7 +1,6 @@
 package daemonset
 
 import (
-	"fmt"
 	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -43,8 +42,6 @@ const (
 
 	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
 	classicHostIdSource  = "--set-host-id-source=auto"
-
-	PodNameOSAgent = "oneagent"
 
 	ClassicFeature        = "classic"
 	HostMonitoringFeature = "inframon"
@@ -116,7 +113,7 @@ func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	result.Name = fmt.Sprintf("%s-%s", dsInfo.instance.Name, PodNameOSAgent)
+	result.Name = dsInfo.instance.OneAgentDaemonsetName()
 	result.Labels[labelFeature] = dsInfo.feature
 	result.Spec.Selector.MatchLabels[labelAgentType] = labelAgentTypeValue
 	result.Spec.Template.Labels[labelFeature] = dsInfo.feature
@@ -136,7 +133,7 @@ func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	result.Name = fmt.Sprintf("%s-%s", dsInfo.instance.Name, PodNameOSAgent)
+	result.Name = dsInfo.instance.OneAgentDaemonsetName()
 	result.Labels[labelFeature] = ClassicFeature
 	result.Spec.Selector.MatchLabels[labelAgentType] = labelAgentTypeValue
 	result.Spec.Template.Labels[labelFeature] = ClassicFeature
