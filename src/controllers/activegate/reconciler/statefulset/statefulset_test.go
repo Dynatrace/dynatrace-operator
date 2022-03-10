@@ -289,7 +289,6 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 		expectedSecretName := instance.Name + "-router-" + customproperties.Suffix
 
-		require.Equal(t, 2, len(volumes))
 		require.Equal(t, 1, len(volumes))
 
 		customPropertiesVolume, err := kubeobjects.GetVolumeByName(volumes, customproperties.VolumeName)
@@ -312,7 +311,6 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 		expectedSecretName := testKey
 
-		require.Equal(t, 2, len(volumes))
 		require.Equal(t, 1, len(volumes))
 
 		customPropertiesVolume, err := kubeobjects.GetVolumeByName(volumes, customproperties.VolumeName)
