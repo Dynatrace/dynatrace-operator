@@ -12,10 +12,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func createService(instance *dynatracev1beta1.DynaKube, feature string) *corev1.Service {
+func createService(instance *dynatracev1beta1.DynaKube, feature string, servicePorts capability.AgServicePorts) *corev1.Service {
 	var ports []corev1.ServicePort
 
-	if instance.NeedsMetricsIngest() {
+	if servicePorts.Webserver {
 		ports = append(ports,
 			corev1.ServicePort{
 				Name:       capability.HttpsServicePortName,
@@ -32,7 +32,7 @@ func createService(instance *dynatracev1beta1.DynaKube, feature string) *corev1.
 		)
 	}
 
-	if instance.NeedsStatsd() {
+	if servicePorts.Statsd {
 		ports = append(ports,
 			corev1.ServicePort{
 				Name:       capability.StatsdIngestPortName,

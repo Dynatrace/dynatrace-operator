@@ -98,6 +98,15 @@ func TestOneAgentImage(t *testing.T) {
 	})
 }
 
+func TestOneAgentDaemonsetName(t *testing.T) {
+	instance := &DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: testName,
+		},
+	}
+	assert.Equal(t, "test-name-oneagent", instance.OneAgentDaemonsetName())
+}
+
 func TestTokens(t *testing.T) {
 	testName := "test-name"
 	testValue := "test-value"
@@ -130,6 +139,18 @@ func TestTenantUUID(t *testing.T) {
 
 	t.Run("happy path (alternative)", func(t *testing.T) {
 		apiUrl := "https://dynakube-activegate.dynatrace/e/tenant/api/v2/metrics/ingest"
+		expectedTenantId := "tenant"
+
+		actualTenantId, err := tenantUUID(apiUrl)
+
+		assert.NoErrorf(t, err, "Expected that getting tenant id from '%s' will be successful", apiUrl)
+		assert.Equalf(t, expectedTenantId, actualTenantId, "Expected that tenant id of %s is %s, but found %s",
+			apiUrl, expectedTenantId, actualTenantId,
+		)
+	})
+
+	t.Run("happy path (alternative, no domain)", func(t *testing.T) {
+		apiUrl := "https://dynakube-activegate/e/tenant/api/v2/metrics/ingest"
 		expectedTenantId := "tenant"
 
 		actualTenantId, err := tenantUUID(apiUrl)
