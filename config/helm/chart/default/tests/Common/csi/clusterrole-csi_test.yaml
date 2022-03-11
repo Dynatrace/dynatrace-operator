@@ -1,4 +1,4 @@
-suite: test clusterrole for csi driver
+suite: test clusterrole for the csi driver
 templates:
   - Common/csi/clusterrole-csi.yaml
 tests:
@@ -13,9 +13,8 @@ tests:
       applicationMonitoring.enabled: true
       applicationMonitoring.useCSIDriver: true
     asserts:
-      - equal:
-          path: apiVersion
-          value: rbac.authorization.k8s.io/v1
+      - isAPIVersion:
+          of: rbac.authorization.k8s.io/v1
       - isKind:
           of: ClusterRole
       - equal:
@@ -29,9 +28,8 @@ tests:
       operator.image: image-name
       cloudNativeFullStack.enabled: true
     asserts:
-      - equal:
-          path: apiVersion
-          value: rbac.authorization.k8s.io/v1
+      - isAPIVersion:
+          of: rbac.authorization.k8s.io/v1
       - isKind:
           of: ClusterRole
       - equal:
