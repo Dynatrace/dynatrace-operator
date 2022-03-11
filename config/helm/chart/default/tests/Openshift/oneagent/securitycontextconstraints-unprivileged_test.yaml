@@ -1,4 +1,4 @@
-suit: test security context constraints on openshift
+suite: test security context constraints on openshift
 templates:
   - Openshift/oneagent/securitycontextconstraints-unprivileged.yaml
 tests:

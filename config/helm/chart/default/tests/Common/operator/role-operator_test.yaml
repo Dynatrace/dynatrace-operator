@@ -1,4 +1,4 @@
-suit: test role for oneagent on kubernetes
+suite: test role for oneagent on kubernetes
 templates:
   - Common/operator/role-operator.yaml
 tests:
