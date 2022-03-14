@@ -124,6 +124,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	oldDynakube = *dynakube
 
 	if err = provisioner.createCSIDirectories(provisioner.path.EnvDir(dynakube.TenantUUID)); err != nil {
 		log.Error(err, "error when creating csi directories", "path", provisioner.path.EnvDir(dynakube.TenantUUID))
