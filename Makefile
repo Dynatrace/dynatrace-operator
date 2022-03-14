@@ -169,9 +169,13 @@ manifests: controller-gen kustomize
 	$(KUSTOMIZE) build config/crd | cat - config/deploy/openshift/openshift.yaml > temp
 	mv temp config/deploy/openshift/openshift.yaml
 
+ifeq ($(OUT), olm)
+	cat config/deploy/kubernetes/kubernetes.yaml > config/deploy/kubernetes/kubernetes-$(OUT).yaml
+	cat config/deploy/openshift/openshift.yaml > config/deploy/openshift/openshift-$(OUT).yaml
+else
 	cat config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/kubernetes-csi.yaml > config/deploy/kubernetes/kubernetes-$(OUT).yaml
 	cat config/deploy/openshift/openshift.yaml config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/openshift-$(OUT).yaml
-
+endif
 	make reset-kustomization-files
 
 reset-kustomization-files: kustomize
@@ -245,14 +249,14 @@ endif
 SERVICE_ACCOUNTS=--extra-service-accounts dynatrace-dynakube-oneagent
 SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-dynakube-oneagent-unprivileged
 SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-kubernetes-monitoring
-SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-activegate
 
 # Generate bundle manifests and metadata, then validate generated files.
-.PHONY: bundle
-bundle: export OLM=true
-bundle: export OUT=olm
-bundle: manifests kustomize
-	operator-sdk generate kustomize manifests -q
+.PHONY: bundle bundle-olm
+# to avoid calling make bundle with OUT=olm
+bundle:
+	make bundle-olm OLM=true OUT=olm
+bundle-olm: manifests kustomize
+	operator-sdk generate kustomize manifests -q --apis-dir ./src/api/
 	cd config/deploy/$(PLATFORM) && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(OLM_IMAGE)
 	$(KUSTOMIZE) build config/olm/$(PLATFORM) | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
 	make OUT=all reset-kustomization-files
@@ -295,7 +299,7 @@ bundle-build:
 	docker build -f ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile -t $(BUNDLE_IMG) ./config/olm/$(PLATFORM)/
 
 setup-pre-commit:
-	$(info WARNING Make sure that golangci-lint is installed, for more info see https://golangci-lint.run/usage/install/")
+	$(info WARNING "Make sure that golangci-lint is installed, for more info see https://golangci-lint.run/usage/install/")
 	GO111MODULE=off go get github.com/daixiang0/gci
 	GO111MODULE=off go get golang.org/x/tools/cmd/goimports
 	cp ./.github/pre-commit ./.git/hooks/pre-commit
