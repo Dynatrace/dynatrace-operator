@@ -89,4 +89,15 @@ rules:
     verbs:
       - get
       - update
+  {{- if eq (default false .Values.olm) true}}
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - host
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+  {{ end }}
 {{ end }}
