@@ -34,7 +34,7 @@ metadata:
   name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.labels" . | nindent 4 }}
+    {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
 spec:
   apiUrl: {{ required "ApiUrl needs to be set!" .Values.apiUrl }}
 

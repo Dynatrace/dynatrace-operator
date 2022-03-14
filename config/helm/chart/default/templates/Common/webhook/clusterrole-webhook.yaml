@@ -18,7 +18,7 @@ kind: ClusterRole
 metadata:
   name: dynatrace-webhook
   labels:
-    {{- include "dynatrace-operator.commonlabelswebhook" . | nindent 4 }}
+    {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
 rules:
   - apiGroups:
       - ""

@@ -19,6 +19,8 @@ metadata:
   annotations:
     kubernetes.io/description: "dynatrace-dynakube-oneagent-unprivileged allows access to all privileged and host features and the ability to run as any user, any group, any fsGroup, and with any SELinux context. This is a copy of privileged scc."
   name: dynatrace-dynakube-oneagent-unprivileged
+  labels:
+    {{- include "dynatrace-operator.oneagentLabels" . | nindent 4 }}
 allowHostDirVolumePlugin: true
 allowHostIPC: false
 allowHostNetwork: true

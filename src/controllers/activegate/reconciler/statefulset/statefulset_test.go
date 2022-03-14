@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -48,10 +49,12 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	assert.NotNil(t, sts)
 	assert.Equal(t, instance.Name+routingStatefulSetSuffix, sts.Name)
 	assert.Equal(t, instance.Namespace, sts.Namespace)
-	assert.Equal(t, map[string]string{
-		KeyDynatrace:  ValueActiveGate,
-		KeyActiveGate: instance.Name,
-		KeyFeature:    testFeature,
+	assert.Contains(t, map[string]string{
+		kubeobjects.AppComponentLabel: ActiveGateComponentName,
+		kubeobjects.AppCreatedByLabel: instance.Name,
+		kubeobjects.FeatureLabel:      testFeature,
+		kubeobjects.AppNameLabel:      version.AppName,
+		kubeobjects.AppVersionLabel:   version.Version,
 	}, sts.Labels)
 	assert.Equal(t, instance.Spec.ActiveGate.Replicas, sts.Spec.Replicas)
 	assert.Equal(t, appsv1.ParallelPodManagement, sts.Spec.PodManagementPolicy)

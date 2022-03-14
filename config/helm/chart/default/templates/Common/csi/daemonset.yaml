@@ -17,15 +17,14 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
-    {{- include "dynatrace-operator.labels" . | nindent 4 }}
+    {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
   name: dynatrace-oneagent-csi-driver
   namespace: {{ .Release.Namespace }}
 spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      internal.oneagent.dynatrace.com/app: csi-driver
-      internal.oneagent.dynatrace.com/component: csi-driver
+      {{- include "dynatrace-operator.csiLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -36,9 +35,7 @@ spec:
         container.apparmor.security.beta.kubernetes.io/liveness-probe: runtime/default
         {{- end}}
       labels:
-        {{- include "dynatrace-operator.labels" . | nindent 8 }}
-        internal.oneagent.dynatrace.com/app: csi-driver
-        internal.oneagent.dynatrace.com/component: csi-driver
+        {{- include "dynatrace-operator.csiLabels" . | nindent 8 }}
     spec:
       containers:
         # Used to receive/execute gRPC requests (NodePublishVolume/NodeUnpublishVolume) from kubelet to mount/unmount volumes for a pod

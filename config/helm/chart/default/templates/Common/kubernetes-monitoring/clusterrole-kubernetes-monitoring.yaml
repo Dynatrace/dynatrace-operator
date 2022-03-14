@@ -18,7 +18,7 @@ kind: ClusterRole
 metadata:
   name: dynatrace-kubernetes-monitoring
   labels:
-    {{- include "dynatrace-operator.labels" . | nindent 4 }}
+    {{- include "dynatrace-operator.activegateLabels" . | nindent 4 }}
 rules:
   - apiGroups:
       - ""

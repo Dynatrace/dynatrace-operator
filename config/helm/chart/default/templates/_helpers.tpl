@@ -23,25 +23,55 @@ Create chart name and version as used by the chart label.
 {{/*
 Common labels
 */}}
-{{- define "dynatrace-operator.labels" -}}
-helm.sh/chart: {{ include "dynatrace-operator.chart" . }}
-dynatrace: operator
-operator: dynakube
-{{ include "dynatrace-operator.selectorLabels" . }}
+{{- define "dynatrace-operator.commonLabels" -}}
+app.kubernetes.io/name: {{ .Release.Name }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end }}
+helm.sh/chart: {{ include "dynatrace-operator.chart" . }}
+{{- end -}}
 
 {{/*
-Selector labels
+Operator labels
 */}}
-{{- define "dynatrace-operator.selectorLabels" -}}
-app.kubernetes.io/name: {{ .Release.Name }}
-app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end }}
+{{- define "dynatrace-operator.operatorLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: operator
+{{- end -}}
 
+{{/*
+Webhook labels
+*/}}
+{{- define "dynatrace-operator.webhookLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: webhook
+{{- end -}}
+
+
+{{/*
+CSI labels
+*/}}
+{{- define "dynatrace-operator.csiLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: csi-driver
+{{- end -}}
+
+{{/*
+ActiveGate labels
+*/}}
+{{- define "dynatrace-operator.activegateLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: activegate
+{{- end -}}
+
+{{/*
+OneAgent labels
+*/}}
+{{- define "dynatrace-operator.oneagentLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: oneagent
+{{- end -}}
 
 
 {{/*
@@ -140,12 +170,3 @@ Check if platform is set
 {{- end -}}
 {{- end -}}
 
-{{/*
-Common labels webhook
-*/}}
-{{- define "dynatrace-operator.commonlabelswebhook" -}}
-{{ include "dynatrace-operator.selectorLabels" . }}
-dynatrace.com/operator: dynakube
-internal.dynatrace.com/component: webhook
-helm.sh/chart: {{ include "dynatrace-operator.chart" . }}
-{{- end -}}

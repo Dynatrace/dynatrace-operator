@@ -19,14 +19,13 @@ metadata:
   name: dynatrace-webhook
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.commonlabelswebhook" . | nindent 4 }}
+    {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
 spec:
   replicas: 1
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-      internal.dynatrace.com/component: webhook
-      internal.dynatrace.com/app: webhook
+      {{- include "dynatrace-operator.webhookLabels" . | nindent 6 }}
   strategy:
     type: RollingUpdate
   template:
@@ -37,9 +36,7 @@ spec:
         container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
         {{- end }}
       labels:
-        dynatrace.com/operator: oneagent
-        internal.dynatrace.com/component: webhook
-        internal.dynatrace.com/app: webhook
+        {{- include "dynatrace-operator.webhookLabels" . | nindent 8 }}
     spec:
       volumes:
       - emptyDir: {}
