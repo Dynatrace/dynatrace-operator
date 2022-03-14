@@ -39,7 +39,10 @@ const (
 )
 
 type DynaKubeProxy struct {
-	Value     string `json:"value,omitempty"`
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy value",order=32,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	Value string `json:"value,omitempty"`
+
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy secret",order=33,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:Secret"}
 	ValueFrom string `json:"valueFrom,omitempty"`
 }
 
@@ -94,6 +97,7 @@ type DynaKubeSpec struct {
 	SkipCertCheck bool `json:"skipCertCheck,omitempty"`
 
 	// Optional: Set custom proxy settings either directly or from a secret with the field 'proxy'
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Proxy",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	Proxy *DynaKubeProxy `json:"proxy,omitempty"`
 
 	// Optional: Adds custom RootCAs from a configmap
@@ -118,10 +122,12 @@ type DynaKubeSpec struct {
 
 	// General configuration about OneAgent instances
 	// +kubebuilder:validation:MaxProperties=1
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
 
 	// General configuration about ActiveGate instances
 	// ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ActiveGate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
 
 	//  Deprecated: Configuration for Routing
