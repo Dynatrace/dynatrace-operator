@@ -25,7 +25,6 @@ proxy: ""
 trustedCAs: ""
 networkZone: ""
 enableIstio: false
-apparmor: false
 
 # Only works for applicationMonitoring and cloudNativeFullStack
 namespaceSelector: {}
@@ -40,6 +39,7 @@ operator:
   customPullSecret: ""
   nodeSelector: {}
   tolerations: []
+  apparmor: false
   requests:
     cpu: 50m
     memory: 64Mi
@@ -49,6 +49,7 @@ operator:
 
 webhook:
   hostNetwork: false
+  apparmor: false
   requests:
     cpu: 300m
     memory: 128Mi
@@ -134,6 +135,8 @@ activeGate:
   labels: {}
   env: []
   tlsSecretName: ""
+  apparmor: false
+  readOnlyFs: false
 
 # deprecated
 kubernetesMonitoring:

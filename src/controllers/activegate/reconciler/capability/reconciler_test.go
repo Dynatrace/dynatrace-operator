@@ -37,6 +37,30 @@ var metricsCapability = capability.NewRoutingCapability(
 	},
 )
 
+type DtCapability = dynatracev1beta1.CapabilityDisplayName
+
+func testRemoveCapability(capabilities []DtCapability, removeMe DtCapability) []DtCapability {
+	for i, capability := range capabilities {
+		if capability == removeMe {
+			return append(capabilities[:i], capabilities[i+1:]...)
+		}
+	}
+	return capabilities
+}
+
+func testSetCapability(instance *dynatracev1beta1.DynaKube, capability dynatracev1beta1.ActiveGateCapability, wantEnabled bool) {
+	hasEnabled := instance.IsActiveGateMode(capability.DisplayName)
+	capabilities := &instance.Spec.ActiveGate.Capabilities
+
+	if wantEnabled && !hasEnabled {
+		*capabilities = append(*capabilities, capability.DisplayName)
+	}
+
+	if !wantEnabled && hasEnabled {
+		*capabilities = testRemoveCapability(*capabilities, capability.DisplayName)
+	}
+}
+
 func TestNewReconiler(t *testing.T) {
 	createDefaultReconciler(t)
 }
@@ -54,6 +78,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 	instance := &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
+			Name:      testName,
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://testing.dev.dynatracelabs.com/api",
@@ -63,6 +88,7 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 	require.NotNil(t, r)
 	require.NotNil(t, r.Client)
 	require.NotNil(t, r.Instance)
+	require.NotEmpty(t, r.Instance.ObjectMeta.Name)
 
 	return r
 }
@@ -85,27 +111,11 @@ func TestReconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, updateExpected, update)
 	}
-	type DtCapability = dynatracev1beta1.CapabilityDisplayName
-	removeCapability := func(capabilities []DtCapability, removeMe DtCapability) []DtCapability {
-		for i, capability := range capabilities {
-			if capability == removeMe {
-				return append(capabilities[:i], capabilities[i+1:]...)
-			}
-		}
-		return capabilities
-	}
 	setStatsdCapability := func(r *Reconciler, wantEnabled bool) {
-		statsdIngest := dynatracev1beta1.StatsdIngestCapability.DisplayName
-		hasEnabled := r.Instance.IsActiveGateMode(statsdIngest)
-		capabilities := &r.Instance.Spec.ActiveGate.Capabilities
-
-		if wantEnabled && !hasEnabled {
-			*capabilities = append(*capabilities, statsdIngest)
-		}
-
-		if !wantEnabled && hasEnabled {
-			*capabilities = removeCapability(*capabilities, statsdIngest)
-		}
+		testSetCapability(r.Instance, dynatracev1beta1.StatsdIngestCapability, wantEnabled)
+	}
+	setMetricsIngestCapability := func(r *Reconciler, wantEnabled bool) {
+		testSetCapability(r.Instance, dynatracev1beta1.MetricsIngestCapability, wantEnabled)
 	}
 
 	agIngestServicePort := corev1.ServicePort{
@@ -195,6 +205,7 @@ func TestReconcile(t *testing.T) {
 	})
 	t.Run(`update service`, func(t *testing.T) {
 		r := createDefaultReconciler(t)
+		setMetricsIngestCapability(r, true)
 		reconcileAndExpectUpdate(r, true)
 		{
 			service := assertServiceExists(r)

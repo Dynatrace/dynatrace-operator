@@ -22,6 +22,18 @@ func TestHasApiUrl(t *testing.T) {
 			},
 		})
 	})
+	t.Run(`valid API URL (no domain)`, func(t *testing.T) {
+		assertAllowedResponse(t, &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: "https://...tenantid/api",
+			},
+		})
+		assertAllowedResponse(t, &dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: "https://my-in-cluster-activegate/e/<tenant>/api",
+			},
+		})
+	})
 	t.Run(`missing API URL`, func(t *testing.T) {
 		assertDeniedResponse(t, []string{errorNoApiUrl}, &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -54,13 +66,6 @@ func TestHasApiUrl(t *testing.T) {
 		assertDeniedResponse(t, []string{errorInvalidApiUrl}, &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: "/api",
-			},
-		})
-	})
-	t.Run(`invalid API URL (missing domain)`, func(t *testing.T) {
-		assertDeniedResponse(t, []string{errorInvalidApiUrl}, &dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: "https://...tenantid/api",
 			},
 		})
 	})
