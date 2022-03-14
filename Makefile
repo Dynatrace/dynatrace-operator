@@ -248,7 +248,7 @@ SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-kubernetes-monitoring
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle bundle-olm
-# to avoid calling make bundle with OUT=olm
+# to avoid necessity of calling make bundle with OUT=olm
 bundle:
 	make bundle-olm OLM=true OUT=olm
 bundle-olm: manifests kustomize
