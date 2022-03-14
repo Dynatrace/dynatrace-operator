@@ -914,18 +914,18 @@ spec:
   description: |
     The Dynatrace Operator supports rollout and lifecycle management of various Dynatrace components in Kubernetes and OpenShift.
 
-    Currently the Dynatrace Operator supports following capabilities:
+    Currently the Dynatrace Operator supports the following capabilities:
 
     ### OneAgent
-      * `classicFullStack` rolls out a OneAgent pod per node to monitor pods on it and the node itself
+      * `classicFullStack` rolls out one OneAgent pod per node to monitor its pods and the node itself
       * `applicationMonitoring` is a webhook based injection mechanism for automatic app-only injection
-      * `hostMonitoring` is only monitoring the hosts (i.e. nodes) in the cluster without app-only injection
+      * `hostMonitoring` monitors only the hosts, i.e., the nodes, in the cluster without app-only injection
     ### ActiveGate
       * `routing` routes OneAgent traffic through the ActiveGate
-      * `kubernetes-monitoring` allows monitoring of the Kubernetes API
-      * `metrics-ingest` routes enriched metrics through ActiveGate
+      * `kubernetes-monitoring` allows monitoring the Kubernetes API
+      * `metrics-ingest` routes enriched metrics through an ActiveGate
 
-    For more information please have a look at [our DynaKube Custom Resource examples](https://dt-url.net/dynakube-samples) and
+    For more information please refer to [our DynaKube Custom Resource examples](https://dt-url.net/dynakube-samples).
 
     ### Installation
     Once you've installed the Dynatrace Operator, you can create a DynaKube custom resource.
