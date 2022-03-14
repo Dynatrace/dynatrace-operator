@@ -61,6 +61,7 @@ var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
 type ActiveGateSpec struct {
 
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Capabilities",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 
 	CapabilityProperties `json:",inline"`
