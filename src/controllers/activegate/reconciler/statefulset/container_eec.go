@@ -21,8 +21,6 @@ const extensionsRuntimeDir = "/var/lib/dynatrace/remotepluginmodule/agent/conf/r
 const activeGateInternalCommunicationPort = 9999
 
 const (
-	eecAuthToken = "auth-tokens"
-
 	dataSourceStartupArguments = "eec-ds-shared"
 	dataSourceAuthToken        = "dsauthtokendir"
 	eecLogs                    = "extensions-logs"
@@ -74,12 +72,6 @@ func (eec *ExtensionController) BuildContainer() corev1.Container {
 
 func (eec *ExtensionController) BuildVolumes() []corev1.Volume {
 	volumes := []corev1.Volume{
-		{
-			Name: eecAuthToken,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
 		{
 			Name: dataSourceStartupArguments,
 			VolumeSource: corev1.VolumeSource{
@@ -148,7 +140,7 @@ func (eec *ExtensionController) buildCommand() []string {
 
 func (eec *ExtensionController) buildVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
-		{Name: eecAuthToken, MountPath: activeGateConfigDir},
+		{Name: capability.ActiveGateGatewayConfigVolumeName, ReadOnly: true, MountPath: capability.ActiveGateGatewayConfigMountPoint},
 		{Name: dataSourceStartupArguments, MountPath: dataSourceStartupArgsMountPoint},
 		{Name: dataSourceAuthToken, MountPath: dataSourceAuthTokenMountPoint},
 		{Name: dataSourceMetadata, MountPath: statsdMetadataMountPoint, ReadOnly: true},
