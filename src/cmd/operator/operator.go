@@ -87,7 +87,7 @@ func setupMgr(ns string, cfg *rest.Config) (manager.Manager, error) {
 		LeaderElectionID:           "dynatrace-operator-lock",
 		LeaderElectionResourceLock: "configmaps",
 		LeaderElectionNamespace:    ns,
-		HealthProbeBindAddress:     ":10080",
+		HealthProbeBindAddress:     "0.0.0.0:10080",
 		LivenessEndpointName:       "livez",
 	})
 	if err != nil {
