@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
@@ -27,7 +28,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -87,20 +87,25 @@ func setupMgr(ns string, cfg *rest.Config) (manager.Manager, error) {
 		LeaderElectionID:           "dynatrace-operator-lock",
 		LeaderElectionResourceLock: "configmaps",
 		LeaderElectionNamespace:    ns,
-		HealthProbeBindAddress:     "0.0.0.0:10080",
-		LivenessEndpointName:       "livez",
+		HealthProbeBindAddress:     ":10080",
+		LivenessEndpointName:       "/livez",
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	log.Info("registering manager components")
-	if err = mgr.AddHealthzCheck("livez", healthz.Ping); err != nil {
+	if err = mgr.AddHealthzCheck("livez", grzybekHandler); err != nil {
 		log.Error(err, "could not start health endpoint for operator")
 	}
 
-	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
+	if err = mgr.AddReadyzCheck("readyz", grzybekHandler); err != nil {
 		log.Error(err, "could not start ready endpoint for operator")
 	}
 	return mgr, err
+}
+
+func grzybekHandler(r *http.Request) error {
+	log.Info("got request:", "URL", r.URL)
+	return nil
 }
