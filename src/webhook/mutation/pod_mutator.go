@@ -48,7 +48,7 @@ func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 	if err := registerInjectEndpoint(mgr, ns, podName); err != nil {
 		return err
 	}
-	registerHealthzEndpoint(mgr)
+	registerLivezEndpoint(mgr)
 	return nil
 }
 
@@ -96,8 +96,8 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 	return nil
 }
 
-func registerHealthzEndpoint(mgr manager.Manager) {
-	mgr.GetWebhookServer().Register("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func registerLivezEndpoint(mgr manager.Manager) {
+	mgr.GetWebhookServer().Register("/livez", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 }

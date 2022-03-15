@@ -100,7 +100,7 @@ func setupCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error
 		return nil, cleanUp, err
 	}
 
-	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+	if err := mgr.AddHealthzCheck("livez", healthz.Ping); err != nil {
 		log.Error(err, "unable to set up health check")
 		return nil, cleanUp, err
 	}

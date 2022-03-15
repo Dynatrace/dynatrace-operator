@@ -70,14 +70,14 @@ tests:
                     mountPath: /tmp/dynatrace-operator
                 readinessProbe:
                   httpGet:
-                    path: /healthz
+                    path: /livez
                     port: server-port
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
                 livenessProbe:
                   httpGet:
-                    path: /healthz
+                    path: /livez
                     port: server-port
                     scheme: HTTP
                   initialDelaySeconds: 15
@@ -219,14 +219,14 @@ tests:
                     mountPath: /tmp/dynatrace-operator
                 readinessProbe:
                   httpGet:
-                    path: /healthz
+                    path: /livez
                     port: server-port
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
                 livenessProbe:
                   httpGet:
-                    path: /healthz
+                    path: /livez
                     port: server-port
                     scheme: HTTP
                   initialDelaySeconds: 15

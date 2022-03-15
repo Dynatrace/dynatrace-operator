@@ -87,14 +87,15 @@ func setupMgr(ns string, cfg *rest.Config) (manager.Manager, error) {
 		LeaderElectionID:           "dynatrace-operator-lock",
 		LeaderElectionResourceLock: "configmaps",
 		LeaderElectionNamespace:    ns,
-		HealthProbeBindAddress:     "0.0.0.0:10080",
+		HealthProbeBindAddress:     ":10080",
+		LivenessEndpointName:       "livez",
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	log.Info("registering manager components")
-	if err = mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
+	if err = mgr.AddHealthzCheck("livez", healthz.Ping); err != nil {
 		log.Error(err, "could not start health endpoint for operator")
 	}
 
