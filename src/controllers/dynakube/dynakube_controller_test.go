@@ -477,7 +477,7 @@ func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID stri
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name + "-" + feature,
 			Namespace: namespace,
-			Labels: labels,
+			Labels:    labels,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: "dynatrace.com/v1beta1",
