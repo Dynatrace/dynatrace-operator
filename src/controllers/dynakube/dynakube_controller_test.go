@@ -9,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -470,15 +471,13 @@ func createFakeClientAndReconcile(mockClient dtclient.Client, instance *dynatrac
 
 // generateStatefulSetForTesting prepares an ActiveGate StatefulSet after a Reconciliation of the Dynakube with a specific feature enabled
 func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID string) *appsv1.StatefulSet {
+	labels := kubeobjects.CommonLabels(name, "activegate")
+	labels[kubeobjects.FeatureLabel] = feature
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name + "-" + feature,
 			Namespace: namespace,
-			Labels: map[string]string{
-				"dynatrace.com/component":         feature,
-				"operator.dynatrace.com/feature":  feature,
-				"operator.dynatrace.com/instance": name,
-			},
+			Labels: labels,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: "dynatrace.com/v1beta1",
@@ -489,19 +488,11 @@ func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID stri
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"dynatrace.com/component":         feature,
-					"operator.dynatrace.com/feature":  feature,
-					"operator.dynatrace.com/instance": name,
-				},
+				MatchLabels: labels,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"dynatrace.com/component":         feature,
-						"operator.dynatrace.com/feature":  feature,
-						"operator.dynatrace.com/instance": name,
-					},
+					Labels: labels,
 					Annotations: map[string]string{
 						"internal.operator.dynatrace.com/custom-properties-hash": "",
 						"internal.operator.dynatrace.com/version":                "",

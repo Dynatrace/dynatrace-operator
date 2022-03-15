@@ -49,7 +49,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	assert.NotNil(t, sts)
 	assert.Equal(t, instance.Name+routingStatefulSetSuffix, sts.Name)
 	assert.Equal(t, instance.Namespace, sts.Namespace)
-	assert.Contains(t, map[string]string{
+	assert.Equal(t, map[string]string{
 		kubeobjects.AppComponentLabel: ActiveGateComponentName,
 		kubeobjects.AppCreatedByLabel: instance.Name,
 		kubeobjects.FeatureLabel:      testFeature,
