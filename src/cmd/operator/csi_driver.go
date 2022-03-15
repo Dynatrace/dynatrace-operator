@@ -25,7 +25,6 @@ import (
 	csigc "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/gc"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	csiprovisioner "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/provisioner"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/grzybek"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
@@ -33,6 +32,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -101,7 +101,7 @@ func setupCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error
 		return nil, cleanUp, err
 	}
 
-	if err := mgr.AddHealthzCheck("livez", grzybek.NewHttpRequestHandler(log)); err != nil {
+	if err := mgr.AddHealthzCheck("livez", healthz.Ping); err != nil {
 		log.Error(err, "unable to set up health check")
 		return nil, cleanUp, err
 	}

@@ -22,12 +22,12 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/nodes"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/grzybek"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -95,11 +95,11 @@ func setupMgr(ns string, cfg *rest.Config) (manager.Manager, error) {
 	}
 
 	log.Info("registering manager components")
-	if err = mgr.AddHealthzCheck("livez", grzybek.NewHttpRequestHandler(log)); err != nil {
+	if err = mgr.AddHealthzCheck("livez", healthz.Ping); err != nil {
 		log.Error(err, "could not start health endpoint for operator")
 	}
 
-	if err = mgr.AddReadyzCheck("readyz", grzybek.NewHttpRequestHandler(log)); err != nil {
+	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		log.Error(err, "could not start ready endpoint for operator")
 	}
 	return mgr, err
