@@ -135,6 +135,8 @@ activeGate:
   labels: {}
   env: []
   tlsSecretName: ""
+  apparmor: false
+  readOnlyFs: false
 
 # deprecated
 kubernetesMonitoring:
