@@ -1586,4 +1586,7 @@ spec:
     timeoutSeconds: 2
     type: MutatingAdmissionWebhook
     webhookPath: /inject
-  skips: dynatrace-operator.v0.4.2,dynatrace-operator.v0.4.1,dynatrace-operator.v0.3.0
+  skips: 
+    - dynatrace-operator.v0.4.2
+    - dynatrace-operator.v0.4.1
+    - dynatrace-operator.v0.3.0
