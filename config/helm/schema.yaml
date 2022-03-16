@@ -15,16 +15,42 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 0.4.2
+  publishedVersion: 0.5.0
   publishedVersionMetadata:
-    releaseNote: >-
-      ## What's Changed
+    releaseNote: '<!-- Release notes generated using configuration in .github/release.yml
+      at v0.5.0 -->
+
+
+      ## What''s Changed
 
       ### Bugfixes
 
-      * Removes unnecessary scopes for API Token
-      * Remove dataingest environment variable from pod injection
+      * Adds extra check for empty node names + merge fix by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/626
 
+      * Decouple standalone and oneagent csi storage by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/629
+
+      * Fixes double insert to dynakube table by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/636
+
+      ### Documentation Updates
+
+      * Update samples, readme and CRD to not mention cloudNative and applicationMonitoring
+      as preview features by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/625
+
+      ### Other Changes
+
+      * Add v0.4.2 CSV files by @dt-team-kubernetes in https://github.com/Dynatrace/dynatrace-operator/pull/571
+
+      * Remove version from helm unittest by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/572
+
+      * Add v0.4.2 helm manifests by @dt-team-kubernetes in https://github.com/Dynatrace/dynatrace-operator/pull/575
+
+
+      ## New Contributors
+
+      * @dt-team-kubernetes made their first contribution in https://github.com/Dynatrace/dynatrace-operator/pull/571
+
+
+      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.4.2...v0.5.0'
     releaseTypes:
     - Feature
     recommended: true
