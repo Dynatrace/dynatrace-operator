@@ -471,7 +471,7 @@ func createFakeClientAndReconcile(mockClient dtclient.Client, instance *dynatrac
 
 // generateStatefulSetForTesting prepares an ActiveGate StatefulSet after a Reconciliation of the Dynakube with a specific feature enabled
 func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID string) *appsv1.StatefulSet {
-	labels := kubeobjects.CommonLabels(name, "activegate")
+	labels := kubeobjects.CommonLabels(name, kubeobjects.ActiveGateComponentLabel)
 	labels[kubeobjects.FeatureLabel] = feature
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{

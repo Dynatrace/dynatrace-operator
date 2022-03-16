@@ -8,7 +8,14 @@ const (
 	AppComponentLabel = "app.kubernetes.io/component"
 	AppVersionLabel   = "app.kubernetes.io/version"
 	FeatureLabel      = "operator.dynatrace.com/feature"
+
+	ActiveGateComponentLabel ComponentLabelValue = "activegate"
+	OperatorComponentLabel   ComponentLabelValue = "operator"
+	OneAgentComponentLabel   ComponentLabelValue = "oneagent"
+	WebhookComponentLabel    ComponentLabelValue = "webhook"
 )
+
+type ComponentLabelValue string
 
 func MergeLabels(labels ...map[string]string) map[string]string {
 	res := map[string]string{}
@@ -21,10 +28,10 @@ func MergeLabels(labels ...map[string]string) map[string]string {
 	return res
 }
 
-func CommonLabels(dynakubeName, componentName string) map[string]string {
+func CommonLabels(dynakubeName string, componentName ComponentLabelValue) map[string]string {
 	return map[string]string{
 		AppNameLabel:      version.AppName,
-		AppComponentLabel: componentName,
+		AppComponentLabel: string(componentName),
 		AppCreatedByLabel: dynakubeName,
 		AppVersionLabel:   version.Version,
 	}

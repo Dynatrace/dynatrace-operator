@@ -10,7 +10,7 @@ import (
 
 func TestBuildLabels(t *testing.T) {
 	l := BuildLabels("my-name", deploymentmetadata.DeploymentTypeFullStack)
-	assert.Equal(t, l[kubeobjects.AppComponentLabel], componentName)
+	assert.Equal(t, l[kubeobjects.AppComponentLabel], string(kubeobjects.OneAgentComponentLabel))
 	assert.Equal(t, l[kubeobjects.AppCreatedByLabel], "my-name")
 	assert.Equal(t, l[kubeobjects.FeatureLabel], deploymentmetadata.DeploymentTypeFullStack)
 }
