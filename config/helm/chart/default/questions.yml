@@ -517,3 +517,9 @@ questions:
         default: "true"
         type: boolean
         show_if: "crdApplied=yes"
+      - variable: activeGate.priorityClassName
+        label: "Assign priority class to ActiveGate pods"
+        description: "Priority class to assign to ActiveGate pods, more at https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/"
+        default: ""
+        type: string
+        show_if: "crdApplied=yes"

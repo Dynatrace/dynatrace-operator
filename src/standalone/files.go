@@ -43,19 +43,19 @@ dt.kubernetes.cluster.id=%s
 
 func (runner *Runner) getBaseConfContent(container containerInfo) string {
 	return fmt.Sprintf(baseConfContentFormatString,
-		container.name,
-		container.image,
-		runner.env.k8PodName,
-		runner.env.k8PodUID,
-		container.name,
-		runner.env.k8BasePodName,
-		runner.env.k8Namespace,
+		container.Name,
+		container.Image,
+		runner.env.K8PodName,
+		runner.env.K8PodUID,
+		container.Name,
+		runner.env.K8BasePodName,
+		runner.env.K8Namespace,
 	)
 }
 
 func (runner *Runner) getK8ConfContent() string {
 	return fmt.Sprintf(k8ConfContentFormatString,
-		runner.env.k8NodeName,
+		runner.env.K8NodeName,
 		runner.config.ClusterID,
 	)
 }
@@ -68,11 +68,11 @@ func (runner *Runner) getHostConfContent() string {
 
 func (runner *Runner) createJsonEnrichmentFile() error {
 	jsonContent := fmt.Sprintf(jsonEnrichmentContentFormatString,
-		runner.env.k8PodUID,
-		runner.env.k8PodName,
-		runner.env.k8Namespace,
-		runner.env.workloadKind,
-		runner.env.workloadName,
+		runner.env.K8PodUID,
+		runner.env.K8PodName,
+		runner.env.K8Namespace,
+		runner.env.WorkloadKind,
+		runner.env.WorkloadName,
 		runner.config.ClusterID,
 	)
 	jsonPath := filepath.Join(EnrichmentPath, fmt.Sprintf(enrichmentFilenameTemplate, "json"))
@@ -82,11 +82,11 @@ func (runner *Runner) createJsonEnrichmentFile() error {
 
 func (runner *Runner) createPropsEnrichmentFile() error {
 	propsContent := fmt.Sprintf(propsEnrichmentContentFormatString,
-		runner.env.k8PodUID,
-		runner.env.k8PodName,
-		runner.env.k8Namespace,
-		runner.env.workloadKind,
-		runner.env.workloadName,
+		runner.env.K8PodUID,
+		runner.env.K8PodName,
+		runner.env.K8Namespace,
+		runner.env.WorkloadKind,
+		runner.env.WorkloadName,
 		runner.config.ClusterID,
 	)
 	propsPath := filepath.Join(EnrichmentPath, fmt.Sprintf(enrichmentFilenameTemplate, "properties"))
@@ -104,5 +104,6 @@ func (runner *Runner) createConfFile(path string, content string) error {
 	if _, err := file.Write([]byte(content)); err != nil {
 		return err
 	}
+	log.Info("created file", "filePath", path, "content", content)
 	return nil
 }

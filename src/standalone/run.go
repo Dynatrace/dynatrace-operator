@@ -20,6 +20,7 @@ type Runner struct {
 }
 
 func NewRunner(fs afero.Fs) (*Runner, error) {
+	log.Info("creating standalone runner")
 	config, err := newSecretConfigViaFs(fs)
 	if err != nil {
 		return nil, err
@@ -38,13 +39,14 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 		installer.InstallerProperties{
 			Os:           dtclient.OsUnix,
 			Type:         dtclient.InstallerTypePaaS,
-			Flavor:       env.installerFlavor,
-			Arch:         env.installerArch,
-			Technologies: env.installerTech,
+			Flavor:       env.InstallerFlavor,
+			Arch:         env.InstallerArch,
+			Technologies: env.InstallerTech,
 			Version:      installer.VersionLatest,
-			Url:          env.installerUrl,
+			Url:          env.InstallerUrl,
 		},
 	)
+	log.Info("standalone runner created successfully")
 	return &Runner{
 		fs:        fs,
 		env:       env,
@@ -63,10 +65,11 @@ func (runner *Runner) Run() error {
 		return err
 	}
 
-	if runner.env.mode == InstallerMode && runner.env.oneAgentInjected {
+	if runner.env.Mode == InstallerMode && runner.env.OneAgentInjected {
 		if err = runner.installOneAgent(); err != nil {
 			return err
 		}
+		log.Info("OneAgent download finished")
 	}
 	err = runner.configureInstallation()
 	if err == nil {
@@ -76,7 +79,7 @@ func (runner *Runner) Run() error {
 }
 
 func (runner *Runner) consumeErrorIfNecessary(err *error) {
-	if !runner.env.canFail && err != nil {
+	if !runner.env.CanFail && err != nil {
 		log.Error(*err, "This error has been masked to not fail the container.")
 		*err = nil
 	}
@@ -86,9 +89,9 @@ func (runner *Runner) setHostTenant() error {
 	log.Info("setting host tenant")
 	runner.hostTenant = NoHostTenant
 	if runner.config.HasHost {
-		hostTenant, ok := runner.config.MonitoringNodes[runner.env.k8NodeName]
+		hostTenant, ok := runner.config.MonitoringNodes[runner.env.K8NodeName]
 		if !ok {
-			return errors.Errorf("host tenant info is missing for %s", runner.env.k8NodeName)
+			return errors.Errorf("host tenant info is missing for %s", runner.env.K8NodeName)
 		}
 		runner.hostTenant = hostTenant
 	}
@@ -104,7 +107,7 @@ func (runner *Runner) installOneAgent() error {
 func (runner *Runner) configureInstallation() error {
 	log.Info("configuring standalone OneAgent")
 
-	if runner.env.oneAgentInjected {
+	if runner.env.OneAgentInjected {
 		log.Info("setting ld.so.preload")
 		if err := runner.setLDPreload(); err != nil {
 			return err
@@ -127,7 +130,7 @@ func (runner *Runner) configureInstallation() error {
 			return err
 		}
 	}
-	if runner.env.dataIngestInjected {
+	if runner.env.DataIngestInjected {
 		log.Info("creating enrichment files")
 		if err := runner.enrichMetadata(); err != nil {
 			return err
@@ -137,17 +140,20 @@ func (runner *Runner) configureInstallation() error {
 }
 
 func (runner *Runner) setLDPreload() error {
-	return runner.createConfFile(filepath.Join(ShareDirMount, ldPreloadFilename), fmt.Sprintf("%s/agent/lib64/liboneagentproc.so", runner.env.installPath))
+	return runner.createConfFile(filepath.Join(ShareDirMount, ldPreloadFilename), fmt.Sprintf("%s/agent/lib64/liboneagentproc.so", runner.env.InstallPath))
 }
 
 func (runner *Runner) createContainerConfigurationFiles() error {
-	for _, container := range runner.env.containers {
-		confFilePath := filepath.Join(ShareDirMount, fmt.Sprintf(ContainerConfFilenameTemplate, container.name))
+	for _, container := range runner.env.Containers {
+		log.Info("creating conf file for container", "container", container)
+		confFilePath := filepath.Join(ShareDirMount, fmt.Sprintf(ContainerConfFilenameTemplate, container.Name))
 		content := runner.getBaseConfContent(container)
 		if runner.hostTenant != NoHostTenant {
 			if runner.config.TenantUUID == runner.hostTenant {
+				log.Info("adding k8s fields")
 				content += runner.getK8ConfContent()
 			}
+			log.Info("adding hostTenant field")
 			content += runner.getHostConfContent()
 		}
 		if err := runner.createConfFile(confFilePath, content); err != nil {

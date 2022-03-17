@@ -1,4 +1,4 @@
-suit: test customresource values for classicFullStack spec
+suite: test customresource values for classicFullStack spec
 templates:
   - Common/customresource-dynakube.yaml
 tests:

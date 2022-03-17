@@ -17,6 +17,8 @@ apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
   name: dynatrace-oneagent-csi-driver
+  labels:
+    {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
 allowHostDirVolumePlugin: true
 allowHostIPC: true
 allowHostNetwork: true

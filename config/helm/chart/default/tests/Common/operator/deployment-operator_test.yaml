@@ -20,11 +20,8 @@ tests:
       - equal:
           path: spec.replicas
           value: 1
-      - equal:
+      - isNotEmpty:
           path: spec.selector
-          value:
-            matchLabels:
-                name: RELEASE-NAME
       - isNotEmpty:
           path: spec.template.metadata.labels
       - equal:
@@ -70,14 +67,14 @@ tests:
                     mountPath: /tmp/dynatrace-operator
                 readinessProbe:
                   httpGet:
-                    path: /healthz
+                    path: /livez
                     port: server-port
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
                 livenessProbe:
                   httpGet:
-                    path: /healthz
+                    path: /livez
                     port: server-port
                     scheme: HTTP
                   initialDelaySeconds: 15
@@ -169,11 +166,8 @@ tests:
       - equal:
           path: spec.replicas
           value: 1
-      - equal:
+      - isNotEmpty:
           path: spec.selector
-          value:
-            matchLabels:
-                name: RELEASE-NAME
       - isNotEmpty:
           path: spec.template.metadata.labels
       - equal:
@@ -219,14 +213,14 @@ tests:
                     mountPath: /tmp/dynatrace-operator
                 readinessProbe:
                   httpGet:
-                    path: /healthz
+                    path: /livez
                     port: server-port
                     scheme: HTTP
                   initialDelaySeconds: 15
                   periodSeconds: 10
                 livenessProbe:
                   httpGet:
-                    path: /healthz
+                    path: /livez
                     port: server-port
                     scheme: HTTP
                   initialDelaySeconds: 15

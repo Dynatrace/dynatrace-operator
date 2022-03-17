@@ -18,7 +18,7 @@ kind: ClusterRole
 metadata:
   name: {{ .Release.Name }}
   labels:
-    {{- include "dynatrace-operator.labels" . | nindent 4 }}
+    {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
 rules:
   - apiGroups:
       - ""

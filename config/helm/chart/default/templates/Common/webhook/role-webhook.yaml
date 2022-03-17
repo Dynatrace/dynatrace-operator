@@ -19,7 +19,7 @@ metadata:
   name: dynatrace-webhook
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.commonlabelswebhook" . | nindent 4 }}
+    {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
 rules:
   - apiGroups:
       - ""
