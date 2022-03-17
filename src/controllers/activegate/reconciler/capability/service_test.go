@@ -51,7 +51,9 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check service name and selector", func(t *testing.T) {
 		instance := testCreateInstance()
-		service := createService(instance, testFeature)
+		service := createService(instance, testFeature, capability.AgServicePorts{
+			Webserver: true,
+		})
 
 		assert.NotNil(t, service)
 		assert.Equal(t, instance.Name+"-"+testFeature, service.Name)
@@ -68,11 +70,15 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if metrics ingest enabled, but not StatsD", func(t *testing.T) {
 		instance := testCreateInstance()
+		desiredPorts := capability.AgServicePorts{
+			Webserver: true,
+		}
 		testSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
 		testSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
-		require.True(t, instance.NeedsMetricsIngest() && !instance.NeedsStatsd())
+		require.True(t, !instance.NeedsStatsd())
+		require.True(t, desiredPorts.AtLeastOneEnabled())
 
-		service := createService(instance, testFeature)
+		service := createService(instance, testFeature, desiredPorts)
 		ports := service.Spec.Ports
 
 		assert.Contains(t, ports, agHttpsPort, agHttpPort)
@@ -81,11 +87,16 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if metrics ingest and StatsD enabled", func(t *testing.T) {
 		instance := testCreateInstance()
+		desiredPorts := capability.AgServicePorts{
+			Webserver: true,
+			Statsd:    true,
+		}
 		testSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
-		testSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, true)
-		require.True(t, instance.NeedsMetricsIngest() && instance.NeedsStatsd())
+		testSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, desiredPorts.Statsd)
+		require.True(t, instance.NeedsStatsd())
+		require.True(t, desiredPorts.AtLeastOneEnabled())
 
-		service := createService(instance, testFeature)
+		service := createService(instance, testFeature, desiredPorts)
 		ports := service.Spec.Ports
 
 		assert.Contains(t, ports, agHttpsPort, agHttpPort, statsdPort)
@@ -93,11 +104,15 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if StatsD enabled, but not metrics ingest", func(t *testing.T) {
 		instance := testCreateInstance()
+		desiredPorts := capability.AgServicePorts{
+			Statsd: true,
+		}
 		testSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
 		testSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, true)
-		require.True(t, !instance.NeedsMetricsIngest() && instance.NeedsStatsd())
+		require.True(t, instance.NeedsStatsd())
+		require.True(t, desiredPorts.AtLeastOneEnabled())
 
-		service := createService(instance, testFeature)
+		service := createService(instance, testFeature, desiredPorts)
 		ports := service.Spec.Ports
 
 		assert.NotContains(t, ports, agHttpsPort, agHttpPort)
@@ -106,11 +121,13 @@ func TestCreateService(t *testing.T) {
 
 	t.Run("check AG service if StatsD and metrics ingest are disabled", func(t *testing.T) {
 		instance := testCreateInstance()
+		desiredPorts := capability.AgServicePorts{}
 		testSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
 		testSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
-		require.True(t, !instance.NeedsMetricsIngest() && !instance.NeedsStatsd())
+		require.True(t, !instance.NeedsStatsd())
+		require.False(t, desiredPorts.AtLeastOneEnabled())
 
-		service := createService(instance, testFeature)
+		service := createService(instance, testFeature, desiredPorts)
 		ports := service.Spec.Ports
 
 		assert.NotContains(t, ports, agHttpsPort, agHttpPort, statsdPort)

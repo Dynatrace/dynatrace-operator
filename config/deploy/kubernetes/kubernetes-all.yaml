@@ -3,7 +3,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
-  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -1154,6 +1153,12 @@ spec:
                     description: 'Optional: Node selector to control the selection
                       of nodes'
                     type: object
+                  priorityClassName:
+                    description: 'Optional: If specified, indicates the pod''s priority.
+                      Name must be defined by creating a PriorityClass object with
+                      that name. If not specified the setting will be removed from
+                      the StatefulSet.'
+                    type: string
                   replicas:
                     description: Amount of replicas for your ActiveGates
                     format: int32
@@ -2960,7 +2965,7 @@ rules:
       - /metrics
       - /version
       - /readyz
-      - /healthz
+      - /livez
     verbs:
       - get
 ---
@@ -3628,14 +3633,14 @@ spec:
               mountPath: /tmp/dynatrace-operator
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /livez
               port: server-port
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /healthz
+              path: /livez
               port: server-port
               scheme: HTTP
             initialDelaySeconds: 15
@@ -3745,7 +3750,7 @@ spec:
                   fieldPath: metadata.name
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /livez
               port: server-port
               scheme: HTTPS
           ports:
@@ -4147,8 +4152,8 @@ spec:
         livenessProbe:
           failureThreshold: 3
           httpGet:
-            path: /healthz
-            port: healthz
+            path: /livez
+            port: livez
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 5
@@ -4156,7 +4161,7 @@ spec:
           timeoutSeconds: 1
         ports:
         - containerPort: 10080
-          name: healthz
+          name: livez
           protocol: TCP
         resources:
           limits:
@@ -4197,23 +4202,19 @@ spec:
         args:
         - --csi-address=/csi/csi.sock
         - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
-        - --health-port=9809
         command:
         - csi-node-driver-registrar
         livenessProbe:
+          exec:
+            command:
+              - csi-node-driver-registrar
+              - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
+              - --mode=kubelet-registration-probe
           failureThreshold: 3
-          httpGet:
-            path: /healthz
-            port: healthz
-            scheme: HTTP
-          initialDelaySeconds: 5
+          initialDelaySeconds: 30
           periodSeconds: 10
           successThreshold: 1
-          timeoutSeconds: 5
-        ports:
-        - containerPort: 9809
-          name: healthz
-          protocol: TCP
+          timeoutSeconds: 15
         resources:
             limits:
               cpu: 100m

@@ -97,7 +97,7 @@ func registerInjectEndpoint(mgr manager.Manager, ns string, podName string) erro
 }
 
 func registerHealthzEndpoint(mgr manager.Manager) {
-	mgr.GetWebhookServer().Register("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mgr.GetWebhookServer().Register("/livez", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 }

@@ -39,7 +39,10 @@ const (
 	annotationFeatureCustomEecImage                   = annotationFeaturePrefix + "custom-eec-image"
 	annotationFeatureCustomStatsdImage                = annotationFeaturePrefix + "custom-statsd-image"
 	AnnotationFeatureDisableReadOnlyOneAgent          = annotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
+	AnnotationFeatureEnableActivegateRawImage         = annotationFeaturePrefix + "enable-activegate-raw-image"
 	AnnotationFeatureEnableMultipleOsAgentsOnNode     = annotationFeaturePrefix + "multiple-osagents-on-node"
+	AnnotationFeatureAgReadOnlyFilesystem             = annotationFeaturePrefix + "activegate-readonly-fs"
+	AnnotationFeatureAgAppArmor                       = annotationFeaturePrefix + "activegate-apparmor"
 )
 
 var (
@@ -147,7 +150,25 @@ func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
 	return dk.Annotations[AnnotationFeatureDisableReadOnlyOneAgent] == "true"
 }
 
+// FeatureEnableActivegateRawImage is a feature flag to specify if the operator should
+// fetch from cluster and set in ActiveGet container: tenant UUID, token and communication endpoints
+// instead of using embedded ones in the image
+// Defaults to false
+func (dk *DynaKube) FeatureEnableActivegateRawImage() bool {
+	return dk.Annotations[AnnotationFeatureEnableActivegateRawImage] == "true"
+}
+
 // FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
 func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
 	return dk.Annotations[AnnotationFeatureEnableMultipleOsAgentsOnNode] == "true"
+}
+
+// FeatureActiveGateReadOnlyFilesystem is a feature flag to enable RO mounted filesystem in ActiveGate container
+func (dk *DynaKube) FeatureActiveGateReadOnlyFilesystem() bool {
+	return dk.Annotations[AnnotationFeatureAgReadOnlyFilesystem] == "true"
+}
+
+// FeatureActiveGateAppArmor is a feature flag to enable AppArmor in ActiveGate container
+func (dk *DynaKube) FeatureActiveGateAppArmor() bool {
+	return dk.Annotations[AnnotationFeatureAgAppArmor] == "true"
 }

@@ -61,6 +61,7 @@ var ActiveGateDisplayNames = map[CapabilityDisplayName]struct{}{
 type ActiveGateSpec struct {
 
 	// Activegate capabilities enabled (routing, kubernetes-monitoring, metrics-ingest, dynatrace-api)
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Capabilities",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Capabilities []CapabilityDisplayName `json:"capabilities,omitempty"`
 
 	CapabilityProperties `json:",inline"`
@@ -74,6 +75,11 @@ type ActiveGateSpec struct {
 	// Optional: Sets DNS Policy for the ActiveGate pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="DNS Policy",order=24,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	DNSPolicy corev1.DNSPolicy `json:"dnsPolicy,omitempty"`
+
+	// Optional: If specified, indicates the pod's priority. Name must be defined by creating a PriorityClass object with that
+	// name. If not specified the setting will be removed from the StatefulSet.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Priority Class name",order=23,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:PriorityClass"}
+	PriorityClassName string `json:"priorityClassName,omitempty"`
 }
 
 // CapabilityProperties is a struct which can be embedded by ActiveGate capabilities

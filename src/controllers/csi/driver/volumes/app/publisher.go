@@ -58,6 +58,13 @@ func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCf
 		return nil, err
 	}
 
+	if bindCfg.Version == "" {
+		return nil, status.Error(
+			codes.Unavailable,
+			fmt.Sprintf("version is not yet set, csi-provisioner hasn't finished setup yet for tenant: %s", bindCfg.TenantUUID),
+		)
+	}
+
 	if err := publisher.mountOneAgent(bindCfg, volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount oneagent volume: %s", err))
 	}

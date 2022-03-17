@@ -55,9 +55,11 @@ func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeC
 	if err != nil {
 		return nil, err
 	}
+
 	if err := publisher.mountOneAgent(bindCfg.TenantUUID, volumeCfg); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount osagent volume: %s", err.Error()))
 	}
+
 	volume, err := publisher.db.GetOsAgentVolumeViaTenantUUID(bindCfg.TenantUUID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get osagent volume info from database: %s", err.Error()))

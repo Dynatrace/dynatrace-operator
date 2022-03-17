@@ -1,4 +1,4 @@
-suit: test clusterrolebinding for the webhook
+suite: test clusterrolebinding for the webhook
 templates:
   - Common/webhook/clusterrolebinding-webhook.yaml
 tests:

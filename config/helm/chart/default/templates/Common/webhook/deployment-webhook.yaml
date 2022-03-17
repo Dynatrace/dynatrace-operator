@@ -81,7 +81,7 @@ spec:
             {{- end }}
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /livez
               port: server-port
               scheme: HTTPS
           ports:

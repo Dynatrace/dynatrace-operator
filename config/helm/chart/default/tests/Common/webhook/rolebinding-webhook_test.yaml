@@ -1,4 +1,4 @@
-suit: test rolebinding of webhook
+suite: test rolebinding of webhook
 templates:
   - Common/webhook/rolebinding-webhook.yaml
 tests:
