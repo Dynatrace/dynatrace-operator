@@ -76,7 +76,7 @@ rules:
       - /metrics
       - /version
       - /readyz
-      - /healthz
+      - /livez
     verbs:
       - get
 {{ end }}

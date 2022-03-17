@@ -2965,7 +2965,7 @@ rules:
       - /metrics
       - /version
       - /readyz
-      - /healthz
+      - /livez
     verbs:
       - get
 ---
@@ -3633,14 +3633,14 @@ spec:
               mountPath: /tmp/dynatrace-operator
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /livez
               port: server-port
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /healthz
+              path: /livez
               port: server-port
               scheme: HTTP
             initialDelaySeconds: 15
@@ -3750,7 +3750,7 @@ spec:
                   fieldPath: metadata.name
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /livez
               port: server-port
               scheme: HTTPS
           ports:
@@ -4152,8 +4152,8 @@ spec:
         livenessProbe:
           failureThreshold: 3
           httpGet:
-            path: /healthz
-            port: healthz
+            path: /livez
+            port: livez
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 5
@@ -4161,7 +4161,7 @@ spec:
           timeoutSeconds: 1
         ports:
         - containerPort: 10080
-          name: healthz
+          name: livez
           protocol: TCP
         resources:
           limits:
