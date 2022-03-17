@@ -15,7 +15,7 @@
 #      protocol: TCP
 #      targetPort: server-port
 
-suit: test service of webhook
+suite: test service of webhook
 templates:
   - Common/webhook/service.yaml
 tests:
