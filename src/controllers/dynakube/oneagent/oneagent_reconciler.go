@@ -157,7 +157,7 @@ func (r *OneAgentReconciler) getPods(ctx context.Context, instance *dynatracev1b
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
 		client.InNamespace((*instance).GetNamespace()),
-		client.MatchingLabels(buildLabels(instance.Name, feature)),
+		client.MatchingLabels(daemonset.BuildLabels(instance.Name, feature)),
 	}
 	err := r.client.List(ctx, podList, listOps...)
 	return podList.Items, listOps, err

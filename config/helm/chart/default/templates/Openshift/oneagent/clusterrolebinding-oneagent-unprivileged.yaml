@@ -17,6 +17,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: dynatrace-dynakube-oneagent-unprivileged
+  labels:
+    {{- include "dynatrace-operator.oneagentLabels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
     name: dynatrace-dynakube-oneagent-unprivileged

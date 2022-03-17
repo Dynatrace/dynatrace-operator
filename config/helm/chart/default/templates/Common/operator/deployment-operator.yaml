@@ -19,13 +19,13 @@ metadata:
   name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.labels" . | nindent 4 }}
+    {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
 spec:
   replicas: 1
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-      name: {{ .Release.Name }}
+      {{- include "dynatrace-operator.operatorLabels" . | nindent 6 }}
   strategy:
     type: RollingUpdate
   template:
@@ -35,8 +35,7 @@ spec:
         container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
       {{- end }}
       labels:
-        name: {{ .Release.Name }}
-        {{- include "dynatrace-operator.labels" . | nindent 8 }}
+        {{- include "dynatrace-operator.operatorLabels" . | nindent 8 }}
     spec:
       containers:
         - name: {{ .Release.Name }}

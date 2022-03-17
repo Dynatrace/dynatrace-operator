@@ -32,12 +32,10 @@ tests:
       - isNotEmpty:
           path: metadata.labels
       - equal:
-          path: spec
+          path: spec.ports
           value:
-            selector:
-              internal.dynatrace.com/app: webhook
-              internal.dynatrace.com/component: webhook
-            ports:
-              - port: 443
-                protocol: TCP
-                targetPort: server-port
+            - port: 443
+              protocol: TCP
+              targetPort: server-port
+      - isNotEmpty:
+          path: spec.selector

@@ -53,7 +53,8 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 	if err != nil {
 		return false, err
 	}
-	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs, data, corev1.SecretTypeOpaque, log)
+	labels := kubeobjects.CommonLabels(dkName, kubeobjects.ActiveGateComponentLabel)
+	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs, data, labels, corev1.SecretTypeOpaque, log)
 }
 
 // GenerateForDynakube creates/updates the data-ingest-endpoint secret for EVERY namespace for the given dynakube.
@@ -65,6 +66,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 	if err != nil {
 		return false, err
 	}
+	labels := kubeobjects.CommonLabels(dk.Name, kubeobjects.ActiveGateComponentLabel)
 
 	anyUpdate := false
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
@@ -72,7 +74,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		return false, err
 	}
 	for _, targetNs := range nsList {
-		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs.Name, data, corev1.SecretTypeOpaque, log); err != nil {
+		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs.Name, data, labels, corev1.SecretTypeOpaque, log); err != nil {
 			return upd, err
 		} else if upd {
 			anyUpdate = true

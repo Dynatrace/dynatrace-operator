@@ -17,6 +17,8 @@ apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
   name: dynatrace-webhook
+  labels:
+    {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
 allowPrivilegedContainer: false
 fsGroup:
   type: RunAsAny
