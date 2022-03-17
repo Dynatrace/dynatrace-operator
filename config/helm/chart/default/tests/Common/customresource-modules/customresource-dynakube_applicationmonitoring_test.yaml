@@ -1,4 +1,4 @@
-suit: test customresource values for applicationMonitoring
+suite: test customresource values for applicationMonitoring
 templates:
   - Common/customresource-dynakube.yaml
 tests:

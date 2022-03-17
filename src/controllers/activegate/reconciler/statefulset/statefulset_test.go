@@ -112,6 +112,24 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 		)
 	}
 
+	t.Run("DynaKube with PriorityClassName set", func(t *testing.T) {
+		const customPriorityClassName = "custom-priority-class"
+		instance := buildTestInstance()
+		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
+
+		instance.Spec.ActiveGate.PriorityClassName = customPriorityClassName
+		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil))
+		assert.Equal(t, customPriorityClassName, templateSpec.PriorityClassName)
+	})
+
+	t.Run("DynaKube with PriorityClassName empty", func(t *testing.T) {
+		instance := buildTestInstance()
+		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
+
+		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil))
+		assert.Equal(t, "", templateSpec.PriorityClassName)
+	})
+
 	t.Run("DynaKube without StatsD", func(t *testing.T) {
 		instance := buildTestInstance()
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties

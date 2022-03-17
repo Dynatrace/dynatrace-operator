@@ -1153,6 +1153,12 @@ spec:
                     description: 'Optional: Node selector to control the selection
                       of nodes'
                     type: object
+                  priorityClassName:
+                    description: 'Optional: If specified, indicates the pod''s priority.
+                      Name must be defined by creating a PriorityClass object with
+                      that name. If not specified the setting will be removed from
+                      the StatefulSet.'
+                    type: string
                   replicas:
                     description: Amount of replicas for your ActiveGates
                     format: int32

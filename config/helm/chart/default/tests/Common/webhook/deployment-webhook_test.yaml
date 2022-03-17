@@ -1,4 +1,4 @@
-suit: test deployment of webhook
+suite: test deployment of webhook
 templates:
   - Common/webhook/deployment-webhook.yaml
 tests:
