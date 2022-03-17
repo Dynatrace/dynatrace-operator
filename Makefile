@@ -91,7 +91,7 @@ deploy: manifests kustomize
 	make reset-kustomization-files
 
 # Deploy controller in the configured OpenShift cluster in ~/.kube/config
-deploy: export PLATFORM=openshift
+deploy-ocp: export PLATFORM=openshift
 deploy-ocp: manifests kustomize
 	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
 	cd config/deploy/openshift && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(BRANCH_IMAGE)
