@@ -181,3 +181,8 @@ spec:
     # Optional: Sets DNS Policy for the ActiveGate pods
     #
     # dnsPolicy: "Default"
+
+    # Optional: priority class to assign to the ActiveGate Pods. By default no class is set.
+    # See more here: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+    #
+    # priorityClassName: priority-class

@@ -83,6 +83,10 @@ spec:
     tlsSecretName: {{.Values.activeGate.tlsSecretName}}
     {{- end }}
 
+    {{- if .Values.activeGate.priorityClassName }}
+    priorityClassName: {{ .Values.activeGate.priorityClassName }}
+    {{- end }}
+
     {{- if .Values.activeGate.replicas }}
     replicas: {{ .Values.activeGate.replicas }}
     {{- end }}
