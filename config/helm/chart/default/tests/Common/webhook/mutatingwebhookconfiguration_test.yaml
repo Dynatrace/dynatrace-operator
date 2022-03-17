@@ -1,4 +1,4 @@
-suit: test mutating webhook configuration
+suite: test mutating webhook configuration
 templates:
   - Common/webhook/mutatingwebhookconfiguration.yaml
 tests:

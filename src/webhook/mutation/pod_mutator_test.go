@@ -1420,7 +1420,7 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 
 	// enable feature
 	instance.Annotations = map[string]string{}
-	instance.Annotations[instance.GetFeatureEnableWebhookReinvocationPolicy()] = "true"
+	instance.Annotations[dynatracev1beta1.AnnotationFeatureEnableWebhookReinvocationPolicy] = "true"
 	err = inj.client.Update(context.TODO(), instance)
 	require.NoError(t, err)
 

@@ -48,7 +48,17 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakub
 	if err != nil {
 		return false, err
 	}
-	return kubeobjects.CreateOrUpdateSecretIfNotExists(agProxySecretGenerator.client, agProxySecretGenerator.apiReader, BuildProxySecretName(), agProxySecretGenerator.namespace, data, corev1.SecretTypeOpaque, agProxySecretGenerator.logger)
+	labels := kubeobjects.CommonLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
+	return kubeobjects.CreateOrUpdateSecretIfNotExists(
+		agProxySecretGenerator.client,
+		agProxySecretGenerator.apiReader,
+		BuildProxySecretName(),
+		agProxySecretGenerator.namespace,
+		data,
+		labels,
+		corev1.SecretTypeOpaque,
+		agProxySecretGenerator.logger,
+	)
 }
 
 func (agProxySecretGenerator *ActiveGateProxySecretGenerator) EnsureDeleted(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {

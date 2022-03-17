@@ -6,6 +6,8 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -62,9 +64,11 @@ func TestCreateService(t *testing.T) {
 		serviceSpec := service.Spec
 		assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
 		assert.Equal(t, map[string]string{
-			statefulset.KeyActiveGate: testName,
-			statefulset.KeyDynatrace:  statefulset.ValueActiveGate,
-			statefulset.KeyFeature:    testFeature,
+			kubeobjects.AppCreatedByLabel: testName,
+			kubeobjects.AppComponentLabel: statefulset.ActiveGateComponentName,
+			kubeobjects.FeatureLabel:      testFeature,
+			kubeobjects.AppNameLabel:      version.AppName,
+			kubeobjects.AppVersionLabel:   version.Version,
 		}, serviceSpec.Selector)
 	})
 

@@ -15,10 +15,6 @@ import (
 )
 
 const (
-	labelFeature        = "operator.dynatrace.com/feature"
-	labelAgentType      = "operator.dynatrace.com/agenttype"
-	labelAgentTypeValue = "os"
-
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
 	annotationVersion           = dynatracev1beta1.InternalFlagPrefix + "version"
@@ -115,10 +111,6 @@ func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	}
 
 	result.Name = dsInfo.instance.OneAgentDaemonsetName()
-	result.Labels[labelFeature] = dsInfo.feature
-	result.Spec.Selector.MatchLabels[labelAgentType] = labelAgentTypeValue
-	result.Spec.Template.Labels[labelFeature] = dsInfo.feature
-	result.Spec.Template.Labels[labelAgentType] = labelAgentTypeValue
 
 	if len(result.Spec.Template.Spec.Containers) > 0 {
 		appendHostIdArgument(result, inframonHostIdSource)
@@ -135,10 +127,6 @@ func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	}
 
 	result.Name = dsInfo.instance.OneAgentDaemonsetName()
-	result.Labels[labelFeature] = ClassicFeature
-	result.Spec.Selector.MatchLabels[labelAgentType] = labelAgentTypeValue
-	result.Spec.Template.Labels[labelFeature] = ClassicFeature
-	result.Spec.Template.Labels[labelAgentType] = labelAgentTypeValue
 
 	if len(result.Spec.Template.Spec.Containers) > 0 {
 		appendHostIdArgument(result, classicHostIdSource)
@@ -239,10 +227,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 }
 
 func (dsInfo *builderInfo) buildLabels() map[string]string {
-	return map[string]string{
-		"dynatrace.com/component":         "operator",
-		"operator.dynatrace.com/instance": dsInfo.instance.Name,
-	}
+	return BuildLabels(dsInfo.instance.Name, dsInfo.deploymentType)
 }
 
 func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {

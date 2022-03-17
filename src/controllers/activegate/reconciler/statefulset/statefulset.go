@@ -145,6 +145,7 @@ func buildTemplateSpec(stsProperties *statefulSetProperties) corev1.PodSpec {
 		ImagePullSecrets: []corev1.LocalObjectReference{
 			{Name: stsProperties.PullSecret()},
 		},
+		PriorityClassName: stsProperties.DynaKube.Spec.ActiveGate.PriorityClassName,
 	}
 	if dnsPolicy := buildDNSPolicy(stsProperties); dnsPolicy != "" {
 		podSpec.DNSPolicy = dnsPolicy

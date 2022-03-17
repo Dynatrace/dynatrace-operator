@@ -19,7 +19,7 @@ metadata:
   name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "dynatrace-operator.labels" . | nindent 4 }}
+  {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
 rules:
   - apiGroups:
       - dynatrace.com
