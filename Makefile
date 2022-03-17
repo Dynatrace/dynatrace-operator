@@ -83,6 +83,7 @@ uninstall: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
+deploy: export PLATFORM=kubernetes
 deploy: manifests kustomize
 	kubectl get namespace dynatrace || kubectl create namespace dynatrace
 	cd config/deploy/kubernetes && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(BRANCH_IMAGE)
@@ -90,6 +91,7 @@ deploy: manifests kustomize
 	make reset-kustomization-files
 
 # Deploy controller in the configured OpenShift cluster in ~/.kube/config
+deploy-ocp: export PLATFORM=openshift
 deploy-ocp: manifests kustomize
 	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
 	cd config/deploy/openshift && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(BRANCH_IMAGE)
@@ -108,8 +110,8 @@ manifests: controller-gen kustomize
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/bases
 
 	# Create directories for manifests if they do not exist
+ifeq ($(PLATFORM), kubernetes)
 	mkdir -p config/deploy/kubernetes
-	mkdir -p config/deploy/openshift
 
 	# Generate kubernetes.yaml
 	helm template dynatrace-operator config/helm/chart/default \
@@ -135,6 +137,12 @@ manifests: controller-gen kustomize
 	grep -v 'app.kubernetes.io/managed-by' config/deploy/kubernetes/kubernetes-csi.yaml > config/deploy/kubernetes/tmp.yaml
 	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > config/deploy/kubernetes/kubernetes-csi.yaml
 	rm config/deploy/kubernetes/tmp.yaml
+
+	$(KUSTOMIZE) build config/crd | cat - config/deploy/kubernetes/kubernetes.yaml > temp
+	mv temp config/deploy/kubernetes/kubernetes.yaml
+endif
+ifeq ($(PLATFORM), openshift)
+	mkdir -p config/deploy/openshift
 
 	# Generate openshift.yaml
 	helm template dynatrace-operator config/helm/chart/default \
@@ -163,31 +171,40 @@ manifests: controller-gen kustomize
 	grep -v 'helm.sh' config/deploy/openshift/tmp.yaml > config/deploy/openshift/openshift-csi.yaml
 	rm config/deploy/openshift/tmp.yaml
 
-	$(KUSTOMIZE) build config/crd | cat - config/deploy/kubernetes/kubernetes.yaml > temp
-	mv temp config/deploy/kubernetes/kubernetes.yaml
-
 	$(KUSTOMIZE) build config/crd | cat - config/deploy/openshift/openshift.yaml > temp
 	mv temp config/deploy/openshift/openshift.yaml
+endif
 
 ifeq ($(OUT), olm)
+ifeq ($(PLATFORM), kubernetes)
 	cat config/deploy/kubernetes/kubernetes.yaml > config/deploy/kubernetes/kubernetes-$(OUT).yaml
+endif
+ifeq ($(PLATFORM), openshift)
 	cat config/deploy/openshift/openshift.yaml > config/deploy/openshift/openshift-$(OUT).yaml
+endif
 else
+ifeq ($(PLATFORM), kubernetes)
 	cat config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/kubernetes-csi.yaml > config/deploy/kubernetes/kubernetes-$(OUT).yaml
+endif
+ifeq ($(PLATFORM), openshift)
 	cat config/deploy/openshift/openshift.yaml config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/openshift-$(OUT).yaml
+endif
 endif
 	make reset-kustomization-files
 
 reset-kustomization-files: kustomize
+ifeq ($(PLATFORM), kubernetes)
 	rm -f config/deploy/kubernetes/kustomization.yaml
 	mkdir -p config/deploy/kubernetes
 	cd config/deploy/kubernetes && $(KUSTOMIZE) create
 	cd config/deploy/kubernetes && $(KUSTOMIZE) edit add base kubernetes-$(OUT).yaml
-
+endif
+ifeq ($(PLATFORM), openshift)
 	rm -f config/deploy/openshift/kustomization.yaml
 	mkdir -p config/deploy/openshift
 	cd config/deploy/openshift && $(KUSTOMIZE) create
 	cd config/deploy/openshift && $(KUSTOMIZE) edit add base openshift-$(OUT).yaml
+endif
 
 
 # Run go fmt against code
