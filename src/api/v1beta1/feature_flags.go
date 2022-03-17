@@ -25,25 +25,36 @@ import (
 )
 
 const (
-	DeprecatedFeatureFlagPrefix                       = "alpha."
-	FeatureFlagAnnotationPrefix                       = "operator.dynatrace.com/"
-	AnnotationFeaturePrefix                           = FeatureFlagAnnotationPrefix + "feature-"
+	DeprecatedFeatureFlagPrefix = "alpha."
+
+	FeatureFlagAnnotationBase = "operator.dynatrace.com/"
+	AnnotationFeaturePrefix   = FeatureFlagAnnotationBase + "feature-"
+
+	// activeGate
 	AnnotationFeatureDisableActiveGateUpdates         = AnnotationFeaturePrefix + "disable-activegate-updates"
-	AnnotationFeatureDisableHostsRequests             = AnnotationFeaturePrefix + "disable-hosts-requests"
-	AnnotationFeatureOneAgentMaxUnavailable           = AnnotationFeaturePrefix + "oneagent-max-unavailable"
-	AnnotationFeatureEnableWebhookReinvocationPolicy  = AnnotationFeaturePrefix + "enable-webhook-reinvocation-policy"
-	AnnotationFeatureIgnoreUnknownState               = AnnotationFeaturePrefix + "ignore-unknown-state"
-	AnnotationFeatureIgnoredNamespaces                = AnnotationFeaturePrefix + "ignored-namespaces"
-	AnnotationFeatureAutomaticKubernetesApiMonitoring = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
-	AnnotationFeatureDisableMetadataEnrichment        = AnnotationFeaturePrefix + "disable-metadata-enrichment"
-	AnnotationFeatureUseActiveGateImageForStatsd      = AnnotationFeaturePrefix + "use-activegate-image-for-statsd"
-	AnnotationFeatureCustomEecImage                   = AnnotationFeaturePrefix + "custom-eec-image"
-	AnnotationFeatureCustomStatsdImage                = AnnotationFeaturePrefix + "custom-statsd-image"
-	AnnotationFeatureDisableReadOnlyOneAgent          = AnnotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
 	AnnotationFeatureEnableActivegateRawImage         = AnnotationFeaturePrefix + "enable-activegate-raw-image"
-	AnnotationFeatureEnableMultipleOsAgentsOnNode     = AnnotationFeaturePrefix + "multiple-osagents-on-node"
-	AnnotationFeatureAgReadOnlyFilesystem             = AnnotationFeaturePrefix + "activegate-readonly-fs"
-	AnnotationFeatureAgAppArmor
+	AnnotationFeatureActiveGateAppArmor               = AnnotationFeaturePrefix + "activegate-apparmor"
+	AnnotationFeatureActiveGateReadOnlyFilesystem     = AnnotationFeaturePrefix + "activegate-readonly-fs"
+	AnnotationFeatureAutomaticKubernetesApiMonitoring = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
+
+	// statsD
+	AnnotationFeatureUseActiveGateImageForStatsd = AnnotationFeaturePrefix + "use-activegate-image-for-statsd"
+	AnnotationFeatureCustomEecImage              = AnnotationFeaturePrefix + "custom-eec-image"
+	AnnotationFeatureCustomStatsdImage           = AnnotationFeaturePrefix + "custom-statsd-image"
+
+	// dtClient
+	AnnotationFeatureDisableHostsRequests = AnnotationFeaturePrefix + "disable-hosts-requests"
+
+	// oneAgent
+	AnnotationFeatureOneAgentMaxUnavailable       = AnnotationFeaturePrefix + "oneagent-max-unavailable"
+	AnnotationFeatureDisableReadOnlyOneAgent      = AnnotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
+	AnnotationFeatureEnableMultipleOsAgentsOnNode = AnnotationFeaturePrefix + "multiple-osagents-on-node"
+
+	// injection (webhook)
+	AnnotationFeatureEnableWebhookReinvocationPolicy = AnnotationFeaturePrefix + "enable-webhook-reinvocation-policy"
+	AnnotationFeatureIgnoreUnknownState              = AnnotationFeaturePrefix + "ignore-unknown-state"
+	AnnotationFeatureIgnoredNamespaces               = AnnotationFeaturePrefix + "ignored-namespaces"
+	AnnotationFeatureDisableMetadataEnrichment       = AnnotationFeaturePrefix + "disable-metadata-enrichment"
 )
 
 var (
@@ -146,6 +157,29 @@ func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureDisableReadOnlyOneAgent) == "true"
 }
 
+// FeatureEnableActivegateRawImage is a feature flag to specify if the operator should
+// fetch from cluster and set in ActiveGet container: tenant UUID, token and communication endpoints
+// instead of using embedded ones in the image
+// Defaults to false
+func (dk *DynaKube) FeatureEnableActivegateRawImage() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureEnableActivegateRawImage) == "true"
+}
+
+// FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
+func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureEnableMultipleOsAgentsOnNode) == "true"
+}
+
+// FeatureActiveGateReadOnlyFilesystem is a feature flag to enable RO mounted filesystem in ActiveGate container
+func (dk *DynaKube) FeatureActiveGateReadOnlyFilesystem() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateReadOnlyFilesystem) == "true"
+}
+
+// FeatureActiveGateAppArmor is a feature flag to enable AppArmor in ActiveGate container
+func (dk *DynaKube) FeatureActiveGateAppArmor() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAppArmor) == "true"
+}
+
 func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
 	if raw, ok := dk.Annotations[annotation]; ok {
 		return raw
@@ -154,27 +188,4 @@ func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
 		return raw
 	}
 	return ""
-}
-
-// FeatureEnableActivegateRawImage is a feature flag to specify if the operator should
-// fetch from cluster and set in ActiveGet container: tenant UUID, token and communication endpoints
-// instead of using embedded ones in the image
-// Defaults to false
-func (dk *DynaKube) FeatureEnableActivegateRawImage() bool {
-	return dk.Annotations[AnnotationFeatureEnableActivegateRawImage] == "true"
-}
-
-// FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
-func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
-	return dk.Annotations[AnnotationFeatureEnableMultipleOsAgentsOnNode] == "true"
-}
-
-// FeatureActiveGateReadOnlyFilesystem is a feature flag to enable RO mounted filesystem in ActiveGate container
-func (dk *DynaKube) FeatureActiveGateReadOnlyFilesystem() bool {
-	return dk.Annotations[AnnotationFeatureAgReadOnlyFilesystem] == "true"
-}
-
-// FeatureActiveGateAppArmor is a feature flag to enable AppArmor in ActiveGate container
-func (dk *DynaKube) FeatureActiveGateAppArmor() bool {
-	return dk.Annotations[AnnotationFeatureAgAppArmor] == "true"
 }

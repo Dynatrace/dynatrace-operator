@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const extensionsRuntimeProperties = dynatracev1beta1.FeatureFlagAnnotationPrefix + "extensions."
+const extensionsRuntimeProperties = dynatracev1beta1.FeatureFlagAnnotationBase + "extensions."
 
 type EecRuntimeConfig struct {
 	Revision   int               `json:"revision"`
