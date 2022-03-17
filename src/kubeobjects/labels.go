@@ -7,7 +7,7 @@ const (
 	AppCreatedByLabel = "app.kubernetes.io/created-by"
 	AppComponentLabel = "app.kubernetes.io/component"
 	AppVersionLabel   = "app.kubernetes.io/version"
-	FeatureLabel      = "operator.dynatrace.com/feature"
+	FeatureLabel      = "component.dynatrace.com/feature"
 
 	ActiveGateComponentLabel ComponentLabelValue = "activegate"
 	OperatorComponentLabel   ComponentLabelValue = "operator"
