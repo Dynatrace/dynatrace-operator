@@ -19,7 +19,7 @@ metadata:
   name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.labels" . | nindent 4 }}
+    {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
 data:
   certs: |
 {{ .Values.trustedCAs | indent 4 }}

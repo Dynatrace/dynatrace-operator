@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -49,9 +50,11 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	assert.Equal(t, instance.Name+routingStatefulSetSuffix, sts.Name)
 	assert.Equal(t, instance.Namespace, sts.Namespace)
 	assert.Equal(t, map[string]string{
-		KeyDynatrace:  ValueActiveGate,
-		KeyActiveGate: instance.Name,
-		KeyFeature:    testFeature,
+		kubeobjects.AppComponentLabel: ActiveGateComponentName,
+		kubeobjects.AppCreatedByLabel: instance.Name,
+		kubeobjects.FeatureLabel:      testFeature,
+		kubeobjects.AppNameLabel:      version.AppName,
+		kubeobjects.AppVersionLabel:   version.Version,
 	}, sts.Labels)
 	assert.Equal(t, instance.Spec.ActiveGate.Replicas, sts.Spec.Replicas)
 	assert.Equal(t, appsv1.ParallelPodManagement, sts.Spec.PodManagementPolicy)
@@ -111,6 +114,24 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 			"Expected that volume mount %s has a predefined pod volume", dataSourceStatsdLogs,
 		)
 	}
+
+	t.Run("DynaKube with PriorityClassName set", func(t *testing.T) {
+		const customPriorityClassName = "custom-priority-class"
+		instance := buildTestInstance()
+		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
+
+		instance.Spec.ActiveGate.PriorityClassName = customPriorityClassName
+		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil))
+		assert.Equal(t, customPriorityClassName, templateSpec.PriorityClassName)
+	})
+
+	t.Run("DynaKube with PriorityClassName empty", func(t *testing.T) {
+		instance := buildTestInstance()
+		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
+
+		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil))
+		assert.Equal(t, "", templateSpec.PriorityClassName)
+	})
 
 	t.Run("DynaKube without StatsD", func(t *testing.T) {
 		instance := buildTestInstance()

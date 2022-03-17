@@ -8,6 +8,10 @@ import (
 )
 
 var (
+
+	// AppName contains the name of the application
+	AppName = "dynatrace-operator"
+
 	// Version contains the version of the Operator. Assigned externally.
 	Version = "snapshot"
 
@@ -22,7 +26,7 @@ var (
 
 // LogVersion logs metadata about the Operator.
 func LogVersion() {
-	log.Info("dynatrace-operator",
+	log.Info(AppName,
 		"version", Version,
 		"gitCommit", Commit,
 		"buildDate", BuildDate,

@@ -18,7 +18,7 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: dynatrace-webhook
   labels:
-  {{- include "dynatrace-operator.commonlabelswebhook" . | nindent 4 }}
+  {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
 webhooks:
   - name: webhook.pod.dynatrace.com
     reinvocationPolicy: IfNeeded
