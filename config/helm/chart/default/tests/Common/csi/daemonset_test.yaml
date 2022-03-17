@@ -78,8 +78,8 @@ tests:
                 livenessProbe:
                   failureThreshold: 3
                   httpGet:
-                    path: /healthz
-                    port: healthz
+                    path: /livez
+                    port: livez
                     scheme: HTTP
                   initialDelaySeconds: 5
                   periodSeconds: 5
@@ -87,7 +87,7 @@ tests:
                   timeoutSeconds: 1
                 ports:
                   - containerPort: 10080
-                    name: healthz
+                    name: livez
                     protocol: TCP
                 resources:
                   limits:
