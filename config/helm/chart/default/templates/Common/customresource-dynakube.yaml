@@ -31,7 +31,7 @@ metadata:
     {{- if (.Values.activeGate).readOnlyFs }}
     alpha.operator.dynatrace.com/feature-activegate-readonly-fs: "true"
     {{- end }}
-    {{- if (and (.Values.activeGate).autoApiMonitoring (has "kubernetes-monitoring" .Values.activeGate.capabilities)) }}
+    {{- if and (.Values.activeGate.autoApiMonitoring) (has "kubernetes-monitoring" .Values.activeGate.capabilities) }}
     alpha.operator.dynatrace.com/feature-automatic-kubernetes-api-monitoring: "true"
     alpha.operator.dynatrace.com/disable-metadata-enrichment: "false"
     {{- end }}
