@@ -111,7 +111,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					"alpha.operator.dynatrace.com/feature-automatic-kubernetes-api-monitoring": "true",
+					"operator.dynatrace.com/feature-automatic-kubernetes-api-monitoring": "true",
 				},
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{

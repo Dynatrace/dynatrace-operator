@@ -215,7 +215,7 @@ func TestStatefulSet_Container(t *testing.T) {
 	test := func(ro bool, statsd bool) {
 		instance := buildTestInstance()
 		if ro {
-			instance.Annotations[dynatracev1beta1.AnnotationFeatureAgReadOnlyFilesystem] = "true"
+			instance.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem] = "true"
 		}
 		if statsd {
 			instance.Spec.ActiveGate.Capabilities = append(instance.Spec.ActiveGate.Capabilities, dynatracev1beta1.StatsdIngestCapability.DisplayName)
@@ -254,7 +254,7 @@ func TestStatefulSet_Container(t *testing.T) {
 
 	t.Run("DynaKube with AppArmor enabled", func(t *testing.T) {
 		instance := buildTestInstance()
-		instance.Annotations[dynatracev1beta1.AnnotationFeatureAgAppArmor] = "true"
+		instance.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAppArmor] = "true"
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
 			"", "", "", "", "", nil, nil, nil)
