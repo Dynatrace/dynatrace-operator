@@ -7,7 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -164,9 +164,9 @@ func (eec *ExtensionController) buildEnvs() []corev1.EnvVar {
 
 func (eec *ExtensionController) buildSecurityContext() *corev1.SecurityContext {
 	return &corev1.SecurityContext{
-		Privileged:               address_of.Scalar(false),
-		AllowPrivilegeEscalation: address_of.Scalar(false),
-		ReadOnlyRootFilesystem:   address_of.Scalar(false),
+		Privileged:               address.Of(false),
+		AllowPrivilegeEscalation: address.Of(false),
+		ReadOnlyRootFilesystem:   address.Of(false),
 
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{

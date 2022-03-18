@@ -1,9 +1,9 @@
-package address_of
+package address
 
 type scalarType interface {
 	bool | int | int64
 }
 
-func Scalar[T scalarType](i T) *T {
+func Of[T scalarType](i T) *T {
 	return &i
 }

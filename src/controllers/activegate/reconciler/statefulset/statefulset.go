@@ -2,6 +2,7 @@ package statefulset
 
 import (
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 
 	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -11,7 +12,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -211,10 +211,10 @@ func buildActiveGateContainer(stsProperties *statefulSetProperties) corev1.Conta
 			FailureThreshold:    3,
 		},
 		SecurityContext: &corev1.SecurityContext{
-			Privileged:               address_of.Scalar(false),
-			AllowPrivilegeEscalation: address_of.Scalar(false),
+			Privileged:               address.Of(false),
+			AllowPrivilegeEscalation: address.Of(false),
 			ReadOnlyRootFilesystem:   &readOnlyFs,
-			RunAsNonRoot:             address_of.Scalar(true),
+			RunAsNonRoot:             address.Of(true),
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{
 					"all",
