@@ -164,9 +164,9 @@ func (eec *ExtensionController) buildEnvs() []corev1.EnvVar {
 
 func (eec *ExtensionController) buildSecurityContext() *corev1.SecurityContext {
 	return &corev1.SecurityContext{
-		Privileged:               address_of.Bool(false),
-		AllowPrivilegeEscalation: address_of.Bool(false),
-		ReadOnlyRootFilesystem:   address_of.Bool(false),
+		Privileged:               address_of.Scalar(false),
+		AllowPrivilegeEscalation: address_of.Scalar(false),
+		ReadOnlyRootFilesystem:   address_of.Scalar(false),
 
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{

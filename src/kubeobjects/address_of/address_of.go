@@ -1,9 +1,9 @@
 package address_of
 
-func Int64(i int64) *int64 {
-	return &i
+type scalarType interface {
+	bool | int | int64
 }
 
-func Bool(i bool) *bool {
+func Scalar[T scalarType](i T) *T {
 	return &i
 }

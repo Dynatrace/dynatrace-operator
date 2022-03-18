@@ -212,7 +212,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		DNSPolicy:                     dnsPolicy,
 		Volumes:                       volumes,
 		Affinity:                      affinity,
-		TerminationGracePeriodSeconds: address_of.Int64(defaultTerminationGracePeriod),
+		TerminationGracePeriodSeconds: address_of.Scalar[int64](defaultTerminationGracePeriod),
 	}
 }
 

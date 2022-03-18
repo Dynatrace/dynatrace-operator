@@ -138,13 +138,13 @@ func (statsd *Statsd) buildEnvs() []corev1.EnvVar {
 
 func (statsd *Statsd) buildSecurityContext() *corev1.SecurityContext {
 	return &corev1.SecurityContext{
-		Privileged:               address_of.Bool(false),
-		AllowPrivilegeEscalation: address_of.Bool(false),
-		ReadOnlyRootFilesystem:   address_of.Bool(true),
+		Privileged:               address_of.Scalar(false),
+		AllowPrivilegeEscalation: address_of.Scalar(false),
+		ReadOnlyRootFilesystem:   address_of.Scalar(true),
 
-		RunAsNonRoot: address_of.Bool(true),
-		RunAsUser:    address_of.Int64(kubeobjects.UnprivilegedUser),
-		RunAsGroup:   address_of.Int64(kubeobjects.UnprivilegedGroup),
+		RunAsNonRoot: address_of.Scalar(true),
+		RunAsUser:    address_of.Scalar(kubeobjects.UnprivilegedUser),
+		RunAsGroup:   address_of.Scalar(kubeobjects.UnprivilegedGroup),
 
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{

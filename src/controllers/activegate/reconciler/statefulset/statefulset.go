@@ -211,10 +211,10 @@ func buildActiveGateContainer(stsProperties *statefulSetProperties) corev1.Conta
 			FailureThreshold:    3,
 		},
 		SecurityContext: &corev1.SecurityContext{
-			Privileged:               address_of.Bool(false),
-			AllowPrivilegeEscalation: address_of.Bool(false),
+			Privileged:               address_of.Scalar(false),
+			AllowPrivilegeEscalation: address_of.Scalar(false),
 			ReadOnlyRootFilesystem:   &readOnlyFs,
-			RunAsNonRoot:             address_of.Bool(true),
+			RunAsNonRoot:             address_of.Scalar(true),
 			Capabilities: &corev1.Capabilities{
 				Drop: []corev1.Capability{
 					"all",
