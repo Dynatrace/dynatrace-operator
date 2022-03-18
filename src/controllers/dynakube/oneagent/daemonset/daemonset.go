@@ -1,7 +1,6 @@
 package daemonset
 
 import (
-	"fmt"
 	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -16,10 +15,6 @@ import (
 )
 
 const (
-	labelFeature        = "operator.dynatrace.com/feature"
-	labelAgentType      = "operator.dynatrace.com/agenttype"
-	labelAgentTypeValue = "os"
-
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
 	annotationVersion           = dynatracev1beta1.InternalFlagPrefix + "version"
@@ -44,8 +39,6 @@ const (
 
 	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
 	classicHostIdSource  = "--set-host-id-source=auto"
-
-	PodNameOSAgent = "oneagent"
 
 	ClassicFeature        = "classic"
 	HostMonitoringFeature = "inframon"
@@ -117,11 +110,7 @@ func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	result.Name = fmt.Sprintf("%s-%s", dsInfo.instance.Name, PodNameOSAgent)
-	result.Labels[labelFeature] = dsInfo.feature
-	result.Spec.Selector.MatchLabels[labelAgentType] = labelAgentTypeValue
-	result.Spec.Template.Labels[labelFeature] = dsInfo.feature
-	result.Spec.Template.Labels[labelAgentType] = labelAgentTypeValue
+	result.Name = dsInfo.instance.OneAgentDaemonsetName()
 
 	if len(result.Spec.Template.Spec.Containers) > 0 {
 		appendHostIdArgument(result, inframonHostIdSource)
@@ -137,11 +126,7 @@ func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	result.Name = fmt.Sprintf("%s-%s", dsInfo.instance.Name, PodNameOSAgent)
-	result.Labels[labelFeature] = ClassicFeature
-	result.Spec.Selector.MatchLabels[labelAgentType] = labelAgentTypeValue
-	result.Spec.Template.Labels[labelFeature] = ClassicFeature
-	result.Spec.Template.Labels[labelAgentType] = labelAgentTypeValue
+	result.Name = dsInfo.instance.OneAgentDaemonsetName()
 
 	if len(result.Spec.Template.Spec.Containers) > 0 {
 		appendHostIdArgument(result, classicHostIdSource)
@@ -242,10 +227,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 }
 
 func (dsInfo *builderInfo) buildLabels() map[string]string {
-	return map[string]string{
-		"dynatrace.com/component":         "operator",
-		"operator.dynatrace.com/instance": dsInfo.instance.Name,
-	}
+	return BuildLabels(dsInfo.instance.Name, dsInfo.deploymentType)
 }
 
 func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {

@@ -61,6 +61,10 @@ func (pmc ProcessModuleConfig) ToMap() processmoduleconfig.ConfMap {
 	return sections
 }
 
+func (pmc ProcessModuleConfig) IsEmpty() bool {
+	return len(pmc.Properties) == 0
+}
+
 func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessModuleConfig, error) {
 	req, err := dtc.createProcessModuleConfigRequest(prevRevision)
 	if err != nil {
@@ -69,8 +73,8 @@ func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessM
 
 	resp, err := dtc.httpClient.Do(req)
 
-	if dtc.specialProcessModuleConfigRequestStatus(resp) {
-		return nil, nil
+	if dtc.checkProcessModuleConfigRequestStatus(resp) {
+		return &ProcessModuleConfig{}, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("error making get request to dynatrace api: %w", err)
@@ -102,9 +106,13 @@ func (dtc *dynatraceClient) createProcessModuleConfigRequest(prevRevision uint) 
 	return req, nil
 }
 
-func (dtc *dynatraceClient) specialProcessModuleConfigRequestStatus(resp *http.Response) bool {
+// The endpoint used here is new therefore some tenants may not have it so we need to
+// handle it gracefully, by checking the status code of the request.
+// we also handle when there were no changes
+func (dtc *dynatraceClient) checkProcessModuleConfigRequestStatus(resp *http.Response) bool {
 	if resp == nil {
-		return false
+		log.Info("problems checking response for processmoduleconfig endpoint")
+		return true
 	}
 
 	if resp.StatusCode == http.StatusNotModified {

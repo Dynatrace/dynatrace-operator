@@ -11,7 +11,7 @@ type Dynakube struct {
 
 // NewDynakube returns a new metadata.Dynakube if all fields are set.
 func NewDynakube(dynakubeName, tenantUUID, latestVersion string) *Dynakube {
-	if tenantUUID == "" || latestVersion == "" || dynakubeName == "" {
+	if tenantUUID == "" || dynakubeName == "" {
 		return nil
 	}
 	return &Dynakube{dynakubeName, tenantUUID, latestVersion}

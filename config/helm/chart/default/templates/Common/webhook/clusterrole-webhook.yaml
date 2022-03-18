@@ -18,7 +18,7 @@ kind: ClusterRole
 metadata:
   name: dynatrace-webhook
   labels:
-    {{- include "dynatrace-operator.commonlabelswebhook" . | nindent 4 }}
+    {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
 rules:
   - apiGroups:
       - ""
@@ -83,4 +83,15 @@ rules:
       - deploymentconfigs
     verbs:
       - get
+  {{- if eq (default false .Values.olm) true}}
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - host
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+  {{ end }}
 {{ end }}

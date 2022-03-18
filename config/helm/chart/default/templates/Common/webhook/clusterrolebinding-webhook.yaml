@@ -18,7 +18,7 @@ kind: ClusterRoleBinding
 metadata:
   name: dynatrace-webhook
   labels:
-    {{- include "dynatrace-operator.commonlabelswebhook" . | nindent 4 }}
+    {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
     name: dynatrace-webhook

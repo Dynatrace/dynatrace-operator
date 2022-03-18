@@ -19,11 +19,10 @@ metadata:
   name: dynatrace-webhook
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "dynatrace-operator.commonlabelswebhook" . | nindent 4 }}
+  {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
 spec:
   selector:
-    internal.dynatrace.com/app: webhook
-    internal.dynatrace.com/component: webhook
+  {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
   ports:
     - port: 443
       protocol: TCP

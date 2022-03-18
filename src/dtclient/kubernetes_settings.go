@@ -2,11 +2,8 @@ package dtclient
 
 import (
 	"bytes"
-	"encoding/binary"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"hash/fnv"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -94,15 +91,7 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(name, kubeSystemUUID
 		},
 	}
 
-	if scope == "" {
-		var meID, err = generateKubernetesMEIdentifier(kubeSystemUUID)
-		if err != nil {
-			return "", err
-		}
-		if meID != "" {
-			body[0].Scope = meID
-		}
-	} else {
+	if scope != "" {
 		body[0].Scope = scope
 	}
 
@@ -267,16 +256,4 @@ func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {
 
 		return fmt.Errorf(sb.String())
 	}
-}
-
-func generateKubernetesMEIdentifier(kubeSystemUUID string) (string, error) {
-	var hasher = fnv.New64()
-	_, err := hasher.Write([]byte(kubeSystemUUID))
-	if err != nil {
-		return "", err
-	}
-	var hash = hasher.Sum64()
-	byteHash := make([]byte, 8)
-	binary.LittleEndian.PutUint64(byteHash, hash)
-	return "KUBERNETES_CLUSTER-" + strings.ToUpper(hex.EncodeToString(byteHash)), nil
 }

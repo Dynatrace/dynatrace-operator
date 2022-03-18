@@ -200,7 +200,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		return
 	}
 
-	if dkState.Instance.NeedsActiveGate() {
+	if dkState.Instance.FeatureEnableActivegateRawImage() && dkState.Instance.NeedsActiveGate() {
 		err = activegate.
 			NewTenantSecretReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtcReconciler.ApiToken, dtc).
 			Reconcile()
@@ -326,7 +326,7 @@ func (controller *DynakubeController) determineDynaKubePhase(instance *dynatrace
 
 func (controller *DynakubeController) numberOfMissingOneagentPods(instance *dynatracev1beta1.DynaKube) (int32, error) {
 	dsActual := &appsv1.DaemonSet{}
-	instanceName := fmt.Sprintf("%s-%s", instance.Name, daemonset.PodNameOSAgent)
+	instanceName := instance.OneAgentDaemonsetName()
 	err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: instance.Namespace}, dsActual)
 
 	if k8serrors.IsNotFound(err) {
@@ -375,7 +375,7 @@ func updatePhaseIfChanged(instance *dynatracev1beta1.DynaKube, newPhase dynatrac
 }
 
 func (controller *DynakubeController) removeOneAgentDaemonSet(dkState *status.DynakubeState) {
-	ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.Name + "-" + daemonset.PodNameOSAgent, Namespace: dkState.Instance.Namespace}}
+	ds := appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: dkState.Instance.OneAgentDaemonsetName(), Namespace: dkState.Instance.Namespace}}
 	if err := controller.ensureDeleted(&ds); dkState.Error(err) {
 		return
 	}
@@ -441,7 +441,7 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 				return false
 			}
 
-			if c.Config().CreateService {
+			if c.ShouldCreateService() {
 				svc := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      rcap.BuildServiceName(dynakubeState.Instance.Name, c.ShortName()),

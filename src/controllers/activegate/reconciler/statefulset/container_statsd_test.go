@@ -77,7 +77,7 @@ func TestStatsd_BuildContainerAndVolumes(t *testing.T) {
 
 	t.Run("resource requirements from feature flags", func(t *testing.T) {
 		stsProperties := testBuildStsProperties()
-		stsProperties.ObjectMeta.Annotations["alpha.operator.dynatrace.com/feature-activegate-statsd-resources-requests-memory"] = "500M"
+		stsProperties.ObjectMeta.Annotations["operator.dynatrace.com/feature-activegate-statsd-resources-requests-memory"] = "500M"
 		statsd := NewStatsd(stsProperties)
 
 		container := statsd.BuildContainer()

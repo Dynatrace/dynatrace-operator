@@ -38,14 +38,14 @@ func TestNewRunner(t *testing.T) {
 func TestConsumeErrorIfNecessary(t *testing.T) {
 	runner := createMockedRunner(t)
 	t.Run(`consume error`, func(t *testing.T) {
-		runner.env.canFail = false
+		runner.env.CanFail = false
 		err := fmt.Errorf("TESTING")
 
 		runner.consumeErrorIfNecessary(&err)
 		assert.NoError(t, err)
 	})
 	t.Run(`NOT consume error`, func(t *testing.T) {
-		runner.env.canFail = true
+		runner.env.CanFail = true
 		err := fmt.Errorf("TESTING")
 
 		runner.consumeErrorIfNecessary(&err)
@@ -65,7 +65,7 @@ func TestSetHostTenant(t *testing.T) {
 	})
 	t.Run(`set hostTenant to node`, func(t *testing.T) {
 		runner.config.HasHost = true
-		runner.env.k8NodeName = testNodeName
+		runner.env.K8NodeName = testNodeName
 
 		err := runner.setHostTenant()
 
@@ -107,8 +107,8 @@ func TestInstallOneAgent(t *testing.T) {
 func TestRun(t *testing.T) {
 	runner := createMockedRunner(t)
 	runner.config.HasHost = false
-	runner.env.oneAgentInjected = true
-	runner.env.dataIngestInjected = true
+	runner.env.OneAgentInjected = true
+	runner.env.DataIngestInjected = true
 	runner.dtclient.(*dtclient.MockDynatraceClient).
 		On("GetProcessModuleConfig", uint(0)).
 		Return(&testProcessModuleConfig, nil)
@@ -118,7 +118,7 @@ func TestRun(t *testing.T) {
 
 	t.Run(`no install, just config generation`, func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
-		runner.env.mode = CsiMode
+		runner.env.Mode = CsiMode
 
 		err := runner.Run()
 
@@ -132,7 +132,7 @@ func TestRun(t *testing.T) {
 			On("InstallAgent", BinDirMount).
 			Return(nil)
 		runner.fs = afero.NewMemMapFs()
-		runner.env.mode = InstallerMode
+		runner.env.Mode = InstallerMode
 
 		err := runner.Run()
 
@@ -155,8 +155,8 @@ func TestConfigureInstallation(t *testing.T) {
 
 	t.Run(`create all config files`, func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
-		runner.env.oneAgentInjected = true
-		runner.env.dataIngestInjected = true
+		runner.env.OneAgentInjected = true
+		runner.env.DataIngestInjected = true
 
 		err := runner.configureInstallation()
 
@@ -167,8 +167,8 @@ func TestConfigureInstallation(t *testing.T) {
 	})
 	t.Run(`create only container confs`, func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
-		runner.env.oneAgentInjected = true
-		runner.env.dataIngestInjected = false
+		runner.env.OneAgentInjected = true
+		runner.env.DataIngestInjected = false
 
 		err := runner.configureInstallation()
 
@@ -179,8 +179,8 @@ func TestConfigureInstallation(t *testing.T) {
 	})
 	t.Run(`create only enrichment file`, func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
-		runner.env.oneAgentInjected = false
-		runner.env.dataIngestInjected = true
+		runner.env.OneAgentInjected = false
+		runner.env.DataIngestInjected = true
 
 		err := runner.configureInstallation()
 
@@ -202,12 +202,12 @@ func TestCreateContainerConfigurationFiles(t *testing.T) {
 		err := runner.createContainerConfigurationFiles()
 
 		require.NoError(t, err)
-		for _, container := range runner.env.containers {
+		for _, container := range runner.env.Containers {
 			assertIfFileExists(t,
 				runner.fs,
 				filepath.Join(
 					ShareDirMount,
-					fmt.Sprintf(ContainerConfFilenameTemplate, container.name)))
+					fmt.Sprintf(ContainerConfFilenameTemplate, container.Name)))
 		}
 		// TODO: Check content ?
 	})
@@ -282,12 +282,12 @@ func createMockedRunner(t *testing.T) *Runner {
 
 func assertIfAgentFilesExists(t *testing.T, runner Runner) {
 	// container confs
-	for _, container := range runner.env.containers {
+	for _, container := range runner.env.Containers {
 		assertIfFileExists(t,
 			runner.fs,
 			filepath.Join(
 				ShareDirMount,
-				fmt.Sprintf(ContainerConfFilenameTemplate, container.name)))
+				fmt.Sprintf(ContainerConfFilenameTemplate, container.Name)))
 	}
 	// ld.so.preload
 	assertIfFileExists(t,
@@ -316,12 +316,12 @@ func assertIfEnrichmentFilesExists(t *testing.T, runner Runner) {
 
 func assertIfAgentFilesNotExists(t *testing.T, runner Runner) {
 	// container confs
-	for _, container := range runner.env.containers {
+	for _, container := range runner.env.Containers {
 		assertIfFileNotExists(t,
 			runner.fs,
 			filepath.Join(
 				ShareDirMount,
-				fmt.Sprintf(ContainerConfFilenameTemplate, container.name)))
+				fmt.Sprintf(ContainerConfFilenameTemplate, container.Name)))
 	}
 	// ld.so.preload
 	assertIfFileNotExists(t,

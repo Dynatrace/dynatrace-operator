@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net/url"
-	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	agcapability "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
@@ -55,7 +53,8 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 	if err != nil {
 		return false, err
 	}
-	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs, data, corev1.SecretTypeOpaque, log)
+	labels := kubeobjects.CommonLabels(dkName, kubeobjects.ActiveGateComponentLabel)
+	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs, data, labels, corev1.SecretTypeOpaque, log)
 }
 
 // GenerateForDynakube creates/updates the data-ingest-endpoint secret for EVERY namespace for the given dynakube.
@@ -67,6 +66,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 	if err != nil {
 		return false, err
 	}
+	labels := kubeobjects.CommonLabels(dk.Name, kubeobjects.ActiveGateComponentLabel)
 
 	anyUpdate := false
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
@@ -74,7 +74,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		return false, err
 	}
 	for _, targetNs := range nsList {
-		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs.Name, data, corev1.SecretTypeOpaque, log); err != nil {
+		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs.Name, data, labels, corev1.SecretTypeOpaque, log); err != nil {
 			return upd, err
 		} else if upd {
 			anyUpdate = true
@@ -111,6 +111,7 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 	}
 
 	var endpointBuf bytes.Buffer
+
 	if _, err := endpointBuf.WriteString(fmt.Sprintf("%s=%s\n", UrlSecretField, fields[UrlSecretField])); err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -132,12 +133,12 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 }
 
 func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string]string, error) {
+	fields := make(map[string]string)
+
 	var tokens corev1.Secret
 	if err := g.client.Get(ctx, client.ObjectKey{Name: dk.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
-
-	fields := make(map[string]string)
 
 	if token, ok := tokens.Data[dtclient.DynatraceDataIngestToken]; ok {
 		fields[TokenSecretField] = string(token)
@@ -175,33 +176,13 @@ func metricsIngestUrlForDynatraceActiveGate(dk *dynatracev1beta1.DynaKube) (stri
 }
 
 func metricsIngestUrlForClusterActiveGate(dk *dynatracev1beta1.DynaKube) (string, error) {
-	apiUrl, err := url.Parse(dk.Spec.APIURL)
-	if err != nil {
-		return "", errors.WithMessage(err, "failed to parse DynaKube.spec.apiUrl")
-	}
-
-	tenant, err := extractTenant(apiUrl)
+	tenant, err := dk.TenantUUID()
 	if err != nil {
 		return "", err
 	}
 
 	serviceName := capability.BuildServiceName(dk.Name, agcapability.MultiActiveGateName)
 	return fmt.Sprintf("https://%s.%s/e/%s/api/v2/metrics/ingest", serviceName, dk.Namespace, tenant), nil
-}
-
-func extractTenant(url *url.URL) (string, error) {
-	tenant := ""
-	subdomains := strings.Split(url.Hostname(), ".")
-	subpaths := strings.Split(url.Path, "/")
-	//Path = '/e/<token>/api' -> ['', 'e',  '<tenant>', 'api']
-	if len(subpaths) >= 4 && subpaths[1] == "e" && subpaths[3] == "api" {
-		tenant = subpaths[2]
-	} else if len(subdomains) >= 2 {
-		tenant = subdomains[0]
-	} else {
-		return "", fmt.Errorf("failed to parse DynaKube.spec.apiUrl, unknown tenant")
-	}
-	return tenant, nil
 }
 
 func statsdIngestUrl(dk *dynatracev1beta1.DynaKube) (string, error) {
