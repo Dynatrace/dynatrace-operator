@@ -17,6 +17,8 @@ apiVersion: storage.k8s.io/v1
 kind: CSIDriver
 metadata:
   name: csi.oneagent.dynatrace.com
+  labels:
+    {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
 spec:
   attachRequired: false
   podInfoOnMount: true

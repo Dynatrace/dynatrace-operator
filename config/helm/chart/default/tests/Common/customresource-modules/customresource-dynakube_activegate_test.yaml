@@ -259,3 +259,16 @@ tests:
           path: spec.activeGate.env.test-env
           value: test-value
 
+  - it: "should set priorityClassName"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      activeGate:
+        capabilities:
+          - kubernetes-monitoring
+        priorityClassName: test-priority-class
+    asserts:
+      - equal:
+          path: spec.activeGate.priorityClassName
+          value: test-priority-class

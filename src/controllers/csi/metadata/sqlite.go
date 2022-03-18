@@ -49,7 +49,11 @@ const (
 
 	insertVolumeStatement = `
 	INSERT INTO volumes (ID, PodName, Version, TenantUUID)
-	VALUES (?,?,?,?);
+	VALUES (?,?,?,?)
+	ON CONFLICT(ID) DO UPDATE SET
+	  PodName=excluded.PodName,
+	  Version=excluded.Version,
+	  TenantUUID=excluded.TenantUUID;
 	`
 
 	insertOsAgentVolumeStatement = `

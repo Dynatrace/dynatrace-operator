@@ -208,19 +208,29 @@ func TestInsertVolume(t *testing.T) {
 	db := FakeMemoryDB()
 
 	err := db.InsertVolume(&testVolume1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE ID = ?;", volumesTableName), testVolume1.VolumeID)
 	var id string
 	var puid string
 	var ver string
 	var tuid string
 	err = row.Scan(&id, &puid, &ver, &tuid)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, id, testVolume1.VolumeID)
 	assert.Equal(t, puid, testVolume1.PodName)
 	assert.Equal(t, ver, testVolume1.Version)
 	assert.Equal(t, tuid, testVolume1.TenantUUID)
-
+	newPodName := "something-else"
+	testVolume1.PodName = newPodName
+	err = db.InsertVolume(&testVolume1)
+	require.NoError(t, err)
+	row = db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE ID = ?;", volumesTableName), testVolume1.VolumeID)
+	err = row.Scan(&id, &puid, &ver, &tuid)
+	require.NoError(t, err)
+	assert.Equal(t, id, testVolume1.VolumeID)
+	assert.Equal(t, puid, newPodName)
+	assert.Equal(t, ver, testVolume1.Version)
+	assert.Equal(t, tuid, testVolume1.TenantUUID)
 }
 
 func TestInsertOsAgentVolume(t *testing.T) {

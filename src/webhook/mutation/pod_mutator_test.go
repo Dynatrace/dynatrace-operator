@@ -79,8 +79,8 @@ func TestInjectionWithMissingOneAgentAPM(t *testing.T) {
 	}
 	resp := inj.Handle(context.TODO(), req)
 	require.NoError(t, resp.Complete(req))
-	require.False(t, resp.Allowed)
-	require.Equal(t, resp.Result.Message, "namespace 'test-namespace' is assigned to DynaKube instance 'dynakube' but doesn't exist")
+	require.True(t, resp.Allowed)
+	require.Equal(t, resp.Result.Message, "Failed to inject into pod: test-pod-123456 because namespace 'test-namespace' is assigned to DynaKube instance 'dynakube' but doesn't exist")
 	t_utils.AssertEvents(t,
 		inj.recorder.(*record.FakeRecorder).Events,
 		t_utils.Events{
@@ -1420,7 +1420,7 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 
 	// enable feature
 	instance.Annotations = map[string]string{}
-	instance.Annotations[instance.GetFeatureEnableWebhookReinvocationPolicy()] = "true"
+	instance.Annotations[dynatracev1beta1.AnnotationFeatureEnableWebhookReinvocationPolicy] = "true"
 	err = inj.client.Update(context.TODO(), instance)
 	require.NoError(t, err)
 

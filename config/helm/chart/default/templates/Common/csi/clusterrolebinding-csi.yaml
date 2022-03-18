@@ -17,6 +17,8 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: dynatrace-oneagent-csi-driver
+  labels:
+    {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
     name: dynatrace-oneagent-csi-driver

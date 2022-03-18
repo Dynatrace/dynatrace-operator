@@ -23,12 +23,18 @@ metadata:
     helm.sh/hook: post-install,post-upgrade
     {{- end }}
     {{- if or (and (.Values.hostMonitoring).enabled (.Values.hostMonitoring).disableReadOnly) (and (.Values.cloudNativeFullStack).enabled (.Values.cloudNativeFullStack).disableReadOnly) }}
-    alpha.operator.dynatrace.com/feature-disable-oneagent-readonly-host-fs: "true"
+    operator.dynatrace.com/feature-disable-oneagent-readonly-host-fs: "true"
+    {{- end }}
+    {{- if (.Values.activeGate).apparmor }}
+    alpha.operator.dynatrace.com/feature-activegate-apparmor: "true"
+    {{- end }}
+    {{- if (.Values.activeGate).readOnlyFs }}
+    alpha.operator.dynatrace.com/feature-activegate-readonly-fs: "true"
     {{- end }}
   name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "dynatrace-operator.labels" . | nindent 4 }}
+    {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
 spec:
   apiUrl: {{ required "ApiUrl needs to be set!" .Values.apiUrl }}
 
@@ -75,6 +81,10 @@ spec:
 
     {{- if .Values.activeGate.tlsSecretName }}
     tlsSecretName: {{.Values.activeGate.tlsSecretName}}
+    {{- end }}
+
+    {{- if .Values.activeGate.priorityClassName }}
+    priorityClassName: {{ .Values.activeGate.priorityClassName }}
     {{- end }}
 
     {{- if .Values.activeGate.replicas }}

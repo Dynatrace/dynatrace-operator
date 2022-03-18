@@ -19,10 +19,12 @@ var validators = []validator{
 	conflictingOneAgentConfiguration,
 	conflictingNodeSelector,
 	conflictingNamespaceSelector,
+	conflictingReadOnlyFilesystemAndMultipleOsAgentsOnNode,
 	noResourcesAvailable,
 }
 
 var warnings = []validator{
+	deprecatedFeatureFlagFormat,
 	metricIngestPreviewWarning,
 	statsdIngestPreviewWarning,
 	missingActiveGateMemoryLimit,
