@@ -138,7 +138,7 @@ activeGate:
   priorityClassName: ""
   apparmor: false
   readOnlyFs: false
-  autoApiMonitoring: true
+  autoApiMonitoring: false
 
 # deprecated
 kubernetesMonitoring:
