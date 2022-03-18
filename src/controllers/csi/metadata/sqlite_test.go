@@ -118,18 +118,67 @@ func TestUpdateDynakube(t *testing.T) {
 	assert.Equal(t, name, testDynakube1.Name)
 }
 
-func TestGetDynakubes(t *testing.T) {
+func TestGetTenantsToDynakubes(t *testing.T) {
 	db := FakeMemoryDB()
 	err := db.InsertDynakube(&testDynakube1)
 	assert.Nil(t, err)
 	err = db.InsertDynakube(&testDynakube2)
 	assert.Nil(t, err)
 
-	dynakubes, err := db.GetDynakubes()
+	dynakubes, err := db.GetTenantsToDynakubes()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(dynakubes))
 	assert.Equal(t, testDynakube1.TenantUUID, dynakubes[testDynakube1.Name])
 	assert.Equal(t, testDynakube2.TenantUUID, dynakubes[testDynakube2.Name])
+}
+
+func TestGetAllDynakubes(t *testing.T) {
+	db := FakeMemoryDB()
+	err := db.InsertDynakube(&testDynakube1)
+	assert.Nil(t, err)
+	err = db.InsertDynakube(&testDynakube2)
+	assert.Nil(t, err)
+
+	dynakubes, err := db.GetAllDynakubes()
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(dynakubes))
+}
+
+func TestGetAllVolumes(t *testing.T) {
+	db := FakeMemoryDB()
+	err := db.InsertVolume(&testVolume1)
+	require.NoError(t, err)
+	err = db.InsertVolume(&testVolume2)
+	require.NoError(t, err)
+
+	volumes, err := db.GetAllVolumes()
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(volumes))
+}
+
+func TestGetAllOsAgentVolumes(t *testing.T) {
+	now := time.Now()
+	osVolume1 := OsAgentVolume{
+		VolumeID:     "vol-1",
+		TenantUUID:   testDynakube1.TenantUUID,
+		Mounted:      true,
+		LastModified: &now,
+	}
+	osVolume2 := OsAgentVolume{
+		VolumeID:     "vol-2",
+		TenantUUID:   testDynakube2.TenantUUID,
+		Mounted:      true,
+		LastModified: &now,
+	}
+	db := FakeMemoryDB()
+	err := db.InsertOsAgentVolume(&osVolume1)
+	require.NoError(t, err)
+	err = db.InsertOsAgentVolume(&osVolume2)
+	require.NoError(t, err)
+
+	osVolumes, err := db.GetAllOsAgentVolumes()
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(osVolumes))
 }
 
 func TestDeleteDynakube(t *testing.T) {
@@ -141,7 +190,7 @@ func TestDeleteDynakube(t *testing.T) {
 
 	err = db.DeleteDynakube(testDynakube1.Name)
 	assert.NoError(t, err)
-	dynakubes, err := db.GetDynakubes()
+	dynakubes, err := db.GetTenantsToDynakubes()
 	assert.NoError(t, err)
 	assert.Equal(t, len(dynakubes), 1)
 	assert.Equal(t, testDynakube2.TenantUUID, dynakubes[testDynakube2.Name])
