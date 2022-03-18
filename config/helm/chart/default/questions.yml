@@ -514,7 +514,7 @@ questions:
       - variable: activeGate.autoApiMonitoring
         label: "Enable auto api monitoring"
         description: "Optional: Enables connect automatically to the local Kubernetes API endpoint"
-        default: "true"
+        default: "false"
         type: boolean
         show_if: "crdApplied=yes"
       - variable: activeGate.priorityClassName
