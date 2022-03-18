@@ -33,7 +33,6 @@ metadata:
     {{- end }}
     {{- if and (.Values.activeGate.autoApiMonitoring) (has "kubernetes-monitoring" .Values.activeGate.capabilities) }}
     operator.dynatrace.com/feature-automatic-kubernetes-api-monitoring: "true"
-    operator.dynatrace.com/feature-disable-metadata-enrichment: "false"
     {{- end }}
   name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
