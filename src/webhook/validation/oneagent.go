@@ -11,6 +11,7 @@ import (
 const (
 	errorConflictingOneagentMode = `The DynaKube's specification tries to use multiple oneagent modes at the same time, which is not supported.
 `
+	errorImageFieldSetWithoutCSIFlag = `The DynaKube's specification tries to enable ApplicationMonitoring mode and get the respective image, but the CSI driver is not enabled.`
 
 	errorNodeSelectorConflict = `The DynaKube's specification tries to specify a nodeSelector conflicts with an another Dynakube's nodeSelector, which is not supported.
 The conflicting Dynakube: %s
@@ -65,6 +66,15 @@ func conflictingNodeSelector(dv *dynakubeValidator, dynakube *dynatracev1beta1.D
 				log.Info("requested dynakube has conflicting nodeSelector", "name", dynakube.Name, "namespace", dynakube.Namespace)
 				return fmt.Sprintf(errorNodeSelectorConflict, item.Name)
 			}
+		}
+	}
+	return ""
+}
+
+func imageFieldSetWithoutCSIFlag(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
+	if dynakube.ApplicationMonitoringMode() && !dynakube.NeedsCSIDriver() {
+		if len(dynakube.Spec.OneAgent.ApplicationMonitoring.Image) > 0 {
+			return errorImageFieldSetWithoutCSIFlag
 		}
 	}
 	return ""
