@@ -37,6 +37,9 @@ spec:
       labels:
         {{- include "dynatrace-operator.csiLabels" . | nindent 8 }}
     spec:
+      {{- if .Values.csi.tolerations }}
+      tolerations: {{ .Values.csi.tolerations | toYaml | nindent 8 }}
+      {{- end }}
       containers:
         # Used to receive/execute gRPC requests (NodePublishVolume/NodeUnpublishVolume) from kubelet to mount/unmount volumes for a pod
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.

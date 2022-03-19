@@ -64,6 +64,7 @@ csi:
   limits:
     cpu: 300m
     memory: 100Mi
+  tolerations: []
 
 createSecurityContextConstraints: true # Only applicable for Openshift
 
