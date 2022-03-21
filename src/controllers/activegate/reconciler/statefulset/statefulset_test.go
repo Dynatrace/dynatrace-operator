@@ -133,6 +133,31 @@ func TestStatefulSet_TemplateSpec(t *testing.T) {
 		assert.Equal(t, "", templateSpec.PriorityClassName)
 	})
 
+	t.Run("DynaKube with TopologySpreadConstraints set", func(t *testing.T) {
+		instance := buildTestInstance()
+		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
+
+		tsc := corev1.TopologySpreadConstraint{
+			MaxSkew:           1,
+			TopologyKey:       "",
+			WhenUnsatisfiable: "",
+			LabelSelector:     nil,
+		}
+		expected := []corev1.TopologySpreadConstraint{tsc, tsc, tsc}
+
+		instance.Spec.ActiveGate.TopologySpreadConstraints = expected
+		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil))
+		assert.Equal(t, len(expected), len(templateSpec.TopologySpreadConstraints))
+	})
+
+	t.Run("DynaKube with TopologySpreadConstraints empty", func(t *testing.T) {
+		instance := buildTestInstance()
+		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
+
+		templateSpec := buildTemplateSpec(NewStatefulSetProperties(instance, capabilityProperties, "", "", "test-feature", "", "", nil, nil, nil))
+		assert.Nil(t, templateSpec.TopologySpreadConstraints)
+	})
+
 	t.Run("DynaKube without StatsD", func(t *testing.T) {
 		instance := buildTestInstance()
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
