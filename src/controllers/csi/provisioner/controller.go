@@ -88,7 +88,10 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		atomic.AddInt64(&provisioner.currentParallel, 1)
 		log.Info("staring parallel download")
 		go func() {
-			provisioner.reconcile(ctx, request, fs)
+			_, err := provisioner.reconcile(ctx, request, fs)
+			if err != nil {
+				log.Error(err, "Problem while provisioning oneagents in parallel")
+			}
 			atomic.AddInt64(&provisioner.currentParallel, -1)
 		}()
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
