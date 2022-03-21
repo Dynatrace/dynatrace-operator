@@ -2,7 +2,7 @@
 # With cloudNative enabled => oneagent daemonset is deployed with envvar ONEAGENT_DISABLE_CONTAINER_INJECTION
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
-timeout: 240
+timeout: 600
 ---
 apiVersion: v1
 kind: Namespace
@@ -25,11 +25,12 @@ kind: DaemonSet
 metadata:
   name: dynakube-oneagent
   namespace: dynatrace
-  labels:
-    dynatrace.com/component: operator
-    operator.dynatrace.com/agenttype: os
-    operator.dynatrace.com/feature: cloud-native
-    operator.dynatrace.com/instance: dynakube
+  # labels: version field can change ==> can't test
+  #   app.kubernetes.io/component: oneagent
+  #   app.kubernetes.io/created-by: dynakube
+  #   app.kubernetes.io/name: dynatrace-operator
+  #   app.kubernetes.io/version: snapshot
+  #   component.dynatrace.com/feature: cloud_native_fullstack
   ownerReferences:
   - apiVersion: dynatrace.com/v1beta1
     blockOwnerDeletion: true
@@ -38,12 +39,13 @@ metadata:
     name: dynakube
 spec:
   template:
-    metadata:
-      labels:
-        dynatrace.com/component: operator
-        operator.dynatrace.com/agenttype: os
-        operator.dynatrace.com/feature: cloud-native
-        operator.dynatrace.com/instance: dynakube
+    # metadata:
+      # labels: version field can change ==> can't test
+      #   app.kubernetes.io/component: oneagent
+      #   app.kubernetes.io/created-by: dynakube
+      #   app.kubernetes.io/name: dynatrace-operator
+      #   app.kubernetes.io/version: snapshot
+      #   component.dynatrace.com/feature: cloud_native_fullstack
     spec:
       containers:
       - name: dynatrace-oneagent
@@ -56,5 +58,6 @@ spec:
               fieldPath: spec.nodeName
         - name: ONEAGENT_DISABLE_CONTAINER_INJECTION
           value: "true"
+        - name: ONEAGENT_READ_ONLY_MODE
 status:
-  numberAvailable: 3
+  numberUnavailable: 0

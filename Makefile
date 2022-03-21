@@ -59,6 +59,9 @@ helm-test:
 helm-lint:
 	cd config/helm && ./testing/lint.sh
 
+kuttl:
+	bash ./hack/e2e/kuttl-with-cleanup.sh
+
 # Build manager binary
 manager: generate fmt vet
 	go build -o bin/manager ./src/cmd/operator/

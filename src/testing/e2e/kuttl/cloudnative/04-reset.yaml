@@ -1,20 +1,19 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 timeout: 130
-commands:
-- command: kubectl delete ns inject-into-cloud-native
-- command: kubectl delete ns leave-alone-cloud-native
-- command: kubectl delete ns already-present-cloud-native
+delete:
+- apiVersion: v1
+  kind: Namespace
+  name: inject-into-cloud-native
+- apiVersion: v1
+  kind: Namespace
+  name: leave-alone-cloud-native
+- apiVersion: v1
+  kind: Namespace
+  name: already-present-cloud-native
+- apiVersion: dynatrace.com/v1beta1
+  kind: DynaKube
+  metadata:
+    name: dynakube
+    namespace: dynatrace
 
----
-
-apiVersion: dynatrace.com/v1beta1
-kind: DynaKube
-metadata:
-  name: dynakube
-  namespace: dynatrace
-spec:
-  namespaceSelector: {}
-
-  oneAgent:
-    cloudNativeFullStack: null
