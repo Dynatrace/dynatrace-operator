@@ -19,6 +19,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csidriver "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver"
@@ -95,7 +96,8 @@ func setupCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error
 		return nil, cleanUp, err
 	}
 
-	if err := csiprovisioner.NewOneAgentProvisioner(mgr, csiOpts, access).SetupWithManager(mgr); err != nil {
+	maxParallel, _ := strconv.ParseInt(os.Getenv("MAX_PARALLEL"), 10, 64)
+	if err := csiprovisioner.NewOneAgentProvisioner(mgr, csiOpts, access, maxParallel).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Provisioner")
 		return nil, cleanUp, err
 	}

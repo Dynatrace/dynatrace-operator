@@ -19,6 +19,7 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -49,23 +50,25 @@ type OneAgentProvisioner struct {
 	apiReader    client.Reader
 	opts         dtcsi.CSIOptions
 	dtcBuildFunc dynakube.DynatraceClientFunc
-	fs           afero.Fs
 	recorder     record.EventRecorder
 	db           metadata.Access
 	path         metadata.PathResolver
+
+	currentParallel int64
+	maxParallel     int64
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
-func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access) *OneAgentProvisioner {
+func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access, maxParallel int64) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
 		client:       mgr.GetClient(),
 		apiReader:    mgr.GetAPIReader(),
 		opts:         opts,
 		dtcBuildFunc: dynakube.BuildDynatraceClient,
-		fs:           afero.NewOsFs(),
 		recorder:     mgr.GetEventRecorderFor("OneAgentProvisioner"),
 		db:           db,
 		path:         metadata.PathResolver{RootDir: opts.RootDir},
+		maxParallel:  maxParallel,
 	}
 }
 
@@ -76,6 +79,24 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 }
 
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	fs := afero.NewOsFs()
+	if provisioner.maxParallel > 0 {
+		if provisioner.currentParallel == provisioner.maxParallel {
+			log.Info("max parallel downloads reached, requeued")
+			return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
+		}
+		atomic.AddInt64(&provisioner.currentParallel, 1)
+		log.Info("staring parallel download")
+		go func() {
+			provisioner.reconcile(ctx, request, fs)
+			atomic.AddInt64(&provisioner.currentParallel, -1)
+		}()
+		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
+	}
+	return provisioner.reconcile(ctx, request, fs)
+}
+
+func (provisioner *OneAgentProvisioner) reconcile(ctx context.Context, request reconcile.Request, fs afero.Fs) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
@@ -126,20 +147,20 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	}
 	oldDynakube = *dynakube
 
-	if err = provisioner.createCSIDirectories(provisioner.path.EnvDir(dynakube.TenantUUID)); err != nil {
+	if err = provisioner.createCSIDirectories(fs, provisioner.path.EnvDir(dynakube.TenantUUID)); err != nil {
 		log.Error(err, "error when creating csi directories", "path", provisioner.path.EnvDir(dynakube.TenantUUID))
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 	log.Info("csi directories exist", "path", provisioner.path.EnvDir(dynakube.TenantUUID))
 
-	latestProcessModuleConfig, storedHash, err := provisioner.getProcessModuleConfig(dtc, dynakube.TenantUUID)
+	latestProcessModuleConfig, storedHash, err := provisioner.getProcessModuleConfig(fs, dtc, dynakube.TenantUUID)
 	if err != nil {
 		log.Error(err, "error when getting the latest ruxitagentproc.conf")
 		return reconcile.Result{}, err
 	}
 	latestProcessModuleConfigCache := newProcessModuleConfigCache(addHostGroup(dk, latestProcessModuleConfig))
 
-	installAgentCfg := newInstallAgentConfig(dtc, provisioner.path, provisioner.fs, provisioner.recorder, dk)
+	installAgentCfg := newInstallAgentConfig(dtc, provisioner.path, fs, provisioner.recorder, dk)
 	if updatedVersion, err := installAgentCfg.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID, storedHash, latestProcessModuleConfigCache); err != nil {
 		log.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
@@ -154,7 +175,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	err = provisioner.writeProcessModuleConfigCache(dynakube.TenantUUID, latestProcessModuleConfigCache)
+	err = provisioner.writeProcessModuleConfigCache(fs, dynakube.TenantUUID, latestProcessModuleConfigCache)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -199,8 +220,8 @@ func (provisioner *OneAgentProvisioner) getDynaKube(ctx context.Context, name ty
 	return &dk, err
 }
 
-func (provisioner *OneAgentProvisioner) createCSIDirectories(envDir string) error {
-	if err := provisioner.fs.MkdirAll(envDir, 0755); err != nil {
+func (provisioner *OneAgentProvisioner) createCSIDirectories(fs afero.Fs, envDir string) error {
+	if err := fs.MkdirAll(envDir, 0755); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", envDir, err)
 	}
 

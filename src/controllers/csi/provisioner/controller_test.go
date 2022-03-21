@@ -233,10 +233,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(dynakube.DynatraceClientProperties) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			fs: errorfs,
 			db: metadata.FakeMemoryDB(),
 		}
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
+		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, errorfs)
 
 		assert.EqualError(t, err, "failed to create directory "+filepath.Join(tenantUUID)+": "+errorMsg)
 		assert.NotNil(t, result)
@@ -285,12 +284,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(dynakube.DynatraceClientProperties) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			fs:       memFs,
 			db:       metadata.FakeMemoryDB(),
 			recorder: &record.FakeRecorder{},
 		}
 
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
+		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs)
 
 		// "go test" breaks if the output does not end with a newline
 		// making sure one is printed here
@@ -339,11 +337,10 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(dynakube.DynatraceClientProperties) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			fs: memFs,
 			db: &metadata.FakeFailDB{},
 		}
 
-		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
+		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs)
 
 		assert.Error(t, err)
 		assert.Empty(t, result)
@@ -403,12 +400,11 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(dynakube.DynatraceClientProperties) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			fs:       memFs,
 			db:       memDB,
 			recorder: &record.FakeRecorder{},
 		}
 
-		result, err := r.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}})
+		result, err := r.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
