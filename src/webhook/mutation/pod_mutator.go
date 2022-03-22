@@ -15,7 +15,6 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
-	oneagent "github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
@@ -35,6 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
+
+const OneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
 
 var podLog = log.WithName("pod")
 
@@ -718,7 +719,7 @@ func updateContainerOneAgent(c *corev1.Container, dk *dynatracev1beta1.DynaKube,
 		c.VolumeMounts = append(c.VolumeMounts,
 			corev1.VolumeMount{
 				Name:      oneAgentShareVolumeName,
-				MountPath: filepath.Join(oneagent.OneAgentCustomKeysPath, "custom.pem"),
+				MountPath: filepath.Join(OneAgentCustomKeysPath, "custom.pem"),
 				SubPath:   "custom.pem",
 			})
 	}

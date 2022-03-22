@@ -31,15 +31,15 @@ func prepareVolumeMounts(instance *dynatracev1beta1.DynaKube) []corev1.VolumeMou
 
 func getCertificateMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
-		Name:      certVolumeName,
-		MountPath: certVolumeMount,
+		Name:      trustedCaVolumeName,
+		MountPath: trustedCaVolumeMount,
 	}
 }
 
 func getTLSMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
-		Name:      tlsVolumeName,
-		MountPath: tlsVolumeMount,
+		Name:      agCaVolumeName,
+		MountPath: agCaVolumeMount,
 	}
 }
 
@@ -83,7 +83,7 @@ func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {
 
 func getCertificateVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
 	return corev1.Volume{
-		Name: certVolumeName,
+		Name: trustedCaVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
@@ -117,7 +117,7 @@ func getCSIStorageVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
 
 func getTLSVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
 	return corev1.Volume{
-		Name: tlsVolumeName,
+		Name: agCaVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName: instance.Spec.ActiveGate.TlsSecretName,
