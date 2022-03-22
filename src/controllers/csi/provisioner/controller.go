@@ -42,6 +42,8 @@ const (
 	defaultRequeueDuration = 5 * time.Minute
 	longRequeueDuration    = 30 * time.Minute
 	shortRequeueDuration   = 15 * time.Second
+
+	eventRecorderName = "OneAgentProvisioner"
 )
 
 // OneAgentProvisioner reconciles a DynaKube object
@@ -55,24 +57,21 @@ type OneAgentProvisioner struct {
 	path         metadata.PathResolver
 
 	currentParallelDownloads int64
-	maxParallelDownloads     int64
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
 func NewOneAgentProvisioner(
 	mgr manager.Manager,
 	opts dtcsi.CSIOptions,
-	db metadata.Access,
-	maxParallelDownloads int64) *OneAgentProvisioner {
+	db metadata.Access) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
-		client:               mgr.GetClient(),
-		apiReader:            mgr.GetAPIReader(),
-		opts:                 opts,
-		dtcBuildFunc:         dynakube.BuildDynatraceClient,
-		recorder:             mgr.GetEventRecorderFor("OneAgentProvisioner"),
-		db:                   db,
-		path:                 metadata.PathResolver{RootDir: opts.RootDir},
-		maxParallelDownloads: maxParallelDownloads,
+		client:       mgr.GetClient(),
+		apiReader:    mgr.GetAPIReader(),
+		opts:         opts,
+		dtcBuildFunc: dynakube.BuildDynatraceClient,
+		recorder:     mgr.GetEventRecorderFor(eventRecorderName),
+		db:           db,
+		path:         metadata.PathResolver{RootDir: opts.RootDir},
 	}
 }
 
@@ -89,25 +88,29 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 			log.Info("max parallel downloads reached, requeued")
 			return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 		}
+
 		atomic.AddInt64(&provisioner.currentParallelDownloads, 1)
 		log.Info("staring parallel download")
-		go func() {
-			defer atomic.AddInt64(&provisioner.currentParallelDownloads, -1)
-			_, err := provisioner.reconcile(ctx, request, fs)
-			if err != nil {
-				log.Error(err, "Problem while provisioning oneagents in parallel")
-			}
-		}()
+		go provisioner.startParallelReconcile(ctx, request, fs)
+
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 	}
 	return provisioner.reconcile(ctx, request, fs)
 }
 
+func (provisioner *OneAgentProvisioner) startParallelReconcile(ctx context.Context, request reconcile.Request, fs afero.Fs) {
+	defer atomic.AddInt64(&provisioner.currentParallelDownloads, -1)
+	_, err := provisioner.reconcile(ctx, request, fs)
+	if err != nil {
+		log.Error(err, "Problem while provisioning oneagents in parallel")
+	}
+}
+
 func (provisioner *OneAgentProvisioner) parallelDownloadsEnabled() bool {
-	return provisioner.maxParallelDownloads > 0
+	return provisioner.opts.MaxParallelDownloads > dtcsi.ParallelDownloadsLowerLimit
 }
 func (provisioner *OneAgentProvisioner) parallelDownloadsLimitReached() bool {
-	return provisioner.currentParallelDownloads >= provisioner.maxParallelDownloads
+	return provisioner.currentParallelDownloads >= provisioner.opts.MaxParallelDownloads
 }
 
 func (provisioner *OneAgentProvisioner) reconcile(ctx context.Context, request reconcile.Request, fs afero.Fs) (reconcile.Result, error) {

@@ -29,12 +29,17 @@ const (
 	OverlayVarDirPath    = "var"
 	OverlayWorkDirPath   = "work"
 	DaemonSetName        = "dynatrace-oneagent-csi-driver"
+
+	MaxParallelDownloadsEnvVar        = "MAX_PARALLEL_DOWNLOADS"
+	ParallelDownloadsUpperLimit int64 = 40
+	ParallelDownloadsLowerLimit int64 = 0
 )
 
 var MetadataAccessPath = filepath.Join(DataPath, "csi.db")
 
 type CSIOptions struct {
-	NodeID   string
-	Endpoint string
-	RootDir  string
+	NodeID               string
+	Endpoint             string
+	RootDir              string
+	MaxParallelDownloads int64
 }

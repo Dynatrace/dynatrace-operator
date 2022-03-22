@@ -70,9 +70,10 @@ func setupCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error
 	}
 
 	csiOpts := dtcsi.CSIOptions{
-		NodeID:   nodeID,
-		Endpoint: endpoint,
-		RootDir:  dtcsi.DataPath,
+		NodeID:               nodeID,
+		Endpoint:             endpoint,
+		RootDir:              dtcsi.DataPath,
+		MaxParallelDownloads: getMaxParallelDowloads(),
 	}
 
 	fs := afero.NewOsFs()
@@ -95,9 +96,7 @@ func setupCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error
 		log.Error(err, "unable to create CSI Driver server")
 		return nil, cleanUp, err
 	}
-
-	maxParallelDownloads, _ := strconv.ParseInt(os.Getenv("MAX_PARALLEL_DOWNLOADS"), 10, 64)
-	if err := csiprovisioner.NewOneAgentProvisioner(mgr, csiOpts, access, maxParallelDownloads).SetupWithManager(mgr); err != nil {
+	if err := csiprovisioner.NewOneAgentProvisioner(mgr, csiOpts, access).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Provisioner")
 		return nil, cleanUp, err
 	}
@@ -113,4 +112,21 @@ func setupCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error
 	}
 
 	return mgr, cleanUp, nil
+}
+
+func getMaxParallelDowloads() int64 {
+	raw := os.Getenv(dtcsi.MaxParallelDownloadsEnvVar)
+	maxParallelDownloads, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil {
+		log.Error(err, "couldn't convert envvar to int64", "envvar", dtcsi.MaxParallelDownloadsEnvVar, "value", raw)
+		return 0
+	}
+	if maxParallelDownloads < dtcsi.ParallelDownloadsLowerLimit || maxParallelDownloads >= dtcsi.ParallelDownloadsUpperLimit {
+		log.Info("max parallel downloads was set to an illegal value",
+			"value", maxParallelDownloads,
+			"minimum", dtcsi.ParallelDownloadsLowerLimit,
+			"maximum", dtcsi.ParallelDownloadsUpperLimit,
+		)
+	}
+	return maxParallelDownloads
 }
