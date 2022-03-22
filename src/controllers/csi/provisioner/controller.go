@@ -122,8 +122,8 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		log.Info("CSI driver not needed")
 		return reconcile.Result{RequeueAfter: longRequeueDuration}, nil
 	}
-
-	if dk.ConnectionInfo().TenantUUID == "" {
+	tenant := dk.ConnectionInfo().TenantUUID
+	if tenant == "" {
 		log.Info("DynaKube instance has not been reconciled yet and some values usually cached are missing, retrying in a few seconds")
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
@@ -133,14 +133,14 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 			log.Info("max parallel downloads reached, requeued")
 			return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 		}
-		if provisioner.isCurrentlyDownloading(dk.ConnectionInfo().TenantUUID) {
-			log.Info("still downloading")
+		if provisioner.isCurrentlyDownloading(tenant) {
+			log.Info("still downloading", "tenant", tenant)
 			return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 		}
 
 		atomic.AddInt64(&provisioner.currentParallelDownloads, 1)
-		provisioner.setCurrentlyDownloading(dk.ConnectionInfo().TenantUUID)
-		log.Info("staring parallel download")
+		provisioner.setCurrentlyDownloading(tenant)
+		log.Info("starting parallel download")
 		go provisioner.startParallelReconcile(ctx, request, fs, *dk)
 
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
