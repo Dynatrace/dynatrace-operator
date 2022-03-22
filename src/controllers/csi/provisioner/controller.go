@@ -19,6 +19,7 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -56,7 +57,9 @@ type OneAgentProvisioner struct {
 	db           metadata.Access
 	path         metadata.PathResolver
 
+	mu                       *sync.Mutex
 	currentParallelDownloads int64
+	currentlyDownloading     map[string]bool
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -65,14 +68,36 @@ func NewOneAgentProvisioner(
 	opts dtcsi.CSIOptions,
 	db metadata.Access) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
-		client:       mgr.GetClient(),
-		apiReader:    mgr.GetAPIReader(),
-		opts:         opts,
-		dtcBuildFunc: dynakube.BuildDynatraceClient,
-		recorder:     mgr.GetEventRecorderFor(eventRecorderName),
-		db:           db,
-		path:         metadata.PathResolver{RootDir: opts.RootDir},
+		client:               mgr.GetClient(),
+		apiReader:            mgr.GetAPIReader(),
+		opts:                 opts,
+		dtcBuildFunc:         dynakube.BuildDynatraceClient,
+		recorder:             mgr.GetEventRecorderFor(eventRecorderName),
+		db:                   db,
+		path:                 metadata.PathResolver{RootDir: opts.RootDir},
+		mu:                   &sync.Mutex{},
+		currentlyDownloading: map[string]bool{},
 	}
+}
+
+func (provisioner *OneAgentProvisioner) setCurrentlyDownloading(name string) {
+	provisioner.mu.Lock()
+	provisioner.currentlyDownloading[name] = true
+	provisioner.mu.Unlock()
+}
+
+func (provisioner *OneAgentProvisioner) isCurrentlyDownloading(name string) bool {
+	var isDownloading bool
+	provisioner.mu.Lock()
+	isDownloading = provisioner.currentlyDownloading[name]
+	provisioner.mu.Unlock()
+	return isDownloading
+}
+
+func (provisioner *OneAgentProvisioner) unsetCurrentlyDownloading(name string) {
+	provisioner.mu.Lock()
+	provisioner.currentlyDownloading[name] = false
+	provisioner.mu.Unlock()
 }
 
 func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
@@ -83,37 +108,7 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	fs := afero.NewOsFs()
-	if provisioner.parallelDownloadsEnabled() {
-		if provisioner.parallelDownloadsLimitReached() {
-			log.Info("max parallel downloads reached, requeued")
-			return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
-		}
 
-		atomic.AddInt64(&provisioner.currentParallelDownloads, 1)
-		log.Info("staring parallel download")
-		go provisioner.startParallelReconcile(ctx, request, fs)
-
-		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
-	}
-	return provisioner.reconcile(ctx, request, fs)
-}
-
-func (provisioner *OneAgentProvisioner) startParallelReconcile(ctx context.Context, request reconcile.Request, fs afero.Fs) {
-	defer atomic.AddInt64(&provisioner.currentParallelDownloads, -1)
-	_, err := provisioner.reconcile(ctx, request, fs)
-	if err != nil {
-		log.Error(err, "Problem while provisioning oneagents in parallel")
-	}
-}
-
-func (provisioner *OneAgentProvisioner) parallelDownloadsEnabled() bool {
-	return provisioner.opts.MaxParallelDownloads > dtcsi.ParallelDownloadsLowerLimit
-}
-func (provisioner *OneAgentProvisioner) parallelDownloadsLimitReached() bool {
-	return provisioner.currentParallelDownloads >= provisioner.opts.MaxParallelDownloads
-}
-
-func (provisioner *OneAgentProvisioner) reconcile(ctx context.Context, request reconcile.Request, fs afero.Fs) (reconcile.Result, error) {
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "dynakube", request.Name)
 
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
@@ -133,66 +128,104 @@ func (provisioner *OneAgentProvisioner) reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
 
+	if provisioner.parallelDownloadsEnabled() {
+		if provisioner.parallelDownloadsLimitReached() {
+			log.Info("max parallel downloads reached, requeued")
+			return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
+		}
+		if provisioner.isCurrentlyDownloading(dk.ConnectionInfo().TenantUUID) {
+			log.Info("still downloading")
+			return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
+		}
+
+		atomic.AddInt64(&provisioner.currentParallelDownloads, 1)
+		provisioner.setCurrentlyDownloading(dk.ConnectionInfo().TenantUUID)
+		log.Info("staring parallel download")
+		go provisioner.startParallelReconcile(ctx, request, fs, *dk)
+
+		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
+	}
+	return provisioner.reconcile(ctx, request, fs, *dk)
+}
+
+func (provisioner *OneAgentProvisioner) startParallelReconcile(ctx context.Context, request reconcile.Request, fs afero.Fs, dk dynatracev1beta1.DynaKube) {
+	defer atomic.AddInt64(&provisioner.currentParallelDownloads, -1)
+	defer provisioner.unsetCurrentlyDownloading(dk.ConnectionInfo().TenantUUID)
+	_, err := provisioner.reconcile(ctx, request, fs, dk)
+	if err != nil {
+		log.Error(err, "Problem while provisioning oneagents in parallel")
+	}
+}
+
+func (provisioner *OneAgentProvisioner) parallelDownloadsEnabled() bool {
+	return provisioner.opts.MaxParallelDownloads > dtcsi.ParallelDownloadsLowerLimit
+}
+func (provisioner *OneAgentProvisioner) parallelDownloadsLimitReached() bool {
+	return provisioner.currentParallelDownloads >= provisioner.opts.MaxParallelDownloads
+}
+
+func (provisioner *OneAgentProvisioner) reconcile(ctx context.Context, request reconcile.Request, fs afero.Fs, dynakube dynatracev1beta1.DynaKube) (reconcile.Result, error) {
+	dynakubePointer := &dynakube
 	// creates a dt client and checks tokens exist for the given dynakube
-	dtc, err := buildDtc(provisioner, ctx, dk)
+	dtc, err := buildDtc(provisioner, ctx, dynakubePointer)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	dynakube, err := provisioner.db.GetDynakube(dk.Name)
+	dynakubeEntry, err := provisioner.db.GetDynakube(dynakubePointer.Name)
 	if err != nil {
 		return reconcile.Result{}, errors.WithStack(err)
 	}
 
 	// In case of a new dynakube
 	var oldDynakube metadata.Dynakube
-	if dynakube == nil {
-		dynakube = &metadata.Dynakube{}
+	if dynakubeEntry == nil {
+		dynakubeEntry = &metadata.Dynakube{}
 	} else {
-		oldDynakube = *dynakube
+		oldDynakube = *dynakubeEntry
 	}
-	log.Info("checking dynakube", "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
+	log.Info("checking dynakube", "tenantUUID", dynakubeEntry.TenantUUID, "version", dynakubeEntry.LatestVersion)
 
-	dynakube.Name = dk.Name
-	dynakube.TenantUUID = dk.ConnectionInfo().TenantUUID
+	dynakubeEntry.Name = dynakubePointer.Name
+	dynakubeEntry.TenantUUID = dynakubePointer.ConnectionInfo().TenantUUID
 
 	// Create/update the dynakube entry while `LatestVersion` is not necessarily set
 	// so the host oneagent-storages can be mounted before the standalone agent binaries are ready to be mounted
-	err = provisioner.createOrUpdateDynakube(oldDynakube, dynakube)
+	err = provisioner.createOrUpdateDynakube(oldDynakube, dynakubeEntry)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	oldDynakube = *dynakube
+	oldDynakube = *dynakubeEntry
 
-	if err = provisioner.createCSIDirectories(fs, provisioner.path.EnvDir(dynakube.TenantUUID)); err != nil {
-		log.Error(err, "error when creating csi directories", "path", provisioner.path.EnvDir(dynakube.TenantUUID))
+	if err = provisioner.createCSIDirectories(fs, provisioner.path.EnvDir(dynakubeEntry.TenantUUID)); err != nil {
+		log.Error(err, "error when creating csi directories", "path", provisioner.path.EnvDir(dynakubeEntry.TenantUUID))
 		return reconcile.Result{}, errors.WithStack(err)
 	}
-	log.Info("csi directories exist", "path", provisioner.path.EnvDir(dynakube.TenantUUID))
+	log.Info("csi directories exist", "path", provisioner.path.EnvDir(dynakubeEntry.TenantUUID))
 
-	latestProcessModuleConfig, storedHash, err := provisioner.getProcessModuleConfig(fs, dtc, dynakube.TenantUUID)
+	latestProcessModuleConfig, storedHash, err := provisioner.getProcessModuleConfig(fs, dtc, dynakubeEntry.TenantUUID)
 	if err != nil {
 		log.Error(err, "error when getting the latest ruxitagentproc.conf")
 		return reconcile.Result{}, err
 	}
-	latestProcessModuleConfigCache := newProcessModuleConfigCache(addHostGroup(dk, latestProcessModuleConfig))
+	latestProcessModuleConfigCache := newProcessModuleConfigCache(addHostGroup(dynakubePointer, latestProcessModuleConfig))
 
-	installAgentCfg := newInstallAgentConfig(dtc, provisioner.path, fs, provisioner.recorder, dk)
-	if updatedVersion, err := installAgentCfg.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID, storedHash, latestProcessModuleConfigCache); err != nil {
+	installAgentCfg := newInstallAgentConfig(dtc, provisioner.path, fs, provisioner.recorder, dynakubePointer)
+	if updatedVersion, err := installAgentCfg.updateAgent(dynakubeEntry.LatestVersion, dynakubeEntry.TenantUUID, storedHash, latestProcessModuleConfigCache); err != nil {
 		log.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 	} else if updatedVersion != "" {
-		dynakube.LatestVersion = updatedVersion
+		dynakubeEntry.LatestVersion = updatedVersion
 	}
 
 	// Set/Update the `LatestVersion` field in the database entry
-	err = provisioner.createOrUpdateDynakube(oldDynakube, dynakube)
+	err = provisioner.createOrUpdateDynakube(oldDynakube, dynakubeEntry)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	err = provisioner.writeProcessModuleConfigCache(fs, dynakube.TenantUUID, latestProcessModuleConfigCache)
+	err = provisioner.writeProcessModuleConfigCache(fs, dynakubeEntry.TenantUUID, latestProcessModuleConfigCache)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

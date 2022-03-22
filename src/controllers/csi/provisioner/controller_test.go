@@ -207,23 +207,23 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: tenantUUID,
 		}, nil)
-		provisioner := &OneAgentProvisioner{
-			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dkName,
-					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
-						OneAgent: dynatracev1beta1.OneAgentSpec{
-							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-						},
-					},
-					Status: dynatracev1beta1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-							TenantUUID: tenantUUID,
-						},
-					},
+		testDynakube := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dkName,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 				},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
+					TenantUUID: tenantUUID,
+				},
+			},
+		}
+		provisioner := &OneAgentProvisioner{
+			apiReader: fake.NewClient(&testDynakube,
 				&v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -235,7 +235,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			},
 			db: metadata.FakeMemoryDB(),
 		}
-		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, errorfs)
+		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, errorfs, testDynakube)
 
 		assert.EqualError(t, err, "failed to create directory "+filepath.Join(tenantUUID)+": "+errorMsg)
 		assert.NotNil(t, result)
@@ -258,23 +258,23 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, mock.AnythingOfType("string"), mock.AnythingOfType("string")).
 			Return(make([]string, 0), fmt.Errorf(errorMsg))
 		mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("uint")).Return(&testProcessModuleConfig, nil)
-		provisioner := &OneAgentProvisioner{
-			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dkName,
-					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
-						OneAgent: dynatracev1beta1.OneAgentSpec{
-							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-						},
-					},
-					Status: dynatracev1beta1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-							TenantUUID: tenantUUID,
-						},
-					},
+		testDynakube := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dkName,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 				},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
+					TenantUUID: tenantUUID,
+				},
+			},
+		}
+		provisioner := &OneAgentProvisioner{
+			apiReader: fake.NewClient(&testDynakube,
 				&v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -288,7 +288,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			recorder: &record.FakeRecorder{},
 		}
 
-		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs)
+		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs, testDynakube)
 
 		// "go test" breaks if the output does not end with a newline
 		// making sure one is printed here
@@ -311,23 +311,23 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		mockClient.On("GetLatestAgentVersion",
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return(agentVersion, nil)
-		provisioner := &OneAgentProvisioner{
-			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dkName,
-					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
-						OneAgent: dynatracev1beta1.OneAgentSpec{
-							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-						},
-					},
-					Status: dynatracev1beta1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-							TenantUUID: tenantUUID,
-						},
-					},
+		testDynakube := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dkName,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 				},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
+					TenantUUID: tenantUUID,
+				},
+			},
+		}
+		provisioner := &OneAgentProvisioner{
+			apiReader: fake.NewClient(&testDynakube,
 				&v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -340,7 +340,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			db: &metadata.FakeFailDB{},
 		}
 
-		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs)
+		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs, testDynakube)
 
 		assert.Error(t, err)
 		assert.Empty(t, result)
@@ -373,24 +373,24 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			}).
 			Return(nil)
 		mockClient.On("GetProcessModuleConfig", mock.AnythingOfType("uint")).Return(&testProcessModuleConfig, nil)
-		r := &OneAgentProvisioner{
-			apiReader: fake.NewClient(
-				&dynatracev1beta1.DynaKube{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: dkName,
-					},
-					Spec: dynatracev1beta1.DynaKubeSpec{
-						OneAgent: dynatracev1beta1.OneAgentSpec{
-							ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
-						},
-					},
-					Status: dynatracev1beta1.DynaKubeStatus{
-						ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
-							TenantUUID: tenantUUID,
-						},
-						LatestAgentVersionUnixPaas: agentVersion,
-					},
+		testDynakube := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dkName,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: buildValidApplicationMonitoringSpec(t),
 				},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
+					TenantUUID: tenantUUID,
+				},
+				LatestAgentVersionUnixPaas: agentVersion,
+			},
+		}
+		r := &OneAgentProvisioner{
+			apiReader: fake.NewClient(&testDynakube,
 				&v1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: dkName,
@@ -404,7 +404,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			recorder: &record.FakeRecorder{},
 		}
 
-		result, err := r.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs)
+		result, err := r.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs, testDynakube)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
