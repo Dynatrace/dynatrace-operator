@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -57,9 +56,8 @@ type OneAgentProvisioner struct {
 	db           metadata.Access
 	path         metadata.PathResolver
 
-	mu                       *sync.Mutex
-	currentParallelDownloads int64
-	currentlyDownloading     map[string]bool
+	mu                   *sync.Mutex
+	currentlyDownloading map[string]bool
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -80,23 +78,31 @@ func NewOneAgentProvisioner(
 	}
 }
 
-func (provisioner *OneAgentProvisioner) setCurrentlyDownloading(name string) {
+func (provisioner *OneAgentProvisioner) setCurrentlyDownloading(tenant string) {
 	provisioner.mu.Lock()
-	provisioner.currentlyDownloading[name] = true
+	provisioner.currentlyDownloading[tenant] = true
 	provisioner.mu.Unlock()
 }
 
-func (provisioner *OneAgentProvisioner) isCurrentlyDownloading(name string) bool {
+func (provisioner *OneAgentProvisioner) isCurrentlyDownloading(tenant string) bool {
 	var isDownloading bool
 	provisioner.mu.Lock()
-	isDownloading = provisioner.currentlyDownloading[name]
+	_, isDownloading = provisioner.currentlyDownloading[tenant]
 	provisioner.mu.Unlock()
 	return isDownloading
 }
 
-func (provisioner *OneAgentProvisioner) unsetCurrentlyDownloading(name string) {
+func (provisioner *OneAgentProvisioner) concurrentDownloads() int64 {
+	var amount int
 	provisioner.mu.Lock()
-	provisioner.currentlyDownloading[name] = false
+	amount = len(provisioner.currentlyDownloading)
+	provisioner.mu.Unlock()
+	return int64(amount)
+}
+
+func (provisioner *OneAgentProvisioner) unsetCurrentlyDownloading(tenant string) {
+	provisioner.mu.Lock()
+	delete(provisioner.currentlyDownloading, tenant)
 	provisioner.mu.Unlock()
 }
 
@@ -137,8 +143,6 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 			log.Info("still downloading", "tenant", tenant)
 			return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 		}
-
-		atomic.AddInt64(&provisioner.currentParallelDownloads, 1)
 		provisioner.setCurrentlyDownloading(tenant)
 		log.Info("starting parallel download")
 		go provisioner.startParallelReconcile(ctx, request, fs, *dk)
@@ -149,7 +153,6 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 }
 
 func (provisioner *OneAgentProvisioner) startParallelReconcile(ctx context.Context, request reconcile.Request, fs afero.Fs, dk dynatracev1beta1.DynaKube) {
-	defer atomic.AddInt64(&provisioner.currentParallelDownloads, -1)
 	defer provisioner.unsetCurrentlyDownloading(dk.ConnectionInfo().TenantUUID)
 	_, err := provisioner.reconcile(ctx, request, fs, dk)
 	if err != nil {
@@ -161,7 +164,7 @@ func (provisioner *OneAgentProvisioner) parallelDownloadsEnabled() bool {
 	return provisioner.opts.MaxParallelDownloads > dtcsi.ParallelDownloadsLowerLimit
 }
 func (provisioner *OneAgentProvisioner) parallelDownloadsLimitReached() bool {
-	return provisioner.currentParallelDownloads >= provisioner.opts.MaxParallelDownloads
+	return provisioner.concurrentDownloads() >= provisioner.opts.MaxParallelDownloads
 }
 
 func (provisioner *OneAgentProvisioner) reconcile(ctx context.Context, request reconcile.Request, fs afero.Fs, dynakube dynatracev1beta1.DynaKube) (reconcile.Result, error) {

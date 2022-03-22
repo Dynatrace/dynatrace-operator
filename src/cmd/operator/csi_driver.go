@@ -121,7 +121,7 @@ func getMaxParallelDowloads() int64 {
 		log.Error(err, "couldn't convert envvar to int64", "envvar", dtcsi.MaxParallelDownloadsEnvVar, "value", raw)
 		return 0
 	}
-	if maxParallelDownloads < dtcsi.ParallelDownloadsLowerLimit || maxParallelDownloads >= dtcsi.ParallelDownloadsUpperLimit {
+	if maxParallelDownloads < dtcsi.ParallelDownloadsLowerLimit || maxParallelDownloads > dtcsi.ParallelDownloadsUpperLimit {
 		log.Info("max parallel downloads was set to an illegal value",
 			"value", maxParallelDownloads,
 			"minimum", dtcsi.ParallelDownloadsLowerLimit,
