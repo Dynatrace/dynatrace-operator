@@ -54,21 +54,25 @@ type OneAgentProvisioner struct {
 	db           metadata.Access
 	path         metadata.PathResolver
 
-	currentParallel int64
-	maxParallel     int64
+	currentParallelDownloads int64
+	maxParallelDownloads     int64
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
-func NewOneAgentProvisioner(mgr manager.Manager, opts dtcsi.CSIOptions, db metadata.Access, maxParallel int64) *OneAgentProvisioner {
+func NewOneAgentProvisioner(
+	mgr manager.Manager,
+	opts dtcsi.CSIOptions,
+	db metadata.Access,
+	maxParallelDownloads int64) *OneAgentProvisioner {
 	return &OneAgentProvisioner{
-		client:       mgr.GetClient(),
-		apiReader:    mgr.GetAPIReader(),
-		opts:         opts,
-		dtcBuildFunc: dynakube.BuildDynatraceClient,
-		recorder:     mgr.GetEventRecorderFor("OneAgentProvisioner"),
-		db:           db,
-		path:         metadata.PathResolver{RootDir: opts.RootDir},
-		maxParallel:  maxParallel,
+		client:               mgr.GetClient(),
+		apiReader:            mgr.GetAPIReader(),
+		opts:                 opts,
+		dtcBuildFunc:         dynakube.BuildDynatraceClient,
+		recorder:             mgr.GetEventRecorderFor("OneAgentProvisioner"),
+		db:                   db,
+		path:                 metadata.PathResolver{RootDir: opts.RootDir},
+		maxParallelDownloads: maxParallelDownloads,
 	}
 }
 
@@ -80,23 +84,30 @@ func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error
 
 func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	fs := afero.NewOsFs()
-	if provisioner.maxParallel > 0 {
-		if provisioner.currentParallel == provisioner.maxParallel {
+	if provisioner.parallelDownloadsEnabled() {
+		if provisioner.parallelDownloadsLimitReached() {
 			log.Info("max parallel downloads reached, requeued")
 			return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 		}
-		atomic.AddInt64(&provisioner.currentParallel, 1)
+		atomic.AddInt64(&provisioner.currentParallelDownloads, 1)
 		log.Info("staring parallel download")
 		go func() {
+			defer atomic.AddInt64(&provisioner.currentParallelDownloads, -1)
 			_, err := provisioner.reconcile(ctx, request, fs)
 			if err != nil {
 				log.Error(err, "Problem while provisioning oneagents in parallel")
 			}
-			atomic.AddInt64(&provisioner.currentParallel, -1)
 		}()
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 	}
 	return provisioner.reconcile(ctx, request, fs)
+}
+
+func (provisioner *OneAgentProvisioner) parallelDownloadsEnabled() bool {
+	return provisioner.maxParallelDownloads > 0
+}
+func (provisioner *OneAgentProvisioner) parallelDownloadsLimitReached() bool {
+	return provisioner.currentParallelDownloads >= provisioner.maxParallelDownloads
 }
 
 func (provisioner *OneAgentProvisioner) reconcile(ctx context.Context, request reconcile.Request, fs afero.Fs) (reconcile.Result, error) {

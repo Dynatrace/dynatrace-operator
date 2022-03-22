@@ -96,8 +96,8 @@ func setupCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error
 		return nil, cleanUp, err
 	}
 
-	maxParallel, _ := strconv.ParseInt(os.Getenv("MAX_PARALLEL"), 10, 64)
-	if err := csiprovisioner.NewOneAgentProvisioner(mgr, csiOpts, access, maxParallel).SetupWithManager(mgr); err != nil {
+	maxParallelDownloads, _ := strconv.ParseInt(os.Getenv("MAX_PARALLEL_DOWNLOADS"), 10, 64)
+	if err := csiprovisioner.NewOneAgentProvisioner(mgr, csiOpts, access, maxParallelDownloads).SetupWithManager(mgr); err != nil {
 		log.Error(err, "unable to create CSI Provisioner")
 		return nil, cleanUp, err
 	}
