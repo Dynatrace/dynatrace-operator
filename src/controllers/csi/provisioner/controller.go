@@ -120,6 +120,8 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
+			provisioner.mu.Lock()
+			defer provisioner.mu.Unlock()
 			return reconcile.Result{}, provisioner.db.DeleteDynakube(request.Name)
 		}
 		return reconcile.Result{}, err
@@ -237,6 +239,8 @@ func (provisioner *OneAgentProvisioner) reconcile(ctx context.Context, request r
 }
 
 func (provisioner *OneAgentProvisioner) createOrUpdateDynakube(oldDynakube metadata.Dynakube, dynakube *metadata.Dynakube) error {
+	provisioner.mu.Lock()
+	defer provisioner.mu.Unlock()
 	if oldDynakube != *dynakube {
 		log.Info("dynakube has changed",
 			"name", dynakube.Name, "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)

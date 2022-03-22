@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -46,6 +47,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        metadata.FakeMemoryDB(),
+			mu:        &sync.Mutex{},
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{})
 
@@ -60,6 +62,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        db,
+			mu:        &sync.Mutex{},
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
 
@@ -234,6 +237,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				return mockClient, nil
 			},
 			db: metadata.FakeMemoryDB(),
+			mu: &sync.Mutex{},
 		}
 		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, errorfs, testDynakube)
 
@@ -286,6 +290,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			},
 			db:       metadata.FakeMemoryDB(),
 			recorder: &record.FakeRecorder{},
+			mu:       &sync.Mutex{},
 		}
 
 		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs, testDynakube)
@@ -338,6 +343,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 				return mockClient, nil
 			},
 			db: &metadata.FakeFailDB{},
+			mu: &sync.Mutex{},
 		}
 
 		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs, testDynakube)
@@ -402,6 +408,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			},
 			db:       memDB,
 			recorder: &record.FakeRecorder{},
+			mu:       &sync.Mutex{},
 		}
 
 		result, err := r.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs, testDynakube)
@@ -475,6 +482,7 @@ func TestProvisioner_CreateDynakube(t *testing.T) {
 	db.InsertDynakube(expectedOtherDynakube)
 	provisioner := &OneAgentProvisioner{
 		db: db,
+		mu: &sync.Mutex{},
 	}
 
 	oldDynakube := metadata.Dynakube{}
@@ -503,6 +511,7 @@ func TestProvisioner_UpdateDynakube(t *testing.T) {
 
 	provisioner := &OneAgentProvisioner{
 		db: db,
+		mu: &sync.Mutex{},
 	}
 	newDynakube := metadata.NewDynakube(dkName, "new-uuid", "v2")
 
