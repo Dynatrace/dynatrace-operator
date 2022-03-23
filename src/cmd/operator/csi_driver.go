@@ -116,6 +116,9 @@ func setupCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error
 
 func getMaxParallelDowloads() int64 {
 	raw := os.Getenv(dtcsi.MaxParallelReconcilesEnvVar)
+	if raw == "" {
+		return dtcsi.ParallelReconcilesLowerLimit
+	}
 	maxParallelDownloads, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil {
 		log.Error(err, "couldn't convert envvar to int64", "envvar", dtcsi.MaxParallelReconcilesEnvVar, "value", raw)

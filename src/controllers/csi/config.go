@@ -30,9 +30,9 @@ const (
 	OverlayWorkDirPath   = "work"
 	DaemonSetName        = "dynatrace-oneagent-csi-driver"
 
-	MaxParallelReconcilesEnvVar        = "MAX_RECONCILES_DOWNLOADS"
+	MaxParallelReconcilesEnvVar        = "MAX_PARALLEL_RECONCILES"
 	ParallelReconcilesUpperLimit int64 = 40
-	ParallelReconcilesLowerLimit int64 = 0
+	ParallelReconcilesLowerLimit int64 = 1
 )
 
 var MetadataAccessPath = filepath.Join(DataPath, "csi.db")
