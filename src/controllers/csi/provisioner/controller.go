@@ -27,6 +27,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -57,7 +58,7 @@ type OneAgentProvisioner struct {
 	path         metadata.PathResolver
 
 	mu                   *sync.Mutex
-	currentlyDownloading map[string]bool
+	currentlyReconciling *kubeobjects.StringSet
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -74,36 +75,32 @@ func NewOneAgentProvisioner(
 		db:                   db,
 		path:                 metadata.PathResolver{RootDir: opts.RootDir},
 		mu:                   &sync.Mutex{},
-		currentlyDownloading: map[string]bool{},
+		currentlyReconciling: kubeobjects.NewStringSet(),
 	}
 }
 
-func (provisioner *OneAgentProvisioner) setCurrentlyDownloading(tenant string) {
+func (provisioner *OneAgentProvisioner) setCurrentlyReconciling(tenant string) {
 	provisioner.mu.Lock()
-	provisioner.currentlyDownloading[tenant] = true
-	provisioner.mu.Unlock()
+	defer provisioner.mu.Unlock()
+	provisioner.currentlyReconciling.Add(tenant)
 }
 
-func (provisioner *OneAgentProvisioner) isCurrentlyDownloading(tenant string) bool {
-	var isDownloading bool
+func (provisioner *OneAgentProvisioner) isCurrentlyReconciling(tenant string) bool {
 	provisioner.mu.Lock()
-	_, isDownloading = provisioner.currentlyDownloading[tenant]
-	provisioner.mu.Unlock()
-	return isDownloading
+	defer provisioner.mu.Unlock()
+	return provisioner.currentlyReconciling.Contains(tenant)
 }
 
 func (provisioner *OneAgentProvisioner) concurrentDownloads() int64 {
-	var amount int
 	provisioner.mu.Lock()
-	amount = len(provisioner.currentlyDownloading)
-	provisioner.mu.Unlock()
-	return int64(amount)
+	defer provisioner.mu.Unlock()
+	return int64(provisioner.currentlyReconciling.Size())
 }
 
 func (provisioner *OneAgentProvisioner) unsetCurrentlyDownloading(tenant string) {
 	provisioner.mu.Lock()
-	delete(provisioner.currentlyDownloading, tenant)
-	provisioner.mu.Unlock()
+	defer provisioner.mu.Unlock()
+	provisioner.currentlyReconciling.Remove(tenant)
 }
 
 func (provisioner *OneAgentProvisioner) SetupWithManager(mgr ctrl.Manager) error {
@@ -136,17 +133,17 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
 
-	if provisioner.parallelDownloadsEnabled() {
-		if provisioner.parallelDownloadsLimitReached() {
-			log.Info("max parallel downloads reached, requeued")
+	if provisioner.parallelReconcilesEnabled() {
+		if provisioner.parallelReconcilesLimitReached() {
+			log.Info("max parallel reconciles reached, requeued")
 			return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 		}
-		if provisioner.isCurrentlyDownloading(tenant) {
-			log.Info("still downloading", "tenant", tenant)
+		if provisioner.isCurrentlyReconciling(tenant) {
+			log.Info("still reconciling", "tenant", tenant)
 			return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 		}
-		provisioner.setCurrentlyDownloading(tenant)
-		log.Info("starting parallel download")
+		provisioner.setCurrentlyReconciling(tenant)
+		log.Info("starting parallel reconcile")
 		go provisioner.startParallelReconcile(ctx, request, fs, *dk)
 
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
@@ -162,10 +159,10 @@ func (provisioner *OneAgentProvisioner) startParallelReconcile(ctx context.Conte
 	}
 }
 
-func (provisioner *OneAgentProvisioner) parallelDownloadsEnabled() bool {
-	return provisioner.opts.MaxParallelDownloads > dtcsi.ParallelDownloadsLowerLimit
+func (provisioner *OneAgentProvisioner) parallelReconcilesEnabled() bool {
+	return provisioner.opts.MaxParallelDownloads > dtcsi.ParallelReconcilesLowerLimit
 }
-func (provisioner *OneAgentProvisioner) parallelDownloadsLimitReached() bool {
+func (provisioner *OneAgentProvisioner) parallelReconcilesLimitReached() bool {
 	return provisioner.concurrentDownloads() >= provisioner.opts.MaxParallelDownloads
 }
 
