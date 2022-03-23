@@ -50,6 +50,6 @@ func complexTestSecretConfigForClient() *SecretConfig {
 		PaasToken:   testPaasToken,
 		Proxy:       testProxy,
 		NetworkZone: testNetworkZone,
-		TrustedCAs:  testTrustedCA,
+		Ca:          testCa,
 	}
 }

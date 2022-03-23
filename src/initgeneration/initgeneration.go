@@ -123,22 +123,22 @@ func (g *InitGenerator) prepareSecretConfigForDynaKube(dk *dynatracev1beta1.Dyna
 		}
 	}
 
-	var trustedCAs []byte
-	if dk.Spec.TrustedCAs != "" {
+	var clusterCa []byte
+	if dk.Spec.ClusterCa != "" {
 		var cam corev1.ConfigMap
-		if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Spec.TrustedCAs, Namespace: g.namespace}, &cam); err != nil {
+		if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Spec.ClusterCa, Namespace: g.namespace}, &cam); err != nil {
 			return nil, fmt.Errorf("failed to query ca: %w", err)
 		}
-		trustedCAs = []byte(cam.Data[trustedCAKey])
+		clusterCa = []byte(cam.Data[clusterCaKey])
 	}
 
 	var tlsCert string
-	if dk.HasActiveGateTLS() {
+	if dk.HasActiveGateCustomCa() {
 		var tlsSecret corev1.Secret
 		if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Spec.ActiveGate.TlsSecretName, Namespace: g.namespace}, &tlsSecret); err != nil {
 			return nil, fmt.Errorf("failed to query tls secret: %w", err)
 		}
-		tlsCert = string(tlsSecret.Data[tlsCertKey])
+		tlsCert = string(tlsSecret.Data[activeGateCaKey])
 	}
 
 	return &standalone.SecretConfig{
@@ -147,7 +147,7 @@ func (g *InitGenerator) prepareSecretConfigForDynaKube(dk *dynatracev1beta1.Dyna
 		PaasToken:       getPaasToken(tokens),
 		Proxy:           proxy,
 		NetworkZone:     dk.Spec.NetworkZone,
-		TrustedCAs:      string(trustedCAs),
+		Ca:              string(clusterCa),
 		SkipCertCheck:   dk.Spec.SkipCertCheck,
 		TenantUUID:      dk.Status.ConnectionInfo.TenantUUID,
 		HasHost:         dk.CloudNativeFullstackMode(),

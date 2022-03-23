@@ -126,8 +126,8 @@ func TestBuildDynatraceClient(t *testing.T) {
 			}}
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL:     testEndpoint,
-				TrustedCAs: testKey,
+				APIURL:    testEndpoint,
+				ClusterCa: testKey,
 			}}
 
 		fakeClient := fake.NewClient(instance, &secret)
@@ -136,7 +136,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 			Secret:       &secret,
 			ApiUrl:       instance.Spec.APIURL,
 			Namespace:    testNamespace,
-			TrustedCerts: instance.Spec.TrustedCAs,
+			TrustedCerts: instance.Spec.ClusterCa,
 		}
 		dtc, err := BuildDynatraceClient(dtf)
 
@@ -269,7 +269,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 // 					Certificates: testValue,
 // 				}})
 // 		err = options.appendTrustedCerts(fakeClient, &dynatracev1alpha1.DynaKubeSpec{
-// 			TrustedCAs: testName,
+// 			Ca: testName,
 // 		}, testNamespace)
 
 // 		assert.NoError(t, err)
@@ -283,7 +283,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 
 // 		fakeClient := fake.NewClient()
 // 		err := options.appendTrustedCerts(fakeClient, &dynatracev1alpha1.DynaKubeSpec{
-// 			TrustedCAs: testName,
+// 			Ca: testName,
 // 		}, testNamespace)
 
 // 		assert.Error(t, err)
@@ -297,7 +297,7 @@ func TestBuildDynatraceClient(t *testing.T) {
 // 				},
 // 				Data: map[string]string{}})
 // 		err = options.appendTrustedCerts(fakeClient, &dynatracev1alpha1.DynaKubeSpec{
-// 			TrustedCAs: testName,
+// 			Ca: testName,
 // 		}, testNamespace)
 
 // 		assert.Error(t, err)

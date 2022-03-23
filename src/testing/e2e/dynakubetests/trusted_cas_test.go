@@ -16,23 +16,23 @@ import (
 )
 
 // Fails since Operator does not create OneAgent pods when certs are invalid
-func TestTrustedCAs(t *testing.T) {
+func TestClusterCa(t *testing.T) {
 	apiURL, clt := prepareDefaultEnvironment(t)
 	oneAgent := createMinimumViableOneAgent(apiURL)
 
-	trustedCAs := v1.ConfigMap{
+	clusterCa := v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      testName,
 			Namespace: namespace,
 		},
 		Data: map[string]string{testCertName: testData},
 	}
-	oneAgent.Spec.TrustedCAs = testName
+	oneAgent.Spec.ClusterCa = testName
 
 	// prevent creation of pull secret, which would fail due to the test cert being invalid
 	oneAgent.Spec.CustomPullSecret = testName
 
-	err := clt.Create(context.TODO(), &trustedCAs)
+	err := clt.Create(context.TODO(), &clusterCa)
 	require.NoError(t, err)
 
 	err = clt.Create(context.TODO(), &oneAgent)

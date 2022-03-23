@@ -60,8 +60,8 @@ func (builder *dtclientBuilder) addNetworkZone() {
 }
 
 func (builder *dtclientBuilder) addTrustedCerts() {
-	if builder.config.TrustedCAs != "" {
-		log.Info("using TrustedCAs, check the secret for more details")
-		builder.options = append(builder.options, dtclient.Certs([]byte(builder.config.TrustedCAs)))
+	if builder.config.Ca != "" {
+		log.Info("using CA, check the secret for more details")
+		builder.options = append(builder.options, dtclient.Certs([]byte(builder.config.Ca)))
 	}
 }

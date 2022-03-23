@@ -9,7 +9,7 @@ var (
 )
 
 const (
-	trustedCAKey = "certs"
-	proxyKey     = "proxy"
-	tlsCertKey   = "server.crt"
+	clusterCaKey    = "certs"
+	proxyKey        = "proxy"
+	activeGateCaKey = "server.crt"
 )

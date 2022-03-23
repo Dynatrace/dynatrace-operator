@@ -104,7 +104,7 @@ type DynaKubeSpec struct {
 	// This property only affects certificates used to communicate with the Dynatrace API.
 	// The property is not applied to the ActiveGate
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Trusted CAs",order=6,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:io.kubernetes:ConfigMap"}
-	TrustedCAs string `json:"trustedCAs,omitempty"`
+	ClusterCa string `json:"trustedCAs,omitempty"`
 
 	// Optional: Sets Network Zone for OneAgent and ActiveGate pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Network Zone",order=7,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}

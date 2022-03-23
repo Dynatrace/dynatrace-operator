@@ -18,7 +18,7 @@ const (
 	testToken                     = "test-token"
 	testCustomPullSecret          = "test-custompullsecret"
 	testProxyValue                = "test-proxyvalue"
-	testTrustedCAs                = "test-trustedCAs"
+	testClusterCa                 = "test-clusterCa"
 	testNetworkZone               = "test-networkzone"
 	testOneAgentImage             = "test-oneagent-image"
 	testOneAgentVersion           = "test-oneagent-version"
@@ -77,7 +77,7 @@ func TestConversion_ConvertFrom(t *testing.T) {
 			Proxy: &v1alpha1.DynaKubeProxy{
 				Value: testProxyValue,
 			},
-			TrustedCAs:  testTrustedCAs,
+			TrustedCAs:  testClusterCa,
 			NetworkZone: testNetworkZone,
 			EnableIstio: true,
 
@@ -197,7 +197,7 @@ func TestConversion_ConvertFrom(t *testing.T) {
 	assert.Equal(t, oldDynakube.Spec.SkipCertCheck, convertedDynakube.Spec.SkipCertCheck)
 	assert.Equal(t, oldDynakube.Spec.Proxy.ValueFrom, convertedDynakube.Spec.Proxy.ValueFrom)
 	assert.Equal(t, oldDynakube.Spec.Proxy.Value, convertedDynakube.Spec.Proxy.Value)
-	assert.Equal(t, oldDynakube.Spec.TrustedCAs, convertedDynakube.Spec.TrustedCAs)
+	assert.Equal(t, oldDynakube.Spec.TrustedCAs, convertedDynakube.Spec.ClusterCa)
 	assert.Equal(t, oldDynakube.Spec.NetworkZone, convertedDynakube.Spec.NetworkZone)
 	assert.Equal(t, oldDynakube.Spec.EnableIstio, convertedDynakube.Spec.EnableIstio)
 
@@ -322,7 +322,7 @@ func TestConversion_ConvertTo(t *testing.T) {
 			Proxy: &DynaKubeProxy{
 				Value: testProxyValue,
 			},
-			TrustedCAs:  testTrustedCAs,
+			ClusterCa:   testClusterCa,
 			NetworkZone: testNetworkZone,
 			EnableIstio: true,
 
@@ -421,7 +421,7 @@ func TestConversion_ConvertTo(t *testing.T) {
 	assert.Equal(t, oldDynakube.Spec.SkipCertCheck, convertedDynakube.Spec.SkipCertCheck)
 	assert.Equal(t, oldDynakube.Spec.Proxy.ValueFrom, convertedDynakube.Spec.Proxy.ValueFrom)
 	assert.Equal(t, oldDynakube.Spec.Proxy.Value, convertedDynakube.Spec.Proxy.Value)
-	assert.Equal(t, oldDynakube.Spec.TrustedCAs, convertedDynakube.Spec.TrustedCAs)
+	assert.Equal(t, oldDynakube.Spec.ClusterCa, convertedDynakube.Spec.TrustedCAs)
 	assert.Equal(t, oldDynakube.Spec.NetworkZone, convertedDynakube.Spec.NetworkZone)
 	assert.Equal(t, oldDynakube.Spec.EnableIstio, convertedDynakube.Spec.EnableIstio)
 

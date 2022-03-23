@@ -17,7 +17,7 @@ func (src *DynaKube) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
 	dst.Spec.SkipCertCheck = src.Spec.SkipCertCheck
 	dst.Spec.Proxy = (*v1alpha1.DynaKubeProxy)(src.Spec.Proxy)
-	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
+	dst.Spec.TrustedCAs = src.Spec.ClusterCa
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
 
@@ -119,7 +119,7 @@ func (dst *DynaKube) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Spec.CustomPullSecret = src.Spec.CustomPullSecret
 	dst.Spec.SkipCertCheck = src.Spec.SkipCertCheck
 	dst.Spec.Proxy = (*DynaKubeProxy)(src.Spec.Proxy)
-	dst.Spec.TrustedCAs = src.Spec.TrustedCAs
+	dst.Spec.ClusterCa = src.Spec.TrustedCAs
 	dst.Spec.NetworkZone = src.Spec.NetworkZone
 	dst.Spec.EnableIstio = src.Spec.EnableIstio
 

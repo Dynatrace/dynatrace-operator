@@ -18,7 +18,7 @@ const (
 
 	testProxy       = "proxy"
 	testNetworkZone = "zone"
-	testTrustedCA   = "secret"
+	testCa          = "secret"
 
 	testTenantUUID = "test"
 	testNodeName   = "node1"
@@ -33,7 +33,7 @@ var testSecretConfig = SecretConfig{
 	PaasToken:     testPaasToken,
 	Proxy:         testProxy,
 	NetworkZone:   testNetworkZone,
-	TrustedCAs:    testTrustedCA,
+	Ca:            testCa,
 	SkipCertCheck: true,
 	TenantUUID:    testTenantUUID,
 	HasHost:       true,
@@ -59,7 +59,7 @@ func TestNewSecretConfigViaFs(t *testing.T) {
 		assert.Equal(t, testPaasToken, config.PaasToken)
 		assert.Equal(t, testProxy, config.Proxy)
 		assert.Equal(t, testNetworkZone, config.NetworkZone)
-		assert.Equal(t, testTrustedCA, config.TrustedCAs)
+		assert.Equal(t, testCa, config.Ca)
 		assert.True(t, config.SkipCertCheck)
 		assert.Equal(t, testTenantUUID, config.TenantUUID)
 		assert.True(t, config.HasHost)

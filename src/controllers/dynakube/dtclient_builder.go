@@ -46,7 +46,7 @@ func NewDynatraceClientProperties(ctx context.Context, apiReader client.Reader, 
 		Namespace:           dk.Namespace,
 		Proxy:               (*DynatraceClientProxy)(dk.Spec.Proxy),
 		NetworkZone:         dk.Spec.NetworkZone,
-		TrustedCerts:        dk.Spec.TrustedCAs,
+		TrustedCerts:        dk.Spec.ClusterCa,
 		SkipCertCheck:       dk.Spec.SkipCertCheck,
 		DisableHostRequests: dk.FeatureDisableHostsRequests(),
 	}, err

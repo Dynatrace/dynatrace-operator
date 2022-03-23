@@ -90,7 +90,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 		ApiUrl:              instance.Spec.APIURL,
 		Namespace:           r.ns,
 		NetworkZone:         instance.Spec.NetworkZone,
-		TrustedCerts:        instance.Spec.TrustedCAs,
+		TrustedCerts:        instance.Spec.ClusterCa,
 		SkipCertCheck:       instance.Spec.SkipCertCheck,
 		DisableHostRequests: instance.FeatureDisableHostsRequests(),
 	})

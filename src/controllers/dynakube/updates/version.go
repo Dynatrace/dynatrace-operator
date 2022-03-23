@@ -62,7 +62,7 @@ func ReconcileVersions(
 	}
 
 	dockerCfg := dtversion.DockerConfig{Auths: auths, SkipCertCheck: dk.Spec.SkipCertCheck}
-	if dk.Spec.TrustedCAs != "" {
+	if dk.Spec.ClusterCa != "" {
 		dockerCfg.UseTrustedCerts = saveCustomCAs(cl, *dk)
 		defer func() {
 			_ = os.Remove(path.Join(dtversion.TmpCAPath, dtversion.TmpCAName))
@@ -99,7 +99,7 @@ func ReconcileVersions(
 
 func saveCustomCAs(cl client.Client, dk dynatracev1beta1.DynaKube) bool {
 	certs := &corev1.ConfigMap{}
-	if err := cl.Get(context.TODO(), client.ObjectKey{Namespace: dk.Namespace, Name: dk.Spec.TrustedCAs}, certs); err != nil {
+	if err := cl.Get(context.TODO(), client.ObjectKey{Namespace: dk.Namespace, Name: dk.Spec.ClusterCa}, certs); err != nil {
 		log.Error(err, "failed to load trusted CAs")
 		return false
 	}

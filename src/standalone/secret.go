@@ -17,7 +17,7 @@ type SecretConfig struct {
 	PaasToken     string `json:"paasToken"`
 	Proxy         string `json:"proxy"`
 	NetworkZone   string `json:"networkZone"`
-	TrustedCAs    string `json:"trustedCAs"`
+	Ca            string `json:"Ca"`
 	SkipCertCheck bool   `json:"skipCertCheck"`
 
 	// For the injection
@@ -38,8 +38,8 @@ func (secret SecretConfig) logContent() {
 	if secret.PaasToken != "" {
 		secret.PaasToken = "***"
 	}
-	if secret.TrustedCAs != "" {
-		secret.TrustedCAs = "***"
+	if secret.Ca != "" {
+		secret.Ca = "***"
 	}
 	if secret.TlsCert != "" {
 		secret.TlsCert = "***"

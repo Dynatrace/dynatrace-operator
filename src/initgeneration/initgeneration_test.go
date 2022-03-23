@@ -25,7 +25,7 @@ var (
 	testTokensName           = "kitchen-sink"
 	testApiUrl               = "https://test-url/api"
 	testProxy                = "testproxy.com"
-	testtrustCAsCM           = "testtrustedCAsConfigMap"
+	testClusterCa            = "testClusterCaConfigMap"
 	testCAValue              = "somecertificate"
 	testTenantUUID           = "abc12345"
 	kubesystemNamespace      = "kube-system"
@@ -38,10 +38,10 @@ var (
 	testDynakubeComplex = &dynatracev1beta1.DynaKube{
 		ObjectMeta: metav1.ObjectMeta{Name: testDynakubeComplexName, Namespace: operatorNamespace},
 		Spec: dynatracev1beta1.DynaKubeSpec{
-			APIURL:     testApiUrl,
-			Proxy:      &dynatracev1beta1.DynaKubeProxy{Value: testProxy},
-			TrustedCAs: testtrustCAsCM,
-			Tokens:     testTokensName,
+			APIURL:    testApiUrl,
+			Proxy:     &dynatracev1beta1.DynaKubeProxy{Value: testProxy},
+			ClusterCa: testClusterCa,
+			Tokens:    testTokensName,
 			OneAgent: dynatracev1beta1.OneAgentSpec{
 				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
 					HostInjectSpec: dynatracev1beta1.HostInjectSpec{
@@ -113,9 +113,9 @@ var (
 	}
 
 	caConfigMap = &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: testtrustCAsCM, Namespace: operatorNamespace},
+		ObjectMeta: metav1.ObjectMeta{Name: testClusterCa, Namespace: operatorNamespace},
 		Data: map[string]string{
-			trustedCAKey: testCAValue,
+			clusterCaKey: testCAValue,
 		},
 	}
 
@@ -131,7 +131,7 @@ var (
 
 	testTlsSecretDynakubeComplex = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: "testing", Namespace: operatorNamespace},
-		Data:       map[string][]byte{tlsCertKey: []byte("testing")},
+		Data:       map[string][]byte{activeGateCaKey: []byte("testing")},
 	}
 
 	testSecretDynakubeSimple = &corev1.Secret{
@@ -347,7 +347,7 @@ func testForCorrectContent(t *testing.T, secret *corev1.Secret) {
 		ApiToken:        string(secret.Data["apiToken"]),
 		SkipCertCheck:   dk.Spec.SkipCertCheck,
 		Proxy:           testProxy,
-		TrustedCAs:      testCAValue,
+		Ca:              testCAValue,
 		ClusterID:       string(kubesystemUID),
 		TenantUUID:      dk.Status.ConnectionInfo.TenantUUID,
 		MonitoringNodes: imNodes,

@@ -715,7 +715,7 @@ func updateContainerOneAgent(c *corev1.Container, dk *dynatracev1beta1.DynaKube,
 			MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
 			SubPath:   fmt.Sprintf(standalone.ContainerConfFilenameTemplate, c.Name),
 		})
-	if dk.HasActiveGateTLS() {
+	if dk.HasActiveGateCustomCa() {
 		c.VolumeMounts = append(c.VolumeMounts,
 			corev1.VolumeMount{
 				Name:      oneAgentShareVolumeName,

@@ -94,7 +94,7 @@ func (dk *DynaKube) NeedsStatsd() bool {
 	return dk.IsActiveGateMode(StatsdIngestCapability.DisplayName)
 }
 
-func (dk *DynaKube) HasActiveGateTLS() bool {
+func (dk *DynaKube) HasActiveGateCustomCa() bool {
 	return dk.ActiveGateMode() && dk.Spec.ActiveGate.TlsSecretName != ""
 }
 

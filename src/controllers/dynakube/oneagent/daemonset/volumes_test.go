@@ -26,7 +26,7 @@ func TestPrepareVolumes(t *testing.T) {
 	t.Run(`has certificate volume`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
-				TrustedCAs: testName,
+				ClusterCa: testName,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
 				},
@@ -40,7 +40,7 @@ func TestPrepareVolumes(t *testing.T) {
 	t.Run(`has tls volume`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
-				TrustedCAs: testName,
+				ClusterCa: testName,
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
 					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 						dynatracev1beta1.KubeMonCapability.DisplayName,
@@ -85,7 +85,7 @@ func TestPrepareVolumes(t *testing.T) {
 	t.Run(`has all volumes`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
-				TrustedCAs: testName,
+				ClusterCa: testName,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
 				},
@@ -129,7 +129,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		volumeMounts := prepareVolumeMounts(instance)
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
-		assert.NotContains(t, volumeMounts, getCertificateMount())
+		assert.NotContains(t, volumeMounts, getClusterCaCertificateMount())
 	})
 	t.Run(`has certificate volume mount`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
@@ -137,13 +137,13 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
 				},
-				TrustedCAs: testName,
+				ClusterCa: testName,
 			},
 		}
 		volumeMounts := prepareVolumeMounts(instance)
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
-		assert.Contains(t, volumeMounts, getCertificateMount())
+		assert.Contains(t, volumeMounts, getClusterCaCertificateMount())
 	})
 	t.Run(`has tls volume mount`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
@@ -151,7 +151,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
 				},
-				TrustedCAs: testName,
+				ClusterCa: testName,
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
 					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
 						dynatracev1beta1.KubeMonCapability.DisplayName,
@@ -164,7 +164,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		volumeMounts := prepareVolumeMounts(instance)
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
-		assert.Contains(t, volumeMounts, getTLSMount())
+		assert.Contains(t, volumeMounts, getActiveGateCaMount())
 	})
 	t.Run(`doesn't have readonly volume mounts`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
@@ -201,7 +201,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 	t.Run(`has all volume mounts`, func(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
-				TrustedCAs: testName,
+				ClusterCa: testName,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
 				},
@@ -225,8 +225,8 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		volumeMounts := dsInfo.podSpec().Containers[0].VolumeMounts
 
 		assert.Contains(t, volumeMounts, getReadOnlyRootMount())
-		assert.Contains(t, volumeMounts, getCertificateMount())
-		assert.Contains(t, volumeMounts, getTLSMount())
+		assert.Contains(t, volumeMounts, getClusterCaCertificateMount())
+		assert.Contains(t, volumeMounts, getActiveGateCaMount())
 		assert.Contains(t, volumeMounts, getCSIStorageMount())
 	})
 }
