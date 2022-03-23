@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-const OneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
+const oneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
 
 var podLog = log.WithName("pod")
 
@@ -719,7 +719,7 @@ func updateContainerOneAgent(c *corev1.Container, dk *dynatracev1beta1.DynaKube,
 		c.VolumeMounts = append(c.VolumeMounts,
 			corev1.VolumeMount{
 				Name:      oneAgentShareVolumeName,
-				MountPath: filepath.Join(OneAgentCustomKeysPath, "custom.pem"),
+				MountPath: filepath.Join(oneAgentCustomKeysPath, "custom.pem"),
 				SubPath:   "custom.pem",
 			})
 	}
