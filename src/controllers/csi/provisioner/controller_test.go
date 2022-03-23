@@ -47,7 +47,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        metadata.FakeMemoryDB(),
-			mu:        &sync.Mutex{},
+			mutex:     &sync.Mutex{},
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{})
 
@@ -62,7 +62,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(),
 			db:        db,
-			mu:        &sync.Mutex{},
+			mutex:     &sync.Mutex{},
 		}
 		result, err := provisioner.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dynakube.Name}})
 
@@ -236,8 +236,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(dynakube.DynatraceClientProperties) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			db: metadata.FakeMemoryDB(),
-			mu: &sync.Mutex{},
+			db:    metadata.FakeMemoryDB(),
+			mutex: &sync.Mutex{},
 		}
 		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, errorfs, testDynakube)
 
@@ -290,7 +290,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			},
 			db:       metadata.FakeMemoryDB(),
 			recorder: &record.FakeRecorder{},
-			mu:       &sync.Mutex{},
+			mutex:    &sync.Mutex{},
 		}
 
 		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs, testDynakube)
@@ -342,8 +342,8 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			dtcBuildFunc: func(dynakube.DynatraceClientProperties) (dtclient.Client, error) {
 				return mockClient, nil
 			},
-			db: &metadata.FakeFailDB{},
-			mu: &sync.Mutex{},
+			db:    &metadata.FakeFailDB{},
+			mutex: &sync.Mutex{},
 		}
 
 		result, err := provisioner.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs, testDynakube)
@@ -408,7 +408,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			},
 			db:       memDB,
 			recorder: &record.FakeRecorder{},
-			mu:       &sync.Mutex{},
+			mutex:    &sync.Mutex{},
 		}
 
 		result, err := r.reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: dkName}}, memFs, testDynakube)
@@ -481,8 +481,8 @@ func TestProvisioner_CreateDynakube(t *testing.T) {
 	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1")
 	db.InsertDynakube(expectedOtherDynakube)
 	provisioner := &OneAgentProvisioner{
-		db: db,
-		mu: &sync.Mutex{},
+		db:    db,
+		mutex: &sync.Mutex{},
 	}
 
 	oldDynakube := metadata.Dynakube{}
@@ -510,8 +510,8 @@ func TestProvisioner_UpdateDynakube(t *testing.T) {
 	db.InsertDynakube(expectedOtherDynakube)
 
 	provisioner := &OneAgentProvisioner{
-		db: db,
-		mu: &sync.Mutex{},
+		db:    db,
+		mutex: &sync.Mutex{},
 	}
 	newDynakube := metadata.NewDynakube(dkName, "new-uuid", "v2")
 

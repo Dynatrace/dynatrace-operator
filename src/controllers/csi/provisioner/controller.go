@@ -27,7 +27,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -57,8 +56,8 @@ type OneAgentProvisioner struct {
 	db           metadata.Access
 	path         metadata.PathResolver
 
-	mu                   *sync.Mutex
-	currentlyReconciling *kubeobjects.StringSet
+	mutex                *sync.Mutex
+	currentlyReconciling *dtcsi.TenantSet
 }
 
 // NewOneAgentProvisioner returns a new OneAgentProvisioner
@@ -74,32 +73,32 @@ func NewOneAgentProvisioner(
 		recorder:             mgr.GetEventRecorderFor(eventRecorderName),
 		db:                   db,
 		path:                 metadata.PathResolver{RootDir: opts.RootDir},
-		mu:                   &sync.Mutex{},
-		currentlyReconciling: kubeobjects.NewStringSet(),
+		mutex:                &sync.Mutex{},
+		currentlyReconciling: dtcsi.NewTenantSet(),
 	}
 }
 
 func (provisioner *OneAgentProvisioner) setCurrentlyReconciling(tenant string) {
-	provisioner.mu.Lock()
-	defer provisioner.mu.Unlock()
+	provisioner.mutex.Lock()
+	defer provisioner.mutex.Unlock()
 	provisioner.currentlyReconciling.Add(tenant)
 }
 
 func (provisioner *OneAgentProvisioner) isCurrentlyReconciling(tenant string) bool {
-	provisioner.mu.Lock()
-	defer provisioner.mu.Unlock()
+	provisioner.mutex.Lock()
+	defer provisioner.mutex.Unlock()
 	return provisioner.currentlyReconciling.Contains(tenant)
 }
 
 func (provisioner *OneAgentProvisioner) concurrentDownloads() int64 {
-	provisioner.mu.Lock()
-	defer provisioner.mu.Unlock()
+	provisioner.mutex.Lock()
+	defer provisioner.mutex.Unlock()
 	return int64(provisioner.currentlyReconciling.Size())
 }
 
 func (provisioner *OneAgentProvisioner) unsetCurrentlyDownloading(tenant string) {
-	provisioner.mu.Lock()
-	defer provisioner.mu.Unlock()
+	provisioner.mutex.Lock()
+	defer provisioner.mutex.Unlock()
 	provisioner.currentlyReconciling.Remove(tenant)
 }
 
@@ -117,8 +116,8 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	dk, err := provisioner.getDynaKube(ctx, request.NamespacedName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			provisioner.mu.Lock()
-			defer provisioner.mu.Unlock()
+			provisioner.mutex.Lock()
+			defer provisioner.mutex.Unlock()
 			return reconcile.Result{}, provisioner.db.DeleteDynakube(request.Name)
 		}
 		return reconcile.Result{}, err
@@ -236,8 +235,8 @@ func (provisioner *OneAgentProvisioner) reconcile(ctx context.Context, request r
 }
 
 func (provisioner *OneAgentProvisioner) createOrUpdateDynakube(oldDynakube metadata.Dynakube, dynakube *metadata.Dynakube) error {
-	provisioner.mu.Lock()
-	defer provisioner.mu.Unlock()
+	provisioner.mutex.Lock()
+	defer provisioner.mutex.Unlock()
 	if oldDynakube != *dynakube {
 		log.Info("dynakube has changed",
 			"name", dynakube.Name, "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)

@@ -43,3 +43,32 @@ type CSIOptions struct {
 	RootDir              string
 	MaxParallelDownloads int64
 }
+
+var exists = struct{}{}
+
+func NewTenantSet() *TenantSet {
+	set := TenantSet{}
+	set.tenants = map[string]struct{}{}
+	return &set
+}
+
+type TenantSet struct {
+	tenants map[string]struct{}
+}
+
+func (set TenantSet) Add(tenant string) {
+	set.tenants[tenant] = exists
+}
+
+func (set TenantSet) Remove(tenant string) {
+	delete(set.tenants, tenant)
+}
+
+func (set TenantSet) Contains(tenant string) bool {
+	_, ok := set.tenants[tenant]
+	return ok
+}
+
+func (set TenantSet) Size() int {
+	return len(set.tenants)
+}
