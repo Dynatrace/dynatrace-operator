@@ -63,9 +63,9 @@ func (controller *DynakubeController) numberOfMissingActiveGatePods(instance *dy
 	sum := int32(0)
 	capabilityFound := false
 
-	for _, c := range capabilities {
+	for _, activeGateCapability := range capabilities {
 		stsActual := &appsv1.StatefulSet{}
-		instanceName := capability.CalculateStatefulSetName(c, instance.Name)
+		instanceName := capability.CalculateStatefulSetName(activeGateCapability, instance.Name)
 		err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: instance.Namespace}, stsActual)
 
 		if k8serrors.IsNotFound(err) {
