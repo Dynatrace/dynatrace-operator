@@ -39,10 +39,6 @@ const (
 
 	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
 	classicHostIdSource  = "--set-host-id-source=auto"
-
-	ClassicFeature        = "classic"
-	HostMonitoringFeature = "inframon"
-	CloudNativeFeature    = "cloud-native"
 )
 
 var (
@@ -51,7 +47,6 @@ var (
 
 type HostMonitoring struct {
 	builderInfo
-	feature string
 }
 
 type ClassicFullStack struct {
@@ -77,7 +72,6 @@ func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string) Bu
 			clusterId:      clusterId,
 			deploymentType: deploymentmetadata.DeploymentTypeHostMonitoring,
 		},
-		HostMonitoringFeature,
 	}
 }
 
@@ -89,7 +83,6 @@ func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, clusterId stri
 			clusterId:      clusterId,
 			deploymentType: deploymentmetadata.DeploymentTypeCloudNative,
 		},
-		CloudNativeFeature,
 	}
 }
 

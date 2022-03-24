@@ -103,7 +103,6 @@ func TestPrepareVolumes(t *testing.T) {
 				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
 				clusterId:      "",
 			},
-			HostMonitoringFeature,
 		}
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
@@ -219,7 +218,6 @@ func TestPrepareVolumeMounts(t *testing.T) {
 				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
 				clusterId:      "",
 			},
-			HostMonitoringFeature,
 		}
 
 		volumeMounts := dsInfo.podSpec().Containers[0].VolumeMounts

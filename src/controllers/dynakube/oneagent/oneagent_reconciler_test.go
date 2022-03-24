@@ -8,6 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
+	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -84,7 +85,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
 		instance:  dynakube,
-		feature:   daemonset.ClassicFeature,
+		feature:   deploymentmetadata.DeploymentTypeFullStack,
 	}
 
 	dkState := status.DynakubeState{Instance: dynakube}
@@ -171,7 +172,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		client:    c,
 		apiReader: c,
 		scheme:    scheme.Scheme,
-		feature:   daemonset.ClassicFeature,
+		feature:   deploymentmetadata.DeploymentTypeFullStack,
 		instance:  &base,
 	}
 
@@ -216,7 +217,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 			apiReader: c,
 			scheme:    scheme.Scheme,
 			instance:  &base,
-			feature:   daemonset.ClassicFeature,
+			feature:   deploymentmetadata.DeploymentTypeFullStack,
 		}
 
 		// arrange
@@ -270,7 +271,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		apiReader: c,
 		scheme:    scheme.Scheme,
 		instance:  &base,
-		feature:   daemonset.ClassicFeature,
+		feature:   deploymentmetadata.DeploymentTypeFullStack,
 	}
 
 	t.Run(`reconileImp Instances set, if autoUpdate is true`, func(t *testing.T) {
@@ -353,7 +354,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 	dkKey := metav1.ObjectMeta{Name: "my-dynakube", Namespace: "my-namespace"}
 	ds1 := &appsv1.DaemonSet{ObjectMeta: dkKey}
 	r := OneAgentReconciler{
-		feature: daemonset.HostMonitoringFeature,
+		feature: deploymentmetadata.DeploymentTypeHostMonitoring,
 	}
 	dkState := &status.DynakubeState{
 		Instance: &dynatracev1beta1.DynaKube{
@@ -377,7 +378,7 @@ func TestHasSpecChanged(t *testing.T) {
 	runTest := func(msg string, exp bool, mod func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube)) {
 		t.Run(msg, func(t *testing.T) {
 			r := OneAgentReconciler{
-				feature: daemonset.HostMonitoringFeature,
+				feature: deploymentmetadata.DeploymentTypeHostMonitoring,
 			}
 			key := metav1.ObjectMeta{Name: "my-oneagent", Namespace: "my-namespace"}
 			oldInstance := dynatracev1beta1.DynaKube{
@@ -488,7 +489,7 @@ func TestNewDaemonset_Affinity(t *testing.T) {
 	t.Run(`adds correct affinities`, func(t *testing.T) {
 		versionProvider := &fakeVersionProvider{}
 		r := OneAgentReconciler{
-			feature: daemonset.HostMonitoringFeature,
+			feature: deploymentmetadata.DeploymentTypeHostMonitoring,
 		}
 		dkState := &status.DynakubeState{
 			Instance: newDynaKube(),
@@ -593,7 +594,7 @@ func TestInstanceStatus(t *testing.T) {
 			Labels: map[string]string{
 				"dynatrace.com/component":         "operator",
 				"operator.dynatrace.com/instance": dkName,
-				"operator.dynatrace.com/feature":  daemonset.HostMonitoringFeature,
+				"operator.dynatrace.com/feature":  deploymentmetadata.DeploymentTypeHostMonitoring,
 			},
 		},
 		Spec: corev1.PodSpec{
@@ -615,7 +616,7 @@ func TestInstanceStatus(t *testing.T) {
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
 		instance:  dynakube,
-		feature:   daemonset.HostMonitoringFeature,
+		feature:   deploymentmetadata.DeploymentTypeHostMonitoring,
 	}
 
 	upd, err := reconciler.reconcileInstanceStatuses(context.Background(), reconciler.instance)

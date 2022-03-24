@@ -121,7 +121,6 @@ func TestPodSpec_Arguments(t *testing.T) {
 				hostInjectSpec: hostInjectSpecs,
 				clusterId:      testClusterID,
 			},
-			HostMonitoringFeature,
 		}
 		daemonset, _ = dsInfo.BuildDaemonSet()
 		podSpecs := daemonset.Spec.Template.Spec
