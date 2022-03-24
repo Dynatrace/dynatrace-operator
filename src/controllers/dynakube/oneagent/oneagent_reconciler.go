@@ -80,10 +80,10 @@ func (r *OneAgentReconciler) Reconcile(ctx context.Context, rec *status.Dynakube
 
 	if rec.IsOutdated(r.instance.Status.OneAgent.LastHostsRequestTimestamp, updInterval) {
 		r.instance.Status.OneAgent.LastHostsRequestTimestamp = rec.Now.DeepCopy()
-		rec.Update(true, 5*time.Minute, "updated last host request time stamp")
+		rec.Update(true, "updated last host request time stamp")
 
 		upd, err = r.reconcileInstanceStatuses(ctx, r.instance)
-		rec.Update(upd, 5*time.Minute, "Instance statuses reconciled")
+		rec.Update(upd, "Instance statuses reconciled")
 		if rec.Error(err) {
 			return false, err
 		}

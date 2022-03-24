@@ -37,10 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const (
-	defaultUpdateInterval = 5 * time.Minute
-)
-
 func Add(mgr manager.Manager, _ string) error {
 	return NewController(mgr).SetupWithManager(mgr)
 }
@@ -126,7 +122,7 @@ func (controller *DynakubeController) Reconcile(ctx context.Context, request rec
 		if !dkState.ValidTokens {
 			instance.Status.SetPhase(dynatracev1beta1.Error)
 			_ = controller.updateCR(ctx, instance)
-			return reconcile.Result{RequeueAfter: defaultUpdateInterval}, nil
+			return reconcile.Result{RequeueAfter: status.DefaultUpdateInterval}, nil
 		}
 		if dkState.Updated || instance.Status.SetPhaseOnError(dkState.Err) {
 			if errClient := controller.updateCR(ctx, instance); errClient != nil {
@@ -159,7 +155,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	}
 	dtc, upd, err := dtcReconciler.Reconcile(ctx, dkState.Instance)
 
-	dkState.Update(upd, defaultUpdateInterval, "Token conditions updated")
+	dkState.Update(upd, "Token conditions updated")
 	if dkState.Error(err) {
 		log.Error(err, "failed to check tokens")
 		return
@@ -187,7 +183,9 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 			// If there are errors log them, but move on.
 			log.Info("Istio: failed to reconcile objects", "error", err)
 		} else if upd {
-			dkState.Update(true, 30*time.Second, "Istio: objects updated")
+			dkState.Update(true, "Istio: objects updated")
+			dkState.RequeueAfter = 30 * time.Second
+			return
 		}
 	}
 
@@ -210,7 +208,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	}
 
 	upd, err = updates.ReconcileVersions(ctx, dkState, controller.client, dtversion.GetImageVersion)
-	dkState.Update(upd, defaultUpdateInterval, "Found updates")
+	dkState.Update(upd, "Found updates")
 	dkState.Error(err)
 
 	if !controller.reconcileActiveGate(ctx, dkState, dtc) {
@@ -224,7 +222,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		if dkState.Error(err) {
 			return
 		}
-		dkState.Update(upd, defaultUpdateInterval, "infra monitoring reconciled")
+		dkState.Update(upd, "infra monitoring reconciled")
 	} else if dkState.Instance.CloudNativeFullstackMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
 			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.CloudNativeFeature,
@@ -232,7 +230,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		if dkState.Error(err) {
 			return
 		}
-		dkState.Update(upd, defaultUpdateInterval, "cloud native infra monitoring reconciled")
+		dkState.Update(upd, "cloud native infra monitoring reconciled")
 	} else if dkState.Instance.ClassicFullStackMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
 			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.ClassicFeature,
@@ -240,7 +238,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		if dkState.Error(err) {
 			return
 		}
-		dkState.Update(upd, defaultUpdateInterval, "classic fullstack reconciled")
+		dkState.Update(upd, "classic fullstack reconciled")
 	} else {
 		controller.removeOneAgentDaemonSet(dkState)
 	}
@@ -254,14 +252,14 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		if dkState.Error(err) {
 			return
 		}
-		dkState.Update(upd, defaultUpdateInterval, "new init script created")
+		dkState.Update(upd, "new init script created")
 
 		if !dkState.Instance.FeatureDisableMetadataEnrichment() {
 			upd, err = endpointSecretGenerator.GenerateForDynakube(ctx, dkState.Instance)
 			if dkState.Error(err) {
 				return
 			}
-			dkState.Update(upd, defaultUpdateInterval, "new data-ingest endpoint secret created")
+			dkState.Update(upd, "new data-ingest endpoint secret created")
 		} else {
 			err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, dkState.Instance)
 			if dkState.Error(err) {
@@ -270,7 +268,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		}
 		if dkState.Instance.ApplicationMonitoringMode() {
 			dkState.Instance.Status.SetPhase(dynatracev1beta1.Running)
-			dkState.Update(true, defaultUpdateInterval, "application only reconciled")
+			dkState.Update(true, "application only reconciled")
 		}
 	} else {
 		if err := dkMapper.UnmapFromDynaKube(); err != nil {
@@ -284,7 +282,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	}
 
 	upd = controller.determineDynaKubePhase(dkState.Instance)
-	dkState.Update(upd, defaultUpdateInterval, "dynakube phase changed")
+	dkState.Update(upd, "dynakube phase changed")
 }
 
 func updatePhaseIfChanged(instance *dynatracev1beta1.DynaKube, newPhase dynatracev1beta1.DynaKubePhaseType) bool {
@@ -320,7 +318,7 @@ func (controller *DynakubeController) reconcileActiveGateProxySecret(ctx context
 	gen := agproxysecret.NewActiveGateProxySecretGenerator(controller.client, controller.apiReader, dynakubeState.Instance.Namespace, log)
 	if dynakubeState.Instance.HasProxy() {
 		upd, err := gen.GenerateForDynakube(ctx, dynakubeState.Instance)
-		if dynakubeState.Error(err) || dynakubeState.Update(upd, defaultUpdateInterval, "new ActiveGate proxy secret created") {
+		if dynakubeState.Error(err) || dynakubeState.Update(upd, "new ActiveGate proxy secret created") {
 			return false
 		}
 	} else {
@@ -349,7 +347,7 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 			if dynakubeState.Error(err) {
 				return false
 			}
-			dynakubeState.Update(upd, defaultUpdateInterval, c.ShortName()+" reconciled")
+			dynakubeState.Update(upd, c.ShortName()+" reconciled")
 			return true
 		} else {
 			sts := appsv1.StatefulSet{
