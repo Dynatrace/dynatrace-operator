@@ -75,7 +75,7 @@ func (controller *DynakubeController) numberOfMissingActiveGatePods(dynakube *dy
 			return -1, err
 		}
 		capabilityFound = true
-		sum += stsActual.Status.CurrentReplicas - stsActual.Status.ReadyReplicas
+		sum += *stsActual.Spec.Replicas - stsActual.Status.ReadyReplicas
 	}
 
 	if !capabilityFound {
