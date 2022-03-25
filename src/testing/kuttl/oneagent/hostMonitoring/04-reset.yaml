@@ -1,8 +1,6 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 timeout: 120
-commands:
-- command: kubectl delete ns already-present-host-monitoring
 delete:
 - apiVersion: v1
   kind: Namespace

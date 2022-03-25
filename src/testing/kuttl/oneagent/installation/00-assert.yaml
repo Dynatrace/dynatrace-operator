@@ -39,9 +39,9 @@ spec:
   template:
     spec:
       serviceAccountName: dynatrace-oneagent-csi-driver
-status:
-  numberAvailable: 3
-  numberReady: 3
+# status: Can't check for this in a nice way
+#   numberAvailable: x
+#   numberReady: x
 ---
 apiVersion: apps/v1
 kind: Deployment

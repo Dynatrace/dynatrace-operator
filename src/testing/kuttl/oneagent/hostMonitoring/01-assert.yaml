@@ -8,7 +8,7 @@ kind: DaemonSet
 metadata:
   name: dynakube-oneagent
   namespace: dynatrace
-  # labels:
+  # labels: version field can change ==> can't test
   #   app.kubernetes.io/component: oneagent
   #   app.kubernetes.io/created-by: dynakube
   #   app.kubernetes.io/name: dynatrace-operator
@@ -23,7 +23,7 @@ metadata:
 spec:
   template:
     # metadata:
-    #   labels:
+    #   labels: version field can change ==> can't test
     #     app.kubernetes.io/component: oneagent
     #     app.kubernetes.io/created-by: dynakube
     #     app.kubernetes.io/name: dynatrace-operator

@@ -30,27 +30,4 @@ webhooks:
     clientConfig:
       CABundle: ""
 ---
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: dynatrace-oneagent-csi-driver
-  namespace: dynatrace
-status:
-  numberUnavailable: 1
----
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: dynatrace-oneagent-csi-driver
-  namespace: dynatrace
-status:
-  numberUnavailable: 2
----
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: dynatrace-oneagent-csi-driver
-  namespace: dynatrace
-status:
-  numberUnavailable: 3
 

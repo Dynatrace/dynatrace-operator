@@ -6,6 +6,4 @@ skipDelete: false
 namespace: dynatrace
 parallel: 1
 testDirs:
-- src/testing/e2e/kuttl
-commands:
-- command: sh ./hack/e2e/install-manifests.sh
+- src/testing/kuttl/oneagent
