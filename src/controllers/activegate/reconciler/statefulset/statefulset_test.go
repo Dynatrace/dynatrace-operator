@@ -308,9 +308,9 @@ func TestStatefulSet_Volumes(t *testing.T) {
 			"Expected that volume %s is not defined if there are no custom properties", customproperties.VolumeName,
 		)
 	})
-	t.Run(`with FeatureEnableActivegateRawImage=true`, func(t *testing.T) {
+	t.Run(`with FeatureDisableActivegateRawImage=false`, func(t *testing.T) {
 		instanceRawImg := instance.DeepCopy()
-		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureEnableActivegateRawImage] = "true"
+		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureDisableActivegateRawImage] = "false"
 
 		stsProperties := NewStatefulSetProperties(instanceRawImg, capabilityProperties,
 			"", "", "", "", "",
@@ -335,7 +335,10 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 		expectedSecretName := instance.Name + "-router-" + customproperties.Suffix
 
-		require.Equal(t, 1, len(volumes))
+		require.Equal(t, 2, len(volumes))
+
+		_, err := kubeobjects.GetVolumeByName(volumes, tenantSecretVolumeName)
+		assert.NoError(t, err)
 
 		customPropertiesVolume, err := kubeobjects.GetVolumeByName(volumes, customproperties.VolumeName)
 		assert.NoError(t, err)
@@ -357,7 +360,10 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 		expectedSecretName := testKey
 
-		require.Equal(t, 1, len(volumes))
+		require.Equal(t, 2, len(volumes))
+
+		_, err := kubeobjects.GetVolumeByName(volumes, tenantSecretVolumeName)
+		assert.NoError(t, err)
 
 		customPropertiesVolume, err := kubeobjects.GetVolumeByName(volumes, customproperties.VolumeName)
 		assert.NoError(t, err)
@@ -375,9 +381,9 @@ func TestStatefulSet_Env(t *testing.T) {
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(testUID, DeploymentTypeActiveGate)
 
-	t.Run(`with FeatureEnableActivegateRawImage=true`, func(t *testing.T) {
+	t.Run(`with FeatureDisableActivegateRawImage=true`, func(t *testing.T) {
 		instanceRawImg := instance.DeepCopy()
-		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureEnableActivegateRawImage] = "true"
+		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureDisableActivegateRawImage] = "true"
 
 		envVars := buildEnvs(NewStatefulSetProperties(instanceRawImg, capabilityProperties,
 			testUID, "", testFeature, "MSGrouter", "",
@@ -385,28 +391,6 @@ func TestStatefulSet_Env(t *testing.T) {
 		))
 
 		expectedEnvVars := []corev1.EnvVar{
-			{
-				Name: dtServer,
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: instanceRawImg.Name + dynatracev1beta1.TenantSecretSuffix,
-						},
-						Key: activegate.CommunicationEndpointsName,
-					},
-				},
-			},
-			{
-				Name: dtTenant,
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: instanceRawImg.Name + dynatracev1beta1.TenantSecretSuffix,
-						},
-						Key: activegate.TenantUuidName,
-					},
-				},
-			},
 			{Name: dtCapabilities, Value: "MSGrouter"},
 			{Name: dtIdSeedNamespace, Value: instanceRawImg.Namespace},
 			{Name: dtIdSeedClusterId, Value: testUID},
@@ -424,6 +408,28 @@ func TestStatefulSet_Env(t *testing.T) {
 		))
 
 		expectedEnvVars := []corev1.EnvVar{
+			{
+				Name: dtServer,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: instance.Name + dynatracev1beta1.TenantSecretSuffix,
+						},
+						Key: activegate.CommunicationEndpointsName,
+					},
+				},
+			},
+			{
+				Name: dtTenant,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: instance.Name + dynatracev1beta1.TenantSecretSuffix,
+						},
+						Key: activegate.TenantUuidName,
+					},
+				},
+			},
 			{Name: dtCapabilities, Value: "MSGrouter"},
 			{Name: dtIdSeedNamespace, Value: instance.Namespace},
 			{Name: dtIdSeedClusterId, Value: testUID},
@@ -432,7 +438,6 @@ func TestStatefulSet_Env(t *testing.T) {
 		}
 
 		assert.ElementsMatch(t, expectedEnvVars, envVars)
-
 	})
 	t.Run(`with networkzone`, func(t *testing.T) {
 		instance := buildTestInstance()
