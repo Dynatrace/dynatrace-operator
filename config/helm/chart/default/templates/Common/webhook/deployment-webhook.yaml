@@ -33,7 +33,7 @@ spec:
       annotations:
         kubectl.kubernetes.io/default-container: webhook
         {{- if (.Values.webhook).apparmor}}
-        container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
+        container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
         {{- end }}
       labels:
         {{- include "dynatrace-operator.webhookLabels" . | nindent 8 }}
