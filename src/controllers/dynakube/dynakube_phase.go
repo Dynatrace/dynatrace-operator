@@ -21,7 +21,7 @@ func (controller *DynakubeController) determineDynaKubePhase(dynakube *dynatrace
 			log.Info("activegate statefulset is still deploying", "dynakube", dynakube.Name)
 			return updatePhaseIfChanged(dynakube, dynatracev1beta1.Deploying)
 		}
-		if activeGatePods == 0 {
+		if activeGatePods < 0 {
 			log.Info("activegate statefulset not yet available", "dynakube", dynakube.Name)
 			return updatePhaseIfChanged(dynakube, dynatracev1beta1.Deploying)
 		}
@@ -79,7 +79,7 @@ func (controller *DynakubeController) numberOfMissingActiveGatePods(dynakube *dy
 	}
 
 	if !capabilityFound {
-		return 0, nil
+		return -1, nil
 	}
 
 	return sum, nil
