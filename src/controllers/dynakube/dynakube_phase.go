@@ -47,14 +47,14 @@ func (controller *DynakubeController) determineDynaKubePhase(dynakube *dynatrace
 }
 
 func (controller *DynakubeController) numberOfMissingOneagentPods(dynakube *dynatracev1beta1.DynaKube) (int32, error) {
-	dsActual := &appsv1.DaemonSet{}
+	oneAgentDaemonSet := &appsv1.DaemonSet{}
 	instanceName := dynakube.OneAgentDaemonsetName()
-	err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dynakube.Namespace}, dsActual)
+	err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dynakube.Namespace}, oneAgentDaemonSet)
 
 	if err != nil {
 		return 0, err
 	}
-	return dsActual.Status.CurrentNumberScheduled - dsActual.Status.NumberReady, nil
+	return oneAgentDaemonSet.Status.CurrentNumberScheduled - oneAgentDaemonSet.Status.NumberReady, nil
 }
 
 func (controller *DynakubeController) numberOfMissingActiveGatePods(dynakube *dynatracev1beta1.DynaKube) (int32, error) {
@@ -64,9 +64,9 @@ func (controller *DynakubeController) numberOfMissingActiveGatePods(dynakube *dy
 	capabilityFound := false
 
 	for _, activeGateCapability := range capabilities {
-		stsActual := &appsv1.StatefulSet{}
+		activeGateStatefulSet := &appsv1.StatefulSet{}
 		instanceName := capability.CalculateStatefulSetName(activeGateCapability, dynakube.Name)
-		err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dynakube.Namespace}, stsActual)
+		err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dynakube.Namespace}, activeGateStatefulSet)
 
 		if k8serrors.IsNotFound(err) {
 			continue
@@ -75,7 +75,14 @@ func (controller *DynakubeController) numberOfMissingActiveGatePods(dynakube *dy
 			return -1, err
 		}
 		capabilityFound = true
-		sum += *stsActual.Spec.Replicas - stsActual.Status.ReadyReplicas
+
+		// This check is needed as in our unit tests replicas is always nil. We can't set it manually as this function
+		// is called from the same function where the statefulset is created
+		scheduledReplicas := int32(0)
+		if activeGateStatefulSet.Spec.Replicas != nil {
+			scheduledReplicas = *activeGateStatefulSet.Spec.Replicas
+		}
+		sum += scheduledReplicas - activeGateStatefulSet.Status.ReadyReplicas
 	}
 
 	if !capabilityFound {
