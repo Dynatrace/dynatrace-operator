@@ -160,9 +160,9 @@ func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
 // FeatureEnableActivegateRawImage is a feature flag to specify if the operator should
 // fetch from cluster and set in ActiveGet container: tenant UUID, token and communication endpoints
 // instead of using embedded ones in the image
-// Defaults to false
+// Defaults to true
 func (dk *DynaKube) FeatureEnableActivegateRawImage() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureEnableActivegateRawImage) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureEnableActivegateRawImage) != "false"
 }
 
 // FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
