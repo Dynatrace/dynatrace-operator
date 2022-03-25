@@ -377,9 +377,9 @@ func createInstallInitContainerBase(image string, pod *corev1.Pod, failurePolicy
 func (m *podMutator) getDeploymentMetadata(dk dynatracev1beta1.DynaKube) *deploymentmetadata.DeploymentMetadata {
 	var deploymentMetadata *deploymentmetadata.DeploymentMetadata
 	if dk.CloudNativeFullstackMode() {
-		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeCloudNative)
+		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, oneagent.DeploymentTypeCloudNative)
 	} else {
-		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
+		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, oneagent.DeploymentTypeApplicationMonitoring)
 	}
 	return deploymentMetadata
 }
@@ -539,7 +539,7 @@ func (m *podMutator) applyReinvocationPolicy(pod *corev1.Pod, dk dynatracev1beta
 			// container does not have LD_PRELOAD set
 			podLog.Info("instrumenting missing container", "injectable", "oneagent", "name", c.Name)
 
-			deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
+			deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, oneagent.DeploymentTypeApplicationMonitoring)
 
 			updateContainerOneAgent(c, &dk, pod, deploymentMetadata)
 
@@ -561,7 +561,7 @@ func (m *podMutator) applyReinvocationPolicy(pod *corev1.Pod, dk dynatracev1beta
 		if diInjectionMissing {
 			podLog.Info("instrumenting missing container", "injectable", "data-ingest", "name", c.Name)
 
-			deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, deploymentmetadata.DeploymentTypeApplicationMonitoring)
+			deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, oneagent.DeploymentTypeApplicationMonitoring)
 			updateContainerDataIngest(c, pod, deploymentMetadata, dataIngestFields)
 
 			needsUpdate = true

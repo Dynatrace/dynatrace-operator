@@ -11,7 +11,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
-	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	appsv1 "k8s.io/api/apps/v1"
@@ -169,11 +168,11 @@ func (r *OneAgentReconciler) newDaemonSetForCR(dkState *status.DynakubeState, cl
 	var ds *appsv1.DaemonSet
 	var err error
 
-	if r.feature == deploymentmetadata.DeploymentTypeFullStack {
+	if r.feature == daemonset.DeploymentTypeFullStack {
 		ds, err = daemonset.NewClassicFullStack(dkState.Instance, clusterID).BuildDaemonSet()
-	} else if r.feature == deploymentmetadata.DeploymentTypeHostMonitoring {
+	} else if r.feature == daemonset.DeploymentTypeHostMonitoring {
 		ds, err = daemonset.NewHostMonitoring(dkState.Instance, clusterID).BuildDaemonSet()
-	} else if r.feature == deploymentmetadata.DeploymentTypeCloudNative {
+	} else if r.feature == daemonset.DeploymentTypeCloudNative {
 		ds, err = daemonset.NewCloudNativeFullStack(dkState.Instance, clusterID).BuildDaemonSet()
 	}
 	if err != nil {

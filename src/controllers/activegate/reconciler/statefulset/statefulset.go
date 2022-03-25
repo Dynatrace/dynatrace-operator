@@ -42,6 +42,8 @@ const (
 	dataSourceMetadataMountPoint    = "/mnt/dsmetadata"
 	statsdMetadataMountPoint        = "/opt/dynatrace/remotepluginmodule/agent/datasources/statsd"
 	tenantTokenMountPoint           = "/var/lib/dynatrace/secrets/tokens/tenant-token"
+
+	DeploymentTypeActiveGate = "active_gate"
 )
 
 type statefulSetProperties struct {
@@ -437,7 +439,7 @@ func buildProxyMounts() []corev1.VolumeMount {
 }
 
 func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
-	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(stsProperties.kubeSystemUID), deploymentmetadata.DeploymentTypeActiveGate)
+	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(stsProperties.kubeSystemUID), DeploymentTypeActiveGate)
 
 	envs := []corev1.EnvVar{
 		{Name: dtCapabilities, Value: stsProperties.capabilityName},

@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
 	appsv1 "k8s.io/api/apps/v1"
@@ -70,7 +69,7 @@ func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string) Bu
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
 			clusterId:      clusterId,
-			deploymentType: deploymentmetadata.DeploymentTypeHostMonitoring,
+			deploymentType: DeploymentTypeHostMonitoring,
 		},
 	}
 }
@@ -81,7 +80,7 @@ func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, clusterId stri
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
 			clusterId:      clusterId,
-			deploymentType: deploymentmetadata.DeploymentTypeCloudNative,
+			deploymentType: DeploymentTypeCloudNative,
 		},
 	}
 }
@@ -92,7 +91,7 @@ func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) 
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
 			clusterId:      clusterId,
-			deploymentType: deploymentmetadata.DeploymentTypeFullStack,
+			deploymentType: DeploymentTypeFullStack,
 		},
 	}
 }
