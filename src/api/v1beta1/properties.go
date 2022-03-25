@@ -167,9 +167,9 @@ func (dk *DynaKube) Image() string {
 	} else if dk.HostMonitoringMode() {
 		return dk.Spec.OneAgent.HostMonitoring.Image
 	} else if dk.CloudNativeFullstackMode() {
-		return dk.Spec.OneAgent.CloudNativeFullStack.Image
+		return dk.Spec.OneAgent.CloudNativeFullStack.CodueModuleImage
 	} else if dk.ApplicationMonitoringMode() && dk.NeedsCSIDriver() {
-		return dk.Spec.OneAgent.ApplicationMonitoring.Image
+		return dk.Spec.OneAgent.ApplicationMonitoring.CodeModuleImage
 	}
 	return ""
 }
