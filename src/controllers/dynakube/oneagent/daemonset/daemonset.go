@@ -21,14 +21,14 @@ const (
 	// normal oneagent shutdown scenario with some extra time
 	defaultTerminationGracePeriod = 80
 
-	hostRootVolumeName  = "host-root"
-	hostRootVolumeMount = "/mnt/root"
+	hostRootVolumeName      = "host-root"
+	hostRootVolumeMountPath = "/mnt/root"
 
-	trustedCaCertVolumeName  = "dynatrace-cluster-ca-cert"
-	trustedCaCertVolumeMount = "/mnt/dynatrace/certs"
+	clusterCaCertVolumeName      = "dynatrace-cluster-ca"
+	clusterCaCertVolumeMountPath = "/mnt/dynatrace/certs"
 
-	activeGateCaCertVolumeName  = "active-gate-ca"
-	activeGateCaCertVolumeMount = "/mnt/dynatrace/certs/activegate/"
+	activeGateCaCertVolumeName      = "active-gate-ca"
+	activeGateCaCertVolumeMountPath = "/mnt/dynatrace/certs/activegate/"
 
 	csiStorageVolumeName  = "osagent-storage"
 	csiStorageVolumeMount = "/mnt/volume_storage_mount"
