@@ -37,6 +37,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const shortUpdateInterval = 30 * time.Second
+
 func Add(mgr manager.Manager, _ string) error {
 	return NewController(mgr).SetupWithManager(mgr)
 }
@@ -122,7 +124,7 @@ func (controller *DynakubeController) Reconcile(ctx context.Context, request rec
 		if !dkState.ValidTokens {
 			instance.Status.SetPhase(dynatracev1beta1.Error)
 			_ = controller.updateCR(ctx, instance)
-			return reconcile.Result{RequeueAfter: status.DefaultUpdateInterval}, nil
+			return reconcile.Result{RequeueAfter: dkState.RequeueAfter}, nil
 		}
 		if dkState.Updated || instance.Status.SetPhaseOnError(dkState.Err) {
 			if errClient := controller.updateCR(ctx, instance); errClient != nil {
@@ -155,7 +157,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	}
 	dtc, upd, err := dtcReconciler.Reconcile(ctx, dkState.Instance)
 
-	dkState.Update(upd, "Token conditions updated")
+	dkState.Update(upd, "token conditions updated")
 	if dkState.Error(err) {
 		log.Error(err, "failed to check tokens")
 		return
@@ -163,9 +165,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	dkState.ValidTokens = true
 	if !dtcReconciler.ValidTokens {
 		dkState.ValidTokens = false
-		errMsg := "tokens not valid"
-		log.Info(errMsg, "name", dkState.Instance.GetName())
-		dkState.Error(fmt.Errorf(errMsg))
+		dkState.Update(true, "tokens not valid")
 		return
 	}
 
@@ -184,7 +184,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 			log.Info("Istio: failed to reconcile objects", "error", err)
 		} else if upd {
 			dkState.Update(true, "Istio: objects updated")
-			dkState.RequeueAfter = 30 * time.Second
+			dkState.RequeueAfter = shortUpdateInterval
 			return
 		}
 	}
