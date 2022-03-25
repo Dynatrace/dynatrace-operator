@@ -10,46 +10,46 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func (controller *DynakubeController) determineDynaKubePhase(instance *dynatracev1beta1.DynaKube) bool {
-	if instance.NeedsActiveGate() {
-		activeGatePods, err := controller.numberOfMissingActiveGatePods(instance)
+func (controller *DynakubeController) determineDynaKubePhase(dynakube *dynatracev1beta1.DynaKube) bool {
+	if dynakube.NeedsActiveGate() {
+		activeGatePods, err := controller.numberOfMissingActiveGatePods(dynakube)
 		if err != nil {
-			log.Error(err, "activegate sts could not be accessed", "dynakube", instance.Name)
-			return updatePhaseIfChanged(instance, dynatracev1beta1.Error)
+			log.Error(err, "activegate statefulset could not be accessed", "dynakube", dynakube.Name)
+			return updatePhaseIfChanged(dynakube, dynatracev1beta1.Error)
 		}
 		if activeGatePods > 0 {
-			log.Info("activegate sts is still deploying", "dynakube", instance.Name)
-			return updatePhaseIfChanged(instance, dynatracev1beta1.Deploying)
+			log.Info("activegate statefulset is still deploying", "dynakube", dynakube.Name)
+			return updatePhaseIfChanged(dynakube, dynatracev1beta1.Deploying)
 		}
 		if activeGatePods == 0 {
-			log.Info("activegate sts not yet available", "dynakube", instance.Name)
-			return updatePhaseIfChanged(instance, dynatracev1beta1.Deploying)
+			log.Info("activegate statefulset not yet available", "dynakube", dynakube.Name)
+			return updatePhaseIfChanged(dynakube, dynatracev1beta1.Deploying)
 		}
 	}
 
-	if instance.CloudNativeFullstackMode() || instance.ClassicFullStackMode() || instance.HostMonitoringMode() {
-		oneAgentPods, err := controller.numberOfMissingOneagentPods(instance)
+	if dynakube.CloudNativeFullstackMode() || dynakube.ClassicFullStackMode() || dynakube.HostMonitoringMode() {
+		oneAgentPods, err := controller.numberOfMissingOneagentPods(dynakube)
 		if k8serrors.IsNotFound(err) {
-			log.Info("oneagent daemonset not yet available", "dynakube", instance.Name)
-			return updatePhaseIfChanged(instance, dynatracev1beta1.Deploying)
+			log.Info("oneagent daemonset not yet available", "dynakube", dynakube.Name)
+			return updatePhaseIfChanged(dynakube, dynatracev1beta1.Deploying)
 		}
 		if err != nil {
-			log.Error(err, "oneagent daemonset could not be accessed", "dynakube", instance.Name)
-			return updatePhaseIfChanged(instance, dynatracev1beta1.Error)
+			log.Error(err, "oneagent daemonset could not be accessed", "dynakube", dynakube.Name)
+			return updatePhaseIfChanged(dynakube, dynatracev1beta1.Error)
 		}
 		if oneAgentPods > 0 {
-			log.Info("oneagent daemonset is still deploying", "dynakube", instance.Name)
-			return updatePhaseIfChanged(instance, dynatracev1beta1.Deploying)
+			log.Info("oneagent daemonset is still deploying", "dynakube", dynakube.Name)
+			return updatePhaseIfChanged(dynakube, dynatracev1beta1.Deploying)
 		}
 	}
 
-	return updatePhaseIfChanged(instance, dynatracev1beta1.Running)
+	return updatePhaseIfChanged(dynakube, dynatracev1beta1.Running)
 }
 
-func (controller *DynakubeController) numberOfMissingOneagentPods(instance *dynatracev1beta1.DynaKube) (int32, error) {
+func (controller *DynakubeController) numberOfMissingOneagentPods(dynakube *dynatracev1beta1.DynaKube) (int32, error) {
 	dsActual := &appsv1.DaemonSet{}
-	instanceName := instance.OneAgentDaemonsetName()
-	err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: instance.Namespace}, dsActual)
+	instanceName := dynakube.OneAgentDaemonsetName()
+	err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dynakube.Namespace}, dsActual)
 
 	if err != nil {
 		return 0, err
@@ -57,16 +57,16 @@ func (controller *DynakubeController) numberOfMissingOneagentPods(instance *dyna
 	return dsActual.Status.CurrentNumberScheduled - dsActual.Status.NumberReady, nil
 }
 
-func (controller *DynakubeController) numberOfMissingActiveGatePods(instance *dynatracev1beta1.DynaKube) (int32, error) {
-	capabilities := generateActiveGateCapabilities(instance)
+func (controller *DynakubeController) numberOfMissingActiveGatePods(dynakube *dynatracev1beta1.DynaKube) (int32, error) {
+	capabilities := generateActiveGateCapabilities(dynakube)
 
 	sum := int32(0)
 	capabilityFound := false
 
 	for _, activeGateCapability := range capabilities {
 		stsActual := &appsv1.StatefulSet{}
-		instanceName := capability.CalculateStatefulSetName(activeGateCapability, instance.Name)
-		err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: instance.Namespace}, stsActual)
+		instanceName := capability.CalculateStatefulSetName(activeGateCapability, dynakube.Name)
+		err := controller.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: dynakube.Namespace}, stsActual)
 
 		if k8serrors.IsNotFound(err) {
 			continue

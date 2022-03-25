@@ -47,14 +47,14 @@ const (
 
 func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 	deploymentModes := map[string]dynatracev1beta1.OneAgentSpec{
-		"host":            {HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{}},
-		"fullstack":       {ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{}},
-		"cloudnative":     {CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
-		"applicationOnly": {ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{}},
+		"hostMonitoring":        {HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{}},
+		"classicFullStack":      {ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{}},
+		"cloudNativeFullStack":  {CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
+		"applicationMonitoring": {ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{}},
 	}
 
 	for mode := range deploymentModes {
-		t.Run(fmt.Sprintf(`Reconcile dynakube with %s-monitoring mode`, mode), func(t *testing.T) {
+		t.Run(fmt.Sprintf(`Reconcile dynakube with %s mode`, mode), func(t *testing.T) {
 			mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
 				dtclient.TokenScopes{dtclient.TokenScopeDataExport})
 

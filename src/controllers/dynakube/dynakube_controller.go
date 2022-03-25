@@ -163,9 +163,9 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	dkState.ValidTokens = true
 	if !dtcReconciler.ValidTokens {
 		dkState.ValidTokens = false
-		errMsg := "paas or api token not valid"
+		errMsg := "tokens not valid"
 		log.Info(errMsg, "name", dkState.Instance.GetName())
-		dkState.Err = fmt.Errorf(errMsg)
+		dkState.Error(fmt.Errorf(errMsg))
 		return
 	}
 
@@ -222,7 +222,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		if dkState.Error(err) {
 			return
 		}
-		dkState.Update(upd, "infra monitoring reconciled")
+		dkState.Update(upd, "host monitoring reconciled")
 	} else if dkState.Instance.CloudNativeFullstackMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
 			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.CloudNativeFeature,
@@ -230,7 +230,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		if dkState.Error(err) {
 			return
 		}
-		dkState.Update(upd, "cloud native infra monitoring reconciled")
+		dkState.Update(upd, "cloud native fullstack monitoring reconciled")
 	} else if dkState.Instance.ClassicFullStackMode() {
 		upd, err = oneagent.NewOneAgentReconciler(
 			controller.client, controller.apiReader, controller.scheme, dkState.Instance, daemonset.ClassicFeature,
@@ -252,7 +252,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		if dkState.Error(err) {
 			return
 		}
-		dkState.Update(upd, "new init script created")
+		dkState.Update(upd, "new init secret created")
 
 		if !dkState.Instance.FeatureDisableMetadataEnrichment() {
 			upd, err = endpointSecretGenerator.GenerateForDynakube(ctx, dkState.Instance)
@@ -268,7 +268,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		}
 		if dkState.Instance.ApplicationMonitoringMode() {
 			dkState.Instance.Status.SetPhase(dynatracev1beta1.Running)
-			dkState.Update(true, "application only reconciled")
+			dkState.Update(true, "application monitoring reconciled")
 		}
 	} else {
 		if err := dkMapper.UnmapFromDynaKube(); err != nil {
