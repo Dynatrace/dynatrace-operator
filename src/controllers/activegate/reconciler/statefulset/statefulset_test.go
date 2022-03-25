@@ -308,9 +308,9 @@ func TestStatefulSet_Volumes(t *testing.T) {
 			"Expected that volume %s is not defined if there are no custom properties", customproperties.VolumeName,
 		)
 	})
-	t.Run(`with FeatureEnableActivegateRawImage=true`, func(t *testing.T) {
+	t.Run(`with FeatureDisableActivegateRawImage=false`, func(t *testing.T) {
 		instanceRawImg := instance.DeepCopy()
-		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureEnableActivegateRawImage] = "true"
+		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureDisableActivegateRawImage] = "false"
 
 		stsProperties := NewStatefulSetProperties(instanceRawImg, capabilityProperties,
 			"", "", "", "", "",
@@ -381,9 +381,9 @@ func TestStatefulSet_Env(t *testing.T) {
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(testUID, deploymentmetadata.DeploymentTypeActiveGate)
 
-	t.Run(`with FeatureEnableActivegateRawImage=false`, func(t *testing.T) {
+	t.Run(`with FeatureDisableActivegateRawImage=true`, func(t *testing.T) {
 		instanceRawImg := instance.DeepCopy()
-		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureEnableActivegateRawImage] = "false"
+		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureDisableActivegateRawImage] = "true"
 
 		envVars := buildEnvs(NewStatefulSetProperties(instanceRawImg, capabilityProperties,
 			testUID, "", testFeature, "MSGrouter", "",
