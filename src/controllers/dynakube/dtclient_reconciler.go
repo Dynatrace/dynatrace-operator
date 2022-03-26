@@ -112,14 +112,15 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 	var tokens []tokenConfig
 	if r.PaasToken == "" {
 		tokens = []tokenConfig{{
-			Type:  dynatracev1beta1.APITokenConditionType,
-			Key:   dtclient.DynatraceApiToken,
-			Value: r.ApiToken,
-			Scopes: []string{dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeInstallerDownload,
-			},
+			Type:      dynatracev1beta1.APITokenConditionType,
+			Key:       dtclient.DynatraceApiToken,
+			Value:     r.ApiToken,
+			Scopes:    []string{dtclient.TokenScopeInstallerDownload},
 			Timestamp: &r.status.LastAPITokenProbeTimestamp,
 		}}
+		if !instance.FeatureDisableHostsRequests() {
+			tokens[0].Scopes = append(tokens[0].Scopes, dtclient.TokenScopeDataExport)
+		}
 		updateCR = r.removePaaSTokenCondition() || updateCR
 	} else {
 		tokens = []tokenConfig{
