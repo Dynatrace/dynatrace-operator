@@ -2,6 +2,7 @@ package kubeobjects
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -21,6 +22,17 @@ func CreateOrUpdateDaemonSet(c client.Client, logger logr.Logger, desiredDs *app
 
 	if !HasChanged(currentDs, desiredDs) {
 		return false, nil
+	}
+
+	if !reflect.DeepEqual(currentDs.Spec.Selector.MatchLabels, desiredDs.Spec.Selector.MatchLabels) {
+		logger.Info("immutable section changed on daemonset, deleting and recreating", "name", desiredDs.Name)
+		err = c.Delete(context.TODO(), currentDs)
+		if err != nil {
+			return false, err
+		}
+		logger.Info("deleted daemonset")
+		logger.Info("recreating daemonset", "name", desiredDs.Name)
+		return true, c.Create(context.TODO(), desiredDs)
 	}
 
 	logger.Info("updating existing daemonset", "name", desiredDs.Name)
