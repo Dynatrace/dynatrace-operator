@@ -1,26 +1,23 @@
 changelog:
   exclude:
     labels:
-      - ignore-for-release
-      - minor
       - cherrypick
   categories:
-    - title: New Features 🎉
-      labels:
-        - feature
     - title: Bugfixes
       labels:
         - bug
-        - bugfix
-    - title: Code Improvements
+    - title: Core changes
       labels:
-        - improvement
-        - enhancement
-    - title: Documentation Updates 
+        - core
+        - ci
+        - security
+    - title: Helm changes
+      labels:
+        - helm
+    - title: Component changes
+      labels:
+        - oneagent
+        - activegate
+    - title: Documentation changes
       labels:
         - documentation
-        - docs
-        - doc
-    - title: Other Changes
-      labels:
-        - "*"
