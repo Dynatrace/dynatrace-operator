@@ -142,7 +142,10 @@ func appendHostIdArgument(result *appsv1.DaemonSet, source string) {
 func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	instance := dsInfo.instance
 	podSpec := dsInfo.podSpec()
-	labels := kubeobjects.MergeLabels(dsInfo.buildLabels(), dsInfo.hostInjectSpec.Labels)
+	labels := kubeobjects.MergeLabels(
+		BuildLabels(dsInfo.instance.Name, dsInfo.deploymentType),
+		dsInfo.hostInjectSpec.Labels,
+	)
 	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
 	annotations := map[string]string{
 		annotationVersion:      instance.Status.OneAgent.Version,
@@ -158,7 +161,7 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: dsInfo.buildLabels(),
+				MatchLabels: buildMatchLabels(dsInfo.instance.Name),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -224,10 +227,6 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		Affinity:                      affinity,
 		TerminationGracePeriodSeconds: address_of.Int64(defaultTerminationGracePeriod),
 	}
-}
-
-func (dsInfo *builderInfo) buildLabels() map[string]string {
-	return BuildLabels(dsInfo.instance.Name, dsInfo.deploymentType)
 }
 
 func (dsInfo *builderInfo) resources() corev1.ResourceRequirements {
