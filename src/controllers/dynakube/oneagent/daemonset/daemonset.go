@@ -143,7 +143,7 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	instance := dsInfo.instance
 	podSpec := dsInfo.podSpec()
 	labels := kubeobjects.MergeLabels(
-		BuildLabels(dsInfo.instance.Name, dsInfo.deploymentType),
+		dsInfo.buildLabels(),
 		dsInfo.hostInjectSpec.Labels,
 	)
 	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
@@ -161,7 +161,7 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: buildMatchLabels(dsInfo.instance.Name),
+				MatchLabels: dsInfo.buildMatchLabels(),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -179,6 +179,21 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	}
 
 	return result, nil
+}
+
+func (dsInfo *builderInfo) buildLabels() map[string]string {
+	return BuildLabels(dsInfo.instance.Name, dsInfo.deploymentType)
+}
+
+// buildMatchLabels produces a set of labels that
+// don't change when switching between oneagent modes
+// or during operator version update
+// as matchLabels are not mutable on a Daemonset
+func (dsInfo *builderInfo) buildMatchLabels() map[string]string {
+	labels := dsInfo.buildLabels()
+	delete(labels, kubeobjects.AppVersionLabel)
+	delete(labels, kubeobjects.FeatureLabel)
+	return labels
 }
 
 func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
