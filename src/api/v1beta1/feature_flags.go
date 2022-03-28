@@ -32,7 +32,7 @@ const (
 
 	// activeGate
 	AnnotationFeatureDisableActiveGateUpdates         = AnnotationFeaturePrefix + "disable-activegate-updates"
-	AnnotationFeatureEnableActivegateRawImage         = AnnotationFeaturePrefix + "enable-activegate-raw-image"
+	AnnotationFeatureDisableActivegateRawImage        = AnnotationFeaturePrefix + "disable-activegate-raw-image"
 	AnnotationFeatureActiveGateAppArmor               = AnnotationFeaturePrefix + "activegate-apparmor"
 	AnnotationFeatureActiveGateReadOnlyFilesystem     = AnnotationFeaturePrefix + "activegate-readonly-fs"
 	AnnotationFeatureAutomaticKubernetesApiMonitoring = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
@@ -157,12 +157,12 @@ func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureDisableReadOnlyOneAgent) == "true"
 }
 
-// FeatureEnableActivegateRawImage is a feature flag to specify if the operator should
+// FeatureDisableActivegateRawImage is a feature flag to specify if the operator should
 // fetch from cluster and set in ActiveGet container: tenant UUID, token and communication endpoints
 // instead of using embedded ones in the image
 // Defaults to false
-func (dk *DynaKube) FeatureEnableActivegateRawImage() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureEnableActivegateRawImage) == "true"
+func (dk *DynaKube) FeatureDisableActivegateRawImage() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureDisableActivegateRawImage) == "true"
 }
 
 // FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
