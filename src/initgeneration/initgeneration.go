@@ -133,7 +133,7 @@ func (g *InitGenerator) prepareSecretConfigForDynaKube(dk *dynatracev1beta1.Dyna
 	}
 
 	var tlsCert string
-	if dk.HasActiveGateTLS() {
+	if dk.HasActiveGateCaCert() {
 		var tlsSecret corev1.Secret
 		if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dk.Spec.ActiveGate.TlsSecretName, Namespace: g.namespace}, &tlsSecret); err != nil {
 			return nil, fmt.Errorf("failed to query tls secret: %w", err)
