@@ -1,8 +1,6 @@
 package daemonset
 
 import (
-	"path/filepath"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -26,14 +24,14 @@ const (
 	// normal oneagent shutdown scenario with some extra time
 	defaultTerminationGracePeriod int64 = 80
 
-	hostRootVolumeName  = "host-root"
-	hostRootVolumeMount = "/mnt/root"
+	hostRootVolumeName      = "host-root"
+	hostRootVolumeMountPath = "/mnt/root"
 
-	certVolumeName  = "certs"
-	certVolumeMount = "/mnt/dynatrace/certs"
+	clusterCaCertVolumeName      = "dynatrace-cluster-ca"
+	clusterCaCertVolumeMountPath = "/mnt/dynatrace/certs"
 
-	OneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
-	tlsVolumeName          = "tls"
+	activeGateCaCertVolumeName      = "active-gate-ca"
+	activeGateCaCertVolumeMountPath = "/mnt/dynatrace/certs/activegate/"
 
 	csiStorageVolumeName  = "osagent-storage"
 	csiStorageVolumeMount = "/mnt/volume_storage_mount"
@@ -46,10 +44,6 @@ const (
 	ClassicFeature        = "classic"
 	HostMonitoringFeature = "inframon"
 	CloudNativeFeature    = "cloud-native"
-)
-
-var (
-	tlsVolumeMount = filepath.Join(hostRootVolumeMount, OneAgentCustomKeysPath)
 )
 
 type HostMonitoring struct {
