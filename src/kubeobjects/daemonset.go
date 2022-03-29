@@ -11,42 +11,60 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreateOrUpdateDaemonSet(c client.Client, logger logr.Logger, desiredDs *appsv1.DaemonSet) (bool, error) {
-	currentDs, err := getDaemonSet(c, desiredDs)
+func CreateOrUpdateDaemonSet(kubernetesClient client.Client, logger logr.Logger, desiredDaemonSet *appsv1.DaemonSet) (bool, error) {
+	currentDaemonSet, err := getDaemonSet(kubernetesClient, desiredDaemonSet)
 	if err != nil && k8serrors.IsNotFound(errors.Cause(err)) {
-		logger.Info("creating new daemonset", "name", desiredDs.Name)
-		return true, c.Create(context.TODO(), desiredDs)
+		logger.Info("creating new daemonset", "name", desiredDaemonSet.Name)
+		return true, kubernetesClient.Create(context.TODO(), desiredDaemonSet)
 	} else if err != nil {
+		return false, err
+	}
+
+	if !HasChanged(currentDaemonSet, desiredDaemonSet) {
 		return false, nil
 	}
 
-	if !HasChanged(currentDs, desiredDs) {
-		return false, nil
+	if matchLabelsChanged(currentDaemonSet, desiredDaemonSet) {
+		return recreateDaemonSet(kubernetesClient, logger, currentDaemonSet, desiredDaemonSet)
 	}
 
-	if !reflect.DeepEqual(currentDs.Spec.Selector.MatchLabels, desiredDs.Spec.Selector.MatchLabels) {
-		logger.Info("immutable section changed on daemonset, deleting and recreating", "name", desiredDs.Name)
-		err = c.Delete(context.TODO(), currentDs)
-		if err != nil {
-			return false, err
-		}
-		logger.Info("deleted daemonset")
-		logger.Info("recreating daemonset", "name", desiredDs.Name)
-		return true, c.Create(context.TODO(), desiredDs)
-	}
-
-	logger.Info("updating existing daemonset", "name", desiredDs.Name)
-	if err = c.Update(context.TODO(), desiredDs); err != nil {
+	logger.Info("updating existing daemonset", "name", desiredDaemonSet.Name)
+	if err = kubernetesClient.Update(context.TODO(), desiredDaemonSet); err != nil {
 		return false, err
 	}
 	return true, err
 }
 
-func getDaemonSet(c client.Client, desiredDs *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
-	var actualDs appsv1.DaemonSet
-	err := c.Get(context.TODO(), client.ObjectKey{Name: desiredDs.Name, Namespace: desiredDs.Namespace}, &actualDs)
+func matchLabelsChanged(currentDaemonSet, desiredDaemonSet *appsv1.DaemonSet) bool {
+	return !reflect.DeepEqual(
+		currentDaemonSet.Spec.Selector.MatchLabels,
+		desiredDaemonSet.Spec.Selector.MatchLabels,
+	)
+}
+
+func recreateDaemonSet(kubernetesClient client.Client, logger logr.Logger, currentDs, desiredDaemonSet *appsv1.DaemonSet) (bool, error) {
+	logger.Info("immutable section changed on daemonset, deleting and recreating", "name", desiredDaemonSet.Name)
+	err := kubernetesClient.Delete(context.TODO(), currentDs)
+	if err != nil {
+		return false, err
+	}
+	logger.Info("deleted daemonset")
+	logger.Info("recreating daemonset", "name", desiredDaemonSet.Name)
+	return true, kubernetesClient.Create(context.TODO(), desiredDaemonSet)
+}
+
+func getDaemonSet(kubernetesClient client.Client, desiredDaemonSet *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
+	var actualDaemonSet appsv1.DaemonSet
+	err := kubernetesClient.Get(
+		context.TODO(),
+		client.ObjectKey{
+			Name:      desiredDaemonSet.Name,
+			Namespace: desiredDaemonSet.Namespace,
+		},
+		&actualDaemonSet,
+	)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return &actualDs, nil
+	return &actualDaemonSet, nil
 }
