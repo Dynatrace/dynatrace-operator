@@ -18,7 +18,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -81,18 +80,14 @@ func (r *OneAgentReconciler) Reconcile(ctx context.Context, rec *status.Dynakube
 
 	if rec.IsOutdated(r.instance.Status.OneAgent.LastHostsRequestTimestamp, updInterval) {
 		r.instance.Status.OneAgent.LastHostsRequestTimestamp = rec.Now.DeepCopy()
-		rec.Update(true, 5*time.Minute, "updated last host request time stamp")
+		rec.Update(true, "updated last host request time stamp")
 
 		upd, err = r.reconcileInstanceStatuses(ctx, r.instance)
-		rec.Update(upd, 5*time.Minute, "Instance statuses reconciled")
+		rec.Update(upd, "Instance statuses reconciled")
 		if rec.Error(err) {
 			return false, err
 		}
 	}
-
-	// Finally we have to determine the correct non error phase
-	_, err = r.determineDynaKubePhase(r.instance)
-	rec.Error(err)
 
 	return upd, nil
 }
@@ -219,31 +214,4 @@ func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1beta1.OneAgen
 	}
 
 	return instanceStatuses, nil
-}
-
-func (r *OneAgentReconciler) determineDynaKubePhase(instance *dynatracev1beta1.DynaKube) (bool, error) {
-	var phaseChanged bool
-	dsActual := &appsv1.DaemonSet{}
-	instanceName := instance.OneAgentDaemonsetName()
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: instance.Namespace}, dsActual)
-
-	if k8serrors.IsNotFound(err) {
-		return false, nil
-	}
-
-	if err != nil {
-		phaseChanged = instance.Status.Phase != dynatracev1beta1.Error
-		instance.Status.Phase = dynatracev1beta1.Error
-		return phaseChanged, err
-	}
-
-	if dsActual.Status.NumberReady == dsActual.Status.CurrentNumberScheduled {
-		phaseChanged = instance.Status.Phase != dynatracev1beta1.Running
-		instance.Status.Phase = dynatracev1beta1.Running
-	} else {
-		phaseChanged = instance.Status.Phase != dynatracev1beta1.Deploying
-		instance.Status.Phase = dynatracev1beta1.Deploying
-	}
-
-	return phaseChanged, nil
 }
