@@ -60,6 +60,8 @@ to [Create user-generated access tokens](https://www.dynatrace.com/support/help/
 
 Make sure the tokens have the following permissions:
 * API Token
+  * Read Settings
+  * Write Settings
   * Read Configuration
   * Write Configuration
   * Read Entities (if using automatic kubernetes api monitoring)
