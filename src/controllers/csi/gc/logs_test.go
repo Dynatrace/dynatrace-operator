@@ -111,7 +111,7 @@ func TestLogGarbageCollector_modificationDateOlderThanTwoWeeks(t *testing.T) {
 	})
 
 	t.Run("is true for timestamp 14 days in past", func(t *testing.T) {
-		isOlder := isOlderThanTwoWeeks(time.Now().AddDate(0, 0, -14))
+		isOlder := isOlderThanTwoWeeks(time.Now().AddDate(0, 0, -15))
 
 		assert.True(t, isOlder)
 	})
