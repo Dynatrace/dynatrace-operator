@@ -623,7 +623,10 @@ func TestInstanceStatus(t *testing.T) {
 	upd, err := reconciler.reconcileInstanceStatuses(context.Background(), reconciler.instance)
 	assert.NoError(t, err)
 	assert.True(t, upd)
-	assert.NotEmpty(t, dynakube.Status.OneAgent.Instances)
+
+	t.Run("check if oneAgent instances are not empty", func(t *testing.T) {
+		assert.NotEmpty(t, t, dynakube.Status.OneAgent.Instances)
+	})
 
 	upd, err = reconciler.reconcileInstanceStatuses(context.Background(), reconciler.instance)
 	assert.NoError(t, err)
