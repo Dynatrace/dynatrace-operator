@@ -59,13 +59,17 @@ helm-test:
 helm-lint:
 	cd config/helm && ./testing/lint.sh
 
+
+kuttl-install:
+	hack/e2e/install-kuttl.sh
+
 kuttl-oneagent: deploy
+	kubectl -n dynatrace wait pod --for=condition=ready -l app.kubernetes.io/component=webhook
 	kubectl kuttl test --config src/testing/kuttl/oneagent/oneagent-test.yaml
 # CLEAN-UP
 	kubectl delete dynakube --all -n dynatrace
 	kubectl -n dynatrace wait pod --for=delete -l app.kubernetes.io/component=oneagent --timeout=500s
 	kubectl delete -f config/deploy/kubernetes/kubernetes-all.yaml
-	kubectl delete namespace dynatrace
 
 # Build manager binary
 manager: generate fmt vet
