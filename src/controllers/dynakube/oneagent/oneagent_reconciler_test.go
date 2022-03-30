@@ -591,9 +591,11 @@ func TestInstanceStatus(t *testing.T) {
 			Name:      "test-pod-1",
 			Namespace: namespace,
 			Labels: map[string]string{
-				"dynatrace.com/component":         "operator",
-				"operator.dynatrace.com/instance": dkName,
-				"operator.dynatrace.com/feature":  daemonset.DeploymentTypeHostMonitoring,
+				"app.kubernetes.io/name":          "dynatrace-operator",
+				"app.kubernetes.io/component":     "oneagent",
+				"app.kubernetes.io/created-by":    dkName,
+				"app.kubernetes.io/version":       "snapshot",
+				"component.dynatrace.com/feature": daemonset.DeploymentTypeHostMonitoring,
 			},
 		},
 		Spec: corev1.PodSpec{
@@ -621,8 +623,59 @@ func TestInstanceStatus(t *testing.T) {
 	upd, err := reconciler.reconcileInstanceStatuses(context.Background(), reconciler.instance)
 	assert.NoError(t, err)
 	assert.True(t, upd)
+	assert.NotEmpty(t, dynakube.Status.OneAgent.Instances)
 
 	upd, err = reconciler.reconcileInstanceStatuses(context.Background(), reconciler.instance)
 	assert.NoError(t, err)
 	assert.False(t, upd)
+}
+func TestEmptyInstancesWithWrongLabels(t *testing.T) {
+	namespace := "dynatrace"
+	dkName := "dynakube"
+
+	dynakube := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
+			Tokens: dkName,
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+			},
+		},
+	}
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-pod-1",
+			Namespace: namespace,
+			Labels: map[string]string{
+				"wrongLabel": "dynatrace-operator",
+			},
+		},
+		Spec: corev1.PodSpec{
+			NodeName: "node-1",
+		},
+		Status: corev1.PodStatus{
+			HostIP: "123.123.123.123",
+		},
+	}
+
+	fakeClient := fake.NewClient(
+		dynakube,
+		pod,
+		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		sampleKubeSystemNS)
+
+	reconciler := &OneAgentReconciler{
+		client:    fakeClient,
+		apiReader: fakeClient,
+		scheme:    scheme.Scheme,
+		instance:  dynakube,
+		feature:   daemonset.DeploymentTypeHostMonitoring,
+	}
+
+	upd, err := reconciler.reconcileInstanceStatuses(context.Background(), reconciler.instance)
+	assert.NoError(t, err)
+	assert.True(t, upd)
+	assert.Empty(t, dynakube.Status.OneAgent.Instances)
 }
