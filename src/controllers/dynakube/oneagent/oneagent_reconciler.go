@@ -25,6 +25,7 @@ import (
 const (
 	defaultUpdateInterval = 5 * time.Minute
 	updateEnvVar          = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
+	oldDsName             = "classic"
 )
 
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
@@ -115,7 +116,7 @@ func (r *OneAgentReconciler) reconcileRollout(dkState *status.DynakubeState) (bo
 		// remove old daemonset with feature in name
 		oldClassicDaemonset := &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s", r.instance.Name, daemonset.ClassicFeature),
+				Name:      fmt.Sprintf("%s-%s", r.instance.Name, oldDsName),
 				Namespace: r.instance.Namespace,
 			},
 		}
@@ -162,11 +163,11 @@ func (r *OneAgentReconciler) newDaemonSetForCR(dkState *status.DynakubeState, cl
 	var ds *appsv1.DaemonSet
 	var err error
 
-	if r.feature == daemonset.ClassicFeature {
+	if r.feature == daemonset.DeploymentTypeFullStack {
 		ds, err = daemonset.NewClassicFullStack(dkState.Instance, clusterID).BuildDaemonSet()
-	} else if r.feature == daemonset.HostMonitoringFeature {
+	} else if r.feature == daemonset.DeploymentTypeHostMonitoring {
 		ds, err = daemonset.NewHostMonitoring(dkState.Instance, clusterID).BuildDaemonSet()
-	} else if r.feature == daemonset.CloudNativeFeature {
+	} else if r.feature == daemonset.DeploymentTypeCloudNative {
 		ds, err = daemonset.NewCloudNativeFullStack(dkState.Instance, clusterID).BuildDaemonSet()
 	}
 	if err != nil {

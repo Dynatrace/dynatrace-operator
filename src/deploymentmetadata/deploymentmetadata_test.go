@@ -9,12 +9,13 @@ import (
 const (
 	testOrchestratorID = "test-uid"
 
-	testKey   = "test-key"
-	testValue = "test-value"
+	testKey      = "test-key"
+	testValue    = "test-value"
+	testMetaData = "testMetaData"
 )
 
 func newTestDeploymentMetadata(_ *testing.T) *DeploymentMetadata {
-	return NewDeploymentMetadata(testOrchestratorID, DeploymentTypeFullStack)
+	return NewDeploymentMetadata(testOrchestratorID, testMetaData)
 }
 
 func TestNewDeploymentMetadata(t *testing.T) {
@@ -28,7 +29,7 @@ func TestDeploymentMetadata_asArgs(t *testing.T) {
 	labels := deploymentMetadata.AsArgs()
 
 	assert.Equal(t, []string{
-		`--set-deployment-metadata=orchestration_tech=Operator-classic_fullstack`,
+		`--set-deployment-metadata=orchestration_tech=Operator-` + testMetaData,
 		`--set-deployment-metadata=script_version=snapshot`,
 		`--set-deployment-metadata=orchestrator_id=` + testOrchestratorID,
 	}, labels)
@@ -38,14 +39,14 @@ func TestDeploymentMetadata_asString(t *testing.T) {
 	deploymentMetadata := newTestDeploymentMetadata(t)
 	labels := deploymentMetadata.AsString()
 
-	assert.Equal(t, `orchestration_tech=Operator-classic_fullstack;script_version=snapshot;orchestrator_id=`+testOrchestratorID, labels)
+	assert.Equal(t, `orchestration_tech=Operator-`+testMetaData+`;script_version=snapshot;orchestrator_id=`+testOrchestratorID, labels)
 }
 
 func TestDeploymentMetadata_asString_empty_agent(t *testing.T) {
 	deploymentMetadata := newTestDeploymentMetadata(t)
 	labels := deploymentMetadata.AsString()
 
-	assert.Equal(t, `orchestration_tech=Operator-classic_fullstack;script_version=snapshot;orchestrator_id=`+testOrchestratorID, labels)
+	assert.Equal(t, `orchestration_tech=Operator-`+testMetaData+`;script_version=snapshot;orchestrator_id=`+testOrchestratorID, labels)
 }
 
 func TestFormatKeyValue(t *testing.T) {

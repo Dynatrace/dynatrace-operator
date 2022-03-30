@@ -7,6 +7,13 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 )
 
+const (
+	DeploymentTypeApplicationMonitoring = "application_monitoring"
+	DeploymentTypeFullStack             = "classic_fullstack"
+	DeploymentTypeCloudNative           = "cloud_native_fullstack"
+	DeploymentTypeHostMonitoring        = "host_monitoring"
+)
+
 func (dsInfo *builderInfo) arguments() []string {
 	metadata := deploymentmetadata.NewDeploymentMetadata(dsInfo.clusterId, dsInfo.deploymentType)
 	args := dsInfo.hostInjectSpec.Args
