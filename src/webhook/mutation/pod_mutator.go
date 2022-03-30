@@ -15,6 +15,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
@@ -376,9 +377,9 @@ func createInstallInitContainerBase(image string, pod *corev1.Pod, failurePolicy
 func (m *podMutator) getDeploymentMetadata(dk dynatracev1beta1.DynaKube) *deploymentmetadata.DeploymentMetadata {
 	var deploymentMetadata *deploymentmetadata.DeploymentMetadata
 	if dk.CloudNativeFullstackMode() {
-		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, oneagent.DeploymentTypeCloudNative)
+		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, daemonset.DeploymentTypeCloudNative)
 	} else {
-		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, oneagent.DeploymentTypeApplicationMonitoring)
+		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(m.clusterID, daemonset.DeploymentTypeApplicationMonitoring)
 	}
 	return deploymentMetadata
 }
@@ -538,7 +539,7 @@ func (m *podMutator) applyReinvocationPolicy(pod *corev1.Pod, dk dynatracev1beta
 			// container does not have LD_PRELOAD set
 			podLog.Info("instrumenting missing container", "injectable", "oneagent", "name", c.Name)
 
-			deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, oneagent.DeploymentTypeApplicationMonitoring)
+			deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, daemonset.DeploymentTypeApplicationMonitoring)
 
 			updateContainerOneAgent(c, &dk, pod, deploymentMetadata)
 
@@ -560,7 +561,7 @@ func (m *podMutator) applyReinvocationPolicy(pod *corev1.Pod, dk dynatracev1beta
 		if diInjectionMissing {
 			podLog.Info("instrumenting missing container", "injectable", "data-ingest", "name", c.Name)
 
-			deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, oneagent.DeploymentTypeApplicationMonitoring)
+			deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(m.clusterID, daemonset.DeploymentTypeApplicationMonitoring)
 			updateContainerDataIngest(c, deploymentMetadata)
 
 			needsUpdate = true
