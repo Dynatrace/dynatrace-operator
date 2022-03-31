@@ -12,95 +12,74 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	testDaemonSetName = "test-name"
-	testNamespace     = "test-namespace"
-)
+func TestCreateOrUpdateDaemonSet(t *testing.T) {
+	const namespaceName = "dynatrace"
+	const daemonsetName = "my-daemonset"
 
-func Test_CreateOrUpdateDaemonSet_Create(t *testing.T) {
-	dsBefore := appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testDaemonSetName,
-		},
-	}
-	fakeClient := fake.NewClient()
+	t.Run("create when not exists", func(t *testing.T) {
+		fakeClient := fake.NewClient()
+		annotations := map[string]string{AnnotationHash: "hash"}
+		daemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, annotations, nil)
 
-	result, err := CreateOrUpdateDaemonSet(fakeClient, log, &dsBefore)
-	require.NoError(t, err)
-	assert.True(t, result)
+		created, err := CreateOrUpdateDaemonSet(fakeClient, log, &daemonSet)
 
-	dsAfter := &appsv1.DaemonSet{}
-	err = fakeClient.Get(context.TODO(), client.ObjectKey{
-		Namespace: testNamespace,
-		Name:      testDaemonSetName,
-	}, dsAfter)
-	require.NoError(t, err)
-	assert.Equal(t, dsBefore.Name, dsBefore.Name)
-	assert.Equal(t, dsBefore.Namespace, dsBefore.Namespace)
+		require.NoError(t, err)
+		assert.True(t, created)
+	})
+	t.Run("update when exists and changed", func(t *testing.T) {
+		oldAnnotations := map[string]string{AnnotationHash: "old"}
+		oldDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, oldAnnotations, nil)
+		newAnnotations := map[string]string{AnnotationHash: "new"}
+		newDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, newAnnotations, nil)
+		fakeClient := fake.NewClient(&oldDaemonSet)
+
+		updated, err := CreateOrUpdateDaemonSet(fakeClient, log, &newDaemonSet)
+
+		require.NoError(t, err)
+		assert.True(t, updated)
+	})
+	t.Run("not update when exists and no changed", func(t *testing.T) {
+		oldAnnotations := map[string]string{AnnotationHash: "old"}
+		oldDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, oldAnnotations, nil)
+
+		fakeClient := fake.NewClient(&oldDaemonSet)
+
+		updated, err := CreateOrUpdateDaemonSet(fakeClient, log, &oldDaemonSet)
+		require.NoError(t, err)
+		assert.False(t, updated)
+	})
+	t.Run("recreate when exists and changed for immutable field", func(t *testing.T) {
+		oldAnnotations := map[string]string{AnnotationHash: "old"}
+		oldMatchLabels := map[string]string{"match": "old"}
+		oldDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, oldAnnotations, oldMatchLabels)
+
+		newAnnotations := map[string]string{AnnotationHash: "new"}
+		newMatchLabels := map[string]string{"match": "new"}
+		newDaemonSet := createTestDaemonSetWithMatchLabels(daemonsetName, namespaceName, newAnnotations, newMatchLabels)
+		fakeClient := fake.NewClient(&oldDaemonSet)
+
+		updated, err := CreateOrUpdateDaemonSet(fakeClient, log, &newDaemonSet)
+
+		require.NoError(t, err)
+		assert.True(t, updated)
+		var actualDaemonSet appsv1.DaemonSet
+		err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: daemonsetName, Namespace: namespaceName}, &actualDaemonSet)
+		require.NoError(t, err)
+		assert.Equal(t, newMatchLabels, actualDaemonSet.Spec.Selector.MatchLabels)
+	})
 }
 
-func Test_CreateOrUpdateDaemonSet_Update(t *testing.T) {
-	dsBefore := appsv1.DaemonSet{
+func createTestDaemonSetWithMatchLabels(name, namespace string, annotations, matchLabels map[string]string) appsv1.DaemonSet {
+	return appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testDaemonSetName,
-			Annotations: map[string]string{
-				AnnotationHash: "old",
+			Name:        name,
+			Namespace:   namespace,
+			Annotations: annotations,
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: matchLabels,
 			},
 		},
 	}
-	fakeClient := fake.NewClient(&dsBefore)
-
-	dsUpdate := appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testDaemonSetName,
-			Annotations: map[string]string{
-				AnnotationHash: "new",
-			},
-		},
-	}
-	result, err := CreateOrUpdateDaemonSet(fakeClient, log, &dsUpdate)
-	require.NoError(t, err)
-	assert.True(t, result)
-
-	dsAfter := &appsv1.DaemonSet{}
-	err = fakeClient.Get(context.TODO(), client.ObjectKey{
-		Namespace: testNamespace,
-		Name:      testDaemonSetName,
-	}, dsAfter)
-	require.NoError(t, err)
-
-	assert.NotNil(t, dsAfter.Annotations)
-	annotation, ok := dsAfter.Annotations[AnnotationHash]
-	assert.True(t, ok)
-	assert.Equal(t, "new", annotation)
-}
-
-func Test_CreateOrUpdateDaemonSet_NoUpdateRequired(t *testing.T) {
-
-	dsBefore := appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testDaemonSetName,
-			Annotations: map[string]string{
-				AnnotationHash: "same",
-			},
-		},
-	}
-	fakeClient := fake.NewClient(&dsBefore)
-
-	dsUpdate := appsv1.DaemonSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testNamespace,
-			Name:      testDaemonSetName,
-			Annotations: map[string]string{
-				AnnotationHash: "same",
-			},
-		},
-	}
-	result, err := CreateOrUpdateDaemonSet(fakeClient, log, &dsUpdate)
-	require.NoError(t, err)
-	assert.False(t, result)
 }

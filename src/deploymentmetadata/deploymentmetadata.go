@@ -14,12 +14,6 @@ const (
 	keyOperatorScriptVersion = "script_version"
 	keyOrchestratorID        = "orchestrator_id"
 	keyOrchestrationTech     = "orchestration_tech"
-
-	DeploymentTypeApplicationMonitoring = "application_monitoring"
-	DeploymentTypeFullStack             = "classic_fullstack"
-	DeploymentTypeCloudNative           = "cloud_native_fullstack"
-	DeploymentTypeHostMonitoring        = "host_monitoring"
-	DeploymentTypeActiveGate            = "active_gate"
 )
 
 type DeploymentMetadata struct {
