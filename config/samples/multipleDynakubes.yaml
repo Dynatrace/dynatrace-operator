@@ -32,6 +32,15 @@ spec:
     # Amount of replicas of ActiveGate pods
     replicas: 3
 
+    # Resources for ActiveGate container
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1.5Gi
+
 ---
 
 apiVersion: dynatrace.com/v1beta1
@@ -73,3 +82,12 @@ spec:
 
     # Amount of replicas of activegate pods
     replicas: 2
+
+    # Resources for ActiveGate container
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1.5Gi

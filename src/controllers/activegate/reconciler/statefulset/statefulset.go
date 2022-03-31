@@ -42,6 +42,8 @@ const (
 	dataSourceMetadataMountPoint    = "/mnt/dsmetadata"
 	statsdMetadataMountPoint        = "/opt/dynatrace/remotepluginmodule/agent/datasources/statsd"
 	tenantTokenMountPoint           = "/var/lib/dynatrace/secrets/tokens/tenant-token"
+
+	DeploymentTypeActiveGate = "active_gate"
 )
 
 type statefulSetProperties struct {
@@ -227,7 +229,7 @@ func buildActiveGateContainer(stsProperties *statefulSetProperties) corev1.Conta
 func buildVolumes(stsProperties *statefulSetProperties, extraContainerBuilders []kubeobjects.ContainerBuilder) []corev1.Volume {
 	var volumes []corev1.Volume
 
-	if stsProperties.DynaKube.FeatureEnableActivegateRawImage() {
+	if !stsProperties.DynaKube.FeatureDisableActivegateRawImage() {
 		volumes = append(volumes, corev1.Volume{
 			Name: tenantSecretVolumeName,
 			VolumeSource: corev1.VolumeSource{
@@ -357,7 +359,7 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 		volumeMounts = append(volumeMounts, buildProxyMounts()...)
 	}
 
-	if stsProperties.DynaKube.FeatureEnableActivegateRawImage() {
+	if !stsProperties.DynaKube.FeatureDisableActivegateRawImage() {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      tenantSecretVolumeName,
 			ReadOnly:  true,
@@ -437,7 +439,7 @@ func buildProxyMounts() []corev1.VolumeMount {
 }
 
 func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
-	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(stsProperties.kubeSystemUID), deploymentmetadata.DeploymentTypeActiveGate)
+	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(string(stsProperties.kubeSystemUID), DeploymentTypeActiveGate)
 
 	envs := []corev1.EnvVar{
 		{Name: dtCapabilities, Value: stsProperties.capabilityName},
@@ -446,7 +448,7 @@ func buildEnvs(stsProperties *statefulSetProperties) []corev1.EnvVar {
 		{Name: dtDeploymentMetadata, Value: deploymentMetadata.AsString()},
 	}
 
-	if stsProperties.DynaKube.FeatureEnableActivegateRawImage() {
+	if !stsProperties.DynaKube.FeatureDisableActivegateRawImage() {
 		envs = append(envs,
 			communicationEndpointEnvVar(stsProperties),
 			tenantUuidNameEnvVar(stsProperties))

@@ -22,6 +22,7 @@ const (
 
 	testSecretName = "super-secret"
 	testSecretType = corev1.SecretType("type")
+	testNamespace  = "test-namespace"
 )
 
 var log = logger.NewDTLogger()

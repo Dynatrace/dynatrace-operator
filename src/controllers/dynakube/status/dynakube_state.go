@@ -7,6 +7,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	DefaultUpdateInterval = 5 * time.Minute
+)
+
 // The purpose of this struct is to keep track of the state of the Dynakube during a Reconcile.
 // Because the dynakube_controller is the one that calls most of the other reconcilers,
 // so we pass the to-be-reconciled Dynakube all over the place AND in some cases the reconcilers will update said Dynakube
@@ -43,13 +47,13 @@ func (dkState *DynakubeState) Error(err error) bool {
 	return true
 }
 
-func (dkState *DynakubeState) Update(upd bool, d time.Duration, cause string) bool {
+func (dkState *DynakubeState) Update(upd bool, cause string) bool {
 	if !upd {
 		return false
 	}
-	log.Info("updating DynaKube CR", "cause", cause)
+	log.Info("updating DynaKube CR", "cause", cause, "dynakube", dkState.Instance.Name)
 	dkState.Updated = true
-	dkState.RequeueAfter = d
+	dkState.RequeueAfter = DefaultUpdateInterval
 	return true
 }
 
