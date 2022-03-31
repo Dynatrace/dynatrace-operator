@@ -73,7 +73,7 @@ func conflictingNodeSelector(dv *dynakubeValidator, dynakube *dynatracev1beta1.D
 
 func imageFieldSetWithoutCSIFlag(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
 	if dynakube.ApplicationMonitoringMode() {
-		if !dynakube.NeedsCSIDriver() && len(dynakube.Spec.OneAgent.ApplicationMonitoring.CodeModuleImage) > 0 {
+		if !dynakube.NeedsCSIDriver() && len(dynakube.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage) > 0 {
 			return errorImageFieldSetWithoutCSIFlag
 		}
 	}
