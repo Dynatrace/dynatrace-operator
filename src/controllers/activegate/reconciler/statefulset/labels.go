@@ -9,10 +9,22 @@ const (
 	ActiveGateComponentName = "activegate"
 )
 
-func buildLabels(instance *dynatracev1beta1.DynaKube, feature string, capabilityProperties *dynatracev1beta1.CapabilityProperties) map[string]string {
-	return kubeobjects.MergeLabels(instance.Labels,
-		BuildLabelsFromInstance(instance, feature),
-		capabilityProperties.Labels)
+func (stsProperties *statefulSetProperties) buildLabels() map[string]string {
+	labels := kubeobjects.MergeLabels(stsProperties.DynaKube.Labels,
+		BuildLabelsFromInstance(stsProperties.DynaKube, stsProperties.feature),
+		stsProperties.CapabilityProperties.Labels)
+	return labels
+}
+
+// buildMatchLabels produces a set of labels that
+// don't change when switching between oneagent modes
+// or during operator version update
+// as matchLabels are not mutable on a Daemonset
+func (stsProperties *statefulSetProperties) buildMatchLabels() map[string]string {
+	labels := kubeobjects.CommonLabels(stsProperties.DynaKube.Name, ActiveGateComponentName)
+	delete(labels, kubeobjects.AppVersionLabel)
+	delete(labels, kubeobjects.FeatureLabel)
+	return labels
 }
 
 func BuildLabelsFromInstance(instance *dynatracev1beta1.DynaKube, feature string) map[string]string {
