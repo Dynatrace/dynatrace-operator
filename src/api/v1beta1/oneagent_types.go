@@ -32,7 +32,7 @@ type CloudNativeFullStackSpec struct {
 	// Optional: the Dynatrace installer container image
 	// Defaults to the registry on the tenant for both Kubernetes and for OpenShift
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	CodueModulesImage string `json:"codeModulesImage,omitempty"`
+	CodeModulesImage string `json:"codeModulesImage,omitempty"`
 
 	// Optional: If specified, indicates the OneAgent version to use
 	// Defaults to latest
