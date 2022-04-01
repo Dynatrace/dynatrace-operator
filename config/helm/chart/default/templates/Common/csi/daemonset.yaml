@@ -24,7 +24,7 @@ spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      {{- include "dynatrace-operator.csiLabels" . | nindent 6 }}
+      {{- include "dynatrace-operator.csiSelectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
