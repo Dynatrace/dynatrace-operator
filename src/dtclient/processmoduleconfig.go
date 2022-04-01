@@ -131,7 +131,7 @@ func (dtc *dynatraceClient) readResponseForProcessModuleConfig(response []byte) 
 	resp := ProcessModuleConfig{}
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
-		log.Error(err, "error unmarshalling processmoduleconfig response: %s", string(response))
+		log.Error(err, "error unmarshalling processmoduleconfig response", "response", string(response))
 		return nil, err
 	}
 
