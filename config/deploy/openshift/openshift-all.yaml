@@ -3998,7 +3998,6 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: dynatrace-operator
-      app.kubernetes.io/version: "0.4.2"
       app.kubernetes.io/component: operator
   strategy:
     type: RollingUpdate
@@ -4113,7 +4112,6 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: dynatrace-operator
-      app.kubernetes.io/version: "0.4.2"
       app.kubernetes.io/component: webhook
   strategy:
     type: RollingUpdate
@@ -4761,7 +4759,6 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: dynatrace-operator
-      app.kubernetes.io/version: "0.4.2"
       app.kubernetes.io/component: csi-driver
   template:
     metadata:
