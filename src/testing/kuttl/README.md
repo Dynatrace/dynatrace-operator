@@ -25,11 +25,14 @@ A collection of yaml fines within a `TestCase`.
 `00` stands for which step these files are for, so step 0. is `00`, step 1. is `01` etc.;
 
 ### create-dynakube-base.sh
-Due to the fact you can only use envvars is shell scripts
-
+Due to the fact you can only use envvars is shell scripts,
 but we need to set the api-url and tokens for the test to run (without hard-coding it in),
-
 so this script was created to do just that.
+
+
+**IMPORTANT:**
+It uses the following envvars: **APIURL, APITOKEN, PAASTOKEN**,
+you should set these accordingly so the test can run.
 
 ## OneAgent Modes TestSuite
 The config(`TestSuite`) for the OneAgent kuttl tests are in `oneagent/oneagent-test.yaml`.
