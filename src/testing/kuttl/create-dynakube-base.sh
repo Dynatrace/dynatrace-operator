@@ -16,6 +16,8 @@ if [[ $missingVars = 1 ]]; then
   exit 1
 fi
 
+kubectl get ns dynatrace || kubectl create ns dynatrace
+
 kubectl get secret -n dynatrace dynakube || kubectl -n dynatrace create secret generic dynakube --from-literal="apiToken=${APITOKEN}" --from-literal="paasToken=${PAASTOKEN}"
 
 # create dynakube
