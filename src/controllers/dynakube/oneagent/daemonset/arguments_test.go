@@ -67,14 +67,14 @@ func TestPodSpec_Arguments(t *testing.T) {
 			},
 		},
 	}
-	metadata := deploymentmetadata.NewDeploymentMetadata(testClusterID, deploymentmetadata.DeploymentTypeFullStack)
+	metadata := deploymentmetadata.NewDeploymentMetadata(testClusterID, DeploymentTypeFullStack)
 	hostInjectSpecs := &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec
 	dsInfo := ClassicFullStack{
 		builderInfo{
 			instance:       instance,
 			hostInjectSpec: hostInjectSpecs,
 			clusterId:      testClusterID,
-			deploymentType: deploymentmetadata.DeploymentTypeFullStack,
+			deploymentType: DeploymentTypeFullStack,
 		},
 	}
 
@@ -87,11 +87,12 @@ func TestPodSpec_Arguments(t *testing.T) {
 	}
 	assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-property=OperatorVersion="+version.Version)
 
+	// hardcoded, because a change of consts should not be done
+	assert.Contains(t, podSpecs.Containers[0].Args, "--set-deployment-metadata=orchestration_tech=Operator-classic_fullstack")
 	metadataArgs := metadata.AsArgs()
 	for _, metadataArg := range metadataArgs {
 		assert.Contains(t, podSpecs.Containers[0].Args, metadataArg)
 	}
-
 	t.Run(`has proxy arg`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
 		podSpecs = dsInfo.podSpec()
@@ -121,10 +122,47 @@ func TestPodSpec_Arguments(t *testing.T) {
 				hostInjectSpec: hostInjectSpecs,
 				clusterId:      testClusterID,
 			},
-			HostMonitoringFeature,
 		}
 		daemonset, _ = dsInfo.BuildDaemonSet()
 		podSpecs := daemonset.Spec.Template.Spec
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-host-id-source=k8s-node-name")
+	})
+	t.Run(`is cloudNative`, func(t *testing.T) {
+		instance.Spec.OneAgent = dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+			HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+				Args: []string{testKey, testValue, testUID},
+			},
+		}}
+		hostInjectSpecs = &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec
+		dsInfo := HostMonitoring{
+			builderInfo{
+				instance:       instance,
+				hostInjectSpec: hostInjectSpecs,
+				clusterId:      testClusterID,
+				deploymentType: DeploymentTypeCloudNative,
+			},
+		}
+		podSpecs = dsInfo.podSpec()
+		// hardcoded, because a change of consts should not be done
+		assert.Contains(t, podSpecs.Containers[0].Args, "--set-deployment-metadata=orchestration_tech=Operator-cloud_native_fullstack")
+	})
+	t.Run(`is hostMonitoring`, func(t *testing.T) {
+		instance.Spec.OneAgent = dynatracev1beta1.OneAgentSpec{CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
+			HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+				Args: []string{testKey, testValue, testUID},
+			},
+		}}
+		hostInjectSpecs = &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec
+		dsInfo := HostMonitoring{
+			builderInfo{
+				instance:       instance,
+				hostInjectSpec: hostInjectSpecs,
+				clusterId:      testClusterID,
+				deploymentType: DeploymentTypeHostMonitoring,
+			},
+		}
+		podSpecs = dsInfo.podSpec()
+		// hardcoded, because a change of consts should not be done
+		assert.Contains(t, podSpecs.Containers[0].Args, "--set-deployment-metadata=orchestration_tech=Operator-host_monitoring")
 	})
 }

@@ -18,7 +18,7 @@ kind: ClusterRoleBinding
 metadata:
   name: dynatrace-kubernetes-monitoring
   labels:
-    {{- include "dynatrace-operator.labels" . | nindent 4 }}
+    {{- include "dynatrace-operator.activegateLabels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

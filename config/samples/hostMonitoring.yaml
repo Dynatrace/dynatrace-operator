@@ -140,16 +140,13 @@ spec:
 
     # Optional: resource settings for ActiveGate container. Consumption of the ActiveGate heavily depends
     # on the workload to monitor; please adjust values accordingly.
-    #
-    # Suggested starting point for resources below:
-    #
-    # resources:
-    #   requests:
-    #     cpu: 150m
-    #     memory: 250M
-    #   limits:
-    #     cpu: 300m
-    #     memory: 1G
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1.5Gi
 
     # Optional: labels are customer defined labels for ActiveGate Pods to structure workloads as desired.
     #
@@ -181,3 +178,8 @@ spec:
     # Optional: Sets DNS Policy for the ActiveGate pods
     #
     # dnsPolicy: "Default"
+
+    # Optional: priority class to assign to the ActiveGate Pods. By default no class is set.
+    # See more here: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/
+    #
+    # priorityClassName: priority-class

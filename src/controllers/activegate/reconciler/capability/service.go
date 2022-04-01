@@ -12,29 +12,35 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func createService(instance *dynatracev1beta1.DynaKube, feature string) *corev1.Service {
-	enableStatsd := instance.NeedsStatsd()
-	ports := []corev1.ServicePort{
-		{
-			Name:       capability.HttpsServicePortName,
-			Protocol:   corev1.ProtocolTCP,
-			Port:       capability.HttpsServicePort,
-			TargetPort: intstr.FromString(capability.HttpsServicePortName),
-		},
-		{
-			Name:       capability.HttpServicePortName,
-			Protocol:   corev1.ProtocolTCP,
-			Port:       capability.HttpServicePort,
-			TargetPort: intstr.FromString(capability.HttpServicePortName),
-		},
+func createService(instance *dynatracev1beta1.DynaKube, feature string, servicePorts capability.AgServicePorts) *corev1.Service {
+	var ports []corev1.ServicePort
+
+	if servicePorts.Webserver {
+		ports = append(ports,
+			corev1.ServicePort{
+				Name:       capability.HttpsServicePortName,
+				Protocol:   corev1.ProtocolTCP,
+				Port:       capability.HttpsServicePort,
+				TargetPort: intstr.FromString(capability.HttpsServicePortName),
+			},
+			corev1.ServicePort{
+				Name:       capability.HttpServicePortName,
+				Protocol:   corev1.ProtocolTCP,
+				Port:       capability.HttpServicePort,
+				TargetPort: intstr.FromString(capability.HttpServicePortName),
+			},
+		)
 	}
-	if enableStatsd {
-		ports = append(ports, corev1.ServicePort{
-			Name:       capability.StatsdIngestPortName,
-			Protocol:   corev1.ProtocolUDP,
-			Port:       capability.StatsdIngestPort,
-			TargetPort: intstr.FromString(capability.StatsdIngestTargetPort),
-		})
+
+	if servicePorts.Statsd {
+		ports = append(ports,
+			corev1.ServicePort{
+				Name:       capability.StatsdIngestPortName,
+				Protocol:   corev1.ProtocolUDP,
+				Port:       capability.StatsdIngestPort,
+				TargetPort: intstr.FromString(capability.StatsdIngestTargetPort),
+			},
+		)
 	}
 
 	return &corev1.Service{

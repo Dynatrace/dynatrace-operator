@@ -2,14 +2,15 @@ package dynakube
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -43,6 +44,45 @@ const (
 	testAnotherPort     = uint32(5678)
 	testAnotherProtocol = "test-another-protocol"
 )
+
+func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
+	deploymentModes := map[string]dynatracev1beta1.OneAgentSpec{
+		"hostMonitoring":        {HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{}},
+		"classicFullStack":      {ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{}},
+		"cloudNativeFullStack":  {CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
+		"applicationMonitoring": {ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{}},
+	}
+
+	for mode := range deploymentModes {
+		t.Run(fmt.Sprintf(`Reconcile dynakube with %s mode`, mode), func(t *testing.T) {
+			mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
+				dtclient.TokenScopes{dtclient.TokenScopeDataExport})
+
+			instance := &dynatracev1beta1.DynaKube{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testName,
+					Namespace: testNamespace,
+				},
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL:   testHost,
+					OneAgent: deploymentModes[mode],
+				},
+			}
+			controller := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
+
+			result, err := controller.Reconcile(context.TODO(), reconcile.Request{
+				NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+			})
+
+			assert.NoError(t, err)
+			assert.NotNil(t, result)
+
+			err = controller.client.Get(context.TODO(), types.NamespacedName{Namespace: testNamespace, Name: testName}, instance)
+			require.NoError(t, err)
+			assert.Equal(t, dynatracev1beta1.Running, instance.Status.Phase)
+		})
+	}
+}
 
 func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	t.Run(`Reconcile works with minimal setup`, func(t *testing.T) {
@@ -111,7 +151,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					"alpha.operator.dynatrace.com/feature-automatic-kubernetes-api-monitoring": "true",
+					"operator.dynatrace.com/feature-automatic-kubernetes-api-monitoring": "true",
 				},
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -221,7 +261,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 			},
 			&appsv1.DaemonSet{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      testName + "-" + daemonset.PodNameOSAgent,
+					Name:      instance.OneAgentDaemonsetName(),
 					Namespace: testNamespace,
 				},
 			},
@@ -244,7 +284,7 @@ func TestRemoveOneAgentDaemonset(t *testing.T) {
 
 		var daemonSet appsv1.DaemonSet
 
-		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: (testName + "-" + daemonset.PodNameOSAgent), Namespace: testNamespace}, &daemonSet)
+		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: (instance.OneAgentDaemonsetName()), Namespace: testNamespace}, &daemonSet)
 
 		assert.Error(t, err)
 	})
@@ -471,15 +511,13 @@ func createFakeClientAndReconcile(mockClient dtclient.Client, instance *dynatrac
 
 // generateStatefulSetForTesting prepares an ActiveGate StatefulSet after a Reconciliation of the Dynakube with a specific feature enabled
 func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID string) *appsv1.StatefulSet {
+	labels := kubeobjects.CommonLabels(name, kubeobjects.ActiveGateComponentLabel)
+	labels[kubeobjects.FeatureLabel] = feature
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name + "-" + feature,
 			Namespace: namespace,
-			Labels: map[string]string{
-				"dynatrace.com/component":         feature,
-				"operator.dynatrace.com/feature":  feature,
-				"operator.dynatrace.com/instance": name,
-			},
+			Labels:    labels,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: "dynatrace.com/v1beta1",
@@ -490,19 +528,11 @@ func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID stri
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"dynatrace.com/component":         feature,
-					"operator.dynatrace.com/feature":  feature,
-					"operator.dynatrace.com/instance": name,
-				},
+				MatchLabels: labels,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"dynatrace.com/component":         feature,
-						"operator.dynatrace.com/feature":  feature,
-						"operator.dynatrace.com/instance": name,
-					},
+					Labels: labels,
 					Annotations: map[string]string{
 						"internal.operator.dynatrace.com/custom-properties-hash": "",
 						"internal.operator.dynatrace.com/version":                "",

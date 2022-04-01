@@ -31,6 +31,22 @@ type SecretConfig struct {
 	ClusterID string `json:"clusterID"`
 }
 
+func (secret SecretConfig) logContent() {
+	if secret.ApiToken != "" {
+		secret.ApiToken = "***"
+	}
+	if secret.PaasToken != "" {
+		secret.PaasToken = "***"
+	}
+	if secret.TrustedCAs != "" {
+		secret.TrustedCAs = "***"
+	}
+	if secret.TlsCert != "" {
+		secret.TlsCert = "***"
+	}
+	log.Info("contents of secret config", "content", secret)
+}
+
 func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	file, err := fs.Open(filepath.Join(ConfigDirMount, SecretConfigFieldName))
 	if err != nil {
@@ -44,5 +60,7 @@ func newSecretConfigViaFs(fs afero.Fs) (*SecretConfig, error) {
 	if err := json.Unmarshal(rawJson, &config); err != nil {
 		return nil, err
 	}
+	log.Info("read secret from filesystem")
+	config.logContent()
 	return &config, nil
 }

@@ -1,11 +1,7 @@
 package daemonset
 
 import (
-	"fmt"
-	"path/filepath"
-
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
 	appsv1 "k8s.io/api/apps/v1"
@@ -16,10 +12,6 @@ import (
 )
 
 const (
-	labelFeature        = "operator.dynatrace.com/feature"
-	labelAgentType      = "operator.dynatrace.com/agenttype"
-	labelAgentTypeValue = "os"
-
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
 	annotationVersion           = dynatracev1beta1.InternalFlagPrefix + "version"
@@ -28,14 +20,14 @@ const (
 	// normal oneagent shutdown scenario with some extra time
 	defaultTerminationGracePeriod = 80
 
-	hostRootVolumeName  = "host-root"
-	hostRootVolumeMount = "/mnt/root"
+	hostRootVolumeName      = "host-root"
+	hostRootVolumeMountPath = "/mnt/root"
 
-	certVolumeName  = "certs"
-	certVolumeMount = "/mnt/dynatrace/certs"
+	clusterCaCertVolumeName      = "dynatrace-cluster-ca"
+	clusterCaCertVolumeMountPath = "/mnt/dynatrace/certs"
 
-	OneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
-	tlsVolumeName          = "tls"
+	activeGateCaCertVolumeName      = "active-gate-ca"
+	activeGateCaCertVolumeMountPath = "/mnt/dynatrace/certs/activegate/"
 
 	csiStorageVolumeName  = "osagent-storage"
 	csiStorageVolumeMount = "/mnt/volume_storage_mount"
@@ -44,21 +36,10 @@ const (
 
 	inframonHostIdSource = "--set-host-id-source=k8s-node-name"
 	classicHostIdSource  = "--set-host-id-source=auto"
-
-	PodNameOSAgent = "oneagent"
-
-	ClassicFeature        = "classic"
-	HostMonitoringFeature = "inframon"
-	CloudNativeFeature    = "cloud-native"
-)
-
-var (
-	tlsVolumeMount = filepath.Join(hostRootVolumeMount, OneAgentCustomKeysPath)
 )
 
 type HostMonitoring struct {
 	builderInfo
-	feature string
 }
 
 type ClassicFullStack struct {
@@ -82,9 +63,8 @@ func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string) Bu
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
 			clusterId:      clusterId,
-			deploymentType: deploymentmetadata.DeploymentTypeHostMonitoring,
+			deploymentType: DeploymentTypeHostMonitoring,
 		},
-		HostMonitoringFeature,
 	}
 }
 
@@ -94,9 +74,8 @@ func NewCloudNativeFullStack(instance *dynatracev1beta1.DynaKube, clusterId stri
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.CloudNativeFullStack.HostInjectSpec,
 			clusterId:      clusterId,
-			deploymentType: deploymentmetadata.DeploymentTypeCloudNative,
+			deploymentType: DeploymentTypeCloudNative,
 		},
-		CloudNativeFeature,
 	}
 }
 
@@ -106,7 +85,7 @@ func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) 
 			instance:       instance,
 			hostInjectSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
 			clusterId:      clusterId,
-			deploymentType: deploymentmetadata.DeploymentTypeFullStack,
+			deploymentType: DeploymentTypeFullStack,
 		},
 	}
 }
@@ -117,11 +96,7 @@ func (dsInfo *HostMonitoring) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	result.Name = fmt.Sprintf("%s-%s", dsInfo.instance.Name, PodNameOSAgent)
-	result.Labels[labelFeature] = dsInfo.feature
-	result.Spec.Selector.MatchLabels[labelAgentType] = labelAgentTypeValue
-	result.Spec.Template.Labels[labelFeature] = dsInfo.feature
-	result.Spec.Template.Labels[labelAgentType] = labelAgentTypeValue
+	result.Name = dsInfo.instance.OneAgentDaemonsetName()
 
 	if len(result.Spec.Template.Spec.Containers) > 0 {
 		appendHostIdArgument(result, inframonHostIdSource)
@@ -137,11 +112,7 @@ func (dsInfo *ClassicFullStack) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		return nil, err
 	}
 
-	result.Name = fmt.Sprintf("%s-%s", dsInfo.instance.Name, PodNameOSAgent)
-	result.Labels[labelFeature] = ClassicFeature
-	result.Spec.Selector.MatchLabels[labelAgentType] = labelAgentTypeValue
-	result.Spec.Template.Labels[labelFeature] = ClassicFeature
-	result.Spec.Template.Labels[labelAgentType] = labelAgentTypeValue
+	result.Name = dsInfo.instance.OneAgentDaemonsetName()
 
 	if len(result.Spec.Template.Spec.Containers) > 0 {
 		appendHostIdArgument(result, classicHostIdSource)
@@ -157,7 +128,10 @@ func appendHostIdArgument(result *appsv1.DaemonSet, source string) {
 func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	instance := dsInfo.instance
 	podSpec := dsInfo.podSpec()
-	labels := kubeobjects.MergeLabels(dsInfo.buildLabels(), dsInfo.hostInjectSpec.Labels)
+	labels := kubeobjects.MergeLabels(
+		dsInfo.buildLabels(),
+		dsInfo.hostInjectSpec.Labels,
+	)
 	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
 	annotations := map[string]string{
 		annotationVersion:      instance.Status.OneAgent.Version,
@@ -173,7 +147,7 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: dsInfo.buildLabels(),
+				MatchLabels: dsInfo.buildMatchLabels(),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -191,6 +165,21 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	}
 
 	return result, nil
+}
+
+func (dsInfo *builderInfo) buildLabels() map[string]string {
+	return BuildLabels(dsInfo.instance.Name, dsInfo.deploymentType)
+}
+
+// buildMatchLabels produces a set of labels that
+// don't change when switching between oneagent modes
+// or during operator version update
+// as matchLabels are not mutable on a Daemonset
+func (dsInfo *builderInfo) buildMatchLabels() map[string]string {
+	labels := dsInfo.buildLabels()
+	delete(labels, kubeobjects.AppVersionLabel)
+	delete(labels, kubeobjects.FeatureLabel)
+	return labels
 }
 
 func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
@@ -238,13 +227,6 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		Volumes:                       volumes,
 		Affinity:                      affinity,
 		TerminationGracePeriodSeconds: address_of.Int64(defaultTerminationGracePeriod),
-	}
-}
-
-func (dsInfo *builderInfo) buildLabels() map[string]string {
-	return map[string]string{
-		"dynatrace.com/component":         "operator",
-		"operator.dynatrace.com/instance": dsInfo.instance.Name,
 	}
 }
 

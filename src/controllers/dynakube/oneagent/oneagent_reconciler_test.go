@@ -84,7 +84,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
 		instance:  dynakube,
-		feature:   daemonset.ClassicFeature,
+		feature:   daemonset.DeploymentTypeFullStack,
 	}
 
 	dkState := status.DynakubeState{Instance: dynakube}
@@ -92,10 +92,10 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 	assert.NoError(t, err)
 
 	dsActual := &appsv1.DaemonSet{}
-	err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: dkName + "-" + daemonset.PodNameOSAgent, Namespace: namespace}, dsActual)
+	err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: dynakube.OneAgentDaemonsetName(), Namespace: namespace}, dsActual)
 	assert.NoError(t, err, "failed to get DaemonSet")
 	assert.Equal(t, namespace, dsActual.Namespace, "wrong namespace")
-	assert.Equal(t, dkName+"-"+daemonset.PodNameOSAgent, dsActual.GetObjectMeta().GetName(), "wrong name")
+	assert.Equal(t, dynakube.OneAgentDaemonsetName(), dsActual.GetObjectMeta().GetName(), "wrong name")
 	assert.Equal(t, corev1.DNSClusterFirstWithHostNet, dsActual.Spec.Template.Spec.DNSPolicy, "wrong policy")
 	mock.AssertExpectationsForObjects(t, dtClient)
 }
@@ -171,7 +171,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 		client:    c,
 		apiReader: c,
 		scheme:    scheme.Scheme,
-		feature:   daemonset.ClassicFeature,
+		feature:   daemonset.DeploymentTypeFullStack,
 		instance:  &base,
 	}
 
@@ -216,7 +216,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 			apiReader: c,
 			scheme:    scheme.Scheme,
 			instance:  &base,
-			feature:   daemonset.ClassicFeature,
+			feature:   daemonset.DeploymentTypeFullStack,
 		}
 
 		// arrange
@@ -270,7 +270,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		apiReader: c,
 		scheme:    scheme.Scheme,
 		instance:  &base,
-		feature:   daemonset.ClassicFeature,
+		feature:   daemonset.DeploymentTypeFullStack,
 	}
 
 	t.Run(`reconileImp Instances set, if autoUpdate is true`, func(t *testing.T) {
@@ -287,7 +287,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		}
 		pod.Name = "oneagent-update-enabled"
 		pod.Namespace = namespace
-		pod.Labels = buildLabels(name, reconciler.feature)
+		pod.Labels = daemonset.BuildLabels(name, reconciler.feature)
 		pod.Spec = ds.Spec.Template.Spec
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
@@ -321,7 +321,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		}
 		pod.Name = "oneagent-update-disabled"
 		pod.Namespace = namespace
-		pod.Labels = buildLabels(name, reconciler.feature)
+		pod.Labels = daemonset.BuildLabels(name, reconciler.feature)
 		pod.Spec = ds.Spec.Template.Spec
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
@@ -353,7 +353,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 	dkKey := metav1.ObjectMeta{Name: "my-dynakube", Namespace: "my-namespace"}
 	ds1 := &appsv1.DaemonSet{ObjectMeta: dkKey}
 	r := OneAgentReconciler{
-		feature: daemonset.HostMonitoringFeature,
+		feature: daemonset.DeploymentTypeHostMonitoring,
 	}
 	dkState := &status.DynakubeState{
 		Instance: &dynatracev1beta1.DynaKube{
@@ -377,7 +377,7 @@ func TestHasSpecChanged(t *testing.T) {
 	runTest := func(msg string, exp bool, mod func(old *dynatracev1beta1.DynaKube, new *dynatracev1beta1.DynaKube)) {
 		t.Run(msg, func(t *testing.T) {
 			r := OneAgentReconciler{
-				feature: daemonset.HostMonitoringFeature,
+				feature: daemonset.DeploymentTypeHostMonitoring,
 			}
 			key := metav1.ObjectMeta{Name: "my-oneagent", Namespace: "my-namespace"}
 			oldInstance := dynatracev1beta1.DynaKube{
@@ -488,7 +488,7 @@ func TestNewDaemonset_Affinity(t *testing.T) {
 	t.Run(`adds correct affinities`, func(t *testing.T) {
 		versionProvider := &fakeVersionProvider{}
 		r := OneAgentReconciler{
-			feature: daemonset.HostMonitoringFeature,
+			feature: daemonset.DeploymentTypeHostMonitoring,
 		}
 		dkState := &status.DynakubeState{
 			Instance: newDynaKube(),
@@ -591,9 +591,11 @@ func TestInstanceStatus(t *testing.T) {
 			Name:      "test-pod-1",
 			Namespace: namespace,
 			Labels: map[string]string{
-				"dynatrace.com/component":         "operator",
-				"operator.dynatrace.com/instance": dkName,
-				"operator.dynatrace.com/feature":  daemonset.HostMonitoringFeature,
+				"app.kubernetes.io/name":          "dynatrace-operator",
+				"app.kubernetes.io/component":     "oneagent",
+				"app.kubernetes.io/created-by":    dkName,
+				"app.kubernetes.io/version":       "snapshot",
+				"component.dynatrace.com/feature": daemonset.DeploymentTypeHostMonitoring,
 			},
 		},
 		Spec: corev1.PodSpec{
@@ -615,14 +617,65 @@ func TestInstanceStatus(t *testing.T) {
 		apiReader: fakeClient,
 		scheme:    scheme.Scheme,
 		instance:  dynakube,
-		feature:   daemonset.HostMonitoringFeature,
+		feature:   daemonset.DeploymentTypeHostMonitoring,
 	}
 
 	upd, err := reconciler.reconcileInstanceStatuses(context.Background(), reconciler.instance)
 	assert.NoError(t, err)
 	assert.True(t, upd)
+	assert.NotEmpty(t, t, dynakube.Status.OneAgent.Instances)
 
 	upd, err = reconciler.reconcileInstanceStatuses(context.Background(), reconciler.instance)
 	assert.NoError(t, err)
 	assert.False(t, upd)
+}
+func TestEmptyInstancesWithWrongLabels(t *testing.T) {
+	namespace := "dynatrace"
+	dkName := "dynakube"
+
+	dynakube := &dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{Name: dkName, Namespace: namespace},
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
+			Tokens: dkName,
+			OneAgent: dynatracev1beta1.OneAgentSpec{
+				HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+			},
+		},
+	}
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-pod-1",
+			Namespace: namespace,
+			Labels: map[string]string{
+				"wrongLabel": "dynatrace-operator",
+			},
+		},
+		Spec: corev1.PodSpec{
+			NodeName: "node-1",
+		},
+		Status: corev1.PodStatus{
+			HostIP: "123.123.123.123",
+		},
+	}
+
+	fakeClient := fake.NewClient(
+		dynakube,
+		pod,
+		NewSecret(dkName, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
+		sampleKubeSystemNS)
+
+	reconciler := &OneAgentReconciler{
+		client:    fakeClient,
+		apiReader: fakeClient,
+		scheme:    scheme.Scheme,
+		instance:  dynakube,
+		feature:   daemonset.DeploymentTypeHostMonitoring,
+	}
+
+	upd, err := reconciler.reconcileInstanceStatuses(context.Background(), reconciler.instance)
+	assert.NoError(t, err)
+	assert.True(t, upd)
+	assert.Empty(t, dynakube.Status.OneAgent.Instances)
 }

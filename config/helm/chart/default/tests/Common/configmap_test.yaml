@@ -1,4 +1,4 @@
-suit: tests configmap for dynatrace operator
+suite: tests configmap for dynatrace operator
 templates:
   - Common/configmap.yaml
 tests:

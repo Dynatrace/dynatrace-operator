@@ -3,7 +3,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
-  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -977,6 +976,9 @@ spec:
     - jsonPath: .status.tokens
       name: Tokens
       type: string
+    - jsonPath: .status.phase
+      name: Status
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -1154,6 +1156,12 @@ spec:
                     description: 'Optional: Node selector to control the selection
                       of nodes'
                     type: object
+                  priorityClassName:
+                    description: 'Optional: If specified, indicates the pod''s priority.
+                      Name must be defined by creating a PriorityClass object with
+                      that name. If not specified the setting will be removed from
+                      the StatefulSet.'
+                    type: string
                   replicas:
                     description: Amount of replicas for your ActiveGates
                     format: int32
@@ -1231,6 +1239,110 @@ spec:
                             to. If the operator is Exists, the value should be empty,
                             otherwise just a regular string.
                           type: string
+                      type: object
+                    type: array
+                  topologySpreadConstraints:
+                    description: 'Optional: Adds TopologySpreadConstraints for the
+                      ActiveGate pods'
+                    items:
+                      description: TopologySpreadConstraint specifies how to spread
+                        matching pods among the given topology.
+                      properties:
+                        labelSelector:
+                          description: LabelSelector is used to find matching pods.
+                            Pods that match this label selector are counted to determine
+                            the number of pods in their corresponding topology domain.
+                          properties:
+                            matchExpressions:
+                              description: matchExpressions is a list of label selector
+                                requirements. The requirements are ANDed.
+                              items:
+                                description: A label selector requirement is a selector
+                                  that contains values, a key, and an operator that
+                                  relates the key and values.
+                                properties:
+                                  key:
+                                    description: key is the label key that the selector
+                                      applies to.
+                                    type: string
+                                  operator:
+                                    description: operator represents a key's relationship
+                                      to a set of values. Valid operators are In,
+                                      NotIn, Exists and DoesNotExist.
+                                    type: string
+                                  values:
+                                    description: values is an array of string values.
+                                      If the operator is In or NotIn, the values array
+                                      must be non-empty. If the operator is Exists
+                                      or DoesNotExist, the values array must be empty.
+                                      This array is replaced during a strategic merge
+                                      patch.
+                                    items:
+                                      type: string
+                                    type: array
+                                required:
+                                - key
+                                - operator
+                                type: object
+                              type: array
+                            matchLabels:
+                              additionalProperties:
+                                type: string
+                              description: matchLabels is a map of {key,value} pairs.
+                                A single {key,value} in the matchLabels map is equivalent
+                                to an element of matchExpressions, whose key field
+                                is "key", the operator is "In", and the values array
+                                contains only "value". The requirements are ANDed.
+                              type: object
+                          type: object
+                        maxSkew:
+                          description: 'MaxSkew describes the degree to which pods
+                            may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
+                            it is the maximum permitted difference between the number
+                            of matching pods in the target topology and the global
+                            minimum. For example, in a 3-zone cluster, MaxSkew is
+                            set to 1, and pods with the same labelSelector spread
+                            as 1/1/0: | zone1 | zone2 | zone3 | |   P   |   P   |       |
+                            - if MaxSkew is 1, incoming pod can only be scheduled
+                            to zone3 to become 1/1/1; scheduling it onto zone1(zone2)
+                            would make the ActualSkew(2-0) on zone1(zone2) violate
+                            MaxSkew(1). - if MaxSkew is 2, incoming pod can be scheduled
+                            onto any zone. When `whenUnsatisfiable=ScheduleAnyway`,
+                            it is used to give higher precedence to topologies that
+                            satisfy it. It''s a required field. Default value is 1
+                            and 0 is not allowed.'
+                          format: int32
+                          type: integer
+                        topologyKey:
+                          description: TopologyKey is the key of node labels. Nodes
+                            that have a label with this key and identical values are
+                            considered to be in the same topology. We consider each
+                            <key, value> as a "bucket", and try to put balanced number
+                            of pods into each bucket. It's a required field.
+                          type: string
+                        whenUnsatisfiable:
+                          description: 'WhenUnsatisfiable indicates how to deal with
+                            a pod if it doesn''t satisfy the spread constraint. -
+                            DoNotSchedule (default) tells the scheduler not to schedule
+                            it. - ScheduleAnyway tells the scheduler to schedule the
+                            pod in any location,   but giving higher precedence to
+                            topologies that would help reduce the   skew. A constraint
+                            is considered "Unsatisfiable" for an incoming pod if and
+                            only if every possible node assignment for that pod would
+                            violate "MaxSkew" on some topology. For example, in a
+                            3-zone cluster, MaxSkew is set to 1, and pods with the
+                            same labelSelector spread as 3/1/1: | zone1 | zone2 |
+                            zone3 | | P P P |   P   |   P   | If WhenUnsatisfiable
+                            is set to DoNotSchedule, incoming pod can only be scheduled
+                            to zone2(zone3) to become 3/2/1(3/1/2) as ActualSkew(2-1)
+                            on zone2(zone3) satisfies MaxSkew(1). In other words,
+                            the cluster can still be imbalanced, but scheduler won''t
+                            make it *more* imbalanced. It''s a required field.'
+                          type: string
+                      required:
+                      - maxSkew
+                      - topologyKey
+                      - whenUnsatisfiable
                       type: object
                     type: array
                 type: object
@@ -1465,6 +1577,110 @@ spec:
                           type: string
                       type: object
                     type: array
+                  topologySpreadConstraints:
+                    description: 'Optional: Adds TopologySpreadConstraints for the
+                      ActiveGate pods'
+                    items:
+                      description: TopologySpreadConstraint specifies how to spread
+                        matching pods among the given topology.
+                      properties:
+                        labelSelector:
+                          description: LabelSelector is used to find matching pods.
+                            Pods that match this label selector are counted to determine
+                            the number of pods in their corresponding topology domain.
+                          properties:
+                            matchExpressions:
+                              description: matchExpressions is a list of label selector
+                                requirements. The requirements are ANDed.
+                              items:
+                                description: A label selector requirement is a selector
+                                  that contains values, a key, and an operator that
+                                  relates the key and values.
+                                properties:
+                                  key:
+                                    description: key is the label key that the selector
+                                      applies to.
+                                    type: string
+                                  operator:
+                                    description: operator represents a key's relationship
+                                      to a set of values. Valid operators are In,
+                                      NotIn, Exists and DoesNotExist.
+                                    type: string
+                                  values:
+                                    description: values is an array of string values.
+                                      If the operator is In or NotIn, the values array
+                                      must be non-empty. If the operator is Exists
+                                      or DoesNotExist, the values array must be empty.
+                                      This array is replaced during a strategic merge
+                                      patch.
+                                    items:
+                                      type: string
+                                    type: array
+                                required:
+                                - key
+                                - operator
+                                type: object
+                              type: array
+                            matchLabels:
+                              additionalProperties:
+                                type: string
+                              description: matchLabels is a map of {key,value} pairs.
+                                A single {key,value} in the matchLabels map is equivalent
+                                to an element of matchExpressions, whose key field
+                                is "key", the operator is "In", and the values array
+                                contains only "value". The requirements are ANDed.
+                              type: object
+                          type: object
+                        maxSkew:
+                          description: 'MaxSkew describes the degree to which pods
+                            may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
+                            it is the maximum permitted difference between the number
+                            of matching pods in the target topology and the global
+                            minimum. For example, in a 3-zone cluster, MaxSkew is
+                            set to 1, and pods with the same labelSelector spread
+                            as 1/1/0: | zone1 | zone2 | zone3 | |   P   |   P   |       |
+                            - if MaxSkew is 1, incoming pod can only be scheduled
+                            to zone3 to become 1/1/1; scheduling it onto zone1(zone2)
+                            would make the ActualSkew(2-0) on zone1(zone2) violate
+                            MaxSkew(1). - if MaxSkew is 2, incoming pod can be scheduled
+                            onto any zone. When `whenUnsatisfiable=ScheduleAnyway`,
+                            it is used to give higher precedence to topologies that
+                            satisfy it. It''s a required field. Default value is 1
+                            and 0 is not allowed.'
+                          format: int32
+                          type: integer
+                        topologyKey:
+                          description: TopologyKey is the key of node labels. Nodes
+                            that have a label with this key and identical values are
+                            considered to be in the same topology. We consider each
+                            <key, value> as a "bucket", and try to put balanced number
+                            of pods into each bucket. It's a required field.
+                          type: string
+                        whenUnsatisfiable:
+                          description: 'WhenUnsatisfiable indicates how to deal with
+                            a pod if it doesn''t satisfy the spread constraint. -
+                            DoNotSchedule (default) tells the scheduler not to schedule
+                            it. - ScheduleAnyway tells the scheduler to schedule the
+                            pod in any location,   but giving higher precedence to
+                            topologies that would help reduce the   skew. A constraint
+                            is considered "Unsatisfiable" for an incoming pod if and
+                            only if every possible node assignment for that pod would
+                            violate "MaxSkew" on some topology. For example, in a
+                            3-zone cluster, MaxSkew is set to 1, and pods with the
+                            same labelSelector spread as 3/1/1: | zone1 | zone2 |
+                            zone3 | | P P P |   P   |   P   | If WhenUnsatisfiable
+                            is set to DoNotSchedule, incoming pod can only be scheduled
+                            to zone2(zone3) to become 3/2/1(3/1/2) as ActualSkew(2-1)
+                            on zone2(zone3) satisfies MaxSkew(1). In other words,
+                            the cluster can still be imbalanced, but scheduler won''t
+                            make it *more* imbalanced. It''s a required field.'
+                          type: string
+                      required:
+                      - maxSkew
+                      - topologyKey
+                      - whenUnsatisfiable
+                      type: object
+                    type: array
                 type: object
               namespaceSelector:
                 description: 'Optional: set a namespace selector to limit which namespaces
@@ -1520,10 +1736,9 @@ spec:
                 description: General configuration about OneAgent instances
                 properties:
                   applicationMonitoring:
-                    description: 'Optional: (Preview feature) enable application-only
-                      monitoring and change its settings Cannot be used in conjunction
-                      with cloud-native fullstack monitoring, classic fullstack monitoring
-                      or host monitoring'
+                    description: 'Optional: enable application-only monitoring and
+                      change its settings Cannot be used in conjunction with cloud-native
+                      fullstack monitoring, classic fullstack monitoring or host monitoring'
                     nullable: true
                     properties:
                       initResources:
@@ -1799,10 +2014,9 @@ spec:
                         type: string
                     type: object
                   cloudNativeFullStack:
-                    description: 'Optional: (Preview feature) enable cloud-native
-                      fullstack monitoring and change its settings Cannot be used
-                      in conjunction with classic fullstack monitoring, application
-                      monitoring or host monitoring'
+                    description: 'Optional: enable cloud-native fullstack monitoring
+                      and change its settings Cannot be used in conjunction with classic
+                      fullstack monitoring, application monitoring or host monitoring'
                     nullable: true
                     properties:
                       args:
@@ -2518,6 +2732,110 @@ spec:
                           type: string
                       type: object
                     type: array
+                  topologySpreadConstraints:
+                    description: 'Optional: Adds TopologySpreadConstraints for the
+                      ActiveGate pods'
+                    items:
+                      description: TopologySpreadConstraint specifies how to spread
+                        matching pods among the given topology.
+                      properties:
+                        labelSelector:
+                          description: LabelSelector is used to find matching pods.
+                            Pods that match this label selector are counted to determine
+                            the number of pods in their corresponding topology domain.
+                          properties:
+                            matchExpressions:
+                              description: matchExpressions is a list of label selector
+                                requirements. The requirements are ANDed.
+                              items:
+                                description: A label selector requirement is a selector
+                                  that contains values, a key, and an operator that
+                                  relates the key and values.
+                                properties:
+                                  key:
+                                    description: key is the label key that the selector
+                                      applies to.
+                                    type: string
+                                  operator:
+                                    description: operator represents a key's relationship
+                                      to a set of values. Valid operators are In,
+                                      NotIn, Exists and DoesNotExist.
+                                    type: string
+                                  values:
+                                    description: values is an array of string values.
+                                      If the operator is In or NotIn, the values array
+                                      must be non-empty. If the operator is Exists
+                                      or DoesNotExist, the values array must be empty.
+                                      This array is replaced during a strategic merge
+                                      patch.
+                                    items:
+                                      type: string
+                                    type: array
+                                required:
+                                - key
+                                - operator
+                                type: object
+                              type: array
+                            matchLabels:
+                              additionalProperties:
+                                type: string
+                              description: matchLabels is a map of {key,value} pairs.
+                                A single {key,value} in the matchLabels map is equivalent
+                                to an element of matchExpressions, whose key field
+                                is "key", the operator is "In", and the values array
+                                contains only "value". The requirements are ANDed.
+                              type: object
+                          type: object
+                        maxSkew:
+                          description: 'MaxSkew describes the degree to which pods
+                            may be unevenly distributed. When `whenUnsatisfiable=DoNotSchedule`,
+                            it is the maximum permitted difference between the number
+                            of matching pods in the target topology and the global
+                            minimum. For example, in a 3-zone cluster, MaxSkew is
+                            set to 1, and pods with the same labelSelector spread
+                            as 1/1/0: | zone1 | zone2 | zone3 | |   P   |   P   |       |
+                            - if MaxSkew is 1, incoming pod can only be scheduled
+                            to zone3 to become 1/1/1; scheduling it onto zone1(zone2)
+                            would make the ActualSkew(2-0) on zone1(zone2) violate
+                            MaxSkew(1). - if MaxSkew is 2, incoming pod can be scheduled
+                            onto any zone. When `whenUnsatisfiable=ScheduleAnyway`,
+                            it is used to give higher precedence to topologies that
+                            satisfy it. It''s a required field. Default value is 1
+                            and 0 is not allowed.'
+                          format: int32
+                          type: integer
+                        topologyKey:
+                          description: TopologyKey is the key of node labels. Nodes
+                            that have a label with this key and identical values are
+                            considered to be in the same topology. We consider each
+                            <key, value> as a "bucket", and try to put balanced number
+                            of pods into each bucket. It's a required field.
+                          type: string
+                        whenUnsatisfiable:
+                          description: 'WhenUnsatisfiable indicates how to deal with
+                            a pod if it doesn''t satisfy the spread constraint. -
+                            DoNotSchedule (default) tells the scheduler not to schedule
+                            it. - ScheduleAnyway tells the scheduler to schedule the
+                            pod in any location,   but giving higher precedence to
+                            topologies that would help reduce the   skew. A constraint
+                            is considered "Unsatisfiable" for an incoming pod if and
+                            only if every possible node assignment for that pod would
+                            violate "MaxSkew" on some topology. For example, in a
+                            3-zone cluster, MaxSkew is set to 1, and pods with the
+                            same labelSelector spread as 3/1/1: | zone1 | zone2 |
+                            zone3 | | P P P |   P   |   P   | If WhenUnsatisfiable
+                            is set to DoNotSchedule, incoming pod can only be scheduled
+                            to zone2(zone3) to become 3/2/1(3/1/2) as ActualSkew(2-1)
+                            on zone2(zone3) satisfies MaxSkew(1). In other words,
+                            the cluster can still be imbalanced, but scheduler won''t
+                            make it *more* imbalanced. It''s a required field.'
+                          type: string
+                      required:
+                      - maxSkew
+                      - topologyKey
+                      - whenUnsatisfiable
+                      type: object
+                    type: array
                 type: object
               skipCertCheck:
                 description: Disable certificate validation checks for installer download
@@ -2788,8 +3106,9 @@ metadata:
   name: dynatrace-activegate
   namespace: dynatrace
   labels:
-    dynatrace: operator
-    operator: dynakube
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: activegate
 ---
 # Source: dynatrace-operator/templates/Common/kubernetes-monitoring/serviceaccount-kubernetes-monitoring.yaml
 # Copyright 2021 Dynatrace LLC
@@ -2811,8 +3130,9 @@ metadata:
   name: dynatrace-kubernetes-monitoring
   namespace: dynatrace
   labels:
-    dynatrace: operator
-    operator: dynakube
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: activegate
 ---
 # Source: dynatrace-operator/templates/Common/oneagent/serviceaccount-oneagent-unprivileged.yaml
 # Copyright 2021 Dynatrace LLC
@@ -2834,8 +3154,9 @@ metadata:
   name: dynatrace-dynakube-oneagent-unprivileged
   namespace: dynatrace
   labels:
-    dynatrace: operator
-    operator: dynakube
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: oneagent
 automountServiceAccountToken: false
 imagePullSecrets:
 - name: redhat-connect
@@ -2861,9 +3182,9 @@ metadata:
   name: dynatrace-operator
   namespace: dynatrace
   labels:
-    
-    dynatrace: operator
-    operator: dynakube
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: operator
 
 
 imagePullSecrets:
@@ -2889,6 +3210,10 @@ kind: ServiceAccount
 metadata:
   name: dynatrace-webhook
   namespace: dynatrace
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: webhook
 imagePullSecrets:
 - name: redhat-connect
 - name: redhat-connect-sso
@@ -2912,8 +3237,9 @@ kind: ClusterRole
 metadata:
   name: dynatrace-kubernetes-monitoring
   labels:
-    dynatrace: operator
-    operator: dynakube
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: activegate
 rules:
   - apiGroups:
       - ""
@@ -2971,7 +3297,7 @@ rules:
       - /metrics
       - /version
       - /readyz
-      - /healthz
+      - /livez
     verbs:
       - get
 ---
@@ -2994,8 +3320,9 @@ kind: ClusterRole
 metadata:
   name: dynatrace-operator
   labels:
-    dynatrace: operator
-    operator: dynakube
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: operator
 rules:
   - apiGroups:
       - ""
@@ -3086,8 +3413,9 @@ kind: ClusterRole
 metadata:
   name: dynatrace-webhook
   labels:
-    dynatrace.com/operator: dynakube
-    internal.dynatrace.com/component: webhook
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: webhook
 rules:
   - apiGroups:
       - ""
@@ -3171,6 +3499,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: dynatrace-dynakube-oneagent-unprivileged
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: oneagent
 rules:
   - apiGroups:
       - security.openshift.io
@@ -3201,8 +3533,9 @@ kind: ClusterRoleBinding
 metadata:
   name: dynatrace-kubernetes-monitoring
   labels:
-    dynatrace: operator
-    operator: dynakube
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: activegate
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -3231,8 +3564,9 @@ kind: ClusterRoleBinding
 metadata:
   name: dynatrace-operator
   labels:
-    dynatrace: operator
-    operator: dynakube
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: operator
 subjects:
   - kind: ServiceAccount
     name: dynatrace-operator
@@ -3261,8 +3595,9 @@ kind: ClusterRoleBinding
 metadata:
   name: dynatrace-webhook
   labels:
-    dynatrace.com/operator: dynakube
-    internal.dynatrace.com/component: webhook
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: webhook
 subjects:
   - kind: ServiceAccount
     name: dynatrace-webhook
@@ -3290,6 +3625,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: dynatrace-dynakube-oneagent-unprivileged
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: oneagent
 subjects:
   - kind: ServiceAccount
     name: dynatrace-dynakube-oneagent-unprivileged
@@ -3319,8 +3658,9 @@ metadata:
   name: dynatrace-operator
   namespace: dynatrace
   labels:
-    dynatrace: operator
-    operator: dynakube
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: operator
 rules:
   - apiGroups:
       - dynatrace.com
@@ -3422,6 +3762,7 @@ rules:
       - services
     verbs:
       - create
+      - update
       - delete
       - get
       - list
@@ -3476,8 +3817,9 @@ metadata:
   name: dynatrace-webhook
   namespace: dynatrace
   labels:
-    dynatrace.com/operator: dynakube
-    internal.dynatrace.com/component: webhook
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: webhook
 rules:
   - apiGroups:
       - ""
@@ -3550,8 +3892,9 @@ metadata:
   name: dynatrace-operator
   namespace: dynatrace
   labels:
-    dynatrace: operator
-    operator: dynakube
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: operator
 subjects:
   - kind: ServiceAccount
     name: dynatrace-operator
@@ -3580,8 +3923,9 @@ metadata:
   name: dynatrace-webhook
   namespace: dynatrace
   labels:
-    dynatrace.com/operator: dynakube
-    internal.dynatrace.com/component: webhook
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: webhook
 subjects:
   - kind: ServiceAccount
     name: dynatrace-webhook
@@ -3611,12 +3955,14 @@ metadata:
   name: dynatrace-webhook
   namespace: dynatrace
   labels:
-    dynatrace.com/operator: dynakube
-    internal.dynatrace.com/component: webhook
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: webhook
 spec:
   selector:
-    internal.dynatrace.com/app: webhook
-    internal.dynatrace.com/component: webhook
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: webhook
   ports:
     - port: 443
       protocol: TCP
@@ -3641,25 +3987,27 @@ kind: Deployment
 metadata:
   name: dynatrace-operator
   namespace: dynatrace
-  annotations:
-    container.apparmor.security.beta.kubernetes.io/dynatrace-operator: runtime/default
   labels:
-    dynatrace: operator
-    operator: dynakube
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: operator
 spec:
   replicas: 1
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-      name: dynatrace-operator
+      app.kubernetes.io/name: dynatrace-operator
+      app.kubernetes.io/version: "0.4.2"
+      app.kubernetes.io/component: operator
   strategy:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
       labels:
-        name: dynatrace-operator
-        dynatrace: operator
-        operator: dynakube
+        app.kubernetes.io/name: dynatrace-operator
+        app.kubernetes.io/version: "0.4.2"
+        app.kubernetes.io/component: operator
     spec:
       containers:
         - name: dynatrace-operator
@@ -3695,14 +4043,14 @@ spec:
               mountPath: /tmp/dynatrace-operator
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /livez
               port: server-port
               scheme: HTTP
             initialDelaySeconds: 15
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /healthz
+              path: /livez
               port: server-port
               scheme: HTTP
             initialDelaySeconds: 15
@@ -3755,26 +4103,27 @@ metadata:
   name: dynatrace-webhook
   namespace: dynatrace
   labels:
-    dynatrace.com/operator: dynakube
-    internal.dynatrace.com/component: webhook
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: webhook
 spec:
   replicas: 1
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-      internal.dynatrace.com/component: webhook
-      internal.dynatrace.com/app: webhook
+      app.kubernetes.io/name: dynatrace-operator
+      app.kubernetes.io/version: "0.4.2"
+      app.kubernetes.io/component: webhook
   strategy:
     type: RollingUpdate
   template:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: webhook
-        container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
       labels:
-        dynatrace.com/operator: oneagent
-        internal.dynatrace.com/component: webhook
-        internal.dynatrace.com/app: webhook
+        app.kubernetes.io/name: dynatrace-operator
+        app.kubernetes.io/version: "0.4.2"
+        app.kubernetes.io/component: webhook
     spec:
       volumes:
       - emptyDir: {}
@@ -3813,7 +4162,7 @@ spec:
                   fieldPath: metadata.name
           readinessProbe:
             httpGet:
-              path: /healthz
+              path: /livez
               port: server-port
               scheme: HTTPS
           ports:
@@ -3863,8 +4212,9 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: dynatrace-webhook
   labels:
-    dynatrace.com/operator: dynakube
-    internal.dynatrace.com/component: webhook
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: webhook
 webhooks:
   - name: webhook.pod.dynatrace.com
     reinvocationPolicy: IfNeeded
@@ -3905,6 +4255,54 @@ webhooks:
     admissionReviewVersions: [ "v1beta1", "v1" ]
     sideEffects: None
 ---
+# Source: dynatrace-operator/templates/Openshift/activegate/securitycontextconstraints.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: dynatrace-activegate
+allowPrivilegedContainer: false
+fsGroup:
+  type: RunAsAny
+priority: 1
+readOnlyRootFilesystem: false
+
+requiredDropCapabilities:
+  - ALL
+runAsUser:
+  type: MustRunAsNonRoot
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - "*"
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:dynatrace:dynatrace-activegate
+  - system:serviceaccount:dynatrace:dynatrace-kubernetes-monitoring
+volumes:
+  - "*"
+
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowedFlexVolumes: null
+defaultAddCapabilities: []
+---
 # Source: dynatrace-operator/templates/Openshift/oneagent/securitycontextconstraints-unprivileged.yaml
 # Copyright 2021 Dynatrace LLC
 
@@ -3925,6 +4323,10 @@ metadata:
   annotations:
     kubernetes.io/description: "dynatrace-dynakube-oneagent-unprivileged allows access to all privileged and host features and the ability to run as any user, any group, any fsGroup, and with any SELinux context. This is a copy of privileged scc."
   name: dynatrace-dynakube-oneagent-unprivileged
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: oneagent
 allowHostDirVolumePlugin: true
 allowHostIPC: false
 allowHostNetwork: true
@@ -3968,6 +4370,106 @@ users:
 volumes:
   - "*"
 ---
+# Source: dynatrace-operator/templates/Openshift/operator/securitycontextconstraints.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: dynatrace-operator
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: operator
+allowPrivilegedContainer: false
+fsGroup:
+  type: RunAsAny
+priority: 1
+readOnlyRootFilesystem: true
+requiredDropCapabilities:
+  - ALL
+runAsUser:
+  type: MustRunAsNonRoot
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - "*"
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:dynatrace:dynatrace-operator
+volumes:
+  - "*"
+
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowedFlexVolumes: null
+defaultAddCapabilities: []
+---
+# Source: dynatrace-operator/templates/Openshift/webhook/securitycontextconstraints.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: dynatrace-webhook
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: operator
+allowPrivilegedContainer: false
+fsGroup:
+  type: RunAsAny
+priority: 1
+readOnlyRootFilesystem: true
+requiredDropCapabilities:
+  - ALL
+runAsUser:
+  type: MustRunAsNonRoot
+seLinuxContext:
+  type: RunAsAny
+seccompProfiles:
+  - "*"
+supplementalGroups:
+  type: RunAsAny
+users:
+  - system:serviceaccount:dynatrace:dynatrace-webhook
+volumes:
+  - "*"
+
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: true
+allowHostPID: false
+allowHostPorts: false
+allowedFlexVolumes: null
+defaultAddCapabilities: []
+---
 # Source: dynatrace-operator/templates/Common/webhook/validatingwebhookconfiguration.yaml
 # Copyright 2021 Dynatrace LLC
 
@@ -3987,8 +4489,9 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: dynatrace-webhook
   labels:
-    dynatrace.com/operator: dynakube
-    internal.dynatrace.com/component: webhook
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: webhook
 webhooks:
   - admissionReviewVersions:
       - v1
@@ -4033,8 +4536,9 @@ metadata:
   name: dynatrace-oneagent-csi-driver
   namespace: dynatrace
   labels:
-    dynatrace: operator
-    operator: dynakube
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: csi-driver
 ---
 # Source: dynatrace-operator/templates/Common/csi/clusterrole-csi.yaml
 # Copyright 2021 Dynatrace LLC
@@ -4054,6 +4558,10 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: dynatrace-oneagent-csi-driver
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: csi-driver
 rules:
   - apiGroups:
       - ""
@@ -4116,6 +4624,10 @@ kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: dynatrace-oneagent-csi-driver
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: csi-driver
 subjects:
   - kind: ServiceAccount
     name: dynatrace-oneagent-csi-driver
@@ -4144,6 +4656,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: dynatrace-oneagent-csi-driver
   namespace: dynatrace
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: csi-driver
 rules:
   - apiGroups:
       - ""
@@ -4203,6 +4719,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: dynatrace-oneagent-csi-driver
   namespace: dynatrace
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: csi-driver
 subjects:
   - kind: ServiceAccount
     name: dynatrace-oneagent-csi-driver
@@ -4230,29 +4750,26 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   labels:
-    dynatrace: operator
-    operator: dynakube
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: csi-driver
   name: dynatrace-oneagent-csi-driver
   namespace: dynatrace
-  annotations:
-    container.apparmor.security.beta.kubernetes.io/driver: runtime/default
-    container.apparmor.security.beta.kubernetes.io/registrar: runtime/default
-    container.apparmor.security.beta.kubernetes.io/liveness-probe: runtime/default
 spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      internal.oneagent.dynatrace.com/app: csi-driver
-      internal.oneagent.dynatrace.com/component: csi-driver
+      app.kubernetes.io/name: dynatrace-operator
+      app.kubernetes.io/version: "0.4.2"
+      app.kubernetes.io/component: csi-driver
   template:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-logs-container: driver
       labels:
-        dynatrace: operator
-        operator: dynakube
-        internal.oneagent.dynatrace.com/app: csi-driver
-        internal.oneagent.dynatrace.com/component: csi-driver
+        app.kubernetes.io/name: dynatrace-operator
+        app.kubernetes.io/version: "0.4.2"
+        app.kubernetes.io/component: csi-driver
     spec:
       containers:
         # Used to receive/execute gRPC requests (NodePublishVolume/NodeUnpublishVolume) from kubelet to mount/unmount volumes for a pod
@@ -4282,8 +4799,8 @@ spec:
         livenessProbe:
           failureThreshold: 3
           httpGet:
-            path: /healthz
-            port: healthz
+            path: /livez
+            port: livez
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 5
@@ -4291,7 +4808,7 @@ spec:
           timeoutSeconds: 1
         ports:
         - containerPort: 10080
-          name: healthz
+          name: livez
           protocol: TCP
         resources:
           limits:
@@ -4332,23 +4849,19 @@ spec:
         args:
         - --csi-address=/csi/csi.sock
         - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
-        - --health-port=9809
         command:
         - csi-node-driver-registrar
         livenessProbe:
+          exec:
+            command:
+              - csi-node-driver-registrar
+              - --kubelet-registration-path=/var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/csi.sock
+              - --mode=kubelet-registration-probe
           failureThreshold: 3
-          httpGet:
-            path: /healthz
-            port: healthz
-            scheme: HTTP
-          initialDelaySeconds: 5
+          initialDelaySeconds: 30
           periodSeconds: 10
           successThreshold: 1
-          timeoutSeconds: 5
-        ports:
-        - containerPort: 9809
-          name: healthz
-          protocol: TCP
+          timeoutSeconds: 15
         resources:
             limits:
               cpu: 100m
@@ -4451,6 +4964,10 @@ apiVersion: storage.k8s.io/v1
 kind: CSIDriver
 metadata:
   name: csi.oneagent.dynatrace.com
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: csi-driver
 spec:
   attachRequired: false
   podInfoOnMount: true
@@ -4475,6 +4992,10 @@ apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
   name: dynatrace-oneagent-csi-driver
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/component: csi-driver
 allowHostDirVolumePlugin: true
 allowHostIPC: true
 allowHostNetwork: true

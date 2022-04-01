@@ -12,6 +12,7 @@ import (
 // CorrectMetadata checks if the entries in the storage are actually valid
 // Removes not valid entries
 func CorrectMetadata(cl client.Client, access Access) error {
+	defer LogAccessOverview(log, access)
 	if err := correctVolumes(cl, access); err != nil {
 		return err
 	}
@@ -45,7 +46,7 @@ func correctVolumes(cl client.Client, access Access) error {
 
 // Removes dynakube entries if their Dynakube instance no longer exists in the cluster
 func correctDynakubes(cl client.Client, access Access) error {
-	dynakubes, err := access.GetDynakubes()
+	dynakubes, err := access.GetTenantsToDynakubes()
 	if err != nil {
 		return err
 	}

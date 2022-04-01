@@ -666,7 +666,7 @@ spec:
           - /metrics
           - /version
           - /readyz
-          - /healthz
+          - /livez
           verbs:
           - get
         serviceAccountName: dynatrace-kubernetes-monitoring
@@ -854,7 +854,7 @@ spec:
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
-                    path: /healthz
+                    path: /livez
                     port: server-port
                     scheme: HTTP
                   initialDelaySeconds: 15
@@ -867,7 +867,7 @@ spec:
                   name: server-port
                 readinessProbe:
                   httpGet:
-                    path: /healthz
+                    path: /livez
                     port: server-port
                     scheme: HTTP
                   initialDelaySeconds: 15
@@ -940,7 +940,7 @@ spec:
                   name: server-port
                 readinessProbe:
                   httpGet:
-                    path: /healthz
+                    path: /livez
                     port: server-port
                     scheme: HTTPS
                 resources:

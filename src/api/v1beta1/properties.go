@@ -31,6 +31,8 @@ const (
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
 	PullSecretSuffix   = "-pull-secret"
 	TenantSecretSuffix = "-activegate-tenant-secret"
+
+	PodNameOsAgent = "oneagent"
 )
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
@@ -63,6 +65,10 @@ func (dk *DynaKube) NeedsOneAgent() bool {
 	return dk.ClassicFullStackMode() || dk.CloudNativeFullstackMode() || dk.HostMonitoringMode()
 }
 
+func (dk *DynaKube) OneAgentDaemonsetName() string {
+	return fmt.Sprintf("%s-%s", dk.Name, PodNameOsAgent)
+}
+
 func (dk *DynaKube) DeprecatedActiveGateMode() bool {
 	return dk.Spec.KubernetesMonitoring.Enabled || dk.Spec.Routing.Enabled
 }
@@ -88,7 +94,7 @@ func (dk *DynaKube) NeedsStatsd() bool {
 	return dk.IsActiveGateMode(StatsdIngestCapability.DisplayName)
 }
 
-func (dk *DynaKube) HasActiveGateTLS() bool {
+func (dk *DynaKube) HasActiveGateCaCert() bool {
 	return dk.ActiveGateMode() && dk.Spec.ActiveGate.TlsSecretName != ""
 }
 
@@ -263,21 +269,31 @@ func (dk *DynaKube) TenantUUID() (string, error) {
 	return tenantUUID(dk.Spec.APIURL)
 }
 
+func runeIs(wanted rune) func(rune) bool {
+	return func(actual rune) bool {
+		return actual == wanted
+	}
+}
+
 func tenantUUID(apiUrl string) (string, error) {
 	parsedUrl, err := url.Parse(apiUrl)
 	if err != nil {
 		return "", errors.WithMessagef(err, "problem parsing tenant id from url %s", apiUrl)
 	}
 
-	fqdn := parsedUrl.Hostname()
-	hostnameWithDomains := strings.FieldsFunc(fqdn,
-		func(r rune) bool { return r == '.' },
-	)
-	if len(hostnameWithDomains) < 1 {
-		return "", fmt.Errorf("problem getting tenant id from fqdn '%s'", fqdn)
+	// Path = "/e/<token>/api" -> ["e",  "<tenant>", "api"]
+	subPaths := strings.FieldsFunc(parsedUrl.Path, runeIs('/'))
+	if len(subPaths) >= 3 && subPaths[0] == "e" && subPaths[2] == "api" {
+		return subPaths[1], nil
 	}
 
-	return hostnameWithDomains[0], nil
+	hostnameWithDomains := strings.FieldsFunc(parsedUrl.Hostname(), runeIs('.'))
+	if len(hostnameWithDomains) >= 1 {
+		return hostnameWithDomains[0], nil
+
+	}
+
+	return "", fmt.Errorf("problem getting tenant id from API URL '%s'", apiUrl)
 }
 
 func (dk *DynaKube) HostGroup() string {

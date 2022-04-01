@@ -3,6 +3,8 @@ package statefulset
 import (
 	"testing"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -37,7 +39,7 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 		}
 
 		for _, mountPath := range []string{
-			activeGateConfigDir,
+			capability.ActiveGateGatewayConfigMountPoint,
 			dataSourceStartupArgsMountPoint,
 			dataSourceAuthTokenMountPoint,
 			statsdMetadataMountPoint,
@@ -46,6 +48,10 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 		} {
 			assertion.Truef(kubeobjects.MountPathIsIn(container.VolumeMounts, mountPath), "Expected that EEC container defines mount point %s", mountPath)
 		}
+
+		assert.Truef(t, kubeobjects.MountPathIsReadOnlyOrReadWrite(container.VolumeMounts, capability.ActiveGateGatewayConfigMountPoint, kubeobjects.ReadOnlyMountPath),
+			"Expected that ActiveGate container mount point %s is mounted ReadOnly", capability.ActiveGateGatewayConfigMountPoint,
+		)
 
 		for _, envVar := range []string{
 			envTenantId, envServerUrl, envEecIngestPort,
@@ -68,6 +74,7 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 
 	t.Run("volumes vs volume mounts", func(t *testing.T) {
 		stsProperties := testBuildStsProperties()
+		stsProperties.Spec.ActiveGate.Capabilities = append(stsProperties.Spec.ActiveGate.Capabilities, dynatracev1beta1.StatsdIngestCapability.DisplayName)
 		eec := NewExtensionController(stsProperties)
 		statsd := NewStatsd(stsProperties)
 		volumes := buildVolumes(stsProperties, []kubeobjects.ContainerBuilder{eec, statsd})
@@ -80,7 +87,7 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 
 	t.Run("resource requirements from feature flags", func(t *testing.T) {
 		stsProperties := testBuildStsProperties()
-		stsProperties.ObjectMeta.Annotations["alpha.operator.dynatrace.com/feature-activegate-eec-resources-limits-cpu"] = "200m"
+		stsProperties.ObjectMeta.Annotations["operator.dynatrace.com/feature-activegate-eec-resources-limits-cpu"] = "200m"
 		eec := NewExtensionController(stsProperties)
 
 		container := eec.BuildContainer()

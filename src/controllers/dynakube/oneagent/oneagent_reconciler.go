@@ -18,7 +18,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -26,6 +25,7 @@ import (
 const (
 	defaultUpdateInterval = 5 * time.Minute
 	updateEnvVar          = "ONEAGENT_OPERATOR_UPDATE_INTERVAL"
+	oldDsName             = "classic"
 )
 
 // NewOneAgentReconciler initializes a new ReconcileOneAgent instance
@@ -81,18 +81,14 @@ func (r *OneAgentReconciler) Reconcile(ctx context.Context, rec *status.Dynakube
 
 	if rec.IsOutdated(r.instance.Status.OneAgent.LastHostsRequestTimestamp, updInterval) {
 		r.instance.Status.OneAgent.LastHostsRequestTimestamp = rec.Now.DeepCopy()
-		rec.Update(true, 5*time.Minute, "updated last host request time stamp")
+		rec.Update(true, "updated last host request time stamp")
 
 		upd, err = r.reconcileInstanceStatuses(ctx, r.instance)
-		rec.Update(upd, 5*time.Minute, "Instance statuses reconciled")
+		rec.Update(upd, "Instance statuses reconciled")
 		if rec.Error(err) {
 			return false, err
 		}
 	}
-
-	// Finally we have to determine the correct non error phase
-	_, err = r.determineDynaKubePhase(r.instance)
-	rec.Error(err)
 
 	return upd, nil
 }
@@ -120,7 +116,7 @@ func (r *OneAgentReconciler) reconcileRollout(dkState *status.DynakubeState) (bo
 		// remove old daemonset with feature in name
 		oldClassicDaemonset := &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      fmt.Sprintf("%s-%s", r.instance.Name, daemonset.ClassicFeature),
+				Name:      fmt.Sprintf("%s-%s", r.instance.Name, oldDsName),
 				Namespace: r.instance.Namespace,
 			},
 		}
@@ -157,7 +153,7 @@ func (r *OneAgentReconciler) getPods(ctx context.Context, instance *dynatracev1b
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
 		client.InNamespace((*instance).GetNamespace()),
-		client.MatchingLabels(buildLabels(instance.Name, feature)),
+		client.MatchingLabels(daemonset.BuildLabels(instance.Name, feature)),
 	}
 	err := r.client.List(ctx, podList, listOps...)
 	return podList.Items, listOps, err
@@ -167,11 +163,11 @@ func (r *OneAgentReconciler) newDaemonSetForCR(dkState *status.DynakubeState, cl
 	var ds *appsv1.DaemonSet
 	var err error
 
-	if r.feature == daemonset.ClassicFeature {
+	if r.feature == daemonset.DeploymentTypeFullStack {
 		ds, err = daemonset.NewClassicFullStack(dkState.Instance, clusterID).BuildDaemonSet()
-	} else if r.feature == daemonset.HostMonitoringFeature {
+	} else if r.feature == daemonset.DeploymentTypeHostMonitoring {
 		ds, err = daemonset.NewHostMonitoring(dkState.Instance, clusterID).BuildDaemonSet()
-	} else if r.feature == daemonset.CloudNativeFeature {
+	} else if r.feature == daemonset.DeploymentTypeCloudNative {
 		ds, err = daemonset.NewCloudNativeFullStack(dkState.Instance, clusterID).BuildDaemonSet()
 	}
 	if err != nil {
@@ -219,31 +215,4 @@ func getInstanceStatuses(pods []corev1.Pod) (map[string]dynatracev1beta1.OneAgen
 	}
 
 	return instanceStatuses, nil
-}
-
-func (r *OneAgentReconciler) determineDynaKubePhase(instance *dynatracev1beta1.DynaKube) (bool, error) {
-	var phaseChanged bool
-	dsActual := &appsv1.DaemonSet{}
-	instanceName := fmt.Sprintf("%s-%s", instance.Name, r.feature)
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: instanceName, Namespace: instance.Namespace}, dsActual)
-
-	if k8serrors.IsNotFound(err) {
-		return false, nil
-	}
-
-	if err != nil {
-		phaseChanged = instance.Status.Phase != dynatracev1beta1.Error
-		instance.Status.Phase = dynatracev1beta1.Error
-		return phaseChanged, err
-	}
-
-	if dsActual.Status.NumberReady == dsActual.Status.CurrentNumberScheduled {
-		phaseChanged = instance.Status.Phase != dynatracev1beta1.Running
-		instance.Status.Phase = dynatracev1beta1.Running
-	} else {
-		phaseChanged = instance.Status.Phase != dynatracev1beta1.Deploying
-		instance.Status.Phase = dynatracev1beta1.Deploying
-	}
-
-	return phaseChanged, nil
 }
