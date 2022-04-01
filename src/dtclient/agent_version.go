@@ -56,7 +56,7 @@ func (dtc *dynatraceClient) readResponseForLatestVersion(response []byte) (strin
 	jr := &jsonResponse{}
 	err := json.Unmarshal(response, jr)
 	if err != nil {
-		log.Error(err, "error unmarshalling json response")
+		log.Error(err, "error unmarshalling latest agent version response", "response", string(response))
 		return "", err
 	}
 
