@@ -67,7 +67,7 @@ manager-amd64: generate-crd fmt vet
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: export RUN_LOCAL=true
 run: export POD_NAMESPACE=dynatrace
-run: generate fmt vet manifests
+run: generate-crd fmt vet manifests
 	go run ./src/cmd/operator/
 
 install-crd: generate-crd kustomize
@@ -88,11 +88,11 @@ deploy-ocp: manifests-ocp kustomize
 	cd config/deploy/openshift && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(BRANCH_IMAGE)
 	$(KUSTOMIZE) build config/deploy/openshift | oc apply -f -
 
-publish-image:
-	./build/publish_image.sh
+push-image:
+	./build/push_image.sh
 
-publish-tagged-image: export TAG=snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
-publish-tagged-image: publish-image
+push-tagged-image: export TAG=snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
+push-tagged-image: push-image
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: manifests-k8s manifests-ocp
