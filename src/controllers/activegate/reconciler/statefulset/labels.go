@@ -19,7 +19,7 @@ func (stsProperties *statefulSetProperties) buildLabels() map[string]string {
 // buildMatchLabels produces a set of labels that
 // don't change when switching between oneagent modes
 // or during operator version update
-// as matchLabels are not mutable on a Daemonset
+// as matchLabels are not mutable on a StatefulSet
 func (stsProperties *statefulSetProperties) buildMatchLabels() map[string]string {
 	labels := kubeobjects.CommonLabels(stsProperties.DynaKube.Name, ActiveGateComponentName)
 	delete(labels, kubeobjects.AppVersionLabel)
