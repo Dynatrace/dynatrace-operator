@@ -2,6 +2,7 @@ package csiprovisioner
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -40,7 +41,7 @@ func (provisioner *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Clie
 		}
 		return latestProcessModuleConfig, storedHash, nil
 	} else if err != nil {
-		return nil, storedHash, err
+		return nil, storedHash, fmt.Errorf("error reading process module config cache: %v", err)
 	}
 	storedHash = storedProcessModuleConfig.Hash
 	latestProcessModuleConfig, err := dtc.GetProcessModuleConfig(storedProcessModuleConfig.Revision)
