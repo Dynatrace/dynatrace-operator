@@ -35,7 +35,6 @@ func (dtc *dynatraceClient) GetActiveGateTenantInfo() (*ActiveGateTenantInfo, er
 
 	tenantInfo, err := dtc.readResponseForActiveGateTenantInfo(data)
 	if err != nil {
-		log.Error(err, err.Error())
 		return nil, err
 	}
 	if len(tenantInfo.Endpoints) == 0 {
@@ -49,8 +48,8 @@ func (dtc *dynatraceClient) readResponseForActiveGateTenantInfo(response []byte)
 	agTenantInfo := &ActiveGateTenantInfo{}
 	err := json.Unmarshal(response, agTenantInfo)
 	if err != nil {
-		log.Error(err, "error unmarshalling json response")
-		return nil, errors.WithStack(err)
+		log.Error(err, "error unmarshalling activegate tenant info", "response", string(response))
+		return nil, err
 	}
 
 	return agTenantInfo, nil
