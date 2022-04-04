@@ -51,7 +51,7 @@ func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conn
 	resp := jsonResponse{}
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
-		log.Error(err, "error unmarshalling json response")
+		log.Error(err, "error unmarshalling connection info response", "response", string(response))
 		return ConnectionInfo{}, err
 	}
 

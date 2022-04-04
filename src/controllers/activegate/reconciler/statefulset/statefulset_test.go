@@ -379,7 +379,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 func TestStatefulSet_Env(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(testUID, deploymentmetadata.DeploymentTypeActiveGate)
+	deploymentMetadata := deploymentmetadata.NewDeploymentMetadata(testUID, DeploymentTypeActiveGate)
 
 	t.Run(`with FeatureDisableActivegateRawImage=true`, func(t *testing.T) {
 		instanceRawImg := instance.DeepCopy()
