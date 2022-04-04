@@ -1,0 +1,13 @@
+# Creates dynakube without any mode set
+# Creates namespace before cloudNative mode is enabled
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+- command: sh ../../create-dynakube-base.sh
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    dk-mode: cloud-native
+  name: already-present-cloud-native

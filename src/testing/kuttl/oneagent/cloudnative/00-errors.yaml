@@ -1,0 +1,8 @@
+# Without cloudNative enabled ==> namespaces are not labeled
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    dk-mode: cloud-native
+    dynakube.internal.dynatrace.com/instance: dynakube
+  name: already-present-cloud-native
