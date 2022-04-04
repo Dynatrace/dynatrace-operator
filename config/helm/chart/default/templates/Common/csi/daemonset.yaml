@@ -36,6 +36,7 @@ spec:
         {{- end}}
       labels:
         {{- include "dynatrace-operator.csiLabels" . | nindent 8 }}
+        {{- include "dynatrace-operator.csiSelectorLabels" . | nindent 8 }}
     spec:
       containers:
         # Used to receive/execute gRPC requests (NodePublishVolume/NodeUnpublishVolume) from kubelet to mount/unmount volumes for a pod

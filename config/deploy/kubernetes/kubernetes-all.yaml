@@ -3922,8 +3922,8 @@ spec:
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: dynatrace-operator
-      app.kubernetes.io/component: operator
+      name: dynatrace-operator
+      # app.kubernetes.io/component: operator
   strategy:
     type: RollingUpdate
   template:
@@ -3933,6 +3933,8 @@ spec:
         app.kubernetes.io/name: dynatrace-operator
         app.kubernetes.io/version: "0.4.2"
         app.kubernetes.io/component: operator
+        name: dynatrace-operator
+        # app.kubernetes.io/component: operator
     spec:
       containers:
         - name: dynatrace-operator
@@ -4036,8 +4038,9 @@ spec:
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: dynatrace-operator
-      app.kubernetes.io/component: webhook
+      internal.dynatrace.com/component: webhook
+      internal.dynatrace.com/app: webhook
+      # app.kubernetes.io/component: webhook
   strategy:
     type: RollingUpdate
   template:
@@ -4048,6 +4051,9 @@ spec:
         app.kubernetes.io/name: dynatrace-operator
         app.kubernetes.io/version: "0.4.2"
         app.kubernetes.io/component: webhook
+        internal.dynatrace.com/component: webhook
+        internal.dynatrace.com/app: webhook
+        # app.kubernetes.io/component: webhook
     spec:
       volumes:
       - emptyDir: {}
@@ -4468,8 +4474,8 @@ spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app.kubernetes.io/name: dynatrace-operator
-      app.kubernetes.io/component: csi-driver
+      internal.oneagent.dynatrace.com/app: csi-driver
+      internal.oneagent.dynatrace.com/component: csi-driver
   template:
     metadata:
       annotations:
@@ -4478,6 +4484,8 @@ spec:
         app.kubernetes.io/name: dynatrace-operator
         app.kubernetes.io/version: "0.4.2"
         app.kubernetes.io/component: csi-driver
+        internal.oneagent.dynatrace.com/app: csi-driver
+        internal.oneagent.dynatrace.com/component: csi-driver
     spec:
       containers:
         # Used to receive/execute gRPC requests (NodePublishVolume/NodeUnpublishVolume) from kubelet to mount/unmount volumes for a pod

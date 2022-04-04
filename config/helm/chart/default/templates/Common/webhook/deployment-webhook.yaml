@@ -37,6 +37,7 @@ spec:
         {{- end }}
       labels:
         {{- include "dynatrace-operator.webhookLabels" . | nindent 8 }}
+        {{- include "dynatrace-operator.webhookSelectorLabels" . | nindent 8 }}
     spec:
       volumes:
       - emptyDir: {}
