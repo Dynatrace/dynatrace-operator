@@ -13,8 +13,6 @@ MASTER_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot
 BRANCH_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
 OLM_IMAGE ?= registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
 
-OUT ?= all
-
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -30,8 +28,6 @@ ifeq ($(origin IMG),undefined)
 	MASTER_IMAGE=$(BRANCH_IMAGE)
 	else ifeq ($(shell git branch --show-current), master)
 	BRANCH_IMAGE=$(MASTER_IMAGE)
-	else
-	IMG=$(BRANCH_IMAGE)
 	endif
 endif
 
@@ -48,7 +44,7 @@ all: manager
 
 # Run tests
 ENVTEST_ASSETS_DIR = $(shell pwd)/testbin
-test: generate fmt vet manifests
+test: generate-crd fmt vet manifests
 	mkdir -p $(ENVTEST_ASSETS_DIR)
 	test -f $(ENVTEST_ASSETS_DIR)/setup-envtest.sh || curl -sSLo $(ENVTEST_ASSETS_DIR)/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.6.3/hack/setup-envtest.sh
 	source $(ENVTEST_ASSETS_DIR)/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
@@ -60,57 +56,49 @@ helm-lint:
 	cd config/helm && ./testing/lint.sh
 
 # Build manager binary
-manager: generate fmt vet
+manager: generate-crd fmt vet
 	go build -o bin/manager ./src/cmd/operator/
 
 manager-amd64: export GOOS=linux
 manager-amd64: export GOARCH=amd64
-manager-amd64: generate fmt vet
+manager-amd64: generate-crd fmt vet
 	go build -o bin/manager-amd64 ./src/cmd/operator/
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
 run: export RUN_LOCAL=true
 run: export POD_NAMESPACE=dynatrace
-run: generate fmt vet manifests
+run: generate-crd fmt vet manifests
 	go run ./src/cmd/operator/
 
-# Install CRDs into a cluster
-install: manifests kustomize
+install-crd: generate-crd kustomize
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
-# Uninstall CRDs from a cluster
-uninstall: manifests kustomize
+uninstall-crd: generate-crd kustomize
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: export PLATFORM=kubernetes
-deploy: manifests kustomize
+deploy: manifests-k8s kustomize
 	kubectl get namespace dynatrace || kubectl create namespace dynatrace
 	cd config/deploy/kubernetes && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(BRANCH_IMAGE)
 	$(KUSTOMIZE) build config/deploy/kubernetes | kubectl apply -f -
-	make reset-kustomization-files
 
 # Deploy controller in the configured OpenShift cluster in ~/.kube/config
-deploy-ocp: export PLATFORM=openshift
-deploy-ocp: manifests kustomize
+deploy-ocp: manifests-ocp kustomize
 	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
 	cd config/deploy/openshift && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(BRANCH_IMAGE)
 	$(KUSTOMIZE) build config/deploy/openshift | oc apply -f -
-	make reset-kustomization-files
 
-deploy-local:
-	./build/deploy_local.sh
+push-image:
+	./build/push_image.sh
 
-deploy-local-easy: export TAG=snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
-deploy-local-easy:
-	./build/deploy_local.sh
+push-tagged-image: export TAG=snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
+push-tagged-image: push-image
 
 # Generate manifests e.g. CRD, RBAC etc.
-manifests: controller-gen kustomize
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/bases
+manifests: manifests-k8s manifests-ocp
 
+manifests-k8s: generate-crd kustomize
 	# Create directories for manifests if they do not exist
-ifeq ($(PLATFORM), kubernetes)
 	mkdir -p config/deploy/kubernetes
 
 	# Generate kubernetes.yaml
@@ -140,8 +128,12 @@ ifeq ($(PLATFORM), kubernetes)
 
 	$(KUSTOMIZE) build config/crd | cat - config/deploy/kubernetes/kubernetes.yaml > temp
 	mv temp config/deploy/kubernetes/kubernetes.yaml
-endif
-ifeq ($(PLATFORM), openshift)
+
+	cat config/deploy/kubernetes/kubernetes.yaml > config/deploy/kubernetes/kubernetes-olm.yaml
+	cat config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/kubernetes-csi.yaml > config/deploy/kubernetes/kubernetes-all.yaml
+
+manifests-ocp: generate-crd controller-gen kustomize
+	# Create directories for manifests if they do not exist
 	mkdir -p config/deploy/openshift
 
 	# Generate openshift.yaml
@@ -173,38 +165,9 @@ ifeq ($(PLATFORM), openshift)
 
 	$(KUSTOMIZE) build config/crd | cat - config/deploy/openshift/openshift.yaml > temp
 	mv temp config/deploy/openshift/openshift.yaml
-endif
 
-ifeq ($(OUT), olm)
-ifeq ($(PLATFORM), kubernetes)
-	cat config/deploy/kubernetes/kubernetes.yaml > config/deploy/kubernetes/kubernetes-$(OUT).yaml
-endif
-ifeq ($(PLATFORM), openshift)
-	cat config/deploy/openshift/openshift.yaml > config/deploy/openshift/openshift-$(OUT).yaml
-endif
-else
-ifeq ($(PLATFORM), kubernetes)
-	cat config/deploy/kubernetes/kubernetes.yaml config/deploy/kubernetes/kubernetes-csi.yaml > config/deploy/kubernetes/kubernetes-$(OUT).yaml
-endif
-ifeq ($(PLATFORM), openshift)
-	cat config/deploy/openshift/openshift.yaml config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/openshift-$(OUT).yaml
-endif
-endif
-	make reset-kustomization-files
-
-reset-kustomization-files: kustomize
-ifeq ($(PLATFORM), kubernetes)
-	rm -f config/deploy/kubernetes/kustomization.yaml
-	mkdir -p config/deploy/kubernetes
-	cd config/deploy/kubernetes && $(KUSTOMIZE) create
-	cd config/deploy/kubernetes && $(KUSTOMIZE) edit add base kubernetes-$(OUT).yaml
-endif
-ifeq ($(PLATFORM), openshift)
-	rm -f config/deploy/openshift/kustomization.yaml
-	mkdir -p config/deploy/openshift
-	cd config/deploy/openshift && $(KUSTOMIZE) create
-	cd config/deploy/openshift && $(KUSTOMIZE) edit add base openshift-$(OUT).yaml
-endif
+	cat config/deploy/openshift/openshift.yaml > config/deploy/openshift/openshift-all.yaml
+	cat config/deploy/openshift/openshift.yaml config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/openshift-olm.yaml
 
 
 # Run go fmt against code
@@ -219,17 +182,8 @@ lint: fmt vet
 	gci -w .
 	golangci-lint run --build-tags integration,containers_image_storage_stub --timeout 300s
 
-# Generate code
-generate: controller-gen
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
-
-# Build the docker image
-docker-build: test
-	docker build . -t ${IMG}
-
-# Push the docker image
-docker-push:
-	docker push ${IMG}
+generate-crd: controller-gen
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # find or download controller-gen
 # download controller-gen if necessary
@@ -268,15 +222,12 @@ SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-dynakube-oneagent-unprivile
 SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-kubernetes-monitoring
 
 # Generate bundle manifests and metadata, then validate generated files.
-.PHONY: bundle bundle-olm
-# to avoid necessity of calling make bundle with OUT=olm
-bundle:
-	make bundle-olm OLM=true OUT=olm
-bundle-olm: manifests kustomize
+.PHONY: bundle
+bundle: OLM=true
+bundle: manifests kustomize
 	operator-sdk generate kustomize manifests -q --apis-dir ./src/api/
 	cd config/deploy/$(PLATFORM) && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(OLM_IMAGE)
 	$(KUSTOMIZE) build config/olm/$(PLATFORM) | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
-	make OUT=all reset-kustomization-files
 	operator-sdk bundle validate ./bundle
 	rm -rf ./config/olm/$(PLATFORM)/$(VERSION)
 	mkdir -p ./config/olm/$(PLATFORM)/$(VERSION)
