@@ -1,0 +1,58 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 300
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: dynakubes.dynatrace.com
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          namespace: dynatrace
+          name: dynatrace-webhook
+          path: /convert
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynatrace-operator
+  namespace: dynatrace
+spec:
+  replicas: 1
+  template:
+    spec:
+      serviceAccountName: dynatrace-operator
+status:
+  availableReplicas: 1
+  readyReplicas: 1
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dynatrace-oneagent-csi-driver
+  namespace: dynatrace
+spec:
+  template:
+    spec:
+      serviceAccountName: dynatrace-oneagent-csi-driver
+# status: Can't check for this in a nice way
+#   numberAvailable: x
+#   numberReady: x
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynatrace-webhook
+  namespace: dynatrace
+spec:
+  replicas: 1
+  template:
+    spec:
+      serviceAccountName: dynatrace-webhook
+status:
+  availableReplicas: 1
+  readyReplicas: 1
