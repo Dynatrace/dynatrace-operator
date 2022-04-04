@@ -1,0 +1,9 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+startKIND: false
+kindConfig: kind.yaml
+skipDelete: false
+namespace: dynatrace
+parallel: 1
+testDirs:
+- src/testing/kuttl/oneagent
