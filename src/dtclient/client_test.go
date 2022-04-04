@@ -81,5 +81,5 @@ func TestCerts(t *testing.T) {
 	certs := Certs(nil)
 	assert.NotNil(t, certs)
 	certs(&dtc)
-	assert.Equal(t, [][]uint8{}, transport.TLSClientConfig.RootCAs.Subjects())
+	assert.NotNil(t, transport.TLSClientConfig.RootCAs)
 }
