@@ -148,11 +148,12 @@ properties:
     x-google-marketplace:
       type: MASKED_FIELD
   crdApplied:
-    type: boolean
-    description: Please make sure you have applied the latest CRD by following the
-      instructions in the Github Repository.
+    type: string
+    description: Make sure you have applied the latest CRD by following the instructions in the Github Repository.
     title: CRD manually applied
-    default: false
+    required: true
+    enum:
+    - 'yes'
   platform:
     type: string
     title: The platform you are deploying on
