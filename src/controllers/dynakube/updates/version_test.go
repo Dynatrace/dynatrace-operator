@@ -61,7 +61,7 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 				Enabled: true,
 			},
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 			},
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{
 				Capabilities: []dynatracev1beta1.CapabilityDisplayName{

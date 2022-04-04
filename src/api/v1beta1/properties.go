@@ -166,6 +166,8 @@ func (dk *DynaKube) Image() string {
 		return dk.Spec.OneAgent.ClassicFullStack.Image
 	} else if dk.HostMonitoringMode() {
 		return dk.Spec.OneAgent.HostMonitoring.Image
+	} else if dk.CloudNativeFullstackMode() {
+		return dk.Spec.OneAgent.CloudNativeFullStack.Image
 	}
 	return ""
 }
@@ -222,7 +224,7 @@ func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
 func (dk *DynaKube) ImmutableOneAgentImage() string {
 	oneAgentImage := dk.Image()
 	if oneAgentImage != "" {
-		return oneAgentImage // TODO: What to do with the Version field in this case ?
+		return oneAgentImage
 	}
 
 	if dk.Spec.APIURL == "" {

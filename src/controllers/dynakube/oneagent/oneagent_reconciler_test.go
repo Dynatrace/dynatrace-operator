@@ -57,12 +57,10 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironmentAndDNSPolicy(t *testing.T)
 		APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 		Tokens: dkName,
 		OneAgent: dynatracev1beta1.OneAgentSpec{
-			ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
-				HostInjectSpec: dynatracev1beta1.HostInjectSpec{
-					DNSPolicy: corev1.DNSClusterFirstWithHostNet,
-					Labels: map[string]string{
-						"label_key": "label_value",
-					},
+			ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+				DNSPolicy: corev1.DNSClusterFirstWithHostNet,
+				Labels: map[string]string{
+					"label_key": "label_value",
 				},
 			},
 		},
@@ -110,9 +108,7 @@ func TestReconcile_PhaseSetCorrectly(t *testing.T) {
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dkName,
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
-					HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
-				},
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 			},
 		},
 	}
@@ -154,9 +150,7 @@ func TestReconcile_TokensSetCorrectly(t *testing.T) {
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dkName,
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
-					HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
-				},
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 			},
 		},
 	}
@@ -248,9 +242,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: name,
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
-					HostInjectSpec: dynatracev1beta1.HostInjectSpec{},
-				},
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 			},
 		},
 	}
@@ -360,7 +352,7 @@ func TestMigrationForDaemonSetWithoutAnnotation(t *testing.T) {
 			ObjectMeta: dkKey,
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
 		},
@@ -384,7 +376,7 @@ func TestHasSpecChanged(t *testing.T) {
 				ObjectMeta: key,
 				Spec: dynatracev1beta1.DynaKubeSpec{
 					OneAgent: dynatracev1beta1.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+						HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 					},
 				},
 			}
@@ -392,7 +384,7 @@ func TestHasSpecChanged(t *testing.T) {
 				ObjectMeta: key,
 				Spec: dynatracev1beta1.DynaKubeSpec{
 					OneAgent: dynatracev1beta1.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+						HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 					},
 				},
 			}
@@ -565,7 +557,7 @@ func newDynaKube() *dynatracev1beta1.DynaKube {
 		},
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+				HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 			},
 		},
 	}
@@ -581,7 +573,7 @@ func TestInstanceStatus(t *testing.T) {
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dkName,
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+				HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 			},
 		},
 	}
@@ -639,7 +631,7 @@ func TestEmptyInstancesWithWrongLabels(t *testing.T) {
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dkName,
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+				HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 			},
 		},
 	}
