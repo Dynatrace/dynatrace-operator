@@ -1,6 +1,10 @@
 package kubeobjects
 
-import "github.com/Dynatrace/dynatrace-operator/src/version"
+import (
+	"reflect"
+
+	"github.com/Dynatrace/dynatrace-operator/src/version"
+)
 
 const (
 	AppNameLabel      = "app.kubernetes.io/name"
@@ -35,4 +39,11 @@ func CommonLabels(dynakubeName string, componentName ComponentLabelValue) map[st
 		AppCreatedByLabel: dynakubeName,
 		AppVersionLabel:   version.Version,
 	}
+}
+
+func MatchLabelsChanged(currentMatchLabels, desiredMatchLabels map[string]string) bool {
+	return !reflect.DeepEqual(
+		currentMatchLabels,
+		desiredMatchLabels,
+	)
 }
