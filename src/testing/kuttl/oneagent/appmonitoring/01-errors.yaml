@@ -1,0 +1,7 @@
+# With appMonitoring enabled, namespace not matching namespaceSelector ==> namespace are not labeled
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    dynakube.internal.dynatrace.com/instance: dynakube
+  name: leave-alone-app-monitoring

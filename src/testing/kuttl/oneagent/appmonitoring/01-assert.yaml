@@ -1,0 +1,21 @@
+# With appMonitoring enabled, namespaces matching namespaceSelector ==> namespaces get labeled
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 90
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    dk-mode: app-monitoring
+    dynakube.internal.dynatrace.com/instance: dynakube
+  name: inject-into-app-monitoring
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    dk-mode: app-monitoring
+    dynakube.internal.dynatrace.com/instance: dynakube
+  name: already-present-app-monitoring
+

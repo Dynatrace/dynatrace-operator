@@ -1,0 +1,6 @@
+# Oneagent Daemonset should be deleted if classicFullStack is disabled
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dynakube-oneagent
+  namespace: dynatrace

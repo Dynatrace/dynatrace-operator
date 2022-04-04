@@ -1,0 +1,11 @@
+# Creates dynakube without any mode set
+# Creates namespace
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+- command: sh ../../create-dynakube-base.sh
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: already-present-classic
