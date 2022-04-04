@@ -26,7 +26,7 @@ func TestReconcileOneAgent_ReconcileOnEmptyEnvironment(t *testing.T) {
 		APIURL: DefaultTestAPIURL,
 		Tokens: "token-test",
 		OneAgent: dynatracev1beta1.OneAgentSpec{
-			ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+			ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 		},
 	})
 	assert.NoError(t, err)
