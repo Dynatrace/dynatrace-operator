@@ -52,7 +52,6 @@ Operator selector labels
 */}}
 {{- define "dynatrace-operator.operatorSelectorLabels" -}}
 name: {{ .Release.Name }}
-# app.kubernetes.io/component: operator
 {{- end -}}
 
 {{/*
@@ -69,7 +68,6 @@ Webhook selector labels
 {{- define "dynatrace-operator.webhookSelectorLabels" -}}
 internal.dynatrace.com/component: webhook
 internal.dynatrace.com/app: webhook
-# app.kubernetes.io/component: webhook
 {{- end -}}
 
 {{/*

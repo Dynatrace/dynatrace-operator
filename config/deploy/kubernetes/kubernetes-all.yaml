@@ -3923,7 +3923,6 @@ spec:
   selector:
     matchLabels:
       name: dynatrace-operator
-      # app.kubernetes.io/component: operator
   strategy:
     type: RollingUpdate
   template:
@@ -3934,7 +3933,6 @@ spec:
         app.kubernetes.io/version: "0.4.2"
         app.kubernetes.io/component: operator
         name: dynatrace-operator
-        # app.kubernetes.io/component: operator
     spec:
       containers:
         - name: dynatrace-operator
@@ -4040,7 +4038,6 @@ spec:
     matchLabels:
       internal.dynatrace.com/component: webhook
       internal.dynatrace.com/app: webhook
-      # app.kubernetes.io/component: webhook
   strategy:
     type: RollingUpdate
   template:
@@ -4053,7 +4050,6 @@ spec:
         app.kubernetes.io/component: webhook
         internal.dynatrace.com/component: webhook
         internal.dynatrace.com/app: webhook
-        # app.kubernetes.io/component: webhook
     spec:
       volumes:
       - emptyDir: {}
