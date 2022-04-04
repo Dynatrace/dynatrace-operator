@@ -49,7 +49,9 @@ func TestGetOneAgentVersionFromInstance(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-						Version: testVersion,
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+							Version: testVersion,
+						},
 					},
 				},
 			},
@@ -70,7 +72,9 @@ func TestUpdateAgent(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-						Version: testVersion,
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+							Version: testVersion,
+						},
 					},
 				},
 			},
@@ -173,7 +177,9 @@ func TestUpdateAgent(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-						Version: testVersion,
+						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
+							Version: testVersion,
+						},
 					},
 				},
 			},
