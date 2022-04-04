@@ -1,4 +1,3 @@
-# THE CLOUD-NATIVE FULLSTACK MODE AND APPLICATION-MONITORING MODE ENABLED IN THIS YAML ARE STILL IN PREVIEW AND SHOULD NOT BE USED IN A PRODUCTION ENVIRONMENT
 apiVersion: dynatrace.com/v1beta1
 kind: DynaKube
 metadata:
@@ -32,6 +31,15 @@ spec:
 
     # Amount of replicas of ActiveGate pods
     replicas: 3
+
+    # Resources for ActiveGate container
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1.5Gi
 
 ---
 
@@ -74,3 +82,12 @@ spec:
 
     # Amount of replicas of activegate pods
     replicas: 2
+
+    # Resources for ActiveGate container
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1.5Gi

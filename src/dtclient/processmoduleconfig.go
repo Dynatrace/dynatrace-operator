@@ -77,7 +77,7 @@ func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessM
 		return &ProcessModuleConfig{}, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("error making get request to dynatrace api: %w", err)
+		return nil, fmt.Errorf("error while requesting process module config: %v", err)
 	}
 	defer func() {
 		//Swallow error, nothing has to be done at this point
@@ -131,7 +131,7 @@ func (dtc *dynatraceClient) readResponseForProcessModuleConfig(response []byte) 
 	resp := ProcessModuleConfig{}
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
-		log.Error(err, "error unmarshalling json response")
+		log.Error(err, "error unmarshalling processmoduleconfig response", "response", string(response))
 		return nil, err
 	}
 

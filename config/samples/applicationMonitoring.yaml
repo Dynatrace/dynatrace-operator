@@ -62,7 +62,6 @@ spec:
       #
       # version:
 
-      # ENABLING 'useCSIDriver' IS STILL IN PREVIEW AND SHOULD NOT BE USED IN A PRODUCTION ENVIRONMENT
       # Optional: If you want to use CSIDriver; disable if your cluster does not have 'nodes' to fall back to the volume approach.
       # Defaults to false
       #
@@ -106,16 +105,13 @@ spec:
 
     # Optional: resource settings for ActiveGate container. Consumption of the ActiveGate heavily depends
     # on the workload to monitor; please adjust values accordingly.
-    #
-    # Suggested starting point for resources below:
-    #
-    # resources:
-    #   requests:
-    #     cpu: 150m
-    #     memory: 250M
-    #   limits:
-    #     cpu: 300m
-    #     memory: 1G
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1.5Gi
 
     # Optional: labels are customer defined labels for ActiveGate Pods to structure workloads as desired.
     #

@@ -14,39 +14,38 @@ func prepareVolumeMounts(instance *dynatracev1beta1.DynaKube) []corev1.VolumeMou
 	if instance.NeedsReadOnlyOneAgents() {
 		volumeMounts = append(volumeMounts, getReadOnlyRootMount())
 		volumeMounts = append(volumeMounts, getCSIStorageMount())
-
 	} else {
 		volumeMounts = append(volumeMounts, getRootMount())
 	}
 
 	if instance.Spec.TrustedCAs != "" {
-		volumeMounts = append(volumeMounts, getCertificateMount())
+		volumeMounts = append(volumeMounts, getClusterCaCertVolumeMount())
 	}
 
-	if instance.HasActiveGateTLS() {
-		volumeMounts = append(volumeMounts, getTLSMount())
+	if instance.HasActiveGateCaCert() {
+		volumeMounts = append(volumeMounts, getActiveGateCaCertVolumeMount())
 	}
 	return volumeMounts
 }
 
-func getCertificateMount() corev1.VolumeMount {
+func getClusterCaCertVolumeMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
-		Name:      certVolumeName,
-		MountPath: certVolumeMount,
+		Name:      clusterCaCertVolumeName,
+		MountPath: clusterCaCertVolumeMountPath,
 	}
 }
 
-func getTLSMount() corev1.VolumeMount {
+func getActiveGateCaCertVolumeMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
-		Name:      tlsVolumeName,
-		MountPath: tlsVolumeMount,
+		Name:      activeGateCaCertVolumeName,
+		MountPath: activeGateCaCertVolumeMountPath,
 	}
 }
 
 func getRootMount() corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      hostRootVolumeName,
-		MountPath: hostRootVolumeMount,
+		MountPath: hostRootVolumeMountPath,
 	}
 }
 
@@ -74,8 +73,8 @@ func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {
 		volumes = append(volumes, getCertificateVolume(instance))
 	}
 
-	if instance.HasActiveGateTLS() {
-		volumes = append(volumes, getTLSVolume(instance))
+	if instance.HasActiveGateCaCert() {
+		volumes = append(volumes, getActiveGateCaCertVolume(instance))
 	}
 
 	return volumes
@@ -83,7 +82,7 @@ func prepareVolumes(instance *dynatracev1beta1.DynaKube) []corev1.Volume {
 
 func getCertificateVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
 	return corev1.Volume{
-		Name: certVolumeName,
+		Name: clusterCaCertVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
@@ -115,9 +114,9 @@ func getCSIStorageVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
 	}
 }
 
-func getTLSVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
+func getActiveGateCaCertVolume(instance *dynatracev1beta1.DynaKube) corev1.Volume {
 	return corev1.Volume{
-		Name: tlsVolumeName,
+		Name: activeGateCaCertVolumeName,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName: instance.Spec.ActiveGate.TlsSecretName,
