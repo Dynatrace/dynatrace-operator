@@ -279,7 +279,7 @@ bundle-build:
 	docker build -f ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile -t $(BUNDLE_IMG) ./config/olm/$(PLATFORM)/
 
 test-olm:
-	./config/olm/setup_olm_catalog.sh
+	./hack/setup_olm_catalog.sh
 
 setup-pre-commit:
 	$(info WARNING "Make sure that golangci-lint is installed, for more info see https://golangci-lint.run/usage/install/")

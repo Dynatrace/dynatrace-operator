@@ -29,7 +29,7 @@ Testing an upgrade can't be fully automated (it would be very flaky).
 So the basic workflow is:
 1. Deploy the version you are upgrading from. (follow the steps above)
 2. **(if it doesn't exist)** Create a the bundle for the version you want to upgrade to.
-3. In `config/olm/setup_olm_catalog.sh` there is commented out line, READ IT and update the script accordingly.
+3. In `hack/setup_olm_catalog.sh` there is commented out line, READ IT and update the script accordingly.
    - You are basically creating an index that has two catalog in it. One referencing the old and one the new version.
    - Then updating the `CatalogSource` on the cluster to use the index with the 2 entries, which will cause an upgrade.
 4. Run `make test-olm` (with the same args as the `make bundle` + TAG)
@@ -71,7 +71,7 @@ First lets understand each part we are creating.
   - Created/managed by the `opm` CLI tool
   - Referenced in the `CatalogSource` resources, which is used by OLM to list what can be installed and do the upgrades when possible.
 
-So `config/olm/setup_olm_catalog.sh` (used by `make test-olm`) does the following:
+So `hack/setup_olm_catalog.sh` (used by `make test-olm`) does the following:
 1. Creates/pushes `catalog` image for specified bundle
 2. Creates/pushes `index` image (by adding the `catalog` to it)
    - can add a new `catalog` to an existing `index` which creates a new `index`
