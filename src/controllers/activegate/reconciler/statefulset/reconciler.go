@@ -158,7 +158,7 @@ func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet)
 		return false, nil
 	}
 
-	if kubeobjects.MatchLabelsChanged(currentSts.Spec.Selector.MatchLabels, desiredSts.Spec.Selector.MatchLabels) {
+	if kubeobjects.LabelsNotEqual(currentSts.Spec.Selector.MatchLabels, desiredSts.Spec.Selector.MatchLabels) {
 		return r.recreateStatefulSet(currentSts, desiredSts)
 	}
 
@@ -171,12 +171,15 @@ func (r *Reconciler) updateStatefulSetIfOutdated(desiredSts *appsv1.StatefulSet)
 
 func (r *Reconciler) recreateStatefulSet(currentSts, desiredSts *appsv1.StatefulSet) (bool, error) {
 	log.Info("immutable section changed on statefulset, deleting and recreating", "name", desiredSts.Name)
+
 	err := r.Delete(context.TODO(), currentSts)
 	if err != nil {
 		return false, err
 	}
+
 	log.Info("deleted statefulset")
 	log.Info("recreating statefulset", "name", desiredSts.Name)
+
 	return true, r.Create(context.TODO(), desiredSts)
 }
 

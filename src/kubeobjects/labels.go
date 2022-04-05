@@ -41,9 +41,9 @@ func CommonLabels(dynakubeName string, componentName ComponentLabelValue) map[st
 	}
 }
 
-func MatchLabelsChanged(currentMatchLabels, desiredMatchLabels map[string]string) bool {
+func LabelsNotEqual(currentLabels, desiredLabels map[string]string) bool {
 	return !reflect.DeepEqual(
-		currentMatchLabels,
-		desiredMatchLabels,
+		currentLabels,
+		desiredLabels,
 	)
 }

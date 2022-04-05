@@ -23,7 +23,7 @@ func CreateOrUpdateDaemonSet(kubernetesClient client.Client, logger logr.Logger,
 		return false, nil
 	}
 
-	if MatchLabelsChanged(currentDaemonSet.Spec.Selector.MatchLabels, desiredDaemonSet.Spec.Selector.MatchLabels) {
+	if LabelsNotEqual(currentDaemonSet.Spec.Selector.MatchLabels, desiredDaemonSet.Spec.Selector.MatchLabels) {
 		return recreateDaemonSet(kubernetesClient, logger, currentDaemonSet, desiredDaemonSet)
 	}
 
