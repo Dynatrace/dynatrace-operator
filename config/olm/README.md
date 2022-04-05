@@ -1,20 +1,20 @@
 # How To Test OLM
 
-If you want to know what is actually happening the background before testing, goto the `What is actually happening` section.
+If you want to know what is actually happening in the background before testing, go to the `What is actually happening` section.
 
-Stuff you should have installed locally:
+Prerequisites:
 - [operator-sdk](https://sdk.operatorframework.io/docs/installation/)
 - [opm](https://docs.openshift.com/container-platform/4.6/cli_reference/opm-cli.html)
 - docker or podman
 
 
 Steps:
-1. Get an openshift cluster that has OLM, and use `oc login` on it
-2. If want you want to test is has no bundle yet => run `make bundle`
+1. Get an Openshift cluster that has OLM, and use `oc login` on it
+2. If want you want to test but there is no bundle yet => run `make bundle`
    - example: `make bundle PLATFORM=openshift VERSION=0.6.0`
 3. Run `make test-olm` (with the same args as the `make bundle` + TAG)
    - example: `make test-olm PLATFORM=openshift VERSION=0.6.0 TAG=test`
-4. Go to the UI of the openshift cluster
+4. Go to the UI of the Openshift cluster
    - Go to `Operators -> OperatorHub`
    - Search for `Dynatrace`
    - Find your test operator among the actually released ones and install it.
@@ -29,8 +29,8 @@ Testing an upgrade can't be fully automated (it would be very flaky).
 So the basic workflow is:
 1. Deploy the version you are upgrading from. (follow the steps above)
 2. **(if it doesn't exist)** Create a the bundle for the version you want to upgrade to.
-3. In `config/olm/prep_index.sh` there is commented out line, READ IT and update the script accordingly.
-   - You are basically creating an index that has 2 catalog in it, one referencing the old and one the new version.
+3. In `config/olm/setup_olm_catalog.sh` there is commented out line, READ IT and update the script accordingly.
+   - You are basically creating an index that has two catalog in it. One referencing the old and one the new version.
    - Then updating the `CatalogSource` on the cluster to use the index with the 2 entries, which will cause an upgrade.
 4. Run `make test-olm` (with the same args as the `make bundle` + TAG)
 5. Look at cluster, monitor if the upgrade is successful.
@@ -39,7 +39,7 @@ So the basic workflow is:
 ## What is actually happening
 **DISCLAIMER: This is only a quick and simple explanation more detailed description [here](https://olm.operatorframework.io/docs/tasks/creating-a-catalog/)**
 
-First lets understand the each part we are creating.
+First lets understand each part we are creating.
 
 - What is a `bundle`:
   - We generate this from the manifests (crd included)
@@ -57,7 +57,7 @@ First lets understand the each part we are creating.
       |
       |---- bundle-{VERSION}.Dockerfile
   ```
-   - `manifests` contains all the kubernetes/openshift yamls that will be deployed by OLM
+   - `manifests` contains all the Kubernetes / Openshift yamls that will be deployed by OLM
       - Most of our *normal* yamls are moved into the `ClusterServiceVersion`.
    - `metadata` contains some metadata used by OLM, not very interesting
    - `bundle-{VERSION}.Dockerfile` is the docker file for creating the `catalog` image for the bundle/release.
@@ -71,7 +71,7 @@ First lets understand the each part we are creating.
   - Created/managed by the `opm` CLI tool
   - Referenced in the `CatalogSource` resources, which is used by OLM to list what can be installed and do the upgrades when possible.
 
-So `config/olm/prep_index.sh` (used by `make test-olm`) does the following:
+So `config/olm/setup_olm_catalog.sh` (used by `make test-olm`) does the following:
 1. Creates/pushes `catalog` image for specified bundle
 2. Creates/pushes `index` image (by adding the `catalog` to it)
    - can add a new `catalog` to an existing `index` which creates a new `index`
