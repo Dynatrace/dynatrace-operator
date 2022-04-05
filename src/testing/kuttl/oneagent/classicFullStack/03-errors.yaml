@@ -1,0 +1,28 @@
+# With appMonitoring enabled, apps in labeled namespaces ==> apps have the initContainer added
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nodejs-musl
+  namespace: already-present-classic
+spec:
+  initContainers:
+  - name: artefact
+  - name: install-oneagent
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: java-glibc
+  namespace: inject-into-classic
+spec:
+  initContainers:
+  - name: artefact
+  - name: install-oneagent
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: php-glibc
+  namespace: leave-alone-classic

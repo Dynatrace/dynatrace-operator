@@ -36,7 +36,6 @@ func (dtc *dynatraceClient) GetAgentTenantInfo() (*AgentTenantInfo, error) {
 
 	tenantInfo, err := dtc.readResponseForTenantInfo(data)
 	if err != nil {
-		log.Error(err, err.Error())
 		return nil, errors.WithStack(err)
 	}
 	if len(tenantInfo.Endpoints) <= 0 {
@@ -57,8 +56,8 @@ func (dtc *dynatraceClient) readResponseForTenantInfo(response []byte) (*AgentTe
 	jr := &jsonResponse{}
 	err := json.Unmarshal(response, jr)
 	if err != nil {
-		log.Error(err, "error unmarshalling json response")
-		return nil, errors.WithStack(err)
+		log.Error(err, "unable to unmarshal tenant info response")
+		return nil, err
 	}
 
 	return &AgentTenantInfo{

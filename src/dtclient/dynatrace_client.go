@@ -197,7 +197,7 @@ func (dtc *dynatraceClient) setHostCacheFromResponse(response []byte) error {
 	var hostInfoResponses []hostInfoResponse
 	err := json.Unmarshal(response, &hostInfoResponses)
 	if err != nil {
-		log.Error(err, "error unmarshalling json response")
+		log.Error(err, "error unmarshalling json response", "response", string(response))
 		return errors.WithStack(err)
 	}
 
