@@ -14,7 +14,7 @@ func TestPrepareVolumes(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
 		}
@@ -28,7 +28,7 @@ func TestPrepareVolumes(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				TrustedCAs: testName,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
 		}
@@ -48,7 +48,7 @@ func TestPrepareVolumes(t *testing.T) {
 					TlsSecretName: "testing",
 				},
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
 		}
@@ -64,7 +64,7 @@ func TestPrepareVolumes(t *testing.T) {
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
 		}
@@ -75,7 +75,7 @@ func TestPrepareVolumes(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
 		}
@@ -87,7 +87,7 @@ func TestPrepareVolumes(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				TrustedCAs: testName,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 				},
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
 					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
@@ -100,7 +100,7 @@ func TestPrepareVolumes(t *testing.T) {
 		dsInfo := HostMonitoring{
 			builderInfo{
 				instance:       instance,
-				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
+				hostInjectSpec: instance.Spec.OneAgent.HostMonitoring,
 				clusterId:      "",
 			},
 		}
@@ -121,7 +121,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
 		}
@@ -134,7 +134,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 				},
 				TrustedCAs: testName,
 			},
@@ -149,7 +149,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 				},
 				TrustedCAs: testName,
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
@@ -181,7 +181,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 					},
 				},
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
 		}
@@ -196,7 +196,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		instance := &dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
 		}
@@ -210,7 +210,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				TrustedCAs: testName,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 				},
 				ActiveGate: dynatracev1beta1.ActiveGateSpec{
 					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
@@ -223,7 +223,7 @@ func TestPrepareVolumeMounts(t *testing.T) {
 		dsInfo := HostMonitoring{
 			builderInfo{
 				instance:       instance,
-				hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
+				hostInjectSpec: instance.Spec.OneAgent.HostMonitoring,
 				clusterId:      "",
 			},
 		}

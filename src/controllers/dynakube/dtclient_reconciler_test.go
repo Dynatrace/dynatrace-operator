@@ -313,7 +313,7 @@ func TestReconcileDynatraceClient_ProbeRequests(t *testing.T) {
 			APIURL: "https://ENVIRONMENTID.live.dynatrace.com/api",
 			Tokens: dkName,
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 			},
 		},
 	}

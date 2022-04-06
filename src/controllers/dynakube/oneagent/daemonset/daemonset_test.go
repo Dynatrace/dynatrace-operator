@@ -20,7 +20,7 @@ func TestUseImmutableImage(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
 		}
@@ -37,7 +37,7 @@ func TestUseImmutableImage(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
 						Image: testImage,
 					},
 				},
@@ -58,7 +58,7 @@ func TestCustomPullSecret(t *testing.T) {
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: testURL,
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 			},
 			CustomPullSecret: testName,
 		},
@@ -79,7 +79,7 @@ func TestResources(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
 		}
@@ -104,17 +104,15 @@ func TestResources(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
-						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
-							OneAgentResources: corev1.ResourceRequirements{
-								Requests: corev1.ResourceList{
-									corev1.ResourceCPU:    *cpuRequest,
-									corev1.ResourceMemory: *memoryRequest,
-								},
-								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    *cpuLimit,
-									corev1.ResourceMemory: *memoryLimit,
-								},
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+						OneAgentResources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    *cpuRequest,
+								corev1.ResourceMemory: *memoryRequest,
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    *cpuLimit,
+								corev1.ResourceMemory: *memoryLimit,
 							},
 						},
 					},
@@ -148,7 +146,7 @@ func TestInfraMon_SecurityContext(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testURL,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
 		}

@@ -10,7 +10,7 @@ type OneAgentSpec struct {
 	// Optional: enable classic fullstack monitoring and change its settings
 	// Cannot be used in conjunction with cloud-native fullstack monitoring, application monitoring or host monitoring
 	// +nullable
-	ClassicFullStack *ClassicFullStackSpec `json:"classicFullStack,omitempty"`
+	ClassicFullStack *HostInjectSpec `json:"classicFullStack,omitempty"`
 
 	// Optional: enable application-only monitoring and change its settings
 	// Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or host monitoring
@@ -20,7 +20,7 @@ type OneAgentSpec struct {
 	// Optional: enable host monitoring and change its settings
 	// Cannot be used in conjunction with cloud-native fullstack monitoring, classic fullstack monitoring or application monitoring
 	// +nullable
-	HostMonitoring *HostMonitoringSpec `json:"hostMonitoring,omitempty"`
+	HostMonitoring *HostInjectSpec `json:"hostMonitoring,omitempty"`
 
 	// Optional: enable cloud-native fullstack monitoring and change its settings
 	// Cannot be used in conjunction with classic fullstack monitoring, application monitoring or host monitoring
@@ -29,45 +29,8 @@ type OneAgentSpec struct {
 }
 
 type CloudNativeFullStackSpec struct {
-
-	// Optional: If specified, indicates the OneAgent version to use
-	// Defaults to latest
-	// Example: {major.minor.release} - 1.200.0
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	Version string `json:"version,omitempty"`
-
 	HostInjectSpec   `json:",inline"`
 	AppInjectionSpec `json:",inline"`
-}
-
-type ClassicFullStackSpec struct {
-	// Optional: the Dynatrace installer container image
-	// Defaults to the registry on the tenant for both Kubernetes and for OpenShift
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	Image string `json:"image,omitempty"`
-
-	// Optional: If specified, indicates the OneAgent version to use
-	// Defaults to latest
-	// Example: {major.minor.release} - 1.200.0
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	Version string `json:"version,omitempty"`
-
-	HostInjectSpec `json:",inline"`
-}
-
-type HostMonitoringSpec struct {
-	// Optional: the Dynatrace installer container image
-	// Defaults to the registry on the tenant for both Kubernetes and for OpenShift
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	Image string `json:"image,omitempty"`
-
-	// Optional: If specified, indicates the OneAgent version to use
-	// Defaults to latest
-	// Example: {major.minor.release} - 1.200.0
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
-	Version string `json:"version,omitempty"`
-
-	HostInjectSpec `json:",inline"`
 }
 
 type HostInjectSpec struct {
@@ -110,6 +73,17 @@ type HostInjectSpec struct {
 	// Optional: Adds additional labels for the OneAgent pods
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Labels",order=26,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
 	Labels map[string]string `json:"labels,omitempty"`
+
+	// Optional: the Dynatrace installer container image
+	// Defaults to the registry on the tenant for both Kubernetes and for OpenShift
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	Image string `json:"image,omitempty"`
+
+	// Optional: If specified, indicates the OneAgent version to use
+	// Defaults to latest
+	// Example: {major.minor.release} - 1.200.0
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent version",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	Version string `json:"version,omitempty"`
 }
 
 type ApplicationMonitoringSpec struct {
