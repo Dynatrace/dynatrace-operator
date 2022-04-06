@@ -2139,6 +2139,11 @@ spec:
                           - name
                           type: object
                         type: array
+                      image:
+                        description: 'Optional: the Dynatrace installer container
+                          image Defaults to the registry on the tenant for both Kubernetes
+                          and for OpenShift'
+                        type: string
                       initResources:
                         description: 'Optional: define resources requests and limits
                           for the initContainer'

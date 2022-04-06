@@ -24,7 +24,7 @@ func TestReconcileOneAgent_ReconcileIstio(t *testing.T) {
 		Tokens:      "token-test",
 		EnableIstio: true,
 		OneAgent: dynatracev1beta1.OneAgentSpec{
-			ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+			ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 		},
 	})
 
@@ -64,7 +64,7 @@ func TestReconcileOneAgent_ReconcileIstioWithMultipleOneAgentObjects(t *testing.
 		Tokens:      "token-test",
 		EnableIstio: true,
 		OneAgent: dynatracev1beta1.OneAgentSpec{
-			ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+			ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 		},
 	})
 
@@ -73,7 +73,7 @@ func TestReconcileOneAgent_ReconcileIstioWithMultipleOneAgentObjects(t *testing.
 		Tokens:      "token-test",
 		EnableIstio: true,
 		OneAgent: dynatracev1beta1.OneAgentSpec{
-			ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+			ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 		},
 	})
 
