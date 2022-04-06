@@ -110,8 +110,7 @@ spec:
       {{- if (.Values.activeGate.customProperties).value }}
       value: |
 {{ (.Values.activeGate.customProperties).value | indent 8 }}
-      {{- end }}
-      {{- if (.Values.activeGate.customProperties).valueFrom }}
+      {{- else if (.Values.activeGate.customProperties).valueFrom }}
       valueFrom: {{ .Values.activeGate.customProperties.valueFrom }}
       {{- end }}
     {{- end }}

@@ -185,7 +185,8 @@ tests:
           path: spec.activeGate.customProperties.valueFrom
       - equal:
           path: spec.activeGate.customProperties.value
-          value: test-value
+          value: |
+            test-value
 
   - it: "should add routing resource if set and enabled"
     set:
