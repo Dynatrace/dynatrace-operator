@@ -96,9 +96,9 @@ tests:
       - equal:
           path: spec.activeGate.customProperties.value
           value: |
-        test-value
+            test-value
 
-  - it: "should add routing customProperties value if set and enabled"
+  - it: "should add routing customProperties multi-line value if set and enabled"
     set:
       apiUrl: test-api-url
       apiToken: test-api-token
@@ -120,8 +120,8 @@ tests:
       - equal:
           path: spec.activeGate.customProperties.value
           value: |
-        [test-value]
-        key=value
+            [test-value]
+            key=value
 
   - it: "should add routing customProperties valueFrom if set and enabled"
     set:
