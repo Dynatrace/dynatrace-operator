@@ -278,6 +278,9 @@ bundle-minimal: bundle
 bundle-build:
 	docker build -f ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile -t $(BUNDLE_IMG) ./config/olm/$(PLATFORM)/
 
+test-olm:
+	./hack/setup_olm_catalog.sh
+
 setup-pre-commit:
 	$(info WARNING "Make sure that golangci-lint is installed, for more info see https://golangci-lint.run/usage/install/")
 	GO111MODULE=off go get github.com/daixiang0/gci
