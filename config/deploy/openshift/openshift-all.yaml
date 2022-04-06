@@ -3108,7 +3108,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: activegate
 ---
 # Source: dynatrace-operator/templates/Common/kubernetes-monitoring/serviceaccount-kubernetes-monitoring.yaml
@@ -3132,7 +3132,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: activegate
 ---
 # Source: dynatrace-operator/templates/Common/oneagent/serviceaccount-oneagent-unprivileged.yaml
@@ -3156,7 +3156,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: oneagent
 automountServiceAccountToken: false
 imagePullSecrets:
@@ -3184,7 +3184,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: operator
 
 
@@ -3213,7 +3213,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: webhook
 imagePullSecrets:
 - name: redhat-connect
@@ -3239,7 +3239,7 @@ metadata:
   name: dynatrace-kubernetes-monitoring
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: activegate
 rules:
   - apiGroups:
@@ -3322,7 +3322,7 @@ metadata:
   name: dynatrace-operator
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: operator
 rules:
   - apiGroups:
@@ -3415,7 +3415,7 @@ metadata:
   name: dynatrace-webhook
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: webhook
 rules:
   - apiGroups:
@@ -3502,7 +3502,7 @@ metadata:
   name: dynatrace-dynakube-oneagent-unprivileged
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: oneagent
 rules:
   - apiGroups:
@@ -3535,7 +3535,7 @@ metadata:
   name: dynatrace-kubernetes-monitoring
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: activegate
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -3566,7 +3566,7 @@ metadata:
   name: dynatrace-operator
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: operator
 subjects:
   - kind: ServiceAccount
@@ -3597,7 +3597,7 @@ metadata:
   name: dynatrace-webhook
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: webhook
 subjects:
   - kind: ServiceAccount
@@ -3628,7 +3628,7 @@ metadata:
   name: dynatrace-dynakube-oneagent-unprivileged
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: oneagent
 subjects:
   - kind: ServiceAccount
@@ -3660,7 +3660,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: operator
 rules:
   - apiGroups:
@@ -3819,7 +3819,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: webhook
 rules:
   - apiGroups:
@@ -3894,7 +3894,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: operator
 subjects:
   - kind: ServiceAccount
@@ -3925,7 +3925,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: webhook
 subjects:
   - kind: ServiceAccount
@@ -3957,12 +3957,12 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: webhook
 spec:
   selector:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: webhook
   ports:
     - port: 443
@@ -3990,7 +3990,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: operator
 spec:
   replicas: 1
@@ -4005,7 +4005,7 @@ spec:
       annotations:
       labels:
         app.kubernetes.io/name: dynatrace-operator
-        app.kubernetes.io/version: "0.4.2"
+        app.kubernetes.io/version: "0.6.0"
         app.kubernetes.io/component: operator
         name: dynatrace-operator
     spec:
@@ -4015,7 +4015,7 @@ spec:
             - operator
           # Replace this with the built image name
           image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-6
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4104,7 +4104,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: webhook
 spec:
   replicas: 1
@@ -4121,7 +4121,7 @@ spec:
         kubectl.kubernetes.io/default-container: webhook
       labels:
         app.kubernetes.io/name: dynatrace-operator
-        app.kubernetes.io/version: "0.4.2"
+        app.kubernetes.io/version: "0.6.0"
         app.kubernetes.io/component: webhook
         internal.dynatrace.com/component: webhook
         internal.dynatrace.com/app: webhook
@@ -4150,7 +4150,7 @@ spec:
             # OLM mounts the certificates here, so we reuse it for simplicity
             - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
           image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-6
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4214,7 +4214,7 @@ metadata:
   name: dynatrace-webhook
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: webhook
 webhooks:
   - name: webhook.pod.dynatrace.com
@@ -4326,7 +4326,7 @@ metadata:
   name: dynatrace-dynakube-oneagent-unprivileged
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: oneagent
 allowHostDirVolumePlugin: true
 allowHostIPC: false
@@ -4391,7 +4391,7 @@ metadata:
   name: dynatrace-operator
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: operator
 allowPrivilegedContainer: false
 fsGroup:
@@ -4441,7 +4441,7 @@ metadata:
   name: dynatrace-webhook
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: operator
 allowPrivilegedContainer: false
 fsGroup:
@@ -4491,7 +4491,7 @@ metadata:
   name: dynatrace-webhook
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: webhook
 webhooks:
   - admissionReviewVersions:
