@@ -106,11 +106,11 @@ spec:
     {{- end }}
 
     {{- if .Values.activeGate.customProperties }}
-      {{- if .Values.activeGate.customProperties.value }}
     customProperties:
-      value: {{ .Values.activeGate.customProperties.value }}
-      {{- else if .Values.activeGate.customProperties.valueFrom }}
-    customProperties:
+      {{- if (.Values.activeGate.customProperties).value }}
+      value: |
+{{ (.Values.activeGate.customProperties).value | indent 8 }}
+      {{- else if (.Values.activeGate.customProperties).valueFrom }}
       valueFrom: {{ .Values.activeGate.customProperties.valueFrom }}
       {{- end }}
     {{- end }}

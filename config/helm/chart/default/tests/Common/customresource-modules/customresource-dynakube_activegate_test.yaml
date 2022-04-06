@@ -95,6 +95,53 @@ tests:
           path: spec.activeGate.customProperties.valueFrom
       - equal:
           path: spec.activeGate.customProperties.value
+          value: |
+            test-value
+
+  - it: "should add routing customProperties multi-line value if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      activeGate:
+        capabilities:
+          - kubernetes-monitoring
+          - routing
+          - metrics-ingest
+        customProperties:
+          value: |
+            [test-value]
+            key=value
+    asserts:
+      - isNotNull:
+          path: spec.activeGate.customProperties
+      - isNull:
+          path: spec.activeGate.customProperties.valueFrom
+      - equal:
+          path: spec.activeGate.customProperties.value
+          value: |
+            [test-value]
+            key=value
+
+  - it: "should add routing customProperties valueFrom if set and enabled"
+    set:
+      apiUrl: test-api-url
+      apiToken: test-api-token
+      paasToken: test-paas-token
+      activeGate:
+        capabilities:
+          - kubernetes-monitoring
+          - routing
+          - metrics-ingest
+        customProperties:
+          valueFrom: test-value
+    asserts:
+      - isNotNull:
+          path: spec.activeGate.customProperties
+      - isNull:
+          path: spec.activeGate.customProperties.value
+      - equal:
+          path: spec.activeGate.customProperties.valueFrom
           value: test-value
 
   - it: "should add routing customProperties valueFrom if set and enabled"
@@ -138,7 +185,8 @@ tests:
           path: spec.activeGate.customProperties.valueFrom
       - equal:
           path: spec.activeGate.customProperties.value
-          value: test-value
+          value: |
+            test-value
 
   - it: "should add routing resource if set and enabled"
     set:
