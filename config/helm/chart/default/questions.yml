@@ -119,7 +119,7 @@ questions:
     description: "Enables cloud native fullstack monitoring (beta feature) and rolls out the OneAgent on nodes and injects into pods"
     default: false
     type: boolean
-    group: "Cloud Native Fullstack (Beta)"
+    group: "Cloud Native Fullstack"
     show_if: "crdApplied=yes && classicFullStack.enabled=false && applicationMonitoring.enabled=false && hostMonitoring.enabled=false"
     show_subquestion_if: true
     subquestions:

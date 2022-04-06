@@ -61,7 +61,7 @@ func NewHostMonitoring(instance *dynatracev1beta1.DynaKube, clusterId string) Bu
 	return &HostMonitoring{
 		builderInfo{
 			instance:       instance,
-			hostInjectSpec: &instance.Spec.OneAgent.HostMonitoring.HostInjectSpec,
+			hostInjectSpec: instance.Spec.OneAgent.HostMonitoring,
 			clusterId:      clusterId,
 			deploymentType: DeploymentTypeHostMonitoring,
 		},
@@ -83,7 +83,7 @@ func NewClassicFullStack(instance *dynatracev1beta1.DynaKube, clusterId string) 
 	return &ClassicFullStack{
 		builderInfo{
 			instance:       instance,
-			hostInjectSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
+			hostInjectSpec: instance.Spec.OneAgent.ClassicFullStack,
 			clusterId:      clusterId,
 			deploymentType: DeploymentTypeFullStack,
 		},

@@ -327,44 +327,42 @@ func TestConversion_ConvertTo(t *testing.T) {
 			EnableIstio: true,
 
 			OneAgent: OneAgentSpec{
-				ClassicFullStack: &ClassicFullStackSpec{
+				ClassicFullStack: &HostInjectSpec{
 					Image:   testOneAgentImage,
 					Version: testOneAgentVersion,
-					HostInjectSpec: HostInjectSpec{
-						NodeSelector: map[string]string{
-							"key": "value",
+					NodeSelector: map[string]string{
+						"key": "value",
+					},
+					PriorityClassName: "test-priorityclass",
+					Tolerations: []corev1.Toleration{
+						{
+							Key:      "key",
+							Operator: "operator",
+							Value:    "value",
+							Effect:   "effect",
 						},
-						PriorityClassName: "test-priorityclass",
-						Tolerations: []corev1.Toleration{
-							{
-								Key:      "key",
-								Operator: "operator",
-								Value:    "value",
-								Effect:   "effect",
-							},
+					},
+					OneAgentResources: corev1.ResourceRequirements{
+						Requests: map[corev1.ResourceName]resource.Quantity{
+							corev1.ResourceMemory: *resource.NewScaledQuantity(1, 2),
 						},
-						OneAgentResources: corev1.ResourceRequirements{
-							Requests: map[corev1.ResourceName]resource.Quantity{
-								corev1.ResourceMemory: *resource.NewScaledQuantity(1, 2),
-							},
-							Limits: map[corev1.ResourceName]resource.Quantity{
-								corev1.ResourceCPU: *resource.NewScaledQuantity(1, 2),
-							},
+						Limits: map[corev1.ResourceName]resource.Quantity{
+							corev1.ResourceCPU: *resource.NewScaledQuantity(1, 2),
 						},
-						Args: []string{
-							"arg1",
-							"arg2",
+					},
+					Args: []string{
+						"arg1",
+						"arg2",
+					},
+					Env: []corev1.EnvVar{
+						{
+							Name:  "name",
+							Value: "value",
 						},
-						Env: []corev1.EnvVar{
-							{
-								Name:  "name",
-								Value: "value",
-							},
-						},
-						DNSPolicy: testDNSPolicy,
-						Labels: map[string]string{
-							"key": "value",
-						},
+					},
+					DNSPolicy: testDNSPolicy,
+					Labels: map[string]string{
+						"key": "value",
 					},
 				},
 			},
