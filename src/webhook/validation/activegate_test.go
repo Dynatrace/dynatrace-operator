@@ -5,8 +5,17 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	testProxySecret = "proxysecret"
+
+	plainTextProxyUrl = "http://test:test \"#%/<>?[\\]^`{|}pass@proxy-service.dynatrace:3128"
+	encodedProxyUrl   = "http://test:test%20%5C%22%23%25%2F%3C%3E%3F%5B%5C%5C%5D%5E%5C%60%7B%7C%7Dpass@proxy-service.dynatrace:3128"
 )
 
 func TestConflictingActiveGateConfiguration(t *testing.T) {
@@ -147,5 +156,148 @@ func TestMissingActiveGateMemoryLimit(t *testing.T) {
 					},
 				},
 			})
+	})
+}
+
+func TestInvalidActiveGateProxy(t *testing.T) {
+	t.Run(`valid proxy url`, func(t *testing.T) {
+		assertAllowedResponseWithoutWarnings(t,
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					Proxy: &dynatracev1beta1.DynaKubeProxy{
+						Value:     encodedProxyUrl,
+						ValueFrom: "",
+					},
+				},
+			})
+	})
+
+	t.Run(`invalid proxy url`, func(t *testing.T) {
+		assertDeniedResponse(t,
+			[]string{errorInvalidActiveGateProxyUrl},
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					Proxy: &dynatracev1beta1.DynaKubeProxy{
+						Value:     plainTextProxyUrl,
+						ValueFrom: "",
+					},
+				},
+			})
+	})
+
+	t.Run(`valid proxy secret url`, func(t *testing.T) {
+		assertAllowedResponseWithoutWarnings(t,
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					Proxy: &dynatracev1beta1.DynaKubeProxy{
+						Value:     "",
+						ValueFrom: testProxySecret,
+					},
+				},
+			},
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testProxySecret,
+					Namespace: testNamespace,
+				},
+				Data: map[string][]byte{
+					"proxy": []byte(encodedProxyUrl),
+				},
+			})
+	})
+
+	t.Run(`missing proxy secret`, func(t *testing.T) {
+		assertDeniedResponse(t,
+			[]string{errorMissingActiveGateProxySecret},
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					Proxy: &dynatracev1beta1.DynaKubeProxy{
+						Value:     "",
+						ValueFrom: testProxySecret,
+					},
+				},
+			})
+	})
+
+	t.Run(`invalid format of proxy secret`, func(t *testing.T) {
+		assertDeniedResponse(t,
+			[]string{errorInvalidProxySecretFormat},
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					Proxy: &dynatracev1beta1.DynaKubeProxy{
+						Value:     "",
+						ValueFrom: testProxySecret,
+					},
+				},
+			},
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testProxySecret,
+					Namespace: testNamespace,
+				},
+				Data: map[string][]byte{
+					"invalid-name": []byte(encodedProxyUrl),
+				},
+			})
+	})
+
+	t.Run(`invalid proxy secret url`, func(t *testing.T) {
+		assertDeniedResponse(t,
+			[]string{errorInvalidProxySecretUrl},
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					Proxy: &dynatracev1beta1.DynaKubeProxy{
+						Value:     "",
+						ValueFrom: testProxySecret,
+					},
+				},
+			},
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testProxySecret,
+					Namespace: testNamespace,
+				},
+				Data: map[string][]byte{
+					"proxy": []byte(plainTextProxyUrl),
+				},
+			})
+	})
+
+	t.Run(`invalid proxy secret url - eval`, func(t *testing.T) {
+		assert.Equal(t, false, isEvalEscapeNeeded("password"))
+
+		// single quotation mark
+		assert.Equal(t, true, isEvalEscapeNeeded("pass\"word"))
+		assert.Equal(t, false, isEvalEscapeNeeded("pass\\\"word"))
+
+		// backtick
+		assert.Equal(t, true, isEvalEscapeNeeded("pass`word"))
+		assert.Equal(t, false, isEvalEscapeNeeded("pass\\`word"))
+
+		// single backslash
+		assert.Equal(t, true, isEvalEscapeNeeded("pass\\word"))
+		assert.Equal(t, false, isEvalEscapeNeeded("pass\\\\word"))
+
+		// odd number of backslashes
+		assert.Equal(t, true, isEvalEscapeNeeded("pass\\\\\\word"))
+		assert.Equal(t, false, isEvalEscapeNeeded("pass\\\\\\\\word"))
+
+		// quotation mark, backtick, backslash
+		assert.Equal(t, false, isEvalEscapeNeeded("pass\\\"\\`\\\\word"))
+
+		// UTF-8 single character - U+1F600 grinning face
+		assert.Equal(t, false, isEvalEscapeNeeded("\xF0\x9F\x98\x80"))
 	})
 }

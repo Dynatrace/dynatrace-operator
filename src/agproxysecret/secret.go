@@ -22,7 +22,7 @@ const (
 	proxyUsernameField = "username"
 	proxyPasswordField = "password"
 
-	proxySecretKey              = "proxy"
+	ProxySecretKey              = "proxy"
 	activeGateProxySecretSuffix = "internal-proxy"
 )
 
@@ -119,7 +119,7 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) proxyUrlFromUserSe
 		return "", errors.WithMessage(err, fmt.Sprintf("failed to query %s secret", dynakube.Spec.Proxy.ValueFrom))
 	}
 
-	proxy, ok := proxySecret.Data[proxySecretKey]
+	proxy, ok := proxySecret.Data[ProxySecretKey]
 	if !ok {
 		return "", fmt.Errorf("invalid secret %s", dynakube.Spec.Proxy.ValueFrom)
 	}
@@ -129,7 +129,7 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) proxyUrlFromUserSe
 func parseProxyUrl(proxy string) (host string, port string, username string, password string, err error) {
 	proxyUrl, err := url.Parse(proxy)
 	if err != nil {
-		return "", "", "", "", err
+		return "", "", "", "", fmt.Errorf("could not parse proxy URL")
 	}
 
 	passwd, _ := proxyUrl.User.Password()
