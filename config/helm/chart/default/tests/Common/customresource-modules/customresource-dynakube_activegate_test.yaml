@@ -96,7 +96,7 @@ tests:
       - equal:
           path: spec.activeGate.customProperties.value
           value: |
-            test-value
+        test-value
 
   - it: "should add routing customProperties value if set and enabled"
     set:
@@ -110,7 +110,8 @@ tests:
           - metrics-ingest
         customProperties:
           value: |
-            test-value
+            [test-value]
+            key=value
     asserts:
       - isNotNull:
           path: spec.activeGate.customProperties
@@ -119,7 +120,8 @@ tests:
       - equal:
           path: spec.activeGate.customProperties.value
           value: |
-            test-value
+        [test-value]
+        key=value
 
   - it: "should add routing customProperties valueFrom if set and enabled"
     set:
