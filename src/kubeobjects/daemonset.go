@@ -2,7 +2,6 @@ package kubeobjects
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -24,7 +23,7 @@ func CreateOrUpdateDaemonSet(kubernetesClient client.Client, logger logr.Logger,
 		return false, nil
 	}
 
-	if matchLabelsChanged(currentDaemonSet, desiredDaemonSet) {
+	if LabelsNotEqual(currentDaemonSet.Spec.Selector.MatchLabels, desiredDaemonSet.Spec.Selector.MatchLabels) {
 		return recreateDaemonSet(kubernetesClient, logger, currentDaemonSet, desiredDaemonSet)
 	}
 
@@ -33,13 +32,6 @@ func CreateOrUpdateDaemonSet(kubernetesClient client.Client, logger logr.Logger,
 		return false, err
 	}
 	return true, err
-}
-
-func matchLabelsChanged(currentDaemonSet, desiredDaemonSet *appsv1.DaemonSet) bool {
-	return !reflect.DeepEqual(
-		currentDaemonSet.Spec.Selector.MatchLabels,
-		desiredDaemonSet.Spec.Selector.MatchLabels,
-	)
 }
 
 func recreateDaemonSet(kubernetesClient client.Client, logger logr.Logger, currentDs, desiredDaemonSet *appsv1.DaemonSet) (bool, error) {

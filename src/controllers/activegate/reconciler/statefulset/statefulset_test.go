@@ -43,6 +43,11 @@ func TestNewStatefulSetBuilder(t *testing.T) {
 func TestStatefulSetBuilder_Build(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
+	stsProps := statefulSetProperties{
+		DynaKube:             instance,
+		CapabilityProperties: capabilityProperties,
+		feature:              testFeature,
+	}
 	sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", "", testFeature, "", "", nil, nil, nil))
 
 	assert.NoError(t, err)
@@ -59,10 +64,10 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	assert.Equal(t, instance.Spec.ActiveGate.Replicas, sts.Spec.Replicas)
 	assert.Equal(t, appsv1.ParallelPodManagement, sts.Spec.PodManagementPolicy)
 	assert.Equal(t, metav1.LabelSelector{
-		MatchLabels: BuildLabelsFromInstance(instance, testFeature),
+		MatchLabels: stsProps.buildMatchLabels(),
 	}, *sts.Spec.Selector)
 	assert.NotEqual(t, corev1.PodTemplateSpec{}, sts.Spec.Template)
-	assert.Equal(t, buildLabels(instance, testFeature, capabilityProperties), sts.Spec.Template.Labels)
+	assert.Equal(t, stsProps.buildLabels(), sts.Spec.Template.Labels)
 	assert.Equal(t, sts.Labels, sts.Spec.Template.Labels)
 	assert.NotEqual(t, corev1.PodSpec{}, sts.Spec.Template.Spec)
 	assert.Contains(t, sts.Annotations, kubeobjects.AnnotationHash)
