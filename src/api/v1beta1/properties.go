@@ -236,11 +236,6 @@ func (dk *DynaKube) ImmutableOneAgentImage() string {
 		return oneAgentImage
 	}
 
-	codeModulesImage := dk.CodeModulesImage()
-	if codeModulesImage != "" {
-		return codeModulesImage
-	}
-
 	if dk.Spec.APIURL == "" {
 		return ""
 	}
