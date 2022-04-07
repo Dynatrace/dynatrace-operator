@@ -96,6 +96,27 @@ func TestOneAgentImage(t *testing.T) {
 		dk := DynaKube{Spec: DynaKubeSpec{OneAgent: OneAgentSpec{ClassicFullStack: &HostInjectSpec{Image: customImg}}}}
 		assert.Equal(t, customImg, dk.ImmutableOneAgentImage())
 	})
+
+	t.Run(`OneAgentImage with custom version truncates build date`, func(t *testing.T) {
+		version := "1.239.14.20220325-164521"
+		expectedImage := "test-endpoint/linux/oneagent:1.239.14"
+
+		dynakube := DynaKube{
+			Spec: DynaKubeSpec{
+				APIURL: testAPIURL,
+				OneAgent: OneAgentSpec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{
+						HostInjectSpec: HostInjectSpec{
+							Version: version,
+						},
+					},
+				},
+			},
+		}
+
+		assert.Equal(t, expectedImage, dynakube.ImmutableOneAgentImage())
+		assert.Equal(t, version, dynakube.Version())
+	})
 }
 
 func TestOneAgentDaemonsetName(t *testing.T) {
