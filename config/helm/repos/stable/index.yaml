@@ -106,4 +106,4 @@ entries:
     urls:
     - https://raw.githubusercontent.com/Dynatrace/dynatrace-operator/master/config/helm/repos/stable/dynatrace-operator-0.4.0.tgz
     version: 0.4.0
-generated: '2022-04-07T09:36:15.547647426Z'
+generated: '2022-04-07T12:32:03.696553028Z'
