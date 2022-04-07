@@ -2827,7 +2827,6 @@ metadata:
   name: dynatrace-operator
   namespace: dynatrace
   labels:
-    
     dynatrace: operator
     operator: dynakube
 ---
@@ -3568,7 +3567,7 @@ spec:
             - operator
           # Replace this with the built image name
           image:
-            docker.io/dynatrace/dynatrace-operator:v0.5.0
+            docker.io/dynatrace/dynatrace-operator:v0.5.1
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -3700,7 +3699,7 @@ spec:
             # OLM mounts the certificates here, so we reuse it for simplicity
             - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
           image:
-            docker.io/dynatrace/dynatrace-operator:v0.5.0
+            docker.io/dynatrace/dynatrace-operator:v0.5.1
           imagePullPolicy: Always
           env:
             - name: POD_NAMESPACE
@@ -4094,7 +4093,7 @@ spec:
         # - Needs access to a dedicated folder on the node to persist data, needs to read/write to it.
       - name: driver
         image:
-            docker.io/dynatrace/dynatrace-operator:v0.5.0
+          docker.io/dynatrace/dynatrace-operator:v0.5.1
         imagePullPolicy: Always
         args:
         - csi-driver
@@ -4160,7 +4159,7 @@ spec:
         # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
       - name: registrar
         image:
-            docker.io/dynatrace/dynatrace-operator:v0.5.0
+          docker.io/dynatrace/dynatrace-operator:v0.5.1
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock
@@ -4207,7 +4206,7 @@ spec:
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
       - name: liveness-probe
         image:
-            docker.io/dynatrace/dynatrace-operator:v0.5.0
+          docker.io/dynatrace/dynatrace-operator:v0.5.1
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock
