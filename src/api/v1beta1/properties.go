@@ -241,12 +241,27 @@ func (dk *DynaKube) ImmutableOneAgentImage() string {
 	}
 
 	tag := "latest"
-	if ver := dk.Version(); ver != "" {
-		tag = ver
+	if version := dk.Version(); version != "" {
+		truncatedVersion := truncateBuildDate(version)
+		tag = truncatedVersion
 	}
 
 	registry := buildImageRegistry(dk.Spec.APIURL)
 	return fmt.Sprintf("%s/linux/oneagent:%s", registry, tag)
+}
+
+func truncateBuildDate(version string) string {
+	const versionSeperator = "."
+	const buildDateIndex = 3
+
+	if strings.Count(version, versionSeperator) >= buildDateIndex {
+		splitVersion := strings.Split(version, versionSeperator)
+		truncatedVersion := strings.Join(splitVersion[:buildDateIndex], versionSeperator)
+
+		return truncatedVersion
+	}
+
+	return version
 }
 
 // Tokens returns the name of the Secret to be used for tokens.
