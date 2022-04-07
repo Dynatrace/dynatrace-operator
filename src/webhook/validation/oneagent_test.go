@@ -260,8 +260,10 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 				APIURL: testApiUrl,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
-						CodeModulesImage: testImage,
-						UseCSIDriver:     &useCSIDriver,
+						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+							CodeModulesImage: testImage,
+						},
+						UseCSIDriver: &useCSIDriver,
 					},
 				},
 			},
@@ -277,8 +279,10 @@ func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
 				APIURL: testApiUrl,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
-						CodeModulesImage: testImage,
-						UseCSIDriver:     &useCSIDriver,
+						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+							CodeModulesImage: testImage,
+						},
+						UseCSIDriver: &useCSIDriver,
 					},
 				},
 			},
