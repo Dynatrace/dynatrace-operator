@@ -77,7 +77,6 @@ spec:
     # Enables listed ActiveGate capabilities
     capabilities:
       - routing
-      - metrics-ingest
       - dynatrace-api
 
     # Amount of replicas of activegate pods
