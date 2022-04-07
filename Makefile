@@ -178,8 +178,8 @@ manifests-ocp: generate-crd controller-gen kustomize
 	$(KUSTOMIZE) build config/crd | cat - config/deploy/openshift/openshift.yaml > temp
 	mv temp config/deploy/openshift/openshift.yaml
 
-	cat config/deploy/openshift/openshift.yaml > config/deploy/openshift/openshift-all.yaml
-	cat config/deploy/openshift/openshift.yaml config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/openshift-olm.yaml
+	cat config/deploy/openshift/openshift.yaml > config/deploy/openshift/openshift-olm.yaml
+	cat config/deploy/openshift/openshift.yaml config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/openshift-all.yaml
 
 
 # Run go fmt against code
