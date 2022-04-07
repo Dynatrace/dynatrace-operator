@@ -30,14 +30,6 @@ x-google-marketplace:
       * Improve info log when `bin` folder does not exist in CSI driver by @chrismuellner
       in https://github.com/Dynatrace/dynatrace-operator/pull/686
 
-      ### Other Changes
-
-      * csv-0.5 by @dt-team-kubernetes in https://github.com/Dynatrace/dynatrace-operator/pull/642
-
-      * helm-0.5 by @dt-team-kubernetes in https://github.com/Dynatrace/dynatrace-operator/pull/645
-
-
-
       **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.5.0...v0.5.1'
     releaseTypes:
     - Feature
