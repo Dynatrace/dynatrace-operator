@@ -1744,8 +1744,7 @@ spec:
                     properties:
                       codeModulesImage:
                         description: 'Optional: the Dynatrace installer container
-                          image Defaults to the registry on the tenant for both Kubernetes
-                          and for OpenShift'
+                          image'
                         type: string
                       initResources:
                         description: 'Optional: define resources requests and limits
@@ -2037,8 +2036,7 @@ spec:
                         type: boolean
                       codeModulesImage:
                         description: 'Optional: the Dynatrace installer container
-                          image Defaults to the registry on the tenant for both Kubernetes
-                          and for OpenShift'
+                          image'
                         type: string
                       dnsPolicy:
                         description: 'Optional: Sets DNS Policy for the OneAgent pods'
