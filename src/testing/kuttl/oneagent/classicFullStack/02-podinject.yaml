@@ -1,0 +1,46 @@
+# Deploy sample apps in created namespace
+apiVersion: v1
+kind: Pod
+metadata:
+  name: php-glibc
+  namespace: already-present-classic
+  annotations:
+    oneagent.dynatrace.com/technologies: php
+    oneagent.dynatrace.com/failure-policy: fail
+  labels:
+    app: php-glibc
+spec:
+  containers:
+    - image: docker.io/php:fpm-stretch
+      imagePullPolicy: Always
+      livenessProbe:
+        failureThreshold: 3
+        tcpSocket:
+          port: 9000
+        initialDelaySeconds: 600
+        periodSeconds: 30
+        successThreshold: 1
+        timeoutSeconds: 2
+      name: app
+      env:
+        - name: DT_DEBUGFLAGS
+          value: debugBootstrapNative=true
+      ports:
+        - containerPort: 9000
+          protocol: TCP
+      readinessProbe:
+        failureThreshold: 3
+        tcpSocket:
+          port: 9000
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 1
+      resources:
+        requests:
+          memory: 64Mi
+        limits:
+          memory: 128Mi
+  restartPolicy: Always
+  securityContext:
+    runAsUser: 1001
+  terminationGracePeriodSeconds: 30

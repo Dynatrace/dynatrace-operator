@@ -21,11 +21,18 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
+Selector labels
+*/}}
+{{- define "dynatrace-operator.futureSelectorLabels" -}}
+app.kubernetes.io/name: {{ .Release.Name }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end -}}
+
+{{/*
 Common labels
 */}}
 {{- define "dynatrace-operator.commonLabels" -}}
-app.kubernetes.io/name: {{ .Release.Name }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{ include "dynatrace-operator.futureSelectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -41,6 +48,13 @@ app.kubernetes.io/component: operator
 {{- end -}}
 
 {{/*
+Operator selector labels
+*/}}
+{{- define "dynatrace-operator.operatorSelectorLabels" -}}
+name: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
 Webhook labels
 */}}
 {{- define "dynatrace-operator.webhookLabels" -}}
@@ -48,6 +62,13 @@ Webhook labels
 app.kubernetes.io/component: webhook
 {{- end -}}
 
+{{/*
+Webhook selector labels
+*/}}
+{{- define "dynatrace-operator.webhookSelectorLabels" -}}
+internal.dynatrace.com/component: webhook
+internal.dynatrace.com/app: webhook
+{{- end -}}
 
 {{/*
 CSI labels
@@ -55,6 +76,14 @@ CSI labels
 {{- define "dynatrace-operator.csiLabels" -}}
 {{ include "dynatrace-operator.commonLabels" . }}
 app.kubernetes.io/component: csi-driver
+{{- end -}}
+
+{{/*
+CSI selector labels
+*/}}
+{{- define "dynatrace-operator.csiSelectorLabels" -}}
+internal.oneagent.dynatrace.com/app: csi-driver
+internal.oneagent.dynatrace.com/component: csi-driver
 {{- end -}}
 
 {{/*

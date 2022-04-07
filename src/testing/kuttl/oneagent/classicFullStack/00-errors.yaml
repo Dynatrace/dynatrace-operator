@@ -1,0 +1,7 @@
+# Namespaces should be labeled during classicFullStack
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    dynakube.internal.dynatrace.com/instance: dynakube
+  name: already-present-classic

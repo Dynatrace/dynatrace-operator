@@ -1,0 +1,19 @@
+# Deploy sample apps in created namespaces
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+timeout: 220
+delete:
+- apiVersion: v1
+  kind: Pod
+  name: java-glibc
+  namespace: inject-into-app-monitoring
+- apiVersion: v1
+  kind: Pod
+  name: php-glibc
+  namespace: leave-alone-app-monitoring
+- apiVersion: v1
+  kind: Pod
+  name: nodejs-musl
+  namespace: already-present-app-monitoring
+
+

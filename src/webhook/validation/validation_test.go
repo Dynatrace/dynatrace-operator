@@ -173,7 +173,7 @@ func TestDynakubeValidator_Handle(t *testing.T) {
 				Spec: dynatracev1beta1.DynaKubeSpec{
 					APIURL: testApiUrl,
 					OneAgent: dynatracev1beta1.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{},
+						HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
 					},
 				},
 			}, &dummyNamespace, &dummyNamespace2)
