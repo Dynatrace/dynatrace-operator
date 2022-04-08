@@ -139,6 +139,7 @@ activeGate:
   priorityClassName: ""
   apparmor: false
   readOnlyFs: false
+  annotations: []
 
 # deprecated
 kubernetesMonitoring:

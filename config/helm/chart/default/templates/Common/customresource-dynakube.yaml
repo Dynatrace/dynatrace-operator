@@ -31,6 +31,9 @@ metadata:
     {{- if (.Values.activeGate).readOnlyFs }}
     alpha.operator.dynatrace.com/feature-activegate-readonly-fs: "true"
     {{- end }}
+    {{- range (.Values.activeGate).annotations }}
+    {{ . }}
+    {{- end }}
   name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
   labels:
