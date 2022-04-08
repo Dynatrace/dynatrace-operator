@@ -30,5 +30,6 @@ func (stsProperties *statefulSetProperties) buildMatchLabels() map[string]string
 func BuildLabelsFromInstance(instance *dynatracev1beta1.DynaKube, feature string) map[string]string {
 	labels := kubeobjects.CommonLabels(instance.Name, ActiveGateComponentName)
 	labels[kubeobjects.FeatureLabel] = feature
+	labels[kubeobjects.AppVersionLabel] = instance.Status.ActiveGate.Version
 	return labels
 }
