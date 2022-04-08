@@ -21,7 +21,7 @@ metadata:
   labels:
     {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
 spec:
-  replicas: {{ (.Values.webhook).enableHighAvailability | ternary 2 1 }}
+  replicas: {{ (.Values.webhook).highAvailability | ternary 2 1 }}
   revisionHistoryLimit: 1
   selector:
     matchLabels:
@@ -39,7 +39,7 @@ spec:
         {{- include "dynatrace-operator.webhookLabels" . | nindent 8 }}
         {{- include "dynatrace-operator.webhookSelectorLabels" . | nindent 8 }}
     spec:
-      {{- if (.Values.webhook).enableHighAvailability }}
+      {{- if (.Values.webhook).highAvailability }}
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: "topology.kubernetes.io/zone"

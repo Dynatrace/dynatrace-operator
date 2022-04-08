@@ -56,7 +56,7 @@ webhook:
   limits:
     cpu: 300m
     memory: 128Mi
-  enableHighAvailability: false
+  highAvailability: true
 
 csi:
   requests:
