@@ -21,11 +21,7 @@ metadata:
   labels:
     {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
 spec:
-  {{- if (.Values.webhook).enableHighAvailability }}
-  replicas: 2
-  {{- else }}
-  replicas: 1
-  {{- end}}
+  replicas: {{ (.Values.webhook).enableHighAvailability | ternary 2 1 }}
   revisionHistoryLimit: 1
   selector:
     matchLabels:
