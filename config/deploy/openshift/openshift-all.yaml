@@ -4538,7 +4538,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: csi-driver
 ---
 # Source: dynatrace-operator/templates/Common/csi/clusterrole-csi.yaml
@@ -4561,7 +4561,7 @@ metadata:
   name: dynatrace-oneagent-csi-driver
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: csi-driver
 rules:
   - apiGroups:
@@ -4627,7 +4627,7 @@ metadata:
   name: dynatrace-oneagent-csi-driver
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: csi-driver
 subjects:
   - kind: ServiceAccount
@@ -4659,7 +4659,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: csi-driver
 rules:
   - apiGroups:
@@ -4722,7 +4722,7 @@ metadata:
   namespace: dynatrace
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: csi-driver
 subjects:
   - kind: ServiceAccount
@@ -4752,7 +4752,7 @@ kind: DaemonSet
 metadata:
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: csi-driver
   name: dynatrace-oneagent-csi-driver
   namespace: dynatrace
@@ -4768,7 +4768,7 @@ spec:
         kubectl.kubernetes.io/default-logs-container: driver
       labels:
         app.kubernetes.io/name: dynatrace-operator
-        app.kubernetes.io/version: "0.4.2"
+        app.kubernetes.io/version: "0.6.0"
         app.kubernetes.io/component: csi-driver
         internal.oneagent.dynatrace.com/app: csi-driver
         internal.oneagent.dynatrace.com/component: csi-driver
@@ -4780,7 +4780,7 @@ spec:
         # - Needs access to a dedicated folder on the node to persist data, needs to read/write to it.
       - name: driver
         image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-6
         imagePullPolicy: Always
         args:
         - csi-driver
@@ -4846,7 +4846,7 @@ spec:
         # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
       - name: registrar
         image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-6
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock
@@ -4889,7 +4889,7 @@ spec:
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
       - name: liveness-probe
         image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-6
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock
@@ -4968,7 +4968,7 @@ metadata:
   name: csi.oneagent.dynatrace.com
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: csi-driver
 spec:
   attachRequired: false
@@ -4996,7 +4996,7 @@ metadata:
   name: dynatrace-oneagent-csi-driver
   labels:
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.4.2"
+    app.kubernetes.io/version: "0.6.0"
     app.kubernetes.io/component: csi-driver
 allowHostDirVolumePlugin: true
 allowHostIPC: true
