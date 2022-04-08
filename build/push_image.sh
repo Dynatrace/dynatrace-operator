@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ ${CONTAINER_CLI} == "" ]
+then
+    CONTAINER_CLI=docker
+fi
+
+
 if [[ ! "${TAG}" ]]; then
   echo "TAG variable not set"
   echo "usage: 'make deploy-local TAG=\"<your-image-tag>\"' or 'make deploy-local-easy'"
@@ -29,15 +35,15 @@ if [[ "${LOCALBUILD}" ]]; then
   go get github.com/google/go-licenses
   go-licenses save ./... --save_path third_party_licenses --force
 
-  docker build . -f ./Dockerfile-localbuild -t "${base_image}" --label "quay.expires-after=14d" --no-cache
+  $CONTAINER_CLI build . -f ./Dockerfile-localbuild -t "${base_image}" --label "quay.expires-after=14d" --no-cache
 
   rm -rf ./third_party_licenses
 else
-  # directory required by docker copy command
+  # directory required by $CONTAINER_CLI copy command
   mkdir -p third_party_licenses
-  docker build . -f ./Dockerfile -t "${base_image}" --build-arg "GO_BUILD_ARGS=$args" --label "quay.expires-after=14d" --no-cache
+  $CONTAINER_CLI build . -f ./Dockerfile -t "${base_image}" --build-arg "GO_BUILD_ARGS=$args" --label "quay.expires-after=14d" --no-cache
   rm -rf third_party_licenses
 fi
 
-docker tag "${base_image}" "${out_image}"
-docker push "${out_image}"
+$CONTAINER_CLI tag "${base_image}" "${out_image}"
+$CONTAINER_CLI push "${out_image}"
