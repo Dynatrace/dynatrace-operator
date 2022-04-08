@@ -21,7 +21,11 @@ metadata:
   labels:
     {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
 spec:
+  {{- if (.Values.webhook).enableHighAvailability }}
+  replicas: 2
+  {{- else }}
   replicas: 1
+  {{- end}}
   revisionHistoryLimit: 1
   selector:
     matchLabels:
@@ -39,6 +43,15 @@ spec:
         {{- include "dynatrace-operator.webhookLabels" . | nindent 8 }}
         {{- include "dynatrace-operator.webhookSelectorLabels" . | nindent 8 }}
     spec:
+      {{- if (.Values.webhook).enableHighAvailability }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: "topology.kubernetes.io/zone"
+          whenUnsatisfiable: ScheduleAnyway
+        - maxSkew: 1
+          topologyKey: "kubernetes.io/hostname"
+          whenUnsatisfiable: DoNotSchedule
+      {{- end }}
       volumes:
       - emptyDir: {}
         name: certs-dir
