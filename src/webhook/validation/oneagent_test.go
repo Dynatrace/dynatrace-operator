@@ -249,3 +249,44 @@ func TestConflictingNodeSelector(t *testing.T) {
 			&defaultCSIDaemonSet)
 	})
 }
+
+func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
+	t.Run(`spec with appMon enabled and image name`, func(t *testing.T) {
+		useCSIDriver := true
+		testImage := "testImage"
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
+						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+							CodeModulesImage: testImage,
+						},
+						UseCSIDriver: &useCSIDriver,
+					},
+				},
+			},
+		}, &defaultCSIDaemonSet)
+	})
+
+	t.Run(`spec with appMon enabled, useCSIDriver not enabled but image set`, func(t *testing.T) {
+		useCSIDriver := false
+		testImage := "testImage"
+		assertDeniedResponse(t, []string{errorImageFieldSetWithoutCSIFlag}, &dynatracev1beta1.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
+						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+							CodeModulesImage: testImage,
+						},
+						UseCSIDriver: &useCSIDriver,
+					},
+				},
+			},
+		}, &defaultCSIDaemonSet)
+	})
+
+}
