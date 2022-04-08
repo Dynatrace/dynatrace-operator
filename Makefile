@@ -178,8 +178,8 @@ manifests-ocp: generate-crd controller-gen kustomize
 	$(KUSTOMIZE) build config/crd | cat - config/deploy/openshift/openshift.yaml > temp
 	mv temp config/deploy/openshift/openshift.yaml
 
-	cat config/deploy/openshift/openshift.yaml > config/deploy/openshift/openshift-all.yaml
-	cat config/deploy/openshift/openshift.yaml config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/openshift-olm.yaml
+	cat config/deploy/openshift/openshift.yaml > config/deploy/openshift/openshift-olm.yaml
+	cat config/deploy/openshift/openshift.yaml config/deploy/openshift/openshift-csi.yaml > config/deploy/openshift/openshift-all.yaml
 
 
 # Run go fmt against code
@@ -277,6 +277,9 @@ bundle-minimal: bundle
 .PHONY: bundle-build
 bundle-build:
 	docker build -f ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile -t $(BUNDLE_IMG) ./config/olm/$(PLATFORM)/
+
+test-olm:
+	./hack/setup_olm_catalog.sh
 
 setup-pre-commit:
 	$(info WARNING "Make sure that golangci-lint is installed, for more info see https://golangci-lint.run/usage/install/")

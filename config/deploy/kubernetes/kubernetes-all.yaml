@@ -3,6 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -1741,6 +1742,10 @@ spec:
                       fullstack monitoring, classic fullstack monitoring or host monitoring'
                     nullable: true
                     properties:
+                      codeModulesImage:
+                        description: 'Optional: the Dynatrace installer container
+                          image'
+                        type: string
                       initResources:
                         description: 'Optional: define resources requests and limits
                           for the initContainer'
@@ -2029,6 +2034,10 @@ spec:
                         description: 'Optional: Enables automatic restarts of OneAgent
                           pods in case a new version is available Defaults to true'
                         type: boolean
+                      codeModulesImage:
+                        description: 'Optional: the Dynatrace installer container
+                          image'
+                        type: string
                       dnsPolicy:
                         description: 'Optional: Sets DNS Policy for the OneAgent pods'
                         type: string
@@ -2147,6 +2156,11 @@ spec:
                           - name
                           type: object
                         type: array
+                      image:
+                        description: 'Optional: the Dynatrace installer container
+                          image Defaults to the registry on the tenant for both Kubernetes
+                          and for OpenShift'
+                        type: string
                       initResources:
                         description: 'Optional: define resources requests and limits
                           for the initContainer'
@@ -3921,9 +3935,7 @@ spec:
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: dynatrace-operator
-      app.kubernetes.io/version: "0.4.2"
-      app.kubernetes.io/component: operator
+      name: dynatrace-operator
   strategy:
     type: RollingUpdate
   template:
@@ -3933,6 +3945,7 @@ spec:
         app.kubernetes.io/name: dynatrace-operator
         app.kubernetes.io/version: "0.4.2"
         app.kubernetes.io/component: operator
+        name: dynatrace-operator
     spec:
       containers:
         - name: dynatrace-operator
@@ -4036,9 +4049,8 @@ spec:
   revisionHistoryLimit: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: dynatrace-operator
-      app.kubernetes.io/version: "0.4.2"
-      app.kubernetes.io/component: webhook
+      internal.dynatrace.com/component: webhook
+      internal.dynatrace.com/app: webhook
   strategy:
     type: RollingUpdate
   template:
@@ -4049,6 +4061,8 @@ spec:
         app.kubernetes.io/name: dynatrace-operator
         app.kubernetes.io/version: "0.4.2"
         app.kubernetes.io/component: webhook
+        internal.dynatrace.com/component: webhook
+        internal.dynatrace.com/app: webhook
     spec:
       volumes:
       - emptyDir: {}
@@ -4469,9 +4483,8 @@ spec:
   revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app.kubernetes.io/name: dynatrace-operator
-      app.kubernetes.io/version: "0.4.2"
-      app.kubernetes.io/component: csi-driver
+      internal.oneagent.dynatrace.com/app: csi-driver
+      internal.oneagent.dynatrace.com/component: csi-driver
   template:
     metadata:
       annotations:
@@ -4480,6 +4493,8 @@ spec:
         app.kubernetes.io/name: dynatrace-operator
         app.kubernetes.io/version: "0.4.2"
         app.kubernetes.io/component: csi-driver
+        internal.oneagent.dynatrace.com/app: csi-driver
+        internal.oneagent.dynatrace.com/component: csi-driver
     spec:
       containers:
         # Used to receive/execute gRPC requests (NodePublishVolume/NodeUnpublishVolume) from kubelet to mount/unmount volumes for a pod

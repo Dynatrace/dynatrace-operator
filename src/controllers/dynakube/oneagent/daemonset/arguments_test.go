@@ -27,10 +27,8 @@ func TestArguments(t *testing.T) {
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: testURL,
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
-					HostInjectSpec: dynatracev1beta1.HostInjectSpec{
-						Args: []string{testValue},
-					},
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+					Args: []string{testValue},
 				},
 			},
 		},
@@ -38,7 +36,7 @@ func TestArguments(t *testing.T) {
 	dsInfo := ClassicFullStack{
 		builderInfo{
 			instance:       &instance,
-			hostInjectSpec: &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec,
+			hostInjectSpec: instance.Spec.OneAgent.ClassicFullStack,
 			clusterId:      testClusterID,
 		},
 	}
@@ -52,10 +50,8 @@ func TestPodSpec_Arguments(t *testing.T) {
 	instance := &dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
-					HostInjectSpec: dynatracev1beta1.HostInjectSpec{
-						Args: []string{testKey, testValue, testUID},
-					},
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
+					Args: []string{testKey, testValue, testUID},
 				},
 			},
 		},
@@ -68,7 +64,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 		},
 	}
 	metadata := deploymentmetadata.NewDeploymentMetadata(testClusterID, DeploymentTypeFullStack)
-	hostInjectSpecs := &instance.Spec.OneAgent.ClassicFullStack.HostInjectSpec
+	hostInjectSpecs := instance.Spec.OneAgent.ClassicFullStack
 	dsInfo := ClassicFullStack{
 		builderInfo{
 			instance:       instance,

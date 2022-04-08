@@ -21,6 +21,7 @@ var validators = []validator{
 	conflictingNamespaceSelector,
 	conflictingReadOnlyFilesystemAndMultipleOsAgentsOnNode,
 	noResourcesAvailable,
+	imageFieldSetWithoutCSIFlag,
 }
 
 var warnings = []validator{

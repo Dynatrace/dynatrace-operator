@@ -47,8 +47,8 @@ const (
 
 func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 	deploymentModes := map[string]dynatracev1beta1.OneAgentSpec{
-		"hostMonitoring":        {HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{}},
-		"classicFullStack":      {ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{}},
+		"hostMonitoring":        {HostMonitoring: &dynatracev1beta1.HostInjectSpec{}},
+		"classicFullStack":      {ClassicFullStack: &dynatracev1beta1.HostInjectSpec{}},
 		"cloudNativeFullStack":  {CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
 		"applicationMonitoring": {ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{}},
 	}
