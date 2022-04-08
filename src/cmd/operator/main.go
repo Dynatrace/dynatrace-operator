@@ -24,6 +24,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/spf13/pflag"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -53,20 +54,17 @@ func main() {
 
 	namespace := os.Getenv("POD_NAMESPACE")
 	var mgr manager.Manager
+	var err error
 	var cleanUp func()
 
 	subCmd := getSubCommand()
 	switch subCmd {
 	case operatorCmd:
-		cfg, err := config.GetConfig()
-		if err != nil {
-			log.Error(err, "")
-			os.Exit(1)
-		}
+		cfg := getKubeConfig()
 		if !kubesystem.DeployedViaOLM() {
 			// setup manager only for certificates
 			bootstrapperCtx, done := context.WithCancel(context.TODO())
-			mgr, err = setupBootstrapper(namespace, cfg, done)
+			mgr, err := setupBootstrapper(namespace, cfg, done)
 			exitOnError(err, "bootstrapper setup failed")
 			exitOnError(mgr.Start(bootstrapperCtx), "problem running bootstrap manager")
 		}
@@ -74,20 +72,12 @@ func main() {
 		mgr, err = setupOperator(namespace, cfg)
 		exitOnError(err, "operator setup failed")
 	case csiDriverCmd:
-		cfg, err := config.GetConfig()
-		if err != nil {
-			log.Error(err, "")
-			os.Exit(1)
-		}
+		cfg := getKubeConfig()
 		mgr, cleanUp, err = setupCSIDriver(namespace, cfg)
 		exitOnError(err, "csi driver setup failed")
 		defer cleanUp()
 	case webhookServerCmd:
-		cfg, err := config.GetConfig()
-		if err != nil {
-			log.Error(err, "")
-			os.Exit(1)
-		}
+		cfg := getKubeConfig()
 		mgr, cleanUp, err = setupWebhookServer(namespace, cfg)
 		exitOnError(err, "webhook-server setup failed")
 		defer cleanUp()
@@ -103,6 +93,15 @@ func main() {
 	signalHandler := ctrl.SetupSignalHandler()
 	log.Info("starting manager")
 	exitOnError(mgr.Start(signalHandler), "problem running manager")
+}
+
+func getKubeConfig() *rest.Config {
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Error(err, "")
+		os.Exit(1)
+	}
+	return cfg
 }
 
 func exitOnError(err error, msg string) {
