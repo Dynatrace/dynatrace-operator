@@ -52,18 +52,17 @@ func main() {
 	version.LogVersion()
 
 	namespace := os.Getenv("POD_NAMESPACE")
-	cfg, err := config.GetConfig()
-	if err != nil {
-		log.Error(err, "")
-		os.Exit(1)
-	}
-
 	var mgr manager.Manager
 	var cleanUp func()
 
 	subCmd := getSubCommand()
 	switch subCmd {
 	case operatorCmd:
+		cfg, err := config.GetConfig()
+		if err != nil {
+			log.Error(err, "")
+			os.Exit(1)
+		}
 		if !kubesystem.DeployedViaOLM() {
 			// setup manager only for certificates
 			bootstrapperCtx, done := context.WithCancel(context.TODO())
@@ -75,15 +74,25 @@ func main() {
 		mgr, err = setupOperator(namespace, cfg)
 		exitOnError(err, "operator setup failed")
 	case csiDriverCmd:
+		cfg, err := config.GetConfig()
+		if err != nil {
+			log.Error(err, "")
+			os.Exit(1)
+		}
 		mgr, cleanUp, err = setupCSIDriver(namespace, cfg)
 		exitOnError(err, "csi driver setup failed")
 		defer cleanUp()
 	case webhookServerCmd:
+		cfg, err := config.GetConfig()
+		if err != nil {
+			log.Error(err, "")
+			os.Exit(1)
+		}
 		mgr, cleanUp, err = setupWebhookServer(namespace, cfg)
 		exitOnError(err, "webhook-server setup failed")
 		defer cleanUp()
 	case standaloneCmd:
-		err = startStandAloneInit()
+		err := startStandAloneInit()
 		exitOnError(err, "initContainer command failed")
 		os.Exit(0)
 	default:
