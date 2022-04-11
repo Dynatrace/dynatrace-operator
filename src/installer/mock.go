@@ -24,3 +24,7 @@ func (mock *InstallerMock) UpdateProcessModuleConfig(targetDir string, processMo
 func (mock *InstallerMock) SetVersion(version string) {
 	mock.Called(version)
 }
+
+func (mock *InstallerMock) SetImagePullInfo(imagePullInfo *ImagePullInfo) {
+	mock.Called(imagePullInfo)
+}

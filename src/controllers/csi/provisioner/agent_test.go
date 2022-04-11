@@ -1,6 +1,7 @@
 package csiprovisioner
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer"
+	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	t_utils "github.com/Dynatrace/dynatrace-operator/src/testing"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +25,7 @@ const (
 
 func TestNewAgentUpdater(t *testing.T) {
 	t.Run(`create`, func(t *testing.T) {
-		createTestAgentUpdater(t, nil)
+		createTestAgentUpdater(t, &dynatracev1beta1.DynaKube{})
 	})
 }
 
@@ -67,6 +69,7 @@ func TestGetOneAgentVersionFromInstance(t *testing.T) {
 }
 
 func TestUpdateAgent(t *testing.T) {
+	ctx := context.TODO()
 	t.Run(`fresh install`, func(t *testing.T) {
 		dk := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -94,6 +97,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(nil)
 
 		currentVersion, err := updater.updateAgent(
+			ctx,
 			testVersion,
 			testTenantUUID,
 			previousHash,
@@ -138,6 +142,7 @@ func TestUpdateAgent(t *testing.T) {
 		updater.fs.MkdirAll(targetDir, 0755)
 
 		currentVersion, err := updater.updateAgent(
+			ctx,
 			testVersion,
 			testTenantUUID,
 			previousHash,
@@ -164,6 +169,7 @@ func TestUpdateAgent(t *testing.T) {
 		updater.fs.MkdirAll(targetDir, 0755)
 
 		currentVersion, err := updater.updateAgent(
+			ctx,
 			testVersion,
 			testTenantUUID,
 			previousHash,
@@ -196,6 +202,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return(fmt.Errorf("BOOM"))
 
 		currentVersion, err := updater.updateAgent(
+			ctx,
 			testVersion,
 			testTenantUUID,
 			previousHash,
@@ -216,6 +223,7 @@ func TestUpdateAgent(t *testing.T) {
 }
 
 func updateOneagent(t *testing.T, alreadyInstalled bool) {
+	ctx := context.TODO()
 	dk := dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			OneAgent: dynatracev1beta1.OneAgentSpec{
@@ -248,23 +256,29 @@ func updateOneagent(t *testing.T, alreadyInstalled bool) {
 	}
 
 	currentVersion, err := updater.updateAgent(
+		ctx,
 		"other",
 		testTenantUUID,
 		previousHash,
 		&processModuleCache)
 
 	require.NoError(t, err)
-	assert.Equal(t, testVersion, currentVersion)
+	if installerCalled {
+		assert.Equal(t, testVersion, currentVersion)
+	} else {
+		assert.Equal(t, "", currentVersion)
+	}
+
 	assert.Equal(t, !alreadyInstalled, installerCalled)
-	t_utils.AssertEvents(t,
-		updater.recorder.(*record.FakeRecorder).Events,
-		t_utils.Events{
-			t_utils.Event{
-				EventType: corev1.EventTypeNormal,
-				Reason:    installAgentVersionEvent,
-			},
-		},
-	)
+	// t_utils.AssertEvents(t,
+	// 	updater.recorder.(*record.FakeRecorder).Events,
+	// 	t_utils.Events{
+	// 		t_utils.Event{
+	// 			EventType: corev1.EventTypeNormal,
+	// 			Reason:    installAgentVersionEvent,
+	// 		},
+	// 	},
+	// )
 
 }
 
@@ -274,7 +288,7 @@ func createTestAgentUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube) *agentU
 	fs := afero.NewMemMapFs()
 	rec := record.NewFakeRecorder(10)
 
-	updater := newAgentUpdater(&client, path, fs, rec, dk)
+	updater := newAgentUpdater(fake.NewClient(), &client, path, fs, rec, dk)
 	require.NotNil(t, updater)
 	assert.NotNil(t, updater.installer)
 

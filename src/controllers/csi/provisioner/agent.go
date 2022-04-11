@@ -1,16 +1,20 @@
 package csiprovisioner
 
 import (
+	"context"
 	"os"
+	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/provisioner/arch"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type agentUpdater struct {
@@ -18,10 +22,12 @@ type agentUpdater struct {
 	dk        *dynatracev1beta1.DynaKube
 	path      metadata.PathResolver
 	installer installer.Installer
+	apiReader client.Reader
 	recorder  record.EventRecorder
 }
 
 func newAgentUpdater(
+	apiReader client.Reader,
 	dtc dtclient.Client,
 	path metadata.PathResolver,
 	fs afero.Fs,
@@ -42,13 +48,14 @@ func newAgentUpdater(
 	return &agentUpdater{
 		fs:        fs,
 		path:      path,
+		apiReader: apiReader,
 		recorder:  recorder,
 		dk:        dk,
 		installer: agentInstaller,
 	}
 }
 
-func (updater *agentUpdater) updateAgent(installedVersion, tenantUUID string, previousHash string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
+func (updater *agentUpdater) updateAgent(ctx context.Context, installedVersion, tenantUUID string, previousHash string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
 	dk := updater.dk
 	targetVersion := updater.getOneAgentVersionFromInstance()
 	targetDir := updater.path.AgentBinaryDirForVersion(tenantUUID, targetVersion)
@@ -59,6 +66,24 @@ func (updater *agentUpdater) updateAgent(installedVersion, tenantUUID string, pr
 			"installed version", installedVersion,
 			"target directory", targetDir)
 
+		if dk.CodeModulesImage() != "" { // TODO: Make this nicer
+			dockerConfig, err := dockerconfig.NewDockerConfig(ctx, updater.apiReader, *dk)
+			if err != nil {
+				return "", err
+			}
+			if dk.Spec.TrustedCAs != "" {
+				caCertPath := filepath.Join(targetDir, "ca.crt")
+				err := dockerConfig.SaveCustomCAs(ctx, updater.apiReader, *dk, caCertPath)
+				defer func() { updater.fs.Remove(caCertPath) }()
+				if err != nil {
+					return "", err
+				}
+			}
+			updater.installer.SetImagePullInfo(&installer.ImagePullInfo{
+				Image:        dk.CodeModulesImage(),
+				DockerConfig: *dockerConfig,
+			})
+		}
 		updater.installer.SetVersion(targetVersion)
 		if err := updater.installer.InstallAgent(targetDir); err != nil {
 			updater.recorder.Eventf(dk,
@@ -75,21 +100,6 @@ func (updater *agentUpdater) updateAgent(installedVersion, tenantUUID string, pr
 			corev1.EventTypeNormal,
 			installAgentVersionEvent,
 			"Installed agent version: %s to tenant: %s", targetVersion, tenantUUID)
-		return targetVersion, nil
-	}
-	if targetVersion != installedVersion {
-		log.Info("updating agent, installer was already present",
-			"target version", targetVersion,
-			"installed version", installedVersion,
-			"target directory", targetDir)
-		updater.recorder.Eventf(dk,
-			corev1.EventTypeNormal,
-			installAgentVersionEvent,
-			"Set new agent version: %s to tenant: %s", targetVersion, tenantUUID)
-		log.Info("updating ruxitagentproc.conf on new set version")
-		if err := updater.installer.UpdateProcessModuleConfig(targetDir, latestProcessModuleConfigCache.ProcessModuleConfig); err != nil {
-			return "", err
-		}
 		return targetVersion, nil
 	}
 	if latestProcessModuleConfigCache != nil && previousHash != latestProcessModuleConfigCache.Hash {

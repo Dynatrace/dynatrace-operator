@@ -122,7 +122,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	}
 	log.Info("csi directories exist", "path", provisioner.path.EnvDir(dynakubeMetadata.TenantUUID))
 
-	latestProcessModuleConfigCache, requeue, err := provisioner.updateAgentInstallation(dtc, dynakubeMetadata, dk)
+	latestProcessModuleConfigCache, requeue, err := provisioner.updateAgentInstallation(ctx, dtc, dynakubeMetadata, dk)
 	if requeue {
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, err
 	}
@@ -144,12 +144,12 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 }
 
-func (provisioner *OneAgentProvisioner) updateAgentInstallation(dtc dtclient.Client, dynakubeMetadata *metadata.Dynakube, dk *dynatracev1beta1.DynaKube) (
+func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Context, dtc dtclient.Client, dynakubeMetadata *metadata.Dynakube, dk *dynatracev1beta1.DynaKube) (
 	latestProcessModuleConfigCache *processModuleConfigCache,
 	requeue bool,
 	err error,
 ) {
-	latestProcessModuleConfig, storedHash, err := provisioner.getProcessModuleConfig(dtc, dynakubeMetadata.TenantUUID)
+	latestProcessModuleConfig, _, err := provisioner.getProcessModuleConfig(dtc, dynakubeMetadata.TenantUUID)
 	if err != nil {
 		log.Error(err, "error when getting the latest ruxitagentproc.conf")
 		return nil, false, err
@@ -167,8 +167,8 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(dtc dtclient.Cli
 
 	latestProcessModuleConfigCache = newProcessModuleConfigCache(latestProcessModuleConfig)
 
-	agentUpdater := newAgentUpdater(dtc, provisioner.path, provisioner.fs, provisioner.recorder, dk)
-	if updatedVersion, err := agentUpdater.updateAgent(dynakubeMetadata.LatestVersion, dynakubeMetadata.TenantUUID, storedHash, latestProcessModuleConfigCache); err != nil {
+	agentUpdater := newAgentUpdater(provisioner.apiReader, dtc, provisioner.path, provisioner.fs, provisioner.recorder, dk)
+	if updatedVersion, err := agentUpdater.updateAgent(ctx, dynakubeMetadata.LatestVersion, dynakubeMetadata.TenantUUID, latestProcessModuleConfigCache); err != nil {
 		log.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 		return nil, true, nil
