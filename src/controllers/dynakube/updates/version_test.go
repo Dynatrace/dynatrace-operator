@@ -26,8 +26,8 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -182,18 +182,18 @@ func (registry *fakeRegistry) SetVersion(imagePath, version string) *fakeRegistr
 	return registry
 }
 
-func (registry *fakeRegistry) ImageVersion(imagePath string) (dtversion.ImageVersion, error) {
+func (registry *fakeRegistry) ImageVersion(imagePath string) (ImageVersion, error) {
 	if version, exists := registry.imageVersions[imagePath]; !exists {
-		return dtversion.ImageVersion{}, fmt.Errorf(`cannot provide version for image: "%s"`, imagePath)
+		return ImageVersion{}, fmt.Errorf(`cannot provide version for image: "%s"`, imagePath)
 	} else {
-		return dtversion.ImageVersion{
+		return ImageVersion{
 			Version: version,
 			Hash:    fmt.Sprintf("%x", sha256.Sum256([]byte(imagePath+":"+version))),
 		}, nil
 	}
 }
 
-func (registry *fakeRegistry) ImageVersionExt(imagePath string, _ *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
+func (registry *fakeRegistry) ImageVersionExt(imagePath string, _ *dockerconfig.DockerConfig) (ImageVersion, error) {
 	return registry.ImageVersion(imagePath)
 }
 
@@ -247,9 +247,9 @@ func createTestPullSecret(_ *testing.T, clt client.Client, dkState *status.Dynak
 // Adding *testing.T parameter to prevent usage in production code
 func buildTestDockerAuth(_ *testing.T) ([]byte, error) {
 	dockerConf := struct {
-		Auths map[string]dtversion.DockerAuth `json:"auths"`
+		Auths map[string]dockerconfig.DockerAuth `json:"auths"`
 	}{
-		Auths: map[string]dtversion.DockerAuth{
+		Auths: map[string]dockerconfig.DockerAuth{
 			testRegistry: {
 				Username: testName,
 				Password: testPaaSToken,

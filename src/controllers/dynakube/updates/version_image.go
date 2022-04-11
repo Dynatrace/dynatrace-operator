@@ -1,22 +1,19 @@
-package dtversion
+package updates
 
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	"github.com/containers/image/v5/docker/reference"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/containers/image/v5/image"
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
 )
 
-// VersionLabel is the name of the label used on ActiveGate-provided images.
 const (
+	// VersionLabel is the name of the label used on ActiveGate-provided images.
 	VersionLabel = "com.dynatrace.build-version"
-	TmpCAPath    = "/tmp/dynatrace-operator"
-	TmpCAName    = "dynatraceCustomCA.crt"
 )
 
 // ImageVersion includes information for a given image. Version can be empty if the corresponding label isn't set.
@@ -26,12 +23,12 @@ type ImageVersion struct {
 }
 
 // ImageVersionProvider can fetch image information from img
-type ImageVersionProvider func(img string, dockerConfig *DockerConfig) (ImageVersion, error)
+type ImageVersionProvider func(img string, dockerConfig *dockerconfig.DockerConfig) (ImageVersion, error)
 
 var _ ImageVersionProvider = GetImageVersion
 
 // GetImageVersion fetches image information for imageName
-func GetImageVersion(imageName string, dockerConfig *DockerConfig) (ImageVersion, error) {
+func GetImageVersion(imageName string, dockerConfig *dockerconfig.DockerConfig) (ImageVersion, error) {
 	transportImageName := fmt.Sprintf("docker://%s", imageName)
 
 	imageReference, err := alltransports.ParseImageName(transportImageName)
@@ -39,7 +36,7 @@ func GetImageVersion(imageName string, dockerConfig *DockerConfig) (ImageVersion
 		return ImageVersion{}, err
 	}
 
-	systemContext := MakeSystemContext(imageReference.DockerReference(), dockerConfig)
+	systemContext := dockerconfig.MakeSystemContext(imageReference.DockerReference(), dockerConfig)
 
 	imageSource, err := imageReference.NewImageSource(context.TODO(), systemContext)
 	if err != nil {
@@ -75,32 +72,6 @@ func GetImageVersion(imageName string, dockerConfig *DockerConfig) (ImageVersion
 		Hash:    digest.Encoded(),
 		Version: inspectedImage.Labels[VersionLabel], // empty if unset
 	}, nil
-}
-
-// MakeSystemContext returns a SystemConfig for the given image and Dockerconfig.
-func MakeSystemContext(dockerReference reference.Named, dockerConfig *DockerConfig) *types.SystemContext {
-	if dockerReference == nil || dockerConfig == nil {
-		return &types.SystemContext{}
-	}
-
-	var ctx types.SystemContext
-
-	if dockerConfig.SkipCertCheck {
-		ctx.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
-	}
-	if dockerConfig.UseTrustedCerts {
-		ctx.DockerCertPath = TmpCAPath
-	}
-
-	registry := strings.Split(dockerReference.Name(), "/")[0]
-
-	for _, r := range []string{registry, "https://" + registry} {
-		if creds, ok := dockerConfig.Auths[r]; ok {
-			ctx.DockerAuthConfig = &types.DockerAuthConfig{Username: creds.Username, Password: creds.Password}
-		}
-	}
-
-	return &ctx
 }
 
 func closeImageSource(source types.ImageSource) {

@@ -14,7 +14,6 @@ import (
 	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
@@ -207,7 +206,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		}
 	}
 
-	upd, err = updates.ReconcileVersions(ctx, dkState, controller.client, dtversion.GetImageVersion)
+	upd, err = updates.ReconcileVersions(ctx, dkState, controller.client, updates.GetImageVersion)
 	dkState.Update(upd, "Found updates")
 	dkState.Error(err)
 

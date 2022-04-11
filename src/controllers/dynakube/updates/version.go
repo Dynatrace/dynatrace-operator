@@ -7,25 +7,28 @@ import (
 	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ProbeThreshold is the minimum time to wait between version upgrades.
-const ProbeThreshold = 15 * time.Minute
+const (
+	// ProbeThreshold is the minimum time to wait between version upgrades.
+	ProbeThreshold = 15 * time.Minute
+
+	TmpCAPath = "/tmp/dynatrace-operator"
+	TmpCAName = "dynatraceCustomCA.crt"
+)
 
 // VersionProviderCallback fetches the version for a given image.
-type VersionProviderCallback func(string, *dtversion.DockerConfig) (dtversion.ImageVersion, error)
+type VersionProviderCallback func(string, *dockerconfig.DockerConfig) (ImageVersion, error)
 
 // ReconcileImageVersions updates the version and hash for the images used by the rec.Instance DynaKube instance.
 func ReconcileVersions(
 	ctx context.Context,
 	dkState *status.DynakubeState,
-	cl client.Client,
+	kubeClient client.Client, // TODO: Add apiReader
 	verProvider VersionProviderCallback,
 ) (bool, error) {
 	upd := false
@@ -51,45 +54,43 @@ func ReconcileVersions(
 		return upd, nil
 	}
 
-	var ps corev1.Secret
-	if err := cl.Get(ctx, client.ObjectKey{Name: dk.PullSecret(), Namespace: dk.Namespace}, &ps); err != nil {
-		return upd, errors.WithMessage(err, "failed to get image pull secret")
-	}
-
-	auths, err := dtversion.ParseDockerAuthsFromSecret(&ps)
+	caCertPath := path.Join(TmpCAPath, TmpCAName)
+	dockerConfig, err := dockerconfig.NewDockerConfig(ctx, kubeClient, *dkState.Instance)
 	if err != nil {
-		return upd, errors.WithMessage(err, "failed to get Dockerconfig for pull secret")
+		return upd, err
 	}
-
-	dockerCfg := dtversion.DockerConfig{Auths: auths, SkipCertCheck: dk.Spec.SkipCertCheck}
 	if dk.Spec.TrustedCAs != "" {
-		dockerCfg.UseTrustedCerts = saveCustomCAs(cl, *dk)
+		_ = os.MkdirAll(TmpCAPath, 0755)
+		dockerConfig.SaveCustomCAs(ctx, kubeClient, *dkState.Instance, caCertPath)
+		if err != nil {
+			return upd, err
+		}
 		defer func() {
-			_ = os.Remove(path.Join(dtversion.TmpCAPath, dtversion.TmpCAName))
+			_ = os.Remove(TmpCAPath)
 		}()
 	}
 	upd = true // updateImageVersion() always updates the status
 
 	if needsActiveGateUpdate {
-		if err := updateImageVersion(dkState, dk.ActiveGateImage(), &dk.Status.ActiveGate.VersionStatus, &dockerCfg, verProvider, true); err != nil {
+		if err := updateImageVersion(dkState, dk.ActiveGateImage(), &dk.Status.ActiveGate.VersionStatus, dockerConfig, verProvider, true); err != nil {
 			log.Error(err, "failed to update ActiveGate image version")
 		}
 	}
 
 	if needsEecUpdate {
-		if err := updateImageVersion(dkState, dk.EecImage(), &dk.Status.ExtensionController.VersionStatus, &dockerCfg, verProvider, true); err != nil {
+		if err := updateImageVersion(dkState, dk.EecImage(), &dk.Status.ExtensionController.VersionStatus, dockerConfig, verProvider, true); err != nil {
 			log.Error(err, "Failed to update Extension Controller image version")
 		}
 	}
 
 	if needsStatsdUpdate {
-		if err := updateImageVersion(dkState, dk.StatsdImage(), &dk.Status.Statsd.VersionStatus, &dockerCfg, verProvider, true); err != nil {
+		if err := updateImageVersion(dkState, dk.StatsdImage(), &dk.Status.Statsd.VersionStatus, dockerConfig, verProvider, true); err != nil {
 			log.Error(err, "Failed to update StatsD image version")
 		}
 	}
 
 	if needsOneAgentUpdate {
-		if err := updateImageVersion(dkState, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.VersionStatus, &dockerCfg, verProvider, false); err != nil {
+		if err := updateImageVersion(dkState, dk.ImmutableOneAgentImage(), &dk.Status.OneAgent.VersionStatus, dockerConfig, verProvider, false); err != nil {
 			log.Error(err, "failed to update OneAgent image version")
 		}
 	}
@@ -97,29 +98,11 @@ func ReconcileVersions(
 	return upd, nil
 }
 
-func saveCustomCAs(cl client.Client, dk dynatracev1beta1.DynaKube) bool {
-	certs := &corev1.ConfigMap{}
-	if err := cl.Get(context.TODO(), client.ObjectKey{Namespace: dk.Namespace, Name: dk.Spec.TrustedCAs}, certs); err != nil {
-		log.Error(err, "failed to load trusted CAs")
-		return false
-	}
-	if certs.Data[dtclient.CustomCertificatesConfigMapKey] == "" {
-		log.Info("failed to extract certificate configmap field: missing field certs")
-		return false
-	}
-	_ = os.MkdirAll(dtversion.TmpCAPath, 0755)
-	if err := os.WriteFile(path.Join(dtversion.TmpCAPath, dtversion.TmpCAName), []byte(certs.Data[dtclient.CustomCertificatesConfigMapKey]), 0666); err != nil {
-		log.Error(err, "failed to save custom certificates")
-		return false
-	}
-	return true
-}
-
 func updateImageVersion(
 	dkState *status.DynakubeState,
 	img string,
 	target *dynatracev1beta1.VersionStatus,
-	dockerCfg *dtversion.DockerConfig,
+	dockerCfg *dockerconfig.DockerConfig,
 	verProvider VersionProviderCallback,
 	allowDowngrades bool,
 ) error {
@@ -135,7 +118,7 @@ func updateImageVersion(
 	}
 
 	if !allowDowngrades && target.Version != "" {
-		if upgrade, err := dtversion.NeedsUpgradeRaw(target.Version, ver.Version); err != nil {
+		if upgrade, err := NeedsUpgradeRaw(target.Version, ver.Version); err != nil {
 			return err
 		} else if !upgrade {
 			return nil

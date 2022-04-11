@@ -1,4 +1,4 @@
-package dtversion
+package updates
 
 import (
 	"testing"
