@@ -101,7 +101,18 @@ func (runner *Runner) setHostTenant() error {
 
 func (runner *Runner) installOneAgent() error {
 	log.Info("downloading OneAgent")
-	return runner.installer.InstallAgent(BinDirMount)
+	err := runner.installer.InstallAgent(BinDirMount)
+	if err != nil {
+		return err
+	}
+	processModuleConfig, err := runner.dtclient.GetProcessModuleConfig(0)
+	if err != nil {
+		return err
+	}
+	if err := runner.installer.UpdateProcessModuleConfig(BinDirMount, processModuleConfig); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (runner *Runner) configureInstallation() error {
@@ -121,13 +132,6 @@ func (runner *Runner) configureInstallation() error {
 			if err := runner.propagateTLSCert(); err != nil {
 				return err
 			}
-		}
-		processModuleConfig, err := runner.dtclient.GetProcessModuleConfig(0)
-		if err != nil {
-			return err
-		}
-		if err := runner.installer.UpdateProcessModuleConfig(BinDirMount, processModuleConfig); err != nil {
-			return err
 		}
 	}
 	if runner.env.DataIngestInjected {
