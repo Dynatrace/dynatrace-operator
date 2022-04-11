@@ -103,4 +103,8 @@ type AppInjectionSpec struct {
 	// Optional: define resources requests and limits for the initContainer
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	InitResources corev1.ResourceRequirements `json:"initResources,omitempty"`
+
+	// Optional: the Dynatrace installer container image
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="CodeModulesImage",order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced","urn:alm:descriptor:com.tectonic.ui:text"}
+	CodeModulesImage string `json:"codeModulesImage,omitempty"`
 }
