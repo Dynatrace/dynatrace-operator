@@ -129,7 +129,7 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) proxyUrlFromUserSe
 func parseProxyUrl(proxy string) (host string, port string, username string, password string, err error) {
 	proxyUrl, err := url.Parse(proxy)
 	if err != nil {
-		return "", "", "", "", fmt.Errorf("could not parse proxy URL")
+		return "", "", "", "", errors.New("could not parse proxy URL")
 	}
 
 	passwd, _ := proxyUrl.User.Password()
