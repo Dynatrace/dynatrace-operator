@@ -32,7 +32,7 @@ metadata:
 spec:
   apiUrl: {{ required "ApiUrl needs to be set!" .Values.apiUrl }}
 
-  tokens: {{ .Values.name }}
+  tokens: {{ .Values.tokenSecret | default .Values.name }}
 
   {{- if .Values.skipCertCheck }}
   skipCertCheck: {{ .Values.skipCertCheck }}
