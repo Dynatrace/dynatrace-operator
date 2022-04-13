@@ -25,7 +25,6 @@ const (
 	serviceAccountPrefix   = "dynatrace-"
 	tenantSecretVolumeName = "ag-tenant-secret"
 
-	annotationVersion                     = dynatracev1beta1.InternalFlagPrefix + "version"
 	annotationCustomPropsHash             = dynatracev1beta1.InternalFlagPrefix + "custom-properties-hash"
 	annotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + capability.ActiveGateContainerName
 
@@ -111,7 +110,6 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: podLabels.BuildLabels(),
 					Annotations: map[string]string{
-						annotationVersion:         stsProperties.Status.ActiveGate.Version,
 						annotationCustomPropsHash: stsProperties.customPropertiesHash,
 					},
 				},

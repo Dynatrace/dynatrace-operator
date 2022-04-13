@@ -85,7 +85,6 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	t.Run(`template has annotations`, func(t *testing.T) {
 		sts, _ := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", testValue, "", "", "", nil, nil, nil))
 		assert.Equal(t, map[string]string{
-			annotationVersion:         instance.Status.ActiveGate.Version,
 			annotationCustomPropsHash: testValue,
 		}, sts.Spec.Template.Annotations)
 	})

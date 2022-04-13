@@ -15,7 +15,6 @@ import (
 const (
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
-	annotationVersion           = dynatracev1beta1.InternalFlagPrefix + "version"
 
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
 	// normal oneagent shutdown scenario with some extra time
@@ -136,8 +135,9 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 			AppCreatedBy: instance.Name,
 			AppComponent: kubeobjects.OneAgentComponentLabel,
 		},
-		AppVersion:       instance.Status.ActiveGate.Version,
+		AppVersion:       version.Version,
 		ComponentFeature: dsInfo.deploymentType,
+		ComponentVersion: instance.Status.OneAgent.Version,
 	}
 	labels := kubeobjects.MergeLabels(
 		podLabels.BuildLabels(),
@@ -145,7 +145,6 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	)
 	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
 	annotations := map[string]string{
-		annotationVersion:      instance.Status.OneAgent.Version,
 		annotationUnprivileged: annotationUnprivilegedValue,
 	}
 
