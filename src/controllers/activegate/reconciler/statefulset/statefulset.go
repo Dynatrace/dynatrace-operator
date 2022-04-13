@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -84,20 +85,31 @@ func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityPro
 }
 
 func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
+	podLabels := kubeobjects.PodLabels{
+		MatchLabels: kubeobjects.MatchLabels{
+			AppName:      version.AppName,
+			AppCreatedBy: stsProperties.Name,
+			AppComponent: kubeobjects.ActiveGateComponentLabel,
+		},
+		AppVersion:       version.Version,
+		ComponentFeature: stsProperties.feature,
+		ComponentVersion: stsProperties.Status.ActiveGate.Version,
+	}
+
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        stsProperties.Name + "-" + stsProperties.feature,
 			Namespace:   stsProperties.Namespace,
-			Labels:      stsProperties.buildLabels(),
+			Labels:      podLabels.BuildLabels(),
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Replicas:            stsProperties.Replicas,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector:            &metav1.LabelSelector{MatchLabels: stsProperties.buildMatchLabels()},
+			Selector:            &metav1.LabelSelector{MatchLabels: podLabels.BuildMatchLabels()},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: stsProperties.buildLabels(),
+					Labels: podLabels.BuildLabels(),
 					Annotations: map[string]string{
 						annotationVersion:         stsProperties.Status.ActiveGate.Version,
 						annotationCustomPropsHash: stsProperties.customPropertiesHash,

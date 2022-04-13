@@ -8,6 +8,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	agcapability "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -48,14 +49,19 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakub
 	if err != nil {
 		return false, err
 	}
-	labels := kubeobjects.CommonLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
+
+	matchLabels := kubeobjects.MatchLabels{
+		AppName:      version.AppName,
+		AppCreatedBy: dynakube.Name,
+		AppComponent: kubeobjects.ActiveGateComponentLabel,
+	}
 	return kubeobjects.CreateOrUpdateSecretIfNotExists(
 		agProxySecretGenerator.client,
 		agProxySecretGenerator.apiReader,
 		BuildProxySecretName(),
 		agProxySecretGenerator.namespace,
 		data,
-		labels,
+		matchLabels.BuildMatchLabels(),
 		corev1.SecretTypeOpaque,
 		agProxySecretGenerator.logger,
 	)

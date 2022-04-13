@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/Dynatrace/dynatrace-operator/src/standalone"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -49,8 +50,14 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1
 	if err != nil {
 		return false, err
 	}
-	labels := kubeobjects.CommonLabels(dk.Name, kubeobjects.WebhookComponentLabel)
-	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs, data, labels, corev1.SecretTypeOpaque, log)
+
+	matchLabels := kubeobjects.MatchLabels{
+		AppName:      version.AppName,
+		AppCreatedBy: dk.Name,
+		AppComponent: kubeobjects.WebhookComponentLabel,
+	}
+	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName,
+		targetNs, data, matchLabels.BuildMatchLabels(), corev1.SecretTypeOpaque, log)
 }
 
 // GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
@@ -68,9 +75,14 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 	if err != nil {
 		return false, err
 	}
-	labels := kubeobjects.CommonLabels(dk.Name, kubeobjects.WebhookComponentLabel)
+	matchLabels := kubeobjects.MatchLabels{
+		AppName:      version.AppName,
+		AppCreatedBy: dk.Name,
+		AppComponent: kubeobjects.WebhookComponentLabel,
+	}
 	for _, targetNs := range nsList {
-		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs.Name, data, labels, corev1.SecretTypeOpaque, log); err != nil {
+		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName,
+			targetNs.Name, data, matchLabels.BuildMatchLabels(), corev1.SecretTypeOpaque, log); err != nil {
 			return false, err
 		} else if upd {
 			anyUpdate = true

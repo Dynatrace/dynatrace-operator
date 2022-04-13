@@ -26,7 +26,8 @@ const (
 	testValue                = "test-value"
 	testUID                  = "test-uid"
 	routingStatefulSetSuffix = "-router"
-	testFeature              = "router"
+	testComponentFeature     = "router"
+	testComponentVersion     = "test-component-version"
 	testDNSPolicy            = corev1.DNSPolicy("dns")
 )
 
@@ -43,31 +44,34 @@ func TestNewStatefulSetBuilder(t *testing.T) {
 func TestStatefulSetBuilder_Build(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-	stsProps := statefulSetProperties{
-		DynaKube:             instance,
-		CapabilityProperties: capabilityProperties,
-		feature:              testFeature,
+	sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", "", testComponentFeature, "", "", nil, nil, nil))
+
+	expectedLabels := map[string]string{
+		kubeobjects.AppNameLabel:          version.AppName,
+		kubeobjects.AppCreatedByLabel:     instance.Name,
+		kubeobjects.AppComponentLabel:     string(kubeobjects.ActiveGateComponentLabel),
+		kubeobjects.AppVersionLabel:       version.Version,
+		kubeobjects.ComponentFeatureLabel: testComponentFeature,
+		kubeobjects.ComponentVersionLabel: testComponentVersion,
 	}
-	sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", "", testFeature, "", "", nil, nil, nil))
+	expectedMatchLabels := map[string]string{
+		kubeobjects.AppNameLabel:      version.AppName,
+		kubeobjects.AppCreatedByLabel: instance.Name,
+		kubeobjects.AppComponentLabel: string(kubeobjects.ActiveGateComponentLabel),
+	}
 
 	assert.NoError(t, err)
 	assert.NotNil(t, sts)
 	assert.Equal(t, instance.Name+routingStatefulSetSuffix, sts.Name)
 	assert.Equal(t, instance.Namespace, sts.Namespace)
-	assert.Equal(t, map[string]string{
-		kubeobjects.AppComponentLabel: ActiveGateComponentName,
-		kubeobjects.AppCreatedByLabel: instance.Name,
-		kubeobjects.FeatureLabel:      testFeature,
-		kubeobjects.AppNameLabel:      version.AppName,
-		kubeobjects.AppVersionLabel:   version.Version,
-	}, sts.Labels)
+	assert.Equal(t, expectedLabels, sts.Labels)
 	assert.Equal(t, instance.Spec.ActiveGate.Replicas, sts.Spec.Replicas)
 	assert.Equal(t, appsv1.ParallelPodManagement, sts.Spec.PodManagementPolicy)
 	assert.Equal(t, metav1.LabelSelector{
-		MatchLabels: stsProps.buildMatchLabels(),
+		MatchLabels: expectedMatchLabels,
 	}, *sts.Spec.Selector)
 	assert.NotEqual(t, corev1.PodTemplateSpec{}, sts.Spec.Template)
-	assert.Equal(t, stsProps.buildLabels(), sts.Spec.Template.Labels)
+	assert.Equal(t, expectedLabels, sts.Spec.Template.Labels)
 	assert.Equal(t, sts.Labels, sts.Spec.Template.Labels)
 	assert.NotEqual(t, corev1.PodSpec{}, sts.Spec.Template.Spec)
 	assert.Contains(t, sts.Annotations, kubeobjects.AnnotationHash)
@@ -334,7 +338,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 			Value: testValue,
 		}
 		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
-			"", "", testFeature, "", "",
+			"", "", testComponentFeature, "", "",
 			nil, nil, nil,
 		)
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
@@ -391,7 +395,7 @@ func TestStatefulSet_Env(t *testing.T) {
 		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureDisableActivegateRawImage] = "true"
 
 		envVars := buildEnvs(NewStatefulSetProperties(instanceRawImg, capabilityProperties,
-			testUID, "", testFeature, "MSGrouter", "",
+			testUID, "", testComponentFeature, "MSGrouter", "",
 			nil, nil, nil,
 		))
 
@@ -408,7 +412,7 @@ func TestStatefulSet_Env(t *testing.T) {
 	})
 	t.Run(`without proxy`, func(t *testing.T) {
 		envVars := buildEnvs(NewStatefulSetProperties(instance, capabilityProperties,
-			testUID, "", testFeature, "MSGrouter", "",
+			testUID, "", testComponentFeature, "MSGrouter", "",
 			nil, nil, nil,
 		))
 
@@ -636,6 +640,13 @@ func buildTestInstance() *dynatracev1beta1.DynaKube {
 					Env: []corev1.EnvVar{
 						{Name: testKey, Value: testValue},
 					},
+				},
+			},
+		},
+		Status: dynatracev1beta1.DynaKubeStatus{
+			ActiveGate: dynatracev1beta1.ActiveGateStatus{
+				VersionStatus: dynatracev1beta1.VersionStatus{
+					Version: testComponentVersion,
 				},
 			},
 		},

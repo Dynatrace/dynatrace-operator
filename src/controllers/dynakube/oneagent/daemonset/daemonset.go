@@ -4,6 +4,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -128,8 +129,18 @@ func appendHostIdArgument(result *appsv1.DaemonSet, source string) {
 func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	instance := dsInfo.instance
 	podSpec := dsInfo.podSpec()
+
+	podLabels := kubeobjects.PodLabels{
+		MatchLabels: kubeobjects.MatchLabels{
+			AppName:      version.AppName,
+			AppCreatedBy: instance.Name,
+			AppComponent: kubeobjects.OneAgentComponentLabel,
+		},
+		AppVersion:       instance.Status.ActiveGate.Version,
+		ComponentFeature: dsInfo.deploymentType,
+	}
 	labels := kubeobjects.MergeLabels(
-		BuildLabels(instance, dsInfo.deploymentType),
+		podLabels.BuildLabels(),
 		dsInfo.hostInjectSpec.Labels,
 	)
 	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
@@ -147,7 +158,7 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: dsInfo.buildMatchLabels(),
+				MatchLabels: podLabels.BuildMatchLabels(),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{

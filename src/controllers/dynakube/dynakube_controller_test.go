@@ -14,6 +14,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -28,10 +29,11 @@ import (
 )
 
 const (
-	testUID       = "test-uid"
-	testPaasToken = "test-paas-token"
-	testAPIToken  = "test-api-token"
-	testVersion   = "1.217-12345-678910"
+	testUID              = "test-uid"
+	testPaasToken        = "test-paas-token"
+	testAPIToken         = "test-api-token"
+	testVersion          = "1.217-12345-678910"
+	testComponentVersion = "test-component-version"
 
 	testUUID     = "test-uuid"
 	testObjectID = "test-object-id"
@@ -376,7 +378,14 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 					dynatracev1beta1.KubeMonCapability.DisplayName,
 					dynatracev1beta1.RoutingCapability.DisplayName,
 				},
-			}}}
+			}},
+		Status: dynatracev1beta1.DynaKubeStatus{
+			ActiveGate: dynatracev1beta1.ActiveGateStatus{
+				VersionStatus: dynatracev1beta1.VersionStatus{
+					Version: testComponentVersion,
+				},
+			},
+		}}
 	r := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -511,13 +520,24 @@ func createFakeClientAndReconcile(mockClient dtclient.Client, instance *dynatrac
 
 // generateStatefulSetForTesting prepares an ActiveGate StatefulSet after a Reconciliation of the Dynakube with a specific feature enabled
 func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID string) *appsv1.StatefulSet {
-	labels := kubeobjects.CommonLabels(name, kubeobjects.ActiveGateComponentLabel)
-	labels[kubeobjects.FeatureLabel] = feature
+	expectedLabels := map[string]string{
+		kubeobjects.AppNameLabel:          version.AppName,
+		kubeobjects.AppComponentLabel:     string(kubeobjects.ActiveGateComponentLabel),
+		kubeobjects.AppCreatedByLabel:     name,
+		kubeobjects.AppVersionLabel:       version.Version,
+		kubeobjects.ComponentFeatureLabel: feature,
+		kubeobjects.ComponentVersionLabel: testComponentVersion,
+	}
+	expectedMatchLabels := map[string]string{
+		kubeobjects.AppNameLabel:      version.AppName,
+		kubeobjects.AppComponentLabel: string(kubeobjects.ActiveGateComponentLabel),
+		kubeobjects.AppCreatedByLabel: name,
+	}
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name + "-" + feature,
 			Namespace: namespace,
-			Labels:    labels,
+			Labels:    expectedLabels,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: "dynatrace.com/v1beta1",
@@ -528,11 +548,11 @@ func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID stri
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
+				MatchLabels: expectedMatchLabels,
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
+					Labels: expectedLabels,
 					Annotations: map[string]string{
 						"internal.operator.dynatrace.com/custom-properties-hash": "",
 						"internal.operator.dynatrace.com/version":                "",

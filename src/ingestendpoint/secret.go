@@ -11,6 +11,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -53,8 +54,14 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 	if err != nil {
 		return false, err
 	}
-	labels := kubeobjects.CommonLabels(dkName, kubeobjects.ActiveGateComponentLabel)
-	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs, data, labels, corev1.SecretTypeOpaque, log)
+
+	matchLabels := kubeobjects.MatchLabels{
+		AppName:      version.AppName,
+		AppCreatedBy: dkName,
+		AppComponent: kubeobjects.ActiveGateComponentLabel,
+	}
+	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName,
+		targetNs, data, matchLabels.BuildMatchLabels(), corev1.SecretTypeOpaque, log)
 }
 
 // GenerateForDynakube creates/updates the data-ingest-endpoint secret for EVERY namespace for the given dynakube.
@@ -66,7 +73,11 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 	if err != nil {
 		return false, err
 	}
-	labels := kubeobjects.CommonLabels(dk.Name, kubeobjects.ActiveGateComponentLabel)
+	matchLabels := kubeobjects.MatchLabels{
+		AppName:      version.AppName,
+		AppCreatedBy: dk.Name,
+		AppComponent: kubeobjects.ActiveGateComponentLabel,
+	}
 
 	anyUpdate := false
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
@@ -74,7 +85,8 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		return false, err
 	}
 	for _, targetNs := range nsList {
-		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs.Name, data, labels, corev1.SecretTypeOpaque, log); err != nil {
+		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName,
+			targetNs.Name, data, matchLabels.BuildMatchLabels(), corev1.SecretTypeOpaque, log); err != nil {
 			return upd, err
 		} else if upd {
 			anyUpdate = true
