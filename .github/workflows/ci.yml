@@ -61,7 +61,7 @@ jobs:
         id: depdownload
         run: |
           sudo apt-get update
-          sudo apt-get install -y libdevmapper-dev libbtrfs-dev
+          sudo apt-get install -y libdevmapper-dev libbtrfs-dev libgpgme-dev
       - name: Run Unit tests
         id: unittest
         run: |
@@ -78,7 +78,7 @@ jobs:
         id: depdownload
         run: |
           sudo apt-get update
-          sudo apt-get install -y libdevmapper-dev libbtrfs-dev
+          sudo apt-get install -y libdevmapper-dev libbtrfs-dev libgpgme-dev
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
@@ -132,7 +132,7 @@ jobs:
             "-ldflags=-X 'github.com/Dynatrace/dynatrace-operator/src/version.Version=${VERSION}'"
             "-X 'github.com/Dynatrace/dynatrace-operator/src/version.Commit=${GITHUB_SHA}'"
             "-X 'github.com/Dynatrace/dynatrace-operator/src/version.BuildDate=${build_date}'"
-            "-linkmode external -extldflags '-static' -s -w"
+            "-s -w"
           )
 
           # Set output parameters.

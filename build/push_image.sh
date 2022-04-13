@@ -12,7 +12,7 @@ go_build_args=(
   "-ldflags=-X 'github.com/Dynatrace/dynatrace-operator/src/version.Version=${TAG}'"
   "-X 'github.com/Dynatrace/dynatrace-operator/src/version.Commit=${commit}'"
   "-X 'github.com/Dynatrace/dynatrace-operator/src/version.BuildDate=${build_date}'"
-  "-linkmode external -extldflags '-static' -s -w"
+  "-s -w"
 )
 base_image="dynatrace-operator"
 out_image="quay.io/dynatrace/dynatrace-operator:${TAG}"
