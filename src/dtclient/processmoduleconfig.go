@@ -21,31 +21,62 @@ type ProcessModuleProperty struct {
 	Value   string `json:"value"`
 }
 
-func (pmc *ProcessModuleConfig) AddHostGroup(hostGroup string) *ProcessModuleConfig {
+func (pmc *ProcessModuleConfig) Add(property ProcessModuleProperty) *ProcessModuleConfig {
 	if pmc == nil {
-		pmc = &ProcessModuleConfig{}
+		return &ProcessModuleConfig{}
 	}
-	newProps := []ProcessModuleProperty{}
-	hasHostGroup := false
+
+	var newProps []ProcessModuleProperty
+	hasPropertyGroup := false
 	for _, prop := range pmc.Properties {
-		if prop.Key != "hostGroup" {
+		if prop.Key != property.Key {
 			newProps = append(newProps, prop)
 		} else {
-			hasHostGroup = true
-			if hostGroup == "" {
+			hasPropertyGroup = true
+			if property.Value == "" {
 				continue
-			} else if hostGroup == prop.Value {
+			} else if property.Value == prop.Value {
 				newProps = append(newProps, prop)
 			} else {
-				newProps = append(pmc.Properties, ProcessModuleProperty{Section: "general", Key: "hostGroup", Value: hostGroup})
+				newProps = append(pmc.Properties, prop)
 			}
 		}
 	}
-	if !hasHostGroup && hostGroup != "" {
-		newProps = append(pmc.Properties, ProcessModuleProperty{Section: "general", Key: "hostGroup", Value: hostGroup})
+	if !hasPropertyGroup && property.Value != "" {
+		newProps = append(pmc.Properties, property)
 	}
 	pmc.Properties = newProps
 	return pmc
+}
+
+func (pmc *ProcessModuleConfig) AddConnectionInfo(connectionInfo ConnectionInfo) *ProcessModuleConfig {
+	tenant := ProcessModuleProperty{
+		Section: "general",
+		Key:     "tenant",
+		Value:   connectionInfo.TenantUUID,
+	}
+	pmc.Add(tenant)
+
+	token := ProcessModuleProperty{
+		Section: "general",
+		Key:     "tenantToken",
+		Value:   connectionInfo.TenantToken,
+	}
+	pmc.Add(token)
+
+	endpoints := ProcessModuleProperty{
+		Section: "general",
+		Key:     "serverAddress",
+		Value:   "{" + connectionInfo.FormattedCommunicationEndpoints + "}",
+	}
+	pmc.Add(endpoints)
+
+	return pmc
+}
+
+func (pmc *ProcessModuleConfig) AddHostGroup(hostGroup string) *ProcessModuleConfig {
+	property := ProcessModuleProperty{Section: "general", Key: "hostGroup", Value: hostGroup}
+	return pmc.Add(property)
 }
 
 func (pmc ProcessModuleConfig) ToMap() processmoduleconfig.ConfMap {

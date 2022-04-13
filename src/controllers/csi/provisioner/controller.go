@@ -95,67 +95,48 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
 
-	// creates a dt client and checks tokens exist for the given dynakube
+	// creates a dt client and checks tokens exist for the given dynakubeMetadata
 	dtc, err := buildDtc(provisioner, ctx, dk)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	dynakube, err := provisioner.db.GetDynakube(dk.Name)
+	dynakubeMetadata, oldDynakubeMetadata, reconcileResult, err := provisioner.handleMetadata(err, dk)
 	if err != nil {
-		return reconcile.Result{}, errors.WithStack(err)
+		return reconcileResult, err
 	}
 
-	// In case of a new dynakube
-	var oldDynakube metadata.Dynakube
-	if dynakube == nil {
-		dynakube = &metadata.Dynakube{}
-	} else {
-		oldDynakube = *dynakube
-	}
-	log.Info("checking dynakube", "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
+	log.Info("checking dynakube", "tenantUUID", dynakubeMetadata.TenantUUID, "version", dynakubeMetadata.LatestVersion)
 
-	dynakube.Name = dk.Name
-	dynakube.TenantUUID = dk.ConnectionInfo().TenantUUID
-
-	// Create/update the dynakube entry while `LatestVersion` is not necessarily set
+	// Create/update the dynakubeMetadata entry while `LatestVersion` is not necessarily set
 	// so the host oneagent-storages can be mounted before the standalone agent binaries are ready to be mounted
-	err = provisioner.createOrUpdateDynakube(oldDynakube, dynakube)
+	err = provisioner.createOrUpdateDynakubeMetadata(oldDynakubeMetadata, dynakubeMetadata)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	oldDynakube = *dynakube
+	oldDynakubeMetadata = *dynakubeMetadata
 
-	if err = provisioner.createCSIDirectories(provisioner.path.EnvDir(dynakube.TenantUUID)); err != nil {
-		log.Error(err, "error when creating csi directories", "path", provisioner.path.EnvDir(dynakube.TenantUUID))
+	if err = provisioner.createCSIDirectories(provisioner.path.EnvDir(dynakubeMetadata.TenantUUID)); err != nil {
+		log.Error(err, "error when creating csi directories", "path", provisioner.path.EnvDir(dynakubeMetadata.TenantUUID))
 		return reconcile.Result{}, errors.WithStack(err)
 	}
-	log.Info("csi directories exist", "path", provisioner.path.EnvDir(dynakube.TenantUUID))
+	log.Info("csi directories exist", "path", provisioner.path.EnvDir(dynakubeMetadata.TenantUUID))
 
-	latestProcessModuleConfig, storedHash, err := provisioner.getProcessModuleConfig(dtc, dynakube.TenantUUID)
-	if err != nil {
-		log.Error(err, "error when getting the latest ruxitagentproc.conf")
-		return reconcile.Result{}, err
-	}
-	latestProcessModuleConfig = latestProcessModuleConfig.AddHostGroup(dk.HostGroup())
-	latestProcessModuleConfigCache := newProcessModuleConfigCache(latestProcessModuleConfig)
-
-	agentUpdater := newAgentUpdater(dtc, provisioner.path, provisioner.fs, provisioner.recorder, dk)
-	if updatedVersion, err := agentUpdater.updateAgent(dynakube.LatestVersion, dynakube.TenantUUID, storedHash, latestProcessModuleConfigCache); err != nil {
-		log.Info("error when updating agent", "error", err.Error())
-		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
-		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
-	} else if updatedVersion != "" {
-		dynakube.LatestVersion = updatedVersion
+	latestProcessModuleConfigCache, requeue, err := provisioner.updateProcessModuleConfigCache(dtc, dynakubeMetadata, dk)
+	if err != nil || requeue {
+		return reconcile.Result{
+			Requeue:      requeue,
+			RequeueAfter: defaultRequeueDuration,
+		}, err
 	}
 
 	// Set/Update the `LatestVersion` field in the database entry
-	err = provisioner.createOrUpdateDynakube(oldDynakube, dynakube)
+	err = provisioner.createOrUpdateDynakubeMetadata(oldDynakubeMetadata, dynakubeMetadata)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	err = provisioner.writeProcessModuleConfigCache(dynakube.TenantUUID, latestProcessModuleConfigCache)
+	err = provisioner.writeProcessModuleConfigCache(dynakubeMetadata.TenantUUID, latestProcessModuleConfigCache)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -163,7 +144,59 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 }
 
-func (provisioner *OneAgentProvisioner) createOrUpdateDynakube(oldDynakube metadata.Dynakube, dynakube *metadata.Dynakube) error {
+func (provisioner *OneAgentProvisioner) updateProcessModuleConfigCache(dtc dtclient.Client, dynakubeMetadata *metadata.Dynakube, dk *dynatracev1beta1.DynaKube) (
+	latestProcessModuleConfigCache *processModuleConfigCache,
+	requeue bool,
+	err error,
+) {
+	latestProcessModuleConfig, storedHash, err := provisioner.getProcessModuleConfig(dtc, dynakubeMetadata.TenantUUID)
+	if err != nil {
+		log.Error(err, "error when getting the latest ruxitagentproc.conf")
+		return nil, false, err
+	}
+	latestProcessModuleConfig = latestProcessModuleConfig.AddHostGroup(dk.HostGroup())
+
+	connectionInfo, err := dtc.GetConnectionInfo()
+	if err != nil {
+		log.Error(err, "error when getting OneAgent connectionInfo")
+		return nil, false, err
+	}
+	latestProcessModuleConfig = latestProcessModuleConfig.AddConnectionInfo(connectionInfo)
+
+	latestProcessModuleConfigCache = newProcessModuleConfigCache(latestProcessModuleConfig)
+
+	agentUpdater := newAgentUpdater(dtc, provisioner.path, provisioner.fs, provisioner.recorder, dk)
+	if updatedVersion, err := agentUpdater.updateAgent(dynakubeMetadata.LatestVersion, dynakubeMetadata.TenantUUID, storedHash, latestProcessModuleConfigCache); err != nil {
+		log.Info("error when updating agent", "error", err.Error())
+		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
+		return nil, true, nil
+	} else if updatedVersion != "" {
+		dynakubeMetadata.LatestVersion = updatedVersion
+	}
+	return latestProcessModuleConfigCache, false, nil
+}
+
+func (provisioner *OneAgentProvisioner) handleMetadata(err error, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, reconcile.Result, error) {
+	dynakubeMetadata, err := provisioner.db.GetDynakube(dk.Name)
+	if err != nil {
+		return nil, metadata.Dynakube{}, reconcile.Result{}, errors.WithStack(err)
+	}
+
+	// In case of a new dynakubeMetadata
+	var oldDynakubeMetadata metadata.Dynakube
+	if dynakubeMetadata == nil {
+		dynakubeMetadata = &metadata.Dynakube{}
+	} else {
+		oldDynakubeMetadata = *dynakubeMetadata
+	}
+
+	dynakubeMetadata.Name = dk.Name
+	dynakubeMetadata.TenantUUID = dk.ConnectionInfo().TenantUUID
+
+	return dynakubeMetadata, oldDynakubeMetadata, reconcile.Result{}, nil
+}
+
+func (provisioner *OneAgentProvisioner) createOrUpdateDynakubeMetadata(oldDynakube metadata.Dynakube, dynakube *metadata.Dynakube) error {
 	if oldDynakube != *dynakube {
 		log.Info("dynakube has changed",
 			"name", dynakube.Name, "tenantUUID", dynakube.TenantUUID, "version", dynakube.LatestVersion)
