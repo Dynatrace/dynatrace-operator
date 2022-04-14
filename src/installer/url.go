@@ -2,16 +2,12 @@ package installer
 
 import (
 	"fmt"
-	"io"
-	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/klauspost/compress/zip"
 	"github.com/spf13/afero"
 )
 
-func (installer *OneAgentInstaller) installAgentFromTenant(targetDir string) error {
+func (installer *OneAgentInstaller) installAgentFromUrl(targetDir string) error {
 	fs := installer.fs
 	tmpFile, err := afero.TempFile(fs, "", "download")
 	if err != nil {
@@ -45,15 +41,10 @@ func (installer *OneAgentInstaller) installAgentFromTenant(targetDir string) err
 
 	log.Info("saved OneAgent package", "dest", tmpFile.Name(), "size", fileSize)
 	log.Info("unzipping OneAgent package")
-	if err := installer.unzip(tmpFile, targetDir); err != nil {
+	if err := installer.extractZip(tmpFile, targetDir); err != nil {
 		return fmt.Errorf("failed to unzip file: %w", err)
 	}
 	log.Info("unzipped OneAgent package")
-
-	if err = installer.createSymlinkIfNotExists(targetDir); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -99,70 +90,4 @@ func (installer *OneAgentInstaller) downloadOneAgentWithVersion(tmpFile afero.Fi
 func (installer *OneAgentInstaller) downloadOneAgentViaInstallerUrl(tmpFile afero.File) error {
 	log.Info("downloading OneAgent package using provided url, all other properties are ignored", "url", installer.props.Url)
 	return installer.dtc.GetAgentViaInstallerUrl(installer.props.Url, tmpFile)
-}
-
-func (installer *OneAgentInstaller) unzip(file afero.File, targetDir string) error {
-	fs := installer.fs
-
-	if file == nil {
-		return fmt.Errorf("file is nil")
-	}
-
-	fileInfo, err := file.Stat()
-	if err != nil {
-		return fmt.Errorf("unable to determine file info: %w", err)
-	}
-
-	reader, err := zip.NewReader(file, fileInfo.Size())
-	if err != nil {
-		return fmt.Errorf("failed to open ZIP file: %w", err)
-	}
-
-	_ = fs.MkdirAll(targetDir, 0755)
-
-	for _, file := range reader.File {
-		err := func() error {
-			path := filepath.Join(targetDir, file.Name)
-
-			// Check for ZipSlip: https://snyk.io/research/zip-slip-vulnerability
-			if !strings.HasPrefix(path, filepath.Clean(targetDir)+string(os.PathSeparator)) {
-				return fmt.Errorf("illegal file path: %s", path)
-			}
-
-			mode := file.Mode()
-
-			// Mark all files inside ./agent/conf as group-writable
-			if file.Name != agentConfPath && strings.HasPrefix(file.Name, agentConfPath) {
-				mode |= 020
-			}
-
-			if file.FileInfo().IsDir() {
-				return fs.MkdirAll(path, mode)
-			}
-
-			if err := fs.MkdirAll(filepath.Dir(path), mode); err != nil {
-				return err
-			}
-
-			dstFile, err := fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
-			if err != nil {
-				return err
-			}
-			defer func() { _ = dstFile.Close() }()
-
-			srcFile, err := file.Open()
-			if err != nil {
-				return err
-			}
-			defer func() { _ = srcFile.Close() }()
-
-			_, err = io.Copy(dstFile, srcFile)
-			return err
-		}()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

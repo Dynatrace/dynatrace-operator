@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
@@ -55,68 +56,89 @@ func newAgentUpdater(
 	}
 }
 
-func (updater *agentUpdater) updateAgent(ctx context.Context, installedVersion, tenantUUID string, previousHash string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
+func (updater *agentUpdater) updateAgent(ctx context.Context, latestVersion, tenantUUID string, previousHash string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
 	dk := updater.dk
 	targetVersion := updater.getOneAgentVersionFromInstance()
 	targetDir := updater.path.AgentBinaryDirForVersion(tenantUUID, targetVersion)
 
+	var updatedVersion string
 	if _, err := updater.fs.Stat(targetDir); os.IsNotExist(err) {
 		log.Info("updating agent",
 			"target version", targetVersion,
-			"installed version", installedVersion,
+			"installed version", latestVersion,
 			"target directory", targetDir)
-
-		if dk.CodeModulesImage() != "" { // TODO: Make this nicer
-			dockerConfig, err := dockerconfig.NewDockerConfig(ctx, updater.apiReader, *dk)
+		_ = updater.fs.MkdirAll(targetDir, 0755)
+		if dk.CodeModulesImage() != "" {
+			cleanCerts, err := updater.setImageInfo(ctx, targetDir)
+			defer cleanCerts()
 			if err != nil {
 				return "", err
 			}
-			if dk.Spec.TrustedCAs != "" {
-				caCertPath := filepath.Join(targetDir, "ca.crt")
-				err := dockerConfig.SaveCustomCAs(ctx, updater.apiReader, *dk, caCertPath)
-				defer func() { updater.fs.Remove(caCertPath) }()
-				if err != nil {
-					return "", err
-				}
-			}
-			updater.installer.SetImagePullInfo(&installer.ImagePullInfo{
-				Image:        dk.CodeModulesImage(),
-				DockerConfig: *dockerConfig,
-			})
+		} else {
+			updater.installer.SetVersion(targetVersion)
 		}
-		updater.installer.SetVersion(targetVersion)
+
 		if err := updater.installer.InstallAgent(targetDir); err != nil {
-			updater.recorder.Eventf(dk,
-				corev1.EventTypeWarning,
-				failedInstallAgentVersionEvent,
-				"Failed to install agent version: %s to tenant: %s, err: %s", targetVersion, tenantUUID, err)
+			updater.sendFailedInstallAgentVersionEvent(targetVersion, tenantUUID)
 			return "", err
 		}
-		log.Info("updating ruxitagentproc.conf on new version")
-		if err := updater.installer.UpdateProcessModuleConfig(targetDir, latestProcessModuleConfigCache.ProcessModuleConfig); err != nil {
-			return "", err
-		}
-		updater.recorder.Eventf(dk,
-			corev1.EventTypeNormal,
-			installAgentVersionEvent,
-			"Installed agent version: %s to tenant: %s", targetVersion, tenantUUID)
-		return targetVersion, nil
+		updater.sendInstalledAgentVersionEvent(targetVersion, tenantUUID)
+		updatedVersion = targetVersion
 	}
-	if latestProcessModuleConfigCache != nil && previousHash != latestProcessModuleConfigCache.Hash {
-		log.Info("updating ruxitagentproc.conf on latest installed version")
-		if err := updater.installer.UpdateProcessModuleConfig(targetDir, latestProcessModuleConfigCache.ProcessModuleConfig); err != nil {
-			return "", err
-		}
+	log.Info("updating ruxitagentproc.conf on latest installed version")
+	if err := updater.installer.UpdateProcessModuleConfig(targetDir, latestProcessModuleConfigCache.ProcessModuleConfig); err != nil {
+		return "", err
 	}
 
-	return "", nil
+	return updatedVersion, nil
+}
+
+func (updater *agentUpdater) setImageInfo(ctx context.Context, targetDir string) (func(), error) {
+	var cleanCerts func()
+	dk := updater.dk
+	dockerConfig, err := dockerconfig.NewDockerConfig(ctx, updater.apiReader, *dk)
+	if err != nil {
+		return cleanCerts, err
+	}
+	if dk.Spec.TrustedCAs != "" {
+		caCertPath := filepath.Join(targetDir, "ca.crt")
+		err := dockerConfig.SaveCustomCAs(ctx, updater.apiReader, *dk, caCertPath)
+		cleanCerts = func() {
+			updater.fs.Remove(caCertPath)
+		}
+		if err != nil {
+			return cleanCerts, err
+		}
+	}
+	updater.installer.SetImageInfo(&installer.ImageInfo{
+		Image:        dk.CodeModulesImage(),
+		DockerConfig: *dockerConfig,
+	})
+	return cleanCerts, nil
 }
 
 func (updater *agentUpdater) getOneAgentVersionFromInstance() string {
 	dk := updater.dk
-	currentVersion := dk.Status.LatestAgentVersionUnixPaas
-	if dk.Version() != "" {
-		currentVersion = dk.Version()
+	if dk.CodeModulesImage() != "" {
+		image := dk.CodeModulesImage()
+		return strings.Split(image, ":")[1]
 	}
-	return currentVersion
+	if dk.Version() != "" {
+		return dk.Version()
+	}
+	return dk.Status.LatestAgentVersionUnixPaas
+}
+
+func (updater *agentUpdater) sendFailedInstallAgentVersionEvent(version, tenantUUID string) {
+	updater.recorder.Eventf(updater.dk,
+		corev1.EventTypeWarning,
+		failedInstallAgentVersionEvent,
+		"Failed to install agent version: %s to tenant: %s", version, tenantUUID)
+}
+
+func (updater *agentUpdater) sendInstalledAgentVersionEvent(version, tenantUUID string) {
+	updater.recorder.Eventf(updater.dk,
+		corev1.EventTypeNormal,
+		installAgentVersionEvent,
+		"Installed agent version: %s to tenant: %s", version, tenantUUID)
 }

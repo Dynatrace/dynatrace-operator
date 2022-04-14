@@ -151,33 +151,6 @@ func TestUpdateAgent(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "", currentVersion)
 	})
-	t.Run(`do nothing`, func(t *testing.T) {
-		dk := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
-				},
-			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				LatestAgentVersionUnixPaas: testVersion,
-			},
-		}
-		updater := createTestAgentUpdater(t, &dk)
-		previousHash := "1"
-		processModuleCache := createTestProcessModuleConfigCache(previousHash)
-		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
-		updater.fs.MkdirAll(targetDir, 0755)
-
-		currentVersion, err := updater.updateAgent(
-			ctx,
-			testVersion,
-			testTenantUUID,
-			previousHash,
-			&processModuleCache)
-
-		require.NoError(t, err)
-		assert.Equal(t, "", currentVersion)
-	})
 	t.Run(`failed install`, func(t *testing.T) {
 		dk := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{

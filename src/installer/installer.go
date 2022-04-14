@@ -29,11 +29,11 @@ type InstallerProperties struct {
 	Flavor       string
 	Version      string
 	Technologies []string
-	Url          string         // if this is set all others will be ignored
-	ImageInfo    *ImagePullInfo // if this is set all others will be ignored, overrules Url
+	Url          string     // if this is set all settings before it will be ignored
+	ImageInfo    *ImageInfo // if this is set all others will be ignored, overrules Url
 }
 
-type ImagePullInfo struct {
+type ImageInfo struct {
 	Image        string
 	DockerConfig dockerconfig.DockerConfig
 }
@@ -48,7 +48,7 @@ type Installer interface {
 	InstallAgent(targetDir string) error
 	UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error
 	SetVersion(version string)
-	SetImagePullInfo(imagePullInfo *ImagePullInfo)
+	SetImageInfo(imageInfo *ImageInfo)
 }
 
 var _ Installer = &OneAgentInstaller{}
@@ -74,24 +74,25 @@ func NewOneAgentInstaller(
 func (installer *OneAgentInstaller) InstallAgent(targetDir string) error {
 	log.Info("installing agent", "target dir", targetDir)
 	installer.props.fillEmptyWithDefaults()
+	var err error
 	if installer.props.ImageInfo != nil {
-		return installer.installAgentFromImage(targetDir)
+		err = installer.installAgentFromImage(targetDir)
+	} else {
+		err = installer.installAgentFromUrl(targetDir)
 	}
-	if err := installer.installAgentFromTenant(targetDir); err != nil {
+	if err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
-
 		return fmt.Errorf("failed to install agent: %w", err)
 	}
-
-	return nil
+	return installer.createSymlinkIfNotExists(targetDir)
 }
 
 func (installer *OneAgentInstaller) SetVersion(version string) {
 	installer.props.Version = version
 }
 
-func (installer *OneAgentInstaller) SetImagePullInfo(imagePullInfo *ImagePullInfo) {
-	installer.props.ImageInfo = imagePullInfo
+func (installer *OneAgentInstaller) SetImageInfo(imageInfo *ImageInfo) {
+	installer.props.ImageInfo = imageInfo
 }
 
 func (installer *OneAgentInstaller) createSymlinkIfNotExists(targetDir string) error {
