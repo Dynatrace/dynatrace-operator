@@ -25,6 +25,9 @@ metadata:
     {{- if or (and (.Values.hostMonitoring).enabled (.Values.hostMonitoring).disableReadOnly) (and (.Values.cloudNativeFullStack).enabled (.Values.cloudNativeFullStack).disableReadOnly) }}
     alpha.operator.dynatrace.com/feature-disable-oneagent-readonly-host-fs: "true"
     {{- end }}
+    {{- with .Values.additionalAnnotations }}
+{{- toYaml . | nindent 4 }}
+    {{- end }}
   name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
   labels:
