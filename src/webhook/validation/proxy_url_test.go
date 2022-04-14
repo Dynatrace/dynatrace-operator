@@ -13,10 +13,10 @@ const (
 	testProxySecret = "proxysecret"
 
 	// invalidPlainTextProxyUrl contains forbidden apostrophe character
-	invalidPlainTextProxyUrl = "http://test:test'~!@#$%^*()_-|}{[]\":;?><./pass@proxy-service.dynatrace:3128"
+	invalidPlainTextProxyUrl = "http://test:password'!\"#$()*-./:;<>?@[]^_{|}~@proxy-service.dynatrace:3128"
 
-	// validEncodedProxyUrl contains no forbidden characters "http://test:test~!@#$%^*()_-|}{[]\":;?><./pass@proxy-service.dynatrace:3128"
-	validEncodedProxyUrl = "http://test:test~!%40%23%5E*()_-%7C%7D%7B%5B%5D%22%3A%3B%3F%3E%3C.%2Fpass@proxy-service.dynatrace:3128"
+	// validEncodedProxyUrl contains no forbidden characters "http://test:password!"#$()*-./:;<>?@[]^_{|}~@proxy-service.dynatrace:3128"
+	validEncodedProxyUrl = "http://test:password!%22%23%24()*-.%2F%3A%3B%3C%3E%3F%40%5B%5D%5E_%7B%7C%7D~@proxy-service.dynatrace:3128"
 )
 
 func TestInvalidActiveGateProxy(t *testing.T) {
@@ -136,29 +136,33 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 	})
 
 	t.Run(`invalid proxy secret url - entrypoint.sh`, func(t *testing.T) {
-		assert.Equal(t, true, isStringValidForAG("password"))
-		assert.Equal(t, true, isStringValidForAG("test~!@#^*()_-|}{[]\":;?><./pass"))
+		assert.True(t, isStringValidForAG("password"))
+		assert.True(t, isStringValidForAG("test~!@#^*()_-|}{[]\":;?><./pass"))
 
 		// -[] have to be escaped in the regex
-		assert.Equal(t, true, isStringValidForAG("pass-word"))
-		assert.Equal(t, true, isStringValidForAG("pass[word"))
-		assert.Equal(t, true, isStringValidForAG("pass]word"))
-		assert.Equal(t, true, isStringValidForAG("pass$word"))
+		assert.True(t, isStringValidForAG("pass-word"))
+		assert.True(t, isStringValidForAG("pass[word"))
+		assert.True(t, isStringValidForAG("pass]word"))
+		assert.True(t, isStringValidForAG("pass$word"))
 
 		// apostrophe
-		assert.Equal(t, false, isStringValidForAG("pass'word"))
+		assert.False(t, isStringValidForAG("pass'word"))
 		// backtick
-		assert.Equal(t, false, isStringValidForAG("pass`word"))
+		assert.False(t, isStringValidForAG("pass`word"))
 		// comma
-		assert.Equal(t, false, isStringValidForAG("pass,word"))
+		assert.False(t, isStringValidForAG("pass,word"))
 		// ampersand
-		assert.Equal(t, false, isStringValidForAG("pass&word"))
+		assert.False(t, isStringValidForAG("pass&word"))
 		// equals sign
-		assert.Equal(t, false, isStringValidForAG("pass=word"))
-		// plus
-		assert.Equal(t, false, isStringValidForAG("pass+word"))
+		assert.False(t, isStringValidForAG("pass=word"))
+		// plus sign
+		assert.False(t, isStringValidForAG("pass+word"))
+		// percent sign
+		assert.False(t, isStringValidForAG("pass%word"))
+		// backslash
+		assert.False(t, isStringValidForAG("pass\\word"))
 
 		// UTF-8 single character - U+1F600 grinning face
-		assert.Equal(t, false, isStringValidForAG("\xF0\x9F\x98\x80"))
+		assert.False(t, isStringValidForAG("\xF0\x9F\x98\x80"))
 	})
 }

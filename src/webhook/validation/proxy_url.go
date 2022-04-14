@@ -15,14 +15,14 @@ import (
 
 const (
 	errorInvalidActiveGateProxyUrl = `The DynaKube's specification has an invalid Proxy URL value set. Make sure you correctly specify the URL in your custom resource.`
-	errorInvalidEvalCharacter      = `The DynaKube's specification has an invalid Proxy password value set. Make sure you don't use forbidden characters: apostrophe, backtick, comma, ampersand, equals sign, plus sign.`
+	errorInvalidEvalCharacter      = `The DynaKube's specification has an invalid Proxy password value set. Make sure you don't use forbidden characters: space, apostrophe, backtick, comma, ampersand, equals sign, plus sign, percent sign, backslash.`
 
 	errorMissingActiveGateProxySecret = `The Proxy secret indicated by the DynaKube specification doesn't exist.`
 
 	errorInvalidProxySecretFormat = `The Proxy secret indicated by the DynaKube specification has an invalid format. Make sure you correctly creates the secret.`
 
 	errorInvalidProxySecretUrl           = `The Proxy secret indicated by the DynaKube specification has an invalid URL value set. Make sure you correctly specify the URL in the secret.`
-	errorInvalidProxySecretEvalCharacter = `The Proxy secret indicated by the DynaKube specification has an invalid Proxy password value set. Make sure you don't use forbidden characters: apostrophe, backtick, comma, ampersand, equals sign, plus sign.`
+	errorInvalidProxySecretEvalCharacter = `The Proxy secret indicated by the DynaKube specification has an invalid Proxy password value set. Make sure you don't use forbidden characters: space, apostrophe, backtick, comma, ampersand, equals sign, plus sign, percent sign, backslash.`
 )
 
 func invalidActiveGateProxyUrl(dv *dynakubeValidator, dynakube *dynatracev1beta1.DynaKube) string {
@@ -70,10 +70,10 @@ func isStringValidForAG(str string) bool {
 	// `	a	b	c	d	e	f	g	h	i	j	k	l	m	n	o
 	// p	q	r	s	t	u	v	w	x	y	z	{	|	}	~
 
-	// '\'' '`'    exceptions due to entrypoint.sh:readSecret:eval
-	// ','         exceptions due to Gateway reader of config files
-	// '&' '=' '+' exceptions due to entrypoint.sh:saveProxyConfiguration
+	// '\'' '`'            exceptions due to entrypoint.sh:readSecret:eval
+	// ','                 exceptions due to Gateway reader of config files
+	// '&' '=' '+' '%' '\' exceptions due to entrypoint.sh:saveProxyConfiguration
 
-	regex := regexp.MustCompile(`^[!"#$%()*\-./0-9:;<>?@A-Z\[\\\]^_a-z{|}~]+$`)
+	regex := regexp.MustCompile(`^[!"#$()*\-./0-9:;<>?@A-Z\[\]^_a-z{|}~]+$`)
 	return regex.MatchString(str)
 }
