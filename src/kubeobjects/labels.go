@@ -1,8 +1,9 @@
 package kubeobjects
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"reflect"
+
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 )
 
 const (
