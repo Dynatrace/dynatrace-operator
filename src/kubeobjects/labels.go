@@ -55,16 +55,11 @@ func NewPodLabels(createdBy string, component ComponentLabelValue) *PodLabels {
 	return NewComponentLabels(createdBy, component, "", "")
 }
 
-func (labels *MatchLabels) buildCommonLabels() map[string]string {
-	return map[string]string{
-		AppNameLabel:      labels.AppName,
-		AppCreatedByLabel: labels.AppCreatedBy,
-		AppComponentLabel: string(labels.AppComponent),
-	}
-}
-
+// BuildLabels produces a set of labels that
+// include versions of operator and component
+// and component feature, if set
 func (labels *PodLabels) BuildLabels() map[string]string {
-	labelsMap := labels.buildCommonLabels()
+	labelsMap := labels.BuildMatchLabels()
 	if labels.AppVersion != "" {
 		labelsMap[AppVersionLabel] = labels.AppVersion
 	}
@@ -82,7 +77,11 @@ func (labels *PodLabels) BuildLabels() map[string]string {
 // or during operator version update
 // as matchLabels are immutable
 func (labels *MatchLabels) BuildMatchLabels() map[string]string {
-	return labels.buildCommonLabels()
+	return map[string]string{
+		AppNameLabel:      labels.AppName,
+		AppCreatedByLabel: labels.AppCreatedBy,
+		AppComponentLabel: string(labels.AppComponent),
+	}
 }
 
 func MergeLabels(labels ...map[string]string) map[string]string {
