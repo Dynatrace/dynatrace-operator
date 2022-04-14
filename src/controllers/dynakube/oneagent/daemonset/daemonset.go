@@ -4,7 +4,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -129,16 +128,8 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	instance := dsInfo.instance
 	podSpec := dsInfo.podSpec()
 
-	podLabels := kubeobjects.PodLabels{
-		MatchLabels: kubeobjects.MatchLabels{
-			AppName:      version.AppName,
-			AppCreatedBy: instance.Name,
-			AppComponent: kubeobjects.OneAgentComponentLabel,
-		},
-		AppVersion:       version.Version,
-		ComponentFeature: dsInfo.deploymentType,
-		ComponentVersion: instance.Status.OneAgent.Version,
-	}
+	podLabels := kubeobjects.NewComponentLabels(instance.Name, kubeobjects.OneAgentComponentLabel,
+		dsInfo.deploymentType, instance.Status.OneAgent.Version)
 	labels := kubeobjects.MergeLabels(
 		podLabels.BuildLabels(),
 		dsInfo.hostInjectSpec.Labels,

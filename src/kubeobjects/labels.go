@@ -1,6 +1,7 @@
 package kubeobjects
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"reflect"
 )
 
@@ -31,6 +32,27 @@ type PodLabels struct {
 	AppVersion       string
 	ComponentFeature string
 	ComponentVersion string
+}
+
+func NewMatchLabels(createdBy string, component ComponentLabelValue) *MatchLabels {
+	return &MatchLabels{
+		AppName:      version.AppName,
+		AppCreatedBy: createdBy,
+		AppComponent: component,
+	}
+}
+
+func NewComponentLabels(createdBy string, component ComponentLabelValue, componentFeature string, componentVersion string) *PodLabels {
+	return &PodLabels{
+		MatchLabels:      *NewMatchLabels(createdBy, component),
+		AppVersion:       version.Version,
+		ComponentFeature: componentFeature,
+		ComponentVersion: componentVersion,
+	}
+}
+
+func NewPodLabels(createdBy string, component ComponentLabelValue) *PodLabels {
+	return NewComponentLabels(createdBy, component, "", "")
 }
 
 func (labels *MatchLabels) buildCommonLabels() map[string]string {

@@ -7,7 +7,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -44,14 +43,7 @@ func createService(instance *dynatracev1beta1.DynaKube, feature string, serviceP
 		)
 	}
 
-	podLabels := kubeobjects.PodLabels{
-		MatchLabels: kubeobjects.MatchLabels{
-			AppName:      version.AppName,
-			AppCreatedBy: instance.Name,
-			AppComponent: kubeobjects.ActiveGateComponentLabel,
-		},
-		AppVersion: version.Version,
-	}
+	podLabels := kubeobjects.NewPodLabels(instance.Name, kubeobjects.ActiveGateComponentLabel)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      BuildServiceName(instance.Name, feature),

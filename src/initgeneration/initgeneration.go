@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/Dynatrace/dynatrace-operator/src/standalone"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -51,11 +50,7 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1
 		return false, err
 	}
 
-	matchLabels := kubeobjects.MatchLabels{
-		AppName:      version.AppName,
-		AppCreatedBy: dk.Name,
-		AppComponent: kubeobjects.WebhookComponentLabel,
-	}
+	matchLabels := kubeobjects.NewMatchLabels(dk.Name, kubeobjects.WebhookComponentLabel)
 	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName,
 		targetNs, data, matchLabels.BuildMatchLabels(), corev1.SecretTypeOpaque, log)
 }
@@ -75,11 +70,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 	if err != nil {
 		return false, err
 	}
-	matchLabels := kubeobjects.MatchLabels{
-		AppName:      version.AppName,
-		AppCreatedBy: dk.Name,
-		AppComponent: kubeobjects.WebhookComponentLabel,
-	}
+	matchLabels := kubeobjects.NewMatchLabels(dk.Name, kubeobjects.WebhookComponentLabel)
 	for _, targetNs := range nsList {
 		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName,
 			targetNs.Name, data, matchLabels.BuildMatchLabels(), corev1.SecretTypeOpaque, log); err != nil {

@@ -274,15 +274,13 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		feature:   daemonset.DeploymentTypeFullStack,
 	}
 
-	podLabels := kubeobjects.PodLabels{
-		MatchLabels: kubeobjects.MatchLabels{
-			AppName:      version.AppName,
-			AppCreatedBy: name,
-			AppComponent: kubeobjects.OneAgentComponentLabel,
-		},
-		AppVersion:       version.Version,
-		ComponentFeature: reconciler.feature,
-		ComponentVersion: oldComponentVersion,
+	expectedLabels := map[string]string{
+		kubeobjects.AppCreatedByLabel:     name,
+		kubeobjects.AppComponentLabel:     string(kubeobjects.OneAgentComponentLabel),
+		kubeobjects.AppNameLabel:          version.AppName,
+		kubeobjects.AppVersionLabel:       version.Version,
+		kubeobjects.ComponentFeatureLabel: reconciler.feature,
+		kubeobjects.ComponentVersionLabel: oldComponentVersion,
 	}
 
 	t.Run(`reconileImp Instances set, if autoUpdate is true`, func(t *testing.T) {
@@ -299,7 +297,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		}
 		pod.Name = "oneagent-update-enabled"
 		pod.Namespace = namespace
-		pod.Labels = podLabels.BuildLabels()
+		pod.Labels = expectedLabels
 		pod.Spec = ds.Spec.Template.Spec
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
@@ -333,7 +331,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		}
 		pod.Name = "oneagent-update-disabled"
 		pod.Namespace = namespace
-		pod.Labels = podLabels.BuildLabels()
+		pod.Labels = expectedLabels
 		pod.Spec = ds.Spec.Template.Spec
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()

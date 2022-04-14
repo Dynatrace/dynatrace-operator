@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -152,16 +151,8 @@ func (r *OneAgentReconciler) getDesiredDaemonSet(dkState *status.DynakubeState) 
 
 // getPods loads pods managed by the operator
 func (r *OneAgentReconciler) getPods(ctx context.Context, instance *dynatracev1beta1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
-	podLabels := kubeobjects.PodLabels{
-		MatchLabels: kubeobjects.MatchLabels{
-			AppName:      version.AppName,
-			AppCreatedBy: instance.Name,
-			AppComponent: kubeobjects.OneAgentComponentLabel,
-		},
-		AppVersion:       version.Version,
-		ComponentFeature: feature,
-		ComponentVersion: instance.Status.OneAgent.Version,
-	}
+	podLabels := kubeobjects.NewComponentLabels(instance.Name, kubeobjects.OneAgentComponentLabel,
+		feature, instance.Status.OneAgent.Version)
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
 		client.InNamespace((*instance).GetNamespace()),

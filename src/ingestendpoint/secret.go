@@ -11,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -55,11 +54,7 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 		return false, err
 	}
 
-	matchLabels := kubeobjects.MatchLabels{
-		AppName:      version.AppName,
-		AppCreatedBy: dkName,
-		AppComponent: kubeobjects.ActiveGateComponentLabel,
-	}
+	matchLabels := kubeobjects.NewMatchLabels(dkName, kubeobjects.ActiveGateComponentLabel)
 	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName,
 		targetNs, data, matchLabels.BuildMatchLabels(), corev1.SecretTypeOpaque, log)
 }
@@ -73,12 +68,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 	if err != nil {
 		return false, err
 	}
-	matchLabels := kubeobjects.MatchLabels{
-		AppName:      version.AppName,
-		AppCreatedBy: dk.Name,
-		AppComponent: kubeobjects.ActiveGateComponentLabel,
-	}
-
+	matchLabels := kubeobjects.NewMatchLabels(dk.Name, kubeobjects.ActiveGateComponentLabel)
 	anyUpdate := false
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
 	if err != nil {
