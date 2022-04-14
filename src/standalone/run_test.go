@@ -83,8 +83,14 @@ func TestSetHostTenant(t *testing.T) {
 }
 
 func TestInstallOneAgent(t *testing.T) {
+	runner := createMockedRunner(t)
 	t.Run(`happy install`, func(t *testing.T) {
-		runner := createMockedRunner(t)
+		runner.dtclient.(*dtclient.MockDynatraceClient).
+			On("GetProcessModuleConfig", uint(0)).
+			Return(&testProcessModuleConfig, nil)
+		runner.installer.(*installer.InstallerMock).
+			On("UpdateProcessModuleConfig", BinDirMount, &testProcessModuleConfig).
+			Return(nil)
 		runner.installer.(*installer.InstallerMock).
 			On("InstallAgent", BinDirMount).
 			Return(nil)
@@ -93,11 +99,43 @@ func TestInstallOneAgent(t *testing.T) {
 
 		require.NoError(t, err)
 	})
-	t.Run(`sad install`, func(t *testing.T) {
+	t.Run(`sad install -> install fail`, func(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.installer.(*installer.InstallerMock).
 			On("InstallAgent", BinDirMount).
 			Return(fmt.Errorf("BOOM"))
+
+		err := runner.installOneAgent()
+
+		require.Error(t, err)
+	})
+	t.Run(`sad install -> ruxitagent update fail`, func(t *testing.T) {
+		runner := createMockedRunner(t)
+		runner.dtclient.(*dtclient.MockDynatraceClient).
+			On("GetProcessModuleConfig", uint(0)).
+			Return(&testProcessModuleConfig, nil)
+		runner.installer.(*installer.InstallerMock).
+			On("UpdateProcessModuleConfig", BinDirMount, &testProcessModuleConfig).
+			Return(fmt.Errorf("BOOM"))
+		runner.installer.(*installer.InstallerMock).
+			On("InstallAgent", BinDirMount).
+			Return(nil)
+
+		err := runner.installOneAgent()
+
+		require.Error(t, err)
+	})
+	t.Run(`sad install -> ruxitagent endpoint fail`, func(t *testing.T) {
+		runner := createMockedRunner(t)
+		runner.dtclient.(*dtclient.MockDynatraceClient).
+			On("GetProcessModuleConfig", uint(0)).
+			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
+		runner.installer.(*installer.InstallerMock).
+			On("UpdateProcessModuleConfig", BinDirMount, &testProcessModuleConfig).
+			Return(nil)
+		runner.installer.(*installer.InstallerMock).
+			On("InstallAgent", BinDirMount).
+			Return(nil)
 
 		err := runner.installOneAgent()
 
@@ -146,12 +184,6 @@ func TestRun(t *testing.T) {
 func TestConfigureInstallation(t *testing.T) {
 	runner := createMockedRunner(t)
 	runner.config.HasHost = false
-	runner.dtclient.(*dtclient.MockDynatraceClient).
-		On("GetProcessModuleConfig", uint(0)).
-		Return(&testProcessModuleConfig, nil)
-	runner.installer.(*installer.InstallerMock).
-		On("UpdateProcessModuleConfig", BinDirMount, &testProcessModuleConfig).
-		Return(nil)
 
 	t.Run(`create all config files`, func(t *testing.T) {
 		runner.fs = afero.NewMemMapFs()
