@@ -21,29 +21,29 @@ type ProcessModuleProperty struct {
 	Value   string `json:"value"`
 }
 
-func (pmc *ProcessModuleConfig) Add(property ProcessModuleProperty) *ProcessModuleConfig {
+func (pmc *ProcessModuleConfig) Add(newProperty ProcessModuleProperty) *ProcessModuleConfig {
 	if pmc == nil {
 		return &ProcessModuleConfig{}
 	}
 
 	var newProps []ProcessModuleProperty
 	hasPropertyGroup := false
-	for _, prop := range pmc.Properties {
-		if prop.Key != property.Key {
-			newProps = append(newProps, prop)
+	for _, currentProperty := range pmc.Properties {
+		if currentProperty.Key != newProperty.Key {
+			newProps = append(newProps, currentProperty)
 		} else {
 			hasPropertyGroup = true
-			if property.Value == "" {
+			if newProperty.Value == "" {
 				continue
-			} else if property.Value == prop.Value {
-				newProps = append(newProps, prop)
+			} else if newProperty.Value == currentProperty.Value {
+				newProps = append(newProps, currentProperty)
 			} else {
-				newProps = append(pmc.Properties, prop)
+				newProps = append(pmc.Properties, currentProperty)
 			}
 		}
 	}
-	if !hasPropertyGroup && property.Value != "" {
-		newProps = append(pmc.Properties, property)
+	if !hasPropertyGroup && newProperty.Value != "" {
+		newProps = append(pmc.Properties, newProperty)
 	}
 	pmc.Properties = newProps
 	return pmc

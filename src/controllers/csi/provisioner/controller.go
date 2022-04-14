@@ -95,13 +95,13 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{RequeueAfter: shortRequeueDuration}, nil
 	}
 
-	// creates a dt client and checks tokens exist for the given dynakubeMetadata
+	// creates a dt client and checks tokens exist for the given dynakube
 	dtc, err := buildDtc(provisioner, ctx, dk)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	dynakubeMetadata, oldDynakubeMetadata, reconcileResult, err := provisioner.handleMetadata(err, dk)
+	dynakubeMetadata, oldDynakubeMetadata, reconcileResult, err := provisioner.handleMetadata(dk)
 	if err != nil {
 		return reconcileResult, err
 	}
@@ -123,11 +123,11 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	log.Info("csi directories exist", "path", provisioner.path.EnvDir(dynakubeMetadata.TenantUUID))
 
 	latestProcessModuleConfigCache, requeue, err := provisioner.updateProcessModuleConfigCache(dtc, dynakubeMetadata, dk)
-	if err != nil || requeue {
-		return reconcile.Result{
-			Requeue:      requeue,
-			RequeueAfter: defaultRequeueDuration,
-		}, err
+	if requeue {
+		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, err
+	}
+	if err != nil {
+		return reconcile.Result{}, err
 	}
 
 	// Set/Update the `LatestVersion` field in the database entry
@@ -176,7 +176,7 @@ func (provisioner *OneAgentProvisioner) updateProcessModuleConfigCache(dtc dtcli
 	return latestProcessModuleConfigCache, false, nil
 }
 
-func (provisioner *OneAgentProvisioner) handleMetadata(err error, dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, reconcile.Result, error) {
+func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, reconcile.Result, error) {
 	dynakubeMetadata, err := provisioner.db.GetDynakube(dk.Name)
 	if err != nil {
 		return nil, metadata.Dynakube{}, reconcile.Result{}, errors.WithStack(err)
