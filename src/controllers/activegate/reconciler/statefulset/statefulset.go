@@ -310,7 +310,19 @@ func buildActiveGateVolumes(stsProperties *statefulSetProperties) []corev1.Volum
 				},
 			},
 		)
+
+		if stsProperties.HasActiveGateCaCert() {
+			volumes = append(volumes,
+				corev1.Volume{
+					Name: capability.ActiveGateGatewaySslVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			)
+		}
 	}
+
 	return volumes
 }
 
@@ -405,6 +417,16 @@ func buildActiveGateVolumeMounts(stsProperties *statefulSetProperties) []corev1.
 				Name:      capability.ActiveGateTmpVolumeName,
 				MountPath: capability.ActiveGateTmpMountPoint,
 			})
+
+		if stsProperties.HasActiveGateCaCert() {
+			volumeMounts = append(volumeMounts,
+				corev1.VolumeMount{
+					ReadOnly:  false,
+					Name:      capability.ActiveGateGatewaySslVolumeName,
+					MountPath: capability.ActiveGateGatewaySslMountPoint,
+				},
+			)
+		}
 	}
 	return volumeMounts
 }
