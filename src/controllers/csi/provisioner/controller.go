@@ -101,9 +101,9 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 		return reconcile.Result{}, err
 	}
 
-	dynakubeMetadata, oldDynakubeMetadata, reconcileResult, err := provisioner.handleMetadata(dk)
+	dynakubeMetadata, oldDynakubeMetadata, err := provisioner.handleMetadata(dk)
 	if err != nil {
-		return reconcileResult, err
+		return reconcile.Result{}, err
 	}
 
 	log.Info("checking dynakube", "tenantUUID", dynakubeMetadata.TenantUUID, "version", dynakubeMetadata.LatestVersion)
@@ -176,10 +176,10 @@ func (provisioner *OneAgentProvisioner) updateProcessModuleConfigCache(dtc dtcli
 	return latestProcessModuleConfigCache, false, nil
 }
 
-func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, reconcile.Result, error) {
+func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynatracev1beta1.DynaKube) (*metadata.Dynakube, metadata.Dynakube, error) {
 	dynakubeMetadata, err := provisioner.db.GetDynakube(dk.Name)
 	if err != nil {
-		return nil, metadata.Dynakube{}, reconcile.Result{}, errors.WithStack(err)
+		return nil, metadata.Dynakube{}, errors.WithStack(err)
 	}
 
 	// In case of a new dynakubeMetadata
@@ -193,7 +193,7 @@ func (provisioner *OneAgentProvisioner) handleMetadata(dk *dynatracev1beta1.Dyna
 	dynakubeMetadata.Name = dk.Name
 	dynakubeMetadata.TenantUUID = dk.ConnectionInfo().TenantUUID
 
-	return dynakubeMetadata, oldDynakubeMetadata, reconcile.Result{}, nil
+	return dynakubeMetadata, oldDynakubeMetadata, nil
 }
 
 func (provisioner *OneAgentProvisioner) createOrUpdateDynakubeMetadata(oldDynakube metadata.Dynakube, dynakube *metadata.Dynakube) error {
