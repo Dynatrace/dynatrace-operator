@@ -128,10 +128,10 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	instance := dsInfo.instance
 	podSpec := dsInfo.podSpec()
 
-	podLabels := kubeobjects.NewComponentLabels(instance.Name, kubeobjects.OneAgentComponentLabel,
+	appLabels := kubeobjects.NewAppLabels(kubeobjects.OneAgentComponentLabel, instance.Name,
 		dsInfo.deploymentType, instance.Status.OneAgent.Version)
 	labels := kubeobjects.MergeLabels(
-		podLabels.BuildLabels(),
+		appLabels.BuildLabels(),
 		dsInfo.hostInjectSpec.Labels,
 	)
 	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
@@ -148,7 +148,7 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: podLabels.BuildMatchLabels(),
+				MatchLabels: appLabels.BuildMatchLabels(),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{

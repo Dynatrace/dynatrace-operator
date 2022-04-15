@@ -83,7 +83,7 @@ func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityPro
 }
 
 func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
-	podLabels := kubeobjects.NewComponentLabels(stsProperties.DynaKube.Name, kubeobjects.ActiveGateComponentLabel,
+	podLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, stsProperties.DynaKube.Name,
 		stsProperties.feature, stsProperties.Status.ActiveGate.Version)
 
 	sts := &appsv1.StatefulSet{

@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
@@ -14,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -521,16 +521,15 @@ func createFakeClientAndReconcile(mockClient dtclient.Client, instance *dynatrac
 // generateStatefulSetForTesting prepares an ActiveGate StatefulSet after a Reconciliation of the Dynakube with a specific feature enabled
 func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID string) *appsv1.StatefulSet {
 	expectedLabels := map[string]string{
-		kubeobjects.AppNameLabel:          version.AppName,
-		kubeobjects.AppComponentLabel:     string(kubeobjects.ActiveGateComponentLabel),
-		kubeobjects.AppCreatedByLabel:     name,
-		kubeobjects.AppVersionLabel:       version.Version,
-		kubeobjects.ComponentFeatureLabel: feature,
-		kubeobjects.ComponentVersionLabel: testComponentVersion,
+		kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
+		kubeobjects.AppVersionLabel:   testComponentVersion,
+		kubeobjects.AppComponentLabel: feature,
+		kubeobjects.AppCreatedByLabel: name,
+		kubeobjects.AppManagedByLabel: version.AppName,
 	}
 	expectedMatchLabels := map[string]string{
-		kubeobjects.AppNameLabel:      version.AppName,
-		kubeobjects.AppComponentLabel: string(kubeobjects.ActiveGateComponentLabel),
+		kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
+		kubeobjects.AppManagedByLabel: version.AppName,
 		kubeobjects.AppCreatedByLabel: name,
 	}
 	return &appsv1.StatefulSet{

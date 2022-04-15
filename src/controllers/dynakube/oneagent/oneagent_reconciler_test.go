@@ -275,12 +275,11 @@ func TestReconcile_InstancesSet(t *testing.T) {
 	}
 
 	expectedLabels := map[string]string{
-		kubeobjects.AppCreatedByLabel:     name,
-		kubeobjects.AppComponentLabel:     string(kubeobjects.OneAgentComponentLabel),
-		kubeobjects.AppNameLabel:          version.AppName,
-		kubeobjects.AppVersionLabel:       version.Version,
-		kubeobjects.ComponentFeatureLabel: reconciler.feature,
-		kubeobjects.ComponentVersionLabel: oldComponentVersion,
+		kubeobjects.AppNameLabel:      kubeobjects.OneAgentComponentLabel,
+		kubeobjects.AppComponentLabel: "classicfullstack",
+		kubeobjects.AppCreatedByLabel: name,
+		kubeobjects.AppVersionLabel:   oldComponentVersion,
+		kubeobjects.AppManagedByLabel: version.AppName,
 	}
 
 	t.Run(`reconileImp Instances set, if autoUpdate is true`, func(t *testing.T) {

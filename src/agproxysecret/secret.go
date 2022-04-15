@@ -49,14 +49,14 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakub
 		return false, err
 	}
 
-	matchLabels := kubeobjects.NewMatchLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
+	coreLabels := kubeobjects.NewCoreLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
 	return kubeobjects.CreateOrUpdateSecretIfNotExists(
 		agProxySecretGenerator.client,
 		agProxySecretGenerator.apiReader,
 		BuildProxySecretName(),
 		agProxySecretGenerator.namespace,
 		data,
-		matchLabels.BuildMatchLabels(),
+		coreLabels.BuildMatchLabels(),
 		corev1.SecretTypeOpaque,
 		agProxySecretGenerator.logger,
 	)

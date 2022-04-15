@@ -2,6 +2,7 @@ package kubeobjects
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 )
@@ -18,69 +19,92 @@ const (
 	WebhookComponentLabel    = "webhook"
 )
 
-type AppFeatureLabel string
-
-type matchLabels struct {
-	AppName      string
-	AppCreatedBy string
-	AppComponent string
+type appMatchLabels struct {
+	Name      string
+	CreatedBy string
+	ManagedBy string
 }
 
-type VersionedLabels struct {
-	matchLabels
-	AppVersion   string
-	AppManagedBy string
+type coreMatchLabels struct {
+	Name      string
+	CreatedBy string
+	Component string
 }
 
-func newMatchLabels(name, createdBy, component string) *matchLabels {
-	return &matchLabels{
-		AppName:      name,
-		AppCreatedBy: createdBy,
-		AppComponent: component,
-	}
+type AppLabels struct {
+	appMatchLabels
+	Component string
+	Version   string
+}
+
+type CoreLabels struct {
+	coreMatchLabels
+	Version string
 }
 
 // NewAppLabels abstracts labels that are specific to an application managed by the operator
 // which have their own version separate from the operator version.
 // Follows the recommended label pattern: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
-func NewAppLabels(name, createdBy, appVersion, feature string) *VersionedLabels {
-	return &VersionedLabels{
-		matchLabels:  *newMatchLabels(name, createdBy, feature),
-		AppVersion:   appVersion,
-		AppManagedBy: version.AppName,
+func NewAppLabels(appName, dynakubeName, feature, featureVersion string) *AppLabels {
+	return &AppLabels{
+		appMatchLabels: appMatchLabels{
+			Name:      appName,
+			CreatedBy: dynakubeName,
+			ManagedBy: version.AppName,
+		},
+		Component: strings.ReplaceAll(feature, "_", ""),
+		Version:   featureVersion,
 	}
 }
 
 // NewCoreLabels abstracts labels that are used for core functionality in the operator
 // which are not specific to an application's version
 // Follows the recommended label pattern: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
-func NewCoreLabels(createdBy, feature string) *VersionedLabels {
-	return NewAppLabels(version.AppName, createdBy, version.Version, feature)
+func NewCoreLabels(dynakubeName, component string) *CoreLabels {
+	return &CoreLabels{
+		coreMatchLabels: coreMatchLabels{
+			Name:      version.AppName,
+			CreatedBy: dynakubeName,
+			Component: component,
+		},
+		Version: version.Version,
+	}
 }
 
 // BuildLabels produces a set of labels that
-// include versions of operator and component
-// and component feature, if set
-func (labels *VersionedLabels) BuildLabels() map[string]string {
+// include operator version
+func (labels *CoreLabels) BuildLabels() map[string]string {
 	labelsMap := labels.BuildMatchLabels()
-	if labels.AppVersion != "" {
-		labelsMap[AppVersionLabel] = labels.AppVersion
-	}
-	if labels.AppManagedBy != "" {
-		labelsMap[AppManagedByLabel] = labels.AppManagedBy
-	}
+	labelsMap[AppVersionLabel] = labels.Version
+	return labelsMap
+}
+
+// BuildLabels produces a set of labels that
+// include oneagent/activegate mode and version
+func (labels *AppLabels) BuildLabels() map[string]string {
+	labelsMap := labels.BuildMatchLabels()
+	labelsMap[AppVersionLabel] = labels.Version
+	labelsMap[AppComponentLabel] = labels.Component
 	return labelsMap
 }
 
 // BuildMatchLabels produces a set of labels that
-// don't change when switching between modes
-// or during operator version update
-// as matchLabels are immutable
-func (labels *matchLabels) BuildMatchLabels() map[string]string {
+// don't change when switching operator versions
+func (labels *coreMatchLabels) BuildMatchLabels() map[string]string {
 	return map[string]string{
-		AppNameLabel:      labels.AppName,
-		AppCreatedByLabel: labels.AppCreatedBy,
-		AppComponentLabel: string(labels.AppComponent),
+		AppNameLabel:      labels.Name,
+		AppCreatedByLabel: labels.CreatedBy,
+		AppComponentLabel: labels.Component,
+	}
+}
+
+// BuildMatchLabels produces a set of labels that
+// don't change when switching oneagent or activegate mode
+func (labels *AppLabels) BuildMatchLabels() map[string]string {
+	return map[string]string{
+		AppNameLabel:      labels.Name,
+		AppCreatedByLabel: labels.CreatedBy,
+		AppManagedByLabel: labels.ManagedBy,
 	}
 }
 

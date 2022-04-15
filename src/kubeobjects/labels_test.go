@@ -16,11 +16,10 @@ const (
 )
 
 func TestConstructors(t *testing.T) {
-	matchLabels := newMatchLabels(testAppName, testName, testComponent)
-	appLabels := NewAppLabels(testComponent, testName, testComponentVersion, testComponentFeature)
+	appLabels := NewAppLabels(testComponent, testName, testComponentFeature, testComponentVersion)
 	coreLabels := NewCoreLabels(testName, testComponent)
 
-	expectedMatchLabels := map[string]string{
+	expectedCoreMatchLabels := map[string]string{
 		AppNameLabel:      testAppName,
 		AppCreatedByLabel: testName,
 		AppComponentLabel: testComponent,
@@ -28,7 +27,7 @@ func TestConstructors(t *testing.T) {
 	expectedAppMatchLabels := map[string]string{
 		AppNameLabel:      testComponent,
 		AppCreatedByLabel: testName,
-		AppComponentLabel: testComponentFeature,
+		AppManagedByLabel: testAppName,
 	}
 	expectedAppLabels := map[string]string{
 		AppNameLabel:      testComponent,
@@ -42,15 +41,10 @@ func TestConstructors(t *testing.T) {
 		AppCreatedByLabel: testName,
 		AppComponentLabel: testComponent,
 		AppVersionLabel:   testAppVersion,
-		AppManagedByLabel: testAppName,
 	}
 
-	t.Run("verify matchLabels", func(t *testing.T) {
-		assert.Equal(t, expectedMatchLabels, matchLabels.BuildMatchLabels())
-	})
-
 	t.Run("verify matchLabels for core", func(t *testing.T) {
-		assert.Equal(t, expectedMatchLabels, coreLabels.BuildMatchLabels())
+		assert.Equal(t, expectedCoreMatchLabels, coreLabels.BuildMatchLabels())
 	})
 	t.Run("verify labels for core", func(t *testing.T) {
 		assert.Equal(t, expectedCoreLabels, coreLabels.BuildLabels())

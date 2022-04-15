@@ -1,6 +1,7 @@
 package statefulset
 
 import (
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -10,7 +11,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -47,17 +47,16 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", "", testComponentFeature, "", "", nil, nil, nil))
 
 	expectedLabels := map[string]string{
-		kubeobjects.AppNameLabel:          version.AppName,
-		kubeobjects.AppCreatedByLabel:     instance.Name,
-		kubeobjects.AppComponentLabel:     string(kubeobjects.ActiveGateComponentLabel),
-		kubeobjects.AppVersionLabel:       version.Version,
-		kubeobjects.ComponentFeatureLabel: testComponentFeature,
-		kubeobjects.ComponentVersionLabel: testComponentVersion,
+		kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
+		kubeobjects.AppCreatedByLabel: instance.Name,
+		kubeobjects.AppComponentLabel: testComponentFeature,
+		kubeobjects.AppVersionLabel:   testComponentVersion,
+		kubeobjects.AppManagedByLabel: version.AppName,
 	}
 	expectedMatchLabels := map[string]string{
-		kubeobjects.AppNameLabel:      version.AppName,
+		kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
 		kubeobjects.AppCreatedByLabel: instance.Name,
-		kubeobjects.AppComponentLabel: string(kubeobjects.ActiveGateComponentLabel),
+		kubeobjects.AppManagedByLabel: version.AppName,
 	}
 
 	assert.NoError(t, err)

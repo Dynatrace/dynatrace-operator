@@ -151,7 +151,7 @@ func (r *OneAgentReconciler) getDesiredDaemonSet(dkState *status.DynakubeState) 
 
 // getPods loads pods managed by the operator
 func (r *OneAgentReconciler) getPods(ctx context.Context, instance *dynatracev1beta1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
-	podLabels := kubeobjects.NewComponentLabels(instance.Name, kubeobjects.OneAgentComponentLabel,
+	podLabels := kubeobjects.NewAppLabels(kubeobjects.OneAgentComponentLabel, instance.Name,
 		feature, instance.Status.OneAgent.Version)
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
