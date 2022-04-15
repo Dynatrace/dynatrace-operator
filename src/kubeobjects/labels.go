@@ -7,68 +7,67 @@ import (
 )
 
 const (
-	AppNameLabel          = "app.kubernetes.io/name"
-	AppCreatedByLabel     = "app.kubernetes.io/created-by"
-	AppComponentLabel     = "app.kubernetes.io/component"
-	AppVersionLabel       = "app.kubernetes.io/version"
-	ComponentFeatureLabel = "app.kubernetes.io/component-feature"
-	ComponentVersionLabel = "app.kubernetes.io/component-version"
+	AppNameLabel      = "app.kubernetes.io/name"
+	AppCreatedByLabel = "app.kubernetes.io/created-by"
+	AppManagedByLabel = "app.kubernetes.io/managed-by"
+	AppComponentLabel = "app.kubernetes.io/component"
+	AppVersionLabel   = "app.kubernetes.io/version"
 
-	ActiveGateComponentLabel ComponentLabelValue = "activegate"
-	OperatorComponentLabel   ComponentLabelValue = "operator"
-	OneAgentComponentLabel   ComponentLabelValue = "oneagent"
-	WebhookComponentLabel    ComponentLabelValue = "webhook"
+	OneAgentComponentLabel   = "oneagent"
+	ActiveGateComponentLabel = "activegate"
+	WebhookComponentLabel    = "webhook"
 )
 
-type ComponentLabelValue string
+type AppFeatureLabel string
 
-type MatchLabels struct {
+type matchLabels struct {
 	AppName      string
 	AppCreatedBy string
-	AppComponent ComponentLabelValue
+	AppComponent string
 }
 
-type PodLabels struct {
-	MatchLabels
-	AppVersion       string
-	ComponentFeature string
-	ComponentVersion string
+type VersionedLabels struct {
+	matchLabels
+	AppVersion   string
+	AppManagedBy string
 }
 
-func NewMatchLabels(createdBy string, component ComponentLabelValue) *MatchLabels {
-	return &MatchLabels{
-		AppName:      version.AppName,
+func newMatchLabels(name, createdBy, component string) *matchLabels {
+	return &matchLabels{
+		AppName:      name,
 		AppCreatedBy: createdBy,
 		AppComponent: component,
 	}
 }
 
-func NewComponentLabels(createdBy string, component ComponentLabelValue, componentFeature string, componentVersion string) *PodLabels {
-	return &PodLabels{
-		MatchLabels:      *NewMatchLabels(createdBy, component),
-		AppVersion:       version.Version,
-		ComponentFeature: componentFeature,
-		ComponentVersion: componentVersion,
+// NewAppLabels abstracts labels that are specific to an application managed by the operator
+// which have their own version separate from the operator version.
+// Follows the recommended label pattern: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
+func NewAppLabels(name, createdBy, appVersion, feature string) *VersionedLabels {
+	return &VersionedLabels{
+		matchLabels:  *newMatchLabels(name, createdBy, feature),
+		AppVersion:   appVersion,
+		AppManagedBy: version.AppName,
 	}
 }
 
-func NewPodLabels(createdBy string, component ComponentLabelValue) *PodLabels {
-	return NewComponentLabels(createdBy, component, "", "")
+// NewCoreLabels abstracts labels that are used for core functionality in the operator
+// which are not specific to an application's version
+// Follows the recommended label pattern: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels
+func NewCoreLabels(createdBy, feature string) *VersionedLabels {
+	return NewAppLabels(version.AppName, createdBy, version.Version, feature)
 }
 
 // BuildLabels produces a set of labels that
 // include versions of operator and component
 // and component feature, if set
-func (labels *PodLabels) BuildLabels() map[string]string {
+func (labels *VersionedLabels) BuildLabels() map[string]string {
 	labelsMap := labels.BuildMatchLabels()
 	if labels.AppVersion != "" {
 		labelsMap[AppVersionLabel] = labels.AppVersion
 	}
-	if labels.ComponentFeature != "" {
-		labelsMap[ComponentFeatureLabel] = labels.ComponentFeature
-	}
-	if labels.ComponentVersion != "" {
-		labelsMap[ComponentVersionLabel] = labels.ComponentVersion
+	if labels.AppManagedBy != "" {
+		labelsMap[AppManagedByLabel] = labels.AppManagedBy
 	}
 	return labelsMap
 }
@@ -77,7 +76,7 @@ func (labels *PodLabels) BuildLabels() map[string]string {
 // don't change when switching between modes
 // or during operator version update
 // as matchLabels are immutable
-func (labels *MatchLabels) BuildMatchLabels() map[string]string {
+func (labels *matchLabels) BuildMatchLabels() map[string]string {
 	return map[string]string{
 		AppNameLabel:      labels.AppName,
 		AppCreatedByLabel: labels.AppCreatedBy,
