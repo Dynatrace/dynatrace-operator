@@ -95,34 +95,9 @@ func (installer *OneAgentInstaller) SetImageInfo(imageInfo *ImageInfo) {
 	installer.props.ImageInfo = imageInfo
 }
 
-func (installer *OneAgentInstaller) createSymlinkIfNotExists(targetDir string) error {
-	fs := installer.fs
-
-	// MemMapFs (used for testing) doesn't comply with the Linker interface
-	linker, ok := fs.(afero.Linker)
-	if !ok {
-		log.Info("symlinking not possible", "version", installer.props.Version, "fs", installer.fs)
-		return nil
-	}
-
-	relativeSymlinkPath := installer.props.Version
-	symlinkTargetPath := filepath.Join(targetDir, "agent", "bin", "current")
-	if fileInfo, _ := fs.Stat(symlinkTargetPath); fileInfo != nil {
-		log.Info("symlink already exists", "location", symlinkTargetPath)
-		return nil
-	}
-
-	log.Info("creating symlink", "points-to(relative)", relativeSymlinkPath, "location", symlinkTargetPath)
-	if err := linker.SymlinkIfPossible(relativeSymlinkPath, symlinkTargetPath); err != nil {
-		log.Info("symlinking failed", "version", installer.props.Version)
-		return err
-	}
-	return nil
-}
-
 func (installer *OneAgentInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
 	if processModuleConfig != nil {
-		log.Info("updating ruxitagentproc.conf", "agentVersion", installer.props.Version)
+		log.Info("updating ruxitagentproc.conf", "targetDir", targetDir)
 		usedProcessModuleConfigPath := filepath.Join(targetDir, ruxitAgentProcPath)
 		sourceProcessModuleConfigPath := filepath.Join(targetDir, sourceRuxitAgentProcPath)
 		if err := installer.checkProcessModuleConfigCopy(sourceProcessModuleConfigPath, usedProcessModuleConfigPath); err != nil {

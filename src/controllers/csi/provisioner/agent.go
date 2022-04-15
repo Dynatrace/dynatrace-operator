@@ -70,9 +70,11 @@ func (updater *agentUpdater) updateAgent(ctx context.Context, latestVersion, ten
 		_ = updater.fs.MkdirAll(targetDir, 0755)
 		if dk.CodeModulesImage() != "" {
 			cleanCerts, err := updater.setImageInfo(ctx, targetDir)
-			defer cleanCerts()
 			if err != nil {
 				return "", err
+			}
+			if cleanCerts != nil {
+				defer cleanCerts()
 			}
 		} else {
 			updater.installer.SetVersion(targetVersion)
@@ -103,9 +105,6 @@ func (updater *agentUpdater) setImageInfo(ctx context.Context, targetDir string)
 	if dk.Spec.TrustedCAs != "" {
 		caCertPath := filepath.Join(targetDir, "ca.crt")
 		err := dockerConfig.SaveCustomCAs(ctx, updater.apiReader, *dk, caCertPath)
-		cleanCerts = func() {
-			updater.fs.Remove(caCertPath)
-		}
 		if err != nil {
 			return cleanCerts, err
 		}
