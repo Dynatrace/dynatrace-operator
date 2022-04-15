@@ -43,16 +43,16 @@ func createService(instance *dynatracev1beta1.DynaKube, feature string, serviceP
 		)
 	}
 
-	podLabels := kubeobjects.NewCoreLabels(instance.Name, kubeobjects.ActiveGateComponentLabel)
+	coreLabels := kubeobjects.NewCoreLabels(instance.Name, kubeobjects.ActiveGateComponentLabel)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      BuildServiceName(instance.Name, feature),
 			Namespace: instance.Namespace,
-			Labels:    podLabels.BuildLabels(),
+			Labels:    coreLabels.BuildLabels(),
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
-			Selector: podLabels.BuildMatchLabels(),
+			Selector: coreLabels.BuildMatchLabels(),
 			Ports:    ports,
 		},
 	}
