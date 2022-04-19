@@ -122,7 +122,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	}
 	log.Info("csi directories exist", "path", provisioner.path.EnvDir(dynakubeMetadata.TenantUUID))
 
-	latestProcessModuleConfigCache, requeue, err := provisioner.updateProcessModuleConfigCache(dtc, dynakubeMetadata, dk)
+	latestProcessModuleConfigCache, requeue, err := provisioner.updateAgentInstallation(dtc, dynakubeMetadata, dk)
 	if requeue {
 		return reconcile.Result{RequeueAfter: defaultRequeueDuration}, err
 	}
@@ -144,7 +144,7 @@ func (provisioner *OneAgentProvisioner) Reconcile(ctx context.Context, request r
 	return reconcile.Result{RequeueAfter: defaultRequeueDuration}, nil
 }
 
-func (provisioner *OneAgentProvisioner) updateProcessModuleConfigCache(dtc dtclient.Client, dynakubeMetadata *metadata.Dynakube, dk *dynatracev1beta1.DynaKube) (
+func (provisioner *OneAgentProvisioner) updateAgentInstallation(dtc dtclient.Client, dynakubeMetadata *metadata.Dynakube, dk *dynatracev1beta1.DynaKube) (
 	latestProcessModuleConfigCache *processModuleConfigCache,
 	requeue bool,
 	err error,
@@ -156,12 +156,14 @@ func (provisioner *OneAgentProvisioner) updateProcessModuleConfigCache(dtc dtcli
 	}
 	latestProcessModuleConfig = latestProcessModuleConfig.AddHostGroup(dk.HostGroup())
 
-	connectionInfo, err := dtc.GetConnectionInfo()
-	if err != nil {
-		log.Error(err, "error when getting OneAgent connectionInfo")
-		return nil, false, err
+	if dk.CodeModulesImage() != "" {
+		connectionInfo, err := dtc.GetConnectionInfo()
+		if err != nil {
+			log.Error(err, "error when getting OneAgent connectionInfo")
+			return nil, false, err
+		}
+		latestProcessModuleConfig = latestProcessModuleConfig.AddConnectionInfo(connectionInfo)
 	}
-	latestProcessModuleConfig = latestProcessModuleConfig.AddConnectionInfo(connectionInfo)
 
 	latestProcessModuleConfigCache = newProcessModuleConfigCache(latestProcessModuleConfig)
 

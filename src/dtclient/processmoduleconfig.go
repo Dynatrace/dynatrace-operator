@@ -23,7 +23,7 @@ type ProcessModuleProperty struct {
 
 func (pmc *ProcessModuleConfig) Add(newProperty ProcessModuleProperty) *ProcessModuleConfig {
 	if pmc == nil {
-		return &ProcessModuleConfig{}
+		pmc = &ProcessModuleConfig{}
 	}
 
 	var newProps []ProcessModuleProperty
