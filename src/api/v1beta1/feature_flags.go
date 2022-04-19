@@ -20,19 +20,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 )
 
 const (
-	DeprecatedFeatureFlagPrefix = "alpha."
+	DeprecatedFeatureFlagPrefix = "alpha.operator.dynatrace.com/feature-"
 
-	FeatureFlagAnnotationBase = "operator.dynatrace.com/"
-	AnnotationFeaturePrefix   = FeatureFlagAnnotationBase + "feature-"
+	AnnotationFeaturePrefix = "feature.dynatrace.com/"
 
 	// activeGate
 	AnnotationFeatureDisableActiveGateUpdates         = AnnotationFeaturePrefix + "disable-activegate-updates"
-	AnnotationFeatureDisableActivegateRawImage        = AnnotationFeaturePrefix + "disable-activegate-raw-image"
+	AnnotationFeatureDisableActiveGateRawImage        = AnnotationFeaturePrefix + "disable-activegate-raw-image"
 	AnnotationFeatureActiveGateAppArmor               = AnnotationFeaturePrefix + "activegate-apparmor"
 	AnnotationFeatureActiveGateReadOnlyFilesystem     = AnnotationFeaturePrefix + "activegate-readonly-fs"
 	AnnotationFeatureAutomaticKubernetesApiMonitoring = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
@@ -162,7 +162,7 @@ func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
 // instead of using embedded ones in the image
 // Defaults to false
 func (dk *DynaKube) FeatureDisableActivegateRawImage() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureDisableActivegateRawImage) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureDisableActiveGateRawImage) == "true"
 }
 
 // FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
@@ -184,7 +184,9 @@ func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
 	if raw, ok := dk.Annotations[annotation]; ok {
 		return raw
 	}
-	if raw, ok := dk.Annotations[DeprecatedFeatureFlagPrefix+annotation]; ok {
+	split := strings.Split(annotation, "/")
+	postFix := split[1]
+	if raw, ok := dk.Annotations[DeprecatedFeatureFlagPrefix+postFix]; ok {
 		return raw
 	}
 	return ""

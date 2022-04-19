@@ -188,7 +188,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 	t.Run("API token has missing scope for automatic kubernetes api monitoring", func(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Annotations = map[string]string{
-			"operator.dynatrace.com/feature-automatic-kubernetes-api-monitoring": "true",
+			dynatracev1beta1.AnnotationFeatureAutomaticKubernetesApiMonitoring: "true",
 		}
 		dk.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{
 			Capabilities: []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName},
