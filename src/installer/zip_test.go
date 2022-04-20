@@ -19,21 +19,15 @@ const (
 func TestExtractZip(t *testing.T) {
 	t.Run(`file nil`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		installer := &OneAgentInstaller{
-			fs: fs,
-		}
-		err := installer.extractZip(nil, "")
+		err := extractZip(fs, nil, "")
 		require.EqualError(t, err, "file is nil")
 	})
 	t.Run(`unzip test zip file`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
-		installer := &OneAgentInstaller{
-			fs: fs,
-		}
 		zipFile := setupTestZip(t, fs)
 		defer func() { _ = zipFile.Close() }()
 
-		err := installer.extractZip(zipFile, testDir)
+		err := extractZip(fs, zipFile, testDir)
 		require.NoError(t, err)
 
 		exists, err := afero.Exists(fs, filepath.Join(testDir, testFilename))

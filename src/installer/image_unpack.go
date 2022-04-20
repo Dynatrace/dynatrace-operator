@@ -85,8 +85,8 @@ func (installer *OneAgentInstaller) unpackOciImage(manifests []*manifest.OCI1, i
 		for _, layer := range entry.LayerInfos() {
 			switch layer.MediaType {
 			case ocispec.MediaTypeImageLayerGzip:
-				source := filepath.Join(imageCacheDir, "blobs", layer.Digest.Algorithm().String(), layer.Digest.Hex())
-				if err := installer.extractGzip(source, targetDir); err != nil {
+				sourcePath := filepath.Join(imageCacheDir, "blobs", layer.Digest.Algorithm().String(), layer.Digest.Hex())
+				if err := extractGzip(installer.fs, sourcePath, targetDir); err != nil {
 					return err
 				}
 			case ocispec.MediaTypeImageLayerZstd:

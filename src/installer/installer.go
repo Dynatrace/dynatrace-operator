@@ -110,8 +110,8 @@ func (installer *OneAgentInstaller) UpdateProcessModuleConfig(targetDir string, 
 }
 
 // checkProcessModuleConfigCopy checks if we already made a copy of the original ruxitagentproc.conf file.
-// After the initial install of a version we copy the ruxitagentproc.conf to _ruxitagentproc.conf and we use the _ruxitagentproc.conf + the api response to re-create the ruxitagentproc.conf
-// so its easier to update
+// After the initial installation of a version we copy the ruxitagentproc.conf to _ruxitagentproc.conf, and we use the _ruxitagentproc.conf + the api response to re-create the ruxitagentproc.conf
+// so it`s easier to update
 func (installer *OneAgentInstaller) checkProcessModuleConfigCopy(sourcePath, destPath string) error {
 	if _, err := installer.fs.Open(sourcePath); os.IsNotExist(err) {
 		log.Info("saving original ruxitagentproc.conf to _ruxitagentproc.conf")
@@ -129,10 +129,15 @@ func (installer *OneAgentInstaller) checkProcessModuleConfigCopy(sourcePath, des
 		if err != nil {
 			return err
 		}
+
 		_, err = io.Copy(sourceProcessModuleConfigFile, usedProcessModuleConfigFile)
 		if err != nil {
-			sourceProcessModuleConfigFile.Close()
-			usedProcessModuleConfigFile.Close()
+			if err := sourceProcessModuleConfigFile.Close(); err != nil {
+				log.Error(err, "failed to close sourceProcessModuleConfigFile")
+			}
+			if err := usedProcessModuleConfigFile.Close(); err != nil {
+				log.Error(err, "failed to close usedProcessModuleConfigFile")
+			}
 			return err
 		}
 		if err = sourceProcessModuleConfigFile.Close(); err != nil {

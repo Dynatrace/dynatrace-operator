@@ -12,7 +12,7 @@ import (
 func (installer *OneAgentInstaller) installAgentFromImage(targetDir string) error {
 	cacheDir := filepath.Join(targetDir, "cache")
 	_ = installer.fs.MkdirAll(cacheDir, 0755)
-	defer func() { installer.fs.RemoveAll(cacheDir) }()
+	defer func() { _ = installer.fs.RemoveAll(cacheDir) }()
 	image := installer.props.ImageInfo.Image
 
 	sourceCtx, sourceRef, err := getSourceInfo(cacheDir, *installer.props.ImageInfo)
@@ -21,12 +21,12 @@ func (installer *OneAgentInstaller) installAgentFromImage(targetDir string) erro
 		return err
 	}
 
-	digest, err := getImageDigest(sourceCtx, sourceRef)
+	imageDigest, err := getImageDigest(sourceCtx, sourceRef)
 	if err != nil {
 		log.Info("failed to get image digest", "image", image)
 		return err
 	}
-	imageCacheDir := filepath.Join(cacheDir, digest.Encoded())
+	imageCacheDir := filepath.Join(cacheDir, imageDigest.Encoded())
 
 	destinationCtx, destinationRef, err := getDestinationInfo(imageCacheDir)
 	if err != nil {

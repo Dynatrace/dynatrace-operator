@@ -47,8 +47,8 @@ key value
 test test3
 `
 
-	installer.UpdateProcessModuleConfig("", &testProcessModuleConfig)
-
+	err := installer.UpdateProcessModuleConfig("", &testProcessModuleConfig)
+	require.NoError(t, err)
 	assertTestConf(t, memFs, ruxitAgentProcPath, expectedUsed)
 	assertTestConf(t, memFs, sourceRuxitAgentProcPath, testRuxitConf)
 }
@@ -62,15 +62,15 @@ func TestCheckProcessModuleConfigCopy(t *testing.T) {
 	sourcePath := sourceRuxitAgentProcPath
 	destPath := ruxitAgentProcPath
 
-	installer.checkProcessModuleConfigCopy(sourcePath, destPath)
-
+	err := installer.checkProcessModuleConfigCopy(sourcePath, destPath)
+	require.NoError(t, err)
 	assertTestConf(t, memFs, sourcePath, testRuxitConf)
 }
 
 func prepTestConfFs(fs afero.Fs) {
-	fs.MkdirAll(filepath.Base(sourceRuxitAgentProcPath), 0755)
+	_ = fs.MkdirAll(filepath.Base(sourceRuxitAgentProcPath), 0755)
 	usedConf, _ := fs.OpenFile(ruxitAgentProcPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	usedConf.WriteString(testRuxitConf)
+	_, _ = usedConf.WriteString(testRuxitConf)
 }
 
 func assertTestConf(t *testing.T, fs afero.Fs, path, expected string) {

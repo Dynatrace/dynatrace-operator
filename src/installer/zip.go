@@ -13,9 +13,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (installer *OneAgentInstaller) extractZip(sourceFile afero.File, targetDir string) error {
-	fs := installer.fs
-
+func extractZip(fs afero.Fs, sourceFile afero.File, targetDir string) error {
 	if sourceFile == nil {
 		return fmt.Errorf("file is nil")
 	}
@@ -79,8 +77,7 @@ func (installer *OneAgentInstaller) extractZip(sourceFile afero.File, targetDir 
 	return nil
 }
 
-func (installer *OneAgentInstaller) extractGzip(sourceFilePath, targetDir string) error {
-	fs := installer.fs
+func extractGzip(fs afero.Fs, sourceFilePath, targetDir string) error {
 	targetDir = filepath.Clean(targetDir)
 	log.Info("extracting tar gzip", "source", sourceFilePath, "destinationDir", targetDir)
 
@@ -122,9 +119,10 @@ func (installer *OneAgentInstaller) extractGzip(sourceFilePath, targetDir string
 			// MemMapFs (used for testing) doesn't comply with the Linker interface, using os in testing causes problems
 			_, ok := fs.(afero.Linker)
 			if !ok {
-				log.Info("symlinking not possible", "version", installer.props.Version, "fs", installer.fs)
+				log.Info("symlinking not possible", "targetDir", targetDir, "fs", fs)
 				continue
 			}
+			// Afero doesn't support Link, so we have to use os.Link
 			if err := os.Link(filepath.Join(targetDir, header.Linkname), target); err != nil {
 				return err
 			}
@@ -133,7 +131,7 @@ func (installer *OneAgentInstaller) extractGzip(sourceFilePath, targetDir string
 			// MemMapFs (used for testing) doesn't comply with the Linker interface
 			linker, ok := fs.(afero.Linker)
 			if !ok {
-				log.Info("symlinking not possible", "version", installer.props.Version, "fs", installer.fs)
+				log.Info("symlinking not possible", "targetDir", targetDir, "fs", fs)
 				continue
 			}
 			if err := linker.SymlinkIfPossible(header.Linkname, target); err != nil {

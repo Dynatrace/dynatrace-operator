@@ -41,7 +41,7 @@ func (installer *OneAgentInstaller) installAgentFromUrl(targetDir string) error 
 
 	log.Info("saved OneAgent package", "dest", tmpFile.Name(), "size", fileSize)
 	log.Info("unzipping OneAgent package")
-	if err := installer.extractZip(tmpFile, targetDir); err != nil {
+	if err := extractZip(installer.fs, tmpFile, targetDir); err != nil {
 		return fmt.Errorf("failed to unzip file: %w", err)
 	}
 	log.Info("unzipped OneAgent package")
