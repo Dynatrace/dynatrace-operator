@@ -16,6 +16,7 @@ var validators = []validator{
 	conflictingActiveGateConfiguration,
 	invalidActiveGateCapabilities,
 	duplicateActiveGateCapabilities,
+	invalidActiveGateProxyUrl,
 	conflictingOneAgentConfiguration,
 	conflictingNodeSelector,
 	conflictingNamespaceSelector,
