@@ -1,0 +1,38 @@
+# With cloudNative enabled, apps in labeled namespaces ==> apps have the initContainer added
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 240
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nodejs-musl
+  namespace: already-present-cloud-native
+spec:
+  initContainers:
+  - name: artefact
+  - name: install-oneagent
+status:
+  phase: Running
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: java-glibc
+  namespace: inject-into-cloud-native
+spec:
+  initContainers:
+  - name: artefact
+  - name: install-oneagent
+status:
+  phase: Running
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: php-glibc
+  namespace: leave-alone-cloud-native
+status:
+  phase: Running

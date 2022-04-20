@@ -1733,6 +1733,10 @@ spec:
                       fullstack monitoring, classic fullstack monitoring or host monitoring'
                     nullable: true
                     properties:
+                      codeModulesImage:
+                        description: 'Optional: the Dynatrace installer container
+                          image'
+                        type: string
                       initResources:
                         description: 'Optional: define resources requests and limits
                           for the initContainer'
@@ -2021,6 +2025,10 @@ spec:
                         description: 'Optional: Enables automatic restarts of OneAgent
                           pods in case a new version is available Defaults to true'
                         type: boolean
+                      codeModulesImage:
+                        description: 'Optional: the Dynatrace installer container
+                          image'
+                        type: string
                       dnsPolicy:
                         description: 'Optional: Sets DNS Policy for the OneAgent pods'
                         type: string
@@ -2139,6 +2147,11 @@ spec:
                           - name
                           type: object
                         type: array
+                      image:
+                        description: 'Optional: the Dynatrace installer container
+                          image Defaults to the registry on the tenant for both Kubernetes
+                          and for OpenShift'
+                        type: string
                       initResources:
                         description: 'Optional: define resources requests and limits
                           for the initContainer'

@@ -16,11 +16,13 @@ var validators = []validator{
 	conflictingActiveGateConfiguration,
 	invalidActiveGateCapabilities,
 	duplicateActiveGateCapabilities,
+	invalidActiveGateProxyUrl,
 	conflictingOneAgentConfiguration,
 	conflictingNodeSelector,
 	conflictingNamespaceSelector,
 	conflictingReadOnlyFilesystemAndMultipleOsAgentsOnNode,
 	noResourcesAvailable,
+	imageFieldSetWithoutCSIFlag,
 }
 
 var warnings = []validator{

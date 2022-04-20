@@ -39,9 +39,12 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, lat
 }
 
 func (gc *CSIGarbageCollector) getStoredVersions(fs *afero.Afero, tenantUUID string) ([]string, error) {
-	versions := []string{}
+	var versions []string
 	bins, err := fs.ReadDir(gc.path.AgentBinaryDir(tenantUUID))
-	if err != nil {
+	if os.IsNotExist(err) {
+		log.Info("no versions stored")
+		return versions, nil
+	} else if err != nil {
 		return nil, errors.WithStack(err)
 	}
 	for _, bin := range bins {

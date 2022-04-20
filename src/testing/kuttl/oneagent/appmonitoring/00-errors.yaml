@@ -1,0 +1,8 @@
+# Without appMonitoring enabled ==> namespaces are not labeled
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    dk-mode: app-monitoring
+    dynakube.internal.dynatrace.com/instance: dynakube
+  name: already-present-app-monitoring

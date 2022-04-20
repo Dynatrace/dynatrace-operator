@@ -81,7 +81,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
-          version: v1.43.0
+          version: v1.45.2
           args: --build-tags integration,containers_image_storage_stub --timeout 300s
 
   builddockerimage:

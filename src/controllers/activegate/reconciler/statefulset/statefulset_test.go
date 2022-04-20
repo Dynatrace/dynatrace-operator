@@ -43,6 +43,11 @@ func TestNewStatefulSetBuilder(t *testing.T) {
 func TestStatefulSetBuilder_Build(t *testing.T) {
 	instance := buildTestInstance()
 	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
+	stsProps := statefulSetProperties{
+		DynaKube:             instance,
+		CapabilityProperties: capabilityProperties,
+		feature:              testFeature,
+	}
 	sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", "", testFeature, "", "", nil, nil, nil))
 
 	assert.NoError(t, err)
@@ -59,10 +64,10 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	assert.Equal(t, instance.Spec.ActiveGate.Replicas, sts.Spec.Replicas)
 	assert.Equal(t, appsv1.ParallelPodManagement, sts.Spec.PodManagementPolicy)
 	assert.Equal(t, metav1.LabelSelector{
-		MatchLabels: BuildLabelsFromInstance(instance, testFeature),
+		MatchLabels: stsProps.buildMatchLabels(),
 	}, *sts.Spec.Selector)
 	assert.NotEqual(t, corev1.PodTemplateSpec{}, sts.Spec.Template)
-	assert.Equal(t, buildLabels(instance, testFeature, capabilityProperties), sts.Spec.Template.Labels)
+	assert.Equal(t, stsProps.buildLabels(), sts.Spec.Template.Labels)
 	assert.Equal(t, sts.Labels, sts.Spec.Template.Labels)
 	assert.NotEqual(t, corev1.PodSpec{}, sts.Spec.Template.Spec)
 	assert.Contains(t, sts.Annotations, kubeobjects.AnnotationHash)
@@ -210,7 +215,7 @@ func TestStatefulSet_Container(t *testing.T) {
 	}
 
 	checkVolumes := func(activeGateContainer *corev1.Container, dynakube *dynatracev1beta1.DynaKube) {
-		for _, directory := range buildActiveGateMountPoints(dynakube.NeedsStatsd(), dynakube.FeatureActiveGateReadOnlyFilesystem()) {
+		for _, directory := range buildActiveGateMountPoints(dynakube.NeedsStatsd(), dynakube.FeatureActiveGateReadOnlyFilesystem(), dynakube.HasActiveGateCaCert()) {
 			assert.Truef(t, kubeobjects.MountPathIsIn(activeGateContainer.VolumeMounts, directory),
 				"Expected that ActiveGate container defines mount point %s", directory,
 			)
@@ -237,13 +242,16 @@ func TestStatefulSet_Container(t *testing.T) {
 		}
 	}
 
-	test := func(ro bool, statsd bool) {
+	test := func(ro bool, statsd bool, tlsSecret bool) {
 		instance := buildTestInstance()
 		if ro {
 			instance.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateReadOnlyFilesystem] = "true"
 		}
 		if statsd {
 			instance.Spec.ActiveGate.Capabilities = append(instance.Spec.ActiveGate.Capabilities, dynatracev1beta1.StatsdIngestCapability.DisplayName)
+		}
+		if tlsSecret {
+			instance.Spec.ActiveGate.TlsSecretName = "secret"
 		}
 		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
@@ -262,19 +270,23 @@ func TestStatefulSet_Container(t *testing.T) {
 	}
 
 	t.Run("DynaKube with RW filesystem and StatsD disabled", func(t *testing.T) {
-		test(false, false)
+		test(false, false, false)
 	})
 
 	t.Run("DynaKube with RW filesystem and StatsD enabled", func(t *testing.T) {
-		test(false, true)
+		test(false, true, false)
 	})
 
 	t.Run("DynaKube with RO filesystem and StatsD disabled", func(t *testing.T) {
-		test(true, false)
+		test(true, false, false)
 	})
 
 	t.Run("DynaKube with RO filesystem and StatsD enabled", func(t *testing.T) {
-		test(true, true)
+		test(true, true, false)
+	})
+
+	t.Run("DynaKube with RO filesystem, StatsD enabled and tlsSecret set", func(t *testing.T) {
+		test(true, true, true)
 	})
 
 	t.Run("DynaKube with AppArmor enabled", func(t *testing.T) {
@@ -637,7 +649,7 @@ func buildTestInstance() *dynatracev1beta1.DynaKube {
 	}
 }
 
-func buildActiveGateMountPoints(statsd bool, readOnly bool) []string {
+func buildActiveGateMountPoints(statsd bool, readOnly bool, tlsSecret bool) []string {
 	var mountPoints []string
 	if readOnly || statsd {
 		mountPoints = append(mountPoints, capability.ActiveGateGatewayConfigMountPoint)
@@ -648,6 +660,10 @@ func buildActiveGateMountPoints(statsd bool, readOnly bool) []string {
 			capability.ActiveGateGatewayDataMountPoint,
 			capability.ActiveGateLogMountPoint,
 			capability.ActiveGateTmpMountPoint)
+
+		if tlsSecret {
+			mountPoints = append(mountPoints, capability.ActiveGateGatewaySslMountPoint)
+		}
 	}
 	return mountPoints
 }

@@ -88,16 +88,16 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        stsProperties.Name + "-" + stsProperties.feature,
 			Namespace:   stsProperties.Namespace,
-			Labels:      buildLabels(stsProperties.DynaKube, stsProperties.feature, stsProperties.CapabilityProperties),
+			Labels:      stsProperties.buildLabels(),
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Replicas:            stsProperties.Replicas,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector:            &metav1.LabelSelector{MatchLabels: BuildLabelsFromInstance(stsProperties.DynaKube, stsProperties.feature)},
+			Selector:            &metav1.LabelSelector{MatchLabels: stsProperties.buildMatchLabels()},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: buildLabels(stsProperties.DynaKube, stsProperties.feature, stsProperties.CapabilityProperties),
+					Labels: stsProperties.buildLabels(),
 					Annotations: map[string]string{
 						annotationVersion:         stsProperties.Status.ActiveGate.Version,
 						annotationCustomPropsHash: stsProperties.customPropertiesHash,
@@ -310,7 +310,19 @@ func buildActiveGateVolumes(stsProperties *statefulSetProperties) []corev1.Volum
 				},
 			},
 		)
+
+		if stsProperties.HasActiveGateCaCert() {
+			volumes = append(volumes,
+				corev1.Volume{
+					Name: capability.ActiveGateGatewaySslVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			)
+		}
 	}
+
 	return volumes
 }
 
@@ -405,6 +417,16 @@ func buildActiveGateVolumeMounts(stsProperties *statefulSetProperties) []corev1.
 				Name:      capability.ActiveGateTmpVolumeName,
 				MountPath: capability.ActiveGateTmpMountPoint,
 			})
+
+		if stsProperties.HasActiveGateCaCert() {
+			volumeMounts = append(volumeMounts,
+				corev1.VolumeMount{
+					ReadOnly:  false,
+					Name:      capability.ActiveGateGatewaySslVolumeName,
+					MountPath: capability.ActiveGateGatewaySslMountPoint,
+				},
+			)
+		}
 	}
 	return volumeMounts
 }

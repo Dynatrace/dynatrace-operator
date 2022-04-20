@@ -85,6 +85,7 @@ classicFullStack:
 
 cloudNativeFullStack:
   enabled: false
+  image: ""
   version: ""
   initResources: {}
   nodeSelector: {}

@@ -26,7 +26,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: testApiUrl,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 					HostMonitoring:   nil,
 				},
 			},
@@ -38,7 +38,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 				APIURL: testApiUrl,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					ClassicFullStack: nil,
-					HostMonitoring:   &dynatracev1beta1.HostMonitoringSpec{},
+					HostMonitoring:   &dynatracev1beta1.HostInjectSpec{},
 				},
 			},
 		}, &defaultCSIDaemonSet)
@@ -51,8 +51,8 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 				Spec: dynatracev1beta1.DynaKubeSpec{
 					APIURL: testApiUrl,
 					OneAgent: dynatracev1beta1.OneAgentSpec{
-						ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
-						HostMonitoring:   &dynatracev1beta1.HostMonitoringSpec{},
+						ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
+						HostMonitoring:   &dynatracev1beta1.HostInjectSpec{},
 					},
 				},
 			}, &defaultCSIDaemonSet)
@@ -65,7 +65,7 @@ func TestConflictingOneAgentConfiguration(t *testing.T) {
 					APIURL: testApiUrl,
 					OneAgent: dynatracev1beta1.OneAgentSpec{
 						ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
-						HostMonitoring:        &dynatracev1beta1.HostMonitoringSpec{},
+						HostMonitoring:        &dynatracev1beta1.HostInjectSpec{},
 					},
 				},
 			}, &defaultCSIDaemonSet)
@@ -102,11 +102,9 @@ func TestConflictingNodeSelector(t *testing.T) {
 				Spec: dynatracev1beta1.DynaKubeSpec{
 					APIURL: testApiUrl,
 					OneAgent: dynatracev1beta1.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{
-							HostInjectSpec: dynatracev1beta1.HostInjectSpec{
-								NodeSelector: map[string]string{
-									"node": "1",
-								},
+						HostMonitoring: &dynatracev1beta1.HostInjectSpec{
+							NodeSelector: map[string]string{
+								"node": "1",
 							},
 						},
 					},
@@ -120,11 +118,9 @@ func TestConflictingNodeSelector(t *testing.T) {
 				Spec: dynatracev1beta1.DynaKubeSpec{
 					APIURL: testApiUrl,
 					OneAgent: dynatracev1beta1.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{
-							HostInjectSpec: dynatracev1beta1.HostInjectSpec{
-								NodeSelector: map[string]string{
-									"node": "2",
-								},
+						HostMonitoring: &dynatracev1beta1.HostInjectSpec{
+							NodeSelector: map[string]string{
+								"node": "2",
 							},
 						},
 					},
@@ -155,11 +151,9 @@ func TestConflictingNodeSelector(t *testing.T) {
 				Spec: dynatracev1beta1.DynaKubeSpec{
 					APIURL: testApiUrl,
 					OneAgent: dynatracev1beta1.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{
-							HostInjectSpec: dynatracev1beta1.HostInjectSpec{
-								NodeSelector: map[string]string{
-									"node": "2",
-								},
+						HostMonitoring: &dynatracev1beta1.HostInjectSpec{
+							NodeSelector: map[string]string{
+								"node": "2",
 							},
 						},
 					},
@@ -211,11 +205,9 @@ func TestConflictingNodeSelector(t *testing.T) {
 				Spec: dynatracev1beta1.DynaKubeSpec{
 					APIURL: testApiUrl,
 					OneAgent: dynatracev1beta1.OneAgentSpec{
-						HostMonitoring: &dynatracev1beta1.HostMonitoringSpec{
-							HostInjectSpec: dynatracev1beta1.HostInjectSpec{
-								NodeSelector: map[string]string{
-									"node": "1",
-								},
+						HostMonitoring: &dynatracev1beta1.HostInjectSpec{
+							NodeSelector: map[string]string{
+								"node": "1",
 							},
 						},
 					},
@@ -256,4 +248,45 @@ func TestConflictingNodeSelector(t *testing.T) {
 			newCloudNativeDynakube("dk2", map[string]string{}, "1"),
 			&defaultCSIDaemonSet)
 	})
+}
+
+func TestImageFieldSetWithoutCSIFlag(t *testing.T) {
+	t.Run(`spec with appMon enabled and image name`, func(t *testing.T) {
+		useCSIDriver := true
+		testImage := "testImage"
+		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
+						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+							CodeModulesImage: testImage,
+						},
+						UseCSIDriver: &useCSIDriver,
+					},
+				},
+			},
+		}, &defaultCSIDaemonSet)
+	})
+
+	t.Run(`spec with appMon enabled, useCSIDriver not enabled but image set`, func(t *testing.T) {
+		useCSIDriver := false
+		testImage := "testImage"
+		assertDeniedResponse(t, []string{errorImageFieldSetWithoutCSIFlag}, &dynatracev1beta1.DynaKube{
+			ObjectMeta: defaultDynakubeObjectMeta,
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testApiUrl,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
+						AppInjectionSpec: dynatracev1beta1.AppInjectionSpec{
+							CodeModulesImage: testImage,
+						},
+						UseCSIDriver: &useCSIDriver,
+					},
+				},
+			},
+		}, &defaultCSIDaemonSet)
+	})
+
 }

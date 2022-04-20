@@ -166,6 +166,17 @@ func (dk *DynaKube) Image() string {
 		return dk.Spec.OneAgent.ClassicFullStack.Image
 	} else if dk.HostMonitoringMode() {
 		return dk.Spec.OneAgent.HostMonitoring.Image
+	} else if dk.CloudNativeFullstackMode() {
+		return dk.Spec.OneAgent.CloudNativeFullStack.Image
+	}
+	return ""
+}
+
+func (dk *DynaKube) CodeModulesImage() string {
+	if dk.CloudNativeFullstackMode() {
+		return dk.Spec.OneAgent.CloudNativeFullStack.CodeModulesImage
+	} else if dk.ApplicationMonitoringMode() && dk.NeedsCSIDriver() {
+		return dk.Spec.OneAgent.ApplicationMonitoring.CodeModulesImage
 	}
 	return ""
 }
@@ -222,7 +233,7 @@ func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
 func (dk *DynaKube) ImmutableOneAgentImage() string {
 	oneAgentImage := dk.Image()
 	if oneAgentImage != "" {
-		return oneAgentImage // TODO: What to do with the Version field in this case ?
+		return oneAgentImage
 	}
 
 	if dk.Spec.APIURL == "" {
@@ -230,12 +241,27 @@ func (dk *DynaKube) ImmutableOneAgentImage() string {
 	}
 
 	tag := "latest"
-	if ver := dk.Version(); ver != "" {
-		tag = ver
+	if version := dk.Version(); version != "" {
+		truncatedVersion := truncateBuildDate(version)
+		tag = truncatedVersion
 	}
 
 	registry := buildImageRegistry(dk.Spec.APIURL)
 	return fmt.Sprintf("%s/linux/oneagent:%s", registry, tag)
+}
+
+func truncateBuildDate(version string) string {
+	const versionSeperator = "."
+	const buildDateIndex = 3
+
+	if strings.Count(version, versionSeperator) >= buildDateIndex {
+		splitVersion := strings.Split(version, versionSeperator)
+		truncatedVersion := strings.Join(splitVersion[:buildDateIndex], versionSeperator)
+
+		return truncatedVersion
+	}
+
+	return version
 }
 
 // Tokens returns the name of the Secret to be used for tokens.
