@@ -9,9 +9,6 @@ on:
     branches:
       - "*"
 
-permissions:
-  contents: read
-
 jobs:
 
   helm-test:
@@ -181,6 +178,7 @@ jobs:
           outputs: type=docker,dest=/tmp/operator-arm64.tar
       - name: Upload artifact
         uses: actions/upload-artifact@v2
+        if: github.event_name != 'pull_request'
         with:
           name: operator
           path: /tmp/operator*.tar
@@ -192,6 +190,7 @@ jobs:
   uploaddockerimage:
     name: Upload docker image to quay
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
     needs: [tests, linting, builddockerimage]
     env:
       IMAGE_QUAY: quay.io/dynatrace/dynatrace-operator
