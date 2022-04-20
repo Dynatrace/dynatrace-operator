@@ -14,7 +14,6 @@ import (
 const (
 	annotationUnprivileged      = "container.apparmor.security.beta.kubernetes.io/dynatrace-oneagent"
 	annotationUnprivilegedValue = "unconfined"
-	annotationVersion           = dynatracev1beta1.InternalFlagPrefix + "version"
 
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
 	// normal oneagent shutdown scenario with some extra time
@@ -128,13 +127,15 @@ func appendHostIdArgument(result *appsv1.DaemonSet, source string) {
 func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	instance := dsInfo.instance
 	podSpec := dsInfo.podSpec()
+
+	appLabels := kubeobjects.NewAppLabels(kubeobjects.OneAgentComponentLabel, instance.Name,
+		dsInfo.deploymentType, instance.Status.OneAgent.Version)
 	labels := kubeobjects.MergeLabels(
-		dsInfo.buildLabels(),
+		appLabels.BuildLabels(),
 		dsInfo.hostInjectSpec.Labels,
 	)
 	maxUnavailable := intstr.FromInt(instance.FeatureOneAgentMaxUnavailable())
 	annotations := map[string]string{
-		annotationVersion:      instance.Status.OneAgent.Version,
 		annotationUnprivileged: annotationUnprivilegedValue,
 	}
 
@@ -147,7 +148,7 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 		},
 		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
-				MatchLabels: dsInfo.buildMatchLabels(),
+				MatchLabels: appLabels.BuildMatchLabels(),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -165,21 +166,6 @@ func (dsInfo *builderInfo) BuildDaemonSet() (*appsv1.DaemonSet, error) {
 	}
 
 	return result, nil
-}
-
-func (dsInfo *builderInfo) buildLabels() map[string]string {
-	return BuildLabels(dsInfo.instance.Name, dsInfo.deploymentType)
-}
-
-// buildMatchLabels produces a set of labels that
-// don't change when switching between oneagent modes
-// or during operator version update
-// as matchLabels are not mutable on a Daemonset
-func (dsInfo *builderInfo) buildMatchLabels() map[string]string {
-	labels := dsInfo.buildLabels()
-	delete(labels, kubeobjects.AppVersionLabel)
-	delete(labels, kubeobjects.FeatureLabel)
-	return labels
 }
 
 func (dsInfo *builderInfo) podSpec() corev1.PodSpec {

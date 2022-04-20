@@ -49,8 +49,10 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1
 	if err != nil {
 		return false, err
 	}
-	labels := kubeobjects.CommonLabels(dk.Name, kubeobjects.WebhookComponentLabel)
-	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs, data, labels, corev1.SecretTypeOpaque, log)
+
+	coreLabels := kubeobjects.NewCoreLabels(dk.Name, kubeobjects.WebhookComponentLabel)
+	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName,
+		targetNs, data, coreLabels.BuildMatchLabels(), corev1.SecretTypeOpaque, log)
 }
 
 // GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
@@ -68,9 +70,10 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 	if err != nil {
 		return false, err
 	}
-	labels := kubeobjects.CommonLabels(dk.Name, kubeobjects.WebhookComponentLabel)
+	coreLabels := kubeobjects.NewCoreLabels(dk.Name, kubeobjects.WebhookComponentLabel)
 	for _, targetNs := range nsList {
-		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName, targetNs.Name, data, labels, corev1.SecretTypeOpaque, log); err != nil {
+		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, webhook.SecretConfigName,
+			targetNs.Name, data, coreLabels.BuildMatchLabels(), corev1.SecretTypeOpaque, log); err != nil {
 			return false, err
 		} else if upd {
 			anyUpdate = true
