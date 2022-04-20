@@ -24,7 +24,6 @@ const (
 	serviceAccountPrefix   = "dynatrace-"
 	tenantSecretVolumeName = "ag-tenant-secret"
 
-	annotationVersion                     = dynatracev1beta1.InternalFlagPrefix + "version"
 	annotationCustomPropsHash             = dynatracev1beta1.InternalFlagPrefix + "custom-properties-hash"
 	annotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + capability.ActiveGateContainerName
 
@@ -84,22 +83,24 @@ func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityPro
 }
 
 func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSet, error) {
+	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, stsProperties.DynaKube.Name,
+		stsProperties.feature, stsProperties.Status.ActiveGate.Version)
+
 	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        stsProperties.Name + "-" + stsProperties.feature,
 			Namespace:   stsProperties.Namespace,
-			Labels:      stsProperties.buildLabels(),
+			Labels:      appLabels.BuildLabels(),
 			Annotations: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
 			Replicas:            stsProperties.Replicas,
 			PodManagementPolicy: appsv1.ParallelPodManagement,
-			Selector:            &metav1.LabelSelector{MatchLabels: stsProperties.buildMatchLabels()},
+			Selector:            &metav1.LabelSelector{MatchLabels: appLabels.BuildMatchLabels()},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: stsProperties.buildLabels(),
+					Labels: appLabels.BuildLabels(),
 					Annotations: map[string]string{
-						annotationVersion:         stsProperties.Status.ActiveGate.Version,
 						annotationCustomPropsHash: stsProperties.customPropertiesHash,
 					},
 				},

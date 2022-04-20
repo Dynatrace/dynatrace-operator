@@ -12,6 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -250,10 +251,10 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		NewSecret(name, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}),
 		sampleKubeSystemNS)
 	dtcMock := &dtclient.MockDynatraceClient{}
-	version := "1.187"
-	oldVersion := "1.186"
+	componentVersion := "1.187"
+	oldComponentVersion := "1.186"
 	hostIP := "1.2.3.4"
-	dtcMock.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(version, nil)
+	dtcMock.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(componentVersion, nil)
 	dtcMock.On("GetTokenScopes", "42").Return(dtclient.TokenScopes{dtclient.DynatracePaasToken}, nil)
 	dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{dtclient.DynatraceApiToken}, nil)
 
@@ -265,9 +266,17 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		feature:   daemonset.DeploymentTypeFullStack,
 	}
 
+	expectedLabels := map[string]string{
+		kubeobjects.AppNameLabel:      kubeobjects.OneAgentComponentLabel,
+		kubeobjects.AppComponentLabel: "classicfullstack",
+		kubeobjects.AppCreatedByLabel: name,
+		kubeobjects.AppVersionLabel:   oldComponentVersion,
+		kubeobjects.AppManagedByLabel: version.AppName,
+	}
+
 	t.Run(`reconileImp Instances set, if autoUpdate is true`, func(t *testing.T) {
 		dk := base.DeepCopy()
-		dk.Status.OneAgent.Version = oldVersion
+		dk.Status.OneAgent.Version = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
@@ -279,7 +288,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		}
 		pod.Name = "oneagent-update-enabled"
 		pod.Namespace = namespace
-		pod.Labels = daemonset.BuildLabels(name, reconciler.feature)
+		pod.Labels = expectedLabels
 		pod.Spec = ds.Spec.Template.Spec
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
@@ -301,7 +310,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		dk := base.DeepCopy()
 		autoUpdate := false
 		dk.Spec.OneAgent.ClassicFullStack.AutoUpdate = &autoUpdate
-		dk.Status.OneAgent.Version = oldVersion
+		dk.Status.OneAgent.Version = oldComponentVersion
 		dsInfo := daemonset.NewClassicFullStack(dk, testClusterID)
 		ds, err := dsInfo.BuildDaemonSet()
 		require.NoError(t, err)
@@ -313,7 +322,7 @@ func TestReconcile_InstancesSet(t *testing.T) {
 		}
 		pod.Name = "oneagent-update-disabled"
 		pod.Namespace = namespace
-		pod.Labels = daemonset.BuildLabels(name, reconciler.feature)
+		pod.Labels = expectedLabels
 		pod.Spec = ds.Spec.Template.Spec
 		pod.Status.HostIP = hostIP
 		dk.Status.Tokens = dk.Tokens()
