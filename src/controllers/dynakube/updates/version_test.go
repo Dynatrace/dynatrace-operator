@@ -29,6 +29,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -72,10 +73,14 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 	}
 
 	t.Run("no update if version provider returns error", func(t *testing.T) {
-		dk, fakeClient, now, registry := dkTemplate.DeepCopy(), fake.NewClient(), metav1.Now(), newEmptyFakeRegistry()
+		dk := dkTemplate.DeepCopy()
+		fakeClient := fake.NewClient()
+		now := metav1.Now()
+		registry := newEmptyFakeRegistry()
+		fs := afero.Afero{Fs: afero.NewMemMapFs()}
 		dkState := &status.DynakubeState{Instance: dk, Now: now}
 
-		upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
+		upd, err := ReconcileVersions(ctx, dkState, fakeClient, fs, registry.ImageVersionExt)
 
 		assert.Error(t, err)
 		assert.False(t, upd)
@@ -83,9 +88,9 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 
 	t.Run("all image versions were updated", func(t *testing.T) {
 		dk := dkTemplate.DeepCopy()
-
+		fs := afero.Afero{Fs: afero.NewMemMapFs()}
 		dkState, fakeClient, now := testInitDynakubeState(t, dk)
-		status := &dkState.Instance.Status
+		dkStatus := &dkState.Instance.Status
 		registry := newFakeRegistry(map[string]string{
 			agImagePath:       "1.0.0",
 			eecImagePath:      "1.0.0",
@@ -94,16 +99,16 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		})
 
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, fs, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.True(t, upd)
-			assertVersionStatusEquals(t, registry, agImagePath, now, &status.ActiveGate)
-			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &status.OneAgent)
-			assertVersionStatusEquals(t, registry, eecImagePath, now, &status.ExtensionController)
-			assertVersionStatusEquals(t, registry, statsdImagePath, now, &status.Statsd)
+			assertVersionStatusEquals(t, registry, agImagePath, now, &dkStatus.ActiveGate)
+			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &dkStatus.OneAgent)
+			assertVersionStatusEquals(t, registry, eecImagePath, now, &dkStatus.ExtensionController)
+			assertVersionStatusEquals(t, registry, statsdImagePath, now, &dkStatus.Statsd)
 		}
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, fs, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.False(t, upd)
 		}
@@ -112,7 +117,8 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 	t.Run("some image versions were updated", func(t *testing.T) {
 		dk := dkTemplate.DeepCopy()
 		dkState, fakeClient, now := testInitDynakubeState(t, dk)
-		status := &dkState.Instance.Status
+		fs := afero.Afero{Fs: afero.NewMemMapFs()}
+		dkStatus := &dkState.Instance.Status
 		registry := newFakeRegistry(map[string]string{
 			agImagePath:       "1.0.0",
 			eecImagePath:      "1.0.0",
@@ -121,40 +127,40 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		})
 
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, fs, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.True(t, upd)
 
-			assertVersionStatusEquals(t, registry, agImagePath, now, &status.ActiveGate)
-			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &status.OneAgent)
-			assertVersionStatusEquals(t, registry, eecImagePath, now, &status.ExtensionController)
-			assertVersionStatusEquals(t, registry, statsdImagePath, now, &status.Statsd)
+			assertVersionStatusEquals(t, registry, agImagePath, now, &dkStatus.ActiveGate)
+			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &dkStatus.OneAgent)
+			assertVersionStatusEquals(t, registry, eecImagePath, now, &dkStatus.ExtensionController)
+			assertVersionStatusEquals(t, registry, statsdImagePath, now, &dkStatus.Statsd)
 		}
 
 		registry.SetVersion(eecImagePath, "1.0.1")
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, fs, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.False(t, upd)
 
-			assertVersionStatusEquals(t, registry, agImagePath, now, &status.ActiveGate)
-			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &status.OneAgent)
+			assertVersionStatusEquals(t, registry, agImagePath, now, &dkStatus.ActiveGate)
+			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &dkStatus.OneAgent)
 			assertVersionStatusEquals(t, newFakeRegistry(map[string]string{
 				eecImagePath: "1.0.0", // Previous state
-			}), eecImagePath, now, &status.ExtensionController)
-			assertVersionStatusEquals(t, registry, statsdImagePath, now, &status.Statsd)
+			}), eecImagePath, now, &dkStatus.ExtensionController)
+			assertVersionStatusEquals(t, registry, statsdImagePath, now, &dkStatus.Statsd)
 		}
 
 		now = testChangeTime(t, dkState, 15*time.Minute+1*time.Second)
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, fs, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.True(t, upd)
 
-			assertVersionStatusEquals(t, registry, agImagePath, now, &status.ActiveGate)
-			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &status.OneAgent)
-			assertVersionStatusEquals(t, registry, eecImagePath, now, &status.ExtensionController)
-			assertVersionStatusEquals(t, registry, statsdImagePath, now, &status.Statsd)
+			assertVersionStatusEquals(t, registry, agImagePath, now, &dkStatus.ActiveGate)
+			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &dkStatus.OneAgent)
+			assertVersionStatusEquals(t, registry, eecImagePath, now, &dkStatus.ExtensionController)
+			assertVersionStatusEquals(t, registry, statsdImagePath, now, &dkStatus.Statsd)
 		}
 	})
 }

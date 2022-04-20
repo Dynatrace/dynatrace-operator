@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -23,9 +23,9 @@ type DockerAuth struct {
 	Password string `json:"password"`
 }
 
-func NewDockerConfig(ctx context.Context, kubeClient client.Reader, dynakube dynatracev1beta1.DynaKube) (*DockerConfig, error) {
+func NewDockerConfig(ctx context.Context, apiReader client.Reader, dynakube dynatracev1beta1.DynaKube) (*DockerConfig, error) {
 	var pullSecret corev1.Secret
-	if err := kubeClient.Get(ctx, client.ObjectKey{Name: dynakube.PullSecret(), Namespace: dynakube.Namespace}, &pullSecret); err != nil {
+	if err := apiReader.Get(ctx, client.ObjectKey{Name: dynakube.PullSecret(), Namespace: dynakube.Namespace}, &pullSecret); err != nil {
 		log.Info("failed to load pull secret", "dynakube", dynakube.Name)
 		return nil, err
 	}
@@ -64,16 +64,22 @@ func parseDockerAuthsFromSecret(secret *corev1.Secret) (map[string]DockerAuth, e
 	return dockerConf.Auths, nil
 }
 
-func (config *DockerConfig) SaveCustomCAs(ctx context.Context, kubeClient client.Reader, dynakube dynatracev1beta1.DynaKube, path string) error {
-	certs := &corev1.ConfigMap{}
-	if err := kubeClient.Get(ctx, client.ObjectKey{Namespace: dynakube.Namespace, Name: dynakube.Spec.TrustedCAs}, certs); err != nil {
+func (config *DockerConfig) SaveCustomCAs(
+	ctx context.Context,
+	apiReader client.Reader,
+	dynakube dynatracev1beta1.DynaKube,
+	fs afero.Afero,
+	path string,
+) error {
+	certs := &corev1.ConfigMap{} // TODO: Secret maybe ?
+	if err := apiReader.Get(ctx, client.ObjectKey{Namespace: dynakube.Namespace, Name: dynakube.Spec.TrustedCAs}, certs); err != nil {
 		log.Info("failed to load trusted CAs")
 		return err
 	}
 	if certs.Data[dtclient.CustomCertificatesConfigMapKey] == "" {
 		return fmt.Errorf("failed to extract certificate configmap field: missing field certs")
 	}
-	if err := os.WriteFile(path, []byte(certs.Data[dtclient.CustomCertificatesConfigMapKey]), 0666); err != nil {
+	if err := fs.WriteFile(path, []byte(certs.Data[dtclient.CustomCertificatesConfigMapKey]), 0666); err != nil {
 		log.Info("failed to save custom certificates")
 		return err
 	}

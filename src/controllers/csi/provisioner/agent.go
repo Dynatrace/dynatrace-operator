@@ -56,7 +56,7 @@ func newAgentUpdater(
 	}
 }
 
-func (updater *agentUpdater) updateAgent(ctx context.Context, latestVersion, tenantUUID string, previousHash string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
+func (updater *agentUpdater) updateAgent(ctx context.Context, latestVersion, tenantUUID string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
 	dk := updater.dk
 	targetVersion := updater.getOneAgentVersionFromInstance()
 	targetDir := updater.path.AgentBinaryDirForVersion(tenantUUID, targetVersion)
@@ -104,9 +104,14 @@ func (updater *agentUpdater) setImageInfo(ctx context.Context, targetDir string)
 	}
 	if dk.Spec.TrustedCAs != "" {
 		caCertPath := filepath.Join(targetDir, "ca.crt")
-		err := dockerConfig.SaveCustomCAs(ctx, updater.apiReader, *dk, caCertPath)
+		err := dockerConfig.SaveCustomCAs(ctx, updater.apiReader, *dk, afero.Afero{Fs: updater.fs}, caCertPath)
 		if err != nil {
 			return cleanCerts, err
+		}
+		cleanCerts = func() {
+			if err := updater.fs.RemoveAll(caCertPath); err != nil {
+				log.Error(err, "failed to remove ca.crt")
+			}
 		}
 	}
 	updater.installer.SetImageInfo(&installer.ImageInfo{

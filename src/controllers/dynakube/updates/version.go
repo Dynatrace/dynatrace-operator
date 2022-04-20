@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/pkg/errors"
+	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -24,11 +25,12 @@ const (
 // VersionProviderCallback fetches the version for a given image.
 type VersionProviderCallback func(string, *dockerconfig.DockerConfig) (ImageVersion, error)
 
-// ReconcileImageVersions updates the version and hash for the images used by the rec.Instance DynaKube instance.
+// ReconcileVersions updates the version and hash for the images used by the rec.Instance DynaKube instance.
 func ReconcileVersions(
 	ctx context.Context,
 	dkState *status.DynakubeState,
-	kubeClient client.Client, // TODO: Add apiReader
+	apiReader client.Reader,
+	fs afero.Afero,
 	verProvider VersionProviderCallback,
 ) (bool, error) {
 	upd := false
@@ -51,19 +53,19 @@ func ReconcileVersions(
 		dkState.IsOutdated(dk.Status.Statsd.LastUpdateProbeTimestamp, ProbeThreshold)
 
 	if !(needsActiveGateUpdate || needsOneAgentUpdate || needsEecUpdate || needsStatsdUpdate) {
-		return upd, nil
+		return false, nil
 	}
 
 	caCertPath := path.Join(TmpCAPath, TmpCAName)
-	dockerConfig, err := dockerconfig.NewDockerConfig(ctx, kubeClient, *dkState.Instance)
+	dockerConfig, err := dockerconfig.NewDockerConfig(ctx, apiReader, *dkState.Instance)
 	if err != nil {
-		return upd, err
+		return false, err
 	}
 	if dk.Spec.TrustedCAs != "" {
 		_ = os.MkdirAll(TmpCAPath, 0755)
-		dockerConfig.SaveCustomCAs(ctx, kubeClient, *dkState.Instance, caCertPath)
+		err := dockerConfig.SaveCustomCAs(ctx, apiReader, *dkState.Instance, fs, caCertPath)
 		if err != nil {
-			return upd, err
+			return false, err
 		}
 		defer func() {
 			_ = os.Remove(TmpCAPath)
