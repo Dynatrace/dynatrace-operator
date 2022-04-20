@@ -71,7 +71,7 @@ func NewCoreLabels(dynakubeName, component string) *CoreLabels {
 	}
 }
 
-// BuildLabels produces a set of labels that
+// BuildLabels creates labels that
 // include operator version
 func (labels *CoreLabels) BuildLabels() map[string]string {
 	labelsMap := labels.BuildMatchLabels()
@@ -79,8 +79,8 @@ func (labels *CoreLabels) BuildLabels() map[string]string {
 	return labelsMap
 }
 
-// BuildLabels produces a set of labels that
-// include oneagent/activegate mode and version
+// BuildLabels creates labels that
+// include oneagent or activegate mode and version
 func (labels *AppLabels) BuildLabels() map[string]string {
 	labelsMap := labels.BuildMatchLabels()
 	labelsMap[AppVersionLabel] = labels.Version
@@ -88,7 +88,7 @@ func (labels *AppLabels) BuildLabels() map[string]string {
 	return labelsMap
 }
 
-// BuildMatchLabels produces a set of labels that
+// BuildMatchLabels creates labels that
 // don't change when switching operator versions
 func (labels *coreMatchLabels) BuildMatchLabels() map[string]string {
 	return map[string]string{
@@ -98,7 +98,7 @@ func (labels *coreMatchLabels) BuildMatchLabels() map[string]string {
 	}
 }
 
-// BuildMatchLabels produces a set of labels that
+// BuildMatchLabels creates labels that
 // don't change when switching oneagent or activegate mode
 func (labels *AppLabels) BuildMatchLabels() map[string]string {
 	return map[string]string{
