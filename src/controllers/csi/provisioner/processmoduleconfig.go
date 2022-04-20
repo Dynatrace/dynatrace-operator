@@ -92,6 +92,7 @@ func (provisioner *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID
 
 	jsonBytes, err := json.Marshal(processModuleConfig)
 	if err != nil {
+		processModuleConfigCache.Close()
 		provisioner.removeProcessModuleConfigCache(tenantUUID, "Error when marshaling processModuleConfigCache")
 		return err
 	}
