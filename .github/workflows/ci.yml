@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: dump env
-        run: echo ${github.env}
+        run: echo ${github.env.IS_EXTERNAL}
       - name: dump event
         run: env.pull_request
       - name: Checkout
