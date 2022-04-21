@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: dump env
+        run: env
       - name: Set up Helm
         uses: azure/setup-helm@v1
         with:
@@ -180,7 +182,7 @@ jobs:
           outputs: type=docker,dest=/tmp/operator-arm64.tar
       - name: Upload artifact
         uses: actions/upload-artifact@v2
-        if:  ${{ IS_EXTERNAL }} == false
+#        if:  ${{ IS_EXTERNAL }} == false
         with:
           name: operator
           path: /tmp/operator*.tar
@@ -192,7 +194,7 @@ jobs:
   uploaddockerimage:
     name: Upload docker image to quay
     runs-on: ubuntu-latest
-    if: $IS_EXTERNAL == false
+#    if: $IS_EXTERNAL == false
     needs: [tests, linting, builddockerimage]
     env:
       IMAGE_QUAY: quay.io/dynatrace/dynatrace-operator
