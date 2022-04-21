@@ -36,7 +36,7 @@ const (
 	AnnotationFeatureActiveGateAppArmor               = AnnotationFeaturePrefix + "activegate-apparmor"
 	AnnotationFeatureActiveGateReadOnlyFilesystem     = AnnotationFeaturePrefix + "activegate-readonly-fs"
 	AnnotationFeatureAutomaticKubernetesApiMonitoring = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
-	AnnotationFeatureActiveGateIgnoreProxy       	  = AnnotationFeaturePrefix + "activegate-ignore-proxy"
+	AnnotationFeatureActiveGateIgnoreProxy            = AnnotationFeaturePrefix + "activegate-ignore-proxy"
 
 	// statsD
 	AnnotationFeatureUseActiveGateImageForStatsd = AnnotationFeaturePrefix + "use-activegate-image-for-statsd"
@@ -50,7 +50,7 @@ const (
 	AnnotationFeatureOneAgentMaxUnavailable       = AnnotationFeaturePrefix + "oneagent-max-unavailable"
 	AnnotationFeatureDisableReadOnlyOneAgent      = AnnotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
 	AnnotationFeatureEnableMultipleOsAgentsOnNode = AnnotationFeaturePrefix + "multiple-osagents-on-node"
-	AnnotationFeatureOneAgentIgnoreProxy       	  = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
+	AnnotationFeatureOneAgentIgnoreProxy          = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
 
 	// injection (webhook)
 	AnnotationFeatureEnableWebhookReinvocationPolicy = AnnotationFeaturePrefix + "enable-webhook-reinvocation-policy"
