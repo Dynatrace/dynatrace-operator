@@ -1,0 +1,15 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+startKIND: true
+kindContext: e2e-ag
+namespace: dynatrace
+artifactsDir: src/testing/kuttl/activegate/logs/
+crdDir: config/crd/bases
+manifestDirs:
+  - src/testing/kuttl/activegate/manifests/dynatrace-namespace.yaml
+  - config/deploy/kubernetes/kubernetes.yaml # csi not needed for AG
+testDirs:
+  - src/testing/kuttl/activegate/tests
+parallel: 1
+timeout: 120
+reportFormat: json

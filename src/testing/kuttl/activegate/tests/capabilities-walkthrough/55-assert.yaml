@@ -1,0 +1,225 @@
+apiVersion: dynatrace.com/v1beta1
+kind: DynaKube
+metadata:
+  name: dynakube
+  namespace: dynatrace
+spec:
+  activeGate:
+    capabilities:
+      - dynatrace-api
+  apiUrl: https://acc27517.dev.dynatracelabs.com/api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dynakube-activegate
+spec:
+  ports:
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: https
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: http
+  selector:
+    app.kubernetes.io/component: activegate
+    app.kubernetes.io/created-by: dynakube
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: snapshot
+    component.dynatrace.com/feature: activegate
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dynakube-activegate-0
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/arch
+                operator: In
+                values:
+                  - amd64
+              - key: kubernetes.io/os
+                operator: In
+                values:
+                  - linux
+  containers:
+    - env:
+        - name: DT_CAPABILITIES
+          value: restInterface
+        - name: DT_ID_SEED_NAMESPACE
+          value: dynatrace
+        - name: DT_ID_SEED_K8S_CLUSTER_ID
+        - name: DT_DEPLOYMENT_METADATA
+        - name: DT_SERVER
+          valueFrom:
+            secretKeyRef:
+              key: communication-endpoints
+              name: dynakube-activegate-tenant-secret
+        - name: DT_TENANT
+          valueFrom:
+            secretKeyRef:
+              key: tenant-uuid
+              name: dynakube-activegate-tenant-secret
+        - name: DT_DNS_ENTRY_POINT
+          value: https://$(DYNAKUBE_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication
+      image: acc27517.dev.dynatracelabs.com/linux/activegate:latest
+      imagePullPolicy: Always
+      name: activegate
+      ports:
+        - containerPort: 9999
+          name: https
+          protocol: TCP
+        - containerPort: 9998
+          name: http
+          protocol: TCP
+      readinessProbe:
+        failureThreshold: 3
+        httpGet:
+          path: "/rest/health"
+          port: https
+          scheme: HTTPS
+        initialDelaySeconds: 90
+        periodSeconds: 15
+        successThreshold: 1
+        timeoutSeconds: 1
+      resources: {}
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - all
+        privileged: false
+        readOnlyRootFilesystem: false
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      terminationMessagePath: "/dev/termination-log"
+      terminationMessagePolicy: File
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  hostname: dynakube-activegate-0
+  imagePullSecrets:
+    - name: dynakube-pull-secret
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: dynatrace-activegate
+  serviceAccountName: dynatrace-activegate
+  terminationGracePeriodSeconds: 30
+  tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dynakube-activegate
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: activegate
+      app.kubernetes.io/created-by: dynakube
+      app.kubernetes.io/name: dynatrace-operator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: activegate
+        app.kubernetes.io/created-by: dynakube
+        app.kubernetes.io/name: dynatrace-operator
+        component.dynatrace.com/feature: activegate
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - amd64
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+      containers:
+        - env:
+            - name: DT_CAPABILITIES
+              value: restInterface
+            - name: DT_ID_SEED_NAMESPACE
+              value: dynatrace
+            - name: DT_ID_SEED_K8S_CLUSTER_ID
+            - name: DT_DEPLOYMENT_METADATA
+            - name: DT_SERVER
+              valueFrom:
+                secretKeyRef:
+                  key: communication-endpoints
+                  name: dynakube-activegate-tenant-secret
+            - name: DT_TENANT
+              valueFrom:
+                secretKeyRef:
+                  key: tenant-uuid
+                  name: dynakube-activegate-tenant-secret
+            - name: DT_DNS_ENTRY_POINT
+              value: https://$(DYNAKUBE_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication
+          image: acc27517.dev.dynatracelabs.com/linux/activegate:latest
+          imagePullPolicy: Always
+          name: activegate
+          ports:
+            - containerPort: 9999
+              name: https
+              protocol: TCP
+            - containerPort: 9998
+              name: http
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: "/rest/health"
+              port: https
+              scheme: HTTPS
+            initialDelaySeconds: 90
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
+            privileged: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          terminationMessagePath: "/dev/termination-log"
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: dynakube-pull-secret
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: dynatrace-activegate
+      serviceAccountName: dynatrace-activegate
+      terminationGracePeriodSeconds: 30
+  updateStrategy:
+    type: RollingUpdate
