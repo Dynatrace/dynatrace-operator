@@ -579,6 +579,39 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 			SubPath:   InternalProxySecretPassword,
 		})
 	})
+	t.Run(`with proxy from value source and feature flag to ignore proxy on activeGate enabled`, func(t *testing.T) {
+		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{ValueFrom: testName}
+		instance.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateIgnoreProxy] = "true"
+		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil))
+
+		assert.NotContains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretHostMountPath,
+			SubPath:   InternalProxySecretHost,
+		})
+
+		assert.NotContains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretPortMountPath,
+			SubPath:   InternalProxySecretPort,
+		})
+
+		assert.NotContains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretUsernameMountPath,
+			SubPath:   InternalProxySecretUsername,
+		})
+
+		assert.NotContains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      InternalProxySecretVolumeName,
+			MountPath: InternalProxySecretPasswordMountPath,
+			SubPath:   InternalProxySecretPassword,
+		})
+	})
 }
 
 func TestStatefulSet_Resources(t *testing.T) {
