@@ -56,22 +56,22 @@ func (provisioner *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Clie
 
 func (provisioner *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID string) (*processModuleConfigCache, error) {
 	var processModuleConfig processModuleConfigCache
-	processModuleConfigCache, err := provisioner.fs.Open(provisioner.path.AgentRuxitProcResponseCache(tenantUUID))
+	processModuleConfigCacheFile, err := provisioner.fs.Open(provisioner.path.AgentRuxitProcResponseCache(tenantUUID))
 	if err != nil {
 		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return nil, err
 	}
 
-	jsonBytes, err := ioutil.ReadAll(processModuleConfigCache)
+	jsonBytes, err := ioutil.ReadAll(processModuleConfigCacheFile)
 	if err != nil {
-		if err := processModuleConfigCache.Close(); err != nil {
+		if err := processModuleConfigCacheFile.Close(); err != nil {
 			log.Error(errors.WithStack(err), "error closing file after trying to read it")
 		}
 		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return nil, errors.Wrapf(err, "error reading processModuleConfigCache")
 	}
 
-	if err := processModuleConfigCache.Close(); err != nil {
+	if err := processModuleConfigCacheFile.Close(); err != nil {
 		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return nil, errors.Wrapf(err, "error closing file after reading processModuleConfigCache")
 	}
@@ -85,7 +85,7 @@ func (provisioner *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID 
 }
 
 func (provisioner *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID string, processModuleConfig *processModuleConfigCache) error {
-	processModuleConfigCache, err := provisioner.fs.OpenFile(provisioner.path.AgentRuxitProcResponseCache(tenantUUID), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	processModuleConfigCacheFile, err := provisioner.fs.OpenFile(provisioner.path.AgentRuxitProcResponseCache(tenantUUID), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return errors.Wrapf(err, "error opening processModuleConfigCache, when writing")
@@ -93,19 +93,19 @@ func (provisioner *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID
 
 	jsonBytes, err := json.Marshal(processModuleConfig)
 	if err != nil {
-		if err := processModuleConfigCache.Close(); err != nil {
+		if err := processModuleConfigCacheFile.Close(); err != nil {
 			log.Error(errors.WithStack(err), "error closing file after trying to unmarshal")
 		}
 		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return errors.Wrapf(err, "error when marshaling processModuleConfigCache")
 	}
 
-	if _, err := processModuleConfigCache.Write(jsonBytes); err != nil {
+	if _, err := processModuleConfigCacheFile.Write(jsonBytes); err != nil {
 		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return errors.Wrapf(err, "error writing processModuleConfigCache")
 	}
 
-	if err := processModuleConfigCache.Close(); err != nil {
+	if err := processModuleConfigCacheFile.Close(); err != nil {
 		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return errors.Wrapf(err, "error closing file after writing processModuleConfigCache")
 	}
