@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const generalSectionName = "general"
+
 type ProcessModuleConfig struct {
 	Revision   uint                    `json:"revision"`
 	Properties []ProcessModuleProperty `json:"properties"`
@@ -51,21 +53,21 @@ func (pmc *ProcessModuleConfig) Add(newProperty ProcessModuleProperty) *ProcessM
 
 func (pmc *ProcessModuleConfig) AddConnectionInfo(connectionInfo ConnectionInfo) *ProcessModuleConfig {
 	tenant := ProcessModuleProperty{
-		Section: "general",
+		Section: generalSectionName,
 		Key:     "tenant",
 		Value:   connectionInfo.TenantUUID,
 	}
 	pmc.Add(tenant)
 
 	token := ProcessModuleProperty{
-		Section: "general",
+		Section: generalSectionName,
 		Key:     "tenantToken",
 		Value:   connectionInfo.TenantToken,
 	}
 	pmc.Add(token)
 
 	endpoints := ProcessModuleProperty{
-		Section: "general",
+		Section: generalSectionName,
 		Key:     "serverAddress",
 		Value:   "{" + connectionInfo.FormattedCommunicationEndpoints + "}",
 	}
@@ -75,7 +77,7 @@ func (pmc *ProcessModuleConfig) AddConnectionInfo(connectionInfo ConnectionInfo)
 }
 
 func (pmc *ProcessModuleConfig) AddHostGroup(hostGroup string) *ProcessModuleConfig {
-	property := ProcessModuleProperty{Section: "general", Key: "hostGroup", Value: hostGroup}
+	property := ProcessModuleProperty{Section: generalSectionName, Key: "hostGroup", Value: hostGroup}
 	return pmc.Add(property)
 }
 
