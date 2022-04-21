@@ -180,7 +180,7 @@ jobs:
           outputs: type=docker,dest=/tmp/operator-arm64.tar
       - name: Upload artifact
         uses: actions/upload-artifact@v2
-        if:  ${{ env.IS_EXTERNAL }}
+        if:  env.IS_EXTERNAL == false
         with:
           name: operator
           path: /tmp/operator*.tar
@@ -192,7 +192,7 @@ jobs:
   uploaddockerimage:
     name: Upload docker image to quay
     runs-on: ubuntu-latest
-    if: ${{ env.IS_EXTERNAL }}
+    if: env.IS_EXTERNAL == false
     needs: [tests, linting, builddockerimage]
     env:
       IMAGE_QUAY: quay.io/dynatrace/dynatrace-operator
