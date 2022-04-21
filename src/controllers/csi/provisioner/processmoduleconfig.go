@@ -57,26 +57,29 @@ func (provisioner *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID 
 	var processModuleConfig processModuleConfigCache
 	processModuleConfigCache, err := provisioner.fs.Open(provisioner.path.AgentRuxitProcResponseCache(tenantUUID))
 	if err != nil {
-		provisioner.removeProcessModuleConfigCache(tenantUUID, "Error opening processModuleConfigCache, when reading")
+		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return nil, err
 	}
 
 	jsonBytes, err := ioutil.ReadAll(processModuleConfigCache)
 	if err != nil {
 		processModuleConfigCache.Close()
-		provisioner.removeProcessModuleConfigCache(tenantUUID, "Error reading processModuleConfigCache")
+		log.Info("Error reading processModuleConfigCache")
+		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return nil, err
 	}
 
 	err = processModuleConfigCache.Close()
 	if err != nil {
-		provisioner.removeProcessModuleConfigCache(tenantUUID, "Error closing file after reading processModuleConfigCache")
+		log.Info("Error closing file after reading processModuleConfigCache")
+		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return nil, err
 	}
 
 	err = json.Unmarshal(jsonBytes, &processModuleConfig)
 	if err != nil {
-		provisioner.removeProcessModuleConfigCache(tenantUUID, "Error when unmarshalling processModuleConfigCache")
+		log.Info("Error when unmarshalling processModuleConfigCache")
+		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return nil, err
 	}
 
@@ -86,34 +89,37 @@ func (provisioner *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID 
 func (provisioner *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID string, processModuleConfig *processModuleConfigCache) error {
 	processModuleConfigCache, err := provisioner.fs.OpenFile(provisioner.path.AgentRuxitProcResponseCache(tenantUUID), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		provisioner.removeProcessModuleConfigCache(tenantUUID, "Error opening processModuleConfigCache, when writing")
+		log.Info("Error opening processModuleConfigCache, when writing")
+		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return err
 	}
 
 	jsonBytes, err := json.Marshal(processModuleConfig)
 	if err != nil {
 		processModuleConfigCache.Close()
-		provisioner.removeProcessModuleConfigCache(tenantUUID, "Error when marshaling processModuleConfigCache")
+		log.Info("Error when marshaling processModuleConfigCache")
+		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return err
 	}
 
 	_, err = processModuleConfigCache.Write(jsonBytes)
 	if err != nil {
 		processModuleConfigCache.Close()
-		provisioner.removeProcessModuleConfigCache(tenantUUID, "Error writing processModuleConfigCache")
+		log.Info("Error writing processModuleConfigCache")
+		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return err
 	}
 
 	err = processModuleConfigCache.Close()
 	if err != nil {
-		provisioner.removeProcessModuleConfigCache(tenantUUID, "Error closing file after writing processModuleConfigCache")
+		log.Info("Error closing file after writing processModuleConfigCache")
+		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return err
 	}
 	return nil
 }
 
-func (provisioner *OneAgentProvisioner) removeProcessModuleConfigCache(tenantUUID string, removalReason string) {
-	log.Info(removalReason)
+func (provisioner *OneAgentProvisioner) removeProcessModuleConfigCache(tenantUUID string) {
 	err := provisioner.fs.Remove(provisioner.path.AgentRuxitProcResponseCache(tenantUUID))
 	if os.IsNotExist(err) {
 		log.Info("processModuleConfigCache can't be removed, does not exist")
