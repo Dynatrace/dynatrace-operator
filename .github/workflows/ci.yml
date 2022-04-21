@@ -182,7 +182,7 @@ jobs:
           outputs: type=docker,dest=/tmp/operator-arm64.tar
       - name: Upload artifact
         uses: actions/upload-artifact@v2
-#        if:  ${{ IS_EXTERNAL }} == false
+        if:  env.IS_EXTERNAL == false
         with:
           name: operator
           path: /tmp/operator*.tar
