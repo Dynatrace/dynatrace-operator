@@ -36,6 +36,7 @@ const (
 	AnnotationFeatureActiveGateAppArmor               = AnnotationFeaturePrefix + "activegate-apparmor"
 	AnnotationFeatureActiveGateReadOnlyFilesystem     = AnnotationFeaturePrefix + "activegate-readonly-fs"
 	AnnotationFeatureAutomaticKubernetesApiMonitoring = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
+	AnnotationFeatureActiveGateIgnoreProxy       	  = AnnotationFeaturePrefix + "activegate-ignore-proxy"
 
 	// statsD
 	AnnotationFeatureUseActiveGateImageForStatsd = AnnotationFeaturePrefix + "use-activegate-image-for-statsd"
@@ -49,6 +50,7 @@ const (
 	AnnotationFeatureOneAgentMaxUnavailable       = AnnotationFeaturePrefix + "oneagent-max-unavailable"
 	AnnotationFeatureDisableReadOnlyOneAgent      = AnnotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
 	AnnotationFeatureEnableMultipleOsAgentsOnNode = AnnotationFeaturePrefix + "multiple-osagents-on-node"
+	AnnotationFeatureOneAgentIgnoreProxy       	  = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
 
 	// injection (webhook)
 	AnnotationFeatureEnableWebhookReinvocationPolicy = AnnotationFeaturePrefix + "enable-webhook-reinvocation-policy"
@@ -178,6 +180,16 @@ func (dk *DynaKube) FeatureActiveGateReadOnlyFilesystem() bool {
 // FeatureActiveGateAppArmor is a feature flag to enable AppArmor in ActiveGate container
 func (dk *DynaKube) FeatureActiveGateAppArmor() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAppArmor) == "true"
+}
+
+// FeatureOneAgentIgnoreProxy is a feature flag to ignore the proxy for oneAgents when set in CR
+func (dk *DynaKube) FeatureOneAgentIgnoreProxy() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureOneAgentIgnoreProxy) == "true"
+}
+
+// FeatureActiveGateIgnoreProxy is a feature flag to ignore the proxy for ActiveGate when set in CR
+func (dk *DynaKube) FeatureActiveGateIgnoreProxy() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateIgnoreProxy) == "true"
 }
 
 func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {

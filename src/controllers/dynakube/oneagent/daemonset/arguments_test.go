@@ -74,6 +74,7 @@ func TestPodSpec_Arguments(t *testing.T) {
 		},
 	}
 
+	instance.Annotations = map[string]string{}
 	podSpecs := dsInfo.podSpec()
 	require.NotNil(t, podSpecs)
 	require.NotEmpty(t, podSpecs.Containers)
@@ -95,6 +96,12 @@ func TestPodSpec_Arguments(t *testing.T) {
 		assert.Contains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 
 		instance.Spec.Proxy = nil
+		podSpecs = dsInfo.podSpec()
+		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
+	})
+	t.Run(`has proxy arg but feature flag to ignore is enabled`, func(t *testing.T) {
+		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+		instance.Annotations[dynatracev1beta1.AnnotationFeatureOneAgentIgnoreProxy] = "true"
 		podSpecs = dsInfo.podSpec()
 		assert.NotContains(t, podSpecs.Containers[0].Args, "--set-proxy=$(https_proxy)")
 	})
