@@ -11,6 +11,7 @@ import (
 	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -49,9 +50,9 @@ const (
 
 func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 	deploymentModes := map[string]dynatracev1beta1.OneAgentSpec{
-		"hostMonitoring":        {HostMonitoring: &dynatracev1beta1.HostInjectSpec{}},
-		"classicFullStack":      {ClassicFullStack: &dynatracev1beta1.HostInjectSpec{}},
-		"cloudNativeFullStack":  {CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{}},
+		"hostMonitoring":        {HostMonitoring: &dynatracev1beta1.HostInjectSpec{AutoUpdate: address_of.Bool(false)}},
+		"classicFullStack":      {ClassicFullStack: &dynatracev1beta1.HostInjectSpec{AutoUpdate: address_of.Bool(false)}},
+		"cloudNativeFullStack":  {CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{HostInjectSpec: dynatracev1beta1.HostInjectSpec{AutoUpdate: address_of.Bool(false)}}},
 		"applicationMonitoring": {ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{}},
 	}
 
