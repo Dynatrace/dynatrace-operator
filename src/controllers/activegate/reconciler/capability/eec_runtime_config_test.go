@@ -36,9 +36,9 @@ func testBuildDynaKubeWithAnnotations(instanceName string, statsdEnabled bool, a
 func TestCreateEecConfigMap(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		instance := testBuildDynaKubeWithAnnotations("dynakube", true, map[string]string{
-			"operator.dynatrace.com/extensions.debugExtensionDSstatsddisablenamedalivesignals": "false",
-			"operator.dynatrace.com/extensions.debugExtensionDSstatsdlogoutboundminttraffic":   "true",
-			"operator.dynatrace.com/extensions.debugExtensionDSstatsdcustomloglevel":           "trace",
+			dynatracev1beta1.AnnotationFeaturePrefix + "extensions.debugExtensionDSstatsddisablenamedalivesignals": "false",
+			dynatracev1beta1.AnnotationFeaturePrefix + "extensions.debugExtensionDSstatsdlogoutboundminttraffic":   "true",
+			dynatracev1beta1.AnnotationFeaturePrefix + "extensions.debugExtensionDSstatsdcustomloglevel":           "trace",
 		})
 		runtimeConfig := NewEecRuntimeConfig()
 
@@ -59,8 +59,8 @@ func TestCreateEecConfigMap(t *testing.T) {
 
 	t.Run("no valid EEC runtime properties, StatsD enabled", func(t *testing.T) {
 		instance := testBuildDynaKubeWithAnnotations("dynakube", true, map[string]string{
-			"operator.dynatrace.com/debugExtensionDSstatsdlogoutboundminttraffic": "true",
-			"debugExtensionDSstatsdcustomloglevel":                                "info",
+			dynatracev1beta1.AnnotationFeaturePrefix + "debugExtensionDSstatsdlogoutboundminttraffic": "true",
+			"debugExtensionDSstatsdcustomloglevel":                                                    "info",
 		})
 		runtimeConfig := NewEecRuntimeConfig()
 
@@ -80,7 +80,7 @@ func TestCreateEecConfigMap(t *testing.T) {
 
 	t.Run("valid EEC runtime properties but StatsD disabled", func(t *testing.T) {
 		instance := testBuildDynaKubeWithAnnotations("dynakube", false, map[string]string{
-			"operator.dynatrace.com/extensions.debugExtensiondummylongflag": "17",
+			dynatracev1beta1.AnnotationFeaturePrefix + "extensions.debugExtensiondummylongflag": "17",
 		})
 		runtimeConfig := NewEecRuntimeConfig()
 
