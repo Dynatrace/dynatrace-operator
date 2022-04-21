@@ -69,15 +69,13 @@ func (provisioner *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID 
 		return nil, err
 	}
 
-	err = processModuleConfigCache.Close()
-	if err != nil {
+	if err := processModuleConfigCache.Close(); err != nil {
 		log.Info("Error closing file after reading processModuleConfigCache")
 		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return nil, err
 	}
 
-	err = json.Unmarshal(jsonBytes, &processModuleConfig)
-	if err != nil {
+	if err := json.Unmarshal(jsonBytes, &processModuleConfig); err != nil {
 		log.Info("Error when unmarshalling processModuleConfigCache")
 		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return nil, err
@@ -102,16 +100,14 @@ func (provisioner *OneAgentProvisioner) writeProcessModuleConfigCache(tenantUUID
 		return err
 	}
 
-	_, err = processModuleConfigCache.Write(jsonBytes)
-	if err != nil {
+	if _, err := processModuleConfigCache.Write(jsonBytes); err != nil {
 		processModuleConfigCache.Close()
 		log.Info("Error writing processModuleConfigCache")
 		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return err
 	}
 
-	err = processModuleConfigCache.Close()
-	if err != nil {
+	if err := processModuleConfigCache.Close(); err != nil {
 		log.Info("Error closing file after writing processModuleConfigCache")
 		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return err
