@@ -7,10 +7,11 @@ import (
 	"strconv"
 )
 
-// ConnectionInfo => struct of TenantUUID and CommunicationHosts
 type ConnectionInfo struct {
-	CommunicationHosts []CommunicationHost
-	TenantUUID         string
+	CommunicationHosts              []CommunicationHost
+	TenantUUID                      string
+	TenantToken                     string
+	FormattedCommunicationEndpoints string
 }
 
 // CommunicationHost => struct of connection endpoint
@@ -44,8 +45,10 @@ func (dtc *dynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
 
 func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (ConnectionInfo, error) {
 	type jsonResponse struct {
-		TenantUUID             string   `json:"tenantUUID"`
-		CommunicationEndpoints []string `json:"communicationEndpoints"`
+		TenantUUID                      string   `json:"tenantUUID"`
+		TenantToken                     string   `json:"tenantToken"`
+		CommunicationEndpoints          []string `json:"communicationEndpoints"`
+		FormattedCommunicationEndpoints string   `json:"formattedCommunicationEndpoints"`
 	}
 
 	resp := jsonResponse{}
@@ -55,8 +58,10 @@ func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conn
 		return ConnectionInfo{}, err
 	}
 
-	t := resp.TenantUUID
-	ch := make([]CommunicationHost, 0, len(resp.CommunicationEndpoints))
+	tenantUuid := resp.TenantUUID
+	tenantToken := resp.TenantToken
+	communicationHosts := make([]CommunicationHost, 0, len(resp.CommunicationEndpoints))
+	formattedCommunicationEndpoints := resp.FormattedCommunicationEndpoints
 
 	for _, s := range resp.CommunicationEndpoints {
 		e, err := dtc.parseEndpoint(s)
@@ -64,16 +69,18 @@ func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conn
 			log.Info("failed to parse communication endpoint", "url", s)
 			continue
 		}
-		ch = append(ch, e)
+		communicationHosts = append(communicationHosts, e)
 	}
 
-	if len(ch) == 0 {
+	if len(communicationHosts) == 0 {
 		return ConnectionInfo{}, errors.New("no communication hosts available")
 	}
 
 	ci := ConnectionInfo{
-		CommunicationHosts: ch,
-		TenantUUID:         t,
+		CommunicationHosts:              communicationHosts,
+		TenantUUID:                      tenantUuid,
+		TenantToken:                     tenantToken,
+		FormattedCommunicationEndpoints: formattedCommunicationEndpoints,
 	}
 
 	return ci, nil
