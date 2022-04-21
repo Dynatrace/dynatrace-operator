@@ -5,7 +5,6 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/statefulset"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/stretchr/testify/assert"
@@ -16,8 +15,8 @@ import (
 )
 
 const (
-	testFeature = "test-feature"
-	testName    = "test-name"
+	testComponentFeature = "test-component-feature"
+	testName             = "test-name"
 )
 
 func testCreateInstance() *dynatracev1beta1.DynaKube {
@@ -51,25 +50,32 @@ func TestCreateService(t *testing.T) {
 		TargetPort: intstr.FromString(capability.HttpServicePortName),
 	}
 
-	t.Run("check service name and selector", func(t *testing.T) {
+	t.Run("check service name, labels and selector", func(t *testing.T) {
 		instance := testCreateInstance()
-		service := createService(instance, testFeature, capability.AgServicePorts{
+		service := createService(instance, testComponentFeature, capability.AgServicePorts{
 			Webserver: true,
 		})
 
 		assert.NotNil(t, service)
-		assert.Equal(t, instance.Name+"-"+testFeature, service.Name)
+		assert.Equal(t, instance.Name+"-"+testComponentFeature, service.Name)
 		assert.Equal(t, instance.Namespace, service.Namespace)
 
-		serviceSpec := service.Spec
-		assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
-		assert.Equal(t, map[string]string{
+		expectedLabels := map[string]string{
 			kubeobjects.AppCreatedByLabel: testName,
-			kubeobjects.AppComponentLabel: statefulset.ActiveGateComponentName,
-			kubeobjects.FeatureLabel:      testFeature,
+			kubeobjects.AppComponentLabel: string(kubeobjects.ActiveGateComponentLabel),
 			kubeobjects.AppNameLabel:      version.AppName,
 			kubeobjects.AppVersionLabel:   version.Version,
-		}, serviceSpec.Selector)
+		}
+		assert.Equal(t, expectedLabels, service.Labels)
+
+		expectedSelector := map[string]string{
+			kubeobjects.AppCreatedByLabel: testName,
+			kubeobjects.AppComponentLabel: string(kubeobjects.ActiveGateComponentLabel),
+			kubeobjects.AppNameLabel:      version.AppName,
+		}
+		serviceSpec := service.Spec
+		assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
+		assert.Equal(t, expectedSelector, serviceSpec.Selector)
 	})
 
 	t.Run("check AG service if metrics ingest enabled, but not StatsD", func(t *testing.T) {
@@ -82,7 +88,7 @@ func TestCreateService(t *testing.T) {
 		require.True(t, !instance.NeedsStatsd())
 		require.True(t, desiredPorts.AtLeastOneEnabled())
 
-		service := createService(instance, testFeature, desiredPorts)
+		service := createService(instance, testComponentFeature, desiredPorts)
 		ports := service.Spec.Ports
 
 		assert.Contains(t, ports, agHttpsPort, agHttpPort)
@@ -100,7 +106,7 @@ func TestCreateService(t *testing.T) {
 		require.True(t, instance.NeedsStatsd())
 		require.True(t, desiredPorts.AtLeastOneEnabled())
 
-		service := createService(instance, testFeature, desiredPorts)
+		service := createService(instance, testComponentFeature, desiredPorts)
 		ports := service.Spec.Ports
 
 		assert.Contains(t, ports, agHttpsPort, agHttpPort, statsdPort)
@@ -116,7 +122,7 @@ func TestCreateService(t *testing.T) {
 		require.True(t, instance.NeedsStatsd())
 		require.True(t, desiredPorts.AtLeastOneEnabled())
 
-		service := createService(instance, testFeature, desiredPorts)
+		service := createService(instance, testComponentFeature, desiredPorts)
 		ports := service.Spec.Ports
 
 		assert.NotContains(t, ports, agHttpsPort, agHttpPort)
@@ -131,7 +137,7 @@ func TestCreateService(t *testing.T) {
 		require.True(t, !instance.NeedsStatsd())
 		require.False(t, desiredPorts.AtLeastOneEnabled())
 
-		service := createService(instance, testFeature, desiredPorts)
+		service := createService(instance, testComponentFeature, desiredPorts)
 		ports := service.Spec.Ports
 
 		assert.NotContains(t, ports, agHttpsPort, agHttpPort, statsdPort)
@@ -139,10 +145,10 @@ func TestCreateService(t *testing.T) {
 }
 
 func TestBuildServiceNameForDNSEntryPoint(t *testing.T) {
-	actual := buildServiceHostName(testName, testFeature)
+	actual := buildServiceHostName(testName, testComponentFeature)
 	assert.NotEmpty(t, actual)
 
-	expected := "$(TEST_NAME_TEST_FEATURE_SERVICE_HOST):$(TEST_NAME_TEST_FEATURE_SERVICE_PORT)"
+	expected := "$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_HOST):$(TEST_NAME_TEST_COMPONENT_FEATURE_SERVICE_PORT)"
 	assert.Equal(t, expected, actual)
 
 	testStringName := "this---test_string"
