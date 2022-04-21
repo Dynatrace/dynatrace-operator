@@ -197,6 +197,10 @@ jobs:
     env:
       IMAGE_QUAY: quay.io/dynatrace/dynatrace-operator
     steps:
+      - name: dump env
+        run: github.env
+      - name: dump event
+        run: env.pull_request
       - name: Login to Quay
         uses: docker/login-action@v1
         with:
