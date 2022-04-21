@@ -13,6 +13,17 @@ import (
 	"github.com/spf13/afero"
 )
 
+const (
+	rawPolicy = `{
+		"default": [
+			{
+				"type": "insecureAcceptAnything"
+			}
+		]
+	}
+	`
+)
+
 type imagePullInfo struct {
 	imageCacheDir  string
 	targetDir      string
@@ -101,14 +112,6 @@ func (installer *OneAgentInstaller) unpackOciImage(manifests []*manifest.OCI1, i
 }
 
 func buildPolicyContext() (*signature.PolicyContext, error) {
-	rawPolicy := `{
-		"default": [
-			{
-				"type": "insecureAcceptAnything"
-			}
-		]
-	}
-	`
 	policy, err := signature.NewPolicyFromBytes([]byte(rawPolicy))
 	if err != nil {
 		return nil, err

@@ -101,7 +101,7 @@ func TestInstallAgentFromTenant(t *testing.T) {
 			Run(func(args mock.Arguments) {
 				writer := args.Get(6).(io.Writer)
 
-				zipFile := setupTestZip(t, fs)
+				zipFile := setupTestArchive(t, fs, testZip)
 				defer func() { _ = zipFile.Close() }()
 
 				_, err := io.Copy(writer, zipFile)
@@ -137,7 +137,7 @@ func TestInstallAgentFromTenant(t *testing.T) {
 			Run(func(args mock.Arguments) {
 				writer := args.Get(5).(io.Writer)
 
-				zipFile := setupTestZip(t, fs)
+				zipFile := setupTestArchive(t, fs, testZip)
 				defer func() { _ = zipFile.Close() }()
 
 				_, err := io.Copy(writer, zipFile)
@@ -172,7 +172,7 @@ func TestInstallAgentFromTenant(t *testing.T) {
 			Run(func(args mock.Arguments) {
 				writer := args.Get(1).(io.Writer)
 
-				zipFile := setupTestZip(t, fs)
+				zipFile := setupTestArchive(t, fs, testZip)
 				defer func() { _ = zipFile.Close() }()
 
 				_, err := io.Copy(writer, zipFile)
