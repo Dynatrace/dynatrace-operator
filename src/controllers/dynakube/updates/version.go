@@ -63,7 +63,7 @@ func ReconcileVersions(
 	}
 	if dk.Spec.TrustedCAs != "" {
 		_ = os.MkdirAll(TmpCAPath, 0755)
-		err := dockerConfig.SaveCustomCAs(ctx, apiReader, *dkState.Instance, fs, caCertPath)
+		err := dockerConfig.SaveCustomCAs(ctx, fs, caCertPath)
 		if err != nil {
 			return false, err
 		}

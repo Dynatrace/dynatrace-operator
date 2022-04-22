@@ -285,9 +285,14 @@ func TestUpdateAgent(t *testing.T) {
 					dtclient.CustomCertificatesConfigMapKey: "I-am-a-cert-trust-me",
 				},
 			})
-		expectedImageInfo := installer.ImageInfo{Image: image + ":" + tag, DockerConfig: dockerconfig.DockerConfig{
-			TrustedCertsPath: filepath.Join(targetDir, "ca.crt"),
-		}}
+		expectedImageInfo := installer.ImageInfo{
+			Image: image + ":" + tag,
+			DockerConfig: dockerconfig.DockerConfig{
+				Dynakube:         &dk,
+				ApiReader:        updater.apiReader,
+				TrustedCertsPath: filepath.Join(targetDir, "ca.crt"),
+			},
+		}
 		updater.installer.(*installer.InstallerMock).
 			On("SetImageInfo", &expectedImageInfo).
 			Return()

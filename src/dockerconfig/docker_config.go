@@ -13,6 +13,9 @@ import (
 )
 
 type DockerConfig struct {
+	ApiReader client.Reader
+	Dynakube  *dynatracev1beta1.DynaKube
+
 	Auths            map[string]DockerAuth
 	SkipCertCheck    bool
 	TrustedCertsPath string
@@ -36,6 +39,8 @@ func NewDockerConfig(ctx context.Context, apiReader client.Reader, dynakube dyna
 	}
 
 	dockerConfig := DockerConfig{
+		ApiReader:     apiReader,
+		Dynakube:      &dynakube,
 		Auths:         dockerAuths,
 		SkipCertCheck: dynakube.Spec.SkipCertCheck,
 	}
@@ -66,13 +71,11 @@ func parseDockerAuthsFromSecret(secret *corev1.Secret) (map[string]DockerAuth, e
 
 func (config *DockerConfig) SaveCustomCAs(
 	ctx context.Context,
-	apiReader client.Reader,
-	dynakube dynatracev1beta1.DynaKube,
 	fs afero.Afero,
 	path string,
 ) error {
-	certs := &corev1.ConfigMap{} // TODO: Secret maybe ?
-	if err := apiReader.Get(ctx, client.ObjectKey{Namespace: dynakube.Namespace, Name: dynakube.Spec.TrustedCAs}, certs); err != nil {
+	certs := &corev1.ConfigMap{}
+	if err := config.ApiReader.Get(ctx, client.ObjectKey{Namespace: config.Dynakube.Namespace, Name: config.Dynakube.Spec.TrustedCAs}, certs); err != nil {
 		log.Info("failed to load trusted CAs")
 		return err
 	}

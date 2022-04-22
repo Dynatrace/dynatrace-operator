@@ -74,7 +74,6 @@ func TestSaveCustomCAs(t *testing.T) {
 	}
 
 	t.Run("fail because of bad secret", func(t *testing.T) {
-		dockerConfig := DockerConfig{}
 		client := fake.NewClient(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      caSecretName,
@@ -84,13 +83,16 @@ func TestSaveCustomCAs(t *testing.T) {
 				"invalid-key": []byte(`invalid json`),
 			},
 		})
+		dockerConfig := DockerConfig{
+			ApiReader: client,
+			Dynakube:  &dynakube,
+		}
 		fs := afero.Afero{Fs: afero.NewMemMapFs()}
-		err := dockerConfig.SaveCustomCAs(context.TODO(), client, dynakube, fs, testPath)
+		err := dockerConfig.SaveCustomCAs(context.TODO(), fs, testPath)
 		require.Error(t, err)
 	})
 
 	t.Run("stores it in the given fs", func(t *testing.T) {
-		dockerConfig := DockerConfig{}
 		client := fake.NewClient(&corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      caSecretName,
@@ -100,8 +102,12 @@ func TestSaveCustomCAs(t *testing.T) {
 				dtclient.CustomCertificatesConfigMapKey: `I-am-a-cert-trust-me`,
 			},
 		})
+		dockerConfig := DockerConfig{
+			ApiReader: client,
+			Dynakube:  &dynakube,
+		}
 		fs := afero.Afero{Fs: afero.NewMemMapFs()}
-		err := dockerConfig.SaveCustomCAs(context.TODO(), client, dynakube, fs, testPath)
+		err := dockerConfig.SaveCustomCAs(context.TODO(), fs, testPath)
 		require.NoError(t, err)
 		exists, err := fs.Exists(testPath)
 		require.NoError(t, err)

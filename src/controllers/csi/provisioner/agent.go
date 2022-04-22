@@ -104,7 +104,7 @@ func (updater *agentUpdater) setImageInfo(ctx context.Context, targetDir string)
 	}
 	if dk.Spec.TrustedCAs != "" {
 		caCertPath := filepath.Join(targetDir, "ca.crt")
-		err := dockerConfig.SaveCustomCAs(ctx, updater.apiReader, *dk, afero.Afero{Fs: updater.fs}, caCertPath)
+		err := dockerConfig.SaveCustomCAs(ctx, afero.Afero{Fs: updater.fs}, caCertPath)
 		if err != nil {
 			return cleanCerts, err
 		}

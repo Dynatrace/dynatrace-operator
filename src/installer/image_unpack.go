@@ -68,24 +68,11 @@ func (installer *OneAgentInstaller) unmarshalManifestBlob(manifestBlob []byte, i
 		manifests = append(manifests, ociManifest)
 
 	} else if mimeType == ocispec.MediaTypeImageIndex {
-		index, err := manifest.OCI1IndexFromManifest(manifestBlob)
+		ociManifests, err := unmarshallImageIndex(installer.fs, imageCacheDir, manifestBlob)
 		if err != nil {
 			return nil, err
 		}
-		aferoFs := afero.Afero{
-			Fs: installer.fs,
-		}
-		for _, descriptor := range index.Manifests {
-			mBlob, err := aferoFs.ReadFile(filepath.Join(imageCacheDir, "blobs", descriptor.Digest.Algorithm().String(), descriptor.Digest.Hex()))
-			if err != nil {
-				return nil, err
-			}
-			ociManifest, err := manifest.OCI1FromManifest(mBlob)
-			if err != nil {
-				return nil, err
-			}
-			manifests = append(manifests, ociManifest)
-		}
+		manifests = append(manifests, ociManifests...)
 	}
 
 	return manifests, nil
@@ -107,8 +94,30 @@ func (installer *OneAgentInstaller) unpackOciImage(manifests []*manifest.OCI1, i
 			}
 		}
 	}
-
 	return nil
+}
+
+func unmarshallImageIndex(fs afero.Fs, imageCacheDir string, manifestBlob []byte) ([]*manifest.OCI1, error) {
+	var manifests []*manifest.OCI1
+	index, err := manifest.OCI1IndexFromManifest(manifestBlob)
+	if err != nil {
+		return nil, err
+	}
+	aferoFs := afero.Afero{
+		Fs: fs,
+	}
+	for _, descriptor := range index.Manifests {
+		mBlob, err := aferoFs.ReadFile(filepath.Join(imageCacheDir, "blobs", descriptor.Digest.Algorithm().String(), descriptor.Digest.Hex()))
+		if err != nil {
+			return nil, err
+		}
+		ociManifest, err := manifest.OCI1FromManifest(mBlob)
+		if err != nil {
+			return nil, err
+		}
+		manifests = append(manifests, ociManifest)
+	}
+	return manifests, nil
 }
 
 func buildPolicyContext() (*signature.PolicyContext, error) {
