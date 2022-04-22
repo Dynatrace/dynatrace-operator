@@ -45,10 +45,10 @@ func prepTestFsCache(fs afero.Fs, content []byte) {
 	cache.Write(content)
 }
 
-func isCacheExisting(fs afero.Fs) error {
+func isCacheExisting(fs afero.Fs) bool {
 	path := metadata.PathResolver{}
 	_, err := fs.Open(path.AgentRuxitProcResponseCache(testTenantUUID))
-	return err
+	return err == nil
 }
 
 func TestGetProcessModuleConfig(t *testing.T) {
@@ -127,7 +127,7 @@ func TestReadInvalidProcessModuleConfigCache(t *testing.T) {
 	}
 
 	_, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
-	assert.Error(t, isCacheExisting(memFs))
+	assert.False(t, isCacheExisting(memFs))
 	assert.Error(t, err)
 }
 
@@ -143,5 +143,5 @@ func TestWriteProcessModuleConfigCache(t *testing.T) {
 	cache, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
 	require.Nil(t, err)
 	assert.Equal(t, testProcessModuleConfigCache, *cache)
-	assert.NoError(t, isCacheExisting(memFs))
+	assert.True(t, isCacheExisting(memFs))
 }
