@@ -23,13 +23,13 @@ metadata:
     helm.sh/hook: post-install,post-upgrade
     {{- end }}
     {{- if or (and (.Values.hostMonitoring).enabled (.Values.hostMonitoring).disableReadOnly) (and (.Values.cloudNativeFullStack).enabled (.Values.cloudNativeFullStack).disableReadOnly) }}
-    operator.dynatrace.com/feature-disable-oneagent-readonly-host-fs: "true"
+    feature.dynatrace.com/disable-oneagent-readonly-host-fs: "true"
     {{- end }}
     {{- if (.Values.activeGate).apparmor }}
-    alpha.operator.dynatrace.com/feature-activegate-apparmor: "true"
+    feature.dynatrace.com/activegate-apparmor: "true"
     {{- end }}
     {{- if (.Values.activeGate).readOnlyFs }}
-    alpha.operator.dynatrace.com/feature-activegate-readonly-fs: "true"
+    feature.dynatrace.com/activegate-readonly-fs: "true"
     {{- end }}
   name: {{ .Values.name }}
   namespace: {{ .Release.Namespace }}
