@@ -4,7 +4,6 @@ metadata:
   name: dynakube
   namespace: dynatrace
 spec:
-  apiUrl: https://acc27517.dev.dynatracelabs.com/api
   activeGate:
     capabilities:
       - routing

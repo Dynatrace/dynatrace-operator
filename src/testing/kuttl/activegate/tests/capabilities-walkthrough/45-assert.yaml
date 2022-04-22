@@ -7,7 +7,6 @@ spec:
   activeGate:
     capabilities:
       - metrics-ingest
-  apiUrl: https://acc27517.dev.dynatracelabs.com/api
 ---
 apiVersion: v1
 kind: Service
