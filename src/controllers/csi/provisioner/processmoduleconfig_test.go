@@ -106,42 +106,42 @@ func TestGetProcessModuleConfig(t *testing.T) {
 }
 
 func TestReadProcessModuleConfigCache(t *testing.T) {
-	memFs := afero.NewMemMapFs()
-	content, _ := json.Marshal(testProcessModuleConfigCache)
-	prepTestFsCache(memFs, content)
-	provisioner := &OneAgentProvisioner{
-		fs: memFs,
-	}
+	t.Run(`read cache successful`, func(t *testing.T) {
+		memFs := afero.NewMemMapFs()
+		content, _ := json.Marshal(testProcessModuleConfigCache)
+		prepTestFsCache(memFs, content)
+		provisioner := &OneAgentProvisioner{
+			fs: memFs,
+		}
 
-	cache, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
-	require.Nil(t, err)
-	assert.Equal(t, testProcessModuleConfigCache, *cache)
-}
+		cache, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
+		require.Nil(t, err)
+		assert.Equal(t, testProcessModuleConfigCache, *cache)
+	})
+	t.Run(`read invalid json from cache`, func(t *testing.T) {
+		memFs := afero.NewMemMapFs()
+		content := []byte("this is invalid json")
+		prepTestFsCache(memFs, content)
+		provisioner := &OneAgentProvisioner{
+			fs: memFs,
+		}
 
-func TestReadInvalidProcessModuleConfigCache(t *testing.T) {
-	memFs := afero.NewMemMapFs()
-	content := []byte("this is invalid json")
-	prepTestFsCache(memFs, content)
-	provisioner := &OneAgentProvisioner{
-		fs: memFs,
-	}
+		_, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
+		assert.False(t, isCacheExisting(memFs))
+		assert.Error(t, err)
+	})
+	t.Run(`write cache successful`, func(t *testing.T) {
+		memFs := afero.NewMemMapFs()
+		provisioner := &OneAgentProvisioner{
+			fs: memFs,
+		}
 
-	_, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
-	assert.False(t, isCacheExisting(memFs))
-	assert.Error(t, err)
-}
+		err := provisioner.writeProcessModuleConfigCache(testTenantUUID, &testProcessModuleConfigCache)
 
-func TestWriteProcessModuleConfigCache(t *testing.T) {
-	memFs := afero.NewMemMapFs()
-	provisioner := &OneAgentProvisioner{
-		fs: memFs,
-	}
-
-	err := provisioner.writeProcessModuleConfigCache(testTenantUUID, &testProcessModuleConfigCache)
-
-	require.Nil(t, err)
-	cache, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
-	require.Nil(t, err)
-	assert.Equal(t, testProcessModuleConfigCache, *cache)
-	assert.True(t, isCacheExisting(memFs))
+		require.Nil(t, err)
+		cache, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
+		require.Nil(t, err)
+		assert.Equal(t, testProcessModuleConfigCache, *cache)
+		assert.True(t, isCacheExisting(memFs))
+	})
 }
