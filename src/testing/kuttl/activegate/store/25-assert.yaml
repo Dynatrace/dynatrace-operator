@@ -6,7 +6,7 @@ metadata:
 spec:
   activeGate:
     capabilities:
-      - dynatrace-api
+      - routing
 ---
 apiVersion: v1
 kind: Service
@@ -26,8 +26,6 @@ spec:
     app.kubernetes.io/component: activegate
     app.kubernetes.io/created-by: dynakube
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: snapshot
-    component.dynatrace.com/feature: activegate
   sessionAffinity: None
   type: ClusterIP
 ---
@@ -52,7 +50,7 @@ spec:
   containers:
     - env:
         - name: DT_CAPABILITIES
-          value: restInterface
+          value: MSGrouter
         - name: DT_ID_SEED_NAMESPACE
           value: dynatrace
         - name: DT_ID_SEED_K8S_CLUSTER_ID
@@ -69,7 +67,6 @@ spec:
               name: dynakube-activegate-tenant-secret
         - name: DT_DNS_ENTRY_POINT
           value: https://$(DYNAKUBE_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication
-      image: acc27517.dev.dynatracelabs.com/linux/activegate:latest
       imagePullPolicy: Always
       name: activegate
       ports:
@@ -134,16 +131,15 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/component: activegate
       app.kubernetes.io/created-by: dynakube
-      app.kubernetes.io/name: dynatrace-operator
+      app.kubernetes.io/managed-by: dynatrace-operator
+      app.kubernetes.io/name: activegate
   template:
     metadata:
       labels:
-        app.kubernetes.io/component: activegate
         app.kubernetes.io/created-by: dynakube
-        app.kubernetes.io/name: dynatrace-operator
-        component.dynatrace.com/feature: activegate
+        app.kubernetes.io/managed-by: dynatrace-operator
+        app.kubernetes.io/name: activegate
     spec:
       affinity:
         nodeAffinity:
@@ -161,7 +157,7 @@ spec:
       containers:
         - env:
             - name: DT_CAPABILITIES
-              value: restInterface
+              value: MSGrouter
             - name: DT_ID_SEED_NAMESPACE
               value: dynatrace
             - name: DT_ID_SEED_K8S_CLUSTER_ID
@@ -178,7 +174,6 @@ spec:
                   name: dynakube-activegate-tenant-secret
             - name: DT_DNS_ENTRY_POINT
               value: https://$(DYNAKUBE_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication
-          image: acc27517.dev.dynatracelabs.com/linux/activegate:latest
           imagePullPolicy: Always
           name: activegate
           ports:
@@ -211,6 +206,11 @@ spec:
               type: RuntimeDefault
           terminationMessagePath: "/dev/termination-log"
           terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: "/var/lib/dynatrace/secrets/tokens/tenant-token"
+              name: ag-tenant-secret
+              readOnly: true
+              subPath: tenant-token
       dnsPolicy: ClusterFirst
       imagePullSecrets:
         - name: dynakube-pull-secret

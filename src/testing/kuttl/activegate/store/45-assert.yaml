@@ -6,7 +6,7 @@ metadata:
 spec:
   activeGate:
     capabilities:
-      - kubernetes-monitoring
+      - metrics-ingest
 ---
 apiVersion: v1
 kind: Service
@@ -26,8 +26,6 @@ spec:
     app.kubernetes.io/component: activegate
     app.kubernetes.io/created-by: dynakube
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: snapshot
-    component.dynatrace.com/feature: activegate
   sessionAffinity: None
   type: ClusterIP
 ---
@@ -52,7 +50,7 @@ spec:
   containers:
     - env:
         - name: DT_CAPABILITIES
-          value: kubernetes_monitoring
+          value: metrics_ingest
         - name: DT_ID_SEED_NAMESPACE
           value: dynatrace
         - name: DT_ID_SEED_K8S_CLUSTER_ID
@@ -67,14 +65,23 @@ spec:
             secretKeyRef:
               key: tenant-uuid
               name: dynakube-activegate-tenant-secret
+        - name: DT_DNS_ENTRY_POINT
+          value: https://$(DYNAKUBE_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication
       image: acc27517.dev.dynatracelabs.com/linux/activegate:latest
       imagePullPolicy: Always
       name: activegate
+      ports:
+        - containerPort: 9999
+          name: https
+          protocol: TCP
+        - containerPort: 9998
+          name: http
+          protocol: TCP
       readinessProbe:
         failureThreshold: 3
         httpGet:
           path: "/rest/health"
-          port: 9999
+          port: https
           scheme: HTTPS
         initialDelaySeconds: 90
         periodSeconds: 15
@@ -95,28 +102,15 @@ spec:
       terminationMessagePolicy: File
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
-  hostname: dynakube-activegate-0
   imagePullSecrets:
     - name: dynakube-pull-secret
-  initContainers:
-    - args:
-        - "-c"
-        - "/opt/dynatrace/gateway/k8scrt2jks.sh"
-      command:
-        - "/bin/bash"
-      image: acc27517.dev.dynatracelabs.com/linux/activegate:latest
-      imagePullPolicy: Always
-      name: certificate-loader
-      resources: {}
-      terminationMessagePath: "/dev/termination-log"
-      terminationMessagePolicy: File
   preemptionPolicy: PreemptLowerPriority
   priority: 0
   restartPolicy: Always
   schedulerName: default-scheduler
   securityContext: {}
-  serviceAccount: dynatrace-kubernetes-monitoring
-  serviceAccountName: dynatrace-kubernetes-monitoring
+  serviceAccount: dynatrace-activegate
+  serviceAccountName: dynatrace-activegate
   terminationGracePeriodSeconds: 30
   tolerations:
     - effect: NoExecute
@@ -137,16 +131,15 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/component: activegate
       app.kubernetes.io/created-by: dynakube
-      app.kubernetes.io/name: dynatrace-operator
+      app.kubernetes.io/managed-by: dynatrace-operator
+      app.kubernetes.io/name: activegate
   template:
     metadata:
       labels:
-        app.kubernetes.io/component: activegate
         app.kubernetes.io/created-by: dynakube
-        app.kubernetes.io/name: dynatrace-operator
-        component.dynatrace.com/feature: activegate
+        app.kubernetes.io/managed-by: dynatrace-operator
+        app.kubernetes.io/name: activegate
     spec:
       affinity:
         nodeAffinity:
@@ -164,7 +157,7 @@ spec:
       containers:
         - env:
             - name: DT_CAPABILITIES
-              value: kubernetes_monitoring
+              value: metrics_ingest
             - name: DT_ID_SEED_NAMESPACE
               value: dynatrace
             - name: DT_ID_SEED_K8S_CLUSTER_ID
@@ -179,14 +172,23 @@ spec:
                 secretKeyRef:
                   key: tenant-uuid
                   name: dynakube-activegate-tenant-secret
+            - name: DT_DNS_ENTRY_POINT
+              value: https://$(DYNAKUBE_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication
           image: acc27517.dev.dynatracelabs.com/linux/activegate:latest
           imagePullPolicy: Always
           name: activegate
+          ports:
+            - containerPort: 9999
+              name: https
+              protocol: TCP
+            - containerPort: 9998
+              name: http
+              protocol: TCP
           readinessProbe:
             failureThreshold: 3
             httpGet:
               path: "/rest/health"
-              port: 9999
+              port: https
               scheme: HTTPS
             initialDelaySeconds: 90
             periodSeconds: 15
@@ -208,27 +210,11 @@ spec:
       dnsPolicy: ClusterFirst
       imagePullSecrets:
         - name: dynakube-pull-secret
-      initContainers:
-        - args:
-            - "-c"
-            - "/opt/dynatrace/gateway/k8scrt2jks.sh"
-          command:
-            - "/bin/bash"
-          image: acc27517.dev.dynatracelabs.com/linux/activegate:latest
-          imagePullPolicy: Always
-          name: certificate-loader
-          resources: {}
-          terminationMessagePath: "/dev/termination-log"
-          terminationMessagePolicy: File
-          volumeMounts:
-            - mountPath: "/var/lib/dynatrace/gateway/ssl"
-              name: truststore-volume
-          workingDir: "/var/lib/dynatrace/gateway"
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
-      serviceAccount: dynatrace-kubernetes-monitoring
-      serviceAccountName: dynatrace-kubernetes-monitoring
+      serviceAccount: dynatrace-activegate
+      serviceAccountName: dynatrace-activegate
       terminationGracePeriodSeconds: 30
   updateStrategy:
     type: RollingUpdate

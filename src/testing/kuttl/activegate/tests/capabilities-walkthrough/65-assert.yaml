@@ -26,8 +26,6 @@ spec:
     app.kubernetes.io/component: activegate
     app.kubernetes.io/created-by: dynakube
     app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: snapshot
-    component.dynatrace.com/feature: activegate
   sessionAffinity: None
   type: ClusterIP
 ---
@@ -40,16 +38,15 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/component: activegate
       app.kubernetes.io/created-by: dynakube
-      app.kubernetes.io/name: dynatrace-operator
+      app.kubernetes.io/managed-by: dynatrace-operator
+      app.kubernetes.io/name: activegate
   template:
     metadata:
       labels:
-        app.kubernetes.io/component: activegate
         app.kubernetes.io/created-by: dynakube
-        app.kubernetes.io/name: dynatrace-operator
-        component.dynatrace.com/feature: activegate
+        app.kubernetes.io/managed-by: dynatrace-operator
+        app.kubernetes.io/name: activegate
     spec:
       affinity:
         nodeAffinity:

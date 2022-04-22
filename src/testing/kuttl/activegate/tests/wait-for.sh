@@ -4,6 +4,8 @@ kind=${1}
 label=${2}
 condition=${3}
 
+counter=0
+
 while true; do
   lines=$(kubectl -n dynatrace get "${kind}" --ignore-not-found -l "${label}" | wc -l)
 
@@ -13,9 +15,10 @@ while true; do
 
     if [ $ret -eq 0 ];
     then
+      echo "[duration: ${counter}s]"
       exit 0
     else
-      echo -n "."
+      ((counter=counter+1))
     fi
   fi
 
