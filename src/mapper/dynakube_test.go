@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -112,7 +113,7 @@ func TestMapFromDynakube(t *testing.T) {
 	t.Run("Feature flag for monitoring system namespaces", func(t *testing.T) {
 		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil, nil)
 		dk.Annotations = map[string]string{
-			"operator.dynatrace.com/feature-ignored-namespaces": "[]",
+			dynatracev1beta1.AnnotationFeatureIgnoredNamespaces: "[]",
 		}
 		namespace := createNamespace("openshift-something", nil)
 		clt := fake.NewClient(dk, namespace)

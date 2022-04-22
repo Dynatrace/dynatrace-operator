@@ -87,7 +87,7 @@ func TestExtensionController_BuildContainerAndVolumes(t *testing.T) {
 
 	t.Run("resource requirements from feature flags", func(t *testing.T) {
 		stsProperties := testBuildStsProperties()
-		stsProperties.ObjectMeta.Annotations["operator.dynatrace.com/feature-activegate-eec-resources-limits-cpu"] = "200m"
+		stsProperties.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeaturePrefix+"activegate-eec-resources-limits-cpu"] = "200m"
 		eec := NewExtensionController(stsProperties)
 
 		container := eec.BuildContainer()
