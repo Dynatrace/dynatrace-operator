@@ -55,8 +55,17 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 	}
 
 	coreLabels := kubeobjects.NewCoreLabels(dkName, kubeobjects.ActiveGateComponentLabel)
-	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName,
-		targetNs, data, coreLabels.BuildMatchLabels(), corev1.SecretTypeOpaque, log)
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      SecretEndpointName,
+			Namespace: targetNs,
+			Labels:    coreLabels.BuildMatchLabels(),
+		},
+		Data: data,
+		Type: corev1.SecretTypeOpaque,
+	}
+	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, secret, log)
 }
 
 // GenerateForDynakube creates/updates the data-ingest-endpoint secret for EVERY namespace for the given dynakube.
@@ -75,8 +84,17 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		return false, err
 	}
 	for _, targetNs := range nsList {
-		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName,
-			targetNs.Name, data, coreLabels.BuildMatchLabels(), corev1.SecretTypeOpaque, log); err != nil {
+		secret := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      SecretEndpointName,
+				Namespace: targetNs.Name,
+				Labels:    coreLabels.BuildMatchLabels(),
+			},
+			Data: data,
+			Type: corev1.SecretTypeOpaque,
+		}
+		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, secret, log); err != nil {
 			return upd, err
 		} else if upd {
 			anyUpdate = true
