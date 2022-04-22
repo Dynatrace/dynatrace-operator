@@ -6,7 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/statefulset"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -43,15 +43,16 @@ func createService(instance *dynatracev1beta1.DynaKube, feature string, serviceP
 		)
 	}
 
+	coreLabels := kubeobjects.NewCoreLabels(instance.Name, kubeobjects.ActiveGateComponentLabel)
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      BuildServiceName(instance.Name, feature),
 			Namespace: instance.Namespace,
-			Labels:    statefulset.BuildLabelsFromInstance(instance, feature),
+			Labels:    coreLabels.BuildLabels(),
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
-			Selector: statefulset.BuildLabelsFromInstance(instance, feature),
+			Selector: coreLabels.BuildMatchLabels(),
 			Ports:    ports,
 		},
 	}

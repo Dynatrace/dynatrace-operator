@@ -21,7 +21,6 @@ const (
 	testKey2   = "test-name"
 
 	testSecretName = "super-secret"
-	testSecretType = corev1.SecretType("type")
 	testNamespace  = "test-namespace"
 )
 
@@ -42,7 +41,8 @@ func TestCreateOrUpdateSecretIfNotExists(t *testing.T) {
 			Data: data,
 		})
 
-		_, err := CreateOrUpdateSecretIfNotExists(client, client, testSecretName, testNamespace, data, labels, "", log)
+		secret := createTestSecret(labels, data)
+		_, err := CreateOrUpdateSecretIfNotExists(client, client, secret, log)
 		assert.NoError(t, err)
 	})
 	t.Run(`Secret present, different data => update data`, func(t *testing.T) {
@@ -59,7 +59,8 @@ func TestCreateOrUpdateSecretIfNotExists(t *testing.T) {
 			Data: map[string][]byte{},
 		})
 
-		_, err := CreateOrUpdateSecretIfNotExists(client, client, testSecretName, testNamespace, data, labels, testSecretType, log)
+		secret := createTestSecret(labels, data)
+		_, err := CreateOrUpdateSecretIfNotExists(client, client, secret, log)
 		assert.NoError(t, err)
 
 		var updatedSecret corev1.Secret
@@ -80,14 +81,15 @@ func TestCreateOrUpdateSecretIfNotExists(t *testing.T) {
 			Data: data,
 		})
 
-		_, err := CreateOrUpdateSecretIfNotExists(client, client, testSecretName, testNamespace, data, labels, testSecretType, log)
+		secret := createTestSecret(labels, data)
+		_, err := CreateOrUpdateSecretIfNotExists(client, client, secret, log)
 		assert.NoError(t, err)
 
 		var updatedSecret corev1.Secret
 		client.Get(context.TODO(), types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, &updatedSecret)
 		assert.True(t, reflect.DeepEqual(labels, updatedSecret.Labels))
 	})
-	t.Run(`Secret in other namespace => create in targe namespace`, func(t *testing.T) {
+	t.Run(`Secret in other namespace => create in target namespace`, func(t *testing.T) {
 		data := map[string][]byte{testKey1: []byte(testValue1)}
 		labels := map[string]string{
 			"label": "test",
@@ -100,7 +102,8 @@ func TestCreateOrUpdateSecretIfNotExists(t *testing.T) {
 			Data: map[string][]byte{},
 		})
 
-		_, err := CreateOrUpdateSecretIfNotExists(client, client, testSecretName, testNamespace, data, labels, testSecretType, log)
+		secret := createTestSecret(labels, data)
+		_, err := CreateOrUpdateSecretIfNotExists(client, client, secret, log)
 		assert.NoError(t, err)
 
 		var newSecret corev1.Secret
@@ -109,16 +112,17 @@ func TestCreateOrUpdateSecretIfNotExists(t *testing.T) {
 		assert.True(t, reflect.DeepEqual(labels, newSecret.Labels))
 		assert.Equal(t, testSecretName, newSecret.Name)
 		assert.Equal(t, testNamespace, newSecret.Namespace)
-		assert.Equal(t, testSecretType, newSecret.Type)
+		assert.Equal(t, corev1.SecretTypeOpaque, newSecret.Type)
 	})
-	t.Run(`Secret not present => create in targe namespace`, func(t *testing.T) {
+	t.Run(`Secret not present => create in target namespace`, func(t *testing.T) {
 		data := map[string][]byte{testKey1: []byte(testValue1)}
 		labels := map[string]string{
 			"label": "test",
 		}
 		client := fake.NewClient()
 
-		_, err := CreateOrUpdateSecretIfNotExists(client, client, testSecretName, testNamespace, data, labels, testSecretType, log)
+		secret := createTestSecret(labels, data)
+		_, err := CreateOrUpdateSecretIfNotExists(client, client, secret, log)
 		assert.NoError(t, err)
 
 		var newSecret corev1.Secret
@@ -127,7 +131,7 @@ func TestCreateOrUpdateSecretIfNotExists(t *testing.T) {
 		assert.True(t, reflect.DeepEqual(labels, newSecret.Labels))
 		assert.Equal(t, testSecretName, newSecret.Name)
 		assert.Equal(t, testNamespace, newSecret.Namespace)
-		assert.Equal(t, testSecretType, newSecret.Type)
+		assert.Equal(t, corev1.SecretTypeOpaque, newSecret.Type)
 	})
 }
 
@@ -210,4 +214,18 @@ func TestExtractToken(t *testing.T) {
 		assert.Error(t, err)
 		assert.Empty(t, value)
 	})
+}
+
+func createTestSecret(labels map[string]string, data map[string][]byte) *corev1.Secret {
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testSecretName,
+			Namespace: testNamespace,
+			Labels:    labels,
+		},
+		Data: data,
+		Type: corev1.SecretTypeOpaque,
+	}
+	return secret
 }

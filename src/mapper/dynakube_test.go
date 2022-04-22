@@ -110,7 +110,7 @@ func TestMapFromDynakube(t *testing.T) {
 		assert.Equal(t, 0, len(ns.Labels))
 		assert.Equal(t, 0, len(ns.Annotations))
 	})
-	t.Run("Feature flag for monitoring system namespaces", func(t *testing.T) {
+	t.Run("ComponentFeature flag for monitoring system namespaces", func(t *testing.T) {
 		dk := createTestDynakubeWithMultipleFeatures("appMonitoring", nil, nil)
 		dk.Annotations = map[string]string{
 			dynatracev1beta1.AnnotationFeatureIgnoredNamespaces: "[]",
