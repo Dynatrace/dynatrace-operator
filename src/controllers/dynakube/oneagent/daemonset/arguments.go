@@ -36,7 +36,7 @@ func (dsInfo *builderInfo) appendNetworkZoneArg(args []string) []string {
 }
 
 func (dsInfo *builderInfo) appendProxyArg(args []string) []string {
-	if !dsInfo.instance.FeatureOneAgentIgnoreProxy() && dsInfo.hasProxy() {
+	if dsInfo.instance.NeedsOneAgentProxy() {
 		return append(args, "--set-proxy=$(https_proxy)")
 	}
 	return args

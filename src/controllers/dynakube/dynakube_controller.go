@@ -316,7 +316,7 @@ func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, d
 
 func (controller *DynakubeController) reconcileActiveGateProxySecret(ctx context.Context, dynakubeState *status.DynakubeState) bool {
 	gen := agproxysecret.NewActiveGateProxySecretGenerator(controller.client, controller.apiReader, dynakubeState.Instance.Namespace, log)
-	if !dynakubeState.Instance.FeatureActiveGateIgnoreProxy() && dynakubeState.Instance.HasProxy() {
+	if dynakubeState.Instance.NeedsActiveGateProxy() {
 		upd, err := gen.GenerateForDynakube(ctx, dynakubeState.Instance)
 		if dynakubeState.Error(err) || dynakubeState.Update(upd, "new ActiveGate proxy secret created") {
 			return false

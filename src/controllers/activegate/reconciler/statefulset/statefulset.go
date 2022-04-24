@@ -265,7 +265,7 @@ func buildVolumes(stsProperties *statefulSetProperties, extraContainerBuilders [
 
 	volumes = append(volumes, stsProperties.volumes...)
 
-	if needsProxy(stsProperties) {
+	if stsProperties.NeedsActiveGateProxy() {
 		volumes = append(volumes, buildProxyVolumes()...)
 	}
 
@@ -368,7 +368,7 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 
 	volumeMounts = append(volumeMounts, stsProperties.containerVolumeMounts...)
 
-	if needsProxy(stsProperties) {
+	if stsProperties.NeedsActiveGateProxy() {
 		volumeMounts = append(volumeMounts, buildProxyMounts()...)
 	}
 
@@ -525,8 +525,4 @@ func isCustomPropertiesNilOrEmpty(customProperties *dynatracev1beta1.DynaKubeVal
 	return customProperties == nil ||
 		(customProperties.Value == "" &&
 			customProperties.ValueFrom == "")
-}
-
-func needsProxy(stsProperties *statefulSetProperties) bool {
-	return !stsProperties.DynaKube.FeatureActiveGateIgnoreProxy() && stsProperties.HasProxy()
 }
