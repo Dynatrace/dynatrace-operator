@@ -39,11 +39,16 @@ var (
 	}
 )
 
-func prepTestFsCache(fs afero.Fs) {
-	testCache, _ := json.Marshal(testProcessModuleConfigCache)
+func prepTestFsCache(fs afero.Fs, content []byte) {
 	path := metadata.PathResolver{}
 	cache, _ := fs.OpenFile(path.AgentRuxitProcResponseCache(testTenantUUID), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	cache.Write(testCache)
+	cache.Write(content)
+}
+
+func isCacheExisting(fs afero.Fs) bool {
+	path := metadata.PathResolver{}
+	_, err := fs.Open(path.AgentRuxitProcResponseCache(testTenantUUID))
+	return err == nil
 }
 
 func TestGetProcessModuleConfig(t *testing.T) {
@@ -66,7 +71,8 @@ func TestGetProcessModuleConfig(t *testing.T) {
 	})
 	t.Run(`cache + latest revision (cached run)`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
-		prepTestFsCache(memFs)
+		content, _ := json.Marshal(testProcessModuleConfigCache)
+		prepTestFsCache(memFs, content)
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetProcessModuleConfig", testProcessModuleConfigCache.Revision).
 			Return(emptyResponse, nil)
@@ -82,7 +88,8 @@ func TestGetProcessModuleConfig(t *testing.T) {
 	})
 	t.Run(`cache + old revision (outdated cache should be ignored)`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
-		prepTestFsCache(memFs)
+		content, _ := json.Marshal(testProcessModuleConfigCache)
+		prepTestFsCache(memFs, content)
 		mockClient := &dtclient.MockDynatraceClient{}
 		mockClient.On("GetProcessModuleConfig", testProcessModuleConfigCache.Revision).
 			Return(&testProcessModuleConfig, nil)
@@ -99,27 +106,42 @@ func TestGetProcessModuleConfig(t *testing.T) {
 }
 
 func TestReadProcessModuleConfigCache(t *testing.T) {
-	memFs := afero.NewMemMapFs()
-	prepTestFsCache(memFs)
-	provisioner := &OneAgentProvisioner{
-		fs: memFs,
-	}
+	t.Run(`read cache successful`, func(t *testing.T) {
+		memFs := afero.NewMemMapFs()
+		content, _ := json.Marshal(testProcessModuleConfigCache)
+		prepTestFsCache(memFs, content)
+		provisioner := &OneAgentProvisioner{
+			fs: memFs,
+		}
 
-	cache, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
-	require.Nil(t, err)
-	assert.Equal(t, testProcessModuleConfigCache, *cache)
-}
+		cache, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
+		require.Nil(t, err)
+		assert.Equal(t, testProcessModuleConfigCache, *cache)
+	})
+	t.Run(`read invalid json from cache`, func(t *testing.T) {
+		memFs := afero.NewMemMapFs()
+		content := []byte("this is invalid json")
+		prepTestFsCache(memFs, content)
+		provisioner := &OneAgentProvisioner{
+			fs: memFs,
+		}
 
-func TestWriteProcessModuleConfigCache(t *testing.T) {
-	memFs := afero.NewMemMapFs()
-	provisioner := &OneAgentProvisioner{
-		fs: memFs,
-	}
+		_, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
+		assert.False(t, isCacheExisting(memFs))
+		assert.Error(t, err)
+	})
+	t.Run(`write cache successful`, func(t *testing.T) {
+		memFs := afero.NewMemMapFs()
+		provisioner := &OneAgentProvisioner{
+			fs: memFs,
+		}
 
-	err := provisioner.writeProcessModuleConfigCache(testTenantUUID, &testProcessModuleConfigCache)
+		err := provisioner.writeProcessModuleConfigCache(testTenantUUID, &testProcessModuleConfigCache)
 
-	require.Nil(t, err)
-	cache, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
-	require.Nil(t, err)
-	assert.Equal(t, testProcessModuleConfigCache, *cache)
+		require.Nil(t, err)
+		cache, err := provisioner.readProcessModuleConfigCache(testTenantUUID)
+		require.Nil(t, err)
+		assert.Equal(t, testProcessModuleConfigCache, *cache)
+		assert.True(t, isCacheExisting(memFs))
+	})
 }
