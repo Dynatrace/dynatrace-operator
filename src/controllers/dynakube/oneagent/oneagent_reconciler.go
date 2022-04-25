@@ -149,11 +149,13 @@ func (r *OneAgentReconciler) getDesiredDaemonSet(dkState *status.DynakubeState) 
 	return dsDesired, nil
 }
 
-func (r *OneAgentReconciler) getPods(ctx context.Context, instance *dynatracev1beta1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
+func (r *OneAgentReconciler) getOneagentPods(ctx context.Context, instance *dynatracev1beta1.DynaKube, feature string) ([]corev1.Pod, []client.ListOption, error) {
+	appLabels := kubeobjects.NewAppLabels(kubeobjects.OneAgentComponentLabel, instance.Name,
+		feature, instance.Status.OneAgent.Version)
 	podList := &corev1.PodList{}
 	listOps := []client.ListOption{
 		client.InNamespace((*instance).GetNamespace()),
-		client.MatchingLabels(daemonset.BuildLabels(instance.Name, feature)),
+		client.MatchingLabels(appLabels.BuildLabels()),
 	}
 	err := r.client.List(ctx, podList, listOps...)
 	return podList.Items, listOps, err
@@ -184,7 +186,7 @@ func (r *OneAgentReconciler) newDaemonSetForCR(dkState *status.DynakubeState, cl
 }
 
 func (r *OneAgentReconciler) reconcileInstanceStatuses(ctx context.Context, instance *dynatracev1beta1.DynaKube) (bool, error) {
-	pods, listOpts, err := r.getPods(ctx, instance, r.feature)
+	pods, listOpts, err := r.getOneagentPods(ctx, instance, r.feature)
 	if err != nil {
 		handlePodListError(err, listOpts)
 	}
