@@ -123,10 +123,11 @@ Check if default image is used
 Check if we need the csi driver.
 */}}
 {{- define "dynatrace-operator.needCSI" -}}
-	{{- if eq (include "dynatrace-operator.partial" .) "csi" -}}
+	{{- if eq (default false .Values.csi.enabled) true -}}
 		{{- printf "true" -}}
-	{{- end -}}
-	{{- if eq (include "dynatrace-operator.partial" .) "false" -}}
+	{{- else if eq (include "dynatrace-operator.partial" .) "csi" -}}
+		{{- printf "true" -}}
+	{{- else -}}
 		{{- if (.Values.cloudNativeFullStack).enabled -}}
 			{{- printf "true" -}}
 		{{- end -}}
@@ -138,6 +139,7 @@ Check if we need the csi driver.
 		{{- end -}}
 	{{- end -}}
 {{- end -}}
+
 
 {{/*
 Check if we are generating only a part of the yamls

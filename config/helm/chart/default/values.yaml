@@ -59,6 +59,7 @@ webhook:
   highAvailability: false
 
 csi:
+  enabled: false
   requests:
     cpu: 300m
     memory: 100Mi
