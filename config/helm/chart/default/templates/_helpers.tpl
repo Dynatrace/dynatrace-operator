@@ -118,24 +118,6 @@ Check if default image is used
 {{- end -}}
 {{- end -}}
 
-{{/*
-Check if only 1 oneagent mode is used.
-*/}}
-{{- define "dynatrace-operator.modeSet" -}}
-	{{- $modes := list .Values.cloudNativeFullStack .Values.classicFullStack .Values.hostMonitoring .Values.applicationMonitoring -}}
-	{{- $enabled := dict -}}
-		{{- range $index, $mode := $modes -}}
-			{{- if $mode -}}
-			{{- if $mode.enabled -}}
-				{{- $_ := set $enabled ($index|toString) ($mode|toString) -}}
-			{{- end -}}
-			{{- end -}}
-		{{- end -}}
-		{{- if (lt (len (keys $enabled)) 2 ) -}}
-			{{- "set" -}}
-		{{- end -}}
-{{- end -}}
-
 
 {{/*
 Check if we need the csi driver.
@@ -166,27 +148,6 @@ Check if we are generating only a part of the yamls
 	{{- else -}}
 	    {{- printf "false" -}}
 	{{- end -}}
-{{- end -}}
-
-
-{{/*
-Check if the old and new activeGate sections are used at the same time.
-*/}}
-{{- define "dynatrace-operator.activeGateModeSet" -}}
-    {{- $enabled := dict -}}
-	{{- if .Values.activeGate }}
-	{{- if .Values.activeGate.capabilities }}
-	{{- if ge (len .Values.activeGate.capabilities) 1 }}
-		{{- $_ := set $enabled "new" "true" -}}
-	{{- end -}}
-	{{- end -}}
-	{{- end -}}
-	{{- if or .Values.kubernetesMonitoring.enabled .Values.routing.enabled }}
-		{{- $_ := set $enabled "old" "true" -}}
-	{{- end -}}
-	{{- if (lt (len (keys $enabled)) 2 ) -}}
-			{{- "set" -}}
-		{{- end -}}
 {{- end -}}
 
 
