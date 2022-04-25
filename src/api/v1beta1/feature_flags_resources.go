@@ -31,7 +31,6 @@ func (dk *DynaKube) FeatureStatsdResourcesLimits(resourceName corev1.ResourceNam
 	return statsdResourceRequirements(dk, "limits-"+resourceName)
 }
 
-// E.g. "operator.dynatrace.com/feature-activegate-eec-resources-limits-cpu": "100m"
 func formatResourceName(resourceName corev1.ResourceName) string {
 	return "resources-" + string(resourceName)
 }

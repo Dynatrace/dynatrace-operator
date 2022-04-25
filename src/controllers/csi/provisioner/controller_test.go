@@ -488,7 +488,7 @@ func TestProvisioner_CreateDynakube(t *testing.T) {
 	oldDynakube := metadata.Dynakube{}
 	newDynakube := metadata.NewDynakube(dkName, tenantUUID, "v1")
 
-	err := provisioner.createOrUpdateDynakube(oldDynakube, newDynakube)
+	err := provisioner.createOrUpdateDynakubeMetadata(oldDynakube, newDynakube)
 	require.NoError(t, err)
 
 	dynakube, err := db.GetDynakube(dkName)
@@ -514,7 +514,7 @@ func TestProvisioner_UpdateDynakube(t *testing.T) {
 	}
 	newDynakube := metadata.NewDynakube(dkName, "new-uuid", "v2")
 
-	err := provisioner.createOrUpdateDynakube(*oldDynakube, newDynakube)
+	err := provisioner.createOrUpdateDynakubeMetadata(*oldDynakube, newDynakube)
 	require.NoError(t, err)
 
 	dynakube, err := db.GetDynakube(dkName)
