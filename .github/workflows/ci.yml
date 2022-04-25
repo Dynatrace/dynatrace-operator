@@ -1,9 +1,14 @@
 name: CI
 
-on: push
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - "*"
 
 jobs:
-
   helm-test:
     name: Run helm unit tests
     runs-on: ubuntu-latest
@@ -182,6 +187,9 @@ jobs:
   uploaddockerimage:
     name: Upload docker image to quay
     runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'pull_request' ||
+      github.pull_request.head.repo.full_name == github.pull_request.head.base.full_name
     needs: [tests, linting, builddockerimage]
     env:
       IMAGE_QUAY: quay.io/dynatrace/dynatrace-operator
