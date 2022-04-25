@@ -53,8 +53,19 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 	if err != nil {
 		return false, err
 	}
-	labels := kubeobjects.CommonLabels(dkName, kubeobjects.ActiveGateComponentLabel)
-	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs, data, labels, corev1.SecretTypeOpaque, log)
+
+	coreLabels := kubeobjects.NewCoreLabels(dkName, kubeobjects.ActiveGateComponentLabel)
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      SecretEndpointName,
+			Namespace: targetNs,
+			Labels:    coreLabels.BuildMatchLabels(),
+		},
+		Data: data,
+		Type: corev1.SecretTypeOpaque,
+	}
+	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, secret, log)
 }
 
 // GenerateForDynakube creates/updates the data-ingest-endpoint secret for EVERY namespace for the given dynakube.
@@ -66,15 +77,24 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 	if err != nil {
 		return false, err
 	}
-	labels := kubeobjects.CommonLabels(dk.Name, kubeobjects.ActiveGateComponentLabel)
-
+	coreLabels := kubeobjects.NewCoreLabels(dk.Name, kubeobjects.ActiveGateComponentLabel)
 	anyUpdate := false
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
 	if err != nil {
 		return false, err
 	}
 	for _, targetNs := range nsList {
-		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, SecretEndpointName, targetNs.Name, data, labels, corev1.SecretTypeOpaque, log); err != nil {
+		secret := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      SecretEndpointName,
+				Namespace: targetNs.Name,
+				Labels:    coreLabels.BuildMatchLabels(),
+			},
+			Data: data,
+			Type: corev1.SecretTypeOpaque,
+		}
+		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, secret, log); err != nil {
 			return upd, err
 		} else if upd {
 			anyUpdate = true

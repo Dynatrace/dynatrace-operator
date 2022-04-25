@@ -48,15 +48,23 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakub
 	if err != nil {
 		return false, err
 	}
-	labels := kubeobjects.CommonLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
+
+	coreLabels := kubeobjects.NewCoreLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      BuildProxySecretName(),
+			Namespace: agProxySecretGenerator.namespace,
+			Labels:    coreLabels.BuildMatchLabels(),
+		},
+		Data: data,
+		Type: corev1.SecretTypeOpaque,
+	}
+
 	return kubeobjects.CreateOrUpdateSecretIfNotExists(
 		agProxySecretGenerator.client,
 		agProxySecretGenerator.apiReader,
-		BuildProxySecretName(),
-		agProxySecretGenerator.namespace,
-		data,
-		labels,
-		corev1.SecretTypeOpaque,
+		secret,
 		agProxySecretGenerator.logger,
 	)
 }

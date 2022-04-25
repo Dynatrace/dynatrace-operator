@@ -3,6 +3,7 @@ package statefulset
 import (
 	"testing"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/stretchr/testify/assert"
@@ -77,7 +78,7 @@ func TestStatsd_BuildContainerAndVolumes(t *testing.T) {
 
 	t.Run("resource requirements from feature flags", func(t *testing.T) {
 		stsProperties := testBuildStsProperties()
-		stsProperties.ObjectMeta.Annotations["operator.dynatrace.com/feature-activegate-statsd-resources-requests-memory"] = "500M"
+		stsProperties.ObjectMeta.Annotations[dynatracev1beta1.AnnotationFeaturePrefix+"activegate-statsd-resources-requests-memory"] = "500M"
 		statsd := NewStatsd(stsProperties)
 
 		container := statsd.BuildContainer()
