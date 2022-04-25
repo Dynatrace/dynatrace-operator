@@ -4,18 +4,19 @@ import (
 	"context"
 	"path/filepath"
 
+	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	"github.com/containers/image/v5/docker"
 	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/go-digest"
 )
 
+var ImageCacheDir = filepath.Join(dtcsi.DataPath + "cache")
+
 func (installer *OneAgentInstaller) installAgentFromImage(targetDir string) error {
-	cacheDir := filepath.Join(targetDir, "cache")
-	_ = installer.fs.MkdirAll(cacheDir, 0755)
-	defer func() { _ = installer.fs.RemoveAll(cacheDir) }()
+	_ = installer.fs.MkdirAll(ImageCacheDir, 0755)
 	image := installer.props.ImageInfo.Image
 
-	sourceCtx, sourceRef, err := getSourceInfo(cacheDir, *installer.props.ImageInfo)
+	sourceCtx, sourceRef, err := getSourceInfo(ImageCacheDir, *installer.props.ImageInfo)
 	if err != nil {
 		log.Info("failed to get source information", "image", image)
 		return err
@@ -26,7 +27,7 @@ func (installer *OneAgentInstaller) installAgentFromImage(targetDir string) erro
 		log.Info("failed to get image digest", "image", image)
 		return err
 	}
-	imageCacheDir := filepath.Join(cacheDir, imageDigest.Encoded())
+	imageCacheDir := filepath.Join(ImageCacheDir, imageDigest.Encoded())
 
 	destinationCtx, destinationRef, err := getDestinationInfo(imageCacheDir)
 	if err != nil {
