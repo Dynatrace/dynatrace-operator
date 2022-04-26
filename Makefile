@@ -55,17 +55,25 @@ helm-test:
 helm-lint:
 	cd config/helm && ./testing/lint.sh
 
+create-kind-cluster:
+	kind create cluster --config ./src/testing/kuttl/oneagent/kind.yaml
+
+delete-kind-cluster:
+	kind delete cluster --name kind
 
 kuttl-install:
 	hack/e2e/install-kuttl.sh
 
-kuttl-oneagent: deploy
+kuttl-oneagent: kuttl-check-mandatory-fields deploy
 	kubectl -n dynatrace wait pod --for=condition=ready -l app.kubernetes.io/component=webhook
 	kubectl kuttl test --config src/testing/kuttl/oneagent/oneagent-test.yaml
-# CLEAN-UP
+	# CLEAN-UP
 	kubectl delete dynakube --all -n dynatrace
-	kubectl -n dynatrace wait pod --for=delete -l app.kubernetes.io/component=oneagent --timeout=500s
+	-kubectl -n dynatrace wait pod --for=delete -l app.kubernetes.io/component=oneagent --timeout=500s
 	kubectl delete -f config/deploy/kubernetes/kubernetes-all.yaml
+
+kuttl-check-mandatory-fields:
+	hack/check_fields.sh "APIURL APITOKEN PAASTOKEN"
 
 # Build manager binary
 manager: generate-crd fmt vet
