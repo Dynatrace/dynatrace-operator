@@ -1,5 +1,8 @@
 name: CI
 
+env:
+  GO_VERSION: "^1.18"
+
 on:
   push:
     branches:
@@ -53,7 +56,7 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v2
         with:
-          go-version: "^1.18.1"
+          go-version: ${{ env.GO_VERSION }}
       - name: Download dependencies
         id: depdownload
         run: |
@@ -97,7 +100,7 @@ jobs:
       - name: Set up Golang
         uses: actions/setup-go@v2
         with:
-          go-version: "^1.18.1"
+          go-version: ${{ env.GO_VERSION }}
       - name: Setup cache
         uses: actions/cache@v2
         with:
