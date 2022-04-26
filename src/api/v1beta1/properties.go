@@ -98,8 +98,16 @@ func (dk *DynaKube) HasActiveGateCaCert() bool {
 	return dk.ActiveGateMode() && dk.Spec.ActiveGate.TlsSecretName != ""
 }
 
-func (dk *DynaKube) HasProxy() bool {
+func (dk *DynaKube) hasProxy() bool {
 	return dk.Spec.Proxy != nil && (dk.Spec.Proxy.Value != "" || dk.Spec.Proxy.ValueFrom != "")
+}
+
+func (dk *DynaKube) NeedsActiveGateProxy() bool {
+	return !dk.FeatureActiveGateIgnoreProxy() && dk.hasProxy()
+}
+
+func (dk *DynaKube) NeedsOneAgentProxy() bool {
+	return !dk.FeatureOneAgentIgnoreProxy() && dk.hasProxy()
 }
 
 // ShouldAutoUpdateOneAgent returns true if the Operator should update OneAgent instances automatically.
