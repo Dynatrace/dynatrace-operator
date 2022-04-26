@@ -112,12 +112,10 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 	var tokens []tokenConfig
 	if r.PaasToken == "" {
 		tokens = []tokenConfig{{
-			Type:  dynatracev1beta1.APITokenConditionType,
-			Key:   dtclient.DynatraceApiToken,
-			Value: r.ApiToken,
-			Scopes: []string{dtclient.TokenScopeDataExport,
-				dtclient.TokenScopeInstallerDownload,
-			},
+			Type:      dynatracev1beta1.APITokenConditionType,
+			Key:       dtclient.DynatraceApiToken,
+			Value:     r.ApiToken,
+			Scopes:    []string{dtclient.TokenScopeInstallerDownload},
 			Timestamp: &r.status.LastAPITokenProbeTimestamp,
 		}}
 		updateCR = r.removePaaSTokenCondition() || updateCR
@@ -127,7 +125,7 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 				Type:      dynatracev1beta1.APITokenConditionType,
 				Key:       dtclient.DynatraceApiToken,
 				Value:     r.ApiToken,
-				Scopes:    []string{dtclient.TokenScopeDataExport},
+				Scopes:    []string{},
 				Timestamp: &r.status.LastAPITokenProbeTimestamp,
 			},
 			{
@@ -137,6 +135,9 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 				Scopes:    []string{dtclient.TokenScopeInstallerDownload},
 				Timestamp: &r.status.LastPaaSTokenProbeTimestamp,
 			}}
+	}
+	if !instance.FeatureDisableHostsRequests() {
+		tokens[0].Scopes = append(tokens[0].Scopes, dtclient.TokenScopeDataExport)
 	}
 
 	if instance.KubernetesMonitoringMode() &&
