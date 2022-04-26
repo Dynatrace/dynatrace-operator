@@ -7,7 +7,7 @@ artifactsDir: src/testing/kuttl/activegate/logs/
 crdDir: config/crd/bases
 manifestDirs:
   - src/testing/kuttl/activegate/manifests/dynatrace-namespace.yaml
-  - config/deploy/kubernetes/kubernetes.yaml # csi not needed for AG
+  - config/deploy/kubernetes/kubernetes-all.yaml
 testDirs:
   - src/testing/kuttl/activegate/tests
 parallel: 1
