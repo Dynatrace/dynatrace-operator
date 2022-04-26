@@ -1,6 +1,5 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
-timeout: 220
 delete:
 - apiVersion: v1
   kind: Namespace
