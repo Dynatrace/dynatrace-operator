@@ -73,7 +73,7 @@ kuttl-oneagent: kuttl-check-mandatory-fields deploy
 	kubectl delete -f config/deploy/kubernetes/kubernetes-all.yaml
 
 kuttl-check-mandatory-fields:
-	hack/check_fields.sh "APIURL APITOKEN PAASTOKEN"
+	hack/do_env_variables_exist.sh "APIURL APITOKEN PAASTOKEN"
 
 # Build manager binary
 manager: generate-crd fmt vet
