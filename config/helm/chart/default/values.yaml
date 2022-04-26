@@ -123,6 +123,9 @@ hostMonitoring:
   labels: {}
   disableReadOnly: false
 
+securityContextConstraints:
+  enabled: true # Only applicable for Openshift
+  activeGateReadOnlyFs: false
 
 activeGate:
   capabilities: []
