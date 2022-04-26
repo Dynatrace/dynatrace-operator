@@ -17,12 +17,10 @@ platform: "kubernetes"
 
 ### base properties
 
-name: "dynakube"
 apiUrl: ""
 customPullSecret: ""
 skipCertCheck: false
 proxy: ""
-trustedCAs: ""
 networkZone: ""
 enableIstio: false
 

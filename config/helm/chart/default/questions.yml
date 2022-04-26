@@ -64,14 +64,6 @@ questions:
     group: "Global Configuration"
     show_if: "crdApplied=yes"
 
-  - variable: trustedCAs
-    label: "Add custom CA certificates"
-    description: "Sets the name of the configmap containing custom certificates. If this is not set the default embedded certificates on the images will be used"
-    default: ""
-    type: string
-    group: "Global Configuration"
-    show_if: "crdApplied=yes"
-
   - variable: networkZone
     label: "Define a network zone"
     description: "Optional: Sets a NetworkZone for the Dynatrace Operator."
