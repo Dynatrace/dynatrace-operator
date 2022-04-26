@@ -1,8 +1,9 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 startKIND: false
-kindConfig: kind.yaml
+kindConfig: src/testing/kuttl/kind.yaml
 skipDelete: false
+skipClusterDelete: true
 namespace: dynatrace
 parallel: 1
 testDirs:
