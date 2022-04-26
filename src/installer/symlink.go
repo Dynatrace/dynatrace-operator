@@ -26,24 +26,20 @@ func (installer *OneAgentInstaller) createSymlinkIfNotExists(targetDir string) e
 	// MemMapFs (used for testing) doesn't comply with the Linker interface
 	linker, ok := fs.(afero.Linker)
 	if !ok {
-		log.Info("symlinking not possible", "version", installer.props.Version, "fs", installer.fs)
+		log.Info("symlinking not possible", "targetDir", targetDir, "fs", installer.fs)
 		return nil
+	}
+
+	relativeSymlinkPath, err = findVersionFromFileSystem(fs, targetBindDir)
+	if err != nil {
+		log.Info("failed to get the version from the filesystem", "targetDir", targetDir)
+		return err
 	}
 
 	symlinkTargetPath := filepath.Join(targetBindDir, "current")
 	if fileInfo, _ := fs.Stat(symlinkTargetPath); fileInfo != nil {
 		log.Info("symlink already exists", "location", symlinkTargetPath)
 		return nil
-	}
-
-	if installer.props.Version == "" {
-		relativeSymlinkPath, err = findVersionFromFileSystem(fs, targetBindDir)
-		if err != nil {
-			log.Info("failed to get the version from the filesystem", "version", installer.props.Version)
-			return err
-		}
-	} else {
-		relativeSymlinkPath = installer.props.Version
 	}
 
 	log.Info("creating symlink", "points-to(relative)", relativeSymlinkPath, "location", symlinkTargetPath)
