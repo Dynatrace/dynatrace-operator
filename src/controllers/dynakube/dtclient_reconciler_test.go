@@ -163,7 +163,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 	t.Run("InstallerDownload permission is sufficient for dynakube with feature-disable-hosts-requests", func(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Annotations = map[string]string{
-			"operator.dynatrace.com/feature-disable-hosts-requests": "true",
+			"feature.dynatrace.com/disable-hosts-requests": "true",
 		}
 		c := fake.NewClient(NewSecret(dynaKube, namespace, map[string]string{dtclient.DynatraceApiToken: "84"}))
 
@@ -187,7 +187,7 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 	t.Run("ApiToken without permissions and PaasToken with InstallerDownload permission is sufficient for dynakube with feature-disable-hosts-requests", func(t *testing.T) {
 		dk := base.DeepCopy()
 		dk.Annotations = map[string]string{
-			"operator.dynatrace.com/feature-disable-hosts-requests": "true",
+			"feature.dynatrace.com/disable-hosts-requests": "true",
 		}
 		c := fake.NewClient(NewSecret(dynaKube, namespace, map[string]string{dtclient.DynatracePaasToken: "42", dtclient.DynatraceApiToken: "84"}))
 
@@ -196,9 +196,9 @@ func TestReconcileDynatraceClient_TokenValidation(t *testing.T) {
 		dtcMock.On("GetTokenScopes", "84").Return(dtclient.TokenScopes{}, nil)
 
 		rec := &DynatraceClientReconciler{
-			Client: c,
+			Client:              c,
 			DynatraceClientFunc: StaticDynatraceClient(dtcMock),
-			Now: metav1.Now(),
+			Now:                 metav1.Now(),
 		}
 
 		dtc, ucr, err := rec.Reconcile(context.TODO(), dk)
