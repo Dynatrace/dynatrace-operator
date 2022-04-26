@@ -10,7 +10,7 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
-var ImageCacheDir = filepath.Join(dtcsi.DataPath + "cache")
+var ImageCacheDir = filepath.Join(dtcsi.DataPath, "cache")
 
 func (installer *OneAgentInstaller) installAgentFromImage(targetDir string) error {
 	_ = installer.fs.MkdirAll(ImageCacheDir, 0755)
