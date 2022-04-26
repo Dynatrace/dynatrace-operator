@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/pkg/errors"
 )
 
@@ -44,12 +45,12 @@ type Client interface {
 	// download a specific agent version
 	GetAgentVersions(os, installerType, flavor, arch string) ([]string, error)
 
-	GetConnectionInfo() (ConnectionInfo, error)
+	GetConnectionInfo() (types.ConnectionInfo, error)
 
-	GetProcessModuleConfig(prevRevision uint) (*ProcessModuleConfig, error)
+	GetProcessModuleConfig(prevRevision uint) (*types.ProcessModuleConfig, error)
 
 	// GetCommunicationHostForClient returns a CommunicationHost for the client's API URL. Or error, if failed to be parsed.
-	GetCommunicationHostForClient() (CommunicationHost, error)
+	GetCommunicationHostForClient() (types.CommunicationHost, error)
 
 	// SendEvent posts events to dynatrace API
 	SendEvent(eventData *EventData) error

@@ -6,6 +6,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer"
+	"github.com/Dynatrace/dynatrace-operator/src/installer/url"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
@@ -33,16 +34,16 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 	if err != nil {
 		return nil, err
 	}
-	oneAgentInstaller := installer.NewOneAgentInstaller(
+	oneAgentInstaller := url.NewUrlInstaller(
 		fs,
 		client,
-		installer.InstallerProperties{
+		&url.Properties{
 			Os:           dtclient.OsUnix,
 			Type:         dtclient.InstallerTypePaaS,
 			Flavor:       env.InstallerFlavor,
 			Arch:         env.InstallerArch,
 			Technologies: env.InstallerTech,
-			Version:      installer.VersionLatest,
+			Version:      url.VersionLatest,
 			Url:          env.InstallerUrl,
 		},
 	)

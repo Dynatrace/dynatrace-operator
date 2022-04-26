@@ -1,4 +1,4 @@
-package installer
+package url
 
 import (
 	"fmt"
@@ -7,40 +7,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (installer *OneAgentInstaller) installAgentFromUrl(targetDir string) error {
-	fs := installer.fs
-	tmpFile, err := afero.TempFile(fs, "", "download")
-	if err != nil {
-		return fmt.Errorf("failed to create temporary file for download: %w", err)
-	}
-	defer func() {
-		_ = tmpFile.Close()
-		if err := fs.Remove(tmpFile.Name()); err != nil {
-			log.Error(err, "failed to delete downloaded file", "path", tmpFile.Name())
-		}
-	}()
-	if err := installer.downloadOneAgentFromUrl(tmpFile); err != nil {
-		return err
-	}
-	return installer.unpackOneAgentZip(targetDir, tmpFile)
-}
-
-func (installer *OneAgentInstaller) unpackOneAgentZip(targetDir string, tmpFile afero.File) error {
-	var fileSize int64
-	if stat, err := tmpFile.Stat(); err == nil {
-		fileSize = stat.Size()
-	}
-
-	log.Info("saved OneAgent package", "dest", tmpFile.Name(), "size", fileSize)
-	log.Info("unzipping OneAgent package")
-	if err := extractZip(installer.fs, tmpFile, targetDir); err != nil {
-		return fmt.Errorf("failed to unzip file: %w", err)
-	}
-	log.Info("unzipped OneAgent package")
-	return nil
-}
-
-func (installer *OneAgentInstaller) downloadOneAgentFromUrl(tmpFile afero.File) error {
+func (installer *urlInstaller) downloadOneAgentFromUrl(tmpFile afero.File) error {
 	if installer.props.Url != "" {
 		if err := installer.downloadOneAgentViaInstallerUrl(tmpFile); err != nil {
 			return err
@@ -57,7 +24,7 @@ func (installer *OneAgentInstaller) downloadOneAgentFromUrl(tmpFile afero.File) 
 	return nil
 }
 
-func (installer *OneAgentInstaller) downloadLatestOneAgent(tmpFile afero.File) error {
+func (installer *urlInstaller) downloadLatestOneAgent(tmpFile afero.File) error {
 	log.Info("downloading latest OneAgent package", "props", installer.props)
 	return installer.dtc.GetLatestAgent(
 		installer.props.Os,
@@ -69,7 +36,7 @@ func (installer *OneAgentInstaller) downloadLatestOneAgent(tmpFile afero.File) e
 	)
 }
 
-func (installer *OneAgentInstaller) downloadOneAgentWithVersion(tmpFile afero.File) error {
+func (installer *urlInstaller) downloadOneAgentWithVersion(tmpFile afero.File) error {
 	log.Info("downloading specific OneAgent package", "version", installer.props.Version)
 	err := installer.dtc.GetAgent(
 		installer.props.Os,
@@ -96,7 +63,7 @@ func (installer *OneAgentInstaller) downloadOneAgentWithVersion(tmpFile afero.Fi
 	return nil
 }
 
-func (installer *OneAgentInstaller) downloadOneAgentViaInstallerUrl(tmpFile afero.File) error {
+func (installer *urlInstaller) downloadOneAgentViaInstallerUrl(tmpFile afero.File) error {
 	log.Info("downloading OneAgent package using provided url, all other properties are ignored", "url", installer.props.Url)
 	return installer.dtc.GetAgentViaInstallerUrl(installer.props.Url, tmpFile)
 }

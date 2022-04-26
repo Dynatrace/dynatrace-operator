@@ -1,4 +1,4 @@
-package installer
+package symlink
 
 import (
 	iofs "io/fs"
@@ -8,25 +8,15 @@ import (
 	"github.com/spf13/afero"
 )
 
-const (
-	// example match: 1.239.14.20220325-164521
-	versionRegexp = `^(\d+)\.(\d+)\.(\d+)\.(\d+)-(\d+)$`
-)
-
-var (
-	binDir = filepath.Join("agent", "bin")
-)
-
-func (installer *OneAgentInstaller) createSymlinkIfNotExists(targetDir string) error {
+func CreateSymlinkIfNotExists(fs afero.Fs, targetDir string) error {
 	var relativeSymlinkPath string
 	var err error
-	fs := installer.fs
 	targetBindDir := filepath.Join(targetDir, binDir)
 
 	// MemMapFs (used for testing) doesn't comply with the Linker interface
 	linker, ok := fs.(afero.Linker)
 	if !ok {
-		log.Info("symlinking not possible", "targetDir", targetDir, "fs", installer.fs)
+		log.Info("symlinking not possible", "targetDir", targetDir, "fs", fs)
 		return nil
 	}
 

@@ -12,6 +12,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer"
+	"github.com/Dynatrace/dynatrace-operator/src/installer/image"
+	"github.com/Dynatrace/dynatrace-operator/src/installer/url"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
@@ -22,9 +24,18 @@ type agentUpdater struct {
 	fs        afero.Fs
 	dk        *dynatracev1beta1.DynaKube
 	path      metadata.PathResolver
+	dtc       dtclient.Client
 	installer installer.Installer
 	apiReader client.Reader
 	recorder  record.EventRecorder
+}
+
+var installUrlProperties = url.Properties{
+	Os:           dtclient.OsUnix,
+	Type:         dtclient.InstallerTypePaaS,
+	Arch:         arch.Arch,
+	Flavor:       arch.Flavor,
+	Technologies: []string{"all"},
 }
 
 func newAgentUpdater(
@@ -35,24 +46,13 @@ func newAgentUpdater(
 	recorder record.EventRecorder,
 	dk *dynatracev1beta1.DynaKube,
 ) *agentUpdater {
-	agentInstaller := installer.NewOneAgentInstaller(
-		fs,
-		dtc,
-		installer.InstallerProperties{
-			Os:           dtclient.OsUnix,
-			Type:         dtclient.InstallerTypePaaS,
-			Arch:         arch.Arch,
-			Flavor:       arch.Flavor,
-			Technologies: []string{"all"},
-		},
-	)
 	return &agentUpdater{
 		fs:        fs,
 		path:      path,
 		apiReader: apiReader,
 		recorder:  recorder,
 		dk:        dk,
-		installer: agentInstaller,
+		dtc:       dtc,
 	}
 }
 
@@ -69,7 +69,7 @@ func (updater *agentUpdater) updateAgent(ctx context.Context, latestVersion, ten
 			"target directory", targetDir)
 		_ = updater.fs.MkdirAll(targetDir, 0755)
 		if dk.CodeModulesImage() != "" {
-			cleanCerts, err := updater.setImageInfo(ctx, targetDir)
+			cleanCerts, err := updater.initImageInstaller(ctx, targetDir)
 			if err != nil {
 				return "", err
 			}
@@ -77,7 +77,7 @@ func (updater *agentUpdater) updateAgent(ctx context.Context, latestVersion, ten
 				defer cleanCerts()
 			}
 		} else {
-			updater.installer.SetVersion(targetVersion)
+			updater.initUrlInstaller()
 		}
 
 		if err := updater.installer.InstallAgent(targetDir); err != nil {
@@ -95,7 +95,14 @@ func (updater *agentUpdater) updateAgent(ctx context.Context, latestVersion, ten
 	return updatedVersion, nil
 }
 
-func (updater *agentUpdater) setImageInfo(ctx context.Context, targetDir string) (func(), error) {
+func (updater *agentUpdater) initUrlInstaller() {
+	// To allow mocking
+	if updater.installer == nil {
+		updater.installer = url.NewUrlInstaller(updater.fs, updater.dtc, &installUrlProperties)
+	}
+}
+
+func (updater *agentUpdater) initImageInstaller(ctx context.Context, targetDir string) (func(), error) {
 	var cleanCerts func()
 	dk := updater.dk
 	dockerConfig, err := dockerconfig.NewDockerConfig(ctx, updater.apiReader, *dk)
@@ -114,10 +121,13 @@ func (updater *agentUpdater) setImageInfo(ctx context.Context, targetDir string)
 			}
 		}
 	}
-	updater.installer.SetImageInfo(&installer.ImageInfo{
-		Image:        dk.CodeModulesImage(),
-		DockerConfig: *dockerConfig,
-	})
+	// To allow mocking
+	if updater.installer == nil {
+		updater.installer = image.NewImageInstaller(updater.fs, &image.Properties{
+			Image:        dk.CodeModulesImage(),
+			DockerConfig: *dockerConfig,
+		})
+	}
 	return cleanCerts, nil
 }
 

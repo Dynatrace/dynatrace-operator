@@ -6,6 +6,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +33,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 
 		mockDTC.
 			On("GetConnectionInfo").
-			Return(dtclient.ConnectionInfo{}, nil)
+			Return(types.ConnectionInfo{}, nil)
 
 		err := r.Reconcile()
 

@@ -1,4 +1,4 @@
-package installer
+package symlink
 
 import (
 	"path/filepath"

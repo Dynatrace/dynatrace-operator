@@ -5,30 +5,18 @@ import (
 	"errors"
 	"net/url"
 	"strconv"
+
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 )
 
-type ConnectionInfo struct {
-	CommunicationHosts              []CommunicationHost
-	TenantUUID                      string
-	TenantToken                     string
-	FormattedCommunicationEndpoints string
-}
-
-// CommunicationHost => struct of connection endpoint
-type CommunicationHost struct {
-	Protocol string
-	Host     string
-	Port     uint32
-}
-
-func (dtc *dynatraceClient) GetCommunicationHostForClient() (CommunicationHost, error) {
+func (dtc *dynatraceClient) GetCommunicationHostForClient() (types.CommunicationHost, error) {
 	return dtc.parseEndpoint(dtc.url)
 }
 
-func (dtc *dynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
+func (dtc *dynatraceClient) GetConnectionInfo() (types.ConnectionInfo, error) {
 	resp, err := dtc.makeRequest(dtc.getOneAgentConnectionInfoUrl(), dynatracePaaSToken)
 	if err != nil {
-		return ConnectionInfo{}, err
+		return types.ConnectionInfo{}, err
 	}
 	defer func() {
 		//Swallow error, nothing has to be done at this point
@@ -37,13 +25,13 @@ func (dtc *dynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
 
 	responseData, err := dtc.getServerResponseData(resp)
 	if err != nil {
-		return ConnectionInfo{}, err
+		return types.ConnectionInfo{}, err
 	}
 
 	return dtc.readResponseForConnectionInfo(responseData)
 }
 
-func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (ConnectionInfo, error) {
+func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (types.ConnectionInfo, error) {
 	type jsonResponse struct {
 		TenantUUID                      string   `json:"tenantUUID"`
 		TenantToken                     string   `json:"tenantToken"`
@@ -55,12 +43,12 @@ func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conn
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
 		log.Error(err, "error unmarshalling connection info response", "response", string(response))
-		return ConnectionInfo{}, err
+		return types.ConnectionInfo{}, err
 	}
 
 	tenantUuid := resp.TenantUUID
 	tenantToken := resp.TenantToken
-	communicationHosts := make([]CommunicationHost, 0, len(resp.CommunicationEndpoints))
+	communicationHosts := make([]types.CommunicationHost, 0, len(resp.CommunicationEndpoints))
 	formattedCommunicationEndpoints := resp.FormattedCommunicationEndpoints
 
 	for _, s := range resp.CommunicationEndpoints {
@@ -73,10 +61,10 @@ func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conn
 	}
 
 	if len(communicationHosts) == 0 {
-		return ConnectionInfo{}, errors.New("no communication hosts available")
+		return types.ConnectionInfo{}, errors.New("no communication hosts available")
 	}
 
-	ci := ConnectionInfo{
+	ci := types.ConnectionInfo{
 		CommunicationHosts:              communicationHosts,
 		TenantUUID:                      tenantUuid,
 		TenantToken:                     tenantToken,
@@ -86,16 +74,16 @@ func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conn
 	return ci, nil
 }
 
-func (dtc *dynatraceClient) parseEndpoint(s string) (CommunicationHost, error) {
+func (dtc *dynatraceClient) parseEndpoint(s string) (types.CommunicationHost, error) {
 	u, err := url.ParseRequestURI(s)
 	if err != nil {
-		return CommunicationHost{}, errors.New("failed to parse URL")
+		return types.CommunicationHost{}, errors.New("failed to parse URL")
 	}
 
 	if u.Scheme == "" {
-		return CommunicationHost{}, errors.New("no protocol provided")
+		return types.CommunicationHost{}, errors.New("no protocol provided")
 	} else if u.Scheme != "http" && u.Scheme != "https" {
-		return CommunicationHost{}, errors.New("unknown protocol")
+		return types.CommunicationHost{}, errors.New("unknown protocol")
 	}
 
 	rp := u.Port() // Empty if not included in the URI
@@ -111,12 +99,12 @@ func (dtc *dynatraceClient) parseEndpoint(s string) (CommunicationHost, error) {
 	} else {
 		q, err := strconv.ParseUint(rp, 10, 32)
 		if err != nil {
-			return CommunicationHost{}, errors.New("failed to parse port")
+			return types.CommunicationHost{}, errors.New("failed to parse port")
 		}
 		p = uint32(q)
 	}
 
-	return CommunicationHost{
+	return types.CommunicationHost{
 		Protocol: u.Scheme,
 		Host:     u.Hostname(),
 		Port:     p,

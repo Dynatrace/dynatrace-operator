@@ -1,4 +1,4 @@
-package installer
+package image
 
 import (
 	"testing"
@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	testDir           = "test"
 	testImageRegistry = "quay.io"
 	testImageName     = "image:tag"
 	testImageUri      = testImageRegistry + "/repo/" + testImageName
@@ -19,7 +20,7 @@ const (
 
 func TestGetSourceInfo(t *testing.T) {
 	t.Run(`not nil`, func(t *testing.T) {
-		sourceCtx, sourceRef, err := getSourceInfo(testDir, ImageInfo{
+		sourceCtx, sourceRef, err := getSourceInfo(testDir, Properties{
 			Image:        testImageUri,
 			DockerConfig: createTestDockerConfig(),
 		})

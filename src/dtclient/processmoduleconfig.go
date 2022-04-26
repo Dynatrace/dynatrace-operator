@@ -6,99 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/pkg/errors"
 )
 
-const generalSectionName = "general"
-
-type ProcessModuleConfig struct {
-	Revision   uint                    `json:"revision"`
-	Properties []ProcessModuleProperty `json:"properties"`
-}
-
-type ProcessModuleProperty struct {
-	Section string `json:"section"`
-	Key     string `json:"key"`
-	Value   string `json:"value"`
-}
-
-func (pmc *ProcessModuleConfig) Add(newProperty ProcessModuleProperty) *ProcessModuleConfig {
-	if pmc == nil {
-		pmc = &ProcessModuleConfig{}
-	}
-
-	var newProps []ProcessModuleProperty
-	hasPropertyGroup := false
-	for _, currentProperty := range pmc.Properties {
-		if currentProperty.Key != newProperty.Key {
-			newProps = append(newProps, currentProperty)
-		} else {
-			hasPropertyGroup = true
-			if newProperty.Value == "" {
-				continue
-			} else if newProperty.Value == currentProperty.Value {
-				newProps = append(newProps, currentProperty)
-			} else {
-				newProps = append(pmc.Properties, currentProperty)
-			}
-		}
-	}
-	if !hasPropertyGroup && newProperty.Value != "" {
-		newProps = append(pmc.Properties, newProperty)
-	}
-	pmc.Properties = newProps
-	return pmc
-}
-
-func (pmc *ProcessModuleConfig) AddConnectionInfo(connectionInfo ConnectionInfo) *ProcessModuleConfig {
-	tenant := ProcessModuleProperty{
-		Section: generalSectionName,
-		Key:     "tenant",
-		Value:   connectionInfo.TenantUUID,
-	}
-	pmc.Add(tenant)
-
-	token := ProcessModuleProperty{
-		Section: generalSectionName,
-		Key:     "tenantToken",
-		Value:   connectionInfo.TenantToken,
-	}
-	pmc.Add(token)
-
-	endpoints := ProcessModuleProperty{
-		Section: generalSectionName,
-		Key:     "serverAddress",
-		Value:   "{" + connectionInfo.FormattedCommunicationEndpoints + "}",
-	}
-	pmc.Add(endpoints)
-
-	return pmc
-}
-
-func (pmc *ProcessModuleConfig) AddHostGroup(hostGroup string) *ProcessModuleConfig {
-	property := ProcessModuleProperty{Section: generalSectionName, Key: "hostGroup", Value: hostGroup}
-	return pmc.Add(property)
-}
-
-func (pmc ProcessModuleConfig) ToMap() processmoduleconfig.ConfMap {
-	sections := map[string]map[string]string{}
-	for _, prop := range pmc.Properties {
-		section := sections[prop.Section]
-		if section == nil {
-			section = map[string]string{}
-		}
-		section[prop.Key] = prop.Value
-		sections[prop.Section] = section
-	}
-	return sections
-}
-
-func (pmc ProcessModuleConfig) IsEmpty() bool {
-	return len(pmc.Properties) == 0
-}
-
-func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessModuleConfig, error) {
+func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*types.ProcessModuleConfig, error) {
 	req, err := dtc.createProcessModuleConfigRequest(prevRevision)
 	if err != nil {
 		return nil, err
@@ -107,7 +19,7 @@ func (dtc *dynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessM
 	resp, err := dtc.httpClient.Do(req)
 
 	if dtc.checkProcessModuleConfigRequestStatus(resp) {
-		return &ProcessModuleConfig{}, nil
+		return &types.ProcessModuleConfig{}, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("error while requesting process module config: %v", err)
@@ -160,8 +72,8 @@ func (dtc *dynatraceClient) checkProcessModuleConfigRequestStatus(resp *http.Res
 	return false
 }
 
-func (dtc *dynatraceClient) readResponseForProcessModuleConfig(response []byte) (*ProcessModuleConfig, error) {
-	resp := ProcessModuleConfig{}
+func (dtc *dynatraceClient) readResponseForProcessModuleConfig(response []byte) (*types.ProcessModuleConfig, error) {
+	resp := types.ProcessModuleConfig{}
 	err := json.Unmarshal(response, &resp)
 	if err != nil {
 		log.Error(err, "error unmarshalling processmoduleconfig response", "response", string(response))

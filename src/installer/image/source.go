@@ -1,4 +1,4 @@
-package installer
+package image
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
@@ -7,7 +7,7 @@ import (
 	"github.com/containers/image/v5/types"
 )
 
-func getSourceInfo(cacheDir string, pullInfo ImageInfo) (*types.SystemContext, *types.ImageReference, error) {
+func getSourceInfo(cacheDir string, pullInfo Properties) (*types.SystemContext, *types.ImageReference, error) {
 	imageRef, err := parseImageReference(pullInfo.Image)
 	if err != nil {
 		log.Info("failed to parse image reference", "image", pullInfo.Image)

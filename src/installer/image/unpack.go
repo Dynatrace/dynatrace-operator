@@ -1,27 +1,17 @@
-package installer
+package image
 
 import (
 	"context"
 	"fmt"
 	"path/filepath"
 
+	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/types"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/afero"
-)
-
-const (
-	rawPolicy = `{
-		"default": [
-			{
-				"type": "insecureAcceptAnything"
-			}
-		]
-	}
-	`
 )
 
 type imagePullInfo struct {
@@ -33,11 +23,11 @@ type imagePullInfo struct {
 	destinationRef *types.ImageReference
 }
 
-func (installer *OneAgentInstaller) getAgentFromImage(pullInfo imagePullInfo) error {
+func (installer *imageInstaller) getAgentFromImage(pullInfo imagePullInfo) error {
 	manifestBlob, err := copyImageToCache(pullInfo)
 	if err != nil {
 		log.Info("failed to get manifests blob",
-			"image", installer.props.ImageInfo.Image,
+			"image", installer.props.Image,
 		)
 		return err
 	}
@@ -45,7 +35,7 @@ func (installer *OneAgentInstaller) getAgentFromImage(pullInfo imagePullInfo) er
 	manifests, err := installer.unmarshalManifestBlob(manifestBlob, pullInfo.imageCacheDir)
 	if err != nil {
 		log.Info("failed to unmarshal manifests",
-			"image", installer.props.ImageInfo.Image,
+			"image", installer.props.Image,
 			"manifestBlob", manifestBlob,
 			"imageCacheDir", pullInfo.imageCacheDir,
 		)
@@ -55,7 +45,7 @@ func (installer *OneAgentInstaller) getAgentFromImage(pullInfo imagePullInfo) er
 
 }
 
-func (installer *OneAgentInstaller) unmarshalManifestBlob(manifestBlob []byte, imageCacheDir string) ([]*manifest.OCI1, error) {
+func (installer *imageInstaller) unmarshalManifestBlob(manifestBlob []byte, imageCacheDir string) ([]*manifest.OCI1, error) {
 	var manifests []*manifest.OCI1
 
 	mimeType := manifest.GuessMIMEType(manifestBlob)
@@ -78,13 +68,13 @@ func (installer *OneAgentInstaller) unmarshalManifestBlob(manifestBlob []byte, i
 	return manifests, nil
 }
 
-func (installer *OneAgentInstaller) unpackOciImage(manifests []*manifest.OCI1, imageCacheDir string, targetDir string) error {
+func (installer *imageInstaller) unpackOciImage(manifests []*manifest.OCI1, imageCacheDir string, targetDir string) error {
 	for _, entry := range manifests {
 		for _, layer := range entry.LayerInfos() {
 			switch layer.MediaType {
 			case ocispec.MediaTypeImageLayerGzip:
 				sourcePath := filepath.Join(imageCacheDir, "blobs", layer.Digest.Algorithm().String(), layer.Digest.Hex())
-				if err := extractGzip(installer.fs, sourcePath, targetDir); err != nil {
+				if err := zip.ExtractGzip(installer.fs, sourcePath, targetDir); err != nil {
 					return err
 				}
 			case ocispec.MediaTypeImageLayerZstd:
@@ -107,11 +97,11 @@ func unmarshallImageIndex(fs afero.Fs, imageCacheDir string, manifestBlob []byte
 		Fs: fs,
 	}
 	for _, descriptor := range index.Manifests {
-		mBlob, err := aferoFs.ReadFile(filepath.Join(imageCacheDir, "blobs", descriptor.Digest.Algorithm().String(), descriptor.Digest.Hex()))
+		manifestFile, err := aferoFs.ReadFile(filepath.Join(imageCacheDir, "blobs", descriptor.Digest.Algorithm().String(), descriptor.Digest.Hex()))
 		if err != nil {
 			return nil, err
 		}
-		ociManifest, err := manifest.OCI1FromManifest(mBlob)
+		ociManifest, err := manifest.OCI1FromManifest(manifestFile)
 		if err != nil {
 			return nil, err
 		}

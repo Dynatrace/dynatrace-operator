@@ -6,18 +6,19 @@ import (
 	"os"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/pkg/errors"
 )
 
 type processModuleConfigCache struct {
-	*dtclient.ProcessModuleConfig
+	*types.ProcessModuleConfig
 	Hash string `json:"hash"`
 }
 
-func newProcessModuleConfigCache(pmc *dtclient.ProcessModuleConfig) *processModuleConfigCache {
+func newProcessModuleConfigCache(pmc *types.ProcessModuleConfig) *processModuleConfigCache {
 	if pmc == nil {
-		pmc = &dtclient.ProcessModuleConfig{}
+		pmc = &types.ProcessModuleConfig{}
 	}
 	hash, err := kubeobjects.GenerateHash(pmc)
 	if err != nil {
@@ -31,7 +32,7 @@ func newProcessModuleConfigCache(pmc *dtclient.ProcessModuleConfig) *processModu
 
 // getProcessModuleConfig gets the latest `RuxitProcResponse`, it can come from the tenant if we don't have the latest revision saved locally,
 // otherwise we use the locally cached response
-func (provisioner *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Client, tenantUUID string) (*dtclient.ProcessModuleConfig, string, error) {
+func (provisioner *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Client, tenantUUID string) (*types.ProcessModuleConfig, string, error) {
 	var storedHash string
 	storedProcessModuleConfig, err := provisioner.readProcessModuleConfigCache(tenantUUID)
 	if os.IsNotExist(err) {

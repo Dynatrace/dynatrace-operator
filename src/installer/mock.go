@@ -1,7 +1,7 @@
 package installer
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -16,15 +16,7 @@ func (mock *InstallerMock) InstallAgent(targetDir string) error {
 	return args.Error(0)
 }
 
-func (mock *InstallerMock) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
+func (mock *InstallerMock) UpdateProcessModuleConfig(targetDir string, processModuleConfig *types.ProcessModuleConfig) error {
 	args := mock.Called(targetDir, processModuleConfig)
 	return args.Error(0)
-}
-
-func (mock *InstallerMock) SetVersion(version string) {
-	mock.Called(version)
-}
-
-func (mock *InstallerMock) SetImageInfo(imageInfo *ImageInfo) {
-	mock.Called(imageInfo)
 }

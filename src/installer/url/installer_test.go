@@ -1,4 +1,4 @@
-package installer
+package url
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -17,6 +18,10 @@ import (
 const (
 	testVersion = "test"
 	testUrl     = "test.url"
+
+	testDir          = "test"
+	testFilename     = "test.txt"
+	testErrorMessage = "BOOM"
 )
 
 type failFs struct {
@@ -27,12 +32,12 @@ func (fs failFs) OpenFile(string, int, os.FileMode) (afero.File, error) {
 	return nil, fmt.Errorf(testErrorMessage)
 }
 
-func TestInstallAgentFromTenant(t *testing.T) {
+func TestInstallAgentFromUrl(t *testing.T) {
 	t.Run(`error when creating temp file`, func(t *testing.T) {
 		fs := failFs{
 			Fs: afero.NewMemMapFs(),
 		}
-		installer := &OneAgentInstaller{
+		installer := &urlInstaller{
 			fs: fs,
 		}
 
@@ -49,10 +54,10 @@ func TestInstallAgentFromTenant(t *testing.T) {
 		dtc.
 			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, mock.AnythingOfType("string")).
 			Return([]string{}, fmt.Errorf(testErrorMessage))
-		installer := &OneAgentInstaller{
+		installer := &urlInstaller{
 			fs:  fs,
 			dtc: dtc,
-			props: InstallerProperties{
+			props: &Properties{
 				Os:     dtclient.OsUnix,
 				Type:   dtclient.InstallerTypePaaS,
 				Flavor: dtclient.FlavorMultidistro,
@@ -72,17 +77,17 @@ func TestInstallAgentFromTenant(t *testing.T) {
 			Run(func(args mock.Arguments) {
 				writer := args.Get(6).(io.Writer)
 
-				zipFile := setupInavlidTestZip(t, fs)
+				zipFile := zip.SetupInvalidTestZip(t, fs)
 				defer func() { _ = zipFile.Close() }()
 
 				_, err := io.Copy(writer, zipFile)
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &OneAgentInstaller{
+		installer := &urlInstaller{
 			fs:  fs,
 			dtc: dtc,
-			props: InstallerProperties{
+			props: &Properties{
 				Os:     dtclient.OsUnix,
 				Type:   dtclient.InstallerTypePaaS,
 				Flavor: dtclient.FlavorMultidistro,
@@ -101,17 +106,17 @@ func TestInstallAgentFromTenant(t *testing.T) {
 			Run(func(args mock.Arguments) {
 				writer := args.Get(6).(io.Writer)
 
-				zipFile := setupTestArchive(t, fs, testZip)
+				zipFile := zip.SetupTestArchive(t, fs, zip.TestRawZip)
 				defer func() { _ = zipFile.Close() }()
 
 				_, err := io.Copy(writer, zipFile)
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &OneAgentInstaller{
+		installer := &urlInstaller{
 			fs:  fs,
 			dtc: dtc,
-			props: InstallerProperties{
+			props: &Properties{
 				Os:      dtclient.OsUnix,
 				Type:    dtclient.InstallerTypePaaS,
 				Flavor:  dtclient.FlavorMultidistro,
@@ -137,17 +142,17 @@ func TestInstallAgentFromTenant(t *testing.T) {
 			Run(func(args mock.Arguments) {
 				writer := args.Get(5).(io.Writer)
 
-				zipFile := setupTestArchive(t, fs, testZip)
+				zipFile := zip.SetupTestArchive(t, fs, zip.TestRawZip)
 				defer func() { _ = zipFile.Close() }()
 
 				_, err := io.Copy(writer, zipFile)
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &OneAgentInstaller{
+		installer := &urlInstaller{
 			fs:  fs,
 			dtc: dtc,
-			props: InstallerProperties{
+			props: &Properties{
 				Os:      dtclient.OsUnix,
 				Type:    dtclient.InstallerTypePaaS,
 				Flavor:  dtclient.FlavorMultidistro,
@@ -172,17 +177,17 @@ func TestInstallAgentFromTenant(t *testing.T) {
 			Run(func(args mock.Arguments) {
 				writer := args.Get(1).(io.Writer)
 
-				zipFile := setupTestArchive(t, fs, testZip)
+				zipFile := zip.SetupTestArchive(t, fs, zip.TestRawZip)
 				defer func() { _ = zipFile.Close() }()
 
 				_, err := io.Copy(writer, zipFile)
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &OneAgentInstaller{
+		installer := &urlInstaller{
 			fs:  fs,
 			dtc: dtc,
-			props: InstallerProperties{
+			props: &Properties{
 				Url: testUrl,
 			},
 		}

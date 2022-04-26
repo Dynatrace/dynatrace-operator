@@ -3,6 +3,7 @@ package status
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,7 +59,7 @@ func SetDynakubeStatus(instance *dynatracev1beta1.DynaKube, opts Options) error 
 	return nil
 }
 
-func communicationHostsToStatus(communicationHosts []dtclient.CommunicationHost) []dynatracev1beta1.CommunicationHostStatus {
+func communicationHostsToStatus(communicationHosts []types.CommunicationHost) []dynatracev1beta1.CommunicationHostStatus {
 	var communicationHostStatuses []dynatracev1beta1.CommunicationHostStatus
 
 	for _, communicationHost := range communicationHosts {

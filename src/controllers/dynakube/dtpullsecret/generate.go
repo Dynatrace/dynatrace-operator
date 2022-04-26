@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/pkg/errors"
 )
 
@@ -59,7 +59,7 @@ func (r *Reconciler) GenerateData() (map[string][]byte, error) {
 	return pullSecretDataFromDockerConfig(dockerConfig)
 }
 
-func (r *Reconciler) buildAuthString(connectionInfo dtclient.ConnectionInfo) string {
+func (r *Reconciler) buildAuthString(connectionInfo types.ConnectionInfo) string {
 	auth := fmt.Sprintf("%s:%s", connectionInfo.TenantUUID, r.paasToken)
 	return b64.StdEncoding.EncodeToString([]byte(auth))
 }

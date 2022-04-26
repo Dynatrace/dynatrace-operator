@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	dtypes "github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
@@ -476,13 +477,13 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *dtclient.MockDynatraceClient {
 	mockClient := &dtclient.MockDynatraceClient{}
 
-	mockClient.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
+	mockClient.On("GetCommunicationHostForClient").Return(dtypes.CommunicationHost{
 		Protocol: testProtocol,
 		Host:     testHost,
 		Port:     testPort,
 	}, nil)
-	mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
-		CommunicationHosts: []dtclient.CommunicationHost{
+	mockClient.On("GetConnectionInfo").Return(dtypes.ConnectionInfo{
+		CommunicationHosts: []dtypes.CommunicationHost{
 			{
 				Protocol: testProtocol,
 				Host:     testHost,
@@ -498,7 +499,7 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	}, nil)
 	mockClient.On("GetTokenScopes", testPaasToken).Return(paasTokenScopes, nil)
 	mockClient.On("GetTokenScopes", testAPIToken).Return(apiTokenScopes, nil)
-	mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{TenantUUID: "abc123456"}, nil)
+	mockClient.On("GetConnectionInfo").Return(dtypes.ConnectionInfo{TenantUUID: "abc123456"}, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
 	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).

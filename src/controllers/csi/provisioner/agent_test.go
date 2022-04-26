@@ -285,17 +285,12 @@ func TestUpdateAgent(t *testing.T) {
 					dtclient.CustomCertificatesConfigMapKey: "I-am-a-cert-trust-me",
 				},
 			})
-		expectedImageInfo := installer.ImageInfo{
-			Image: image + ":" + tag,
-			DockerConfig: dockerconfig.DockerConfig{
-				Dynakube:         &dk,
-				ApiReader:        updater.apiReader,
-				TrustedCertsPath: filepath.Join(targetDir, "ca.crt"),
-			},
+		expectedDockerConfig := dockerconfig.DockerConfig{
+			Dynakube:         &dk,
+			ApiReader:        updater.apiReader,
+			TrustedCertsPath: filepath.Join(targetDir, "ca.crt"),
 		}
-		updater.installer.(*installer.InstallerMock).
-			On("SetImageInfo", &expectedImageInfo).
-			Return()
+
 		updater.installer.(*installer.InstallerMock).
 			On("InstallAgent", targetDir).
 			Return(nil)
@@ -310,7 +305,7 @@ func TestUpdateAgent(t *testing.T) {
 			&processModuleConfig)
 		require.NoError(t, err)
 		assert.Equal(t, tag, currentVersion)
-		_, err = updater.fs.Stat(expectedImageInfo.DockerConfig.TrustedCertsPath)
+		_, err = updater.fs.Stat(expectedDockerConfig.TrustedCertsPath)
 		assert.Error(t, err)
 	})
 }
@@ -371,6 +366,7 @@ func createTestAgentUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube) *agentU
 	rec := record.NewFakeRecorder(10)
 
 	updater := newAgentUpdater(fake.NewClient(), &client, path, fs, rec, dk)
+	updater.installer = &installer.InstallerMock{}
 	require.NotNil(t, updater)
 	assert.NotNil(t, updater.installer)
 
