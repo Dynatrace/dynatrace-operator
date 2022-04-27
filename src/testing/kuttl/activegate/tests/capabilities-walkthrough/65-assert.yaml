@@ -7,6 +7,9 @@ spec:
   activeGate:
     capabilities:
       - dynatrace-api
+      - routing
+      - metrics-ingest
+      - kubernetes-monitoring
 ---
 apiVersion: v1
 kind: Service
