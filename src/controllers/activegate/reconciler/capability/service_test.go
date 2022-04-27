@@ -62,7 +62,7 @@ func TestCreateService(t *testing.T) {
 
 		expectedLabels := map[string]string{
 			kubeobjects.AppCreatedByLabel: testName,
-			kubeobjects.AppComponentLabel: string(kubeobjects.ActiveGateComponentLabel),
+			kubeobjects.AppComponentLabel: kubeobjects.ActiveGateComponentLabel,
 			kubeobjects.AppNameLabel:      version.AppName,
 			kubeobjects.AppVersionLabel:   version.Version,
 		}
@@ -70,8 +70,8 @@ func TestCreateService(t *testing.T) {
 
 		expectedSelector := map[string]string{
 			kubeobjects.AppCreatedByLabel: testName,
-			kubeobjects.AppComponentLabel: string(kubeobjects.ActiveGateComponentLabel),
-			kubeobjects.AppNameLabel:      version.AppName,
+			kubeobjects.AppManagedByLabel: version.AppName,
+			kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
 		}
 		serviceSpec := service.Spec
 		assert.Equal(t, corev1.ServiceTypeClusterIP, serviceSpec.Type)
