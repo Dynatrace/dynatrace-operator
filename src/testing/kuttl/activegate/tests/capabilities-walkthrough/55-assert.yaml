@@ -67,7 +67,6 @@ spec:
               name: dynakube-activegate-tenant-secret
         - name: DT_DNS_ENTRY_POINT
           value: https://$(DYNAKUBE_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication
-      image: acc27517.dev.dynatracelabs.com/linux/activegate:latest
       imagePullPolicy: Always
       name: activegate
       ports:
@@ -175,7 +174,6 @@ spec:
                   name: dynakube-activegate-tenant-secret
             - name: DT_DNS_ENTRY_POINT
               value: https://$(DYNAKUBE_ACTIVEGATE_SERVICE_HOST):$(DYNAKUBE_ACTIVEGATE_SERVICE_PORT)/communication
-          image: acc27517.dev.dynatracelabs.com/linux/activegate:latest
           imagePullPolicy: Always
           name: activegate
           ports:
