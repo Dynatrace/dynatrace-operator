@@ -201,6 +201,36 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, proxySecret)
 	})
+	t.Run(`has proxy secret but feature flag disables proxy`, func(t *testing.T) {
+		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
+			dtclient.TokenScopes{dtclient.TokenScopeDataExport})
+		instance := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				Proxy: &dynatracev1beta1.DynaKubeProxy{
+					Value:     "https://proxy:1234",
+					ValueFrom: "",
+				}}}
+		instance.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureActiveGateIgnoreProxy: "true"}
+		controller := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
+
+		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+		})
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+
+		var proxySecret corev1.Secret
+		name := agproxysecret.BuildProxySecretName()
+		err = controller.client.Get(context.TODO(), client.ObjectKey{Name: name, Namespace: testNamespace}, &proxySecret)
+
+		assert.Error(t, err)
+		assert.True(t, k8serrors.IsNotFound(err))
+	})
 }
 
 func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
