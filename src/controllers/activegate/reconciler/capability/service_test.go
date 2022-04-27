@@ -86,7 +86,7 @@ func TestCreateService(t *testing.T) {
 		testSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
 		testSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
 		require.True(t, !instance.NeedsStatsd())
-		require.True(t, desiredPorts.AtLeastOneEnabled())
+		require.True(t, desiredPorts.HasPorts())
 
 		service := createService(instance, testComponentFeature, desiredPorts)
 		ports := service.Spec.Ports
@@ -104,7 +104,7 @@ func TestCreateService(t *testing.T) {
 		testSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, true)
 		testSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, desiredPorts.Statsd)
 		require.True(t, instance.NeedsStatsd())
-		require.True(t, desiredPorts.AtLeastOneEnabled())
+		require.True(t, desiredPorts.HasPorts())
 
 		service := createService(instance, testComponentFeature, desiredPorts)
 		ports := service.Spec.Ports
@@ -120,7 +120,7 @@ func TestCreateService(t *testing.T) {
 		testSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
 		testSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, true)
 		require.True(t, instance.NeedsStatsd())
-		require.True(t, desiredPorts.AtLeastOneEnabled())
+		require.True(t, desiredPorts.HasPorts())
 
 		service := createService(instance, testComponentFeature, desiredPorts)
 		ports := service.Spec.Ports
@@ -135,7 +135,7 @@ func TestCreateService(t *testing.T) {
 		testSetCapability(instance, dynatracev1beta1.MetricsIngestCapability, false)
 		testSetCapability(instance, dynatracev1beta1.StatsdIngestCapability, false)
 		require.True(t, !instance.NeedsStatsd())
-		require.False(t, desiredPorts.AtLeastOneEnabled())
+		require.False(t, desiredPorts.HasPorts())
 
 		service := createService(instance, testComponentFeature, desiredPorts)
 		ports := service.Spec.Ports
