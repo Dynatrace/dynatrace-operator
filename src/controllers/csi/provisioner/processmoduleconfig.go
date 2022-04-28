@@ -55,9 +55,8 @@ func (provisioner *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Clie
 }
 
 func (provisioner *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID string) (*processModuleConfigCache, error) {
-	var processModuleConfig processModuleConfigCache
 	processModuleConfigCacheFile, err := provisioner.fs.Open(provisioner.path.AgentRuxitProcResponseCache(tenantUUID))
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return nil, err
 	}
@@ -76,6 +75,7 @@ func (provisioner *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID 
 		return nil, errors.Wrapf(err, "error closing file after reading processModuleConfigCache")
 	}
 
+	var processModuleConfig processModuleConfigCache
 	if err := json.Unmarshal(jsonBytes, &processModuleConfig); err != nil {
 		provisioner.removeProcessModuleConfigCache(tenantUUID)
 		return nil, errors.Wrapf(err, "error when unmarshalling processModuleConfigCache")
