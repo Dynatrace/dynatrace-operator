@@ -53,7 +53,7 @@ func (updater *agentUpdater) updateAgent(installedVersion, tenantUUID string, pr
 	targetVersion := updater.getOneAgentVersionFromInstance()
 	targetDir := updater.path.AgentBinaryDirForVersion(tenantUUID, targetVersion)
 
-	if _, err := updater.fs.Stat(targetDir); os.IsNotExist(err) {
+	if _, err := updater.fs.Stat(targetDir); os.IsNotExist(err) || installedVersion == "" {
 		log.Info("updating agent",
 			"target version", targetVersion,
 			"installed version", installedVersion,
