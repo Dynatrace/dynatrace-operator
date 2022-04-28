@@ -56,8 +56,10 @@ func (provisioner *OneAgentProvisioner) getProcessModuleConfig(dtc dtclient.Clie
 
 func (provisioner *OneAgentProvisioner) readProcessModuleConfigCache(tenantUUID string) (*processModuleConfigCache, error) {
 	processModuleConfigCacheFile, err := provisioner.fs.Open(provisioner.path.AgentRuxitProcResponseCache(tenantUUID))
-	if err != nil && !os.IsNotExist(err) {
-		provisioner.removeProcessModuleConfigCache(tenantUUID)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			provisioner.removeProcessModuleConfigCache(tenantUUID)
+		}
 		return nil, err
 	}
 
