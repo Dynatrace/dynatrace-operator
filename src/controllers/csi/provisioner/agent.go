@@ -124,7 +124,7 @@ func (updater *agentUpdater) initImageInstaller(ctx context.Context, targetDir s
 	// To allow mocking
 	if updater.installer == nil {
 		updater.installer = image.NewImageInstaller(updater.fs, &image.Properties{
-			Image:        dk.CodeModulesImage(),
+			ImageUri:     dk.CodeModulesImage(),
 			DockerConfig: *dockerConfig,
 		})
 	}

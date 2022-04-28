@@ -16,7 +16,7 @@ import (
 )
 
 type Properties struct {
-	Image        string
+	ImageUri     string
 	DockerConfig dockerconfig.DockerConfig
 }
 
@@ -47,7 +47,7 @@ func (installer *imageInstaller) UpdateProcessModuleConfig(targetDir string, pro
 
 func (installer *imageInstaller) installAgentFromImage(targetDir string) error {
 	_ = installer.fs.MkdirAll(CacheDir, 0755)
-	image := installer.props.Image
+	image := installer.props.ImageUri
 
 	sourceCtx, sourceRef, err := getSourceInfo(CacheDir, *installer.props)
 	if err != nil {
@@ -67,7 +67,7 @@ func (installer *imageInstaller) installAgentFromImage(targetDir string) error {
 		log.Info("failed to get destination information", "image", image, "imageCacheDir", imageCacheDir)
 		return err
 	}
-	return installer.getAgentFromImage(
+	return installer.extractAgentBinariesFromImage(
 		imagePullInfo{
 			imageCacheDir:  imageCacheDir,
 			targetDir:      targetDir,

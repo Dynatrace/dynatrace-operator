@@ -13,7 +13,7 @@ func getDestinationInfo(imageCacheDir string) (*types.SystemContext, *types.Imag
 		return nil, nil, err
 	}
 	destinationCtx := buildDestinationContext(imageCacheDir)
-	return destinationCtx, &destinationRef, nil
+	return destinationCtx, destinationRef, nil
 }
 
 func buildDestinationContext(cacheDir string) *types.SystemContext {
@@ -23,8 +23,8 @@ func buildDestinationContext(cacheDir string) *types.SystemContext {
 	}
 }
 
-func getDestinationReference(imageCacheDir string) (types.ImageReference, error) {
+func getDestinationReference(imageCacheDir string) (*types.ImageReference, error) {
 	destinationImage := fmt.Sprintf("oci:%s", imageCacheDir)
-
-	return alltransports.ParseImageName(destinationImage)
+	destinationRef, err := alltransports.ParseImageName(destinationImage)
+	return &destinationRef, err
 }

@@ -21,7 +21,7 @@ const (
 func TestGetSourceInfo(t *testing.T) {
 	t.Run(`not nil`, func(t *testing.T) {
 		sourceCtx, sourceRef, err := getSourceInfo(testDir, Properties{
-			Image:        testImageUri,
+			ImageUri:     testImageUri,
 			DockerConfig: createTestDockerConfig(),
 		})
 		require.NoError(t, err)

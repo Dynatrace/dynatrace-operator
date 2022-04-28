@@ -8,22 +8,22 @@ import (
 )
 
 func getSourceInfo(cacheDir string, pullInfo Properties) (*types.SystemContext, *types.ImageReference, error) {
-	imageRef, err := parseImageReference(pullInfo.Image)
+	imageRef, err := parseImageReference(pullInfo.ImageUri)
 	if err != nil {
-		log.Info("failed to parse image reference", "image", pullInfo.Image)
+		log.Info("failed to parse image reference", "image", pullInfo.ImageUri)
 		return nil, nil, err
 	}
 	log.Info("parsed image reference", "imageRef", imageRef)
 
 	sourceRef, err := getSourceReference(imageRef)
 	if err != nil {
-		log.Info("failed to get source reference", "image", pullInfo.Image, "imageRef", imageRef)
+		log.Info("failed to get source reference", "image", pullInfo.ImageUri, "imageRef", imageRef)
 		return nil, nil, err
 	}
-	log.Info("got source reference", "image", pullInfo.Image)
+	log.Info("got source reference", "image", pullInfo.ImageUri)
 
 	sourceCtx := buildSourceContext(imageRef, cacheDir, pullInfo.DockerConfig)
-	return sourceCtx, &sourceRef, nil
+	return sourceCtx, sourceRef, nil
 }
 
 func parseImageReference(uri string) (reference.Named, error) {
@@ -36,8 +36,9 @@ func parseImageReference(uri string) (reference.Named, error) {
 	return ref, nil
 }
 
-func getSourceReference(named reference.Named) (types.ImageReference, error) {
-	return docker.NewReference(named)
+func getSourceReference(named reference.Named) (*types.ImageReference, error) {
+	ref, err := docker.NewReference(named)
+	return &ref, err
 }
 
 func buildSourceContext(imageRef reference.Named, cacheDir string, dockerConfig dockerconfig.DockerConfig) *types.SystemContext {

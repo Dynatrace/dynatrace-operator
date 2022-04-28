@@ -353,7 +353,7 @@ func updateOneagent(t *testing.T, alreadyInstalled bool) {
 	if installerCalled {
 		assert.Equal(t, testVersion, currentVersion)
 	} else {
-		assert.Equal(t, "", currentVersion)
+		assert.Empty(t, currentVersion)
 	}
 
 	assert.Equal(t, !alreadyInstalled, installerCalled)

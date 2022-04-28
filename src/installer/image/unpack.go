@@ -23,11 +23,11 @@ type imagePullInfo struct {
 	destinationRef *types.ImageReference
 }
 
-func (installer *imageInstaller) getAgentFromImage(pullInfo imagePullInfo) error {
+func (installer *imageInstaller) extractAgentBinariesFromImage(pullInfo imagePullInfo) error {
 	manifestBlob, err := copyImageToCache(pullInfo)
 	if err != nil {
 		log.Info("failed to get manifests blob",
-			"image", installer.props.Image,
+			"image", installer.props.ImageUri,
 		)
 		return err
 	}
@@ -35,7 +35,7 @@ func (installer *imageInstaller) getAgentFromImage(pullInfo imagePullInfo) error
 	manifests, err := installer.unmarshalManifestBlob(manifestBlob, pullInfo.imageCacheDir)
 	if err != nil {
 		log.Info("failed to unmarshal manifests",
-			"image", installer.props.Image,
+			"image", installer.props.ImageUri,
 			"manifestBlob", manifestBlob,
 			"imageCacheDir", pullInfo.imageCacheDir,
 		)
@@ -48,19 +48,17 @@ func (installer *imageInstaller) getAgentFromImage(pullInfo imagePullInfo) error
 func (installer *imageInstaller) unmarshalManifestBlob(manifestBlob []byte, imageCacheDir string) ([]*manifest.OCI1, error) {
 	var manifests []*manifest.OCI1
 
-	mimeType := manifest.GuessMIMEType(manifestBlob)
-
-	if mimeType == ocispec.MediaTypeImageManifest {
+	switch manifest.GuessMIMEType(manifestBlob) {
+	case ocispec.MediaTypeImageManifest:
 		ociManifest, err := manifest.OCI1FromManifest(manifestBlob)
 		if err != nil {
 			return manifests, err
 		}
 		manifests = append(manifests, ociManifest)
-
-	} else if mimeType == ocispec.MediaTypeImageIndex {
+	case ocispec.MediaTypeImageIndex:
 		ociManifests, err := unmarshallImageIndex(installer.fs, imageCacheDir, manifestBlob)
 		if err != nil {
-			return nil, err
+			return manifests, err
 		}
 		manifests = append(manifests, ociManifests...)
 	}
