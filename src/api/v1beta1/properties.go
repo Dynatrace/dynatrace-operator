@@ -21,7 +21,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -233,6 +233,20 @@ func (dk *DynaKube) Version() string {
 	return ""
 }
 
+func (dynakube DynaKube) CodeModulesVersion() string {
+	if !dynakube.CloudNativeFullstackMode() && !dynakube.ApplicationMonitoringMode() {
+		return ""
+	}
+	if dynakube.CodeModulesImage() != "" {
+		codeModulesImage := dynakube.CodeModulesImage()
+		return strings.Split(codeModulesImage, ":")[1]
+	}
+	if dynakube.Version() != "" {
+		return dynakube.Version()
+	}
+	return dynakube.Status.LatestAgentVersionUnixPaas
+}
+
 func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
 	return &dk.Spec.NamespaceSelector
 }
@@ -280,21 +294,21 @@ func (dk *DynaKube) Tokens() string {
 	return dk.Name
 }
 
-func (dk *DynaKube) CommunicationHostForClient() types.CommunicationHost {
-	return types.CommunicationHost(dk.Status.CommunicationHostForClient)
+func (dk *DynaKube) CommunicationHostForClient() dtclient.CommunicationHost {
+	return dtclient.CommunicationHost(dk.Status.CommunicationHostForClient)
 }
 
-func (dk *DynaKube) ConnectionInfo() types.ConnectionInfo {
-	return types.ConnectionInfo{
+func (dk *DynaKube) ConnectionInfo() dtclient.ConnectionInfo {
+	return dtclient.ConnectionInfo{
 		CommunicationHosts: dk.CommunicationHosts(),
 		TenantUUID:         dk.Status.ConnectionInfo.TenantUUID,
 	}
 }
 
-func (dk *DynaKube) CommunicationHosts() []types.CommunicationHost {
-	var communicationHosts []types.CommunicationHost
+func (dk *DynaKube) CommunicationHosts() []dtclient.CommunicationHost {
+	var communicationHosts []dtclient.CommunicationHost
 	for _, communicationHost := range dk.Status.ConnectionInfo.CommunicationHosts {
-		communicationHosts = append(communicationHosts, types.CommunicationHost(communicationHost))
+		communicationHosts = append(communicationHosts, dtclient.CommunicationHost(communicationHost))
 	}
 	return communicationHosts
 }

@@ -3,7 +3,6 @@ package dtclient
 import (
 	"io"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -47,19 +46,19 @@ func (o *MockDynatraceClient) GetAgentVersions(os, installerType, flavor, arch s
 	return args.Get(0).([]string), args.Error(1)
 }
 
-func (o *MockDynatraceClient) GetConnectionInfo() (types.ConnectionInfo, error) {
+func (o *MockDynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
 	args := o.Called()
-	return args.Get(0).(types.ConnectionInfo), args.Error(1)
+	return args.Get(0).(ConnectionInfo), args.Error(1)
 }
 
-func (o *MockDynatraceClient) GetCommunicationHostForClient() (types.CommunicationHost, error) {
+func (o *MockDynatraceClient) GetCommunicationHostForClient() (CommunicationHost, error) {
 	args := o.Called()
-	return args.Get(0).(types.CommunicationHost), args.Error(1)
+	return args.Get(0).(CommunicationHost), args.Error(1)
 }
 
-func (o *MockDynatraceClient) GetProcessModuleConfig(prevRevision uint) (*types.ProcessModuleConfig, error) {
+func (o *MockDynatraceClient) GetProcessModuleConfig(prevRevision uint) (*ProcessModuleConfig, error) {
 	args := o.Called(prevRevision)
-	return args.Get(0).(*types.ProcessModuleConfig), args.Error(1)
+	return args.Get(0).(*ProcessModuleConfig), args.Error(1)
 }
 
 func (o *MockDynatraceClient) SendEvent(event *EventData) error {

@@ -6,16 +6,15 @@ import (
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/Dynatrace/dynatrace-operator/src/installer"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-var testProcessModuleConfig = types.ProcessModuleConfig{
+var testProcessModuleConfig = dtclient.ProcessModuleConfig{
 	Revision: 0,
-	Properties: []types.ProcessModuleProperty{
+	Properties: []dtclient.ProcessModuleProperty{
 		{
 			Section: "test",
 			Key:     "test",
@@ -130,7 +129,7 @@ func TestInstallOneAgent(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.dtclient.(*dtclient.MockDynatraceClient).
 			On("GetProcessModuleConfig", uint(0)).
-			Return(&types.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
+			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
 		runner.installer.(*installer.InstallerMock).
 			On("UpdateProcessModuleConfig", BinDirMount, &testProcessModuleConfig).
 			Return(nil)

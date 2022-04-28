@@ -12,7 +12,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	dtypes "github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -128,12 +127,12 @@ func newReconciliationRequest(oaName string) reconcile.Request {
 
 func mockDynatraceClientFunc(communicationHosts *[]string) dynakube.DynatraceClientFunc {
 	return func(dynakube.DynatraceClientProperties) (dtclient.Client, error) {
-		commHosts := make([]dtypes.CommunicationHost, len(*communicationHosts))
+		commHosts := make([]dtclient.CommunicationHost, len(*communicationHosts))
 		for i, c := range *communicationHosts {
-			commHosts[i] = dtypes.CommunicationHost{Protocol: "https", Host: c, Port: 443}
+			commHosts[i] = dtclient.CommunicationHost{Protocol: "https", Host: c, Port: 443}
 		}
 
-		connInfo := dtypes.ConnectionInfo{
+		connInfo := dtclient.ConnectionInfo{
 			TenantUUID:         "asdf",
 			CommunicationHosts: commHosts,
 		}
@@ -142,7 +141,7 @@ func mockDynatraceClientFunc(communicationHosts *[]string) dynakube.DynatraceCli
 		dtc.On("GetLatestAgentVersion", "unix", "default").Return("17", nil)
 		dtc.On("GetLatestAgentVersion", "unix", "paas").Return("18", nil)
 		dtc.On("GetConnectionInfo").Return(connInfo, nil)
-		dtc.On("GetCommunicationHostForClient").Return(dtypes.CommunicationHost{
+		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
 			Protocol: "https",
 			Host:     DefaultTestAPIURL,
 			Port:     443,

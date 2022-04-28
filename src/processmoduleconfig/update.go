@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/spf13/afero"
 )
 
@@ -14,7 +14,7 @@ var (
 	sourceRuxitAgentProcPath = filepath.Join("agent", "conf", "_ruxitagentproc.conf")
 )
 
-func UpdateProcessModuleConfig(fs afero.Fs, targetDir string, processModuleConfig *types.ProcessModuleConfig) error {
+func UpdateProcessModuleConfig(fs afero.Fs, targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
 	if processModuleConfig != nil {
 		log.Info("updating ruxitagentproc.conf", "targetDir", targetDir)
 		usedProcessModuleConfigPath := filepath.Join(targetDir, ruxitAgentProcPath)

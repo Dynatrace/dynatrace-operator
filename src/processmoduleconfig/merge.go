@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/spf13/afero"
 )
 
@@ -17,7 +17,7 @@ var sectionRegexp, _ = regexp.Compile(`\[(.*)\]`)
 
 // Update opens the file at `sourcePath` and merges it with the ConfMap provided
 // then writes the results into a file at `destPath`
-func Update(fs afero.Fs, sourcePath, destPath string, conf types.ConfMap) error {
+func Update(fs afero.Fs, sourcePath, destPath string, conf dtclient.ConfMap) error {
 	fileInfo, err := fs.Stat(sourcePath)
 	if err != nil {
 		return err
@@ -102,7 +102,7 @@ func confSectionHeader(confLine string) string {
 	return ""
 }
 
-func addLeftovers(conf types.ConfMap) []string {
+func addLeftovers(conf dtclient.ConfMap) []string {
 	lines := []string{}
 	for section, props := range conf {
 		lines = append(lines, fmt.Sprintf("[%s]", section))
@@ -113,7 +113,7 @@ func addLeftovers(conf types.ConfMap) []string {
 	return lines
 }
 
-func addLeftoversForSection(currentSection string, conf types.ConfMap) []string {
+func addLeftoversForSection(currentSection string, conf dtclient.ConfMap) []string {
 	lines := []string{}
 	if currentSection != "" {
 		section, ok := conf[currentSection]
@@ -127,7 +127,7 @@ func addLeftoversForSection(currentSection string, conf types.ConfMap) []string 
 	return lines
 }
 
-func mergeLine(line, currentSection string, conf types.ConfMap) string {
+func mergeLine(line, currentSection string, conf dtclient.ConfMap) string {
 	splitLine := strings.Split(line, " ")
 	key := splitLine[0]
 

@@ -7,7 +7,6 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,9 +14,9 @@ import (
 
 var (
 	testTenantUUID          = "zib123"
-	testProcessModuleConfig = types.ProcessModuleConfig{
+	testProcessModuleConfig = dtclient.ProcessModuleConfig{
 		Revision: 3,
-		Properties: []types.ProcessModuleProperty{
+		Properties: []dtclient.ProcessModuleProperty{
 			{
 				Section: "test",
 				Key:     "test",
@@ -26,9 +25,9 @@ var (
 		},
 	}
 	testProcessModuleConfigCache = processModuleConfigCache{
-		ProcessModuleConfig: &types.ProcessModuleConfig{
+		ProcessModuleConfig: &dtclient.ProcessModuleConfig{
 			Revision: 1,
-			Properties: []types.ProcessModuleProperty{
+			Properties: []dtclient.ProcessModuleProperty{
 				{
 					Section: "test",
 					Key:     "test",
@@ -53,7 +52,7 @@ func isCacheExisting(fs afero.Fs) bool {
 }
 
 func TestGetProcessModuleConfig(t *testing.T) {
-	var emptyResponse *types.ProcessModuleConfig
+	var emptyResponse *dtclient.ProcessModuleConfig
 	t.Run(`no cache + no revision (dry run)`, func(t *testing.T) {
 		var defaultHash string
 		memFs := afero.NewMemMapFs()

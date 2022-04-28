@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -68,14 +67,14 @@ func TestReadResponseForProcessModuleConfig(t *testing.T) {
 
 func TestAddHostGroup(t *testing.T) {
 	t.Run(`hostGroup, no api`, func(t *testing.T) {
-		emptyResponse := types.ProcessModuleConfig{}
+		emptyResponse := ProcessModuleConfig{}
 		result := emptyResponse.AddHostGroup("test")
 		assert.NotNil(t, result)
 		assert.Equal(t, "test", result.ToMap()["general"]["hostGroup"])
 	})
 	t.Run(`hostGroup, api present`, func(t *testing.T) {
-		pmc := types.ProcessModuleConfig{
-			Properties: []types.ProcessModuleProperty{
+		pmc := ProcessModuleConfig{
+			Properties: []ProcessModuleProperty{
 				{
 					Section: "general",
 					Key:     "other",
@@ -89,8 +88,8 @@ func TestAddHostGroup(t *testing.T) {
 		assert.Equal(t, "test", result.ToMap()["general"]["hostGroup"])
 	})
 	t.Run(`empty hostGroup`, func(t *testing.T) {
-		pmc := types.ProcessModuleConfig{
-			Properties: []types.ProcessModuleProperty{
+		pmc := ProcessModuleConfig{
+			Properties: []ProcessModuleProperty{
 				{
 					Section: "general",
 					Key:     "other",
@@ -103,8 +102,8 @@ func TestAddHostGroup(t *testing.T) {
 		assert.Equal(t, *result, pmc)
 	})
 	t.Run(`empty hostGroup, remove previous hostgroup`, func(t *testing.T) {
-		pmc := types.ProcessModuleConfig{
-			Properties: []types.ProcessModuleProperty{
+		pmc := ProcessModuleConfig{
+			Properties: []ProcessModuleProperty{
 				{
 					Section: "general",
 					Key:     "hostGroup",

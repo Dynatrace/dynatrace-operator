@@ -15,7 +15,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/provisioner/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	dtypes "github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -173,7 +172,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	})
 	t.Run(`error when querying dynatrace client for connection info`, func(t *testing.T) {
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtypes.ConnectionInfo{}, fmt.Errorf(errorMsg))
+		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{}, fmt.Errorf(errorMsg))
 
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
@@ -208,7 +207,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			Fs: afero.NewMemMapFs(),
 		}
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtypes.ConnectionInfo{
+		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: tenantUUID,
 		}, nil)
 		provisioner := &OneAgentProvisioner{
@@ -249,7 +248,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`error getting latest agent version`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtypes.ConnectionInfo{
+		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: tenantUUID,
 		}, nil)
 		mockClient.On("GetAgent",
@@ -312,7 +311,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`error getting dynakube from db`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtypes.ConnectionInfo{
+		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: tenantUUID,
 		}, nil)
 		mockClient.On("GetLatestAgentVersion",
@@ -361,7 +360,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		require.NoError(t, err)
 
 		mockClient := &dtclient.MockDynatraceClient{}
-		mockClient.On("GetConnectionInfo").Return(dtypes.ConnectionInfo{
+		mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{
 			TenantUUID: tenantUUID,
 		}, nil)
 		mockClient.On("GetLatestAgentVersion",

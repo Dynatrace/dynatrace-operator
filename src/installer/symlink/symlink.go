@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func CreateSymlinkIfNotExists(fs afero.Fs, targetDir string) error {
+func CreateSymlinkForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) error {
 	var relativeSymlinkPath string
 	var err error
 	targetBindDir := filepath.Join(targetDir, binDir)

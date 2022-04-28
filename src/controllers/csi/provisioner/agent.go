@@ -3,8 +3,6 @@ package csiprovisioner
 import (
 	"context"
 	"os"
-	"path/filepath"
-	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
@@ -21,13 +19,13 @@ import (
 )
 
 type agentUpdater struct {
-	fs        afero.Fs
-	dk        *dynatracev1beta1.DynaKube
-	path      metadata.PathResolver
-	dtc       dtclient.Client
-	installer installer.Installer
-	apiReader client.Reader
-	recorder  record.EventRecorder
+	fs            afero.Fs
+	path          metadata.PathResolver
+	targetDir     string
+	targetVersion string
+	tenantUUID    string
+	installer     installer.Installer
+	recorder      updaterEventRecorder
 }
 
 var installUrlProperties = url.Properties{
@@ -39,119 +37,113 @@ var installUrlProperties = url.Properties{
 }
 
 func newAgentUpdater(
+	ctx context.Context,
+	fs afero.Fs,
 	apiReader client.Reader,
 	dtc dtclient.Client,
 	path metadata.PathResolver,
-	fs afero.Fs,
 	recorder record.EventRecorder,
-	dk *dynatracev1beta1.DynaKube,
-) *agentUpdater {
-	return &agentUpdater{
-		fs:        fs,
-		path:      path,
-		apiReader: apiReader,
-		recorder:  recorder,
-		dk:        dk,
-		dtc:       dtc,
+	dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) {
+	tenantUUID := dk.ConnectionInfo().TenantUUID
+	targetVersion := dk.CodeModulesVersion()
+	targetDir := path.AgentBinaryDirForVersion(tenantUUID, targetVersion)
+	certPath := path.ImageCertPath(tenantUUID)
+
+	var agentInstaller installer.Installer
+	var err error
+	if dk.CodeModulesImage() != "" {
+		agentInstaller, err = setupImageInstaller(ctx, fs, apiReader, certPath, dk)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		agentInstaller = url.NewUrlInstaller(fs, dtc, &installUrlProperties)
 	}
+	eventRecorder := updaterEventRecorder{
+		recorder: recorder,
+		dynakube: dk,
+	}
+	return &agentUpdater{
+		fs:            fs,
+		path:          path,
+		targetDir:     targetDir,
+		targetVersion: targetVersion,
+		tenantUUID:    tenantUUID,
+		installer:     agentInstaller,
+		recorder:      eventRecorder,
+	}, nil
+
 }
 
-func (updater *agentUpdater) updateAgent(ctx context.Context, latestVersion, tenantUUID string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
-	dk := updater.dk
-	targetVersion := updater.getOneAgentVersionFromInstance()
-	targetDir := updater.path.AgentBinaryDirForVersion(tenantUUID, targetVersion)
-
-	var updatedVersion string
-	if _, err := updater.fs.Stat(targetDir); os.IsNotExist(err) {
-		log.Info("updating agent",
-			"target version", targetVersion,
-			"installed version", latestVersion,
-			"target directory", targetDir)
-		_ = updater.fs.MkdirAll(targetDir, 0755)
-		if dk.CodeModulesImage() != "" {
-			cleanCerts, err := updater.initImageInstaller(ctx, targetDir)
-			if err != nil {
-				return "", err
-			}
-			if cleanCerts != nil {
-				defer cleanCerts()
-			}
-		} else {
-			updater.initUrlInstaller()
+func setupImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Reader, certPath string, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) {
+	dockerConfig, err := dockerconfig.NewDockerConfig(ctx, apiReader, *dynakube)
+	if err != nil {
+		return nil, err
+	}
+	if dynakube.Spec.TrustedCAs != "" {
+		err := dockerConfig.SaveCustomCAs(ctx, afero.Afero{Fs: fs}, certPath)
+		if err != nil {
+			return nil, err
 		}
+	}
+	imageInstaller := image.NewImageInstaller(fs, &image.Properties{
+		ImageUri:     dynakube.CodeModulesImage(),
+		DockerConfig: *dockerConfig})
+	return imageInstaller, nil
+}
 
-		if err := updater.installer.InstallAgent(targetDir); err != nil {
-			updater.sendFailedInstallAgentVersionEvent(targetVersion, tenantUUID)
+func (updater *agentUpdater) updateAgent(installedVersion, tenantUUID string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
+	defer updater.cleanCertsIfPresent()
+	var updatedVersion string
+	if updater.VersionDirNotPresent() || installedVersion == "" {
+		log.Info("updating agent",
+			"target version", updater.targetVersion,
+			"installed version", installedVersion,
+			"target directory", updater.targetDir)
+		_ = updater.fs.MkdirAll(updater.targetDir, 0755)
+
+		if err := updater.installer.InstallAgent(updater.targetDir); err != nil {
+			updater.recorder.sendFailedInstallAgentVersionEvent(updater.targetVersion, tenantUUID)
 			return "", err
 		}
-		updater.sendInstalledAgentVersionEvent(targetVersion, tenantUUID)
-		updatedVersion = targetVersion
+		updater.recorder.sendInstalledAgentVersionEvent(updater.targetVersion, tenantUUID)
+		updatedVersion = updater.targetVersion
 	}
 	log.Info("updating ruxitagentproc.conf on latest installed version")
-	if err := updater.installer.UpdateProcessModuleConfig(targetDir, latestProcessModuleConfigCache.ProcessModuleConfig); err != nil {
+	if err := updater.installer.UpdateProcessModuleConfig(updater.targetDir, latestProcessModuleConfigCache.ProcessModuleConfig); err != nil {
 		return "", err
 	}
-
 	return updatedVersion, nil
 }
 
-func (updater *agentUpdater) initUrlInstaller() {
-	// To allow mocking
-	if updater.installer == nil {
-		updater.installer = url.NewUrlInstaller(updater.fs, updater.dtc, &installUrlProperties)
+func (updater *agentUpdater) cleanCertsIfPresent() {
+	err := updater.fs.RemoveAll(updater.path.ImageCertPath(updater.tenantUUID))
+	if err != nil && os.IsNotExist(err) {
+		log.Info("no ca.crt found to clean")
+	} else if err != nil {
+		log.Error(err, "failed to clean ca.crt")
 	}
 }
 
-func (updater *agentUpdater) initImageInstaller(ctx context.Context, targetDir string) (func(), error) {
-	var cleanCerts func()
-	dk := updater.dk
-	dockerConfig, err := dockerconfig.NewDockerConfig(ctx, updater.apiReader, *dk)
-	if err != nil {
-		return cleanCerts, err
-	}
-	if dk.Spec.TrustedCAs != "" {
-		caCertPath := filepath.Join(targetDir, "ca.crt")
-		err := dockerConfig.SaveCustomCAs(ctx, afero.Afero{Fs: updater.fs}, caCertPath)
-		if err != nil {
-			return cleanCerts, err
-		}
-		cleanCerts = func() {
-			if err := updater.fs.RemoveAll(caCertPath); err != nil {
-				log.Error(err, "failed to remove ca.crt")
-			}
-		}
-	}
-	// To allow mocking
-	if updater.installer == nil {
-		updater.installer = image.NewImageInstaller(updater.fs, &image.Properties{
-			ImageUri:     dk.CodeModulesImage(),
-			DockerConfig: *dockerConfig,
-		})
-	}
-	return cleanCerts, nil
+func (updater agentUpdater) VersionDirNotPresent() bool {
+	_, err := updater.fs.Stat(updater.targetDir)
+	return os.IsNotExist(err)
 }
 
-func (updater *agentUpdater) getOneAgentVersionFromInstance() string {
-	dk := updater.dk
-	if dk.CodeModulesImage() != "" {
-		image := dk.CodeModulesImage()
-		return strings.Split(image, ":")[1]
-	}
-	if dk.Version() != "" {
-		return dk.Version()
-	}
-	return dk.Status.LatestAgentVersionUnixPaas
+type updaterEventRecorder struct {
+	dynakube *dynatracev1beta1.DynaKube
+	recorder record.EventRecorder
 }
 
-func (updater *agentUpdater) sendFailedInstallAgentVersionEvent(version, tenantUUID string) {
-	updater.recorder.Eventf(updater.dk,
+func (event *updaterEventRecorder) sendFailedInstallAgentVersionEvent(version, tenantUUID string) {
+	event.recorder.Eventf(event.dynakube,
 		corev1.EventTypeWarning,
 		failedInstallAgentVersionEvent,
 		"Failed to install agent version: %s to tenant: %s", version, tenantUUID)
 }
 
-func (updater *agentUpdater) sendInstalledAgentVersionEvent(version, tenantUUID string) {
-	updater.recorder.Eventf(updater.dk,
+func (event *updaterEventRecorder) sendInstalledAgentVersionEvent(version, tenantUUID string) {
+	event.recorder.Eventf(event.dynakube,
 		corev1.EventTypeNormal,
 		installAgentVersionEvent,
 		"Installed agent version: %s to tenant: %s", version, tenantUUID)

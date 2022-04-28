@@ -212,3 +212,60 @@ func TestTenantUUID(t *testing.T) {
 		)
 	})
 }
+
+func TestCodeModulesVersion(t *testing.T) {
+	testVersion := "1.2.3"
+	t.Run(`use status`, func(t *testing.T) {
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{},
+				},
+			},
+			Status: DynaKubeStatus{
+				LatestAgentVersionUnixPaas: testVersion,
+			},
+		}
+		version := dk.CodeModulesVersion()
+		assert.Equal(t, testVersion, version)
+	})
+	t.Run(`use version `, func(t *testing.T) {
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{
+						HostInjectSpec: HostInjectSpec{
+							Version: testVersion,
+						},
+					},
+				},
+			},
+			Status: DynaKubeStatus{
+				LatestAgentVersionUnixPaas: "other",
+			},
+		}
+		version := dk.CodeModulesVersion()
+		assert.Equal(t, testVersion, version)
+	})
+	t.Run(`use image tag `, func(t *testing.T) {
+		dk := DynaKube{
+			Spec: DynaKubeSpec{
+				OneAgent: OneAgentSpec{
+					CloudNativeFullStack: &CloudNativeFullStackSpec{
+						HostInjectSpec: HostInjectSpec{
+							Version: testVersion,
+						},
+						AppInjectionSpec: AppInjectionSpec{
+							CodeModulesImage: "image:" + testVersion,
+						},
+					},
+				},
+			},
+			Status: DynaKubeStatus{
+				LatestAgentVersionUnixPaas: "other",
+			},
+		}
+		version := dk.CodeModulesVersion()
+		assert.Equal(t, testVersion, version)
+	})
+}

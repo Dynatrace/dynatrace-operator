@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
-	dtypes "github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
+	dtypes "github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 	"github.com/containers/image/v5/docker"
@@ -38,7 +38,7 @@ func (installer *imageInstaller) InstallAgent(targetDir string) error {
 		_ = installer.fs.RemoveAll(targetDir)
 		return fmt.Errorf("failed to install agent: %w", err)
 	}
-	return symlink.CreateSymlinkIfNotExists(installer.fs, targetDir)
+	return symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, targetDir)
 }
 
 func (installer *imageInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtypes.ProcessModuleConfig) error {

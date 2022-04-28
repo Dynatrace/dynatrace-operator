@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 	"github.com/spf13/afero"
@@ -26,18 +25,18 @@ func (props *Properties) fillEmptyWithDefaults() {
 	}
 }
 
+type urlInstaller struct {
+	fs    afero.Fs
+	dtc   dtclient.Client
+	props *Properties
+}
+
 func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) *urlInstaller {
 	return &urlInstaller{
 		fs:    fs,
 		dtc:   dtc,
 		props: props,
 	}
-}
-
-type urlInstaller struct {
-	fs    afero.Fs
-	dtc   dtclient.Client
-	props *Properties
 }
 
 func (installer *urlInstaller) InstallAgent(targetDir string) error {
@@ -47,10 +46,10 @@ func (installer *urlInstaller) InstallAgent(targetDir string) error {
 		_ = installer.fs.RemoveAll(targetDir)
 		return fmt.Errorf("failed to install agent: %w", err)
 	}
-	return symlink.CreateSymlinkIfNotExists(installer.fs, targetDir)
+	return symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, targetDir)
 }
 
-func (installer *urlInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *types.ProcessModuleConfig) error {
+func (installer *urlInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
 	return processmoduleconfig.UpdateProcessModuleConfig(installer.fs, targetDir, processModuleConfig)
 }
 

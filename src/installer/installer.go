@@ -1,10 +1,10 @@
 package installer
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient/types"
+	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 )
 
 type Installer interface {
 	InstallAgent(targetDir string) error
-	UpdateProcessModuleConfig(targetDir string, processModuleConfig *types.ProcessModuleConfig) error
+	UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error
 }

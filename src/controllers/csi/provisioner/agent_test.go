@@ -3,12 +3,10 @@ package csiprovisioner
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
-	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -20,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -28,69 +27,37 @@ const (
 
 func TestNewAgentUpdater(t *testing.T) {
 	t.Run(`create`, func(t *testing.T) {
-		createTestAgentUpdater(t, &dynatracev1beta1.DynaKube{})
-	})
-}
-
-func TestGetOneAgentVersionFromInstance(t *testing.T) {
-	t.Run(`use status`, func(t *testing.T) {
-		dk := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+		createTestAgentUpdater(t,
+			&dynatracev1beta1.DynaKube{
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 				},
-			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				LatestAgentVersionUnixPaas: testVersion,
-			},
-		}
-		updater := createTestAgentUpdater(t, &dk)
-
-		version := updater.getOneAgentVersionFromInstance()
-		assert.Equal(t, testVersion, version)
-	})
-	t.Run(`use version `, func(t *testing.T) {
-		dk := dynatracev1beta1.DynaKube{
-			Spec: dynatracev1beta1.DynaKubeSpec{
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
-							Version: testVersion,
-						},
-					},
-				},
-			},
-			Status: dynatracev1beta1.DynaKubeStatus{
-				LatestAgentVersionUnixPaas: "other",
-			},
-		}
-		updater := createTestAgentUpdater(t, &dk)
-
-		version := updater.getOneAgentVersionFromInstance()
-		assert.Equal(t, testVersion, version)
+			})
 	})
 }
 
 func TestUpdateAgent(t *testing.T) {
-	ctx := context.TODO()
 	t.Run(`fresh install`, func(t *testing.T) {
 		dk := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
 						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
 							Version: testVersion,
 						},
 					},
+				},
+			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
+					TenantUUID: tenantUUID,
 				},
 			},
 		}
 		updater := createTestAgentUpdater(t, &dk)
 		processModuleCache := createTestProcessModuleConfigCache("1")
-		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
-		updater.installer.(*installer.InstallerMock).
-			On("SetVersion", testVersion).
-			Return()
+		targetDir := updater.targetDir
 		updater.installer.(*installer.InstallerMock).
 			On("InstallAgent", targetDir).
 			Return(nil)
@@ -99,7 +66,6 @@ func TestUpdateAgent(t *testing.T) {
 			Return(nil)
 
 		currentVersion, err := updater.updateAgent(
-			ctx,
 			testVersion,
 			testTenantUUID,
 			&processModuleCache)
@@ -107,7 +73,7 @@ func TestUpdateAgent(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, testVersion, currentVersion)
 		t_utils.AssertEvents(t,
-			updater.recorder.(*record.FakeRecorder).Events,
+			updater.recorder.recorder.(*record.FakeRecorder).Events,
 			t_utils.Events{
 				t_utils.Event{
 					EventType: corev1.EventTypeNormal,
@@ -125,24 +91,27 @@ func TestUpdateAgent(t *testing.T) {
 	t.Run(`only process module config update`, func(t *testing.T) {
 		dk := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
 				},
 			},
 			Status: dynatracev1beta1.DynaKubeStatus{
 				LatestAgentVersionUnixPaas: testVersion,
+				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
+					TenantUUID: tenantUUID,
+				},
 			},
 		}
 		updater := createTestAgentUpdater(t, &dk)
 		processModuleCache := createTestProcessModuleConfigCache("other")
-		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+		targetDir := updater.targetDir
 		updater.installer.(*installer.InstallerMock).
 			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
 			Return(nil)
 		_ = updater.fs.MkdirAll(targetDir, 0755)
 
 		currentVersion, err := updater.updateAgent(
-			ctx,
 			testVersion,
 			testTenantUUID,
 			&processModuleCache)
@@ -153,6 +122,7 @@ func TestUpdateAgent(t *testing.T) {
 	t.Run(`failed install`, func(t *testing.T) {
 		dk := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
 						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
@@ -161,10 +131,15 @@ func TestUpdateAgent(t *testing.T) {
 					},
 				},
 			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
+					TenantUUID: tenantUUID,
+				},
+			},
 		}
 		updater := createTestAgentUpdater(t, &dk)
 		processModuleCache := createTestProcessModuleConfigCache("1")
-		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+		targetDir := updater.targetDir
 		updater.installer.(*installer.InstallerMock).
 			On("SetVersion", testVersion).
 			Return()
@@ -173,7 +148,6 @@ func TestUpdateAgent(t *testing.T) {
 			Return(fmt.Errorf("BOOM"))
 
 		currentVersion, err := updater.updateAgent(
-			ctx,
 			testVersion,
 			testTenantUUID,
 			&processModuleCache)
@@ -181,7 +155,7 @@ func TestUpdateAgent(t *testing.T) {
 		require.Error(t, err)
 		assert.Equal(t, "", currentVersion)
 		t_utils.AssertEvents(t,
-			updater.recorder.(*record.FakeRecorder).Events,
+			updater.recorder.recorder.(*record.FakeRecorder).Events,
 			t_utils.Events{
 				t_utils.Event{
 					EventType: corev1.EventTypeWarning,
@@ -202,6 +176,7 @@ func TestUpdateAgent(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL:           "https://" + testTenantUUID + ".dynatrace.com",
 				CustomPullSecret: pullSecretName,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
@@ -211,10 +186,13 @@ func TestUpdateAgent(t *testing.T) {
 					},
 				},
 			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
+					TenantUUID: tenantUUID,
+				},
+			},
 		}
-		updater := createTestAgentUpdater(t, &dk)
-		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, tag)
-		updater.apiReader = fake.NewClient(&corev1.Secret{
+		mockedPullSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      pullSecretName,
 				Namespace: testNamespace,
@@ -222,10 +200,9 @@ func TestUpdateAgent(t *testing.T) {
 			Data: map[string][]byte{
 				".dockerconfigjson": []byte("{}"),
 			},
-		})
-		updater.installer.(*installer.InstallerMock).
-			On("SetImageInfo", mock.Anything).
-			Return()
+		}
+		updater := createTestAgentUpdater(t, &dk, mockedPullSecret)
+		targetDir := updater.targetDir
 		updater.installer.(*installer.InstallerMock).
 			On("InstallAgent", targetDir).
 			Return(nil)
@@ -234,7 +211,6 @@ func TestUpdateAgent(t *testing.T) {
 			Return(nil)
 
 		currentVersion, err := updater.updateAgent(
-			ctx,
 			testVersion,
 			testTenantUUID,
 			&processModuleConfig)
@@ -264,18 +240,22 @@ func TestUpdateAgent(t *testing.T) {
 					},
 				},
 			},
+			Status: dynatracev1beta1.DynaKubeStatus{
+				ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
+					TenantUUID: tenantUUID,
+				},
+			},
 		}
-		updater := createTestAgentUpdater(t, &dk)
-		targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, tag)
-		updater.apiReader = fake.NewClient(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      pullSecretName,
-				Namespace: testNamespace,
+		mockedObjects := []client.Object{
+			&corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      pullSecretName,
+					Namespace: testNamespace,
+				},
+				Data: map[string][]byte{
+					".dockerconfigjson": []byte("{}"),
+				},
 			},
-			Data: map[string][]byte{
-				".dockerconfigjson": []byte("{}"),
-			},
-		},
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      trustedCAName,
@@ -284,12 +264,10 @@ func TestUpdateAgent(t *testing.T) {
 				Data: map[string]string{
 					dtclient.CustomCertificatesConfigMapKey: "I-am-a-cert-trust-me",
 				},
-			})
-		expectedDockerConfig := dockerconfig.DockerConfig{
-			Dynakube:         &dk,
-			ApiReader:        updater.apiReader,
-			TrustedCertsPath: filepath.Join(targetDir, "ca.crt"),
+			},
 		}
+		updater := createTestAgentUpdater(t, &dk, mockedObjects...)
+		targetDir := updater.targetDir
 
 		updater.installer.(*installer.InstallerMock).
 			On("InstallAgent", targetDir).
@@ -299,33 +277,35 @@ func TestUpdateAgent(t *testing.T) {
 			Return(nil)
 
 		currentVersion, err := updater.updateAgent(
-			ctx,
 			testVersion,
 			testTenantUUID,
 			&processModuleConfig)
 		require.NoError(t, err)
 		assert.Equal(t, tag, currentVersion)
-		_, err = updater.fs.Stat(expectedDockerConfig.TrustedCertsPath)
+		_, err = updater.fs.Stat(updater.path.ImageCertPath(testTenantUUID))
 		assert.Error(t, err)
 	})
 }
 
 func updateOneagent(t *testing.T, alreadyInstalled bool) {
-	ctx := context.TODO()
 	dk := dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 			OneAgent: dynatracev1beta1.OneAgentSpec{
 				CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
 			},
 		},
 		Status: dynatracev1beta1.DynaKubeStatus{
 			LatestAgentVersionUnixPaas: testVersion,
+			ConnectionInfo: dynatracev1beta1.ConnectionInfoStatus{
+				TenantUUID: tenantUUID,
+			},
 		},
 	}
 	updater := createTestAgentUpdater(t, &dk)
 	previousHash := "1"
 	processModuleCache := createTestProcessModuleConfigCache(previousHash)
-	targetDir := updater.path.AgentBinaryDirForVersion(testTenantUUID, testVersion)
+	targetDir := updater.targetDir
 	installerCalled := false
 	updater.installer.(*installer.InstallerMock).
 		On("SetVersion", testVersion).
@@ -344,7 +324,6 @@ func updateOneagent(t *testing.T, alreadyInstalled bool) {
 	}
 
 	currentVersion, err := updater.updateAgent(
-		ctx,
 		"other",
 		testTenantUUID,
 		&processModuleCache)
@@ -359,17 +338,14 @@ func updateOneagent(t *testing.T, alreadyInstalled bool) {
 	assert.Equal(t, !alreadyInstalled, installerCalled)
 }
 
-func createTestAgentUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube) *agentUpdater {
-	client := dtclient.MockDynatraceClient{}
+func createTestAgentUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube, obj ...client.Object) *agentUpdater {
+	mockedClient := dtclient.MockDynatraceClient{}
 	path := metadata.PathResolver{RootDir: "test"}
 	fs := afero.NewMemMapFs()
 	rec := record.NewFakeRecorder(10)
 
-	updater := newAgentUpdater(fake.NewClient(), &client, path, fs, rec, dk)
-	updater.installer = &installer.InstallerMock{}
-	require.NotNil(t, updater)
-	assert.NotNil(t, updater.installer)
-
+	updater, err := newAgentUpdater(context.TODO(), fs, fake.NewClient(obj...), &mockedClient, path, rec, dk)
+	require.NoError(t, err)
 	updater.installer = &installer.InstallerMock{}
 
 	return updater
