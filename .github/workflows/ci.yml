@@ -115,7 +115,7 @@ jobs:
         id: prep
         run: |
           if [[ "${{ github.event_name }}" == "pull_request ]]; then
-            VERSION=${GITHUB_HEAD_REF}
+            VERSION="snapshot-$(echo ${GITHUB_HEAD_REF} | sed 's#[^a-zA-Z0-9_-]#-#g')"
           else
             if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
               VERSION="${GITHUB_REF_NAME}"
