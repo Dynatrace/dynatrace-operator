@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package updates
+package version
 
 import (
 	"context"
@@ -26,9 +26,10 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
+	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -72,10 +73,14 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 	}
 
 	t.Run("no update if version provider returns error", func(t *testing.T) {
-		dk, fakeClient, now, registry := dkTemplate.DeepCopy(), fake.NewClient(), metav1.Now(), newEmptyFakeRegistry()
+		dk := dkTemplate.DeepCopy()
+		fakeClient := fake.NewClient()
+		now := metav1.Now()
+		registry := newEmptyFakeRegistry()
+		fs := afero.Afero{Fs: afero.NewMemMapFs()}
 		dkState := &status.DynakubeState{Instance: dk, Now: now}
 
-		upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
+		upd, err := ReconcileVersions(ctx, dkState, fakeClient, fs, registry.ImageVersionExt)
 
 		assert.Error(t, err)
 		assert.False(t, upd)
@@ -83,9 +88,9 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 
 	t.Run("all image versions were updated", func(t *testing.T) {
 		dk := dkTemplate.DeepCopy()
-
+		fs := afero.Afero{Fs: afero.NewMemMapFs()}
 		dkState, fakeClient, now := testInitDynakubeState(t, dk)
-		status := &dkState.Instance.Status
+		dkStatus := &dkState.Instance.Status
 		registry := newFakeRegistry(map[string]string{
 			agImagePath:       "1.0.0",
 			eecImagePath:      "1.0.0",
@@ -94,16 +99,16 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		})
 
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, fs, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.True(t, upd)
-			assertVersionStatusEquals(t, registry, agImagePath, now, &status.ActiveGate)
-			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &status.OneAgent)
-			assertVersionStatusEquals(t, registry, eecImagePath, now, &status.ExtensionController)
-			assertVersionStatusEquals(t, registry, statsdImagePath, now, &status.Statsd)
+			assertVersionStatusEquals(t, registry, agImagePath, now, &dkStatus.ActiveGate)
+			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &dkStatus.OneAgent)
+			assertVersionStatusEquals(t, registry, eecImagePath, now, &dkStatus.ExtensionController)
+			assertVersionStatusEquals(t, registry, statsdImagePath, now, &dkStatus.Statsd)
 		}
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, fs, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.False(t, upd)
 		}
@@ -112,7 +117,8 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 	t.Run("some image versions were updated", func(t *testing.T) {
 		dk := dkTemplate.DeepCopy()
 		dkState, fakeClient, now := testInitDynakubeState(t, dk)
-		status := &dkState.Instance.Status
+		fs := afero.Afero{Fs: afero.NewMemMapFs()}
+		dkStatus := &dkState.Instance.Status
 		registry := newFakeRegistry(map[string]string{
 			agImagePath:       "1.0.0",
 			eecImagePath:      "1.0.0",
@@ -121,40 +127,40 @@ func TestReconcile_UpdateImageVersion(t *testing.T) {
 		})
 
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, fs, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.True(t, upd)
 
-			assertVersionStatusEquals(t, registry, agImagePath, now, &status.ActiveGate)
-			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &status.OneAgent)
-			assertVersionStatusEquals(t, registry, eecImagePath, now, &status.ExtensionController)
-			assertVersionStatusEquals(t, registry, statsdImagePath, now, &status.Statsd)
+			assertVersionStatusEquals(t, registry, agImagePath, now, &dkStatus.ActiveGate)
+			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &dkStatus.OneAgent)
+			assertVersionStatusEquals(t, registry, eecImagePath, now, &dkStatus.ExtensionController)
+			assertVersionStatusEquals(t, registry, statsdImagePath, now, &dkStatus.Statsd)
 		}
 
 		registry.SetVersion(eecImagePath, "1.0.1")
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, fs, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.False(t, upd)
 
-			assertVersionStatusEquals(t, registry, agImagePath, now, &status.ActiveGate)
-			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &status.OneAgent)
+			assertVersionStatusEquals(t, registry, agImagePath, now, &dkStatus.ActiveGate)
+			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &dkStatus.OneAgent)
 			assertVersionStatusEquals(t, newFakeRegistry(map[string]string{
 				eecImagePath: "1.0.0", // Previous state
-			}), eecImagePath, now, &status.ExtensionController)
-			assertVersionStatusEquals(t, registry, statsdImagePath, now, &status.Statsd)
+			}), eecImagePath, now, &dkStatus.ExtensionController)
+			assertVersionStatusEquals(t, registry, statsdImagePath, now, &dkStatus.Statsd)
 		}
 
 		now = testChangeTime(t, dkState, 15*time.Minute+1*time.Second)
 		{
-			upd, err := ReconcileVersions(ctx, dkState, fakeClient, registry.ImageVersionExt)
+			upd, err := ReconcileVersions(ctx, dkState, fakeClient, fs, registry.ImageVersionExt)
 			assert.NoError(t, err)
 			assert.True(t, upd)
 
-			assertVersionStatusEquals(t, registry, agImagePath, now, &status.ActiveGate)
-			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &status.OneAgent)
-			assertVersionStatusEquals(t, registry, eecImagePath, now, &status.ExtensionController)
-			assertVersionStatusEquals(t, registry, statsdImagePath, now, &status.Statsd)
+			assertVersionStatusEquals(t, registry, agImagePath, now, &dkStatus.ActiveGate)
+			assertVersionStatusEquals(t, registry, oneAgentImagePath, now, &dkStatus.OneAgent)
+			assertVersionStatusEquals(t, registry, eecImagePath, now, &dkStatus.ExtensionController)
+			assertVersionStatusEquals(t, registry, statsdImagePath, now, &dkStatus.Statsd)
 		}
 	})
 }
@@ -182,18 +188,18 @@ func (registry *fakeRegistry) SetVersion(imagePath, version string) *fakeRegistr
 	return registry
 }
 
-func (registry *fakeRegistry) ImageVersion(imagePath string) (dtversion.ImageVersion, error) {
+func (registry *fakeRegistry) ImageVersion(imagePath string) (ImageVersion, error) {
 	if version, exists := registry.imageVersions[imagePath]; !exists {
-		return dtversion.ImageVersion{}, fmt.Errorf(`cannot provide version for image: "%s"`, imagePath)
+		return ImageVersion{}, fmt.Errorf(`cannot provide version for image: "%s"`, imagePath)
 	} else {
-		return dtversion.ImageVersion{
+		return ImageVersion{
 			Version: version,
 			Hash:    fmt.Sprintf("%x", sha256.Sum256([]byte(imagePath+":"+version))),
 		}, nil
 	}
 }
 
-func (registry *fakeRegistry) ImageVersionExt(imagePath string, _ *dtversion.DockerConfig) (dtversion.ImageVersion, error) {
+func (registry *fakeRegistry) ImageVersionExt(imagePath string, _ *dockerconfig.DockerConfig) (ImageVersion, error) {
 	return registry.ImageVersion(imagePath)
 }
 
@@ -247,9 +253,9 @@ func createTestPullSecret(_ *testing.T, clt client.Client, dkState *status.Dynak
 // Adding *testing.T parameter to prevent usage in production code
 func buildTestDockerAuth(_ *testing.T) ([]byte, error) {
 	dockerConf := struct {
-		Auths map[string]dtversion.DockerAuth `json:"auths"`
+		Auths map[string]dockerconfig.DockerAuth `json:"auths"`
 	}{
-		Auths: map[string]dtversion.DockerAuth{
+		Auths: map[string]dockerconfig.DockerAuth{
 			testRegistry: {
 				Username: testName,
 				Password: testPaaSToken,

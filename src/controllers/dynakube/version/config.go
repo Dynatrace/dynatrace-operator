@@ -1,4 +1,4 @@
-package updates
+package version
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
