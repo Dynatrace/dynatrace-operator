@@ -1,0 +1,10 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: ../wait-for.sh deployment app.kubernetes.io/component=operator condition=available
+    timeout: 300
+  - command: ../wait-for.sh deployment app.kubernetes.io/component=webhook condition=available
+    timeout: 300
+  - command: ../../../create-secrets.sh
+  - command: ../../create-dynakube-base.sh
+timeout: 120

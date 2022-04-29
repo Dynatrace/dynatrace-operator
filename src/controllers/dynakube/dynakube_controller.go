@@ -350,7 +350,6 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 				return false
 			}
 			dynakubeState.Update(upd, c.ShortName()+" reconciled")
-			return true
 		} else {
 			sts := appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{

@@ -38,7 +38,7 @@ type AgServicePorts struct {
 	Statsd    bool
 }
 
-func (ports AgServicePorts) AtLeastOneEnabled() bool {
+func (ports AgServicePorts) HasPorts() bool {
 	return ports.Webserver || ports.Statsd
 }
 
@@ -95,7 +95,7 @@ func (c *capabilityBase) ArgName() string {
 }
 
 func (c *capabilityBase) ShouldCreateService() bool {
-	return c.ServicePorts.AtLeastOneEnabled()
+	return c.ServicePorts.HasPorts()
 }
 
 // Note:
