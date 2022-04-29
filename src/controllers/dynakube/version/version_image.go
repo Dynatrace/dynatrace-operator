@@ -1,4 +1,4 @@
-package updates
+package version
 
 import (
 	"context"

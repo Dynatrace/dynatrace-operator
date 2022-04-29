@@ -13,9 +13,8 @@ import (
 )
 
 type DockerConfig struct {
-	ApiReader client.Reader
-	Dynakube  *dynatracev1beta1.DynaKube
-
+	ApiReader        client.Reader
+	Dynakube         *dynatracev1beta1.DynaKube
 	Auths            map[string]DockerAuth
 	SkipCertCheck    bool
 	TrustedCertsPath string

@@ -18,7 +18,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/updates"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/src/initgeneration"
@@ -209,7 +209,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		}
 	}
 
-	upd, err = updates.ReconcileVersions(ctx, dkState, controller.apiReader, controller.fs, updates.GetImageVersion)
+	upd, err = version.ReconcileVersions(ctx, dkState, controller.apiReader, controller.fs, version.GetImageVersion)
 	dkState.Update(upd, "Found updates")
 	dkState.Error(err)
 
