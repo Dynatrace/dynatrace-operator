@@ -64,18 +64,13 @@ delete-kind-cluster:
 kuttl-install:
 	hack/e2e/install-kuttl.sh
 
-kuttl-all: kuttl-check-mandatory-fieldskuttl-activegate kuttl-oneagent
+kuttl-all: kuttl-activegate kuttl-oneagent
 
-kuttl-activegate:
+kuttl-activegate: kuttl-check-mandatory-fields
 	kubectl kuttl test --config src/testing/kuttl/activegate/testsuite.yaml
 
-kuttl-oneagent: deploy
-	kubectl -n dynatrace wait pod --for=condition=ready -l app.kubernetes.io/component=webhook
+kuttl-oneagent: kuttl-check-mandatory-fields
 	kubectl kuttl test --config src/testing/kuttl/oneagent/oneagent-test.yaml
-	# CLEAN-UP
-	kubectl delete dynakube --all -n dynatrace
-	-kubectl -n dynatrace wait pod --for=delete -l app.kubernetes.io/component=oneagent --timeout=500s
-	kubectl delete -f config/deploy/kubernetes/kubernetes-all.yaml
 
 kuttl-check-mandatory-fields:
 	hack/do_env_variables_exist.sh "APIURL APITOKEN PAASTOKEN"
