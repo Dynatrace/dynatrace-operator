@@ -81,6 +81,8 @@ tags
 /tmp/
 /reapply-all.sh
 config/deploy/kustomization.yaml
+config/deploy/kubernetes/kubernetes-all.yaml
+config/deploy/openshift/openshift-all.yaml
 
 /.run/
 /config/deploy/kubernetes/kubernetes.yaml
