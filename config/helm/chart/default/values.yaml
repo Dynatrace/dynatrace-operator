@@ -56,7 +56,7 @@ webhook:
     memory: 128Mi
   highAvailability: false
 
-csi:
+csidriver:
   enabled: false
   requests:
     cpu: 300m

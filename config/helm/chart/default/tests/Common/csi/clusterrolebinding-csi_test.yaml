@@ -10,7 +10,7 @@ tests:
   - it: should be built correctly with CSI enabled
     set:
       operator.image: image-name
-      csi.enabled: true
+      csidriver.enabled: true
     asserts:
       - isAPIVersion:
           of: rbac.authorization.k8s.io/v1
