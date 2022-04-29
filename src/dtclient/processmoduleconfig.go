@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 	"github.com/pkg/errors"
 )
 
@@ -22,6 +21,10 @@ type ProcessModuleProperty struct {
 	Key     string `json:"key"`
 	Value   string `json:"value"`
 }
+
+// ConfMap is the representation of a config file with sections that are divided by headers (map[header] == section)
+// each section consists of key value pairs.
+type ConfMap map[string]map[string]string
 
 func (pmc *ProcessModuleConfig) Add(newProperty ProcessModuleProperty) *ProcessModuleConfig {
 	if pmc == nil {
@@ -81,7 +84,7 @@ func (pmc *ProcessModuleConfig) AddHostGroup(hostGroup string) *ProcessModuleCon
 	return pmc.Add(property)
 }
 
-func (pmc ProcessModuleConfig) ToMap() processmoduleconfig.ConfMap {
+func (pmc ProcessModuleConfig) ToMap() ConfMap {
 	sections := map[string]map[string]string{}
 	for _, prop := range pmc.Properties {
 		section := sections[prop.Section]
