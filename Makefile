@@ -237,6 +237,7 @@ endif
 SERVICE_ACCOUNTS=--extra-service-accounts dynatrace-dynakube-oneagent
 SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-dynakube-oneagent-unprivileged
 SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-kubernetes-monitoring
+SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-activegate
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle
