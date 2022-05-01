@@ -1,0 +1,35 @@
+{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift" (include "dynatrace-operator.platformSet" .))}}
+{{- if eq (default false .Values.olm) true}}
+{{ if eq (include "dynatrace-operator.partial" .) "false" }}
+
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: dynatrace-activegate
+  labels:
+  {{- include "dynatrace-operator.activegateLabels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - host
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+{{- end -}}
+{{- end -}}
