@@ -41,10 +41,10 @@ func TestExtractVersion(t *testing.T) {
 	})
 }
 
-func assertIsDefaultVersionInfo(t *testing.T, version VersionInfo, err error) {
+func assertIsDefaultVersionInfo(t *testing.T, version SemanticVersion, err error) {
 	assert.Error(t, err)
 	assert.NotNil(t, version)
-	assert.Equal(t, VersionInfo{
+	assert.Equal(t, SemanticVersion{
 		major:     0,
 		minor:     0,
 		release:   0,
@@ -53,8 +53,8 @@ func assertIsDefaultVersionInfo(t *testing.T, version VersionInfo, err error) {
 }
 
 func TestCompareClusterVersion(t *testing.T) {
-	makeVer := func(major, minor, release int, timestamp string) VersionInfo {
-		return VersionInfo{
+	makeVer := func(major, minor, release int, timestamp string) SemanticVersion {
+		return SemanticVersion{
 			major:     major,
 			minor:     minor,
 			release:   release,

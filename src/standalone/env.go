@@ -2,11 +2,11 @@ package standalone
 
 import (
 	"fmt"
+	arch "github.com/Dynatrace/dynatrace-operator/src/arch"
 	"os"
 	"strconv"
 	"strings"
 
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/pkg/errors"
 )
 
@@ -124,11 +124,11 @@ func (env *environment) addInstallerTech() error {
 }
 
 func (env *environment) addInstallerArch() {
-	arch, err := checkEnvVar(InstallerArchEnv)
+	archEnv, err := checkEnvVar(InstallerArchEnv)
 	if err != nil {
-		env.InstallerArch = dtclient.ArchX86
+		env.InstallerArch = arch.ArchX86
 	} else {
-		env.InstallerArch = arch
+		env.InstallerArch = archEnv
 	}
 
 }

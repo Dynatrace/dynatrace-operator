@@ -2,6 +2,7 @@ package version
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"os"
 	"path"
 	"time"
@@ -120,7 +121,7 @@ func updateImageVersion(
 	}
 
 	if !allowDowngrades && target.Version != "" {
-		if upgrade, err := NeedsUpgradeRaw(target.Version, ver.Version); err != nil {
+		if upgrade, err := version.NeedsUpgradeRaw(target.Version, ver.Version); err != nil {
 			return err
 		} else if !upgrade {
 			return nil

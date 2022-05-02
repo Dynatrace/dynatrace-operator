@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type VersionInfo struct {
+type SemanticVersion struct {
 	major     int
 	minor     int
 	release   int
@@ -23,7 +23,7 @@ var versionRegex = regexp.MustCompile(`^([\d]+)\.([\d]+)\.([\d]+)\.([\d]+\-[\d]+
 //  n > 0: if a > b
 //  n < 0: if a < b
 //  0 with error: if a == nil || b == nil
-func CompareVersionInfo(a VersionInfo, b VersionInfo) int {
+func CompareVersionInfo(a SemanticVersion, b SemanticVersion) int {
 	if a.major != b.major {
 		return a.major - b.major
 	}
@@ -39,33 +39,33 @@ func CompareVersionInfo(a VersionInfo, b VersionInfo) int {
 	return strings.Compare(a.timestamp, b.timestamp)
 }
 
-func ExtractVersion(versionString string) (VersionInfo, error) {
+func ExtractVersion(versionString string) (SemanticVersion, error) {
 	version := versionRegex.FindStringSubmatch(versionString)
 
 	if len(version) < 5 {
-		return VersionInfo{}, fmt.Errorf("version malformed: %s", versionString)
+		return SemanticVersion{}, fmt.Errorf("version malformed: %s", versionString)
 	}
 
 	major, err := strconv.Atoi(version[1])
 	if err != nil {
-		return VersionInfo{}, err
+		return SemanticVersion{}, err
 	}
 
 	minor, err := strconv.Atoi(version[2])
 	if err != nil {
-		return VersionInfo{}, err
+		return SemanticVersion{}, err
 	}
 
 	release, err := strconv.Atoi(version[3])
 	if err != nil {
-		return VersionInfo{}, err
+		return SemanticVersion{}, err
 	}
 
-	return VersionInfo{major, minor, release, version[4]}, nil
+	return SemanticVersion{major, minor, release, version[4]}, nil
 }
 
-func (v VersionInfo) String() string {
-	return fmt.Sprintf("%d.%d.%d", v.major, v.minor, v.release)
+func (version SemanticVersion) String() string {
+	return fmt.Sprintf("%d.%d.%d.%s", version.major, version.minor, version.release, version.timestamp)
 }
 
 // NeedsUpgradeRaw parses prev and curr, and returns true when curr is a newer version than prev, or false if they are
