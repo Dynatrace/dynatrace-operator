@@ -52,7 +52,7 @@ func createService(instance *dynatracev1beta1.DynaKube, feature string, serviceP
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeClusterIP,
-			Selector: coreLabels.BuildMatchLabels(),
+			Selector: buildSelectorLabels(instance.Name),
 			Ports:    ports,
 		},
 	}
@@ -73,4 +73,9 @@ func buildServiceHostName(instanceName string, module string) string {
 			"-", "_")
 
 	return fmt.Sprintf("$(%s_SERVICE_HOST):$(%s_SERVICE_PORT)", serviceName, serviceName)
+}
+
+func buildSelectorLabels(dynakubeName string) map[string]string {
+	appLabels := kubeobjects.NewAppLabels(kubeobjects.ActiveGateComponentLabel, dynakubeName, "", "")
+	return appLabels.BuildMatchLabels()
 }

@@ -158,10 +158,10 @@ func (r *Reconciler) Reconcile() (update bool, err error) {
 
 func (r *Reconciler) createOrUpdateService(desiredServicePorts capability.AgServicePorts) (bool, error) {
 	desired := createService(r.Instance, r.ShortName(), desiredServicePorts)
-	installed := &corev1.Service{}
 
+	installed := &corev1.Service{}
 	err := r.Get(context.TODO(), kubeobjects.Key(desired), installed)
-	if k8serrors.IsNotFound(err) && desiredServicePorts.AtLeastOneEnabled() {
+	if k8serrors.IsNotFound(err) && desiredServicePorts.HasPorts() {
 		log.Info("creating AG service", "module", r.ShortName())
 		if err = controllerutil.SetControllerReference(r.Instance, desired, r.Scheme()); err != nil {
 			return false, errors.WithStack(err)
@@ -171,28 +171,33 @@ func (r *Reconciler) createOrUpdateService(desiredServicePorts capability.AgServ
 		return true, errors.WithStack(err)
 	}
 
-	if err == nil {
-		if r.portsAreOutdated(installed, desired) {
-			desired.Spec.ClusterIP = installed.Spec.ClusterIP
-			desired.ObjectMeta.ResourceVersion = installed.ObjectMeta.ResourceVersion
-
-			switch desiredServicePorts.AtLeastOneEnabled() {
-			case true:
-				if err := r.Update(context.TODO(), desired); err != nil {
-					return false, err
-				}
-			case false:
-				if err := r.Delete(context.TODO(), desired); err != nil {
-					return false, err
-				}
-			}
-			return true, nil
-		}
+	if err != nil {
+		return false, errors.WithStack(err)
 	}
 
-	return false, errors.WithStack(err)
+	if r.portsAreOutdated(installed, desired) || r.labelsAreOutdated(installed, desired) {
+		desired.Spec.ClusterIP = installed.Spec.ClusterIP
+		desired.ObjectMeta.ResourceVersion = installed.ObjectMeta.ResourceVersion
+
+		if desiredServicePorts.HasPorts() {
+			if err := r.Update(context.TODO(), desired); err != nil {
+				return false, err
+			}
+		} else {
+			if err := r.Delete(context.TODO(), desired); err != nil {
+				return false, err
+			}
+		}
+		return true, nil
+	}
+	return false, nil
 }
 
 func (r *Reconciler) portsAreOutdated(installedService, desiredService *corev1.Service) bool {
 	return !reflect.DeepEqual(installedService.Spec.Ports, desiredService.Spec.Ports)
+}
+
+func (r *Reconciler) labelsAreOutdated(installedService, desiredService *corev1.Service) bool {
+	return !reflect.DeepEqual(installedService.Labels, desiredService.Labels) ||
+		!reflect.DeepEqual(installedService.Spec.Selector, desiredService.Spec.Selector)
 }

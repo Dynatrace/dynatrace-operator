@@ -265,7 +265,7 @@ func buildVolumes(stsProperties *statefulSetProperties, extraContainerBuilders [
 
 	volumes = append(volumes, stsProperties.volumes...)
 
-	if stsProperties.HasProxy() {
+	if stsProperties.NeedsActiveGateProxy() {
 		volumes = append(volumes, buildProxyVolumes()...)
 	}
 
@@ -368,7 +368,7 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 
 	volumeMounts = append(volumeMounts, stsProperties.containerVolumeMounts...)
 
-	if stsProperties.HasProxy() {
+	if stsProperties.NeedsActiveGateProxy() {
 		volumeMounts = append(volumeMounts, buildProxyMounts()...)
 	}
 
