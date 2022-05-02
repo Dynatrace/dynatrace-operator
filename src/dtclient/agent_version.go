@@ -10,7 +10,15 @@ import (
 
 // GetLatestAgentVersion gets the latest agent version for the given OS and installer type.
 func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {
-	versions, err := dtc.GetAgentVersions(os, installerType, arch.Flavor, arch.Arch)
+	var flavor string
+	// Default installer type has no "multidistro" flavor
+	// so the default flavor is always needed in that case
+	if installerType == InstallerTypeDefault {
+		flavor = arch.FlavorDefault
+	} else {
+		flavor = arch.Flavor
+	}
+	versions, err := dtc.GetAgentVersions(os, installerType, flavor, arch.Arch)
 	if err != nil {
 		return "", err
 	}
@@ -18,9 +26,12 @@ func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (str
 		return "", errors.New("no agent versions found")
 	}
 
-	latestVersion := dtversion.VersionInfo{}
-	for _, version := range versions {
-		versionInfo, err := dtversion.ExtractVersion(version)
+	latestVersion, err := dtversion.ExtractVersion(versions[0])
+	if err != nil {
+		return "", err
+	}
+	for i := 1; i < len(versions); i++ {
+		versionInfo, err := dtversion.ExtractVersion(versions[i])
 		if err != nil {
 			return "", err
 		}
