@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 	"github.com/klauspost/compress/zip"
 	"github.com/spf13/afero"
@@ -120,7 +121,7 @@ func (installer *OneAgentInstaller) installAgent(targetDir string) error {
 	}
 	log.Info("unzipped OneAgent package")
 
-	if err = installer.createSymlinkIfNotExists(targetDir); err != nil {
+	if err = symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, targetDir); err != nil {
 		return err
 	}
 
@@ -234,31 +235,6 @@ func (installer *OneAgentInstaller) unzip(file afero.File, targetDir string) err
 		}
 	}
 
-	return nil
-}
-
-func (installer *OneAgentInstaller) createSymlinkIfNotExists(targetDir string) error {
-	fs := installer.fs
-
-	// MemMapFs (used for testing) doesn't comply with the Linker interface
-	linker, ok := fs.(afero.Linker)
-	if !ok {
-		log.Info("symlinking not possible", "version", installer.props.Version, "fs", installer.fs)
-		return nil
-	}
-
-	relativeSymlinkPath := installer.props.Version
-	symlinkTargetPath := filepath.Join(targetDir, "agent", "bin", "current")
-	if fileInfo, _ := fs.Stat(symlinkTargetPath); fileInfo != nil {
-		log.Info("symlink already exists", "location", symlinkTargetPath)
-		return nil
-	}
-
-	log.Info("creating symlink", "points-to(relative)", relativeSymlinkPath, "location", symlinkTargetPath)
-	if err := linker.SymlinkIfPossible(relativeSymlinkPath, symlinkTargetPath); err != nil {
-		log.Info("symlinking failed", "version", installer.props.Version)
-		return err
-	}
 	return nil
 }
 
