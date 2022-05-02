@@ -65,7 +65,7 @@ func ExtractVersion(versionString string) (VersionInfo, error) {
 }
 
 func (v VersionInfo) String() string {
-	return fmt.Sprintf("%d.%d.%d", v.major, v.minor, v.release)
+	return fmt.Sprintf("%d.%d.%d.%s", v.major, v.minor, v.release, v.timestamp)
 }
 
 // NeedsUpgradeRaw parses prev and curr, and returns true when curr is a newer version than prev, or false if they are
