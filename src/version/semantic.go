@@ -18,12 +18,12 @@ type SemanticVersion struct {
 
 var versionRegex = regexp.MustCompile(`^([\d]+)\.([\d]+)\.([\d]+)\.([\d]+\-[\d]+)$`)
 
-// CompareVersionInfo returns:
+// CompareSemanticVersion returns:
 // 	0: if a == b
 //  n > 0: if a > b
 //  n < 0: if a < b
 //  0 with error: if a == nil || b == nil
-func CompareVersionInfo(a SemanticVersion, b SemanticVersion) int {
+func CompareSemanticVersion(a SemanticVersion, b SemanticVersion) int {
 	if a.major != b.major {
 		return a.major - b.major
 	}
@@ -39,7 +39,7 @@ func CompareVersionInfo(a SemanticVersion, b SemanticVersion) int {
 	return strings.Compare(a.timestamp, b.timestamp)
 }
 
-func ExtractVersion(versionString string) (SemanticVersion, error) {
+func ExtractSemanticVersion(versionString string) (SemanticVersion, error) {
 	version := versionRegex.FindStringSubmatch(versionString)
 
 	if len(version) < 5 {
@@ -71,17 +71,17 @@ func (version SemanticVersion) String() string {
 // NeedsUpgradeRaw parses prev and curr, and returns true when curr is a newer version than prev, or false if they are
 // the same. In case curr is older than prev an error is returned.
 func NeedsUpgradeRaw(prev string, curr string) (bool, error) {
-	parsedPrev, err := ExtractVersion(prev)
+	parsedPrev, err := ExtractSemanticVersion(prev)
 	if err != nil {
 		return false, errors.WithMessage(err, "failed to parse version")
 	}
 
-	parsedCurr, err := ExtractVersion(curr)
+	parsedCurr, err := ExtractSemanticVersion(curr)
 	if err != nil {
 		return false, errors.WithMessage(err, "failed to parse version")
 	}
 
-	comp := CompareVersionInfo(parsedPrev, parsedCurr)
+	comp := CompareSemanticVersion(parsedPrev, parsedCurr)
 	if comp > 0 {
 		return false, errors.Errorf("trying to downgrade from '%s' to '%s'", parsedPrev, parsedCurr)
 	}

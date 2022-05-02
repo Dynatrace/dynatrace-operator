@@ -26,16 +26,16 @@ func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (str
 		return "", errors.New("no agent versions found")
 	}
 
-	latestVersion, err := version.ExtractVersion(versions[0])
+	latestVersion, err := version.ExtractSemanticVersion(versions[0])
 	if err != nil {
 		return "", err
 	}
 	for i := 1; i < len(versions); i++ {
-		versionInfo, err := version.ExtractVersion(versions[i])
+		versionInfo, err := version.ExtractSemanticVersion(versions[i])
 		if err != nil {
 			return "", err
 		}
-		if version.CompareVersionInfo(versionInfo, latestVersion) > 0 {
+		if version.CompareSemanticVersion(versionInfo, latestVersion) > 0 {
 			latestVersion = versionInfo
 		}
 	}

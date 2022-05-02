@@ -7,36 +7,36 @@ import (
 )
 
 func TestExtractVersion(t *testing.T) {
-	t.Run("ExtractVersion", func(t *testing.T) {
-		version, err := ExtractVersion("1.203.0.20200908-220956")
+	t.Run("ExtractSemanticVersion", func(t *testing.T) {
+		version, err := ExtractSemanticVersion("1.203.0.20200908-220956")
 		assert.NoError(t, err)
 		assert.NotNil(t, version)
 
-		version, err = ExtractVersion("2.003.0.20200908-220956")
+		version, err = ExtractSemanticVersion("2.003.0.20200908-220956")
 		assert.NoError(t, err)
 		assert.NotNil(t, version)
 
-		version, err = ExtractVersion("1.003.5.20200908-220956")
+		version, err = ExtractSemanticVersion("1.003.5.20200908-220956")
 		assert.NoError(t, err)
 		assert.NotNil(t, version)
 	})
-	t.Run("ExtractVersion fails on malformed version", func(t *testing.T) {
-		version, err := ExtractVersion("1.203")
+	t.Run("ExtractSemanticVersion fails on malformed version", func(t *testing.T) {
+		version, err := ExtractSemanticVersion("1.203")
 		assertIsDefaultVersionInfo(t, version, err)
 
-		version, err = ExtractVersion("2.003.x.20200908-220956")
+		version, err = ExtractSemanticVersion("2.003.x.20200908-220956")
 		assertIsDefaultVersionInfo(t, version, err)
 
-		version, err = ExtractVersion("")
+		version, err = ExtractSemanticVersion("")
 		assertIsDefaultVersionInfo(t, version, err)
 
-		version, err = ExtractVersion("abc")
+		version, err = ExtractSemanticVersion("abc")
 		assertIsDefaultVersionInfo(t, version, err)
 
-		version, err = ExtractVersion("a.bcd.e")
+		version, err = ExtractSemanticVersion("a.bcd.e")
 		assertIsDefaultVersionInfo(t, version, err)
 
-		version, err = ExtractVersion("asdadasdsd.asd1.2.3")
+		version, err = ExtractSemanticVersion("asdadasdsd.asd1.2.3")
 		assertIsDefaultVersionInfo(t, version, err)
 	})
 }
@@ -62,23 +62,23 @@ func TestCompareClusterVersion(t *testing.T) {
 		}
 	}
 
-	t.Run("CompareVersionInfo a == b", func(t *testing.T) {
-		assert.Equal(t, 0, CompareVersionInfo(makeVer(1, 200, 0, ""), makeVer(1, 200, 0, "")))
+	t.Run("CompareSemanticVersion a == b", func(t *testing.T) {
+		assert.Equal(t, 0, CompareSemanticVersion(makeVer(1, 200, 0, ""), makeVer(1, 200, 0, "")))
 	})
 
-	t.Run("CompareVersionInfo a < b", func(t *testing.T) {
-		assert.Less(t, CompareVersionInfo(makeVer(1, 0, 0, ""), makeVer(1, 200, 0, "")), 0)
-		assert.Less(t, CompareVersionInfo(makeVer(0, 0, 0, ""), makeVer(0, 2000, 3000, "")), 0)
-		assert.Less(t, CompareVersionInfo(makeVer(1, 200, 0, ""), makeVer(1, 200, 1, "")), 0)
-		assert.Less(t, CompareVersionInfo(makeVer(1, 200, 0, "0"), makeVer(1, 200, 1, "1")), 0)
+	t.Run("CompareSemanticVersion a < b", func(t *testing.T) {
+		assert.Less(t, CompareSemanticVersion(makeVer(1, 0, 0, ""), makeVer(1, 200, 0, "")), 0)
+		assert.Less(t, CompareSemanticVersion(makeVer(0, 0, 0, ""), makeVer(0, 2000, 3000, "")), 0)
+		assert.Less(t, CompareSemanticVersion(makeVer(1, 200, 0, ""), makeVer(1, 200, 1, "")), 0)
+		assert.Less(t, CompareSemanticVersion(makeVer(1, 200, 0, "0"), makeVer(1, 200, 1, "1")), 0)
 	})
 
-	t.Run("CompareVersionInfo a > b", func(t *testing.T) {
-		assert.Greater(t, CompareVersionInfo(makeVer(1, 200, 0, ""), makeVer(1, 100, 0, "")), 0)
-		assert.Greater(t, CompareVersionInfo(makeVer(2, 0, 0, ""), makeVer(1, 100, 0, "")), 0)
-		assert.Greater(t, CompareVersionInfo(makeVer(1, 201, 0, ""), makeVer(1, 100, 0, "")), 0)
-		assert.Greater(t, CompareVersionInfo(makeVer(1, 0, 0, ""), makeVer(0, 0, 20000, "")), 0)
-		assert.Greater(t, CompareVersionInfo(makeVer(1, 0, 0, "1"), makeVer(1, 0, 0, "0")), 0)
+	t.Run("CompareSemanticVersion a > b", func(t *testing.T) {
+		assert.Greater(t, CompareSemanticVersion(makeVer(1, 200, 0, ""), makeVer(1, 100, 0, "")), 0)
+		assert.Greater(t, CompareSemanticVersion(makeVer(2, 0, 0, ""), makeVer(1, 100, 0, "")), 0)
+		assert.Greater(t, CompareSemanticVersion(makeVer(1, 201, 0, ""), makeVer(1, 100, 0, "")), 0)
+		assert.Greater(t, CompareSemanticVersion(makeVer(1, 0, 0, ""), makeVer(0, 0, 20000, "")), 0)
+		assert.Greater(t, CompareSemanticVersion(makeVer(1, 0, 0, "1"), makeVer(1, 0, 0, "0")), 0)
 	})
 }
 
