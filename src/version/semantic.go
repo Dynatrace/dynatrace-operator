@@ -18,12 +18,12 @@ type SemanticVersion struct {
 
 var versionRegex = regexp.MustCompile(`^([\d]+)\.([\d]+)\.([\d]+)\.([\d]+\-[\d]+)$`)
 
-// CompareSemanticVersion returns:
+// CompareSemanticVersions returns:
 // 	0: if a == b
 //  n > 0: if a > b
 //  n < 0: if a < b
 //  0 with error: if a == nil || b == nil
-func CompareSemanticVersion(a SemanticVersion, b SemanticVersion) int {
+func CompareSemanticVersions(a SemanticVersion, b SemanticVersion) int {
 	if a.major != b.major {
 		return a.major - b.major
 	}
@@ -81,7 +81,7 @@ func NeedsUpgradeRaw(prev string, curr string) (bool, error) {
 		return false, errors.WithMessage(err, "failed to parse version")
 	}
 
-	comp := CompareSemanticVersion(parsedPrev, parsedCurr)
+	comp := CompareSemanticVersions(parsedPrev, parsedCurr)
 	if comp > 0 {
 		return false, errors.Errorf("trying to downgrade from '%s' to '%s'", parsedPrev, parsedCurr)
 	}

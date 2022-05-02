@@ -1,10 +1,10 @@
 package dtclient
 
 import (
-	"github.com/Dynatrace/dynatrace-operator/src/arch"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"io"
 
+	"github.com/Dynatrace/dynatrace-operator/src/arch"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 )
 
@@ -35,7 +35,7 @@ func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (str
 		if err != nil {
 			return "", err
 		}
-		if version.CompareSemanticVersion(versionInfo, latestVersion) > 0 {
+		if version.CompareSemanticVersions(versionInfo, latestVersion) > 0 {
 			latestVersion = versionInfo
 		}
 	}

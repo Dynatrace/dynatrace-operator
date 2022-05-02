@@ -3,12 +3,12 @@ package dtclient
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

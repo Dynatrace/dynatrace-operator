@@ -2,11 +2,11 @@ package standalone
 
 import (
 	"fmt"
-	arch "github.com/Dynatrace/dynatrace-operator/src/arch"
 	"os"
 	"strconv"
 	"strings"
 
+	arch "github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/pkg/errors"
 )
 

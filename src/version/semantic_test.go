@@ -62,23 +62,23 @@ func TestCompareClusterVersion(t *testing.T) {
 		}
 	}
 
-	t.Run("CompareSemanticVersion a == b", func(t *testing.T) {
-		assert.Equal(t, 0, CompareSemanticVersion(makeVer(1, 200, 0, ""), makeVer(1, 200, 0, "")))
+	t.Run("CompareSemanticVersions a == b", func(t *testing.T) {
+		assert.Equal(t, 0, CompareSemanticVersions(makeVer(1, 200, 0, ""), makeVer(1, 200, 0, "")))
 	})
 
-	t.Run("CompareSemanticVersion a < b", func(t *testing.T) {
-		assert.Less(t, CompareSemanticVersion(makeVer(1, 0, 0, ""), makeVer(1, 200, 0, "")), 0)
-		assert.Less(t, CompareSemanticVersion(makeVer(0, 0, 0, ""), makeVer(0, 2000, 3000, "")), 0)
-		assert.Less(t, CompareSemanticVersion(makeVer(1, 200, 0, ""), makeVer(1, 200, 1, "")), 0)
-		assert.Less(t, CompareSemanticVersion(makeVer(1, 200, 0, "0"), makeVer(1, 200, 1, "1")), 0)
+	t.Run("CompareSemanticVersions a < b", func(t *testing.T) {
+		assert.Less(t, CompareSemanticVersions(makeVer(1, 0, 0, ""), makeVer(1, 200, 0, "")), 0)
+		assert.Less(t, CompareSemanticVersions(makeVer(0, 0, 0, ""), makeVer(0, 2000, 3000, "")), 0)
+		assert.Less(t, CompareSemanticVersions(makeVer(1, 200, 0, ""), makeVer(1, 200, 1, "")), 0)
+		assert.Less(t, CompareSemanticVersions(makeVer(1, 200, 0, "0"), makeVer(1, 200, 1, "1")), 0)
 	})
 
-	t.Run("CompareSemanticVersion a > b", func(t *testing.T) {
-		assert.Greater(t, CompareSemanticVersion(makeVer(1, 200, 0, ""), makeVer(1, 100, 0, "")), 0)
-		assert.Greater(t, CompareSemanticVersion(makeVer(2, 0, 0, ""), makeVer(1, 100, 0, "")), 0)
-		assert.Greater(t, CompareSemanticVersion(makeVer(1, 201, 0, ""), makeVer(1, 100, 0, "")), 0)
-		assert.Greater(t, CompareSemanticVersion(makeVer(1, 0, 0, ""), makeVer(0, 0, 20000, "")), 0)
-		assert.Greater(t, CompareSemanticVersion(makeVer(1, 0, 0, "1"), makeVer(1, 0, 0, "0")), 0)
+	t.Run("CompareSemanticVersions a > b", func(t *testing.T) {
+		assert.Greater(t, CompareSemanticVersions(makeVer(1, 200, 0, ""), makeVer(1, 100, 0, "")), 0)
+		assert.Greater(t, CompareSemanticVersions(makeVer(2, 0, 0, ""), makeVer(1, 100, 0, "")), 0)
+		assert.Greater(t, CompareSemanticVersions(makeVer(1, 201, 0, ""), makeVer(1, 100, 0, "")), 0)
+		assert.Greater(t, CompareSemanticVersions(makeVer(1, 0, 0, ""), makeVer(0, 0, 20000, "")), 0)
+		assert.Greater(t, CompareSemanticVersions(makeVer(1, 0, 0, "1"), makeVer(1, 0, 0, "0")), 0)
 	})
 }
 

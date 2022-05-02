@@ -2,12 +2,12 @@ package url
 
 import (
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
 	"github.com/spf13/afero"
