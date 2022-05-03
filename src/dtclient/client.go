@@ -98,19 +98,6 @@ const (
 	//InstallerTypePaasSh     = "paas-sh"
 )
 
-// Known flavors.
-const (
-	FlavorDefault     = "default"
-	FlavorMusl        = "musl"
-	FlavorMultidistro = "multidistro"
-)
-
-// Known architectures.
-const (
-	ArchX86 = "x86"
-	ArchARM = "arm"
-)
-
 // Known token scopes
 const (
 	TokenScopeInstallerDownload = "InstallerDownload"

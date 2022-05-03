@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/zip"
 	"github.com/spf13/afero"
@@ -48,11 +49,11 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("*mem.File")).
 			Return(fmt.Errorf(testErrorMessage))
 		dtc.
-			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro, mock.AnythingOfType("string")).
+			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro, mock.AnythingOfType("string")).
 			Return([]string{}, fmt.Errorf(testErrorMessage))
 		installer := &urlInstaller{
 			fs:  fs,
@@ -60,7 +61,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			props: &Properties{
 				Os:     dtclient.OsUnix,
 				Type:   dtclient.InstallerTypePaaS,
-				Flavor: dtclient.FlavorMultidistro,
+				Flavor: arch.FlavorMultidistro,
 			},
 		}
 
@@ -72,7 +73,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
 				writer := args.Get(6).(io.Writer)
@@ -90,7 +91,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			props: &Properties{
 				Os:     dtclient.OsUnix,
 				Type:   dtclient.InstallerTypePaaS,
-				Flavor: dtclient.FlavorMultidistro,
+				Flavor: arch.FlavorMultidistro,
 			},
 		}
 
@@ -101,7 +102,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+			On("GetAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), testVersion, mock.AnythingOfType("[]string"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
 				writer := args.Get(6).(io.Writer)
@@ -119,7 +120,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			props: &Properties{
 				Os:      dtclient.OsUnix,
 				Type:    dtclient.InstallerTypePaaS,
-				Flavor:  dtclient.FlavorMultidistro,
+				Flavor:  arch.FlavorMultidistro,
 				Version: testVersion,
 			},
 		}
@@ -137,7 +138,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		fs := afero.NewMemMapFs()
 		dtc := &dtclient.MockDynatraceClient{}
 		dtc.
-			On("GetLatestAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, dtclient.FlavorMultidistro,
+			On("GetLatestAgent", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro,
 				mock.AnythingOfType("string"), mock.AnythingOfType("[]string"), mock.AnythingOfType("*mem.File")).
 			Run(func(args mock.Arguments) {
 				writer := args.Get(5).(io.Writer)
@@ -155,7 +156,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			props: &Properties{
 				Os:      dtclient.OsUnix,
 				Type:    dtclient.InstallerTypePaaS,
-				Flavor:  dtclient.FlavorMultidistro,
+				Flavor:  arch.FlavorMultidistro,
 				Version: VersionLatest,
 			},
 		}

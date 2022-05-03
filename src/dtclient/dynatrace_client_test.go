@@ -148,10 +148,10 @@ func dynatraceServerHandler() http.HandlerFunc {
 }
 
 func handleRequest(request *http.Request, writer http.ResponseWriter) {
-	latestAgentVersion := fmt.Sprintf("/v1/deployment/installer/agent/%s/%s/latest/metainfo", OsUnix, InstallerTypeDefault)
+	agentVersions := fmt.Sprintf("/v1/deployment/installer/agent/versions/%s/%s", OsUnix, InstallerTypePaaS)
 
 	switch request.URL.Path {
-	case latestAgentVersion:
+	case agentVersions:
 		handleLatestAgentVersion(request, writer)
 	case "/v1/entity/infrastructure/hosts":
 		(&ipHandler{}).ServeHTTP(writer, request)
