@@ -196,7 +196,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name != 'pull_request' ||
-      github.pull_request.head.repo.fork == false
+      !github.event.pull_request.head.repo.fork
     needs: [tests, linting, builddockerimage]
     env:
       IMAGE_QUAY: quay.io/dynatrace/dynatrace-operator
