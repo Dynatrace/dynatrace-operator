@@ -28,14 +28,6 @@ type agentUpdater struct {
 	recorder      updaterEventRecorder
 }
 
-var installUrlProperties = url.Properties{
-	Os:           dtclient.OsUnix,
-	Type:         dtclient.InstallerTypePaaS,
-	Arch:         arch.Arch,
-	Flavor:       arch.Flavor,
-	Technologies: []string{"all"},
-}
-
 func newAgentUpdater(
 	ctx context.Context,
 	fs afero.Fs,
@@ -57,7 +49,7 @@ func newAgentUpdater(
 			return nil, err
 		}
 	} else {
-		agentInstaller = url.NewUrlInstaller(fs, dtc, &installUrlProperties)
+		agentInstaller = url.NewUrlInstaller(fs, dtc, getUrlProperties(dk.CodeModulesVersion()))
 	}
 	eventRecorder := updaterEventRecorder{
 		recorder: recorder,
@@ -73,6 +65,17 @@ func newAgentUpdater(
 		recorder:      eventRecorder,
 	}, nil
 
+}
+
+func getUrlProperties(version string) *url.Properties {
+	return &url.Properties{
+		Os:           dtclient.OsUnix,
+		Type:         dtclient.InstallerTypePaaS,
+		Arch:         arch.Arch,
+		Flavor:       arch.Flavor,
+		Technologies: []string{"all"},
+		Version:      version,
+	}
 }
 
 func setupImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Reader, certPath string, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) {
