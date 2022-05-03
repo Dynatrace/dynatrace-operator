@@ -30,8 +30,8 @@ func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (str
 	if err != nil {
 		return "", err
 	}
-	for i := 1; i < len(versions); i++ {
-		versionInfo, err := version.ExtractSemanticVersion(versions[i])
+	for _, rawVersion := range versions[1:] {
+		versionInfo, err := version.ExtractSemanticVersion(rawVersion)
 		if err != nil {
 			return "", err
 		}
