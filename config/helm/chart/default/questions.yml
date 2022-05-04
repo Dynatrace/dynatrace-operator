@@ -39,14 +39,6 @@ questions:
     group: "Global Configuration"
     show_if: "crdApplied=yes"
 
-  - variable: proxy
-    label: "Define a proxy by it's value"
-    description: "Configures a proxy for the ActiveGate and Operator. Provide the proxy here"
-    default: ""
-    type: string
-    group: "Global Configuration"
-    show_if: "crdApplied=yes"
-
   - variable: networkZone
     label: "Define a network zone"
     description: "Optional: Sets a NetworkZone for the Dynatrace Operator."
