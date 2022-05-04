@@ -14,15 +14,6 @@ questions:
     group: "Prerequisites"
 
   #################### Global Configuration ####################
-  - variable: apiUrl
-    label: "Dynatrace API URL"
-    description: "Dynatrace API URL including `/api` path at the end"
-    default: "https://ENVIRONMENTID.live.dynatrace.com/api"
-    type: string
-    required: true
-    group: "Global Configuration"
-    show_if: "crdApplied=yes"
-
   - variable: apiToken
     label: "Dynatrace API token"
     description: "Your Dynatrace API token - You can generate this token in your Dynatrace environment"

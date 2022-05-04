@@ -8,7 +8,6 @@ The following environment variables needs to be provided:
 * gcloud project (REGISTRY bases on this)
 * APP_NAME (defaults to "dynatrace-operator")
 * VERSION (tag of the docker image - defaults to "test")
-* APIURL (dynatrace api url)
 * APITOKEN (dynatrace api token)
 * PAASTOKEN (dynatrace paas token)
 
