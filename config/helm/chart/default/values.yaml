@@ -17,7 +17,6 @@ platform: "kubernetes"
 
 ### base properties
 
-skipCertCheck: false
 proxy: ""
 networkZone: ""
 enableIstio: false

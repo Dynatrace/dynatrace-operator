@@ -39,14 +39,6 @@ questions:
     group: "Global Configuration"
     show_if: "crdApplied=yes"
 
-  - variable: skipCertCheck
-    label: "Skip certificate check"
-    description: "Disable certificate validation checks for installer download and API communication"
-    default: false
-    type: boolean
-    group: "Global Configuration"
-    show_if: "crdApplied=yes"
-
   - variable: proxy
     label: "Define a proxy by it's value"
     description: "Configures a proxy for the ActiveGate and Operator. Provide the proxy here"
