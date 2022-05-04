@@ -16,8 +16,6 @@
 platform: "kubernetes"
 
 ### base properties
-
-networkZone: ""
 enableIstio: false
 
 # Only works for applicationMonitoring and cloudNativeFullStack
