@@ -18,6 +18,10 @@ import (
 // or the version set for the download
 type pinnedVersionSet map[string]bool
 
+func (set pinnedVersionSet) isNotPinned(version string) bool {
+	return !set[version]
+}
+
 // CSIGarbageCollector removes unused and outdated agent versions
 type CSIGarbageCollector struct {
 	apiReader client.Reader
@@ -91,9 +95,9 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 }
 
 // getAllPinnedVersionsForTenantUUID returns all pinned versions for a given tenantUUID.
-// A pinned version is either the:
-// - image tag/digest set in the dynakube for the csi codeModules
-// - version set for in the dynakube for the csi codeModules. (currently not supported on cloudNative)
+// A pinned version is either:
+// - the image tag or digest set in the custom resource
+// - the version set in the custom resource if applicationMonitoring is used
 func getAllPinnedVersionsForTenantUUID(tenantUUID string, dynakubes dynatracev1beta1.DynaKubeList) pinnedVersionSet {
 	pinnedImages := make(pinnedVersionSet)
 	for _, dynakube := range dynakubes.Items {

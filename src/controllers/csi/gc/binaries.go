@@ -27,7 +27,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(pinnedVersions pinnedV
 
 	for _, version := range storedVersions {
 		shouldDelete := isNotLatestVersion(version, latestVersion) &&
-			shouldDeleteVersion(version, usedVersions) && !pinnedVersions[version]
+			shouldDeleteVersion(version, usedVersions) && pinnedVersions.isNotPinned(version)
 
 		if shouldDelete {
 			binaryPath := gc.path.AgentBinaryDirForVersion(tenantUUID, version)
