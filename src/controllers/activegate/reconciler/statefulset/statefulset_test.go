@@ -6,7 +6,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -388,6 +388,21 @@ func TestStatefulSet_Volumes(t *testing.T) {
 			{Key: customproperties.DataKey, Path: customproperties.DataPath},
 		}, customPropertiesVolume.Secret.Items)
 	})
+	t.Run(`test activeGateAuthToken volumes`, func(t *testing.T) {
+		stsProperties := NewStatefulSetProperties(instance, capabilityProperties,
+			"", "", "", "", "",
+			nil, nil, nil,
+		)
+
+		stsProperties.Status.ActiveGate.UseAuthToken = true
+		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
+
+		authTokenVolume, err := kubeobjects.GetVolumeByName(volumes, authTokenSecretVolumeName)
+		assert.NoError(t, err)
+		assert.NotNil(t, authTokenVolume.VolumeSource)
+		assert.NotNil(t, authTokenVolume.VolumeSource.Secret)
+		assert.Equal(t, stsProperties.ActiveGateAuthTokenSecret(), authTokenVolume.Secret.SecretName)
+	})
 }
 
 func TestStatefulSet_Env(t *testing.T) {
@@ -429,7 +444,7 @@ func TestStatefulSet_Env(t *testing.T) {
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: instance.Name + dynatracev1beta1.TenantSecretSuffix,
 						},
-						Key: activegate.CommunicationEndpointsName,
+						Key: secrets.CommunicationEndpointsName,
 					},
 				},
 			},
@@ -440,7 +455,7 @@ func TestStatefulSet_Env(t *testing.T) {
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: instance.Name + dynatracev1beta1.TenantSecretSuffix,
 						},
-						Key: activegate.TenantUuidName,
+						Key: secrets.TenantUuidName,
 					},
 				},
 			},
@@ -610,6 +625,25 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 			Name:      InternalProxySecretVolumeName,
 			MountPath: InternalProxySecretPasswordMountPath,
 			SubPath:   InternalProxySecretPassword,
+		})
+	})
+	t.Run(`with activeGateAuthToken`, func(t *testing.T) {
+		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
+		instance.Status.ActiveGate.UseAuthToken = true
+		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil))
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      authTokenSecretVolumeName,
+			MountPath: authTokenMountPoint,
+			SubPath:   secrets.ActiveGateAuthTokenName,
+		})
+
+		assert.Contains(t, volumeMounts, corev1.VolumeMount{
+			ReadOnly:  true,
+			Name:      authTokenSecretVolumeName,
+			MountPath: authTokenMountPoint,
+			SubPath:   secrets.ActiveGateAuthTokenName,
 		})
 	})
 }

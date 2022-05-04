@@ -94,6 +94,7 @@ var _ VersionStatusNamer = (*ActiveGateStatus)(nil)
 
 type ActiveGateStatus struct {
 	VersionStatus `json:",inline"`
+	UseAuthToken  bool `json:"useAuthToken,omitempty"`
 }
 
 func (agStatus *ActiveGateStatus) Name() string {

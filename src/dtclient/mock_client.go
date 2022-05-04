@@ -90,3 +90,8 @@ func (o *MockDynatraceClient) GetSettingsForMonitoredEntities(monitoredEntities 
 	args := o.Called(monitoredEntities)
 	return args.Get(0).(GetSettingsResponse), args.Error(1)
 }
+
+func (o *MockDynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*ActiveGateAuthTokenInfo, error) {
+	args := o.Called(dynakubeName)
+	return args.Get(0).(*ActiveGateAuthTokenInfo), args.Error(1)
+}

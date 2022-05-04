@@ -8,7 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/events"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
@@ -21,8 +21,9 @@ import (
 )
 
 const (
-	serviceAccountPrefix   = "dynatrace-"
-	tenantSecretVolumeName = "ag-tenant-secret"
+	serviceAccountPrefix      = "dynatrace-"
+	tenantSecretVolumeName    = "ag-tenant-secret"
+	authTokenSecretVolumeName = "ag-authtoken-secret"
 
 	annotationCustomPropsHash             = dynatracev1beta1.InternalFlagPrefix + "custom-properties-hash"
 	annotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + capability.ActiveGateContainerName
@@ -40,7 +41,9 @@ const (
 	dataSourceAuthTokenMountPoint   = "/var/lib/dynatrace/remotepluginmodule/agent/runtime/datasources"
 	dataSourceMetadataMountPoint    = "/mnt/dsmetadata"
 	statsdMetadataMountPoint        = "/opt/dynatrace/remotepluginmodule/agent/datasources/statsd"
-	tenantTokenMountPoint           = "/var/lib/dynatrace/secrets/tokens/tenant-token"
+	tokenBasePath                   = "/var/lib/dynatrace/secrets/tokens"
+	tenantTokenMountPoint           = tokenBasePath + "/tenant-token"
+	authTokenMountPoint             = tokenBasePath + "/auth-token"
 
 	DeploymentTypeActiveGate = "active_gate"
 )
@@ -242,6 +245,17 @@ func buildVolumes(stsProperties *statefulSetProperties, extraContainerBuilders [
 		)
 	}
 
+	if stsProperties.DynaKube.UseActiveGateAuthToken() {
+		volumes = append(volumes, corev1.Volume{
+			Name: authTokenSecretVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: stsProperties.ActiveGateAuthTokenSecret(),
+				},
+			},
+		})
+	}
+
 	if !isCustomPropertiesNilOrEmpty(stsProperties.CustomProperties) {
 		valueFrom := determineCustomPropertiesSource(stsProperties)
 		volumes = append(volumes,
@@ -377,9 +391,18 @@ func buildVolumeMounts(stsProperties *statefulSetProperties) []corev1.VolumeMoun
 			Name:      tenantSecretVolumeName,
 			ReadOnly:  true,
 			MountPath: tenantTokenMountPoint,
-			SubPath:   activegate.TenantTokenName,
+			SubPath:   secrets.TenantTokenName,
 		},
 		)
+	}
+
+	if stsProperties.DynaKube.UseActiveGateAuthToken() {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      authTokenSecretVolumeName,
+			ReadOnly:  true,
+			MountPath: authTokenMountPoint,
+			SubPath:   secrets.ActiveGateAuthTokenName,
+		})
 	}
 
 	volumeMounts = append(volumeMounts, buildActiveGateVolumeMounts(stsProperties)...)
@@ -497,7 +520,7 @@ func tenantUuidNameEnvVar(stsProperties *statefulSetProperties) corev1.EnvVar {
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: stsProperties.AGTenantSecret(),
 				},
-				Key: activegate.TenantUuidName,
+				Key: secrets.TenantUuidName,
 			},
 		},
 	}
@@ -511,7 +534,7 @@ func communicationEndpointEnvVar(stsProperties *statefulSetProperties) corev1.En
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: stsProperties.AGTenantSecret(),
 				},
-				Key: activegate.CommunicationEndpointsName,
+				Key: secrets.CommunicationEndpointsName,
 			},
 		},
 	}

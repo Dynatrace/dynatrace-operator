@@ -28,10 +28,11 @@ type DynatraceClientReconciler struct {
 }
 
 type tokenConfig struct {
-	Type       string
-	Key, Value string
-	Scopes     []string
-	Timestamp  **metav1.Time
+	Type           string
+	Key, Value     string
+	Scopes         []string
+	OptionalScopes []string
+	Timestamp      **metav1.Time
 }
 
 func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dynatracev1beta1.DynaKube) (dtclient.Client, bool, error) {
@@ -158,6 +159,8 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 		})
 	}
 
+	tokens[0].OptionalScopes = append(tokens[0].Scopes, dtclient.TokenScopeActiveGateTokenCreate)
+
 	for _, token := range tokens {
 		updateCR = r.CheckToken(dtc, token) || updateCR
 	}
@@ -216,6 +219,7 @@ func (r *DynatraceClientReconciler) CheckToken(dtc dtclient.Client, token tokenC
 			missingScopes = append(missingScopes, s)
 		}
 	}
+
 	if len(missingScopes) > 0 {
 		r.setAndLogCondition(&r.status.Conditions, metav1.Condition{
 			Type:    token.Type,
@@ -225,6 +229,8 @@ func (r *DynatraceClientReconciler) CheckToken(dtc dtclient.Client, token tokenC
 		})
 		return true
 	}
+
+	r.HandleOptionalScope(token.OptionalScopes, ss)
 
 	r.setAndLogCondition(&r.status.Conditions, metav1.Condition{
 		Type:    token.Type,
@@ -277,6 +283,15 @@ func (r *DynatraceClientReconciler) setAndLogCondition(conditions *[]metav1.Cond
 	condition.LastTransitionTime = r.Now
 	meta.SetStatusCondition(conditions, condition)
 	return true
+}
+
+func (r *DynatraceClientReconciler) HandleOptionalScope(optionalScopes []string, tokenScopes dtclient.TokenScopes) {
+	for _, scope := range optionalScopes {
+		switch scope {
+		case dtclient.TokenScopeActiveGateTokenCreate:
+			r.status.ActiveGate.UseAuthToken = tokenScopes.Contains(scope)
+		}
+	}
 }
 
 func convertProxy(proxy *dynatracev1beta1.DynaKubeProxy) *DynatraceClientProxy {

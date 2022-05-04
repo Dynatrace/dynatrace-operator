@@ -29,10 +29,10 @@ import (
 
 const (
 	// PullSecretSuffix is the suffix appended to the DynaKube name to n.
-	PullSecretSuffix   = "-pull-secret"
-	TenantSecretSuffix = "-activegate-tenant-secret"
-
-	PodNameOsAgent = "oneagent"
+	PullSecretSuffix      = "-pull-secret"
+	TenantSecretSuffix    = "-activegate-tenant-secret"
+	AuthTokenSecretSuffix = "-activegate-authtoken-secret"
+	PodNameOsAgent        = "oneagent"
 )
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
@@ -125,6 +125,11 @@ func (dk *DynaKube) ShouldAutoUpdateOneAgent() bool {
 // AGTenantSecret returns the name of the secret containing tenant UUID, token and communication endpoints for ActiveGate
 func (dk *DynaKube) AGTenantSecret() string {
 	return dk.Name + TenantSecretSuffix
+}
+
+// ActiveGateAuthTokenSecret returns the name of the secret containing the ActiveGateAuthToken, which is mounted to the AGs
+func (dk *DynaKube) ActiveGateAuthTokenSecret() string {
+	return dk.Name + AuthTokenSecretSuffix
 }
 
 // PullSecret returns the name of the pull secret to be used for immutable images.
@@ -356,6 +361,11 @@ func (dk *DynaKube) HostGroup() string {
 		}
 	}
 	return hostGroup
+}
+
+// UseActiveGateAuthToken returns if the activeGate should get an authToken mounted
+func (dk *DynaKube) UseActiveGateAuthToken() bool {
+	return dk.Status.ActiveGate.UseAuthToken && !dk.FeatureActiveGateDisableAuthToken() && dk.NeedsActiveGate()
 }
 
 func splitArg(arg string) (key, value string) {
