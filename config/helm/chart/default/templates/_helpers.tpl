@@ -87,6 +87,14 @@ internal.oneagent.dynatrace.com/component: csi-driver
 {{- end -}}
 
 {{/*
+ActiveGate labels
+*/}}
+{{- define "dynatrace-operator.activegateLabels" -}}
+{{ include "dynatrace-operator.commonLabels" . }}
+app.kubernetes.io/component: activegate
+{{- end -}}
+
+{{/*
 OneAgent labels
 */}}
 {{- define "dynatrace-operator.oneagentLabels" -}}
