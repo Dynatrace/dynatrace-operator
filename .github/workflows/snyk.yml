@@ -1,36 +1,30 @@
 name: "Snyk"
 
+env:
+  RESULTS_FILENAME: "results.sarif"
+  SNYK_SHA: "7a25034bb99f934b1e45b08d2025b07dde28aa48"
+  UPLOAD_SARIF_SHA: "96bc9c36c68e097cd033777efed25c248ffcf09a"
+
 on:
   push:
     branches:
       - "*"
 
 jobs:
-  analyze:
-    name: Analyze
+  security:
     runs-on: ubuntu-latest
-
-    permissions:
-      security-events: write
-
-    strategy:
-      fail-fast: false
-      matrix:
-        language:
-          - 'go'
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
     - name: Run Snyk to check for vulnerabilities
-      uses: snyk/actions/golang@7a25034bb99f934b1e45b08d2025b07dde28aa48
+      uses: snyk/actions/golang@{{ $env.SNYK_SHA }}
       continue-on-error: true # To make sure that SARIF upload gets called
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
-        args: --sarif-file-output=results.sarif --severity-threshold=high
+        args: --sarif-file-output=${{ env.RESULTS_FILENAME }} --severity-threshold=high
     - name: Upload result to GitHub Code Scanning
-      uses: github/codeql-action/upload-sarif@96bc9c36c68e097cd033777efed25c248ffcf09a
+      uses: github/codeql-action/upload-sarif@{{ env.UPLOAD_SARIF_SHA }}
       with:
           # Path to SARIF file relative to the root of the repository
-          sarif_file: results.sarif
+          sarif_file: ${{ env.RESULTS_FILENAME }}
