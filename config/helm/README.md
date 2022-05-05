@@ -6,7 +6,7 @@ https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools/blob/25b17f7410
 
 # Installation
 
-Generate an API and a PaaS token in your Dynatrace environment.
+Generate an API token in your Dynatrace environment.
 
 https://www.dynatrace.com/support/help/reference/dynatrace-concepts/why-do-i-need-an-environment-id/#create-user-generated-access-tokens
 
@@ -25,6 +25,5 @@ mpdev /scripts/install \
 --parameters='{ \
 "name": "dynatrace-operator", \
 "namespace": "dynatrace", \
-"apiToken": "DYNATRACE_API_TOKEN", \
-"paasToken": "PLATFORM_AS_A_SERVICE_TOKEN" }'
+"apiToken": "DYNATRACE_API_TOKEN" }'
 ```

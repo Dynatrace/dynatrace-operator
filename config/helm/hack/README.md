@@ -9,6 +9,5 @@ The following environment variables needs to be provided:
 * APP_NAME (defaults to "dynatrace-operator")
 * VERSION (tag of the docker image - defaults to "test")
 * APITOKEN (dynatrace api token)
-* PAASTOKEN (dynatrace paas token)
 
 The `verify.sh` script will run will build/push the necessary container then run `mpdev verify` on it.

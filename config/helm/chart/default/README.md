@@ -39,7 +39,7 @@ helm repo add dynatrace https://dt-url.net/operator-helm
 
 ### Prepare tokens
 
-Generate an API and a PaaS token in your Dynatrace environment.
+Generate an API token in your Dynatrace environment.
 
 https://www.dynatrace.com/support/help/reference/dynatrace-concepts/why-do-i-need-an-environment-id/#create-user-generated-access-tokens
 

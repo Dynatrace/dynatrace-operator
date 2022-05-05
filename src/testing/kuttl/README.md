@@ -31,7 +31,7 @@ so this script was created to do just that.
 
 
 **IMPORTANT:**
-It uses the following envvars: **APIURL, APITOKEN, PAASTOKEN**,
+It uses the following envvars: **APIURL, APITOKEN**,
 you should set these accordingly so the test can run.
 
 ## OneAgent Modes TestSuite
