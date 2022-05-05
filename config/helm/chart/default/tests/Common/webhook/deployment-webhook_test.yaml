@@ -83,10 +83,6 @@ tests:
                     port: server-port
                     scheme: HTTPS
                 ports:
-                  - name: metrics
-                    containerPort: 8383
-                  - name: validation
-                    containerPort: 8384
                   - name: server-port
                     containerPort: 8443
                 resources:
@@ -201,10 +197,6 @@ tests:
                     port: server-port
                     scheme: HTTPS
                 ports:
-                  - name: metrics
-                    containerPort: 8383
-                  - name: validation
-                    containerPort: 8384
                   - name: server-port
                     containerPort: 8443
                 resources:
