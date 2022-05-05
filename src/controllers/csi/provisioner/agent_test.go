@@ -42,10 +42,8 @@ func TestUpdateAgent(t *testing.T) {
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				APIURL: "https://" + testTenantUUID + ".dynatrace.com",
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{
-						HostInjectSpec: dynatracev1beta1.HostInjectSpec{
-							Version: testVersion,
-						},
+					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{
+						Version: testVersion,
 					},
 				},
 			},

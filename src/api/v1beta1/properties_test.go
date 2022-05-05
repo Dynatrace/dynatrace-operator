@@ -233,10 +233,8 @@ func TestCodeModulesVersion(t *testing.T) {
 		dk := DynaKube{
 			Spec: DynaKubeSpec{
 				OneAgent: OneAgentSpec{
-					CloudNativeFullStack: &CloudNativeFullStackSpec{
-						HostInjectSpec: HostInjectSpec{
-							Version: testVersion,
-						},
+					ApplicationMonitoring: &ApplicationMonitoringSpec{
+						Version: testVersion,
 					},
 				},
 			},
