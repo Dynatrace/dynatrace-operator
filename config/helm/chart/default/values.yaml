@@ -15,9 +15,6 @@
 # may be set to "kubernetes", "openshift", "google"
 platform: "kubernetes"
 
-# Only works for applicationMonitoring and cloudNativeFullStack
-namespaceSelector: {}
-
 autoCreateSecret: true
 apiToken: ""
 paasToken: ""
