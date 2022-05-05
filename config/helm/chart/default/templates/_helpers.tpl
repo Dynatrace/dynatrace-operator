@@ -123,12 +123,8 @@ Check if default image is used
 Check if we need the csi driver.
 */}}
 {{- define "dynatrace-operator.needCSI" -}}
-	{{- if eq (default false .Values.csidriver.enabled) true -}}
+	{{- if or (.Values.csidriver.enabled) (eq (include "dynatrace-operator.partial" .) "csi") -}}
 		{{- printf "true" -}}
-	{{- else if eq (include "dynatrace-operator.partial" .) "csi" -}}
-		{{- printf "true" -}}
-	{{- else -}}
-		{{- printf "false" -}}
 	{{- end -}}
 {{- end -}}
 
