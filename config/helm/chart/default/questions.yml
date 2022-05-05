@@ -14,31 +14,6 @@ questions:
     group: "Prerequisites"
 
   #################### Global Configuration ####################
-  - variable: apiToken
-    label: "Dynatrace API token"
-    description: "Your Dynatrace API token - You can generate this token in your Dynatrace environment"
-    default: ""
-    type: string
-    required: true
-    group: "Global Configuration"
-    show_if: "crdApplied=yes"
-
-  - variable: paasToken
-    label: "Dynatrace PaaS token"
-    description: "Your Dynatrace Platform as a Service token - You can generate this token in your Dynatrace environment"
-    default: ""
-    type: string
-    group: "Global Configuration"
-    show_if: "crdApplied=yes"
-
-  - variable: dataIngestToken
-    label: "Dynatrace DataIngest Token"
-    description: "Your Dynatrace DataIngest token - You can generate this token in your Dynatrace environment"
-    default: ""
-    type: string
-    group: "Global Configuration"
-    show_if: "crdApplied=yes"
-
   - variable: operator.image
     label: "Set a custom image for operator"
     description: "Optional: Set a custom image for operator. Defaults to docker.io/dynatrace/dynatrace-operator"

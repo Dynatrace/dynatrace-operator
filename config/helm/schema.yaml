@@ -125,24 +125,6 @@ properties:
     x-google-marketplace:
       type: NAMESPACE
     default: dynatrace
-  apiToken:
-    type: string
-    description: The API token from your Dynatrace environment
-    title: API Token
-    x-google-marketplace:
-      type: MASKED_FIELD
-  paasToken:
-    type: string
-    description: The PaaS token from your Dynatrace environment
-    title: PaaS Token
-    x-google-marketplace:
-      type: MASKED_FIELD
-  dataIngestToken:
-    type: string
-    description: The DataIngest token from your Dynatrace environment
-    title: DataIngest Token
-    x-google-marketplace:
-      type: MASKED_FIELD
   crdApplied:
     type: string
     description: Make sure you have applied the latest CRD by following the instructions in the Github Repository.
@@ -162,5 +144,4 @@ properties:
 required:
 - name
 - namespace
-- apiToken
 - crdApplied

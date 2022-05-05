@@ -15,11 +15,6 @@
 # may be set to "kubernetes", "openshift", "google"
 platform: "kubernetes"
 
-autoCreateSecret: true
-apiToken: ""
-paasToken: ""
-dataIngestToken: ""
-
 operator:
   image: ""
   customPullSecret: ""

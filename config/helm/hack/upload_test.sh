@@ -17,4 +17,4 @@ fi
 
 kubectl create ns dynatrace
 kubectl apply -k https://github.com/Dynatrace/dynatrace-operator/config/crd
-mpdev /scripts/install --deployer=$REGISTRY/$APP_NAME/deployer:$VERSION --parameters='{ "name": "dynatrace-operator","namespace": "dynatrace","apiToken": "'"${APITOKEN}"'","paasToken": "'"${PAASTOKEN}"'"}'
+mpdev /scripts/install --deployer=$REGISTRY/$APP_NAME/deployer:$VERSION --parameters='{ "name": "dynatrace-operator","namespace": "dynatrace" }'
