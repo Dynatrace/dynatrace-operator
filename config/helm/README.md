@@ -6,10 +6,6 @@ https://github.com/GoogleCloudPlatform/marketplace-k8s-app-tools/blob/25b17f7410
 
 # Installation
 
-Generate an API and a PaaS token in your Dynatrace environment.
-
-https://www.dynatrace.com/support/help/reference/dynatrace-concepts/why-do-i-need-an-environment-id/#create-user-generated-access-tokens
-
 The Dynatrace Operator acts on its separate namespace `dynatrace`.
 To create this namespace run the following command:
 
@@ -17,15 +13,12 @@ To create this namespace run the following command:
 kubectl create namespace dynatrace
 ```
 
-To install the Dynatrace Operator run this command after replacing apiToken, passToken and apiUrl:
+To install the Dynatrace Operator run this command:
 
 ```
 mpdev /scripts/install \
 --deployer=gcr.io/cloud-marketplace/dynatrace-marketplace-prod/dynatrace-operator/deployer \
 --parameters='{ \
 "name": "dynatrace-operator", \
-"namespace": "dynatrace", \
-"apiUrl": "https://ENVIRONMENTID.live.dynatrace.com/api", \
-"apiToken": "DYNATRACE_API_TOKEN", \
-"paasToken": "PLATFORM_AS_A_SERVICE_TOKEN" }'
+"namespace": "dynatrace" }'
 ```

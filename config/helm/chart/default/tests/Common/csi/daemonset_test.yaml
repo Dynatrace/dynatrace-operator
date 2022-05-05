@@ -7,29 +7,10 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: should exist in case of cloudNativeFullStack mode
+  - it: should exist in case of CSI enabled
     set:
       operator.image: image-name
-      cloudNativeFullStack.enabled: true
-    asserts:
-      - isKind:
-          of: DaemonSet
-      - equal:
-          path: metadata.name
-          value: dynatrace-oneagent-csi-driver
-      - equal:
-          path: metadata.namespace
-          value: NAMESPACE
-      - isNotEmpty:
-          path: metadata.labels
-      - isNotEmpty:
-          path: spec.template.metadata.labels
-
-  - it: should exist in case of applicationMonitoring mode with useCSIDriver enabled
-    set:
-      operator.image: image-name
-      applicationMonitoring.enabled: true
-      applicationMonitoring.useCSIDriver: true
+      csidriver.enabled: true
     asserts:
       - isKind:
           of: DaemonSet
@@ -47,8 +28,7 @@ tests:
   - it: should create correct spec for template of daemonset spec
     set:
       operator.image: image-name
-      applicationMonitoring.enabled: true
-      applicationMonitoring.useCSIDriver: true
+      csidriver.enabled: true
     asserts:
       - isNotEmpty:
           path: spec.template.metadata.labels

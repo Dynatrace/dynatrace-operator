@@ -5,15 +5,17 @@ tests:
   - it: should not exist if platform is not openshift
     set:
       platform: kubernetes
-      createSecurityContextConstraints: true
+      securityContextConstraints:
+        enabled: true
     asserts:
       - hasDocuments:
           count: 0
 
-  - it: should not exist if createSecurityContextConstraints is false
+  - it: should not exist if securityContextConstraints.enabled is false
     set:
       platform: openshift
-      createSecurityContextConstraints: false
+      securityContextConstraints:
+        enabled: false
     asserts:
       - hasDocuments:
           count: 0
@@ -21,7 +23,8 @@ tests:
   - it: should exist
     set:
       platform: openshift
-      createSecurityContextConstraints: true
+      securityContextConstraints:
+        enabled: true
     asserts:
       - equal:
           path: metadata.annotations
