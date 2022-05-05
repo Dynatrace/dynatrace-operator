@@ -15,9 +15,6 @@
 # may be set to "kubernetes", "openshift", "google"
 platform: "kubernetes"
 
-### base properties
-enableIstio: false
-
 # Only works for applicationMonitoring and cloudNativeFullStack
 namespaceSelector: {}
 

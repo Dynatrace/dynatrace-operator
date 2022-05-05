@@ -39,14 +39,6 @@ questions:
     group: "Global Configuration"
     show_if: "crdApplied=yes"
 
-  - variable: enableIstio
-    label: "Define if istio support should be enabled"
-    description: "Optional: when enabled, and if Istio is installed on the Kubernetes environment, then the Operator will create the corresponding VirtualService and ServiceEntry objects to allow access to the Dynatrace cluster from the agent or the activeGate."
-    default: false
-    type: boolean
-    group: "Global Configuration"
-    show_if: "crdApplied=yes"
-
   - variable: operator.image
     label: "Set a custom image for operator"
     description: "Optional: Set a custom image for operator. Defaults to docker.io/dynatrace/dynatrace-operator"
