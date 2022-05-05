@@ -7,29 +7,10 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: should be built correctly with applicationMonitoring enabled
+  - it: should be built correctly with CSI enabled
     set:
       operator.image: image-name
-      applicationMonitoring.enabled: true
-      applicationMonitoring.useCSIDriver: true
-    asserts:
-      - isAPIVersion:
-          of: rbac.authorization.k8s.io/v1
-      - isKind:
-          of: Role
-      - equal:
-          path: metadata.name
-          value: dynatrace-oneagent-csi-driver
-      - equal:
-          path: metadata.namespace
-          value: NAMESPACE
-      - isNotEmpty:
-          path: rules
-
-  - it: should be built correctly with cloudNativeFullstack enabled
-    set:
-      operator.image: image-name
-      cloudNativeFullStack.enabled: true
+      csidriver.enabled: true
     asserts:
       - isAPIVersion:
           of: rbac.authorization.k8s.io/v1
@@ -47,8 +28,7 @@ tests:
   - it: should have correct rules
     set:
       operator.image: image-name
-      applicationMonitoring.enabled: true
-      applicationMonitoring.useCSIDriver: true
+      csidriver.enabled: true
     asserts:
       - equal:
           path: rules

@@ -59,8 +59,6 @@ spec:
               value: "true"
             {{- end }}
           ports:
-            - containerPort: 8080
-              name: metrics
             - containerPort: 10080
               name: server-port
           resources:
