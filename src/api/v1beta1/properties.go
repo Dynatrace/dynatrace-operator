@@ -233,6 +233,21 @@ func (dk *DynaKube) Version() string {
 	return ""
 }
 
+// The dynakube.Version is not take into account when using cloudNative to avoid confusion
+func (dynakube DynaKube) CodeModulesVersion() string {
+	if !dynakube.CloudNativeFullstackMode() && !dynakube.ApplicationMonitoringMode() {
+		return ""
+	}
+	if dynakube.CodeModulesImage() != "" {
+		codeModulesImage := dynakube.CodeModulesImage()
+		return strings.Split(codeModulesImage, ":")[1]
+	}
+	if dynakube.Version() != "" && !dynakube.CloudNativeFullstackMode() {
+		return dynakube.Version()
+	}
+	return dynakube.Status.LatestAgentVersionUnixPaas
+}
+
 func (dk *DynaKube) NamespaceSelector() *metav1.LabelSelector {
 	return &dk.Spec.NamespaceSelector
 }

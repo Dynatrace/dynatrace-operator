@@ -35,8 +35,8 @@ func TestReadCommunicationHosts(t *testing.T) {
 	dc := &dynatraceClient{}
 
 	readFromString := func(json string) (ConnectionInfo, error) {
-		r := []byte(json)
-		return dc.readResponseForConnectionInfo(r)
+		response := []byte(json)
+		return dc.readResponseForConnectionInfo(response)
 	}
 
 	{

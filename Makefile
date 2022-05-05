@@ -59,6 +59,11 @@ helm-lint:
 kuttl-install:
 	hack/e2e/install-kuttl.sh
 
+kuttl-all: kuttl-activegate kuttl-oneagent
+
+kuttl-activegate:
+	kubectl kuttl test --config src/testing/kuttl/activegate/testsuite.yaml
+
 kuttl-oneagent: deploy
 	kubectl -n dynatrace wait pod --for=condition=ready -l app.kubernetes.io/component=webhook
 	kubectl kuttl test --config src/testing/kuttl/oneagent/oneagent-test.yaml
@@ -232,6 +237,7 @@ endif
 SERVICE_ACCOUNTS=--extra-service-accounts dynatrace-dynakube-oneagent
 SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-dynakube-oneagent-unprivileged
 SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-kubernetes-monitoring
+SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-activegate
 
 # Generate bundle manifests and metadata, then validate generated files.
 .PHONY: bundle

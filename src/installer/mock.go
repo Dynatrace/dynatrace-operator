@@ -20,7 +20,3 @@ func (mock *InstallerMock) UpdateProcessModuleConfig(targetDir string, processMo
 	args := mock.Called(targetDir, processModuleConfig)
 	return args.Error(0)
 }
-
-func (mock *InstallerMock) SetVersion(version string) {
-	mock.Called(version)
-}

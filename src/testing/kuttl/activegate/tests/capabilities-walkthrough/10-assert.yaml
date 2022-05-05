@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dynatrace
+status:
+  phase: Active
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dynakube
+  namespace: dynatrace
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynatrace-operator
+  namespace: dynatrace
+spec:
+  template:
+    spec:
+      containers:
+        - name: dynatrace-operator
+          args:
+            - operator
+      serviceAccountName: dynatrace-operator
+status:
+  readyReplicas: 1

@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, latestVersion string) {
+func (gc *CSIGarbageCollector) runBinaryGarbageCollection(pinnedVersions pinnedVersionSet, tenantUUID string, latestVersion string) {
 	fs := &afero.Afero{Fs: gc.fs}
 	gcRunsMetric.Inc()
 
@@ -27,7 +27,7 @@ func (gc *CSIGarbageCollector) runBinaryGarbageCollection(tenantUUID string, lat
 
 	for _, version := range storedVersions {
 		shouldDelete := isNotLatestVersion(version, latestVersion) &&
-			shouldDeleteVersion(version, usedVersions)
+			shouldDeleteVersion(version, usedVersions) && pinnedVersions.isNotPinned(version)
 
 		if shouldDelete {
 			binaryPath := gc.path.AgentBinaryDirForVersion(tenantUUID, version)

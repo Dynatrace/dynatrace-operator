@@ -14,17 +14,17 @@ import (
 	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtversion"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/updates"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/version"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/src/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/pkg/errors"
+	"github.com/spf13/afero"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -69,6 +69,7 @@ func NewDynaKubeController(c client.Client, apiReader client.Reader, scheme *run
 		client:            c,
 		apiReader:         apiReader,
 		scheme:            scheme,
+		fs:                afero.Afero{Fs: afero.NewOsFs()},
 		dtcBuildFunc:      dtcBuildFunc,
 		config:            config,
 		operatorPodName:   os.Getenv("POD_NAME"),
@@ -83,6 +84,7 @@ type DynakubeController struct {
 	client            client.Client
 	apiReader         client.Reader
 	scheme            *runtime.Scheme
+	fs                afero.Afero
 	dtcBuildFunc      DynatraceClientFunc
 	config            *rest.Config
 	operatorPodName   string
@@ -207,7 +209,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		}
 	}
 
-	upd, err = updates.ReconcileVersions(ctx, dkState, controller.client, dtversion.GetImageVersion)
+	upd, err = version.ReconcileVersions(ctx, dkState, controller.apiReader, controller.fs, version.GetImageVersion)
 	dkState.Update(upd, "Found updates")
 	dkState.Error(err)
 
@@ -348,7 +350,6 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 				return false
 			}
 			dynakubeState.Update(upd, c.ShortName()+" reconciled")
-			return true
 		} else {
 			sts := appsv1.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{

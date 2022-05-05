@@ -1,7 +1,7 @@
 FROM golang:1.18-alpine AS operator-build
 
 RUN apk update --no-cache && \
-    apk add --no-cache gcc musl-dev btrfs-progs-dev lvm2-dev device-mapper-static git && \
+    apk add --no-cache gcc musl-dev btrfs-progs-dev lvm2-dev device-mapper-static gpgme-dev git && \
     rm -rf /var/cache/apk/*
 
 ARG GO_BUILD_ARGS
@@ -21,6 +21,16 @@ FROM registry.access.redhat.com/ubi8-micro:8.5
 
 COPY --from=operator-build /etc/ssl/cert.pem /etc/ssl/cert.pem
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
+
+COPY --from=operator-build /lib/libc.musl-x86_64.so.* /lib/
+COPY --from=operator-build /lib/ld-musl-x86_64.so.* /lib/
+
+COPY --from=operator-build /lib/libdevmapper.so.* /lib/
+
+COPY --from=operator-build /usr/lib/libassuan.so.* /usr/lib/
+COPY --from=operator-build /usr/lib/libgpg-error.so.* /usr/lib/
+COPY --from=operator-build /usr/lib/libgpgme.so.* /usr/lib/
+
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 
 LABEL name="Dynatrace Operator" \
