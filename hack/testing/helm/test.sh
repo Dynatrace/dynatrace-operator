@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-cd chart/default || exit 5
 echo "Unit-testing helm chart"
-if ! helm unittest --helm3 -f './tests/*/*/*.yaml' -f './tests/*/*.yaml' -f './tests/*.yaml' .; then
+if ! helm unittest --helm3 -f './tests/*/*/*.yaml' -f './tests/*/*.yaml' -f './tests/*.yaml' ./config/helm/chart/default; then
   echo "some tests failed"
   exit 10
 fi

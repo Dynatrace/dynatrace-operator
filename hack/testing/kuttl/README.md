@@ -54,6 +54,6 @@ This will run the tests and then try to delete everything.
 
 OR the kuttl command (you HAVE TO deploy the operator before by hand)
 ```
-kubectl kuttl test --config src/testing/kuttl/oneagent/oneagent-test.yaml
+kubectl kuttl test --config hack/testing/kuttl/oneagent/oneagent-test.yaml
 ```
 

@@ -2,20 +2,20 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 #startKIND: true
 namespace: dynatrace
-artifactsDir: src/testing/kuttl/activegate/logs/
+artifactsDir: hack/testing/kuttl/activegate/logs/
 crdDir: config/crd/bases
 manifestDirs:
-  - src/testing/kuttl/activegate/manifests/dynatrace-namespace.yaml
+  - hack/testing/kuttl/activegate/manifests/dynatrace-namespace.yaml
   - config/deploy/kubernetes/kubernetes.yaml # csi not needed
 testDirs:
-  - src/testing/kuttl/activegate/tests
+  - hack/testing/kuttl/activegate/tests
 parallel: 1
 timeout: 120
 reportFormat: json
 
 ## Debug
 # usage:
-# $ k delete --force --grace-period=0 ns dynatrace; kuttl test --config src/testing/kuttl/activegate/testsuite-debug.yaml
+# $ k delete --force --grace-period=0 ns dynatrace; kuttl test --config hack/testing/kuttl/activegate/testsuite-debug.yaml
 skipClusterDelete: true
 skipDelete: true
 startKIND: false

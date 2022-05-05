@@ -95,3 +95,8 @@ config/deploy/kustomization.yaml
 kubeconfig
 kind-logs-*
 hack/testing/kuttl/activegate/logs/
+/testbin/bin/etcd
+/testbin/bin/kube-apiserver
+/testbin/bin/kubectl
+/testbin/setup-envtest.sh
+/bin/manager

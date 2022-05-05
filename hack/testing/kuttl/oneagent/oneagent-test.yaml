@@ -6,4 +6,4 @@ skipDelete: false
 namespace: dynatrace
 parallel: 1
 testDirs:
-- src/testing/kuttl/oneagent
+- hack/testing/kuttl/oneagent

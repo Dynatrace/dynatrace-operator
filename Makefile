@@ -66,7 +66,7 @@ kuttl-activegate:
 
 kuttl-oneagent: deploy
 	kubectl -n dynatrace wait pod --for=condition=ready -l app.kubernetes.io/component=webhook
-	kubectl kuttl test --config src/testing/kuttl/oneagent/oneagent-test.yaml
+	kubectl kuttl test --config hack/testing/kuttl/oneagent/oneagent-test.yaml
 # CLEAN-UP
 	kubectl delete dynakube --all -n dynatrace
 	kubectl -n dynatrace wait pod --for=delete -l app.kubernetes.io/component=oneagent --timeout=500s
@@ -106,7 +106,7 @@ deploy-ocp: manifests-ocp kustomize
 	$(KUSTOMIZE) build config/deploy/openshift | oc apply -f -
 
 push-image:
-	./build/push_image.sh
+	./hack/build/push_image.sh
 
 push-tagged-image: export TAG=snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
 push-tagged-image: push-image
