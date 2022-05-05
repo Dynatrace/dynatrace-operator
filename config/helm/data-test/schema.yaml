@@ -9,22 +9,3 @@ properties:
     default: "dynatrace"
     x-google-marketplace:
       type: NAMESPACE
-  apiUrl:
-    type: string
-    description: The Dynatrace api url including `/api` path at the end
-    default: "https://mydynatraceenvironmenttesturl.com/api"
-    title: API URL
-  apiToken:
-    type: string
-    description: The API token from your Dynatrace environment
-    title: API Token
-    default: "APITOKENtesttest1234"
-    x-google-marketplace:
-      type: MASKED_FIELD
-  paasToken:
-    type: string
-    description: The PaaS token from your Dynatrace environment
-    title: PaaS Token
-    default: "PAASTOKENtesttest1234"
-    x-google-marketplace:
-      type: MASKED_FIELD
