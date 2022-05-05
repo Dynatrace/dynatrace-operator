@@ -92,12 +92,6 @@ spec:
               port: server-port
               scheme: HTTPS
           ports:
-            {{- if eq (.Values.platform) "openshift"}}
-            - name: metrics
-              containerPort: 8383
-            - name: validation
-              containerPort: 8384
-            {{- end}}
             - name: server-port
               containerPort: 8443
           resources:
