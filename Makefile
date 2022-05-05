@@ -55,12 +55,6 @@ helm-test:
 helm-lint:
 	cd config/helm && ./testing/lint.sh
 
-create-kind-cluster:
-	kind create cluster --config ./src/testing/kuttl/oneagent/kind.yaml
-
-delete-kind-cluster:
-	kind delete cluster --name kind
-
 kuttl-install:
 	hack/e2e/install-kuttl.sh
 
