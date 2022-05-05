@@ -31,9 +31,7 @@ webhooks:
         path: /validate
     rules:
       - operations:
-          {{- if eq (default false .Values.manifests) true }}
           - CREATE
-          {{- end }}
           - UPDATE
         apiGroups:
           - dynatrace.com

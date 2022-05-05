@@ -37,31 +37,25 @@ To install the Dynatrace Operator via Helm run the following command:
 helm repo add dynatrace https://dt-url.net/operator-helm
 ```
 
-### Prepare tokens
-
-Generate an API and a PaaS token in your Dynatrace environment.
-
-https://www.dynatrace.com/support/help/reference/dynatrace-concepts/why-do-i-need-an-environment-id/#create-user-generated-access-tokens
-
 ### Chart installation
 
-To install the Dynatrace Operator first create the dynatrace namespace, apply the latest CRD from [the latest release](https://github.com/Dynatrace/dynatrace-operator/releases/latest) and replace the APIUrl, the API token and the PaaS token in command and execute it
+To install the Dynatrace Operator first create the dynatrace namespace, apply the latest CRD from [the latest release](https://github.com/Dynatrace/dynatrace-operator/releases/latest) and execute it
 
 #### Kubernetes
 ```console
 kubectl create namespace dynatrace
 kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/dynatrace.com_dynakubes.yaml
-helm install dynatrace-operator dynatrace/dynatrace-operator -n dynatrace --set apiUrl="https://ENVIRONMENTID.live.dynatrace.com/api",apiToken="DYNATRACE_API_TOKEN",paasToken="PLATFORM_AS_A_SERVICE_TOKEN"
+helm install dynatrace-operator dynatrace/dynatrace-operator -n dynatrace
 ```
 
 #### OpenShift
 ```console
 oc adm new-project --node-selector="" dynatrace
 oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/dynatrace.com_dynakubes.yaml
-helm install dynatrace-operator dynatrace/dynatrace-operator -n dynatrace --set platform="openshift",apiUrl="https://ENVIRONMENTID.live.dynatrace.com/api",apiToken="DYNATRACE_API_TOKEN",paasToken="PLATFORM_AS_A_SERVICE_TOKEN"
+helm install dynatrace-operator dynatrace/dynatrace-operator -n dynatrace --set platform="openshift"
 ```
 
-This will automatically install the Dynatrace Operator, create a containerized ActiveGate and deploy classicFullStack OneAgents.
+This will automatically install the Dynatrace Operator.
 
 ## Update procedure
 

@@ -13,7 +13,7 @@ This script checks the following scenarios:
   - `CustomResource` with the given name exists (name overwrite-able via parameter)
   - API url ends on `/api`
   - Secret with the same name as `dynakube` (or `.spec.tokens` if used) exists
-  - Secret has `apiToken` and `paasToken` set
+  - Secret has `apiToken` set
   - Secret for `customPullSecret` exists if defined
 - Tenant
   - Tenant is reachable from the operator pod using the same options as the `dynatrace-operator` (proxy, certificate, ...)
