@@ -59,6 +59,10 @@ spec:
               value: "true"
             {{- end }}
           ports:
+            {{- if eq (.Values.platform) "openshift"}}
+            - containerPort: 8080
+              name: metrics
+            {{- end}}
             - containerPort: 10080
               name: server-port
           resources:
