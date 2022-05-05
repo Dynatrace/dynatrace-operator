@@ -18,7 +18,7 @@ base_image="dynatrace-operator"
 out_image="quay.io/dynatrace/dynatrace-operator:${TAG}"
 
 
-args="${go_build_args[@]}"
+args="${go_build_args[*]}"
 if [[ "${LOCALBUILD}" ]]; then
   export CGO_ENABLED=1
   export GOOS=linux

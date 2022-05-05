@@ -149,8 +149,6 @@ function checkDynakube {
     log "secret '${secret_name}' exists"
   fi
 
-  # check secret has required tokens
-  token_names="apiToken paasToken"
   # check token exists in secret
   api_token=$("${cli}" get secret "$secret_name" \
     --namespace "${selected_namespace}" \

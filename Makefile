@@ -50,10 +50,10 @@ test: generate-crd fmt vet manifests
 	source $(ENVTEST_ASSETS_DIR)/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
 
 helm-test:
-	cd config/helm && ./testing/test.sh
+	./hack/testing/helm/test.sh
 
 helm-lint:
-	cd config/helm && ./testing/lint.sh
+	./hack/testing/helm/lint.sh
 
 
 kuttl-install:
@@ -62,7 +62,7 @@ kuttl-install:
 kuttl-all: kuttl-activegate kuttl-oneagent
 
 kuttl-activegate:
-	kubectl kuttl test --config src/testing/kuttl/activegate/testsuite.yaml
+	kubectl kuttl test --config hack/testing/kuttl/activegate/testsuite.yaml
 
 kuttl-oneagent: deploy
 	kubectl -n dynatrace wait pod --for=condition=ready -l app.kubernetes.io/component=webhook

@@ -94,4 +94,4 @@ config/deploy/kustomization.yaml
 
 kubeconfig
 kind-logs-*
-src/testing/kuttl/activegate/logs/
+hack/testing/kuttl/activegate/logs/
