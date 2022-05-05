@@ -51,8 +51,6 @@ tests:
                       fieldRef:
                         fieldPath: metadata.name
                 ports:
-                  - containerPort: 8080
-                    name: metrics
                   - containerPort: 10080
                     name: server-port
                 resources:
@@ -188,8 +186,6 @@ tests:
                       fieldRef:
                         fieldPath: metadata.name
                 ports:
-                  - containerPort: 8080
-                    name: metrics
                   - containerPort: 10080
                     name: server-port
                 resources:
