@@ -6,7 +6,7 @@ metadata:
 spec:
   activeGate:
     capabilities:
-      - metrics-ingest
+      - dynatrace-api
 ---
 apiVersion: v1
 kind: Service
@@ -23,9 +23,9 @@ spec:
       protocol: TCP
       targetPort: http
   selector:
-    app.kubernetes.io/component: activegate
+    app.kubernetes.io/name: activegate
     app.kubernetes.io/created-by: dynakube
-    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/managed-by: dynatrace-operator
   sessionAffinity: None
   type: ClusterIP
 ---
@@ -50,7 +50,7 @@ spec:
   containers:
     - env:
         - name: DT_CAPABILITIES
-          value: metrics_ingest
+          value: restInterface
         - name: DT_ID_SEED_NAMESPACE
           value: dynatrace
         - name: DT_ID_SEED_K8S_CLUSTER_ID
@@ -101,6 +101,7 @@ spec:
       terminationMessagePolicy: File
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
+  hostname: dynakube-activegate-0
   imagePullSecrets:
     - name: dynakube-pull-secret
   preemptionPolicy: PreemptLowerPriority
@@ -156,7 +157,7 @@ spec:
       containers:
         - env:
             - name: DT_CAPABILITIES
-              value: metrics_ingest
+              value: restInterface
             - name: DT_ID_SEED_NAMESPACE
               value: dynatrace
             - name: DT_ID_SEED_K8S_CLUSTER_ID

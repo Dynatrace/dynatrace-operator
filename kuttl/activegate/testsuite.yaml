@@ -3,9 +3,9 @@ kind: TestSuite
 startKIND: true
 kindContext: e2e-ag
 namespace: dynatrace
-artifactsDir: hack/testing/kuttl/activegate/logs/
+artifactsDir: kuttl/activegate/logs/
 testDirs:
-  - hack/testing/kuttl/activegate/tests
+  - kuttl/activegate/tests
 parallel: 1
 timeout: 120
 reportFormat: json

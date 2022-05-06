@@ -23,9 +23,9 @@ spec:
       protocol: TCP
       targetPort: http
   selector:
-    app.kubernetes.io/component: activegate
+    app.kubernetes.io/name: activegate
     app.kubernetes.io/created-by: dynakube
-    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/managed-by: dynatrace-operator
   sessionAffinity: None
   type: ClusterIP
 ---

@@ -61,10 +61,10 @@ kuttl-install:
 kuttl-all: kuttl-activegate kuttl-oneagent
 
 kuttl-activegate: kuttl-check-mandatory-fields
-	kubectl kuttl test --config hack/testing/kuttl/activegate/testsuite.yaml
+	kubectl kuttl test --config kuttl/activegate/testsuite.yaml
 
 kuttl-oneagent: kuttl-check-mandatory-fields
-	kubectl kuttl test --config hack/testing/kuttl/oneagent/oneagent-test.yaml
+	kubectl kuttl test --config kuttl/oneagent/oneagent-test.yaml
 
 kuttl-check-mandatory-fields:
 	hack/do_env_variables_exist.sh "APIURL APITOKEN PAASTOKEN"

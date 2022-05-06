@@ -3,8 +3,8 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-  - command: ../../create-secrets.sh
-  - command: ../create-dynakube-base.sh
+  - command: ../../../hack/kuttl/create-secrets.sh
+  - command: ../../../hack/kuttl/oneagent/create-dynakube-base.sh
 ---
 apiVersion: v1
 kind: Namespace

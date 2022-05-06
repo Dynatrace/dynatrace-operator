@@ -6,7 +6,7 @@ metadata:
 spec:
   activeGate:
     capabilities:
-      - dynatrace-api
+      - routing
 ---
 apiVersion: v1
 kind: Service
@@ -23,9 +23,9 @@ spec:
       protocol: TCP
       targetPort: http
   selector:
-    app.kubernetes.io/component: activegate
+    app.kubernetes.io/name: activegate
     app.kubernetes.io/created-by: dynakube
-    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/managed-by: dynatrace-operator
   sessionAffinity: None
   type: ClusterIP
 ---
@@ -50,7 +50,7 @@ spec:
   containers:
     - env:
         - name: DT_CAPABILITIES
-          value: restInterface
+          value: MSGrouter
         - name: DT_ID_SEED_NAMESPACE
           value: dynatrace
         - name: DT_ID_SEED_K8S_CLUSTER_ID
@@ -157,7 +157,7 @@ spec:
       containers:
         - env:
             - name: DT_CAPABILITIES
-              value: restInterface
+              value: MSGrouter
             - name: DT_ID_SEED_NAMESPACE
               value: dynatrace
             - name: DT_ID_SEED_K8S_CLUSTER_ID
@@ -206,6 +206,11 @@ spec:
               type: RuntimeDefault
           terminationMessagePath: "/dev/termination-log"
           terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: "/var/lib/dynatrace/secrets/tokens/tenant-token"
+              name: ag-tenant-secret
+              readOnly: true
+              subPath: tenant-token
       dnsPolicy: ClusterFirst
       imagePullSecrets:
         - name: dynakube-pull-secret

@@ -1,13 +1,13 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 startKIND: true
-kindConfig: src/testing/kuttl/oneagent/kind.yaml
+kindConfig: kuttl/oneagent/kind.yaml
 skipDelete: false
 skipClusterDelete: false
 namespace: dynatrace
 parallel: 1
 testDirs:
-- hack/testing/kuttl/oneagent
+- kuttl/oneagent
 commands:
 # kuttl is smart enough to set the KUBECONFIG env variable for the created kind cluster
 # Therefore deploy references the correct cluster
