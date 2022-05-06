@@ -167,8 +167,6 @@ x-google-marketplace:
 
       ### Helm changes
 
-      * Brings helm up-to-speed by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/484
-
       * Makes apparmor setting more flexible in helm by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/612
 
       * added helm-0.5 release by @dt-team-kubernetes in https://github.com/Dynatrace/dynatrace-operator/pull/646
@@ -178,11 +176,6 @@ x-google-marketplace:
       * Add highavailability option for webhook via helm by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/713
 
       ### Component changes
-
-      * New data-ingest endpoint secret containing data-ingest URL and token mounted
-      to micrometer pods by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/322
-
-      * Additional dimensions for data ingest by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/291
 
       * Adds preview warning for metrics-ingest (+minor fixes) by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/445
 
@@ -256,14 +249,6 @@ x-google-marketplace:
       * Adds tlsSecretName to samples by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/437
 
       * Amended coding guidelines by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/490
-
-
-      ## New Contributors
-
-      * @chrkl made their first contribution in https://github.com/Dynatrace/dynatrace-operator/pull/410
-
-      * @fabwer made their first contribution in https://github.com/Dynatrace/dynatrace-operator/pull/423
-
 
       **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.0.1...v0.6.0'
     releaseTypes:
