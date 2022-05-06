@@ -15,16 +15,242 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 0.4.2
+  publishedVersion: 0.6.0
   publishedVersionMetadata:
-    releaseNote: >-
-      ## What's Changed
+    releaseNote: '<!-- Release notes generated using configuration in .github/release.yml
+      at v0.6.0 -->
+
+
+      ## What''s Changed
 
       ### Bugfixes
 
-      * Removes unnecessary scopes for API Token
-      * Remove dataingest environment variable from pod injection
+      * Update troubleshoot script with activegate version check by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/369
 
+      * Remove unused KeyValue pair to fix wrong logging by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/431
+
+      * Enables the monitoring of the operator''s namespace via feature-flag by @0sewa0
+      in https://github.com/Dynatrace/dynatrace-operator/pull/453
+
+      * Adds missing check for hostMonitoring for autoUpdate by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/479
+
+      * Update image default registry in sample comments by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/491
+
+      * Fixes daemonset deletion issue by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/505
+
+      * Moves the tls in the correct postion for oneagent daemonset by @0sewa0 in
+      https://github.com/Dynatrace/dynatrace-operator/pull/514
+
+      * Removes unnecessary scopes for API Token by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/548
+
+      * Adds support for single token in troubleshoot script by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/549
+
+      * Send Mark for termination event also, when node is not found in the cluster
+      anymore by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/553
+
+      * Change logging condition when ensuring agProxySecret is deleted by @luhi-DT
+      in https://github.com/Dynatrace/dynatrace-operator/pull/556
+
+      * Makes checking the statusCode safer for ProcessModuleConfig endpoint by @0sewa0
+      in https://github.com/Dynatrace/dynatrace-operator/pull/570
+
+      * Fix CSI driver daemonset by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/599
+
+      * Add openshift scc for operator and webhook by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/602
+
+      * Add validity check for certificates on webhook startup by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/592
+
+      * Update volume entry if exists by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/615
+
+      * Allows domainless tenant urls by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/617
+
+      * Fix phase field not updating by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/614
+
+      * Enables relevant ActiveGate service ports based on capability requirements
+      by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/622
+
+      * Fix nil panic introduced by installer rework by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/620
+
+      * Adapt Makefile to exclude CSI and add v1beta1 changes to CSV by @luhi-DT in
+      https://github.com/Dynatrace/dynatrace-operator/pull/633
+
+      * Fixes double insert to dynakube table by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/638
+
+      * Moves the version check in the correct volume publisher by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/648
+
+      * Webhook AppArmor annotation fixed by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/658
+
+      * Reverted kustomization.yaml accidental change by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/660
+
+      * ActiveGate webserver''s CA mounted properly in OneAgents pods by @mjgrzybek
+      in https://github.com/Dynatrace/dynatrace-operator/pull/661
+
+      * Simplifies the matchLabels for Oneagent daemonset by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/672
+
+      * Mark for termination Event was not sent correctly, because of wrong labels
+      on Daemonset by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/664
+
+      * Remove version from `matchLabels` in Helm and Activegate by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/683
+
+      * Add RW volume for AG tls certificate by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/722
+
+      * Fix check for empty high availability flag by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/747
+
+      * Fix automatic kubernetes api monitoring usage being skipped by @chrismuellner
+      in https://github.com/Dynatrace/dynatrace-operator/pull/750
+
+      * Fix activegate service not updating when labels mismatch by @chrismuellner
+      in https://github.com/Dynatrace/dynatrace-operator/pull/749
+
+      * Skip cache removal when file does not exist by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/754
+
+      * Add ClusterRoles for OLM activegate by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/759
+
+      * Replace the latest oneagent version endpoint to use the versions endpoint
+      by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/760
+
+      * Fixes the special arch filenames by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/763
+
+      ### Core changes
+
+      * Fix image version for CI build by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/532
+
+      * Fix branch check for master branch by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/536
+
+      * Adds security context to the operator/webhook by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/580
+
+      * Revert pre-generation of Kubernetes ME Id by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/613
+
+      * Removes admission.Errored responses from podmutator webhook by @0sewa0 in
+      https://github.com/Dynatrace/dynatrace-operator/pull/604
+
+      * Switch to distroless base image by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/596
+
+      * SecurityContext added to ActiveGate container by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/597
+
+      * Dynatrace containers livenessprobes switched from `/healthz` to `/livez` by
+      @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/641
+
+      * Adds detailed logs for the standalone init by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/619
+
+      * Removes "alpha." from the feature flags + adds deprecation warning for old
+      flags by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/611
+
+      * Only generate manifests for the selected platform by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/647
+
+      * Adds database overview to the logs of the csi driver on error and startup
+      by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/618
+
+      * Add `CODEOWNERS` file by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/667
+
+      * Reworked phase/status-field handling by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/609
+
+      * Update labels considered for release note generation by @chrismuellner in
+      https://github.com/Dynatrace/dynatrace-operator/pull/673
+
+      * Fix mock client for ARM architecture by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/668
+
+      * Add malformed response to log metadata in dtclient by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/685
+
+      * Prunes the makefile by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/678
+
+      * Fix lint github action by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/688
+
+      * Add kuttl tests for oneagent modes by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/610
+
+      * Refactor component feature and version labels by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/726
+
+      * Makes the deprecated feature-flag warning more precise by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/723
+
+      * Create symlink from filesystem instead of latest version on Dynakube by @chrismuellner
+      in https://github.com/Dynatrace/dynatrace-operator/pull/757
+
+      ### Helm changes
+
+      * Makes apparmor setting more flexible in helm by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/612
+
+      * added helm-0.5 release by @dt-team-kubernetes in https://github.com/Dynatrace/dynatrace-operator/pull/646
+
+      * Change crdApplied to required for google marketplace by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/559
+
+      * Add highavailability option for webhook via helm by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/713
+
+      ### Component changes
+
+      * Adds preview warning for metrics-ingest (+minor fixes) by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/445
+
+      * Adds dynakube feature flag to disable metadata enrichment by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/448
+
+      * Adds DNSPolicy to the ActiveGate section by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/458
+
+      * Adds token scope check for activeGate features by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/461
+
+      * Add statsd ingest by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/313
+
+      * Adds warning for missing memory limit for activeGate by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/538
+
+      * Separate statsd-ingest capability from metrics-ingest by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/539
+
+      * Exposes custom StatsD and EEC images in DynaKube ActiveGate spec by @toszr
+      in https://github.com/Dynatrace/dynatrace-operator/pull/546
+
+      * Adds Extension Controller/StatsD logs to the ActiveGate support archive by
+      @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/561
+
+      * Adds security context for EEC and StatsD containers (statsd-ingest) by @toszr
+      in https://github.com/Dynatrace/dynatrace-operator/pull/586
+
+      * Maps certain StatsD-related annotations to EEC/StatsD container resource requests
+      or limits by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/588
+
+      * Maps EEC/StatsD-related annotations to the EEC and data sources runtime properties
+      by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/582
+
+      * Raw ActiveGate image support by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/544
+
+      * Defines constants for environment variables in EEC/StatsD containers by @toszr
+      in https://github.com/Dynatrace/dynatrace-operator/pull/593
+
+      * Includes DT_STATSD_INGEST_URL in the endpoint.properties file injected to
+      pods by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/594
+
+      * Set terminationGracePeriod for oneagent pods by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/595
+
+      * Remove preview warning from CSI driver by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/603
+
+      * Removes statsd-ingest dependency on metrics-ingest by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/600
+
+      * Multiple osagents on the same node by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/608
+
+      * Added opt-in feature flag AnnotationFeatureEnableActivegateRawImage by @mjgrzybek
+      in https://github.com/Dynatrace/dynatrace-operator/pull/616
+
+      * ActiveGate pods support setting PriorityClass by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/637
+
+      * Added TopologySpreadConstraints support to ActiveGate spec by @mjgrzybek in
+      https://github.com/Dynatrace/dynatrace-operator/pull/652
+
+      * Remove dataingest environment variable from pod injection by @chrismuellner
+      in https://github.com/Dynatrace/dynatrace-operator/pull/666
+
+      * `AnnotationFeatureDisableActivegateRawImage` defaults to `false` by @mjgrzybek
+      in https://github.com/Dynatrace/dynatrace-operator/pull/669
+
+      ### Documentation changes
+
+      * Create config file to use Github release notes by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/331
+
+      * Rename mentions of beta to preview by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/367
+
+      * Change File endings of samples by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/389
+
+      * Remove Url from multipleDynakubes samples by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/419
+
+      * Adds tlsSecretName to samples by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/437
+
+      * Amended coding guidelines by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/490
+
+      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.0.1...v0.6.0'
     releaseTypes:
     - Feature
     recommended: true
@@ -149,7 +375,8 @@ properties:
       type: MASKED_FIELD
   crdApplied:
     type: string
-    description: Make sure you have applied the latest CRD by following the instructions in the Github Repository.
+    description: Make sure you have applied the latest CRD by following the instructions
+      in the Github Repository.
     title: CRD manually applied
     required: true
     enum:
