@@ -5,6 +5,9 @@ env:
 
 on:
   push:
+    branches:
+      - master
+      - release-*
   pull_request:
     branches:
       - "*"
