@@ -1,3 +1,5 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: 120
+# Do not delete.
+# Required to override the default timeout for this test step.
