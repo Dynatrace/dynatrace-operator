@@ -20,7 +20,7 @@ entries:
     - https://github.com/Dynatrace/dynatrace-operator
     type: application
     urls:
-    - https://raw.githubusercontent.com/Dynatrace/dynatrace-operator/master/config/helm/repos/stable/dynatrace-operator-0.6.0.tgz
+    - https://github.com/Dynatrace/dynatrace-operator/releases/download/v0.6.0/dynatrace-operator-0.6.0.tgz
     version: 0.6.0
   - apiVersion: v2
     appVersion: 0.5.0
