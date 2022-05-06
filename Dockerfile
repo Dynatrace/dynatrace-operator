@@ -3,7 +3,7 @@ FROM golang:1.18-alpine AS operator-build
 RUN apk update --no-cache && \
     apk add --no-cache gcc musl-dev btrfs-progs-dev lvm2-dev device-mapper-static gpgme-dev git && \
     rm -rf /var/cache/apk/*
-
+ 
 ARG GO_BUILD_ARGS
 COPY . /app
 WORKDIR /app
