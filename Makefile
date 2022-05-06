@@ -50,10 +50,10 @@ test: generate-crd fmt vet manifests
 	source $(ENVTEST_ASSETS_DIR)/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
 
 helm-test:
-	./hack/testing/helm/test.sh
+	./hack/helm/test.sh
 
 helm-lint:
-	./hack/testing/helm/lint.sh
+	./hack/helm/lint.sh
 
 kuttl-install:
 	hack/e2e/install-kuttl.sh
