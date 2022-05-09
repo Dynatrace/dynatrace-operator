@@ -20,8 +20,6 @@ our [official help page](https://www.dynatrace.com/support/help/setup-and-config
 
 ## Supported platforms
 
-Depending on the version of the Dynatrace Operator, it supports the following platforms:
-
 | Dynatrace Operator version | Kubernetes | OpenShift Container Platform |
 |----------------------------|------------|------------------------------|
 | v0.6.0                     | 1.22-1.24  | 4.8-4.10                     |
