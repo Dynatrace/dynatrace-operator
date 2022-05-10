@@ -1,0 +1,12 @@
+# Creates dynakube without any mode set
+# Creates namespace
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: ../../../hack/kuttl/create-secrets.sh
+  - command: ../../../hack/kuttl/oneagent/create-dynakube-base.sh
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: already-present-host-monitoring
