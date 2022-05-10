@@ -1,6 +1,6 @@
-SHELL = bash
+SHELL ?= bash
 
-OLM = false
+OLM ?= false
 
 # Current Operator version
 VERSION ?= 0.0.1
@@ -9,8 +9,8 @@ PLATFORM ?= openshift
 # Default bundle image tag
 BUNDLE_IMG ?= controller-bundle:$(VERSION)
 
-MASTER_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot
-BRANCH_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
+MASTER_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot
+BRANCH_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
 OLM_IMAGE ?= registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
 
 # Options for 'bundle-build'
@@ -199,37 +199,6 @@ lint: fmt vet
 generate-crd: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/bases
 
-# find or download controller-gen
-# download controller-gen if necessary
-controller-gen:
-ifeq (, $(shell which controller-gen))
-	@{ \
-	set -e ;\
-	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$CONTROLLER_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0 ;\
-	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-	}
-CONTROLLER_GEN=$(GOBIN)/controller-gen
-else
-CONTROLLER_GEN=$(shell which controller-gen)
-endif
-
-kustomize:
-ifeq (, $(shell which kustomize))
-	@{ \
-	set -e ;\
-	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
-	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
-	}
-KUSTOMIZE=$(GOBIN)/kustomize
-else
-KUSTOMIZE=$(shell which kustomize)
-endif
 
 SERVICE_ACCOUNTS=--extra-service-accounts dynatrace-dynakube-oneagent
 SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-dynakube-oneagent-unprivileged
