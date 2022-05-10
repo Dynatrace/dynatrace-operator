@@ -1,5 +1,3 @@
-**Note: Requires Dynatrace Cluster version 1.209**
-
 # Dynatrace Operator
 
 The Dynatrace Operator supports rollout and lifecycle management of various Dynatrace components in Kubernetes and OpenShift.
@@ -20,16 +18,11 @@ our [official help page](https://www.dynatrace.com/support/help/setup-and-config
 
 ## Supported platforms
 
-Depending on the version of the Dynatrace Operator, it supports the following platforms:
-
 | Dynatrace Operator version | Kubernetes | OpenShift Container Platform |
 |----------------------------|------------|------------------------------|
-| master                     | 1.21+      | 4.7+                         |
-| v0.5.0                     | 1.21+      | 4.7+                         |
-| v0.4.0                     | 1.21+      | 4.7+                         |
-| v0.3.0                     | 1.20+      | 4.7+                         |
-| v0.2.2                     | 1.18+      | 3.11.188+, 4.5+              |
-| v0.1.0                     | 1.18+      | 3.11.188+, 4.4+              |
+| v0.6.0                     | 1.22-1.24  | 4.8-4.10                     |
+| v0.5.1                     | 1.21-1.23  | 4.7-4.9                      |
+| v0.2.2                     | -          | 3.11.188                     |
 
 ## Quick Start
 

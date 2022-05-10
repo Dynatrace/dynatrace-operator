@@ -6,7 +6,8 @@ env:
 on:
   push:
     branches:
-      - "*"
+      - master
+      - release-*
   pull_request:
     branches:
       - "*"
@@ -92,11 +93,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
         with:
           platforms: amd64
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
       - name: Set up Golang
         uses: actions/setup-go@v2
         with:
