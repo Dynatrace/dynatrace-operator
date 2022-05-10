@@ -2,13 +2,7 @@
 
 set -eu
 
-build_date="$(date -u +"%Y-%m-%d %H:%M:%S+00:00")"
-go_build_args=(
-  "-ldflags=-X 'github.com/Dynatrace/dynatrace-operator/src/version.Version=${TAG}'"
-  "-X 'github.com/Dynatrace/dynatrace-operator/src/version.Commit=${COMMIT}'"
-  "-X 'github.com/Dynatrace/dynatrace-operator/src/version.BuildDate=${build_date}'"
-  "-s -w"
-)
+go_build_args=$(hack/github_actions.sh createGoBuildArgs "${TAG}" "${commit}")
 
 if [[ "${GCR:-}" == "true" ]]; then
   echo "$GCLOUD_SERVICE_KEY" | base64 -d | docker login -u _json_key --password-stdin https://gcr.io
@@ -17,11 +11,10 @@ fi
 
 base_image="dynatrace-operator"
 
-args=${go_build_args[@]}
 if [[ -z "${LABEL:-}" ]]; then
-  docker build . -f ./Dockerfile -t "$base_image" --build-arg "GO_BUILD_ARGS=$args"
+  docker build . -f ./Dockerfile -t "$base_image" --build-arg "GO_BUILD_ARGS=$go_build_args"
 else
-  docker build . -f ./Dockerfile -t "$base_image" --build-arg "GO_BUILD_ARGS=$args" --label "$LABEL"
+  docker build . -f ./Dockerfile -t "$base_image" --build-arg "GO_BUILD_ARGS=$go_build_args" --label "$LABEL"
 fi
 
 failed=false

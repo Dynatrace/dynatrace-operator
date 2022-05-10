@@ -47,7 +47,6 @@ jobs:
         run: |
           make helm-lint
 
-
   tests:
     name: Run unit tests
     runs-on: ubuntu-latest
@@ -61,13 +60,11 @@ jobs:
       - name: Download dependencies
         id: depdownload
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libdevmapper-dev libbtrfs-dev libgpgme-dev
+          hack/github_actions.sh installCGODependencies
       - name: Run Unit tests
         id: unittest
         run: |
-          chmod +x ./build/test.sh
-          ./build/test.sh
+          make test
 
   linting:
     name: Run linting
@@ -78,8 +75,7 @@ jobs:
       - name: Download dependencies
         id: depdownload
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libdevmapper-dev libbtrfs-dev libgpgme-dev
+          hack/github_actions.sh installCGODependencies
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
@@ -114,59 +110,22 @@ jobs:
             ${{ runner.os }}-go-build-
       - name: Prepare
         id: prep
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            VERSION="snapshot-$(echo ${GITHUB_HEAD_REF} | sed 's#[^a-zA-Z0-9_-]#-#g')"
-          else
-            if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-              VERSION="${GITHUB_REF_NAME}"
-            elif [[ "${GITHUB_REF_NAME}" == "master" ]]; then
-              VERSION="snapshot"
-            else
-              VERSION="snapshot-$(echo ${GITHUB_REF_NAME} | sed 's#[^a-zA-Z0-9_-]#-#g')"
-            fi
-          fi
-
-          LABELS=""
-          if [[ "${GITHUB_REF_TYPE}" != "tag" ]] && [[ ! "${GITHUB_REF_NAME}" =~ ^release-* ]]; then
-            LABELS="quay.expires-after=10d"
-          fi
-
-          build_date="$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")"
-          go_build_args=(
-            "-ldflags=-X 'github.com/Dynatrace/dynatrace-operator/src/version.Version=${VERSION}'"
-            "-X 'github.com/Dynatrace/dynatrace-operator/src/version.Commit=${GITHUB_SHA}'"
-            "-X 'github.com/Dynatrace/dynatrace-operator/src/version.BuildDate=${build_date}'"
-            "-s -w"
-          )
-
-          # Set output parameters.
-          echo ::set-output name=goargs::"${go_build_args[@]}"
-
-          echo ::set-output name=labels::${LABELS}
-          echo ::set-output name=version::${VERSION}
-
-          # Get licenses if no cache exists
-          if ! [ -d ./third_party_licenses ]; then
-            go get github.com/google/go-licenses && go-licenses save ./... --save_path third_party_licenses --force
-          fi
-
-          # Get dependencies
-          go get -d ./...
-          ls -la $HOME/go/pkg/mod
-          cp -r $HOME/go/pkg/mod .
+          hack/github_actions.sh prepareVariablesAndDependencies
       - name: Build amd64
         uses: docker/build-push-action@v2
         with:
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
-            GO_BUILD_ARGS=${{ steps.prep.outputs.goargs }}
+            GO_BUILD_ARGS=${{ steps.prep.outputs.go_build_args }}
           context: .
           file: ./Dockerfile
           platforms: linux/amd64
           push: false
-          tags: operator-amd64:${{ steps.prep.outputs.version }}
-          labels: ${{ steps.prep.outputs.labels }}
+          tags: operator-amd64:${{ steps.prep.outputs.docker_image_tag }}
+          labels: ${{ steps.prep.outputs.docker_image_labels }}
           outputs: type=docker,dest=/tmp/operator-amd64.tar
       - name: Build arm64
         uses: docker/build-push-action@v2
@@ -174,13 +133,13 @@ jobs:
         with:
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
-            GO_BUILD_ARGS=${{ steps.prep.outputs.goargs }}
+            GO_BUILD_ARGS=${{ steps.prep.outputs.go_build_args }}
           context: .
           file: ./Dockerfile
           platforms: linux/arm64
           push: false
-          tags: operator-arm64:${{ steps.prep.outputs.version }}
-          labels: ${{ steps.prep.outputs.labels }}
+          tags: operator-arm64:${{ steps.prep.outputs.docker_image_tag }}
+          labels: ${{ steps.prep.outputs.docker_image_labels }}
           outputs: type=docker,dest=/tmp/operator-arm64.tar
       - name: Upload artifact
         uses: actions/upload-artifact@v2
@@ -189,8 +148,7 @@ jobs:
           path: /tmp/operator*.tar
           retention-days: 1
     outputs:
-      labels: ${{ steps.prep.outputs.labels }}
-      version: ${{ steps.prep.outputs.version }}
+      docker_image_tag: ${{ steps.prep.outputs.docker_image_tag }}
 
   uploaddockerimage:
     name: Upload docker image to quay
@@ -216,22 +174,8 @@ jobs:
       - name: Upload image to Quay
         env:
           # reuse variables defined during build job
-          LABELS: ${{ needs.builddockerimage.outputs.labels }}
-          TAG: ${{ needs.builddockerimage.outputs.version }}
+          TAG: ${{ needs.builddockerimage.outputs.docker_image_tag }}
         run: |
           docker load --input /tmp/operator-amd64.tar
 
-          if [[ -f "/tmp/operator-arm64.tar" ]]; then
-            echo "we build for arm too => combine images"
-            docker load --input /tmp/operator-arm64.tar
-            docker tag operator-arm64:${TAG} ${IMAGE_QUAY}:${TAG}-arm64
-            docker tag operator-amd64:${TAG} ${IMAGE_QUAY}:${TAG}-amd64
-            docker push ${IMAGE_QUAY}:${TAG}-arm64
-            docker push ${IMAGE_QUAY}:${TAG}-amd64
-
-            docker manifest create ${IMAGE_QUAY}:${TAG} ${IMAGE_QUAY}:${TAG}-arm64 ${IMAGE_QUAY}:${TAG}-amd64
-            docker manifest push ${IMAGE_QUAY}:${TAG}
-          else
-            docker tag operator-amd64:${TAG} ${IMAGE_QUAY}:${TAG}
-            docker push ${IMAGE_QUAY}:${TAG}
-          fi
+          hack/github_actions.sh uploadDockerImage $TAG
