@@ -140,8 +140,9 @@ manifests-crd: generate-crd controller-gen kustomize
 		--set autoCreateSecret=false \
 		--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_OTHERS_YAML)"
 
-	sed -i "/app.kubernetes.io\/managed-by/d" "$(KUBERNETES_OTHERS_YAML)" 
-	sed -i "/helm.sh/d" "$(KUBERNETES_OTHERS_YAML)" 
+	grep -v 'app.kubernetes.io/managed-by' "$(KUBERNETES_OTHERS_YAML)"  > config/deploy/kubernetes/tmp.yaml
+	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(KUBERNETES_OTHERS_YAML)"
+	rm config/deploy/kubernetes/tmp.yaml
 
 	$(KUSTOMIZE) build config/crd | cat - "$(KUBERNETES_OTHERS_YAML)" > "$(KUBERNETES_CRD_YAML)"
 
@@ -156,8 +157,9 @@ manifests-k8s-csidriver:
 		--set autoCreateSecret=false \
 		--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_CSIDRIVER_YAML)"
 
-	sed -i "/app.kubernetes.io\/managed-by/d" "$(KUBERNETES_CSIDRIVER_YAML)" 
-	sed -i "/helm.sh/d" "$(KUBERNETES_CSIDRIVER_YAML)" 
+	grep -v 'app.kubernetes.io/managed-by' "$(KUBERNETES_CSIDRIVER_YAML)"  > config/deploy/kubernetes/tmp.yaml
+	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(KUBERNETES_CSIDRIVER_YAML)"
+	rm config/deploy/kubernetes/tmp.yaml
 
 manifests-ocp: manifests-ocp-crd manifests-ocp-csidriver
 	cp "$(OPENSHIFT_CRD_YAML)" "$(OPENSHIFT_OLM_YAML)"
@@ -177,8 +179,9 @@ manifests-ocp-crd: generate-crd controller-gen kustomize
 		--set createSecurityContextConstraints="true" \
 		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_OTHERS_YAML)"
 
-	sed -i "/app.kubernetes.io\/managed-by/d" "$(OPENSHIFT_OTHERS_YAML)"
-	sed -i "/helm.sh/d" "$(OPENSHIFT_OTHERS_YAML)" 
+	grep -v 'app.kubernetes.io/managed-by' "$(OPENSHIFT_OTHERS_YAML)"  > config/deploy/kubernetes/tmp.yaml
+	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(OPENSHIFT_OTHERS_YAML)"
+	rm config/deploy/kubernetes/tmp.yaml
 
 	$(KUSTOMIZE) build config/crd | cat - "$(OPENSHIFT_OTHERS_YAML)" > "$(OPENSHIFT_CRD_YAML)"
 
@@ -194,9 +197,10 @@ manifests-ocp-csidriver:
 		--set createSecurityContextConstraints="true" \
 		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_CSIDRIVER_YAML)"
 
-	sed -i "/app.kubernetes.io\/managed-by/d" "$(OPENSHIFT_CSIDRIVER_YAML)" 
-	sed -i "/helm.sh/d" "$(OPENSHIFT_CSIDRIVER_YAML)" 
-
+	grep -v 'app.kubernetes.io/managed-by' "$(OPENSHIFT_CSIDRIVER_YAML)"  > config/deploy/kubernetes/tmp.yaml
+	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(OPENSHIFT_CSIDRIVER_YAML)"
+	rm config/deploy/kubernetes/tmp.yaml
+	
 
 # Run go fmt against code
 fmt:
