@@ -123,11 +123,11 @@ push-tagged-image: push-image
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: manifests-k8s manifests-ocp
 
-manifests-k8s: manifests-k8s-crd manifests-k8s-csidriver
+manifests-k8s: manifests-crd manifests-k8s-csidriver
 	cp "$(KUBERNETES_CRD_YAML)" "$(KUBERNETES_OLM_YAML)"
 	cat "$(KUBERNETES_CRD_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
 
-manifests-k8s-crd: generate-crd controller-gen kustomize
+manifests-crd: generate-crd controller-gen kustomize
 	# Create directories for manifests if they do not exist
 	mkdir -p config/deploy/kubernetes
 
@@ -158,7 +158,6 @@ manifests-k8s-csidriver:
 
 	sed -i "/app.kubernetes.io\/managed-by/d" "$(KUBERNETES_CSIDRIVER_YAML)" 
 	sed -i "/helm.sh/d" "$(KUBERNETES_CSIDRIVER_YAML)" 
-
 
 manifests-ocp: manifests-ocp-crd manifests-ocp-csidriver
 	cp "$(OPENSHIFT_CRD_YAML)" "$(OPENSHIFT_OLM_YAML)"
