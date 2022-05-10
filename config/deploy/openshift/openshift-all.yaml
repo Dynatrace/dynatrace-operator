@@ -4129,8 +4129,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: DEPLOYED_VIA_OLM
-              value: "true"
           ports:
             - containerPort: 10080
               name: server-port
@@ -4264,8 +4262,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: DEPLOYED_VIA_OLM
-              value: "true"
           readinessProbe:
             httpGet:
               path: /livez
