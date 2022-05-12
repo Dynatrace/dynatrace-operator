@@ -11,23 +11,23 @@ func TestOf(t *testing.T) {
 		assert.True(t, *Of(true))
 		assert.False(t, *Of(false))
 
-		const definitelyYes = true
-		assert.True(t, *Of(definitelyYes))
+		const constantBool = true
+		assert.True(t, *Of(constantBool))
 
-		probablyYes := true
-		assert.True(t, *Of(probablyYes))
+		mutableBool := true
+		assert.True(t, *Of(mutableBool))
 
-		probablyYes = false
-		assert.False(t, *Of(probablyYes))
+		mutableBool = false
+		assert.False(t, *Of(mutableBool))
 	})
 
 	t.Run("int64", func(t *testing.T) {
 		assert.Equal(t, 23, *Of(23))
 
-		const twentySeven = 27
-		assert.Equal(t, 27, *Of(twentySeven))
+		const constantInt = 27
+		assert.Equal(t, 27, *Of(constantInt))
 
-		roughlyThree := int64(4)
-		assert.Equal(t, int64(4), *Of(roughlyThree))
+		mutableInt := int64(4)
+		assert.Equal(t, int64(4), *Of(mutableInt))
 	})
 }
