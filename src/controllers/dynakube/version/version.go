@@ -9,6 +9,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/status"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -120,7 +121,7 @@ func updateImageVersion(
 	}
 
 	if !allowDowngrades && target.Version != "" {
-		if upgrade, err := NeedsUpgradeRaw(target.Version, ver.Version); err != nil {
+		if upgrade, err := version.NeedsUpgradeRaw(target.Version, ver.Version); err != nil {
 			return err
 		} else if !upgrade {
 			return nil

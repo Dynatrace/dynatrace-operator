@@ -47,7 +47,7 @@ ENV OPERATOR=dynatrace-operator \
     USER_NAME=dynatrace-operator
 
 COPY LICENSE /licenses/
-COPY build/bin /usr/local/bin
+COPY hack/build/bin /usr/local/bin
 
 COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.0 /csi-node-driver-registrar /usr/local/bin
 COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.6.0 /livenessprobe /usr/local/bin

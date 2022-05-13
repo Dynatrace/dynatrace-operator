@@ -6,7 +6,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -138,13 +138,13 @@ func (statsd *Statsd) buildEnvs() []corev1.EnvVar {
 
 func (statsd *Statsd) buildSecurityContext() *corev1.SecurityContext {
 	return &corev1.SecurityContext{
-		Privileged:               address_of.Bool(false),
-		AllowPrivilegeEscalation: address_of.Bool(false),
-		ReadOnlyRootFilesystem:   address_of.Bool(true),
+		Privileged:               address.Of(false),
+		AllowPrivilegeEscalation: address.Of(false),
+		ReadOnlyRootFilesystem:   address.Of(true),
 
-		RunAsNonRoot: address_of.Bool(true),
-		RunAsUser:    address_of.Int64(kubeobjects.UnprivilegedUser),
-		RunAsGroup:   address_of.Int64(kubeobjects.UnprivilegedGroup),
+		RunAsNonRoot: address.Of(true),
+		RunAsUser:    address.Of(kubeobjects.UnprivilegedUser),
+		RunAsGroup:   address.Of(kubeobjects.UnprivilegedGroup),
 
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{

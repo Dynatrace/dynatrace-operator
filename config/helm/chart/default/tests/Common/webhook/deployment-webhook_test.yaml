@@ -83,10 +83,6 @@ tests:
                     port: server-port
                     scheme: HTTPS
                 ports:
-                  - name: metrics
-                    containerPort: 8383
-                  - name: validation
-                    containerPort: 8384
                   - name: server-port
                     containerPort: 8443
                 resources:
@@ -109,15 +105,6 @@ tests:
                   capabilities:
                     drop: ["all"]
             serviceAccountName: dynatrace-webhook
-
-  - it: should have imagePullSecrets defined in spec
-    set:
-      operator:
-        customPullSecret: pull-secret
-    asserts:
-      - equal:
-          path: spec.template.spec.imagePullSecrets[0].name
-          value: pull-secret
 
   - it: should not have imagePullSecrets defined in spec
     asserts:
@@ -201,10 +188,6 @@ tests:
                     port: server-port
                     scheme: HTTPS
                 ports:
-                  - name: metrics
-                    containerPort: 8383
-                  - name: validation
-                    containerPort: 8384
                   - name: server-port
                     containerPort: 8443
                 resources:

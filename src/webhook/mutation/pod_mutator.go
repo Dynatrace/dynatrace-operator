@@ -12,12 +12,12 @@ import (
 	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
-	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/src/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
@@ -465,7 +465,7 @@ func (m *podMutator) getBasicData(pod *corev1.Pod) (
 	failurePolicy string,
 	image string,
 ) {
-	flavor = kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFlavor, dtclient.FlavorMultidistro)
+	flavor = kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFlavor, arch.FlavorMultidistro)
 	technologies = url.QueryEscape(kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationTechnologies, "all"))
 	installPath = kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 	installerURL = kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallerUrl, "")

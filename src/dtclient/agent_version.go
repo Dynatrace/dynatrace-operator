@@ -1,34 +1,45 @@
 package dtclient
 
 import (
-	"encoding/json"
 	"io"
 
+	"github.com/Dynatrace/dynatrace-operator/src/arch"
+	"github.com/Dynatrace/dynatrace-operator/src/version"
 	"github.com/pkg/errors"
 )
 
 // GetLatestAgentVersion gets the latest agent version for the given OS and installer type.
 func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {
-	if len(os) == 0 || len(installerType) == 0 {
-		return "", errors.New("os or installerType is empty")
+	var flavor string
+	// Default installer type has no "multidistro" flavor
+	// so the default flavor is always needed in that case
+	if installerType == InstallerTypeDefault {
+		flavor = arch.FlavorDefault
+	} else {
+		flavor = arch.Flavor
 	}
-
-	url := dtc.getLatestAgentVersionUrl(os, installerType)
-	resp, err := dtc.makeRequest(url, dynatracePaaSToken)
+	versions, err := dtc.GetAgentVersions(os, installerType, flavor, arch.Arch)
 	if err != nil {
 		return "", err
 	}
-	defer func() {
-		//Swallow error, nothing has to be done at this point
-		_ = resp.Body.Close()
-	}()
+	if len(versions) == 0 {
+		return "", errors.New("no agent versions found")
+	}
 
-	responseData, err := dtc.getServerResponseData(resp)
+	latestVersion, err := version.ExtractSemanticVersion(versions[0])
 	if err != nil {
 		return "", err
 	}
-
-	return dtc.readResponseForLatestVersion(responseData)
+	for _, rawVersion := range versions[1:] {
+		versionInfo, err := version.ExtractSemanticVersion(rawVersion)
+		if err != nil {
+			return "", err
+		}
+		if version.CompareSemanticVersions(versionInfo, latestVersion) > 0 {
+			latestVersion = versionInfo
+		}
+	}
+	return latestVersion.String(), nil
 }
 
 func (dtc *dynatraceClient) GetEntityIDForIP(ip string) (string, error) {
@@ -45,27 +56,6 @@ func (dtc *dynatraceClient) GetEntityIDForIP(ip string) (string, error) {
 	}
 
 	return hostInfo.entityID, nil
-}
-
-// readLatestVersion reads the agent version from the given server response reader.
-func (dtc *dynatraceClient) readResponseForLatestVersion(response []byte) (string, error) {
-	type jsonResponse struct {
-		LatestAgentVersion string
-	}
-
-	jr := &jsonResponse{}
-	err := json.Unmarshal(response, jr)
-	if err != nil {
-		log.Error(err, "error unmarshalling latest agent version response", "response", string(response))
-		return "", err
-	}
-
-	v := jr.LatestAgentVersion
-	if len(v) == 0 {
-		return "", errors.New("agent version not set")
-	}
-
-	return v, nil
 }
 
 // GetLatestAgent gets the latest agent package for the given OS and installer type.

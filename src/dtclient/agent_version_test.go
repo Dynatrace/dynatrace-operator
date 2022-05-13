@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -50,36 +51,6 @@ const (
 	versionedAgentResponse = `zip-content-1.2.3`
 	versionsResponse       = `{ "availableVersions": [ "1.123.1", "1.123.2", "1.123.3", "1.123.4" ] }`
 )
-
-func TestResponseForLatestVersion(t *testing.T) {
-	dc := &dynatraceClient{}
-	readFromString := func(json string) (string, error) {
-		r := []byte(json)
-		return dc.readResponseForLatestVersion(r)
-	}
-
-	{
-		m, err := readFromString(`{"latestAgentVersion": "17"}`)
-		if assert.NoError(t, err) {
-			assert.Equal(t, "17", m)
-		}
-	}
-	{
-		m, err := readFromString(`{"latestAgentVersion": "179.786.861", "extraParam" : "tobeignored"}`)
-		if assert.NoError(t, err) {
-			assert.Equal(t, "179.786.861", m)
-		}
-	}
-	{
-		_, err := readFromString("")
-		assert.Error(t, err, "empty response")
-	}
-	{
-		_, err := readFromString(`{"wrong_json": ["shouldnotbeparsed"]}`)
-		assert.Error(t, err, "invalid data")
-	}
-
-}
 
 func TestGetEntityIDForIP(t *testing.T) {
 	dynatraceServer, _ := createTestDynatraceClient(t, &ipHandler{}, "")
@@ -162,10 +133,10 @@ func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client)
 		assert.Error(t, err, "empty installer type")
 	}
 	{
-		latestAgentVersion, err := dynatraceClient.GetLatestAgentVersion(OsUnix, InstallerTypeDefault)
+		latestAgentVersion, err := dynatraceClient.GetLatestAgentVersion(OsUnix, InstallerTypePaaS)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "17", latestAgentVersion, "latest agent version equals expected version")
+		assert.Equal(t, "1.242.0.20220429-180918", latestAgentVersion, "latest agent version equals expected version")
 	}
 }
 
@@ -186,7 +157,7 @@ func TestGetLatestAgent(t *testing.T) {
 		file, err := afero.TempFile(fs, "client", "installer")
 		require.NoError(t, err)
 
-		err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, FlavorMultidistro, "arch", nil, file)
+		err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, "arch", nil, file)
 		require.NoError(t, err)
 
 		resp, err := afero.ReadFile(fs, file.Name())
@@ -198,7 +169,7 @@ func TestGetLatestAgent(t *testing.T) {
 		file, err := afero.TempFile(fs, "client", "installer")
 		require.NoError(t, err)
 
-		err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, FlavorMultidistro, "invalid", nil, file)
+		err = dtc.GetLatestAgent(OsUnix, InstallerTypePaaS, arch.FlavorMultidistro, "invalid", nil, file)
 		require.Error(t, err)
 	})
 }
@@ -341,7 +312,19 @@ func handleLatestAgentVersion(request *http.Request, writer http.ResponseWriter)
 	switch request.Method {
 	case "GET":
 		writer.WriteHeader(http.StatusOK)
-		out, _ := json.Marshal(map[string]string{"latestAgentVersion": "17"})
+		out, _ := json.Marshal(
+			map[string][]string{
+				"availableVersions": {
+					"1.241.6.20220422-072953",
+					"1.241.0.20220421-185631",
+					"1.241.15.20220425-161457",
+					"1.242.0.20220429-180918",
+					"1.239.0.20220324-225902",
+					"1.240.0.20220407-234527",
+					"1.242.0.20220429-165750",
+				},
+			},
+		)
 		_, _ = writer.Write(out)
 	default:
 		writeError(writer, http.StatusMethodNotAllowed)

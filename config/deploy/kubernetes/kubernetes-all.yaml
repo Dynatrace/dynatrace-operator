@@ -3,6 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
+  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -3966,8 +3967,6 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
           ports:
-            - containerPort: 8080
-              name: metrics
             - containerPort: 10080
               name: server-port
           resources:
@@ -4106,10 +4105,6 @@ spec:
               port: server-port
               scheme: HTTPS
           ports:
-            - name: metrics
-              containerPort: 8383
-            - name: validation
-              containerPort: 8384
             - name: server-port
               containerPort: 8443
           resources:

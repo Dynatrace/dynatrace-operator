@@ -1,0 +1,19 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+startKIND: true
+kindConfig: kuttl/oneagent/kind.yaml
+skipDelete: false
+skipClusterDelete: false
+namespace: dynatrace
+parallel: 1
+testDirs:
+- kuttl/oneagent
+commands:
+# kuttl is smart enough to set the KUBECONFIG env variable for the created kind cluster
+# Therefore deploy references the correct cluster
+- command: make deploy
+  timeout: 120
+- command: kubectl -n dynatrace wait pod --for=condition=ready -l app.kubernetes.io/component=webhook --timeout=200s
+  timeout: 200
+- command: kubectl -n dynatrace wait pod --for=condition=ready -l app.kubernetes.io/component=operator --timeout=200s
+  timeout: 200
