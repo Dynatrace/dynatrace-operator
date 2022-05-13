@@ -1,0 +1,26 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+#startKIND: true
+namespace: dynatrace
+artifactsDir: kuttl/activegate/logs/
+crdDir: config/crd/bases
+manifestDirs:
+  - kuttl/activegate/manifests/dynatrace-namespace.yaml
+  - config/deploy/kubernetes/kubernetes.yaml # csi not needed
+testDirs:
+  - kuttl/activegate/tests
+parallel: 1
+timeout: 120
+reportFormat: json
+
+## Debug
+# usage:
+# $ k delete --force --grace-period=0 ns dynatrace; kuttl test --config hack/testing/kuttl/activegate/testsuite-debug.yaml
+skipClusterDelete: true
+skipDelete: true
+startKIND: false
+kindNodeCache: true
+kindContext: e2e
+kindContainers:
+  - quay.io/dynatrace/dynatrace-operator:snapshot
+  - acc27517.dev.dynatracelabs.com/linux/activegate:latest

@@ -1,0 +1,10 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: ../../../../hack/kuttl/activegate/wait-for.sh deployment app.kubernetes.io/component=operator condition=available
+    timeout: 300
+  - command: ../../../../hack/kuttl/activegate/wait-for.sh deployment app.kubernetes.io/component=webhook condition=available
+    timeout: 300
+  - command: ../../../../hack/kuttl/create-secrets.sh
+  - command: ../../../../hack/kuttl/activegate/create-dynakube-base.sh
+timeout: 120

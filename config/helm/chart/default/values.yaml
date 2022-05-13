@@ -15,25 +15,6 @@
 # may be set to "kubernetes", "openshift", "google"
 platform: "kubernetes"
 
-### base properties
-
-name: "dynakube"
-apiUrl: ""
-customPullSecret: ""
-skipCertCheck: false
-proxy: ""
-trustedCAs: ""
-networkZone: ""
-enableIstio: false
-
-# Only works for applicationMonitoring and cloudNativeFullStack
-namespaceSelector: {}
-
-autoCreateSecret: true
-apiToken: ""
-paasToken: ""
-dataIngestToken: ""
-
 operator:
   image: ""
   customPullSecret: ""
@@ -58,7 +39,8 @@ webhook:
     memory: 128Mi
   highAvailability: false
 
-csi:
+csidriver:
+  enabled: false
   requests:
     cpu: 300m
     memory: 100Mi
@@ -66,107 +48,8 @@ csi:
     cpu: 300m
     memory: 100Mi
 
-createSecurityContextConstraints: true # Only applicable for Openshift
-
-### module properties
-
-classicFullStack:
-  enabled: false
-  image: ""
-  version: ""
-  nodeSelector: {}
-  tolerations: []
-  oneAgentResources: {}
-  args: []
-  env: []
-  autoUpdate: true
-  priorityClassName: ""
-  dnsPolicy: ""
-  labels: {}
-
-cloudNativeFullStack:
-  enabled: false
-  image: ""
-  version: ""
-  initResources: {}
-  nodeSelector: {}
-  tolerations: []
-  oneAgentResources: {}
-  args: []
-  env: []
-  autoUpdate: true
-  priorityClassName: ""
-  dnsPolicy: ""
-  labels: {}
-  disableReadOnly: false
-
-applicationMonitoring:
-  enabled: false
-  image: ""
-  version: ""
-  useCSIDriver: false
-  initResources: {}
-
-hostMonitoring:
-  enabled: false
-  image: ""
-  version: ""
-  nodeSelector: ""
-  tolerations: []
-  oneAgentResources: {}
-  args: []
-  env: []
-  autoUpdate: true
-  priorityClassName: ""
-  dnsPolicy: ""
-  labels: {}
-  disableReadOnly: false
-
-
+securityContextConstraints:
+  enabled: true # Only applicable for Openshift
+  
 activeGate:
-  capabilities: []
-  image: ""
-  replicas: 1
-  group: ""
-  customProperties:
-    value: ""
-    valueFrom: ""
-  resources: {}
-  nodeSelector: {}
-  tolerations: []
-  labels: {}
-  env: []
-  tlsSecretName: ""
-  priorityClassName: ""
-  apparmor: false
   readOnlyFs: false
-
-# deprecated
-kubernetesMonitoring:
-  enabled: false
-  image: ""
-  replicas: 1
-  group: ""
-  customProperties:
-    value: ""
-    valueFrom: ""
-  resources: {}
-  nodeSelector: {}
-  tolerations: []
-  labels: {}
-  env: []
-
-# deprecated
-routing:
-  enabled: false
-  image: ""
-  replicas: 1
-  group: ""
-  customProperties:
-    value: ""
-    valueFrom: ""
-  resources: {}
-  nodeSelector: {}
-  tolerations: []
-  labels: {}
-  env: []

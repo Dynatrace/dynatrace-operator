@@ -7,11 +7,10 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: should be built correctly with applicationMonitoring enabled
+  - it: should be built correctly with CSI enabled
     set:
       operator.image: image-name
-      applicationMonitoring.enabled: true
-      applicationMonitoring.useCSIDriver: true
+      csidriver.enabled: true
     asserts:
       - isAPIVersion:
           of: rbac.authorization.k8s.io/v1

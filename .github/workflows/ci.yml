@@ -6,7 +6,8 @@ env:
 on:
   push:
     branches:
-      - "*"
+      - master
+      - release-*
   pull_request:
     branches:
       - "*"
@@ -25,7 +26,7 @@ jobs:
       - name: Download dependencies
         id: helm-unittest-download
         run: |
-          helm plugin install https://github.com/quintush/helm-unittest --version 0.2.6
+          helm plugin install https://github.com/quintush/helm-unittest --version 0.2.8
       - name: Run Unit tests
         id: helm-unittest
         run: |
@@ -40,7 +41,7 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v1
         with:
-          version: v3.7.1
+          version: v3.8.2
       - name: Run Linting
         id: helm-linting
         run: |
@@ -65,8 +66,8 @@ jobs:
       - name: Run Unit tests
         id: unittest
         run: |
-          chmod +x ./build/test.sh
-          ./build/test.sh
+          chmod +x ./hack/build/test.sh
+          ./hack/build/test.sh
 
   linting:
     name: Run linting
@@ -92,11 +93,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
         with:
           platforms: amd64
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
       - name: Set up Golang
         uses: actions/setup-go@v2
         with:
@@ -196,7 +197,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name != 'pull_request' ||
-      github.pull_request.head.repo.fork == false
+      !github.event.pull_request.head.repo.fork
     needs: [tests, linting, builddockerimage]
     env:
       IMAGE_QUAY: quay.io/dynatrace/dynatrace-operator

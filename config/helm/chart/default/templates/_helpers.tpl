@@ -118,44 +118,16 @@ Check if default image is used
 {{- end -}}
 {{- end -}}
 
-{{/*
-Check if only 1 oneagent mode is used.
-*/}}
-{{- define "dynatrace-operator.modeSet" -}}
-	{{- $modes := list .Values.cloudNativeFullStack .Values.classicFullStack .Values.hostMonitoring .Values.applicationMonitoring -}}
-	{{- $enabled := dict -}}
-		{{- range $index, $mode := $modes -}}
-			{{- if $mode -}}
-			{{- if $mode.enabled -}}
-				{{- $_ := set $enabled ($index|toString) ($mode|toString) -}}
-			{{- end -}}
-			{{- end -}}
-		{{- end -}}
-		{{- if (lt (len (keys $enabled)) 2 ) -}}
-			{{- "set" -}}
-		{{- end -}}
-{{- end -}}
-
 
 {{/*
 Check if we need the csi driver.
 */}}
 {{- define "dynatrace-operator.needCSI" -}}
-	{{- if eq (include "dynatrace-operator.partial" .) "csi" -}}
+	{{- if or (.Values.csidriver.enabled) (eq (include "dynatrace-operator.partial" .) "csi") -}}
 		{{- printf "true" -}}
 	{{- end -}}
-	{{- if eq (include "dynatrace-operator.partial" .) "false" -}}
-		{{- if (.Values.cloudNativeFullStack).enabled -}}
-			{{- printf "true" -}}
-		{{- end -}}
-		{{- if and (.Values.applicationMonitoring).enabled (.Values.applicationMonitoring).useCSIDriver -}}
-			{{- printf "true" -}}
-		{{- end -}}
-		{{- if and (.Values.hostMonitoring).enabled (not (.Values.hostMonitoring).disableReadOnly) -}}
-			{{- printf "true" -}}
-		{{- end -}}
-	{{- end -}}
 {{- end -}}
+
 
 {{/*
 Check if we are generating only a part of the yamls
@@ -166,27 +138,6 @@ Check if we are generating only a part of the yamls
 	{{- else -}}
 	    {{- printf "false" -}}
 	{{- end -}}
-{{- end -}}
-
-
-{{/*
-Check if the old and new activeGate sections are used at the same time.
-*/}}
-{{- define "dynatrace-operator.activeGateModeSet" -}}
-    {{- $enabled := dict -}}
-	{{- if .Values.activeGate }}
-	{{- if .Values.activeGate.capabilities }}
-	{{- if ge (len .Values.activeGate.capabilities) 1 }}
-		{{- $_ := set $enabled "new" "true" -}}
-	{{- end -}}
-	{{- end -}}
-	{{- end -}}
-	{{- if or .Values.kubernetesMonitoring.enabled .Values.routing.enabled }}
-		{{- $_ := set $enabled "old" "true" -}}
-	{{- end -}}
-	{{- if (lt (len (keys $enabled)) 2 ) -}}
-			{{- "set" -}}
-		{{- end -}}
 {{- end -}}
 
 
