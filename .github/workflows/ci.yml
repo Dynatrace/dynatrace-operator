@@ -61,10 +61,11 @@ jobs:
         id: depdownload
         run: |
           hack/github_actions.sh installCGODependencies
+          hack/github_actions.sh installKubebuilderIfNotExists
       - name: Run Unit tests
         id: unittest
         run: |
-          make test
+          go test -cover -tags integration,containers_image_storage_stub ./...
 
   linting:
     name: Run linting
