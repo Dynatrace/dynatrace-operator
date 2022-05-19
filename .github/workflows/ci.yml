@@ -86,33 +86,11 @@ jobs:
           version: v1.45.2
           args: --build-tags integration,containers_image_storage_stub --timeout 300s
 
-  builddockerimage:
-    name: Build docker image
+  preparing:
+    name: Prepare labels, version and goargs
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-        with:
-          platforms: amd64
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Set up Golang
-        uses: actions/setup-go@v2
-        with:
-          go-version: ${{ env.GO_VERSION }}
-      - name: Setup cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-            ./third_party_licenses
-          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-build-
-      - name: Prepare
+      - name: prepare
         id: prep
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
@@ -145,60 +123,83 @@ jobs:
 
           echo ::set-output name=labels::${LABELS}
           echo ::set-output name=version::${VERSION}
-
-          # Get licenses if no cache exists
-          if ! [ -d ./third_party_licenses ]; then
-            go get github.com/google/go-licenses && go-licenses save ./... --save_path third_party_licenses --force
-          fi
-
-          # Get dependencies
-          go get -d ./...
-          ls -la $HOME/go/pkg/mod
-          cp -r $HOME/go/pkg/mod .
-      - name: Build amd64
-        uses: docker/build-push-action@v2
-        with:
-          builder: ${{ steps.buildx.outputs.name }}
-          build-args: |
-            GO_BUILD_ARGS=${{ steps.prep.outputs.goargs }}
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64
-          push: false
-          tags: operator-amd64:${{ steps.prep.outputs.version }}
-          labels: ${{ steps.prep.outputs.labels }}
-          outputs: type=docker,dest=/tmp/operator-amd64.tar
-      - name: Build arm64
-        uses: docker/build-push-action@v2
-        if: ${{ contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-') }}
-        with:
-          builder: ${{ steps.buildx.outputs.name }}
-          build-args: |
-            GO_BUILD_ARGS=${{ steps.prep.outputs.goargs }}
-          context: .
-          file: ./Dockerfile
-          platforms: linux/arm64
-          push: false
-          tags: operator-arm64:${{ steps.prep.outputs.version }}
-          labels: ${{ steps.prep.outputs.labels }}
-          outputs: type=docker,dest=/tmp/operator-arm64.tar
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: operator
-          path: /tmp/operator*.tar
-          retention-days: 1
     outputs:
       labels: ${{ steps.prep.outputs.labels }}
       version: ${{ steps.prep.outputs.version }}
+      goargs: ${{ steps.prep.outputs.goargs }}
 
-  uploaddockerimage:
-    name: Upload docker image to quay
+  prepare_go_version:
+    name: workaround for GO_VERSION env variable
     runs-on: ubuntu-latest
+    steps:
+      - name: prepare
+        id: prep
+        run: |
+          goversion="${{ env.GO_VERSION }}"
+
+          # Set output parameters.
+          echo ::set-output name=goversion::${goversion}
+    outputs:
+      goversion: ${{ steps.prep.outputs.goversion }}
+
+  buildamd64:
+    name: Build amd64 image
+    needs: [preparing,prepare_go_version]
+    uses: ./.github/workflows/builddockerimage.yml
+    with:
+      platform: amd64
+      goversion: ${{ needs.prepare_go_version.outputs.goversion }}
+      goargs: ${{ needs.preparing.outputs.goargs }}
+      labels: ${{ needs.preparing.outputs.labels }}
+      version: ${{ needs.preparing.outputs.version }}
+
+  buildarm64:
+    name: Build arm64 image
+    needs: [preparing,prepare_go_version]
+    uses: ./.github/workflows/builddockerimage.yml
+    if: ${{ contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-') }}
+    with:
+      platform: arm64
+      goversion: ${{ needs.prepare_go_version.outputs.goversion }}
+      goargs: ${{ needs.preparing.outputs.goargs }}
+      labels: ${{ needs.preparing.outputs.labels }}
+      version: ${{ needs.preparing.outputs.version }}
+
+  uploadamd64:
+    name: Upload amd64 image
+    needs: [tests,linting,preparing,buildamd64]
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork }}
+    uses: ./.github/workflows/uploaddockerimage.yml
+    with:
+      platform: amd64
+      labels: ${{ needs.preparing.outputs.labels }}
+      version: ${{ needs.preparing.outputs.version }}
+      registry: quay.io
+    secrets:
+      docker_repo_username: ${{ secrets.QUAY_USERNAME }}
+      docker_repo_password: ${{ secrets.QUAY_PASSWORD }}
+
+  uploadarm64:
+    name: Upload arm64 image
+    needs: [tests,linting,preparing,buildarm64]
     if: |
-      github.event_name != 'pull_request' ||
-      !github.event.pull_request.head.repo.fork
-    needs: [tests, linting, builddockerimage]
+      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
+      (contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-'))
+    uses: ./.github/workflows/uploaddockerimage.yml
+    with:
+      platform: arm64
+      labels: ${{ needs.preparing.outputs.labels }}
+      version: ${{ needs.preparing.outputs.version }}
+      registry: quay.io
+    secrets:
+      docker_repo_username: ${{ secrets.QUAY_USERNAME }}
+      docker_repo_password: ${{ secrets.QUAY_PASSWORD }}
+
+  create_docker_manifest:
+    name: Combine images
+    needs: [preparing,uploadamd64,uploadarm64]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork }}
     env:
       IMAGE_QUAY: quay.io/dynatrace/dynatrace-operator
     steps:
@@ -208,30 +209,14 @@ jobs:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-      - name: Download artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: operator
-          path: /tmp
-      - name: Upload image to Quay
-        env:
-          # reuse variables defined during build job
-          LABELS: ${{ needs.builddockerimage.outputs.labels }}
-          TAG: ${{ needs.builddockerimage.outputs.version }}
+      - name: Create manifest
         run: |
-          docker load --input /tmp/operator-amd64.tar
+            if [[ "${GITHUB_REF_NAME}" == "master" ]] || [[ "${GITHUB_REF_NAME}" =~ ^release-* ]]; then
+              echo "we build for arm too => combine images"
+              docker manifest create ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }} ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }}-arm64 ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }}-amd64
+            else
+              echo "we build for amd only"
+              docker manifest create ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }} ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }}-amd64
+            fi
+            docker manifest push ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }}
 
-          if [[ -f "/tmp/operator-arm64.tar" ]]; then
-            echo "we build for arm too => combine images"
-            docker load --input /tmp/operator-arm64.tar
-            docker tag operator-arm64:${TAG} ${IMAGE_QUAY}:${TAG}-arm64
-            docker tag operator-amd64:${TAG} ${IMAGE_QUAY}:${TAG}-amd64
-            docker push ${IMAGE_QUAY}:${TAG}-arm64
-            docker push ${IMAGE_QUAY}:${TAG}-amd64
-
-            docker manifest create ${IMAGE_QUAY}:${TAG} ${IMAGE_QUAY}:${TAG}-arm64 ${IMAGE_QUAY}:${TAG}-amd64
-            docker manifest push ${IMAGE_QUAY}:${TAG}
-          else
-            docker tag operator-amd64:${TAG} ${IMAGE_QUAY}:${TAG}
-            docker push ${IMAGE_QUAY}:${TAG}
-          fi
