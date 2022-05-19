@@ -2,6 +2,7 @@ name: CI
 
 env:
   GO_VERSION: "^1.18"
+  REGISTRY: "quay.io"
 
 on:
   push:
@@ -128,23 +129,26 @@ jobs:
       version: ${{ steps.prep.outputs.version }}
       goargs: ${{ steps.prep.outputs.goargs }}
 
-  prepare_go_version:
-    name: workaround for GO_VERSION env variable
+  prepare_properties:
+    name: create properties based on env variables
     runs-on: ubuntu-latest
     steps:
       - name: prepare
         id: prep
         run: |
           goversion="${{ env.GO_VERSION }}"
+          registry="${{ env.REGISTRY }}"
 
           # Set output parameters.
           echo ::set-output name=goversion::${goversion}
+          echo ::set-output name=registry::${registry}
     outputs:
       goversion: ${{ steps.prep.outputs.goversion }}
+      registry: ${{ steps.prep.outputs.registry }}
 
   buildamd64:
-    name: Build amd64 image
-    needs: [preparing,prepare_go_version]
+    name: Build amd64 docker image
+    needs: [preparing,prepare_properties]
     uses: ./.github/workflows/builddockerimage.yml
     with:
       platform: amd64
@@ -154,10 +158,10 @@ jobs:
       version: ${{ needs.preparing.outputs.version }}
 
   buildarm64:
-    name: Build arm64 image
-    needs: [preparing,prepare_go_version]
+    name: Build arm64 docker image
+    needs: [preparing,prepare_properties]
     uses: ./.github/workflows/builddockerimage.yml
-    if: ${{ contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-') }}
+    if: ${{ contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-') }}
     with:
       platform: arm64
       goversion: ${{ needs.prepare_go_version.outputs.goversion }}
@@ -167,56 +171,75 @@ jobs:
 
   uploadamd64:
     name: Upload amd64 image
-    needs: [tests,linting,preparing,buildamd64]
+    needs: [tests,linting,preparing,prepare_properties,buildamd64]
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork }}
     uses: ./.github/workflows/uploaddockerimage.yml
     with:
       platform: amd64
       labels: ${{ needs.preparing.outputs.labels }}
       version: ${{ needs.preparing.outputs.version }}
-      registry: quay.io
+      registry: ${{ needs.prepare_properties.outputs.registry }}
     secrets:
       docker_repo_username: ${{ secrets.QUAY_USERNAME }}
       docker_repo_password: ${{ secrets.QUAY_PASSWORD }}
 
   uploadarm64:
     name: Upload arm64 image
-    needs: [tests,linting,preparing,buildarm64]
+    needs: [tests,linting,preparing,prepare_properties,buildarm64]
     if: |
       (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
-      (contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-'))
+      (contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-'))
     uses: ./.github/workflows/uploaddockerimage.yml
     with:
       platform: arm64
       labels: ${{ needs.preparing.outputs.labels }}
       version: ${{ needs.preparing.outputs.version }}
-      registry: quay.io
+      registry: ${{ needs.prepare_properties.outputs.registry }}
     secrets:
       docker_repo_username: ${{ secrets.QUAY_USERNAME }}
       docker_repo_password: ${{ secrets.QUAY_PASSWORD }}
 
-  create_docker_manifest:
+  create_manifest_for_combined_images:
     name: Combine images
-    needs: [preparing,uploadamd64,uploadarm64]
+    needs: [preparing,prepare_properties,uploadamd64,uploadarm64]
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork }}
+    if: |
+      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
+      (contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-'))
     env:
-      IMAGE_QUAY: quay.io/dynatrace/dynatrace-operator
+      IMAGE_QUAY: ${{ needs.prepare_properties.outputs.registry }}/dynatrace/dynatrace-operator
     steps:
       - name: Login to Quay
         uses: docker/login-action@v1
         with:
-          registry: quay.io
+          registry: ${{ needs.prepare_properties.outputs.registry }}
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
       - name: Create manifest
         run: |
-            if [[ "${GITHUB_REF_NAME}" == "master" ]] || [[ "${GITHUB_REF_NAME}" =~ ^release-* ]]; then
-              echo "we build for arm too => combine images"
-              docker manifest create ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }} ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }}-arm64 ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }}-amd64
-            else
-              echo "we build for amd only"
-              docker manifest create ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }} ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }}-amd64
-            fi
-            docker manifest push ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }}
+          echo "we build for arm too => combine images"
+          docker manifest create ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }} ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }}-arm64 ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }}-amd64
+          docker manifest push ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }}
+
+  create_manifest_for_amd:
+    name: Create manifest
+    needs: [preparing,prepare_properties,uploadamd64]
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
+      ! (contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-'))
+    env:
+      IMAGE_QUAY: ${{ needs.prepare_properties.outputs.registry }}/dynatrace/dynatrace-operator
+    steps:
+      - name: Login to Quay
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ needs.prepare_properties.outputs.registry }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Create manifest
+        run: |
+          echo "we build for amd only"
+          docker manifest create ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }} ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }}-amd64
+          docker manifest push ${IMAGE_QUAY}:${{ needs.preparing.outputs.version }}
 
