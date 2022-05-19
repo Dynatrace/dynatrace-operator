@@ -7,7 +7,7 @@ if [[ ! "${TAG}" ]]; then
 fi
 
 commit=$(git rev-parse HEAD)
-go_build_args=$(hack/github_actions.sh createGoBuildArgs "${TAG}" "${commit}")
+go_build_args=$(hack/build/ci/prepare_variables_and_download_go_build_deps.sh createGoBuildArgs "${TAG}" "${commit}")
 base_image="dynatrace-operator"
 out_image="quay.io/dynatrace/dynatrace-operator:${TAG}"
 

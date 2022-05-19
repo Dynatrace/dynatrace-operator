@@ -60,8 +60,8 @@ jobs:
       - name: Download dependencies
         id: depdownload
         run: |
-          hack/github_actions.sh installCGODependencies
-          hack/github_actions.sh installKubebuilderIfNotExists
+          hack/build/ci/install_go_test_dependencies.sh installCGODependencies
+          hack/build/ci/install_go_test_dependencies.sh installKubebuilderIfNotExists
       - name: Run Unit tests
         id: unittest
         run: |
@@ -76,7 +76,7 @@ jobs:
       - name: Download dependencies
         id: depdownload
         run: |
-          hack/github_actions.sh installCGODependencies
+          hack/build/ci/install_go_test_dependencies.sh installCGODependencies
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
@@ -114,7 +114,7 @@ jobs:
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
-          hack/github_actions.sh prepareVariablesAndDependencies
+          hack/build/ci/prepare_variables_and_download_go_build_deps.sh
       - name: Build amd64
         uses: docker/build-push-action@v2
         with:
@@ -179,4 +179,4 @@ jobs:
         run: |
           docker load --input /tmp/operator-amd64.tar
 
-          hack/github_actions.sh uploadDockerImage $TAG
+          hack/build/ci/push_docker_image.sh $TAG
