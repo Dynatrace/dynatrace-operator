@@ -765,7 +765,7 @@ func setInitialConnectRetryIfMissing(c *corev1.Container, dynaKube *dynatracev1b
 	}
 
 	for _, v := range c.Env {
-		if v.Name == initialConnectRetryEnvVarName{
+		if v.Name == initialConnectRetryEnvVarName {
 			return
 		}
 	}
