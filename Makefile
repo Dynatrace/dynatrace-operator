@@ -13,14 +13,15 @@ MASTER_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot
 BRANCH_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
 OLM_IMAGE ?= registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
 
+# "OTHERS" = ClusterRole, ClusterRoleBinding, Deployment, MutatingWebhookConfiguration, Role, RoleBinding, Service, ServiceAccount, ValidatingWebhookConfiguration
 KUBERNETES_OTHERS_YAML=config/deploy/kubernetes/kubernetes-others.yaml
-KUBERNETES_CRD_YAML=config/deploy/kubernetes/kubernetes-crd.yaml
+KUBERNETES_CRD_AND_OTHERS_YAML=config/deploy/kubernetes/kubernetes.yaml
 KUBERNETES_CSIDRIVER_YAML=config/deploy/kubernetes/kubernetes-csidriver.yaml
 KUBERNETES_OLM_YAML=config/deploy/kubernetes/kubernetes-olm.yaml
 KUBERNETES_ALL_YAML=config/deploy/kubernetes/kubernetes-all.yaml
 
 OPENSHIFT_OTHERS_YAML=config/deploy/openshift/openshift-others.yaml
-OPENSHIFT_CRD_YAML=config/deploy/openshift/openshift-crd.yaml
+OPENSHIFT_CRD_AND_OTHERS_YAML=config/deploy/openshift/openshift.yaml
 OPENSHIFT_CSIDRIVER_YAML=config/deploy/openshift/openshift-csidriver.yaml
 OPENSHIFT_OLM_YAML=config/deploy/openshift/openshift-olm.yaml
 OPENSHIFT_ALL_YAML=config/deploy/openshift/openshift-all.yaml
@@ -124,14 +125,14 @@ push-tagged-image: push-image
 manifests: manifests-k8s manifests-ocp
 
 manifests-k8s: manifests-crd manifests-k8s-csidriver
-	cp "$(KUBERNETES_CRD_YAML)" "$(KUBERNETES_OLM_YAML)"
-	cat "$(KUBERNETES_CRD_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
+	cp "$(KUBERNETES_CRD_AND_OTHERS_YAML)" "$(KUBERNETES_OLM_YAML)"
+	cat "$(KUBERNETES_CRD_AND_OTHERS_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
 
 manifests-crd: generate-crd controller-gen kustomize
 	# Create directories for manifests if they do not exist
 	mkdir -p config/deploy/kubernetes
 
-	# Generate kubernetes-crd.yaml
+	# Generate kubernetes.yaml
 	helm template dynatrace-operator config/helm/chart/default \
 		--namespace dynatrace \
 		--set platform="kubernetes" \
@@ -144,7 +145,7 @@ manifests-crd: generate-crd controller-gen kustomize
 	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(KUBERNETES_OTHERS_YAML)"
 	rm config/deploy/kubernetes/tmp.yaml
 
-	$(KUSTOMIZE) build config/crd | cat - "$(KUBERNETES_OTHERS_YAML)" > "$(KUBERNETES_CRD_YAML)"
+	$(KUSTOMIZE) build config/crd | cat - "$(KUBERNETES_OTHERS_YAML)" > "$(KUBERNETES_CRD_AND_OTHERS_YAML)"
 
 manifests-k8s-csidriver:
 	# Generate kubernetes-csidriver.yaml
@@ -162,8 +163,8 @@ manifests-k8s-csidriver:
 	rm config/deploy/kubernetes/tmp.yaml
 
 manifests-ocp: manifests-ocp-crd manifests-ocp-csidriver
-	cp "$(OPENSHIFT_CRD_YAML)" "$(OPENSHIFT_OLM_YAML)"
-	cat "$(OPENSHIFT_CRD_YAML)" "$(OPENSHIFT_CSIDRIVER_YAML)" > "$(OPENSHIFT_ALL_YAML)"
+	cp "$(OPENSHIFT_CRD_AND_OTHERS_YAML)" "$(OPENSHIFT_OLM_YAML)"
+	cat "$(OPENSHIFT_CRD_AND_OTHERS_YAML)" "$(OPENSHIFT_CSIDRIVER_YAML)" > "$(OPENSHIFT_ALL_YAML)"
 
 manifests-ocp-crd: generate-crd controller-gen kustomize
 	# Create directories for manifests if they do not exist
@@ -183,7 +184,7 @@ manifests-ocp-crd: generate-crd controller-gen kustomize
 	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(OPENSHIFT_OTHERS_YAML)"
 	rm config/deploy/kubernetes/tmp.yaml
 
-	$(KUSTOMIZE) build config/crd | cat - "$(OPENSHIFT_OTHERS_YAML)" > "$(OPENSHIFT_CRD_YAML)"
+	$(KUSTOMIZE) build config/crd | cat - "$(OPENSHIFT_OTHERS_YAML)" > "$(OPENSHIFT_CRD_AND_OTHERS_YAML)"
 
 manifests-ocp-csidriver:
 	# Generate openshift-csi.yaml
