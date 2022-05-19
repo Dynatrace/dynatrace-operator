@@ -167,6 +167,8 @@ jobs:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Download artifact
         uses: actions/download-artifact@v2
         with:
