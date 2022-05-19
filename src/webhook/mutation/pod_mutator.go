@@ -693,6 +693,7 @@ func updateContainerOneAgent(c *corev1.Container, dk *dynatracev1beta1.DynaKube,
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 
 	addMetadataIfMissing(c, deploymentMetadata)
+	setInitialConnectRetryIfMissing(c, dk)
 
 	c.VolumeMounts = append(c.VolumeMounts,
 		corev1.VolumeMount{
@@ -751,11 +752,28 @@ func addMetadataIfMissing(c *corev1.Container, deploymentMetadata *deploymentmet
 			return
 		}
 	}
-
 	c.Env = append(c.Env,
 		corev1.EnvVar{
 			Name:  dynatraceMetadataEnvVarName,
 			Value: deploymentMetadata.AsString(),
+		})
+}
+
+func setInitialConnectRetryIfMissing(c *corev1.Container, dynaKube *dynatracev1beta1.DynaKube) {
+	if dynaKube.FeatureAgentInitialConnectRetry() < 0 {
+		return
+	}
+
+	for _, v := range c.Env {
+		if v.Name == initialConnectRetryEnvVarName{
+			return
+		}
+	}
+
+	c.Env = append(c.Env,
+		corev1.EnvVar{
+			Name:  initialConnectRetryEnvVarName,
+			Value: strconv.Itoa(dynaKube.FeatureAgentInitialConnectRetry()),
 		})
 }
 
