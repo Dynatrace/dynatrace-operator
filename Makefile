@@ -13,6 +13,8 @@ MASTER_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot
 BRANCH_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
 OLM_IMAGE ?= registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
 
+DYNATRACE_OPERATOR_CRD_YAML=config/deploy/kubernetes/dynatrace-operator-crd.yaml
+
 # "OTHERS" = ClusterRole, ClusterRoleBinding, Deployment, MutatingWebhookConfiguration, Role, RoleBinding, Service, ServiceAccount, ValidatingWebhookConfiguration
 KUBERNETES_OTHERS_YAML=config/deploy/kubernetes/kubernetes-others.yaml
 KUBERNETES_CRD_AND_OTHERS_YAML=config/deploy/kubernetes/kubernetes.yaml
@@ -145,7 +147,8 @@ manifests-crd: generate-crd controller-gen kustomize
 	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(KUBERNETES_OTHERS_YAML)"
 	rm config/deploy/kubernetes/tmp.yaml
 
-	$(KUSTOMIZE) build config/crd | cat - "$(KUBERNETES_OTHERS_YAML)" > "$(KUBERNETES_CRD_AND_OTHERS_YAML)"
+	$(KUSTOMIZE) build config/crd > "$(DYNATRACE_OPERATOR_CRD_YAML)"
+	cat "$(DYNATRACE_OPERATOR_CRD_YAML)" "$(KUBERNETES_OTHERS_YAML)" > "$(KUBERNETES_CRD_AND_OTHERS_YAML)"
 
 manifests-k8s-csidriver:
 	# Generate kubernetes-csidriver.yaml

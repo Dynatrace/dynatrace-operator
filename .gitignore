@@ -91,6 +91,7 @@ config/deploy/openshift/openshift.yaml
 config/deploy/openshift/openshift-csidriver.yaml
 config/deploy/openshift/openshift-others.yaml
 config/deploy/openshift/openshift-olm.yaml
+config/deploy/kubernetes/dynatrace-operator-crd.yaml
 
 
 .vscode
