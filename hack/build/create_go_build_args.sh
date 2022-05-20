@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ -z "$2" ]
+then
+  echo "Usage: $0 <version> <commit_hash>"
+  exit 1
+fi
+
 version=$1
 commit=$2
 

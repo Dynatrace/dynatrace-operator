@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# aka: version
 createDockerImageTag() {
   if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
     echo "snapshot-$(echo "${GITHUB_HEAD_REF}" | sed 's#[^a-zA-Z0-9_-]#-#g')"
@@ -15,7 +14,6 @@ createDockerImageTag() {
   fi
 }
 
-# aka: label
 createDockerImageLabels() {
   if [[ "${GITHUB_REF_TYPE}" != "tag" ]] && [[ ! "${GITHUB_REF_NAME}" =~ ^release-* ]]; then
     echo "quay.expires-after=10d"
@@ -32,7 +30,7 @@ prepareVariablesAndDependencies() {
   # prepare variables
   docker_image_tag=$(createDockerImageTag)
   docker_image_labels=$(createDockerImageLabels)
-  go_build_args=$(hack/build/ci/create_go_build_args.sh "${docker_image_tag}" "${GITHUB_SHA}")
+  go_build_args=$(hack/build/create_go_build_args.sh "${docker_image_tag}" "${GITHUB_SHA}")
   setBuildRelatedVariables
 
   # get licenses if no cache exists

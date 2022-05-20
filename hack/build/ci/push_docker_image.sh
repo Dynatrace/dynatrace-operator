@@ -1,6 +1,13 @@
 #!/bin/bash
 
+if [ -z "$2" ]
+then
+  echo "Usage: $0 <tag> <external image name>"
+  exit 1
+fi
+
 TAG=$1
+IMAGE_QUAY=$2
 
 if [[ -f "/tmp/operator-arm64.tar" ]]; then
   echo "we build for arm too => combine images"

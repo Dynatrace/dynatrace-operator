@@ -111,8 +111,6 @@ jobs:
             ${{ runner.os }}-go-build-
       - name: Prepare
         id: prep
-        env:
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
           hack/build/ci/prepare_variables_and_download_go_build_deps.sh
       - name: Build amd64
@@ -181,4 +179,4 @@ jobs:
         run: |
           docker load --input /tmp/operator-amd64.tar
 
-          hack/build/ci/push_docker_image.sh $TAG
+          hack/build/ci/push_docker_image.sh "$TAG" "$IMAGE_QUAY"
