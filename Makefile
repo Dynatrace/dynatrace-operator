@@ -159,12 +159,9 @@ create-crd-for-helm: generate-crd
 	$(KUSTOMIZE) build config/crd > $(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)
 
 	# Create input for for helm
-	echo '{{- $$platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google" (include "dynatrace-operator.platformSet" .))}}' > "$(HELM_TEMPLATES_DIR)/$(HELM_CRD_DIR)/$(DYNATRACE_OPERATOR_CRD_YAML)"
-	echo '{{ if eq (include "dynatrace-operator.partial" .) "false" }}' 			>> "$(HELM_TEMPLATES_DIR)/$(HELM_CRD_DIR)/$(DYNATRACE_OPERATOR_CRD_YAML)"
-	echo '' 																		>> "$(HELM_TEMPLATES_DIR)/$(HELM_CRD_DIR)/$(DYNATRACE_OPERATOR_CRD_YAML)"
-	cat  $(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)					>> "$(HELM_TEMPLATES_DIR)/$(HELM_CRD_DIR)/$(DYNATRACE_OPERATOR_CRD_YAML)"
-	echo '' 																		>> "$(HELM_TEMPLATES_DIR)/$(HELM_CRD_DIR)/$(DYNATRACE_OPERATOR_CRD_YAML)"
-	echo '  {{- end -}}' 															>> "$(HELM_TEMPLATES_DIR)/$(HELM_CRD_DIR)/$(DYNATRACE_OPERATOR_CRD_YAML)"
+	./hack/build/create-default-yaml-for-helm.sh \
+ 		"$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)" \
+ 		"$(HELM_TEMPLATES_DIR)/$(HELM_CRD_DIR)/$(DYNATRACE_OPERATOR_CRD_YAML)"
 
 
 manifests-k8s-csidriver:
