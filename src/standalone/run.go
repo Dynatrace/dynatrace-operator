@@ -57,32 +57,32 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 	}, nil
 }
 
-func (runner *Runner) Run() error {
+func (runner *Runner) Run() (resultedError error) {
 	log.Info("standalone agent init started")
-	var err error
-	defer runner.consumeErrorIfNecessary(&err)
+	defer runner.consumeErrorIfNecessary(&resultedError)
 
-	if err = runner.setHostTenant(); err != nil {
+	if err := runner.setHostTenant(); err != nil {
 		return err
 	}
 
 	if runner.env.Mode == InstallerMode && runner.env.OneAgentInjected {
-		if err = runner.installOneAgent(); err != nil {
+		if err := runner.installOneAgent(); err != nil {
 			return err
 		}
 		log.Info("OneAgent download finished")
 	}
-	err = runner.configureInstallation()
+
+	err := runner.configureInstallation()
 	if err == nil {
 		log.Info("standalone agent init completed")
 	}
 	return err
 }
 
-func (runner *Runner) consumeErrorIfNecessary(err *error) {
-	if !runner.env.CanFail && err != nil {
-		log.Error(*err, "This error has been masked to not fail the container.")
-		*err = nil
+func (runner *Runner) consumeErrorIfNecessary(resultedError *error) {
+	if !runner.env.CanFail && *resultedError != nil {
+		log.Error(*resultedError, "This error has been masked to not fail the container.")
+		*resultedError = nil
 	}
 }
 
