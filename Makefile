@@ -27,11 +27,10 @@ KUBERNETES_CSIDRIVER_YAML=$(MANIFESTS_DIR)/kubernetes/kubernetes-csidriver.yaml
 KUBERNETES_OLM_YAML=$(MANIFESTS_DIR)/kubernetes/kubernetes-olm.yaml
 KUBERNETES_ALL_YAML=$(MANIFESTS_DIR)/kubernetes/kubernetes-all.yaml
 
-OPENSHIFT_COMPANIONS_YAML=config/deploy/openshift/openshift-companions.yaml
-OPENSHIFT_CRD_AND_COMPANIONS_YAML=config/deploy/openshift/openshift.yaml
-OPENSHIFT_CSIDRIVER_YAML=config/deploy/openshift/openshift-csidriver.yaml
-OPENSHIFT_OLM_YAML=config/deploy/openshift/openshift-olm.yaml
-OPENSHIFT_ALL_YAML=config/deploy/openshift/openshift-all.yaml
+OPENSHIFT_CRD_AND_COMPANIONS_YAML=$(MANIFESTS_DIR)/openshift/openshift.yaml
+OPENSHIFT_CSIDRIVER_YAML=$(MANIFESTS_DIR)/openshift/openshift-csidriver.yaml
+OPENSHIFT_OLM_YAML=$(MANIFESTS_DIR)/openshift/openshift-olm.yaml
+OPENSHIFT_ALL_YAML=$(MANIFESTS_DIR)/openshift/openshift-all.yaml
 
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
@@ -119,8 +118,8 @@ deploy: manifests-k8s kustomize
 # Deploy controller in the configured OpenShift cluster in ~/.kube/config
 deploy-ocp: manifests-ocp kustomize
 	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
-	cd config/deploy/openshift && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(BRANCH_IMAGE)
-	$(KUSTOMIZE) build config/deploy/openshift | oc apply -f -
+	cd $(MANIFESTS_DIR)/openshift && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(BRANCH_IMAGE)
+	$(KUSTOMIZE) build $(MANIFESTS_DIR)/openshift | oc apply -f -
 
 push-image:
 	./hack/build/push_image.sh
@@ -129,16 +128,23 @@ push-tagged-image: export TAG=snapshot-$(shell git branch --show-current | sed "
 push-tagged-image: push-image
 
 # Generate manifests e.g. CRD, RBAC etc.
-manifests: prepare-manifests-directory manifests-k8s manifests-ocp
+manifests: prepare-manifests-directory manifests-k8s manifests-ocp strip-helm-labels
+
+strip-helm-labels:
+	./hack/build/strip-helm-labels.sh \
+		$(KUBERNETES_OLM_YAML) \
+		$(KUBERNETES_ALL_YAML) \
+		$(OPENSHIFT_OLM_YAML) \
+		$(OPENSHIFT_ALL_YAML)
 
 prepare-manifests-directory:
 	find $(MANIFESTS_DIR) -type f -not -name 'kustomization.yaml' -delete
 
-manifests-k8s: manifests-crd manifests-k8s-csidriver
+manifests-k8s: manifests-k8s-crd manifests-k8s-csidriver
 	cp "$(KUBERNETES_CRD_AND_COMPANIONS_YAML)" "$(KUBERNETES_OLM_YAML)"
 	cat "$(KUBERNETES_CRD_AND_COMPANIONS_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
 
-manifests-crd: generate-crd create-crd-for-helm kustomize
+manifests-k8s-crd: create-crd-for-helm kustomize
 	helm template dynatrace-operator config/helm/chart/default \
 		--namespace dynatrace \
 		--set platform="kubernetes" \
@@ -172,19 +178,12 @@ manifests-k8s-csidriver:
 		--set autoCreateSecret=false \
 		--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_CSIDRIVER_YAML)"
 
-	grep -v 'app.kubernetes.io/managed-by' "$(KUBERNETES_CSIDRIVER_YAML)"  > $(MANIFESTS_DIR)/kubernetes/tmp.yaml
-	grep -v 'helm.sh' $(MANIFESTS_DIR)/kubernetes/tmp.yaml > "$(KUBERNETES_CSIDRIVER_YAML)"
-	rm $(MANIFESTS_DIR)/kubernetes/tmp.yaml
 
 manifests-ocp: manifests-ocp-crd manifests-ocp-csidriver
 	cp "$(OPENSHIFT_CRD_AND_COMPANIONS_YAML)" "$(OPENSHIFT_OLM_YAML)"
 	cat "$(OPENSHIFT_CRD_AND_COMPANIONS_YAML)" "$(OPENSHIFT_CSIDRIVER_YAML)" > "$(OPENSHIFT_ALL_YAML)"
 
-manifests-ocp-crd: generate-crd controller-gen kustomize
-	# Create directories for manifests if they do not exist
-	mkdir -p config/deploy/openshift
-
-	# Generate openshift.yaml
+manifests-ocp-crd: create-crd-for-helm kustomize
 	helm template dynatrace-operator config/helm/chart/default \
 		--namespace dynatrace \
 		--set platform="openshift" \
@@ -192,13 +191,8 @@ manifests-ocp-crd: generate-crd controller-gen kustomize
 		--set olm="${OLM}" \
 		--set autoCreateSecret=false \
 		--set createSecurityContextConstraints="true" \
-		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_COMPANIONS_YAML)"
+		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_CRD_AND_COMPANIONS_YAML)"
 
-	grep -v 'app.kubernetes.io/managed-by' "$(OPENSHIFT_COMPANIONS_YAML)"  > $(MANIFESTS_DIR)/kubernetes/tmp.yaml
-	grep -v 'helm.sh' $(MANIFESTS_DIR)/kubernetes/tmp.yaml > "$(OPENSHIFT_COMPANIONS_YAML)"
-	rm $(MANIFESTS_DIR)/kubernetes/tmp.yaml
-
-	$(KUSTOMIZE) build config/crd | cat - "$(OPENSHIFT_COMPANIONS_YAML)" > "$(OPENSHIFT_CRD_AND_COMPANIONS_YAML)"
 
 manifests-ocp-csidriver:
 	# Generate openshift-csi.yaml
@@ -211,10 +205,6 @@ manifests-ocp-csidriver:
 		--set autoCreateSecret=false \
 		--set createSecurityContextConstraints="true" \
 		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_CSIDRIVER_YAML)"
-
-	grep -v 'app.kubernetes.io/managed-by' "$(OPENSHIFT_CSIDRIVER_YAML)"  > $(MANIFESTS_DIR)/kubernetes/tmp.yaml
-	grep -v 'helm.sh' $(MANIFESTS_DIR)/kubernetes/tmp.yaml > "$(OPENSHIFT_CSIDRIVER_YAML)"
-	rm $(MANIFESTS_DIR)/kubernetes/tmp.yaml
 
 
 # Run go fmt against code
@@ -274,7 +264,7 @@ SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-activegate
 bundle: OLM=true
 bundle: manifests kustomize
 	operator-sdk generate kustomize manifests -q --apis-dir ./src/api/
-	cd config/deploy/$(PLATFORM) && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(OLM_IMAGE)
+	cd $(MANIFESTS_DIR)/$(PLATFORM) && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(OLM_IMAGE)
 	$(KUSTOMIZE) build config/olm/$(PLATFORM) | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
 	rm -rf ./config/olm/$(PLATFORM)/$(VERSION)
