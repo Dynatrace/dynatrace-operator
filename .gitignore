@@ -85,11 +85,11 @@ config/deploy/kustomization.yaml
 /.run/
 config/deploy/kubernetes/kubernetes.yaml
 config/deploy/kubernetes/kubernetes-csidriver.yaml
-config/deploy/kubernetes/kubernetes-others.yaml
+config/deploy/kubernetes/kubernetes-companions.yaml
 config/deploy/kubernetes/kubernetes-olm.yaml
 config/deploy/openshift/openshift.yaml
 config/deploy/openshift/openshift-csidriver.yaml
-config/deploy/openshift/openshift-others.yaml
+config/deploy/openshift/openshift-companions.yaml
 config/deploy/openshift/openshift-olm.yaml
 config/deploy/kubernetes/dynatrace-operator-crd.yaml
 

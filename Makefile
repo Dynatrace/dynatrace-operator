@@ -18,15 +18,15 @@ HELM_CRD_DIR=Common/crd/
 
 DYNATRACE_OPERATOR_CRD_YAML=config/deploy/kubernetes/dynatrace-operator-crd.yaml
 
-# "OTHERS" = ClusterRole, ClusterRoleBinding, Deployment, MutatingWebhookConfiguration, Role, RoleBinding, Service, ServiceAccount, ValidatingWebhookConfiguration
-KUBERNETES_OTHERS_YAML=config/deploy/kubernetes/kubernetes-others.yaml
-KUBERNETES_CRD_AND_OTHERS_YAML=config/deploy/kubernetes/kubernetes.yaml
+# "COMPANIONS" = ClusterRole, ClusterRoleBinding, Deployment, MutatingWebhookConfiguration, Role, RoleBinding, Service, ServiceAccount, ValidatingWebhookConfiguration
+KUBERNETES_COMPANIONS_YAML=config/deploy/kubernetes/kubernetes-companions.yaml
+KUBERNETES_CRD_AND_COMPANIONS_YAML=config/deploy/kubernetes/kubernetes.yaml
 KUBERNETES_CSIDRIVER_YAML=config/deploy/kubernetes/kubernetes-csidriver.yaml
 KUBERNETES_OLM_YAML=config/deploy/kubernetes/kubernetes-olm.yaml
 KUBERNETES_ALL_YAML=config/deploy/kubernetes/kubernetes-all.yaml
 
-OPENSHIFT_OTHERS_YAML=config/deploy/openshift/openshift-others.yaml
-OPENSHIFT_CRD_AND_OTHERS_YAML=config/deploy/openshift/openshift.yaml
+OPENSHIFT_COMPANIONS_YAML=config/deploy/openshift/openshift-companions.yaml
+OPENSHIFT_CRD_AND_COMPANIONS_YAML=config/deploy/openshift/openshift.yaml
 OPENSHIFT_CSIDRIVER_YAML=config/deploy/openshift/openshift-csidriver.yaml
 OPENSHIFT_OLM_YAML=config/deploy/openshift/openshift-olm.yaml
 OPENSHIFT_ALL_YAML=config/deploy/openshift/openshift-all.yaml
@@ -133,8 +133,8 @@ manifests: manifests-k8s manifests-ocp
 	cp "$(DYNATRACE_OPERATOR_CRD_YAML)" "$(HELM_TEMPLATES_DIR)/$(HELM_CRD_DIR)"
 
 manifests-k8s: manifests-crd manifests-k8s-csidriver
-	cp "$(KUBERNETES_CRD_AND_OTHERS_YAML)" "$(KUBERNETES_OLM_YAML)"
-	cat "$(KUBERNETES_CRD_AND_OTHERS_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
+	cp "$(KUBERNETES_CRD_AND_COMPANIONS_YAML)" "$(KUBERNETES_OLM_YAML)"
+	cat "$(KUBERNETES_CRD_AND_COMPANIONS_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
 
 manifests-crd: generate-crd controller-gen kustomize
 	# Create directories for manifests if they do not exist
@@ -147,14 +147,14 @@ manifests-crd: generate-crd controller-gen kustomize
 		--set manifests=true \
 		--set olm="${OLM}" \
 		--set autoCreateSecret=false \
-		--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_OTHERS_YAML)"
+		--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_COMPANIONS_YAML)"
 
-	grep -v 'app.kubernetes.io/managed-by' "$(KUBERNETES_OTHERS_YAML)"  > config/deploy/kubernetes/tmp.yaml
-	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(KUBERNETES_OTHERS_YAML)"
+	grep -v 'app.kubernetes.io/managed-by' "$(KUBERNETES_COMPANIONS_YAML)"  > config/deploy/kubernetes/tmp.yaml
+	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(KUBERNETES_COMPANIONS_YAML)"
 	rm config/deploy/kubernetes/tmp.yaml
 
 	$(KUSTOMIZE) build config/crd > "$(DYNATRACE_OPERATOR_CRD_YAML)"
-	cat "$(DYNATRACE_OPERATOR_CRD_YAML)" "$(KUBERNETES_OTHERS_YAML)" > "$(KUBERNETES_CRD_AND_OTHERS_YAML)"
+	cat "$(DYNATRACE_OPERATOR_CRD_YAML)" "$(KUBERNETES_COMPANIONS_YAML)" > "$(KUBERNETES_CRD_AND_COMPANIONS_YAML)"
 
 manifests-k8s-csidriver:
 	# Generate kubernetes-csidriver.yaml
@@ -172,8 +172,8 @@ manifests-k8s-csidriver:
 	rm config/deploy/kubernetes/tmp.yaml
 
 manifests-ocp: manifests-ocp-crd manifests-ocp-csidriver
-	cp "$(OPENSHIFT_CRD_AND_OTHERS_YAML)" "$(OPENSHIFT_OLM_YAML)"
-	cat "$(OPENSHIFT_CRD_AND_OTHERS_YAML)" "$(OPENSHIFT_CSIDRIVER_YAML)" > "$(OPENSHIFT_ALL_YAML)"
+	cp "$(OPENSHIFT_CRD_AND_COMPANIONS_YAML)" "$(OPENSHIFT_OLM_YAML)"
+	cat "$(OPENSHIFT_CRD_AND_COMPANIONS_YAML)" "$(OPENSHIFT_CSIDRIVER_YAML)" > "$(OPENSHIFT_ALL_YAML)"
 
 manifests-ocp-crd: generate-crd controller-gen kustomize
 	# Create directories for manifests if they do not exist
@@ -187,13 +187,13 @@ manifests-ocp-crd: generate-crd controller-gen kustomize
 		--set olm="${OLM}" \
 		--set autoCreateSecret=false \
 		--set createSecurityContextConstraints="true" \
-		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_OTHERS_YAML)"
+		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_COMPANIONS_YAML)"
 
-	grep -v 'app.kubernetes.io/managed-by' "$(OPENSHIFT_OTHERS_YAML)"  > config/deploy/kubernetes/tmp.yaml
-	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(OPENSHIFT_OTHERS_YAML)"
+	grep -v 'app.kubernetes.io/managed-by' "$(OPENSHIFT_COMPANIONS_YAML)"  > config/deploy/kubernetes/tmp.yaml
+	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(OPENSHIFT_COMPANIONS_YAML)"
 	rm config/deploy/kubernetes/tmp.yaml
 
-	$(KUSTOMIZE) build config/crd | cat - "$(OPENSHIFT_OTHERS_YAML)" > "$(OPENSHIFT_CRD_AND_OTHERS_YAML)"
+	$(KUSTOMIZE) build config/crd | cat - "$(OPENSHIFT_COMPANIONS_YAML)" > "$(OPENSHIFT_CRD_AND_COMPANIONS_YAML)"
 
 manifests-ocp-csidriver:
 	# Generate openshift-csi.yaml
