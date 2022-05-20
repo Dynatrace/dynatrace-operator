@@ -747,11 +747,10 @@ func updateContainerOneAgent(c *corev1.Container, dk *dynatracev1beta1.DynaKube,
 }
 
 func addMetadataIfMissing(c *corev1.Container, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
-	for _, v := range c.Env {
-		if v.Name == dynatraceMetadataEnvVarName {
-			return
-		}
+	if envVarExists(c.Env, dynatraceMetadataEnvVarName) {
+		return
 	}
+
 	c.Env = append(c.Env,
 		corev1.EnvVar{
 			Name:  dynatraceMetadataEnvVarName,
@@ -760,14 +759,8 @@ func addMetadataIfMissing(c *corev1.Container, deploymentMetadata *deploymentmet
 }
 
 func setInitialConnectRetryIfMissing(c *corev1.Container, dynaKube *dynatracev1beta1.DynaKube) {
-	if dynaKube.FeatureAgentInitialConnectRetry() < 0 {
+	if dynaKube.FeatureAgentInitialConnectRetry() < 0 || envVarExists(c.Env, initialConnectRetryEnvVarName) {
 		return
-	}
-
-	for _, v := range c.Env {
-		if v.Name == initialConnectRetryEnvVarName {
-			return
-		}
 	}
 
 	c.Env = append(c.Env,
@@ -805,6 +798,15 @@ func getResponseForPod(pod *corev1.Pod, req *admission.Request) admission.Respon
 
 func fieldEnvVar(key string) *corev1.EnvVarSource {
 	return &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: key}}
+}
+
+func envVarExists(envVars []corev1.EnvVar, checkedVar string) bool {
+	for _, v := range envVars {
+		if v.Name == checkedVar {
+			return true
+		}
+	}
+	return false
 }
 
 func silentErrorResponse(podName string, err error) admission.Response {
