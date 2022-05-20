@@ -22,20 +22,6 @@ createDockerImageLabels() {
   fi
 }
 
-createGoBuildArgs() {
-  version=$1
-  commit=$2
-
-  build_date="$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")"
-  go_build_args=(
-    "-ldflags=-X 'github.com/Dynatrace/dynatrace-operator/src/version.Version=${version}'"
-    "-X 'github.com/Dynatrace/dynatrace-operator/src/version.Commit=${commit}'"
-    "-X 'github.com/Dynatrace/dynatrace-operator/src/version.BuildDate=${build_date}'"
-    "-s -w"
-  )
-  echo "${go_build_args[*]}"
-}
-
 setBuildRelatedVariables() {
   echo ::set-output name=go_build_args::"${go_build_args}"
   echo ::set-output name=docker_image_labels::"${docker_image_labels}"
@@ -46,7 +32,7 @@ prepareVariablesAndDependencies() {
   # prepare variables
   docker_image_tag=$(createDockerImageTag)
   docker_image_labels=$(createDockerImageLabels)
-  go_build_args=$(createGoBuildArgs "${docker_image_tag}" "${GITHUB_SHA}")
+  go_build_args=$(hack/build/ci/create_go_build_args.sh "${docker_image_tag}" "${GITHUB_SHA}")
   setBuildRelatedVariables
 
   # get licenses if no cache exists
@@ -60,10 +46,4 @@ prepareVariablesAndDependencies() {
   cp -r $HOME/go/pkg/mod .
 }
 
-# if no parameter is given, prepare all Variables and Dependencies
-if [ -z "$1" ]; then
-  prepareVariablesAndDependencies
-else
-  # if parameter is given, call the function accordingly
-  "$@"
-fi
+prepareVariablesAndDependencies
