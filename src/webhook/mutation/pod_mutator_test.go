@@ -1404,7 +1404,9 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 
 	// enable feature
 	instance.Annotations = map[string]string{}
+	connectRetryValue := "6000"
 	instance.Annotations[dynatracev1beta1.AnnotationFeatureEnableWebhookReinvocationPolicy] = "true"
+	instance.Annotations[dynatracev1beta1.AnnotationFeatureOneAgentInitialConnectRetry] = connectRetryValue
 	err = inj.client.Update(context.TODO(), instance)
 	require.NoError(t, err)
 
@@ -1488,6 +1490,9 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 
 	// check updated pod
 	require.Equal(t, "DT_DEPLOYMENT_METADATA", updPod.Spec.Containers[1].Env[0].Name)
+
+	require.Equal(t, "DT_INITIAL_CONNECT_RETRY_MS", updPod.Spec.Containers[1].Env[1].Name)
+	require.Equal(t, connectRetryValue, updPod.Spec.Containers[1].Env[1].Value)
 
 	var updInstallContainer = updPod.Spec.InitContainers[0]
 

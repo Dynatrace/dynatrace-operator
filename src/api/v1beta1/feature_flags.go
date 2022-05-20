@@ -51,6 +51,7 @@ const (
 	AnnotationFeatureDisableReadOnlyOneAgent      = AnnotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
 	AnnotationFeatureEnableMultipleOsAgentsOnNode = AnnotationFeaturePrefix + "multiple-osagents-on-node"
 	AnnotationFeatureOneAgentIgnoreProxy          = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
+	AnnotationFeatureOneAgentInitialConnectRetry  = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 
 	// injection (webhook)
 	AnnotationFeatureEnableWebhookReinvocationPolicy = AnnotationFeaturePrefix + "enable-webhook-reinvocation-policy"
@@ -190,6 +191,22 @@ func (dk *DynaKube) FeatureOneAgentIgnoreProxy() bool {
 // FeatureActiveGateIgnoreProxy is a feature flag to ignore the proxy for ActiveGate when set in CR
 func (dk *DynaKube) FeatureActiveGateIgnoreProxy() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateIgnoreProxy) == "true"
+}
+
+// FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents
+func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
+	raw := dk.getFeatureFlagRaw(AnnotationFeatureOneAgentInitialConnectRetry)
+	if raw == "" {
+		return -1
+	}
+
+	val, err := strconv.Atoi(raw)
+	if err != nil {
+		log.Error(err, "failed to parse agentInitialConnectRetry feature-flag")
+		return -1
+	}
+
+	return val
 }
 
 func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
