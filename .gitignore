@@ -93,6 +93,7 @@ config/deploy/openshift/openshift-others.yaml
 config/deploy/openshift/openshift-olm.yaml
 config/deploy/kubernetes/dynatrace-operator-crd.yaml
 
+config/helm/chart/default/templates/Common/crd
 
 .vscode
 

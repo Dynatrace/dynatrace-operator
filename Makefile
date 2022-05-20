@@ -13,6 +13,9 @@ MASTER_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot
 BRANCH_IMAGE = quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
 OLM_IMAGE ?= registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
 
+HELM_TEMPLATES_DIR=config/helm/chart/default/templates/
+HELM_CRD_DIR=Common/crd/
+
 DYNATRACE_OPERATOR_CRD_YAML=config/deploy/kubernetes/dynatrace-operator-crd.yaml
 
 # "OTHERS" = ClusterRole, ClusterRoleBinding, Deployment, MutatingWebhookConfiguration, Role, RoleBinding, Service, ServiceAccount, ValidatingWebhookConfiguration
@@ -125,6 +128,9 @@ push-tagged-image: push-image
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: manifests-k8s manifests-ocp
+	# propagate crd to helm chart
+	mkdir -p "$(HELM_TEMPLATES_DIR)/$(HELM_CRD_DIR)"
+	cp "$(DYNATRACE_OPERATOR_CRD_YAML)" "$(HELM_TEMPLATES_DIR)/$(HELM_CRD_DIR)"
 
 manifests-k8s: manifests-crd manifests-k8s-csidriver
 	cp "$(KUBERNETES_CRD_AND_OTHERS_YAML)" "$(KUBERNETES_OLM_YAML)"
