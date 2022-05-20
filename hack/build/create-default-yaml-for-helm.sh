@@ -23,5 +23,4 @@ echo "$license"  													                            >> "$output"
 echo '' 																		                          >> "$output"
 cat  "$input"					                                                >> "$output"
 echo '' 																		                          >> "$output"
-echo '  {{- end -}}' 															                    >> "$output"
-
+echo '{{- end -}}'   															                    >> "$output"
