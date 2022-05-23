@@ -7,13 +7,15 @@ const (
 	// AnnotationDynatraceInjected is set to "true" by the webhook to Pods to indicate that it has been injected.
 	AnnotationDynatraceInjected = "dynakube.dynatrace.com/injected"
 
+	OneAgentPrefix = "oneagent"
 	// AnnotationOneAgentInject can be set at pod level to enable/disable OneAgent injection.
-	OneAgentPrefix           = "oneagent"
-	AnnotationOneAgentInject = OneAgentPrefix + ".dynatrace.com/inject"
+	AnnotationOneAgentInject   = OneAgentPrefix + ".dynatrace.com/inject"
+	AnnotationOneAgentInjected = OneAgentPrefix + ".dynatrace.com/injected"
 
+	DataIngestPrefix = "data-ingest"
 	// AnnotationDataIngestInject can be set at pod level to enable/disable data-ingest injection.
-	DataIngestPrefix           = "data-ingest"
-	AnnotationDataIngestInject = DataIngestPrefix + ".dynatrace.com/inject"
+	AnnotationDataIngestInject   = DataIngestPrefix + ".dynatrace.com/inject"
+	AnnotationDataIngestInjected = DataIngestPrefix + ".dynatrace.com/injected"
 
 	// AnnotationFlavor can be set on a Pod to configure which code modules flavor to download. It's set to "default"
 	// if not set.

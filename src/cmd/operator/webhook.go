@@ -21,7 +21,8 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook"
-	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/namespace"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod"
 	"github.com/spf13/pflag"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -51,11 +52,11 @@ func setupWebhookServer(ns string, cfg *rest.Config) (manager.Manager, func(), e
 		waitForCertificates(newCertificateWatcher(mgr, ns, webhook.SecretCertsName))
 	}
 
-	if err := mutation.AddNamespaceMutationWebhookToManager(mgr, ns); err != nil {
+	if err := namespace.AddNamespaceMutationWebhookToManager(mgr, ns); err != nil {
 		return nil, cleanUp, err
 	}
 
-	if err := mutation.AddPodMutationWebhookToManager(mgr, ns); err != nil {
+	if err := pod.AddPodMutationWebhookToManager(mgr, ns); err != nil {
 		return nil, cleanUp, err
 	}
 
