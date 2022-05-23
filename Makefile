@@ -17,6 +17,7 @@ OLM_IMAGE ?= registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION
 DYNATRACE_OPERATOR_CRD_YAML=dynatrace-operator-crd.yaml
 
 HELM_CHART_DEFAULT_DIR=config/helm/chart/default/
+HELM_GENERATED_DIR=$(HELM_CHART_DEFAULT_DIR)/generated/
 HELM_TEMPLATES_DIR=$(HELM_CHART_DEFAULT_DIR)/templates/
 HELM_CRD_DIR=$(HELM_TEMPLATES_DIR)/Common/crd/
 
@@ -159,8 +160,8 @@ prepare-crd-for-helm: generate-crd
 	$(KUSTOMIZE) build config/crd > $(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)
 
 	# Copy crd to CHART PATH
-	mkdir -p $(HELM_CHART_DEFAULT_DIR)/crd
-	cp "$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)" "$(HELM_CHART_DEFAULT_DIR)"/crd
+	mkdir -p "$(HELM_GENERATED_DIR)"
+	cp "$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)" "$(HELM_GENERATED_DIR)"
 
 manifests-k8s-csidriver:
 	# Generate kubernetes-csidriver.yaml
