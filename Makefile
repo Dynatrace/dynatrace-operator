@@ -140,11 +140,11 @@ strip-helm-labels:
 prepare-manifests-directory:
 	find $(MANIFESTS_DIR) -type f -not -name 'kustomization.yaml' -delete
 
-manifests-k8s: manifests-k8s-crd manifests-k8s-csidriver
+manifests-k8s: manifests-k8s-core manifests-k8s-csidriver
 	cp "$(KUBERNETES_CORE_YAML)" "$(KUBERNETES_OLM_YAML)"
 	cat "$(KUBERNETES_CORE_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
 
-manifests-k8s-crd: prepare-crd-for-helm kustomize
+manifests-k8s-core: prepare-crd-for-helm kustomize
 	helm template dynatrace-operator config/helm/chart/default \
 		--namespace dynatrace \
 		--set platform="kubernetes" \
@@ -173,11 +173,11 @@ manifests-k8s-csidriver:
 		--set autoCreateSecret=false \
 		--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_CSIDRIVER_YAML)"
 
-manifests-ocp: manifests-ocp-crd manifests-ocp-csidriver
+manifests-ocp: manifests-ocp-core manifests-ocp-csidriver
 	cp "$(OPENSHIFT_CORE_YAML)" "$(OPENSHIFT_OLM_YAML)"
 	cat "$(OPENSHIFT_CORE_YAML)" "$(OPENSHIFT_CSIDRIVER_YAML)" > "$(OPENSHIFT_ALL_YAML)"
 
-manifests-ocp-crd: prepare-crd-for-helm kustomize
+manifests-ocp-core: prepare-crd-for-helm kustomize
 	helm template dynatrace-operator config/helm/chart/default \
 		--namespace dynatrace \
 		--set platform="openshift" \
