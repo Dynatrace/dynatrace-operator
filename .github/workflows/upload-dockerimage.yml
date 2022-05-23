@@ -29,9 +29,10 @@ jobs:
     name: Upload docker image to quay
     runs-on: ubuntu-latest
     env:
-      IMAGE_QUAY: ${{ inputs.registry }}/${{ inputs.repository }}
+      SOURCE_IMAGE_TAG: operator-${{ inputs.platform }}:${{ inputs.version }}
+      TARGET_IMAGE_TAG: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}-${{ inputs.platform }}
     steps:
-      - name: Login to Quay
+      - name: Login to Registry
         uses: docker/login-action@v1
         with:
           registry: ${{ inputs.registry }}
@@ -42,8 +43,8 @@ jobs:
         with:
           name: operator-${{ inputs.platform }}
           path: /tmp
-      - name: Upload image to Quay
+      - name: Upload image to Registry
         run: |
             docker load --input /tmp/operator-${{ inputs.platform }}.tar
-            docker tag operator-${{ inputs.platform }}:${{ inputs.version }} ${IMAGE_QUAY}:${{ inputs.version }}-${{ inputs.platform }}
-            docker push ${IMAGE_QUAY}:${{ inputs.version }}-${{ inputs.platform }}
+            docker tag ${SOURCE_IMAGE_TAG} ${TARGET_IMAGE_TAG}
+            docker push ${TARGET_IMAGE_TAG}
