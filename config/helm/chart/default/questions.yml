@@ -2,18 +2,6 @@ categories:
   - APM
   - Monitoring
 questions:
-
-  - variable: crdApplied
-    label: "CRD manually applied"
-    description: "Please make sure you have applied the latest CRD by following the instructions in the description above."
-    default: ""
-    required: true
-    type: enum
-    options:
-      - "yes"
-    group: "Prerequisites"
-
-  #################### Global Configuration ####################
   - variable: operator.image
     label: "Set a custom image for operator"
     description: "Optional: Set a custom image for operator. Defaults to docker.io/dynatrace/dynatrace-operator"

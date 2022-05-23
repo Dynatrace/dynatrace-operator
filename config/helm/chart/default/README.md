@@ -39,19 +39,15 @@ helm repo add dynatrace https://dt-url.net/operator-helm
 
 ### Chart installation
 
-To install the Dynatrace Operator first create the dynatrace namespace, apply the latest CRD from [the latest release](https://github.com/Dynatrace/dynatrace-operator/releases/latest) and execute it
-
 #### Kubernetes
 ```console
 kubectl create namespace dynatrace
-kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/dynatrace.com_dynakubes.yaml
 helm install dynatrace-operator dynatrace/dynatrace-operator -n dynatrace
 ```
 
 #### OpenShift
 ```console
 oc adm new-project --node-selector="" dynatrace
-oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/dynatrace.com_dynakubes.yaml
 helm install dynatrace-operator dynatrace/dynatrace-operator -n dynatrace --set platform="openshift"
 ```
 
@@ -73,7 +69,17 @@ helm search repo dynatrace-operator
 
 To update to the latest version apply the latest version of the CRD attached to [the latest release](https://github.com/Dynatrace/dynatrace-operator/releases/latest) and run this command.
 
-### Update between 0.2.3 and 0.3.0
+##### Kubernetes
+```console
+helm upgrade dynatrace-operator dynatrace/dynatrace-operator -n dynatrace --reuse-values
+```
+
+##### OpenShift
+```console
+helm upgrade dynatrace-operator dynatrace/dynatrace-operator -n dynatrace --reuse-values
+```
+
+### Update from 0.2.3 to >=0.3.0
 In version 0.3.0 the CRD changed significantly, so the values.yaml changed to remain consistent with it.
 You can still use the `--reuse-values` flag and everything will work, however its recommended to either do `-f override.yaml` where the fields in the `override.yaml` will overwrite/append the fields that changed or update your values file.
 
@@ -104,18 +110,6 @@ routing:
 
   # moved from activeGate.image
   image: <some-image>
-```
-
-##### Kubernetes
-```console
-kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/dynatrace.com_dynakubes.yaml
-helm upgrade dynatrace-operator dynatrace/dynatrace-operator -n dynatrace --reuse-values
-```
-
-##### OpenShift
-```console
-oc apply -f https://github.com/Dynatrace/dynatrace-operator/releases/latest/download/dynatrace.com_dynakubes.yaml
-helm upgrade dynatrace-operator dynatrace/dynatrace-operator -n dynatrace --reuse-values
 ```
 
 ## Uninstall dynatrace-operator
