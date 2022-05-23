@@ -21,13 +21,12 @@ HELM_CRD_DIR=Common/crd/
 
 MANIFESTS_DIR=config/deploy/
 
-# "COMPANIONS" = ClusterRole, ClusterRoleBinding, Deployment, MutatingWebhookConfiguration, Role, RoleBinding, Service, ServiceAccount, ValidatingWebhookConfiguration
-KUBERNETES_CRD_AND_COMPANIONS_YAML=$(MANIFESTS_DIR)/kubernetes/kubernetes.yaml
+KUBERNETES_CORE_YAML=$(MANIFESTS_DIR)/kubernetes/kubernetes.yaml
 KUBERNETES_CSIDRIVER_YAML=$(MANIFESTS_DIR)/kubernetes/kubernetes-csidriver.yaml
 KUBERNETES_OLM_YAML=$(MANIFESTS_DIR)/kubernetes/kubernetes-olm.yaml
 KUBERNETES_ALL_YAML=$(MANIFESTS_DIR)/kubernetes/kubernetes-all.yaml
 
-OPENSHIFT_CRD_AND_COMPANIONS_YAML=$(MANIFESTS_DIR)/openshift/openshift.yaml
+OPENSHIFT_CORE_YAML=$(MANIFESTS_DIR)/openshift/openshift.yaml
 OPENSHIFT_CSIDRIVER_YAML=$(MANIFESTS_DIR)/openshift/openshift-csidriver.yaml
 OPENSHIFT_OLM_YAML=$(MANIFESTS_DIR)/openshift/openshift-olm.yaml
 OPENSHIFT_ALL_YAML=$(MANIFESTS_DIR)/openshift/openshift-all.yaml
@@ -141,8 +140,8 @@ prepare-manifests-directory:
 	find $(MANIFESTS_DIR) -type f -not -name 'kustomization.yaml' -delete
 
 manifests-k8s: manifests-k8s-crd manifests-k8s-csidriver
-	cp "$(KUBERNETES_CRD_AND_COMPANIONS_YAML)" "$(KUBERNETES_OLM_YAML)"
-	cat "$(KUBERNETES_CRD_AND_COMPANIONS_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
+	cp "$(KUBERNETES_CORE_YAML)" "$(KUBERNETES_OLM_YAML)"
+	cat "$(KUBERNETES_CORE_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
 
 manifests-k8s-crd: create-crd-for-helm kustomize
 	helm template dynatrace-operator config/helm/chart/default \
@@ -151,7 +150,7 @@ manifests-k8s-crd: create-crd-for-helm kustomize
 		--set manifests=true \
 		--set olm="${OLM}" \
 		--set autoCreateSecret=false \
-		--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_CRD_AND_COMPANIONS_YAML)"
+		--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_CORE_YAML)"
 
 create-crd-for-helm: generate-crd
 	# Build crd
@@ -177,8 +176,8 @@ manifests-k8s-csidriver:
 
 
 manifests-ocp: manifests-ocp-crd manifests-ocp-csidriver
-	cp "$(OPENSHIFT_CRD_AND_COMPANIONS_YAML)" "$(OPENSHIFT_OLM_YAML)"
-	cat "$(OPENSHIFT_CRD_AND_COMPANIONS_YAML)" "$(OPENSHIFT_CSIDRIVER_YAML)" > "$(OPENSHIFT_ALL_YAML)"
+	cp "$(OPENSHIFT_CORE_YAML)" "$(OPENSHIFT_OLM_YAML)"
+	cat "$(OPENSHIFT_CORE_YAML)" "$(OPENSHIFT_CSIDRIVER_YAML)" > "$(OPENSHIFT_ALL_YAML)"
 
 manifests-ocp-crd: create-crd-for-helm kustomize
 	helm template dynatrace-operator config/helm/chart/default \
@@ -188,7 +187,7 @@ manifests-ocp-crd: create-crd-for-helm kustomize
 		--set olm="${OLM}" \
 		--set autoCreateSecret=false \
 		--set createSecurityContextConstraints="true" \
-		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_CRD_AND_COMPANIONS_YAML)"
+		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_CORE_YAML)"
 
 
 manifests-ocp-csidriver:
