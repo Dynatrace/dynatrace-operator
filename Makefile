@@ -16,8 +16,9 @@ OLM_IMAGE ?= registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION
 
 DYNATRACE_OPERATOR_CRD_YAML=dynatrace-operator-crd.yaml
 
-HELM_TEMPLATES_DIR=config/helm/chart/default/templates/
-HELM_CRD_DIR=Common/crd/
+HELM_CHART_DEFAULT_DIR=config/helm/chart/default/
+HELM_TEMPLATES_DIR=$(HELM_CHART_DEFAULT_DIR)/templates/
+HELM_CRD_DIR=$(HELM_TEMPLATES_DIR)/Common/crd/
 
 MANIFESTS_DIR=config/deploy/
 
@@ -143,7 +144,7 @@ manifests-k8s: manifests-k8s-crd manifests-k8s-csidriver
 	cp "$(KUBERNETES_CORE_YAML)" "$(KUBERNETES_OLM_YAML)"
 	cat "$(KUBERNETES_CORE_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
 
-manifests-k8s-crd: create-crd-for-helm kustomize
+manifests-k8s-crd: prepare-crd-for-helm kustomize
 	helm template dynatrace-operator config/helm/chart/default \
 		--namespace dynatrace \
 		--set platform="kubernetes" \
@@ -152,16 +153,14 @@ manifests-k8s-crd: create-crd-for-helm kustomize
 		--set autoCreateSecret=false \
 		--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_CORE_YAML)"
 
-create-crd-for-helm: generate-crd
+prepare-crd-for-helm: generate-crd
 	# Build crd
-	mkdir -p "$(HELM_TEMPLATES_DIR)/$(HELM_CRD_DIR)"
+	mkdir -p "$(HELM_CRD_DIR)"
 	$(KUSTOMIZE) build config/crd > $(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)
 
-	# Create input for for helm
-	./hack/build/create-default-yaml-for-helm.sh \
- 		"$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)" \
- 		"$(HELM_TEMPLATES_DIR)/$(HELM_CRD_DIR)/$(DYNATRACE_OPERATOR_CRD_YAML)"
-
+	# Copy crd to CHART PATH
+	mkdir -p $(HELM_CHART_DEFAULT_DIR)/crd
+	cp "$(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)" "$(HELM_CHART_DEFAULT_DIR)"/crd
 
 manifests-k8s-csidriver:
 	# Generate kubernetes-csidriver.yaml
@@ -174,12 +173,11 @@ manifests-k8s-csidriver:
 		--set autoCreateSecret=false \
 		--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_CSIDRIVER_YAML)"
 
-
 manifests-ocp: manifests-ocp-crd manifests-ocp-csidriver
 	cp "$(OPENSHIFT_CORE_YAML)" "$(OPENSHIFT_OLM_YAML)"
 	cat "$(OPENSHIFT_CORE_YAML)" "$(OPENSHIFT_CSIDRIVER_YAML)" > "$(OPENSHIFT_ALL_YAML)"
 
-manifests-ocp-crd: create-crd-for-helm kustomize
+manifests-ocp-crd: prepare-crd-for-helm kustomize
 	helm template dynatrace-operator config/helm/chart/default \
 		--namespace dynatrace \
 		--set platform="openshift" \
@@ -201,7 +199,6 @@ manifests-ocp-csidriver:
 		--set autoCreateSecret=false \
 		--set createSecurityContextConstraints="true" \
 		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_CSIDRIVER_YAML)"
-
 
 # Run go fmt against code
 fmt:
