@@ -3,7 +3,7 @@ package daemonset
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address_of"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -17,7 +17,7 @@ const (
 
 	defaultUnprivilegedServiceAccountName = "dynatrace-dynakube-oneagent-unprivileged"
 	// normal oneagent shutdown scenario with some extra time
-	defaultTerminationGracePeriod = 80
+	defaultTerminationGracePeriod = int64(80)
 
 	hostRootVolumeName      = "host-root"
 	hostRootVolumeMountPath = "/mnt/root"
@@ -212,7 +212,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 		DNSPolicy:                     dnsPolicy,
 		Volumes:                       volumes,
 		Affinity:                      affinity,
-		TerminationGracePeriodSeconds: address_of.Int64(defaultTerminationGracePeriod),
+		TerminationGracePeriodSeconds: address.Of(defaultTerminationGracePeriod),
 	}
 }
 
