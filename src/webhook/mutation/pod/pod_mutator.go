@@ -61,13 +61,22 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 
 	webhook.setupEventRecorder(mutationRequest)
 
-	if !webhook.handleAlreadyInjectedPod(mutationRequest) {
-		if err := webhook.handleFreshPod(mutationRequest); err != nil {
-			log.Error(err, "failed to inject into pod")
-			return silentErrorResponse(mutationRequest.Pod.GenerateName, err)
+	if webhook.isInjected(mutationRequest) {
+		if webhook.handlePodReinvocation(mutationRequest) {
+			log.Info("reinvocation policy applied", "podName", mutationRequest.Pod.GenerateName)
+			webhook.recorder.sendPodUpdateEvent()
+			return createResponseForPod(mutationRequest.Pod, request)
 		}
-		log.Info("injection finished for pod", "podName", mutationRequest.Pod.GenerateName, "namespace", request.Namespace)
+		log.Info("pod already injected, no change", "podName", mutationRequest.Pod.GenerateName)
+		return emptyPatch
 	}
+
+	if err := webhook.handlePodMutation(mutationRequest); err != nil {
+		log.Error(err, "failed to inject into pod")
+		return silentErrorResponse(mutationRequest.Pod.GenerateName, err)
+	}
+	log.Info("injection finished for pod", "podName", mutationRequest.Pod.GenerateName, "namespace", request.Namespace)
+
 	return createResponseForPod(mutationRequest.Pod, request)
 }
 
@@ -76,7 +85,16 @@ func (webhook *podMutatorWebhook) setupEventRecorder(mutationRequest *dtwebhook.
 	webhook.recorder.pod = mutationRequest.Pod
 }
 
-func (webhook *podMutatorWebhook) handleFreshPod(mutationRequest *dtwebhook.MutationRequest) error {
+func (webhook *podMutatorWebhook) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
+	for _, mutator := range webhook.mutators {
+		if mutator.Injected(mutationRequest.Pod) {
+			return true
+		}
+	}
+	return false
+}
+
+func (webhook *podMutatorWebhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) error {
 	mutationRequest.InitContainer = webhook.createInstallInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
 	for _, mutator := range webhook.mutators {
 		if !mutator.Enabled(mutationRequest.Pod) {
@@ -92,20 +110,13 @@ func (webhook *podMutatorWebhook) handleFreshPod(mutationRequest *dtwebhook.Muta
 	return nil
 }
 
-func (webhook *podMutatorWebhook) handleAlreadyInjectedPod(mutationRequest *dtwebhook.MutationRequest) bool {
+func (webhook *podMutatorWebhook) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
 	var needsUpdate bool
-	if mutationRequest.DynaKube.FeatureEnableWebhookReinvocationPolicy() {
-		if webhook.applyReinvocationPolicy(mutationRequest) {
-			log.Info("reinvocation policy applied", "podName", mutationRequest.Pod.GenerateName)
-			webhook.recorder.sendPodUpdateEvent()
-			needsUpdate = true
-		}
-	}
-	return needsUpdate
-}
 
-func (webhook *podMutatorWebhook) applyReinvocationPolicy(mutationRequest *dtwebhook.MutationRequest) bool {
-	var needsUpdate bool
+	if !mutationRequest.DynaKube.FeatureEnableWebhookReinvocationPolicy() {
+		return false
+	}
+
 	reinvocationRequest := mutationRequest.ToReinvocationRequest()
 	for _, mutator := range webhook.mutators {
 		if mutator.Enabled(mutationRequest.Pod) {

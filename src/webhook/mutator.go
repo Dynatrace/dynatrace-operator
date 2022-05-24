@@ -9,6 +9,7 @@ import (
 
 type PodMutator interface {
 	Enabled(pod *corev1.Pod) bool
+	Injected(pod *corev1.Pod) bool
 	Mutate(request *MutationRequest) error
 	Reinvoke(request *ReinvocationRequest) bool
 }

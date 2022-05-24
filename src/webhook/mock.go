@@ -15,6 +15,12 @@ func (mutator *PodMutatorMock) Enabled(pod *corev1.Pod) bool {
 	args := mutator.Called(pod)
 	return args.Bool(0)
 }
+
+func (mutator *PodMutatorMock) Injected(pod *corev1.Pod) bool {
+	args := mutator.Called(pod)
+	return args.Bool(0)
+}
+
 func (mutator *PodMutatorMock) Mutate(request *MutationRequest) error {
 	args := mutator.Called(request)
 	return args.Error(0)

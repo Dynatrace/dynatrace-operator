@@ -32,6 +32,10 @@ func (mutator *OneAgentPodMutator) Enabled(pod *corev1.Pod) bool {
 	return kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInject, true)
 }
 
+func (mutator *OneAgentPodMutator) Injected(pod *corev1.Pod) bool {
+	return kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
+}
+
 func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) error {
 	log.Info("injecting OneAgent into pod", "pod", request.Pod.GenerateName)
 	if err := mutator.ensureInitSecret(request); err != nil {

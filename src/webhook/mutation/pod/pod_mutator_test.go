@@ -75,7 +75,7 @@ func TestHandle(t *testing.T) {
 	})
 }
 
-func TestHandleFreshPod(t *testing.T) {
+func TestHandlePodMutation(t *testing.T) {
 	t.Run("should call both mutators, initContainer and annotation added, no error", func(t *testing.T) {
 		mutator1 := createSimplePodMutatorMock()
 		mutator2 := createSimplePodMutatorMock()
@@ -83,7 +83,7 @@ func TestHandleFreshPod(t *testing.T) {
 		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
-		err := podWebhook.handleFreshPod(mutationRequest)
+		err := podWebhook.handlePodMutation(mutationRequest)
 		require.NoError(t, err)
 		assert.NotNil(t, mutationRequest.InitContainer)
 		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 2)
@@ -102,7 +102,7 @@ func TestHandleFreshPod(t *testing.T) {
 		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{sadMutator, happyMutator}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
-		err := podWebhook.handleFreshPod(mutationRequest)
+		err := podWebhook.handlePodMutation(mutationRequest)
 		require.Error(t, err)
 		assert.NotNil(t, mutationRequest.InitContainer)
 		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 1)
@@ -114,15 +114,15 @@ func TestHandleFreshPod(t *testing.T) {
 	})
 }
 
-func TestHandleAlreadyInjectedPod(t *testing.T) {
-	t.Run("no reinvokation feature-flag, no update", func(t *testing.T) {
-		mutator1 := createSimplePodMutatorMock()
-		mutator2 := createSimplePodMutatorMock()
+func TestHandlePodReinvocation(t *testing.T) {
+	t.Run("no reinvocation feature-flag, no update", func(t *testing.T) {
+		mutator1 := createAlreadyInjectedPodMutatorMock()
+		mutator2 := createAlreadyInjectedPodMutatorMock()
 		dynakube := getTestDynakube()
 		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
-		updated := podWebhook.handleAlreadyInjectedPod(mutationRequest)
+		updated := podWebhook.handlePodReinvocation(mutationRequest)
 		require.False(t, updated)
 		mutator1.(*dtwebhook.PodMutatorMock).AssertNotCalled(t, "Enabled", mutationRequest.Pod)
 		mutator1.(*dtwebhook.PodMutatorMock).AssertNotCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
@@ -130,14 +130,14 @@ func TestHandleAlreadyInjectedPod(t *testing.T) {
 		mutator2.(*dtwebhook.PodMutatorMock).AssertNotCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
 	t.Run("should call both mutators, updated == true", func(t *testing.T) {
-		mutator1 := createSimplePodMutatorMock()
-		mutator2 := createSimplePodMutatorMock()
+		mutator1 := createAlreadyInjectedPodMutatorMock()
+		mutator2 := createAlreadyInjectedPodMutatorMock()
 		dynakube := getTestDynakube()
 		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureEnableWebhookReinvocationPolicy: "true"}
 		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
-		updated := podWebhook.handleAlreadyInjectedPod(mutationRequest)
+		updated := podWebhook.handlePodReinvocation(mutationRequest)
 		require.True(t, updated)
 		mutator1.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.Pod)
 		mutator1.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
@@ -146,13 +146,13 @@ func TestHandleAlreadyInjectedPod(t *testing.T) {
 	})
 	t.Run("should call both mutator, only 1 update, updated == true", func(t *testing.T) {
 		sadMutator := createFailPodMutatorMock()
-		happyMutator := createSimplePodMutatorMock()
+		happyMutator := createAlreadyInjectedPodMutatorMock()
 		dynakube := getTestDynakube()
 		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureEnableWebhookReinvocationPolicy: "true"}
 		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{sadMutator, happyMutator}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
-		updated := podWebhook.handleAlreadyInjectedPod(mutationRequest)
+		updated := podWebhook.handlePodReinvocation(mutationRequest)
 		require.True(t, updated)
 		sadMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.Pod)
 		sadMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
@@ -166,7 +166,7 @@ func TestHandleAlreadyInjectedPod(t *testing.T) {
 		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{sadMutator}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
-		updated := podWebhook.handleAlreadyInjectedPod(mutationRequest)
+		updated := podWebhook.handlePodReinvocation(mutationRequest)
 		require.False(t, updated)
 		sadMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.Pod)
 		sadMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
@@ -191,6 +191,16 @@ func createTestWebhook(t *testing.T, mutators []dtwebhook.PodMutator, objects []
 func createSimplePodMutatorMock() dtwebhook.PodMutator {
 	mutator := dtwebhook.PodMutatorMock{}
 	mutator.On("Enabled", mock.Anything).Return(true)
+	mutator.On("Injected", mock.Anything).Return(false)
+	mutator.On("Mutate", mock.Anything).Return(nil)
+	mutator.On("Reinvoke", mock.Anything).Return(true)
+	return &mutator
+}
+
+func createAlreadyInjectedPodMutatorMock() dtwebhook.PodMutator {
+	mutator := dtwebhook.PodMutatorMock{}
+	mutator.On("Enabled", mock.Anything).Return(true)
+	mutator.On("Injected", mock.Anything).Return(true)
 	mutator.On("Mutate", mock.Anything).Return(nil)
 	mutator.On("Reinvoke", mock.Anything).Return(true)
 	return &mutator
@@ -199,6 +209,7 @@ func createSimplePodMutatorMock() dtwebhook.PodMutator {
 func createFailPodMutatorMock() dtwebhook.PodMutator {
 	mutator := dtwebhook.PodMutatorMock{}
 	mutator.On("Enabled", mock.Anything).Return(true)
+	mutator.On("Injected", mock.Anything).Return(false)
 	mutator.On("Mutate", mock.Anything).Return(fmt.Errorf("BOOM"))
 	mutator.On("Reinvoke", mock.Anything).Return(false)
 	return &mutator
