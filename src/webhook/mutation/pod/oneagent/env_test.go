@@ -3,9 +3,12 @@ package oneagent_mutation
 import (
 	"testing"
 
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestAddPreloadEnv(t *testing.T) {
@@ -22,7 +25,7 @@ func TestAddPreloadEnv(t *testing.T) {
 }
 
 func TestAddNetworkZoneEnv(t *testing.T) {
-	t.Run("Add networkzone env", func(t *testing.T) {
+	t.Run("Add networkZone env", func(t *testing.T) {
 		container := &corev1.Container{}
 		networkZone := "testZone"
 
@@ -63,14 +66,63 @@ func TestAddContainerInfoInitEnv(t *testing.T) {
 }
 
 func TestAddDeploymentMetadataEnv(t *testing.T) {
-	t.Run("Add deployment metadata env", func(t *testing.T) {
-		// TODO
+	t.Run("Add cloudNative deployment metadata env", func(t *testing.T) {
+		container := &corev1.Container{}
+		dynakube := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				},
+			},
+		}
+		addDeploymentMetadataEnv(container, &dynakube, testClusterID)
+		require.Len(t, container.Env, 1)
+		assert.Contains(t, container.Env[0].Value, testClusterID)
+		assert.Contains(t, container.Env[0].Value, daemonset.DeploymentTypeCloudNative)
+	})
+
+	t.Run("Add appMonitoring deployment metadata env", func(t *testing.T) {
+		container := &corev1.Container{}
+		dynakube := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
+				},
+			},
+		}
+		addDeploymentMetadataEnv(container, &dynakube, testClusterID)
+		require.Len(t, container.Env, 1)
+		assert.Contains(t, container.Env[0].Value, testClusterID)
+		assert.Contains(t, container.Env[0].Value, daemonset.DeploymentTypeApplicationMonitoring)
 	})
 }
 
-
 func TestInitialConnectRetryEnvIf(t *testing.T) {
 	t.Run("Add initialConnectRetry env", func(t *testing.T) {
-		// TODO
+		container := &corev1.Container{}
+		testValue := "42"
+		dynakube := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeatureOneAgentInitialConnectRetry: testValue,
+				},
+			},
+		}
+		addInitialConnectRetryEnv(container, &dynakube)
+		require.Len(t, container.Env, 1)
+		assert.Equal(t, container.Env[0].Value, testValue)
+	})
+	t.Run("Not add incorrect initialConnectRetry env", func(t *testing.T) {
+		container := &corev1.Container{}
+		testValue := "-45"
+		dynakube := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeatureOneAgentInitialConnectRetry: testValue,
+				},
+			},
+		}
+		addInitialConnectRetryEnv(container, &dynakube)
+		require.Len(t, container.Env, 0)
 	})
 }

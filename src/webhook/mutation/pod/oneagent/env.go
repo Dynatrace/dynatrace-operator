@@ -68,7 +68,6 @@ func addDeploymentMetadataEnv(container *corev1.Container, dynakube *dynatracev1
 	if kubeobjects.EnvVarIsIn(container.Env, dynatraceMetadataEnvVarName) {
 		return
 	}
-
 	var deploymentMetadata *deploymentmetadata.DeploymentMetadata
 	if dynakube.CloudNativeFullstackMode() {
 		deploymentMetadata = deploymentmetadata.NewDeploymentMetadata(clusterID, daemonset.DeploymentTypeCloudNative)
@@ -82,14 +81,14 @@ func addDeploymentMetadataEnv(container *corev1.Container, dynakube *dynatracev1
 		})
 }
 
-func addInitialConnectRetryEnv(container *corev1.Container, dynaKube *dynatracev1beta1.DynaKube) {
-	if dynaKube.FeatureAgentInitialConnectRetry() < 0 || kubeobjects.EnvVarIsIn(container.Env, initialConnectRetryEnvVarName) {
+func addInitialConnectRetryEnv(container *corev1.Container, dynakube *dynatracev1beta1.DynaKube) {
+	if dynakube.FeatureAgentInitialConnectRetry() < 0 || kubeobjects.EnvVarIsIn(container.Env, initialConnectRetryEnvVarName) {
 		return
 	}
 
 	container.Env = append(container.Env,
 		corev1.EnvVar{
 			Name:  initialConnectRetryEnvVarName,
-			Value: strconv.Itoa(dynaKube.FeatureAgentInitialConnectRetry()),
+			Value: strconv.Itoa(dynakube.FeatureAgentInitialConnectRetry()),
 		})
 }

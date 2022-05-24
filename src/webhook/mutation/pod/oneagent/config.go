@@ -9,10 +9,10 @@ var (
 )
 
 const (
-	preloadEnvVarName           = "LD_PRELOAD"
-	networkZoneEnvVarName       = "DT_NETWORK_ZONE"
-	proxyEnvVarName             = "DT_PROXY"
-	dynatraceMetadataEnvVarName = "DT_DEPLOYMENT_METADATA"
+	preloadEnvVarName             = "LD_PRELOAD"
+	networkZoneEnvVarName         = "DT_NETWORK_ZONE"
+	proxyEnvVarName               = "DT_PROXY"
+	dynatraceMetadataEnvVarName   = "DT_DEPLOYMENT_METADATA"
 	initialConnectRetryEnvVarName = "DT_INITIAL_CONNECT_RETRY_MS"
 
 	oneAgentBinVolumeName   = "oneagent-bin"
