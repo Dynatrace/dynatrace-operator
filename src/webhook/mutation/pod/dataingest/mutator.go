@@ -40,30 +40,26 @@ func (mutator *DataIngestPodMutator) Mutate(request *dtwebhook.MutationRequest) 
 		return err
 	}
 	mutator.setupVolumes(request.Pod)
-	mutator.updateContainers(request.Pod)
+	updateFreshUserContainers(request.Pod)
 	updateInstallContainer(request.InitContainer, workload)
-	for _, container := range request.Pod.Spec.Containers {
-		setupVolumeMounts(&container)
-	}
 	setAnnotation(request.Pod)
 	return nil
 }
 
 func (mutator *DataIngestPodMutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	var needsUpdate = false
 	if !podIsInjected(request.Pod) {
 		return false
 	}
 	log.Info("reinvoking", "pod", request.Pod.GenerateName)
 
-	for _, container := range request.Pod.Spec.Containers {
+	for i := range request.Pod.Spec.Containers {
+		container := &request.Pod.Spec.Containers[i]
 		if containerIsInjected(container) {
 			continue
 		}
-		setupVolumeMounts(&container)
-		needsUpdate = true
+		setupVolumeMountsForUserContainer(container)
 	}
-	return needsUpdate
+	return true
 }
 
 func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.MutationRequest) error {
@@ -95,7 +91,7 @@ func podIsInjected(pod *corev1.Pod) bool {
 	return kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
 }
 
-func containerIsInjected(container corev1.Container) bool {
+func containerIsInjected(container *corev1.Container) bool {
 	for _, volumeMount := range container.VolumeMounts {
 		if volumeMount.Name == EnrichmentVolumeName || volumeMount.Name == EnrichmentEndpointVolumeName {
 			return true

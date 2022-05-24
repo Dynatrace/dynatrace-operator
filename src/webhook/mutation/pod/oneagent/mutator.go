@@ -47,8 +47,6 @@ func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) er
 }
 
 func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	var needsUpdate = false
-
 	if !podIsInjected(request.Pod) {
 		return false
 	}
@@ -68,9 +66,8 @@ func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationReque
 			currentContainer.Name,
 			currentContainer.Image,
 		)
-		needsUpdate = true
 	}
-	return needsUpdate
+	return true
 }
 
 func (mutator *OneAgentPodMutator) getVolumeMode(dynakube *dynatracev1beta1.DynaKube) string {

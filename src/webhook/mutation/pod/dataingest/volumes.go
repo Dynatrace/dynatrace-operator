@@ -35,7 +35,7 @@ func addEnrichmentVolume(pod *corev1.Pod) {
 	)
 }
 
-func setupVolumeMounts(container *corev1.Container) {
+func setupVolumeMountsForUserContainer(container *corev1.Container) {
 	addEnrichmentVolumeMount(container)
 	addEnrichmentEndpointVolumeMount(container)
 }

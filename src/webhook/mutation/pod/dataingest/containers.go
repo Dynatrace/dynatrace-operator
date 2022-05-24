@@ -2,10 +2,10 @@ package dataingest_mutation
 
 import corev1 "k8s.io/api/core/v1"
 
-func (mutator *DataIngestPodMutator) updateContainers(pod *corev1.Pod) {
+func updateFreshUserContainers(pod *corev1.Pod) {
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
-		addEnrichmentVolumeMount(container)
+		setupVolumeMountsForUserContainer(container)
 	}
 }
 
