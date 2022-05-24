@@ -31,12 +31,14 @@ const (
 	AnnotationFeaturePrefix = "feature.dynatrace.com/"
 
 	// activeGate
-	AnnotationFeatureDisableActiveGateUpdates         = AnnotationFeaturePrefix + "disable-activegate-updates"
-	AnnotationFeatureDisableActiveGateRawImage        = AnnotationFeaturePrefix + "disable-activegate-raw-image"
-	AnnotationFeatureActiveGateAppArmor               = AnnotationFeaturePrefix + "activegate-apparmor"
-	AnnotationFeatureActiveGateReadOnlyFilesystem     = AnnotationFeaturePrefix + "activegate-readonly-fs"
-	AnnotationFeatureAutomaticKubernetesApiMonitoring = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
-	AnnotationFeatureActiveGateIgnoreProxy            = AnnotationFeaturePrefix + "activegate-ignore-proxy"
+	AnnotationFeatureDisableActiveGateUpdates              = AnnotationFeaturePrefix + "disable-activegate-updates"
+	AnnotationFeatureDisableActiveGateRawImage             = AnnotationFeaturePrefix + "disable-activegate-raw-image"
+	AnnotationFeatureActiveGateAppArmor                    = AnnotationFeaturePrefix + "activegate-apparmor"
+	AnnotationFeatureActiveGateReadOnlyFilesystem          = AnnotationFeaturePrefix + "activegate-readonly-fs"
+	AnnotationFeatureAutomaticK8sApiMonitoring             = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
+	AnnotationFeatureAutomaticK8sApiMonitoringClusterLabel = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-label"
+	AnnotationFeatureActiveGateIgnoreProxy                 = AnnotationFeaturePrefix + "activegate-ignore-proxy"
+	AnnotationFeatureActiveGateAuthToken                   = AnnotationFeaturePrefix + "enable-activegate-authtoken"
 	AnnotationFeatureActiveGateAuthToken              = AnnotationFeaturePrefix + "enable-activegate-authtoken"
 
 	// statsD
@@ -130,7 +132,12 @@ func (dk *DynaKube) getDefaultIgnoredNamespaces() []string {
 // FeatureAutomaticKubernetesApiMonitoring is a feature flag to enable automatic kubernetes api monitoring,
 // which ensures that settings for this kubernetes cluster exist in Dynatrace
 func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoring() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticKubernetesApiMonitoring) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoring) == "true"
+}
+
+// FeatureAutomaticKubernetesApiMonitoringClusterLabel is a feature flag to set custom cluster name for automatic-kubernetes-api-monitoring
+func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoringClusterLabel() string {
+	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoringClusterLabel)
 }
 
 // FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,

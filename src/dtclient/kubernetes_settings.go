@@ -67,7 +67,7 @@ type constraintViolations []struct {
 	Path              string
 }
 
-func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(name, kubeSystemUUID, scope string) (string, error) {
+func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSystemUUID, scope string) (string, error) {
 	if kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
@@ -78,7 +78,7 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(name, kubeSystemUUID
 			SchemaVersion: "1.0.27",
 			Value: postKubernetesSettings{
 				Enabled:                         true,
-				Label:                           name,
+				Label:                           clusterLabel,
 				ClusterIdEnabled:                true,
 				ClusterId:                       kubeSystemUUID,
 				CloudApplicationPipelineEnabled: true,

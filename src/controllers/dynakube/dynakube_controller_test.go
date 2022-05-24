@@ -154,7 +154,36 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureAutomaticKubernetesApiMonitoring: "true",
+					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring: "true",
+				},
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				ActiveGate: dynatracev1beta1.ActiveGateSpec{
+					Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+						dynatracev1beta1.KubeMonCapability.DisplayName,
+					},
+				},
+			}}
+		controller := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
+
+		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
+			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
+		})
+
+		assert.NoError(t, err)
+		assert.NotNil(t, result)
+	})
+	t.Run(`Reconcile reconciles automatic kubernetes api monitoring with custom cluster label`, func(t *testing.T) {
+		const clusterLabel = "..blabla..;.🙃"
+		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
+			dtclient.TokenScopes{dtclient.TokenScopeDataExport})
+		instance := &dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring:             "true",
+					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoringClusterLabel: clusterLabel,
 				},
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
