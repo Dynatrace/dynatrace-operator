@@ -71,7 +71,7 @@ func TestMonitoringModesDynakube_Reconcile(t *testing.T) {
 					OneAgent: deploymentModes[mode],
 				},
 			}
-			controller := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
+			controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 
 			result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 				NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -107,7 +107,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 			}}
-		controller := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -128,7 +128,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				KubernetesMonitoring: dynatracev1beta1.KubernetesMonitoringSpec{
 					Enabled: true,
 				}}}
-		controller := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -164,7 +164,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					},
 				},
 			}}
-		controller := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -193,7 +193,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					},
 				},
 			}}
-		controller := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -215,7 +215,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					Value:     "https://proxy:1234",
 					ValueFrom: "",
 				}}}
-		controller := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -245,7 +245,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 					ValueFrom: "",
 				}}}
 		instance.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureActiveGateIgnoreProxy: "true"}
-		controller := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
+		controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -274,7 +274,7 @@ func TestReconcileOnlyOneTokenProvided_Reconcile(t *testing.T) {
 				Namespace: testNamespace,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{}}
-		controller := createFakeClientAndReconcile(mockClient, instance, "", testAPIToken)
+		controller := createFakeClientAndReconciler(mockClient, instance, "", testAPIToken)
 
 		result, err := controller.Reconcile(context.TODO(), reconcile.Request{
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
@@ -364,7 +364,7 @@ func TestReconcile_RemoveRoutingIfDisabled(t *testing.T) {
 			Routing: dynatracev1beta1.RoutingSpec{
 				Enabled: true,
 			}}}
-	controller := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
+	controller := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 	}
@@ -446,7 +446,7 @@ func TestReconcile_ActiveGateMultiCapability(t *testing.T) {
 				},
 			},
 		}}
-	r := createFakeClientAndReconcile(mockClient, instance, testPaasToken, testAPIToken)
+	r := createFakeClientAndReconciler(mockClient, instance, testPaasToken, testAPIToken)
 	request := reconcile.Request{
 		NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 	}
@@ -542,7 +542,7 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	return mockClient
 }
 
-func createFakeClientAndReconcile(mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *DynakubeController {
+func createFakeClientAndReconciler(mockClient dtclient.Client, instance *dynatracev1beta1.DynaKube, paasToken, apiToken string) *DynakubeController {
 	data := map[string][]byte{
 		dtclient.DynatraceApiToken: []byte(apiToken),
 	}
