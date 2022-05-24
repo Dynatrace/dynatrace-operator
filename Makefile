@@ -1,280 +1,51 @@
+# Running 'make' runs the first rule in the makefile
+# In order to print the help text in this case,
+# 	'default' has been put here even before the includes
+# The position of a 'default' target that prints a help screen is a
+# 	makefile best-practice
+## Prints help text
+default: help
+
+# Help has been copied from 'https://docs.cloudposse.com/reference/best-practices/make-best-practices/'
+# What exactly it does line by line is a mystery, but the printed help text looks nice
+# Basically, it takes every target, even the ones from includes, and prints their name and the comment above it which is marked by two ##
+# If there is no such comment line, e.g., "## Prints a help screen", the target is not printed at all
+## Prints a help screen
+help:
+	@printf "Available targets:\n\n"
+	@awk '/^[a-zA-Z\-_0-9%:\\]+/ { \
+	  helpMessage = match(lastLine, /^## (.*)/); \
+	  if (helpMessage) { \
+		helpCommand = $$1; \
+		helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \
+  gsub("\\\\", "", helpCommand); \
+  gsub(":+$$", "", helpCommand); \
+		printf "  \x1b[32;01m%-35s\x1b[0m %s\n", helpCommand, helpMessage; \
+	  } \
+	} \
+	{ lastLine = $$0 }' $(MAKEFILE_LIST) | sort -u
+	@printf "\n"
+
 SHELL ?= bash
 
-OLM ?= false
+-include hack/make/*.mk
+-include hack/make/manifests/*.mk
+-include hack/make/tests/*.mk
+-include hack/make/deploy/*.mk
 
-# Current Operator version
-VERSION ?= 0.0.1
-# Default platform for bundles
-PLATFORM ?= openshift
-# Default bundle image tag
-BUNDLE_IMG ?= controller-bundle:$(VERSION)
+## Installs dependencies
+deps: prerequisites/setup-pre-commit prerequisites/kustomize prerequisites/controller-gen
 
-MASTER_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot
-BRANCH_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
-OLM_IMAGE ?= registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
+## Builds the operator image and pushes it to quay with a snapshot tag
+build: images/push/tagged
 
-# "OTHERS" = ClusterRole, ClusterRoleBinding, Deployment, MutatingWebhookConfiguration, Role, RoleBinding, Service, ServiceAccount, ValidatingWebhookConfiguration
-KUBERNETES_OTHERS_YAML=config/deploy/kubernetes/kubernetes-others.yaml
-KUBERNETES_CRD_AND_OTHERS_YAML=config/deploy/kubernetes/kubernetes.yaml
-KUBERNETES_CSIDRIVER_YAML=config/deploy/kubernetes/kubernetes-csidriver.yaml
-KUBERNETES_OLM_YAML=config/deploy/kubernetes/kubernetes-olm.yaml
-KUBERNETES_ALL_YAML=config/deploy/kubernetes/kubernetes-all.yaml
+## Installs (deploys) the operator on a Kubernetes cluster
+install: deploy/kubernetes
 
-OPENSHIFT_OTHERS_YAML=config/deploy/openshift/openshift-others.yaml
-OPENSHIFT_CRD_AND_OTHERS_YAML=config/deploy/openshift/openshift.yaml
-OPENSHIFT_CSIDRIVER_YAML=config/deploy/openshift/openshift-csidriver.yaml
-OPENSHIFT_OLM_YAML=config/deploy/openshift/openshift-olm.yaml
-OPENSHIFT_ALL_YAML=config/deploy/openshift/openshift-all.yaml
+## Installs dependencies, builds and pushes a tagged operator image, and deploys the operator on a cluster
+all: deps build install
 
-# Options for 'bundle-build'
-ifneq ($(origin CHANNELS), undefined)
-BUNDLE_CHANNELS := --channels=$(CHANNELS)
-endif
-ifneq ($(origin DEFAULT_CHANNEL), undefined)
-BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
-endif
-BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
-
-# Image URL to use all building/pushing image targets
-ifeq ($(origin IMG),undefined)
-	ifneq ($(shell git branch --show-current | grep "^release-"),)
-	MASTER_IMAGE=$(BRANCH_IMAGE)
-	else ifeq ($(shell git branch --show-current), master)
-	BRANCH_IMAGE=$(MASTER_IMAGE)
-	endif
-endif
-
-CRD_OPTIONS ?= "crd:preserveUnknownFields=false, crdVersions=v1"
-
-# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
-ifeq (,$(shell go env GOBIN))
-GOBIN=$(shell go env GOPATH)/bin
-else
-GOBIN=$(shell go env GOBIN)
-endif
-
-all: manager
-
-# Run tests
-ENVTEST_ASSETS_DIR = $(shell pwd)/testbin
-test: generate-crd fmt vet manifests
-	mkdir -p $(ENVTEST_ASSETS_DIR)
-	test -f $(ENVTEST_ASSETS_DIR)/setup-envtest.sh || curl -sSLo $(ENVTEST_ASSETS_DIR)/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.6.3/hack/setup-envtest.sh
-	source $(ENVTEST_ASSETS_DIR)/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
-
-helm-test:
-	./hack/helm/test.sh
-
-helm-lint:
-	./hack/helm/lint.sh
-
-kuttl-install:
-	hack/e2e/install-kuttl.sh
-
-kuttl-all: kuttl-activegate kuttl-oneagent
-
-kuttl-activegate: kuttl-check-mandatory-fields
-	kubectl kuttl test --config kuttl/activegate/testsuite.yaml
-
-kuttl-oneagent: kuttl-check-mandatory-fields
-	kubectl kuttl test --config kuttl/oneagent/oneagent-test.yaml
-
-kuttl-check-mandatory-fields:
-	hack/do_env_variables_exist.sh "APIURL APITOKEN PAASTOKEN"
-
-# Build manager binary
-manager: generate-crd fmt vet
-	go build -o bin/manager ./src/cmd/operator/
-
-manager-amd64: export GOOS=linux
-manager-amd64: export GOARCH=amd64
-manager-amd64: generate-crd fmt vet
-	go build -o bin/manager-amd64 ./src/cmd/operator/
-
-# Run against the configured Kubernetes cluster in ~/.kube/config
-run: export RUN_LOCAL=true
-run: export POD_NAMESPACE=dynatrace
-run: generate-crd fmt vet manifests
-	go run ./src/cmd/operator/
-
-install-crd: generate-crd kustomize
-	$(KUSTOMIZE) build config/crd | kubectl apply -f -
-
-uninstall-crd: generate-crd kustomize
-	$(KUSTOMIZE) build config/crd | kubectl delete -f -
-
-# Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests-k8s kustomize
-	kubectl get namespace dynatrace || kubectl create namespace dynatrace
-	cd config/deploy/kubernetes && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(BRANCH_IMAGE)
-	$(KUSTOMIZE) build config/deploy/kubernetes | kubectl apply -f -
-
-# Deploy controller in the configured OpenShift cluster in ~/.kube/config
-deploy-ocp: manifests-ocp kustomize
-	oc get project dynatrace || oc adm new-project --node-selector="" dynatrace
-	cd config/deploy/openshift && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(BRANCH_IMAGE)
-	$(KUSTOMIZE) build config/deploy/openshift | oc apply -f -
-
-push-image:
-	./hack/build/push_image.sh
-
-push-tagged-image: export TAG=snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
-push-tagged-image: push-image
-
-# Generate manifests e.g. CRD, RBAC etc.
-manifests: manifests-k8s manifests-ocp
-
-manifests-k8s: manifests-crd manifests-k8s-csidriver
-	cp "$(KUBERNETES_CRD_AND_OTHERS_YAML)" "$(KUBERNETES_OLM_YAML)"
-	cat "$(KUBERNETES_CRD_AND_OTHERS_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
-
-manifests-crd: generate-crd controller-gen kustomize
-	# Create directories for manifests if they do not exist
-	mkdir -p config/deploy/kubernetes
-
-	# Generate kubernetes.yaml
-	helm template dynatrace-operator config/helm/chart/default \
-		--namespace dynatrace \
-		--set platform="kubernetes" \
-		--set manifests=true \
-		--set olm="${OLM}" \
-		--set autoCreateSecret=false \
-		--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_OTHERS_YAML)"
-
-	grep -v 'app.kubernetes.io/managed-by' "$(KUBERNETES_OTHERS_YAML)"  > config/deploy/kubernetes/tmp.yaml
-	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(KUBERNETES_OTHERS_YAML)"
-	rm config/deploy/kubernetes/tmp.yaml
-
-	$(KUSTOMIZE) build config/crd | cat - "$(KUBERNETES_OTHERS_YAML)" > "$(KUBERNETES_CRD_AND_OTHERS_YAML)"
-
-manifests-k8s-csidriver:
-	# Generate kubernetes-csidriver.yaml
-	helm template dynatrace-operator config/helm/chart/default \
-		--namespace dynatrace \
-		--set partial="csi" \
-		--set platform="kubernetes" \
-		--set manifests=true \
-		--set olm="${OLM}" \
-		--set autoCreateSecret=false \
-		--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_CSIDRIVER_YAML)"
-
-	grep -v 'app.kubernetes.io/managed-by' "$(KUBERNETES_CSIDRIVER_YAML)"  > config/deploy/kubernetes/tmp.yaml
-	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(KUBERNETES_CSIDRIVER_YAML)"
-	rm config/deploy/kubernetes/tmp.yaml
-
-manifests-ocp: manifests-ocp-crd manifests-ocp-csidriver
-	cp "$(OPENSHIFT_CRD_AND_OTHERS_YAML)" "$(OPENSHIFT_OLM_YAML)"
-	cat "$(OPENSHIFT_CRD_AND_OTHERS_YAML)" "$(OPENSHIFT_CSIDRIVER_YAML)" > "$(OPENSHIFT_ALL_YAML)"
-
-manifests-ocp-crd: generate-crd controller-gen kustomize
-	# Create directories for manifests if they do not exist
-	mkdir -p config/deploy/openshift
-
-	# Generate openshift.yaml
-	helm template dynatrace-operator config/helm/chart/default \
-		--namespace dynatrace \
-		--set platform="openshift" \
-		--set manifests=true \
-		--set olm="${OLM}" \
-		--set autoCreateSecret=false \
-		--set createSecurityContextConstraints="true" \
-		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_OTHERS_YAML)"
-
-	grep -v 'app.kubernetes.io/managed-by' "$(OPENSHIFT_OTHERS_YAML)"  > config/deploy/kubernetes/tmp.yaml
-	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(OPENSHIFT_OTHERS_YAML)"
-	rm config/deploy/kubernetes/tmp.yaml
-
-	$(KUSTOMIZE) build config/crd | cat - "$(OPENSHIFT_OTHERS_YAML)" > "$(OPENSHIFT_CRD_AND_OTHERS_YAML)"
-
-manifests-ocp-csidriver:
-	# Generate openshift-csi.yaml
-	helm template dynatrace-operator config/helm/chart/default \
-		--namespace dynatrace \
-		--set partial="csi" \
-		--set platform="openshift" \
-		--set manifests=true \
-		--set olm="${OLM}" \
-		--set autoCreateSecret=false \
-		--set createSecurityContextConstraints="true" \
-		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_CSIDRIVER_YAML)"
-
-	grep -v 'app.kubernetes.io/managed-by' "$(OPENSHIFT_CSIDRIVER_YAML)"  > config/deploy/kubernetes/tmp.yaml
-	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(OPENSHIFT_CSIDRIVER_YAML)"
-	rm config/deploy/kubernetes/tmp.yaml
-	
-
-# Run go fmt against code
-fmt:
-	go fmt ./...
-
-# Run go vet against code
-vet:
-	go vet ./...
-
-lint: fmt vet
-	gci -w .
-	golangci-lint run --build-tags integration,containers_image_storage_stub --timeout 300s
-
-generate-crd: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/bases
+# Generates manifests e.g. CRD, RBAC etc, for Kubernetes and OpenShift
+manifests: manifests/kubernetes manifests/openshift
 
 
-SERVICE_ACCOUNTS=--extra-service-accounts dynatrace-dynakube-oneagent
-SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-dynakube-oneagent-unprivileged
-SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-kubernetes-monitoring
-SERVICE_ACCOUNTS+=--extra-service-accounts dynatrace-activegate
-
-# Generate bundle manifests and metadata, then validate generated files.
-.PHONY: bundle
-bundle: OLM=true
-bundle: manifests kustomize
-	operator-sdk generate kustomize manifests -q --apis-dir ./src/api/
-	cd config/deploy/$(PLATFORM) && $(KUSTOMIZE) edit set image "quay.io/dynatrace/dynatrace-operator:snapshot"=$(OLM_IMAGE)
-	$(KUSTOMIZE) build config/olm/$(PLATFORM) | operator-sdk generate bundle --overwrite --version $(VERSION) $(SERVICE_ACCOUNTS) $(BUNDLE_METADATA_OPTS)
-	operator-sdk bundle validate ./bundle
-	rm -rf ./config/olm/$(PLATFORM)/$(VERSION)
-	mkdir -p ./config/olm/$(PLATFORM)/$(VERSION)
-	mv ./bundle/* ./config/olm/$(PLATFORM)/$(VERSION)
-	mv ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.clusterserviceversion.yaml ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml
-	mv ./bundle.Dockerfile ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile
-	grep -v 'scorecard' ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile > ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile.output
-	mv ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile.output ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile
-	sed 's/bundle/$(VERSION)/' ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile > ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile.output
-	mv ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile.output ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile
-	awk '/operators.operatorframework.io.metrics.project_layout/ { print; print "  operators.operatorframework.io.bundle.channel.default.v1: alpha"; next }1' ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml >  ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml.output
-	mv ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml.output ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml
-	awk '/operators.operatorframework.io.$(VERSION).mediatype.v1/ { print "LABEL operators.operatorframework.io.bundle.channel.default.v1=alpha"; print; next }1' ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile > ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile.output
-	mv ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile.output ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile
-	grep -v '# Labels for testing.' ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile > ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile.output
-	mv ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile.output ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile
-ifeq ($(PLATFORM), openshift)
-	echo 'LABEL com.redhat.openshift.versions="v4.7,v4.8,v4.9"' >> ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile
-	echo 'LABEL com.redhat.delivery.operator.bundle=true' >> ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile
-	echo 'LABEL com.redhat.delivery.backport=true' >> ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile
-	sed 's/\bkubectl\b/oc/g' ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml > ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output
-	mv ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml.output ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml
-	echo '  com.redhat.openshift.versions: v4.7-v4.9' >> ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml
-endif
-	grep -v 'scorecard' ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml > ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml.output
-	grep -v '  # Annotations for testing.' ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml.output > ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml
-	rm ./config/olm/$(PLATFORM)/$(VERSION)/metadata/annotations.yaml.output
-	mv ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.v$(VERSION).clusterserviceversion.yaml ./config/olm/$(PLATFORM)/$(VERSION)/manifests/dynatrace-operator.clusterserviceversion.yaml
-
-.PHONY: bundle-minimal
-bundle-minimal: bundle
-	find ./config/olm/${PLATFORM}/${VERSION}/manifests/ ! \( -name "dynatrace-operator.v${VERSION}.clusterserviceversion.yaml" -o -name "dynatrace.com_dynakubes.yaml" \) -type f -exec rm {} +
-
-# Build the bundle image.
-.PHONY: bundle-build
-bundle-build:
-	docker build -f ./config/olm/$(PLATFORM)/bundle-$(VERSION).Dockerfile -t $(BUNDLE_IMG) ./config/olm/$(PLATFORM)/
-
-test-olm:
-	./hack/setup_olm_catalog.sh
-
-setup-pre-commit:
-	$(info WARNING "Make sure that golangci-lint is installed, for more info see https://golangci-lint.run/usage/install/")
-	GO111MODULE=off go get github.com/daixiang0/gci
-	GO111MODULE=off go get golang.org/x/tools/cmd/goimports
-	cp ./.github/pre-commit ./.git/hooks/pre-commit
-	chmod +x ./.git/hooks/pre-commit

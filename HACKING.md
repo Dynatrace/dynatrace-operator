@@ -11,19 +11,19 @@ There are automatic builds from the master branch. The latest development build 
 
 #### Kubernetes
 ```sh
-$ make deploy
+$ make deploy/kubernetes
 ```
 
 #### OpenShift
 
 ```sh
-$ make deploy-ocp
+$ make deploy/openshift
 ```
 
 #### Tests
 
 The unit tests can be executed as follows:
 
-```
-$ go test ./...
+```sh
+$ make go/test
 ```
