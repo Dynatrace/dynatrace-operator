@@ -2870,8 +2870,6 @@ spec:
             properties:
               activeGate:
                 properties:
-                  UseAuthToken:
-                    type: boolean
                   imageHash:
                     description: ImageHash contains the last image hash seen.
                     type: string

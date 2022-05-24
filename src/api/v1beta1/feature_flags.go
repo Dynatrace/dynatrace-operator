@@ -37,7 +37,7 @@ const (
 	AnnotationFeatureActiveGateReadOnlyFilesystem     = AnnotationFeaturePrefix + "activegate-readonly-fs"
 	AnnotationFeatureAutomaticKubernetesApiMonitoring = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
 	AnnotationFeatureActiveGateIgnoreProxy            = AnnotationFeaturePrefix + "activegate-ignore-proxy"
-	AnnotationFeatureActiveGateDisableAuthToken       = AnnotationFeaturePrefix + "activegate-disable-authToken"
+	AnnotationFeatureActiveGateAuthToken              = AnnotationFeaturePrefix + "enable-activegate-authtoken"
 
 	// statsD
 	AnnotationFeatureUseActiveGateImageForStatsd = AnnotationFeaturePrefix + "use-activegate-image-for-statsd"
@@ -193,9 +193,9 @@ func (dk *DynaKube) FeatureActiveGateIgnoreProxy() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateIgnoreProxy) == "true"
 }
 
-// FeatureActiveGateDisableAuthToken is a feature flag to avoid authToken usage in the activeGate
-func (dk *DynaKube) FeatureActiveGateDisableAuthToken() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateDisableAuthToken) == "true"
+// FeatureActiveGateAuthToken is a feature flag to enable authToken usage in the activeGate
+func (dk *DynaKube) FeatureActiveGateAuthToken() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == "true"
 }
 
 func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {

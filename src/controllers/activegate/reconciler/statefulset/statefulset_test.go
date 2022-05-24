@@ -394,7 +394,9 @@ func TestStatefulSet_Volumes(t *testing.T) {
 			nil, nil, nil,
 		)
 
-		stsProperties.Status.ActiveGate.UseAuthToken = true
+		stsProperties.Annotations = map[string]string{}
+		stsProperties.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAuthToken] = "true"
+
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 
 		authTokenVolume, err := kubeobjects.GetVolumeByName(volumes, authTokenSecretVolumeName)
@@ -629,7 +631,7 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 	})
 	t.Run(`with activeGateAuthToken`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-		instance.Status.ActiveGate.UseAuthToken = true
+		instance.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAuthToken] = "true"
 		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil))
 
 		assert.Contains(t, volumeMounts, corev1.VolumeMount{

@@ -2,7 +2,6 @@ package secrets
 
 import (
 	"context"
-	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -42,7 +41,7 @@ func NewAuthTokenReconciler(clt client.Client, apiReader client.Reader, scheme *
 func (r *AuthTokenReconciler) Reconcile() error {
 	_, err := r.createSecretIfNotExists()
 	if err != nil {
-		return fmt.Errorf("failed to create or update activeGateAuthToken secret: %w", err)
+		return errors.Errorf("failed to create activeGateAuthToken secret: %v", err)
 	}
 
 	return nil
@@ -57,11 +56,11 @@ func (r *AuthTokenReconciler) createSecretIfNotExists() (*corev1.Secret, error) 
 		log.Info("creating activeGateAuthToken secret")
 		agSecretData, err := r.getActiveGateAuthToken()
 		if err != nil {
-			return nil, fmt.Errorf("failed to fetch activeGateAuthToken: %w", err)
+			return nil, errors.Errorf("failed to create secret '%s': %v", extendWithAGSecretSuffix(r.instance.Name), err)
 		}
 		return r.createSecret(agSecretData)
 	}
-	return &config, err
+	return &config, errors.WithStack(err)
 }
 
 func (r *AuthTokenReconciler) getActiveGateAuthToken() (map[string][]byte, error) {
@@ -82,7 +81,7 @@ func (r *AuthTokenReconciler) createSecret(secretData map[string][]byte) (*corev
 
 	err := r.Create(context.TODO(), secret)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create secret '%s': %w", extendWithAGSecretSuffix(r.instance.Name), err)
+		return nil, errors.Errorf("failed to create secret '%s': %v", extendWithAGSecretSuffix(r.instance.Name), err)
 	}
 	return secret, nil
 }

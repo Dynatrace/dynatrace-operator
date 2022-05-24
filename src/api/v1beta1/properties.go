@@ -365,7 +365,7 @@ func (dk *DynaKube) HostGroup() string {
 
 // UseActiveGateAuthToken returns if the activeGate should get an authToken mounted
 func (dk *DynaKube) UseActiveGateAuthToken() bool {
-	return dk.Status.ActiveGate.UseAuthToken && !dk.FeatureActiveGateDisableAuthToken() && dk.NeedsActiveGate()
+	return dk.FeatureActiveGateAuthToken() && dk.NeedsActiveGate()
 }
 
 func splitArg(arg string) (key, value string) {
