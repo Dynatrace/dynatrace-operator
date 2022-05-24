@@ -99,7 +99,7 @@ func (r *TenantSecretReconciler) updateSecretIfOutdated(secret *corev1.Secret, d
 }
 
 func (r *TenantSecretReconciler) createSecret(secretData map[string][]byte) (*corev1.Secret, error) {
-	secret := kubeobjects.CreateSecret(extendWithAGSecretSuffix(r.instance.Name), r.instance.Namespace, secretData)
+	secret := kubeobjects.NewSecret(extendWithAGSecretSuffix(r.instance.Name), r.instance.Namespace, secretData)
 
 	if err := controllerutil.SetControllerReference(r.instance, secret, r.scheme); err != nil {
 		return nil, errors.WithStack(err)

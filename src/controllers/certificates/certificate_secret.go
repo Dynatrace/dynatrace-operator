@@ -31,7 +31,7 @@ func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, ap
 		return errors.WithStack(err)
 	}
 	if secret == nil {
-		secret = kubeobjects.CreateSecret(buildSecretName(), namespace, map[string][]byte{})
+		secret = kubeobjects.NewSecret(buildSecretName(), namespace, map[string][]byte{})
 		certSecret.existsInCluster = false
 	} else {
 		certSecret.existsInCluster = true

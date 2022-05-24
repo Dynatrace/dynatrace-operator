@@ -74,7 +74,7 @@ func (r *AuthTokenReconciler) getActiveGateAuthToken() (map[string][]byte, error
 }
 
 func (r *AuthTokenReconciler) createSecret(secretData map[string][]byte) (*corev1.Secret, error) {
-	secret := kubeobjects.CreateSecret(r.instance.ActiveGateAuthTokenSecret(), r.instance.Namespace, secretData)
+	secret := kubeobjects.NewSecret(r.instance.ActiveGateAuthTokenSecret(), r.instance.Namespace, secretData)
 	if err := controllerutil.SetControllerReference(r.instance, secret, r.scheme); err != nil {
 		return nil, errors.WithStack(err)
 	}
