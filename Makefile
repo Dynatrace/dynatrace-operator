@@ -148,6 +148,7 @@ manifests-k8s: manifests-k8s-core manifests-k8s-csidriver
 manifests-k8s-core: manifests-helm-crd kustomize
 	helm template dynatrace-operator config/helm/chart/default \
 		--namespace dynatrace \
+		--set installCRD=true \
 		--set platform="kubernetes" \
 		--set manifests=true \
 		--set olm="${OLM}" \
@@ -181,6 +182,7 @@ manifests-ocp: manifests-ocp-core manifests-ocp-csidriver
 manifests-ocp-core: manifests-helm-crd kustomize
 	helm template dynatrace-operator config/helm/chart/default \
 		--namespace dynatrace \
+		--set installCRD=true \
 		--set platform="openshift" \
 		--set manifests=true \
 		--set olm="${OLM}" \
