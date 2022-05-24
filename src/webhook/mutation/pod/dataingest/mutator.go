@@ -51,7 +51,7 @@ func (mutator *DataIngestPodMutator) Mutate(request *dtwebhook.MutationRequest) 
 }
 
 func (mutator *DataIngestPodMutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	if !podIsInjected(request.Pod) {
+	if !mutator.Injected(request.Pod) {
 		return false
 	}
 	log.Info("reinvoking", "pod", request.Pod.GenerateName)
@@ -89,10 +89,6 @@ func setAnnotation(pod *corev1.Pod) {
 		pod.Annotations = make(map[string]string)
 	}
 	pod.Annotations[dtwebhook.AnnotationDataIngestInjected] = "true"
-}
-
-func podIsInjected(pod *corev1.Pod) bool {
-	return kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
 }
 
 func containerIsInjected(container *corev1.Container) bool {

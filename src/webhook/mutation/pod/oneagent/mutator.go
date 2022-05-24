@@ -51,7 +51,7 @@ func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) er
 }
 
 func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	if !podIsInjected(request.Pod) {
+	if !mutator.Injected(request.Pod) {
 		return false
 	}
 	log.Info("reinvoking", "pod", request.Pod.GenerateName)
@@ -97,10 +97,6 @@ func (mutator *OneAgentPodMutator) ensureInitSecret(request *dtwebhook.MutationR
 		return err
 	}
 	return nil
-}
-
-func podIsInjected(pod *corev1.Pod) bool {
-	return kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
 }
 
 func containerInjected(container *corev1.Container) bool {
