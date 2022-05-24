@@ -66,7 +66,7 @@ func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*Active
 	if err != nil {
 		return nil, err
 	}
-	log.Info("Token create", "Token", authTokenInfo.Token)
+
 	return authTokenInfo, nil
 }
 
