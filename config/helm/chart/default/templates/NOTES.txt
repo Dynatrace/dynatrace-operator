@@ -8,4 +8,3 @@ https://github.com/Dynatrace/dynatrace-operator
 To verify the current state of the deployments, try:
   $ kubectl get pods -n {{ .Release.Namespace }}
   $ kubectl logs -f deployment/{{ .Release.Name }} -n {{ .Release.Namespace }}
-  $ kubectl get dynakube {{ .Values.name }} -n {{ .Release.Namespace }}

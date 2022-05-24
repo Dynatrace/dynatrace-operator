@@ -1,0 +1,5 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: ../../../../hack/kuttl/activegate/wait-for.sh statefulset app.kubernetes.io/component=activegate jsonpath='{.status.readyReplicas}'=1
+    timeout: 300

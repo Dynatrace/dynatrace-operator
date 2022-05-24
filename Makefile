@@ -50,27 +50,24 @@ test: generate-crd fmt vet manifests
 	source $(ENVTEST_ASSETS_DIR)/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
 
 helm-test:
-	cd config/helm && ./testing/test.sh
+	./hack/helm/test.sh
 
 helm-lint:
-	cd config/helm && ./testing/lint.sh
-
+	./hack/helm/lint.sh
 
 kuttl-install:
 	hack/e2e/install-kuttl.sh
 
 kuttl-all: kuttl-activegate kuttl-oneagent
 
-kuttl-activegate:
-	kubectl kuttl test --config src/testing/kuttl/activegate/testsuite.yaml
+kuttl-activegate: kuttl-check-mandatory-fields
+	kubectl kuttl test --config kuttl/activegate/testsuite.yaml
 
-kuttl-oneagent: deploy
-	kubectl -n dynatrace wait pod --for=condition=ready -l app.kubernetes.io/component=webhook
-	kubectl kuttl test --config src/testing/kuttl/oneagent/oneagent-test.yaml
-# CLEAN-UP
-	kubectl delete dynakube --all -n dynatrace
-	kubectl -n dynatrace wait pod --for=delete -l app.kubernetes.io/component=oneagent --timeout=500s
-	kubectl delete -f config/deploy/kubernetes/kubernetes-all.yaml
+kuttl-oneagent: kuttl-check-mandatory-fields
+	kubectl kuttl test --config kuttl/oneagent/oneagent-test.yaml
+
+kuttl-check-mandatory-fields:
+	hack/do_env_variables_exist.sh "APIURL APITOKEN PAASTOKEN"
 
 # Build manager binary
 manager: generate-crd fmt vet
@@ -106,7 +103,7 @@ deploy-ocp: manifests-ocp kustomize
 	$(KUSTOMIZE) build config/deploy/openshift | oc apply -f -
 
 push-image:
-	./build/push_image.sh
+	./hack/build/push_image.sh
 
 push-tagged-image: export TAG=snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
 push-tagged-image: push-image
