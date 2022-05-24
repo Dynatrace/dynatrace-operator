@@ -129,14 +129,7 @@ push-tagged-image: export TAG=snapshot-$(shell git branch --show-current | sed "
 push-tagged-image: push-image
 
 # Generate manifests e.g. CRD, RBAC etc.
-manifests: prepare-manifests-directory manifests-k8s manifests-ocp strip-helm-labels
-
-strip-helm-labels:
-	./hack/build/strip-helm-labels.sh \
-		$(KUBERNETES_OLM_YAML) \
-		$(KUBERNETES_ALL_YAML) \
-		$(OPENSHIFT_OLM_YAML) \
-		$(OPENSHIFT_ALL_YAML)
+manifests: prepare-manifests-directory manifests-k8s manifests-ocp
 
 prepare-manifests-directory:
 	find $(MANIFESTS_DIR) -type f -not -name 'kustomization.yaml' -delete
