@@ -71,6 +71,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 			),
 		},
 	}})
+	log.Info("registered /inject endpoint")
 	return nil
 }
 
@@ -78,6 +79,7 @@ func registerLivezEndpoint(mgr manager.Manager) {
 	mgr.GetWebhookServer().Register("/livez", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
+	log.Info("registered /livez endpoint")
 }
 
 func getWebhookPodImage(apiReader client.Reader, podName string, namespaceName string) (string, error) {
@@ -88,7 +90,9 @@ func getWebhookPodImage(apiReader client.Reader, podName string, namespaceName s
 	}, &pod); err != nil {
 		return "", err
 	}
-	return pod.Spec.Containers[0].Image, nil
+	podImage := pod.Spec.Containers[0].Image
+	log.Info("got webhook's image", "image", pod.Spec.Containers[0].Image)
+	return podImage, nil
 }
 
 func getClusterID(apiReader client.Reader) (string, error) {
@@ -97,5 +101,6 @@ func getClusterID(apiReader client.Reader) (string, error) {
 	if clusterUID, err = kubesystem.GetUID(apiReader); err != nil {
 		return "", err
 	}
+	log.Info("got cluster UID", "clusterUID", clusterUID)
 	return string(clusterUID), nil
 }

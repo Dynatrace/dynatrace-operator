@@ -22,7 +22,7 @@ func (mutator *OneAgentPodMutator) updateContainers(request *dtwebhook.MutationR
 
 func (mutator *OneAgentPodMutator) addOneAgentToContainer(pod *corev1.Pod, dynakube *dynatracev1beta1.DynaKube, container *corev1.Container) {
 
-	log.Info("updating container with missing preload variables", "containerName", container.Name)
+	log.Info("adding OneAgent to container", "container", container.Name)
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 
 	addOneAgentVolumeMounts(container, installPath)
@@ -34,6 +34,7 @@ func (mutator *OneAgentPodMutator) addOneAgentToContainer(pod *corev1.Pod, dynak
 
 	addDeploymentMetadataEnv(container, dynakube, mutator.clusterID)
 	addPreloadEnv(container, installPath)
+
 	if dynakube.NeedsOneAgentProxy() {
 		addProxyEnv(container)
 	}

@@ -33,6 +33,7 @@ func (mutator *OneAgentPodMutator) Enabled(pod *corev1.Pod) bool {
 }
 
 func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) error {
+	log.Info("injecting OneAgent into pod", "pod", request.Pod.GenerateName)
 	if err := mutator.ensureInitSecret(request); err != nil {
 		return err
 	}
@@ -51,6 +52,7 @@ func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationReque
 	if !podIsInjected(request.Pod) {
 		return false
 	}
+	log.Info("reinvoking", "pod", request.Pod.GenerateName)
 
 	pod := request.Pod
 	initContainer := dtwebhook.FindInitContainer(pod.Spec.InitContainers)
@@ -88,6 +90,7 @@ func (mutator *OneAgentPodMutator) ensureInitSecret(request *dtwebhook.MutationR
 			log.Error(err, "Failed to create the init secret before oneagent pod injection")
 			return err
 		}
+		log.Info("created the init secret before oneagent pod injection")
 	} else if err != nil {
 		log.Error(err, "failed to query the init secret before oneagent pod injection")
 		return err
@@ -96,7 +99,7 @@ func (mutator *OneAgentPodMutator) ensureInitSecret(request *dtwebhook.MutationR
 }
 
 func podIsInjected(pod *corev1.Pod) bool {
-	return kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInjected, true)
+	return kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
 }
 
 func containerInjected(container *corev1.Container) bool {

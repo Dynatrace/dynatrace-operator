@@ -44,7 +44,7 @@ func (webhook *podMutatorWebhook) getPodFromRequest(req admission.Request) (*cor
 	pod := &corev1.Pod{}
 	err := webhook.decoder.Decode(req, pod)
 	if err != nil {
-		log.Error(err, "Failed to decode the request for pod injection")
+		log.Error(err, "failed to decode the request for pod injection")
 		return nil, err
 	}
 	return pod, nil
@@ -54,10 +54,9 @@ func (webhook *podMutatorWebhook) getNamespaceFromRequest(ctx context.Context, r
 	var namespace corev1.Namespace
 
 	if err := webhook.apiReader.Get(ctx, client.ObjectKey{Name: req.Namespace}, &namespace); err != nil {
-		log.Error(err, "Failed to query the namespace before pod injection")
+		log.Error(err, "failed to query the namespace before pod injection")
 		return nil, err
 	}
-
 	return &namespace, nil
 }
 

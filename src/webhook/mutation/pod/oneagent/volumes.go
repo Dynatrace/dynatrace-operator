@@ -68,7 +68,10 @@ func addInjectionConfigVolume(pod *corev1.Pod) {
 
 func addOneAgentVolumes(dynakube *dynatracev1beta1.DynaKube, pod *corev1.Pod) {
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
-		corev1.Volume{Name: oneAgentBinVolumeName, VolumeSource: getInstallerVolumeSource(dynakube)},
+		corev1.Volume{
+			Name:         oneAgentBinVolumeName,
+			VolumeSource: getInstallerVolumeSource(dynakube),
+		},
 		corev1.Volume{
 			Name: oneAgentShareVolumeName,
 			VolumeSource: corev1.VolumeSource{

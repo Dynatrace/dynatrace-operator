@@ -30,6 +30,7 @@ func (mutator *DataIngestPodMutator) Enabled(pod *corev1.Pod) bool {
 }
 
 func (mutator *DataIngestPodMutator) Mutate(request *dtwebhook.MutationRequest) error {
+	log.Info("injecting data-ingest into pod", "pod", request.Pod.GenerateName)
 	workload, err := mutator.retrieveWorkload(request)
 	if err != nil {
 		return err
@@ -53,6 +54,7 @@ func (mutator *DataIngestPodMutator) Reinvoke(request *dtwebhook.ReinvocationReq
 	if !podIsInjected(request.Pod) {
 		return false
 	}
+	log.Info("reinvoking", "pod", request.Pod.GenerateName)
 
 	for _, container := range request.Pod.Spec.Containers {
 		if containerIsInjected(container) {
@@ -73,6 +75,7 @@ func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.M
 			log.Error(err, "failed to create the data-ingest endpoint secret before pod injection")
 			return err
 		}
+		log.Info("created the data-ingest endpoint secret before pod injection")
 	} else if err != nil {
 		log.Error(err, "failed to query the data-ingest endpoint secret before pod injection")
 		return err
@@ -89,7 +92,7 @@ func setAnnotation(pod *corev1.Pod) {
 }
 
 func podIsInjected(pod *corev1.Pod) bool {
-	return kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInjected, true)
+	return kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
 }
 
 func containerIsInjected(container corev1.Container) bool {

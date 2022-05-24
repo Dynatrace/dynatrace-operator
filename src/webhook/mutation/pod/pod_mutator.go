@@ -66,7 +66,7 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 			log.Error(err, "failed to inject into pod")
 			return silentErrorResponse(mutationRequest.Pod.GenerateName, err)
 		}
-		log.Info("injecting into Pod", "generatedName", mutationRequest.Pod.GenerateName, "namespace", request.Namespace)
+		log.Info("injection finished for pod", "podName", mutationRequest.Pod.GenerateName, "namespace", request.Namespace)
 	}
 	return createResponseForPod(mutationRequest.Pod, request)
 }
@@ -78,7 +78,6 @@ func (webhook *podMutatorWebhook) setupEventRecorder(mutationRequest *dtwebhook.
 
 func (webhook *podMutatorWebhook) handleFreshPod(mutationRequest *dtwebhook.MutationRequest) error {
 	mutationRequest.InitContainer = webhook.createInstallInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
-
 	for _, mutator := range webhook.mutators {
 		if !mutator.Enabled(mutationRequest.Pod) {
 			continue
@@ -97,7 +96,7 @@ func (webhook *podMutatorWebhook) handleAlreadyInjectedPod(mutationRequest *dtwe
 	var needsUpdate bool
 	if mutationRequest.DynaKube.FeatureEnableWebhookReinvocationPolicy() {
 		if webhook.applyReinvocationPolicy(mutationRequest) {
-			log.Info("updating pod with missing containers")
+			log.Info("reinvocation policy applied", "podName", mutationRequest.Pod.GenerateName)
 			webhook.recorder.sendPodUpdateEvent()
 			needsUpdate = true
 		}
