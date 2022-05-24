@@ -389,8 +389,8 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 		dynakubeState.Instance.KubernetesMonitoringMode() {
 
 		clusterLabel := dynakubeState.Instance.Name
-		if dynakubeState.Instance.FeatureAutomaticKubernetesApiMonitoringClusterLabel() != "" {
-			clusterLabel = dynakubeState.Instance.FeatureAutomaticKubernetesApiMonitoringClusterLabel()
+		if ffClusterLabel := dynakubeState.Instance.FeatureAutomaticKubernetesApiMonitoringClusterLabel(); ffClusterLabel != "" {
+			clusterLabel = ffClusterLabel
 		}
 
 		err := automaticapimonitoring.NewReconciler(dtc, clusterLabel, dynakubeState.Instance.Status.KubeSystemUUID).
