@@ -8,14 +8,14 @@ import (
 )
 
 func (mutator *OneAgentPodMutator) configureInitContainer(request *dtwebhook.MutationRequest, installer installerInfo) {
-	addInstallerInitEnvs(request.InitContainer, installer, mutator.getVolumeMode(request.DynaKube))
-	addInitVolumeMounts(request.InitContainer)
+	addInstallerInitEnvs(request.InstallContainer, installer, mutator.getVolumeMode(request.DynaKube))
+	addInitVolumeMounts(request.InstallContainer)
 }
 
 func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.MutationRequest) {
 	for i := range request.Pod.Spec.Containers {
 		container := &request.Pod.Spec.Containers[i]
-		addContainerInfoInitEnv(request.InitContainer, i+1, container.Name, container.Image)
+		addContainerInfoInitEnv(request.InstallContainer, i+1, container.Name, container.Image)
 		mutator.addOneAgentToContainer(request.Pod, request.DynaKube, container)
 	}
 }

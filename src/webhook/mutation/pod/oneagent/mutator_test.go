@@ -46,6 +46,120 @@ func TestEnsureInitSecret(t *testing.T) {
 	})
 }
 
+func TestMutate(t *testing.T) {
+	t.Run("basic, should mutate the pod and init container in the request", func(t *testing.T) {
+		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
+		request := createTestMutationRequest(getTestDynakube(), nil)
+
+		initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
+		initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
+		initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
+		initialContainersLen := len(request.Pod.Spec.Containers)
+		initialAnnotationsLen := len(request.Pod.Annotations)
+		initialInitContainers := request.Pod.Spec.InitContainers
+
+		err := mutator.Mutate(request)
+		require.NoError(t, err)
+
+		assert.Equal(t, initialNumberOfContainerEnvsLen+2, len(request.Pod.Spec.Containers[0].Env))
+		assert.Equal(t, initialNumberOfVolumesLen+3, len(request.Pod.Spec.Volumes))
+		assert.Equal(t, len(initialInitContainers), len(request.Pod.Spec.InitContainers)) // the init container should be added when in the PodMutator
+		assert.Equal(t, initialContainerVolumeMountsLen+3, len(request.Pod.Spec.Containers[0].VolumeMounts))
+		assert.Equal(t, initialAnnotationsLen+1, len(request.Pod.Annotations))
+		assert.Equal(t, initialInitContainers, request.Pod.Spec.InitContainers)
+
+		assert.Equal(t, 6+(initialContainersLen*2), len(request.InstallContainer.Env))
+		assert.Equal(t, 2, len(request.InstallContainer.VolumeMounts))
+	})
+	t.Run("everything turned on, should mutate the pod and init container in the request", func(t *testing.T) {
+		dynakube := getTestCSIDynakube()
+		dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: "test-proxy"}
+		dynakube.Spec.NetworkZone = "test-network-zone"
+		dynakube.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{
+			Capabilities:  []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName},
+			TlsSecretName: "super-secret",
+		}
+		dynakube.Annotations = map[string]string{
+			dynatracev1beta1.AnnotationFeatureOneAgentInitialConnectRetry: "5",
+		}
+		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
+		request := createTestMutationRequest(dynakube, nil)
+
+		initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
+		initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
+		initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
+		initialContainersLen := len(request.Pod.Spec.Containers)
+		initialAnnotationsLen := len(request.Pod.Annotations)
+		initialInitContainers := request.Pod.Spec.InitContainers
+
+		err := mutator.Mutate(request)
+		require.NoError(t, err)
+
+		assert.Equal(t, initialNumberOfContainerEnvsLen+5, len(request.Pod.Spec.Containers[0].Env))
+		assert.Equal(t, initialNumberOfVolumesLen+3, len(request.Pod.Spec.Volumes))
+		assert.Equal(t, len(initialInitContainers), len(request.Pod.Spec.InitContainers)) // the init container should be added when in the PodMutator
+		assert.Equal(t, initialContainerVolumeMountsLen+4, len(request.Pod.Spec.Containers[0].VolumeMounts))
+		assert.Equal(t, initialAnnotationsLen+1, len(request.Pod.Annotations))
+		assert.Equal(t, initialInitContainers, request.Pod.Spec.InitContainers)
+
+		assert.Equal(t, 6+(initialContainersLen*2), len(request.InstallContainer.Env))
+		assert.Equal(t, 2, len(request.InstallContainer.VolumeMounts))
+	})
+}
+
+func TestReinvoke(t *testing.T) {
+	t.Run("basic, should only mutate the containers in the pod", func(t *testing.T) {
+		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
+		request := createTestReinvocationRequest(getTestDynakube(), map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"})
+
+		initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
+		initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
+		initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
+		initialContainersLen := len(request.Pod.Spec.Containers)
+		initialAnnotationsLen := len(request.Pod.Annotations)
+
+		updated := mutator.Reinvoke(request)
+		require.True(t, updated)
+
+		assert.Equal(t, initialNumberOfVolumesLen, len(request.Pod.Spec.Volumes))
+		assert.Equal(t, initialAnnotationsLen, len(request.Pod.Annotations))
+
+		assert.Equal(t, initialNumberOfContainerEnvsLen+2, len(request.Pod.Spec.Containers[0].Env))
+		assert.Equal(t, initialContainerVolumeMountsLen+3, len(request.Pod.Spec.Containers[0].VolumeMounts))
+		assert.Equal(t, initialContainersLen*2, len(request.Pod.Spec.InitContainers[1].Env)) // only add the new container specific env vars
+	})
+	t.Run("everything turned on, should only mutate the containers in the pod", func(t *testing.T) {
+		dynakube := getTestCSIDynakube()
+		dynakube.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: "test-proxy"}
+		dynakube.Spec.NetworkZone = "test-network-zone"
+		dynakube.Spec.ActiveGate = dynatracev1beta1.ActiveGateSpec{
+			Capabilities:  []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName},
+			TlsSecretName: "super-secret",
+		}
+		dynakube.Annotations = map[string]string{
+			dynatracev1beta1.AnnotationFeatureOneAgentInitialConnectRetry: "5",
+		}
+		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
+		request := createTestReinvocationRequest(dynakube, map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"})
+
+		initialNumberOfContainerEnvsLen := len(request.Pod.Spec.Containers[0].Env)
+		initialNumberOfVolumesLen := len(request.Pod.Spec.Volumes)
+		initialContainerVolumeMountsLen := len(request.Pod.Spec.Containers[0].VolumeMounts)
+		initialContainersLen := len(request.Pod.Spec.Containers)
+		initialAnnotationsLen := len(request.Pod.Annotations)
+
+		updated := mutator.Reinvoke(request)
+		require.True(t, updated)
+
+		assert.Equal(t, initialNumberOfVolumesLen, len(request.Pod.Spec.Volumes))
+		assert.Equal(t, initialAnnotationsLen, len(request.Pod.Annotations))
+
+		assert.Equal(t, initialNumberOfContainerEnvsLen+5, len(request.Pod.Spec.Containers[0].Env))
+		assert.Equal(t, initialContainerVolumeMountsLen+4, len(request.Pod.Spec.Containers[0].VolumeMounts))
+		assert.Equal(t, initialContainersLen*2, len(request.Pod.Spec.InitContainers[1].Env)) // only add the new container specific env vars
+	})
+}
+
 func createTestPodMutator(objects []client.Object) *OneAgentPodMutator {
 	return &OneAgentPodMutator{
 		client:           fake.NewClient(objects...),
@@ -71,7 +185,16 @@ func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube, annotations 
 		Pod:       getTestPod(annotations),
 		Namespace: getTestNamespace(),
 		DynaKube:  dynakube,
+		InstallContainer: &corev1.Container{
+			Name: dtwebhook.InstallContainerName,
+		},
 	}
+}
+
+func createTestReinvocationRequest(dynakube *dynatracev1beta1.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
+	request := createTestMutationRequest(dynakube, annotations).ToReinvocationRequest()
+	request.Pod.Spec.InitContainers = append(request.Pod.Spec.InitContainers, corev1.Container{Name: dtwebhook.InstallContainerName})
+	return request
 }
 
 func getTestCSIDynakube() *dynatracev1beta1.DynaKube {

@@ -45,7 +45,7 @@ func (mutator *DataIngestPodMutator) Mutate(request *dtwebhook.MutationRequest) 
 	}
 	mutator.setupVolumes(request.Pod)
 	mutateUserContainers(request.Pod)
-	updateInstallContainer(request.InitContainer, workload)
+	updateInstallContainer(request.InstallContainer, workload)
 	setInjectedAnnotation(request.Pod)
 	return nil
 }

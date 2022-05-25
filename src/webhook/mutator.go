@@ -15,11 +15,11 @@ type PodMutator interface {
 }
 
 type MutationRequest struct {
-	Context       context.Context
-	Pod           *corev1.Pod
-	Namespace     *corev1.Namespace
-	DynaKube      *dynatracev1beta1.DynaKube
-	InitContainer *corev1.Container
+	Context          context.Context
+	Pod              *corev1.Pod
+	Namespace        *corev1.Namespace
+	DynaKube         *dynatracev1beta1.DynaKube
+	InstallContainer *corev1.Container
 }
 
 type ReinvocationRequest struct {
@@ -35,9 +35,10 @@ func (request *MutationRequest) ToReinvocationRequest() *ReinvocationRequest {
 }
 
 func FindInitContainer(initContainers []corev1.Container) *corev1.Container {
-	for _, container := range initContainers {
+	for i := range initContainers {
+		container := &initContainers[i]
 		if container.Name == InstallContainerName {
-			return &container
+			return container
 		}
 	}
 	return nil

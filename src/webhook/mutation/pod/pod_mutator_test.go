@@ -85,7 +85,7 @@ func TestHandlePodMutation(t *testing.T) {
 
 		err := podWebhook.handlePodMutation(mutationRequest)
 		require.NoError(t, err)
-		assert.NotNil(t, mutationRequest.InitContainer)
+		assert.NotNil(t, mutationRequest.InstallContainer)
 		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 2)
 		assert.Equal(t, mutationRequest.Pod.Spec.InitContainers[1].SecurityContext, testSecurityContext)
 		assert.Equal(t, mutationRequest.Pod.Spec.InitContainers[1].Resources, testResourceRequirements)
@@ -104,7 +104,7 @@ func TestHandlePodMutation(t *testing.T) {
 
 		err := podWebhook.handlePodMutation(mutationRequest)
 		require.Error(t, err)
-		assert.NotNil(t, mutationRequest.InitContainer)
+		assert.NotNil(t, mutationRequest.InstallContainer)
 		assert.Len(t, mutationRequest.Pod.Spec.InitContainers, 1)
 		assert.NotEqual(t, "true", mutationRequest.Pod.Annotations[dtwebhook.AnnotationDynatraceInjected])
 		sadMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.Pod)
