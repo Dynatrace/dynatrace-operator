@@ -37,6 +37,7 @@ const (
 	AnnotationFeatureActiveGateReadOnlyFilesystem     = AnnotationFeaturePrefix + "activegate-readonly-fs"
 	AnnotationFeatureAutomaticKubernetesApiMonitoring = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
 	AnnotationFeatureActiveGateIgnoreProxy            = AnnotationFeaturePrefix + "activegate-ignore-proxy"
+	AnnotationFeatureActiveGateAuthToken              = AnnotationFeaturePrefix + "enable-activegate-authtoken"
 
 	// statsD
 	AnnotationFeatureUseActiveGateImageForStatsd = AnnotationFeaturePrefix + "use-activegate-image-for-statsd"
@@ -191,6 +192,11 @@ func (dk *DynaKube) FeatureOneAgentIgnoreProxy() bool {
 // FeatureActiveGateIgnoreProxy is a feature flag to ignore the proxy for ActiveGate when set in CR
 func (dk *DynaKube) FeatureActiveGateIgnoreProxy() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateIgnoreProxy) == "true"
+}
+
+// FeatureActiveGateAuthToken is a feature flag to enable authToken usage in the activeGate
+func (dk *DynaKube) FeatureActiveGateAuthToken() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == "true"
 }
 
 // FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents

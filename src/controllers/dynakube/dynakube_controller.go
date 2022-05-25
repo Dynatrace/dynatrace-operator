@@ -12,7 +12,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/automaticapimonitoring"
 	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/dtpullsecret"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/istio"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent"
@@ -200,11 +200,19 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	}
 
 	if !dkState.Instance.FeatureDisableActivegateRawImage() && dkState.Instance.NeedsActiveGate() {
-		err = activegate.
-			NewTenantSecretReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtcReconciler.ApiToken, dtc).
+		err = secrets.NewTenantSecretReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtcReconciler.ApiToken, dtc).
 			Reconcile()
 		if dkState.Error(err) {
 			log.Error(err, "could not reconcile Dynatrace ActiveGate Tenant secrets")
+			return
+		}
+	}
+
+	if dkState.Instance.UseActiveGateAuthToken() {
+		err = secrets.NewAuthTokenReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtcReconciler.ApiToken, dtc).
+			Reconcile()
+		if dkState.Error(err) {
+			log.Error(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")
 			return
 		}
 	}
