@@ -45,8 +45,8 @@ func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) er
 	installerInfo := getInstallerInfo(request.Pod)
 	mutator.addVolumes(request.Pod, request.DynaKube)
 	mutator.configureInitContainer(request, installerInfo)
-	mutator.updateContainers(request)
-	setAnnotation(request.Pod)
+	mutator.mutateUserContainers(request)
+	setInjectedAnnotation(request.Pod)
 	return nil
 }
 
@@ -55,22 +55,7 @@ func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationReque
 		return false
 	}
 	log.Info("reinvoking", "pod", request.Pod.GenerateName)
-
-	pod := request.Pod
-	initContainer := dtwebhook.FindInitContainer(pod.Spec.InitContainers)
-	for i := range pod.Spec.Containers {
-		currentContainer := &pod.Spec.Containers[i]
-		if containerInjected(currentContainer) {
-			continue
-		}
-		mutator.addOneAgentToContainer(pod, request.DynaKube, currentContainer)
-		addContainerInfoInitEnv(
-			initContainer,
-			i+1,
-			currentContainer.Name,
-			currentContainer.Image,
-		)
-	}
+	mutator.reinvokeUserContainers(request)
 	return true
 }
 
@@ -99,7 +84,7 @@ func (mutator *OneAgentPodMutator) ensureInitSecret(request *dtwebhook.MutationR
 	return nil
 }
 
-func containerInjected(container *corev1.Container) bool {
+func containerIsInjected(container *corev1.Container) bool {
 	for _, e := range container.Env {
 		if e.Name == "LD_PRELOAD" {
 			return true

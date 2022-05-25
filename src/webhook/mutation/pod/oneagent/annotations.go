@@ -17,7 +17,7 @@ type installerInfo struct {
 	failurePolicy string
 }
 
-func setAnnotation(pod *corev1.Pod) {
+func setInjectedAnnotation(pod *corev1.Pod) {
 	if pod.Annotations == nil {
 		pod.Annotations = make(map[string]string)
 	}

@@ -44,9 +44,9 @@ func (mutator *DataIngestPodMutator) Mutate(request *dtwebhook.MutationRequest) 
 		return err
 	}
 	mutator.setupVolumes(request.Pod)
-	updateFreshUserContainers(request.Pod)
+	mutateUserContainers(request.Pod)
 	updateInstallContainer(request.InitContainer, workload)
-	setAnnotation(request.Pod)
+	setInjectedAnnotation(request.Pod)
 	return nil
 }
 
@@ -55,14 +55,7 @@ func (mutator *DataIngestPodMutator) Reinvoke(request *dtwebhook.ReinvocationReq
 		return false
 	}
 	log.Info("reinvoking", "pod", request.Pod.GenerateName)
-
-	for i := range request.Pod.Spec.Containers {
-		container := &request.Pod.Spec.Containers[i]
-		if containerIsInjected(container) {
-			continue
-		}
-		setupVolumeMountsForUserContainer(container)
-	}
+	reinvokeUserContainers(request.Pod)
 	return true
 }
 
@@ -84,7 +77,7 @@ func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.M
 	return nil
 }
 
-func setAnnotation(pod *corev1.Pod) {
+func setInjectedAnnotation(pod *corev1.Pod) {
 	if pod.Annotations == nil {
 		pod.Annotations = make(map[string]string)
 	}

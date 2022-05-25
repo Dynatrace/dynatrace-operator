@@ -12,11 +12,35 @@ func (mutator *OneAgentPodMutator) configureInitContainer(request *dtwebhook.Mut
 	addInitVolumeMounts(request.InitContainer)
 }
 
-func (mutator *OneAgentPodMutator) updateContainers(request *dtwebhook.MutationRequest) {
+func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.MutationRequest) {
 	for i := range request.Pod.Spec.Containers {
 		container := &request.Pod.Spec.Containers[i]
 		addContainerInfoInitEnv(request.InitContainer, i+1, container.Name, container.Image)
 		mutator.addOneAgentToContainer(request.Pod, request.DynaKube, container)
+	}
+}
+
+// reinvokeUserContainers mutates each user container that hasn't been injected
+// it does it in an way to make sure that the new containers will have an envvar in the install-container
+// that don't conflict with the previous envvars for the originally injected containers
+func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.ReinvocationRequest) {
+	pod := request.Pod
+	initContainer := dtwebhook.FindInitContainer(pod.Spec.InitContainers)
+	newContainers := []*corev1.Container{}
+
+	for i := range pod.Spec.Containers {
+		currentContainer := &pod.Spec.Containers[i]
+		if containerIsInjected(currentContainer) {
+			continue
+		}
+		newContainers = append(newContainers, currentContainer)
+	}
+
+	oldContainersLen := len(pod.Spec.Containers) - len(newContainers)
+	for i := range newContainers {
+		currentContainer := newContainers[i]
+		addContainerInfoInitEnv(initContainer, oldContainersLen+i+1, currentContainer.Name, currentContainer.Image)
+		mutator.addOneAgentToContainer(request.Pod, request.DynaKube, currentContainer)
 	}
 }
 
