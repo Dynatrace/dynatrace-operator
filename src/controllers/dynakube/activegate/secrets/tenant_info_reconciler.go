@@ -1,4 +1,4 @@
-package activegate
+package secrets
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -100,7 +99,7 @@ func (r *TenantSecretReconciler) updateSecretIfOutdated(secret *corev1.Secret, d
 }
 
 func (r *TenantSecretReconciler) createSecret(secretData map[string][]byte) (*corev1.Secret, error) {
-	secret := BuildAGSecret(r.instance, secretData)
+	secret := kubeobjects.NewSecret(extendWithAGSecretSuffix(r.instance.Name), r.instance.Namespace, secretData)
 
 	if err := controllerutil.SetControllerReference(r.instance, secret, r.scheme); err != nil {
 		return nil, errors.WithStack(err)
@@ -120,17 +119,6 @@ func (r *TenantSecretReconciler) updateSecret(agSecret *corev1.Secret, desiredAG
 		return fmt.Errorf("failed to update secret %s: %w", agSecret.Name, err)
 	}
 	return nil
-}
-
-func BuildAGSecret(instance *dynatracev1beta1.DynaKube, agSecretData map[string][]byte) *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      extendWithAGSecretSuffix(instance.Name),
-			Namespace: instance.Namespace,
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: agSecretData,
-	}
 }
 
 func extendWithAGSecretSuffix(name string) string {

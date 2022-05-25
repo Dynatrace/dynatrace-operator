@@ -55,6 +55,10 @@ func (dtc *dynatraceClient) getTokensLookupUrl() string {
 	return fmt.Sprintf("%s/v1/tokens/lookup", dtc.url)
 }
 
+func (dtc *dynatraceClient) getActiveGateAuthTokenUrl() string {
+	return fmt.Sprintf("%s/v2/activeGateTokens", dtc.url)
+}
+
 func appendTechnologies(url string, technologies []string) string {
 	for _, tech := range technologies {
 		url = fmt.Sprintf("%s&include=%s", url, tech)

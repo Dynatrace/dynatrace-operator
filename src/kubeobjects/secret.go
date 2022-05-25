@@ -114,13 +114,13 @@ func GetSecret(ctx context.Context, apiReader client.Reader, name string, namesp
 	return &secret, errors.WithStack(err)
 }
 
-func CreateEmptySecret(name string, namespace string) *corev1.Secret {
+func NewSecret(name string, namespace string, data map[string][]byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Data: map[string][]byte{},
+		Data: data,
 	}
 }
 
