@@ -1,4 +1,4 @@
-name: builddockerimage
+name: build-dockerimage
 
 on:
   workflow_call:
@@ -20,7 +20,7 @@ on:
         type: string
 
 jobs:
-  build_job:
+  build:
     name: Build docker image
     runs-on: ubuntu-latest
     steps:

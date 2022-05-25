@@ -1,4 +1,4 @@
-name: uploaddockerimage
+name: upload-dockerimage
 
 on:
   workflow_call:
@@ -26,7 +26,7 @@ on:
 
 jobs:
   upload_job:
-    name: Upload docker image to quay
+    name: Upload docker image to Registry
     runs-on: ubuntu-latest
     env:
       SOURCE_IMAGE_TAG: operator-${{ inputs.platform }}:${{ inputs.version }}
