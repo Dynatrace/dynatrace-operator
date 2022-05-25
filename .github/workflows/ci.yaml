@@ -1,0 +1,240 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - release-*
+  pull_request:
+    branches:
+      - "*"
+
+env:
+  GO_VERSION: "^1.18"
+  DOCKER_REGISTRY: "quay.io"
+  DOCKER_REPOSITORY: "dynatrace/dynatrace-operator"
+
+jobs:
+  helm-test:
+    name: Run helm unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.7.1
+      - name: Download dependencies
+        id: helm-unittest-download
+        run: |
+          helm plugin install https://github.com/quintush/helm-unittest --version 0.2.8
+      - name: Run Unit tests
+        id: helm-unittest
+        run: |
+          make helm-test
+
+  helm-lint:
+    name: Run helm linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.8.2
+      - name: Run Linting
+        id: helm-linting
+        run: |
+          make helm-lint
+
+  tests:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Golang
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Download dependencies
+        id: depdownload
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdevmapper-dev libbtrfs-dev libgpgme-dev
+      - name: Run Unit tests
+        id: unittest
+        run: |
+          chmod +x ./hack/build/test.sh
+          ./hack/build/test.sh
+
+  linting:
+    name: Run linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Download dependencies
+        id: depdownload
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdevmapper-dev libbtrfs-dev libgpgme-dev
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.45.2
+          args: --build-tags integration,containers_image_storage_stub --timeout 300s
+
+  prepare:
+    name: Prepare properties
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare build parameters
+        id: prep
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            VERSION="snapshot-$(echo ${GITHUB_HEAD_REF} | sed 's#[^a-zA-Z0-9_-]#-#g')"
+          else
+            if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+              VERSION="${GITHUB_REF_NAME}"
+            elif [[ "${GITHUB_REF_NAME}" == "master" ]]; then
+              VERSION="snapshot"
+            else
+              VERSION="snapshot-$(echo ${GITHUB_REF_NAME} | sed 's#[^a-zA-Z0-9_-]#-#g')"
+            fi
+          fi
+
+          LABELS=""
+          if [[ "${GITHUB_REF_TYPE}" != "tag" ]] && [[ ! "${GITHUB_REF_NAME}" =~ ^release-* ]]; then
+            LABELS="quay.expires-after=10d"
+          fi
+
+          build_date="$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")"
+          go_build_args=(
+            "-ldflags=-X 'github.com/Dynatrace/dynatrace-operator/src/version.Version=${VERSION}'"
+            "-X 'github.com/Dynatrace/dynatrace-operator/src/version.Commit=${GITHUB_SHA}'"
+            "-X 'github.com/Dynatrace/dynatrace-operator/src/version.BuildDate=${build_date}'"
+            "-s -w"
+          )
+
+          # Set output parameters.
+          echo ::set-output name=goargs::"${go_build_args[@]}"
+
+          echo ::set-output name=labels::${LABELS}
+          echo ::set-output name=version::${VERSION}
+      - name: Prepare build parameters
+        id: prepenv
+        run: |
+          # Set output parameters.
+          echo ::set-output name=goversion::${{ env.GO_VERSION }}
+          echo ::set-output name=registry::${{ env.DOCKER_REGISTRY }}
+          echo ::set-output name=repository::${{ env.DOCKER_REPOSITORY }}
+    outputs:
+      labels: ${{ steps.prep.outputs.labels }}
+      version: ${{ steps.prep.outputs.version }}
+      goargs: ${{ steps.prep.outputs.goargs }}
+      goversion: ${{ steps.prepenv.outputs.goversion }}
+      registry: ${{ steps.prepenv.outputs.registry }}
+      repository: ${{ steps.prepenv.outputs.repository }}
+
+  build-amd64:
+    name: Build amd64 docker image
+    needs: [prepare]
+    uses: ./.github/workflows/build-dockerimage.yaml
+    with:
+      platform: amd64
+      goversion: ${{ needs.prepare.outputs.goversion }}
+      goargs: ${{ needs.prepare.outputs.goargs }}
+      labels: ${{ needs.prepare.outputs.labels }}
+      image-tag: ${{ needs.prepare.outputs.version }}
+
+  build-arm64:
+    name: Build arm64 docker image
+    needs: [prepare]
+    uses: ./.github/workflows/build-dockerimage.yaml
+    if: ${{ contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-') }}
+    with:
+      platform: arm64
+      goversion: ${{ needs.prepare.outputs.goversion }}
+      goargs: ${{ needs.prepare.outputs.goargs }}
+      labels: ${{ needs.prepare.outputs.labels }}
+      image-tag: ${{ needs.prepare.outputs.version }}
+
+  upload-amd64:
+    name: Upload amd64 image
+    needs: [tests,linting,prepare,build-amd64]
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork }}
+    uses: ./.github/workflows/upload-dockerimage.yaml
+    with:
+      platform: amd64
+      labels: ${{ needs.prepare.outputs.labels }}
+      version: ${{ needs.prepare.outputs.version }}
+      registry: ${{ needs.prepare.outputs.registry }}
+      repository: ${{ needs.prepare.outputs.repository }}
+    secrets:
+      docker_repo_username: ${{ secrets.QUAY_USERNAME }}
+      docker_repo_password: ${{ secrets.QUAY_PASSWORD }}
+
+  upload-arm64:
+    name: Upload arm64 image
+    needs: [tests,linting,prepare,build-arm64]
+    if: |
+      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
+      (contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-'))
+    uses: ./.github/workflows/upload-dockerimage.yaml
+    with:
+      platform: arm64
+      labels: ${{ needs.prepare.outputs.labels }}
+      version: ${{ needs.prepare.outputs.version }}
+      registry: ${{ needs.prepare.outputs.registry }}
+      repository: ${{ needs.prepare.outputs.repository }}
+    secrets:
+      docker_repo_username: ${{ secrets.QUAY_USERNAME }}
+      docker_repo_password: ${{ secrets.QUAY_PASSWORD }}
+
+  create-manifest-for-combined-images:
+    name: Combine images
+    needs: [prepare,upload-amd64,upload-arm64]
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
+      (contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-'))
+    env:
+      IMAGE_QUAY: ${{ needs.prepare.outputs.registry }}/${{ needs.prepare.outputs.repository }}
+    steps:
+      - name: Login to Quay
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ needs.prepare.outputs.registry }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Create manifest
+        run: |
+          echo "we build for arm too => combine images"
+          docker manifest create ${IMAGE_QUAY}:${{ needs.prepare.outputs.version }} ${IMAGE_QUAY}:${{ needs.prepare.outputs.version }}-arm64 ${IMAGE_QUAY}:${{ needs.prepare.outputs.version }}-amd64
+          docker manifest push ${IMAGE_QUAY}:${{ needs.prepare.outputs.version }}
+
+  create-manifest-for-amd:
+    name: Create manifest
+    needs: [prepare,upload-amd64]
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
+      ! (contains(github.ref, 'refs/tags/v') || contains(github.ref, 'refs/heads/master') || contains(github.ref, 'refs/heads/release-'))
+    env:
+      IMAGE_QUAY: ${{ needs.prepare.outputs.registry }}/${{ needs.prepare.outputs.repository }}
+    steps:
+      - name: Login to Quay
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ needs.prepare.outputs.registry }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Create manifest
+        run: |
+          echo "we build for amd only"
+          docker manifest create ${IMAGE_QUAY}:${{ needs.prepare.outputs.version }} ${IMAGE_QUAY}:${{ needs.prepare.outputs.version }}-amd64
+          docker manifest push ${IMAGE_QUAY}:${{ needs.prepare.outputs.version }}
+
