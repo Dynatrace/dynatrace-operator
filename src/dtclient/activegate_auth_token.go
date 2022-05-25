@@ -24,6 +24,28 @@ type ActiveGateAuthTokenParams struct {
 }
 
 func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*ActiveGateAuthTokenInfo, error) {
+
+	request, err := dtc.createAuthTokenRequest(dynakubeName)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	response, err := dtc.httpClient.Do(request)
+	if err != nil {
+		log.Info("failed to retrieve ag-auth-token")
+		return nil, err
+	}
+
+	authTokenInfo, err := dtc.handleAuthTokenResponse(response)
+	if err != nil {
+		log.Info("failed to handle ag-auth-token response")
+		return nil, err
+	}
+
+	return authTokenInfo, nil
+}
+
+func (dtc *dynatraceClient) createAuthTokenRequest(dynakubeName string) (*http.Request, error) {
 	body := &ActiveGateAuthTokenParams{
 		Name:           dynakubeName,
 		SeedToken:      false,
@@ -43,13 +65,10 @@ func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*Active
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
+	return request, nil
+}
 
-	response, err := dtc.httpClient.Do(request)
-	if err != nil {
-		log.Info("failed to retrieve ActiveGateAuthToken")
-		return nil, err
-	}
-
+func (dtc *dynatraceClient) handleAuthTokenResponse(response *http.Response) (*ActiveGateAuthTokenInfo, error) {
 	defer func() {
 		err := response.Body.Close()
 		if err != nil {
@@ -67,7 +86,7 @@ func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*Active
 		return nil, err
 	}
 
-	return authTokenInfo, nil
+	return authTokenInfo, err
 }
 
 func (dtc *dynatraceClient) readResponseForActiveGateAuthToken(response []byte) (*ActiveGateAuthTokenInfo, error) {
