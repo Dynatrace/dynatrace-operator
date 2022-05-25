@@ -134,8 +134,8 @@ func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoring() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoring) == "true"
 }
 
-// FeatureAutomaticKubernetesApiMonitoringClusterLabel is a feature flag to set custom cluster name for automatic-kubernetes-api-monitoring
-func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoringClusterLabel() string {
+// FeatureAutomaticKubernetesApiMonitoringClusterName is a feature flag to set custom cluster name for automatic-kubernetes-api-monitoring
+func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoringClusterName() string {
 	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoringClusterName)
 }
 
