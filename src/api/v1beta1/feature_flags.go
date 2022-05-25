@@ -31,15 +31,14 @@ const (
 	AnnotationFeaturePrefix = "feature.dynatrace.com/"
 
 	// activeGate
-	AnnotationFeatureDisableActiveGateUpdates              = AnnotationFeaturePrefix + "disable-activegate-updates"
-	AnnotationFeatureDisableActiveGateRawImage             = AnnotationFeaturePrefix + "disable-activegate-raw-image"
-	AnnotationFeatureActiveGateAppArmor                    = AnnotationFeaturePrefix + "activegate-apparmor"
-	AnnotationFeatureActiveGateReadOnlyFilesystem          = AnnotationFeaturePrefix + "activegate-readonly-fs"
-	AnnotationFeatureAutomaticK8sApiMonitoring             = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
-	AnnotationFeatureAutomaticK8sApiMonitoringClusterLabel = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-label"
-	AnnotationFeatureActiveGateIgnoreProxy                 = AnnotationFeaturePrefix + "activegate-ignore-proxy"
-	AnnotationFeatureActiveGateAuthToken                   = AnnotationFeaturePrefix + "enable-activegate-authtoken"
-	AnnotationFeatureActiveGateAuthToken              = AnnotationFeaturePrefix + "enable-activegate-authtoken"
+	AnnotationFeatureDisableActiveGateUpdates             = AnnotationFeaturePrefix + "disable-activegate-updates"
+	AnnotationFeatureDisableActiveGateRawImage            = AnnotationFeaturePrefix + "disable-activegate-raw-image"
+	AnnotationFeatureActiveGateAppArmor                   = AnnotationFeaturePrefix + "activegate-apparmor"
+	AnnotationFeatureActiveGateReadOnlyFilesystem         = AnnotationFeaturePrefix + "activegate-readonly-fs"
+	AnnotationFeatureAutomaticK8sApiMonitoring            = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
+	AnnotationFeatureAutomaticK8sApiMonitoringClusterName = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-name"
+	AnnotationFeatureActiveGateIgnoreProxy                = AnnotationFeaturePrefix + "activegate-ignore-proxy"
+	AnnotationFeatureActiveGateAuthToken                  = AnnotationFeaturePrefix + "enable-activegate-authtoken"
 
 	// statsD
 	AnnotationFeatureUseActiveGateImageForStatsd = AnnotationFeaturePrefix + "use-activegate-image-for-statsd"
@@ -137,7 +136,7 @@ func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoring() bool {
 
 // FeatureAutomaticKubernetesApiMonitoringClusterLabel is a feature flag to set custom cluster name for automatic-kubernetes-api-monitoring
 func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoringClusterLabel() string {
-	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoringClusterLabel)
+	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoringClusterName)
 }
 
 // FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,

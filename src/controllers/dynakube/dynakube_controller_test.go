@@ -182,8 +182,8 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 				Name:      testName,
 				Namespace: testNamespace,
 				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring:             "true",
-					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoringClusterLabel: clusterLabel,
+					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoring:            "true",
+					dynatracev1beta1.AnnotationFeatureAutomaticK8sApiMonitoringClusterName: clusterLabel,
 				},
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
