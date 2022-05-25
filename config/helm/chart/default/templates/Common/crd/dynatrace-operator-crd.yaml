@@ -1,0 +1,4 @@
+{{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift, google" (include "dynatrace-operator.platformSet" .))}}
+{{ if and .Values.installCRD (eq (include "dynatrace-operator.partial" .) "false") }}
+  {{ .Files.Get "generated/dynatrace-operator-crd.yaml" }}
+{{- end -}}
