@@ -25,7 +25,9 @@ Selector labels
 */}}
 {{- define "dynatrace-operator.futureSelectorLabels" -}}
 app.kubernetes.io/name: {{ .Release.Name }}
+{{- if not (.Values).manifests }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end -}}
 {{- end -}}
 
 {{/*
@@ -36,7 +38,9 @@ Common labels
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
+{{- if not (.Values).manifests }}
 helm.sh/chart: {{ include "dynatrace-operator.chart" . }}
+{{- end -}}
 {{- end -}}
 
 {{/*
