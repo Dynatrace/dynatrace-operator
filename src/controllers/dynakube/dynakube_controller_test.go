@@ -148,7 +148,7 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 	})
 	t.Run(`Reconcile reconciles automatic kubernetes api monitoring`, func(t *testing.T) {
 		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-			dtclient.TokenScopes{dtclient.TokenScopeDataExport})
+			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeEntitiesRead, dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite})
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -170,13 +170,23 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
 
+		mockClient.AssertCalled(t, "CreateOrUpdateKubernetesSetting",
+			testName,
+			testUID,
+			mock.AnythingOfType("string"))
 		assert.NoError(t, err)
-		assert.NotNil(t, result)
+		assert.Equal(t, false, result.Requeue)
 	})
-	t.Run(`Reconcile reconciles automatic kubernetes api monitoring with custom cluster label`, func(t *testing.T) {
+	t.Run(`Reconcile reconciles automatic kubernetes api monitoring with custom cluster name`, func(t *testing.T) {
 		const clusterLabel = "..blabla..;.🙃"
+
 		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
-			dtclient.TokenScopes{dtclient.TokenScopeDataExport})
+			dtclient.TokenScopes{dtclient.TokenScopeDataExport, dtclient.TokenScopeEntitiesRead, dtclient.TokenScopeSettingsRead, dtclient.TokenScopeSettingsWrite})
+		mockClient.On("CreateOrUpdateKubernetesSetting",
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("string"),
+			mock.AnythingOfType("string")).Return(testUID, nil)
+
 		instance := &dynatracev1beta1.DynaKube{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      testName,
@@ -199,8 +209,13 @@ func TestReconcileActiveGate_Reconcile(t *testing.T) {
 			NamespacedName: types.NamespacedName{Namespace: testNamespace, Name: testName},
 		})
 
+		mockClient.AssertCalled(t, "CreateOrUpdateKubernetesSetting",
+			clusterLabel,
+			testUID,
+			mock.AnythingOfType("string"))
+
 		assert.NoError(t, err)
-		assert.NotNil(t, result)
+		assert.Equal(t, false, result.Requeue)
 	})
 	t.Run(`Reconcile reconciles proxy secret`, func(t *testing.T) {
 		mockClient := createDTMockClient(dtclient.TokenScopes{dtclient.TokenScopeInstallerDownload},
