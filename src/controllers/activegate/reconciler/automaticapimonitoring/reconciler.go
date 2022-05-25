@@ -9,14 +9,14 @@ import (
 
 type AutomaticApiMonitoringReconciler struct {
 	dtc            dtclient.Client
-	name           string
+	clusterLabel   string
 	kubeSystemUUID string
 }
 
-func NewReconciler(dtc dtclient.Client, name, kubeSystemUUID string) *AutomaticApiMonitoringReconciler {
+func NewReconciler(dtc dtclient.Client, clusterLabel, kubeSystemUUID string) *AutomaticApiMonitoringReconciler {
 	return &AutomaticApiMonitoringReconciler{
 		dtc,
-		name,
+		clusterLabel,
 		kubeSystemUUID,
 	}
 }
@@ -29,9 +29,9 @@ func (r *AutomaticApiMonitoringReconciler) Reconcile() error {
 	}
 
 	if objectID != "" {
-		log.Info("created kubernetes cluster setting", "name", r.name, "cluster", r.kubeSystemUUID, "object id", objectID)
+		log.Info("created kubernetes cluster setting", "clusterLabel", r.clusterLabel, "cluster", r.kubeSystemUUID, "object id", objectID)
 	} else {
-		log.Info("kubernetes cluster setting already exists", "name", r.name, "cluster", r.kubeSystemUUID)
+		log.Info("kubernetes cluster setting already exists", "clusterLabel", r.clusterLabel, "cluster", r.kubeSystemUUID)
 	}
 
 	return nil
@@ -60,7 +60,7 @@ func (r *AutomaticApiMonitoringReconciler) ensureSettingExists() (string, error)
 
 	// determine newest ME (can be empty string), and create or update a settings object accordingly
 	meID := determineNewestMonitoredEntity(monitoredEntities)
-	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(r.name, r.kubeSystemUUID, meID)
+	objectID, err := r.dtc.CreateOrUpdateKubernetesSetting(r.clusterLabel, r.kubeSystemUUID, meID)
 
 	if err != nil {
 		return "", err
