@@ -280,19 +280,19 @@ func (m *podMutator) Handle(ctx context.Context, req admission.Request) admissio
 }
 
 func (m *podMutator) handleAlreadyInjectedPod(pod *corev1.Pod, dynaKube dynatracev1beta1.DynaKube, injectionInfo *InjectionInfo, req admission.Request) *admission.Response {
-	// are there any injections already?
-	if len(pod.Annotations[dtwebhook.AnnotationDynatraceInjected]) > 0 {
+	if isPodInjected(pod) {
 		if !dynaKube.FeatureDisableWebhookReinvocationPolicy() {
-			log.Info("reinvocation started for pod", "pod", pod.Name, "dynakube", dynaKube.Name)
 			rsp := m.applyReinvocationPolicy(pod, dynaKube, injectionInfo, req)
 			return &rsp
-		} else {
-			log.Info("reinvocation skipped for pod", "pod", pod.Name, "dynakube", dynaKube.Name)
 		}
 		rsp := admission.Patched("")
 		return &rsp
 	}
 	return nil
+}
+
+func isPodInjected(pod *corev1.Pod) bool {
+	return len(pod.Annotations[dtwebhook.AnnotationDynatraceInjected]) > 0
 }
 
 func addToInitContainers(pod *corev1.Pod, installContainer corev1.Container) {

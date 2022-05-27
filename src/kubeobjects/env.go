@@ -5,7 +5,7 @@ import corev1 "k8s.io/api/core/v1"
 func FindEnvVar(envVarList []corev1.EnvVar, name string) *corev1.EnvVar {
 	for i, envVar := range envVarList {
 		if envVar.Name == name {
-			// returning reference to env var to ease later manipulation of the same
+			// returning reference to env var to ease later manipulation of it
 			return &envVarList[i]
 		}
 	}
