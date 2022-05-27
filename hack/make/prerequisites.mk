@@ -38,8 +38,8 @@ CONTROLLER_GEN=$(shell which controller-gen)
 endif
 
 prerequisites/setup-pre-commit:
-	$(info WARNING "Make sure that golangci-lint is installed, for more info see https://golangci-lint.run/usage/install/")
-	GO111MODULE=off go install github.com/daixiang0/gci
-	GO111MODULE=off go install golang.org/x/tools/cmd/goimports
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.46.2
+	go install github.com/daixiang0/gci@v0.3.3
+	go install golang.org/x/tools/cmd/goimports@v0.1.10
 	cp ./.github/pre-commit ./.git/hooks/pre-commit
 	chmod +x ./.git/hooks/pre-commit
