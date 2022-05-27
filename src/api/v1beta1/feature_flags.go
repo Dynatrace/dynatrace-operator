@@ -31,12 +31,14 @@ const (
 	AnnotationFeaturePrefix = "feature.dynatrace.com/"
 
 	// activeGate
-	AnnotationFeatureDisableActiveGateUpdates         = AnnotationFeaturePrefix + "disable-activegate-updates"
-	AnnotationFeatureDisableActiveGateRawImage        = AnnotationFeaturePrefix + "disable-activegate-raw-image"
-	AnnotationFeatureActiveGateAppArmor               = AnnotationFeaturePrefix + "activegate-apparmor"
-	AnnotationFeatureActiveGateReadOnlyFilesystem     = AnnotationFeaturePrefix + "activegate-readonly-fs"
-	AnnotationFeatureAutomaticKubernetesApiMonitoring = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
-	AnnotationFeatureActiveGateIgnoreProxy            = AnnotationFeaturePrefix + "activegate-ignore-proxy"
+	AnnotationFeatureDisableActiveGateUpdates             = AnnotationFeaturePrefix + "disable-activegate-updates"
+	AnnotationFeatureDisableActiveGateRawImage            = AnnotationFeaturePrefix + "disable-activegate-raw-image"
+	AnnotationFeatureActiveGateAppArmor                   = AnnotationFeaturePrefix + "activegate-apparmor"
+	AnnotationFeatureActiveGateReadOnlyFilesystem         = AnnotationFeaturePrefix + "activegate-readonly-fs"
+	AnnotationFeatureAutomaticK8sApiMonitoring            = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
+	AnnotationFeatureAutomaticK8sApiMonitoringClusterName = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-name"
+	AnnotationFeatureActiveGateIgnoreProxy                = AnnotationFeaturePrefix + "activegate-ignore-proxy"
+	AnnotationFeatureActiveGateAuthToken                  = AnnotationFeaturePrefix + "enable-activegate-authtoken"
 
 	// statsD
 	AnnotationFeatureUseActiveGateImageForStatsd = AnnotationFeaturePrefix + "use-activegate-image-for-statsd"
@@ -129,7 +131,12 @@ func (dk *DynaKube) getDefaultIgnoredNamespaces() []string {
 // FeatureAutomaticKubernetesApiMonitoring is a feature flag to enable automatic kubernetes api monitoring,
 // which ensures that settings for this kubernetes cluster exist in Dynatrace
 func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoring() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticKubernetesApiMonitoring) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoring) == "true"
+}
+
+// FeatureAutomaticKubernetesApiMonitoringClusterName is a feature flag to set custom cluster name for automatic-kubernetes-api-monitoring
+func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoringClusterName() string {
+	return dk.getFeatureFlagRaw(AnnotationFeatureAutomaticK8sApiMonitoringClusterName)
 }
 
 // FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,
@@ -191,6 +198,11 @@ func (dk *DynaKube) FeatureOneAgentIgnoreProxy() bool {
 // FeatureActiveGateIgnoreProxy is a feature flag to ignore the proxy for ActiveGate when set in CR
 func (dk *DynaKube) FeatureActiveGateIgnoreProxy() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateIgnoreProxy) == "true"
+}
+
+// FeatureActiveGateAuthToken is a feature flag to enable authToken usage in the activeGate
+func (dk *DynaKube) FeatureActiveGateAuthToken() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == "true"
 }
 
 // FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents

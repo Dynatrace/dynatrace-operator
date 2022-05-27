@@ -109,57 +109,56 @@ func (r *DynatraceClientReconciler) Reconcile(ctx context.Context, instance *dyn
 		return nil, updateCR, err
 	}
 
-	var tokens []tokenConfig
+	var tokens = map[string]*tokenConfig{dtclient.DynatraceApiToken: {
+		Type:      dynatracev1beta1.APITokenConditionType,
+		Key:       dtclient.DynatraceApiToken,
+		Value:     r.ApiToken,
+		Scopes:    []string{},
+		Timestamp: &r.status.LastAPITokenProbeTimestamp,
+	}}
+
 	if r.PaasToken == "" {
-		tokens = []tokenConfig{{
-			Type:      dynatracev1beta1.APITokenConditionType,
-			Key:       dtclient.DynatraceApiToken,
-			Value:     r.ApiToken,
-			Scopes:    []string{dtclient.TokenScopeInstallerDownload},
-			Timestamp: &r.status.LastAPITokenProbeTimestamp,
-		}}
+		tokens[dtclient.DynatraceApiToken].Scopes = append(tokens[dtclient.DynatraceApiToken].Scopes, dtclient.TokenScopeInstallerDownload)
 		updateCR = r.removePaaSTokenCondition() || updateCR
 	} else {
-		tokens = []tokenConfig{
-			{
-				Type:      dynatracev1beta1.APITokenConditionType,
-				Key:       dtclient.DynatraceApiToken,
-				Value:     r.ApiToken,
-				Scopes:    []string{},
-				Timestamp: &r.status.LastAPITokenProbeTimestamp,
-			},
-			{
-				Type:      dynatracev1beta1.PaaSTokenConditionType,
-				Key:       dtclient.DynatracePaasToken,
-				Value:     r.PaasToken,
-				Scopes:    []string{dtclient.TokenScopeInstallerDownload},
-				Timestamp: &r.status.LastPaaSTokenProbeTimestamp,
-			}}
+		tokens[dtclient.DynatracePaasToken] = &tokenConfig{
+			Type:      dynatracev1beta1.PaaSTokenConditionType,
+			Key:       dtclient.DynatracePaasToken,
+			Value:     r.PaasToken,
+			Scopes:    []string{dtclient.TokenScopeInstallerDownload},
+			Timestamp: &r.status.LastPaaSTokenProbeTimestamp,
+		}
 	}
+
 	if !instance.FeatureDisableHostsRequests() {
-		tokens[0].Scopes = append(tokens[0].Scopes, dtclient.TokenScopeDataExport)
+		tokens[dtclient.DynatraceApiToken].Scopes = append(tokens[dtclient.DynatraceApiToken].Scopes, dtclient.TokenScopeDataExport)
 	}
 
 	if instance.KubernetesMonitoringMode() &&
 		instance.FeatureAutomaticKubernetesApiMonitoring() {
-		tokens[0].Scopes = append(tokens[0].Scopes,
+		tokens[dtclient.DynatraceApiToken].Scopes = append(tokens[dtclient.DynatraceApiToken].Scopes,
 			dtclient.TokenScopeEntitiesRead,
 			dtclient.TokenScopeSettingsRead,
 			dtclient.TokenScopeSettingsWrite)
 	}
 
+	if instance.FeatureActiveGateAuthToken() {
+		tokens[dtclient.DynatraceApiToken].Scopes = append(tokens[dtclient.DynatraceApiToken].Scopes,
+			dtclient.TokenScopeActiveGateTokenCreate)
+	}
+
 	if r.DataIngestToken != "" {
-		tokens = append(tokens, tokenConfig{
+		tokens[dtclient.DynatraceDataIngestToken] = &tokenConfig{
 			Type:      dynatracev1beta1.DataIngestTokenConditionType,
 			Key:       dtclient.DynatraceDataIngestToken,
 			Value:     r.DataIngestToken,
 			Scopes:    []string{dtclient.TokenScopeMetricsIngest},
 			Timestamp: &r.status.LastDataIngestTokenProbeTimestamp,
-		})
+		}
 	}
 
 	for _, token := range tokens {
-		updateCR = r.CheckToken(dtc, token) || updateCR
+		updateCR = r.CheckToken(dtc, *token) || updateCR
 	}
 
 	return dtc, updateCR, nil
@@ -216,6 +215,7 @@ func (r *DynatraceClientReconciler) CheckToken(dtc dtclient.Client, token tokenC
 			missingScopes = append(missingScopes, s)
 		}
 	}
+
 	if len(missingScopes) > 0 {
 		r.setAndLogCondition(&r.status.Conditions, metav1.Condition{
 			Type:    token.Type,

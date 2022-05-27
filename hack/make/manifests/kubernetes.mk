@@ -1,6 +1,7 @@
 -include ../prerequisites.mk
 -include ../images.mk
 -include config.mk
+-include manifests.mk
 -include crd.mk
 
 ## Generates a manifest for Kubernetes solely for a CSI driver deployment
@@ -19,7 +20,20 @@ manifests/kubernetes/csi:
 	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(KUBERNETES_CSIDRIVER_YAML)"
 	rm config/deploy/kubernetes/tmp.yaml
 
-## Generates a manifest for Kubernetes including a CRD and a CSI driver deployment
+## Generates manifests for Kubernetes including a CRD and a CSI driver deployment
+manifests/kubernetes/core: manifests/crd/helm prerequisites/kustomize
+	helm template dynatrace-operator config/helm/chart/default \
+			--namespace dynatrace \
+			--set installCRD=true \
+			--set platform="kubernetes" \
+			--set manifests=true \
+			--set olm="${OLM}" \
+			--set autoCreateSecret=false \
+			--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_CORE_YAML)"
+
+## Generates a manifest for Kubernetes including a CRD, a CSI driver deployment and a OLM version
 manifests/kubernetes: manifests/kubernetes/crd manifests/kubernetes/csi
-	cp "$(KUBERNETES_CRD_AND_OTHERS_YAML)" "$(KUBERNETES_OLM_YAML)"
-	cat "$(KUBERNETES_CRD_AND_OTHERS_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
+	cp "$(KUBERNETES_CORE_YAML)" "$(KUBERNETES_OLM_YAML)"
+	cat "$(KUBERNETES_CORE_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
+
+

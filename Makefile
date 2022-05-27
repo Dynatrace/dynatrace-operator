@@ -14,7 +14,7 @@ default: help
 # '/^[a-zA-Z\-_0-9%:\\]+/ Match every line that is neither a comment nor a command, i.e. only targets
 # helpMessage = match(lastLine, /^## (.*)/); If `lastLine` starts with `## ` it is assumed to be a help message
 # if (helpMessage) { If it is indeed a help message
-# 	helpCommand = $$1; Then the command it describes is the next line
+# 	helpCommand = $$1; Then the command it describes is in the next line
 #   helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \  Remove the `## ` from the help comment
 #   gsub("\\\\", "", helpCommand); \ Remove `\\` from the command string
 #   gsub(":+$$", "", helpCommand); \ Remove the colon and everything past it from the command string
@@ -59,8 +59,5 @@ install: deploy/kubernetes
 
 ## Installs dependencies, builds and pushes a tagged operator image, and deploys the operator on a cluster
 all: deps build install
-
-# Generates manifests e.g. CRD, RBAC etc, for Kubernetes and OpenShift
-manifests: manifests/kubernetes manifests/openshift
 
 

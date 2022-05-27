@@ -78,6 +78,10 @@ type Client interface {
 	// GetSettingsForMonitoredEntities returns the settings response with the number of settings objects,
 	// or an api error otherwise
 	GetSettingsForMonitoredEntities(monitoredEntities []MonitoredEntity) (GetSettingsResponse, error)
+
+	// GetSettingsForMonitoredEntities returns the settings response with the number of settings objects,
+	// or an api error otherwise
+	GetActiveGateAuthToken(dynakubeName string) (*ActiveGateAuthTokenInfo, error)
 }
 
 // Known OS values.
@@ -100,12 +104,13 @@ const (
 
 // Known token scopes
 const (
-	TokenScopeInstallerDownload = "InstallerDownload"
-	TokenScopeDataExport        = "DataExport"
-	TokenScopeMetricsIngest     = "metrics.ingest"
-	TokenScopeEntitiesRead      = "entities.read"
-	TokenScopeSettingsRead      = "settings.read"
-	TokenScopeSettingsWrite     = "settings.write"
+	TokenScopeInstallerDownload     = "InstallerDownload"
+	TokenScopeDataExport            = "DataExport"
+	TokenScopeMetricsIngest         = "metrics.ingest"
+	TokenScopeEntitiesRead          = "entities.read"
+	TokenScopeSettingsRead          = "settings.read"
+	TokenScopeSettingsWrite         = "settings.write"
+	TokenScopeActiveGateTokenCreate = "activeGateTokenManagement.create"
 )
 
 // NewClient creates a REST client for the given API base URL and authentication tokens.

@@ -12,7 +12,7 @@ import (
 
 const (
 	testUID      = "test-uid"
-	testName     = "test-name"
+	testName     = "test-clusterLabel"
 	testObjectID = "test-objectid"
 )
 

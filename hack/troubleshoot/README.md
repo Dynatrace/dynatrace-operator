@@ -46,7 +46,7 @@ In addition, macOS has the following requirements:
 Run the following command to run the script.
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/dynatrace/dynatrace-operator/master/troubleshoot/troubleshoot.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/dynatrace/dynatrace-operator/master/hack/troubleshoot/troubleshoot.sh)"
 ```
 
 Make sure to inspect the contents of the troubleshooting script before executing it.
