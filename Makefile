@@ -7,9 +7,24 @@
 default: help
 
 # Help has been copied from 'https://docs.cloudposse.com/reference/best-practices/make-best-practices/'
-# What exactly it does line by line is a mystery, but the printed help text looks nice
 # Basically, it takes every target, even the ones from includes, and prints their name and the comment above it which is marked by two ##
 # If there is no such comment line, e.g., "## Prints a help screen", the target is not printed at all
+#
+# Code breakdown:
+# '/^[a-zA-Z\-_0-9%:\\]+/ Match every line that is neither a comment nor a command, i.e. only targets
+# helpMessage = match(lastLine, /^## (.*)/); If `lastLine` starts with `## ` it is assumed to be a help message
+# if (helpMessage) { If it is indeed a help message
+# 	helpCommand = $$1; Then the command it describes is the next line
+#   helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \  Remove the `## ` from the help comment
+#   gsub("\\\\", "", helpCommand); \ Remove `\\` from the command string
+#   gsub(":+$$", "", helpCommand); \ Remove the colon and everything past it from the command string
+#   printf
+#  		"  \x1b[32;01m Escape code to set the output color to green
+#		%-35s Print the first argument and truncate to 35 characters
+#  		\x1b[0m Reset the output color
+#		%s\n", helpCommand, helpMessage; Print the second argument, supply command and message as arguments
+# { lastLine = $$0 }' Iterates through every line and assigns it to `lastLine`
+# $(MAKEFILE_LIST) Holds the filenames to every Makefile so `awk` can iterate through it
 ## Prints a help screen
 help:
 	@printf "Available targets:\n\n"
