@@ -53,6 +53,11 @@ func TestTenant(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, tenantInfo)
 
+		// Logging a newline because otherwise the "--- PASS" line is on the same line as the error
+		// logged in GetAgentTenantInfo() which makes IntelliJ / Goland think it has not terminated
+		// which means the tests of this suit are not reported correctly.
+		log.Info("\n")
+
 		assert.Equal(t, "invalid character 'h' in literal true (expecting 'r')", err.Error())
 	})
 }

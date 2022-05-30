@@ -82,7 +82,7 @@ func (dm DynakubeMapper) mapFromDynakube(nsList *corev1.NamespaceList, dkList *d
 
 	for i := range nsList.Items {
 		namespace := &nsList.Items[i]
-		updated, err = updateNamespace(dm.operatorNs, namespace, dkList)
+		updated, err = updateNamespace(namespace, dkList)
 		if err != nil {
 			return nil, err
 		}

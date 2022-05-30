@@ -14,6 +14,7 @@ import (
 	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -1405,7 +1406,7 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 	// enable feature
 	instance.Annotations = map[string]string{}
 	connectRetryValue := "6000"
-	instance.Annotations[dynatracev1beta1.AnnotationFeatureEnableWebhookReinvocationPolicy] = "true"
+	instance.Annotations[dynatracev1beta1.AnnotationFeatureDisableWebhookReinvocationPolicy] = "false"
 	instance.Annotations[dynatracev1beta1.AnnotationFeatureOneAgentInitialConnectRetry] = connectRetryValue
 	err = inj.client.Update(context.TODO(), instance)
 	require.NoError(t, err)
@@ -1496,7 +1497,6 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 
 	var updInstallContainer = updPod.Spec.InitContainers[0]
 
-	fmt.Println(updInstallContainer.Env)
 	require.Equal(t, 4, len(updInstallContainer.Env))
 	require.Equal(t, "CONTAINER_2_NAME", updInstallContainer.Env[2].Name)
 	require.Equal(t, thirdPartyContainerName, updInstallContainer.Env[2].Value)
@@ -1512,6 +1512,76 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 			},
 		},
 	)
+}
+
+func TestHandleAlreadyInjectedPod(t *testing.T) {
+	t.Run(`reinvocation is enabled by default`, testReinvocationEnabledAndDefault)
+	t.Run(`reinvocation can be disabled`, testReinvocationDisabled)
+}
+
+func testReinvocationEnabledAndDefault(t *testing.T) {
+	mutator := podMutator{
+		recorder: record.NewFakeRecorder(1024),
+	}
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{dtwebhook.AnnotationDynatraceInjected: "true"},
+		},
+		Spec: corev1.PodSpec{
+			InitContainers: []corev1.Container{{Name: dtwebhook.InstallContainerName}},
+			Containers:     []corev1.Container{{Name: "test-container"}},
+		},
+	}
+	dynakube := dynatracev1beta1.DynaKube{}
+	injectionInfo := &InjectionInfo{features: map[FeatureType]bool{OneAgent: true}}
+	marshaledPod, _ := json.Marshal(pod)
+	req := admission.Request{
+		AdmissionRequest: admissionv1.AdmissionRequest{
+			Object: runtime.RawExtension{
+				Object: pod,
+				Raw:    marshaledPod,
+			},
+		},
+	}
+
+	response := mutator.handleAlreadyInjectedPod(pod, dynakube, injectionInfo, req)
+
+	assert.NotNil(t, response)
+	assert.True(t, response.Allowed)
+	assert.NotEmpty(t, response.Patches)
+
+	containerNameEnvVar := kubeobjects.FindEnvVar(pod.Spec.InitContainers[0].Env, "CONTAINER_1_NAME")
+	containerImageEnvVar := kubeobjects.FindEnvVar(pod.Spec.InitContainers[0].Env, "CONTAINER_1_IMAGE")
+
+	assert.NotNil(t, containerNameEnvVar)
+	assert.NotNil(t, containerImageEnvVar)
+
+	assert.Equal(t, "test-container", containerNameEnvVar.Value)
+	assert.Empty(t, containerImageEnvVar.Value)
+}
+
+func testReinvocationDisabled(t *testing.T) {
+	mutator := podMutator{}
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{dtwebhook.AnnotationDynatraceInjected: "true"},
+		},
+	}
+	dynakube := dynatracev1beta1.DynaKube{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				dynatracev1beta1.AnnotationFeatureDisableWebhookReinvocationPolicy: "true",
+			},
+		},
+	}
+	injectionInfo := &InjectionInfo{features: map[FeatureType]bool{OneAgent: true}}
+	req := admission.Request{}
+	response := mutator.handleAlreadyInjectedPod(pod, dynakube, injectionInfo, req)
+
+	assert.NotNil(t, response)
+	assert.Empty(t, response.Patches)
+	assert.True(t, response.Allowed)
+	assert.Equal(t, int32(200), response.Result.Code)
 }
 
 func buildTestSecrets() client.Client {
