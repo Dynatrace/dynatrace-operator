@@ -34,7 +34,7 @@ func (request *MutationRequest) ToReinvocationRequest() *ReinvocationRequest {
 	}
 }
 
-func FindInitContainer(initContainers []corev1.Container) *corev1.Container {
+func FindOneAgentInstallContainer(initContainers []corev1.Container) *corev1.Container {
 	for i := range initContainers {
 		container := &initContainers[i]
 		if container.Name == InstallContainerName {

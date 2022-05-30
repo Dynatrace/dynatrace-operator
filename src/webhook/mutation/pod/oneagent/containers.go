@@ -25,7 +25,7 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 // that don't conflict with the previous envvars for the originally injected containers
 func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.ReinvocationRequest) {
 	pod := request.Pod
-	initContainer := dtwebhook.FindInitContainer(pod.Spec.InitContainers)
+	initContainer := dtwebhook.FindOneAgentInstallContainer(pod.Spec.InitContainers)
 	newContainers := []*corev1.Container{}
 
 	for i := range pod.Spec.Containers {
