@@ -387,7 +387,13 @@ func (controller *DynakubeController) reconcileActiveGateCapabilities(dynakubeSt
 	if dynakubeState.Instance.Status.KubeSystemUUID != "" &&
 		dynakubeState.Instance.FeatureAutomaticKubernetesApiMonitoring() &&
 		dynakubeState.Instance.KubernetesMonitoringMode() {
-		err := automaticapimonitoring.NewReconciler(dtc, dynakubeState.Instance.Name, dynakubeState.Instance.Status.KubeSystemUUID).
+
+		clusterLabel := dynakubeState.Instance.FeatureAutomaticKubernetesApiMonitoringClusterName()
+		if clusterLabel == "" {
+			clusterLabel = dynakubeState.Instance.Name
+		}
+
+		err := automaticapimonitoring.NewReconciler(dtc, clusterLabel, dynakubeState.Instance.Status.KubeSystemUUID).
 			Reconcile()
 		if err != nil {
 			log.Error(err, "could not create setting")
