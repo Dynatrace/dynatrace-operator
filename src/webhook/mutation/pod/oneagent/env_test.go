@@ -119,17 +119,4 @@ func TestInitialConnectRetryEnvIf(t *testing.T) {
 		require.Len(t, container.Env, 1)
 		assert.Equal(t, container.Env[0].Value, testValue)
 	})
-	t.Run("Not add incorrect initialConnectRetry env", func(t *testing.T) {
-		container := &corev1.Container{}
-		testValue := "-45"
-		dynakube := dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureOneAgentInitialConnectRetry: testValue,
-				},
-			},
-		}
-		addInitialConnectRetryEnv(container, &dynakube)
-		require.Len(t, container.Env, 0)
-	})
 }

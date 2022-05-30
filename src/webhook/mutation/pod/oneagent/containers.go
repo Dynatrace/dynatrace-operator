@@ -50,14 +50,16 @@ func (mutator *OneAgentPodMutator) addOneAgentToContainer(pod *corev1.Pod, dynak
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 
 	addOneAgentVolumeMounts(container, installPath)
+	addDeploymentMetadataEnv(container, dynakube, mutator.clusterID)
+	addPreloadEnv(container, installPath)
+
 	if dynakube.HasActiveGateCaCert() {
 		addCertVolumeMounts(container)
 	}
 
-	addInitialConnectRetryEnv(container, dynakube)
-
-	addDeploymentMetadataEnv(container, dynakube, mutator.clusterID)
-	addPreloadEnv(container, installPath)
+	if dynakube.FeatureAgentInitialConnectRetry() > 0 {
+		addInitialConnectRetryEnv(container, dynakube)
+	}
 
 	if dynakube.NeedsOneAgentProxy() {
 		addProxyEnv(container)

@@ -82,7 +82,7 @@ func addDeploymentMetadataEnv(container *corev1.Container, dynakube *dynatracev1
 }
 
 func addInitialConnectRetryEnv(container *corev1.Container, dynakube *dynatracev1beta1.DynaKube) {
-	if dynakube.FeatureAgentInitialConnectRetry() < 0 || kubeobjects.EnvVarIsIn(container.Env, initialConnectRetryEnvVarName) {
+	if kubeobjects.EnvVarIsIn(container.Env, initialConnectRetryEnvVarName) {
 		return
 	}
 
