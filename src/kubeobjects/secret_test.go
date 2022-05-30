@@ -14,16 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-const (
-	testValue1 = "test-value"
-	testValue2 = "test-alternative-value"
-	testKey1   = "test-key"
-	testKey2   = "test-name"
-
-	testSecretName = "super-secret"
-	testNamespace  = "test-namespace"
-)
-
 var log = logger.NewDTLogger()
 
 func TestCreateOrUpdateSecretIfNotExists(t *testing.T) {

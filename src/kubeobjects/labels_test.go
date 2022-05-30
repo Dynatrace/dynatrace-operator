@@ -6,15 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	testAppName          = "dynatrace-operator"
-	testAppVersion       = "snapshot"
-	testName             = "test-name"
-	testComponent        = "test-component"
-	testComponentFeature = "test-component-feature"
-	testComponentVersion = "test-component-version"
-)
-
 func TestConstructors(t *testing.T) {
 	appLabels := NewAppLabels(testComponent, testName, testComponentFeature, testComponentVersion)
 	coreLabels := NewCoreLabels(testName, testComponent)
