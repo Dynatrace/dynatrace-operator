@@ -19,7 +19,7 @@ func reinvokeUserContainers(pod *corev1.Pod) {
 	}
 }
 
-func updateInstallContainer(initContainer *corev1.Container, workload *workloadInfo) {
-	addWorkloadInfoEnvs(initContainer, workload)
-	addEnrichmentVolumeMount(initContainer)
+func updateInstallContainer(installContainer *corev1.Container, workload *workloadInfo) {
+	addWorkloadInfoEnvs(installContainer, workload)
+	addEnrichmentVolumeMount(installContainer)
 }

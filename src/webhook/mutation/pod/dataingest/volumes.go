@@ -6,30 +6,30 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (mutator *DataIngestPodMutator) setupVolumes(pod *corev1.Pod) {
+func setupVolumes(pod *corev1.Pod) {
 	addEnrichmentVolume(pod)
 	addEnrichmentEndpointVolume(pod)
-}
-
-func addEnrichmentEndpointVolume(pod *corev1.Pod) {
-	pod.Spec.Volumes = append(pod.Spec.Volumes,
-		corev1.Volume{
-			Name: EnrichmentVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-	)
 }
 
 func addEnrichmentVolume(pod *corev1.Pod) {
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
-			Name: EnrichmentEndpointVolumeName,
+			Name: EnrichmentVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: dtingestendpoint.SecretEndpointName,
 				},
+			},
+		},
+	)
+}
+
+func addEnrichmentEndpointVolume(pod *corev1.Pod) {
+	pod.Spec.Volumes = append(pod.Spec.Volumes,
+		corev1.Volume{
+			Name: EnrichmentEndpointVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
 	)

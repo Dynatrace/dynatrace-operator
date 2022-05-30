@@ -43,7 +43,7 @@ func (mutator *DataIngestPodMutator) Mutate(request *dtwebhook.MutationRequest) 
 	if err != nil {
 		return err
 	}
-	mutator.setupVolumes(request.Pod)
+	setupVolumes(request.Pod)
 	mutateUserContainers(request.Pod)
 	updateInstallContainer(request.InstallContainer, workload)
 	setInjectedAnnotation(request.Pod)
@@ -63,8 +63,16 @@ func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.M
 	endpointGenerator := dtingestendpoint.NewEndpointSecretGenerator(mutator.client, mutator.apiReader, mutator.webhookNamespace)
 
 	var endpointSecret corev1.Secret
-	if err := mutator.apiReader.Get(request.Context, client.ObjectKey{Name: dtingestendpoint.SecretEndpointName, Namespace: request.Namespace.Name}, &endpointSecret); k8serrors.IsNotFound(err) {
-		if _, err := endpointGenerator.GenerateForNamespace(request.Context, request.DynaKube.Name, request.Namespace.Name); err != nil {
+	err := mutator.apiReader.Get(
+		request.Context,
+		client.ObjectKey{
+			Name:      dtingestendpoint.SecretEndpointName,
+			Namespace: request.Namespace.Name,
+		},
+		&endpointSecret)
+	if k8serrors.IsNotFound(err) {
+		_, err := endpointGenerator.GenerateForNamespace(request.Context, request.DynaKube.Name, request.Namespace.Name)
+		if err != nil {
 			log.Error(err, "failed to create the data-ingest endpoint secret before pod injection")
 			return err
 		}

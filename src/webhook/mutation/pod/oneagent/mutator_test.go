@@ -23,6 +23,44 @@ const (
 	testDynakubeName  = "test-dynakube"
 )
 
+func TestEnabled(t *testing.T) {
+	t.Run("turned off", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		pod := getTestPod(map[string]string{dtwebhook.AnnotationOneAgentInject: "false"})
+
+		enabled := mutator.Enabled(pod)
+
+		require.False(t, enabled)
+	})
+	t.Run("on by default", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		pod := getTestPod(nil)
+
+		enabled := mutator.Enabled(pod)
+
+		require.True(t, enabled)
+	})
+}
+
+func TestInjected(t *testing.T) {
+	t.Run("already marked", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		pod := getTestPod(map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"})
+
+		enabled := mutator.Injected(pod)
+
+		require.True(t, enabled)
+	})
+	t.Run("fresh", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		pod := getTestPod(nil)
+
+		enabled := mutator.Injected(pod)
+
+		require.False(t, enabled)
+	})
+}
+
 func TestGetVolumeMode(t *testing.T) {
 	t.Run("should return csi volume mode", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
