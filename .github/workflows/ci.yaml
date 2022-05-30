@@ -32,7 +32,7 @@ jobs:
       - name: Run Unit tests
         id: helm-unittest
         run: |
-          make helm-test
+          make test/helm/unit
 
   helm-lint:
     name: Run helm linting
@@ -47,7 +47,7 @@ jobs:
       - name: Run Linting
         id: helm-linting
         run: |
-          make helm-lint
+          make test/helm/lint
 
   tests:
     name: Run unit tests
