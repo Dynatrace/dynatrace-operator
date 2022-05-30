@@ -20,11 +20,11 @@ func (webhook *podMutatorWebhook) createInstallInitContainerBase(pod *corev1.Pod
 		Env: []corev1.EnvVar{
 			{Name: standalone.ContainerCountEnv, Value: strconv.Itoa(len(pod.Spec.Containers))},
 			{Name: standalone.CanFailEnv, Value: kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationFailurePolicy, "silent")},
-			{Name: standalone.K8PodNameEnv, ValueFrom: kubeobjects.FieldEnvVar("metadata.name")},
-			{Name: standalone.K8PodUIDEnv, ValueFrom: kubeobjects.FieldEnvVar("metadata.uid")},
+			{Name: standalone.K8PodNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.name")},
+			{Name: standalone.K8PodUIDEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.uid")},
 			{Name: standalone.K8BasePodNameEnv, Value: getBasePodName(pod)},
-			{Name: standalone.K8NamespaceEnv, ValueFrom: kubeobjects.FieldEnvVar("metadata.namespace")},
-			{Name: standalone.K8NodeNameEnv, ValueFrom: kubeobjects.FieldEnvVar("spec.nodeName")},
+			{Name: standalone.K8NamespaceEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.namespace")},
+			{Name: standalone.K8NodeNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("spec.nodeName")},
 		},
 		SecurityContext: getSecurityContext(pod),
 		VolumeMounts: []corev1.VolumeMount{

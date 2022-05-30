@@ -119,6 +119,7 @@ func TestHandlePodReinvocation(t *testing.T) {
 		mutator1 := createAlreadyInjectedPodMutatorMock()
 		mutator2 := createAlreadyInjectedPodMutatorMock()
 		dynakube := getTestDynakube()
+		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureDisableWebhookReinvocationPolicy: "true"}
 		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
@@ -133,7 +134,6 @@ func TestHandlePodReinvocation(t *testing.T) {
 		mutator1 := createAlreadyInjectedPodMutatorMock()
 		mutator2 := createAlreadyInjectedPodMutatorMock()
 		dynakube := getTestDynakube()
-		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureEnableWebhookReinvocationPolicy: "true"}
 		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{mutator1, mutator2}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
@@ -145,31 +145,29 @@ func TestHandlePodReinvocation(t *testing.T) {
 		mutator2.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
 	t.Run("should call both mutator, only 1 update, updated == true", func(t *testing.T) {
-		sadMutator := createFailPodMutatorMock()
-		happyMutator := createAlreadyInjectedPodMutatorMock()
+		failingMutator := createFailPodMutatorMock()
+		workingMutator := createAlreadyInjectedPodMutatorMock()
 		dynakube := getTestDynakube()
-		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureEnableWebhookReinvocationPolicy: "true"}
-		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{sadMutator, happyMutator}, nil)
+		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{failingMutator, workingMutator}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
 		updated := podWebhook.handlePodReinvocation(mutationRequest)
 		require.True(t, updated)
-		sadMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.Pod)
-		sadMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
-		happyMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.Pod)
-		happyMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
+		failingMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.Pod)
+		failingMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
+		workingMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.Pod)
+		workingMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
 	t.Run("should call mutator, no update", func(t *testing.T) {
-		sadMutator := createFailPodMutatorMock()
+		failingMutator := createFailPodMutatorMock()
 		dynakube := getTestDynakube()
-		dynakube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureEnableWebhookReinvocationPolicy: "true"}
-		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{sadMutator}, nil)
+		podWebhook := createTestWebhook(t, []dtwebhook.PodMutator{failingMutator}, nil)
 		mutationRequest := createTestMutationRequest(dynakube)
 
 		updated := podWebhook.handlePodReinvocation(mutationRequest)
 		require.False(t, updated)
-		sadMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.Pod)
-		sadMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
+		failingMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Enabled", mutationRequest.Pod)
+		failingMutator.(*dtwebhook.PodMutatorMock).AssertCalled(t, "Reinvoke", mutationRequest.ToReinvocationRequest())
 	})
 }
 

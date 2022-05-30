@@ -106,14 +106,14 @@ func (webhook *podMutatorWebhook) handlePodMutation(mutationRequest *dtwebhook.M
 	}
 	addToInitContainers(mutationRequest.Pod, mutationRequest.InstallContainer)
 	webhook.recorder.sendPodInjectEvent()
-	setAnnotation(mutationRequest)
+	setDynatraceInjectedAnnotation(mutationRequest)
 	return nil
 }
 
 func (webhook *podMutatorWebhook) handlePodReinvocation(mutationRequest *dtwebhook.MutationRequest) bool {
 	var needsUpdate bool
 
-	if !mutationRequest.DynaKube.FeatureEnableWebhookReinvocationPolicy() {
+	if mutationRequest.DynaKube.FeatureDisableWebhookReinvocationPolicy() {
 		return false
 	}
 
@@ -128,7 +128,7 @@ func (webhook *podMutatorWebhook) handlePodReinvocation(mutationRequest *dtwebho
 	return needsUpdate
 }
 
-func setAnnotation(mutationRequest *dtwebhook.MutationRequest) {
+func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) {
 	if mutationRequest.Pod.Annotations == nil {
 		mutationRequest.Pod.Annotations = make(map[string]string)
 	}
