@@ -16,11 +16,7 @@ manifests/kubernetes/csi:
 		--set autoCreateSecret=false \
 		--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_CSIDRIVER_YAML)"
 
-	grep -v 'app.kubernetes.io/managed-by' "$(KUBERNETES_CSIDRIVER_YAML)"  > config/deploy/kubernetes/tmp.yaml
-	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(KUBERNETES_CSIDRIVER_YAML)"
-	rm config/deploy/kubernetes/tmp.yaml
-
-## Generates manifests for Kubernetes including a CRD and a CSI driver deployment
+## Generates an Kubernetes manifest with a CRD
 manifests/kubernetes/core: manifests/crd/helm prerequisites/kustomize
 	helm template dynatrace-operator config/helm/chart/default \
 			--namespace dynatrace \
@@ -32,7 +28,7 @@ manifests/kubernetes/core: manifests/crd/helm prerequisites/kustomize
 			--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_CORE_YAML)"
 
 ## Generates a manifest for Kubernetes including a CRD, a CSI driver deployment and a OLM version
-manifests/kubernetes: manifests/kubernetes/crd manifests/kubernetes/csi
+manifests/kubernetes: manifests/kubernetes/core manifests/kubernetes/csi
 	cp "$(KUBERNETES_CORE_YAML)" "$(KUBERNETES_OLM_YAML)"
 	cat "$(KUBERNETES_CORE_YAML)" "$(KUBERNETES_CSIDRIVER_YAML)" > "$(KUBERNETES_ALL_YAML)"
 

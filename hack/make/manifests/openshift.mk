@@ -16,11 +16,19 @@ manifests/openshift/csi:
 		--set createSecurityContextConstraints="true" \
 		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_CSIDRIVER_YAML)"
 
-	grep -v 'app.kubernetes.io/managed-by' "$(OPENSHIFT_CSIDRIVER_YAML)"  > config/deploy/kubernetes/tmp.yaml
-	grep -v 'helm.sh' config/deploy/kubernetes/tmp.yaml > "$(OPENSHIFT_CSIDRIVER_YAML)"
-	rm config/deploy/kubernetes/tmp.yaml
+## Generates an OpenShift manifest with a CRD
+manifests/openshift/core: manifests/crd/helm prerequisites/kustomize
+	helm template dynatrace-operator config/helm/chart/default \
+		--namespace dynatrace \
+		--set installCRD=true \
+		--set platform="openshift" \
+		--set manifests=true \
+		--set olm="${OLM}" \
+		--set autoCreateSecret=false \
+		--set createSecurityContextConstraints="true" \
+		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_CORE_YAML)"
 
 ## Generates a manifest for OpenShift including a CRD and a CSI driver deployment
-manifests/openshift: manifests/openshift/crd manifests/openshift/csi
-	cp "$(OPENSHIFT_CRD_AND_OTHERS_YAML)" "$(OPENSHIFT_OLM_YAML)"
-	cat "$(OPENSHIFT_CRD_AND_OTHERS_YAML)" "$(OPENSHIFT_CSIDRIVER_YAML)" > "$(OPENSHIFT_ALL_YAML)"
+manifests/openshift: manifests/openshift/core manifests/openshift/csi
+	cp "$(OPENSHIFT_CORE_YAML)" "$(OPENSHIFT_OLM_YAML)"
+	cat "$(OPENSHIFT_CORE_YAML)" "$(OPENSHIFT_CSIDRIVER_YAML)" > "$(OPENSHIFT_ALL_YAML)"
