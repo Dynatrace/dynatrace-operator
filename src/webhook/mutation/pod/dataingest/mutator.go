@@ -4,6 +4,7 @@ import (
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -37,11 +38,11 @@ func (mutator *DataIngestPodMutator) Mutate(request *dtwebhook.MutationRequest) 
 	log.Info("injecting data-ingest into pod", "pod", request.Pod.GenerateName)
 	workload, err := mutator.retrieveWorkload(request)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	err = mutator.ensureDataIngestSecret(request)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	setupVolumes(request.Pod)
 	mutateUserContainers(request.Pod)
@@ -74,12 +75,12 @@ func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.M
 		_, err := endpointGenerator.GenerateForNamespace(request.Context, request.DynaKube.Name, request.Namespace.Name)
 		if err != nil {
 			log.Error(err, "failed to create the data-ingest endpoint secret before pod injection")
-			return err
+			return errors.WithStack(err)
 		}
 		log.Info("created the data-ingest endpoint secret before pod injection")
 	} else if err != nil {
 		log.Error(err, "failed to query the data-ingest endpoint secret before pod injection")
-		return err
+		return errors.WithStack(err)
 	}
 
 	return nil

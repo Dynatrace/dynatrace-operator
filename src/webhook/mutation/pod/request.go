@@ -15,15 +15,15 @@ import (
 )
 
 func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context, request admission.Request) (*dtwebhook.MutationRequest, error) {
-	pod, err := webhook.getPodFromRequest(request)
+	pod, err := getPodFromRequest(request, *webhook.decoder)
 	if err != nil {
 		return nil, err
 	}
-	namespace, err := webhook.getNamespaceFromRequest(ctx, request)
+	namespace, err := getNamespaceFromRequest(ctx, webhook.apiReader, request)
 	if err != nil {
 		return nil, err
 	}
-	dynakubeName, err := webhook.getDynakubeName(namespace)
+	dynakubeName, err := getDynakubeName(namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -40,9 +40,9 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 	return &mutationRequest, nil
 }
 
-func (webhook *podMutatorWebhook) getPodFromRequest(req admission.Request) (*corev1.Pod, error) {
+func getPodFromRequest(req admission.Request, decoder admission.Decoder) (*corev1.Pod, error) {
 	pod := &corev1.Pod{}
-	err := webhook.decoder.Decode(req, pod)
+	err := decoder.Decode(req, pod)
 	if err != nil {
 		log.Error(err, "failed to decode the request for pod injection")
 		return nil, err
@@ -50,17 +50,17 @@ func (webhook *podMutatorWebhook) getPodFromRequest(req admission.Request) (*cor
 	return pod, nil
 }
 
-func (webhook *podMutatorWebhook) getNamespaceFromRequest(ctx context.Context, req admission.Request) (*corev1.Namespace, error) {
+func getNamespaceFromRequest(ctx context.Context, apiReader client.Reader, req admission.Request) (*corev1.Namespace, error) {
 	var namespace corev1.Namespace
 
-	if err := webhook.apiReader.Get(ctx, client.ObjectKey{Name: req.Namespace}, &namespace); err != nil {
+	if err := apiReader.Get(ctx, client.ObjectKey{Name: req.Namespace}, &namespace); err != nil {
 		log.Error(err, "failed to query the namespace before pod injection")
 		return nil, err
 	}
 	return &namespace, nil
 }
 
-func (webhook *podMutatorWebhook) getDynakubeName(namespace *corev1.Namespace) (string, error) {
+func getDynakubeName(namespace *corev1.Namespace) (string, error) {
 	dynakubeName, ok := namespace.Labels[mapper.InstanceLabel]
 	if !ok {
 		var err error

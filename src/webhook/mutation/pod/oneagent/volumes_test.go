@@ -25,7 +25,7 @@ func TestAddCertVolumeMounts(t *testing.T) {
 
 		addCertVolumeMounts(container)
 		require.Len(t, container.VolumeMounts, 1)
-		assert.Equal(t, container.VolumeMounts[0].SubPath, customCertFileName)
+		assert.Equal(t, customCertFileName, container.VolumeMounts[0].SubPath)
 	})
 }
 

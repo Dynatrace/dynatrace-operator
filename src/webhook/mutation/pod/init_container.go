@@ -26,7 +26,7 @@ func (webhook *podMutatorWebhook) createInstallInitContainerBase(pod *corev1.Pod
 			{Name: standalone.K8NamespaceEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.namespace")},
 			{Name: standalone.K8NodeNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("spec.nodeName")},
 		},
-		SecurityContext: getSecurityContext(pod),
+		SecurityContext: copyUserContainerSecurityContext(pod),
 		VolumeMounts: []corev1.VolumeMount{
 			{Name: injectionConfigVolumeName, MountPath: standalone.ConfigDirMount},
 		},
@@ -34,12 +34,15 @@ func (webhook *podMutatorWebhook) createInstallInitContainerBase(pod *corev1.Pod
 	}
 }
 
-func getSecurityContext(pod *corev1.Pod) *corev1.SecurityContext {
-	var sc *corev1.SecurityContext
-	if pod.Spec.Containers[0].SecurityContext != nil {
-		sc = pod.Spec.Containers[0].SecurityContext.DeepCopy()
+func copyUserContainerSecurityContext(pod *corev1.Pod) *corev1.SecurityContext {
+	var securityContext *corev1.SecurityContext
+	if len(pod.Spec.Containers) == 0 {
+		return securityContext
 	}
-	return sc
+	if pod.Spec.Containers[0].SecurityContext != nil {
+		securityContext = pod.Spec.Containers[0].SecurityContext.DeepCopy()
+	}
+	return securityContext
 }
 
 func getBasePodName(pod *corev1.Pod) string {
@@ -49,12 +52,12 @@ func getBasePodName(pod *corev1.Pod) string {
 	}
 
 	// Only include up to the last dash character, exclusive.
-	if p := strings.LastIndex(basePodName, "-"); p != -1 {
-		basePodName = basePodName[:p]
+	if lastDashIndex := strings.LastIndex(basePodName, "-"); lastDashIndex != -1 {
+		basePodName = basePodName[:lastDashIndex]
 	}
 	return basePodName
 }
 
-func addToInitContainers(pod *corev1.Pod, installContainer *corev1.Container) {
-	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *installContainer)
+func addToInitContainers(pod *corev1.Pod, initContainer *corev1.Container) {
+	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *initContainer)
 }

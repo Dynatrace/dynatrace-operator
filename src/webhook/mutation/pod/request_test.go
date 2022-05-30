@@ -58,7 +58,7 @@ func TestGetPodFromRequest(t *testing.T) {
 		)
 		expected := getTestPod()
 
-		pod, err := podWebhook.getPodFromRequest(*createTestAdmissionRequest(expected))
+		pod, err := getPodFromRequest(*createTestAdmissionRequest(expected), *podWebhook.decoder)
 		require.NoError(t, err)
 		assert.Equal(t, expected, pod)
 	})
@@ -72,7 +72,7 @@ func TestGetNamespaceFromRequest(t *testing.T) {
 			[]client.Object{expected},
 		)
 
-		namespace, err := podWebhook.getNamespaceFromRequest(context.TODO(), *createTestAdmissionRequest(getTestPod()))
+		namespace, err := getNamespaceFromRequest(context.TODO(), podWebhook.apiReader, *createTestAdmissionRequest(getTestPod()))
 		require.NoError(t, err)
 		assert.Equal(t, expected.ObjectMeta, namespace.ObjectMeta)
 	})
@@ -81,12 +81,7 @@ func TestGetNamespaceFromRequest(t *testing.T) {
 func TestGetDynakubeName(t *testing.T) {
 	t.Run("should return the dynakube's name", func(t *testing.T) {
 		namespace := getTestNamespace()
-		podWebhook := createTestWebhook(t,
-			[]dtwebhook.PodMutator{},
-			[]client.Object{namespace},
-		)
-
-		dynakubeName, err := podWebhook.getDynakubeName(namespace)
+		dynakubeName, err := getDynakubeName(namespace)
 		require.NoError(t, err)
 		assert.Equal(t, testDynakubeName, dynakubeName)
 	})

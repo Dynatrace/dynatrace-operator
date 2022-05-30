@@ -4,6 +4,7 @@ import (
 	"context"
 
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,27 +36,27 @@ func findRootOwnerOfPod(ctx context.Context, clt client.Client, pod *corev1.Pod,
 			OwnerReferences: pod.ObjectMeta.OwnerReferences,
 		},
 	}
-	workloadName, workloadKind, err := findRootOwner(ctx, clt, obj)
+	workloadInfo, err := findRootOwner(ctx, clt, obj)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
-	return &workloadInfo{
-		name: workloadName,
-		kind: workloadKind,
-	}, nil
+	return &workloadInfo, nil
 }
 
-func findRootOwner(ctx context.Context, clt client.Client, o *metav1.PartialObjectMetadata) (string, string, error) {
-	if len(o.ObjectMeta.OwnerReferences) == 0 {
-		kind := o.Kind
+func findRootOwner(ctx context.Context, clt client.Client, partialObjectMetadata *metav1.PartialObjectMetadata) (workloadInfo, error) {
+	if len(partialObjectMetadata.ObjectMeta.OwnerReferences) == 0 {
+		kind := partialObjectMetadata.Kind
 		if kind == "Pod" {
 			kind = ""
 		}
-		return o.ObjectMeta.Name, kind, nil
+		return workloadInfo{
+			name: partialObjectMetadata.ObjectMeta.Name,
+			kind: kind,
+		}, nil
 	}
 
-	om := o.ObjectMeta
-	for _, owner := range om.OwnerReferences {
+	objectMetadata := partialObjectMetadata.ObjectMeta
+	for _, owner := range objectMetadata.OwnerReferences {
 		if owner.Controller != nil && *owner.Controller && isWellKnownWorkload(owner) {
 			obj := &metav1.PartialObjectMetadata{
 				TypeMeta: metav1.TypeMeta{
@@ -63,15 +64,21 @@ func findRootOwner(ctx context.Context, clt client.Client, o *metav1.PartialObje
 					Kind:       owner.Kind,
 				},
 			}
-			if err := clt.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: om.Namespace}, obj); err != nil {
-				log.Error(err, "failed to query the object", "apiVersion", owner.APIVersion, "kind", owner.Kind, "name", owner.Name, "namespace", om.Namespace)
-				return o.ObjectMeta.Name, o.Kind, err
+			if err := clt.Get(ctx, client.ObjectKey{Name: owner.Name, Namespace: objectMetadata.Namespace}, obj); err != nil {
+				log.Error(err, "failed to query the object", "apiVersion", owner.APIVersion, "kind", owner.Kind, "name", owner.Name, "namespace", objectMetadata.Namespace)
+				return workloadInfo{
+					name: partialObjectMetadata.ObjectMeta.Name,
+					kind: partialObjectMetadata.Kind,
+				}, err
 			}
 
 			return findRootOwner(ctx, clt, obj)
 		}
 	}
-	return o.ObjectMeta.Name, o.Kind, nil
+	return workloadInfo{
+		name: partialObjectMetadata.ObjectMeta.Name,
+		kind: partialObjectMetadata.Kind,
+	}, nil
 }
 
 func isWellKnownWorkload(ownerRef metav1.OwnerReference) bool {

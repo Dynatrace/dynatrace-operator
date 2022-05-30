@@ -57,11 +57,11 @@ func addInstallerInitEnvs(initContainer *corev1.Container, installer installerIn
 	)
 }
 
-func addContainerInfoInitEnv(initContainer *corev1.Container, number int, name string, image string) {
+func addContainerInfoInitEnv(initContainer *corev1.Container, containerIndex int, name string, image string) {
 	log.Info("updating init container with new container", "containerName", name, "containerImage", image)
 	initContainer.Env = append(initContainer.Env,
-		corev1.EnvVar{Name: fmt.Sprintf(standalone.ContainerNameEnvTemplate, number), Value: name},
-		corev1.EnvVar{Name: fmt.Sprintf(standalone.ContainerImageEnvTemplate, number), Value: image})
+		corev1.EnvVar{Name: fmt.Sprintf(standalone.ContainerNameEnvTemplate, containerIndex), Value: name},
+		corev1.EnvVar{Name: fmt.Sprintf(standalone.ContainerImageEnvTemplate, containerIndex), Value: image})
 }
 
 func addDeploymentMetadataEnv(container *corev1.Container, dynakube *dynatracev1beta1.DynaKube, clusterID string) {

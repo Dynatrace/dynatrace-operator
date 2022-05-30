@@ -5,6 +5,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/initgeneration"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,7 +40,7 @@ func (mutator *OneAgentPodMutator) Injected(pod *corev1.Pod) bool {
 func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) error {
 	log.Info("injecting OneAgent into pod", "pod", request.Pod.GenerateName)
 	if err := mutator.ensureInitSecret(request); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	installerInfo := getInstallerInfo(request.Pod)
@@ -74,19 +75,19 @@ func (mutator *OneAgentPodMutator) ensureInitSecret(request *dtwebhook.MutationR
 		_, err := initGenerator.GenerateForNamespace(request.Context, *request.DynaKube, request.Namespace.Name)
 		if err != nil {
 			log.Error(err, "Failed to create the init secret before oneagent pod injection")
-			return err
+			return errors.WithStack(err)
 		}
 		log.Info("created the init secret before oneagent pod injection")
 	} else if err != nil {
 		log.Error(err, "failed to query the init secret before oneagent pod injection")
-		return err
+		return errors.WithStack(err)
 	}
 	return nil
 }
 
 func containerIsInjected(container *corev1.Container) bool {
 	for _, e := range container.Env {
-		if e.Name == "LD_PRELOAD" {
+		if e.Name == dynatraceMetadataEnvVarName {
 			return true
 		}
 	}

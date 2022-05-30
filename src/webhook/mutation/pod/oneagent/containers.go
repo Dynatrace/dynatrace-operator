@@ -20,9 +20,9 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 	}
 }
 
-// reinvokeUserContainers mutates each user container that hasn't been injected
-// it does it in an way to make sure that the new containers will have an envvar in the install-container
-// that don't conflict with the previous envvars for the originally injected containers
+// reinvokeUserContainers mutates each user container that hasn't been injected yet.
+// It makes sure that the new containers will have an environment variable in the install-container
+// that doesn't conflict with the previous environment variables of the originally injected containers
 func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.ReinvocationRequest) {
 	pod := request.Pod
 	initContainer := dtwebhook.FindOneAgentInstallContainer(pod.Spec.InitContainers)
@@ -45,7 +45,6 @@ func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.Rei
 }
 
 func (mutator *OneAgentPodMutator) addOneAgentToContainer(pod *corev1.Pod, dynakube *dynatracev1beta1.DynaKube, container *corev1.Container) {
-
 	log.Info("adding OneAgent to container", "container", container.Name)
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 

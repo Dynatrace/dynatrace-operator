@@ -49,6 +49,8 @@ const (
 	// DeploymentName is the name used for the Deployment of any webhooks and WebhookConfiguration objects.
 	DeploymentName = "dynatrace-webhook"
 
+	WebhookContainerName = "webhook"
+
 	// InstallContainerName is the name used for the install container
 	InstallContainerName = "install-oneagent"
 )

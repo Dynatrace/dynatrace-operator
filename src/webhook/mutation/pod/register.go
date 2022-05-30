@@ -6,9 +6,10 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
-	webhook2 "github.com/Dynatrace/dynatrace-operator/src/webhook"
+	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	dataingest_mutation "github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod/dataingest"
 	oneagent_mutation "github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod/oneagent"
+	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -24,7 +25,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 	kubeConfig := mgr.GetConfig()
 	apmExists, err := kubeobjects.CheckIfOneAgentAPMExists(kubeConfig)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	if apmExists {
 		log.Info("OneAgentAPM object detected - DynaKube webhook won't inject until the OneAgent Operator has been uninstalled")
@@ -35,17 +36,17 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 	// the injected podMutator.client doesn't have permissions to Get(sth) from a different namespace
 	metaClient, err := client.New(kubeConfig, client.Options{})
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
-	webhookPodImage, err := getWebhookPodImage(apiReader, webhookPodName, webhookNamespace)
+	webhookPodImage, err := getWebhookContainerImage(apiReader, webhookPodName, webhookNamespace)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	clusterID, err := getClusterID(apiReader)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	mgr.GetWebhookServer().Register("/inject", &webhook.Admission{Handler: &podMutatorWebhook{
@@ -54,8 +55,8 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		webhookImage:     webhookPodImage,
 		apmExists:        apmExists,
 		clusterID:        clusterID,
-		recorder:         newBasePodMutatorEventRecorder(mgr.GetEventRecorderFor("Webhook Server")),
-		mutators: []webhook2.PodMutator{
+		recorder:         newPodMutatorEventRecorder(mgr.GetEventRecorderFor("Webhook Server")),
+		mutators: []dtwebhook.PodMutator{
 			oneagent_mutation.NewOneAgentPodMutator(
 				webhookPodImage,
 				clusterID,
@@ -82,24 +83,27 @@ func registerLivezEndpoint(mgr manager.Manager) {
 	log.Info("registered /livez endpoint")
 }
 
-func getWebhookPodImage(apiReader client.Reader, podName string, namespaceName string) (string, error) {
+func getWebhookContainerImage(apiReader client.Reader, podName string, namespaceName string) (string, error) {
 	var pod v1.Pod
 	if err := apiReader.Get(context.TODO(), client.ObjectKey{
 		Name:      podName,
 		Namespace: namespaceName,
 	}, &pod); err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
-	podImage := pod.Spec.Containers[0].Image
-	log.Info("got webhook's image", "image", pod.Spec.Containers[0].Image)
-	return podImage, nil
+	webhookContainer, err := kubeobjects.GetContainer(pod, dtwebhook.WebhookContainerName)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	log.Info("got webhook's image", "image", webhookContainer.Image)
+	return webhookContainer.Image, nil
 }
 
 func getClusterID(apiReader client.Reader) (string, error) {
 	var clusterUID types.UID
 	var err error
 	if clusterUID, err = kubesystem.GetUID(apiReader); err != nil {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	log.Info("got cluster UID", "clusterUID", clusterUID)
 	return string(clusterUID), nil

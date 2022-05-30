@@ -13,7 +13,7 @@ type podMutatorEventRecorder struct {
 	recorder record.EventRecorder
 }
 
-func newBasePodMutatorEventRecorder(recorder record.EventRecorder) podMutatorEventRecorder {
+func newPodMutatorEventRecorder(recorder record.EventRecorder) podMutatorEventRecorder {
 	return podMutatorEventRecorder{recorder: recorder}
 }
 
@@ -32,9 +32,9 @@ func (event *podMutatorEventRecorder) sendPodUpdateEvent() {
 }
 
 func (event *podMutatorEventRecorder) sendMissingDynaKubeEvent(namespaceName, dynakubeName string) {
-	template := "namespace '%s' is assigned to DynaKube instance '%s' but doesn't exist"
+	template := "Namespace '%s' is assigned to DynaKube instance '%s' but this instance doesn't exist"
 	event.recorder.Eventf(
-		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: "placeholder", Namespace: namespaceName}},
+		&dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: dynakubeName, Namespace: namespaceName}},
 		corev1.EventTypeWarning,
 		missingDynakubeEvent,
 		template, namespaceName, dynakubeName)
