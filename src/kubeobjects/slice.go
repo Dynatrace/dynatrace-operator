@@ -51,12 +51,3 @@ func PortIsIn(ports []corev1.ContainerPort, portToCheck int32) bool {
 	}
 	return false
 }
-
-func EnvVarIsIn(envVars []corev1.EnvVar, envVarToCheck string) bool {
-	for _, envVar := range envVars {
-		if envVar.Name == envVarToCheck {
-			return true
-		}
-	}
-	return false
-}

@@ -56,10 +56,10 @@ const (
 	AnnotationFeatureOneAgentInitialConnectRetry  = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 
 	// injection (webhook)
-	AnnotationFeatureEnableWebhookReinvocationPolicy = AnnotationFeaturePrefix + "enable-webhook-reinvocation-policy"
-	AnnotationFeatureIgnoreUnknownState              = AnnotationFeaturePrefix + "ignore-unknown-state"
-	AnnotationFeatureIgnoredNamespaces               = AnnotationFeaturePrefix + "ignored-namespaces"
-	AnnotationFeatureDisableMetadataEnrichment       = AnnotationFeaturePrefix + "disable-metadata-enrichment"
+	AnnotationFeatureDisableWebhookReinvocationPolicy = AnnotationFeaturePrefix + "disable-webhook-reinvocation-policy"
+	AnnotationFeatureIgnoreUnknownState               = AnnotationFeaturePrefix + "ignore-unknown-state"
+	AnnotationFeatureIgnoredNamespaces                = AnnotationFeaturePrefix + "ignored-namespaces"
+	AnnotationFeatureDisableMetadataEnrichment        = AnnotationFeaturePrefix + "disable-metadata-enrichment"
 )
 
 var (
@@ -91,10 +91,10 @@ func (dk *DynaKube) FeatureOneAgentMaxUnavailable() int {
 	return val
 }
 
-// FeatureEnableWebhookReinvocationPolicy is a feature flag to enable instrumenting missing containers
-// by enabling reinvocation for webhook.
-func (dk *DynaKube) FeatureEnableWebhookReinvocationPolicy() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureEnableWebhookReinvocationPolicy) == "true"
+// FeatureDisableWebhookReinvocationPolicy disables the reinvocation for the Operator's webhooks.
+// This disables instrumenting containers injected by other webhooks following the admission to the Operator's webhook.
+func (dk *DynaKube) FeatureDisableWebhookReinvocationPolicy() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureDisableWebhookReinvocationPolicy) == "true"
 }
 
 // FeatureIgnoreUnknownState is a feature flag that makes the operator inject into applications even when the dynakube is in an UNKNOWN state,

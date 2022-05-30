@@ -64,23 +64,22 @@ func setUpdatedViaDynakubeAnnotation(ns *corev1.Namespace) {
 // match uses the namespace selector in the dynakube to check if it matches a given namespace
 // if the namspace selector is not set on the dynakube its an automatic match
 func match(dk *dynatracev1beta1.DynaKube, namespace *corev1.Namespace) (bool, error) {
-	matches := false
 	if dk.NamespaceSelector() == nil {
-		matches = true
-	} else {
-		selector, err := metav1.LabelSelectorAsSelector(dk.NamespaceSelector())
-		if err != nil {
-			return matches, errors.WithStack(err)
-		}
-		matches = selector.Matches(labels.Set(namespace.Labels))
+		return true, nil
 	}
-	return matches, nil
+
+	selector, err := metav1.LabelSelectorAsSelector(dk.NamespaceSelector())
+	if err != nil {
+		return false, errors.WithStack(err)
+	}
+
+	return selector.Matches(labels.Set(namespace.Labels)), nil
 }
 
 // updateNamespace tries to match the namespace to every dynakube with codeModules
 // finds conflicting dynakubes(2 dynakube with codeModules on the same namespace)
 // adds/updates/removes labels from the namespace.
-func updateNamespace(operatorNs string, namespace *corev1.Namespace, dkList *dynatracev1beta1.DynaKubeList) (bool, error) {
+func updateNamespace(namespace *corev1.Namespace, dkList *dynatracev1beta1.DynaKubeList) (bool, error) {
 	var updated bool
 	conflict := ConflictChecker{}
 	for i := range dkList.Items {
