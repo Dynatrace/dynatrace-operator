@@ -1,4 +1,4 @@
-CRD_OPTIONS ?= "crd:preserveUnknownFields=false, crdVersions=v1"
+CRD_OPTIONS ?= "crdVersions=v1"
 OLM ?= false
 
 DYNATRACE_OPERATOR_CRD_YAML=dynatrace-operator-crd.yaml

@@ -13,7 +13,6 @@ manifests/kubernetes/csi:
 		--set platform="kubernetes" \
 		--set manifests=true \
 		--set olm="${OLM}" \
-		--set autoCreateSecret=false \
 		--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_CSIDRIVER_YAML)"
 
 ## Generates an Kubernetes manifest with a CRD
@@ -24,7 +23,6 @@ manifests/kubernetes/core: manifests/crd/helm prerequisites/kustomize
 			--set platform="kubernetes" \
 			--set manifests=true \
 			--set olm="${OLM}" \
-			--set autoCreateSecret=false \
 			--set operator.image="$(MASTER_IMAGE)" > "$(KUBERNETES_CORE_YAML)"
 
 ## Generates a manifest for Kubernetes including a CRD, a CSI driver deployment and a OLM version

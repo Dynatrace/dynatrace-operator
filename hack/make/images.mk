@@ -2,7 +2,8 @@ MASTER_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot
 
 # Default bundle image tag
 BUNDLE_IMG ?= controller-bundle:$(VERSION)
-BRANCH_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
+SNAPSHOT_SUFFIX = $(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
+BRANCH_IMAGE ?= quay.io/dynatrace/dynatrace-operator:snapshot-${SNAPSHOT_SUFFIX}
 OLM_IMAGE ?= registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}
 
 # Image URL to use all building/pushing image targets
@@ -24,5 +25,5 @@ images/push:
 	./hack/build/push_image.sh
 
 ## Builds and pushes an Operator image with a snapshot tag
-images/push/tagged: export TAG=snapshot-$(shell git branch --show-current | sed "s/[^a-zA-Z0-9_-]/-/g")
+images/push/tagged: export TAG=snapshot-${SNAPSHOT_SUFFIX}
 images/push/tagged: images/push

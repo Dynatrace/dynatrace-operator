@@ -12,7 +12,6 @@ manifests/openshift/csi:
 		--set platform="openshift" \
 		--set manifests=true \
 		--set olm="${OLM}" \
-		--set autoCreateSecret=false \
 		--set createSecurityContextConstraints="true" \
 		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_CSIDRIVER_YAML)"
 
@@ -24,7 +23,6 @@ manifests/openshift/core: manifests/crd/helm prerequisites/kustomize
 		--set platform="openshift" \
 		--set manifests=true \
 		--set olm="${OLM}" \
-		--set autoCreateSecret=false \
 		--set createSecurityContextConstraints="true" \
 		--set operator.image="$(MASTER_IMAGE)" > "$(OPENSHIFT_CORE_YAML)"
 
