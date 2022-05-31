@@ -7,14 +7,14 @@ import (
 )
 
 func setupVolumes(pod *corev1.Pod) {
-	addEnrichmentVolume(pod)
 	addEnrichmentEndpointVolume(pod)
+	addWorkloadEnrichmentVolume(pod)
 }
 
-func addEnrichmentVolume(pod *corev1.Pod) {
+func addEnrichmentEndpointVolume(pod *corev1.Pod) {
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
-			Name: EnrichmentVolumeName,
+			Name: EnrichmentEndpointVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: dtingestendpoint.SecretEndpointName,
@@ -24,10 +24,10 @@ func addEnrichmentVolume(pod *corev1.Pod) {
 	)
 }
 
-func addEnrichmentEndpointVolume(pod *corev1.Pod) {
+func addWorkloadEnrichmentVolume(pod *corev1.Pod) {
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
-			Name: EnrichmentEndpointVolumeName,
+			Name: WorkloadEnrichmentVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
@@ -36,7 +36,7 @@ func addEnrichmentEndpointVolume(pod *corev1.Pod) {
 }
 
 func setupVolumeMountsForUserContainer(container *corev1.Container) {
-	addEnrichmentVolumeMount(container)
+	addWorkloadEnrichmentVolumeMount(container)
 	addEnrichmentEndpointVolumeMount(container)
 }
 
@@ -49,10 +49,10 @@ func addEnrichmentEndpointVolumeMount(container *corev1.Container) {
 	)
 }
 
-func addEnrichmentVolumeMount(container *corev1.Container) {
+func addWorkloadEnrichmentVolumeMount(container *corev1.Container) {
 	container.VolumeMounts = append(container.VolumeMounts,
 		corev1.VolumeMount{
-			Name:      EnrichmentVolumeName,
+			Name:      WorkloadEnrichmentVolumeName,
 			MountPath: standalone.EnrichmentPath,
 		},
 	)

@@ -5,11 +5,11 @@ import (
 )
 
 const (
-	EnrichmentVolumeName         = "data-ingest-enrichment"
+	WorkloadEnrichmentVolumeName = "data-ingest-enrichment"
 	EnrichmentEndpointVolumeName = "data-ingest-endpoint"
 	EnrichmentEndpointPath       = "/var/lib/dynatrace/enrichment/endpoint"
 )
 
 var (
-	log = logger.NewDTLogger().WithName("mutation-webhook.dataIngest")
+	log = logger.NewDTLogger().WithName("pod.mutation-webhook.dataingest")
 )

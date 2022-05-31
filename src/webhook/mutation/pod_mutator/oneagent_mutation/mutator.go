@@ -74,7 +74,7 @@ func (mutator *OneAgentPodMutator) ensureInitSecret(request *dtwebhook.MutationR
 		initGenerator := initgeneration.NewInitGenerator(mutator.client, mutator.apiReader, mutator.webhookNamespace)
 		_, err := initGenerator.GenerateForNamespace(request.Context, *request.DynaKube, request.Namespace.Name)
 		if err != nil {
-			log.Error(err, "Failed to create the init secret before oneagent pod injection")
+			log.Error(err, "failed to create the init secret before oneagent pod injection")
 			return errors.WithStack(err)
 		}
 		log.Info("created the init secret before oneagent pod injection")

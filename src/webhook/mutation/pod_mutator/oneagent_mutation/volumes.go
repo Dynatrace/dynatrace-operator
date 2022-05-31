@@ -16,7 +16,6 @@ import (
 func (mutator *OneAgentPodMutator) addVolumes(pod *corev1.Pod, dynakube *dynatracev1beta1.DynaKube) {
 	addInjectionConfigVolume(pod)
 	addOneAgentVolumes(dynakube, pod)
-
 }
 
 func addOneAgentVolumeMounts(container *corev1.Container, installPath string) {

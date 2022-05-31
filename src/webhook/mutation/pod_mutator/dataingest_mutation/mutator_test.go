@@ -107,10 +107,12 @@ func TestEnsureDataIngestSecret(t *testing.T) {
 func TestSetInjectedAnnotation(t *testing.T) {
 	t.Run("should add annotation to nil map", func(t *testing.T) {
 		pod := &corev1.Pod{}
+		mutator := createTestPodMutator(nil)
 
+		require.False(t, mutator.Injected(pod))
 		setInjectedAnnotation(pod)
-
 		require.Len(t, pod.Annotations, 1)
+		require.True(t, mutator.Injected(pod))
 	})
 }
 
@@ -126,7 +128,7 @@ func TestContainerIsInjected(t *testing.T) {
 		container := &corev1.Container{
 			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name: EnrichmentVolumeName,
+					Name: WorkloadEnrichmentVolumeName,
 				},
 			},
 		}

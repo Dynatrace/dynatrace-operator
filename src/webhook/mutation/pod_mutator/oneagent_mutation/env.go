@@ -58,7 +58,7 @@ func addInstallerInitEnvs(initContainer *corev1.Container, installer installerIn
 }
 
 func addContainerInfoInitEnv(initContainer *corev1.Container, containerIndex int, name string, image string) {
-	log.Info("updating init container with new container", "containerName", name, "containerImage", image)
+	log.Info("updating init container with new container", "name", name, "image", image)
 	initContainer.Env = append(initContainer.Env,
 		corev1.EnvVar{Name: fmt.Sprintf(standalone.ContainerNameEnvTemplate, containerIndex), Value: name},
 		corev1.EnvVar{Name: fmt.Sprintf(standalone.ContainerImageEnvTemplate, containerIndex), Value: image})

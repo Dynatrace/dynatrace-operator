@@ -45,7 +45,7 @@ func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.Rei
 }
 
 func (mutator *OneAgentPodMutator) addOneAgentToContainer(pod *corev1.Pod, dynakube *dynatracev1beta1.DynaKube, container *corev1.Container) {
-	log.Info("adding OneAgent to container", "container", container.Name)
+	log.Info("adding OneAgent to container", "name", container.Name)
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 
 	addOneAgentVolumeMounts(container, installPath)

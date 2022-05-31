@@ -1,4 +1,4 @@
-package pod
+package pod_mutator
 
 import (
 	"context"
@@ -27,7 +27,7 @@ func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 	return nil
 }
 
-// podMutatorWebhook injects the OneAgent into Pods
+// podMutatorWebhook executes mutators on Pods
 type podMutatorWebhook struct {
 	apiReader client.Reader
 	decoder   *admission.Decoder

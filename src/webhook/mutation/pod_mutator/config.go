@@ -1,4 +1,4 @@
-package pod
+package pod_mutator
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
@@ -13,5 +13,5 @@ const (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("pod-mutation-webhook")
+	log = logger.NewDTLogger().WithName("pod.mutation-webhook")
 )

@@ -1,4 +1,4 @@
-package pod
+package pod_mutator
 
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"

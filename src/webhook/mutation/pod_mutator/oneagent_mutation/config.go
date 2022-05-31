@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("mutation-webhook.oneagent")
+	log = logger.NewDTLogger().WithName("pod.mutation-webhook.oneagent")
 )
 
 const (

@@ -1,4 +1,4 @@
-package pod
+package pod_mutator
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
-	dataingest_mutation "github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod/dataingest"
-	oneagent_mutation "github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod/oneagent"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator/dataingest_mutation"
+	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator/oneagent_mutation"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -91,7 +91,7 @@ func getWebhookContainerImage(apiReader client.Reader, podName string, namespace
 	}, &pod); err != nil {
 		return "", errors.WithStack(err)
 	}
-	webhookContainer, err := kubeobjects.GetContainer(pod, dtwebhook.WebhookContainerName)
+	webhookContainer, err := kubeobjects.FindContainerInPod(pod, dtwebhook.WebhookContainerName)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
