@@ -34,8 +34,8 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 	mutationRequest := dtwebhook.MutationRequest{
 		Context:   ctx,
 		Pod:       pod,
-		Namespace: namespace,
-		DynaKube:  dynakube,
+		Namespace: *namespace,
+		DynaKube:  *dynakube,
 	}
 	return &mutationRequest, nil
 }

@@ -82,7 +82,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 				},
 			},
 		}
-		addDeploymentMetadataEnv(container, &dynakube, testClusterID)
+		addDeploymentMetadataEnv(container, dynakube, testClusterID)
 		require.Len(t, container.Env, 1)
 		assert.Contains(t, container.Env[0].Value, testClusterID)
 		assert.Contains(t, container.Env[0].Value, daemonset.DeploymentTypeCloudNative)
@@ -97,7 +97,7 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 				},
 			},
 		}
-		addDeploymentMetadataEnv(container, &dynakube, testClusterID)
+		addDeploymentMetadataEnv(container, dynakube, testClusterID)
 		require.Len(t, container.Env, 1)
 		assert.Contains(t, container.Env[0].Value, testClusterID)
 		assert.Contains(t, container.Env[0].Value, daemonset.DeploymentTypeApplicationMonitoring)
@@ -115,7 +115,7 @@ func TestInitialConnectRetryEnvIf(t *testing.T) {
 				},
 			},
 		}
-		addInitialConnectRetryEnv(container, &dynakube)
+		addInitialConnectRetryEnv(container, dynakube)
 		require.Len(t, container.Env, 1)
 		assert.Equal(t, container.Env[0].Value, testValue)
 	})

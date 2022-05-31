@@ -17,14 +17,14 @@ type PodMutator interface {
 type MutationRequest struct {
 	Context          context.Context
 	Pod              *corev1.Pod
-	Namespace        *corev1.Namespace
-	DynaKube         *dynatracev1beta1.DynaKube
+	Namespace        corev1.Namespace
+	DynaKube         dynatracev1beta1.DynaKube
 	InstallContainer *corev1.Container
 }
 
 type ReinvocationRequest struct {
 	Pod      *corev1.Pod
-	DynaKube *dynatracev1beta1.DynaKube
+	DynaKube dynatracev1beta1.DynaKube
 }
 
 func (request *MutationRequest) ToReinvocationRequest() *ReinvocationRequest {

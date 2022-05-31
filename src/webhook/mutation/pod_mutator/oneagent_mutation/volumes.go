@@ -13,9 +13,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (mutator *OneAgentPodMutator) addVolumes(pod *corev1.Pod, dynakube *dynatracev1beta1.DynaKube) {
+func (mutator *OneAgentPodMutator) addVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
 	addInjectionConfigVolume(pod)
-	addOneAgentVolumes(dynakube, pod)
+	addOneAgentVolumes(pod, dynakube)
 }
 
 func addOneAgentVolumeMounts(container *corev1.Container, installPath string) {
@@ -69,7 +69,7 @@ func addInjectionConfigVolume(pod *corev1.Pod) {
 	)
 }
 
-func addOneAgentVolumes(dynakube *dynatracev1beta1.DynaKube, pod *corev1.Pod) {
+func addOneAgentVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{
 			Name:         oneAgentBinVolumeName,
@@ -84,7 +84,7 @@ func addOneAgentVolumes(dynakube *dynatracev1beta1.DynaKube, pod *corev1.Pod) {
 	)
 }
 
-func getInstallerVolumeSource(dynakube *dynatracev1beta1.DynaKube) corev1.VolumeSource {
+func getInstallerVolumeSource(dynakube dynatracev1beta1.DynaKube) corev1.VolumeSource {
 	volumeSource := corev1.VolumeSource{}
 	if dynakube.NeedsCSIDriver() {
 		volumeSource.CSI = &corev1.CSIVolumeSource{

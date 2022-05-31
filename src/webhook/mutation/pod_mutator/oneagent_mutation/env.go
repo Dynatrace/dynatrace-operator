@@ -72,7 +72,7 @@ func getContainerImageEnv(containerIndex int) string {
 	return fmt.Sprintf(standalone.ContainerImageEnvTemplate, containerIndex)
 }
 
-func addDeploymentMetadataEnv(container *corev1.Container, dynakube *dynatracev1beta1.DynaKube, clusterID string) {
+func addDeploymentMetadataEnv(container *corev1.Container, dynakube dynatracev1beta1.DynaKube, clusterID string) {
 	if kubeobjects.EnvVarIsIn(container.Env, dynatraceMetadataEnvVarName) {
 		return
 	}
@@ -89,7 +89,7 @@ func addDeploymentMetadataEnv(container *corev1.Container, dynakube *dynatracev1
 		})
 }
 
-func addInitialConnectRetryEnv(container *corev1.Container, dynakube *dynatracev1beta1.DynaKube) {
+func addInitialConnectRetryEnv(container *corev1.Container, dynakube dynatracev1beta1.DynaKube) {
 	if kubeobjects.EnvVarIsIn(container.Env, initialConnectRetryEnvVarName) {
 		return
 	}

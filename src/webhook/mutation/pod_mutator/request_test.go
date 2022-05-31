@@ -106,8 +106,8 @@ func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube) *dtwebhook.M
 	return &dtwebhook.MutationRequest{
 		Context:   context.TODO(),
 		Pod:       getTestPod(),
-		Namespace: getTestNamespace(),
-		DynaKube:  dynakube,
+		Namespace: *getTestNamespace(),
+		DynaKube:  *dynakube,
 	}
 }
 

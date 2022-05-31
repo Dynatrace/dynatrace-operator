@@ -12,7 +12,7 @@ func TestCreateInstallInitContainerBase(t *testing.T) {
 		dynakube := getTestDynakube()
 		pod := getTestPod()
 		webhookImage := "test-image"
-		initContainer := createInstallInitContainerBase(webhookImage, pod, dynakube)
+		initContainer := createInstallInitContainerBase(webhookImage, pod, *dynakube)
 		require.NotNil(t, initContainer)
 		assert.Equal(t, initContainer.Image, webhookImage)
 		assert.Equal(t, initContainer.Resources, testResourceRequirements)

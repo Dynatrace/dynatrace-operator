@@ -81,7 +81,7 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 }
 
 func (webhook *podMutatorWebhook) setupEventRecorder(mutationRequest *dtwebhook.MutationRequest) {
-	webhook.recorder.dynakube = mutationRequest.DynaKube
+	webhook.recorder.dynakube = &mutationRequest.DynaKube
 	webhook.recorder.pod = mutationRequest.Pod
 }
 

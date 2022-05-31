@@ -16,7 +16,7 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 	for i := range request.Pod.Spec.Containers {
 		container := &request.Pod.Spec.Containers[i]
 		addContainerInfoInitEnv(request.InstallContainer, i+1, container.Name, container.Image)
-		mutator.addOneAgentToContainer(request.Pod, request.DynaKube, container)
+		mutator.addOneAgentToContainer(request.Pod, container, request.DynaKube)
 	}
 }
 
@@ -40,11 +40,11 @@ func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.Rei
 	for i := range newContainers {
 		currentContainer := newContainers[i]
 		addContainerInfoInitEnv(initContainer, oldContainersLen+i+1, currentContainer.Name, currentContainer.Image)
-		mutator.addOneAgentToContainer(request.Pod, request.DynaKube, currentContainer)
+		mutator.addOneAgentToContainer(request.Pod, currentContainer, request.DynaKube)
 	}
 }
 
-func (mutator *OneAgentPodMutator) addOneAgentToContainer(pod *corev1.Pod, dynakube *dynatracev1beta1.DynaKube, container *corev1.Container) {
+func (mutator *OneAgentPodMutator) addOneAgentToContainer(pod *corev1.Pod, container *corev1.Container, dynakube dynatracev1beta1.DynaKube) {
 	log.Info("adding OneAgent to container", "name", container.Name)
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 

@@ -41,7 +41,7 @@ func TestAddInitVolumeMounts(t *testing.T) {
 func TestAddOneAgentVolumes(t *testing.T) {
 	t.Run("should add oneagent volumes, with csi", func(t *testing.T) {
 		pod := &corev1.Pod{}
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
@@ -49,14 +49,14 @@ func TestAddOneAgentVolumes(t *testing.T) {
 			},
 		}
 
-		addOneAgentVolumes(dynakube, pod)
+		addOneAgentVolumes(pod, dynakube)
 		require.Len(t, pod.Spec.Volumes, 2)
 		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.CSI)
 	})
 
 	t.Run("should add oneagent volumes, without csi", func(t *testing.T) {
 		pod := &corev1.Pod{}
-		dynakube := &dynatracev1beta1.DynaKube{
+		dynakube := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
 				OneAgent: dynatracev1beta1.OneAgentSpec{
 					ApplicationMonitoring: &dynatracev1beta1.ApplicationMonitoringSpec{},
@@ -64,7 +64,7 @@ func TestAddOneAgentVolumes(t *testing.T) {
 			},
 		}
 
-		addOneAgentVolumes(dynakube, pod)
+		addOneAgentVolumes(pod, dynakube)
 		require.Len(t, pod.Spec.Volumes, 2)
 		assert.NotNil(t, pod.Spec.Volumes[0].VolumeSource.EmptyDir)
 	})

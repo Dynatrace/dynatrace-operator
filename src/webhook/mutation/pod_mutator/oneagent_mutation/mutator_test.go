@@ -65,12 +65,12 @@ func TestGetVolumeMode(t *testing.T) {
 	t.Run("should return csi volume mode", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 
-		assert.Equal(t, provisionedVolumeMode, mutator.getVolumeMode(getTestCSIDynakube()))
+		assert.Equal(t, provisionedVolumeMode, mutator.getVolumeMode(*getTestCSIDynakube()))
 	})
 	t.Run("should return empty volume mode", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 
-		assert.Equal(t, installerVolumeMode, mutator.getVolumeMode(getTestDynakube()))
+		assert.Equal(t, installerVolumeMode, mutator.getVolumeMode(*getTestDynakube()))
 	})
 }
 
@@ -201,8 +201,8 @@ func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube, annotations 
 	return &dtwebhook.MutationRequest{
 		Context:   context.TODO(),
 		Pod:       getTestPod(annotations),
-		Namespace: getTestNamespace(),
-		DynaKube:  dynakube,
+		Namespace: *getTestNamespace(),
+		DynaKube:  *dynakube,
 		InstallContainer: &corev1.Container{
 			Name: dtwebhook.InstallContainerName,
 		},

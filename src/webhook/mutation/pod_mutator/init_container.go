@@ -11,7 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func createInstallInitContainerBase(webhookImage string, pod *corev1.Pod, dynakube *dynatracev1beta1.DynaKube) *corev1.Container {
+func createInstallInitContainerBase(webhookImage string, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *corev1.Container {
 	return &corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           webhookImage,
