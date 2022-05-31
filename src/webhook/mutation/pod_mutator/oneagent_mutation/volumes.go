@@ -32,8 +32,12 @@ func addOneAgentVolumeMounts(container *corev1.Container, installPath string) {
 		corev1.VolumeMount{
 			Name:      oneAgentShareVolumeName,
 			MountPath: containerConfPath,
-			SubPath:   fmt.Sprintf(standalone.ContainerConfFilenameTemplate, container.Name),
+			SubPath:   getContainerConfSubPath(container.Name),
 		})
+}
+
+func getContainerConfSubPath(containerName string) string {
+	return fmt.Sprintf(standalone.ContainerConfFilenameTemplate, containerName)
 }
 
 func addCertVolumeMounts(container *corev1.Container) {

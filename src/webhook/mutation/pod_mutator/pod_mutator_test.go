@@ -176,7 +176,7 @@ func createTestWebhook(t *testing.T, mutators []dtwebhook.PodMutator, objects []
 	require.NoError(t, err)
 	return &podMutatorWebhook{
 		apiReader:        fake.NewClient(objects...),
-		decoder:          decoder,
+		decoder:          *decoder,
 		recorder:         podMutatorEventRecorder{recorder: record.NewFakeRecorder(10), pod: &corev1.Pod{}, dynakube: getTestDynakube()},
 		webhookImage:     testImage,
 		webhookNamespace: testNamespaceName,

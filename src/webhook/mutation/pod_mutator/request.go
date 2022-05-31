@@ -15,7 +15,7 @@ import (
 )
 
 func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context, request admission.Request) (*dtwebhook.MutationRequest, error) {
-	pod, err := getPodFromRequest(request, *webhook.decoder)
+	pod, err := getPodFromRequest(request, webhook.decoder)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	dynakubeName, err := getDynakubeName(namespace)
+	dynakubeName, err := getDynakubeName(*namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func getNamespaceFromRequest(ctx context.Context, apiReader client.Reader, req a
 	return &namespace, nil
 }
 
-func getDynakubeName(namespace *corev1.Namespace) (string, error) {
+func getDynakubeName(namespace corev1.Namespace) (string, error) {
 	dynakubeName, ok := namespace.Labels[mapper.InstanceLabel]
 	if !ok {
 		var err error
@@ -74,7 +74,8 @@ func getDynakubeName(namespace *corev1.Namespace) (string, error) {
 
 func (webhook *podMutatorWebhook) getDynakube(ctx context.Context, dynakubeName string) (*dynatracev1beta1.DynaKube, error) {
 	var dk dynatracev1beta1.DynaKube
-	if err := webhook.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName, Namespace: webhook.webhookNamespace}, &dk); k8serrors.IsNotFound(err) {
+	err := webhook.apiReader.Get(ctx, client.ObjectKey{Name: dynakubeName, Namespace: webhook.webhookNamespace}, &dk)
+	if k8serrors.IsNotFound(err) {
 		webhook.recorder.sendMissingDynaKubeEvent(webhook.webhookNamespace, dynakubeName)
 		return nil, err
 	} else if err != nil {

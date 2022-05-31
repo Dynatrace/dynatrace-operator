@@ -25,7 +25,7 @@ func (mutator *OneAgentPodMutator) mutateUserContainers(request *dtwebhook.Mutat
 // that doesn't conflict with the previous environment variables of the originally injected containers
 func (mutator *OneAgentPodMutator) reinvokeUserContainers(request *dtwebhook.ReinvocationRequest) {
 	pod := request.Pod
-	initContainer := dtwebhook.FindOneAgentInstallContainer(pod.Spec.InitContainers)
+	initContainer := findOneAgentInstallContainer(pod.Spec.InitContainers)
 	newContainers := []*corev1.Container{}
 
 	for i := range pod.Spec.Containers {
@@ -67,4 +67,14 @@ func (mutator *OneAgentPodMutator) addOneAgentToContainer(pod *corev1.Pod, dynak
 	if dynakube.Spec.NetworkZone != "" {
 		addNetworkZoneEnv(container, dynakube.Spec.NetworkZone)
 	}
+}
+
+func findOneAgentInstallContainer(initContainers []corev1.Container) *corev1.Container {
+	for i := range initContainers {
+		container := &initContainers[i]
+		if container.Name == dtwebhook.InstallContainerName {
+			return container
+		}
+	}
+	return nil
 }

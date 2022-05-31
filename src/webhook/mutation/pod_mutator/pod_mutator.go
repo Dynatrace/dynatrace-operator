@@ -30,7 +30,7 @@ func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 // podMutatorWebhook executes mutators on Pods
 type podMutatorWebhook struct {
 	apiReader client.Reader
-	decoder   *admission.Decoder
+	decoder   admission.Decoder
 	recorder  podMutatorEventRecorder
 
 	webhookImage     string
@@ -43,7 +43,7 @@ type podMutatorWebhook struct {
 
 // InjectDecoder injects the decoder
 func (webhook *podMutatorWebhook) InjectDecoder(d *admission.Decoder) error {
-	webhook.decoder = d
+	webhook.decoder = *d
 	return nil
 }
 

@@ -33,13 +33,3 @@ func (request *MutationRequest) ToReinvocationRequest() *ReinvocationRequest {
 		DynaKube: request.DynaKube,
 	}
 }
-
-func FindOneAgentInstallContainer(initContainers []corev1.Container) *corev1.Container {
-	for i := range initContainers {
-		container := &initContainers[i]
-		if container.Name == InstallContainerName {
-			return container
-		}
-	}
-	return nil
-}
