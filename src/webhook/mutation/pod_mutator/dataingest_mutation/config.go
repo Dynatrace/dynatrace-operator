@@ -5,9 +5,9 @@ import (
 )
 
 const (
-	WorkloadEnrichmentVolumeName = "data-ingest-enrichment"
-	EnrichmentEndpointVolumeName = "data-ingest-endpoint"
-	EnrichmentEndpointPath       = "/var/lib/dynatrace/enrichment/endpoint"
+	workloadEnrichmentVolumeName = "data-ingest-enrichment"
+	ingestEndpointVolumeName     = "data-ingest-endpoint"
+	enrichmentEndpointPath       = "/var/lib/dynatrace/enrichment/endpoint"
 )
 
 var (

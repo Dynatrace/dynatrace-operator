@@ -3,6 +3,8 @@ package oneagent_mutation
 import (
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/Dynatrace/dynatrace-operator/src/standalone"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +22,9 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		require.Len(t, request.InstallContainer.Env, 6)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
-		assert.Equal(t, installerVolumeMode, request.InstallContainer.Env[4].Value)
+		envvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, standalone.ModeEnv)
+		require.NotNil(t, envvar)
+		assert.Equal(t, installerVolumeMode, envvar.Value)
 	})
 
 	t.Run("add envs and volume mounts (csi)", func(t *testing.T) {
@@ -32,7 +36,9 @@ func TestConfigureInitContainer(t *testing.T) {
 
 		require.Len(t, request.InstallContainer.Env, 6)
 		assert.Len(t, request.InstallContainer.VolumeMounts, 2)
-		assert.Equal(t, provisionedVolumeMode, request.InstallContainer.Env[4].Value)
+		envvar := kubeobjects.FindEnvVar(request.InstallContainer.Env, standalone.ModeEnv)
+		require.NotNil(t, envvar)
+		assert.Equal(t, provisionedVolumeMode, envvar.Value)
 	})
 }
 

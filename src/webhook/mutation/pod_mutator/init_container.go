@@ -11,10 +11,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func (webhook *podMutatorWebhook) createInstallInitContainerBase(pod *corev1.Pod, dynakube *dynatracev1beta1.DynaKube) *corev1.Container {
+func createInstallInitContainerBase(webhookImage string, pod *corev1.Pod, dynakube *dynatracev1beta1.DynaKube) *corev1.Container {
 	return &corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
-		Image:           webhook.webhookImage,
+		Image:           webhookImage,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Args:            []string{"init"},
 		Env: []corev1.EnvVar{

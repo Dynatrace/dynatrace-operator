@@ -128,7 +128,7 @@ func TestContainerIsInjected(t *testing.T) {
 		container := &corev1.Container{
 			VolumeMounts: []corev1.VolumeMount{
 				{
-					Name: WorkloadEnrichmentVolumeName,
+					Name: workloadEnrichmentVolumeName,
 				},
 			},
 		}

@@ -95,7 +95,7 @@ func setInjectedAnnotation(pod *corev1.Pod) {
 
 func containerIsInjected(container *corev1.Container) bool {
 	for _, volumeMount := range container.VolumeMounts {
-		if volumeMount.Name == WorkloadEnrichmentVolumeName || volumeMount.Name == EnrichmentEndpointVolumeName {
+		if volumeMount.Name == workloadEnrichmentVolumeName || volumeMount.Name == ingestEndpointVolumeName {
 			return true
 		}
 	}

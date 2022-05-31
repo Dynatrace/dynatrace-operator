@@ -95,7 +95,7 @@ func (webhook *podMutatorWebhook) isInjected(mutationRequest *dtwebhook.Mutation
 }
 
 func (webhook *podMutatorWebhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) error {
-	mutationRequest.InstallContainer = webhook.createInstallInitContainerBase(mutationRequest.Pod, mutationRequest.DynaKube)
+	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, mutationRequest.Pod, mutationRequest.DynaKube)
 	for _, mutator := range webhook.mutators {
 		if !mutator.Enabled(mutationRequest.Pod) {
 			continue
