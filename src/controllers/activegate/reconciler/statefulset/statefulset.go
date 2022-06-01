@@ -25,7 +25,7 @@ const (
 	tenantSecretVolumeName    = "ag-tenant-secret"
 	authTokenSecretVolumeName = "ag-authtoken-secret"
 
-	annotationActiveGateHash              = dynatracev1beta1.InternalFlagPrefix + "activegate-hash"
+	annotationActiveGateConfigHash        = dynatracev1beta1.InternalFlagPrefix + "activegate-configuration-hash"
 	annotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + capability.ActiveGateContainerName
 
 	dtServer             = "DT_SERVER"
@@ -104,7 +104,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: appLabels.BuildLabels(),
 					Annotations: map[string]string{
-						annotationActiveGateHash: stsProperties.activeGateHash,
+						annotationActiveGateConfigHash: stsProperties.activeGateHash,
 					},
 				},
 				Spec: buildTemplateSpec(stsProperties),
