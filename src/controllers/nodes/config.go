@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	cacheName                   = "dynatrace-node-cache"
-	cacheLifetime               = 10 * time.Minute
-	lastUpdatedCacheAnnotiation = "DTOperatorLastUpdated"
+	cacheName                  = "dynatrace-node-cache"
+	cacheLifetime              = 10 * time.Minute
+	lastUpdatedCacheAnnotation = "DTOperatorLastUpdated"
 )
 
 var (
