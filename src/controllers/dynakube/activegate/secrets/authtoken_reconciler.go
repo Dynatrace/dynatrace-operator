@@ -57,7 +57,7 @@ func (r *AuthTokenReconciler) reconcileAuthTokenSecret() (*corev1.Secret, error)
 			log.Info("creating activeGateAuthToken secret")
 			return r.ensureAuthTokenSecret()
 		}
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	if isSecretOutdated(&config) {
 		log.Info("activeGateAuthToken is outdated, creating new one")
