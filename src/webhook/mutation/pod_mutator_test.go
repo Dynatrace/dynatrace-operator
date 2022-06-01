@@ -3,6 +3,7 @@ package mutation
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"sort"
 	"strconv"
 	"testing"
@@ -1492,8 +1493,8 @@ func TestInstrumentThirdPartyContainers(t *testing.T) {
 	// check updated pod
 	require.Equal(t, "DT_DEPLOYMENT_METADATA", updPod.Spec.Containers[1].Env[0].Name)
 
-	require.Equal(t, "DT_INITIAL_CONNECT_RETRY_MS", updPod.Spec.Containers[1].Env[1].Name)
-	require.Equal(t, connectRetryValue, updPod.Spec.Containers[1].Env[1].Value)
+	require.False(t,
+		kubeobjects.EnvVarIsIn(updPod.Spec.Containers[1].Env, "DT_INITIAL_CONNECT_RETRY_MS"))
 
 	var updInstallContainer = updPod.Spec.InitContainers[0]
 
@@ -1608,4 +1609,30 @@ func buildTestSecrets() client.Client {
 			},
 		},
 	)
+}
+
+func TestUpdateContainerOneAgent(t *testing.T) {
+	container := &corev1.Container{}
+	dynakube := &dynatracev1beta1.DynaKube{}
+	pod := &corev1.Pod{}
+	metadata := &deploymentmetadata.DeploymentMetadata{}
+	curlOptionsVolumeMount := corev1.VolumeMount{
+		Name:      oneAgentShareVolumeName,
+		MountPath: "/var/lib/dynatrace/oneagent/agent/customkeys/curl_options.conf",
+		SubPath:   "curl_options.conf",
+	}
+
+	updateContainerOneAgent(container, dynakube, pod, metadata)
+
+	assert.NotContains(t, container.VolumeMounts, curlOptionsVolumeMount)
+
+	container = &corev1.Container{}
+	dynakube.Annotations = map[string]string{
+		dynatracev1beta1.AnnotationFeatureOneAgentInitialConnectRetry: "30",
+	}
+
+	updateContainerOneAgent(container, dynakube, pod, metadata)
+
+	assert.Contains(t, container.VolumeMounts, curlOptionsVolumeMount)
+
 }

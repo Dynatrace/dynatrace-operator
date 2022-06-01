@@ -7,9 +7,3 @@ import (
 var (
 	log = logger.NewDTLogger().WithName("initgeneration")
 )
-
-const (
-	trustedCAKey = "certs"
-	proxyKey     = "proxy"
-	tlsCertKey   = "server.crt"
-)

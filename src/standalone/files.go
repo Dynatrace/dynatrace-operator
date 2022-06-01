@@ -2,6 +2,7 @@ package standalone
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 )
@@ -39,6 +40,9 @@ dt.kubernetes.workload.kind=%s
 dt.kubernetes.workload.name=%s
 dt.kubernetes.cluster.id=%s
 `
+
+	curlOptionsFormatString = `initialConnectRetryMs %d
+`
 )
 
 func (runner *Runner) getBaseConfContent(container containerInfo) string {
@@ -66,6 +70,10 @@ func (runner *Runner) getHostConfContent() string {
 	)
 }
 
+func (runner *Runner) getCurlOptionsContent() string {
+	return fmt.Sprintf(curlOptionsFormatString, runner.config.InitialConnectRetry)
+}
+
 func (runner *Runner) createJsonEnrichmentFile() error {
 	jsonContent := fmt.Sprintf(jsonEnrichmentContentFormatString,
 		runner.env.K8PodUID,
@@ -76,7 +84,8 @@ func (runner *Runner) createJsonEnrichmentFile() error {
 		runner.config.ClusterID,
 	)
 	jsonPath := filepath.Join(EnrichmentPath, fmt.Sprintf(enrichmentFilenameTemplate, "json"))
-	return runner.createConfFile(jsonPath, jsonContent)
+
+	return errors.WithStack(runner.createConfFile(jsonPath, jsonContent))
 
 }
 
@@ -90,20 +99,33 @@ func (runner *Runner) createPropsEnrichmentFile() error {
 		runner.config.ClusterID,
 	)
 	propsPath := filepath.Join(EnrichmentPath, fmt.Sprintf(enrichmentFilenameTemplate, "properties"))
-	return runner.createConfFile(propsPath, propsContent)
+
+	return errors.WithStack(runner.createConfFile(propsPath, propsContent))
+}
+
+func (runner *Runner) createCurlOptionsFile() error {
+	content := runner.getCurlOptionsContent()
+	path := filepath.Join(ShareDirMount, curlOptionsFileName)
+
+	return errors.WithStack(runner.createConfFile(path, content))
 }
 
 func (runner *Runner) createConfFile(path string, content string) error {
-	if err := runner.fs.MkdirAll(filepath.Dir(path), 0770); err != nil {
+	err := runner.fs.MkdirAll(filepath.Dir(path), 0770)
+	if err != nil {
 		return err
 	}
+
 	file, err := runner.fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
 	if err != nil {
 		return err
 	}
-	if _, err := file.Write([]byte(content)); err != nil {
+
+	_, err = file.Write([]byte(content))
+	if err != nil {
 		return err
 	}
+
 	log.Info("created file", "filePath", path, "content", content)
 	return nil
 }
