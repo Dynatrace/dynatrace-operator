@@ -2,6 +2,7 @@ package secrets
 
 import (
 	"context"
+	"time"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -15,7 +16,8 @@ import (
 )
 
 const (
-	ActiveGateAuthTokenName = "auth-token"
+	ActiveGateAuthTokenName   = "auth-token"
+	AuthTokenRotationInterval = time.Hour * 24 * 30
 )
 
 type AuthTokenReconciler struct {
@@ -23,23 +25,21 @@ type AuthTokenReconciler struct {
 	apiReader client.Reader
 	instance  *dynatracev1beta1.DynaKube
 	scheme    *runtime.Scheme
-	apiToken  string
 	dtc       dtclient.Client
 }
 
-func NewAuthTokenReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, apiToken string, dtc dtclient.Client) *AuthTokenReconciler {
+func NewAuthTokenReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, dtc dtclient.Client) *AuthTokenReconciler {
 	return &AuthTokenReconciler{
 		Client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
 		instance:  instance,
-		apiToken:  apiToken,
 		dtc:       dtc,
 	}
 }
 
 func (r *AuthTokenReconciler) Reconcile() error {
-	_, err := r.createSecretIfNotExists()
+	_, err := r.reconcileAuthTokenSecret()
 	if err != nil {
 		return errors.Errorf("failed to create activeGateAuthToken secret: %v", err)
 	}
@@ -47,20 +47,35 @@ func (r *AuthTokenReconciler) Reconcile() error {
 	return nil
 }
 
-func (r *AuthTokenReconciler) createSecretIfNotExists() (*corev1.Secret, error) {
+func (r *AuthTokenReconciler) reconcileAuthTokenSecret() (*corev1.Secret, error) {
 	var config corev1.Secret
 	err := r.apiReader.Get(context.TODO(),
 		client.ObjectKey{Name: r.instance.ActiveGateAuthTokenSecret(), Namespace: r.instance.Namespace},
 		&config)
-	if k8serrors.IsNotFound(err) {
-		log.Info("creating activeGateAuthToken secret")
-		agSecretData, err := r.getActiveGateAuthToken()
-		if err != nil {
-			return nil, errors.Errorf("failed to create secret '%s': %v", extendWithAGSecretSuffix(r.instance.Name), err)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			log.Info("creating activeGateAuthToken secret")
+			return r.ensureAuthTokenSecret()
 		}
-		return r.createSecret(agSecretData)
+		return nil, err
 	}
-	return &config, errors.WithStack(err)
+	if isSecretOutdated(&config) {
+		log.Info("activeGateAuthToken is outdated, creating new one")
+		if err := r.deleteSecret(&config); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return r.ensureAuthTokenSecret()
+	}
+
+	return &config, nil
+}
+
+func (r *AuthTokenReconciler) ensureAuthTokenSecret() (*corev1.Secret, error) {
+	agSecretData, err := r.getActiveGateAuthToken()
+	if err != nil {
+		return nil, errors.Errorf("failed to create secret '%s': %v", extendWithAGSecretSuffix(r.instance.Name), err)
+	}
+	return r.createSecret(agSecretData)
 }
 
 func (r *AuthTokenReconciler) getActiveGateAuthToken() (map[string][]byte, error) {
@@ -84,4 +99,15 @@ func (r *AuthTokenReconciler) createSecret(secretData map[string][]byte) (*corev
 		return nil, errors.Errorf("failed to create secret '%s': %v", extendWithAGSecretSuffix(r.instance.Name), err)
 	}
 	return secret, nil
+}
+
+func (r *AuthTokenReconciler) deleteSecret(secret *corev1.Secret) error {
+	if err := r.Client.Delete(context.TODO(), secret); err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+	return nil
+}
+
+func isSecretOutdated(secret *corev1.Secret) bool {
+	return secret.CreationTimestamp.Add(AuthTokenRotationInterval).Before(time.Now())
 }

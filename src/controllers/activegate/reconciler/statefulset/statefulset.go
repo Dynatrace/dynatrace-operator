@@ -25,7 +25,7 @@ const (
 	tenantSecretVolumeName    = "ag-tenant-secret"
 	authTokenSecretVolumeName = "ag-authtoken-secret"
 
-	annotationCustomPropsHash             = dynatracev1beta1.InternalFlagPrefix + "custom-properties-hash"
+	annotationActiveGateHash              = dynatracev1beta1.InternalFlagPrefix + "activegate-hash"
 	annotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + capability.ActiveGateContainerName
 
 	dtServer             = "DT_SERVER"
@@ -51,7 +51,7 @@ const (
 type statefulSetProperties struct {
 	*dynatracev1beta1.DynaKube
 	*dynatracev1beta1.CapabilityProperties
-	customPropertiesHash    string
+	activeGateHash          string
 	kubeSystemUID           types.UID
 	feature                 string
 	capabilityName          string
@@ -63,7 +63,7 @@ type statefulSetProperties struct {
 }
 
 func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties, kubeSystemUID types.UID,
-	customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string,
+	activeGateHash string, feature string, capabilityName string, serviceAccountOwner string,
 	initContainers []corev1.Container, containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume) *statefulSetProperties {
 
 	if serviceAccountOwner == "" {
@@ -73,7 +73,7 @@ func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityPro
 	return &statefulSetProperties{
 		DynaKube:                instance,
 		CapabilityProperties:    capabilityProperties,
-		customPropertiesHash:    customPropertiesHash,
+		activeGateHash:          activeGateHash,
 		kubeSystemUID:           kubeSystemUID,
 		feature:                 feature,
 		capabilityName:          capabilityName,
@@ -104,7 +104,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: appLabels.BuildLabels(),
 					Annotations: map[string]string{
-						annotationCustomPropsHash: stsProperties.customPropertiesHash,
+						annotationActiveGateHash: stsProperties.activeGateHash,
 					},
 				},
 				Spec: buildTemplateSpec(stsProperties),
