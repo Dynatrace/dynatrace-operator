@@ -19,23 +19,24 @@ if [ -z "${OPERATOR_SDK}" ]; then
   exit 2
 fi
 
-SERVICE_ACCOUNTS=(
+SDK_PARAMS=(
 --extra-service-accounts dynatrace-dynakube-oneagent
 --extra-service-accounts dynatrace-dynakube-oneagent-unprivileged
 --extra-service-accounts dynatrace-kubernetes-monitoring
 --extra-service-accounts dynatrace-activegate
 )
 
-function splitOperatorSdkOptions() {
-    # shellcheck disable=SC2034
-    OPERATOR_SDK_OPTIONS=("$@")
-}
+if [ -n "${BUNDLE_CHANNELS}" ]; then
+    SDK_PARAMS+=("${BUNDLE_CHANNELS}")
+fi
 
-eval splitOperatorSdkOptions "${SERVICE_ACCOUNTS[@]}" "${BUNDLE_CHANNELS}" "${BUNDLE_DEFAULT_CHANNEL}"
+if [ -n "${BUNDLE_DEFAULT_CHANNEL}" ]; then
+    SDK_PARAMS+=("${BUNDLE_DEFAULT_CHANNEL}")
+fi
 
 "${OPERATOR_SDK}" generate kustomize manifests -q --apis-dir ./src/api/
 (cd "config/deploy/${PLATFORM}" && ${KUSTOMIZE} edit set image quay.io/dynatrace/dynatrace-operator:snapshot="${OLM_IMAGE}")
-"${KUSTOMIZE}" build "config/olm/${PLATFORM}" | "${OPERATOR_SDK}" generate bundle --overwrite --version "${VERSION}" "${OPERATOR_SDK_OPTIONS[@]}"
+"${KUSTOMIZE}" build "config/olm/${PLATFORM}" | "${OPERATOR_SDK}" generate bundle --overwrite --version "${VERSION}" "${SDK_PARAMS[@]}"
 "${OPERATOR_SDK}" bundle validate ./bundle
 
 rm -rf "./config/olm/${PLATFORM}/${VERSION}"
