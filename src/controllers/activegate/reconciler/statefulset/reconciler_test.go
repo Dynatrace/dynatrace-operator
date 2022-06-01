@@ -215,17 +215,17 @@ func TestReconcile_DeleteStatefulSetIfOldLabelsAreUsed(t *testing.T) {
 
 func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	r := createDefaultReconciler(t)
-	hash, err := r.calculateAGHash()
+	hash, err := r.calculateActiveGateHash()
 	assert.NoError(t, err)
 	assert.Empty(t, hash)
 
 	r.Instance.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{Value: testValue}
-	hash, err = r.calculateAGHash()
+	hash, err = r.calculateActiveGateHash()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 
 	r.Instance.Spec.Routing.CustomProperties = &dynatracev1beta1.DynaKubeValueSource{ValueFrom: testName}
-	hash, err = r.calculateAGHash()
+	hash, err = r.calculateActiveGateHash()
 	assert.Error(t, err)
 	assert.Empty(t, hash)
 
@@ -240,7 +240,7 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	hash, err = r.calculateAGHash()
+	hash, err = r.calculateActiveGateHash()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash)
 }

@@ -118,7 +118,7 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	agHash, err := r.calculateAGHash()
+	agHash, err := r.calculateActiveGateHash()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -201,7 +201,7 @@ func (r *Reconciler) deleteStatefulSetIfOldLabelsAreUsed(desiredSts *appsv1.Stat
 	return false, nil
 }
 
-func (r *Reconciler) calculateAGHash() (string, error) {
+func (r *Reconciler) calculateActiveGateHash() (string, error) {
 	customPropData, err := r.getCustomPropertyHash()
 	if err != nil {
 		return "", errors.WithStack(err)
