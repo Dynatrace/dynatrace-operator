@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ########## Prepare directories for Kubebuilder ##########
 sudo mkdir -p /usr/local/kubebuilder
