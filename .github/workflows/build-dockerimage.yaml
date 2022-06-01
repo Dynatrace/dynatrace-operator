@@ -1,0 +1,77 @@
+name: build-dockerimage
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+      goversion:
+        required: true
+        type: string
+      goargs:
+        required: true
+        type: string
+      labels:
+        required: true
+        type: string
+      image-tag:
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: Build docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Set up Golang
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ inputs.goversion }}
+      - name: Setup cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ./third_party_licenses
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-build-
+      - name: Prepare
+        run: |
+          # Get licenses if no cache exists
+          if ! [ -d ./third_party_licenses ]; then
+            go get github.com/google/go-licenses && go-licenses save ./... --save_path third_party_licenses --force
+          fi
+
+          # Get dependencies
+          go get -d ./...
+          ls -la $HOME/go/pkg/mod
+          cp -r $HOME/go/pkg/mod .
+      - name: Build target
+        uses: docker/build-push-action@v2
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          build-args: |
+            GO_BUILD_ARGS=${{ inputs.goargs }}
+          context: .
+          file: ./Dockerfile
+          platforms: linux/${{ inputs.platform }}
+          push: false
+          tags: operator-${{ inputs.platform }}:${{ inputs.image-tag }}
+          labels: ${{ inputs.labels }}
+          outputs: type=docker,dest=/tmp/operator-${{ inputs.platform }}.tar
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: operator-${{ inputs.platform }}
+          path: /tmp/operator-${{ inputs.platform }}.tar
+          retention-days: 1
+

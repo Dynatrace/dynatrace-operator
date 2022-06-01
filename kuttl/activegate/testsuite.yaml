@@ -12,7 +12,7 @@ reportFormat: json
 commands:
 # kuttl is smart enough to set the KUBECONFIG env variable for the created kind cluster
 # Therefore deploy references the correct cluster
-- command: make deploy
+- command: make install
   timeout: 120
 - command: kubectl -n dynatrace wait pod --for=condition=ready -l app.kubernetes.io/component=webhook --timeout=200s
   timeout: 200
