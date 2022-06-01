@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -26,13 +28,12 @@ func newCertificateSecret() *certificateSecret {
 }
 
 func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, apiReader client.Reader, namespace string) error {
-	secret, err := kubeobjects.GetSecret(ctx, apiReader, buildSecretName(), namespace)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	if secret == nil {
+	secret, err := kubeobjects.GetSecret(ctx, apiReader, types.NamespacedName{Name: buildSecretName(), Namespace: namespace})
+	if k8serrors.IsNotFound(err) {
 		secret = kubeobjects.NewSecret(buildSecretName(), namespace, map[string][]byte{})
 		certSecret.existsInCluster = false
+	} else if err != nil {
+		return errors.WithStack(err)
 	} else {
 		certSecret.existsInCluster = true
 	}

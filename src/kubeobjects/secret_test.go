@@ -206,6 +206,31 @@ func TestExtractToken(t *testing.T) {
 	})
 }
 
+func TestGetDataFromSecretName(t *testing.T) {
+	t.Run(`GetDataFromSecret returns value from secret`, func(t *testing.T) {
+		client := fake.NewClient(&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testSecretName,
+				Namespace: testNamespace,
+				Labels:    map[string]string{},
+			},
+			Data: map[string][]byte{
+				testKey1: []byte(testValue1),
+			},
+		})
+
+		value, err := GetDataFromSecretName(client, types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testKey1)
+
+		assert.NoError(t, err)
+		assert.Equal(t, value, testValue1)
+	})
+	t.Run(`ExtractToken handles missing key`, func(t *testing.T) {
+		value, err := GetDataFromSecretName(fake.NewClient(), types.NamespacedName{Name: testSecretName, Namespace: testNamespace}, testKey1)
+		assert.Error(t, err)
+		assert.Empty(t, value)
+	})
+}
+
 func createTestSecret(labels map[string]string, data map[string][]byte) *corev1.Secret {
 	secret := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{},

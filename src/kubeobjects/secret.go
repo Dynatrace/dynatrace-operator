@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -105,13 +106,23 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	return strings.TrimSpace(string(value)), nil
 }
 
-func GetSecret(ctx context.Context, apiReader client.Reader, name string, namespace string) (*corev1.Secret, error) {
+func GetSecret(ctx context.Context, apiReader client.Reader, namespacedName types.NamespacedName) (*corev1.Secret, error) {
 	var secret corev1.Secret
-	err := apiReader.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &secret)
-	if k8serrors.IsNotFound(err) {
-		return nil, nil
-	}
+	err := apiReader.Get(ctx, namespacedName, &secret)
 	return &secret, errors.WithStack(err)
+}
+
+func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string) (string, error) {
+	secret, err := GetSecret(context.TODO(), apiReader, namespacedName)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	value, err := ExtractToken(secret, dataKey)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return value, nil
 }
 
 func NewSecret(name string, namespace string, data map[string][]byte) *corev1.Secret {

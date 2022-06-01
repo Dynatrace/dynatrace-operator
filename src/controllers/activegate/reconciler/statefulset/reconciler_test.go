@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
@@ -36,6 +37,12 @@ func createDefaultReconciler(t *testing.T) *Reconciler {
 		}).
 		Build()
 	instance := &dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			ActiveGate: dynatracev1beta1.ActiveGateSpec{
+				Capabilities: []dynatracev1beta1.CapabilityDisplayName{
+					dynatracev1beta1.RoutingCapability.DisplayName,
+				}},
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: testNamespace,
 		}}
@@ -236,6 +243,35 @@ func TestReconcile_GetCustomPropertyHash(t *testing.T) {
 		},
 		Data: map[string][]byte{
 			customproperties.DataKey: []byte(testValue),
+		},
+	})
+	require.NoError(t, err)
+
+	hash, err = r.calculateActiveGateConfigurationHash()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, hash)
+}
+
+func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
+	r := createDefaultReconciler(t)
+	hash, err := r.calculateActiveGateConfigurationHash()
+	assert.NoError(t, err)
+	assert.Empty(t, hash)
+
+	r.Instance.Annotations = make(map[string]string)
+	r.Instance.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAuthToken] = "true"
+
+	hash, err = r.calculateActiveGateConfigurationHash()
+	assert.Error(t, err)
+	assert.Empty(t, hash)
+
+	err = r.Create(context.TODO(), &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      r.Instance.ActiveGateAuthTokenSecret(),
+			Namespace: r.Instance.Namespace,
+		},
+		Data: map[string][]byte{
+			secrets.ActiveGateAuthTokenName: []byte(testValue),
 		},
 	})
 	require.NoError(t, err)
