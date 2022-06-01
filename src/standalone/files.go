@@ -2,9 +2,10 @@ package standalone
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
+
+	"github.com/pkg/errors"
 )
 
 var (

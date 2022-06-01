@@ -3,7 +3,6 @@ package mutation
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"sort"
 	"strconv"
 	"testing"
@@ -13,6 +12,7 @@ import (
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
+	"github.com/Dynatrace/dynatrace-operator/src/deploymentmetadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	dtingestendpoint "github.com/Dynatrace/dynatrace-operator/src/ingestendpoint"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
