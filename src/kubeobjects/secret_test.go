@@ -18,6 +18,7 @@ import (
 var log = logger.NewDTLogger()
 
 func TestSecretQuery(t *testing.T) {
+	t.Run(`Get secret`, testGetSecret)
 	t.Run(`Create secret`, testCreateSecret)
 	t.Run(`Update secret`, testUpdateSecret)
 	t.Run(`Create or update secret`, testCreateOrUpdateSecret)
@@ -25,6 +26,23 @@ func TestSecretQuery(t *testing.T) {
 	t.Run(`Update secret when data has changed`, testUpdateSecretWhenDataChanged)
 	t.Run(`Update secret when labels have changed`, testUpdateSecretWhenLabelsChanged)
 	t.Run(`Create secret in target namespace`, testCreateSecretInTargetNamespace)
+}
+
+func testGetSecret(t *testing.T) {
+	secret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      testSecretName,
+			Namespace: testNamespace,
+		},
+		Data: map[string][]byte{testKey1: []byte(testSecretValue)},
+	}
+	fakeClient := fake.NewClient(&secret)
+	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
+
+	foundSecret, err := secretQuery.Get(client.ObjectKey{Name: testSecretName, Namespace: testNamespace})
+
+	assert.NoError(t, err)
+	assert.True(t, AreSecretsEqual(secret, foundSecret))
 }
 
 func testCreateSecret(t *testing.T) {

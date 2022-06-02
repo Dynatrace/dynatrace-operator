@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -23,6 +24,16 @@ func NewSecretQuery(ctx context.Context, kubeClient client.Client, kubeReader cl
 	return SecretQuery{
 		newKubeQuery(ctx, kubeClient, kubeReader, log),
 	}
+}
+
+func (query SecretQuery) Get(objectKey client.ObjectKey) (corev1.Secret, error) {
+	ctx := query.ctx
+	kubeReader := query.kubeReader
+
+	var secret corev1.Secret
+	err := kubeReader.Get(ctx, objectKey, &secret)
+
+	return secret, errors.WithStack(err)
 }
 
 func (query SecretQuery) Create(secret corev1.Secret) error {
@@ -112,12 +123,15 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	return strings.TrimSpace(string(value)), nil
 }
 
+// Deprecated: GetSecret is deprecated, use SecretQuery.Get instead
 func GetSecret(ctx context.Context, apiReader client.Reader, name string, namespace string) (*corev1.Secret, error) {
-	var secret corev1.Secret
-	err := apiReader.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &secret)
+	secretQuery := NewSecretQuery(ctx, nil, apiReader, logger.NewDTLogger())
+	secret, err := secretQuery.Get(client.ObjectKey{Name: name, Namespace: namespace})
+
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	}
+
 	return &secret, errors.WithStack(err)
 }
 

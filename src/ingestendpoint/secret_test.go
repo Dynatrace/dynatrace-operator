@@ -312,8 +312,7 @@ func TestGenerateDataIngestSecret_ForDynakube(t *testing.T) {
 				dynatracev1beta1.AnnotationFeatureDisableMetadataEnrichment: "true",
 			}
 
-			upd := testGenerateEndpointsSecret(t, instance, fakeClient)
-			assert.Equal(t, true, upd)
+			testGenerateEndpointsSecret(t, instance, fakeClient)
 
 			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace1, Name: SecretEndpointName}, testEmptyFile)
 			checkTestSecretContains(t, fakeClient, types.NamespacedName{Namespace: testNamespace2, Name: SecretEndpointName}, testEmptyFile)
