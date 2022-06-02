@@ -65,9 +65,9 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
-	query := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
 
-	return errors.WithStack(query.CreateOrUpdate(*secret))
+	return errors.WithStack(secretQuery.CreateOrUpdate(*secret))
 }
 
 // GenerateForDynakube creates/updates the data-ingest-endpoint secret for EVERY namespace for the given dynakube.
@@ -87,7 +87,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		return errors.WithStack(err)
 	}
 
-	query := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
 
 	for _, targetNs := range nsList {
 		secret := &corev1.Secret{
@@ -101,7 +101,7 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 			Type: corev1.SecretTypeOpaque,
 		}
 
-		err = query.CreateOrUpdate(*secret)
+		err = secretQuery.CreateOrUpdate(*secret)
 		if err != nil {
 			return errors.WithStack(err)
 		}

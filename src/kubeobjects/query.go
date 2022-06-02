@@ -7,15 +7,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type complexKubeQuery struct {
+type kubeQuery struct {
 	kubeClient client.Client
 	kubeReader client.Reader
 	ctx        context.Context
 	log        logr.Logger
 }
 
-func newComplexKubeQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logr.Logger) complexKubeQuery {
-	return complexKubeQuery{
+func newKubeQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logr.Logger) kubeQuery {
+	return kubeQuery{
 		kubeClient: kubeClient,
 		kubeReader: kubeReader,
 		ctx:        ctx,

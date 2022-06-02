@@ -9,5 +9,5 @@ import (
 
 func TestKubeQuery(t *testing.T) {
 	fakeClient := fake.NewClient()
-	_ = newComplexKubeQuery(context.TODO(), fakeClient, fakeClient, log)
+	_ = newKubeQuery(context.TODO(), fakeClient, fakeClient, log)
 }

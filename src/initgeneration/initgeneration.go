@@ -63,9 +63,9 @@ func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
-	query := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
 
-	return errors.WithStack(query.CreateOrUpdate(*secret))
+	return errors.WithStack(secretQuery.CreateOrUpdate(*secret))
 }
 
 // GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
@@ -86,7 +86,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 	}
 
 	coreLabels := kubeobjects.NewCoreLabels(dk.Name, kubeobjects.WebhookComponentLabel)
-	query := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
 
 	for _, targetNs := range nsList {
 		secret := &corev1.Secret{
@@ -100,7 +100,7 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 			Type: corev1.SecretTypeOpaque,
 		}
 
-		err = query.CreateOrUpdate(*secret)
+		err = secretQuery.CreateOrUpdate(*secret)
 
 		if err != nil {
 			return errors.WithStack(err)

@@ -16,12 +16,12 @@ import (
 )
 
 type SecretQuery struct {
-	complexKubeQuery
+	kubeQuery
 }
 
 func NewSecretQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logr.Logger) SecretQuery {
 	return SecretQuery{
-		newComplexKubeQuery(ctx, kubeClient, kubeReader, log),
+		newKubeQuery(ctx, kubeClient, kubeReader, log),
 	}
 }
 

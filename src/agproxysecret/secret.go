@@ -60,9 +60,9 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakub
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
-	query := kubeobjects.NewSecretQuery(ctx, agProxySecretGenerator.client, agProxySecretGenerator.apiReader, agProxySecretGenerator.logger)
+	secretQuery := kubeobjects.NewSecretQuery(ctx, agProxySecretGenerator.client, agProxySecretGenerator.apiReader, agProxySecretGenerator.logger)
 
-	return errors.WithStack(query.CreateOrUpdate(*secret))
+	return errors.WithStack(secretQuery.CreateOrUpdate(*secret))
 }
 
 func (agProxySecretGenerator *ActiveGateProxySecretGenerator) EnsureDeleted(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {

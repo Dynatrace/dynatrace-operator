@@ -135,9 +135,9 @@ func testIdenticalSecretIsNotUpdated(t *testing.T) {
 		Data: data,
 	})
 	secret := createTestSecret(labels, data)
-	query := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
+	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
 
-	err := query.CreateOrUpdate(*secret)
+	err := secretQuery.CreateOrUpdate(*secret)
 	assert.NoError(t, err)
 }
 
@@ -155,9 +155,9 @@ func testUpdateSecretWhenDataChanged(t *testing.T) {
 		Data: map[string][]byte{},
 	})
 	secret := createTestSecret(labels, data)
-	query := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
+	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
 
-	err := query.CreateOrUpdate(*secret)
+	err := secretQuery.CreateOrUpdate(*secret)
 	assert.NoError(t, err)
 
 	var updatedSecret corev1.Secret
@@ -181,9 +181,9 @@ func testUpdateSecretWhenLabelsChanged(t *testing.T) {
 		Data: data,
 	})
 	secret := createTestSecret(labels, data)
-	query := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
+	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
 
-	err := query.CreateOrUpdate(*secret)
+	err := secretQuery.CreateOrUpdate(*secret)
 	assert.NoError(t, err)
 
 	var updatedSecret corev1.Secret
@@ -206,9 +206,9 @@ func testCreateSecretInTargetNamespace(t *testing.T) {
 		Data: map[string][]byte{},
 	})
 	secret := createTestSecret(labels, data)
-	query := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
+	secretQuery := NewSecretQuery(context.TODO(), fakeClient, fakeClient, log)
 
-	err := query.CreateOrUpdate(*secret)
+	err := secretQuery.CreateOrUpdate(*secret)
 
 	assert.NoError(t, err)
 
