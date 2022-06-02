@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -68,7 +67,7 @@ type constraintViolations []struct {
 	Path              string
 }
 
-func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(name, kubeSystemUUID, scope string) (string, error) {
+func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(clusterLabel, kubeSystemUUID, scope string) (string, error) {
 	if kubeSystemUUID == "" {
 		return "", errors.New("no kube-system namespace UUID given")
 	}
@@ -79,7 +78,7 @@ func (dtc *dynatraceClient) CreateOrUpdateKubernetesSetting(name, kubeSystemUUID
 			SchemaVersion: "1.0.27",
 			Value: postKubernetesSettings{
 				Enabled:                         true,
-				Label:                           name,
+				Label:                           clusterLabel,
 				ClusterIdEnabled:                true,
 				ClusterId:                       kubeSystemUUID,
 				CloudApplicationPipelineEnabled: true,
@@ -213,21 +212,6 @@ func (dtc *dynatraceClient) unmarshalToJson(res *http.Response, resDataJson inte
 	}
 
 	return nil
-}
-
-func createBaseRequest(url, method, apiToken string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequest(method, url, body)
-	if err != nil {
-		return nil, fmt.Errorf("error initializing http request: %s", err.Error())
-	}
-	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Authorization", fmt.Sprintf("Api-Token %s", apiToken))
-
-	if method == http.MethodPost {
-		req.Header.Add("Content-Type", "application/json")
-	}
-
-	return req, nil
 }
 
 func handleErrorArrayResponseFromAPI(response []byte, statusCode int) error {

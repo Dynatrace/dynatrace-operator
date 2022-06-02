@@ -19,6 +19,7 @@ RUN  microdnf install util-linux && microdnf clean all
 
 FROM registry.access.redhat.com/ubi8-micro:8.5
 
+# operator dependencies
 COPY --from=operator-build /etc/ssl/cert.pem /etc/ssl/cert.pem
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
@@ -30,6 +31,14 @@ COPY --from=operator-build /lib/libdevmapper.so.* /lib/
 COPY --from=operator-build /usr/lib/libassuan.so.* /usr/lib/
 COPY --from=operator-build /usr/lib/libgpg-error.so.* /usr/lib/
 COPY --from=operator-build /usr/lib/libgpgme.so.* /usr/lib/
+
+# csi binaries
+COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.1 /csi-node-driver-registrar /usr/local/bin
+COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.7.0 /livenessprobe /usr/local/bin
+
+# csi depdenencies
+COPY --from=dependency-src /bin/mount /bin/umount /bin/
+COPY --from=dependency-src /lib64/libmount.so.1 /lib64/libblkid.so.1 /lib64/libuuid.so.1 /lib64/
 
 COPY ./third_party_licenses /usr/share/dynatrace-operator/third_party_licenses
 
@@ -48,11 +57,6 @@ ENV OPERATOR=dynatrace-operator \
 
 COPY LICENSE /licenses/
 COPY hack/build/bin /usr/local/bin
-
-COPY --from=k8s.gcr.io/sig-storage/csi-node-driver-registrar:v2.5.0 /csi-node-driver-registrar /usr/local/bin
-COPY --from=k8s.gcr.io/sig-storage/livenessprobe:v2.6.0 /livenessprobe /usr/local/bin
-COPY --from=dependency-src /bin/mount /bin/umount /bin/
-COPY --from=dependency-src /lib64/libmount.so.1 /lib64/libblkid.so.1 /lib64/libuuid.so.1 /lib64/
 
 RUN  /usr/local/bin/user_setup
 

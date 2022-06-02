@@ -122,12 +122,10 @@ type DynaKubeSpec struct {
 	NamespaceSelector metav1.LabelSelector `json:"namespaceSelector,omitempty"`
 
 	// General configuration about OneAgent instances
-	// +kubebuilder:validation:MaxProperties=1
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="OneAgent",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	OneAgent OneAgentSpec `json:"oneAgent,omitempty"`
 
 	// General configuration about ActiveGate instances
-	// ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="ActiveGate",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	ActiveGate ActiveGateSpec `json:"activeGate,omitempty"`
 

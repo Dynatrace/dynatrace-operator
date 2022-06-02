@@ -26,22 +26,12 @@ setBuildRelatedVariables() {
   echo ::set-output name=docker_image_tag::"${docker_image_tag}"
 }
 
-prepareVariablesAndDependencies() {
+prepareVariables() {
   # prepare variables
   docker_image_tag=$(createDockerImageTag)
   docker_image_labels=$(createDockerImageLabels)
   go_build_args=$(hack/build/create_go_build_args.sh "${docker_image_tag}" "${GITHUB_SHA}")
   setBuildRelatedVariables
-
-  # get licenses if no cache exists
-  if ! [ -d ./third_party_licenses ]; then
-    go get github.com/google/go-licenses && go-licenses save ./... --save_path third_party_licenses --force
-  fi
-
-  # fetch dependencies
-  go get -d ./...
-  ls -la $HOME/go/pkg/mod
-  cp -r $HOME/go/pkg/mod .
 }
 
-prepareVariablesAndDependencies
+prepareVariables
