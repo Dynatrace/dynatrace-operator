@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	agcapability "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
@@ -19,10 +20,10 @@ import (
 )
 
 const (
-	UrlSecretField   = "DT_METRICS_INGEST_URL"
-	TokenSecretField = "DT_METRICS_INGEST_API_TOKEN"
-	StatsdIngestUrl  = "DT_STATSD_INGEST_URL"
-	configFile       = "endpoint.properties"
+	MetricsUrlSecretField   = "DT_METRICS_INGEST_URL"
+	MetricsTokenSecretField = "DT_METRICS_INGEST_API_TOKEN"
+	StatsdUrlSecretField    = "DT_STATSD_INGEST_URL"
+	configFile              = "endpoint.properties"
 )
 
 // EndpointSecretGenerator manages the mint endpoint secret generation for the user namespaces.
@@ -72,16 +73,16 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 // Used by the dynakube controller during reconcile.
 func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) (bool, error) {
 	log.Info("reconciling data-ingest endpoint secret for", "dynakube", dk.Name)
+	anyUpdated := false
 
 	data, err := g.prepare(ctx, dk)
 	if err != nil {
-		return false, err
+		return anyUpdated, err
 	}
 	coreLabels := kubeobjects.NewCoreLabels(dk.Name, kubeobjects.ActiveGateComponentLabel)
-	anyUpdate := false
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
 	if err != nil {
-		return false, err
+		return anyUpdated, err
 	}
 	for _, targetNs := range nsList {
 		secret := &corev1.Secret{
@@ -97,11 +98,11 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, secret, log); err != nil {
 			return upd, err
 		} else if upd {
-			anyUpdate = true
+			anyUpdated = true
 		}
 	}
 	log.Info("done updating data-ingest endpoint secrets")
-	return anyUpdate, nil
+	return anyUpdated, nil
 }
 
 func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
@@ -130,23 +131,25 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 		return nil, errors.WithStack(err)
 	}
 
-	var endpointBuf bytes.Buffer
+	endpointPropertiesBuilder := strings.Builder{}
 
-	if _, err := endpointBuf.WriteString(fmt.Sprintf("%s=%s\n", UrlSecretField, fields[UrlSecretField])); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	if _, err := endpointBuf.WriteString(fmt.Sprintf("%s=%s\n", TokenSecretField, fields[TokenSecretField])); err != nil {
-		return nil, errors.WithStack(err)
+	if !dk.FeatureDisableMetadataEnrichment() {
+		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsUrlSecretField, fields[MetricsUrlSecretField])); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsTokenSecretField, fields[MetricsTokenSecretField])); err != nil {
+			return nil, errors.WithStack(err)
+		}
 	}
 
 	if dk.NeedsStatsd() {
-		if _, err := endpointBuf.WriteString(fmt.Sprintf("%s=%s\n", StatsdIngestUrl, fields[StatsdIngestUrl])); err != nil {
+		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", StatsdUrlSecretField, fields[StatsdUrlSecretField])); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
 
 	data := map[string][]byte{
-		configFile: endpointBuf.Bytes(),
+		configFile: bytes.NewBufferString(endpointPropertiesBuilder.String()).Bytes(),
 	}
 	return data, nil
 }
@@ -159,21 +162,23 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	if token, ok := tokens.Data[dtclient.DynatraceDataIngestToken]; ok {
-		fields[TokenSecretField] = string(token)
-	}
+	if !dk.FeatureDisableMetadataEnrichment() {
+		if token, ok := tokens.Data[dtclient.DynatraceDataIngestToken]; ok {
+			fields[MetricsTokenSecretField] = string(token)
+		}
 
-	if diUrl, err := dataIngestUrl(dk); err != nil {
-		return nil, err
-	} else {
-		fields[UrlSecretField] = diUrl
+		if diUrl, err := dataIngestUrl(dk); err != nil {
+			return nil, err
+		} else {
+			fields[MetricsUrlSecretField] = diUrl
+		}
 	}
 
 	if dk.NeedsStatsd() {
 		if statsdUrl, err := statsdIngestUrl(dk); err != nil {
 			return nil, err
 		} else {
-			fields[StatsdIngestUrl] = statsdUrl
+			fields[StatsdUrlSecretField] = statsdUrl
 		}
 	}
 
