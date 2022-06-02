@@ -196,14 +196,6 @@ properties:
     x-google-marketplace:
       type: DEPLOYER_IMAGE
 
-  platform:
-    type: string
-    title: The platform you are deploying on
-    description: This should always be set to "google"
-    default: google
-    enum:
-      - "google"
-
   operator.customPullSecret:
     type: string
     title: Custom pull secret
@@ -326,6 +318,23 @@ properties:
     title: Mount filesystem in read-only mode
     description: Restricts ActiveGate deployments to mount filesystems read-only.
     default: false
+
+  installCRD:
+    type: boolean
+    title: Install DynaKube CRD
+    description: |
+      Tells the Helm chart of the deployer to install the custom resource definition (CRD) of the DynaKube API.
+    default: true
+    enum:
+      - true
+
+  platform:
+    type: string
+    title: Platform
+    description: Platform to deploy on. This should always be set to "google" for GKE clusters
+    default: google
+    enum:
+      - "google"
 
 required:
 - name
