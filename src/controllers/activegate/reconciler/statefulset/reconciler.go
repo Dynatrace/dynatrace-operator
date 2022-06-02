@@ -203,12 +203,12 @@ func (r *Reconciler) deleteStatefulSetIfOldLabelsAreUsed(desiredSts *appsv1.Stat
 }
 
 func (r *Reconciler) calculateActiveGateConfigurationHash() (string, error) {
-	customPropertyData, err := r.getCustomPropertyValueToHash()
+	customPropertyData, err := r.getCustomPropertyValue()
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
 
-	authTokenData, err := r.getAuthTokenValueToHash()
+	authTokenData, err := r.getAuthTokenValue()
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -225,7 +225,7 @@ func (r *Reconciler) calculateActiveGateConfigurationHash() (string, error) {
 	return strconv.FormatUint(uint64(hash.Sum32()), 10), nil
 }
 
-func (r *Reconciler) getCustomPropertyValueToHash() (string, error) {
+func (r *Reconciler) getCustomPropertyValue() (string, error) {
 	if !needsCustomPropertyHash(r.capability.CustomProperties) {
 		return "", nil
 	}
@@ -237,7 +237,7 @@ func (r *Reconciler) getCustomPropertyValueToHash() (string, error) {
 	return customPropertyData, nil
 }
 
-func (r *Reconciler) getAuthTokenValueToHash() (string, error) {
+func (r *Reconciler) getAuthTokenValue() (string, error) {
 	if !r.Instance.UseActiveGateAuthToken() {
 		return "", nil
 	}
