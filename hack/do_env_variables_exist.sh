@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # check if parameters are set
 if [ -z "$1" ]
 then

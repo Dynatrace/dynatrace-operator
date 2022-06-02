@@ -264,20 +264,14 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 			return
 		}
 
-		if !dkState.Instance.FeatureDisableMetadataEnrichment() {
-			err = endpointSecretGenerator.GenerateForDynakube(ctx, dkState.Instance)
-			if dkState.Error(err) {
-				return
-			}
-		} else {
-			err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, dkState.Instance)
-			if dkState.Error(err) {
-				return
-			}
+		err = endpointSecretGenerator.GenerateForDynakube(ctx, dkState.Instance)
+		if dkState.Error(err) {
+			return
 		}
+
 		if dkState.Instance.ApplicationMonitoringMode() {
 			dkState.Instance.Status.SetPhase(dynatracev1beta1.Running)
-			dkState.Update(true, "application monitoring reconciled")
+			dkState.Update(upd, "application monitoring reconciled")
 		}
 	} else {
 		if err := dkMapper.UnmapFromDynaKube(); err != nil {
