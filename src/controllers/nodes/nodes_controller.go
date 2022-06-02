@@ -22,6 +22,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+type NodesController struct {
+	client       client.Client
+	apiReader    client.Reader
+	scheme       *runtime.Scheme
+	dtClientFunc dynakube.DynatraceClientFunc
+	runLocal     bool
+	podNamespace string
+}
+
+type CachedNodeInfo struct {
+	cachedNode CacheEntry
+	nodeCache  *Cache
+	nodeName   string
+}
+
 func Add(mgr manager.Manager, _ string) error {
 	return NewController(mgr).SetupWithManager(mgr)
 }
@@ -36,7 +51,7 @@ func nodeDeletionPredicate(controller *NodesController) predicate.Predicate {
 	return predicate.Funcs{
 		DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
 			node := deleteEvent.Object.GetName()
-			err := controller.reconcileNodeDeletion(node)
+			err := controller.reconcileNodeDeletion(context.TODO(), node)
 			if err != nil {
 				log.Error(err, "error while deleting node", "node", node)
 			}
@@ -49,25 +64,12 @@ func nodeDeletionPredicate(controller *NodesController) predicate.Predicate {
 func NewController(mgr manager.Manager) *NodesController {
 	return &NodesController{
 		client:       mgr.GetClient(),
+		apiReader:    mgr.GetAPIReader(),
 		scheme:       mgr.GetScheme(),
 		dtClientFunc: dynakube.BuildDynatraceClient,
 		runLocal:     os.Getenv("RUN_LOCAL") == "true",
 		podNamespace: os.Getenv("POD_NAMESPACE"),
 	}
-}
-
-type NodesController struct {
-	client       client.Client
-	scheme       *runtime.Scheme
-	dtClientFunc dynakube.DynatraceClientFunc
-	runLocal     bool
-	podNamespace string
-}
-
-type CachedNodeInfo struct {
-	cachedNode CacheEntry
-	nodeCache  *Cache
-	nodeName   string
 }
 
 func (controller *NodesController) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
@@ -77,13 +79,13 @@ func (controller *NodesController) Reconcile(ctx context.Context, request reconc
 		return reconcile.Result{}, err
 	}
 
-	nodeCache, err := controller.getCache()
+	nodeCache, err := controller.getCache(ctx)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	var node corev1.Node
-	if err := controller.client.Get(ctx, client.ObjectKey{Name: nodeName}, &node); err != nil {
+	if err := controller.apiReader.Get(ctx, client.ObjectKey{Name: nodeName}, &node); err != nil {
 		if k8serrors.IsNotFound(err) {
 			log.Info("node was not found in cluster", "node", nodeName)
 			return reconcile.Result{}, nil
@@ -124,16 +126,16 @@ func (controller *NodesController) Reconcile(ctx context.Context, request reconc
 
 	// check node cache for outdated nodes and remove them, to keep cache clean
 	if nodeCache.IsCacheOutdated() {
-		if err := controller.handleOutdatedCache(nodeCache); err != nil {
+		if err := controller.handleOutdatedCache(ctx, nodeCache); err != nil {
 			return reconcile.Result{}, err
 		}
 		nodeCache.UpdateTimestamp()
 	}
-	return reconcile.Result{}, controller.updateCache(nodeCache, ctx)
+	return reconcile.Result{}, controller.updateCache(ctx, nodeCache)
 }
 
-func (controller *NodesController) reconcileNodeDeletion(nodeName string) error {
-	nodeCache, err := controller.getCache()
+func (controller *NodesController) reconcileNodeDeletion(ctx context.Context, nodeName string) error {
+	nodeCache, err := controller.getCache(ctx)
 	if err != nil {
 		return err
 	}
@@ -146,7 +148,7 @@ func (controller *NodesController) reconcileNodeDeletion(nodeName string) error 
 	cachedNodeInfo, err := nodeCache.Get(nodeName)
 	if err != nil {
 		if err == ErrNotFound {
-			// uncached node -> igonoring
+			// uncached node -> ignoring
 			return nil
 		}
 		return err
@@ -165,16 +167,16 @@ func (controller *NodesController) reconcileNodeDeletion(nodeName string) error 
 	}
 
 	nodeCache.Delete(nodeName)
-	if err := controller.updateCache(nodeCache, context.TODO()); err != nil {
+	if err := controller.updateCache(ctx, nodeCache); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (controller *NodesController) getCache() (*Cache, error) {
+func (controller *NodesController) getCache(ctx context.Context) (*Cache, error) {
 	var cm corev1.ConfigMap
 
-	err := controller.client.Get(context.TODO(), client.ObjectKey{Name: cacheName, Namespace: controller.podNamespace}, &cm)
+	err := controller.apiReader.Get(ctx, client.ObjectKey{Name: cacheName, Namespace: controller.podNamespace}, &cm)
 	if err == nil {
 		return &Cache{Obj: &cm}, nil
 	}
@@ -205,7 +207,7 @@ func (controller *NodesController) getCache() (*Cache, error) {
 	return nil, err
 }
 
-func (controller *NodesController) updateCache(nodeCache *Cache, ctx context.Context) error {
+func (controller *NodesController) updateCache(ctx context.Context, nodeCache *Cache) error {
 	if !nodeCache.Changed() {
 		return nil
 	}
@@ -220,7 +222,7 @@ func (controller *NodesController) updateCache(nodeCache *Cache, ctx context.Con
 	return nil
 }
 
-func (controller *NodesController) handleOutdatedCache(nodeCache *Cache) error {
+func (controller *NodesController) handleOutdatedCache(ctx context.Context, nodeCache *Cache) error {
 	var nodeLst corev1.NodeList
 	if err := controller.client.List(context.TODO(), &nodeLst); err != nil {
 		return err
@@ -244,8 +246,8 @@ func (controller *NodesController) handleOutdatedCache(nodeCache *Cache) error {
 
 		// if node is not in cluster -> probably deleted
 		if !cachedNodeInCluster {
-			log.Info("Removing unfound cached node from cluster", "node", cachedNodeName)
-			err := controller.reconcileNodeDeletion(cachedNodeName)
+			log.Info("Removing missing cached node from cluster", "node", cachedNodeName)
+			err := controller.reconcileNodeDeletion(ctx, cachedNodeName)
 			if err != nil {
 				return err
 			}
@@ -255,12 +257,12 @@ func (controller *NodesController) handleOutdatedCache(nodeCache *Cache) error {
 }
 
 func (controller *NodesController) removeNodeFromCache(nodeCache *Cache, cachedNode CacheEntry, nodeName string) {
-	if controller.isNodeDeleteable(cachedNode) {
+	if controller.isNodeDeletable(cachedNode) {
 		nodeCache.Delete(nodeName)
 	}
 }
 
-func (controller *NodesController) isNodeDeleteable(cachedNode CacheEntry) bool {
+func (controller *NodesController) isNodeDeletable(cachedNode CacheEntry) bool {
 	if time.Now().UTC().Sub(cachedNode.LastSeen).Hours() > 1 {
 		return true
 	} else if cachedNode.IPAddress == "" {

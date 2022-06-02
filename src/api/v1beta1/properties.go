@@ -174,6 +174,7 @@ func (dk *DynaKube) NeedsCSIDriver() bool {
 func (dk *DynaKube) NeedAppInjection() bool {
 	return dk.CloudNativeFullstackMode() || dk.ApplicationMonitoringMode()
 }
+
 func (dk *DynaKube) Image() string {
 	if dk.ClassicFullStackMode() {
 		return dk.Spec.OneAgent.ClassicFullStack.Image

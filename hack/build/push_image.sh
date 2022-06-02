@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [[ ! "${TAG}" ]]; then
   echo "TAG variable not set"

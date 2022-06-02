@@ -11,7 +11,7 @@ import (
 // ErrNotFound is returned when entry hasn't been found on the cache.
 var ErrNotFound = errors.New("not found")
 
-// CacheEntry constains information about a Node.
+// CacheEntry contains information about a Node.
 type CacheEntry struct {
 	Instance                 string    `json:"instance"`
 	IPAddress                string    `json:"ip"`
@@ -95,7 +95,7 @@ func (cache *Cache) ContainsKey(key string) bool {
 }
 
 func (cache *Cache) IsCacheOutdated() bool {
-	if lastUpdated, ok := cache.Obj.Annotations[lastUpdatedCacheAnnotiation]; ok {
+	if lastUpdated, ok := cache.Obj.Annotations[lastUpdatedCacheAnnotation]; ok {
 		if lastUpdatedTime, err := time.Parse(time.RFC3339, lastUpdated); err == nil {
 			return lastUpdatedTime.Add(cacheLifetime).Before(time.Now())
 		} else {
@@ -109,7 +109,7 @@ func (cache *Cache) UpdateTimestamp() {
 	if cache.Obj.Annotations == nil {
 		cache.Obj.Annotations = make(map[string]string)
 	}
-	cache.Obj.Annotations[lastUpdatedCacheAnnotiation] = time.Now().Format(time.RFC3339)
+	cache.Obj.Annotations[lastUpdatedCacheAnnotation] = time.Now().Format(time.RFC3339)
 	cache.upd = true
 }
 
