@@ -7,7 +7,6 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
-	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/query"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/Dynatrace/dynatrace-operator/src/standalone"
@@ -26,7 +25,7 @@ type InitGenerator struct {
 	apiReader     client.Reader
 	namespace     string
 	canWatchNodes bool
-	dynakubeQuery *query.DynakubeQuery
+	dynakubeQuery kubeobjects.DynakubeQuery
 }
 
 type nodeInfo struct {
@@ -39,18 +38,18 @@ func NewInitGenerator(client client.Client, apiReader client.Reader, namespace s
 		client:        client,
 		apiReader:     apiReader,
 		namespace:     namespace,
-		dynakubeQuery: query.NewDynakubeQuery(client, namespace),
+		dynakubeQuery: kubeobjects.NewDynakubeQuery(client, namespace),
 	}
 }
 
 // GenerateForNamespace creates the init secret for namespace while only having the name of the corresponding dynakube
 // Used by the podInjection webhook in case the namespace lacks the init secret.
-func (g *InitGenerator) GenerateForNamespace(dk dynatracev1beta1.DynaKube, targetNs string) (bool, error) {
+func (g *InitGenerator) GenerateForNamespace(ctx context.Context, dk dynatracev1beta1.DynaKube, targetNs string) error {
 	log.Info("reconciling namespace init secret for", "namespace", targetNs)
 	g.canWatchNodes = false
-	data, err := g.generate(&dk)
+	data, err := g.generate(ctx, &dk)
 	if err != nil {
-		return false, err
+		return errors.WithStack(err)
 	}
 
 	coreLabels := kubeobjects.NewCoreLabels(dk.Name, kubeobjects.WebhookComponentLabel)
@@ -64,25 +63,31 @@ func (g *InitGenerator) GenerateForNamespace(dk dynatracev1beta1.DynaKube, targe
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
-	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, secret, log)
+	query := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+
+	return errors.WithStack(query.CreateOrUpdate(*secret))
 }
 
 // GenerateForDynakube creates/updates the init secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
-func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) (bool, error) {
+func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling namespace init secret for", "dynakube", dk.Name)
 	g.canWatchNodes = true
-	data, err := g.generate(dk)
+	data, err := g.generate(ctx, dk)
+
 	if err != nil {
-		return false, err
+		return errors.WithStack(err)
 	}
 
-	anyUpdate := false
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
+
 	if err != nil {
-		return false, err
+		return errors.WithStack(err)
 	}
+
 	coreLabels := kubeobjects.NewCoreLabels(dk.Name, kubeobjects.WebhookComponentLabel)
+	query := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+
 	for _, targetNs := range nsList {
 		secret := &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{},
@@ -94,21 +99,23 @@ func (g *InitGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1
 			Data: data,
 			Type: corev1.SecretTypeOpaque,
 		}
-		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, secret, log); err != nil {
-			return false, err
-		} else if upd {
-			anyUpdate = true
+
+		err = query.CreateOrUpdate(*secret)
+
+		if err != nil {
+			return errors.WithStack(err)
 		}
 	}
+
 	log.Info("done updating init secrets")
-	return anyUpdate, nil
+	return nil
 }
 
 // generate gets the necessary info the create the init secret data
-func (g *InitGenerator) generate(dk *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
+func (g *InitGenerator) generate(ctx context.Context, dk *dynatracev1beta1.DynaKube) (map[string][]byte, error) {
 	kubeSystemUID, err := kubesystem.GetUID(g.apiReader)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	hostMonitoringNodes, err := g.getHostMonitoringNodes(dk)
@@ -116,7 +123,7 @@ func (g *InitGenerator) generate(dk *dynatracev1beta1.DynaKube) (map[string][]by
 		return nil, err
 	}
 
-	secretConfig, err := g.createSecretConfigForDynaKube(dk, kubeSystemUID, hostMonitoringNodes)
+	secretConfig, err := g.createSecretConfigForDynaKube(ctx, dk, kubeSystemUID, hostMonitoringNodes)
 	if err != nil {
 		return nil, err
 	}
@@ -128,23 +135,24 @@ func (g *InitGenerator) generate(dk *dynatracev1beta1.DynaKube) (map[string][]by
 	return data, nil
 }
 
-func (g *InitGenerator) createSecretConfigForDynaKube(dynakube *dynatracev1beta1.DynaKube, kubeSystemUID types.UID, hostMonitoringNodes map[string]string) (*standalone.SecretConfig, error) {
+func (g *InitGenerator) createSecretConfigForDynaKube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube, kubeSystemUID types.UID, hostMonitoringNodes map[string]string) (*standalone.SecretConfig, error) {
 	var tokens corev1.Secret
-	if err := g.client.Get(context.TODO(), client.ObjectKey{Name: dynakube.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
+	if err := g.client.Get(ctx, client.ObjectKey{Name: dynakube.Tokens(), Namespace: g.namespace}, &tokens); err != nil {
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	proxy, err := g.dynakubeQuery.Proxy(dynakube)
+	dynakubeQuery := g.dynakubeQuery.WithContext(ctx)
+	proxy, err := dynakubeQuery.Proxy(*dynakube)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	trustedCAs, err := g.dynakubeQuery.TrustedCAs(dynakube)
+	trustedCAs, err := dynakubeQuery.TrustedCAs(*dynakube)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	tlsCert, err := g.dynakubeQuery.TlsCert(dynakube)
+	tlsCert, err := dynakubeQuery.TlsCert(*dynakube)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

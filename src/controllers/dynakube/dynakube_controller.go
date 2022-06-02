@@ -255,21 +255,20 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 
 	endpointSecretGenerator := dtingestendpoint.NewEndpointSecretGenerator(controller.client, controller.apiReader, dkState.Instance.Namespace)
 	if dkState.Instance.NeedAppInjection() {
-		if err := dkMapper.MapFromDynakube(); err != nil {
+		if err = dkMapper.MapFromDynakube(); err != nil {
 			log.Error(err, "update of a map of namespaces failed")
 		}
-		upd, err := initgeneration.NewInitGenerator(controller.client, controller.apiReader, dkState.Instance.Namespace).GenerateForDynakube(ctx, dkState.Instance)
+
+		err = initgeneration.NewInitGenerator(controller.client, controller.apiReader, dkState.Instance.Namespace).GenerateForDynakube(ctx, dkState.Instance)
 		if dkState.Error(err) {
 			return
 		}
-		dkState.Update(upd, "new init secret created")
 
 		if !dkState.Instance.FeatureDisableMetadataEnrichment() {
-			upd, err = endpointSecretGenerator.GenerateForDynakube(ctx, dkState.Instance)
+			err = endpointSecretGenerator.GenerateForDynakube(ctx, dkState.Instance)
 			if dkState.Error(err) {
 				return
 			}
-			dkState.Update(upd, "new data-ingest endpoint secret created")
 		} else {
 			err = endpointSecretGenerator.RemoveEndpointSecrets(ctx, dkState.Instance)
 			if dkState.Error(err) {
@@ -327,8 +326,8 @@ func (controller *DynakubeController) reconcileActiveGate(ctx context.Context, d
 func (controller *DynakubeController) reconcileActiveGateProxySecret(ctx context.Context, dynakubeState *status.DynakubeState) bool {
 	gen := agproxysecret.NewActiveGateProxySecretGenerator(controller.client, controller.apiReader, dynakubeState.Instance.Namespace, log)
 	if dynakubeState.Instance.NeedsActiveGateProxy() {
-		upd, err := gen.GenerateForDynakube(ctx, dynakubeState.Instance)
-		if dynakubeState.Error(err) || dynakubeState.Update(upd, "new ActiveGate proxy secret created") {
+		err := gen.GenerateForDynakube(ctx, dynakubeState.Instance)
+		if dynakubeState.Error(err) {
 			return false
 		}
 	} else {

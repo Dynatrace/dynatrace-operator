@@ -43,10 +43,10 @@ func NewActiveGateProxySecretGenerator(client client.Client, apiReader client.Re
 	}
 }
 
-func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) (bool, error) {
+func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakube(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {
 	data, err := agProxySecretGenerator.createProxyMap(ctx, dynakube)
 	if err != nil {
-		return false, err
+		return errors.WithStack(err)
 	}
 
 	coreLabels := kubeobjects.NewCoreLabels(dynakube.Name, kubeobjects.ActiveGateComponentLabel)
@@ -60,13 +60,9 @@ func (agProxySecretGenerator *ActiveGateProxySecretGenerator) GenerateForDynakub
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
+	query := kubeobjects.NewSecretQuery(ctx, agProxySecretGenerator.client, agProxySecretGenerator.apiReader, agProxySecretGenerator.logger)
 
-	return kubeobjects.CreateOrUpdateSecretIfNotExists(
-		agProxySecretGenerator.client,
-		agProxySecretGenerator.apiReader,
-		secret,
-		agProxySecretGenerator.logger,
-	)
+	return errors.WithStack(query.CreateOrUpdate(*secret))
 }
 
 func (agProxySecretGenerator *ActiveGateProxySecretGenerator) EnsureDeleted(ctx context.Context, dynakube *dynatracev1beta1.DynaKube) error {

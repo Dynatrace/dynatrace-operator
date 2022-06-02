@@ -33,6 +33,10 @@ const (
 	TenantSecretSuffix    = "-activegate-tenant-secret"
 	AuthTokenSecretSuffix = "-activegate-authtoken-secret"
 	PodNameOsAgent        = "oneagent"
+
+	TrustedCAKey = "certs"
+	ProxyKey     = "proxy"
+	TlsCertKey   = "server.crt"
 )
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.

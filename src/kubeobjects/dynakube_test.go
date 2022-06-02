@@ -1,4 +1,4 @@
-package query
+package kubeobjects
 
 import (
 	"testing"
@@ -33,7 +33,7 @@ func testProxyValue(t *testing.T) {
 		clt:       nil,
 		namespace: "",
 	}
-	proxy, err := query.Proxy(&dynatracev1beta1.DynaKube{
+	proxy, err := query.Proxy(dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			Proxy: &dynatracev1beta1.DynaKubeProxy{Value: testProxyData},
 		},
@@ -42,7 +42,7 @@ func testProxyValue(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, testProxyData, proxy)
 
-	proxy, err = query.Proxy(&dynatracev1beta1.DynaKube{})
+	proxy, err = query.Proxy(dynatracev1beta1.DynaKube{})
 
 	assert.NoError(t, err)
 	assert.Equal(t, "", proxy)
@@ -53,11 +53,11 @@ func testProxyValueFrom(t *testing.T) {
 		clt: fake.NewClient(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{Name: testProxyName},
 			Data: map[string][]byte{
-				proxyKey: []byte(testProxyData),
+				dynatracev1beta1.ProxyKey: []byte(testProxyData),
 			}}),
 		namespace: "",
 	}
-	proxy, err := query.Proxy(&dynatracev1beta1.DynaKube{
+	proxy, err := query.Proxy(dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			Proxy: &dynatracev1beta1.DynaKubeProxy{ValueFrom: testProxyName},
 		},
@@ -67,7 +67,7 @@ func testProxyValueFrom(t *testing.T) {
 	assert.Equal(t, testProxyData, proxy)
 
 	query.clt = fake.NewClient()
-	proxy, err = query.Proxy(&dynatracev1beta1.DynaKube{
+	proxy, err = query.Proxy(dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			Proxy: &dynatracev1beta1.DynaKubeProxy{ValueFrom: testProxyName},
 		},
@@ -82,11 +82,11 @@ func testTrustedCAs(t *testing.T) {
 		clt: fake.NewClient(&corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{Name: testConfigMapName},
 			Data: map[string]string{
-				trustedCAKey: testConfigMapValue,
+				dynatracev1beta1.TrustedCAKey: testConfigMapValue,
 			},
 		}),
 	}
-	trustedCAs, err := query.TrustedCAs(&dynatracev1beta1.DynaKube{
+	trustedCAs, err := query.TrustedCAs(dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			TrustedCAs: testConfigMapName,
 		},
@@ -96,7 +96,7 @@ func testTrustedCAs(t *testing.T) {
 	assert.Equal(t, []byte(testConfigMapValue), trustedCAs)
 
 	query.clt = fake.NewClient()
-	trustedCAs, err = query.TrustedCAs(&dynatracev1beta1.DynaKube{
+	trustedCAs, err = query.TrustedCAs(dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			TrustedCAs: testConfigMapName,
 		},
@@ -105,7 +105,7 @@ func testTrustedCAs(t *testing.T) {
 	assert.Error(t, err)
 	assert.Empty(t, trustedCAs)
 
-	trustedCAs, err = query.TrustedCAs(&dynatracev1beta1.DynaKube{
+	trustedCAs, err = query.TrustedCAs(dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{},
 	})
 
@@ -118,11 +118,11 @@ func testTlsCert(t *testing.T) {
 		clt: fake.NewClient(&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{Name: testSecretName},
 			Data: map[string][]byte{
-				tlsCertKey: []byte(testSecretValue),
+				dynatracev1beta1.TlsCertKey: []byte(testSecretValue),
 			}}),
 		namespace: "",
 	}
-	tlsCert, err := query.TlsCert(&dynatracev1beta1.DynaKube{
+	tlsCert, err := query.TlsCert(dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{
 				Capabilities:  []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName},
@@ -135,7 +135,7 @@ func testTlsCert(t *testing.T) {
 	assert.Equal(t, testSecretValue, tlsCert)
 
 	query.clt = fake.NewClient()
-	tlsCert, err = query.TlsCert(&dynatracev1beta1.DynaKube{
+	tlsCert, err = query.TlsCert(dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			ActiveGate: dynatracev1beta1.ActiveGateSpec{
 				Capabilities:  []dynatracev1beta1.CapabilityDisplayName{dynatracev1beta1.KubeMonCapability.DisplayName},
@@ -147,7 +147,7 @@ func testTlsCert(t *testing.T) {
 	assert.Error(t, err)
 	assert.Empty(t, tlsCert)
 
-	tlsCert, err = query.TlsCert(&dynatracev1beta1.DynaKube{})
+	tlsCert, err = query.TlsCert(dynatracev1beta1.DynaKube{})
 
 	assert.NoError(t, err)
 	assert.Empty(t, tlsCert)
