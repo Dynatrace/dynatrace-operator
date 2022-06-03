@@ -13,6 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -114,16 +115,18 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	return strings.TrimSpace(string(value)), nil
 }
 
-// Deprecated: GetSecret is deprecated, use SecretQuery.Get instead
-func GetSecret(ctx context.Context, apiReader client.Reader, name string, namespace string) (*corev1.Secret, error) {
-	secretQuery := NewSecretQuery(ctx, nil, apiReader, logger.NewDTLogger())
-	secret, err := secretQuery.Get(client.ObjectKey{Name: name, Namespace: namespace})
-
-	if k8serrors.IsNotFound(err) {
-		return nil, nil
+func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string) (string, error) {
+	query := NewSecretQuery(context.TODO(), nil, apiReader, logger.NewDTLogger())
+	secret, err := query.Get(namespacedName)
+	if err != nil {
+		return "", errors.WithStack(err)
 	}
 
-	return &secret, errors.WithStack(err)
+	value, err := ExtractToken(&secret, dataKey)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return value, nil
 }
 
 func NewSecret(name string, namespace string, data map[string][]byte) *corev1.Secret {
