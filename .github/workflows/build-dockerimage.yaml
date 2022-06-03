@@ -41,9 +41,7 @@ jobs:
             ~/go/pkg/mod
             ~/.cache/go-build
             ./third_party_licenses
-          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-build-
+          key: ${{ runner.os }}-go-build-cache-${{ hashFiles('**/go.sum') }}
       - name: Prepare
         run: |
           hack/build/ci/download-go-build-deps.sh
