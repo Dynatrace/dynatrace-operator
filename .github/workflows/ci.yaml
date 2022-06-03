@@ -223,6 +223,63 @@ jobs:
           secrets.docker_repo_username: ${{ secrets.RHCC_USERNAME }}
           secrets.docker_repo_password: ${{ secrets.RHCC_PASSWORD }}
 
+  push-gcr:
+    name: Push to GCR
+    needs: [prepare,build-amd64,build-arm64]
+    if: |
+      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
+      (contains(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push AMD64
+        uses: ./.github/workflows/upload-dockerimage.yaml
+        with:
+          platform: amd64
+          labels: ${{ needs.prepare.outputs.labels }}
+          version: ${{ needs.prepare.outputs.version }}
+          registry: gcr.io
+          repository: dynatrace-marketplace-prod/dynatrace-operator
+          secrets.docker_repo_username: ${{ secrets.GCR_USERNAME }}
+          secrets.docker_repo_password: ${{ secrets.GCR_PASSWORD }}
+      - name: Push ARM64
+        uses: ./.github/workflows/upload-dockerimage.yaml
+        with:
+          platform: arm64
+          labels: ${{ needs.prepare.outputs.labels }}
+          version: ${{ needs.prepare.outputs.version }}
+          registry: gcr.io
+          repository: dynatrace-marketplace-prod/dynatrace-operator
+          secrets.docker_repo_username: ${{ secrets.GCR_USERNAME }}
+          secrets.docker_repo_password: ${{ secrets.GCR_PASSWORD }}
+
+  push-dockerhub:
+    name: Push to Dockerhub
+    needs: [prepare,build-amd64,build-arm64]
+    if: |
+      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
+      (contains(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push AMD64
+        uses: ./.github/workflows/upload-dockerimage.yaml
+        with:
+          platform: amd64
+          labels: ${{ needs.prepare.outputs.labels }}
+          version: ${{ needs.prepare.outputs.version }}
+          registry: docker.io
+          repository: dynatrace/dynatrace-operator
+          secrets.docker_repo_username: ${{ secrets.DOCKERHUB_USERNAME }}
+          secrets.docker_repo_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Push ARM64
+        uses: ./.github/workflows/upload-dockerimage.yaml
+        with:
+          platform: arm64
+          labels: ${{ needs.prepare.outputs.labels }}
+          version: ${{ needs.prepare.outputs.version }}
+          registry: docker.io
+          repository: dynatrace/dynatrace-operator
+          secrets.docker_repo_username: ${{ secrets.DOCKERHUB_USERNAME }}
+          secrets.docker_repo_password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
   create-manifest-for-combined-images:
     name: Combine images
