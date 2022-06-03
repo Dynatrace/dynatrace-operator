@@ -104,6 +104,7 @@ tests:
                 - watch
                 - create
                 - update
+                - delete
             - apiGroups:
                 - ""
               resources:

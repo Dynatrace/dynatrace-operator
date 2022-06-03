@@ -10,6 +10,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/customproperties"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/internal/events"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/activegate/secrets"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
@@ -17,6 +18,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -117,13 +119,13 @@ func (r *Reconciler) buildDesiredStatefulSet() (*appsv1.StatefulSet, error) {
 		return nil, errors.WithStack(err)
 	}
 
-	cpHash, err := r.calculateCustomPropertyHash()
+	activeGateConfigurationHash, err := r.calculateActiveGateConfigurationHash()
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	stsProperties := NewStatefulSetProperties(
-		r.Instance, r.capability, kubeUID, cpHash, r.feature, r.capabilityName, r.serviceAccountOwner,
+		r.Instance, r.capability, kubeUID, activeGateConfigurationHash, r.feature, r.capabilityName, r.serviceAccountOwner,
 		r.initContainersTemplates, r.containerVolumeMounts, r.volumes)
 	stsProperties.OnAfterCreateListener = r.onAfterStatefulSetCreateListener
 
@@ -200,39 +202,64 @@ func (r *Reconciler) deleteStatefulSetIfOldLabelsAreUsed(desiredSts *appsv1.Stat
 	return false, nil
 }
 
-func (r *Reconciler) calculateCustomPropertyHash() (string, error) {
-	customProperties := r.capability.CustomProperties
-	if customProperties == nil || (customProperties.Value == "" && customProperties.ValueFrom == "") {
-		return "", nil
-	}
-
-	data, err := r.getDataFromCustomProperty(customProperties)
+func (r *Reconciler) calculateActiveGateConfigurationHash() (string, error) {
+	customPropertyData, err := r.getCustomPropertyValue()
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
 
+	authTokenData, err := r.getAuthTokenValue()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	if len(customPropertyData) < 1 && len(authTokenData) < 1 {
+		return "", nil
+	}
+
 	hash := fnv.New32()
-	if _, err = hash.Write([]byte(data)); err != nil {
+	if _, err := hash.Write([]byte(customPropertyData + authTokenData)); err != nil {
 		return "", errors.WithStack(err)
 	}
 
 	return strconv.FormatUint(uint64(hash.Sum32()), 10), nil
 }
 
+func (r *Reconciler) getCustomPropertyValue() (string, error) {
+	if !needsCustomPropertyHash(r.capability.CustomProperties) {
+		return "", nil
+	}
+
+	customPropertyData, err := r.getDataFromCustomProperty(r.capability.CustomProperties)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return customPropertyData, nil
+}
+
+func (r *Reconciler) getAuthTokenValue() (string, error) {
+	if !r.Instance.UseActiveGateAuthToken() {
+		return "", nil
+	}
+
+	authTokenData, err := r.getDataFromAuthTokenSecret()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	return authTokenData, nil
+}
+
 func (r *Reconciler) getDataFromCustomProperty(customProperties *dynatracev1beta1.DynaKubeValueSource) (string, error) {
 	if customProperties.ValueFrom != "" {
-		namespace := r.Instance.Namespace
-		var secret corev1.Secret
-		err := r.Get(context.TODO(), client.ObjectKey{Name: customProperties.ValueFrom, Namespace: namespace}, &secret)
-		if err != nil {
-			return "", errors.WithStack(err)
-		}
-
-		dataBytes, ok := secret.Data[customproperties.DataKey]
-		if !ok {
-			return "", errors.Errorf("no custom properties found on secret '%s' on namespace '%s'", customProperties.ValueFrom, namespace)
-		}
-		return string(dataBytes), nil
+		return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.Instance.Namespace, Name: customProperties.ValueFrom}, customproperties.DataKey)
 	}
 	return customProperties.Value, nil
+}
+
+func (r *Reconciler) getDataFromAuthTokenSecret() (string, error) {
+	return kubeobjects.GetDataFromSecretName(r.apiReader, types.NamespacedName{Namespace: r.Instance.Namespace, Name: r.Instance.ActiveGateAuthTokenSecret()}, secrets.ActiveGateAuthTokenName)
+}
+
+func needsCustomPropertyHash(customProperties *dynatracev1beta1.DynaKubeValueSource) bool {
+	return customProperties != nil && (customProperties.Value != "" || customProperties.ValueFrom != "")
 }
