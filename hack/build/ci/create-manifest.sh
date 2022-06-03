@@ -12,10 +12,10 @@ multiplatform=$3
 
 if [ "$multiplatform" == "true" ]
 then
-  echo "we build for arm too => combine images"
+  echo "Creating manifest for AMD and ARM images"
   docker manifest create "${image_name}:${image_tag}" "${image_name}:${image_tag}-arm64" "${image_name}:${image_tag}-amd64"
 else
-  echo "we build for amd only"
+  echo "Creating manifest for the AMD image "
   docker manifest create "${image_name}:${image_tag}" "${image_name}:${image_tag}-amd64"
 fi
 
