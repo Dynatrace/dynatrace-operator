@@ -24,129 +24,128 @@ const testNamespace = "dynatrace"
 
 var testCacheKey = client.ObjectKey{Name: cacheName, Namespace: testNamespace}
 
-func TestNodesReconciler_CreateCache(t *testing.T) {
-	fakeClient := createDefaultFakeClient()
+func TestReconcile(t *testing.T) {
+	ctx := context.TODO()
+	t.Run("Create cache", func(t *testing.T) {
+		fakeClient := createDefaultFakeClient()
 
-	dtClient := &dtclient.MockDynatraceClient{}
-	defer mock.AssertExpectationsForObjects(t, dtClient)
+		dtClient := &dtclient.MockDynatraceClient{}
+		defer mock.AssertExpectationsForObjects(t, dtClient)
 
-	ctrl := createDefaultReconciler(fakeClient, dtClient)
-	result, err := ctrl.Reconcile(context.TODO(), createReconcileRequest("node1"))
-	assert.Nil(t, err)
-	assert.NotNil(t, result)
+		ctrl := createDefaultReconciler(fakeClient, dtClient)
+		result, err := ctrl.Reconcile(ctx, createReconcileRequest("node1"))
+		assert.Nil(t, err)
+		assert.NotNil(t, result)
 
-	var cm corev1.ConfigMap
-	require.NoError(t, fakeClient.Get(context.TODO(), testCacheKey, &cm))
-	nodesCache := &Cache{Obj: &cm}
+		var cm corev1.ConfigMap
+		require.NoError(t, fakeClient.Get(ctx, testCacheKey, &cm))
+		nodesCache := &Cache{Obj: &cm}
 
-	if info, err := nodesCache.Get("node1"); assert.NoError(t, err) {
-		assert.Equal(t, "1.2.3.4", info.IPAddress)
-		assert.Equal(t, "oneagent1", info.Instance)
-	}
-}
+		if info, err := nodesCache.Get("node1"); assert.NoError(t, err) {
+			assert.Equal(t, "1.2.3.4", info.IPAddress)
+			assert.Equal(t, "oneagent1", info.Instance)
+		}
+	})
 
-func TestNodesReconciler_DeleteNode(t *testing.T) {
-	fakeClient := createDefaultFakeClient()
+	t.Run("Delete node", func(t *testing.T) {
+		fakeClient := createDefaultFakeClient()
 
-	dtClient := createDTMockClient("1.2.3.4", "HOST-42")
-	defer mock.AssertExpectationsForObjects(t, dtClient)
+		dtClient := createDTMockClient("1.2.3.4", "HOST-42")
+		defer mock.AssertExpectationsForObjects(t, dtClient)
 
-	ctrl := createDefaultReconciler(fakeClient, dtClient)
+		ctrl := createDefaultReconciler(fakeClient, dtClient)
+		reconcileAllNodes(t, ctrl, fakeClient)
+		assert.NoError(t, ctrl.reconcileNodeDeletion(ctx, "node1"))
 
-	reconcileAllNodes(t, ctrl, fakeClient)
-	assert.NoError(t, ctrl.reconcileNodeDeletion("node1"))
+		var cm corev1.ConfigMap
+		require.NoError(t, fakeClient.Get(ctx, testCacheKey, &cm))
+		nodesCache := &Cache{Obj: &cm}
 
-	var cm corev1.ConfigMap
-	require.NoError(t, fakeClient.Get(context.TODO(), testCacheKey, &cm))
-	nodesCache := &Cache{Obj: &cm}
+		_, err := nodesCache.Get("node1")
+		assert.Equal(t, err, ErrNotFound)
 
-	_, err := nodesCache.Get("node1")
-	assert.Equal(t, err, ErrNotFound)
+		if info, err := nodesCache.Get("node2"); assert.NoError(t, err) {
+			assert.Equal(t, "5.6.7.8", info.IPAddress)
+			assert.Equal(t, "oneagent2", info.Instance)
+		}
+	})
+	t.Run("Node not found", func(t *testing.T) {
+		fakeClient := createDefaultFakeClient()
 
-	if info, err := nodesCache.Get("node2"); assert.NoError(t, err) {
-		assert.Equal(t, "5.6.7.8", info.IPAddress)
-		assert.Equal(t, "oneagent2", info.Instance)
-	}
-}
+		dtClient := createDTMockClient("5.6.7.8", "HOST-84")
+		defer mock.AssertExpectationsForObjects(t, dtClient)
 
-func TestNodesReconciler_NodeNotFound(t *testing.T) {
-	fakeClient := createDefaultFakeClient()
+		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
-	dtClient := createDTMockClient("5.6.7.8", "HOST-84")
-	defer mock.AssertExpectationsForObjects(t, dtClient)
+		reconcileAllNodes(t, ctrl, fakeClient)
 
-	ctrl := createDefaultReconciler(fakeClient, dtClient)
+		var node2 corev1.Node
+		require.NoError(t, fakeClient.Get(context.TODO(), client.ObjectKey{Name: "node2"}, &node2))
+		require.NoError(t, fakeClient.Delete(context.TODO(), &node2))
 
-	reconcileAllNodes(t, ctrl, fakeClient)
+		assert.NoError(t, ctrl.reconcileNodeDeletion(ctx, "node2"))
 
-	var node2 corev1.Node
-	require.NoError(t, fakeClient.Get(context.TODO(), client.ObjectKey{Name: "node2"}, &node2))
-	require.NoError(t, fakeClient.Delete(context.TODO(), &node2))
+		var cm corev1.ConfigMap
+		require.NoError(t, fakeClient.Get(context.TODO(), testCacheKey, &cm))
+		nodesCache := &Cache{Obj: &cm}
 
-	assert.NoError(t, ctrl.reconcileNodeDeletion("node2"))
+		if info, err := nodesCache.Get("node1"); assert.NoError(t, err) {
+			assert.Equal(t, "1.2.3.4", info.IPAddress)
+			assert.Equal(t, "oneagent1", info.Instance)
+		}
 
-	var cm corev1.ConfigMap
-	require.NoError(t, fakeClient.Get(context.TODO(), testCacheKey, &cm))
-	nodesCache := &Cache{Obj: &cm}
+		_, err := nodesCache.Get("node2")
+		assert.Equal(t, err, ErrNotFound)
+	})
+	t.Run("Node has taint", func(t *testing.T) {
+		fakeClient := createDefaultFakeClient()
+		dtClient := createDTMockClient("1.2.3.4", "HOST-42")
+		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
-	if info, err := nodesCache.Get("node1"); assert.NoError(t, err) {
-		assert.Equal(t, "1.2.3.4", info.IPAddress)
-		assert.Equal(t, "oneagent1", info.Instance)
-	}
+		// Get node 1
+		node1 := &corev1.Node{}
+		err := fakeClient.Get(context.TODO(), client.ObjectKey{Name: "node1"}, node1)
+		assert.NoError(t, err)
 
-	_, err := nodesCache.Get("node2")
-	assert.Equal(t, err, ErrNotFound)
-}
+		reconcileAllNodes(t, ctrl, fakeClient)
+		// Add taint that makes it unschedulable
+		node1.Spec.Taints = []corev1.Taint{
+			{Key: "ToBeDeletedByClusterAutoscaler"},
+		}
+		err = fakeClient.Update(context.TODO(), node1)
+		assert.NoError(t, err)
 
-func TestNodeReconciler_NodeHasTaint(t *testing.T) {
-	fakeClient := createDefaultFakeClient()
-	dtClient := createDTMockClient("1.2.3.4", "HOST-42")
-	ctrl := createDefaultReconciler(fakeClient, dtClient)
+		result, err := ctrl.Reconcile(context.TODO(), createReconcileRequest("node1"))
+		assert.NotNil(t, result)
+		assert.NoError(t, err)
 
-	// Get node 1
-	node1 := &corev1.Node{}
-	err := fakeClient.Get(context.TODO(), client.ObjectKey{Name: "node1"}, node1)
-	assert.NoError(t, err)
+		// Get node from cache
+		c, err := ctrl.getCache(ctx)
+		assert.NoError(t, err)
+		assert.NotNil(t, c)
 
-	reconcileAllNodes(t, ctrl, fakeClient)
-	// Add taint that makes it unschedulable
-	node1.Spec.Taints = []corev1.Taint{
-		{Key: "ToBeDeletedByClusterAutoscaler"},
-	}
-	err = fakeClient.Update(context.TODO(), node1)
-	assert.NoError(t, err)
+		node, err := c.Get("node1")
+		assert.NoError(t, err)
+		assert.NotNil(t, node)
 
-	result, err := ctrl.Reconcile(context.TODO(), createReconcileRequest("node1"))
-	assert.NotNil(t, result)
-	assert.NoError(t, err)
+		// Check if LastMarkedForTermination Timestamp is set to current time
+		// Added one minute buffer to account for operation times
+		now := time.Now().UTC()
+		assert.True(t, node.LastMarkedForTermination.Add(time.Minute).After(now))
+	})
 
-	// Get node from cache
-	c, err := ctrl.getCache()
-	assert.NoError(t, err)
-	assert.NotNil(t, c)
+	t.Run("Server error when removing node", func(t *testing.T) {
+		fakeClient := createDefaultFakeClient()
 
-	node, err := c.Get("node1")
-	assert.NoError(t, err)
-	assert.NotNil(t, node)
+		dtClient := &dtclient.MockDynatraceClient{}
+		dtClient.On("GetEntityIDForIP", mock.Anything).Return("", ErrNotFound)
 
-	// Check if LastMarkedForTermination Timestamp is set to current time
-	// Added one minute buffer to account for operation times
-	now := time.Now().UTC()
-	assert.True(t, node.LastMarkedForTermination.Add(time.Minute).After(now))
-}
+		ctrl := createDefaultReconciler(fakeClient, dtClient)
 
-func Test_RemoveNode_ServerError(t *testing.T) {
-	fakeClient := createDefaultFakeClient()
+		reconcileAllNodes(t, ctrl, fakeClient)
 
-	dtClient := &dtclient.MockDynatraceClient{}
-	dtClient.On("GetEntityIDForIP", mock.Anything).Return("", ErrNotFound)
-
-	ctrl := createDefaultReconciler(fakeClient, dtClient)
-
-	reconcileAllNodes(t, ctrl, fakeClient)
-
-	assert.Error(t, ctrl.reconcileNodeDeletion("node1"))
-
+		assert.Error(t, ctrl.reconcileNodeDeletion(ctx, "node1"))
+	})
 }
 
 func createReconcileRequest(nodeName string) reconcile.Request {
@@ -158,6 +157,7 @@ func createReconcileRequest(nodeName string) reconcile.Request {
 func createDefaultReconciler(fakeClient client.Client, dtClient *dtclient.MockDynatraceClient) *NodesController {
 	return &NodesController{
 		client:       fakeClient,
+		apiReader:    fakeClient,
 		scheme:       scheme.Scheme,
 		dtClientFunc: dynakube.StaticDynatraceClient(dtClient),
 		podNamespace: testNamespace,

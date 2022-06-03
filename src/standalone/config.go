@@ -16,6 +16,8 @@ const (
 	enrichmentFilenameTemplate = "dt_metadata.%s"
 	ldPreloadFilename          = "ld.so.preload"
 
+	curlOptionsFileName = "curl_options.conf"
+
 	// Env Vars
 	InstallerMode InstallMode = "installer"
 	CsiMode       InstallMode = "csi"

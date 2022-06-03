@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -15,41 +16,49 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// CreateOrUpdateSecretIfNotExists creates a secret in case it does not exist or updates it if there are changes
-func CreateOrUpdateSecretIfNotExists(c client.Client, r client.Reader, secret *corev1.Secret, log logr.Logger) (bool, error) {
-	var cfg corev1.Secret
-	err := r.Get(context.TODO(), client.ObjectKey{Name: secret.Name, Namespace: secret.Namespace}, &cfg)
-	if k8serrors.IsNotFound(err) {
-		log.Info("creating secret", "namespace", secret.Namespace, "secret", secret.Name)
-		if err := c.Create(context.TODO(), secret); err != nil {
-			return false, errors.Wrapf(err, "failed to create secret %s", secret.Name)
-		}
-		return true, nil
+type SecretQuery struct {
+	kubeQuery
+}
+
+func NewSecretQuery(ctx context.Context, kubeClient client.Client, kubeReader client.Reader, log logr.Logger) SecretQuery {
+	return SecretQuery{
+		newKubeQuery(ctx, kubeClient, kubeReader, log),
+	}
+}
+
+func (query SecretQuery) Get(objectKey client.ObjectKey) (corev1.Secret, error) {
+	var secret corev1.Secret
+	err := query.kubeReader.Get(query.ctx, objectKey, &secret)
+
+	return secret, errors.WithStack(err)
+}
+
+func (query SecretQuery) Create(secret corev1.Secret) error {
+	query.log.Info("creating secret", "name", secret.Name, "namespace", secret.Namespace)
+
+	return errors.WithStack(query.kubeClient.Create(query.ctx, &secret))
+}
+
+func (query SecretQuery) Update(secret corev1.Secret) error {
+	query.log.Info("updating secret", "name", secret.Name, "namespace", secret.Namespace)
+
+	return errors.WithStack(query.kubeClient.Update(query.ctx, &secret))
+}
+
+func (query SecretQuery) CreateOrUpdate(secret corev1.Secret) error {
+	err := query.Create(secret)
+
+	if !k8serrors.IsAlreadyExists(err) {
+		return errors.WithStack(err)
 	}
 
-	if err != nil {
-		return false, errors.Wrapf(err, "failed to query for secret %s", secret.Name)
-	}
-	var updated bool
-	if !reflect.DeepEqual(secret.Data, cfg.Data) {
-		updated = true
-		cfg.Data = secret.Data
-	}
+	query.log.Info("secret already exists", "name", secret.Name, "namespace", secret.Namespace)
 
-	if !reflect.DeepEqual(secret.Labels, cfg.Labels) {
-		updated = true
-		cfg.Labels = secret.Labels
-	}
+	return errors.WithStack(query.Update(secret))
+}
 
-	if updated {
-		if err := c.Update(context.TODO(), &cfg); err != nil {
-			log.Info("updating secret", "namespace", secret.Namespace, "secret", secret.Name)
-			return false, errors.Wrapf(err, "failed to update secret %s", secret.Name)
-		}
-		return true, nil
-	}
-
-	return false, nil
+func AreSecretsEqual(secret corev1.Secret, other corev1.Secret) bool {
+	return reflect.DeepEqual(secret.Data, other.Data) && reflect.DeepEqual(secret.Labels, other.Labels)
 }
 
 type Tokens struct {
@@ -105,12 +114,15 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	return strings.TrimSpace(string(value)), nil
 }
 
+// Deprecated: GetSecret is deprecated, use SecretQuery.Get instead
 func GetSecret(ctx context.Context, apiReader client.Reader, name string, namespace string) (*corev1.Secret, error) {
-	var secret corev1.Secret
-	err := apiReader.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &secret)
+	secretQuery := NewSecretQuery(ctx, nil, apiReader, logger.NewDTLogger())
+	secret, err := secretQuery.Get(client.ObjectKey{Name: name, Namespace: namespace})
+
 	if k8serrors.IsNotFound(err) {
 		return nil, nil
 	}
+
 	return &secret, errors.WithStack(err)
 }
 
@@ -124,6 +136,6 @@ func NewSecret(name string, namespace string, data map[string][]byte) *corev1.Se
 	}
 }
 
-func IsSecretEqual(currentSecret *corev1.Secret, desired map[string][]byte) bool {
+func IsSecretDataEqual(currentSecret *corev1.Secret, desired map[string][]byte) bool {
 	return reflect.DeepEqual(desired, currentSecret.Data)
 }

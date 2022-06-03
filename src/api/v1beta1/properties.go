@@ -33,6 +33,10 @@ const (
 	TenantSecretSuffix    = "-activegate-tenant-secret"
 	AuthTokenSecretSuffix = "-activegate-authtoken-secret"
 	PodNameOsAgent        = "oneagent"
+
+	TrustedCAKey = "certs"
+	ProxyKey     = "proxy"
+	TlsCertKey   = "server.crt"
 )
 
 // NeedsActiveGate returns true when a feature requires ActiveGate instances.
@@ -174,6 +178,7 @@ func (dk *DynaKube) NeedsCSIDriver() bool {
 func (dk *DynaKube) NeedAppInjection() bool {
 	return dk.CloudNativeFullstackMode() || dk.ApplicationMonitoringMode()
 }
+
 func (dk *DynaKube) Image() string {
 	if dk.ClassicFullStackMode() {
 		return dk.Spec.OneAgent.ClassicFullStack.Image

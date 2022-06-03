@@ -16,8 +16,6 @@ const (
 	workloadKindEnvVarName = "DT_WORKLOAD_KIND"
 	workloadNameEnvVarName = "DT_WORKLOAD_NAME"
 
-	initialConnectRetryEnvVarName = "DT_INITIAL_CONNECT_RETRY_MS"
-
 	dataIngestVolumeName = "data-ingest-enrichment"
 
 	dataIngestEndpointVolumeName = "data-ingest-endpoint"

@@ -25,6 +25,8 @@ const (
 	testTlsCert    = "tls"
 	testHostGroup  = "group"
 	testClusterID  = "id"
+
+	testInitialConnectRetry = 30
 )
 
 var testSecretConfig = SecretConfig{
@@ -40,34 +42,34 @@ var testSecretConfig = SecretConfig{
 	MonitoringNodes: map[string]string{
 		testNodeName: testTenantUUID,
 	},
-	TlsCert:   testTlsCert,
-	HostGroup: testHostGroup,
-	ClusterID: testClusterID,
+	TlsCert:             testTlsCert,
+	HostGroup:           testHostGroup,
+	ClusterID:           testClusterID,
+	InitialConnectRetry: testInitialConnectRetry,
 }
 
 func TestNewSecretConfigViaFs(t *testing.T) {
-	t.Run(`read correct json`, func(t *testing.T) {
-		fs := prepTestFs(t)
+	fs := prepTestFs(t)
 
-		config, err := newSecretConfigViaFs(fs)
+	config, err := newSecretConfigViaFs(fs)
 
-		require.NoError(t, err)
-		require.NotNil(t, config)
+	require.NoError(t, err)
+	require.NotNil(t, config)
 
-		assert.Equal(t, testApiUrl, config.ApiUrl)
-		assert.Equal(t, testApiToken, config.ApiToken)
-		assert.Equal(t, testPaasToken, config.PaasToken)
-		assert.Equal(t, testProxy, config.Proxy)
-		assert.Equal(t, testNetworkZone, config.NetworkZone)
-		assert.Equal(t, testTrustedCA, config.TrustedCAs)
-		assert.True(t, config.SkipCertCheck)
-		assert.Equal(t, testTenantUUID, config.TenantUUID)
-		assert.True(t, config.HasHost)
-		assert.Equal(t, testTlsCert, config.TlsCert)
-		assert.Equal(t, testHostGroup, config.HostGroup)
-		assert.Equal(t, testClusterID, config.ClusterID)
-		assert.Len(t, config.MonitoringNodes, 1)
-	})
+	assert.Equal(t, testApiUrl, config.ApiUrl)
+	assert.Equal(t, testApiToken, config.ApiToken)
+	assert.Equal(t, testPaasToken, config.PaasToken)
+	assert.Equal(t, testProxy, config.Proxy)
+	assert.Equal(t, testNetworkZone, config.NetworkZone)
+	assert.Equal(t, testTrustedCA, config.TrustedCAs)
+	assert.True(t, config.SkipCertCheck)
+	assert.Equal(t, testTenantUUID, config.TenantUUID)
+	assert.True(t, config.HasHost)
+	assert.Equal(t, testTlsCert, config.TlsCert)
+	assert.Equal(t, testHostGroup, config.HostGroup)
+	assert.Equal(t, testClusterID, config.ClusterID)
+	assert.Len(t, config.MonitoringNodes, 1)
+	assert.Equal(t, testInitialConnectRetry, config.InitialConnectRetry)
 }
 
 func prepTestFs(t *testing.T) afero.Fs {
@@ -83,7 +85,9 @@ func prepTestFs(t *testing.T) afero.Fs {
 
 	_, err = file.Write(rawJson)
 	require.NoError(t, err)
-	file.Close()
+
+	err = file.Close()
+	require.NoError(t, err)
 
 	return fs
 }

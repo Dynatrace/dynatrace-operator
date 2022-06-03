@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 set -eu
 
 gcloud config set project dynatrace-marketplace-dev

@@ -122,23 +122,32 @@ func (runner *Runner) configureInstallation() error {
 	if runner.env.OneAgentInjected {
 		log.Info("setting ld.so.preload")
 		if err := runner.setLDPreload(); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
+
 		log.Info("creating container configuration files")
 		if err := runner.createContainerConfigurationFiles(); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
+
 		if runner.config.TlsCert != "" {
 			log.Info("propagating tls cert to agent")
 			if err := runner.propagateTLSCert(); err != nil {
-				return err
+				return errors.WithStack(err)
+			}
+		}
+
+		if runner.config.InitialConnectRetry > -1 {
+			log.Info("creating curl options file")
+			if err := runner.createCurlOptionsFile(); err != nil {
+				return errors.WithStack(err)
 			}
 		}
 	}
 	if runner.env.DataIngestInjected {
 		log.Info("creating enrichment files")
 		if err := runner.enrichMetadata(); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 	}
 	return nil

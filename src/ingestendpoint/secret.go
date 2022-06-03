@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	agcapability "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
@@ -19,10 +20,10 @@ import (
 )
 
 const (
-	UrlSecretField   = "DT_METRICS_INGEST_URL"
-	TokenSecretField = "DT_METRICS_INGEST_API_TOKEN"
-	StatsdIngestUrl  = "DT_STATSD_INGEST_URL"
-	configFile       = "endpoint.properties"
+	MetricsUrlSecretField   = "DT_METRICS_INGEST_URL"
+	MetricsTokenSecretField = "DT_METRICS_INGEST_API_TOKEN"
+	StatsdUrlSecretField    = "DT_STATSD_INGEST_URL"
+	configFile              = "endpoint.properties"
 )
 
 // EndpointSecretGenerator manages the mint endpoint secret generation for the user namespaces.
@@ -42,16 +43,16 @@ func NewEndpointSecretGenerator(client client.Client, apiReader client.Reader, n
 
 // GenerateForNamespace creates the data-ingest-endpoint secret for namespace while only having the name of the corresponding dynakube
 // Used by the podInjection webhook in case the namespace lacks the secret.
-func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkName, targetNs string) (bool, error) {
+func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkName, targetNs string) error {
 	log.Info("reconciling data-ingest endpoint secret for", "namespace", targetNs)
 	var dk dynatracev1beta1.DynaKube
 	if err := g.client.Get(ctx, client.ObjectKey{Name: dkName, Namespace: g.namespace}, &dk); err != nil {
-		return false, err
+		return errors.WithStack(err)
 	}
 
 	data, err := g.prepare(ctx, &dk)
 	if err != nil {
-		return false, err
+		return errors.WithStack(err)
 	}
 
 	coreLabels := kubeobjects.NewCoreLabels(dkName, kubeobjects.ActiveGateComponentLabel)
@@ -65,24 +66,30 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
-	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, secret, log)
+	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+
+	return errors.WithStack(secretQuery.CreateOrUpdate(*secret))
 }
 
 // GenerateForDynakube creates/updates the data-ingest-endpoint secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
-func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) (bool, error) {
+func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling data-ingest endpoint secret for", "dynakube", dk.Name)
 
 	data, err := g.prepare(ctx, dk)
 	if err != nil {
-		return false, err
+		return errors.WithStack(err)
 	}
+
 	coreLabels := kubeobjects.NewCoreLabels(dk.Name, kubeobjects.ActiveGateComponentLabel)
-	anyUpdate := false
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
+
 	if err != nil {
-		return false, err
+		return errors.WithStack(err)
 	}
+
+	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+
 	for _, targetNs := range nsList {
 		secret := &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{},
@@ -94,14 +101,15 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 			Data: data,
 			Type: corev1.SecretTypeOpaque,
 		}
-		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, secret, log); err != nil {
-			return upd, err
-		} else if upd {
-			anyUpdate = true
+
+		err = secretQuery.CreateOrUpdate(*secret)
+		if err != nil {
+			return errors.WithStack(err)
 		}
 	}
+
 	log.Info("done updating data-ingest endpoint secrets")
-	return anyUpdate, nil
+	return nil
 }
 
 func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
@@ -130,23 +138,25 @@ func (g *EndpointSecretGenerator) prepare(ctx context.Context, dk *dynatracev1be
 		return nil, errors.WithStack(err)
 	}
 
-	var endpointBuf bytes.Buffer
+	endpointPropertiesBuilder := strings.Builder{}
 
-	if _, err := endpointBuf.WriteString(fmt.Sprintf("%s=%s\n", UrlSecretField, fields[UrlSecretField])); err != nil {
-		return nil, errors.WithStack(err)
-	}
-	if _, err := endpointBuf.WriteString(fmt.Sprintf("%s=%s\n", TokenSecretField, fields[TokenSecretField])); err != nil {
-		return nil, errors.WithStack(err)
+	if !dk.FeatureDisableMetadataEnrichment() {
+		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsUrlSecretField, fields[MetricsUrlSecretField])); err != nil {
+			return nil, errors.WithStack(err)
+		}
+		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", MetricsTokenSecretField, fields[MetricsTokenSecretField])); err != nil {
+			return nil, errors.WithStack(err)
+		}
 	}
 
 	if dk.NeedsStatsd() {
-		if _, err := endpointBuf.WriteString(fmt.Sprintf("%s=%s\n", StatsdIngestUrl, fields[StatsdIngestUrl])); err != nil {
+		if _, err := endpointPropertiesBuilder.WriteString(fmt.Sprintf("%s=%s\n", StatsdUrlSecretField, fields[StatsdUrlSecretField])); err != nil {
 			return nil, errors.WithStack(err)
 		}
 	}
 
 	data := map[string][]byte{
-		configFile: endpointBuf.Bytes(),
+		configFile: bytes.NewBufferString(endpointPropertiesBuilder.String()).Bytes(),
 	}
 	return data, nil
 }
@@ -159,28 +169,30 @@ func (g *EndpointSecretGenerator) PrepareFields(ctx context.Context, dk *dynatra
 		return nil, errors.WithMessage(err, "failed to query tokens")
 	}
 
-	if token, ok := tokens.Data[dtclient.DynatraceDataIngestToken]; ok {
-		fields[TokenSecretField] = string(token)
-	}
+	if !dk.FeatureDisableMetadataEnrichment() {
+		if token, ok := tokens.Data[dtclient.DynatraceDataIngestToken]; ok {
+			fields[MetricsTokenSecretField] = string(token)
+		}
 
-	if diUrl, err := dataIngestUrl(dk); err != nil {
-		return nil, err
-	} else {
-		fields[UrlSecretField] = diUrl
+		if dataIngestUrl, err := dataIngestUrlFor(dk); err != nil {
+			return nil, err
+		} else {
+			fields[MetricsUrlSecretField] = dataIngestUrl
+		}
 	}
 
 	if dk.NeedsStatsd() {
 		if statsdUrl, err := statsdIngestUrl(dk); err != nil {
 			return nil, err
 		} else {
-			fields[StatsdIngestUrl] = statsdUrl
+			fields[StatsdUrlSecretField] = statsdUrl
 		}
 	}
 
 	return fields, nil
 }
 
-func dataIngestUrl(dk *dynatracev1beta1.DynaKube) (string, error) {
+func dataIngestUrlFor(dk *dynatracev1beta1.DynaKube) (string, error) {
 	if dk.IsActiveGateMode(dynatracev1beta1.MetricsIngestCapability.DisplayName) {
 		return metricsIngestUrlForClusterActiveGate(dk)
 	} else if len(dk.Spec.APIURL) > 0 {

@@ -39,7 +39,7 @@ webhook:
   limits:
     cpu: 300m
     memory: 128Mi
-  highAvailability: false
+  highAvailability: true
 
 csidriver:
   enabled: false
@@ -52,6 +52,6 @@ csidriver:
 
 securityContextConstraints:
   enabled: true # Only applicable for Openshift
-  
+
 activeGate:
   readOnlyFs: false
