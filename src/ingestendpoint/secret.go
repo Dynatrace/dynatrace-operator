@@ -43,16 +43,16 @@ func NewEndpointSecretGenerator(client client.Client, apiReader client.Reader, n
 
 // GenerateForNamespace creates the data-ingest-endpoint secret for namespace while only having the name of the corresponding dynakube
 // Used by the podInjection webhook in case the namespace lacks the secret.
-func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkName, targetNs string) (bool, error) {
+func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkName, targetNs string) error {
 	log.Info("reconciling data-ingest endpoint secret for", "namespace", targetNs)
 	var dk dynatracev1beta1.DynaKube
 	if err := g.client.Get(ctx, client.ObjectKey{Name: dkName, Namespace: g.namespace}, &dk); err != nil {
-		return false, err
+		return errors.WithStack(err)
 	}
 
 	data, err := g.prepare(ctx, &dk)
 	if err != nil {
-		return false, err
+		return errors.WithStack(err)
 	}
 
 	coreLabels := kubeobjects.NewCoreLabels(dkName, kubeobjects.ActiveGateComponentLabel)
@@ -66,24 +66,30 @@ func (g *EndpointSecretGenerator) GenerateForNamespace(ctx context.Context, dkNa
 		Data: data,
 		Type: corev1.SecretTypeOpaque,
 	}
-	return kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, secret, log)
+	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+
+	return errors.WithStack(secretQuery.CreateOrUpdate(*secret))
 }
 
 // GenerateForDynakube creates/updates the data-ingest-endpoint secret for EVERY namespace for the given dynakube.
 // Used by the dynakube controller during reconcile.
-func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) (bool, error) {
+func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {
 	log.Info("reconciling data-ingest endpoint secret for", "dynakube", dk.Name)
-	anyUpdated := false
 
 	data, err := g.prepare(ctx, dk)
 	if err != nil {
-		return anyUpdated, err
+		return errors.WithStack(err)
 	}
+
 	coreLabels := kubeobjects.NewCoreLabels(dk.Name, kubeobjects.ActiveGateComponentLabel)
 	nsList, err := mapper.GetNamespacesForDynakube(ctx, g.apiReader, dk.Name)
+
 	if err != nil {
-		return anyUpdated, err
+		return errors.WithStack(err)
 	}
+
+	secretQuery := kubeobjects.NewSecretQuery(ctx, g.client, g.apiReader, log)
+
 	for _, targetNs := range nsList {
 		secret := &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{},
@@ -95,14 +101,15 @@ func (g *EndpointSecretGenerator) GenerateForDynakube(ctx context.Context, dk *d
 			Data: data,
 			Type: corev1.SecretTypeOpaque,
 		}
-		if upd, err := kubeobjects.CreateOrUpdateSecretIfNotExists(g.client, g.apiReader, secret, log); err != nil {
-			return upd, err
-		} else if upd {
-			anyUpdated = true
+
+		err = secretQuery.CreateOrUpdate(*secret)
+		if err != nil {
+			return errors.WithStack(err)
 		}
 	}
+
 	log.Info("done updating data-ingest endpoint secrets")
-	return anyUpdated, nil
+	return nil
 }
 
 func (g *EndpointSecretGenerator) RemoveEndpointSecrets(ctx context.Context, dk *dynatracev1beta1.DynaKube) error {

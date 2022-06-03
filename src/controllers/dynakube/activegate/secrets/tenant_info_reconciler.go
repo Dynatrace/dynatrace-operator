@@ -90,7 +90,7 @@ func (r *TenantSecretReconciler) createSecretIfNotExists(agSecretData map[string
 }
 
 func (r *TenantSecretReconciler) updateSecretIfOutdated(secret *corev1.Secret, desiredSecret map[string][]byte) error {
-	if !kubeobjects.IsSecretEqual(secret, desiredSecret) {
+	if !kubeobjects.IsSecretDataEqual(secret, desiredSecret) {
 		return r.updateSecret(secret, desiredSecret)
 	}
 	return nil

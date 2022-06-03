@@ -6,8 +6,7 @@ const (
 	testKey1   = "test-key"
 	testKey2   = "test-name"
 
-	testSecretName = "super-secret"
-	testNamespace  = "test-namespace"
+	testNamespace = "test-namespace"
 
 	testAppName          = "dynatrace-operator"
 	testAppVersion       = "snapshot"
