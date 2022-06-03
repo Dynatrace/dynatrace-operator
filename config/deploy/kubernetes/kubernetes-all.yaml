@@ -1,4 +1,15 @@
 ---
+# Source: dynatrace-operator/templates/Common/webhook/poddisruptionbudget-webhook.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: dynatrace-webhook
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: webhook
+---
 # Source: dynatrace-operator/templates/Common/activegate/serviceaccount-activegate.yaml
 # Copyright 2021 Dynatrace LLC
 
@@ -126,7 +137,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
-  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -4036,7 +4046,7 @@ metadata:
     app.kubernetes.io/version: "0.4.2"
     app.kubernetes.io/component: webhook
 spec:
-  replicas: 1
+  replicas: 2
   revisionHistoryLimit: 1
   selector:
     matchLabels:
@@ -4055,6 +4065,13 @@ spec:
         internal.dynatrace.com/component: webhook
         internal.dynatrace.com/app: webhook
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: "topology.kubernetes.io/zone"
+          whenUnsatisfiable: ScheduleAnyway
+        - maxSkew: 1
+          topologyKey: "kubernetes.io/hostname"
+          whenUnsatisfiable: DoNotSchedule
       volumes:
       - emptyDir: {}
         name: certs-dir
@@ -4226,6 +4243,17 @@ webhooks:
     name: webhook.dynatrace.com
     timeoutSeconds: 2
     sideEffects: None
+---
+# Source: dynatrace-operator/templates/Common/webhook/poddisruptionbudget-webhook.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: dynatrace-webhook
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: webhook
 ---
 # Source: dynatrace-operator/templates/Common/csi/serviceaccount-csi.yaml
 # Copyright 2021 Dynatrace LLC

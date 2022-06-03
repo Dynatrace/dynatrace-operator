@@ -2,10 +2,123 @@ suite: test deployment of webhook
 templates:
   - Common/webhook/deployment-webhook.yaml
 tests:
-  - it: should exist
+  - it: should exist with highavailability mode
     set:
       platform: kubernetes
       operator.image: image-name
+      webhook.highAvailability: true
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: dynatrace-webhook
+      - equal:
+          path: metadata.namespace
+          value: NAMESPACE
+      - equal:
+          path: metadata.labels.[app.kubernetes.io/name]
+          value: RELEASE-NAME
+      - equal:
+          path: metadata.labels.[app.kubernetes.io/component]
+          value: webhook
+      - isNotEmpty:
+          path: metadata.labels.[helm.sh/chart]
+      - equal:
+          path: spec.replicas
+          value: 2
+      - equal:
+          path: spec.revisionHistoryLimit
+          value: 1
+      - equal:
+          path: spec.strategy
+          value:
+            type: RollingUpdate
+      - isNotEmpty:
+          path: spec.selector.matchLabels
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            kubectl.kubernetes.io/default-container: webhook
+      - isNotEmpty:
+          path: spec.template.metadata.labels
+      - equal:
+          path: spec.template.spec
+          value:
+            topologySpreadConstraints:
+              - maxSkew: 1
+                topologyKey: "topology.kubernetes.io/zone"
+                whenUnsatisfiable: ScheduleAnyway
+              - maxSkew: 1
+                topologyKey: "kubernetes.io/hostname"
+                whenUnsatisfiable: DoNotSchedule
+            volumes:
+              - emptyDir: { }
+                name: certs-dir
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/arch
+                          operator: In
+                          values:
+                            - amd64
+                            - arm64
+                        - key: kubernetes.io/os
+                          operator: In
+                          values:
+                            - linux
+            containers:
+              - name: webhook
+                args:
+                  - webhook-server
+                  - --certs-dir=/tmp/k8s-webhook-server/serving-certs/
+                image: image-name
+                imagePullPolicy: Always
+                env:
+                  - name: POD_NAMESPACE
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.namespace
+                  - name: POD_NAME
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: metadata.name
+                readinessProbe:
+                  httpGet:
+                    path: /livez
+                    port: server-port
+                    scheme: HTTPS
+                ports:
+                  - name: server-port
+                    containerPort: 8443
+                resources:
+                  requests:
+                    cpu: 300m
+                    memory: 128Mi
+                  limits:
+                    cpu: 300m
+                    memory: 128Mi
+                volumeMounts:
+                  - name: certs-dir
+                    mountPath: /tmp/k8s-webhook-server/serving-certs/
+                securityContext:
+                  seccompProfile:
+                    type: RuntimeDefault
+                  privileged: false
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsNonRoot: true
+                  capabilities:
+                    drop: [ "all" ]
+            serviceAccountName: dynatrace-webhook
+
+  - it: should exist (without highavailabilty mode)
+    set:
+      platform: kubernetes
+      operator.image: image-name
+      webhook.highAvailability: false
     asserts:
       - isKind:
           of: Deployment
@@ -106,15 +219,16 @@ tests:
                     drop: ["all"]
             serviceAccountName: dynatrace-webhook
 
-  - it: should not have imagePullSecrets defined in spec
+  - it: should not have imagePullSecrets defined in spec (without highavailabilty mode)
     asserts:
       - isNull:
           path: spec.template.spec.imagePullSecrets
 
-  - it: should exist on olm (but different)
+  - it: should exist on olm (but different and without highavailabilty mode)
     set:
       olm: true
       operator.image: image-name
+      webhook.highAvailability: false
     asserts:
       - isKind:
           of: Deployment
