@@ -115,25 +115,14 @@ func ExtractToken(secret *corev1.Secret, key string) (string, error) {
 	return strings.TrimSpace(string(value)), nil
 }
 
-// Deprecated: GetSecret is deprecated, use SecretQuery.Get instead
-func GetSecret(ctx context.Context, apiReader client.Reader, namespacedName types.NamespacedName) (*corev1.Secret, error) {
-	secretQuery := NewSecretQuery(ctx, nil, apiReader, logger.NewDTLogger())
-	secret, err := secretQuery.Get(namespacedName)
-
-	if k8serrors.IsNotFound(err) {
-		return nil, nil
-	}
-
-	return &secret, errors.WithStack(err)
-}
-
 func GetDataFromSecretName(apiReader client.Reader, namespacedName types.NamespacedName, dataKey string) (string, error) {
-	secret, err := GetSecret(context.TODO(), apiReader, namespacedName)
+	query := NewSecretQuery(context.TODO(), nil, apiReader, logger.NewDTLogger())
+	secret, err := query.Get(namespacedName)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
 
-	value, err := ExtractToken(secret, dataKey)
+	value, err := ExtractToken(&secret, dataKey)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
