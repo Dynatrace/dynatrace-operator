@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
 )
 
 const (
-	activeGateType = "ENVIRONMENT"
+	activeGateType    = "ENVIRONMENT"
+	authTokenValidity = time.Hour * 24 * 60
 )
 
 type ActiveGateAuthTokenInfo struct {
@@ -21,6 +23,7 @@ type ActiveGateAuthTokenParams struct {
 	Name           string `json:"name"`
 	SeedToken      bool   `json:"seedToken"`
 	ActiveGateType string `json:"activeGateType"`
+	ExpirationDate string `json:"expirationDate"`
 }
 
 func (dtc *dynatraceClient) GetActiveGateAuthToken(dynakubeName string) (*ActiveGateAuthTokenInfo, error) {
@@ -50,6 +53,7 @@ func (dtc *dynatraceClient) createAuthTokenRequest(dynakubeName string) (*http.R
 		Name:           dynakubeName,
 		SeedToken:      false,
 		ActiveGateType: activeGateType,
+		ExpirationDate: getAuthTokenExpirationDate(),
 	}
 	bodyData, err := json.Marshal(body)
 	if err != nil {
@@ -98,4 +102,8 @@ func (dtc *dynatraceClient) readResponseForActiveGateAuthToken(response []byte) 
 	}
 
 	return agAuthToken, nil
+}
+
+func getAuthTokenExpirationDate() string {
+	return time.Now().Add(authTokenValidity).UTC().Format(time.RFC3339)
 }

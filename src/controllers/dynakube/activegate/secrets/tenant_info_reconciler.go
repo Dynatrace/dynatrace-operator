@@ -26,17 +26,15 @@ type TenantSecretReconciler struct {
 	apiReader client.Reader
 	instance  *dynatracev1beta1.DynaKube
 	scheme    *runtime.Scheme
-	apiToken  string
 	dtc       dtclient.Client
 }
 
-func NewTenantSecretReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, apiToken string, dtc dtclient.Client) *TenantSecretReconciler {
+func NewTenantSecretReconciler(clt client.Client, apiReader client.Reader, scheme *runtime.Scheme, instance *dynatracev1beta1.DynaKube, dtc dtclient.Client) *TenantSecretReconciler {
 	return &TenantSecretReconciler{
 		Client:    clt,
 		apiReader: apiReader,
 		scheme:    scheme,
 		instance:  instance,
-		apiToken:  apiToken,
 		dtc:       dtc,
 	}
 }

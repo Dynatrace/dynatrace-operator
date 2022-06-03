@@ -200,7 +200,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	}
 
 	if !dkState.Instance.FeatureDisableActivegateRawImage() && dkState.Instance.NeedsActiveGate() {
-		err = secrets.NewTenantSecretReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtcReconciler.ApiToken, dtc).
+		err = secrets.NewTenantSecretReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtc).
 			Reconcile()
 		if dkState.Error(err) {
 			log.Error(err, "could not reconcile Dynatrace ActiveGate Tenant secrets")
@@ -209,7 +209,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	}
 
 	if dkState.Instance.UseActiveGateAuthToken() {
-		err = secrets.NewAuthTokenReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtcReconciler.ApiToken, dtc).
+		err = secrets.NewAuthTokenReconciler(controller.client, controller.apiReader, controller.scheme, dkState.Instance, dtc).
 			Reconcile()
 		if dkState.Error(err) {
 			log.Error(err, "could not reconcile Dynatrace ActiveGateAuthToken secrets")

@@ -12,6 +12,8 @@ import (
 	"github.com/pkg/errors"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -26,21 +28,19 @@ func newCertificateSecret() *certificateSecret {
 }
 
 func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, apiReader client.Reader, namespace string) error {
-	// Not linting this line because a lot has already been refactored in the pr this command was added
-	// Should be refactored whenever someone reads this comment
-	//nolint:staticcheck
-	secret, err := kubeobjects.GetSecret(ctx, apiReader, buildSecretName(), namespace)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-	if secret == nil {
-		secret = kubeobjects.NewSecret(buildSecretName(), namespace, map[string][]byte{})
+	query := kubeobjects.NewSecretQuery(ctx, nil, apiReader, log)
+	secret, err := query.Get(types.NamespacedName{Name: buildSecretName(), Namespace: namespace})
+
+	if k8serrors.IsNotFound(err) {
+		certSecret.secret = kubeobjects.NewSecret(buildSecretName(), namespace, map[string][]byte{})
 		certSecret.existsInCluster = false
+	} else if err != nil {
+		return errors.WithStack(err)
 	} else {
+		certSecret.secret = &secret
 		certSecret.existsInCluster = true
 	}
 
-	certSecret.secret = secret
 	return nil
 }
 

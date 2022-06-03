@@ -36,8 +36,8 @@ func TestNewStatefulSetBuilder(t *testing.T) {
 	assert.NotNil(t, stsBuilder)
 	assert.NotNil(t, stsBuilder.DynaKube)
 	assert.NotNil(t, stsBuilder.CapabilityProperties)
-	assert.NotNil(t, stsBuilder.customPropertiesHash)
-	assert.NotEmpty(t, stsBuilder.customPropertiesHash)
+	assert.NotNil(t, stsBuilder.activeGateConfigurationHash)
+	assert.NotEmpty(t, stsBuilder.activeGateConfigurationHash)
 	assert.NotEmpty(t, stsBuilder.kubeSystemUID)
 }
 
@@ -84,7 +84,7 @@ func TestStatefulSetBuilder_Build(t *testing.T) {
 	t.Run(`template has annotations`, func(t *testing.T) {
 		sts, _ := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", testValue, "", "", "", nil, nil, nil))
 		assert.Equal(t, map[string]string{
-			annotationCustomPropsHash: testValue,
+			annotationActiveGateConfigurationHash: testValue,
 		}, sts.Spec.Template.Annotations)
 	})
 }
