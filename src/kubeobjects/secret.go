@@ -27,31 +27,22 @@ func NewSecretQuery(ctx context.Context, kubeClient client.Client, kubeReader cl
 }
 
 func (query SecretQuery) Get(objectKey client.ObjectKey) (corev1.Secret, error) {
-	ctx := query.ctx
-	kubeReader := query.kubeReader
-
 	var secret corev1.Secret
-	err := kubeReader.Get(ctx, objectKey, &secret)
+	err := query.kubeReader.Get(query.ctx, objectKey, &secret)
 
 	return secret, errors.WithStack(err)
 }
 
 func (query SecretQuery) Create(secret corev1.Secret) error {
-	ctx := query.ctx
-	kubeClient := query.kubeClient
-
 	query.log.Info("creating secret", "name", secret.Name, "namespace", secret.Namespace)
 
-	return errors.WithStack(kubeClient.Create(ctx, &secret))
+	return errors.WithStack(query.kubeClient.Create(query.ctx, &secret))
 }
 
 func (query SecretQuery) Update(secret corev1.Secret) error {
-	ctx := query.ctx
-	kubeClient := query.kubeClient
-
 	query.log.Info("updating secret", "name", secret.Name, "namespace", secret.Namespace)
 
-	return errors.WithStack(kubeClient.Update(ctx, &secret))
+	return errors.WithStack(query.kubeClient.Update(query.ctx, &secret))
 }
 
 func (query SecretQuery) CreateOrUpdate(secret corev1.Secret) error {
