@@ -1,3 +1,5 @@
+SHELL = bash
+
 # Running 'make' runs the first rule in the makefile
 # In order to print the help text in this case,
 # 	'default' has been put here even before the includes
