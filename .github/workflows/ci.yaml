@@ -194,6 +194,36 @@ jobs:
       docker_repo_username: ${{ secrets.QUAY_USERNAME }}
       docker_repo_password: ${{ secrets.QUAY_PASSWORD }}
 
+  push-rhcc:
+    name: Push to RHCC
+    needs: [prepare,build-amd64,build-arm64]
+    if: |
+      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
+      (contains(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Push AMD64
+        uses: ./.github/workflows/upload-dockerimage.yaml
+        with:
+          platform: amd64
+          labels: ${{ needs.prepare.outputs.labels }}
+          version: ${{ needs.prepare.outputs.version }}
+          registry: registry.connect.redhat.com
+          repository: dynatrace/dynatrace-operator
+          secrets.docker_repo_username: ${{ secrets.RHCC_USERNAME }}
+          secrets.docker_repo_password: ${{ secrets.RHCC_PASSWORD }}
+      - name: Push ARM64
+        uses: ./.github/workflows/upload-dockerimage.yaml
+        with:
+          platform: arm64
+          labels: ${{ needs.prepare.outputs.labels }}
+          version: ${{ needs.prepare.outputs.version }}
+          registry: registry.connect.redhat.com
+          repository: dynatrace/dynatrace-operator
+          secrets.docker_repo_username: ${{ secrets.RHCC_USERNAME }}
+          secrets.docker_repo_password: ${{ secrets.RHCC_PASSWORD }}
+
+
   create-manifest-for-combined-images:
     name: Combine images
     needs: [prepare,upload-amd64,upload-arm64]
