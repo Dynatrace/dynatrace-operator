@@ -292,8 +292,25 @@ func TestPropagateTLSCert(t *testing.T) {
 		assertIfFileExists(t,
 			runner.fs,
 			filepath.Join(ShareDirMount, "custom.pem"))
-		// TODO: Check content ?
 	})
+}
+
+func TestWriteCurlOptions(t *testing.T) {
+	filesystem := afero.NewMemMapFs()
+	runner := Runner{
+		config: &SecretConfig{InitialConnectRetry: 30},
+		env:    &environment{OneAgentInjected: true},
+		fs:     filesystem,
+	}
+
+	err := runner.configureInstallation()
+
+	assert.NoError(t, err)
+
+	exists, err := afero.Exists(filesystem, "mnt/share/curl_options.conf")
+
+	assert.NoError(t, err)
+	assert.True(t, exists)
 }
 
 func creatTestRunner(t *testing.T) *Runner {

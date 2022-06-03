@@ -619,7 +619,7 @@ func (m *podMutator) ensureDataIngestSecret(ctx context.Context, ns corev1.Names
 
 	var endpointSecret corev1.Secret
 	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtingestendpoint.SecretEndpointName, Namespace: ns.Name}, &endpointSecret); k8serrors.IsNotFound(err) {
-		if _, err := endpointGenerator.GenerateForNamespace(ctx, dkName, ns.Name); err != nil {
+		if err = endpointGenerator.GenerateForNamespace(ctx, dkName, ns.Name); err != nil {
 			podLog.Error(err, "failed to create the data-ingest endpoint secret before pod injection")
 			return err
 		}
@@ -656,7 +656,7 @@ func (m *podMutator) ensureInitSecret(ctx context.Context, ns corev1.Namespace, 
 	var rsp admission.Response
 
 	if err := m.apiReader.Get(ctx, client.ObjectKey{Name: dtwebhook.SecretConfigName, Namespace: ns.Name}, &initSecret); k8serrors.IsNotFound(err) {
-		if _, err := initgeneration.NewInitGenerator(m.client, m.apiReader, m.namespace).GenerateForNamespace(ctx, dk, ns.Name); err != nil {
+		if err = initgeneration.NewInitGenerator(m.client, m.apiReader, m.namespace).GenerateForNamespace(ctx, dk, ns.Name); err != nil {
 			podLog.Error(err, "Failed to create the init secret before pod injection")
 			rsp = silentErrorResponse(m.currentPodName, err)
 			return &rsp
@@ -690,15 +690,14 @@ func updateInstallContainerOneAgent(ic *corev1.Container, number int, name strin
 }
 
 // updateContainerOA sets missing preload Variables
-func updateContainerOneAgent(c *corev1.Container, dk *dynatracev1beta1.DynaKube, pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
+func updateContainerOneAgent(container *corev1.Container, dynakube *dynatracev1beta1.DynaKube, pod *corev1.Pod, deploymentMetadata *deploymentmetadata.DeploymentMetadata) {
 
-	podLog.Info("updating container with missing preload variables", "containerName", c.Name)
+	podLog.Info("updating container with missing preload variables", "containerName", container.Name)
 	installPath := kubeobjects.GetField(pod.Annotations, dtwebhook.AnnotationInstallPath, dtwebhook.DefaultInstallPath)
 
-	addMetadataIfMissing(c, deploymentMetadata)
-	setInitialConnectRetryIfMissing(c, dk)
+	addMetadataIfMissing(container, deploymentMetadata)
 
-	c.VolumeMounts = append(c.VolumeMounts,
+	container.VolumeMounts = append(container.VolumeMounts,
 		corev1.VolumeMount{
 			Name:      oneAgentShareVolumeName,
 			MountPath: "/etc/ld.so.preload",
@@ -711,10 +710,19 @@ func updateContainerOneAgent(c *corev1.Container, dk *dynatracev1beta1.DynaKube,
 		corev1.VolumeMount{
 			Name:      oneAgentShareVolumeName,
 			MountPath: "/var/lib/dynatrace/oneagent/agent/config/container.conf",
-			SubPath:   fmt.Sprintf(standalone.ContainerConfFilenameTemplate, c.Name),
+			SubPath:   fmt.Sprintf(standalone.ContainerConfFilenameTemplate, container.Name),
 		})
-	if dk.HasActiveGateCaCert() {
-		c.VolumeMounts = append(c.VolumeMounts,
+
+	if dynakube.FeatureAgentInitialConnectRetry() > 0 {
+		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+			Name:      oneAgentShareVolumeName,
+			MountPath: "/var/lib/dynatrace/oneagent/agent/customkeys/curl_options.conf",
+			SubPath:   "curl_options.conf",
+		})
+	}
+
+	if dynakube.HasActiveGateCaCert() {
+		container.VolumeMounts = append(container.VolumeMounts,
 			corev1.VolumeMount{
 				Name:      oneAgentShareVolumeName,
 				MountPath: filepath.Join(oneAgentCustomKeysPath, "custom.pem"),
@@ -722,14 +730,14 @@ func updateContainerOneAgent(c *corev1.Container, dk *dynatracev1beta1.DynaKube,
 			})
 	}
 
-	c.Env = append(c.Env,
+	container.Env = append(container.Env,
 		corev1.EnvVar{
 			Name:  "LD_PRELOAD",
 			Value: installPath + "/agent/lib64/liboneagentproc.so",
 		})
 
-	if dk.Spec.Proxy != nil && (dk.Spec.Proxy.Value != "" || dk.Spec.Proxy.ValueFrom != "") {
-		c.Env = append(c.Env,
+	if dynakube.Spec.Proxy != nil && (dynakube.Spec.Proxy.Value != "" || dynakube.Spec.Proxy.ValueFrom != "") {
+		container.Env = append(container.Env,
 			corev1.EnvVar{
 				Name: "DT_PROXY",
 				ValueFrom: &corev1.EnvVarSource{
@@ -743,8 +751,8 @@ func updateContainerOneAgent(c *corev1.Container, dk *dynatracev1beta1.DynaKube,
 			})
 	}
 
-	if dk.Spec.NetworkZone != "" {
-		c.Env = append(c.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: dk.Spec.NetworkZone})
+	if dynakube.Spec.NetworkZone != "" {
+		container.Env = append(container.Env, corev1.EnvVar{Name: "DT_NETWORK_ZONE", Value: dynakube.Spec.NetworkZone})
 	}
 
 }
@@ -758,18 +766,6 @@ func addMetadataIfMissing(c *corev1.Container, deploymentMetadata *deploymentmet
 		corev1.EnvVar{
 			Name:  dynatraceMetadataEnvVarName,
 			Value: deploymentMetadata.AsString(),
-		})
-}
-
-func setInitialConnectRetryIfMissing(c *corev1.Container, dynaKube *dynatracev1beta1.DynaKube) {
-	if dynaKube.FeatureAgentInitialConnectRetry() < 0 || kubeobjects.EnvVarIsIn(c.Env, initialConnectRetryEnvVarName) {
-		return
-	}
-
-	c.Env = append(c.Env,
-		corev1.EnvVar{
-			Name:  initialConnectRetryEnvVarName,
-			Value: strconv.Itoa(dynaKube.FeatureAgentInitialConnectRetry()),
 		})
 }
 

@@ -26,6 +26,9 @@ func newCertificateSecret() *certificateSecret {
 }
 
 func (certSecret *certificateSecret) setSecretFromReader(ctx context.Context, apiReader client.Reader, namespace string) error {
+	// Not linting this line because a lot has already been refactored in the pr this command was added
+	// Should be refactored whenever someone reads this comment
+	//nolint:staticcheck
 	secret, err := kubeobjects.GetSecret(ctx, apiReader, buildSecretName(), namespace)
 	if err != nil {
 		return errors.WithStack(err)
