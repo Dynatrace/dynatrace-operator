@@ -1,5 +1,5 @@
 {{- $platformIsSet := printf "%s" (required "Platform needs to be set to kubernetes, openshift " (include "dynatrace-operator.platformSet" .))}}
-{{ if (.Values.webhook).highAvailability }}
+{{ if and (.Values.webhook).highAvailability (eq (include "dynatrace-operator.partial" .) "false") }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
