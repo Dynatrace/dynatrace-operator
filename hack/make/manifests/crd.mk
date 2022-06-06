@@ -1,6 +1,12 @@
 -include config.mk
 -include ../prerequisites.mk
 
+manifests/version:
+ifneq ($(CHART_VERSION),)
+	sed -i "s/^version: .*/version: $(CHART_VERSION)/" $(HELM_CHART_DEFAULT_DIR)/Chart.yaml
+	sed -i "s/^appVersion: .*/appVersion: $(CHART_VERSION)/" $(HELM_CHART_DEFAULT_DIR)/Chart.yaml
+endif
+
 ## Generates a CRD in config/crd/bases
 manifests/crd/generate: prerequisites/controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./..." output:crd:artifacts:config=config/crd/bases
@@ -14,7 +20,7 @@ manifests/crd/uninstall: prerequisites/kustomize manifests/crd/generate
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
 ## Builds a CRD and puts it with the Helm charts
-manifests/crd/helm: prerequisites/kustomize manifests/crd/generate
+manifests/crd/helm: manifests/version prerequisites/kustomize manifests/crd/generate
 	# Build crd
 	mkdir -p "$(HELM_CRD_DIR)"
 	$(KUSTOMIZE) build config/crd > $(MANIFESTS_DIR)/kubernetes/$(DYNATRACE_OPERATOR_CRD_YAML)
