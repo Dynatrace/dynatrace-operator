@@ -52,15 +52,7 @@ type *Dynatrace API* and use its values in the following commands respectively. 
 assistance please refer
 to [Create user-generated access tokens](https://www.dynatrace.com/support/help/shortlink/token#create-api-token).
 
-Make sure the tokens have the following permissions:
-* API Token
-  * Read Configuration
-  * Write Configuration
-  * Read Entities (if using automatic kubernetes api monitoring)
-  * Installer Download
-  * Access problem and event feed, metrics and topology
-* Data Ingest Token
-  * Ingest Metrics
+The token scopes required by the Dynatrace Operator are documented on our [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#tokens)
 
 ```sh
 $ kubectl -n dynatrace create secret generic dynakube --from-literal="apiToken=DYNATRACE_API_TOKEN" --from-literal="dataIngestToken=DATA_INGEST_TOKEN"
@@ -75,8 +67,8 @@ contain parameters for various Dynatrace capabilities (OneAgent deployment mode,
 >
 > If not specified Dynatrace Operator searches for a secret called like the DynaKube custom resource `.metadata.name`.
 
-The recommended approach is using classic Fullstack injection to roll out Dynatrace to your cluster, available as [classicFullStack sample](config/samples/classicFullStack.yaml).
-In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](config/samples).
+The recommended approach is using classic Fullstack injection to roll out Dynatrace to your cluster, available as [classicFullStack sample](assets/samples/classicFullStack.yaml).
+In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](assets/samples).
 
 Save one of the sample configurations, change the API url to your environment and apply it to your cluster.
 ```sh
