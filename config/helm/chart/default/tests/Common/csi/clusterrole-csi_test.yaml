@@ -9,7 +9,7 @@ tests:
 
   - it: should be built correctly with CSI enabled
     set:
-      operator.image: image-name
+      image: image-name
       csidriver.enabled: true
     asserts:
       - isAPIVersion:
@@ -24,7 +24,7 @@ tests:
 
   - it: should have the correct rules
     set:
-      operator.image: image-name
+      image: image-name
       csidriver.enabled: true
     asserts:
       - equal:

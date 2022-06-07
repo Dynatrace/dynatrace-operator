@@ -33,7 +33,7 @@ tests:
 
   - it: should exist in case of CSI enabled
     set:
-      operator.image: image-name
+      image: image-name
       csidriver.enabled: true
     asserts:
       - isKind:
@@ -51,7 +51,7 @@ tests:
 
   - it: should create correct spec for template of daemonset spec
     set:
-      operator.image: image-name
+      image: image-name
       csidriver.enabled: true
     asserts:
       - isNotEmpty:
