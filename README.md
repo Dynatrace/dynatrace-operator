@@ -20,6 +20,7 @@ our [official help page](https://www.dynatrace.com/support/help/shortlink/kubern
 
 | Dynatrace Operator version | Kubernetes | OpenShift Container Platform |
 |----------------------------|------------|------------------------------|
+| v0.7.0                     | 1.22-1.24  | 4.8-4.10                     |
 | v0.6.0                     | 1.22-1.24  | 4.8-4.10                     |
 | v0.5.1                     | 1.21-1.23  | 4.7-4.9                      |
 | v0.4.2                     | 1.21-1.23  | 4.7-4.9                      |
