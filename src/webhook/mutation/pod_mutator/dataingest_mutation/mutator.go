@@ -72,7 +72,7 @@ func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.M
 		},
 		&endpointSecret)
 	if k8serrors.IsNotFound(err) {
-		_, err := endpointGenerator.GenerateForNamespace(request.Context, request.DynaKube.Name, request.Namespace.Name)
+		err := endpointGenerator.GenerateForNamespace(request.Context, request.DynaKube.Name, request.Namespace.Name)
 		if err != nil {
 			log.Error(err, "failed to create the data-ingest endpoint secret before pod injection")
 			return errors.WithStack(err)

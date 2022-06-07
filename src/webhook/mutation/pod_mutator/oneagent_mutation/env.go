@@ -3,7 +3,6 @@ package oneagent_mutation
 import (
 	"fmt"
 	"path/filepath"
-	"strconv"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube/oneagent/daemonset"
@@ -86,17 +85,5 @@ func addDeploymentMetadataEnv(container *corev1.Container, dynakube dynatracev1b
 		corev1.EnvVar{
 			Name:  dynatraceMetadataEnvVarName,
 			Value: deploymentMetadata.AsString(),
-		})
-}
-
-func addInitialConnectRetryEnv(container *corev1.Container, dynakube dynatracev1beta1.DynaKube) {
-	if kubeobjects.EnvVarIsIn(container.Env, initialConnectRetryEnvVarName) {
-		return
-	}
-
-	container.Env = append(container.Env,
-		corev1.EnvVar{
-			Name:  initialConnectRetryEnvVarName,
-			Value: strconv.Itoa(dynakube.FeatureAgentInitialConnectRetry()),
 		})
 }

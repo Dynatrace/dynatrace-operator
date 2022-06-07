@@ -1,9 +1,11 @@
 package oneagent_mutation
 
 import (
+	"path/filepath"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/standalone"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -26,6 +28,17 @@ func TestAddCertVolumeMounts(t *testing.T) {
 		addCertVolumeMounts(container)
 		require.Len(t, container.VolumeMounts, 1)
 		assert.Equal(t, customCertFileName, container.VolumeMounts[0].SubPath)
+	})
+}
+
+func TestAddCurlOptionsVolumeMount(t *testing.T) {
+	t.Run("should add cert volume mounts", func(t *testing.T) {
+		container := &corev1.Container{}
+
+		addCurlOptionsVolumeMount(container)
+		require.Len(t, container.VolumeMounts, 1)
+		assert.Equal(t, filepath.Join(oneAgentCustomKeysPath, standalone.CurlOptionsFileName), container.VolumeMounts[0].MountPath)
+		assert.Equal(t, standalone.CurlOptionsFileName, container.VolumeMounts[0].SubPath)
 	})
 }
 

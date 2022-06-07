@@ -123,10 +123,10 @@ func TestMutate(t *testing.T) {
 		err := mutator.Mutate(request)
 		require.NoError(t, err)
 
-		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+5)
+		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+4)
 		assert.Len(t, request.Pod.Spec.Volumes, initialNumberOfVolumesLen+3)
 		assert.Equal(t, len(initialInitContainers), len(request.Pod.Spec.InitContainers)) // the init container should be added when in the PodMutator
-		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+4)
+		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+5)
 		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen+1)
 		assert.Equal(t, initialInitContainers, request.Pod.Spec.InitContainers)
 
@@ -172,8 +172,8 @@ func TestReinvoke(t *testing.T) {
 		assert.Len(t, request.Pod.Spec.Volumes, initialNumberOfVolumesLen)
 		assert.Len(t, request.Pod.Annotations, initialAnnotationsLen)
 
-		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+5)
-		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+4)
+		assert.Len(t, request.Pod.Spec.Containers[0].Env, initialNumberOfContainerEnvsLen+4)
+		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+5)
 		assert.Len(t, request.Pod.Spec.InitContainers[1].Env, initialContainersLen*2)
 	})
 }

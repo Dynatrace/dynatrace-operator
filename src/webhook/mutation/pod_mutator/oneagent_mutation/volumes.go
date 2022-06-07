@@ -56,6 +56,14 @@ func addInitVolumeMounts(initContainer *corev1.Container) {
 	)
 }
 
+func addCurlOptionsVolumeMount(container *corev1.Container) {
+	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+		Name:      oneAgentShareVolumeName,
+		MountPath: filepath.Join(oneAgentCustomKeysPath, standalone.CurlOptionsFileName),
+		SubPath:   standalone.CurlOptionsFileName,
+	})
+}
+
 func addInjectionConfigVolume(pod *corev1.Pod) {
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{

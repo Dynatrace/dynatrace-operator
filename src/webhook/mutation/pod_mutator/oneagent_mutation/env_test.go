@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestAddPreloadEnv(t *testing.T) {
@@ -101,22 +100,5 @@ func TestAddDeploymentMetadataEnv(t *testing.T) {
 		require.Len(t, container.Env, 1)
 		assert.Contains(t, container.Env[0].Value, testClusterID)
 		assert.Contains(t, container.Env[0].Value, daemonset.DeploymentTypeApplicationMonitoring)
-	})
-}
-
-func TestInitialConnectRetryEnvIf(t *testing.T) {
-	t.Run("Add initialConnectRetry env", func(t *testing.T) {
-		container := &corev1.Container{}
-		testValue := "42"
-		dynakube := dynatracev1beta1.DynaKube{
-			ObjectMeta: metav1.ObjectMeta{
-				Annotations: map[string]string{
-					dynatracev1beta1.AnnotationFeatureOneAgentInitialConnectRetry: testValue,
-				},
-			},
-		}
-		addInitialConnectRetryEnv(container, dynakube)
-		require.Len(t, container.Env, 1)
-		assert.Equal(t, container.Env[0].Value, testValue)
 	})
 }

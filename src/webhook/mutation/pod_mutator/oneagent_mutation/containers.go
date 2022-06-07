@@ -57,7 +57,7 @@ func (mutator *OneAgentPodMutator) addOneAgentToContainer(pod *corev1.Pod, conta
 	}
 
 	if dynakube.FeatureAgentInitialConnectRetry() > 0 {
-		addInitialConnectRetryEnv(container, dynakube)
+		addCurlOptionsVolumeMount(container)
 	}
 
 	if dynakube.NeedsOneAgentProxy() {
