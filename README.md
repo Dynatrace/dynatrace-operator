@@ -13,8 +13,8 @@ The Dynatrace Operator supports rollout and lifecycle management of various Dyna
   * `kubernetes-monitoring` allows monitoring of the Kubernetes API
   * `metrics-ingest` routes enriched metrics through ActiveGate
 
-For more information please have a look at [our DynaKube Custom Resource examples](assets/samples) and
-our [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/).
+For more information please have a look at [our DynaKube Custom Resource examples](config/samples) and
+our [official help page](https://www.dynatrace.com/support/help/shortlink/kubernetes-hub).
 
 ## Supported platforms
 
@@ -33,7 +33,7 @@ objects like permissions, custom resources and corresponding StatefulSets.
 ### Installation
 
 > For install instructions on Openshift, head to the
-> [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/openshift/set-up-ocp-monitoring#set-up-openshift-monitoring)
+> [official help page](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8)
 
 To create the namespace and apply the operator run the following commands
 
@@ -50,7 +50,7 @@ $ kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/late
 A secret holding tokens for authenticating to the Dynatrace cluster needs to be created upfront. Create access tokens of
 type *Dynatrace API* and use its values in the following commands respectively. For
 assistance please refer
-to [Create user-generated access tokens](https://www.dynatrace.com/support/help/get-started/access-tokens#create-api-token).
+to [Create user-generated access tokens](https://www.dynatrace.com/support/help/shortlink/token#create-api-token).
 
 The token scopes required by the Dynatrace Operator are documented on our [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#tokens)
 
@@ -76,12 +76,12 @@ $ kubectl apply -f cr.yaml
 ```
 
 For detailed instructions see
-our [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/).
+our [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#get-started-with-kubernetesopenshift-monitoring).
 
 
 ## Uninstall dynatrace-operator
 
-> For instructions on how to uninstall the dynatrace-operator on Openshift, head to the [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/openshift/set-up-ocp-monitoring#uninstall-dynatrace-operator)
+> For instructions on how to uninstall the dynatrace-operator on Openshift, head to the [official help page](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8#uninstall-dynatrace-operator)
 
 Clean-up all Dynatrace Operator specific objects:
 ```sh
