@@ -25,7 +25,7 @@ const (
 	tenantSecretVolumeName    = "ag-tenant-secret"
 	authTokenSecretVolumeName = "ag-authtoken-secret"
 
-	annotationCustomPropsHash             = dynatracev1beta1.InternalFlagPrefix + "custom-properties-hash"
+	annotationActiveGateConfigurationHash = dynatracev1beta1.InternalFlagPrefix + "activegate-configuration-hash"
 	annotationActiveGateContainerAppArmor = "container.apparmor.security.beta.kubernetes.io/" + capability.ActiveGateContainerName
 
 	dtServer             = "DT_SERVER"
@@ -51,19 +51,19 @@ const (
 type statefulSetProperties struct {
 	*dynatracev1beta1.DynaKube
 	*dynatracev1beta1.CapabilityProperties
-	customPropertiesHash    string
-	kubeSystemUID           types.UID
-	feature                 string
-	capabilityName          string
-	serviceAccountOwner     string
-	OnAfterCreateListener   []events.StatefulSetEvent
-	initContainersTemplates []corev1.Container
-	containerVolumeMounts   []corev1.VolumeMount
-	volumes                 []corev1.Volume
+	activeGateConfigurationHash string
+	kubeSystemUID               types.UID
+	feature                     string
+	capabilityName              string
+	serviceAccountOwner         string
+	OnAfterCreateListener       []events.StatefulSetEvent
+	initContainersTemplates     []corev1.Container
+	containerVolumeMounts       []corev1.VolumeMount
+	volumes                     []corev1.Volume
 }
 
 func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityProperties *dynatracev1beta1.CapabilityProperties, kubeSystemUID types.UID,
-	customPropertiesHash string, feature string, capabilityName string, serviceAccountOwner string,
+	activeGateHash string, feature string, capabilityName string, serviceAccountOwner string,
 	initContainers []corev1.Container, containerVolumeMounts []corev1.VolumeMount, volumes []corev1.Volume) *statefulSetProperties {
 
 	if serviceAccountOwner == "" {
@@ -71,17 +71,17 @@ func NewStatefulSetProperties(instance *dynatracev1beta1.DynaKube, capabilityPro
 	}
 
 	return &statefulSetProperties{
-		DynaKube:                instance,
-		CapabilityProperties:    capabilityProperties,
-		customPropertiesHash:    customPropertiesHash,
-		kubeSystemUID:           kubeSystemUID,
-		feature:                 feature,
-		capabilityName:          capabilityName,
-		serviceAccountOwner:     serviceAccountOwner,
-		OnAfterCreateListener:   []events.StatefulSetEvent{},
-		initContainersTemplates: initContainers,
-		containerVolumeMounts:   containerVolumeMounts,
-		volumes:                 volumes,
+		DynaKube:                    instance,
+		CapabilityProperties:        capabilityProperties,
+		activeGateConfigurationHash: activeGateHash,
+		kubeSystemUID:               kubeSystemUID,
+		feature:                     feature,
+		capabilityName:              capabilityName,
+		serviceAccountOwner:         serviceAccountOwner,
+		OnAfterCreateListener:       []events.StatefulSetEvent{},
+		initContainersTemplates:     initContainers,
+		containerVolumeMounts:       containerVolumeMounts,
+		volumes:                     volumes,
 	}
 }
 
@@ -104,7 +104,7 @@ func CreateStatefulSet(stsProperties *statefulSetProperties) (*appsv1.StatefulSe
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: appLabels.BuildLabels(),
 					Annotations: map[string]string{
-						annotationCustomPropsHash: stsProperties.customPropertiesHash,
+						annotationActiveGateConfigurationHash: stsProperties.activeGateConfigurationHash,
 					},
 				},
 				Spec: buildTemplateSpec(stsProperties),
