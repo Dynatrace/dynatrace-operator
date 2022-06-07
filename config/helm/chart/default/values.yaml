@@ -52,6 +52,3 @@ csidriver:
 
 securityContextConstraints:
   enabled: true # Only applicable for Openshift
-
-activeGate:
-  readOnlyFs: false
