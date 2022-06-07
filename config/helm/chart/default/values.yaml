@@ -32,6 +32,8 @@ operator:
 
 webhook:
   hostNetwork: false
+  nodeSelector: {}
+  tolerations: []
   apparmor: false
   requests:
     cpu: 300m
@@ -43,6 +45,8 @@ webhook:
 
 csidriver:
   enabled: false
+  nodeSelector: {}
+  tolerations: []
   requests:
     cpu: 300m
     memory: 100Mi

@@ -7,6 +7,30 @@ tests:
       - hasDocuments:
           count: 0
 
+  - it: should have tolerations if set
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      csidriver.tolerations:
+        test-key: test-value
+    asserts:
+    - equal:
+        path: spec.template.spec.tolerations
+        value:
+          test-key: test-value
+
+  - it: should have nodeSelectors if set
+    set:
+      platform: kubernetes
+      csidriver.enabled: true
+      csidriver.nodeSelector:
+        test-key: test-value
+    asserts:
+    - equal:
+        path: spec.template.spec.nodeSelector
+        value:
+          test-key: test-value
+
   - it: should exist in case of CSI enabled
     set:
       operator.image: image-name
