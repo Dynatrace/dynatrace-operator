@@ -111,7 +111,9 @@ app.kubernetes.io/component: oneagent
 Check if default image is used
 */}}
 {{- define "dynatrace-operator.image" -}}
-{{- if .Values.operator.image -}}
+{{- if .Values.image -}}
+	{{- printf "%s" .Values.image -}}
+{{- else if .Values.operator.image -}} # Left in for backwards compativility
 	{{- printf "%s" .Values.operator.image -}}
 {{- else -}}
 	{{- if eq .Values.platform "google" -}}
