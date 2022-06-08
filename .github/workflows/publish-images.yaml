@@ -41,7 +41,7 @@ jobs:
           labels: ${{ needs.prepare.outputs.labels }}
           image-tag: ${{ needs.prepare.outputs.version }}
   push:
-    name: Push images
+    name: Push and create manifests
     environment: Release
     needs: [prepare,build]
     runs-on: ubuntu-latest
@@ -67,7 +67,6 @@ jobs:
             password: ${{ secrets.DOCKERHUB_PASSWORD }}
     steps:
       - name: Push ${{matrix.platform}} to ${{matrix.registry}}
-        if: ${{ matrix.platform != 'gcr' }}
         uses: ./.github/workflows/upload-dockerimage.yaml
         with:
           platform: ${{matrix.platform}}
@@ -77,68 +76,8 @@ jobs:
           repository: ${{matrix.repository}}
           secrets.docker_repo_username: ${{matrix.username}}
           secrets.docker_repo_password: ${{matrix.password}}
-      - name: Push ${{matrix.platform}} to ${{matrix.registry}}
-        if: ${{ matrix.platform == 'gcr' }}
-        env:
-          # GCR does not have the "v" prefix
-          RAW_VERSION: ${{ needs.prepare.outputs.version }}
-          VERSION: ${RAW_VERSION#"v"}
-        uses: ./.github/workflows/upload-dockerimage.yaml
-        with:
-          platform: ${{matrix.platform}}
-          labels: ${{ needs.prepare.outputs.labels }}
-          version: ${VERSION}
-          registry: ${{matrix.url}}
-          repository: ${{matrix.repository}}
-          secrets.docker_repo_username: ${{matrix.username}}
-          secrets.docker_repo_password: ${{matrix.password}}
-
-  manifest:
-    name: Create manifests
-    needs: [prepare, push]
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        registry: [ rhcc, gcr, dockerhub ]
-        include:
-          - registry: rhcc
-            url: registry.connect.redhat.com
-            repository: dynatrace/dynatrace-operator
-            username: ${{ secrets.RHCC_USERNAME }}
-            password: ${{ secrets.RHCC_PASSWORD }}
-          - registry: gcr
-            url: gcr.io
-            repository: dynatrace-marketplace-prod/dynatrace-operator
-            username: ${{ secrets.GCR_USERNAME }}
-            password: ${{ secrets.GCR_PASSWORD }}
-          - registry: dockerhub
-            url: docker.io
-            repository: dynatrace/dynatrace-operator
-            username: ${{ secrets.DOCKERHUB_USERNAME }}
-            password: ${{ secrets.DOCKERHUB_PASSWORD }}
-    steps:
-      - name: Login to ${{matrix.repository}}
-        uses: docker/login-action@v1
-        with:
-          registry: ${{ matrix.url }}
-          username: ${{ matrix.username }}
-          password: ${{ matrix.password }}
-      - name: Create manifest for ${{matrix.repository}}
-        if: ${{ matrix.platform != 'gcr' }}
+      - name: Create manifest for on ${{matrix.registry}}
         env:
           IMAGE: ${{matrix.url}}/${{matrix.repository}}
         run: |
-          docker pull ${{matrix.url}}/${{matrix.repository}}:${{ needs.prepare.outputs.version }}-amd64
-          docker pull ${{matrix.url}}/${{matrix.repository}}:${{ needs.prepare.outputs.version }}-arm64
           hack/build/ci/create-manifest.sh "${IMAGE}" "${{ needs.prepare.outputs.version }}" true
-      - name: Create manifest for ${{matrix.repository}}
-        if: ${{ matrix.platform == 'gcr' }}
-        env:
-          IMAGE: ${{matrix.url}}/${{matrix.repository}}
-          # GCR does not have the "v" prefix
-          RAW_VERSION: ${{ needs.prepare.outputs.version }}
-          VERSION: ${RAW_VERSION#"v"}
-        run: |
-          docker pull ${{matrix.url}}/${{matrix.repository}}:${VERSION}-amd64
-          docker pull ${{matrix.url}}/${{matrix.repository}}:${VERSION}-arm64
-          hack/build/ci/create-manifest.sh "${IMAGE}" "${VERSION}" true
