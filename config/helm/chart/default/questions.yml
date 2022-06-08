@@ -11,7 +11,7 @@ questions:
     type: boolean
     group: "Global Configuration"
 
-  - variable: operator.image
+  - variable: image
     label: "Set a custom image for operator components"
     description: "Set a custom image for operator. Defaults to docker.io/dynatrace/dynatrace-operator"
     default: ""
