@@ -3,29 +3,164 @@ categories:
   - Monitoring
 questions:
 
-  - variable: crdApplied
-    label: "CRD manually applied"
-    description: "Please make sure you have applied the latest CRD by following the instructions in the description above."
-    default: ""
-    required: true
-    type: enum
-    options:
-      - "yes"
-    group: "Prerequisites"
-
   #################### Global Configuration ####################
+  - variable: installCRD
+    label: "Install Custom Resource Definitions"
+    description: "Installs the Custom Resource Definitions for the Dynakube. This is recommended if you haven't installed it manually yet. Default: true"
+    default: true
+    type: boolean
+    group: "Global Configuration"
+
   - variable: operator.image
-    label: "Set a custom image for operator"
-    description: "Optional: Set a custom image for operator. Defaults to docker.io/dynatrace/dynatrace-operator"
+    label: "Set a custom image for operator components"
+    description: "Set a custom image for operator. Defaults to docker.io/dynatrace/dynatrace-operator"
     default: ""
     type: string
     group: "Global Configuration"
-    show_if: "crdApplied=yes"
 
   - variable: operator.customPullSecret
     label: "Set a custom pull secret for operator image"
-    description: "Optional: Set a custom pull secret for the operator image"
+    description: "Set a custom pull secret for the operator image"
     default: ""
     type: string
     group: "Global Configuration"
-    show_if: "crdApplied=yes"
+
+  #################### Operator Deployment Configuration ####################
+  - variable: operator.nodeSelector
+    label: "Assign the Dynatrace Operator's pod to certain nodes"
+    description: "Defines a NodeSelector to customize to which nodes the Dynatrace Operator can be deployed on - Please edit as Yaml for the best experience - see https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector"
+    default: ""
+    type: string
+    group: "Operator Deployment Configuration"
+
+  - variable: operator.tolerations
+    label: "Custom tolerations for the Dynatrace Operator's pod"
+    description: "Defines custom tolerations to the Dynatrace Operator - Please edit as Yaml for the best experience - see https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/"
+    default: ""
+    type: string
+    group: "Operator Deployment Configuration"
+
+  - variable: operator.apparmor
+    label: "Enable AppArmor for the Dynatrace Operator's pod"
+    description: "Adds AppArmor security annotations to the Dynatrace Operator's pod. Default: false"
+    default: false
+    type: boolean
+    group: "Operator Deployment Configuration"
+
+  - variable: operator.requests.cpu
+    label: "CPU resource requests settings for Dynatrace Operator's pods"
+    description: "The minimum amount of CPU resources that the Dynatrace Operator's pods should request. Affects scheduling. Default: 50m"
+    default: "50m"
+    type: string
+    group: "Operator Deployment Configuration"
+
+  - variable: operator.requests.memory
+    label: "Memory resource requests settings for Dynatrace Operator's pods"
+    description: "The minimum amount of memory that the Dynatrace Operator's pods should request. Affects scheduling. Default: 64Mi"
+    default: "64Mi"
+    type: string
+    group: "Operator Deployment Configuration"
+
+  - variable: operator.limits.cpu
+    label: "CPU resource limits settings for Dynatrace Operator's pods"
+    description: "The maximum amount of CPU resources that the Dynatrace Operator's pods can use. Default: 100m"
+    default: "100m"
+    type: string
+    group: "Operator Deployment Configuration"
+
+  - variable: operator.limits.memory
+    label: "Memory resource limits settings for Dynatrace Operator's pods"
+    description: "The maximum amount of memory that the Dynatrace Operator's pods can use. Pod restarted if exceeded. Default: 128Mi"
+    default: "128Mi"
+    type: string
+    group: "Operator Deployment Configuration"
+
+
+  #################### Webhook Deployment Configuration ####################
+
+  - variable: webhook.apparmor
+    label: "Enable AppArmor for the Dynatrace Webhook's pod"
+    description: "Adds AppArmor security annotations to the Dynatrace Webhook's pod. Default: false"
+    default: false
+    type: boolean
+    group: "Webhook Deployment Configuration"
+
+  - variable: webhook.highAvailability
+    label: "Enable high availability for the Dynatrace Webhook's pod"
+    description: "Adds topologySpreadConstraints and increases the replicas to 2 for the Dynatrace Webhook's pod. Default: false"
+    default: false
+    type: boolean
+    group: "Webhook Deployment Configuration"
+
+  - variable: webhook.hostNetwork
+    label: "Enable hostNetwork for the Dynatrace Webhook's pod"
+    description: "Enables hostNetwork for the Dynatrace Webhook's pod. Default: false"
+    default: false
+    type: boolean
+    group: "Webhook Deployment Configuration"
+
+  - variable: webhook.requests.cpu
+    label: "CPU resource requests settings for Dynatrace Webhook's pods"
+    description: "The minimum amount of CPU resources that the Dynatrace Webhook's pods should request. Affects scheduling. Default: 300m"
+    default: "300m"
+    type: string
+    group: "Webhook Deployment Configuration"
+
+  - variable: webhook.requests.memory
+    label: "Memory resource requests settings for Dynatrace Webhook's pods"
+    description: "The minimum amount of memory that the Dynatrace Webhook's pods should request. Affects scheduling. Default: 128Mi"
+    default: "128Mi"
+    type: string
+    group: "Webhook Deployment Configuration"
+
+  - variable: webhook.limits.cpu
+    label: "CPU resource limits settings for Dynatrace Webhook's pods"
+    description: "The maximum amount of CPU resources that the Dynatrace Webhook's pods can use. Default: 300m"
+    default: "300m"
+    type: string
+    group: "Webhook Deployment Configuration"
+
+  - variable: webhook.limits.memory
+    label: "Memory resource limits settings for Dynatrace Webhook's pods"
+    description: "The maximum amount of memory that the Dynatrace Webhook's pods can use. Pod restarted if exceeded. Default: 128Mi"
+    default: "128Mi"
+    type: string
+    group: "Webhook Deployment Configuration"
+
+
+  #################### CSI Driver Deployment Configuration ####################
+
+  - variable: csidriver.enabled
+    label: "Deploy the Dynatrace CSI Driver"
+    description: "Deploys the Dynatrace CSI Driver via a DaemonSet to enable Cloud Native FullStack. Default: false"
+    default: false
+    type: boolean
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.requests.cpu
+    label: "CPU resource requests settings for Dynatrace CSI Driver's pods"
+    description: "The minimum amount of CPU resources that the Dynatrace CSI Driver's pods should request. Affects scheduling. Default: 300m"
+    default: "300m"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.requests.memory
+    label: "Memory resource requests settings for Dynatrace CSI Driver's pods"
+    description: "The minimum amount of memory that the Dynatrace CSI Driver's pods should request. Affects scheduling. Default: 100Mi"
+    default: "100Mi"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.limits.cpu
+    label: "CPU resource limits settings for Dynatrace CSI Driver's pods"
+    description: "The maximum amount of CPU resources that the Dynatrace CSI Driver's pods can use. Default: 300m"
+    default: "300m"
+    type: string
+    group: "CSI Driver Deployment Configuration"
+
+  - variable: csidriver.limits.memory
+    label: "Memory resource limits settings for Dynatrace CSI Driver's pods"
+    description: "The maximum amount of memory that the Dynatrace CSI Driver's pods can use. Pod restarted if exceeded. Default: 100Mi"
+    default: "100Mi"
+    type: string
+    group: "CSI Driver Deployment Configuration"

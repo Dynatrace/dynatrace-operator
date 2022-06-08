@@ -1,4 +1,4 @@
 resources:
 - ../default
-- ../samples
+- ../../assets/samples
 - ../scorecard

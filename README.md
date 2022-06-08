@@ -14,7 +14,7 @@ The Dynatrace Operator supports rollout and lifecycle management of various Dyna
   * `metrics-ingest` routes enriched metrics through ActiveGate
 
 For more information please have a look at [our DynaKube Custom Resource examples](config/samples) and
-our [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/).
+our [official help page](https://www.dynatrace.com/support/help/shortlink/kubernetes-hub).
 
 ## Supported platforms
 
@@ -33,7 +33,7 @@ objects like permissions, custom resources and corresponding StatefulSets.
 ### Installation
 
 > For install instructions on Openshift, head to the
-> [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/openshift/set-up-ocp-monitoring#set-up-openshift-monitoring)
+> [official help page](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8)
 
 To create the namespace and apply the operator run the following commands
 
@@ -50,17 +50,9 @@ $ kubectl apply -f https://github.com/Dynatrace/dynatrace-operator/releases/late
 A secret holding tokens for authenticating to the Dynatrace cluster needs to be created upfront. Create access tokens of
 type *Dynatrace API* and use its values in the following commands respectively. For
 assistance please refer
-to [Create user-generated access tokens](https://www.dynatrace.com/support/help/get-started/access-tokens#create-api-token).
+to [Create user-generated access tokens](https://www.dynatrace.com/support/help/shortlink/token#create-api-token).
 
-Make sure the tokens have the following permissions:
-* API Token
-  * Read Configuration
-  * Write Configuration
-  * Read Entities (if using automatic kubernetes api monitoring)
-  * Installer Download
-  * Access problem and event feed, metrics and topology
-* Data Ingest Token
-  * Ingest Metrics
+The token scopes required by the Dynatrace Operator are documented on our [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#tokens)
 
 ```sh
 $ kubectl -n dynatrace create secret generic dynakube --from-literal="apiToken=DYNATRACE_API_TOKEN" --from-literal="dataIngestToken=DATA_INGEST_TOKEN"
@@ -75,8 +67,8 @@ contain parameters for various Dynatrace capabilities (OneAgent deployment mode,
 >
 > If not specified Dynatrace Operator searches for a secret called like the DynaKube custom resource `.metadata.name`.
 
-The recommended approach is using classic Fullstack injection to roll out Dynatrace to your cluster, available as [classicFullStack sample](config/samples/classicFullStack.yaml).
-In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](config/samples).
+The recommended approach is using classic Fullstack injection to roll out Dynatrace to your cluster, available as [classicFullStack sample](assets/samples/classicFullStack.yaml).
+In case you want to have adjustments please have a look at [our DynaKube Custom Resource examples](assets/samples).
 
 Save one of the sample configurations, change the API url to your environment and apply it to your cluster.
 ```sh
@@ -84,12 +76,12 @@ $ kubectl apply -f cr.yaml
 ```
 
 For detailed instructions see
-our [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/).
+our [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#get-started-with-kubernetesopenshift-monitoring).
 
 
 ## Uninstall dynatrace-operator
 
-> For instructions on how to uninstall the dynatrace-operator on Openshift, head to the [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/openshift/set-up-ocp-monitoring#uninstall-dynatrace-operator)
+> For instructions on how to uninstall the dynatrace-operator on Openshift, head to the [official help page](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8#uninstall-dynatrace-operator)
 
 Clean-up all Dynatrace Operator specific objects:
 ```sh

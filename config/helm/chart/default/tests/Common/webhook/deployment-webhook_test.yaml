@@ -114,6 +114,28 @@ tests:
                     drop: [ "all" ]
             serviceAccountName: dynatrace-webhook
 
+  - it: should have tolerations if set
+    set:
+      platform: kubernetes
+      webhook.tolerations:
+        test-key: test-value
+    asserts:
+    - equal:
+        path: spec.template.spec.tolerations
+        value:
+          test-key: test-value
+
+  - it: should have nodeSelectors if set
+    set:
+      platform: kubernetes
+      webhook.nodeSelector:
+        test-key: test-value
+    asserts:
+    - equal:
+        path: spec.template.spec.nodeSelector
+        value:
+          test-key: test-value
+
   - it: should exist (without highavailabilty mode)
     set:
       platform: kubernetes

@@ -28,7 +28,7 @@ jobs:
       - name: Download dependencies
         id: helm-unittest-download
         run: |
-          helm plugin install https://github.com/quintush/helm-unittest --version 0.2.8
+          hack/build/ci/install-helm-dependencies.sh
       - name: Run Unit tests
         id: helm-unittest
         run: |
@@ -62,13 +62,12 @@ jobs:
       - name: Download dependencies
         id: depdownload
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libdevmapper-dev libbtrfs-dev libgpgme-dev
+          hack/build/ci/install-cgo-dependencies.sh
+          hack/build/ci/install-kubebuilder.sh
       - name: Run Unit tests
         id: unittest
         run: |
-          chmod +x ./hack/build/test.sh
-          ./hack/build/test.sh
+          hack/build/ci/run-unit-tests.sh
 
   linting:
     name: Run linting
@@ -79,8 +78,7 @@ jobs:
       - name: Download dependencies
         id: depdownload
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libdevmapper-dev libbtrfs-dev libgpgme-dev
+          hack/build/ci/install-cgo-dependencies.sh
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
@@ -91,50 +89,26 @@ jobs:
     name: Prepare properties
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Prepare build parameters
         id: prep
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            VERSION="snapshot-$(echo ${GITHUB_HEAD_REF} | sed 's#[^a-zA-Z0-9_-]#-#g')"
-          else
-            if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-              VERSION="${GITHUB_REF_NAME}"
-            elif [[ "${GITHUB_REF_NAME}" == "master" ]]; then
-              VERSION="snapshot"
-            else
-              VERSION="snapshot-$(echo ${GITHUB_REF_NAME} | sed 's#[^a-zA-Z0-9_-]#-#g')"
-            fi
-          fi
-
-          LABELS=""
-          if [[ "${GITHUB_REF_TYPE}" != "tag" ]] && [[ ! "${GITHUB_REF_NAME}" =~ ^release-* ]]; then
-            LABELS="quay.expires-after=10d"
-          fi
-
-          build_date="$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")"
-          go_build_args=(
-            "-ldflags=-X 'github.com/Dynatrace/dynatrace-operator/src/version.Version=${VERSION}'"
-            "-X 'github.com/Dynatrace/dynatrace-operator/src/version.Commit=${GITHUB_SHA}'"
-            "-X 'github.com/Dynatrace/dynatrace-operator/src/version.BuildDate=${build_date}'"
-            "-s -w"
-          )
-
-          # Set output parameters.
-          echo ::set-output name=goargs::"${go_build_args[@]}"
-
-          echo ::set-output name=labels::${LABELS}
-          echo ::set-output name=version::${VERSION}
+          hack/build/ci/prepare-build-variables.sh
       - name: Prepare build parameters
         id: prepenv
         run: |
           # Set output parameters.
+          # Reason: global envs do not work in workflow calls
+          # More info: https://github.com/actions/runner/issues/480#issuecomment-1021278915
+
           echo ::set-output name=goversion::${{ env.GO_VERSION }}
           echo ::set-output name=registry::${{ env.DOCKER_REGISTRY }}
           echo ::set-output name=repository::${{ env.DOCKER_REPOSITORY }}
     outputs:
-      labels: ${{ steps.prep.outputs.labels }}
-      version: ${{ steps.prep.outputs.version }}
-      goargs: ${{ steps.prep.outputs.goargs }}
+      labels: ${{ steps.prep.outputs.docker_image_labels }}
+      version: ${{ steps.prep.outputs.docker_image_tag }}
+      goargs: ${{ steps.prep.outputs.go_build_args }}
       goversion: ${{ steps.prepenv.outputs.goversion }}
       registry: ${{ steps.prepenv.outputs.registry }}
       repository: ${{ steps.prepenv.outputs.repository }}
@@ -291,6 +265,8 @@ jobs:
     env:
       IMAGE_QUAY: ${{ needs.prepare.outputs.registry }}/${{ needs.prepare.outputs.repository }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Login to Quay
         uses: docker/login-action@v1
         with:
@@ -299,9 +275,7 @@ jobs:
           password: ${{ secrets.QUAY_PASSWORD }}
       - name: Create manifest
         run: |
-          echo "we build for arm too => combine images"
-          docker manifest create ${IMAGE_QUAY}:${{ needs.prepare.outputs.version }} ${IMAGE_QUAY}:${{ needs.prepare.outputs.version }}-arm64 ${IMAGE_QUAY}:${{ needs.prepare.outputs.version }}-amd64
-          docker manifest push ${IMAGE_QUAY}:${{ needs.prepare.outputs.version }}
+          hack/build/ci/create-manifest.sh "${IMAGE_QUAY}" "${{ needs.prepare.outputs.version }}" true
 
   create-manifest-for-amd:
     name: Create manifest
@@ -313,6 +287,8 @@ jobs:
     env:
       IMAGE_QUAY: ${{ needs.prepare.outputs.registry }}/${{ needs.prepare.outputs.repository }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Login to Quay
         uses: docker/login-action@v1
         with:
@@ -321,7 +297,4 @@ jobs:
           password: ${{ secrets.QUAY_PASSWORD }}
       - name: Create manifest
         run: |
-          echo "we build for amd only"
-          docker manifest create ${IMAGE_QUAY}:${{ needs.prepare.outputs.version }} ${IMAGE_QUAY}:${{ needs.prepare.outputs.version }}-amd64
-          docker manifest push ${IMAGE_QUAY}:${{ needs.prepare.outputs.version }}
-
+          hack/build/ci/create-manifest.sh "${IMAGE_QUAY}" "${{ needs.prepare.outputs.version }}" false

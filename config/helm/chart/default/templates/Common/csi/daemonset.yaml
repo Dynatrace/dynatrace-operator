@@ -205,6 +205,12 @@ spec:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
           type: DirectoryOrCreate
         name: dynatrace-oneagent-data-dir
+      {{- if .Values.csidriver.nodeSelector }}
+      nodeSelector: {{- toYaml .Values.csidriver.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.csidriver.tolerations }}
+      tolerations: {{- toYaml .Values.csidriver.tolerations | nindent 8 }}
+      {{- end }}
   updateStrategy:
     rollingUpdate:
       maxUnavailable: 1
