@@ -299,7 +299,7 @@ jobs:
 
   manifest-dockerhub:
     name: Manifest for Dockerhub
-    needs: [prepare, push-rhcc]
+    needs: [prepare, push-dockerhub]
     runs-on: ubuntu-latest
     if: |
       (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
