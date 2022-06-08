@@ -170,6 +170,7 @@ jobs:
 
   push-rhcc:
     name: Push to RHCC
+    environment: Release
     needs: [prepare,build-amd64,build-arm64]
     if: |
       (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
@@ -199,6 +200,7 @@ jobs:
 
   manifest-rhcc:
     name: Manifest for RHCC
+    environment: Release
     needs: [prepare, push-rhcc]
     runs-on: ubuntu-latest
     if: |
@@ -219,6 +221,7 @@ jobs:
 
   push-gcr:
     name: Push to GCR
+    environment: Release
     needs: [prepare,build-amd64,build-arm64]
     if: |
       (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
@@ -248,6 +251,7 @@ jobs:
 
   manifest-gcr:
     name: Manifest for GCR
+    environment: Release
     needs: [prepare, push-gcr]
     runs-on: ubuntu-latest
     if: |
@@ -270,6 +274,7 @@ jobs:
 
   push-dockerhub:
     name: Push to Dockerhub
+    environment: Release
     needs: [prepare,build-amd64,build-arm64]
     if: |
       (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
@@ -299,6 +304,7 @@ jobs:
 
   manifest-dockerhub:
     name: Manifest for Dockerhub
+    environment: Release
     needs: [prepare, push-dockerhub]
     runs-on: ubuntu-latest
     if: |
