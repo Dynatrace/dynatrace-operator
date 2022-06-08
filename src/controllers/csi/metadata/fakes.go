@@ -9,6 +9,7 @@ var (
 		TenantUUID:    "asc1",
 		LatestVersion: "123",
 		Name:          "dk1",
+		UsesImage:     true,
 	}
 	testDynakube2 = Dynakube{
 		TenantUUID:    "asc2",
@@ -50,6 +51,7 @@ func emptyMemoryDB() *SqliteAccess {
 func FakeMemoryDB() *SqliteAccess {
 	db := SqliteAccess{}
 	db.Setup(":memory:")
+	_ = db.createTables()
 	return &db
 }
 

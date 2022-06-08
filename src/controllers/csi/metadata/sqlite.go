@@ -44,13 +44,13 @@ const (
 	// ALTER
 	dynakubesAlterStatementUsesImageColumn = `
 	ALTER TABLE dynakubes
-	ADD COLUMN uses_image BOOLEAN NOT NULL DEFAULT false;
+	ADD COLUMN UsesImage BOOLEAN NOT NULL DEFAULT false;
 	`
 
 	// INSERT
 	insertDynakubeStatement = `
-	INSERT INTO dynakubes (Name, TenantUUID, LatestVersion)
-	VALUES (?,?,?);
+	INSERT INTO dynakubes (Name, TenantUUID, LatestVersion, UsesImage)
+	VALUES (?,?,?,?);
 	`
 
 	insertVolumeStatement = `
@@ -190,9 +190,9 @@ func (a *SqliteAccess) setupDynakubeTable() error {
 		return fmt.Errorf("couldn't create the table %s, err: %s", dynakubesTableName, err)
 	}
 
-	// errors if column already exists
 	if _, err := a.conn.Exec(dynakubesAlterStatementUsesImageColumn); err != nil {
-		return fmt.Errorf("couldn't add uses image column to table %s, err: %s", dynakubesTableName, err)
+		// statement errors if column already exists, swallow error
+		log.Info("column UsesImage already exists")
 	}
 	return nil
 }
@@ -224,7 +224,7 @@ func (a *SqliteAccess) InsertDynakube(dynakube *Dynakube) error {
 
 // UpdateDynakube updates an existing Dynakube by matching the name
 func (a *SqliteAccess) UpdateDynakube(dynakube *Dynakube) error {
-	err := a.executeStatement(updateDynakubeStatement, dynakube.LatestVersion, dynakube.TenantUUID, dynakube.Name, dynakube.UsesImage)
+	err := a.executeStatement(updateDynakubeStatement, dynakube.LatestVersion, dynakube.TenantUUID, dynakube.UsesImage, dynakube.Name)
 	if err != nil {
 		err = fmt.Errorf("couldn't update dynakube, tenantUUID '%s', latest version '%s', name '%s', uses image '%t', err: %s",
 			dynakube.TenantUUID,
