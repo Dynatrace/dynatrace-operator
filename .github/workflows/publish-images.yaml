@@ -67,27 +67,11 @@ jobs:
             password: ${{ secrets.DOCKERHUB_PASSWORD }}
     steps:
       - name: Push ${{matrix.platform}} to ${{matrix.registry}}
-        if: ${{ matrix.platform != 'gcr' }}
         uses: ./.github/workflows/upload-dockerimage.yaml
         with:
           platform: ${{matrix.platform}}
           labels: ${{ needs.prepare.outputs.labels }}
           version: ${{ needs.prepare.outputs.version }}
-          registry: ${{matrix.url}}
-          repository: ${{matrix.repository}}
-          secrets.docker_repo_username: ${{matrix.username}}
-          secrets.docker_repo_password: ${{matrix.password}}
-      - name: Push ${{matrix.platform}} to ${{matrix.registry}}
-        if: ${{ matrix.platform == 'gcr' }}
-        env:
-          # GCR does not have the "v" prefix
-          RAW_VERSION: ${{ needs.prepare.outputs.version }}
-          VERSION: ${RAW_VERSION#"v"}
-        uses: ./.github/workflows/upload-dockerimage.yaml
-        with:
-          platform: ${{matrix.platform}}
-          labels: ${{ needs.prepare.outputs.labels }}
-          version: ${VERSION}
           registry: ${{matrix.url}}
           repository: ${{matrix.repository}}
           secrets.docker_repo_username: ${{matrix.username}}
@@ -124,21 +108,11 @@ jobs:
           username: ${{ matrix.username }}
           password: ${{ matrix.password }}
       - name: Create manifest for ${{matrix.repository}}
-        if: ${{ matrix.platform != 'gcr' }}
         env:
           IMAGE: ${{matrix.url}}/${{matrix.repository}}
-        run: |
+        # Simply pulls, otherwise the artifact would need to be re-downloaded and re-tagged correctly which would mean
+        # two more steps instead of two more lines
+        run: |          
           docker pull ${{matrix.url}}/${{matrix.repository}}:${{ needs.prepare.outputs.version }}-amd64
           docker pull ${{matrix.url}}/${{matrix.repository}}:${{ needs.prepare.outputs.version }}-arm64
           hack/build/ci/create-manifest.sh "${IMAGE}" "${{ needs.prepare.outputs.version }}" true
-      - name: Create manifest for ${{matrix.repository}}
-        if: ${{ matrix.platform == 'gcr' }}
-        env:
-          IMAGE: ${{matrix.url}}/${{matrix.repository}}
-          # GCR does not have the "v" prefix
-          RAW_VERSION: ${{ needs.prepare.outputs.version }}
-          VERSION: ${RAW_VERSION#"v"}
-        run: |
-          docker pull ${{matrix.url}}/${{matrix.repository}}:${VERSION}-amd64
-          docker pull ${{matrix.url}}/${{matrix.repository}}:${VERSION}-arm64
-          hack/build/ci/create-manifest.sh "${IMAGE}" "${VERSION}" true
