@@ -50,7 +50,6 @@ func emptyMemoryDB() *SqliteAccess {
 func FakeMemoryDB() *SqliteAccess {
 	db := SqliteAccess{}
 	db.Setup(":memory:")
-	_ = db.createTables()
 	return &db
 }
 

@@ -32,7 +32,7 @@ func TestNewBindConfig(t *testing.T) {
 
 		db := metadata.FakeMemoryDB()
 
-		db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion))
+		db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, false))
 
 		bindCfg, err := NewBindConfig(context.TODO(), db, volumeCfg)
 

@@ -11,14 +11,15 @@ type Dynakube struct {
 	Name          string `json:"name"`
 	TenantUUID    string `json:"tenantUUID"`
 	LatestVersion string `json:"latestVersion"`
+	UsesImage     bool   `json:"usesImage"`
 }
 
 // NewDynakube returns a new metadata.Dynakube if all fields are set.
-func NewDynakube(dynakubeName, tenantUUID, latestVersion string) *Dynakube {
+func NewDynakube(dynakubeName, tenantUUID, latestVersion string, usesImage bool) *Dynakube {
 	if tenantUUID == "" || dynakubeName == "" {
 		return nil
 	}
-	return &Dynakube{dynakubeName, tenantUUID, latestVersion}
+	return &Dynakube{dynakubeName, tenantUUID, latestVersion, usesImage}
 }
 
 type Volume struct {
