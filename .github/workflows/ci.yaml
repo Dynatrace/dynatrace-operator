@@ -197,6 +197,26 @@ jobs:
           secrets.docker_repo_username: ${{ secrets.RHCC_USERNAME }}
           secrets.docker_repo_password: ${{ secrets.RHCC_PASSWORD }}
 
+  manifest-rhcc:
+    name: Manifest for RHCC
+    needs: [prepare, push-rhcc]
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
+      (contains(github.ref, 'refs/tags/v')
+    env:
+      IMAGE: registry.connect.redhat.com/dynatrace/dynatrace-operator
+    steps:
+      - name: Login
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ needs.prepare.outputs.registry }}
+          username: ${{ secrets.RHCC_USERNAME }}
+          password: ${{ secrets.RHCC_PASSWORD }}
+      - name: Create manifest
+        run: |
+          hack/build/ci/create-manifest.sh "${IMAGE}" "${{ needs.prepare.outputs.version }}" true
+
   push-gcr:
     name: Push to GCR
     needs: [prepare,build-amd64,build-arm64]
@@ -226,6 +246,28 @@ jobs:
           secrets.docker_repo_username: ${{ secrets.GCR_USERNAME }}
           secrets.docker_repo_password: ${{ secrets.GCR_PASSWORD }}
 
+  manifest-gcr:
+    name: Manifest for RHCC
+    needs: [prepare, push-gcr]
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
+      (contains(github.ref, 'refs/tags/v')
+    env:
+      IMAGE: gcr.io/dynatrace-marketplace-prod/dynatrace-operator
+    steps:
+      - name: Login
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ needs.prepare.outputs.registry }}
+          username: ${{ secrets.GCR_USERNAME }}
+          password: ${{ secrets.GCR_PASSWORD }}
+      - name: Create manifest
+        run: |
+          versionWithPrefix="${{ needs.prepare.outputs.version }}"
+          versionWithoutPrefix=${versionWithPrefix#"v"}
+          hack/build/ci/create-manifest.sh "${IMAGE}" "${versionWithoutPrefix}" true
+
   push-dockerhub:
     name: Push to Dockerhub
     needs: [prepare,build-amd64,build-arm64]
@@ -254,6 +296,26 @@ jobs:
           repository: dynatrace/dynatrace-operator
           secrets.docker_repo_username: ${{ secrets.DOCKERHUB_USERNAME }}
           secrets.docker_repo_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+  manifest-dockerhub:
+    name: Manifest for RHCC
+    needs: [prepare, push-rhcc]
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork) &&
+      (contains(github.ref, 'refs/tags/v')
+    env:
+      IMAGE: docker.io/dynatrace/dynatrace-operator
+    steps:
+      - name: Login
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ needs.prepare.outputs.registry }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Create manifest
+        run: |
+          hack/build/ci/create-manifest.sh "${IMAGE}" "${{ needs.prepare.outputs.version }}" true
 
   create-manifest-for-combined-images:
     name: Combine images
