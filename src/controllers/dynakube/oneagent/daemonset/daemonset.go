@@ -198,7 +198,7 @@ func (dsInfo *builderInfo) podSpec() corev1.PodSpec {
 				TimeoutSeconds:      1,
 			},
 			Resources:       resources,
-			SecurityContext: dsInfo.unprivilegedSecurityContext(),
+			SecurityContext: dsInfo.securityContext(),
 			VolumeMounts:    volumeMounts,
 		}},
 		ImagePullSecrets:              imagePullSecrets,
@@ -253,7 +253,15 @@ func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
 	return pullSecrets
 }
 
-func (dsInfo *builderInfo) unprivilegedSecurityContext() *corev1.SecurityContext {
+func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
+	if dsInfo.instance.IsOneAgentPrivileged() {
+		runAsPrivileged := true
+		securityContext := &corev1.SecurityContext{
+			Privileged: &runAsPrivileged,
+		}
+		return securityContext
+	}
+
 	securityContext := &corev1.SecurityContext{
 		Capabilities: &corev1.Capabilities{
 			Drop: []corev1.Capability{

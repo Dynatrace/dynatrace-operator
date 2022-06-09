@@ -49,11 +49,12 @@ const (
 	AnnotationFeatureDisableHostsRequests = AnnotationFeaturePrefix + "disable-hosts-requests"
 
 	// oneAgent
-	AnnotationFeatureOneAgentMaxUnavailable       = AnnotationFeaturePrefix + "oneagent-max-unavailable"
-	AnnotationFeatureDisableReadOnlyOneAgent      = AnnotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
-	AnnotationFeatureEnableMultipleOsAgentsOnNode = AnnotationFeaturePrefix + "multiple-osagents-on-node"
-	AnnotationFeatureOneAgentIgnoreProxy          = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
-	AnnotationFeatureOneAgentInitialConnectRetry  = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
+	AnnotationFeatureOneAgentMaxUnavailable         = AnnotationFeaturePrefix + "oneagent-max-unavailable"
+	AnnotationFeatureDisableReadOnlyOneAgent        = AnnotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
+	AnnotationFeatureEnableMultipleOsAgentsOnNode   = AnnotationFeaturePrefix + "multiple-osagents-on-node"
+	AnnotationFeatureOneAgentIgnoreProxy            = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
+	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
+	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
 
 	// injection (webhook)
 	AnnotationFeatureDisableWebhookReinvocationPolicy = AnnotationFeaturePrefix + "disable-webhook-reinvocation-policy"
@@ -219,6 +220,10 @@ func (dk *DynaKube) FeatureAgentInitialConnectRetry() int {
 	}
 
 	return val
+}
+
+func (dk *DynaKube) FeatureAgentRunPrivileged() bool {
+	return dk.getFeatureFlagRaw(AnnotationFeatureRunOneAgentContainerPrivileged) == "true"
 }
 
 func (dk *DynaKube) getFeatureFlagRaw(annotation string) string {
