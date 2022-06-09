@@ -4,9 +4,6 @@ The Dynatrace Operator supports rollout and lifecycle of various Dynatrace compo
 
 This Helm Chart requires Helm 3.
 
-## Platforms
-Depending on the version the platforms shown in the [supported platforms](../../../../README.md#supported-platforms) section are supported.
-
 ## Quick Start
 > Migration instructions can be found in the [official help page]()
 Install the Dynatrace Operator via Helm by running the following commands.
