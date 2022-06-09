@@ -5,7 +5,7 @@ tests:
   - it: should exist with highavailability mode
     set:
       platform: kubernetes
-      operator.image: image-name
+      image: image-name
       webhook.highAvailability: true
     asserts:
       - isKind:
@@ -139,7 +139,7 @@ tests:
   - it: should exist (without highavailabilty mode)
     set:
       platform: kubernetes
-      operator.image: image-name
+      image: image-name
       webhook.highAvailability: false
     asserts:
       - isKind:
@@ -249,7 +249,7 @@ tests:
   - it: should exist on olm (but different and without highavailabilty mode)
     set:
       olm: true
-      operator.image: image-name
+      image: image-name
       webhook.highAvailability: false
     asserts:
       - isKind:
