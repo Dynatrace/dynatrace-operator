@@ -9,6 +9,7 @@ var (
 		TenantUUID:    "asc1",
 		LatestVersion: "123",
 		Name:          "dk1",
+		UsesImage:     true,
 	}
 	testDynakube2 = Dynakube{
 		TenantUUID:    "asc2",

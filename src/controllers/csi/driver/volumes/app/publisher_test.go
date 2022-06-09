@@ -185,7 +185,7 @@ func mockPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
 }
 
 func mockOneAgent(t *testing.T, publisher *AppVolumePublisher) {
-	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion))
+	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, false))
 	require.NoError(t, err)
 }
 
