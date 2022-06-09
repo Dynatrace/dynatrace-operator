@@ -192,10 +192,11 @@ func (a *SqliteAccess) setupDynakubeTable() error {
 
 	if _, err := a.conn.Exec(dynakubesAlterStatementUsesImageColumn); err != nil {
 		sqliteError := err.(sqlite3.Error)
-		if sqliteError.Code == sqlite3.ErrError {
-			// generic sql error, column already exists
-			log.Info("column UsesImage already exists")
+		if sqliteError.Code != sqlite3.ErrError {
+			return err
 		}
+		// generic sql error, column already exists
+		log.Info("column UsesImage already exists")
 	}
 	return nil
 }
