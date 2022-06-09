@@ -114,7 +114,7 @@ func (dk *DynaKube) NeedsOneAgentProxy() bool {
 	return !dk.FeatureOneAgentIgnoreProxy() && dk.hasProxy()
 }
 
-func (dk *DynaKube) OneAgentRunsPrivileged() bool {
+func (dk *DynaKube) IsOneAgentPrivileged() bool {
 	return dk.FeatureAgentRunPrivileged()
 }
 
