@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -191,8 +191,11 @@ func (a *SqliteAccess) setupDynakubeTable() error {
 	}
 
 	if _, err := a.conn.Exec(dynakubesAlterStatementUsesImageColumn); err != nil {
-		// statement errors if column already exists, swallow error
-		log.Info("column UsesImage already exists")
+		sqliteError := err.(sqlite3.Error)
+		if sqliteError.Code == sqlite3.ErrError {
+			// generic sql error, column already exists
+			log.Info("column UsesImage already exists")
+		}
 	}
 	return nil
 }
