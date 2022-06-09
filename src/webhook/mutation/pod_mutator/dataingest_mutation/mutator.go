@@ -26,12 +26,12 @@ func NewDataIngestPodMutator(webhookNamespace string, client client.Client, apiR
 	}
 }
 
-func (mutator *DataIngestPodMutator) Enabled(pod *corev1.Pod) bool {
-	return kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationDataIngestInject, true)
+func (mutator *DataIngestPodMutator) Enabled(request *dtwebhook.BaseRequest) bool {
+	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDataIngestInject, true)
 }
 
-func (mutator *DataIngestPodMutator) Injected(pod *corev1.Pod) bool {
-	return kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationDataIngestInjected, false)
+func (mutator *DataIngestPodMutator) Injected(request *dtwebhook.BaseRequest) bool {
+	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDataIngestInjected, false)
 }
 
 func (mutator *DataIngestPodMutator) Mutate(request *dtwebhook.MutationRequest) error {
@@ -52,7 +52,7 @@ func (mutator *DataIngestPodMutator) Mutate(request *dtwebhook.MutationRequest) 
 }
 
 func (mutator *DataIngestPodMutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	if !mutator.Injected(request.Pod) {
+	if !mutator.Injected(request.BaseRequest) {
 		return false
 	}
 	log.Info("reinvoking", "pod", request.Pod.GenerateName)

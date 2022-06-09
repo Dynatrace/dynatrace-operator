@@ -87,7 +87,7 @@ func (webhook *podMutatorWebhook) setupEventRecorder(mutationRequest *dtwebhook.
 
 func (webhook *podMutatorWebhook) isInjected(mutationRequest *dtwebhook.MutationRequest) bool {
 	for _, mutator := range webhook.mutators {
-		if mutator.Injected(mutationRequest.Pod) {
+		if mutator.Injected(mutationRequest.BaseRequest) {
 			return true
 		}
 	}
@@ -97,7 +97,7 @@ func (webhook *podMutatorWebhook) isInjected(mutationRequest *dtwebhook.Mutation
 func (webhook *podMutatorWebhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) error {
 	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, mutationRequest.Pod, mutationRequest.DynaKube)
 	for _, mutator := range webhook.mutators {
-		if !mutator.Enabled(mutationRequest.Pod) {
+		if !mutator.Enabled(mutationRequest.BaseRequest) {
 			continue
 		}
 		if err := mutator.Mutate(mutationRequest); err != nil {
@@ -119,7 +119,7 @@ func (webhook *podMutatorWebhook) handlePodReinvocation(mutationRequest *dtwebho
 
 	reinvocationRequest := mutationRequest.ToReinvocationRequest()
 	for _, mutator := range webhook.mutators {
-		if mutator.Enabled(mutationRequest.Pod) {
+		if mutator.Enabled(mutationRequest.BaseRequest) {
 			if update := mutator.Reinvoke(reinvocationRequest); update {
 				needsUpdate = true
 			}

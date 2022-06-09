@@ -31,13 +31,8 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 	if err != nil {
 		return nil, err
 	}
-	mutationRequest := dtwebhook.MutationRequest{
-		Context:   ctx,
-		Pod:       pod,
-		Namespace: *namespace,
-		DynaKube:  *dynakube,
-	}
-	return &mutationRequest, nil
+	mutationRequest := dtwebhook.NewMutationRequest(ctx, *namespace, nil, pod, *dynakube)
+	return mutationRequest, nil
 }
 
 func getPodFromRequest(req admission.Request, decoder admission.Decoder) (*corev1.Pod, error) {

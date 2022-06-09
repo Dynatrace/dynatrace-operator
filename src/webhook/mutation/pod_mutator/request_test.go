@@ -103,12 +103,7 @@ func TestGetDynakube(t *testing.T) {
 }
 
 func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube) *dtwebhook.MutationRequest {
-	return &dtwebhook.MutationRequest{
-		Context:   context.TODO(),
-		Pod:       getTestPod(),
-		Namespace: *getTestNamespace(),
-		DynaKube:  *dynakube,
-	}
+	return dtwebhook.NewMutationRequest(context.TODO(), *getTestNamespace(), nil, getTestPod(), *dynakube)
 }
 
 func createTestAdmissionRequest(pod *corev1.Pod) *admission.Request {

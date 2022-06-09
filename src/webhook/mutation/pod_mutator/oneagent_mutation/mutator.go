@@ -29,12 +29,12 @@ func NewOneAgentPodMutator(image, clusterID, webhookNamespace string, client cli
 	}
 }
 
-func (mutator *OneAgentPodMutator) Enabled(pod *corev1.Pod) bool {
-	return kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInject, true)
+func (mutator *OneAgentPodMutator) Enabled(request *dtwebhook.BaseRequest) bool {
+	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInject, true)
 }
 
-func (mutator *OneAgentPodMutator) Injected(pod *corev1.Pod) bool {
-	return kubeobjects.GetFieldBool(pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
+func (mutator *OneAgentPodMutator) Injected(request *dtwebhook.BaseRequest) bool {
+	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationOneAgentInjected, false)
 }
 
 func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) error {
@@ -52,7 +52,7 @@ func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) er
 }
 
 func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationRequest) bool {
-	if !mutator.Injected(request.Pod) {
+	if !mutator.Injected(request.BaseRequest) {
 		return false
 	}
 	log.Info("reinvoking", "pod", request.Pod.GenerateName)

@@ -2,7 +2,6 @@ package webhook
 
 import (
 	"github.com/stretchr/testify/mock"
-	corev1 "k8s.io/api/core/v1"
 )
 
 type PodMutatorMock struct {
@@ -11,13 +10,13 @@ type PodMutatorMock struct {
 
 var _ PodMutator = &PodMutatorMock{}
 
-func (mutator *PodMutatorMock) Enabled(pod *corev1.Pod) bool {
-	args := mutator.Called(pod)
+func (mutator *PodMutatorMock) Enabled(request *BaseRequest) bool {
+	args := mutator.Called(request)
 	return args.Bool(0)
 }
 
-func (mutator *PodMutatorMock) Injected(pod *corev1.Pod) bool {
-	args := mutator.Called(pod)
+func (mutator *PodMutatorMock) Injected(request *BaseRequest) bool {
+	args := mutator.Called(request)
 	return args.Bool(0)
 }
 

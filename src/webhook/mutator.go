@@ -8,28 +8,53 @@ import (
 )
 
 type PodMutator interface {
-	Enabled(pod *corev1.Pod) bool
-	Injected(pod *corev1.Pod) bool
+	Enabled(request *BaseRequest) bool
+	Injected(request *BaseRequest) bool
 	Mutate(request *MutationRequest) error
 	Reinvoke(request *ReinvocationRequest) bool
 }
 
-type MutationRequest struct {
-	Context          context.Context
-	Pod              *corev1.Pod
-	Namespace        corev1.Namespace
-	DynaKube         dynatracev1beta1.DynaKube
-	InstallContainer *corev1.Container
-}
-
-type ReinvocationRequest struct {
+// BaseRequest is the base request for all mutation requests
+type BaseRequest struct {
 	Pod      *corev1.Pod
 	DynaKube dynatracev1beta1.DynaKube
 }
 
+type MutationRequest struct {
+	*BaseRequest
+	Context          context.Context
+	Namespace        corev1.Namespace
+	InstallContainer *corev1.Container
+}
+
+type ReinvocationRequest struct {
+	*BaseRequest
+}
+
+func newBaseRequest(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *BaseRequest {
+	return &BaseRequest{
+		Pod:      pod,
+		DynaKube: dynakube,
+	}
+}
+
+func NewMutationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *MutationRequest {
+	return &MutationRequest{
+		BaseRequest:      newBaseRequest(pod, dynakube),
+		Context:          ctx,
+		Namespace:        namespace,
+		InstallContainer: installContainer,
+	}
+}
+
+func NewReinvocationRequest(ctx context.Context, namespace corev1.Namespace, installContainer *corev1.Container, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *ReinvocationRequest {
+	return &ReinvocationRequest{
+		BaseRequest: newBaseRequest(pod, dynakube),
+	}
+}
+
 func (request *MutationRequest) ToReinvocationRequest() *ReinvocationRequest {
 	return &ReinvocationRequest{
-		Pod:      request.Pod,
-		DynaKube: request.DynaKube,
+		BaseRequest: request.BaseRequest,
 	}
 }

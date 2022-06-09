@@ -26,17 +26,17 @@ const (
 func TestEnabled(t *testing.T) {
 	t.Run("turned off", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		pod := getTestPod(map[string]string{dtwebhook.AnnotationOneAgentInject: "false"})
+		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationOneAgentInject: "false"})
 
-		enabled := mutator.Enabled(pod)
+		enabled := mutator.Enabled(request.BaseRequest)
 
 		require.False(t, enabled)
 	})
 	t.Run("on by default", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		pod := getTestPod(nil)
+		request := createTestMutationRequest(nil, nil)
 
-		enabled := mutator.Enabled(pod)
+		enabled := mutator.Enabled(request.BaseRequest)
 
 		require.True(t, enabled)
 	})
@@ -45,17 +45,17 @@ func TestEnabled(t *testing.T) {
 func TestInjected(t *testing.T) {
 	t.Run("already marked", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		pod := getTestPod(map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"})
+		request := createTestMutationRequest(nil, map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"})
 
-		enabled := mutator.Injected(pod)
+		enabled := mutator.Injected(request.BaseRequest)
 
 		require.True(t, enabled)
 	})
 	t.Run("fresh", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
-		pod := getTestPod(nil)
+		request := createTestMutationRequest(nil, nil)
 
-		enabled := mutator.Injected(pod)
+		enabled := mutator.Injected(request.BaseRequest)
 
 		require.False(t, enabled)
 	})
@@ -198,15 +198,18 @@ func getTestInitSecret() *corev1.Secret {
 }
 
 func createTestMutationRequest(dynakube *dynatracev1beta1.DynaKube, annotations map[string]string) *dtwebhook.MutationRequest {
-	return &dtwebhook.MutationRequest{
-		Context:   context.TODO(),
-		Pod:       getTestPod(annotations),
-		Namespace: *getTestNamespace(),
-		DynaKube:  *dynakube,
-		InstallContainer: &corev1.Container{
+	if dynakube == nil {
+		dynakube = &dynatracev1beta1.DynaKube{}
+	}
+	return dtwebhook.NewMutationRequest(
+		context.TODO(),
+		*getTestNamespace(),
+		&corev1.Container{
 			Name: dtwebhook.InstallContainerName,
 		},
-	}
+		getTestPod(annotations),
+		*dynakube,
+	)
 }
 
 func createTestReinvocationRequest(dynakube *dynatracev1beta1.DynaKube, annotations map[string]string) *dtwebhook.ReinvocationRequest {
