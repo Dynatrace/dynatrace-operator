@@ -15,10 +15,10 @@
 # may be set to "kubernetes", "openshift", "google"
 platform: "kubernetes"
 
+image: ""
 installCRD: false
 
 operator:
-  image: ""
   customPullSecret: ""
   nodeSelector: {}
   tolerations: []

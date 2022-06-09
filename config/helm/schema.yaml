@@ -101,7 +101,7 @@ x-google-marketplace:
   images:
     ? ''
     : properties:
-        operator.image:
+        image:
           type: FULL
   deployerServiceAccount:
     description: 'Service account used to configure the Dynatrace Operator'
@@ -205,8 +205,8 @@ properties:
     type: boolean
     title: Enables AppArmor for Operator
     description: |
-      AppArmor is a security system for Linux. 
-      If a cluster supports AppArmor the Operator uses it if it is enabled here. 
+      AppArmor is a security system for Linux.
+      If a cluster supports AppArmor the Operator uses it if it is enabled here.
       If it is not supported by a cluster it must not be enabled.
     default: false
   operator.requests.cpu:
@@ -234,15 +234,15 @@ properties:
     type: boolean
     title: Webhook uses Host network
     description: |
-      Allows the webhook to connect with and use the same network as the node. 
+      Allows the webhook to connect with and use the same network as the node.
       May alleviate issues with container network interfaces (CNI).
     default: false
   webhook.apparmor:
     type: boolean
     title: Enables AppArmor for Webhook
     description: |
-      AppArmor is a security system for Linux. 
-      If a cluster supports AppArmor the Webhook uses it if it is enabled here. 
+      AppArmor is a security system for Linux.
+      If a cluster supports AppArmor the Webhook uses it if it is enabled here.
       If it is not supported by a cluster it must not be enabled.
     default: false
   webhook.requests.cpu:
@@ -269,7 +269,7 @@ properties:
   webhook.limits.memory:
     type: string
     title: Webhook Memory limit
-    description: | 
+    description: |
       The amount of memory allocation to which the cluster may limit the Webhook.
       It is recommended for the memory limits to be the same as the memory requests.
     default: 128Mi

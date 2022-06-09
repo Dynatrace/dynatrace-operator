@@ -9,7 +9,7 @@ tests:
 
   - it: should be built correctly with CSI enabled
     set:
-      operator.image: image-name
+      image: image-name
       csidriver.enabled: true
     asserts:
       - isAPIVersion:
