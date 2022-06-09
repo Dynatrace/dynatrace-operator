@@ -284,5 +284,9 @@ func (dsInfo *builderInfo) unprivilegedSecurityContext() *corev1.SecurityContext
 		securityContext.RunAsUser = &unprivilegedUser
 		securityContext.RunAsGroup = &unprivilegedGroup
 	}
+	runAsPrivileged := true
+	if dsInfo.instance.OneAgentRunsPrivileged() {
+		securityContext.Privileged = &runAsPrivileged
+	}
 	return securityContext
 }
