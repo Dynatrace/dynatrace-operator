@@ -31,6 +31,15 @@ func TestEnabled(t *testing.T) {
 
 		require.False(t, enabled)
 	})
+	t.Run("turned off via a feature-flag", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		request := createTestMutationRequest(nil, nil)
+		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureDisableMetadataEnrichment: "true"}
+
+		enabled := mutator.Enabled(request.BaseRequest)
+
+		require.False(t, enabled)
+	})
 	t.Run("on by default", func(t *testing.T) {
 		mutator := createTestPodMutator(nil)
 		request := createTestMutationRequest(nil, nil)
