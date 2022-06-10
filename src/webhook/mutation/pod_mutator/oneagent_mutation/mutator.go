@@ -56,8 +56,7 @@ func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationReque
 		return false
 	}
 	log.Info("reinvoking", "podName", request.Pod.GenerateName)
-	mutator.reinvokeUserContainers(request)
-	return true
+	return mutator.reinvokeUserContainers(request)
 }
 
 func (mutator *OneAgentPodMutator) getVolumeMode(dynakube dynatracev1beta1.DynaKube) string {

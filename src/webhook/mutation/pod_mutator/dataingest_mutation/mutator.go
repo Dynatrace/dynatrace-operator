@@ -58,8 +58,7 @@ func (mutator *DataIngestPodMutator) Reinvoke(request *dtwebhook.ReinvocationReq
 		return false
 	}
 	log.Info("reinvoking", "pod", request.Pod.GenerateName)
-	reinvokeUserContainers(request.Pod)
-	return true
+	return reinvokeUserContainers(request.Pod)
 }
 
 func (mutator *DataIngestPodMutator) ensureDataIngestSecret(request *dtwebhook.MutationRequest) error {

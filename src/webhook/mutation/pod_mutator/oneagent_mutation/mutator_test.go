@@ -176,6 +176,21 @@ func TestReinvoke(t *testing.T) {
 		assert.Len(t, request.Pod.Spec.Containers[0].VolumeMounts, initialContainerVolumeMountsLen+5)
 		assert.Len(t, request.Pod.Spec.InitContainers[1].Env, initialContainersLen*2)
 	})
+	t.Run("no change ==> no update", func(t *testing.T) {
+		mutator := createTestPodMutator([]client.Object{getTestInitSecret()})
+		request := &dtwebhook.ReinvocationRequest{
+			BaseRequest: &dtwebhook.BaseRequest{
+				DynaKube: *getTestDynakube(),
+				Pod: &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{dtwebhook.AnnotationOneAgentInjected: "true"},
+					},
+				},
+			},
+		}
+		updated := mutator.Reinvoke(request)
+		require.False(t, updated)
+	})
 }
 
 func createTestPodMutator(objects []client.Object) *OneAgentPodMutator {
