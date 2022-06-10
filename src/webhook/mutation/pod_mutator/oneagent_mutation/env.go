@@ -39,7 +39,7 @@ func addProxyEnv(container *corev1.Container) {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: dtwebhook.SecretConfigName,
 					},
-					Key: proxySecretKey,
+					Key: dynatracev1beta1.ProxyKey,
 				},
 			},
 		})

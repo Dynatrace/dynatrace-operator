@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("pod.mutation-webhook.oneagent")
+	log = logger.NewDTLogger().WithName("mutation-webhook.pod.oneagent")
 )
 
 const (
@@ -24,7 +24,6 @@ const (
 
 	oneAgentCustomKeysPath = "/var/lib/dynatrace/oneagent/agent/customkeys"
 	customCertFileName     = "custom.pem"
-	proxySecretKey         = "proxy"
 
 	preloadPath       = "/etc/ld.so.preload"
 	preloadSubPath    = "ld.so.preload"

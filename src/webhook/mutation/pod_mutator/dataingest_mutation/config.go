@@ -11,5 +11,5 @@ const (
 )
 
 var (
-	log = logger.NewDTLogger().WithName("pod.mutation-webhook.dataingest")
+	log = logger.NewDTLogger().WithName("mutation-webhook.pod.dataingest")
 )
