@@ -1,5 +1,3 @@
--include manifests/*.mk
-
 ENVTEST_ASSETS_DIR = $(shell pwd)/testbin
 
 ## Runs go fmt
