@@ -65,7 +65,6 @@ func TestUpdateAgent(t *testing.T) {
 
 		currentVersion, err := updater.updateAgent(
 			testVersion,
-			testTenantUUID,
 			&processModuleCache)
 
 		require.NoError(t, err)
@@ -111,7 +110,6 @@ func TestUpdateAgent(t *testing.T) {
 
 		currentVersion, err := updater.updateAgent(
 			testVersion,
-			testTenantUUID,
 			&processModuleCache)
 
 		require.NoError(t, err)
@@ -147,7 +145,6 @@ func TestUpdateAgent(t *testing.T) {
 
 		currentVersion, err := updater.updateAgent(
 			testVersion,
-			testTenantUUID,
 			&processModuleCache)
 
 		require.Error(t, err)
@@ -210,7 +207,6 @@ func TestUpdateAgent(t *testing.T) {
 
 		currentVersion, err := updater.updateAgent(
 			testVersion,
-			testTenantUUID,
 			&processModuleConfig)
 		require.NoError(t, err)
 		assert.Equal(t, tag, currentVersion)
@@ -276,7 +272,6 @@ func TestUpdateAgent(t *testing.T) {
 
 		currentVersion, err := updater.updateAgent(
 			testVersion,
-			testTenantUUID,
 			&processModuleConfig)
 		require.NoError(t, err)
 		assert.Equal(t, tag, currentVersion)
@@ -323,7 +318,6 @@ func updateOneagent(t *testing.T, alreadyInstalled bool) {
 
 	currentVersion, err := updater.updateAgent(
 		"other",
-		testTenantUUID,
 		&processModuleCache)
 
 	require.NoError(t, err)

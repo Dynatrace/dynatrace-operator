@@ -172,7 +172,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 		log.Info("error when setting up the agent updater", "error", err.Error())
 		return nil, false, err
 	}
-	if updatedVersion, err := agentUpdater.updateAgent(dynakubeMetadata.LatestVersion, dynakubeMetadata.TenantUUID, latestProcessModuleConfigCache); err != nil {
+	if updatedVersion, err := agentUpdater.updateAgent(dynakubeMetadata.LatestVersion, latestProcessModuleConfigCache); err != nil {
 		log.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 		return nil, true, nil

@@ -13,7 +13,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/installer/image"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/url"
 	"github.com/spf13/afero"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -95,10 +94,10 @@ func setupImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Read
 	return imageInstaller, nil
 }
 
-func (updater *agentUpdater) updateAgent(installedVersion, tenantUUID string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
+func (updater *agentUpdater) updateAgent(installedVersion string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
 	defer updater.cleanCertsIfPresent()
 	var updatedVersion string
-	if updater.VersionDirNotPresent() || installedVersion == "" {
+	if updater.versionDirNotPresent() || installedVersion == "" {
 		log.Info("updating agent",
 			"target version", updater.targetVersion,
 			"installed version", installedVersion,
@@ -106,10 +105,10 @@ func (updater *agentUpdater) updateAgent(installedVersion, tenantUUID string, la
 		_ = updater.fs.MkdirAll(updater.targetDir, 0755)
 
 		if err := updater.installer.InstallAgent(updater.targetDir); err != nil {
-			updater.recorder.sendFailedInstallAgentVersionEvent(updater.targetVersion, tenantUUID)
+			updater.recorder.sendFailedInstallAgentVersionEvent(updater.targetVersion, updater.tenantUUID)
 			return "", err
 		}
-		updater.recorder.sendInstalledAgentVersionEvent(updater.targetVersion, tenantUUID)
+		updater.recorder.sendInstalledAgentVersionEvent(updater.targetVersion, updater.tenantUUID)
 		updatedVersion = updater.targetVersion
 	}
 	log.Info("updating ruxitagentproc.conf on latest installed version")
@@ -128,26 +127,7 @@ func (updater *agentUpdater) cleanCertsIfPresent() {
 	}
 }
 
-func (updater agentUpdater) VersionDirNotPresent() bool {
+func (updater agentUpdater) versionDirNotPresent() bool {
 	_, err := updater.fs.Stat(updater.targetDir)
 	return os.IsNotExist(err)
-}
-
-type updaterEventRecorder struct {
-	dynakube *dynatracev1beta1.DynaKube
-	recorder record.EventRecorder
-}
-
-func (event *updaterEventRecorder) sendFailedInstallAgentVersionEvent(version, tenantUUID string) {
-	event.recorder.Eventf(event.dynakube,
-		corev1.EventTypeWarning,
-		failedInstallAgentVersionEvent,
-		"Failed to install agent version: %s to tenant: %s", version, tenantUUID)
-}
-
-func (event *updaterEventRecorder) sendInstalledAgentVersionEvent(version, tenantUUID string) {
-	event.recorder.Eventf(event.dynakube,
-		corev1.EventTypeNormal,
-		installAgentVersionEvent,
-		"Installed agent version: %s to tenant: %s", version, tenantUUID)
 }
