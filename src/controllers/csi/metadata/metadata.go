@@ -11,11 +11,11 @@ type Dynakube struct {
 	Name          string `json:"name"`
 	TenantUUID    string `json:"tenantUUID"`
 	LatestVersion string `json:"latestVersion"`
-	UsesImage     bool   `json:"usesImage"`
+	ImageDigest   string `json:"imageDigest"`
 }
 
 // NewDynakube returns a new metadata.Dynakube if all fields are set.
-func NewDynakube(dynakubeName, tenantUUID, latestVersion string, usesImage bool) *Dynakube {
+func NewDynakube(dynakubeName, tenantUUID, latestVersion string, usesImage string) *Dynakube {
 	if tenantUUID == "" || dynakubeName == "" {
 		return nil
 	}

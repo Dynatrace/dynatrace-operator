@@ -42,14 +42,14 @@ const (
 	);`
 
 	// ALTER
-	dynakubesAlterStatementUsesImageColumn = `
+	dynakubesAlterStatementImageDigestColumn = `
 	ALTER TABLE dynakubes
-	ADD COLUMN UsesImage BOOLEAN NOT NULL DEFAULT false;
+	ADD COLUMN ImageDigest VARCHAR NOT NULL DEFAULT '';
 	`
 
 	// INSERT
 	insertDynakubeStatement = `
-	INSERT INTO dynakubes (Name, TenantUUID, LatestVersion, UsesImage)
+	INSERT INTO dynakubes (Name, TenantUUID, LatestVersion, ImageDigest)
 	VALUES (?,?,?,?);
 	`
 
@@ -70,7 +70,7 @@ const (
 	// UPDATE
 	updateDynakubeStatement = `
 	UPDATE dynakubes
-	SET LatestVersion = ?, TenantUUID = ?, UsesImage = ?
+	SET LatestVersion = ?, TenantUUID = ?, ImageDigest = ?
 	WHERE Name = ?;
 	`
 
@@ -82,7 +82,7 @@ const (
 
 	// GET
 	getDynakubeStatement = `
-	SELECT TenantUUID, LatestVersion, UsesImage
+	SELECT TenantUUID, LatestVersion, ImageDigest
 	FROM dynakubes
 	WHERE Name = ?;
 	`
@@ -107,7 +107,7 @@ const (
 
 	// GET ALL
 	getAllDynakubesStatement = `
-		SELECT Name, TenantUUID, LatestVersion, UsesImage
+		SELECT Name, TenantUUID, LatestVersion, ImageDigest
 		FROM dynakubes;
 		`
 
@@ -190,13 +190,13 @@ func (a *SqliteAccess) setupDynakubeTable() error {
 		return fmt.Errorf("couldn't create the table %s, err: %s", dynakubesTableName, err)
 	}
 
-	if _, err := a.conn.Exec(dynakubesAlterStatementUsesImageColumn); err != nil {
+	if _, err := a.conn.Exec(dynakubesAlterStatementImageDigestColumn); err != nil {
 		sqliteError := err.(sqlite3.Error)
 		if sqliteError.Code != sqlite3.ErrError {
 			return err
 		}
 		// generic sql error, column already exists
-		log.Info("column UsesImage already exists")
+		log.Info("column ImageDigest already exists")
 	}
 	return nil
 }
@@ -214,13 +214,13 @@ func (a *SqliteAccess) Setup(path string) error {
 
 // InsertDynakube inserts a new Dynakube
 func (a *SqliteAccess) InsertDynakube(dynakube *Dynakube) error {
-	err := a.executeStatement(insertDynakubeStatement, dynakube.Name, dynakube.TenantUUID, dynakube.LatestVersion, dynakube.UsesImage)
+	err := a.executeStatement(insertDynakubeStatement, dynakube.Name, dynakube.TenantUUID, dynakube.LatestVersion, dynakube.ImageDigest)
 	if err != nil {
-		err = fmt.Errorf("couldn't insert dynakube entry, tenantUUID '%s', latest version '%s', name '%s', uses image '%t', err: %s",
+		err = fmt.Errorf("couldn't insert dynakube entry, tenantUUID '%s', latest version '%s', name '%s', image digest '%s', err: %s",
 			dynakube.TenantUUID,
 			dynakube.LatestVersion,
 			dynakube.Name,
-			dynakube.UsesImage,
+			dynakube.ImageDigest,
 			err)
 	}
 	return err
@@ -228,13 +228,13 @@ func (a *SqliteAccess) InsertDynakube(dynakube *Dynakube) error {
 
 // UpdateDynakube updates an existing Dynakube by matching the name
 func (a *SqliteAccess) UpdateDynakube(dynakube *Dynakube) error {
-	err := a.executeStatement(updateDynakubeStatement, dynakube.LatestVersion, dynakube.TenantUUID, dynakube.UsesImage, dynakube.Name)
+	err := a.executeStatement(updateDynakubeStatement, dynakube.LatestVersion, dynakube.TenantUUID, dynakube.ImageDigest, dynakube.Name)
 	if err != nil {
-		err = fmt.Errorf("couldn't update dynakube, tenantUUID '%s', latest version '%s', name '%s', uses image '%t', err: %s",
+		err = fmt.Errorf("couldn't update dynakube, tenantUUID '%s', latest version '%s', name '%s', image digest '%s', err: %s",
 			dynakube.TenantUUID,
 			dynakube.LatestVersion,
 			dynakube.Name,
-			dynakube.UsesImage,
+			dynakube.ImageDigest,
 			err)
 	}
 	return err
@@ -253,12 +253,12 @@ func (a *SqliteAccess) DeleteDynakube(dynakubeName string) error {
 func (a *SqliteAccess) GetDynakube(dynakubeName string) (*Dynakube, error) {
 	var tenantUUID string
 	var latestVersion string
-	var usesImage bool
-	err := a.querySimpleStatement(getDynakubeStatement, dynakubeName, &tenantUUID, &latestVersion, &usesImage)
+	var imageDigest string
+	err := a.querySimpleStatement(getDynakubeStatement, dynakubeName, &tenantUUID, &latestVersion, &imageDigest)
 	if err != nil {
 		err = fmt.Errorf("couldn't get dynakube, name '%s', err: %s", dynakubeName, err)
 	}
-	return NewDynakube(dynakubeName, tenantUUID, latestVersion, usesImage), err
+	return NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest), err
 }
 
 // InsertVolume inserts a new Volume
@@ -382,12 +382,12 @@ func (a *SqliteAccess) GetAllDynakubes() ([]*Dynakube, error) {
 		var name string
 		var version string
 		var tenantUUID string
-		var usesImage bool
-		err := rows.Scan(&name, &tenantUUID, &version, &usesImage)
+		var imageDigest string
+		err := rows.Scan(&name, &tenantUUID, &version, &imageDigest)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan from database for volumes, err: %s", err)
 		}
-		dynakubes = append(dynakubes, NewDynakube(name, tenantUUID, version, usesImage))
+		dynakubes = append(dynakubes, NewDynakube(name, tenantUUID, version, imageDigest))
 	}
 	return dynakubes, nil
 }

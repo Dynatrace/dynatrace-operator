@@ -70,14 +70,14 @@ func TestInsertDynakube(t *testing.T) {
 	require.NoError(t, err)
 
 	var uuid, lv, name string
-	var usesImage bool
+	var imageDigest string
 	row := db.conn.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE TenantUUID = ?;", dynakubesTableName), testDynakube1.TenantUUID)
-	err = row.Scan(&name, &uuid, &lv, &usesImage)
+	err = row.Scan(&name, &uuid, &lv, &imageDigest)
 	require.NoError(t, err)
 	assert.Equal(t, testDynakube1.TenantUUID, uuid)
 	assert.Equal(t, testDynakube1.LatestVersion, lv)
 	assert.Equal(t, testDynakube1.Name, name)
-	assert.True(t, testDynakube1.UsesImage)
+	assert.Equal(t, testDynakube1.ImageDigest, imageDigest)
 }
 
 func TestGetDynakube_Empty(t *testing.T) {
@@ -104,19 +104,19 @@ func TestUpdateDynakube(t *testing.T) {
 	require.NoError(t, err)
 
 	testDynakube1.LatestVersion = "132.546"
-	testDynakube1.UsesImage = false
+	testDynakube1.ImageDigest = ""
 	err = db.UpdateDynakube(&testDynakube1)
 	require.NoError(t, err)
 
 	var uuid, lv, name string
-	var usesImage bool
-	row := db.conn.QueryRow(fmt.Sprintf("SELECT Name, TenantUUID, LatestVersion, UsesImage FROM %s WHERE Name = ?;", dynakubesTableName), testDynakube1.Name)
-	err = row.Scan(&name, &uuid, &lv, &usesImage)
+	var imageDigest string
+	row := db.conn.QueryRow(fmt.Sprintf("SELECT Name, TenantUUID, LatestVersion, ImageDigest FROM %s WHERE Name = ?;", dynakubesTableName), testDynakube1.Name)
+	err = row.Scan(&name, &uuid, &lv, &imageDigest)
 	require.NoError(t, err)
 	assert.Equal(t, testDynakube1.TenantUUID, uuid)
 	assert.Equal(t, testDynakube1.LatestVersion, lv)
 	assert.Equal(t, testDynakube1.Name, name)
-	assert.False(t, testDynakube1.UsesImage)
+	assert.Empty(t, imageDigest)
 }
 
 func TestGetTenantsToDynakubes(t *testing.T) {
