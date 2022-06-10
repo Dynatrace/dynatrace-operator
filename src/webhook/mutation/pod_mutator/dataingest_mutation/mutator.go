@@ -27,7 +27,9 @@ func NewDataIngestPodMutator(webhookNamespace string, client client.Client, apiR
 }
 
 func (mutator *DataIngestPodMutator) Enabled(request *dtwebhook.BaseRequest) bool {
-	return kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDataIngestInject, true) && !request.DynaKube.FeatureDisableMetadataEnrichment()
+	enabledOnPod := kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDataIngestInject, true)
+	enabledOnDynakube := !request.DynaKube.FeatureDisableMetadataEnrichment()
+	return enabledOnPod && enabledOnDynakube
 }
 
 func (mutator *DataIngestPodMutator) Injected(request *dtwebhook.BaseRequest) bool {
@@ -35,7 +37,7 @@ func (mutator *DataIngestPodMutator) Injected(request *dtwebhook.BaseRequest) bo
 }
 
 func (mutator *DataIngestPodMutator) Mutate(request *dtwebhook.MutationRequest) error {
-	log.Info("injecting data-ingest into pod", "pod", request.Pod.GenerateName)
+	log.Info("injecting data-ingest into pod", "podName", request.Pod.GenerateName)
 	workload, err := mutator.retrieveWorkload(request)
 	if err != nil {
 		return errors.WithStack(err)

@@ -38,7 +38,7 @@ func (mutator *OneAgentPodMutator) Injected(request *dtwebhook.BaseRequest) bool
 }
 
 func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) error {
-	log.Info("injecting OneAgent into pod", "pod", request.Pod.GenerateName)
+	log.Info("injecting OneAgent into pod", "podName", request.Pod.GenerateName)
 	if err := mutator.ensureInitSecret(request); err != nil {
 		return errors.WithStack(err)
 	}
@@ -55,7 +55,7 @@ func (mutator *OneAgentPodMutator) Reinvoke(request *dtwebhook.ReinvocationReque
 	if !mutator.Injected(request.BaseRequest) {
 		return false
 	}
-	log.Info("reinvoking", "pod", request.Pod.GenerateName)
+	log.Info("reinvoking", "podName", request.Pod.GenerateName)
 	mutator.reinvokeUserContainers(request)
 	return true
 }

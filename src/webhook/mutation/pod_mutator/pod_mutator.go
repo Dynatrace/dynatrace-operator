@@ -56,26 +56,27 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 
 	mutationRequest, err := webhook.createMutationRequestBase(ctx, request)
 	if err != nil {
-		return silentErrorResponse(mutationRequest.Pod.Name, err)
+		return silentErrorResponse(mutationRequest.Pod, err)
 	}
+	podName := mutationRequest.Pod.GenerateName // at this point, the pod name is not yet set
 
 	webhook.setupEventRecorder(mutationRequest)
 
 	if webhook.isInjected(mutationRequest) {
 		if webhook.handlePodReinvocation(mutationRequest) {
-			log.Info("reinvocation policy applied", "podName", mutationRequest.Pod.GenerateName)
+			log.Info("reinvocation policy applied", "podName", podName)
 			webhook.recorder.sendPodUpdateEvent()
 			return createResponseForPod(mutationRequest.Pod, request)
 		}
-		log.Info("pod already injected, no change", "podName", mutationRequest.Pod.GenerateName)
+		log.Info("pod already injected, no change", "podName", podName)
 		return emptyPatch
 	}
 
 	if err := webhook.handlePodMutation(mutationRequest); err != nil {
 		log.Error(err, "failed to inject into pod")
-		return silentErrorResponse(mutationRequest.Pod.GenerateName, err)
+		return silentErrorResponse(mutationRequest.Pod, err)
 	}
-	log.Info("injection finished for pod", "podName", mutationRequest.Pod.GenerateName, "namespace", request.Namespace)
+	log.Info("injection finished for pod", "podName", podName, "namespace", request.Namespace)
 
 	return createResponseForPod(mutationRequest.Pod, request)
 }
@@ -139,13 +140,14 @@ func setDynatraceInjectedAnnotation(mutationRequest *dtwebhook.MutationRequest) 
 func createResponseForPod(pod *corev1.Pod, req admission.Request) admission.Response {
 	marshaledPod, err := json.MarshalIndent(pod, "", "  ")
 	if err != nil {
-		return silentErrorResponse(pod.Name, err)
+		return silentErrorResponse(pod, err)
 	}
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 }
 
-func silentErrorResponse(podName string, err error) admission.Response {
+func silentErrorResponse(pod *corev1.Pod, err error) admission.Response {
 	rsp := admission.Patched("")
+	podName := pod.GenerateName
 	log.Error(err, "failed to inject into pod", "podName", podName)
 	rsp.Result.Message = fmt.Sprintf("Failed to inject into pod: %s because %s", podName, err.Error())
 	return rsp

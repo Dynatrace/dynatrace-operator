@@ -12,5 +12,9 @@ func FindContainerInPod(pod corev1.Pod, name string) (*corev1.Container, error) 
 			return container, nil
 		}
 	}
-	return nil, errors.Errorf("no container %s found for pod %s", pod.Name, name)
+	podName := pod.Name
+	if podName == "" {
+		podName = pod.GenerateName
+	}
+	return nil, errors.Errorf("no container %s found for pod %s", name, podName)
 }
