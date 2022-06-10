@@ -44,6 +44,7 @@ func newAgentUpdater(
 	var err error
 	if dk.CodeModulesImage() != "" {
 		agentInstaller, err = setupImageInstaller(ctx, fs, apiReader, certPath, dk)
+		targetDir = path.AgentSharedBinaryDirForVersion(targetVersion)
 		if err != nil {
 			return nil, err
 		}
