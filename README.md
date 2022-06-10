@@ -24,6 +24,8 @@ Github issues will also be considered on a case-by-case basis regardless of supp
 The Dynatrace Operator's support lifecycle guarantees that the latest Kubernetes and OpenShift platforms are fully supported within 4 weeks of their release unless release notes state otherwise.
 These versions will be supported for a period of nine months, or until two releases ("N-2") occur in Kubernetes and OpenShift projects, whichever period is longer.
 
+OpenShift 3.11 is an exception to the Dynatrace Operator support lifecyle and will be supported with Operator v0.2.2 until end of 2022.
+
 ## Quick Start
 
 The Dynatrace Operator acts on its separate namespace `dynatrace`. It holds the operator deployment and all dependent
