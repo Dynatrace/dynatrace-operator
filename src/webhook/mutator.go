@@ -31,7 +31,7 @@ type BaseRequest struct {
 }
 
 // MutationRequest contains all the information needed to mutate a pod
-// It is meant to passed into each mutator, so that they can mutate the elements in the way they need to,
+// It is meant to be passed into each mutator, so that they can mutate the elements in the way they need to,
 // and after passing it in to all the mutator the request will have the final state which can be used to mutate the pod.
 type MutationRequest struct {
 	*BaseRequest
@@ -41,7 +41,7 @@ type MutationRequest struct {
 }
 
 // ReinvocationRequest contains all the information needed to reinvoke a pod
-// It is meant to passed into each mutator, so that they can mutate the elements in the way they need to,
+// It is meant to be passed into each mutator, so that they can mutate the elements in the way they need to,
 // and after passing it in to all the mutator the request will have the final state which can be used to mutate the pod.
 type ReinvocationRequest struct {
 	*BaseRequest
