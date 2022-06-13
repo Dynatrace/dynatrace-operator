@@ -1,19 +1,12 @@
 name: Scorecards supply-chain security
 
-# Currently this workflow is failing and should be run only when triggered manually
-# If workflow result is green:
-#    - remove `workflow_dispatch` and uncomment remaining lines 
 on:
-  workflow_dispatch:  
-#   push:
-#     branches:
-#       - master
+  push:
+    branches:
+      - master
 #   pull_request:
-#     # The branches below must be a subset of the branches above
 #     branches:
 #       - master
-#   schedule:
-#     - cron: '34 23 * * 0'
 
 
 # Declare default permissions as read only.
