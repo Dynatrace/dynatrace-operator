@@ -14,7 +14,7 @@ var (
 	sourceRuxitAgentProcPath = filepath.Join("agent", "conf", "_ruxitagentproc.conf")
 )
 
-func UpdateProcessModuleConfig(fs afero.Fs, targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
+func UpdateProcessModuleConfigInPlace(fs afero.Fs, targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
 	if processModuleConfig != nil {
 		log.Info("updating ruxitagentproc.conf", "targetDir", targetDir)
 		usedProcessModuleConfigPath := filepath.Join(targetDir, ruxitAgentProcPath)
@@ -23,6 +23,18 @@ func UpdateProcessModuleConfig(fs afero.Fs, targetDir string, processModuleConfi
 			return err
 		}
 		return Update(fs, sourceProcessModuleConfigPath, usedProcessModuleConfigPath, processModuleConfig.ToMap())
+	}
+	log.Info("no changes to ruxitagentproc.conf, skipping update")
+	return nil
+}
+
+func CreateAgentConfigDir(fs afero.Fs, targetDir, sourceDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
+	if processModuleConfig != nil {
+		log.Info("updating ruxitagentproc.conf", "targetDir", targetDir, "sourceDir", sourceDir)
+		sourceProcessModuleConfigPath := filepath.Join(sourceDir, ruxitAgentProcPath)
+		destinationProcessModuleConfigPath := filepath.Join(targetDir, ruxitAgentProcPath)
+		_ = fs.MkdirAll(filepath.Dir(destinationProcessModuleConfigPath), 0755)
+		return Update(fs, sourceProcessModuleConfigPath, destinationProcessModuleConfigPath, processModuleConfig.ToMap())
 	}
 	log.Info("no changes to ruxitagentproc.conf, skipping update")
 	return nil

@@ -41,7 +41,7 @@ key value
 test test3
 `
 
-	err := UpdateProcessModuleConfig(memFs, "", &testProcessModuleConfig)
+	err := UpdateProcessModuleConfigInPlace(memFs, "", &testProcessModuleConfig)
 	require.NoError(t, err)
 	assertTestConf(t, memFs, ruxitAgentProcPath, expectedUsed)
 	assertTestConf(t, memFs, sourceRuxitAgentProcPath, testRuxitConf)
