@@ -106,7 +106,7 @@ func (runner *Runner) createPropsEnrichmentFile() error {
 
 func (runner *Runner) createCurlOptionsFile() error {
 	content := runner.getCurlOptionsContent()
-	path := filepath.Join(ShareDirMount, curlOptionsFileName)
+	path := filepath.Join(ShareDirMount, CurlOptionsFileName)
 
 	return errors.WithStack(runner.createConfFile(path, content))
 }

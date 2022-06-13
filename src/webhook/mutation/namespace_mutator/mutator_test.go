@@ -1,4 +1,4 @@
-package mutation
+package namespace_mutator
 
 import (
 	"context"

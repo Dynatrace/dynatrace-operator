@@ -20,3 +20,7 @@ func EnvVarIsIn(envVars []corev1.EnvVar, envVarToCheck string) bool {
 	}
 	return false
 }
+
+func NewEnvVarSourceForField(fieldPath string) *corev1.EnvVarSource {
+	return &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: fieldPath}}
+}
