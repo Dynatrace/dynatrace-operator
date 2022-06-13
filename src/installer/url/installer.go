@@ -25,23 +25,24 @@ func (props *Properties) fillEmptyWithDefaults() {
 	}
 }
 
-type urlInstaller struct {
+type UrlInstaller struct {
 	fs    afero.Fs
 	dtc   dtclient.Client
 	props *Properties
 }
 
-func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) *urlInstaller {
-	return &urlInstaller{
+func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) *UrlInstaller {
+	return &UrlInstaller{
 		fs:    fs,
 		dtc:   dtc,
 		props: props,
 	}
 }
 
-func (installer *urlInstaller) InstallAgent(targetDir string) error {
+func (installer *UrlInstaller) InstallAgent(targetDir string) error {
 	log.Info("installing agent", "target dir", targetDir)
 	installer.props.fillEmptyWithDefaults()
+	_ = installer.fs.MkdirAll(targetDir, 0755)
 	if err := installer.installAgentFromUrl(targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
 		return fmt.Errorf("failed to install agent: %w", err)
@@ -49,11 +50,11 @@ func (installer *urlInstaller) InstallAgent(targetDir string) error {
 	return symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, targetDir)
 }
 
-func (installer *urlInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
-	return processmoduleconfig.UpdateProcessModuleConfig(installer.fs, targetDir, processModuleConfig)
+func (installer *UrlInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
+	return processmoduleconfig.UpdateProcessModuleConfigInPlace(installer.fs, targetDir, processModuleConfig)
 }
 
-func (installer *urlInstaller) installAgentFromUrl(targetDir string) error {
+func (installer *UrlInstaller) installAgentFromUrl(targetDir string) error {
 	fs := installer.fs
 	tmpFile, err := afero.TempFile(fs, "", "download")
 	if err != nil {

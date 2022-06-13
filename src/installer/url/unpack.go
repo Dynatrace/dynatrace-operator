@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func (installer *urlInstaller) unpackOneAgentZip(targetDir string, tmpFile afero.File) error {
+func (installer *UrlInstaller) unpackOneAgentZip(targetDir string, tmpFile afero.File) error {
 	var fileSize int64
 	if stat, err := tmpFile.Stat(); err == nil {
 		fileSize = stat.Size()

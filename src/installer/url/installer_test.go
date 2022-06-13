@@ -38,7 +38,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		fs := failFs{
 			Fs: afero.NewMemMapFs(),
 		}
-		installer := &urlInstaller{
+		installer := &UrlInstaller{
 			fs: fs,
 		}
 
@@ -55,7 +55,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		dtc.
 			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro, mock.AnythingOfType("string")).
 			Return([]string{}, fmt.Errorf(testErrorMessage))
-		installer := &urlInstaller{
+		installer := &UrlInstaller{
 			fs:  fs,
 			dtc: dtc,
 			props: &Properties{
@@ -85,7 +85,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &urlInstaller{
+		installer := &UrlInstaller{
 			fs:  fs,
 			dtc: dtc,
 			props: &Properties{
@@ -114,7 +114,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &urlInstaller{
+		installer := &UrlInstaller{
 			fs:  fs,
 			dtc: dtc,
 			props: &Properties{
@@ -150,7 +150,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &urlInstaller{
+		installer := &UrlInstaller{
 			fs:  fs,
 			dtc: dtc,
 			props: &Properties{
@@ -185,7 +185,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &urlInstaller{
+		installer := &UrlInstaller{
 			fs:  fs,
 			dtc: dtc,
 			props: &Properties{
