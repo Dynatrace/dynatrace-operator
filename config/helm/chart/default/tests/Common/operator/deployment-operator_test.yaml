@@ -5,7 +5,7 @@ tests:
   - it: should exist
     set:
       platform: kubernetes
-      operator.image: image-name
+      image: image-name
     asserts:
       - isKind:
           of: Deployment
@@ -140,7 +140,7 @@ tests:
   - it: should exist
     set:
       platform: openshift
-      operator.image: image-name
+      image: image-name
     asserts:
       - isKind:
           of: Deployment

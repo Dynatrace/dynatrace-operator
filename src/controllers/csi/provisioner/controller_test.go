@@ -356,7 +356,7 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 	t.Run(`correct directories are created`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
 		memDB := metadata.FakeMemoryDB()
-		err := memDB.InsertDynakube(metadata.NewDynakube(dkName, tenantUUID, agentVersion))
+		err := memDB.InsertDynakube(metadata.NewDynakube(dkName, tenantUUID, agentVersion, ""))
 		require.NoError(t, err)
 
 		mockClient := &dtclient.MockDynatraceClient{}
@@ -479,14 +479,14 @@ func buildValidApplicationMonitoringSpec(_ *testing.T) *dynatracev1beta1.Applica
 
 func TestProvisioner_CreateDynakube(t *testing.T) {
 	db := metadata.FakeMemoryDB()
-	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1")
+	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1", "")
 	db.InsertDynakube(expectedOtherDynakube)
 	provisioner := &OneAgentProvisioner{
 		db: db,
 	}
 
 	oldDynakube := metadata.Dynakube{}
-	newDynakube := metadata.NewDynakube(dkName, tenantUUID, "v1")
+	newDynakube := metadata.NewDynakube(dkName, tenantUUID, "v1", "")
 
 	err := provisioner.createOrUpdateDynakubeMetadata(oldDynakube, newDynakube)
 	require.NoError(t, err)
@@ -504,15 +504,15 @@ func TestProvisioner_CreateDynakube(t *testing.T) {
 
 func TestProvisioner_UpdateDynakube(t *testing.T) {
 	db := metadata.FakeMemoryDB()
-	oldDynakube := metadata.NewDynakube(dkName, tenantUUID, "v1")
+	oldDynakube := metadata.NewDynakube(dkName, tenantUUID, "v1", "")
 	db.InsertDynakube(oldDynakube)
-	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1")
+	expectedOtherDynakube := metadata.NewDynakube(otherDkName, tenantUUID, "v1", "")
 	db.InsertDynakube(expectedOtherDynakube)
 
 	provisioner := &OneAgentProvisioner{
 		db: db,
 	}
-	newDynakube := metadata.NewDynakube(dkName, "new-uuid", "v2")
+	newDynakube := metadata.NewDynakube(dkName, "new-uuid", "v2", "")
 
 	err := provisioner.createOrUpdateDynakubeMetadata(*oldDynakube, newDynakube)
 	require.NoError(t, err)

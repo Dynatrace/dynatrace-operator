@@ -13,17 +13,18 @@ The Dynatrace Operator supports rollout and lifecycle management of various Dyna
   * `kubernetes-monitoring` allows monitoring of the Kubernetes API
   * `metrics-ingest` routes enriched metrics through ActiveGate
 
-For more information please have a look at [our DynaKube Custom Resource examples](config/samples) and
+For more information please have a look at [our DynaKube Custom Resource examples](assets/samples) and
 our [official help page](https://www.dynatrace.com/support/help/shortlink/kubernetes-hub).
 
-## Supported platforms
+## Supported lifecycle
 
-| Dynatrace Operator version | Kubernetes | OpenShift Container Platform |
-|----------------------------|------------|------------------------------|
-| v0.6.0                     | 1.22-1.24  | 4.8-4.10                     |
-| v0.5.1                     | 1.21-1.23  | 4.7-4.9                      |
-| v0.4.2                     | 1.21-1.23  | 4.7-4.9                      |
-| v0.2.2                     | -          | 3.11.188                     |
+As the Dynatrace Operator is provided by Dynatrace Incorporated, support is provided by the Dynatrace Support team, as described on the [support page](https://support.dynatrace.com/).
+Github issues will also be considered on a case-by-case basis regardless of support contracts and commercial relationships with Dynatrace.
+
+The Dynatrace Operator's support lifecycle guarantees that the latest Kubernetes and OpenShift platforms are fully supported within 4 weeks of their release unless release notes state otherwise.
+These versions will be supported for a period of nine months, or until two releases ("N-2") occur in Kubernetes and OpenShift projects, whichever period is longer.
+
+OpenShift 3.11 is an exception to the Dynatrace Operator support lifecyle and will be supported with Operator v0.2.2 until end of 2022.
 
 ## Quick Start
 

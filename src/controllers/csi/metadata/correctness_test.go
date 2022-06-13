@@ -6,6 +6,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -58,33 +59,33 @@ func TestCheckStorageCorrectness_PURGE(t *testing.T) {
 	)
 
 	err := CorrectMetadata(client, db)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	vol, err := db.GetVolume(testVolume1.VolumeID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, &testVolume1, vol)
 
 	ten, err := db.GetDynakube(testDynakube1.Name)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, &testDynakube1, ten)
 
 	// PURGED
 	vol, err = db.GetVolume(testVolume2.VolumeID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Nil(t, vol)
 
 	// PURGED
 	vol, err = db.GetVolume(testVolume3.VolumeID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Nil(t, vol)
 
 	// PURGED
 	ten, err = db.GetDynakube(testDynakube2.TenantUUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Nil(t, ten)
 
 	// PURGED
 	ten, err = db.GetDynakube(testDynakube3.TenantUUID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Nil(t, ten)
 }
