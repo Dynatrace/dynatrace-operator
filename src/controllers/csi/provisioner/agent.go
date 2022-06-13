@@ -27,30 +27,18 @@ type agentUpdater struct {
 	recorder      updaterEventRecorder
 }
 
-func newAgentUpdater(
+func newAgentUrlUpdater(
 	ctx context.Context,
 	fs afero.Fs,
-	apiReader client.Reader,
 	dtc dtclient.Client,
 	path metadata.PathResolver,
 	recorder record.EventRecorder,
 	dk *dynatracev1beta1.DynaKube) (*agentUpdater, error) {
+
 	tenantUUID := dk.ConnectionInfo().TenantUUID
 	targetVersion := dk.CodeModulesVersion()
-	targetDir := path.AgentBinaryDirForVersion(tenantUUID, targetVersion)
-	certPath := path.ImageCertPath(tenantUUID)
 
-	var agentInstaller installer.Installer
-	var err error
-	if dk.CodeModulesImage() != "" {
-		agentInstaller, err = setupImageInstaller(ctx, fs, apiReader, certPath, dk)
-		targetDir = path.AgentSharedBinaryDirForVersion(targetVersion)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		agentInstaller = url.NewUrlInstaller(fs, dtc, getUrlProperties(dk.CodeModulesVersion()))
-	}
+	agentInstaller := url.NewUrlInstaller(fs, dtc, getUrlProperties(targetVersion))
 	eventRecorder := updaterEventRecorder{
 		recorder: recorder,
 		dynakube: dk,
@@ -58,8 +46,41 @@ func newAgentUpdater(
 	return &agentUpdater{
 		fs:            fs,
 		path:          path,
-		targetDir:     targetDir,
+		targetDir:     path.AgentBinaryDirForVersion(tenantUUID, targetVersion),
 		targetVersion: targetVersion,
+		tenantUUID:    tenantUUID,
+		installer:     agentInstaller,
+		recorder:      eventRecorder,
+	}, nil
+}
+
+func newAgentImageUpdater(
+	ctx context.Context,
+	fs afero.Fs,
+	apiReader client.Reader,
+	path metadata.PathResolver,
+	recorder record.EventRecorder,
+	dk *dynatracev1beta1.DynaKube,
+	digest string) (*agentUpdater, error) {
+
+	tenantUUID := dk.ConnectionInfo().TenantUUID
+	certPath := path.ImageCertPath(tenantUUID)
+
+	agentInstaller, err := setupImageInstaller(ctx, fs, path, apiReader, certPath, digest, dk)
+	if err != nil {
+		return nil, err
+	}
+
+	eventRecorder := updaterEventRecorder{
+		recorder: recorder,
+		dynakube: dk,
+	}
+
+	return &agentUpdater{
+		fs:            fs,
+		path:          path,
+		targetDir:     path.AgentConfigDir(tenantUUID),
+		targetVersion: dk.CodeModulesVersion(),
 		tenantUUID:    tenantUUID,
 		installer:     agentInstaller,
 		recorder:      eventRecorder,
@@ -78,7 +99,7 @@ func getUrlProperties(version string) *url.Properties {
 	}
 }
 
-func setupImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Reader, certPath string, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) {
+func setupImageInstaller(ctx context.Context, fs afero.Fs, path metadata.PathResolver, apiReader client.Reader, certPath, digest string, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) {
 	dockerConfig, err := dockerconfig.NewDockerConfig(ctx, apiReader, *dynakube)
 	if err != nil {
 		return nil, err
@@ -91,6 +112,8 @@ func setupImageInstaller(ctx context.Context, fs afero.Fs, apiReader client.Read
 	}
 	imageInstaller := image.NewImageInstaller(fs, &image.Properties{
 		ImageUri:     dynakube.CodeModulesImage(),
+		ImageDigest:  digest,
+		PathResolver: path,
 		DockerConfig: *dockerConfig})
 	return imageInstaller, nil
 }
@@ -103,8 +126,6 @@ func (updater *agentUpdater) updateAgent(installedVersion string, latestProcessM
 			"target version", updater.targetVersion,
 			"installed version", installedVersion,
 			"target directory", updater.targetDir)
-		_ = updater.fs.MkdirAll(updater.targetDir, 0755)
-
 		if err := updater.installer.InstallAgent(updater.targetDir); err != nil {
 			updater.recorder.sendFailedInstallAgentVersionEvent(updater.targetVersion, updater.tenantUUID)
 			return "", err

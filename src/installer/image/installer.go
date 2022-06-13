@@ -3,8 +3,10 @@ package image
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	dtypes "github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
@@ -17,35 +19,45 @@ import (
 
 type Properties struct {
 	ImageUri     string
+	ImageDigest  string
 	DockerConfig dockerconfig.DockerConfig
+	PathResolver metadata.PathResolver
 }
 
-func NewImageInstaller(fs afero.Fs, props *Properties) *imageInstaller {
-	return &imageInstaller{
+func NewImageInstaller(fs afero.Fs, props *Properties) *ImageInstaller {
+	return &ImageInstaller{
 		fs:    fs,
 		props: props,
 	}
 }
 
-type imageInstaller struct {
+type ImageInstaller struct {
 	fs    afero.Fs
 	props *Properties
 }
 
-func (installer *imageInstaller) InstallAgent(targetDir string) error {
-	log.Info("installing agent", "target dir", targetDir)
-	if err := installer.installAgentFromImage(targetDir); err != nil {
+func (installer *ImageInstaller) ImageDigest() string {
+	return installer.props.ImageDigest
+}
+
+func (installer *ImageInstaller) InstallAgent(targetDir string) error {
+	log.Info("installing agent from image")
+	_ = installer.fs.MkdirAll(targetDir, 0755)
+	if err := installer.installAgentFromImage(); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
 		return fmt.Errorf("failed to install agent: %w", err)
 	}
-	return symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, targetDir)
+	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForDigest(installer.props.ImageDigest)
+	return symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, sharedDir)
 }
 
-func (installer *imageInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtypes.ProcessModuleConfig) error {
-	return processmoduleconfig.UpdateProcessModuleConfig(installer.fs, targetDir, processModuleConfig)
+func (installer *ImageInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtypes.ProcessModuleConfig) error {
+	sourceDir := installer.props.PathResolver.AgentSharedBinaryDirForDigest(installer.props.ImageDigest)
+	return processmoduleconfig.CreateAgentConfigDir(installer.fs, targetDir, sourceDir, processModuleConfig)
 }
 
-func (installer *imageInstaller) installAgentFromImage(targetDir string) error {
+func (installer *ImageInstaller) installAgentFromImage() error {
+	defer func() { _ = installer.fs.RemoveAll(CacheDir) }()
 	_ = installer.fs.MkdirAll(CacheDir, 0755)
 	image := installer.props.ImageUri
 
@@ -60,24 +72,48 @@ func (installer *imageInstaller) installAgentFromImage(targetDir string) error {
 		log.Info("failed to get image digest", "image", image)
 		return err
 	}
-	imageCacheDir := filepath.Join(CacheDir, imageDigest.Encoded())
+
+	imageDigestEncoded := imageDigest.Encoded()
+	imageCacheDir := filepath.Join(CacheDir, imageDigestEncoded)
+	if installer.isAlreadyDownloaded(imageDigestEncoded, imageCacheDir) {
+		log.Info("image is already installed", "image", image, "digest", imageDigestEncoded)
+		installer.props.ImageDigest = imageDigestEncoded
+		return nil
+	}
+	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForDigest(imageDigestEncoded)
+	_ = installer.fs.MkdirAll(sharedDir, 0755)
 
 	destinationCtx, destinationRef, err := getDestinationInfo(imageCacheDir)
 	if err != nil {
 		log.Info("failed to get destination information", "image", image, "imageCacheDir", imageCacheDir)
 		return err
 	}
-	return installer.extractAgentBinariesFromImage(
+	err = installer.extractAgentBinariesFromImage(
 		imagePullInfo{
 			imageCacheDir:  imageCacheDir,
-			targetDir:      targetDir,
+			targetDir:      sharedDir,
 			sourceCtx:      sourceCtx,
 			destinationCtx: destinationCtx,
 			sourceRef:      sourceRef,
 			destinationRef: destinationRef,
 		},
 	)
+	if err != nil {
+		log.Info("failed to extract agent binaries from image", "image", image, "imageCacheDir", imageCacheDir)
+		return err
+	}
+	installer.props.ImageDigest = imageDigestEncoded
+	return nil
+}
 
+func (installer *ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string, imageCacheDir string) bool {
+	if _, err := installer.fs.Stat(imageCacheDir); !os.IsNotExist(err) {
+		return false
+	}
+	if installer.props.ImageDigest == imageDigestEncoded {
+		return true
+	}
+	return false
 }
 
 func getImageDigest(systemContext *types.SystemContext, imageReference *types.ImageReference) (digest.Digest, error) {

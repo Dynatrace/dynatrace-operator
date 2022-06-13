@@ -26,6 +26,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/installer/image"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -156,18 +157,30 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 	}
 	latestProcessModuleConfig = latestProcessModuleConfig.AddHostGroup(dk.HostGroup())
 
+	var agentUpdater *agentUpdater
 	if dk.CodeModulesImage() != "" {
+		// TODO: Maybe use the one in the Dynakube ?
 		connectionInfo, err := dtc.GetConnectionInfo()
 		if err != nil {
 			log.Error(err, "error when getting OneAgent connectionInfo")
 			return nil, false, err
 		}
 		latestProcessModuleConfig = latestProcessModuleConfig.AddConnectionInfo(connectionInfo)
+		agentUpdater, err = newAgentImageUpdater(ctx, provisioner.fs, provisioner.apiReader, provisioner.path, provisioner.recorder, dk, dynakubeMetadata.ImageDigest)
+		if err != nil {
+			log.Error(err, "error when setting up the agent image updater")
+			return nil, false, err
+		}
+	} else {
+		agentUpdater, err = newAgentUrlUpdater(ctx, provisioner.fs, dtc, provisioner.path, provisioner.recorder, dk)
+		if err != nil {
+			log.Info("error when setting up the agent url updater", "error", err.Error())
+			return nil, false, err
+		}
 	}
 
 	latestProcessModuleConfigCache = newProcessModuleConfigCache(latestProcessModuleConfig)
 
-	agentUpdater, err := newAgentUpdater(ctx, provisioner.fs, provisioner.apiReader, dtc, provisioner.path, provisioner.recorder, dk)
 	if err != nil {
 		log.Info("error when setting up the agent updater", "error", err.Error())
 		return nil, false, err
@@ -178,6 +191,10 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 		return nil, true, nil
 	} else if updatedVersion != "" {
 		dynakubeMetadata.LatestVersion = updatedVersion
+		imageInstaller, ok := agentUpdater.installer.(*image.ImageInstaller)
+		if ok {
+			dynakubeMetadata.ImageDigest = imageInstaller.ImageDigest()
+		}
 	}
 	return latestProcessModuleConfigCache, false, nil
 }
