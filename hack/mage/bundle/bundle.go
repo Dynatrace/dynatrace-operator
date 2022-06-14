@@ -1,8 +1,9 @@
 package bundle
 
 import (
-	"github.com/magefile/mage/sh"
 	"os"
+
+	"github.com/magefile/mage/sh"
 )
 
 // Bundle generates bundle manifests and metadata, then validates generated files

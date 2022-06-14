@@ -8,11 +8,20 @@ import (
 
 	//mage:import bundle
 	_ "github.com/Dynatrace/dynatrace-operator/hack/mage/bundle"
+	//mage:import code
+	"github.com/Dynatrace/dynatrace-operator/hack/mage/code"
+	//mage:import init
+	_ "github.com/Dynatrace/dynatrace-operator/hack/mage/config"
 	//mage:import manifests
 	_ "github.com/Dynatrace/dynatrace-operator/hack/mage/crd"
-	//mage:import code
-	_ "github.com/Dynatrace/dynatrace-operator/hack/mage/go"
-	"github.com/Dynatrace/dynatrace-operator/hack/mage/utils"
+	//mage:import shallow
+	_ "github.com/Dynatrace/dynatrace-operator/hack/mage/deep"
+	//mage:import deps
+	_ "github.com/Dynatrace/dynatrace-operator/hack/mage/dependencies"
+	"github.com/Dynatrace/dynatrace-operator/hack/mage/prerequisites"
+	//mage:import vars
+	_ "github.com/Dynatrace/dynatrace-operator/hack/mage/vars"
+	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
 
@@ -20,29 +29,14 @@ import (
 // If not set, running mage will list available targets
 // var Default = Build
 
+var Aliases = map[string]interface{}{
+	"go:lint":  code.Lint,
+	"go:purge": Clean,
+}
+
+// deps installs dependencies
 func Deps() error {
-	return nil
-}
-
-// Build the operator image and pushes it to quay with a snapshot tag
-func Build() error {
-	commandPath, err := utils.GetCommand("kustomize")
-	if err != nil {
-		return err
-	}
-	fmt.Println(commandPath)
-
-	commandPath, err = utils.GetCommand("controller-gen")
-	if err != nil {
-		return err
-	}
-	fmt.Println(commandPath)
-	return nil
-}
-
-// Install dependencies
-func Install(name string) error {
-	fmt.Println(name)
+	mg.SerialDeps(prerequisites.SetupPreCommit, prerequisites.Kustomize, prerequisites.ControllerGen)
 	return nil
 }
 
@@ -62,3 +56,14 @@ func Clean() {
 	}
 	sh.Run("git", files...)
 }
+
+// Parameters - a target with parameters. Parameters:
+// <dir> - directory,
+// <level> - recursion level.
+func Parameters(dir string, level int) {
+	fmt.Printf("Params dir: '%v' level: '%v'\n", dir, level)
+}
+
+/*func main() {
+	fmt.Println("main")
+}*/

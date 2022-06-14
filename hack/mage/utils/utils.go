@@ -13,7 +13,7 @@ import (
 func isExecutable(filePath string) (bool, error) {
 	fileInfo, err := os.Stat(filePath)
 	if err == nil {
-		if fileInfo.IsDir() == false && fileInfo.Mode().Perm()&0755 == 0755 {
+		if !fileInfo.IsDir() && fileInfo.Mode().Perm()&0755 == 0755 {
 			return true, nil
 		}
 		return false, nil
@@ -41,16 +41,19 @@ func GetCommand(commandName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	commandPath := path.Join(gobin, "bin", commandName)
-	isExec, err := isExecutable(commandPath)
-	if err != nil {
-		return "", err
-	}
-	if isExec {
-		return commandPath, nil
+
+	if gobin != "" {
+		commandPath := path.Join(gobin, "bin", commandName)
+		isExec, err := isExecutable(commandPath)
+		if err != nil {
+			return "", err
+		}
+		if isExec {
+			return commandPath, nil
+		}
 	}
 
-	commandPath, err = which(commandName)
+	commandPath, err := which(commandName)
 	if err != nil {
 		return "", err
 	}
