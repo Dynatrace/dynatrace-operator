@@ -21,13 +21,13 @@ func ExtractGzip(fs afero.Fs, sourceFilePath, targetDir string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	defer func() { _ = reader.Close() }()
+	defer reader.Close()
 
 	gzipReader, err := gzip.NewReader(reader)
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	defer func() { _ = gzipReader.Close() }()
+	defer gzipReader.Close()
 
 	tarReader := tar.NewReader(gzipReader)
 	for {

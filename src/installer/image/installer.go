@@ -62,7 +62,7 @@ func (installer ImageInstaller) UpdateProcessModuleConfig(targetDir string, proc
 }
 
 func (installer *ImageInstaller) installAgentFromImage() error {
-	defer func() { _ = installer.fs.RemoveAll(CacheDir) }()
+	defer installer.fs.RemoveAll(CacheDir)
 	err := installer.fs.MkdirAll(CacheDir, 0755)
 	if err != nil {
 		log.Info("failed to create cache dir", "err", err)

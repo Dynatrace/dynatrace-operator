@@ -72,13 +72,13 @@ func extractFileFromZip(fs afero.Fs, targetDir string, file *zip.File) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	defer func() { _ = dstFile.Close() }()
+	defer dstFile.Close()
 
 	srcFile, err := file.Open()
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	defer func() { _ = srcFile.Close() }()
+	defer srcFile.Close()
 
 	_, err = io.Copy(dstFile, srcFile)
 	return errors.WithStack(err)
