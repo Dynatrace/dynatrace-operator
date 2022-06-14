@@ -99,7 +99,7 @@ func getUrlProperties(version string) *url.Properties {
 	}
 }
 
-func setupImageInstaller(ctx context.Context, fs afero.Fs, path metadata.PathResolver, apiReader client.Reader, certPath, digest string, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) {
+func setupImageInstaller(ctx context.Context, fs afero.Fs, pathResolver metadata.PathResolver, apiReader client.Reader, certPath, digest string, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) {
 	dockerConfig, err := dockerconfig.NewDockerConfig(ctx, apiReader, *dynakube)
 	if err != nil {
 		return nil, err
@@ -113,7 +113,7 @@ func setupImageInstaller(ctx context.Context, fs afero.Fs, path metadata.PathRes
 	imageInstaller := image.NewImageInstaller(fs, &image.Properties{
 		ImageUri:     dynakube.CodeModulesImage(),
 		ImageDigest:  digest,
-		PathResolver: path,
+		PathResolver: pathResolver,
 		DockerConfig: *dockerConfig})
 	return imageInstaller, nil
 }
