@@ -1,9 +1,3 @@
--include ../prerequisites.mk
--include ../images.mk
--include config.mk
--include manifests.mk
--include crd.mk
-
 ## Generates a manifest for Kubernetes solely for a CSI driver deployment
 manifests/kubernetes/csi:
 	# Generate kubernetes-csidriver.yaml

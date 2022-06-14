@@ -1,7 +1,3 @@
--include images.mk
--include prerequisites.mk
--include manifests/*.mk
-
 # Current Operator version
 VERSION ?= 0.0.1
 # Default platform for bundles

@@ -1,7 +1,3 @@
--include config.mk
--include kubernetes.mk
--include openshift.mk
-
 manifests/prepare-directory:
 	find $(MANIFESTS_DIR) -type f -not -name 'kustomization.yaml' -delete
 
