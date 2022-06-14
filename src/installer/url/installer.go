@@ -38,7 +38,7 @@ func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) *UrlIn
 	}
 }
 
-func (installer *UrlInstaller) InstallAgent(targetDir string) error {
+func (installer UrlInstaller) InstallAgent(targetDir string) error {
 	log.Info("installing agent", "target dir", targetDir)
 	installer.props.fillEmptyWithDefaults()
 	err := installer.fs.MkdirAll(targetDir, 0755)
@@ -54,11 +54,11 @@ func (installer *UrlInstaller) InstallAgent(targetDir string) error {
 	return symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, targetDir)
 }
 
-func (installer *UrlInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
+func (installer UrlInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
 	return processmoduleconfig.UpdateProcessModuleConfigInPlace(installer.fs, targetDir, processModuleConfig)
 }
 
-func (installer *UrlInstaller) installAgentFromUrl(targetDir string) error {
+func (installer UrlInstaller) installAgentFromUrl(targetDir string) error {
 	fs := installer.fs
 	tmpFile, err := afero.TempFile(fs, "", "download")
 	if err != nil {
