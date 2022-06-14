@@ -2,7 +2,6 @@ package image
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/containers/image/v5/docker"
 	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/go-digest"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
@@ -42,10 +42,15 @@ func (installer *ImageInstaller) ImageDigest() string {
 
 func (installer *ImageInstaller) InstallAgent(targetDir string) error {
 	log.Info("installing agent from image")
-	_ = installer.fs.MkdirAll(targetDir, 0755)
+	err := installer.fs.MkdirAll(targetDir, 0755)
+	if err != nil {
+		log.Info("failed to create install target dir", "err", err, "targetDir", targetDir)
+		return errors.WithStack(err)
+	}
 	if err := installer.installAgentFromImage(); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
-		return fmt.Errorf("failed to install agent: %w", err)
+		log.Info("failed to install agent from image", "err", err)
+		return errors.WithStack(err)
 	}
 	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForDigest(installer.props.ImageDigest)
 	return symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, sharedDir)
@@ -58,19 +63,23 @@ func (installer *ImageInstaller) UpdateProcessModuleConfig(targetDir string, pro
 
 func (installer *ImageInstaller) installAgentFromImage() error {
 	defer func() { _ = installer.fs.RemoveAll(CacheDir) }()
-	_ = installer.fs.MkdirAll(CacheDir, 0755)
+	err := installer.fs.MkdirAll(CacheDir, 0755)
+	if err != nil {
+		log.Info("failed to create cache dir", "err", err)
+		return errors.WithStack(err)
+	}
 	image := installer.props.ImageUri
 
 	sourceCtx, sourceRef, err := getSourceInfo(CacheDir, *installer.props)
 	if err != nil {
 		log.Info("failed to get source information", "image", image)
-		return err
+		return errors.WithStack(err)
 	}
 
 	imageDigest, err := getImageDigest(sourceCtx, sourceRef)
 	if err != nil {
 		log.Info("failed to get image digest", "image", image)
-		return err
+		return errors.WithStack(err)
 	}
 
 	imageDigestEncoded := imageDigest.Encoded()
@@ -100,7 +109,7 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 	)
 	if err != nil {
 		log.Info("failed to extract agent binaries from image", "image", image, "imageCacheDir", imageCacheDir)
-		return err
+		return errors.WithStack(err)
 	}
 	installer.props.ImageDigest = imageDigestEncoded
 	return nil

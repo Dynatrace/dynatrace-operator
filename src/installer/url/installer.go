@@ -1,11 +1,10 @@
 package url
 
 import (
-	"fmt"
-
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
@@ -42,10 +41,15 @@ func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) *UrlIn
 func (installer *UrlInstaller) InstallAgent(targetDir string) error {
 	log.Info("installing agent", "target dir", targetDir)
 	installer.props.fillEmptyWithDefaults()
-	_ = installer.fs.MkdirAll(targetDir, 0755)
+	err := installer.fs.MkdirAll(targetDir, 0755)
+	if err != nil {
+		log.Info("failed to create install target dir", "err", err, "targetDir", targetDir)
+		return errors.WithStack(err)
+	}
 	if err := installer.installAgentFromUrl(targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
-		return fmt.Errorf("failed to install agent: %w", err)
+		log.Info("failed to install agent", "err", err, "targetDir", targetDir)
+		return errors.WithStack(err)
 	}
 	return symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, targetDir)
 }
@@ -58,7 +62,8 @@ func (installer *UrlInstaller) installAgentFromUrl(targetDir string) error {
 	fs := installer.fs
 	tmpFile, err := afero.TempFile(fs, "", "download")
 	if err != nil {
-		return fmt.Errorf("failed to create temporary file for download: %w", err)
+		log.Info("failed to create temp file download", "err", err)
+		return errors.WithStack(err)
 	}
 	defer func() {
 		_ = tmpFile.Close()
@@ -67,7 +72,7 @@ func (installer *UrlInstaller) installAgentFromUrl(targetDir string) error {
 		}
 	}()
 	if err := installer.downloadOneAgentFromUrl(tmpFile); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	return installer.unpackOneAgentZip(targetDir, tmpFile)
 }

@@ -43,7 +43,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		}
 
 		err := installer.installAgentFromUrl("")
-		assert.EqualError(t, err, "failed to create temporary file for download: "+testErrorMessage)
+		assert.EqualError(t, err, testErrorMessage)
 	})
 	t.Run(`error when downloading latest agent`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -66,7 +66,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		}
 
 		err := installer.installAgentFromUrl("")
-		assert.EqualError(t, err, "failed to fetch OneAgent version: "+testErrorMessage)
+		assert.EqualError(t, err, testErrorMessage)
 	})
 	t.Run(`error unzipping file`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()

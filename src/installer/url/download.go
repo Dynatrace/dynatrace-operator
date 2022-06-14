@@ -1,24 +1,22 @@
 package url
 
 import (
-	"fmt"
-	"strings"
-
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
 func (installer *UrlInstaller) downloadOneAgentFromUrl(tmpFile afero.File) error {
 	if installer.props.Url != "" {
 		if err := installer.downloadOneAgentViaInstallerUrl(tmpFile); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 	} else if installer.props.Version == VersionLatest {
 		if err := installer.downloadLatestOneAgent(tmpFile); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 	} else {
 		if err := installer.downloadOneAgentWithVersion(tmpFile); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 	}
 	return nil
@@ -56,9 +54,11 @@ func (installer *UrlInstaller) downloadOneAgentWithVersion(tmpFile afero.File) e
 			installer.props.Arch,
 		)
 		if getVersionsError != nil {
-			return fmt.Errorf("failed to fetch OneAgent version: %w", err)
+			log.Info("failed to get available versions", "err", getVersionsError)
+			return errors.WithStack(getVersionsError)
 		}
-		return fmt.Errorf("failed to fetch OneAgent version: %w, available versions are: %s", err, "[ "+strings.Join(availableVersions, " , ")+" ]")
+		log.Info("failed to download specific OneAgent package", "version", installer.props.Version, "available versions", availableVersions)
+		return errors.WithStack(err)
 	}
 	return nil
 }

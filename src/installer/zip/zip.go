@@ -9,6 +9,7 @@ import (
 
 	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/klauspost/compress/zip"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
@@ -19,19 +20,25 @@ func ExtractZip(fs afero.Fs, sourceFile afero.File, targetDir string) error {
 
 	fileInfo, err := sourceFile.Stat()
 	if err != nil {
-		return fmt.Errorf("unable to determine file info: %w", err)
+		log.Info("failed to get file info", "err", err)
+		return errors.WithStack(err)
 	}
 
 	reader, err := zip.NewReader(sourceFile, fileInfo.Size())
 	if err != nil {
-		return fmt.Errorf("failed to open ZIP file: %w", err)
+		log.Info("failed to create zip reader", "err", err)
+		return errors.WithStack(err)
 	}
 
-	_ = fs.MkdirAll(targetDir, 0755)
+	err = fs.MkdirAll(targetDir, 0755)
+	if err != nil {
+		log.Info("failed to create target directory", "err", err)
+		return errors.WithStack(err)
+	}
 
 	for _, file := range reader.File {
 		if err := extractFileFromZip(fs, targetDir, file); err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 	}
 
@@ -58,21 +65,21 @@ func extractFileFromZip(fs afero.Fs, targetDir string, file *zip.File) error {
 	}
 
 	if err := fs.MkdirAll(filepath.Dir(path), mode); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	dstFile, err := fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	defer func() { _ = dstFile.Close() }()
 
 	srcFile, err := file.Open()
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	defer func() { _ = srcFile.Close() }()
 
 	_, err = io.Copy(dstFile, srcFile)
-	return err
+	return errors.WithStack(err)
 }

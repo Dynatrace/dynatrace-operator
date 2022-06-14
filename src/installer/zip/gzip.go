@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/klauspost/compress/gzip"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
@@ -18,13 +19,13 @@ func ExtractGzip(fs afero.Fs, sourceFilePath, targetDir string) error {
 
 	reader, err := fs.Open(sourceFilePath)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	defer func() { _ = reader.Close() }()
 
 	gzipReader, err := gzip.NewReader(reader)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	defer func() { _ = gzipReader.Close() }()
 
@@ -34,7 +35,7 @@ func ExtractGzip(fs afero.Fs, sourceFilePath, targetDir string) error {
 		if err == io.EOF {
 			return nil
 		} else if err != nil {
-			return err
+			return errors.WithStack(err)
 		}
 
 		target := filepath.Join(targetDir, header.Name)
@@ -47,19 +48,19 @@ func ExtractGzip(fs afero.Fs, sourceFilePath, targetDir string) error {
 		switch header.Typeflag {
 		case tar.TypeDir:
 			if err := fs.MkdirAll(target, 0755); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 		case tar.TypeLink:
 			if err := extractLink(fs, targetDir, target, header); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 		case tar.TypeSymlink:
 			if err := extractSymlink(fs, targetDir, target, header); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 		case tar.TypeReg:
 			if err := extractFile(fs, target, header, tarReader); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 		default:
 			log.Info("skipping special file", "name", header.Name)
@@ -76,7 +77,7 @@ func extractLink(fs afero.Fs, targetDir, target string, header *tar.Header) erro
 	}
 	// Afero doesn't support Link, so we have to use os.Link
 	if err := os.Link(filepath.Join(targetDir, header.Linkname), target); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	return nil
 }
@@ -89,7 +90,7 @@ func extractSymlink(fs afero.Fs, targetDir, target string, header *tar.Header) e
 		return nil
 	}
 	if err := linker.SymlinkIfPossible(header.Linkname, target); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	return nil
 }
@@ -102,11 +103,11 @@ func extractFile(fs afero.Fs, target string, header *tar.Header, tarReader *tar.
 	destinationFile, err := fs.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(mode))
 	defer (func() { _ = destinationFile.Close() })()
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
 	if _, err := io.Copy(destinationFile, tarReader); err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 	return nil
 }
