@@ -130,12 +130,6 @@ func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volume metadata
 	}
 }
 
-type MountOptionsBuilder struct {
-	tenantUUID   string
-	bindCfg      *csivolumes.BindConfig
-	pathResolver metadata.PathResolver
-}
-
 func (publisher *AppVolumePublisher) buildLowerDir(bindCfg *csivolumes.BindConfig) string {
 	var directories []string
 	if bindCfg.ImageDigest == "" {
