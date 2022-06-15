@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
@@ -33,7 +34,11 @@ func CreateAgentConfigDir(fs afero.Fs, targetDir, sourceDir string, processModul
 		log.Info("updating ruxitagentproc.conf", "targetDir", targetDir, "sourceDir", sourceDir)
 		sourceProcessModuleConfigPath := filepath.Join(sourceDir, ruxitAgentProcPath)
 		destinationProcessModuleConfigPath := filepath.Join(targetDir, ruxitAgentProcPath)
-		_ = fs.MkdirAll(filepath.Dir(destinationProcessModuleConfigPath), 0755)
+		err := fs.MkdirAll(filepath.Dir(destinationProcessModuleConfigPath), 0755)
+		if err != nil {
+			log.Info("failed to create directory for destination process module config", "path", filepath.Dir(destinationProcessModuleConfigPath))
+			return errors.WithStack(err)
+		}
 		return Update(fs, sourceProcessModuleConfigPath, destinationProcessModuleConfigPath, processModuleConfig.ToMap())
 	}
 	log.Info("no changes to ruxitagentproc.conf, skipping update")
