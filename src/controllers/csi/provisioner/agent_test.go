@@ -23,6 +23,7 @@ import (
 
 const (
 	testVersion = "test"
+	testDigest  = "123iamDigest456"
 )
 
 func TestNewAgentUpdater(t *testing.T) {
@@ -348,7 +349,7 @@ func createTestAgentImageUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube, ob
 	fs := afero.NewMemMapFs()
 	rec := record.NewFakeRecorder(10)
 
-	updater, err := newAgentImageUpdater(context.TODO(), fs, fake.NewClient(obj...), path, rec, dk, "TODO")
+	updater, err := newAgentImageUpdater(context.TODO(), fs, fake.NewClient(obj...), path, rec, dk, testDigest)
 	require.NoError(t, err)
 	updater.installer = &installer.InstallerMock{}
 
