@@ -27,20 +27,65 @@ const (
 	testTenantUUID   = "a-tenant-uuid"
 	testAgentVersion = "1.2-3"
 	testDynakubeName = "a-dynakube"
+	testImageDigest  = "sha256:123456789"
 )
 
 func TestPublishVolume(t *testing.T) {
-	mounter := mount.NewFakeMounter([]mount.MountPoint{})
-	publisher := newPublisherForTesting(t, mounter)
+	t.Run(`using url`, func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		publisher := newPublisherForTesting(t, mounter)
+		mockUrlDynakubeMetadata(t, &publisher)
 
-	mockOneAgent(t, &publisher)
+		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
+		require.NoError(t, err)
+		assert.NotNil(t, response)
 
-	response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
+		require.NotEmpty(t, mounter.MountPoints)
 
-	assert.NoError(t, err)
-	assert.NotNil(t, response)
-	assert.NotEmpty(t, mounter.MountPoints)
-	assertReferencesForPublishedVolume(t, &publisher, mounter)
+		assert.Equal(t, "overlay", mounter.MountPoints[0].Device)
+		assert.Equal(t, "overlay", mounter.MountPoints[0].Type)
+		assert.Equal(t, []string{
+			"lowerdir=/a-tenant-uuid/bin/1.2-3",
+			"upperdir=/a-tenant-uuid/run/a-volume/var",
+			"workdir=/a-tenant-uuid/run/a-volume/work"},
+			mounter.MountPoints[0].Opts)
+		assert.Equal(t, "/a-tenant-uuid/run/a-volume/mapped", mounter.MountPoints[0].Path)
+
+		assert.Equal(t, "overlay", mounter.MountPoints[1].Device)
+		assert.Equal(t, "", mounter.MountPoints[1].Type)
+		assert.Equal(t, []string{"bind"}, mounter.MountPoints[1].Opts)
+		assert.Equal(t, testTargetPath, mounter.MountPoints[1].Path)
+
+		assertReferencesForPublishedVolume(t, &publisher, mounter)
+	})
+
+	t.Run(`using code modules image`, func(t *testing.T) {
+		mounter := mount.NewFakeMounter([]mount.MountPoint{})
+		publisher := newPublisherForTesting(t, mounter)
+		mockImageDynakubeMetadata(t, &publisher)
+
+		response, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
+		require.NoError(t, err)
+		assert.NotNil(t, response)
+
+		require.NotEmpty(t, mounter.MountPoints)
+
+		assert.Equal(t, "overlay", mounter.MountPoints[0].Device)
+		assert.Equal(t, "overlay", mounter.MountPoints[0].Type)
+		assert.Equal(t, []string{
+			"lowerdir=/data/codemodules/1.2-3,/data/a-tenant-uuid/config",
+			"upperdir=/a-tenant-uuid/run/a-volume/var",
+			"workdir=/a-tenant-uuid/run/a-volume/work"},
+			mounter.MountPoints[0].Opts)
+		assert.Equal(t, "/a-tenant-uuid/run/a-volume/mapped", mounter.MountPoints[0].Path)
+
+		assert.Equal(t, "overlay", mounter.MountPoints[1].Device)
+		assert.Equal(t, "", mounter.MountPoints[1].Type)
+		assert.Equal(t, []string{"bind"}, mounter.MountPoints[1].Opts)
+		assert.Equal(t, testTargetPath, mounter.MountPoints[1].Path)
+
+		assertReferencesForPublishedVolume(t, &publisher, mounter)
+	})
 }
 
 func TestUnpublishVolume(t *testing.T) {
@@ -91,7 +136,7 @@ func TestNodePublishAndUnpublishVolume(t *testing.T) {
 	resetMetrics()
 	mounter := mount.NewFakeMounter([]mount.MountPoint{})
 	publisher := newPublisherForTesting(t, mounter)
-	mockOneAgent(t, &publisher)
+	mockUrlDynakubeMetadata(t, &publisher)
 
 	publishResponse, err := publisher.PublishVolume(context.TODO(), createTestVolumeConfig())
 
@@ -178,14 +223,19 @@ func newPublisherForTesting(t *testing.T, mounter *mount.FakeMounter) AppVolumeP
 }
 
 func mockPublishedVolume(t *testing.T, publisher *AppVolumePublisher) {
-	mockOneAgent(t, publisher)
+	mockUrlDynakubeMetadata(t, publisher)
 	err := publisher.db.InsertVolume(metadata.NewVolume(testVolumeId, testPodUID, testAgentVersion, testTenantUUID))
 	require.NoError(t, err)
 	agentsVersionsMetric.WithLabelValues(testAgentVersion).Inc()
 }
 
-func mockOneAgent(t *testing.T, publisher *AppVolumePublisher) {
+func mockUrlDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
 	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, ""))
+	require.NoError(t, err)
+}
+
+func mockImageDynakubeMetadata(t *testing.T, publisher *AppVolumePublisher) {
+	err := publisher.db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, testImageDigest))
 	require.NoError(t, err)
 }
 
