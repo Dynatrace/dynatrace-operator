@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
@@ -129,6 +130,28 @@ func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volume metadata
 	}
 }
 
+type MountOptionsBuilder struct {
+	tenantUUID   string
+	bindCfg      *csivolumes.BindConfig
+	pathResolver metadata.PathResolver
+}
+
+func (publisher *AppVolumePublisher) buildLowerDir(bindCfg *csivolumes.BindConfig) string {
+	var directories []string
+	if bindCfg.ImageDigest == "" {
+		directories = []string{
+			publisher.path.AgentBinaryDirForVersion(bindCfg.TenantUUID, bindCfg.Version),
+		}
+	} else {
+		directories = []string{
+			publisher.path.AgentSharedBinary(bindCfg.Version),
+			publisher.path.AgentSharedConfig(bindCfg.TenantUUID),
+		}
+	}
+
+	return strings.Join(directories, ",")
+}
+
 func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
 	mappedDir := publisher.path.OverlayMappedDir(bindCfg.TenantUUID, volumeCfg.VolumeID)
 	_ = publisher.fs.MkdirAll(mappedDir, os.ModePerm)
@@ -140,7 +163,7 @@ func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfi
 	_ = publisher.fs.MkdirAll(workDir, os.ModePerm)
 
 	overlayOptions := []string{
-		"lowerdir=" + publisher.path.AgentBinaryDirForVersion(bindCfg.TenantUUID, bindCfg.Version),
+		"lowerdir=" + publisher.buildLowerDir(bindCfg),
 		"upperdir=" + upperDir,
 		"workdir=" + workDir,
 	}

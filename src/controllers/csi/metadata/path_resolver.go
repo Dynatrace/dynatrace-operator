@@ -65,3 +65,11 @@ func (pr PathResolver) OverlayVarDir(tenantUUID string, volumeId string) string 
 func (pr PathResolver) OverlayWorkDir(tenantUUID string, volumeId string) string {
 	return filepath.Join(pr.AgentRunDirForVolume(tenantUUID, volumeId), dtcsi.OverlayWorkDirPath)
 }
+
+func (pr PathResolver) AgentSharedBinary(version string) string {
+	return filepath.Join(dtcsi.DataPath, dtcsi.SharedAgentBinDir, version)
+}
+
+func (pr PathResolver) AgentSharedConfig(tenantUUID string) string {
+	return filepath.Join(dtcsi.DataPath, tenantUUID, dtcsi.SharedAgentConfigDir)
+}
