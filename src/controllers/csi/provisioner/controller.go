@@ -159,13 +159,7 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 
 	var agentUpdater *agentUpdater
 	if dk.CodeModulesImage() != "" {
-		// TODO: Maybe use the one in the Dynakube ?
-		connectionInfo, err := dtc.GetConnectionInfo()
-		if err != nil {
-			log.Error(err, "error when getting OneAgent connectionInfo")
-			return nil, false, err
-		}
-		latestProcessModuleConfig = latestProcessModuleConfig.AddConnectionInfo(connectionInfo)
+		latestProcessModuleConfig = latestProcessModuleConfig.AddConnectionInfo(dk.ConnectionInfo())
 		agentUpdater, err = newAgentImageUpdater(ctx, provisioner.fs, provisioner.apiReader, provisioner.path, provisioner.recorder, dk, dynakubeMetadata.ImageDigest)
 		if err != nil {
 			log.Error(err, "error when setting up the agent image updater")
