@@ -7,17 +7,20 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: should have tolerations if set
+  - it: should have tolerations by default
     set:
       platform: kubernetes
       csidriver.enabled: true
-      csidriver.tolerations:
-        test-key: test-value
     asserts:
     - equal:
         path: spec.template.spec.tolerations
         value:
-          test-key: test-value
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/master
+            operator: Exists
+          - effect: NoSchedule
+            key: node-role.kubernetes.io/control-plane
+            operator: Exists
 
   - it: should have nodeSelectors if set
     set:
@@ -59,6 +62,13 @@ tests:
       - equal:
           path: spec.template.spec
           value:
+            tolerations:
+                - effect: NoSchedule
+                  key: node-role.kubernetes.io/master
+                  operator: Exists
+                - effect: NoSchedule
+                  key: node-role.kubernetes.io/control-plane
+                  operator: Exists
             containers:
               - name: driver
                 image: image-name
