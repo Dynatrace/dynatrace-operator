@@ -137,7 +137,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
-  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -4672,6 +4671,13 @@ spec:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
           type: DirectoryOrCreate
         name: dynatrace-oneagent-data-dir
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
   updateStrategy:
     rollingUpdate:
       maxUnavailable: 1
