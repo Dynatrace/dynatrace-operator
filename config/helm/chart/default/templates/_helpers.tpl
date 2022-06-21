@@ -154,3 +154,13 @@ Check if platform is set
 {{- end -}}
 {{- end -}}
 
+{{/*
+Exclude Kubernetes manifest not running on OLM
+*/}}
+{{- define "dynatrace-operator.openshiftOrOlm" -}}
+{{- if and (or (eq .Values.platform "openshift") (.Values.olm)) (eq (include "dynatrace-operator.partial" .) "false") -}}
+    {{ default "true" }}
+{{- end -}}
+{{- end -}}
+
+
