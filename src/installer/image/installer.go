@@ -84,7 +84,7 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 	}
 
 	imageDigestEncoded := imageDigest.Encoded()
-	imageCacheDir := filepath.Join(CacheDir, imageDigestEncoded)
+	imageCacheDir := getCacheDirPath(imageDigestEncoded)
 	if installer.isAlreadyDownloaded(imageDigestEncoded, imageCacheDir) {
 		log.Info("image is already installed", "image", image, "digest", imageDigestEncoded)
 		installer.props.ImageDigest = imageDigestEncoded
@@ -132,4 +132,8 @@ func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string, i
 
 func getImageDigest(systemContext *types.SystemContext, imageReference *types.ImageReference) (digest.Digest, error) {
 	return docker.GetDigest(context.TODO(), systemContext, *imageReference)
+}
+
+func getCacheDirPath(digest string) string {
+	return filepath.Join(CacheDir, digest)
 }
