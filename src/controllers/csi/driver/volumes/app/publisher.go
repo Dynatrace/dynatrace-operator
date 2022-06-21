@@ -143,7 +143,7 @@ func (publisher *AppVolumePublisher) buildLowerDir(bindCfg *csivolumes.BindConfi
 		}
 	}
 
-	return strings.Join(directories, ",")
+	return strings.Join(directories, ":")
 }
 
 func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
