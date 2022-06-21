@@ -62,12 +62,12 @@ grep -v '# Labels for testing.' "./config/olm/${PLATFORM}/bundle-${VERSION}.Dock
 mv "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile.output" "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 if [ "${PLATFORM}" = "openshift" ]; then
   # shellcheck disable=SC2129
-	echo 'LABEL com.redhat.openshift.versions="v4.7,v4.8,v4.9"' >> "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
+	echo 'LABEL com.redhat.openshift.versions="v4.8-v4.10"' >> "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 	echo 'LABEL com.redhat.delivery.operator.bundle=true' >> "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 	echo 'LABEL com.redhat.delivery.backport=true' >> "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 	sed 's/\bkubectl\b/oc/g' "./config/olm/${PLATFORM}/${VERSION}/manifests/dynatrace-operator.v${VERSION}.clusterserviceversion.yaml" > "./config/olm/${PLATFORM}/${VERSION}/manifests/dynatrace-operator.v${VERSION}.clusterserviceversion.yaml.output"
 	mv "./config/olm/${PLATFORM}/${VERSION}/manifests/dynatrace-operator.v${VERSION}.clusterserviceversion.yaml.output" "./config/olm/${PLATFORM}/${VERSION}/manifests/dynatrace-operator.v${VERSION}.clusterserviceversion.yaml"
-	echo '  com.redhat.openshift.versions: v4.7-v4.9' >> "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml"
+	echo '  com.redhat.openshift.versions: v4.8-v4.10' >> "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml"
 fi
 grep -v 'scorecard' "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml" > "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml.output"
 grep -v '  # Annotations for testing.' "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml.output" > "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml"
