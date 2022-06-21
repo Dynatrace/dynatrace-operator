@@ -1,7 +1,6 @@
 package csivolumes
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
@@ -15,10 +14,7 @@ type BindConfig struct {
 	ImageDigest string
 }
 
-func NewBindConfig(
-	_ context.Context,
-	access metadata.Access,
-	volumeCfg *VolumeConfig) (*BindConfig, error) {
+func NewBindConfig(access metadata.Access, volumeCfg *VolumeConfig) (*BindConfig, error) {
 
 	dynakube, err := access.GetDynakube(volumeCfg.DynakubeName)
 	if err != nil {

@@ -53,8 +53,8 @@ type AppVolumePublisher struct {
 	path    metadata.PathResolver
 }
 
-func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	bindCfg, err := csivolumes.NewBindConfig(ctx, publisher.db, volumeCfg)
+func (publisher *AppVolumePublisher) PublishVolume(_ context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	bindCfg, err := csivolumes.NewBindConfig(publisher.db, volumeCfg)
 	if err != nil {
 		return nil, err
 	}
