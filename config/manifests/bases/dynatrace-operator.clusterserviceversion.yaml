@@ -634,8 +634,7 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: General configuration about ActiveGate instances ActiveGate ActiveGateSpec
-          `json:"activeGate,omitempty"`
+      - description: General configuration about ActiveGate instances
         displayName: ActiveGate
         path: activeGate
         x-descriptors:
