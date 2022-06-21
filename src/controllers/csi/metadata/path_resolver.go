@@ -46,7 +46,7 @@ func (pr PathResolver) AgentSharedBinaryDirBase() string {
 	return filepath.Join(pr.RootDir, "codemodules")
 }
 
-func (pr PathResolver) AgentSharedBinaryDirForDigest(digest string) string {
+func (pr PathResolver) AgentSharedBinaryDirForImage(digest string) string {
 	return filepath.Join(pr.AgentSharedBinaryDirBase(), digest)
 }
 

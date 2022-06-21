@@ -2,6 +2,7 @@ package url
 
 import (
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 	"github.com/pkg/errors"
@@ -41,7 +42,7 @@ func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) *UrlIn
 func (installer UrlInstaller) InstallAgent(targetDir string) error {
 	log.Info("installing agent", "target dir", targetDir)
 	installer.props.fillEmptyWithDefaults()
-	err := installer.fs.MkdirAll(targetDir, 0755)
+	err := installer.fs.MkdirAll(targetDir, common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create install target dir", "err", err, "targetDir", targetDir)
 		return errors.WithStack(err)

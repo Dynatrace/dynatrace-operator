@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/klauspost/compress/gzip"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -47,7 +48,7 @@ func ExtractGzip(fs afero.Fs, sourceFilePath, targetDir string) error {
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := fs.MkdirAll(target, 0755); err != nil {
+			if err := fs.MkdirAll(target, common.MkDirFileMode); err != nil {
 				return errors.WithStack(err)
 			}
 		case tar.TypeLink:

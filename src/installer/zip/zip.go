@@ -30,7 +30,7 @@ func ExtractZip(fs afero.Fs, sourceFile afero.File, targetDir string) error {
 		return errors.WithStack(err)
 	}
 
-	err = fs.MkdirAll(targetDir, 0755)
+	err = fs.MkdirAll(targetDir, common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create target directory", "err", err)
 		return errors.WithStack(err)

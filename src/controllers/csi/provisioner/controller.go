@@ -179,14 +179,15 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 		log.Info("error when setting up the agent updater", "error", err.Error())
 		return nil, false, err
 	}
-	if updatedVersion, err := agentUpdater.updateAgent(dynakubeMetadata.LatestVersion, latestProcessModuleConfigCache); err != nil {
+	updatedVersion, err := agentUpdater.updateAgent(dynakubeMetadata.LatestVersion, latestProcessModuleConfigCache)
+	if err != nil {
 		log.Info("error when updating agent", "error", err.Error())
 		// reporting error but not returning it to avoid immediate requeue and subsequently calling the API every few seconds
 		return nil, true, nil
 	} else if updatedVersion != "" {
 		dynakubeMetadata.LatestVersion = updatedVersion
-		imageInstaller, ok := agentUpdater.installer.(*image.ImageInstaller)
-		if ok {
+		imageInstaller, isImageInstaller := agentUpdater.installer.(*image.ImageInstaller)
+		if isImageInstaller {
 			dynakubeMetadata.ImageDigest = imageInstaller.ImageDigest()
 		}
 	}

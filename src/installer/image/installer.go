@@ -8,6 +8,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
 	"github.com/Dynatrace/dynatrace-operator/src/dockerconfig"
 	dtypes "github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
 	"github.com/Dynatrace/dynatrace-operator/src/processmoduleconfig"
 	"github.com/containers/image/v5/docker"
@@ -42,7 +43,7 @@ func (installer ImageInstaller) ImageDigest() string {
 
 func (installer *ImageInstaller) InstallAgent(targetDir string) error {
 	log.Info("installing agent from image")
-	err := installer.fs.MkdirAll(targetDir, 0755)
+	err := installer.fs.MkdirAll(targetDir, common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create install target dir", "err", err, "targetDir", targetDir)
 		return errors.WithStack(err)
@@ -52,18 +53,18 @@ func (installer *ImageInstaller) InstallAgent(targetDir string) error {
 		log.Info("failed to install agent from image", "err", err)
 		return errors.WithStack(err)
 	}
-	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForDigest(installer.props.ImageDigest)
+	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.props.ImageDigest)
 	return symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, sharedDir)
 }
 
 func (installer ImageInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtypes.ProcessModuleConfig) error {
-	sourceDir := installer.props.PathResolver.AgentSharedBinaryDirForDigest(installer.props.ImageDigest)
+	sourceDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.props.ImageDigest)
 	return processmoduleconfig.CreateAgentConfigDir(installer.fs, targetDir, sourceDir, processModuleConfig)
 }
 
 func (installer *ImageInstaller) installAgentFromImage() error {
 	defer installer.fs.RemoveAll(CacheDir)
-	err := installer.fs.MkdirAll(CacheDir, 0755)
+	err := installer.fs.MkdirAll(CacheDir, common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create cache dir", "err", err)
 		return errors.WithStack(err)
@@ -89,8 +90,8 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 		installer.props.ImageDigest = imageDigestEncoded
 		return nil
 	}
-	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForDigest(imageDigestEncoded)
-	err = installer.fs.MkdirAll(sharedDir, 0755)
+	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(imageDigestEncoded)
+	err = installer.fs.MkdirAll(sharedDir, common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create share dir", "err", err, "sharedDir", sharedDir)
 		return errors.WithStack(err)
