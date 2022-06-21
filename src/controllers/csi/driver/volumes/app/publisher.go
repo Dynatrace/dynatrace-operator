@@ -138,8 +138,8 @@ func (publisher *AppVolumePublisher) buildLowerDir(bindCfg *csivolumes.BindConfi
 		}
 	} else {
 		directories = []string{
-			publisher.path.AgentSharedBinaryDirForImage(bindCfg.ImageDigest),
 			publisher.path.AgentConfigDir(bindCfg.TenantUUID),
+			publisher.path.AgentSharedBinaryDirForImage(bindCfg.ImageDigest),
 		}
 	}
 
