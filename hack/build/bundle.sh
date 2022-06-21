@@ -3,9 +3,16 @@ set -e
 
 PLATFORM="${1:-openshift}"
 VERSION="${2:-0.0.1}"
-OLM_IMAGE="${3:-registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}}"
-BUNDLE_CHANNELS="${4:-}"
-BUNDLE_DEFAULT_CHANNEL="${5:-}"
+BUNDLE_CHANNELS="${3:-}"
+BUNDLE_DEFAULT_CHANNEL="${4:-}"
+
+if [ -z "$OLM_IMAGE" ]; then
+  OLM_IMAGE="registry.connect.redhat.com/dynatrace/dynatrace-operator:v${VERSION}"
+  if [ "${PLATFORM}" == "kubernetes" ]; then
+    OLM_IMAGE="docker.io/dynatrace/dynatrace-operator:v${VERSION}"
+  fi
+fi
+echo "OLM image: ${OLM_IMAGE}"
 
 KUSTOMIZE="$(hack/build/command.sh kustomize 2>/dev/null)"
 if [ -z "${KUSTOMIZE}" ]; then
@@ -20,7 +27,6 @@ if [ -z "${OPERATOR_SDK}" ]; then
 fi
 
 SDK_PARAMS=(
---extra-service-accounts dynatrace-dynakube-oneagent
 --extra-service-accounts dynatrace-dynakube-oneagent-unprivileged
 --extra-service-accounts dynatrace-kubernetes-monitoring
 --extra-service-accounts dynatrace-activegate
