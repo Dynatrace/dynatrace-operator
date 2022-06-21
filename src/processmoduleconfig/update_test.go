@@ -30,10 +30,17 @@ var testProcessModuleConfig = dtclient.ProcessModuleConfig{
 	},
 }
 
-func TestUpdateProcessModuleConfig(t *testing.T) {
-	memFs := afero.NewMemMapFs()
-	prepTestConfFs(memFs)
-	expectedUsed := `
+func TestUpdateProcessModuleConfigInPlace(t *testing.T) {
+	t.Run("no processModuleConfig", func(t *testing.T) {
+		memFs := afero.NewMemMapFs()
+
+		err := UpdateProcessModuleConfigInPlace(memFs, "", nil)
+		require.NoError(t, err)
+	})
+	t.Run("update file", func(t *testing.T) {
+		memFs := afero.NewMemMapFs()
+		prepTestConfFs(memFs)
+		expectedUsed := `
 [general]
 key value
 
@@ -41,10 +48,40 @@ key value
 test test3
 `
 
-	err := UpdateProcessModuleConfig(memFs, "", &testProcessModuleConfig)
-	require.NoError(t, err)
-	assertTestConf(t, memFs, ruxitAgentProcPath, expectedUsed)
-	assertTestConf(t, memFs, sourceRuxitAgentProcPath, testRuxitConf)
+		err := UpdateProcessModuleConfigInPlace(memFs, "", &testProcessModuleConfig)
+		require.NoError(t, err)
+		assertTestConf(t, memFs, ruxitAgentProcPath, expectedUsed)
+		assertTestConf(t, memFs, sourceRuxitAgentProcPath, testRuxitConf)
+	})
+
+}
+
+func TestCreateAgentConfigDir(t *testing.T) {
+	t.Run("no processModuleConfig", func(t *testing.T) {
+		memFs := afero.NewMemMapFs()
+
+		err := CreateAgentConfigDir(memFs, "", "", nil)
+		require.NoError(t, err)
+	})
+
+	t.Run("create config dir with file", func(t *testing.T) {
+		targetDir := "test"
+		sourceDir := ""
+		memFs := afero.NewMemMapFs()
+		prepTestConfFs(memFs)
+		expectedUsed := `
+[general]
+key value
+
+[test]
+test test3
+`
+
+		err := CreateAgentConfigDir(memFs, targetDir, sourceDir, &testProcessModuleConfig)
+		require.NoError(t, err)
+		assertTestConf(t, memFs, filepath.Join(targetDir, ruxitAgentProcPath), expectedUsed)
+		assertTestConf(t, memFs, filepath.Join(sourceDir, ruxitAgentProcPath), testRuxitConf)
+	})
 }
 
 func TestCheckProcessModuleConfigCopy(t *testing.T) {
@@ -60,6 +97,7 @@ func TestCheckProcessModuleConfigCopy(t *testing.T) {
 
 func prepTestConfFs(fs afero.Fs) {
 	_ = fs.MkdirAll(filepath.Base(sourceRuxitAgentProcPath), 0755)
+	_ = fs.MkdirAll(filepath.Base(ruxitAgentProcPath), 0755)
 	usedConf, _ := fs.OpenFile(ruxitAgentProcPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	_, _ = usedConf.WriteString(testRuxitConf)
 }

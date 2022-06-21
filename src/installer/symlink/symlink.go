@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"regexp"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
@@ -23,7 +24,7 @@ func CreateSymlinkForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) er
 	relativeSymlinkPath, err = findVersionFromFileSystem(fs, targetBindDir)
 	if err != nil {
 		log.Info("failed to get the version from the filesystem", "targetDir", targetDir)
-		return err
+		return errors.WithStack(err)
 	}
 
 	symlinkTargetPath := filepath.Join(targetBindDir, "current")
@@ -35,7 +36,7 @@ func CreateSymlinkForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) er
 	log.Info("creating symlink", "points-to(relative)", relativeSymlinkPath, "location", symlinkTargetPath)
 	if err := linker.SymlinkIfPossible(relativeSymlinkPath, symlinkTargetPath); err != nil {
 		log.Info("symlinking failed", "version", relativeSymlinkPath)
-		return err
+		return errors.WithStack(err)
 	}
 	return nil
 }
@@ -58,7 +59,7 @@ func findVersionFromFileSystem(fs afero.Fs, targetDir string) (string, error) {
 		return nil
 	}
 	if err := aferoFs.Walk(targetDir, walkFiles); err != nil && err != iofs.ErrExist {
-		return "", err
+		return "", errors.WithStack(err)
 	}
 	return version, nil
 }
