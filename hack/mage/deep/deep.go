@@ -8,7 +8,7 @@ import (
 
 type Deep mg.Namespace
 
-// Deep namespace
+// Namespace a simple target to present namespaces
 func (Deep) Namespace() {
 	fmt.Println("namespace in namespace")
 }

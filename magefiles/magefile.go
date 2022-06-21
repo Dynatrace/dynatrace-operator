@@ -12,12 +12,17 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/hack/mage/code"
 	//mage:import init
 	_ "github.com/Dynatrace/dynatrace-operator/hack/mage/config"
-	//mage:import manifests
+	//mage:import crd
 	_ "github.com/Dynatrace/dynatrace-operator/hack/mage/crd"
 	//mage:import shallow
 	_ "github.com/Dynatrace/dynatrace-operator/hack/mage/deep"
 	//mage:import deps
 	_ "github.com/Dynatrace/dynatrace-operator/hack/mage/dependencies"
+	//mage:import helm
+	_ "github.com/Dynatrace/dynatrace-operator/hack/mage/helm"
+	//mage:import manifests
+	_ "github.com/Dynatrace/dynatrace-operator/hack/mage/manifests"
+	//mage:import prerequisites
 	"github.com/Dynatrace/dynatrace-operator/hack/mage/prerequisites"
 	//mage:import vars
 	_ "github.com/Dynatrace/dynatrace-operator/hack/mage/vars"
@@ -57,7 +62,7 @@ func Clean() {
 	sh.Run("git", files...)
 }
 
-// Parameters - a target with parameters. Parameters:
+// Parameters a target with parameters. Parameters:
 // <dir> - directory,
 // <level> - recursion level.
 func Parameters(dir string, level int) {

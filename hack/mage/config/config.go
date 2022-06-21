@@ -32,6 +32,8 @@ var (
 	OPENSHIFT_ALL_YAML       = MANIFESTS_DIR + "openshift/openshift-all.yaml"
 
 	CHART_VERSION = ""
+
+	MASTER_IMAGE = "quay.io/dynatrace/dynatrace-operator:snapshot"
 )
 
 func envInit() {

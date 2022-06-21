@@ -9,25 +9,40 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
+// Aaa an example for serial/parallel dependency
 func Aaa() error {
 	fmt.Println("aaa")
 	time.Sleep(1 * time.Second)
 	return fmt.Errorf("aaa")
 }
 
+// Bbb an example for serial/parallel dependency
 func Bbb() error {
 	fmt.Println("bbb")
 	return nil
 }
 
-// Ccc stderr redirected to stdout, no exit code
-func Ccc() error {
+// Parallel dependence on Aaa (fail) and Bbb (pass), Bbb is executed.
+func Parallel() {
+	mg.Deps(Aaa, Bbb)
+	fmt.Println("parallel")
+}
+
+// Serial dependence on Aaa (fail) and Bbb (pass), Bbb isn't executed.
+func Serial() {
+	mg.SerialDeps(Aaa, Bbb)
+	fmt.Println("serial")
+}
+
+// StdoutOnlyNoExitCode stderr redirected to stdout, no exit code
+func StdoutOnlyNoExitCode() error {
 	sh.Exec(nil, os.Stdout, os.Stdout, "hack/build/error.sh")
+	fmt.Println("StdoutOnlyNoExitCode")
 	return nil
 }
 
-// Ddd stderr redirected to stdout
-func Ddd() error {
+// StdoutOnlyExitCode stderr redirected to stdout, exit code returned
+func StdoutOnlyExitCode() error {
 	ran, err := sh.Exec(nil, os.Stdout, os.Stdout, "hack/build/error.sh")
 	if !ran {
 		return fmt.Errorf("error.sh not found/not executable")
@@ -35,26 +50,9 @@ func Ddd() error {
 	return err
 }
 
-// Eee stderr not redirected
-func Eee() {
-	sh.Run("hack/build/error.sh")
-
-}
-
-// Fff depends on eee
-func Fff() {
-	mg.Deps(Eee)
-	fmt.Println("fff")
-}
-
-// Ggg depends on Aaa (fail) and Bbb (pass)
-func Ggg() {
-	mg.Deps(Aaa, Bbb)
-	fmt.Println("ggg")
-}
-
-// Hhh serial dependence on Aaa (fail) and Bbb (pass)
-func Hhh() {
-	mg.SerialDeps(Aaa, Bbb)
-	fmt.Println("ggg")
+// StdStreams stderr not redirected, exit code returned
+func StdStreams() error {
+	err := sh.Run("hack/build/error.sh")
+	fmt.Println("StdStreams")
+	return err
 }
