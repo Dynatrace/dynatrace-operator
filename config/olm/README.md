@@ -12,8 +12,8 @@ Steps:
 1. Get an Openshift cluster that has OLM, and use `oc login` on it
 2. If want you want to test but there is no bundle yet => run `make bundle`
    - example: `make bundle PLATFORM=openshift VERSION=0.6.0`
-3. Run `make test-olm` (with the same args as the `make bundle` + TAG)
-   - example: `make test-olm PLATFORM=openshift VERSION=0.6.0 TAG=test`
+3. Run `make test/olm` (with the same args as the `make bundle` + TAG)
+   - example: `make test/olm PLATFORM=openshift VERSION=0.6.0 TAG=test`
 4. Go to the UI of the Openshift cluster
    - Go to `Operators -> OperatorHub`
    - Search for `Dynatrace`
@@ -71,7 +71,7 @@ First lets understand each part we are creating.
   - Created/managed by the `opm` CLI tool
   - Referenced in the `CatalogSource` resources, which is used by OLM to list what can be installed and do the upgrades when possible.
 
-So `hack/setup_olm_catalog.sh` (used by `make test-olm`) does the following:
+So `hack/setup_olm_catalog.sh` (used by `make test/olm`) does the following:
 1. Creates/pushes `catalog` image for specified bundle
 2. Creates/pushes `index` image (by adding the `catalog` to it)
    - can add a new `catalog` to an existing `index` which creates a new `index`
