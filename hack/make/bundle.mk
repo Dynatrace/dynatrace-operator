@@ -1,7 +1,3 @@
--include images.mk
--include prerequisites.mk
--include manifests/*.mk
-
 # Current Operator version
 VERSION ?= 0.0.1
 # Default platform for bundles
@@ -21,7 +17,7 @@ endif
 ## Generates bundle manifests and metadata, then validates generated files
 bundle: OLM=true
 bundle: prerequisites/kustomize manifests/kubernetes manifests/openshift
-	./hack/build/bundle.sh "$(PLATFORM)" "$(VERSION)" "$(OLM_IMAGE)" "$(BUNDLE_CHANNELS)" "$(BUNDLE_DEFAULT_CHANNEL)"
+	./hack/build/bundle.sh "$(PLATFORM)" "$(VERSION)" "$(BUNDLE_CHANNELS)" "$(BUNDLE_DEFAULT_CHANNEL)"
 
 .PHONY: bundle/minimal
 ## Generates bundle manifests and metadata, validates generated files and removes everything but the CSV file

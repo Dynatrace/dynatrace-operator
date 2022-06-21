@@ -1,8 +1,3 @@
--include ../prerequisites.mk
--include ../images.mk
--include config.mk
--include crd.mk
-
 ## Generates a manifest for Openshift solely for a CSI driver deployment
 manifests/openshift/csi:
 	# Generate openshift-csi.yaml
