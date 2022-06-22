@@ -43,7 +43,7 @@ func (pr PathResolver) AgentBinaryDirForVersion(tenantUUID string, version strin
 }
 
 func (pr PathResolver) AgentSharedBinaryDirBase() string {
-	return filepath.Join(pr.RootDir, "codemodules")
+	return filepath.Join(pr.RootDir, dtcsi.SharedAgentBinDir)
 }
 
 func (pr PathResolver) AgentSharedBinaryDirForImage(digest string) string {
@@ -51,7 +51,7 @@ func (pr PathResolver) AgentSharedBinaryDirForImage(digest string) string {
 }
 
 func (pr PathResolver) AgentConfigDir(tenantUUID string) string {
-	return filepath.Join(pr.EnvDir(tenantUUID), "config")
+	return filepath.Join(pr.EnvDir(tenantUUID), dtcsi.SharedAgentConfigDir)
 }
 
 func (pr PathResolver) InnerAgentBinaryDirForSymlinkForVersion(tenantUUID string, version string) string {

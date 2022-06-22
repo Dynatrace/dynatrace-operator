@@ -1,7 +1,6 @@
 package csivolumes
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
@@ -20,7 +19,7 @@ func TestNewBindConfig(t *testing.T) {
 			DynakubeName: testDynakubeName,
 		}
 
-		bindCfg, err := NewBindConfig(context.TODO(), metadata.FakeMemoryDB(), volumeCfg)
+		bindCfg, err := NewBindConfig(metadata.FakeMemoryDB(), volumeCfg)
 
 		assert.Error(t, err)
 		assert.Nil(t, bindCfg)
@@ -34,7 +33,7 @@ func TestNewBindConfig(t *testing.T) {
 
 		db.InsertDynakube(metadata.NewDynakube(testDynakubeName, testTenantUUID, testAgentVersion, ""))
 
-		bindCfg, err := NewBindConfig(context.TODO(), db, volumeCfg)
+		bindCfg, err := NewBindConfig(db, volumeCfg)
 
 		expected := BindConfig{
 			TenantUUID: testTenantUUID,

@@ -1,7 +1,6 @@
 package csivolumes
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
@@ -10,14 +9,12 @@ import (
 )
 
 type BindConfig struct {
-	TenantUUID string
-	Version    string
+	TenantUUID  string
+	Version     string
+	ImageDigest string
 }
 
-func NewBindConfig(
-	ctx context.Context,
-	access metadata.Access,
-	volumeCfg *VolumeConfig) (*BindConfig, error) {
+func NewBindConfig(access metadata.Access, volumeCfg *VolumeConfig) (*BindConfig, error) {
 
 	dynakube, err := access.GetDynakube(volumeCfg.DynakubeName)
 	if err != nil {
@@ -27,7 +24,8 @@ func NewBindConfig(
 		return nil, status.Error(codes.Unavailable, fmt.Sprintf("dynakube (%s) is missing from metadata database", volumeCfg.DynakubeName))
 	}
 	return &BindConfig{
-		TenantUUID: dynakube.TenantUUID,
-		Version:    dynakube.LatestVersion,
+		TenantUUID:  dynakube.TenantUUID,
+		Version:     dynakube.LatestVersion,
+		ImageDigest: dynakube.ImageDigest,
 	}, nil
 }
