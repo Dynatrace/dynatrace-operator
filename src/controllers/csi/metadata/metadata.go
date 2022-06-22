@@ -74,6 +74,7 @@ type Access interface {
 	GetAllVolumes() ([]*Volume, error)
 	GetPodNames() (map[string]string, error)
 	GetUsedVersions(tenantUUID string) (map[string]bool, error)
+	GetUsedImageDigests() (map[string]bool, error)
 }
 
 type AccessOverview struct {

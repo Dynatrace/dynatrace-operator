@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/mattn/go-sqlite3"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -131,6 +132,11 @@ const (
 	SELECT Version
 	FROM volumes
 	WHERE TenantUUID = ?;
+	`
+
+	getUsedImageDigestStatement = `
+	SELECT ImageDigest
+	FROM dynakubes;
 	`
 
 	getPodNamesStatement = `
@@ -435,6 +441,26 @@ func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, erro
 		}
 	}
 	return versions, nil
+}
+
+func (a *SqliteAccess) GetUsedImageDigests() (map[string]bool, error) {
+	rows, err := a.conn.Query(getUsedImageDigestStatement)
+	if err != nil {
+		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get used image digests from database"))
+	}
+	imageDigests := map[string]bool{}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var digest string
+		err := rows.Scan(&digest)
+		if err != nil {
+			return nil, errors.WithStack(errors.WithMessage(err, "failed to scan from image digests database"))
+		}
+		if _, ok := imageDigests[digest]; !ok {
+			imageDigests[digest] = true
+		}
+	}
+	return imageDigests, nil
 }
 
 // GetPodNames gets all PodNames present in the `volumes` database in map with their corresponding volumeIDs.

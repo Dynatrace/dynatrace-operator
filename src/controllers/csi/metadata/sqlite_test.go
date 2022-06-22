@@ -384,6 +384,29 @@ func TestGetUsedVersions(t *testing.T) {
 	assert.True(t, versions[testVolume11.Version])
 }
 
+func TestGetUsedImageDigests(t *testing.T) {
+	db := FakeMemoryDB()
+	testDynakube1 := createTestDynakube(1)
+	err := db.InsertDynakube(&testDynakube1)
+	require.NoError(t, err)
+
+	copyDynakube := testDynakube1
+	copyDynakube.Name = "copy"
+	err = db.InsertDynakube(&copyDynakube)
+	require.NoError(t, err)
+
+	testDynakube2 := createTestDynakube(2)
+	err = db.InsertDynakube(&testDynakube2)
+	require.NoError(t, err)
+
+	versions, err := db.GetUsedImageDigests()
+	require.NoError(t, err)
+	assert.Equal(t, len(versions), 2)
+	assert.True(t, versions[testDynakube1.ImageDigest])
+	assert.True(t, versions[copyDynakube.ImageDigest])
+	assert.True(t, versions[testDynakube2.ImageDigest])
+}
+
 func TestGetPodNames(t *testing.T) {
 	testVolume1 := createTestVolume(1)
 	testVolume2 := createTestVolume(2)

@@ -64,3 +64,5 @@ func (f *FakeFailDB) GetPodNames() (map[string]string, error)    { return nil, s
 func (f *FakeFailDB) GetUsedVersions(tenantUUID string) (map[string]bool, error) {
 	return nil, sql.ErrTxDone
 }
+
+func (f *FakeFailDB) GetUsedImageDigests() (map[string]bool, error) { return nil, sql.ErrTxDone }
