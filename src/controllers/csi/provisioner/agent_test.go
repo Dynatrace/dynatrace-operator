@@ -23,11 +23,12 @@ import (
 
 const (
 	testVersion = "test"
+	testDigest  = "123iamDigest456"
 )
 
 func TestNewAgentUpdater(t *testing.T) {
 	t.Run(`create`, func(t *testing.T) {
-		createTestAgentUpdater(t,
+		createTestAgentUrlUpdater(t,
 			&dynatracev1beta1.DynaKube{
 				Spec: dynatracev1beta1.DynaKubeSpec{
 					APIURL: "https://" + testTenantUUID + ".dynatrace.com",
@@ -53,7 +54,7 @@ func TestUpdateAgent(t *testing.T) {
 				},
 			},
 		}
-		updater := createTestAgentUpdater(t, &dk)
+		updater := createTestAgentUrlUpdater(t, &dk)
 		processModuleCache := createTestProcessModuleConfigCache("1")
 		targetDir := updater.targetDir
 		updater.installer.(*installer.InstallerMock).
@@ -65,7 +66,6 @@ func TestUpdateAgent(t *testing.T) {
 
 		currentVersion, err := updater.updateAgent(
 			testVersion,
-			testTenantUUID,
 			&processModuleCache)
 
 		require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestUpdateAgent(t *testing.T) {
 				},
 			},
 		}
-		updater := createTestAgentUpdater(t, &dk)
+		updater := createTestAgentUrlUpdater(t, &dk)
 		processModuleCache := createTestProcessModuleConfigCache("other")
 		targetDir := updater.targetDir
 		updater.installer.(*installer.InstallerMock).
@@ -111,7 +111,6 @@ func TestUpdateAgent(t *testing.T) {
 
 		currentVersion, err := updater.updateAgent(
 			testVersion,
-			testTenantUUID,
 			&processModuleCache)
 
 		require.NoError(t, err)
@@ -135,7 +134,7 @@ func TestUpdateAgent(t *testing.T) {
 				},
 			},
 		}
-		updater := createTestAgentUpdater(t, &dk)
+		updater := createTestAgentUrlUpdater(t, &dk)
 		processModuleCache := createTestProcessModuleConfigCache("1")
 		targetDir := updater.targetDir
 		updater.installer.(*installer.InstallerMock).
@@ -147,7 +146,6 @@ func TestUpdateAgent(t *testing.T) {
 
 		currentVersion, err := updater.updateAgent(
 			testVersion,
-			testTenantUUID,
 			&processModuleCache)
 
 		require.Error(t, err)
@@ -199,7 +197,7 @@ func TestUpdateAgent(t *testing.T) {
 				".dockerconfigjson": []byte("{}"),
 			},
 		}
-		updater := createTestAgentUpdater(t, &dk, mockedPullSecret)
+		updater := createTestAgentImageUpdater(t, &dk, mockedPullSecret)
 		targetDir := updater.targetDir
 		updater.installer.(*installer.InstallerMock).
 			On("InstallAgent", targetDir).
@@ -210,7 +208,6 @@ func TestUpdateAgent(t *testing.T) {
 
 		currentVersion, err := updater.updateAgent(
 			testVersion,
-			testTenantUUID,
 			&processModuleConfig)
 		require.NoError(t, err)
 		assert.Equal(t, tag, currentVersion)
@@ -264,7 +261,7 @@ func TestUpdateAgent(t *testing.T) {
 				},
 			},
 		}
-		updater := createTestAgentUpdater(t, &dk, mockedObjects...)
+		updater := createTestAgentImageUpdater(t, &dk, mockedObjects...)
 		targetDir := updater.targetDir
 
 		updater.installer.(*installer.InstallerMock).
@@ -276,7 +273,6 @@ func TestUpdateAgent(t *testing.T) {
 
 		currentVersion, err := updater.updateAgent(
 			testVersion,
-			testTenantUUID,
 			&processModuleConfig)
 		require.NoError(t, err)
 		assert.Equal(t, tag, currentVersion)
@@ -300,7 +296,7 @@ func updateOneagent(t *testing.T, alreadyInstalled bool) {
 			},
 		},
 	}
-	updater := createTestAgentUpdater(t, &dk)
+	updater := createTestAgentUrlUpdater(t, &dk)
 	previousHash := "1"
 	processModuleCache := createTestProcessModuleConfigCache(previousHash)
 	targetDir := updater.targetDir
@@ -323,7 +319,6 @@ func updateOneagent(t *testing.T, alreadyInstalled bool) {
 
 	currentVersion, err := updater.updateAgent(
 		"other",
-		testTenantUUID,
 		&processModuleCache)
 
 	require.NoError(t, err)
@@ -336,13 +331,25 @@ func updateOneagent(t *testing.T, alreadyInstalled bool) {
 	assert.Equal(t, !alreadyInstalled, installerCalled)
 }
 
-func createTestAgentUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube, obj ...client.Object) *agentUpdater {
+func createTestAgentUrlUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube) *agentUpdater {
 	mockedClient := dtclient.MockDynatraceClient{}
 	path := metadata.PathResolver{RootDir: "test"}
 	fs := afero.NewMemMapFs()
 	rec := record.NewFakeRecorder(10)
 
-	updater, err := newAgentUpdater(context.TODO(), fs, fake.NewClient(obj...), &mockedClient, path, rec, dk)
+	updater, err := newAgentUrlUpdater(context.TODO(), fs, &mockedClient, path, rec, dk)
+	require.NoError(t, err)
+	updater.installer = &installer.InstallerMock{}
+
+	return updater
+}
+
+func createTestAgentImageUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube, obj ...client.Object) *agentUpdater {
+	path := metadata.PathResolver{RootDir: "test"}
+	fs := afero.NewMemMapFs()
+	rec := record.NewFakeRecorder(10)
+
+	updater, err := newAgentImageUpdater(context.TODO(), fs, fake.NewClient(obj...), path, rec, dk, testDigest)
 	require.NoError(t, err)
 	updater.installer = &installer.InstallerMock{}
 

@@ -38,12 +38,12 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		fs := failFs{
 			Fs: afero.NewMemMapFs(),
 		}
-		installer := &urlInstaller{
+		installer := &UrlInstaller{
 			fs: fs,
 		}
 
 		err := installer.installAgentFromUrl("")
-		assert.EqualError(t, err, "failed to create temporary file for download: "+testErrorMessage)
+		assert.EqualError(t, err, testErrorMessage)
 	})
 	t.Run(`error when downloading latest agent`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -55,7 +55,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		dtc.
 			On("GetAgentVersions", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.FlavorMultidistro, mock.AnythingOfType("string")).
 			Return([]string{}, fmt.Errorf(testErrorMessage))
-		installer := &urlInstaller{
+		installer := &UrlInstaller{
 			fs:  fs,
 			dtc: dtc,
 			props: &Properties{
@@ -66,7 +66,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		}
 
 		err := installer.installAgentFromUrl("")
-		assert.EqualError(t, err, "failed to fetch OneAgent version: "+testErrorMessage)
+		assert.EqualError(t, err, testErrorMessage)
 	})
 	t.Run(`error unzipping file`, func(t *testing.T) {
 		fs := afero.NewMemMapFs()
@@ -85,7 +85,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &urlInstaller{
+		installer := &UrlInstaller{
 			fs:  fs,
 			dtc: dtc,
 			props: &Properties{
@@ -114,7 +114,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &urlInstaller{
+		installer := &UrlInstaller{
 			fs:  fs,
 			dtc: dtc,
 			props: &Properties{
@@ -150,7 +150,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &urlInstaller{
+		installer := &UrlInstaller{
 			fs:  fs,
 			dtc: dtc,
 			props: &Properties{
@@ -185,7 +185,7 @@ func TestInstallAgentFromUrl(t *testing.T) {
 				require.NoError(t, err)
 			}).
 			Return(nil)
-		installer := &urlInstaller{
+		installer := &UrlInstaller{
 			fs:  fs,
 			dtc: dtc,
 			props: &Properties{
