@@ -50,8 +50,8 @@ type HostVolumePublisher struct {
 	path    metadata.PathResolver
 }
 
-func (publisher *HostVolumePublisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	bindCfg, err := csivolumes.NewBindConfig(ctx, publisher.db, volumeCfg)
+func (publisher *HostVolumePublisher) PublishVolume(_ context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	bindCfg, err := csivolumes.NewBindConfig(publisher.db, volumeCfg)
 	if err != nil {
 		return nil, err
 	}

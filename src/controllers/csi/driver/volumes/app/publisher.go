@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
@@ -52,8 +53,8 @@ type AppVolumePublisher struct {
 	path    metadata.PathResolver
 }
 
-func (publisher *AppVolumePublisher) PublishVolume(ctx context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
-	bindCfg, err := csivolumes.NewBindConfig(ctx, publisher.db, volumeCfg)
+func (publisher *AppVolumePublisher) PublishVolume(_ context.Context, volumeCfg *csivolumes.VolumeConfig) (*csi.NodePublishVolumeResponse, error) {
+	bindCfg, err := csivolumes.NewBindConfig(publisher.db, volumeCfg)
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +130,22 @@ func (publisher *AppVolumePublisher) fireVolumeUnpublishedMetric(volume metadata
 	}
 }
 
+func (publisher *AppVolumePublisher) buildLowerDir(bindCfg *csivolumes.BindConfig) string {
+	var directories []string
+	if bindCfg.ImageDigest == "" {
+		directories = []string{
+			publisher.path.AgentBinaryDirForVersion(bindCfg.TenantUUID, bindCfg.Version),
+		}
+	} else {
+		directories = []string{
+			publisher.path.AgentConfigDir(bindCfg.TenantUUID),
+			publisher.path.AgentSharedBinaryDirForImage(bindCfg.ImageDigest),
+		}
+	}
+
+	return strings.Join(directories, ":")
+}
+
 func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
 	mappedDir := publisher.path.OverlayMappedDir(bindCfg.TenantUUID, volumeCfg.VolumeID)
 	_ = publisher.fs.MkdirAll(mappedDir, os.ModePerm)
@@ -140,7 +157,7 @@ func (publisher *AppVolumePublisher) mountOneAgent(bindCfg *csivolumes.BindConfi
 	_ = publisher.fs.MkdirAll(workDir, os.ModePerm)
 
 	overlayOptions := []string{
-		"lowerdir=" + publisher.path.AgentBinaryDirForVersion(bindCfg.TenantUUID, bindCfg.Version),
+		"lowerdir=" + publisher.buildLowerDir(bindCfg),
 		"upperdir=" + upperDir,
 		"workdir=" + workDir,
 	}
