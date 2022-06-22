@@ -11,11 +11,11 @@ HELM_CRD_DIR=$(HELM_TEMPLATES_DIR)/Common/crd/
 MANIFESTS_DIR=config/deploy/
 
 KUBERNETES_CORE_YAML=$(MANIFESTS_DIR)kubernetes/kubernetes.yaml
-KUBERNETES_CSIDRIVER_YAML=$(MANIFESTS_DIR)kubernetes/kubernetes-csidriver.yaml
+KUBERNETES_CSIDRIVER_YAML=$(MANIFESTS_DIR)kubernetes/kubernetes-csi.yaml
 KUBERNETES_OLM_YAML=$(MANIFESTS_DIR)kubernetes/kubernetes-olm.yaml
 KUBERNETES_ALL_YAML=$(MANIFESTS_DIR)kubernetes/kubernetes-all.yaml
 
 OPENSHIFT_CORE_YAML=$(MANIFESTS_DIR)openshift/openshift.yaml
-OPENSHIFT_CSIDRIVER_YAML=$(MANIFESTS_DIR)openshift/openshift-csidriver.yaml
+OPENSHIFT_CSIDRIVER_YAML=$(MANIFESTS_DIR)openshift/openshift-csi.yaml
 OPENSHIFT_OLM_YAML=$(MANIFESTS_DIR)openshift/openshift-olm.yaml
 OPENSHIFT_ALL_YAML=$(MANIFESTS_DIR)openshift/openshift-all.yaml
