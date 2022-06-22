@@ -32,6 +32,20 @@ Important characteristics:
 - Is called/used BY a Controller
 - Examples: OneAgentReconciler, IstioReconciler...
 
+### Errors
+
+#### Do's
+
+- If an error is returned by an external function from an external package, it must be wrapped with `errors.WithStack()`.
+- If an error is instantiated by internal code, it must be instantiated with `errors.New()`
+- If an error is returned by an internal function and propagated, it must be propagated as is and must __not__ be wrapped with `errors.WithStack()`.
+	- The stacktrace is already complete when `errors.New` is called, wrapping it with `errors.WithStack()` convolutes it.
+
+#### Don'ts
+
+- Errors must not be logged with `log.Errorf`
+	- Errors are propagated to the controller or reconciler and then automatically logged by the Operator-SDK framework
+
 
 ### Logging
 
