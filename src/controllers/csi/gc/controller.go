@@ -88,15 +88,18 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	log.Info("running log garbage collection")
 	gc.runLogGarbageCollection(tenantUUID)
 
-	log.Info("running image garbage collection")
-	gc.runImageGarbageCollection()
+	log.Info("running shared images garbage collection")
+	if err := gc.runSharedImagesGarbageCollection(); err != nil {
+		log.Info("failed to garbage collect the shared images")
+		return reconcileResult, err
+	}
 
 	return reconcileResult, nil
 }
 
 // getAllPinnedVersionsForTenantUUID returns all pinned versions for a given tenantUUID.
 // A pinned version is either:
-// - the image tag or digest set in the custom resource
+// - the image tag or digest set in the custom resource (this doesn't matter in context of the GC)
 // - the version set in the custom resource if applicationMonitoring is used
 func getAllPinnedVersionsForTenantUUID(tenantUUID string, dynakubes dynatracev1beta1.DynaKubeList) pinnedVersionSet {
 	pinnedImages := make(pinnedVersionSet)
