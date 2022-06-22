@@ -9,6 +9,7 @@ import (
 )
 
 type installerInfo struct {
+	arch          string
 	flavor        string
 	technologies  string
 	installPath   string

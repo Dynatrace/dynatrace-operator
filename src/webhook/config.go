@@ -17,6 +17,10 @@ const (
 	AnnotationDataIngestInject   = DataIngestPrefix + ".dynatrace.com/inject"
 	AnnotationDataIngestInjected = DataIngestPrefix + ".dynatrace.com/injected"
 
+	// AnnotationArch can be set on a Pod to configure which code modules architecture to download. It's set to "x86"
+	// if not set.
+	AnnotationArch = "oneagent.dynatrace.com/arch"
+
 	// AnnotationFlavor can be set on a Pod to configure which code modules flavor to download. It's set to "default"
 	// if not set.
 	AnnotationFlavor = "oneagent.dynatrace.com/flavor"
