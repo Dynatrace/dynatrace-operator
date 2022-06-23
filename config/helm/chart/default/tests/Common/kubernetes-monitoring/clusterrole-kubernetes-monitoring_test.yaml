@@ -93,7 +93,7 @@ tests:
 
   - it: should add additional permissions when flag is enabled
     set:
-      additionalPermissions.pvcMonitoring: false
+      additionalPermissions.pvcMonitoring: true
     asserts:
       - isKind:
           of: ClusterRole
