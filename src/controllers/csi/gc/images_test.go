@@ -51,7 +51,7 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 		require.Error(t, err)
 		assert.True(t, os.IsNotExist(err))
 	})
-	t.Run("deletes nothing", func(t *testing.T) {
+	t.Run("deletes nothing, because of dynakube metadata present", func(t *testing.T) {
 		fs := createTestSharedImageDir(t)
 		gc := CSIGarbageCollector{
 			fs: fs,
@@ -62,6 +62,25 @@ func TestRunSharedImagesGarbageCollection(t *testing.T) {
 			TenantUUID:    "test",
 			LatestVersion: "test",
 			ImageDigest:   testImageDigest,
+		})
+
+		err := gc.runSharedImagesGarbageCollection()
+		require.NoError(t, err)
+
+		_, err = fs.Stat(testPathResolver.AgentSharedBinaryDirForImage(testImageDigest))
+		require.NoError(t, err)
+	})
+	t.Run("deletes nothing, because of volume metadata present", func(t *testing.T) {
+		fs := createTestSharedImageDir(t)
+		gc := CSIGarbageCollector{
+			fs: fs,
+			db: metadata.FakeMemoryDB(),
+		}
+		gc.db.InsertVolume(&metadata.Volume{
+			VolumeID:   "test",
+			TenantUUID: "test",
+			Version:    testImageDigest,
+			PodName:    "test",
 		})
 
 		err := gc.runSharedImagesGarbageCollection()
@@ -146,6 +165,61 @@ func TestCollectUnusedImageDirs(t *testing.T) {
 		dirs, err := gc.collectUnusedImageDirs([]os.FileInfo{fileInfo})
 		require.NoError(t, err)
 		assert.Len(t, dirs, 0)
+	})
+}
+
+func TestGetUsedImageDigests(t *testing.T) {
+	t.Run("bad database", func(t *testing.T) {
+		fs := createTestSharedImageDir(t)
+		gc := CSIGarbageCollector{
+			fs:   fs,
+			db:   &metadata.FakeFailDB{},
+			path: testPathResolver,
+		}
+		_, err := gc.getUsedImageDigests()
+		require.Error(t, err)
+	})
+	t.Run("no error on db", func(t *testing.T) {
+		gc := CSIGarbageCollector{
+			db: metadata.FakeMemoryDB(),
+		}
+		usedDigests, err := gc.getUsedImageDigests()
+		require.NoError(t, err)
+		assert.Empty(t, usedDigests)
+	})
+	t.Run("finds used digest, because of dynakube metadata present", func(t *testing.T) {
+		fs := createTestSharedImageDir(t)
+		gc := CSIGarbageCollector{
+			fs: fs,
+			db: metadata.FakeMemoryDB(),
+		}
+		gc.db.InsertDynakube(&metadata.Dynakube{
+			Name:          "test",
+			TenantUUID:    "test",
+			LatestVersion: "test",
+			ImageDigest:   testImageDigest,
+		})
+
+		usedDigests, err := gc.getUsedImageDigests()
+		require.NoError(t, err)
+		assert.True(t, usedDigests[testImageDigest])
+	})
+	t.Run("finds used digest,, because of volume metadata present", func(t *testing.T) {
+		fs := createTestSharedImageDir(t)
+		gc := CSIGarbageCollector{
+			fs: fs,
+			db: metadata.FakeMemoryDB(),
+		}
+		gc.db.InsertVolume(&metadata.Volume{
+			VolumeID:   "test",
+			TenantUUID: "test",
+			Version:    testImageDigest,
+			PodName:    "test",
+		})
+
+		usedDigests, err := gc.getUsedImageDigests()
+		require.NoError(t, err)
+		assert.True(t, usedDigests[testImageDigest])
 	})
 }
 

@@ -43,7 +43,7 @@ func (gc *CSIGarbageCollector) getSharedImageDirs() ([]os.FileInfo, error) {
 
 func (gc *CSIGarbageCollector) collectUnusedImageDirs(imageDirs []os.FileInfo) ([]string, error) {
 	var toDelete []string
-	usedImageDigests, err := gc.db.GetUsedImageDigests()
+	usedImageDigests, err := gc.getUsedImageDigests()
 	if err != nil {
 		log.Info("failed to get the used image digests")
 		return nil, err
@@ -58,6 +58,27 @@ func (gc *CSIGarbageCollector) collectUnusedImageDirs(imageDirs []os.FileInfo) (
 		}
 	}
 	return toDelete, nil
+}
+
+func (gc *CSIGarbageCollector) getUsedImageDigests() (map[string]bool, error) {
+	usedImageDigests, err := gc.db.GetUsedImageDigests()
+	if err != nil {
+		log.Info("failed to get the used image digests")
+		return nil, err
+	}
+
+	// the version of a Volume is the imageDigest if the shared image was used during mount
+	// this will still can contain versions that are not imageDigests,
+	// however this shouldn't cause issues as those versions doesn't matter in this context
+	usedVersions, err := gc.db.GetAllUsedVersions()
+	if err != nil {
+		log.Info("failed to get all used versions")
+		return nil, err
+	}
+	for version := range usedVersions {
+		usedImageDigests[version] = true
+	}
+	return usedImageDigests, nil
 }
 
 func deleteImageDirs(fs afero.Fs, imageDirs []string) error {

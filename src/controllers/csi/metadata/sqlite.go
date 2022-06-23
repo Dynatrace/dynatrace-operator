@@ -133,9 +133,15 @@ const (
 	WHERE TenantUUID = ?;
 	`
 
+	getAllUsedVersionsStatement = `
+	SELECT Version
+	FROM volumes;
+	`
+
 	getUsedImageDigestStatement = `
 	SELECT ImageDigest
-	FROM dynakubes;
+	FROM dynakubes
+	WHERE ImageDigest != "";
 	`
 
 	getPodNamesStatement = `
@@ -414,7 +420,7 @@ func (access *SqliteAccess) GetAllOsAgentVolumes() ([]*OsAgentVolume, error) {
 	return osVolumes, nil
 }
 
-// GetUsedVersions gets all UNIQUE versions present in the `volumes` database in map.
+// GetUsedVersions gets all UNIQUE versions present in the `volumes` for a given tenantUUID database in map.
 // Map is used to make sure we don't return the same version multiple time,
 // it's also easier to check if a version is in it or not. (a Set in style of Golang)
 func (access *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, error) {
@@ -429,6 +435,29 @@ func (access *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool,
 		err := rows.Scan(&version)
 		if err != nil {
 			return nil, errors.WithStack(errors.WithMessagef(err, "couldn't scan used version info for tenant uuid '%s'", tenantUUID))
+		}
+		if _, ok := versions[version]; !ok {
+			versions[version] = true
+		}
+	}
+	return versions, nil
+}
+
+// GetUsedVersions gets all UNIQUE versions present in the `volumes` database in map.
+// Map is used to make sure we don't return the same version multiple time,
+// it's also easier to check if a version is in it or not. (a Set in style of Golang)
+func (access *SqliteAccess) GetAllUsedVersions() (map[string]bool, error) {
+	rows, err := access.conn.Query(getAllUsedVersionsStatement)
+	if err != nil {
+		return nil, errors.WithStack(errors.WithMessagef(err, "couldn't get all used version info"))
+	}
+	versions := map[string]bool{}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var version string
+		err := rows.Scan(&version)
+		if err != nil {
+			return nil, errors.WithStack(errors.WithMessagef(err, "couldn't scan used version info"))
 		}
 		if _, ok := versions[version]; !ok {
 			versions[version] = true
