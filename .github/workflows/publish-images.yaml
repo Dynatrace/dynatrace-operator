@@ -1,0 +1,165 @@
+name: Publish images
+
+on:
+  push:
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
+
+jobs:
+  prepare:
+    name: Prepare properties
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Prepare build parameters
+        id: prep
+        run: |
+          hack/build/ci/prepare-build-variables.sh
+    outputs:
+      labels: ${{ steps.prep.outputs.docker_image_labels }}
+      version: ${{ steps.prep.outputs.docker_image_tag }}
+      goargs: ${{ steps.prep.outputs.go_build_args }}
+      goversion: "1.18"
+
+  # Workflow needs to build docker images again as separate workflows don't have access to others artifacts
+  # https://github.com/actions/download-artifact/issues/3
+  build-amd:
+    name: Build amd image
+    uses: ./.github/workflows/build-dockerimage.yaml
+    needs: [prepare]
+    with:
+      platform: amd64
+      goversion: ${{ needs.prepare.outputs.goversion }}
+      goargs: ${{ needs.prepare.outputs.goargs }}
+      labels: ${{ needs.prepare.outputs.labels }}
+      image-tag: ${{ needs.prepare.outputs.version }}
+
+  build-arm:
+    name: Build arm image
+    uses: ./.github/workflows/build-dockerimage.yaml
+    needs: [prepare]
+    with:
+      platform: arm64
+      goversion: ${{ needs.prepare.outputs.goversion }}
+      goargs: ${{ needs.prepare.outputs.goargs }}
+      labels: ${{ needs.prepare.outputs.labels }}
+      image-tag: ${{ needs.prepare.outputs.version }}
+
+  push-dockerhub-amd:
+    name: Push amd image to Dockerhub
+    uses: ./.github/workflows/upload-dockerimage.yaml
+    needs: [prepare, build-amd]
+    with:
+      platform: amd64
+      labels: ${{ needs.prepare.outputs.labels }}
+      version: ${{ needs.prepare.outputs.version }}
+      registry: docker.io
+      repository: dynatrace/dynatrace-operator
+    secrets:
+      docker_repo_username: ${{ secrets.DOCKERHUB_USERNAME }}
+      docker_repo_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+  push-dockerhub-arm:
+    name: Push arm image to Dockerhub
+    uses: ./.github/workflows/upload-dockerimage.yaml
+    needs: [prepare, build-arm]
+    with:
+     platform: arm64
+     labels: ${{ needs.prepare.outputs.labels }}
+     version: ${{ needs.prepare.outputs.version }}
+     registry: docker.io
+     repository: dynatrace/dynatrace-operator
+    secrets:
+     docker_repo_username: ${{ secrets.DOCKERHUB_USERNAME }}
+     docker_repo_password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+  push-gcr-amd:
+    name: Push amd image to GCR
+    uses: ./.github/workflows/upload-dockerimage.yaml
+    needs: [prepare, build-amd]
+    with:
+      platform: amd64
+      labels: ${{ needs.prepare.outputs.labels }}
+      version: ${{ needs.prepare.outputs.version }}
+      registry: gcr.io
+      repository: dynatrace-marketplace-prod/dynatrace-operator
+    secrets:
+      docker_repo_username: ${{ secrets.GCR_USERNAME }}
+      docker_repo_password: ${{ secrets.GCR_PASSWORD }}
+
+  push-gcr-arm:
+    name: Push arm image to GCR
+    uses: ./.github/workflows/upload-dockerimage.yaml
+    needs: [prepare, build-arm]
+    with:
+      platform: arm64
+      labels: ${{ needs.prepare.outputs.labels }}
+      version: ${{ needs.prepare.outputs.version }}
+      registry: gcr.io
+      repository: dynatrace-marketplace-prod/dynatrace-operator
+    secrets:
+      docker_repo_username: ${{ secrets.GCR_USERNAME }}
+      docker_repo_password: ${{ secrets.GCR_PASSWORD }}
+
+#  push-rhcc-amd:
+#    name: Push amd image to RHCC
+#    uses: ./.github/workflows/upload-dockerimage.yaml
+#    needs: [prepare, build-amd]
+#    with:
+#      platform: amd64
+#      labels: ${{ needs.prepare.outputs.labels }}
+#      version: ${{ needs.prepare.outputs.version }}
+#      registry: scan.connect.redhat.com
+#      repository: ${{ secrets.RHCC_REPOSITORY }}
+#    secrets:
+#      docker_repo_username: ${{ secrets.RHCC_USERNAME }}
+#      docker_repo_password: ${{ secrets.RHCC_PASSWORD }}
+
+  manifest-dockerhub:
+    name: Create Dockerhub manifests
+    needs: [prepare, push-dockerhub-amd, push-dockerhub-arm]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Login to Dockerhub
+        uses: docker/login-action@v1
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Create manifest for Dockerhub
+        env:
+          IMAGE: docker.io/dynatrace/dynatrace-operator
+          VERSION: ${{ needs.prepare.outputs.version }}
+        # Simply pulls, otherwise the artifact would need to be re-downloaded and re-tagged correctly which would mean
+        # two more steps instead of two more lines
+        run: |
+          docker pull ${IMAGE}:${VERSION}-amd64
+          docker pull ${IMAGE}:${VERSION}-arm64
+          hack/build/ci/create-manifest.sh "${IMAGE}" "${VERSION}" true
+
+  manifest-gcr:
+    name: Create GCR manifests
+    needs: [prepare, push-gcr-amd, push-gcr-arm]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Login to Dockerhub
+        uses: docker/login-action@v1
+        with:
+          registry: gcr.io
+          username: ${{ secrets.GCR_USERNAME }}
+          password: ${{ secrets.GCR_PASSWORD }}
+      - name: Create manifest for Dockerhub
+        env:
+          IMAGE: gcr.io/dynatrace-marketplace-prod/dynatrace-operator
+          VERSION: ${{ needs.prepare.outputs.version }}
+        # Simply pulls, otherwise the artifact would need to be re-downloaded and re-tagged correctly which would mean
+        # two more steps instead of two more lines
+        run: |
+          docker pull ${IMAGE}:${VERSION}-amd64
+          docker pull ${IMAGE}:${VERSION}-arm64
+          hack/build/ci/create-manifest.sh "${IMAGE}" "${VERSION}" true
