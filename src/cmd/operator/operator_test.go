@@ -42,6 +42,7 @@ func TestOperatorCommand(t *testing.T) {
 		runCfg := runConfig{
 			kubeConfigProvider:       mockCfgProvider,
 			bootstrapManagerProvider: mockMgrProvider,
+			operatorManagerProvider:  mockMgrProvider,
 			isDeployedInOlm:          false,
 			namespace:                testNamespace,
 		}
@@ -75,8 +76,10 @@ func TestOperatorCommand(t *testing.T) {
 		runCfg := runConfig{
 			kubeConfigProvider:       mockCfgProvider,
 			bootstrapManagerProvider: mockMgrProvider,
+			operatorManagerProvider:  mockMgrProvider,
 			isDeployedInOlm:          false,
 			namespace:                testNamespace,
+			signalHandler:            context.TODO(),
 		}
 		operatorCommand := newOperatorCommand(runCfg)
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
@@ -118,13 +121,49 @@ func TestOperatorCommand(t *testing.T) {
 		runCfg := runConfig{
 			kubeConfigProvider:       mockCfgProvider,
 			bootstrapManagerProvider: mockMgrProvider,
+			operatorManagerProvider:  mockMgrProvider,
 			isDeployedInOlm:          false,
 			namespace:                testNamespace,
+			signalHandler:            context.TODO(),
 		}
 		operatorCommand := newOperatorCommand(runCfg)
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
 
 		assert.NoError(t, err)
 		mockMgr.AssertCalled(t, "Start", mock.Anything)
+	})
+	t.Run("operator manager is started", func(t *testing.T) {
+		mockCfgProvider := &mockConfigProvider{}
+		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
+
+		bootstrapMockMgr := &mockManager{}
+		bootstrapMockMgr.On("Start", mock.Anything).Return(nil)
+
+		mockBootstrapMgrProvider := &mockManagerProvider{}
+		mockBootstrapMgrProvider.
+			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
+			Return(bootstrapMockMgr, nil)
+
+		operatorMockMgr := &mockManager{}
+		operatorMockMgr.On("Start", mock.Anything).Return(nil)
+
+		mockOperatorMgrProvider := &mockManagerProvider{}
+		mockOperatorMgrProvider.
+			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
+			Return(operatorMockMgr, nil)
+
+		runCfg := runConfig{
+			kubeConfigProvider:       mockCfgProvider,
+			bootstrapManagerProvider: mockBootstrapMgrProvider,
+			operatorManagerProvider:  mockOperatorMgrProvider,
+			isDeployedInOlm:          true,
+			namespace:                testNamespace,
+		}
+		operatorCommand := newOperatorCommand(runCfg)
+		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
+
+		assert.NoError(t, err)
+		bootstrapMockMgr.AssertNotCalled(t, "Start", mock.Anything)
+		operatorMockMgr.AssertCalled(t, "Start", mock.Anything)
 	})
 }

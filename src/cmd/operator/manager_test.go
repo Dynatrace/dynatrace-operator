@@ -60,6 +60,9 @@ func (provider *mockManagerProvider) CreateManager(namespace string, cfg *rest.C
 }
 
 func TestManagerProvider(t *testing.T) {
-	provider := newControlManagerProvider()
-	_, _ = provider.CreateManager("namespace", &rest.Config{})
+	bootstrapProvider := newBootstrapManagerProvider()
+	_, _ = bootstrapProvider.CreateManager("namespace", &rest.Config{})
+
+	controlManagerProvider := newOperatorManagerProvider()
+	_, _ = controlManagerProvider.CreateManager("namespace", &rest.Config{})
 }
