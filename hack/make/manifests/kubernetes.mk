@@ -6,7 +6,7 @@
 
 ## Generates a manifest for Kubernetes solely for a CSI driver deployment
 manifests/kubernetes/csi:
-	# Generate kubernetes-csidriver.yaml
+	# Generate kubernetes-csi.yaml
 	helm template dynatrace-operator config/helm/chart/default \
 		--namespace dynatrace \
 		--set partial="csi" \
