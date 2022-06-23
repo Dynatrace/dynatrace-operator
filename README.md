@@ -7,7 +7,9 @@ The Dynatrace Operator supports rollout and lifecycle management of various Dyna
   * `applicationMonitoring` is a webhook based injection mechanism for automatic app-only injection
     * CSI Driver can be enabled to cache OneAgent downloads per node
   * `hostMonitoring` is only monitoring the hosts (i.e. nodes) in the cluster without app-only injection
-  * `cloudNativeFullStack` is a combination of `applicationMonitoring` with CSI driver and `hostMonitoring`
+    * CSI Driver is used to provide a writeable volume for the Oneagent as it's running in read-only mode
+  * `cloudNativeFullStack` is a combination of `applicationMonitoring` and `hostMonitoring`
+    * CSI Driver is used for both features
 * ActiveGate
   * `routing` routes OneAgent traffic through the ActiveGate
   * `kubernetes-monitoring` allows monitoring of the Kubernetes API
@@ -53,7 +55,7 @@ type *Dynatrace API* and use its values in the following commands respectively. 
 assistance please refer
 to [Create user-generated access tokens](https://www.dynatrace.com/support/help/shortlink/token#create-api-token).
 
-The token scopes required by the Dynatrace Operator are documented on our [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#tokens)
+The token scopes required by the Dynatrace Operator are documented on our [official help page](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8#tokens)
 
 ```sh
 $ kubectl -n dynatrace create secret generic dynakube --from-literal="apiToken=DYNATRACE_API_TOKEN" --from-literal="dataIngestToken=DATA_INGEST_TOKEN"
@@ -77,12 +79,13 @@ $ kubectl apply -f cr.yaml
 ```
 
 For detailed instructions see
-our [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/get-started-with-kubernetes-monitoring#get-started-with-kubernetesopenshift-monitoring).
+our [official help page](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8).
 
 
 ## Uninstall dynatrace-operator
 
-> For instructions on how to uninstall the dynatrace-operator on Openshift, head to the [official help page](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8#uninstall-dynatrace-operator)
+> For instructions on how to uninstall the dynatrace-operator on Openshift,
+> head to the [official help page](https://www.dynatrace.com/support/help/shortlink/full-stack-dto-k8#uninstall-dynatrace-operator)
 
 Clean-up all Dynatrace Operator specific objects:
 ```sh
