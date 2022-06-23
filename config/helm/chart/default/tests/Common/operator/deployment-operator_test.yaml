@@ -57,9 +57,11 @@ tests:
                   requests:
                     cpu: 50m
                     memory: 64Mi
+                    ephemeral-storage: 10Mi
                   limits:
                     cpu: 100m
                     memory: 128Mi
+                    ephemeral-storage: 10Mi
                 volumeMounts:
                   - name: tmp-cert-dir
                     mountPath: /tmp/dynatrace-operator
@@ -192,9 +194,11 @@ tests:
                   requests:
                     cpu: 50m
                     memory: 64Mi
+                    ephemeral-storage: 10Mi
                   limits:
                     cpu: 100m
                     memory: 128Mi
+                    ephemeral-storage: 10Mi
                 volumeMounts:
                   - name: tmp-cert-dir
                     mountPath: /tmp/dynatrace-operator
