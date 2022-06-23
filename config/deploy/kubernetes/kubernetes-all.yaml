@@ -137,6 +137,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
+  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -3975,9 +3976,11 @@ spec:
             requests:
               cpu: 50m
               memory: 64Mi
+              ephemeral-storage: "10Mi"
             limits:
               cpu: 100m
               memory: 128Mi
+              ephemeral-storage: "10Mi"
           volumeMounts:
             - name: tmp-cert-dir
               mountPath: /tmp/dynatrace-operator
@@ -4120,9 +4123,11 @@ spec:
             requests:
               cpu: 300m
               memory: 128Mi
+              ephemeral-storage: "10Mi"
             limits:
               cpu: 300m
               memory: 128Mi
+              ephemeral-storage: "10Mi"
           volumeMounts:
             - name: certs-dir
               mountPath: /tmp/k8s-webhook-server/serving-certs/
@@ -4551,7 +4556,7 @@ spec:
           runAsUser: 0
           privileged: true # Needed for mountPropagation
           allowPrivilegeEscalation: true # Needed for privileged
-          readOnlyRootFilesystem: false
+          readOnlyRootFilesystem: true
           runAsNonRoot: false
           seccompProfile:
             type: RuntimeDefault
@@ -4568,6 +4573,8 @@ spec:
         - mountPath: /data
           mountPropagation: Bidirectional
           name: dynatrace-oneagent-data-dir
+        - mountPath: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/tmp
+          name: tmp-dir
         # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
         # Used for registering the driver with kubelet
@@ -4602,7 +4609,7 @@ spec:
         securityContext:
           runAsUser: 0
           privileged: false
-          readOnlyRootFilesystem: false
+          readOnlyRootFilesystem: true
           runAsNonRoot: false
           seccompProfile:
             type: RuntimeDefault
@@ -4613,6 +4620,8 @@ spec:
           name: plugin-dir
         - mountPath: /registration
           name: registration-dir
+        - mountPath: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
+          name: lockfile-dir
         # Used to make a gRPC request (Probe()) to the driver to check if its running
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
       - name: liveness-probe
@@ -4637,7 +4646,7 @@ spec:
           runAsUser: 0
           privileged: false
           allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: false
+          readOnlyRootFilesystem: true
           runAsNonRoot: false
           seccompProfile:
             type: RuntimeDefault
@@ -4657,10 +4666,10 @@ spec:
           type: Directory
         name: registration-dir
         # This volume is where the socket for kubelet->driver communication is done
-      - hostPath:
+      - name: plugin-dir
+        hostPath:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
           type: DirectoryOrCreate
-        name: plugin-dir
         # This volume is where the driver mounts volumes
       - hostPath:
           path: /var/lib/kubelet/pods
@@ -4671,6 +4680,12 @@ spec:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
           type: DirectoryOrCreate
         name: dynatrace-oneagent-data-dir
+        # Used by the registrar to create its lockfile
+      - name: lockfile-dir
+        emptyDir: {}
+        # A volume for the driver to write temporary files to
+      - name: tmp-dir
+        emptyDir: {}
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/master
