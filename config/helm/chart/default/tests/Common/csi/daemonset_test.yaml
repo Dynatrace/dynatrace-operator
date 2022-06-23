@@ -114,7 +114,7 @@ tests:
                   runAsUser: 0
                   privileged: true
                   allowPrivilegeEscalation: true
-                  readOnlyRootFilesystem: false
+                  readOnlyRootFilesystem: true
                   runAsNonRoot: false
                   seccompProfile:
                     type: RuntimeDefault
@@ -131,6 +131,8 @@ tests:
                   - mountPath: /data
                     mountPropagation: Bidirectional
                     name: dynatrace-oneagent-data-dir
+                  - mountPath: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/tmp
+                    name: tmp-dir
               - name: registrar
                 image: image-name
                 imagePullPolicy: Always
@@ -160,7 +162,7 @@ tests:
                 securityContext:
                   runAsUser: 0
                   privileged: false
-                  readOnlyRootFilesystem: false
+                  readOnlyRootFilesystem: true
                   runAsNonRoot: false
                   seccompProfile:
                     type: RuntimeDefault
@@ -171,6 +173,8 @@ tests:
                     name: plugin-dir
                   - mountPath: /registration
                     name: registration-dir
+                  - mountPath: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
+                    name: lockfile-dir
               - name: liveness-probe
                 image: image-name
                 imagePullPolicy: Always
@@ -192,7 +196,7 @@ tests:
                   runAsUser: 0
                   privileged: false
                   allowPrivilegeEscalation: false
-                  readOnlyRootFilesystem: false
+                  readOnlyRootFilesystem: true
                   runAsNonRoot: false
                   seccompProfile:
                     type: RuntimeDefault
@@ -222,3 +226,8 @@ tests:
                   path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
                   type: DirectoryOrCreate
                 name: dynatrace-oneagent-data-dir
+              - emptyDir: { }
+                name: lockfile-dir
+              - emptyDir: { }
+                name: tmp-dir
+
