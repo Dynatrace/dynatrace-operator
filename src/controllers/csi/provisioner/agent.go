@@ -124,7 +124,7 @@ func setupImageInstaller(ctx context.Context, fs afero.Fs, pathResolver metadata
 func (updater *agentUpdater) updateAgent(installedVersion string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
 	defer updater.cleanCertsIfPresent()
 	var updatedVersion string
-	if updater.versionDirNotPresent() || installedVersion == "" {
+	if updater.targetDirNotPresent() || installedVersion == "" {
 		log.Info("updating agent",
 			"target version", updater.targetVersion,
 			"installed version", installedVersion,
@@ -152,7 +152,7 @@ func (updater *agentUpdater) cleanCertsIfPresent() {
 	}
 }
 
-func (updater agentUpdater) versionDirNotPresent() bool {
+func (updater agentUpdater) targetDirNotPresent() bool {
 	_, err := updater.fs.Stat(updater.targetDir)
 	return os.IsNotExist(err)
 }
