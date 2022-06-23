@@ -19,8 +19,14 @@ endif
 
 .PHONY: bundle
 ## Generates bundle manifests and metadata, then validates generated files
-bundle: OLM=true
-bundle: prerequisites/kustomize manifests/kubernetes manifests/openshift
+bundle/kubernetes: OLM=true
+bundle/kubernetes: PLATFORM=kubernetes
+bundle/kubernetes: prerequisites/kustomize manifests/kubernetes
+	./hack/build/bundle.sh "$(PLATFORM)" "$(VERSION)" "$(BUNDLE_CHANNELS)" "$(BUNDLE_DEFAULT_CHANNEL)"
+
+bundle/openshift: OLM=true
+bundle/openshift: PLATFORM=openshift
+bundle/openshift: prerequisites/kustomize manifests/openshift
 	./hack/build/bundle.sh "$(PLATFORM)" "$(VERSION)" "$(BUNDLE_CHANNELS)" "$(BUNDLE_DEFAULT_CHANNEL)"
 
 .PHONY: bundle/minimal
