@@ -32,6 +32,9 @@ rules:
       - pods/proxy
       - nodes/proxy
       - services
+      {{- if eq (default false .Values.additionalPermissions.pvcMonitoring) true}}
+      - nodes/metrics
+      {{- end }}
     verbs:
       - list
       - watch
