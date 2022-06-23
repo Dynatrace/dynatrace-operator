@@ -102,19 +102,19 @@ jobs:
       docker_repo_username: ${{ secrets.GCR_USERNAME }}
       docker_repo_password: ${{ secrets.GCR_PASSWORD }}
 
-#  push-rhcc-amd:
-#    name: Push amd image to RHCC
-#    uses: ./.github/workflows/upload-dockerimage.yaml
-#    needs: [prepare, build-amd]
-#    with:
-#      platform: amd64
-#      labels: ${{ needs.prepare.outputs.labels }}
-#      version: ${{ needs.prepare.outputs.version }}
-#      registry: scan.connect.redhat.com
-#      repository: ${{ secrets.RHCC_REPOSITORY }}
-#    secrets:
-#      docker_repo_username: ${{ secrets.RHCC_USERNAME }}
-#      docker_repo_password: ${{ secrets.RHCC_PASSWORD }}
+  push-rhcc-amd:
+    name: Push amd image to RHCC
+    uses: ./.github/workflows/upload-dockerimage.yaml
+    needs: [prepare, build-amd]
+    with:
+      platform: amd64
+      labels: ${{ needs.prepare.outputs.labels }}
+      version: ${{ needs.prepare.outputs.version }}
+      registry: scan.connect.redhat.com
+      repository: ${{ secrets.RHCC_REPOSITORY }}
+    secrets:
+      docker_repo_username: ${{ secrets.RHCC_USERNAME }}
+      docker_repo_password: ${{ secrets.RHCC_PASSWORD }}
 
   manifest-dockerhub:
     name: Create Dockerhub manifests
