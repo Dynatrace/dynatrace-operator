@@ -2,6 +2,8 @@ package operator
 
 import (
 	"context"
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/go-logr/logr"
@@ -11,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"testing"
 )
 
 type testManager struct {

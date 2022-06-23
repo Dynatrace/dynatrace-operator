@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/nodes"

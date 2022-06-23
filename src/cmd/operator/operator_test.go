@@ -2,11 +2,12 @@ package operator
 
 import (
 	"context"
+	"testing"
+
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/client-go/rest"
-	"testing"
 )
 
 const (

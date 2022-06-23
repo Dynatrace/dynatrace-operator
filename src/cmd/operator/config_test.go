@@ -1,10 +1,11 @@
 package operator
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/client-go/rest"
-	"testing"
 )
 
 type mockConfigProvider struct {
