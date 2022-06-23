@@ -56,7 +56,7 @@ sed "s/bundle/${VERSION}/" "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfil
 mv "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile.output" "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 awk '/operators.operatorframework.io.metrics.project_layout/ { print; print "  operators.operatorframework.io.bundle.channel.default.v1: alpha"; next }1' "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml" >  "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml.output"
 mv "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml.output" "./config/olm/${PLATFORM}/${VERSION}/metadata/annotations.yaml"
-awk '/operators.operatorframework.io.${VERSION}.mediatype.v1/ { print "LABEL operators.operatorframework.io.bundle.channel.default.v1=alpha"; print; next }1' "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile" > "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile.output"
+awk "/operators.operatorframework.io.${VERSION}.mediatype.v1/ { print \"LABEL operators.operatorframework.io.bundle.channel.default.v1=alpha\"; print; next }1" "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile" > "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile.output"
 mv "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile.output" "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
 grep -v '# Labels for testing.' "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile" > "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile.output"
 mv "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile.output" "./config/olm/${PLATFORM}/bundle-${VERSION}.Dockerfile"
