@@ -18,6 +18,8 @@ const (
 	leaderElectionResourceLock = "configmaps"
 
 	livenessEndpointName = "/livez"
+	readyzEndpointName   = "readyz"
+	livezEndpointName    = "livez"
 )
 
 type managerProvider interface {
@@ -41,7 +43,27 @@ func newBootstrapManagerProvider() managerProvider {
 type operatorManagerProvider struct{}
 
 func (provider operatorManagerProvider) CreateManager(namespace string, cfg *rest.Config) (manager.Manager, error) {
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+	mgr, err := ctrl.NewManager(cfg, provider.createOptions(namespace))
+
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	err = provider.addHealthzCheck(mgr)
+	if err != nil {
+		return nil, err
+	}
+
+	err = provider.addReadyzCheck(mgr)
+	if err != nil {
+		return nil, err
+	}
+
+	return mgr, nil
+}
+
+func (provider operatorManagerProvider) createOptions(namespace string) ctrl.Options {
+	return ctrl.Options{
 		Namespace:                  namespace,
 		Scheme:                     scheme.Scheme,
 		MetricsBindAddress:         metricsBindAddress,
@@ -52,21 +74,27 @@ func (provider operatorManagerProvider) CreateManager(namespace string, cfg *res
 		LeaderElectionNamespace:    namespace,
 		HealthProbeBindAddress:     healthProbeBindAddress,
 		LivenessEndpointName:       livenessEndpointName,
-	})
+	}
+}
+
+func (provider operatorManagerProvider) addHealthzCheck(mgr manager.Manager) error {
+	err := mgr.AddHealthzCheck(livezEndpointName, healthz.Ping)
 
 	if err != nil {
-		return nil, errors.WithStack(err)
+		return errors.WithStack(err)
 	}
 
-	if err = mgr.AddHealthzCheck("livez", healthz.Ping); err != nil {
-		return nil, errors.WithStack(err)
+	return nil
+}
+
+func (provider operatorManagerProvider) addReadyzCheck(mgr manager.Manager) error {
+	err := mgr.AddReadyzCheck(readyzEndpointName, healthz.Ping)
+
+	if err != nil {
+		return errors.WithStack(err)
 	}
 
-	if err = mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	return mgr, nil
+	return nil
 }
 
 func newOperatorManagerProvider() managerProvider {

@@ -2,6 +2,7 @@ package operator
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/pkg/errors"
@@ -15,7 +16,7 @@ const (
 )
 
 type runConfig struct {
-	kubeConfigProvider       configProvider
+	kubeConfigProvider       config.Provider
 	bootstrapManagerProvider managerProvider
 	operatorManagerProvider  managerProvider
 	isDeployedInOlm          bool

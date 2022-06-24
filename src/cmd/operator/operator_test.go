@@ -2,6 +2,8 @@ package operator
 
 import (
 	"context"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -14,16 +16,6 @@ const (
 	testNamespace = "test-namespace"
 )
 
-type mockManager struct {
-	testManager
-	mock.Mock
-}
-
-func (mgr *mockManager) Start(ctx context.Context) error {
-	args := mgr.Called(ctx)
-	return args.Error(0)
-}
-
 func TestOperatorCommand(t *testing.T) {
 	t.Run("operator command exists", func(t *testing.T) {
 		operatorCommand := newOperatorCommand(runConfig{})
@@ -32,13 +24,13 @@ func TestOperatorCommand(t *testing.T) {
 		assert.NotNil(t, operatorCommand.RunE)
 	})
 	t.Run("kubernetes config provider is called", func(t *testing.T) {
-		mockCfgProvider := &mockConfigProvider{}
+		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
 		mockMgrProvider := &mockManagerProvider{}
 		mockMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
-			Return(&testManager{}, nil)
+			Return(&manager.TestManager{}, nil)
 
 		runCfg := runConfig{
 			kubeConfigProvider:       mockCfgProvider,
@@ -54,7 +46,7 @@ func TestOperatorCommand(t *testing.T) {
 		mockCfgProvider.AssertCalled(t, "GetConfig")
 	})
 	t.Run("exit on config provider error", func(t *testing.T) {
-		mockCfgProvider := &mockConfigProvider{}
+		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, errors.New("config provider error"))
 		runCfg := runConfig{
 			kubeConfigProvider: mockCfgProvider,
@@ -66,13 +58,13 @@ func TestOperatorCommand(t *testing.T) {
 		assert.EqualError(t, err, "config provider error")
 	})
 	t.Run("create manager if not in OLM", func(t *testing.T) {
-		mockCfgProvider := &mockConfigProvider{}
+		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
 		mockMgrProvider := &mockManagerProvider{}
 		mockMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
-			Return(&testManager{}, nil)
+			Return(&manager.TestManager{}, nil)
 
 		runCfg := runConfig{
 			kubeConfigProvider:       mockCfgProvider,
@@ -88,13 +80,13 @@ func TestOperatorCommand(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("exit on manager error", func(t *testing.T) {
-		mockCfgProvider := &mockConfigProvider{}
+		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
 		mockMgrProvider := &mockManagerProvider{}
 		mockMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
-			Return(&testManager{}, errors.New("create manager error"))
+			Return(&manager.TestManager{}, errors.New("create manager error"))
 
 		runCfg := runConfig{
 			kubeConfigProvider:       mockCfgProvider,
@@ -108,10 +100,10 @@ func TestOperatorCommand(t *testing.T) {
 		assert.EqualError(t, err, "create manager error")
 	})
 	t.Run("bootstrap manager is started", func(t *testing.T) {
-		mockCfgProvider := &mockConfigProvider{}
+		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
-		mockMgr := &mockManager{}
+		mockMgr := &manager.Mock{}
 		mockMgr.On("Start", mock.Anything).Return(nil)
 
 		mockMgrProvider := &mockManagerProvider{}
@@ -134,10 +126,10 @@ func TestOperatorCommand(t *testing.T) {
 		mockMgr.AssertCalled(t, "Start", mock.Anything)
 	})
 	t.Run("operator manager is started", func(t *testing.T) {
-		mockCfgProvider := &mockConfigProvider{}
+		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
-		bootstrapMockMgr := &mockManager{}
+		bootstrapMockMgr := &manager.Mock{}
 		bootstrapMockMgr.On("Start", mock.Anything).Return(nil)
 
 		mockBootstrapMgrProvider := &mockManagerProvider{}
@@ -145,7 +137,7 @@ func TestOperatorCommand(t *testing.T) {
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(bootstrapMockMgr, nil)
 
-		operatorMockMgr := &mockManager{}
+		operatorMockMgr := &manager.Mock{}
 		operatorMockMgr.On("Start", mock.Anything).Return(nil)
 
 		mockOperatorMgrProvider := &mockManagerProvider{}
