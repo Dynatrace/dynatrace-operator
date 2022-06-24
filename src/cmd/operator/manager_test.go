@@ -9,17 +9,7 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
-
-type mockManagerProvider struct {
-	mock.Mock
-}
-
-func (provider *mockManagerProvider) CreateManager(namespace string, cfg *rest.Config) (manager.Manager, error) {
-	args := provider.Called(namespace, cfg)
-	return args.Get(0).(manager.Manager), args.Error(1)
-}
 
 func TestOperatorManagerProvider(t *testing.T) {
 	t.Run("implements interface", func(t *testing.T) {
@@ -46,7 +36,7 @@ func TestOperatorManagerProvider(t *testing.T) {
 		const addHealthzCheck = "AddHealthzCheck"
 
 		operatorMgrProvider := operatorManagerProvider{}
-		mockMgr := &cmdManager.Mock{}
+		mockMgr := &cmdManager.MockManager{}
 		mockMgr.On(addHealthzCheck, livezEndpointName, mock.AnythingOfType("healthz.Checker")).Return(nil)
 
 		err := operatorMgrProvider.addHealthzCheck(mockMgr)
@@ -55,7 +45,7 @@ func TestOperatorManagerProvider(t *testing.T) {
 		mockMgr.AssertCalled(t, addHealthzCheck, livezEndpointName, mock.AnythingOfType("healthz.Checker"))
 
 		expectedError := errors.New("healthz error")
-		mockMgr = &cmdManager.Mock{}
+		mockMgr = &cmdManager.MockManager{}
 		mockMgr.On(addHealthzCheck, mock.Anything, mock.Anything).Return(expectedError)
 
 		err = operatorMgrProvider.addHealthzCheck(mockMgr)
@@ -67,7 +57,7 @@ func TestOperatorManagerProvider(t *testing.T) {
 		const addReadyzCheck = "AddReadyzCheck"
 
 		operatorMgrProvider := operatorManagerProvider{}
-		mockMgr := &cmdManager.Mock{}
+		mockMgr := &cmdManager.MockManager{}
 		mockMgr.On(addReadyzCheck, readyzEndpointName, mock.AnythingOfType("healthz.Checker")).Return(nil)
 
 		err := operatorMgrProvider.addReadyzCheck(mockMgr)
@@ -76,7 +66,7 @@ func TestOperatorManagerProvider(t *testing.T) {
 		mockMgr.AssertCalled(t, addReadyzCheck, readyzEndpointName, mock.AnythingOfType("healthz.Checker"))
 
 		expectedError := errors.New("readyz error")
-		mockMgr = &cmdManager.Mock{}
+		mockMgr = &cmdManager.MockManager{}
 		mockMgr.On(addReadyzCheck, mock.Anything, mock.Anything).Return(expectedError)
 
 		err = operatorMgrProvider.addReadyzCheck(mockMgr)

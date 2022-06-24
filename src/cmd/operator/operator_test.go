@@ -27,7 +27,7 @@ func TestOperatorCommand(t *testing.T) {
 		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
-		mockMgrProvider := &mockManagerProvider{}
+		mockMgrProvider := &manager.MockProvider{}
 		mockMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(&manager.TestManager{}, nil)
@@ -61,7 +61,7 @@ func TestOperatorCommand(t *testing.T) {
 		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
-		mockMgrProvider := &mockManagerProvider{}
+		mockMgrProvider := &manager.MockProvider{}
 		mockMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(&manager.TestManager{}, nil)
@@ -83,7 +83,7 @@ func TestOperatorCommand(t *testing.T) {
 		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
-		mockMgrProvider := &mockManagerProvider{}
+		mockMgrProvider := &manager.MockProvider{}
 		mockMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(&manager.TestManager{}, errors.New("create manager error"))
@@ -103,10 +103,10 @@ func TestOperatorCommand(t *testing.T) {
 		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
-		mockMgr := &manager.Mock{}
+		mockMgr := &manager.MockManager{}
 		mockMgr.On("Start", mock.Anything).Return(nil)
 
-		mockMgrProvider := &mockManagerProvider{}
+		mockMgrProvider := &manager.MockProvider{}
 		mockMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(mockMgr, nil)
@@ -129,18 +129,18 @@ func TestOperatorCommand(t *testing.T) {
 		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, nil)
 
-		bootstrapMockMgr := &manager.Mock{}
+		bootstrapMockMgr := &manager.MockManager{}
 		bootstrapMockMgr.On("Start", mock.Anything).Return(nil)
 
-		mockBootstrapMgrProvider := &mockManagerProvider{}
+		mockBootstrapMgrProvider := &manager.MockProvider{}
 		mockBootstrapMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(bootstrapMockMgr, nil)
 
-		operatorMockMgr := &manager.Mock{}
+		operatorMockMgr := &manager.MockManager{}
 		operatorMockMgr.On("Start", mock.Anything).Return(nil)
 
-		mockOperatorMgrProvider := &mockManagerProvider{}
+		mockOperatorMgrProvider := &manager.MockProvider{}
 		mockOperatorMgrProvider.
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(operatorMockMgr, nil)

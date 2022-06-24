@@ -8,7 +8,7 @@ import (
 )
 
 func TestMockManager(t *testing.T) {
-	mgr := Mock{}
+	mgr := MockManager{}
 
 	mgr.On("Start", mock.Anything).Return(errors.New(""))
 	mgr.On("AddHealthzCheck", mock.Anything, mock.Anything).Return(errors.New(""))
