@@ -1,0 +1,25 @@
+version: 2
+updates:
+- package-ecosystem: "gomod"
+  directory: "/"
+  schedule:
+    interval: "weekly"
+    day: "friday"
+    time: "03:00"
+  commit-message:
+    prefix: "Go"
+    include: "scope"
+  labels:
+  - "dependencies"
+
+- package-ecosystem: "docker"
+  directory: "/"
+  schedule:
+    interval: "weekly"
+    day: "friday"
+    time: "03:00"
+  commit-message:
+    prefix: "Docker"
+    include: "scope"
+  labels:
+  - "dependencies"
