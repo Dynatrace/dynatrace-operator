@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -20,6 +21,14 @@ type pinnedVersionSet map[string]bool
 
 func (set pinnedVersionSet) isNotPinned(version string) bool {
 	return !set[version]
+}
+
+// garbageCollectionInfo is a collection of tenant specific information
+// that is needed to safely delete unused files/directories connected to that tenant
+type garbageCollectionInfo struct {
+	tenantUUID         string
+	latestAgentVersion string
+	pinnedVersions     pinnedVersionSet
 }
 
 // CSIGarbageCollector removes unused and outdated agent versions
@@ -52,41 +61,27 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	log.Info("running OneAgent garbage collection", "namespace", request.Namespace, "name", request.Name)
 	reconcileResult := reconcile.Result{RequeueAfter: 60 * time.Minute}
 
-	var dynakube dynatracev1beta1.DynaKube
-	if err := gc.apiReader.Get(ctx, request.NamespacedName, &dynakube); err != nil {
-		if k8serrors.IsNotFound(err) {
-			log.Info("given DynaKube object not found")
-			return reconcileResult, nil
-		}
-
-		log.Error(err, "failed to get DynaKube object")
-		return reconcileResult, nil
-	}
-
-	tenantUUID, err := dynakube.TenantUUID()
+	dynakube, err := getDynakubeFromRequest(ctx, gc.apiReader, request)
 	if err != nil {
-		log.Error(err, "failed to get tenantUUID of DynaKube")
 		return reconcileResult, err
 	}
-
-	latestAgentVersion := dynakube.Status.LatestAgentVersionUnixPaas
-	if latestAgentVersion == "" {
-		log.Info("no latest agent version found in dynakube, checking later")
+	if dynakube == nil {
 		return reconcileResult, nil
 	}
 
-	var dynakubeList dynatracev1beta1.DynaKubeList
-	if err := gc.apiReader.List(ctx, &dynakubeList, client.InNamespace(dynakube.Namespace)); err != nil {
-		log.Error(err, "failed to get all DynaKube objects")
+	gcInfo, err := collectGCInfo(ctx, gc.apiReader, *dynakube)
+	if err != nil {
 		return reconcileResult, err
 	}
+	if gcInfo == nil {
+		return reconcileResult, nil
+	}
 
-	pinnedVersions := getAllPinnedVersionsForTenantUUID(tenantUUID, dynakubeList)
 	log.Info("running binary garbage collection")
-	gc.runBinaryGarbageCollection(pinnedVersions, tenantUUID, latestAgentVersion)
+	gc.runBinaryGarbageCollection(gcInfo.pinnedVersions, gcInfo.tenantUUID, gcInfo.latestAgentVersion)
 
 	log.Info("running log garbage collection")
-	gc.runLogGarbageCollection(tenantUUID)
+	gc.runLogGarbageCollection(gcInfo.tenantUUID)
 
 	log.Info("running shared images garbage collection")
 	if err := gc.runSharedImagesGarbageCollection(); err != nil {
@@ -97,13 +92,58 @@ func (gc *CSIGarbageCollector) Reconcile(ctx context.Context, request reconcile.
 	return reconcileResult, nil
 }
 
+func getDynakubeFromRequest(ctx context.Context, apiReader client.Reader, request reconcile.Request) (*dynatracev1beta1.DynaKube, error) {
+	var dynakube dynatracev1beta1.DynaKube
+	if err := apiReader.Get(ctx, request.NamespacedName, &dynakube); err != nil {
+		if k8serrors.IsNotFound(err) {
+			log.Info("given DynaKube object not found")
+			return nil, nil
+		}
+
+		log.Info("failed to get DynaKube object")
+		return nil, errors.WithStack(err)
+	}
+	return &dynakube, nil
+}
+
+func collectGCInfo(ctx context.Context, apiReader client.Reader, dynakube dynatracev1beta1.DynaKube) (*garbageCollectionInfo, error) {
+	tenantUUID, err := dynakube.TenantUUID()
+	if err != nil {
+		log.Info("failed to get tenantUUID of DynaKube, checking later")
+		return nil, nil
+	}
+
+	latestAgentVersion := dynakube.Status.LatestAgentVersionUnixPaas
+	if latestAgentVersion == "" {
+		log.Info("no latest agent version found in dynakube, checking later")
+		return nil, nil
+	}
+
+	pinnedVersions, err := getAllPinnedVersionsForTenantUUID(ctx, apiReader, tenantUUID, dynakube.Namespace)
+	if err != nil {
+		log.Info("failed to determine pinned agent versions")
+		return nil, err
+	}
+
+	return &garbageCollectionInfo{
+		tenantUUID:         tenantUUID,
+		latestAgentVersion: latestAgentVersion,
+		pinnedVersions:     pinnedVersions,
+	}, nil
+}
+
 // getAllPinnedVersionsForTenantUUID returns all pinned versions for a given tenantUUID.
 // A pinned version is either:
 // - the image tag or digest set in the custom resource (this doesn't matter in context of the GC)
 // - the version set in the custom resource if applicationMonitoring is used
-func getAllPinnedVersionsForTenantUUID(tenantUUID string, dynakubes dynatracev1beta1.DynaKubeList) pinnedVersionSet {
+func getAllPinnedVersionsForTenantUUID(ctx context.Context, apiReader client.Reader, tenantUUID, namespace string) (pinnedVersionSet, error) {
+	var dynakubeList dynatracev1beta1.DynaKubeList
+	if err := apiReader.List(ctx, &dynakubeList, client.InNamespace(namespace)); err != nil {
+		log.Info("failed to get all DynaKube objects")
+		return nil, errors.WithStack(err)
+	}
 	pinnedImages := make(pinnedVersionSet)
-	for _, dynakube := range dynakubes.Items {
+	for _, dynakube := range dynakubeList.Items {
 		uuid, err := dynakube.TenantUUID()
 		if err != nil {
 			log.Error(err, "failed to get tenantUUID of DynaKube")
@@ -114,5 +154,5 @@ func getAllPinnedVersionsForTenantUUID(tenantUUID string, dynakubes dynatracev1b
 		}
 		pinnedImages[dynakube.CodeModulesVersion()] = true
 	}
-	return pinnedImages
+	return pinnedImages, nil
 }
