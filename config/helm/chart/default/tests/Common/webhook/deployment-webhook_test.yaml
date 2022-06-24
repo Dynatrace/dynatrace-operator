@@ -110,6 +110,8 @@ tests:
                   allowPrivilegeEscalation: false
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
                   capabilities:
                     drop: [ "all" ]
             serviceAccountName: dynatrace-webhook
@@ -237,6 +239,8 @@ tests:
                   allowPrivilegeEscalation: false
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
                   capabilities:
                     drop: ["all"]
             serviceAccountName: dynatrace-webhook
@@ -343,6 +347,8 @@ tests:
                   allowPrivilegeEscalation: false
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
                   capabilities:
                     drop: ["all"]
             serviceAccountName: dynatrace-webhook

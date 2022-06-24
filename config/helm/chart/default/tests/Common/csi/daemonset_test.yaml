@@ -131,7 +131,7 @@ tests:
                   - mountPath: /data
                     mountPropagation: Bidirectional
                     name: dynatrace-oneagent-data-dir
-                  - mountPath: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/tmp
+                  - mountPath: /tmp
                     name: tmp-dir
               - name: registrar
                 image: image-name
