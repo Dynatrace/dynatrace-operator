@@ -1,4 +1,4 @@
-package operator
+package config
 
 import (
 	"github.com/pkg/errors"
@@ -6,14 +6,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-type configProvider interface {
+type Provider interface {
 	GetConfig() (*rest.Config, error)
 }
 
 type kubeConfigProvider struct {
 }
 
-func newKubeConfigProvider() configProvider {
+func newKubeConfigProvider() Provider {
 	return kubeConfigProvider{}
 }
 
