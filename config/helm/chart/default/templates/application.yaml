@@ -24,7 +24,7 @@ metadata:
 spec:
   descriptor:
     type: "Dynatrace Operator"
-    version: "0.6.0"
+    version: "0.7.0"
     maintainers:
       - name: Dynatrace LLC
         url: https://www.dynatrace.com/
@@ -37,9 +37,9 @@ spec:
       - "apm"
     description: |
       # Dynatrace Operator
-  
+
       The Dynatrace Operator supports rollout and lifecycle management of various Dynatrace components in Kubernetes and OpenShift.
-      
+
       * OneAgent
       * `classicFullStack` rolls out a OneAgent pod per node to monitor pods on it and the node itself
       * `applicationMonitoring` is a webhook based injection mechanism for automatic app-only injection
@@ -50,8 +50,8 @@ spec:
       * `routing` routes OneAgent traffic through the ActiveGate
       * `kubernetes-monitoring` allows monitoring of the Kubernetes API
       * `metrics-ingest` routes enriched metrics through ActiveGate
-      
-      For more information please have a look at [our DynaKube Custom Resource examples](config/samples) and
+
+      For more information please have a look at [our DynaKube Custom Resource examples](assets/samples) and
       our [official help page](https://www.dynatrace.com/support/help/setup-and-configuration/setup-on-container-platforms/kubernetes/).
     links:
       - description: Dynatrace Website

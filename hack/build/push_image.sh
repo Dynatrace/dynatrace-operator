@@ -9,7 +9,7 @@ fi
 commit=$(git rev-parse HEAD)
 go_build_args=$(hack/build/create_go_build_args.sh "${TAG}" "${commit}")
 base_image="dynatrace-operator"
-out_image="quay.io/dynatrace/dynatrace-operator:${TAG}"
+out_image="${IMG:-quay.io/dynatrace/dynatrace-operator}:${TAG}"
 
 if [[ "${LOCALBUILD}" ]]; then
   export CGO_ENABLED=1
