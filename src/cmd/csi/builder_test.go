@@ -37,4 +37,7 @@ func TestCsiCommandBuilder(t *testing.T) {
 
 		assert.Equal(t, "namespace", builder.namespace)
 	})
+	t.Run("set filesystem", func(t *testing.T) {
+		_ = newCsiCommandBuilder().getFilesystem()
+	})
 }

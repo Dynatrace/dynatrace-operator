@@ -33,6 +33,10 @@ func (builder commandBuilder) setNamespace(namespace string) commandBuilder {
 	return builder
 }
 
+func (builder commandBuilder) getFilesystem() interface{} {
+	return nil
+}
+
 func (builder commandBuilder) build() *cobra.Command {
 	return &cobra.Command{
 		Use:  use,
