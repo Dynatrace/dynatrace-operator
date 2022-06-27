@@ -1,8 +1,11 @@
 package csi
 
 import (
+	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"testing"
 )
 
@@ -27,5 +30,25 @@ func TestCsiDriverManagerProvider(t *testing.T) {
 		assert.Equal(t, "", options.HealthProbeBindAddress)
 		assert.Equal(t, livenessEndpointName, options.LivenessEndpointName)
 	})
+	t.Run("adds healthz check endpoint", func(t *testing.T) {
+		const addHealthzCheck = "AddHealthzCheck"
 
+		operatorMgrProvider := csiDriverManagerProvider{}
+		mockMgr := &cmdManager.MockManager{}
+		mockMgr.On(addHealthzCheck, livezEndpointName, mock.AnythingOfType("healthz.Checker")).Return(nil)
+
+		err := operatorMgrProvider.addHealthzCheck(mockMgr)
+
+		assert.NoError(t, err)
+		mockMgr.AssertCalled(t, addHealthzCheck, livezEndpointName, mock.AnythingOfType("healthz.Checker"))
+
+		expectedError := errors.New("healthz error")
+		mockMgr = &cmdManager.MockManager{}
+		mockMgr.On(addHealthzCheck, mock.Anything, mock.Anything).Return(expectedError)
+
+		err = operatorMgrProvider.addHealthzCheck(mockMgr)
+
+		assert.EqualError(t, err, expectedError.Error())
+		mockMgr.AssertCalled(t, addHealthzCheck, mock.Anything, mock.Anything)
+	})
 }

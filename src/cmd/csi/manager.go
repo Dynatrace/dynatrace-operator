@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -14,6 +15,7 @@ const (
 	defaultProbeAddress  = ":8081"
 	port                 = 8383
 	livenessEndpointName = "/livez"
+	livezEndpointName    = "livez"
 )
 
 type csiDriverManagerProvider struct {
@@ -32,7 +34,22 @@ func (provider csiDriverManagerProvider) CreateManager(namespace string, config 
 		return nil, errors.WithStack(err)
 	}
 
+	err = provider.addHealthzCheck(mgr)
+	if err != nil {
+		return nil, err
+	}
+
 	return mgr, nil
+}
+
+func (provider csiDriverManagerProvider) addHealthzCheck(mgr manager.Manager) error {
+	err := mgr.AddHealthzCheck(livezEndpointName, healthz.Ping)
+
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
 
 func (provider csiDriverManagerProvider) createOptions(namespace string) ctrl.Options {
