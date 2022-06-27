@@ -149,7 +149,7 @@ Check if we are generating only a part of the yamls
 Check if platform is set
 */}}
 {{- define "dynatrace-operator.platformSet" -}}
-{{- if or (eq .Values.platform "kubernetes") (eq .Values.platform "openshift") (eq .Values.platform "google") -}}
+{{- if or (eq .Values.platform "kubernetes") (eq .Values.platform "openshift") (eq .Values.platform "google") (eq .Values.platform "google-autopilot") -}}
     {{ default "set" }}
 {{- end -}}
 {{- end -}}
