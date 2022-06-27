@@ -1,7 +1,6 @@
 package operator
 
 import (
-	"context"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
@@ -72,7 +71,6 @@ func TestOperatorCommand(t *testing.T) {
 			operatorManagerProvider:  mockMgrProvider,
 			isDeployedInOlm:          false,
 			namespace:                testNamespace,
-			signalHandler:            context.TODO(),
 		}
 		operatorCommand := newOperatorCommand(runCfg)
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
@@ -117,7 +115,6 @@ func TestOperatorCommand(t *testing.T) {
 			operatorManagerProvider:  mockMgrProvider,
 			isDeployedInOlm:          false,
 			namespace:                testNamespace,
-			signalHandler:            context.TODO(),
 		}
 		operatorCommand := newOperatorCommand(runCfg)
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))

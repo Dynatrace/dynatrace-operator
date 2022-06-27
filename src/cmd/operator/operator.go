@@ -21,7 +21,6 @@ type runConfig struct {
 	operatorManagerProvider  managerProvider
 	isDeployedInOlm          bool
 	namespace                string
-	signalHandler            context.Context
 }
 
 func newOperatorCommand(runCfg runConfig) *cobra.Command {
@@ -52,7 +51,8 @@ func run(runCfg runConfig) func(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		err = operatorManager.Start(runCfg.signalHandler)
+		signalHandler := ctrl.SetupSignalHandler()
+		err = operatorManager.Start(signalHandler)
 
 		return errors.WithStack(err)
 	}

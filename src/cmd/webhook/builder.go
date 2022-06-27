@@ -10,7 +10,9 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/namespace_mutator"
 	"github.com/Dynatrace/dynatrace-operator/src/webhook/mutation/pod_mutator"
 	validationhook "github.com/Dynatrace/dynatrace-operator/src/webhook/validation"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const use = "webhook-server"
@@ -61,37 +63,45 @@ func (builder commandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		mgr, err := builder.managerProvider.CreateManager(builder.namespace, kubeConfig)
+		webhookManager, err := builder.managerProvider.CreateManager(builder.namespace, kubeConfig)
 		if err != nil {
 			return err
 		}
 
 		if !builder.isDeployedViaOlm {
 			certificates.
-				NewCertificateWatcher(mgr, builder.namespace, webhook.SecretCertsName).
+				NewCertificateWatcher(webhookManager, builder.namespace, webhook.SecretCertsName).
 				WaitForCertificates()
 		}
 
-		err = namespace_mutator.AddNamespaceMutationWebhookToManager(mgr, builder.namespace)
+		err = namespace_mutator.AddNamespaceMutationWebhookToManager(webhookManager, builder.namespace)
 		if err != nil {
 			return err
 		}
 
-		err = pod_mutator.AddPodMutationWebhookToManager(mgr, builder.namespace)
+		err = pod_mutator.AddPodMutationWebhookToManager(webhookManager, builder.namespace)
 		if err != nil {
 			return err
 		}
 
-		err = (&v1alpha1.DynaKube{}).SetupWebhookWithManager(mgr)
+		err = (&v1alpha1.DynaKube{}).SetupWebhookWithManager(webhookManager)
 		if err != nil {
 			return err
 		}
 
-		err = (&dynatracev1beta1.DynaKube{}).SetupWebhookWithManager(mgr)
+		err = (&dynatracev1beta1.DynaKube{}).SetupWebhookWithManager(webhookManager)
 		if err != nil {
 			return err
 		}
 
-		return validationhook.AddDynakubeValidationWebhookToManager(mgr)
+		err = validationhook.AddDynakubeValidationWebhookToManager(webhookManager)
+		if err != nil {
+			return err
+		}
+
+		signalHandler := ctrl.SetupSignalHandler()
+		err = webhookManager.Start(signalHandler)
+
+		return errors.WithStack(err)
 	}
 }

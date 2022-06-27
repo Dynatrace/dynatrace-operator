@@ -2,6 +2,7 @@ package csi
 
 import (
 	"path/filepath"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
@@ -76,7 +77,7 @@ func (builder commandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		mgr, err := builder.managerProvider.CreateManager(builder.namespace, kubeConfig)
+		csiManager, err := builder.managerProvider.CreateManager(builder.namespace, kubeConfig)
 		if err != nil {
 			return err
 		}
@@ -92,27 +93,29 @@ func (builder commandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = metadata.CorrectMetadata(mgr.GetClient(), access)
+		err = metadata.CorrectMetadata(csiManager.GetClient(), access)
 		if err != nil {
 			return err
 		}
 
-		err = csidriver.NewServer(mgr.GetClient(), builder.csiOptions, access).SetupWithManager(mgr)
+		err = csidriver.NewServer(csiManager.GetClient(), builder.csiOptions, access).SetupWithManager(csiManager)
 		if err != nil {
 			return err
 		}
 
-		err = csiprovisioner.NewOneAgentProvisioner(mgr, builder.csiOptions, access).SetupWithManager(mgr)
+		err = csiprovisioner.NewOneAgentProvisioner(csiManager, builder.csiOptions, access).SetupWithManager(csiManager)
 		if err != nil {
 			return err
 		}
 
-		err = csigc.NewCSIGarbageCollector(mgr.GetClient(), builder.csiOptions, access).SetupWithManager(mgr)
+		err = csigc.NewCSIGarbageCollector(csiManager.GetClient(), builder.csiOptions, access).SetupWithManager(csiManager)
 		if err != nil {
 			return err
 		}
 
-		return nil
+		signalHandler := ctrl.SetupSignalHandler()
+		err = csiManager.Start(signalHandler)
+		return errors.WithStack(err)
 	}
 }
 
