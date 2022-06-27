@@ -84,7 +84,7 @@ config/deploy/kustomization.yaml
 
 /.run/
 config/deploy/kubernetes/kubernetes.yaml
-config/deploy/kubernetes/gke-autopilot.yaml
+config/deploy/kubernetes/google-autopilot.yaml
 config/deploy/kubernetes/kubernetes-csi.yaml
 config/deploy/kubernetes/kubernetes-olm.yaml
 config/deploy/openshift/openshift.yaml
