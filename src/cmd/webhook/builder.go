@@ -62,6 +62,9 @@ func (builder commandBuilder) buildRun() func(*cobra.Command, []string) error {
 		}
 
 		mgr, err := builder.managerProvider.CreateManager(builder.namespace, kubeConfig)
+		if err != nil {
+			return err
+		}
 
 		if !builder.isDeployedViaOlm {
 			certificates.

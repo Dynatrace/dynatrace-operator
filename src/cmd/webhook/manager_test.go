@@ -1,13 +1,13 @@
 package webhook
 
 import (
-	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"testing"
 
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 func TestCreateOptions(t *testing.T) {

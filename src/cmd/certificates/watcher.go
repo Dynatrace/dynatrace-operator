@@ -4,16 +4,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"os"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"time"
 )
 
 // TODO: refactor code below to be testable and tested

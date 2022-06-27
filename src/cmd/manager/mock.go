@@ -2,12 +2,12 @@ package manager
 
 import (
 	"context"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/stretchr/testify/mock"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 type MockManager struct {
