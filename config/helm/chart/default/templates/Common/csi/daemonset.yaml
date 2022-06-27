@@ -104,7 +104,7 @@ spec:
         - mountPath: /data
           mountPropagation: Bidirectional
           name: dynatrace-oneagent-data-dir
-        - mountPath: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/tmp
+        - mountPath: /tmp
           name: tmp-dir
         # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.

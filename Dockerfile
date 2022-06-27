@@ -62,4 +62,4 @@ RUN  /usr/local/bin/user_setup
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 
-USER ${USER_UID}
+USER ${USER_UID}:${USER_UID}
