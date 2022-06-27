@@ -86,7 +86,7 @@ func (builder commandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		// TODO: make the code below testable, but in another ticket because otherwise adding the other commands will take a week
+		// TODO: make the code below testable and test it, but in another ticket because otherwise adding the other commands will take a week
 		access, err := metadata.NewAccess(dtcsi.MetadataAccessPath)
 		if err != nil {
 			return err

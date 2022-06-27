@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/stretchr/testify/mock"
 	"k8s.io/client-go/rest"
@@ -27,6 +28,11 @@ func (mgr *MockManager) AddHealthzCheck(name string, check healthz.Checker) erro
 func (mgr *MockManager) AddReadyzCheck(name string, check healthz.Checker) error {
 	args := mgr.Called(name, check)
 	return args.Error(0)
+}
+
+func (mgr *MockManager) GetWebhookServer() *webhook.Server {
+	args := mgr.Called()
+	return args.Get(0).(*webhook.Server)
 }
 
 type MockProvider struct {
