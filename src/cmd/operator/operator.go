@@ -2,8 +2,8 @@ package operator
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"

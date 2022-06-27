@@ -2,10 +2,10 @@ package operator
 
 import (
 	"context"
-	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
-	"github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"testing"
 
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

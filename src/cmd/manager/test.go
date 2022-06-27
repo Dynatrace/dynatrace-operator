@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/go-logr/logr"

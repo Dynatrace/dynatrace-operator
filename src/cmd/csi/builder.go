@@ -1,6 +1,8 @@
 package csi
 
 import (
+	"path/filepath"
+
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
@@ -11,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"path/filepath"
 )
 
 const use = "csi-driver"
@@ -21,7 +22,6 @@ type commandBuilder struct {
 	managerProvider cmdManager.Provider
 	namespace       string
 	filesystem      afero.Fs
-	metadataAccess  metadata.Access
 	csiOptions      dtcsi.CSIOptions
 }
 

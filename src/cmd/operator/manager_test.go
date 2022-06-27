@@ -1,12 +1,12 @@
 package operator
 
 import (
-	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
-	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
+	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/client-go/rest"
 )

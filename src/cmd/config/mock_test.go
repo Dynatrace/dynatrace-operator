@@ -1,10 +1,11 @@
 package config
 
 import (
+	"testing"
+
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/rest"
-	"testing"
 )
 
 func TestMockConfigProvider(t *testing.T) {

@@ -1,13 +1,14 @@
 package csi
 
 import (
+	"io/fs"
+	"testing"
+
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
-	"io/fs"
-	"testing"
 )
 
 func TestCsiCommandBuilder(t *testing.T) {

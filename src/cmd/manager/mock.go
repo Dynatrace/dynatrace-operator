@@ -2,6 +2,7 @@ package manager
 
 import (
 	"context"
+
 	"github.com/stretchr/testify/mock"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"

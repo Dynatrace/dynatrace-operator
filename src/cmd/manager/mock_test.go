@@ -1,10 +1,12 @@
 package manager
 
 import (
+	"context"
+	"testing"
+
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 )
 
 func TestMockManager(t *testing.T) {
@@ -14,7 +16,7 @@ func TestMockManager(t *testing.T) {
 	mgr.On("AddHealthzCheck", mock.Anything, mock.Anything).Return(errors.New(""))
 	mgr.On("AddReadyzCheck", mock.Anything, mock.Anything).Return(errors.New(""))
 
-	assert.EqualError(t, mgr.Start(nil), "")
+	assert.EqualError(t, mgr.Start(context.TODO()), "")
 	assert.EqualError(t, mgr.AddHealthzCheck("", nil), "")
 	assert.EqualError(t, mgr.AddReadyzCheck("", nil), "")
 
