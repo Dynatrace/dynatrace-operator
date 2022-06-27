@@ -128,18 +128,18 @@ const (
 
 	// SPECIAL
 	getUsedVersionsStatement = `
-	SELECT Version
+	SELECT DISTINCT Version
 	FROM volumes
 	WHERE TenantUUID = ?;
 	`
 
 	getAllUsedVersionsStatement = `
-	SELECT Version
+	SELECT DISTINCT Version
 	FROM volumes;
 	`
 
 	getUsedImageDigestStatement = `
-	SELECT ImageDigest
+	SELECT DISTINCT ImageDigest
 	FROM dynakubes
 	WHERE ImageDigest != "";
 	`
