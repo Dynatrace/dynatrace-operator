@@ -23,7 +23,7 @@ k8s_cluster_id %s
 `
 	hostConfContentFormatString = `[host]
 tenant %s
-isCloudNativeFullStack true"
+isCloudNativeFullStack true
 `
 
 	jsonEnrichmentContentFormatString = `"k8s.pod.uid": "%s",
