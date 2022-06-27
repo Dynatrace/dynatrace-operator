@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	arch "github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/pkg/errors"
 )
 
@@ -84,7 +83,6 @@ func (env *environment) setOptionalFields() {
 	env.addWorkloadKind()
 	env.addWorkloadName()
 	env.addInstallerUrl()
-	env.addInstallerArch()
 }
 
 func (env *environment) addMode() error {
@@ -121,16 +119,6 @@ func (env *environment) addInstallerTech() error {
 	}
 	env.InstallerTech = strings.Split(technologies, ",")
 	return nil
-}
-
-func (env *environment) addInstallerArch() {
-	archEnv, err := checkEnvVar(InstallerArchEnv)
-	if err != nil {
-		env.InstallerArch = arch.ArchX86
-	} else {
-		env.InstallerArch = archEnv
-	}
-
 }
 
 func (env *environment) addInstallPath() error {
