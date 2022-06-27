@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/url"
@@ -41,7 +42,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 			Os:           dtclient.OsUnix,
 			Type:         dtclient.InstallerTypePaaS,
 			Flavor:       env.InstallerFlavor,
-			Arch:         env.InstallerArch,
+			Arch:         arch.Arch,
 			Technologies: env.InstallerTech,
 			Version:      url.VersionLatest,
 			Url:          env.InstallerUrl,
