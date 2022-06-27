@@ -2,7 +2,6 @@ package csi
 
 import (
 	"path/filepath"
-	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
@@ -14,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 const use = "csi-driver"
