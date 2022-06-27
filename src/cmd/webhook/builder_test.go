@@ -10,40 +10,40 @@ import (
 
 func TestWebhookCommandBuilder(t *testing.T) {
 	t.Run("build command", func(t *testing.T) {
-		builder := newWebhookCommandBuilder()
-		csiCommand := builder.build()
+		builder := NewWebhookCommandBuilder()
+		csiCommand := builder.Build()
 
 		assert.NotNil(t, csiCommand)
 		assert.Equal(t, use, csiCommand.Use)
 		assert.NotNil(t, csiCommand.RunE)
 	})
 	t.Run("set config provider", func(t *testing.T) {
-		builder := newWebhookCommandBuilder()
+		builder := NewWebhookCommandBuilder()
 
 		assert.NotNil(t, builder)
 
 		expectedProvider := &config.MockProvider{}
-		builder = builder.setConfigProvider(expectedProvider)
+		builder = builder.SetConfigProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.configProvider)
 	})
 	t.Run("set manager provider", func(t *testing.T) {
 		expectedProvider := &cmdManager.MockProvider{}
-		builder := newWebhookCommandBuilder().setManagerProvider(expectedProvider)
+		builder := NewWebhookCommandBuilder().SetManagerProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.managerProvider)
 	})
 	t.Run("set namespace", func(t *testing.T) {
-		builder := newWebhookCommandBuilder().setNamespace("namespace")
+		builder := NewWebhookCommandBuilder().SetNamespace("namespace")
 
 		assert.Equal(t, "namespace", builder.namespace)
 	})
 	t.Run("set deployed via olm flag", func(t *testing.T) {
-		builder := newWebhookCommandBuilder().setIsDeployedViaOlm(true)
+		builder := NewWebhookCommandBuilder().SetIsDeployedViaOlm(true)
 
 		assert.True(t, builder.isDeployedViaOlm)
 
-		builder = builder.setIsDeployedViaOlm(false)
+		builder = builder.SetIsDeployedViaOlm(false)
 		assert.False(t, builder.isDeployedViaOlm)
 	})
 }

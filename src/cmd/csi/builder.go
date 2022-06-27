@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"golang.org/x/sys/unix"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -72,6 +73,8 @@ func (builder commandBuilder) build() *cobra.Command {
 
 func (builder commandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		defer unix.Umask(0000)
+
 		kubeConfig, err := builder.configProvider.GetConfig()
 		if err != nil {
 			return err

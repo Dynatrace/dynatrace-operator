@@ -7,7 +7,7 @@ import (
 )
 
 func TestConfigProvider(t *testing.T) {
-	provider := newKubeConfigProvider()
+	provider := NewKubeConfigProvider()
 
 	assert.NotNil(t, provider)
 }

@@ -15,19 +15,16 @@ limitations under the License.
 package main
 
 import (
-	"context"
-	"fmt"
 	"os"
 
+	cmdConfig "github.com/Dynatrace/dynatrace-operator/src/cmd/config"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
-	"github.com/Dynatrace/dynatrace-operator/src/version"
-	"github.com/spf13/pflag"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var (
@@ -35,85 +32,40 @@ var (
 )
 
 const (
-	operatorCmd      = "operator"
-	csiDriverCmd     = "csi-driver"
-	standaloneCmd    = "init"
-	webhookServerCmd = "webhook-server"
+	envPodNamespace = "POD_NAMESPACE"
 )
 
-var errBadSubcmd = fmt.Errorf("subcommand must be %s, %s, %s or %s", operatorCmd, csiDriverCmd, webhookServerCmd, standaloneCmd)
+func newRootCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:  "dynatrace-operator",
+		RunE: rootCommand,
+	}
+
+	return cmd
+}
+
+func addWebhookCommand(cmd *cobra.Command) {
+	webhookCommandBuilder := webhook.NewWebhookCommandBuilder().
+		SetNamespace(os.Getenv(envPodNamespace)).
+		SetIsDeployedViaOlm(kubesystem.DeployedViaOLM()).
+		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
+
+	cmd.AddCommand(webhookCommandBuilder.Build())
+}
+
+func rootCommand(_ *cobra.Command, _ []string) error {
+	return errors.New("operator binary must be called with one of the subcommands")
+}
 
 func main() {
-	pflag.CommandLine.AddFlagSet(webhookServerFlags())
-	pflag.CommandLine.AddFlagSet(csiDriverFlags())
-	pflag.Parse()
-
 	ctrl.SetLogger(log)
+	cmd := newRootCommand()
 
-	version.LogVersion()
+	addWebhookCommand(cmd)
 
-	namespace := os.Getenv("POD_NAMESPACE")
-	var mgr manager.Manager
-	var err error
-	var cleanUp func()
-
-	subCmd := getSubCommand()
-	switch subCmd {
-	case operatorCmd:
-		cfg := getKubeConfig()
-		if !kubesystem.DeployedViaOLM() {
-			// setup manager only for certificates
-			bootstrapperCtx, done := context.WithCancel(context.TODO())
-			mgr, err := setupBootstrapper(namespace, cfg, done)
-			exitOnError(err, "bootstrapper setup failed")
-			exitOnError(mgr.Start(bootstrapperCtx), "problem running bootstrap manager")
-		}
-		// bootstrap manager stopped, starting full manager
-		mgr, err = setupOperator(namespace, cfg)
-		exitOnError(err, "operator setup failed")
-	case csiDriverCmd:
-		cfg := getKubeConfig()
-		mgr, cleanUp, err = setupCSIDriver(namespace, cfg)
-		exitOnError(err, "csi driver setup failed")
-		defer cleanUp()
-	case webhookServerCmd:
-		cfg := getKubeConfig()
-		mgr, cleanUp, err = setupWebhookServer(namespace, cfg)
-		exitOnError(err, "webhook-server setup failed")
-		defer cleanUp()
-	case standaloneCmd:
-		err := startStandAloneInit()
-		exitOnError(err, "initContainer command failed")
-		os.Exit(0)
-	default:
-		log.Error(errBadSubcmd, "unknown subcommand", "command", subCmd)
-		os.Exit(1)
-	}
-
-	signalHandler := ctrl.SetupSignalHandler()
-	log.Info("starting manager")
-	exitOnError(mgr.Start(signalHandler), "problem running manager")
-}
-
-func getKubeConfig() *rest.Config {
-	cfg, err := config.GetConfig()
+	err := cmd.Execute()
 	if err != nil {
-		log.Error(err, "")
+		log.Info(err.Error())
 		os.Exit(1)
 	}
-	return cfg
-}
-
-func exitOnError(err error, msg string) {
-	if err != nil {
-		log.Error(err, msg)
-		os.Exit(1)
-	}
-}
-
-func getSubCommand() string {
-	if args := pflag.Args(); len(args) > 0 {
-		return args[0]
-	}
-	return operatorCmd
 }

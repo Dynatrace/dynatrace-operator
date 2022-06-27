@@ -17,99 +17,83 @@ limitations under the License.
 package main
 
 import (
-	"os"
-	"path/filepath"
-
-	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
-	csidriver "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver"
-	csigc "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/gc"
-	"github.com/Dynatrace/dynatrace-operator/src/controllers/csi/metadata"
-	csiprovisioner "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/provisioner"
-	"github.com/Dynatrace/dynatrace-operator/src/scheme"
-	"github.com/spf13/afero"
-	"github.com/spf13/pflag"
-	"golang.org/x/sys/unix"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"k8s.io/client-go/rest"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-var (
-	nodeID    string
-	endpoint  string
-	probeAddr string
-)
-
-func csiDriverFlags() *pflag.FlagSet {
-	csiDriverFlags := pflag.NewFlagSet("csi-driver", pflag.ExitOnError)
-	csiDriverFlags.StringVar(&nodeID, "node-id", "", "node id")
-	csiDriverFlags.StringVar(&endpoint, "endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
-	csiDriverFlags.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	return csiDriverFlags
-}
-
-func setupCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
-	defaultUmask := unix.Umask(0000)
-	cleanUp := func() {
-		unix.Umask(defaultUmask)
-	}
-
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Namespace:              ns,
-		Scheme:                 scheme.Scheme,
-		MetricsBindAddress:     ":8080",
-		Port:                   8383,
-		HealthProbeBindAddress: probeAddr,
-		LivenessEndpointName:   "/livez",
-	})
-	if err != nil {
-		log.Error(err, "unable to start manager")
-		return nil, cleanUp, err
-	}
-
-	csiOpts := dtcsi.CSIOptions{
-		NodeID:   nodeID,
-		Endpoint: endpoint,
-		RootDir:  dtcsi.DataPath,
-	}
-
-	fs := afero.NewOsFs()
-
-	if err := fs.MkdirAll(filepath.Join(csiOpts.RootDir), 0770); err != nil {
-		log.Error(err, "unable to create data directory for CSI Driver")
-		return nil, cleanUp, err
-	}
-
-	access, err := metadata.NewAccess(dtcsi.MetadataAccessPath)
-	if err != nil {
-		log.Error(err, "failed to setup database storage for CSI Driver")
-		os.Exit(1)
-	}
-	if err := metadata.CorrectMetadata(mgr.GetClient(), access); err != nil {
-		log.Error(err, "failed to correct database storage for CSI Driver")
-	}
-
-	if err := csidriver.NewServer(mgr.GetClient(), csiOpts, access).SetupWithManager(mgr); err != nil {
-		log.Error(err, "unable to create CSI Driver server")
-		return nil, cleanUp, err
-	}
-
-	if err := csiprovisioner.NewOneAgentProvisioner(mgr, csiOpts, access).SetupWithManager(mgr); err != nil {
-		log.Error(err, "unable to create CSI Provisioner")
-		return nil, cleanUp, err
-	}
-
-	if err := mgr.AddHealthzCheck("livez", healthz.Ping); err != nil {
-		log.Error(err, "unable to set up health check")
-		return nil, cleanUp, err
-	}
-
-	if err := csigc.NewCSIGarbageCollector(mgr.GetClient(), csiOpts, access).SetupWithManager(mgr); err != nil {
-		log.Error(err, "unable to create CSI Garbage Collector")
-		return nil, cleanUp, err
-	}
-
-	return mgr, cleanUp, nil
-}
+//var (
+//	nodeID    string
+//	endpoint  string
+//	probeAddr string
+//)
+//
+//func csiDriverFlags() *pflag.FlagSet {
+//	csiDriverFlags := pflag.NewFlagSet("csi-driver", pflag.ExitOnError)
+//	csiDriverFlags.StringVar(&nodeID, "node-id", "", "node id")
+//	csiDriverFlags.StringVar(&endpoint, "endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
+//	csiDriverFlags.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+//	return csiDriverFlags
+//}
+//
+//func setupCSIDriver(ns string, cfg *rest.Config) (manager.Manager, func(), error) {
+//	defaultUmask := unix.Umask(0000)
+//	cleanUp := func() {
+//		unix.Umask(defaultUmask)
+//	}
+//
+//	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+//		Namespace:              ns,
+//		Scheme:                 scheme.Scheme,
+//		MetricsBindAddress:     ":8080",
+//		Port:                   8383,
+//		HealthProbeBindAddress: probeAddr,
+//		LivenessEndpointName:   "/livez",
+//	})
+//	if err != nil {
+//		log.Error(err, "unable to start manager")
+//		return nil, cleanUp, err
+//	}
+//
+//	csiOpts := dtcsi.CSIOptions{
+//		NodeID:   nodeID,
+//		Endpoint: endpoint,
+//		RootDir:  dtcsi.DataPath,
+//	}
+//
+//	fs := afero.NewOsFs()
+//
+//	if err := fs.MkdirAll(filepath.Join(csiOpts.RootDir), 0770); err != nil {
+//		log.Error(err, "unable to create data directory for CSI Driver")
+//		return nil, cleanUp, err
+//	}
+//
+//	access, err := metadata.NewAccess(dtcsi.MetadataAccessPath)
+//	if err != nil {
+//		log.Error(err, "failed to setup database storage for CSI Driver")
+//		os.Exit(1)
+//	}
+//	if err := metadata.CorrectMetadata(mgr.GetClient(), access); err != nil {
+//		log.Error(err, "failed to correct database storage for CSI Driver")
+//	}
+//
+//	if err := csidriver.NewServer(mgr.GetClient(), csiOpts, access).SetupWithManager(mgr); err != nil {
+//		log.Error(err, "unable to create CSI Driver server")
+//		return nil, cleanUp, err
+//	}
+//
+//	if err := csiprovisioner.NewOneAgentProvisioner(mgr, csiOpts, access).SetupWithManager(mgr); err != nil {
+//		log.Error(err, "unable to create CSI Provisioner")
+//		return nil, cleanUp, err
+//	}
+//
+//	if err := mgr.AddHealthzCheck("livez", healthz.Ping); err != nil {
+//		log.Error(err, "unable to set up health check")
+//		return nil, cleanUp, err
+//	}
+//
+//	if err := csigc.NewCSIGarbageCollector(mgr.GetClient(), csiOpts, access).SetupWithManager(mgr); err != nil {
+//		log.Error(err, "unable to create CSI Garbage Collector")
+//		return nil, cleanUp, err
+//	}
+//
+//	return mgr, cleanUp, nil
+//}

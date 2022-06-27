@@ -14,16 +14,11 @@ limitations under the License.
 
 package main
 
-import (
-	validationhook "github.com/Dynatrace/dynatrace-operator/src/webhook/validation"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-)
-
-func startValidationServer(mgr manager.Manager) (manager.Manager, func(), error) {
-	cleanUp := func() {}
-	if err := validationhook.AddDynakubeValidationWebhookToManager(mgr); err != nil {
-		return nil, cleanUp, err
-	}
-
-	return mgr, cleanUp, nil
-}
+//func startValidationServer(mgr manager.Manager) (manager.Manager, func(), error) {
+//	cleanUp := func() {}
+//	if err := validationhook.AddDynakubeValidationWebhookToManager(mgr); err != nil {
+//		return nil, cleanUp, err
+//	}
+//
+//	return mgr, cleanUp, nil
+//}

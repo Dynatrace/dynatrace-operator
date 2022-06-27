@@ -13,7 +13,7 @@ type Provider interface {
 type kubeConfigProvider struct {
 }
 
-func newKubeConfigProvider() Provider {
+func NewKubeConfigProvider() Provider {
 	return kubeConfigProvider{}
 }
 

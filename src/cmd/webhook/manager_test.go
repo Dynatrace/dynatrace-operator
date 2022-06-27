@@ -12,16 +12,16 @@ import (
 
 func TestCreateOptions(t *testing.T) {
 	t.Run("implements interface", func(t *testing.T) {
-		var provider cmdManager.Provider = newWebhookProvider("certs-dir", "key-file", "cert-file")
+		var provider cmdManager.Provider = NewWebhookManagerProvider("certs-dir", "key-file", "cert-file")
 		_, _ = provider.CreateManager("namespace", &rest.Config{})
 
-		providerImpl := provider.(webhookProvider)
+		providerImpl := provider.(WebhookProvider)
 		assert.Equal(t, "certs-dir", providerImpl.certificateDirectory)
 		assert.Equal(t, "key-file", providerImpl.keyFileName)
 		assert.Equal(t, "cert-file", providerImpl.certificateFileName)
 	})
 	t.Run("creates options", func(t *testing.T) {
-		provider := webhookProvider{}
+		provider := WebhookProvider{}
 		options := provider.createOptions("test-namespace")
 
 		assert.NotNil(t, options)
@@ -31,7 +31,7 @@ func TestCreateOptions(t *testing.T) {
 		assert.Equal(t, port, options.Port)
 	})
 	t.Run("configures webhooks server", func(t *testing.T) {
-		provider := newWebhookProvider("certs-dir", "key-file", "cert-file")
+		provider := NewWebhookManagerProvider("certs-dir", "key-file", "cert-file")
 		expectedWebhookServer := &webhook.Server{}
 
 		mgr := &cmdManager.MockManager{}

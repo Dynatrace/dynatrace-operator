@@ -15,47 +15,76 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-const use = "webhook-server"
+const (
+	use                        = "webhook-server"
+	FlagCertificateDirectory   = "certs-dir"
+	FlagCertificateFileName    = "cert"
+	FlagCertificateKeyFileName = "cert-key"
+)
 
-type commandBuilder struct {
+var (
+	certificateDirectory   string
+	certificateFileName    string
+	certificateKeyFileName string
+)
+
+type CommandBuilder struct {
 	configProvider   config.Provider
 	managerProvider  cmdManager.Provider
 	namespace        string
 	isDeployedViaOlm bool
 }
 
-func newWebhookCommandBuilder() commandBuilder {
-	return commandBuilder{}
+func NewWebhookCommandBuilder() CommandBuilder {
+	return CommandBuilder{}
 }
 
-func (builder commandBuilder) setConfigProvider(provider config.Provider) commandBuilder {
+func (builder CommandBuilder) SetConfigProvider(provider config.Provider) CommandBuilder {
 	builder.configProvider = provider
 	return builder
 }
 
-func (builder commandBuilder) setManagerProvider(provider cmdManager.Provider) commandBuilder {
+func (builder CommandBuilder) SetManagerProvider(provider cmdManager.Provider) CommandBuilder {
 	builder.managerProvider = provider
 	return builder
 }
 
-func (builder commandBuilder) setNamespace(namespace string) commandBuilder {
+func (builder CommandBuilder) GetManagerProvider() cmdManager.Provider {
+	if builder.managerProvider == nil {
+		builder.managerProvider = NewWebhookManagerProvider(certificateDirectory, certificateKeyFileName, certificateFileName)
+	}
+
+	return builder.managerProvider
+}
+
+func (builder CommandBuilder) SetNamespace(namespace string) CommandBuilder {
 	builder.namespace = namespace
 	return builder
 }
 
-func (builder commandBuilder) setIsDeployedViaOlm(isDeployedViaOlm bool) commandBuilder {
+func (builder CommandBuilder) SetIsDeployedViaOlm(isDeployedViaOlm bool) CommandBuilder {
 	builder.isDeployedViaOlm = isDeployedViaOlm
 	return builder
 }
 
-func (builder commandBuilder) build() *cobra.Command {
-	return &cobra.Command{
+func (builder CommandBuilder) Build() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:  use,
 		RunE: builder.buildRun(),
 	}
+
+	addFlags(cmd)
+
+	return cmd
 }
 
-func (builder commandBuilder) buildRun() func(*cobra.Command, []string) error {
+func addFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVar(&certificateDirectory, FlagCertificateDirectory, "/tmp/webhook/certs", "Directory to look certificates for.")
+	cmd.PersistentFlags().StringVar(&certificateFileName, FlagCertificateFileName, "tls.crt", "File name for the public certificate.")
+	cmd.PersistentFlags().StringVar(&certificateKeyFileName, FlagCertificateKeyFileName, "tls.key", "File name for the private key.")
+}
+
+func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		// TODO: make the code below testable and test it, but in another ticket because otherwise adding the other commands will take a week
 		kubeConfig, err := builder.configProvider.GetConfig()
@@ -63,7 +92,7 @@ func (builder commandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		webhookManager, err := builder.managerProvider.CreateManager(builder.namespace, kubeConfig)
+		webhookManager, err := builder.GetManagerProvider().CreateManager(builder.namespace, kubeConfig)
 		if err != nil {
 			return err
 		}
