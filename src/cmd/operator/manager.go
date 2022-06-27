@@ -1,6 +1,7 @@
 package operator
 
 import (
+	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
@@ -22,10 +23,6 @@ const (
 	livezEndpointName    = "livez"
 )
 
-type managerProvider interface {
-	CreateManager(namespace string, config *rest.Config) (manager.Manager, error)
-}
-
 type bootstrapManagerProvider struct{}
 
 func (provider bootstrapManagerProvider) CreateManager(namespace string, config *rest.Config) (manager.Manager, error) {
@@ -36,7 +33,7 @@ func (provider bootstrapManagerProvider) CreateManager(namespace string, config 
 	return controlManager, errors.WithStack(err)
 }
 
-func newBootstrapManagerProvider() managerProvider {
+func newBootstrapManagerProvider() cmdManager.Provider {
 	return bootstrapManagerProvider{}
 }
 
@@ -97,6 +94,6 @@ func (provider operatorManagerProvider) addReadyzCheck(mgr manager.Manager) erro
 	return nil
 }
 
-func newOperatorManagerProvider() managerProvider {
+func newOperatorManagerProvider() cmdManager.Provider {
 	return operatorManagerProvider{}
 }
