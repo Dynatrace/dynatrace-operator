@@ -18,6 +18,7 @@ import (
 	"os"
 
 	cmdConfig "github.com/Dynatrace/dynatrace-operator/src/cmd/config"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/operator"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
@@ -53,6 +54,17 @@ func addWebhookCommand(cmd *cobra.Command) {
 	cmd.AddCommand(webhookCommandBuilder.Build())
 }
 
+func addOperatorCommand(cmd *cobra.Command) {
+	operatorCommandBuilder := operator.NewOperatorCommandBuilder().
+		SetNamespace(os.Getenv(envPodNamespace)).
+		SetIsDeployedViaOlm(kubesystem.DeployedViaOLM()).
+		SetConfigProvider(cmdConfig.NewKubeConfigProvider()).
+		SetBootstrapManagerProvider(operator.NewBootstrapManagerProvider()).
+		SetOperatorManagerProvider(operator.NewOperatorManagerProvider())
+
+	cmd.AddCommand(operatorCommandBuilder.Build())
+}
+
 func rootCommand(_ *cobra.Command, _ []string) error {
 	return errors.New("operator binary must be called with one of the subcommands")
 }
@@ -62,6 +74,7 @@ func main() {
 	cmd := newRootCommand()
 
 	addWebhookCommand(cmd)
+	addOperatorCommand(cmd)
 
 	err := cmd.Execute()
 	if err != nil {

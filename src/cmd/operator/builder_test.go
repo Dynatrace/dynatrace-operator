@@ -18,37 +18,37 @@ const (
 
 func TestCommandBuilder(t *testing.T) {
 	t.Run("build command", func(t *testing.T) {
-		builder := newOperatorCommandBuilder()
-		operatorCommand := builder.build()
+		builder := NewOperatorCommandBuilder()
+		operatorCommand := builder.Build()
 
 		assert.NotNil(t, operatorCommand)
 		assert.Equal(t, use, operatorCommand.Use)
 		assert.NotNil(t, operatorCommand.RunE)
 	})
 	t.Run("set config provider", func(t *testing.T) {
-		builder := newOperatorCommandBuilder()
+		builder := NewOperatorCommandBuilder()
 
 		assert.NotNil(t, builder)
 
 		expectedProvider := &config.MockProvider{}
-		builder = builder.setConfigProvider(expectedProvider)
+		builder = builder.SetConfigProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.configProvider)
 	})
 	t.Run("set operator manager provider", func(t *testing.T) {
 		expectedProvider := &cmdManager.MockProvider{}
-		builder := newOperatorCommandBuilder().setOperatorManagerProvider(expectedProvider)
+		builder := NewOperatorCommandBuilder().SetOperatorManagerProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.operatorManagerProvider)
 	})
 	t.Run("set bootstrap manager provider", func(t *testing.T) {
 		expectedProvider := &cmdManager.MockProvider{}
-		builder := newOperatorCommandBuilder().setBootstrapManagerProvider(expectedProvider)
+		builder := NewOperatorCommandBuilder().SetBootstrapManagerProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.bootstrapManagerProvider)
 	})
 	t.Run("set namespace", func(t *testing.T) {
-		builder := newOperatorCommandBuilder().setNamespace("namespace")
+		builder := NewOperatorCommandBuilder().SetNamespace("namespace")
 
 		assert.Equal(t, "namespace", builder.namespace)
 	})
@@ -56,7 +56,7 @@ func TestCommandBuilder(t *testing.T) {
 		// If ctrl.SetupSignalHandler() is used multiple times during a test suit, it will panic
 		// Therefore it is necessary to set a custom context to unit test properly
 		ctx := context.TODO()
-		builder := newOperatorCommandBuilder().setSignalHandler(ctx)
+		builder := NewOperatorCommandBuilder().setSignalHandler(ctx)
 
 		assert.Equal(t, ctx, builder.signalHandler)
 	})
@@ -64,7 +64,7 @@ func TestCommandBuilder(t *testing.T) {
 
 func TestOperatorCommand(t *testing.T) {
 	t.Run("operator command exists", func(t *testing.T) {
-		operatorCommand := newOperatorCommandBuilder().build()
+		operatorCommand := NewOperatorCommandBuilder().Build()
 
 		assert.Equal(t, operatorCommand.Use, "operator")
 		assert.NotNil(t, operatorCommand.RunE)
@@ -78,13 +78,13 @@ func TestOperatorCommand(t *testing.T) {
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(&cmdManager.TestManager{}, nil)
 
-		builder := newOperatorCommandBuilder().
-			setNamespace(testNamespace).
-			setIsDeployedViaOlm(false).
-			setOperatorManagerProvider(mockMgrProvider).
-			setBootstrapManagerProvider(mockMgrProvider).
-			setConfigProvider(mockCfgProvider)
-		operatorCommand := builder.build()
+		builder := NewOperatorCommandBuilder().
+			SetNamespace(testNamespace).
+			SetIsDeployedViaOlm(false).
+			SetOperatorManagerProvider(mockMgrProvider).
+			SetBootstrapManagerProvider(mockMgrProvider).
+			SetConfigProvider(mockCfgProvider)
+		operatorCommand := builder.Build()
 
 		_ = operatorCommand.RunE(operatorCommand, make([]string, 0))
 
@@ -93,10 +93,10 @@ func TestOperatorCommand(t *testing.T) {
 	t.Run("exit on config provider error", func(t *testing.T) {
 		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, errors.New("config provider error"))
-		builder := newOperatorCommandBuilder().
-			setIsDeployedViaOlm(false).
-			setConfigProvider(mockCfgProvider)
-		operatorCommand := builder.build()
+		builder := NewOperatorCommandBuilder().
+			SetIsDeployedViaOlm(false).
+			SetConfigProvider(mockCfgProvider)
+		operatorCommand := builder.Build()
 
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
 
@@ -111,14 +111,14 @@ func TestOperatorCommand(t *testing.T) {
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(&cmdManager.TestManager{}, nil)
 
-		builder := newOperatorCommandBuilder().
-			setNamespace(testNamespace).
-			setIsDeployedViaOlm(false).
-			setOperatorManagerProvider(mockMgrProvider).
-			setBootstrapManagerProvider(mockMgrProvider).
-			setConfigProvider(mockCfgProvider).
+		builder := NewOperatorCommandBuilder().
+			SetNamespace(testNamespace).
+			SetIsDeployedViaOlm(false).
+			SetOperatorManagerProvider(mockMgrProvider).
+			SetBootstrapManagerProvider(mockMgrProvider).
+			SetConfigProvider(mockCfgProvider).
 			setSignalHandler(context.TODO())
-		operatorCommand := builder.build()
+		operatorCommand := builder.Build()
 
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
 
@@ -133,12 +133,12 @@ func TestOperatorCommand(t *testing.T) {
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(&cmdManager.TestManager{}, errors.New("create manager error"))
 
-		builder := newOperatorCommandBuilder().
-			setNamespace(testNamespace).
-			setIsDeployedViaOlm(false).
-			setBootstrapManagerProvider(mockMgrProvider).
-			setConfigProvider(mockCfgProvider)
-		operatorCommand := builder.build()
+		builder := NewOperatorCommandBuilder().
+			SetNamespace(testNamespace).
+			SetIsDeployedViaOlm(false).
+			SetBootstrapManagerProvider(mockMgrProvider).
+			SetConfigProvider(mockCfgProvider)
+		operatorCommand := builder.Build()
 
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
 
@@ -156,14 +156,14 @@ func TestOperatorCommand(t *testing.T) {
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(mockMgr, nil)
 
-		builder := newOperatorCommandBuilder().
-			setNamespace(testNamespace).
-			setIsDeployedViaOlm(false).
-			setOperatorManagerProvider(mockMgrProvider).
-			setBootstrapManagerProvider(mockMgrProvider).
-			setConfigProvider(mockCfgProvider).
+		builder := NewOperatorCommandBuilder().
+			SetNamespace(testNamespace).
+			SetIsDeployedViaOlm(false).
+			SetOperatorManagerProvider(mockMgrProvider).
+			SetBootstrapManagerProvider(mockMgrProvider).
+			SetConfigProvider(mockCfgProvider).
 			setSignalHandler(context.TODO())
-		operatorCommand := builder.build()
+		operatorCommand := builder.Build()
 
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
 
@@ -190,14 +190,14 @@ func TestOperatorCommand(t *testing.T) {
 			On("CreateManager", mock.AnythingOfType("string"), &rest.Config{}).
 			Return(operatorMockMgr, nil)
 
-		builder := newOperatorCommandBuilder().
-			setNamespace(testNamespace).
-			setIsDeployedViaOlm(true).
-			setOperatorManagerProvider(mockOperatorMgrProvider).
-			setBootstrapManagerProvider(mockBootstrapMgrProvider).
-			setConfigProvider(mockCfgProvider).
+		builder := NewOperatorCommandBuilder().
+			SetNamespace(testNamespace).
+			SetIsDeployedViaOlm(true).
+			SetOperatorManagerProvider(mockOperatorMgrProvider).
+			SetBootstrapManagerProvider(mockBootstrapMgrProvider).
+			SetConfigProvider(mockCfgProvider).
 			setSignalHandler(context.TODO())
-		operatorCommand := builder.build()
+		operatorCommand := builder.Build()
 
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
 

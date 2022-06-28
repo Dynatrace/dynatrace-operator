@@ -13,7 +13,7 @@ import (
 
 func TestOperatorManagerProvider(t *testing.T) {
 	t.Run("implements interface", func(t *testing.T) {
-		var controlManagerProvider cmdManager.Provider = newOperatorManagerProvider()
+		var controlManagerProvider cmdManager.Provider = NewOperatorManagerProvider()
 		_, _ = controlManagerProvider.CreateManager("namespace", &rest.Config{})
 	})
 	t.Run("creates correct options", func(t *testing.T) {
@@ -77,7 +77,7 @@ func TestOperatorManagerProvider(t *testing.T) {
 }
 
 func TestBootstrapManagerProvider(t *testing.T) {
-	bootstrapProvider := newBootstrapManagerProvider()
+	bootstrapProvider := NewBootstrapManagerProvider()
 	_, _ = bootstrapProvider.CreateManager("namespace", &rest.Config{})
 
 }

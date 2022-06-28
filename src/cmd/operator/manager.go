@@ -25,6 +25,10 @@ const (
 
 type bootstrapManagerProvider struct{}
 
+func NewBootstrapManagerProvider() cmdManager.Provider {
+	return bootstrapManagerProvider{}
+}
+
 func (provider bootstrapManagerProvider) CreateManager(namespace string, config *rest.Config) (manager.Manager, error) {
 	controlManager, err := ctrl.NewManager(config, ctrl.Options{
 		Scheme:    scheme.Scheme,
@@ -33,11 +37,11 @@ func (provider bootstrapManagerProvider) CreateManager(namespace string, config 
 	return controlManager, errors.WithStack(err)
 }
 
-func newBootstrapManagerProvider() cmdManager.Provider {
-	return bootstrapManagerProvider{}
-}
-
 type operatorManagerProvider struct{}
+
+func NewOperatorManagerProvider() cmdManager.Provider {
+	return operatorManagerProvider{}
+}
 
 func (provider operatorManagerProvider) CreateManager(namespace string, cfg *rest.Config) (manager.Manager, error) {
 	mgr, err := ctrl.NewManager(cfg, provider.createOptions(namespace))
@@ -92,8 +96,4 @@ func (provider operatorManagerProvider) addReadyzCheck(mgr manager.Manager) erro
 	}
 
 	return nil
-}
-
-func newOperatorManagerProvider() cmdManager.Provider {
-	return operatorManagerProvider{}
 }
