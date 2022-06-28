@@ -102,3 +102,5 @@ kuttl/activegate/logs/
 /testbin/bin/kubectl
 /testbin/setup-envtest.sh
 /bin/manager
+
+/src/dtclient2/generated
