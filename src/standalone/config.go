@@ -28,7 +28,6 @@ const (
 
 	InstallerFlavorEnv = "FLAVOR"
 	InstallerTechEnv   = "TECHNOLOGIES"
-	InstallerArchEnv   = "ARCH"
 
 	K8NodeNameEnv    = "K8S_NODE_NAME"
 	K8PodNameEnv     = "K8S_PODNAME"

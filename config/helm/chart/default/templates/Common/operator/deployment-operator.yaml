@@ -101,11 +101,13 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
+                  {{- if ne .Values.platform "google-autopilot"}}
                   - key: kubernetes.io/arch
                     operator: In
                     values:
                       - amd64
                       - arm64
+                  {{- end }}
                   - key: kubernetes.io/os
                     operator: In
                     values:

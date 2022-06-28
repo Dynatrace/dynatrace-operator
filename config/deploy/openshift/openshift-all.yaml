@@ -3318,6 +3318,39 @@ rules:
     verbs:
       - get
 ---
+# Source: dynatrace-operator/templates/Common/oneagent/clusterrole-oneagent-unprivileged.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dynatrace-dynakube-oneagent-unprivileged
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/component: oneagent
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - host
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+---
 # Source: dynatrace-operator/templates/Common/operator/clusterrole-operator.yaml
 # Copyright 2021 Dynatrace LLC
 
@@ -3498,39 +3531,6 @@ rules:
     verbs:
       - get
 ---
-# Source: dynatrace-operator/templates/Openshift/oneagent/clusterrole-oneagent-unprivileged.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: dynatrace-dynakube-oneagent-unprivileged
-  labels:
-    app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
-    app.kubernetes.io/component: oneagent
-rules:
-  - apiGroups:
-      - security.openshift.io
-    resourceNames:
-      - host
-      - privileged
-    resources:
-      - securitycontextconstraints
-    verbs:
-      - use
----
 # Source: dynatrace-operator/templates/Common/kubernetes-monitoring/clusterrolebinding-kubernetes-monitoring.yaml
 # Copyright 2021 Dynatrace LLC
 
@@ -3561,6 +3561,37 @@ subjects:
   - kind: ServiceAccount
     name: dynatrace-kubernetes-monitoring
     namespace: dynatrace
+---
+# Source: dynatrace-operator/templates/Common/oneagent/clusterrolebinding-oneagent-unprivileged.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-dynakube-oneagent-unprivileged
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.0.0-snapshot"
+    app.kubernetes.io/component: oneagent
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-dynakube-oneagent-unprivileged
+    namespace: dynatrace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-dynakube-oneagent-unprivileged
 ---
 # Source: dynatrace-operator/templates/Common/operator/clusterrolebinding-operator.yaml
 # Copyright 2021 Dynatrace LLC
@@ -3623,37 +3654,6 @@ roleRef:
   kind: ClusterRole
   name: dynatrace-webhook
   apiGroup: rbac.authorization.k8s.io
----
-# Source: dynatrace-operator/templates/Openshift/oneagent/clusterrolebinding-oneagent-unprivileged.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: dynatrace-dynakube-oneagent-unprivileged
-  labels:
-    app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.0.0-snapshot"
-    app.kubernetes.io/component: oneagent
-subjects:
-  - kind: ServiceAccount
-    name: dynatrace-dynakube-oneagent-unprivileged
-    namespace: dynatrace
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: dynatrace-dynakube-oneagent-unprivileged
 ---
 # Source: dynatrace-operator/templates/Common/operator/role-operator.yaml
 # Copyright 2021 Dynatrace LLC
@@ -4077,6 +4077,8 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
             capabilities:
               drop: ["all"]
       affinity:
@@ -4208,6 +4210,8 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
             capabilities:
               drop: ["all"]
       serviceAccountName: dynatrace-webhook
@@ -4841,7 +4845,7 @@ spec:
           runAsUser: 0
           privileged: true # Needed for mountPropagation
           allowPrivilegeEscalation: true # Needed for privileged
-          readOnlyRootFilesystem: false
+          readOnlyRootFilesystem: true
           runAsNonRoot: false
           seccompProfile:
             type: RuntimeDefault
@@ -4858,6 +4862,8 @@ spec:
         - mountPath: /data
           mountPropagation: Bidirectional
           name: dynatrace-oneagent-data-dir
+        - mountPath: /tmp
+          name: tmp-dir
         # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
         # Used for registering the driver with kubelet
@@ -4892,7 +4898,7 @@ spec:
         securityContext:
           runAsUser: 0
           privileged: false
-          readOnlyRootFilesystem: false
+          readOnlyRootFilesystem: true
           runAsNonRoot: false
           seccompProfile:
             type: RuntimeDefault
@@ -4903,6 +4909,8 @@ spec:
           name: plugin-dir
         - mountPath: /registration
           name: registration-dir
+        - mountPath: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
+          name: lockfile-dir
         # Used to make a gRPC request (Probe()) to the driver to check if its running
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.
       - name: liveness-probe
@@ -4927,7 +4935,7 @@ spec:
           runAsUser: 0
           privileged: false
           allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: false
+          readOnlyRootFilesystem: true
           runAsNonRoot: false
           seccompProfile:
             type: RuntimeDefault
@@ -4947,10 +4955,10 @@ spec:
           type: Directory
         name: registration-dir
         # This volume is where the socket for kubelet->driver communication is done
-      - hostPath:
+      - name: plugin-dir
+        hostPath:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com
           type: DirectoryOrCreate
-        name: plugin-dir
         # This volume is where the driver mounts volumes
       - hostPath:
           path: /var/lib/kubelet/pods
@@ -4961,6 +4969,12 @@ spec:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
           type: DirectoryOrCreate
         name: dynatrace-oneagent-data-dir
+        # Used by the registrar to create its lockfile
+      - name: lockfile-dir
+        emptyDir: {}
+        # A volume for the driver to write temporary files to
+      - name: tmp-dir
+        emptyDir: {}
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/master
