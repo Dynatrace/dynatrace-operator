@@ -16,7 +16,6 @@ type DockerConfig struct {
 	ApiReader        client.Reader
 	Dynakube         *dynatracev1beta1.DynaKube
 	Auths            map[string]DockerAuth
-	SkipCertCheck    bool
 	TrustedCertsPath string
 }
 
@@ -27,10 +26,9 @@ type DockerAuth struct {
 
 func NewDockerConfig(apiReader client.Reader, dynakube dynatracev1beta1.DynaKube) *DockerConfig {
 	dockerConfig := DockerConfig{
-		ApiReader:     apiReader,
-		Auths:         make(map[string]DockerAuth),
-		Dynakube:      &dynakube,
-		SkipCertCheck: dynakube.Spec.SkipCertCheck,
+		ApiReader: apiReader,
+		Auths:     make(map[string]DockerAuth),
+		Dynakube:  &dynakube,
 	}
 	return &dockerConfig
 }
@@ -72,9 +70,16 @@ func (config *DockerConfig) SaveCustomCAs(
 	return nil
 }
 
+func (config DockerConfig) SkipCertCheck() bool {
+	if config.Dynakube == nil {
+		return false
+	}
+	return config.Dynakube.Spec.SkipCertCheck
+}
+
 func parseDockerAuthsFromSecret(secret *corev1.Secret) (map[string]DockerAuth, error) {
 	if secret == nil {
-		return nil, errors.New("given secret is nil")
+		return nil, errors.New("pull secret is nil, parsing not possible")
 	}
 
 	config, hasConfig := secret.Data[".dockerconfigjson"]

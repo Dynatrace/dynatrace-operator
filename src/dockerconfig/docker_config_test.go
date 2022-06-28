@@ -31,7 +31,7 @@ func TestNewDockerConfig(t *testing.T) {
 		assert.NotNil(t, dockerConfig.Auths)
 		assert.Empty(t, dockerConfig.Auths)
 		assert.Equal(t, apiReader, dockerConfig.ApiReader)
-		assert.False(t, dockerConfig.SkipCertCheck)
+		assert.False(t, dockerConfig.SkipCertCheck())
 	})
 	t.Run("empty skipCertCheck", func(t *testing.T) {
 		dynakube := dynatracev1beta1.DynaKube{
@@ -45,7 +45,7 @@ func TestNewDockerConfig(t *testing.T) {
 		assert.NotNil(t, dockerConfig.Auths)
 		assert.Empty(t, dockerConfig.Auths)
 		assert.Equal(t, apiReader, dockerConfig.ApiReader)
-		assert.True(t, dockerConfig.SkipCertCheck)
+		assert.True(t, dockerConfig.SkipCertCheck())
 	})
 }
 
