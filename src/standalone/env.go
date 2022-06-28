@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/pkg/errors"
 )
 
@@ -21,7 +22,6 @@ type environment struct {
 
 	InstallerFlavor string          `json:"installerFlavor"`
 	InstallerTech   []string        `json:"installerTech"`
-	InstallerArch   string          `json:"installerArch"`
 	InstallPath     string          `json:"installPath"`
 	Containers      []containerInfo `json:"containers"`
 
@@ -108,7 +108,11 @@ func (env *environment) addInstallerFlavor() error {
 	if err != nil {
 		return err
 	}
-	env.InstallerFlavor = flavor
+	if flavor == "" {
+		env.InstallerFlavor = arch.Flavor
+	} else {
+		env.InstallerFlavor = flavor
+	}
 	return nil
 }
 
