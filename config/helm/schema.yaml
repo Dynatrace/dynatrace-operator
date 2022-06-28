@@ -195,12 +195,12 @@ properties:
     type: string
     x-google-marketplace:
       type: DEPLOYER_IMAGE
-
-  operator.customPullSecret:
+  customPullSecret:
     type: string
     title: Custom pull secret
     description: If the Operator image is in a private registry, the name of the appropriate pull secret can be set here
     default: ""
+
   operator.apparmor:
     type: boolean
     title: Enables AppArmor for Operator
