@@ -64,6 +64,8 @@ func TestCreateTables(t *testing.T) {
 }
 
 func TestInsertDynakube(t *testing.T) {
+	testDynakube1 := createTestDynakube(1)
+
 	db := FakeMemoryDB()
 
 	err := db.InsertDynakube(&testDynakube1)
@@ -81,6 +83,7 @@ func TestInsertDynakube(t *testing.T) {
 }
 
 func TestGetDynakube_Empty(t *testing.T) {
+	testDynakube1 := createTestDynakube(1)
 	db := FakeMemoryDB()
 
 	gt, err := db.GetDynakube(testDynakube1.TenantUUID)
@@ -89,6 +92,7 @@ func TestGetDynakube_Empty(t *testing.T) {
 }
 
 func TestGetDynakube(t *testing.T) {
+	testDynakube1 := createTestDynakube(1)
 	db := FakeMemoryDB()
 	err := db.InsertDynakube(&testDynakube1)
 	require.NoError(t, err)
@@ -99,6 +103,7 @@ func TestGetDynakube(t *testing.T) {
 }
 
 func TestUpdateDynakube(t *testing.T) {
+	testDynakube1 := createTestDynakube(1)
 	db := FakeMemoryDB()
 	err := db.InsertDynakube(&testDynakube1)
 	require.NoError(t, err)
@@ -120,6 +125,9 @@ func TestUpdateDynakube(t *testing.T) {
 }
 
 func TestGetTenantsToDynakubes(t *testing.T) {
+	testDynakube1 := createTestDynakube(1)
+	testDynakube2 := createTestDynakube(2)
+
 	db := FakeMemoryDB()
 	err := db.InsertDynakube(&testDynakube1)
 	require.NoError(t, err)
@@ -134,6 +142,9 @@ func TestGetTenantsToDynakubes(t *testing.T) {
 }
 
 func TestGetAllDynakubes(t *testing.T) {
+	testDynakube1 := createTestDynakube(1)
+	testDynakube2 := createTestDynakube(2)
+
 	db := FakeMemoryDB()
 	err := db.InsertDynakube(&testDynakube1)
 	require.NoError(t, err)
@@ -146,6 +157,9 @@ func TestGetAllDynakubes(t *testing.T) {
 }
 
 func TestGetAllVolumes(t *testing.T) {
+	testVolume1 := createTestVolume(1)
+	testVolume2 := createTestVolume(2)
+
 	db := FakeMemoryDB()
 	err := db.InsertVolume(&testVolume1)
 	require.NoError(t, err)
@@ -158,6 +172,9 @@ func TestGetAllVolumes(t *testing.T) {
 }
 
 func TestGetAllOsAgentVolumes(t *testing.T) {
+	testDynakube1 := createTestDynakube(1)
+	testDynakube2 := createTestDynakube(2)
+
 	now := time.Now()
 	osVolume1 := OsAgentVolume{
 		VolumeID:     "vol-1",
@@ -183,6 +200,9 @@ func TestGetAllOsAgentVolumes(t *testing.T) {
 }
 
 func TestDeleteDynakube(t *testing.T) {
+	testDynakube1 := createTestDynakube(1)
+	testDynakube2 := createTestDynakube(2)
+
 	db := FakeMemoryDB()
 	err := db.InsertDynakube(&testDynakube1)
 	require.NoError(t, err)
@@ -198,6 +218,7 @@ func TestDeleteDynakube(t *testing.T) {
 }
 
 func TestGetVolume_Empty(t *testing.T) {
+	testVolume1 := createTestVolume(1)
 	db := FakeMemoryDB()
 
 	vo, err := db.GetVolume(testVolume1.PodName)
@@ -206,6 +227,7 @@ func TestGetVolume_Empty(t *testing.T) {
 }
 
 func TestInsertVolume(t *testing.T) {
+	testVolume1 := createTestVolume(1)
 	db := FakeMemoryDB()
 
 	err := db.InsertVolume(&testVolume1)
@@ -235,6 +257,7 @@ func TestInsertVolume(t *testing.T) {
 }
 
 func TestInsertOsAgentVolume(t *testing.T) {
+	testDynakube1 := createTestDynakube(1)
 	db := FakeMemoryDB()
 
 	now := time.Now()
@@ -261,6 +284,7 @@ func TestInsertOsAgentVolume(t *testing.T) {
 }
 
 func TestGetOsAgentVolumeViaVolumeID(t *testing.T) {
+	testDynakube1 := createTestDynakube(1)
 	db := FakeMemoryDB()
 
 	now := time.Now()
@@ -283,6 +307,7 @@ func TestGetOsAgentVolumeViaVolumeID(t *testing.T) {
 }
 
 func TestGetOsAgentVolumeViaTennatUUID(t *testing.T) {
+	testDynakube1 := createTestDynakube(1)
 	db := FakeMemoryDB()
 
 	now := time.Now()
@@ -304,6 +329,7 @@ func TestGetOsAgentVolumeViaTennatUUID(t *testing.T) {
 }
 
 func TestUpdateOsAgentVolume(t *testing.T) {
+	testDynakube1 := createTestDynakube(1)
 	db := FakeMemoryDB()
 
 	now := time.Now()
@@ -330,6 +356,7 @@ func TestUpdateOsAgentVolume(t *testing.T) {
 }
 
 func TestGetVolume(t *testing.T) {
+	testVolume1 := createTestVolume(1)
 	db := FakeMemoryDB()
 	err := db.InsertVolume(&testVolume1)
 	require.NoError(t, err)
@@ -340,6 +367,7 @@ func TestGetVolume(t *testing.T) {
 }
 
 func TestGetUsedVersions(t *testing.T) {
+	testVolume1 := createTestVolume(1)
 	db := FakeMemoryDB()
 	err := db.InsertVolume(&testVolume1)
 	testVolume11 := testVolume1
@@ -357,6 +385,9 @@ func TestGetUsedVersions(t *testing.T) {
 }
 
 func TestGetPodNames(t *testing.T) {
+	testVolume1 := createTestVolume(1)
+	testVolume2 := createTestVolume(2)
+
 	db := FakeMemoryDB()
 	err := db.InsertVolume(&testVolume1)
 	require.NoError(t, err)
@@ -371,6 +402,9 @@ func TestGetPodNames(t *testing.T) {
 }
 
 func TestDeleteVolume(t *testing.T) {
+	testVolume1 := createTestVolume(1)
+	testVolume2 := createTestVolume(2)
+
 	db := FakeMemoryDB()
 	err := db.InsertVolume(&testVolume1)
 	require.NoError(t, err)

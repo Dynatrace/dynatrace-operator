@@ -15,7 +15,7 @@ func MakeSystemContext(dockerReference reference.Named, dockerConfig *DockerConf
 
 	var systemContext types.SystemContext
 
-	if dockerConfig.SkipCertCheck {
+	if dockerConfig.SkipCertCheck() {
 		systemContext.DockerInsecureSkipTLSVerify = types.OptionalBoolTrue
 	}
 	if dockerConfig.TrustedCertsPath != "" {
