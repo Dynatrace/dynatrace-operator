@@ -205,6 +205,10 @@ spec:
           path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
           type: DirectoryOrCreate
         name: dynatrace-oneagent-data-dir
+      {{- if .Values.customPullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.customPullSecret }}
+      {{- end }}
       {{- if .Values.csidriver.nodeSelector }}
       nodeSelector: {{- toYaml .Values.csidriver.nodeSelector | nindent 8 }}
       {{- end }}

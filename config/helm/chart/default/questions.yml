@@ -18,7 +18,7 @@ questions:
     type: string
     group: "Global Configuration"
 
-  - variable: operator.customPullSecret
+  - variable: customPullSecret
     label: "Set a custom pull secret for operator image"
     description: "Set a custom pull secret for the operator image"
     default: ""

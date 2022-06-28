@@ -16,10 +16,10 @@
 platform: "kubernetes"
 
 image: ""
+customPullSecret: ""
 installCRD: false
 
 operator:
-  customPullSecret: ""
   nodeSelector: {}
   tolerations: []
   apparmor: false
