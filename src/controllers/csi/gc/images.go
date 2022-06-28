@@ -67,9 +67,9 @@ func (gc *CSIGarbageCollector) getUsedImageDigests() (map[string]bool, error) {
 		return nil, err
 	}
 
-	// the version of a Volume is the imageDigest if the shared image was used during mount
-	// this will still can contain versions that are not imageDigests,
-	// however this shouldn't cause issues as those versions doesn't matter in this context
+	// If a shared image was used during mount, the version of a Volume is the imageDigest.
+	// A Volume can still reference versions that are not imageDigests.
+	// However, this shouldn't cause issues as those versions don't matter in this context.
 	usedVersions, err := gc.db.GetAllUsedVersions()
 	if err != nil {
 		log.Info("failed to get all used versions")

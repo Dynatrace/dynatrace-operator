@@ -23,8 +23,8 @@ func (set pinnedVersionSet) isNotPinned(version string) bool {
 	return !set[version]
 }
 
-// garbageCollectionInfo is a collection of tenant specific information
-// that is needed to safely delete unused files/directories connected to that tenant
+// garbageCollectionInfo stores tenant specific information
+// used to delete unused files or directories connected to that tenant
 type garbageCollectionInfo struct {
 	tenantUUID         string
 	latestAgentVersion string
