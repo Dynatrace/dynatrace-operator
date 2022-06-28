@@ -55,7 +55,7 @@ func validateProxyUrl(proxyUrl string, parseErrorMessage string, evalErrorMessag
 		return parseErrorMessage
 	} else {
 		password, _ := parsedUrl.User.Password()
-		if !isStringValidForAG(password) {
+		if password != "" && !isStringValidForAG(password) {
 			return evalErrorMessage
 		}
 	}
