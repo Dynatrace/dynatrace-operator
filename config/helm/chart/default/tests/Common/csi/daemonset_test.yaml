@@ -222,3 +222,12 @@ tests:
                   path: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/data
                   type: DirectoryOrCreate
                 name: dynatrace-oneagent-data-dir
+
+  - it: should have imagePullSecrets defined in spec
+    set:
+      customPullSecret: pull-secret
+      csidriver.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: pull-secret
