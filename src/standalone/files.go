@@ -8,6 +8,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	onlyReadAllFileMode = 0444
+)
+
 var (
 	baseConfContentFormatString = `[container]
 containerName %s
@@ -112,12 +116,12 @@ func (runner *Runner) createCurlOptionsFile() error {
 }
 
 func (runner *Runner) createConfFile(path string, content string) error {
-	err := runner.fs.MkdirAll(filepath.Dir(path), 0770)
+	err := runner.fs.MkdirAll(filepath.Dir(path), onlyReadAllFileMode)
 	if err != nil {
 		return err
 	}
 
-	file, err := runner.fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0770)
+	file, err := runner.fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, onlyReadAllFileMode)
 	if err != nil {
 		return err
 	}
