@@ -26,7 +26,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
