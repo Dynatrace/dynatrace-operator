@@ -114,9 +114,9 @@ spec:
         - emptyDir: { }
           name: tmp-cert-dir
       serviceAccountName: {{ .Release.Name }}
-      {{- if .Values.operator.customPullSecret }}
+      {{- if .Values.customPullSecret }}
       imagePullSecrets:
-        - name: {{ .Values.operator.customPullSecret }}
+        - name: {{ .Values.customPullSecret }}
       {{- end }}
       {{- if .Values.operator.nodeSelector }}
       nodeSelector: {{- toYaml .Values.operator.nodeSelector | nindent 8 }}
