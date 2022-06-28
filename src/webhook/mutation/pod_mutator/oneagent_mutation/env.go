@@ -47,7 +47,6 @@ func addProxyEnv(container *corev1.Container) {
 
 func addInstallerInitEnvs(initContainer *corev1.Container, installer installerInfo, volumeMode string) {
 	initContainer.Env = append(initContainer.Env,
-		corev1.EnvVar{Name: standalone.InstallerArchEnv, Value: installer.arch},
 		corev1.EnvVar{Name: standalone.InstallerFlavorEnv, Value: installer.flavor},
 		corev1.EnvVar{Name: standalone.InstallerTechEnv, Value: installer.technologies},
 		corev1.EnvVar{Name: standalone.InstallPathEnv, Value: installer.installPath},
