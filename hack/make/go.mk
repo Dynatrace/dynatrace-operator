@@ -2,11 +2,11 @@ ENVTEST_ASSETS_DIR = $(shell pwd)/testbin
 
 ## Runs go fmt
 go/fmt:
-	go fmt $(shell go list ./... | grep -v swagger)
+	go fmt $(shell go list ./... | grep -v dtclient2/generated)
 
 ## Runs go vet
 go/vet:
-	go vet $(shell go list ./... | grep -v swagger)
+	go vet $(shell go list ./... | grep -v dtclient2/generated)
 
 ## Lints the go code
 go/lint: go/fmt go/vet
