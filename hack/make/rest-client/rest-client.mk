@@ -1,11 +1,4 @@
-SWAGGER_VERSION=3.0.34
-DESTINATION=src/dtclient2/generated
-USER=$(shell id -u)
-GROUP=$(shell id -g)
-
-## Generate a rest-client go code for example interface
-generate-rest-client:
-	rm -rf $(DESTINATION)
-	mkdir -p $(DESTINATION)
-	docker run --rm -u $(USER):$(GROUP) -v ${PWD}/$(DESTINATION):/local swaggerapi/swagger-codegen-cli-v3:$(SWAGGER_VERSION) generate -i http://petstore.swagger.io/v2/swagger.json -l go -o /local/
+## Generate a rest-client go code for OpenAPI schemas provided in ./third_party/dynatrace_api
+swagger/generate-rest-client:
+	./hack/build/generate-rest-clients.sh
 
