@@ -21,6 +21,124 @@ const (
 	testValue = "testValue"
 )
 
+func TestNewDockerConfig(t *testing.T) {
+	apiReader := fake.NewClient()
+	t.Run("empty dynakube", func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{}
+		dockerConfig := NewDockerConfig(apiReader, dynakube)
+
+		require.NotNil(t, dockerConfig)
+		assert.NotNil(t, dockerConfig.Auths)
+		assert.Empty(t, dockerConfig.Auths)
+		assert.Equal(t, apiReader, dockerConfig.ApiReader)
+		assert.False(t, dockerConfig.SkipCertCheck)
+	})
+	t.Run("empty skipCertCheck", func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				SkipCertCheck: true,
+			},
+		}
+		dockerConfig := NewDockerConfig(apiReader, dynakube)
+
+		require.NotNil(t, dockerConfig)
+		assert.NotNil(t, dockerConfig.Auths)
+		assert.Empty(t, dockerConfig.Auths)
+		assert.Equal(t, apiReader, dockerConfig.ApiReader)
+		assert.True(t, dockerConfig.SkipCertCheck)
+	})
+}
+
+func TestSetupAuths(t *testing.T) {
+	t.Run("using default pull secret", func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: testName,
+			},
+		}
+		pullSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dynakube.PullSecret(),
+			},
+			Data: map[string][]byte{
+				".dockerconfigjson": []byte(
+					fmt.Sprintf(`{ "auths": { "%s": { "username": "%s", "password": "%s" } } }`, testKey, testName, testValue)),
+			},
+		}
+		apiReader := fake.NewClient(pullSecret)
+		dockerConfig := NewDockerConfig(apiReader, dynakube)
+
+		err := dockerConfig.SetupAuths(context.TODO())
+
+		require.NoError(t, err)
+		assert.NotNil(t, dockerConfig.Auths)
+		assert.NotEmpty(t, dockerConfig.Auths)
+		assert.Equal(t, testName, dockerConfig.Auths[testKey].Username)
+		assert.Equal(t, testValue, dockerConfig.Auths[testKey].Password)
+
+	})
+	t.Run("using custom pull secret", func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				CustomPullSecret: testName,
+			},
+		}
+		pullSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dynakube.PullSecret(),
+			},
+			Data: map[string][]byte{
+				".dockerconfigjson": []byte(
+					fmt.Sprintf(`{ "auths": { "%s": { "username": "%s", "password": "%s" } } }`, testKey, testName, testValue)),
+			},
+		}
+		apiReader := fake.NewClient(pullSecret)
+		dockerConfig := NewDockerConfig(apiReader, dynakube)
+
+		err := dockerConfig.SetupAuths(context.TODO())
+
+		require.NoError(t, err)
+		assert.NotNil(t, dockerConfig.Auths)
+		assert.NotEmpty(t, dockerConfig.Auths)
+		assert.Equal(t, testName, dockerConfig.Auths[testKey].Username)
+		assert.Equal(t, testValue, dockerConfig.Auths[testKey].Password)
+	})
+	t.Run("handles invalid json", func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				CustomPullSecret: testName,
+			},
+		}
+		pullSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dynakube.PullSecret(),
+			},
+			Data: map[string][]byte{
+				".dockerconfigjson": []byte("asd"),
+			},
+		}
+		apiReader := fake.NewClient(pullSecret)
+		dockerConfig := NewDockerConfig(apiReader, dynakube)
+
+		err := dockerConfig.SetupAuths(context.TODO())
+
+		require.Error(t, err)
+		assert.Empty(t, dockerConfig.Auths)
+	})
+	t.Run("handles no secret", func(t *testing.T) {
+		dynakube := dynatracev1beta1.DynaKube{}
+
+		apiReader := fake.NewClient()
+		dockerConfig := NewDockerConfig(apiReader, dynakube)
+
+		err := dockerConfig.SetupAuths(context.TODO())
+
+		require.Error(t, err)
+		assert.Empty(t, dockerConfig.Auths)
+	})
+
+}
+
 func TestParseDockerAuthsFromSecret(t *testing.T) {
 	t.Run("parseDockerAuthsFromSecret handles nil secret", func(t *testing.T) {
 		auths, err := parseDockerAuthsFromSecret(nil)
@@ -42,7 +160,7 @@ func TestParseDockerAuthsFromSecret(t *testing.T) {
 		require.Nil(t, auths)
 		require.Error(t, err)
 	})
-	t.Run("parseDockerAuthsFromSecret handles invalid json", func(t *testing.T) {
+	t.Run("parseDockerAuthsFromSecret handles valid json", func(t *testing.T) {
 		auths, err := parseDockerAuthsFromSecret(&corev1.Secret{
 			Data: map[string][]byte{
 				".dockerconfigjson": []byte(

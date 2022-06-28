@@ -3,10 +3,10 @@ package dockerconfig
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -25,47 +25,30 @@ type DockerAuth struct {
 	Password string `json:"password"`
 }
 
-func NewDockerConfig(ctx context.Context, apiReader client.Reader, dynakube dynatracev1beta1.DynaKube) (*DockerConfig, error) {
+func NewDockerConfig(apiReader client.Reader, dynakube dynatracev1beta1.DynaKube) *DockerConfig {
+	dockerConfig := DockerConfig{
+		ApiReader:     apiReader,
+		Auths:         make(map[string]DockerAuth),
+		Dynakube:      &dynakube,
+		SkipCertCheck: dynakube.Spec.SkipCertCheck,
+	}
+	return &dockerConfig
+}
+
+func (config *DockerConfig) SetupAuths(ctx context.Context) error {
 	var pullSecret corev1.Secret
-	if err := apiReader.Get(ctx, client.ObjectKey{Name: dynakube.PullSecret(), Namespace: dynakube.Namespace}, &pullSecret); err != nil {
-		log.Info("failed to load pull secret", "dynakube", dynakube.Name)
-		return nil, err
+	err := config.ApiReader.Get(ctx, client.ObjectKey{Name: config.Dynakube.PullSecret(), Namespace: config.Dynakube.Namespace}, &pullSecret)
+	if err != nil {
+		log.Info("failed to load pull secret", "dynakube", config.Dynakube.Name)
+		return errors.WithStack(err)
 	}
 	dockerAuths, err := parseDockerAuthsFromSecret(&pullSecret)
 	if err != nil {
-		log.Info("failed to parse pull secret content", "dynakube", dynakube.Name)
-		return nil, err
+		log.Info("failed to parse pull secret content", "dynakube", config.Dynakube.Name)
+		return err
 	}
-
-	dockerConfig := DockerConfig{
-		ApiReader:     apiReader,
-		Dynakube:      &dynakube,
-		Auths:         dockerAuths,
-		SkipCertCheck: dynakube.Spec.SkipCertCheck,
-	}
-	return &dockerConfig, nil
-
-}
-
-func parseDockerAuthsFromSecret(secret *corev1.Secret) (map[string]DockerAuth, error) {
-	if secret == nil {
-		return nil, fmt.Errorf("given secret is nil")
-	}
-
-	config, hasConfig := secret.Data[".dockerconfigjson"]
-	if !hasConfig {
-		return nil, fmt.Errorf("could not find any docker config in image pull secret")
-	}
-
-	var dockerConf struct {
-		Auths map[string]DockerAuth `json:"auths"`
-	}
-	err := json.Unmarshal(config, &dockerConf)
-	if err != nil {
-		return nil, err
-	}
-
-	return dockerConf.Auths, nil
+	config.Auths = dockerAuths
+	return nil
 }
 
 func (config *DockerConfig) SaveCustomCAs(
@@ -76,15 +59,36 @@ func (config *DockerConfig) SaveCustomCAs(
 	certs := &corev1.ConfigMap{}
 	if err := config.ApiReader.Get(ctx, client.ObjectKey{Namespace: config.Dynakube.Namespace, Name: config.Dynakube.Spec.TrustedCAs}, certs); err != nil {
 		log.Info("failed to load trusted CAs")
-		return err
+		return errors.WithStack(err)
 	}
 	if certs.Data[dtclient.CustomCertificatesConfigMapKey] == "" {
-		return fmt.Errorf("failed to extract certificate configmap field: missing field certs")
+		return errors.New("failed to extract certificate configmap field: missing field certs")
 	}
 	if err := fs.WriteFile(path, []byte(certs.Data[dtclient.CustomCertificatesConfigMapKey]), 0666); err != nil {
 		log.Info("failed to save custom certificates")
-		return err
+		return errors.WithStack(err)
 	}
 	config.TrustedCertsPath = path
 	return nil
+}
+
+func parseDockerAuthsFromSecret(secret *corev1.Secret) (map[string]DockerAuth, error) {
+	if secret == nil {
+		return nil, errors.New("given secret is nil")
+	}
+
+	config, hasConfig := secret.Data[".dockerconfigjson"]
+	if !hasConfig {
+		return nil, errors.New("could not find any docker config in image pull secret")
+	}
+
+	var dockerConf struct {
+		Auths map[string]DockerAuth `json:"auths"`
+	}
+	err := json.Unmarshal(config, &dockerConf)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return dockerConf.Auths, nil
 }
