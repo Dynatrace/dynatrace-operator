@@ -121,9 +121,9 @@ spec:
       {{- if (.Values.webhook).hostNetwork }}
       hostNetwork: true
       {{- end }}
-      {{- if .Values.operator.customPullSecret }}
+      {{- if .Values.customPullSecret }}
       imagePullSecrets:
-        - name: {{ .Values.operator.customPullSecret }}
+        - name: {{ .Values.customPullSecret }}
       {{- end }}
       {{- if .Values.webhook.nodeSelector }}
       nodeSelector: {{- toYaml .Values.webhook.nodeSelector | nindent 8 }}

@@ -244,6 +244,9 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		assert.EqualError(t, err, "failed to create directory "+filepath.Join(tenantUUID)+": "+errorMsg)
 		assert.NotNil(t, result)
 		assert.Equal(t, reconcile.Result{}, result)
+
+		// Logging newline so go test can parse the output correctly
+		log.Info("")
 	})
 	t.Run(`error getting latest agent version`, func(t *testing.T) {
 		memFs := afero.NewMemMapFs()
