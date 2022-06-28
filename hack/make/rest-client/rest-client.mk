@@ -1,5 +1,5 @@
 SWAGGER_VERSION=3.0.34
-DESTINATION=src/rest-client
+DESTINATION=src/dtclient2/generated
 USER=$(shell id -u)
 GROUP=$(shell id -g)
 
