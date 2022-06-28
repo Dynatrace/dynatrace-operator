@@ -33,12 +33,12 @@ func (builder CommandBuilder) SetConfigProvider(provider config.Provider) Comman
 	return builder
 }
 
-func (builder CommandBuilder) SetOperatorManagerProvider(provider cmdManager.Provider) CommandBuilder {
+func (builder CommandBuilder) setOperatorManagerProvider(provider cmdManager.Provider) CommandBuilder {
 	builder.operatorManagerProvider = provider
 	return builder
 }
 
-func (builder CommandBuilder) SetBootstrapManagerProvider(provider cmdManager.Provider) CommandBuilder {
+func (builder CommandBuilder) setBootstrapManagerProvider(provider cmdManager.Provider) CommandBuilder {
 	builder.bootstrapManagerProvider = provider
 	return builder
 }
@@ -58,11 +58,26 @@ func (builder CommandBuilder) setSignalHandler(ctx context.Context) CommandBuild
 	return builder
 }
 
+func (builder CommandBuilder) getOperatorManagerProvider() cmdManager.Provider {
+	if builder.operatorManagerProvider == nil {
+		builder.operatorManagerProvider = NewOperatorManagerProvider(builder.isDeployedViaOlm)
+	}
+
+	return builder.operatorManagerProvider
+}
+
+func (builder CommandBuilder) getBootstrapManagerProvider() cmdManager.Provider {
+	if builder.bootstrapManagerProvider == nil {
+		builder.bootstrapManagerProvider = NewBootstrapManagerProvider()
+	}
+
+	return builder.bootstrapManagerProvider
+}
+
 func (builder CommandBuilder) getSignalHandler() context.Context {
 	if builder.signalHandler == nil {
 		builder.signalHandler = ctrl.SetupSignalHandler()
 	}
-
 	return builder.signalHandler
 }
 
@@ -83,7 +98,7 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 
 		if !builder.isDeployedViaOlm {
 			var bootstrapManager ctrl.Manager
-			bootstrapManager, err = builder.bootstrapManagerProvider.CreateManager(builder.namespace, kubeCfg)
+			bootstrapManager, err = builder.getBootstrapManagerProvider().CreateManager(builder.namespace, kubeCfg)
 
 			if err != nil {
 				return err
@@ -96,7 +111,7 @@ func (builder CommandBuilder) buildRun() func(cmd *cobra.Command, args []string)
 			}
 		}
 
-		operatorManager, err := builder.operatorManagerProvider.CreateManager(builder.namespace, kubeCfg)
+		operatorManager, err := builder.getOperatorManagerProvider().CreateManager(builder.namespace, kubeCfg)
 
 		if err != nil {
 			return err

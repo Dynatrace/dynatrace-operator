@@ -2,6 +2,9 @@ package operator
 
 import (
 	cmdManager "github.com/Dynatrace/dynatrace-operator/src/cmd/manager"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/certificates"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
+	"github.com/Dynatrace/dynatrace-operator/src/controllers/nodes"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/rest"
@@ -37,10 +40,14 @@ func (provider bootstrapManagerProvider) CreateManager(namespace string, config 
 	return controlManager, errors.WithStack(err)
 }
 
-type operatorManagerProvider struct{}
+type operatorManagerProvider struct {
+	deployedViaOlm bool
+}
 
-func NewOperatorManagerProvider() cmdManager.Provider {
-	return operatorManagerProvider{}
+func NewOperatorManagerProvider(deployedViaOlm bool) cmdManager.Provider {
+	return operatorManagerProvider{
+		deployedViaOlm: deployedViaOlm,
+	}
 }
 
 func (provider operatorManagerProvider) CreateManager(namespace string, cfg *rest.Config) (manager.Manager, error) {
@@ -60,7 +67,29 @@ func (provider operatorManagerProvider) CreateManager(namespace string, cfg *res
 		return nil, err
 	}
 
+	err = dynakube.Add(mgr, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	err = nodes.Add(mgr, namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	err = provider.addCertificateController(mgr, namespace)
+	if err != nil {
+		return nil, err
+	}
+
 	return mgr, nil
+}
+
+func (provider operatorManagerProvider) addCertificateController(mgr manager.Manager, namespace string) error {
+	if !provider.deployedViaOlm {
+		return certificates.Add(mgr, namespace)
+	}
+	return nil
 }
 
 func (provider operatorManagerProvider) createOptions(namespace string) ctrl.Options {

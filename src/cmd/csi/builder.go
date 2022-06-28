@@ -19,44 +19,70 @@ import (
 
 const use = "csi-driver"
 
-type commandBuilder struct {
+var (
+	nodeId       = ""
+	probeAddress = ""
+	endpoint     = ""
+)
+
+type CommandBuilder struct {
 	configProvider  config.Provider
 	managerProvider cmdManager.Provider
 	namespace       string
 	filesystem      afero.Fs
-	csiOptions      dtcsi.CSIOptions
+	csiOptions      *dtcsi.CSIOptions
 }
 
-func newCsiCommandBuilder() commandBuilder {
-	return commandBuilder{}
+func NewCsiCommandBuilder() CommandBuilder {
+	return CommandBuilder{}
 }
 
-func (builder commandBuilder) setConfigProvider(provider config.Provider) commandBuilder {
+func (builder CommandBuilder) SetConfigProvider(provider config.Provider) CommandBuilder {
 	builder.configProvider = provider
 	return builder
 }
 
-func (builder commandBuilder) setManagerProvider(provider cmdManager.Provider) commandBuilder {
+func (builder CommandBuilder) setManagerProvider(provider cmdManager.Provider) CommandBuilder {
 	builder.managerProvider = provider
 	return builder
 }
 
-func (builder commandBuilder) setNamespace(namespace string) commandBuilder {
+func (builder CommandBuilder) SetNamespace(namespace string) CommandBuilder {
 	builder.namespace = namespace
 	return builder
 }
 
-func (builder commandBuilder) setCsiOptions(csiOptions dtcsi.CSIOptions) commandBuilder {
-	builder.csiOptions = csiOptions
+func (builder CommandBuilder) setCsiOptions(csiOptions dtcsi.CSIOptions) CommandBuilder {
+	builder.csiOptions = &csiOptions
 	return builder
 }
 
-func (builder commandBuilder) setFilesystem(filesystem afero.Fs) commandBuilder {
+func (builder CommandBuilder) setFilesystem(filesystem afero.Fs) CommandBuilder {
 	builder.filesystem = filesystem
 	return builder
 }
 
-func (builder commandBuilder) getFilesystem() afero.Fs {
+func (builder CommandBuilder) getCsiOptions() dtcsi.CSIOptions {
+	if builder.csiOptions == nil {
+		builder.csiOptions = &dtcsi.CSIOptions{
+			NodeID:   nodeId,
+			Endpoint: endpoint,
+			RootDir:  dtcsi.DataPath,
+		}
+	}
+
+	return *builder.csiOptions
+}
+
+func (builder CommandBuilder) getManagerProvider() cmdManager.Provider {
+	if builder.managerProvider == nil {
+		builder.managerProvider = newCsiDriverManagerProvider(probeAddress)
+	}
+
+	return builder.managerProvider
+}
+
+func (builder CommandBuilder) getFilesystem() afero.Fs {
 	if builder.filesystem == nil {
 		builder.filesystem = afero.NewOsFs()
 	}
@@ -64,14 +90,24 @@ func (builder commandBuilder) getFilesystem() afero.Fs {
 	return builder.filesystem
 }
 
-func (builder commandBuilder) build() *cobra.Command {
-	return &cobra.Command{
+func (builder CommandBuilder) Build() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:  use,
 		RunE: builder.buildRun(),
 	}
+
+	addFlags(cmd)
+
+	return cmd
 }
 
-func (builder commandBuilder) buildRun() func(*cobra.Command, []string) error {
+func addFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVar(&nodeId, "node-id", "", "node id")
+	cmd.PersistentFlags().StringVar(&endpoint, "endpoint", "unix:///tmp/csi.sock", "CSI endpoint")
+	cmd.PersistentFlags().StringVar(&probeAddress, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+}
+
+func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		defer unix.Umask(0000)
 
@@ -80,7 +116,7 @@ func (builder commandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		csiManager, err := builder.managerProvider.CreateManager(builder.namespace, kubeConfig)
+		csiManager, err := builder.getManagerProvider().CreateManager(builder.namespace, kubeConfig)
 		if err != nil {
 			return err
 		}
@@ -101,17 +137,17 @@ func (builder commandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = csidriver.NewServer(csiManager.GetClient(), builder.csiOptions, access).SetupWithManager(csiManager)
+		err = csidriver.NewServer(csiManager.GetClient(), builder.getCsiOptions(), access).SetupWithManager(csiManager)
 		if err != nil {
 			return err
 		}
 
-		err = csiprovisioner.NewOneAgentProvisioner(csiManager, builder.csiOptions, access).SetupWithManager(csiManager)
+		err = csiprovisioner.NewOneAgentProvisioner(csiManager, builder.getCsiOptions(), access).SetupWithManager(csiManager)
 		if err != nil {
 			return err
 		}
 
-		err = csigc.NewCSIGarbageCollector(csiManager.GetClient(), builder.csiOptions, access).SetupWithManager(csiManager)
+		err = csigc.NewCSIGarbageCollector(csiManager.GetClient(), builder.getCsiOptions(), access).SetupWithManager(csiManager)
 		if err != nil {
 			return err
 		}

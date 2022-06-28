@@ -18,7 +18,9 @@ import (
 	"os"
 
 	cmdConfig "github.com/Dynatrace/dynatrace-operator/src/cmd/config"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/csi"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/operator"
+	"github.com/Dynatrace/dynatrace-operator/src/cmd/standalone"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/webhook"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
@@ -58,11 +60,21 @@ func addOperatorCommand(cmd *cobra.Command) {
 	operatorCommandBuilder := operator.NewOperatorCommandBuilder().
 		SetNamespace(os.Getenv(envPodNamespace)).
 		SetIsDeployedViaOlm(kubesystem.DeployedViaOLM()).
-		SetConfigProvider(cmdConfig.NewKubeConfigProvider()).
-		SetBootstrapManagerProvider(operator.NewBootstrapManagerProvider()).
-		SetOperatorManagerProvider(operator.NewOperatorManagerProvider())
+		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 
 	cmd.AddCommand(operatorCommandBuilder.Build())
+}
+
+func addCsiCommand(cmd *cobra.Command) {
+	csiCommandBuilder := csi.NewCsiCommandBuilder().
+		SetNamespace(os.Getenv(envPodNamespace)).
+		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
+
+	cmd.AddCommand(csiCommandBuilder.Build())
+}
+
+func addStandaloneCommand(cmd *cobra.Command) {
+	cmd.AddCommand(standalone.NewStandaloneCommand())
 }
 
 func rootCommand(_ *cobra.Command, _ []string) error {
@@ -75,6 +87,8 @@ func main() {
 
 	addWebhookCommand(cmd)
 	addOperatorCommand(cmd)
+	addCsiCommand(cmd)
+	addStandaloneCommand(cmd)
 
 	err := cmd.Execute()
 	if err != nil {

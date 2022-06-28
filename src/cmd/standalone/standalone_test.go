@@ -4,5 +4,5 @@ import "testing"
 
 func TestStandaloneCommand(t *testing.T) {
 	// Stops the linter from complaining
-	_ = newStandaloneCommand()
+	_ = NewStandaloneCommand()
 }

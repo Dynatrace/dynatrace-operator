@@ -10,7 +10,7 @@ const (
 	use = "init"
 )
 
-func newStandaloneCommand() *cobra.Command {
+func NewStandaloneCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:  use,
 		RunE: startStandAloneInit,

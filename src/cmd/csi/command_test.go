@@ -23,12 +23,12 @@ func TestCsiCommand(t *testing.T) {
 	managerProvider.On("CreateManager", mock.Anything, mock.Anything).Return(cmdMgr, nil)
 
 	memFs := afero.NewMemMapFs()
-	builder := newCsiCommandBuilder().
-		setConfigProvider(configProvider).
+	builder := NewCsiCommandBuilder().
+		SetConfigProvider(configProvider).
 		setManagerProvider(managerProvider).
-		setNamespace("test-namespace").
+		SetNamespace("test-namespace").
 		setFilesystem(memFs)
-	command := builder.build()
+	command := builder.Build()
 	commandFn := builder.buildRun()
 
 	err := commandFn(command, make([]string, 0))

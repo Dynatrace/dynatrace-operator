@@ -37,13 +37,13 @@ func TestCommandBuilder(t *testing.T) {
 	})
 	t.Run("set operator manager provider", func(t *testing.T) {
 		expectedProvider := &cmdManager.MockProvider{}
-		builder := NewOperatorCommandBuilder().SetOperatorManagerProvider(expectedProvider)
+		builder := NewOperatorCommandBuilder().setOperatorManagerProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.operatorManagerProvider)
 	})
 	t.Run("set bootstrap manager provider", func(t *testing.T) {
 		expectedProvider := &cmdManager.MockProvider{}
-		builder := NewOperatorCommandBuilder().SetBootstrapManagerProvider(expectedProvider)
+		builder := NewOperatorCommandBuilder().setBootstrapManagerProvider(expectedProvider)
 
 		assert.Equal(t, expectedProvider, builder.bootstrapManagerProvider)
 	})
@@ -81,8 +81,8 @@ func TestOperatorCommand(t *testing.T) {
 		builder := NewOperatorCommandBuilder().
 			SetNamespace(testNamespace).
 			SetIsDeployedViaOlm(false).
-			SetOperatorManagerProvider(mockMgrProvider).
-			SetBootstrapManagerProvider(mockMgrProvider).
+			setOperatorManagerProvider(mockMgrProvider).
+			setBootstrapManagerProvider(mockMgrProvider).
 			SetConfigProvider(mockCfgProvider)
 		operatorCommand := builder.Build()
 
@@ -114,8 +114,8 @@ func TestOperatorCommand(t *testing.T) {
 		builder := NewOperatorCommandBuilder().
 			SetNamespace(testNamespace).
 			SetIsDeployedViaOlm(false).
-			SetOperatorManagerProvider(mockMgrProvider).
-			SetBootstrapManagerProvider(mockMgrProvider).
+			setOperatorManagerProvider(mockMgrProvider).
+			setBootstrapManagerProvider(mockMgrProvider).
 			SetConfigProvider(mockCfgProvider).
 			setSignalHandler(context.TODO())
 		operatorCommand := builder.Build()
@@ -136,7 +136,7 @@ func TestOperatorCommand(t *testing.T) {
 		builder := NewOperatorCommandBuilder().
 			SetNamespace(testNamespace).
 			SetIsDeployedViaOlm(false).
-			SetBootstrapManagerProvider(mockMgrProvider).
+			setBootstrapManagerProvider(mockMgrProvider).
 			SetConfigProvider(mockCfgProvider)
 		operatorCommand := builder.Build()
 
@@ -159,8 +159,8 @@ func TestOperatorCommand(t *testing.T) {
 		builder := NewOperatorCommandBuilder().
 			SetNamespace(testNamespace).
 			SetIsDeployedViaOlm(false).
-			SetOperatorManagerProvider(mockMgrProvider).
-			SetBootstrapManagerProvider(mockMgrProvider).
+			setOperatorManagerProvider(mockMgrProvider).
+			setBootstrapManagerProvider(mockMgrProvider).
 			SetConfigProvider(mockCfgProvider).
 			setSignalHandler(context.TODO())
 		operatorCommand := builder.Build()
@@ -193,8 +193,8 @@ func TestOperatorCommand(t *testing.T) {
 		builder := NewOperatorCommandBuilder().
 			SetNamespace(testNamespace).
 			SetIsDeployedViaOlm(true).
-			SetOperatorManagerProvider(mockOperatorMgrProvider).
-			SetBootstrapManagerProvider(mockBootstrapMgrProvider).
+			setOperatorManagerProvider(mockOperatorMgrProvider).
+			setBootstrapManagerProvider(mockBootstrapMgrProvider).
 			SetConfigProvider(mockCfgProvider).
 			setSignalHandler(context.TODO())
 		operatorCommand := builder.Build()
