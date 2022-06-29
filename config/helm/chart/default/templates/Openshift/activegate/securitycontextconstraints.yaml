@@ -20,7 +20,7 @@ metadata:
 allowPrivilegedContainer: false
 fsGroup:
   type: RunAsAny
-priority: 1
+priority: null
 {{- if (.Values.activeGate).readOnlyFs }}
 readOnlyRootFilesystem: true
 {{ else }}
