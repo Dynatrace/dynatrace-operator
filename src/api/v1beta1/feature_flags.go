@@ -86,6 +86,7 @@ const (
 
 	AnnotationFeatureIgnoreUnknownState = AnnotationFeaturePrefix + "ignore-unknown-state"
 	AnnotationFeatureIgnoredNamespaces  = AnnotationFeaturePrefix + "ignored-namespaces"
+	AnnotationFeatureAutomaticInjection = AnnotationFeaturePrefix + "automatic-injection"
 )
 
 var (
@@ -173,6 +174,13 @@ func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoringClusterName() string 
 // FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,
 func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
 	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureMetadataEnrichment, AnnotationFeatureDisableMetadataEnrichment)
+}
+
+// FeatureAutomaticInjection controls OneAgent is injected to pods in selected namespaces automatically ("automatic-injection=true" or flag not set)
+// or if pods need to be opted-in one by one ("automatic-injection=false")
+func (dk *DynaKube) FeatureEnableAutomaticInjection() bool {
+	autoInjectionFlag := dk.getFeatureFlagRaw(AnnotationFeatureAutomaticInjection)
+	return autoInjectionFlag == "true" || len(autoInjectionFlag) == 0
 }
 
 // FeatureUseActiveGateImageForStatsd is a feature flag that makes the operator use ActiveGate image when initializing Extension Controller and Statsd containers

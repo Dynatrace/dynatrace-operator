@@ -111,7 +111,7 @@ func (webhook *podMutatorWebhook) handlePodMutation(mutationRequest *dtwebhook.M
 		log.Info("no mutation is enabled")
 		return nil
 	}
-	addToInitContainers(mutationRequest.Pod, mutationRequest.InstallContainer)
+	attachInitContainerToPod(mutationRequest.Pod, mutationRequest.InstallContainer)
 	webhook.recorder.sendPodInjectEvent()
 	setDynatraceInjectedAnnotation(mutationRequest)
 	return nil
