@@ -138,6 +138,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
+  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -4575,7 +4576,7 @@ spec:
         # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
       - name: registrar
         image:
-            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-7
+            quay.io/dynatrace/dynatrace-operator:snapshot
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock
