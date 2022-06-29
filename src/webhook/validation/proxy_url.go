@@ -55,7 +55,7 @@ func validateProxyUrl(proxyUrl string, parseErrorMessage string, evalErrorMessag
 		return parseErrorMessage
 	} else {
 		password, _ := parsedUrl.User.Password()
-		if password != "" && !isStringValidForAG(password) {
+		if !isStringValidForAG(password) {
 			return evalErrorMessage
 		}
 	}
@@ -74,6 +74,6 @@ func isStringValidForAG(str string) bool {
 	// ','                 exceptions due to Gateway reader of config files
 	// '&' '=' '+' '%' '\' exceptions due to entrypoint.sh:saveProxyConfiguration
 
-	regex := regexp.MustCompile(`^[!"#$()*\-./0-9:;<>?@A-Z\[\]^_a-z{|}~]+$`)
+	regex := regexp.MustCompile(`^[!"#$()*\-./0-9:;<>?@A-Z\[\]^_a-z{|}~]*$`)
 	return regex.MatchString(str)
 }
