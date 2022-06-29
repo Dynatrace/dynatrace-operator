@@ -20,7 +20,7 @@ type PodMutator interface {
 	Mutate(request *MutationRequest) error
 
 	// Reinvocation mutates the pod of the given ReinvocationRequest.
-	// It only mutates the parts of the pod that hasn't been mutated yet. (example: another webhook mutated the pod after our webhook was executed)
+	// It only mutates the parts of the pod that haven't been mutated yet. (example: another webhook mutated the pod after our webhook was executed)
 	Reinvoke(request *ReinvocationRequest) bool
 }
 
