@@ -55,7 +55,6 @@ func (env *environment) setRequiredFields() error {
 	fieldSetters := []func() error{
 		env.addMode,
 		env.addCanFail,
-		env.addInstallerFlavor,
 		env.addInstallerTech,
 		env.addInstallPath,
 		env.addContainers,
@@ -83,6 +82,7 @@ func (env *environment) setOptionalFields() {
 	env.addWorkloadKind()
 	env.addWorkloadName()
 	env.addInstallerUrl()
+	env.addInstallerFlavor()
 }
 
 func (env *environment) addMode() error {
@@ -103,17 +103,13 @@ func (env *environment) addCanFail() error {
 	return nil
 }
 
-func (env *environment) addInstallerFlavor() error {
-	flavor, err := checkEnvVar(InstallerFlavorEnv)
-	if err != nil {
-		return err
-	}
+func (env *environment) addInstallerFlavor() {
+	flavor, _ := checkEnvVar(InstallerFlavorEnv)
 	if flavor == "" {
 		env.InstallerFlavor = arch.Flavor
 	} else {
 		env.InstallerFlavor = flavor
 	}
-	return nil
 }
 
 func (env *environment) addInstallerTech() error {
