@@ -56,6 +56,6 @@ func getBasePodName(pod *corev1.Pod) string {
 	return basePodName
 }
 
-func attachInitContainerToPod(pod *corev1.Pod, initContainer *corev1.Container) {
+func addInitContainerToPod(pod *corev1.Pod, initContainer *corev1.Container) {
 	pod.Spec.InitContainers = append(pod.Spec.InitContainers, *initContainer)
 }

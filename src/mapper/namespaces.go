@@ -32,12 +32,12 @@ func (nm NamespaceMapper) MapFromNamespace() (bool, error) {
 }
 
 func (nm NamespaceMapper) updateNamespace() (bool, error) {
-	dkList := &dynatracev1beta1.DynaKubeList{}
-	err := nm.client.List(nm.ctx, dkList)
+	deployedDynakubes := &dynatracev1beta1.DynaKubeList{}
+	err := nm.client.List(nm.ctx, deployedDynakubes)
 
 	if err != nil {
 		return false, errors.Cause(err)
 	}
 
-	return updateNamespace(nm.targetNs, dkList)
+	return updateNamespace(nm.targetNs, deployedDynakubes)
 }

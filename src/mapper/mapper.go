@@ -79,52 +79,50 @@ func match(dk *dynatracev1beta1.DynaKube, namespace *corev1.Namespace) (bool, er
 // updateNamespace tries to match the namespace to every dynakube with codeModules
 // finds conflicting dynakubes(2 dynakube with codeModules on the same namespace)
 // adds/updates/removes labels from the namespace.
-func updateNamespace(namespace *corev1.Namespace, dkList *dynatracev1beta1.DynaKubeList) (bool, error) {
-	var updated bool
+func updateNamespace(namespace *corev1.Namespace, deployedDynakubes *dynatracev1beta1.DynaKubeList) (bool, error) {
+	namespaceUpdated := false
 	conflict := ConflictChecker{}
-	for i := range dkList.Items {
-		dynakube := &dkList.Items[i]
+	for i := range deployedDynakubes.Items {
+		dynakube := &deployedDynakubes.Items[i]
 		if isIgnoredNamespace(dynakube, namespace.Name) {
 			return false, nil
 		}
 		matches, err := match(dynakube, namespace)
+
 		if err != nil {
-			return updated, err
+			return namespaceUpdated, err
 		}
 		if matches {
 			if err := conflict.check(dynakube); err != nil {
-				return updated, err
+				return namespaceUpdated, err
 			}
 		}
 
-		upd, err := updateLabels(matches, dynakube, namespace)
-		if err != nil {
-			return updated, err
-		}
-		if upd {
-			updated = true
-		}
+		labelsUpdated := updateLabels(matches, dynakube, namespace)
+		namespaceUpdated = labelsUpdated || namespaceUpdated
 	}
-	return updated, nil
+	return namespaceUpdated, nil
 }
 
-func updateLabels(matches bool, dynakube *dynatracev1beta1.DynaKube, namespace *corev1.Namespace) (bool, error) {
+func updateLabels(matches bool, dynakube *dynatracev1beta1.DynaKube, namespace *corev1.Namespace) bool {
 	updated := false
 	if namespace.Labels == nil {
 		namespace.Labels = make(map[string]string)
 	}
-	oldDkName, ok := namespace.Labels[InstanceLabel]
+
+	associatedDynakubeName, instanceLabelFound := namespace.Labels[InstanceLabel]
+
 	if matches && dynakube.NeedAppInjection() {
-		if !ok || oldDkName != dynakube.Name {
+		if !instanceLabelFound || associatedDynakubeName != dynakube.Name {
 			updated = true
 			addNamespaceInjectLabel(dynakube.Name, namespace)
 			log.Info("started monitoring namespace", "namespace", namespace.Name, "dynakube", dynakube.Name)
 		}
-	} else if ok && oldDkName == dynakube.Name {
+	} else if instanceLabelFound && associatedDynakubeName == dynakube.Name {
 		updated = true
 		delete(namespace.Labels, InstanceLabel)
 	}
-	return updated, nil
+	return updated
 }
 
 func isIgnoredNamespace(dk *dynatracev1beta1.DynaKube, namespaceName string) bool {
