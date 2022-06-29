@@ -49,7 +49,7 @@ func TestMissingCSIDaemonSet(t *testing.T) {
 	t.Run(`valid none-readonly host-monitoring dynakube specs`, func(t *testing.T) {
 		objectMeta := defaultDynakubeObjectMeta.DeepCopy()
 		objectMeta.Annotations = map[string]string{
-			dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent: "true",
+			dynatracev1beta1.AnnotationFeatureReadOnlyOneAgent: "false",
 		}
 		assertAllowedResponseWithoutWarnings(t, &dynatracev1beta1.DynaKube{
 			ObjectMeta: *objectMeta,

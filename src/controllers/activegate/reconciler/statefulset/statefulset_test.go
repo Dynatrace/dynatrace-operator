@@ -324,7 +324,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 	})
 	t.Run(`with FeatureDisableActivegateRawImage=false`, func(t *testing.T) {
 		instanceRawImg := instance.DeepCopy()
-		instanceRawImg.Annotations[dynatracev1beta1.DeprecatedAnnotationFeatureDisableActiveGateRawImage] = "false"
+		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateRawImage] = "true"
 
 		stsProperties := NewStatefulSetProperties(instanceRawImg, capabilityProperties,
 			"", "", "", "", "",
@@ -414,7 +414,7 @@ func TestStatefulSet_Env(t *testing.T) {
 
 	t.Run(`with FeatureDisableActivegateRawImage=true`, func(t *testing.T) {
 		instanceRawImg := instance.DeepCopy()
-		instanceRawImg.Annotations[dynatracev1beta1.DeprecatedAnnotationFeatureDisableActiveGateRawImage] = "true"
+		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateRawImage] = "false"
 
 		envVars := buildEnvs(NewStatefulSetProperties(instanceRawImg, capabilityProperties,
 			testUID, "", testComponentFeature, "MSGrouter", "",

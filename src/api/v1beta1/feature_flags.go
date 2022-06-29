@@ -59,7 +59,7 @@ const (
 
 	// Deprecated: AnnotationFeatureDisableHostsRequests use AnnotationFeatureHostsRequests instead
 	AnnotationFeatureDisableHostsRequests = AnnotationFeaturePrefix + "disable-hosts-requests"
-	AnnotationFeatureHostsRequests        = AnnotationFeaturePrefix + "disable-hosts-requests"
+	AnnotationFeatureHostsRequests        = AnnotationFeaturePrefix + "hosts-requests"
 
 	// oneAgent
 
@@ -92,15 +92,21 @@ var (
 	log = logger.NewDTLogger().WithName("dynakube-api")
 )
 
+func (dk *DynaKube) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {
+	return dk.getFeatureFlagRaw(annotation) == "false" ||
+		dk.getFeatureFlagRaw(deprecatedAnnotation) == "true" &&
+			(dk.getFeatureFlagRaw(annotation) == "false" ||
+				dk.getFeatureFlagRaw(annotation) == "")
+}
+
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
 func (dk *DynaKube) FeatureDisableActiveGateUpdates() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateUpdates) == "false" ||
-		dk.getFeatureFlagRaw(AnnotationFeatureDisableActiveGateUpdates) == "true" && (dk.getFeatureFlagRaw(AnnotationFeatureActiveGateUpdates) == "false" || dk.getFeatureFlagRaw(AnnotationFeatureActiveGateUpdates) == "")
+	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureActiveGateUpdates, AnnotationFeatureDisableActiveGateUpdates)
 }
 
 // FeatureDisableHostsRequests is a feature flag to disable queries to the Hosts API.
 func (dk *DynaKube) FeatureDisableHostsRequests() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureDisableHostsRequests) == "true"
+	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureHostsRequests, AnnotationFeatureDisableHostsRequests)
 }
 
 // FeatureOneAgentMaxUnavailable is a feature flag to configure maxUnavailable on the OneAgent DaemonSets rolling upgrades.
@@ -121,7 +127,7 @@ func (dk *DynaKube) FeatureOneAgentMaxUnavailable() int {
 // FeatureDisableWebhookReinvocationPolicy disables the reinvocation for the Operator's webhooks.
 // This disables instrumenting containers injected by other webhooks following the admission to the Operator's webhook.
 func (dk *DynaKube) FeatureDisableWebhookReinvocationPolicy() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureDisableWebhookReinvocationPolicy) == "true"
+	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureWebhookReinvocationPolicy, AnnotationFeatureDisableWebhookReinvocationPolicy)
 }
 
 // FeatureIgnoreUnknownState is a feature flag that makes the operator inject into applications even when the dynakube is in an UNKNOWN state,
@@ -168,7 +174,7 @@ func (dk *DynaKube) FeatureAutomaticKubernetesApiMonitoringClusterName() string 
 
 // FeatureDisableMetadataEnrichment is a feature flag to disable metadata enrichment,
 func (dk *DynaKube) FeatureDisableMetadataEnrichment() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureDisableMetadataEnrichment) == "true"
+	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureMetadataEnrichment, AnnotationFeatureDisableMetadataEnrichment)
 }
 
 // FeatureUseActiveGateImageForStatsd is a feature flag that makes the operator use ActiveGate image when initializing Extension Controller and Statsd containers
@@ -191,7 +197,7 @@ func (dk *DynaKube) FeatureCustomStatsdImage() string {
 // where the csi-driver would provide the volume for logs and such
 // Defaults to false
 func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureDisableReadOnlyOneAgent) == "true"
+	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureReadOnlyOneAgent, AnnotationFeatureDisableReadOnlyOneAgent)
 }
 
 // FeatureDisableActivegateRawImage is a feature flag to specify if the operator should
@@ -199,7 +205,7 @@ func (dk *DynaKube) FeatureDisableReadOnlyOneAgent() bool {
 // instead of using embedded ones in the image
 // Defaults to false
 func (dk *DynaKube) FeatureDisableActivegateRawImage() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureDisableActiveGateRawImage) == "true"
+	return dk.getDisableFlagWithDeprecatedAnnotation(AnnotationFeatureActiveGateRawImage, AnnotationFeatureDisableActiveGateRawImage)
 }
 
 // FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
@@ -229,7 +235,9 @@ func (dk *DynaKube) FeatureActiveGateIgnoreProxy() bool {
 
 // FeatureActiveGateAuthToken is a feature flag to enable authToken usage in the activeGate
 func (dk *DynaKube) FeatureActiveGateAuthToken() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureEnableActiveGateAuthToken) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == "true" ||
+		dk.getFeatureFlagRaw(AnnotationFeatureEnableActiveGateAuthToken) == "true" &&
+			(dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == "true" || dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == "")
 }
 
 // FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents
