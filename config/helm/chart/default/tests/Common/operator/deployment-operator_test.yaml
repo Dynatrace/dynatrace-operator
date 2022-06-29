@@ -86,6 +86,8 @@ tests:
                   allowPrivilegeEscalation: false
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
                   capabilities:
                     drop: ["all"]
             affinity:
@@ -223,6 +225,8 @@ tests:
                   allowPrivilegeEscalation: false
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
                   capabilities:
                     drop: ["all"]
             affinity:
@@ -273,7 +277,7 @@ tests:
   - it: should have imagePullSecrets defined in spec
     set:
       platform: openshift
-      operator.customPullSecret: pull-secret
+      customPullSecret: pull-secret
     asserts:
       - equal:
           path: spec.template.spec.imagePullSecrets[0].name
@@ -285,3 +289,19 @@ tests:
     asserts:
       - isNull:
           path: spec.template.spec.imagePullSecrets
+
+  - it: should have only OS node affinity on GKE Autopilot
+    set:
+      platform: google-autopilot
+    asserts:
+      - equal:
+          path: spec.template.spec.affinity
+          value:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/os
+                          operator: In
+                          values:
+                            - linux

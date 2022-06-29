@@ -100,9 +100,12 @@ func getUrlProperties(version string) *url.Properties {
 }
 
 func setupImageInstaller(ctx context.Context, fs afero.Fs, pathResolver metadata.PathResolver, apiReader client.Reader, certPath, digest string, dynakube *dynatracev1beta1.DynaKube) (installer.Installer, error) {
-	dockerConfig, err := dockerconfig.NewDockerConfig(ctx, apiReader, *dynakube)
-	if err != nil {
-		return nil, err
+	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dynakube)
+	if dynakube.Spec.CustomPullSecret != "" {
+		err := dockerConfig.SetupAuths(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if dynakube.Spec.TrustedCAs != "" {
 		err := dockerConfig.SaveCustomCAs(ctx, afero.Afero{Fs: fs}, certPath)

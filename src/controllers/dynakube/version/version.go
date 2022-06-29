@@ -58,7 +58,8 @@ func ReconcileVersions(
 	}
 
 	caCertPath := path.Join(TmpCAPath, TmpCAName)
-	dockerConfig, err := dockerconfig.NewDockerConfig(ctx, apiReader, *dkState.Instance)
+	dockerConfig := dockerconfig.NewDockerConfig(apiReader, *dkState.Instance)
+	err := dockerConfig.SetupAuths(ctx)
 	if err != nil {
 		return false, err
 	}
