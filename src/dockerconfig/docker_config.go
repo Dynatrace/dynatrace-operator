@@ -3,6 +3,7 @@ package dockerconfig
 import (
 	"context"
 	"encoding/json"
+	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
@@ -66,7 +67,7 @@ func (config *DockerConfig) SaveCustomCAs(
 		log.Info("failed to save custom certificates")
 		return errors.WithStack(err)
 	}
-	config.TrustedCertsPath = path
+	config.TrustedCertsPath = filepath.Dir(path)
 	return nil
 }
 
