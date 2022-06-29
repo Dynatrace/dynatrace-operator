@@ -102,3 +102,4 @@ kuttl/activegate/logs/
 /testbin/bin/kubectl
 /testbin/setup-envtest.sh
 /bin/manager
+/dynatrace-operator.iml

@@ -4,6 +4,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: dynatrace-webhook
+  namespace: dynatrace
 spec:
   minAvailable: 1
   selector:
