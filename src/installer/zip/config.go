@@ -11,10 +11,6 @@ var (
 	log = logger.NewDTLogger().WithName("oneagent-installer-zip")
 )
 
-// Checks if a file is under /agent/conf
-// Different archive file implementations return different output, this function handles the differences
-// tar.Header.Name == "./path/to/file"
-// zip.File.Name == "path/to/file"
-func isAgentConfFile(fileName string) bool {
-	return strings.HasPrefix(fileName, "./"+common.AgentConfDirPath) || strings.HasPrefix(fileName, common.AgentConfDirPath)
+func isRuxitConfFile(fileName string) bool {
+	return strings.HasSuffix(fileName, common.RuxitConfFileName)
 }

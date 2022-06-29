@@ -55,17 +55,16 @@ func extractFileFromZip(fs afero.Fs, targetDir string, file *zip.File) error {
 
 	mode := file.Mode()
 
-	// Mark all files inside ./agent/conf as group-writable
-	if file.Name != common.AgentConfDirPath && isAgentConfFile(file.Name) {
-		mode |= 020
-	}
-
 	if file.FileInfo().IsDir() {
 		return fs.MkdirAll(path, mode)
 	}
 
 	if err := fs.MkdirAll(filepath.Dir(path), mode); err != nil {
 		return errors.WithStack(err)
+	}
+
+	if isRuxitConfFile(file.Name) {
+		mode = common.RuxitConfFileMode
 	}
 
 	dstFile, err := fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
