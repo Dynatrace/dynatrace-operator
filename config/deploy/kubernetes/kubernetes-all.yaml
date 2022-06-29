@@ -138,6 +138,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
+  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -3976,9 +3977,11 @@ spec:
             requests:
               cpu: 50m
               memory: 64Mi
+              ephemeral-storage: "10Mi"
             limits:
               cpu: 100m
               memory: 128Mi
+              ephemeral-storage: "10Mi"
           volumeMounts:
             - name: tmp-cert-dir
               mountPath: /tmp/dynatrace-operator
@@ -4123,9 +4126,11 @@ spec:
             requests:
               cpu: 300m
               memory: 128Mi
+              ephemeral-storage: "10Mi"
             limits:
               cpu: 300m
               memory: 128Mi
+              ephemeral-storage: "10Mi"
           volumeMounts:
             - name: certs-dir
               mountPath: /tmp/k8s-webhook-server/serving-certs/
