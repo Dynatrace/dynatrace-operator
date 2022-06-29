@@ -79,7 +79,7 @@ tests:
             type: RunAsAny
       - equal:
           path: priority
-          value: 1
+          value: null
       - equal:
           path: readOnlyRootFilesystem
           value: false

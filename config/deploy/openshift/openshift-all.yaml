@@ -149,6 +149,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
+  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -3319,6 +3320,39 @@ rules:
     verbs:
       - get
 ---
+# Source: dynatrace-operator/templates/Common/oneagent/clusterrole-oneagent-unprivileged.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dynatrace-dynakube-oneagent-unprivileged
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.7.0"
+    app.kubernetes.io/component: oneagent
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - host
+      - privileged
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+---
 # Source: dynatrace-operator/templates/Common/operator/clusterrole-operator.yaml
 # Copyright 2021 Dynatrace LLC
 
@@ -3499,39 +3533,6 @@ rules:
     verbs:
       - get
 ---
-# Source: dynatrace-operator/templates/Openshift/oneagent/clusterrole-oneagent-unprivileged.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: dynatrace-dynakube-oneagent-unprivileged
-  labels:
-    app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.7.0"
-    app.kubernetes.io/component: oneagent
-rules:
-  - apiGroups:
-      - security.openshift.io
-    resourceNames:
-      - host
-      - privileged
-    resources:
-      - securitycontextconstraints
-    verbs:
-      - use
----
 # Source: dynatrace-operator/templates/Common/kubernetes-monitoring/clusterrolebinding-kubernetes-monitoring.yaml
 # Copyright 2021 Dynatrace LLC
 
@@ -3562,6 +3563,37 @@ subjects:
   - kind: ServiceAccount
     name: dynatrace-kubernetes-monitoring
     namespace: dynatrace
+---
+# Source: dynatrace-operator/templates/Common/oneagent/clusterrolebinding-oneagent-unprivileged.yaml
+# Copyright 2021 Dynatrace LLC
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynatrace-dynakube-oneagent-unprivileged
+  labels:
+    app.kubernetes.io/name: dynatrace-operator
+    app.kubernetes.io/version: "0.7.0"
+    app.kubernetes.io/component: oneagent
+subjects:
+  - kind: ServiceAccount
+    name: dynatrace-dynakube-oneagent-unprivileged
+    namespace: dynatrace
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: dynatrace-dynakube-oneagent-unprivileged
 ---
 # Source: dynatrace-operator/templates/Common/operator/clusterrolebinding-operator.yaml
 # Copyright 2021 Dynatrace LLC
@@ -3624,37 +3656,6 @@ roleRef:
   kind: ClusterRole
   name: dynatrace-webhook
   apiGroup: rbac.authorization.k8s.io
----
-# Source: dynatrace-operator/templates/Openshift/oneagent/clusterrolebinding-oneagent-unprivileged.yaml
-# Copyright 2021 Dynatrace LLC
-
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#     http://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: dynatrace-dynakube-oneagent-unprivileged
-  labels:
-    app.kubernetes.io/name: dynatrace-operator
-    app.kubernetes.io/version: "0.7.0"
-    app.kubernetes.io/component: oneagent
-subjects:
-  - kind: ServiceAccount
-    name: dynatrace-dynakube-oneagent-unprivileged
-    namespace: dynatrace
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: dynatrace-dynakube-oneagent-unprivileged
 ---
 # Source: dynatrace-operator/templates/Common/operator/role-operator.yaml
 # Copyright 2021 Dynatrace LLC
@@ -4296,7 +4297,7 @@ metadata:
 allowPrivilegedContainer: false
 fsGroup:
   type: RunAsAny
-priority: 1
+priority: null
 readOnlyRootFilesystem: false
 
 requiredDropCapabilities:
@@ -4373,7 +4374,7 @@ allowedFlexVolumes: null
 defaultAddCapabilities: []
 fsGroup:
   type: RunAsAny
-priority: 1
+priority: null
 readOnlyRootFilesystem: false
 requiredDropCapabilities:
   - ALL
@@ -4415,7 +4416,7 @@ metadata:
 allowPrivilegedContainer: false
 fsGroup:
   type: RunAsAny
-priority: 1
+priority: null
 readOnlyRootFilesystem: true
 requiredDropCapabilities:
   - ALL
@@ -4465,7 +4466,7 @@ metadata:
 allowPrivilegedContainer: false
 fsGroup:
   type: RunAsAny
-priority: 1
+priority: null
 readOnlyRootFilesystem: true
 requiredDropCapabilities:
   - ALL
