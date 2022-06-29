@@ -324,7 +324,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 	})
 	t.Run(`with FeatureDisableActivegateRawImage=false`, func(t *testing.T) {
 		instanceRawImg := instance.DeepCopy()
-		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureDisableActiveGateRawImage] = "false"
+		instanceRawImg.Annotations[dynatracev1beta1.DeprecatedAnnotationFeatureDisableActiveGateRawImage] = "false"
 
 		stsProperties := NewStatefulSetProperties(instanceRawImg, capabilityProperties,
 			"", "", "", "", "",
@@ -395,7 +395,7 @@ func TestStatefulSet_Volumes(t *testing.T) {
 		)
 
 		stsProperties.Annotations = map[string]string{}
-		stsProperties.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAuthToken] = "true"
+		stsProperties.Annotations[dynatracev1beta1.AnnotationFeatureEnableActiveGateAuthToken] = "true"
 
 		volumes := buildVolumes(stsProperties, getContainerBuilders(stsProperties))
 
@@ -414,7 +414,7 @@ func TestStatefulSet_Env(t *testing.T) {
 
 	t.Run(`with FeatureDisableActivegateRawImage=true`, func(t *testing.T) {
 		instanceRawImg := instance.DeepCopy()
-		instanceRawImg.Annotations[dynatracev1beta1.AnnotationFeatureDisableActiveGateRawImage] = "true"
+		instanceRawImg.Annotations[dynatracev1beta1.DeprecatedAnnotationFeatureDisableActiveGateRawImage] = "true"
 
 		envVars := buildEnvs(NewStatefulSetProperties(instanceRawImg, capabilityProperties,
 			testUID, "", testComponentFeature, "MSGrouter", "",
@@ -631,7 +631,7 @@ func TestStatefulSet_VolumeMounts(t *testing.T) {
 	})
 	t.Run(`with activeGateAuthToken`, func(t *testing.T) {
 		instance.Spec.Proxy = &dynatracev1beta1.DynaKubeProxy{Value: testValue}
-		instance.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAuthToken] = "true"
+		instance.Annotations[dynatracev1beta1.AnnotationFeatureEnableActiveGateAuthToken] = "true"
 		volumeMounts := buildVolumeMounts(NewStatefulSetProperties(instance, capabilityProperties, "", "", "", "", "", nil, nil, nil))
 
 		assert.Contains(t, volumeMounts, corev1.VolumeMount{

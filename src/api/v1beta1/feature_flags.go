@@ -31,36 +31,61 @@ const (
 	AnnotationFeaturePrefix = "feature.dynatrace.com/"
 
 	// activeGate
-	AnnotationFeatureDisableActiveGateUpdates             = AnnotationFeaturePrefix + "disable-activegate-updates"
-	AnnotationFeatureDisableActiveGateRawImage            = AnnotationFeaturePrefix + "disable-activegate-raw-image"
+
+	// Deprecated: AnnotationFeatureDisableActiveGateUpdates use AnnotationFeatureActiveGateUpdates instead
+	AnnotationFeatureDisableActiveGateUpdates = AnnotationFeaturePrefix + "disable-activegate-updates"
+	// Deprecated: AnnotationFeatureDisableActiveGateRawImage use AnnotationFeatureActiveGateRawImage instead
+	AnnotationFeatureDisableActiveGateRawImage = AnnotationFeaturePrefix + "disable-activegate-raw-image"
+	// Deprecated: AnnotationFeatureEnableActiveGateAuthToken use AnnotationFeatureActiveGateAuthToken instead
+	AnnotationFeatureEnableActiveGateAuthToken = AnnotationFeaturePrefix + "enable-activegate-authtoken"
+
+	AnnotationFeatureActiveGateUpdates   = AnnotationFeaturePrefix + "activegate-updates"
+	AnnotationFeatureActiveGateRawImage  = AnnotationFeaturePrefix + "activegate-raw-image"
+	AnnotationFeatureActiveGateAuthToken = AnnotationFeaturePrefix + "activegate-authtoken"
+
 	AnnotationFeatureActiveGateAppArmor                   = AnnotationFeaturePrefix + "activegate-apparmor"
 	AnnotationFeatureActiveGateReadOnlyFilesystem         = AnnotationFeaturePrefix + "activegate-readonly-fs"
 	AnnotationFeatureAutomaticK8sApiMonitoring            = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring"
 	AnnotationFeatureAutomaticK8sApiMonitoringClusterName = AnnotationFeaturePrefix + "automatic-kubernetes-api-monitoring-cluster-name"
 	AnnotationFeatureActiveGateIgnoreProxy                = AnnotationFeaturePrefix + "activegate-ignore-proxy"
-	AnnotationFeatureActiveGateAuthToken                  = AnnotationFeaturePrefix + "enable-activegate-authtoken"
 
 	// statsD
+
 	AnnotationFeatureUseActiveGateImageForStatsd = AnnotationFeaturePrefix + "use-activegate-image-for-statsd"
 	AnnotationFeatureCustomEecImage              = AnnotationFeaturePrefix + "custom-eec-image"
 	AnnotationFeatureCustomStatsdImage           = AnnotationFeaturePrefix + "custom-statsd-image"
 
 	// dtClient
+
+	// Deprecated: AnnotationFeatureDisableHostsRequests use AnnotationFeatureHostsRequests instead
 	AnnotationFeatureDisableHostsRequests = AnnotationFeaturePrefix + "disable-hosts-requests"
+	AnnotationFeatureHostsRequests        = AnnotationFeaturePrefix + "disable-hosts-requests"
 
 	// oneAgent
+
+	// Deprecated: AnnotationFeatureDisableReadOnlyOneAgent use AnnotationFeatureReadOnlyOneAgent instead
+	AnnotationFeatureDisableReadOnlyOneAgent = AnnotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
+
+	AnnotationFeatureReadOnlyOneAgent = AnnotationFeaturePrefix + "oneagent-readonly-host-fs"
+
+	AnnotationFeatureMultipleOsAgentsOnNode         = AnnotationFeaturePrefix + "multiple-osagents-on-node"
 	AnnotationFeatureOneAgentMaxUnavailable         = AnnotationFeaturePrefix + "oneagent-max-unavailable"
-	AnnotationFeatureDisableReadOnlyOneAgent        = AnnotationFeaturePrefix + "disable-oneagent-readonly-host-fs"
-	AnnotationFeatureEnableMultipleOsAgentsOnNode   = AnnotationFeaturePrefix + "multiple-osagents-on-node"
 	AnnotationFeatureOneAgentIgnoreProxy            = AnnotationFeaturePrefix + "oneagent-ignore-proxy"
 	AnnotationFeatureOneAgentInitialConnectRetry    = AnnotationFeaturePrefix + "oneagent-initial-connect-retry-ms"
 	AnnotationFeatureRunOneAgentContainerPrivileged = AnnotationFeaturePrefix + "oneagent-privileged"
 
 	// injection (webhook)
+
+	// Deprecated: AnnotationFeatureDisableWebhookReinvocationPolicy use AnnotationFeatureWebhookReinvocationPolicy instead
 	AnnotationFeatureDisableWebhookReinvocationPolicy = AnnotationFeaturePrefix + "disable-webhook-reinvocation-policy"
-	AnnotationFeatureIgnoreUnknownState               = AnnotationFeaturePrefix + "ignore-unknown-state"
-	AnnotationFeatureIgnoredNamespaces                = AnnotationFeaturePrefix + "ignored-namespaces"
-	AnnotationFeatureDisableMetadataEnrichment        = AnnotationFeaturePrefix + "disable-metadata-enrichment"
+	// Deprecated: AnnotationFeatureDisableMetadataEnrichment use AnnotationFeatureMetadataEnrichment instead
+	AnnotationFeatureDisableMetadataEnrichment = AnnotationFeaturePrefix + "disable-metadata-enrichment"
+
+	AnnotationFeatureWebhookReinvocationPolicy = AnnotationFeaturePrefix + "webhook-reinvocation-policy"
+	AnnotationFeatureMetadataEnrichment        = AnnotationFeaturePrefix + "metadata-enrichment"
+
+	AnnotationFeatureIgnoreUnknownState = AnnotationFeaturePrefix + "ignore-unknown-state"
+	AnnotationFeatureIgnoredNamespaces  = AnnotationFeaturePrefix + "ignored-namespaces"
 )
 
 var (
@@ -69,7 +94,8 @@ var (
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
 func (dk *DynaKube) FeatureDisableActiveGateUpdates() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureDisableActiveGateUpdates) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateUpdates) == "false" ||
+		dk.getFeatureFlagRaw(AnnotationFeatureDisableActiveGateUpdates) == "true" && (dk.getFeatureFlagRaw(AnnotationFeatureActiveGateUpdates) == "false" || dk.getFeatureFlagRaw(AnnotationFeatureActiveGateUpdates) == "")
 }
 
 // FeatureDisableHostsRequests is a feature flag to disable queries to the Hosts API.
@@ -178,7 +204,7 @@ func (dk *DynaKube) FeatureDisableActivegateRawImage() bool {
 
 // FeatureEnableMultipleOsAgentsOnNode is a feature flag to enable multiple osagents running on the same host
 func (dk *DynaKube) FeatureEnableMultipleOsAgentsOnNode() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureEnableMultipleOsAgentsOnNode) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureMultipleOsAgentsOnNode) == "true"
 }
 
 // FeatureActiveGateReadOnlyFilesystem is a feature flag to enable RO mounted filesystem in ActiveGate container
@@ -203,7 +229,7 @@ func (dk *DynaKube) FeatureActiveGateIgnoreProxy() bool {
 
 // FeatureActiveGateAuthToken is a feature flag to enable authToken usage in the activeGate
 func (dk *DynaKube) FeatureActiveGateAuthToken() bool {
-	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == "true"
+	return dk.getFeatureFlagRaw(AnnotationFeatureEnableActiveGateAuthToken) == "true"
 }
 
 // FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents
