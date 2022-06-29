@@ -47,6 +47,12 @@ func findVersionFromFileSystem(fs afero.Fs, targetDir string) (string, error) {
 		Fs: fs,
 	}
 	walkFiles := func(path string, info iofs.FileInfo, err error) error {
+		if info == nil {
+			log.Info(
+				"file does not exist, are you using a correct codeModules image?",
+				"path", path)
+			return iofs.ErrNotExist
+		}
 		if !info.IsDir() {
 			return nil
 		}
