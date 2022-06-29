@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	dtcsi "github.com/Dynatrace/dynatrace-operator/src/controllers/csi"
 	csivolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes"
 	appvolumes "github.com/Dynatrace/dynatrace-operator/src/controllers/csi/driver/volumes/app"
@@ -1281,7 +1280,7 @@ func buildResultPod(_ *testing.T, oneAgentFf FeatureFlag, dataIngestFf FeatureFl
 	if oaEnabled {
 		pod.Spec.InitContainers[0].Env = append(pod.Spec.InitContainers[0].Env,
 			corev1.EnvVar{Name: oneAgentInjectedEnvVarName, Value: "true"},
-			corev1.EnvVar{Name: standalone.InstallerFlavorEnv, Value: arch.FlavorMultidistro},
+			corev1.EnvVar{Name: standalone.InstallerFlavorEnv, Value: ""},
 			corev1.EnvVar{Name: standalone.InstallerTechEnv, Value: "all"},
 			corev1.EnvVar{Name: standalone.InstallPathEnv, Value: "/opt/dynatrace/oneagent-paas"},
 			corev1.EnvVar{Name: standalone.InstallerUrlEnv, Value: ""},
