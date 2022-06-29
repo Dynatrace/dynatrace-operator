@@ -4576,7 +4576,7 @@ spec:
         # - Needs access to the registration socket, needs to read/write to it, needs root permissions to do so.
       - name: registrar
         image:
-            quay.io/dynatrace/dynatrace-operator:snapshot
+            quay.io/dynatrace/dynatrace-operator:snapshot-release-0-7
         imagePullPolicy: Always
         args:
         - --csi-address=/csi/csi.sock
