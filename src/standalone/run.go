@@ -103,7 +103,7 @@ func (runner *Runner) setHostTenant() error {
 
 func (runner *Runner) installOneAgent() error {
 	log.Info("downloading OneAgent")
-	err := runner.installer.InstallAgent(BinDirMount)
+	_, err := runner.installer.InstallAgent(BinDirMount)
 	if err != nil {
 		return err
 	}

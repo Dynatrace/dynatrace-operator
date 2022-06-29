@@ -24,7 +24,7 @@ func CreateSymlinkForCurrentVersionIfNotExists(fs afero.Fs, targetDir string) er
 	relativeSymlinkPath, err = findVersionFromFileSystem(fs, targetBindDir)
 	if err != nil {
 		log.Info("failed to get the version from the filesystem", "targetDir", targetDir)
-		return errors.WithStack(err)
+		return err
 	}
 
 	symlinkTargetPath := filepath.Join(targetBindDir, "current")

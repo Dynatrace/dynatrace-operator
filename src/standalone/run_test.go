@@ -95,7 +95,7 @@ func TestInstallOneAgent(t *testing.T) {
 			Return(nil)
 		runner.installer.(*installer.InstallerMock).
 			On("InstallAgent", BinDirMount).
-			Return(nil)
+			Return(true, nil)
 
 		err := runner.installOneAgent()
 
@@ -105,7 +105,7 @@ func TestInstallOneAgent(t *testing.T) {
 		runner := createMockedRunner(t)
 		runner.installer.(*installer.InstallerMock).
 			On("InstallAgent", BinDirMount).
-			Return(fmt.Errorf("BOOM"))
+			Return(false, fmt.Errorf("BOOM"))
 
 		err := runner.installOneAgent()
 
@@ -121,7 +121,7 @@ func TestInstallOneAgent(t *testing.T) {
 			Return(fmt.Errorf("BOOM"))
 		runner.installer.(*installer.InstallerMock).
 			On("InstallAgent", BinDirMount).
-			Return(nil)
+			Return(true, nil)
 
 		err := runner.installOneAgent()
 
@@ -137,7 +137,7 @@ func TestInstallOneAgent(t *testing.T) {
 			Return(nil)
 		runner.installer.(*installer.InstallerMock).
 			On("InstallAgent", BinDirMount).
-			Return(nil)
+			Return(true, nil)
 
 		err := runner.installOneAgent()
 
@@ -170,7 +170,7 @@ func TestRun(t *testing.T) {
 	t.Run(`install + config generation`, func(t *testing.T) {
 		runner.installer.(*installer.InstallerMock).
 			On("InstallAgent", BinDirMount).
-			Return(nil)
+			Return(true, nil)
 		runner.fs = afero.NewMemMapFs()
 		runner.env.Mode = InstallerMode
 

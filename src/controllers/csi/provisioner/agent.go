@@ -107,12 +107,14 @@ func setupImageInstaller(ctx context.Context, fs afero.Fs, pathResolver metadata
 			return nil, err
 		}
 	}
+
 	if dynakube.Spec.TrustedCAs != "" {
 		err := dockerConfig.SaveCustomCAs(ctx, afero.Afero{Fs: fs}, certPath)
 		if err != nil {
 			return nil, err
 		}
 	}
+
 	imageInstaller := image.NewImageInstaller(fs, &image.Properties{
 		ImageUri:     dynakube.CodeModulesImage(),
 		ImageDigest:  digest,
@@ -124,18 +126,24 @@ func setupImageInstaller(ctx context.Context, fs afero.Fs, pathResolver metadata
 func (updater *agentUpdater) updateAgent(installedVersion string, latestProcessModuleConfigCache *processModuleConfigCache) (string, error) {
 	defer updater.cleanCertsIfPresent()
 	var updatedVersion string
-	if updater.targetDirNotPresent() || installedVersion == "" {
-		log.Info("updating agent",
-			"target version", updater.targetVersion,
-			"installed version", installedVersion,
-			"target directory", updater.targetDir)
-		if err := updater.installer.InstallAgent(updater.targetDir); err != nil {
-			updater.recorder.sendFailedInstallAgentVersionEvent(updater.targetVersion, updater.tenantUUID)
-			return "", err
-		}
+
+	log.Info("updating agent",
+		"target version", updater.targetVersion,
+		"installed version", installedVersion,
+		"target directory", updater.targetDir,
+	)
+
+	updated, err := updater.installer.InstallAgent(updater.targetDir)
+	if err != nil {
+		updater.recorder.sendFailedInstallAgentVersionEvent(updater.targetVersion, updater.tenantUUID)
+		return "", err
+	}
+
+	if updated {
 		updater.recorder.sendInstalledAgentVersionEvent(updater.targetVersion, updater.tenantUUID)
 		updatedVersion = updater.targetVersion
 	}
+
 	log.Info("updating ruxitagentproc.conf on latest installed version")
 	if err := updater.installer.UpdateProcessModuleConfig(updater.targetDir, latestProcessModuleConfigCache.ProcessModuleConfig); err != nil {
 		return "", err
@@ -150,9 +158,4 @@ func (updater *agentUpdater) cleanCertsIfPresent() {
 	} else if err != nil {
 		log.Error(err, "failed to clean ca.crt")
 	}
-}
-
-func (updater agentUpdater) targetDirNotPresent() bool {
-	_, err := updater.fs.Stat(updater.targetDir)
-	return os.IsNotExist(err)
 }

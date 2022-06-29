@@ -1,6 +1,8 @@
 package url
 
 import (
+	"os"
+
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/Dynatrace/dynatrace-operator/src/installer/symlink"
@@ -39,20 +41,30 @@ func NewUrlInstaller(fs afero.Fs, dtc dtclient.Client, props *Properties) *UrlIn
 	}
 }
 
-func (installer UrlInstaller) InstallAgent(targetDir string) error {
+func (installer UrlInstaller) InstallAgent(targetDir string) (bool, error) {
+	if installer.isAlreadyDownloaded(targetDir) {
+		log.Info("agent already installed", "target dir", targetDir)
+		return false, nil
+	}
 	log.Info("installing agent", "target dir", targetDir)
 	installer.props.fillEmptyWithDefaults()
 	err := installer.fs.MkdirAll(targetDir, common.MkDirFileMode)
 	if err != nil {
-		log.Info("failed to create install target dir", "err", err, "targetDir", targetDir)
-		return errors.WithStack(err)
+		log.Info("failed to create install target dir", "targetDir", targetDir)
+		return false, errors.WithStack(err)
 	}
 	if err := installer.installAgentFromUrl(targetDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
-		log.Info("failed to install agent", "err", err, "targetDir", targetDir)
-		return errors.WithStack(err)
+		log.Info("failed to install agent", "targetDir", targetDir)
+		return false, err
 	}
-	return symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, targetDir)
+
+	if err := symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, targetDir); err != nil {
+		_ = installer.fs.RemoveAll(targetDir)
+		log.Info("failed to create symlink for agent installation", "targetDir", targetDir)
+		return false, err
+	}
+	return true, nil
 }
 
 func (installer UrlInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtclient.ProcessModuleConfig) error {
@@ -73,7 +85,15 @@ func (installer UrlInstaller) installAgentFromUrl(targetDir string) error {
 		}
 	}()
 	if err := installer.downloadOneAgentFromUrl(tmpFile); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 	return installer.unpackOneAgentZip(targetDir, tmpFile)
+}
+
+func (installer UrlInstaller) isAlreadyDownloaded(targetDir string) bool {
+	if standaloneBinDir == targetDir {
+		return false
+	}
+	_, err := installer.fs.Stat(targetDir)
+	return !os.IsNotExist(err)
 }

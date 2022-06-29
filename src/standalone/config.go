@@ -20,7 +20,7 @@ const (
 
 	// Env Vars
 	InstallerMode InstallMode = "installer"
-	CsiMode       InstallMode = "csi"
+	CsiMode       InstallMode = "provisioned"
 
 	ModeEnv         = "MODE"
 	CanFailEnv      = "FAILURE_POLICY"
