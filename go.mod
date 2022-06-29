@@ -7,7 +7,7 @@ require (
 	github.com/containers/image/v5 v5.19.0
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-logr/logr v1.2.2
-	github.com/klauspost/compress v1.14.1
+	github.com/klauspost/compress v1.15.6
 	github.com/mattn/go-sqlite3 v1.14.10
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.3-0.20211202193544-a5463b7f9c84
@@ -16,7 +16,6 @@ require (
 	github.com/prometheus/client_model v0.2.0
 	github.com/spf13/afero v1.8.0
 	github.com/spf13/cobra v1.3.0
-	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/zap v1.20.0
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
@@ -90,6 +89,7 @@ require (
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
+	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stefanberger/go-pkcs11uri v0.0.0-20201008174630-78d3cae3a980 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/sylabs/sif/v2 v2.3.1 // indirect
