@@ -4438,6 +4438,14 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
 ---
 # Source: dynatrace-operator/templates/Common/csi/rolebinding-csi.yaml
 # Copyright 2021 Dynatrace LLC
