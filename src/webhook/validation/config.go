@@ -30,4 +30,11 @@ var warnings = []validator{
 	metricIngestPreviewWarning,
 	statsdIngestPreviewWarning,
 	missingActiveGateMemoryLimit,
+	deprecatedFeatureFlagDisableActiveGateUpdates,
+	deprecatedFeatureFlagDisableActiveGateRawImage,
+	deprecatedFeatureFlagEnableActiveGateAuthToken,
+	deprecatedFeatureFlagDisableHostsRequests,
+	deprecatedFeatureFlagDisableReadOnlyAgent,
+	deprecatedFeatureFlagDisableWebhookReinvocationPolicy,
+	deprecatedFeatureFlagDisableMetadataEnrichment,
 }

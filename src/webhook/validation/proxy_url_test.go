@@ -17,6 +17,9 @@ const (
 
 	// validEncodedProxyUrl contains no forbidden characters "http://test:password!"#$()*-./:;<>?@[]^_{|}~@proxy-service.dynatrace:3128"
 	validEncodedProxyUrl = "http://test:password!%22%23%24()*-.%2F%3A%3B%3C%3E%3F%40%5B%5D%5E_%7B%7C%7D~@proxy-service.dynatrace:3128"
+
+	// validEncodedProxyUrlNoPassword contains empty password
+	validEncodedProxyUrlNoPassword = "http://test@proxy-service.dynatrace:3128"
 )
 
 func TestInvalidActiveGateProxy(t *testing.T) {
@@ -28,6 +31,20 @@ func TestInvalidActiveGateProxy(t *testing.T) {
 					APIURL: testApiUrl,
 					Proxy: &dynatracev1beta1.DynaKubeProxy{
 						Value:     validEncodedProxyUrl,
+						ValueFrom: "",
+					},
+				},
+			})
+	})
+
+	t.Run(`valid proxy url, no password`, func(t *testing.T) {
+		assertAllowedResponseWithoutWarnings(t,
+			&dynatracev1beta1.DynaKube{
+				ObjectMeta: defaultDynakubeObjectMeta,
+				Spec: dynatracev1beta1.DynaKubeSpec{
+					APIURL: testApiUrl,
+					Proxy: &dynatracev1beta1.DynaKubeProxy{
+						Value:     validEncodedProxyUrlNoPassword,
 						ValueFrom: "",
 					},
 				},
