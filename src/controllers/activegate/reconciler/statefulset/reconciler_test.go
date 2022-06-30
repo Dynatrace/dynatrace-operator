@@ -259,7 +259,7 @@ func TestReconcile_GetActiveGateAuthTokenHash(t *testing.T) {
 	assert.Empty(t, hash)
 
 	r.Instance.Annotations = make(map[string]string)
-	r.Instance.Annotations[dynatracev1beta1.AnnotationFeatureActiveGateAuthToken] = "true"
+	r.Instance.Annotations[dynatracev1beta1.AnnotationFeatureEnableActiveGateAuthToken] = "true"
 
 	hash, err = r.calculateActiveGateConfigurationHash()
 	assert.Error(t, err)
