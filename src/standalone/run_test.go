@@ -1,7 +1,7 @@
 package standalone
 
 import (
-	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"testing"
 
@@ -23,18 +23,15 @@ var testProcessModuleConfig = dtclient.ProcessModuleConfig{
 	},
 }
 
-// TODO: FIX THIS
-// func TestNewRunner(t *testing.T) {
-// 	t.Run(`create runner`, func(t *testing.T) {
-// 		runner := creatTestRunner(t)
-// 		assert.NotNil(t, runner.fs)
-// 		assert.NotNil(t, runner.env)
-// 		assert.NotNil(t, runner.dtclient)
-// 		assert.NotNil(t, runner.config)
-// 		assert.NotNil(t, runner.installer)
-// 		assert.Empty(t, runner.hostTenant)
-// 	})
-// }
+func TestNewRunner(t *testing.T) {
+	t.Run(`create runner`, func(t *testing.T) {
+		runner := creatTestRunner(t)
+		assert.NotNil(t, runner.fs)
+		assert.NotNil(t, runner.env)
+		assert.NotNil(t, runner.agentSetup)
+		assert.NotNil(t, runner.ingestSetup)
+	})
+}
 
 func TestConsumeErrorIfNecessary(t *testing.T) {
 	runner := createMockedRunner(t)
@@ -57,261 +54,76 @@ func TestConsumeErrorIfNecessary(t *testing.T) {
 	})
 }
 
-func TestSetHostTenant(t *testing.T) {
-	runner := createMockedRunner(t)
-	t.Run(`fail due to missing node`, func(t *testing.T) {
-		runner.config.HasHost = true
-
-		err := runner.setHostTenant()
-
-		require.Error(t, err)
-	})
-	t.Run(`set hostTenant to node`, func(t *testing.T) {
-		runner.config.HasHost = true
-		runner.env.K8NodeName = testNodeName
-
-		err := runner.setHostTenant()
-
-		require.NoError(t, err)
-		assert.Equal(t, testTenantUUID, runner.hostTenant)
-	})
-	t.Run(`set hostTenant to empty`, func(t *testing.T) {
-		runner.config.HasHost = false
-
-		err := runner.setHostTenant()
-
-		require.NoError(t, err)
-		assert.Equal(t, NoHostTenant, runner.hostTenant)
-	})
-}
-
-func TestInstallOneAgent(t *testing.T) {
-	runner := createMockedRunner(t)
-	t.Run(`happy install`, func(t *testing.T) {
-		runner.dtclient.(*dtclient.MockDynatraceClient).
-			On("GetProcessModuleConfig", uint(0)).
-			Return(&testProcessModuleConfig, nil)
-		runner.installer.(*installer.InstallerMock).
-			On("UpdateProcessModuleConfig", BinDirMount, &testProcessModuleConfig).
-			Return(nil)
-		runner.installer.(*installer.InstallerMock).
-			On("InstallAgent", BinDirMount).
-			Return(true, nil)
-
-		err := runner.installOneAgent()
-
-		require.NoError(t, err)
-	})
-	t.Run(`sad install -> install fail`, func(t *testing.T) {
-		runner := createMockedRunner(t)
-		runner.installer.(*installer.InstallerMock).
-			On("InstallAgent", BinDirMount).
-			Return(false, fmt.Errorf("BOOM"))
-
-		err := runner.installOneAgent()
-
-		require.Error(t, err)
-	})
-	t.Run(`sad install -> ruxitagent update fail`, func(t *testing.T) {
-		runner := createMockedRunner(t)
-		runner.dtclient.(*dtclient.MockDynatraceClient).
-			On("GetProcessModuleConfig", uint(0)).
-			Return(&testProcessModuleConfig, nil)
-		runner.installer.(*installer.InstallerMock).
-			On("UpdateProcessModuleConfig", BinDirMount, &testProcessModuleConfig).
-			Return(fmt.Errorf("BOOM"))
-		runner.installer.(*installer.InstallerMock).
-			On("InstallAgent", BinDirMount).
-			Return(true, nil)
-
-		err := runner.installOneAgent()
-
-		require.Error(t, err)
-	})
-	t.Run(`sad install -> ruxitagent endpoint fail`, func(t *testing.T) {
-		runner := createMockedRunner(t)
-		runner.dtclient.(*dtclient.MockDynatraceClient).
-			On("GetProcessModuleConfig", uint(0)).
-			Return(&dtclient.ProcessModuleConfig{}, fmt.Errorf("BOOM"))
-		runner.installer.(*installer.InstallerMock).
-			On("UpdateProcessModuleConfig", BinDirMount, &testProcessModuleConfig).
-			Return(nil)
-		runner.installer.(*installer.InstallerMock).
-			On("InstallAgent", BinDirMount).
-			Return(true, nil)
-
-		err := runner.installOneAgent()
-
-		require.Error(t, err)
-	})
-}
 func TestRun(t *testing.T) {
 	runner := createMockedRunner(t)
-	runner.config.HasHost = false
+	runner.agentSetup.config.HasHost = false
 	runner.env.OneAgentInjected = true
 	runner.env.DataIngestInjected = true
-	runner.dtclient.(*dtclient.MockDynatraceClient).
+	runner.agentSetup.dtclient.(*dtclient.MockDynatraceClient).
 		On("GetProcessModuleConfig", uint(0)).
 		Return(&testProcessModuleConfig, nil)
-	runner.installer.(*installer.InstallerMock).
+	runner.agentSetup.installer.(*installer.InstallerMock).
 		On("UpdateProcessModuleConfig", BinDirMount, &testProcessModuleConfig).
 		Return(nil)
 
 	t.Run(`no install, just config generation`, func(t *testing.T) {
-		runner.fs = afero.NewMemMapFs()
+		resetRunnerTestFs(runner)
 		runner.env.Mode = CsiMode
 
 		err := runner.Run()
 
 		require.NoError(t, err)
-		assertIfAgentFilesExists(t, *runner)
-		assertIfEnrichmentFilesExists(t, *runner)
+		assertIfAgentFilesExists(t, *runner.agentSetup)
+		assertIfEnrichmentFilesExists(t, *runner.ingestSetup)
 
 	})
 	t.Run(`install + config generation`, func(t *testing.T) {
-		runner.installer.(*installer.InstallerMock).
+		runner.agentSetup.installer.(*installer.InstallerMock).
 			On("InstallAgent", BinDirMount).
 			Return(true, nil)
-		runner.fs = afero.NewMemMapFs()
+		resetRunnerTestFs(runner)
 		runner.env.Mode = InstallerMode
 
 		err := runner.Run()
 
 		require.NoError(t, err)
-		assertIfAgentFilesExists(t, *runner)
-		assertIfEnrichmentFilesExists(t, *runner)
+		assertIfAgentFilesExists(t, *runner.agentSetup)
+		assertIfEnrichmentFilesExists(t, *runner.ingestSetup)
 
 	})
 }
 
-func TestConfigureInstallation(t *testing.T) {
-	runner := createMockedRunner(t)
-	runner.config.HasHost = false
+func TestCreateConfFile(t *testing.T) {
+	fs := afero.NewMemMapFs()
 
-	t.Run(`create all config files`, func(t *testing.T) {
-		runner.fs = afero.NewMemMapFs()
-		runner.env.OneAgentInjected = true
-		runner.env.DataIngestInjected = true
+	t.Run(`create file`, func(t *testing.T) {
+		path := "test"
 
-		err := runner.configureInstallation()
+		err := createConfFile(fs, path, "test")
 
 		require.NoError(t, err)
-		assertIfAgentFilesExists(t, *runner)
-		assertIfEnrichmentFilesExists(t, *runner)
+
+		file, err := fs.Open(path)
+		require.NoError(t, err)
+		content, err := ioutil.ReadAll(file)
+		require.NoError(t, err)
+		assert.Contains(t, string(content), "test")
 
 	})
-	t.Run(`create only container confs`, func(t *testing.T) {
-		runner.fs = afero.NewMemMapFs()
-		runner.env.OneAgentInjected = true
-		runner.env.DataIngestInjected = false
+	t.Run(`create nested file`, func(t *testing.T) {
+		path := filepath.Join("dir1", "dir2", "test")
 
-		err := runner.configureInstallation()
+		err := createConfFile(fs, path, "test")
 
 		require.NoError(t, err)
-		assertIfAgentFilesExists(t, *runner)
-		assertIfEnrichmentFilesNotExists(t, *runner)
 
-	})
-	t.Run(`create only enrichment file`, func(t *testing.T) {
-		runner.fs = afero.NewMemMapFs()
-		runner.env.OneAgentInjected = false
-		runner.env.DataIngestInjected = true
-
-		err := runner.configureInstallation()
-
+		file, err := fs.Open(path)
 		require.NoError(t, err)
-		assertIfAgentFilesNotExists(t, *runner)
-		// enrichemt
-		assertIfEnrichmentFilesExists(t, *runner)
-
-	})
-}
-
-func TestCreateContainerConfigurationFiles(t *testing.T) {
-	runner := createMockedRunner(t)
-	runner.config.HasHost = false
-
-	t.Run(`create config files`, func(t *testing.T) {
-		runner.fs = afero.NewMemMapFs()
-
-		err := runner.createContainerConfigurationFiles()
-
+		content, err := ioutil.ReadAll(file)
 		require.NoError(t, err)
-		for _, container := range runner.env.Containers {
-			assertIfFileExists(t,
-				runner.fs,
-				filepath.Join(
-					ShareDirMount,
-					fmt.Sprintf(ContainerConfFilenameTemplate, container.Name)))
-		}
-		// TODO: Check content ?
+		assert.Contains(t, string(content), "test")
+
 	})
-}
-
-func TestSetLDPreload(t *testing.T) {
-	runner := createMockedRunner(t)
-	t.Run(`create ld preload file`, func(t *testing.T) {
-		runner.fs = afero.NewMemMapFs()
-
-		err := runner.setLDPreload()
-
-		require.NoError(t, err)
-		assertIfFileExists(t,
-			runner.fs,
-			filepath.Join(
-				ShareDirMount,
-				ldPreloadFilename))
-		// TODO: Check content ?
-	})
-}
-
-func TestEnrichMetadata(t *testing.T) {
-	runner := createMockedRunner(t)
-	runner.config.HasHost = false
-
-	t.Run(`create enrichment files`, func(t *testing.T) {
-		runner.fs = afero.NewMemMapFs()
-
-		err := runner.enrichMetadata()
-
-		require.NoError(t, err)
-		assertIfEnrichmentFilesExists(t, *runner)
-		// TODO: Check content ?
-	})
-}
-
-func TestPropagateTLSCert(t *testing.T) {
-	runner := createMockedRunner(t)
-	runner.config.HasHost = false
-
-	t.Run(`create tls custom.pem`, func(t *testing.T) {
-		runner.fs = afero.NewMemMapFs()
-
-		err := runner.propagateTLSCert()
-
-		require.NoError(t, err)
-		assertIfFileExists(t,
-			runner.fs,
-			filepath.Join(ShareDirMount, "custom.pem"))
-	})
-}
-
-func TestWriteCurlOptions(t *testing.T) {
-	filesystem := afero.NewMemMapFs()
-	runner := Runner{
-		config: &SecretConfig{InitialConnectRetry: 30},
-		env:    &environment{OneAgentInjected: true},
-		fs:     filesystem,
-	}
-
-	err := runner.configureInstallation()
-
-	assert.NoError(t, err)
-
-	exists, err := afero.Exists(filesystem, "mnt/share/curl_options.conf")
-
-	assert.NoError(t, err)
-	assert.True(t, exists)
 }
 
 func creatTestRunner(t *testing.T) *Runner {
@@ -325,79 +137,22 @@ func creatTestRunner(t *testing.T) *Runner {
 	return runner
 }
 
+func resetRunnerTestFs(runner *Runner) {
+	fs := afero.NewMemMapFs()
+	runner.fs = fs
+	runner.ingestSetup.fs = fs
+	runner.agentSetup.fs = fs
+}
+
 func createMockedRunner(t *testing.T) *Runner {
 	runner := creatTestRunner(t)
-	runner.installer = &installer.InstallerMock{}
-	runner.dtclient = &dtclient.MockDynatraceClient{}
+	ingestSetup := createTestDataIngestSetup(t)
+	agentSetup := createMockedOneAgentSetup(t)
+	ingestSetup.fs = runner.fs
+	agentSetup.fs = runner.fs
+	runner.ingestSetup = ingestSetup
+	runner.agentSetup = agentSetup
 	return runner
-}
-
-func assertIfAgentFilesExists(t *testing.T, runner Runner) {
-	// container confs
-	for _, container := range runner.env.Containers {
-		assertIfFileExists(t,
-			runner.fs,
-			filepath.Join(
-				ShareDirMount,
-				fmt.Sprintf(ContainerConfFilenameTemplate, container.Name)))
-	}
-	// ld.so.preload
-	assertIfFileExists(t,
-		runner.fs,
-		filepath.Join(ShareDirMount, ldPreloadFilename))
-	// tls cert
-	assertIfFileExists(t,
-		runner.fs,
-		filepath.Join(ShareDirMount, "custom.pem"))
-
-}
-
-func assertIfEnrichmentFilesExists(t *testing.T, runner Runner) {
-	assertIfFileExists(t,
-		runner.fs,
-		filepath.Join(
-			EnrichmentPath,
-			fmt.Sprintf(enrichmentFilenameTemplate, "json")))
-	assertIfFileExists(t,
-		runner.fs,
-		filepath.Join(
-			EnrichmentPath,
-			fmt.Sprintf(enrichmentFilenameTemplate, "properties")))
-
-}
-
-func assertIfAgentFilesNotExists(t *testing.T, runner Runner) {
-	// container confs
-	for _, container := range runner.env.Containers {
-		assertIfFileNotExists(t,
-			runner.fs,
-			filepath.Join(
-				ShareDirMount,
-				fmt.Sprintf(ContainerConfFilenameTemplate, container.Name)))
-	}
-	// ld.so.preload
-	assertIfFileNotExists(t,
-		runner.fs,
-		filepath.Join(ShareDirMount, ldPreloadFilename))
-	// tls cert
-	assertIfFileNotExists(t,
-		runner.fs,
-		filepath.Join(ShareDirMount, "custom.pem"))
-
-}
-
-func assertIfEnrichmentFilesNotExists(t *testing.T, runner Runner) {
-	assertIfFileNotExists(t,
-		runner.fs,
-		filepath.Join(
-			EnrichmentPath,
-			fmt.Sprintf(enrichmentFilenameTemplate, "json")))
-	assertIfFileNotExists(t,
-		runner.fs,
-		filepath.Join(
-			EnrichmentPath,
-			fmt.Sprintf(enrichmentFilenameTemplate, "properties")))
-
 }
 
 func assertIfFileExists(t *testing.T, fs afero.Fs, path string) {

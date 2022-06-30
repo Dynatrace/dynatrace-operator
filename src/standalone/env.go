@@ -51,6 +51,13 @@ func newEnv() (*environment, error) {
 	return env, nil
 }
 
+func (env *environment) consumeErrorIfNecessary(resultedError *error) {
+	if !env.CanFail && *resultedError != nil {
+		log.Error(*resultedError, "This error has been masked to not fail the container.")
+		*resultedError = nil
+	}
+}
+
 func (env *environment) setRequiredFields() error {
 	errs := []error{}
 	requiredFieldSetters := []func() error{
