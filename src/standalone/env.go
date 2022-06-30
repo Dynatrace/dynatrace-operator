@@ -28,6 +28,7 @@ type environment struct {
 	K8NodeName    string `json:"k8NodeName"`
 	K8PodName     string `json:"k8PodName"`
 	K8PodUID      string `json:"k8BasePodUID"`
+	K8ClusterID   string `json:"k8ClusterID"`
 	K8BasePodName string `json:"k8BasePodName"`
 	K8Namespace   string `json:"k8Namespace"`
 
@@ -41,32 +42,45 @@ type environment struct {
 func newEnv() (*environment, error) {
 	log.Info("checking envvars")
 	env := &environment{}
+	env.setOptionalFields()
 	err := env.setRequiredFields()
 	if err != nil {
 		return nil, err
 	}
-	env.setOptionalFields()
 	log.Info("envvars checked", "env", env)
 	return env, nil
 }
 
 func (env *environment) setRequiredFields() error {
 	errs := []error{}
-	fieldSetters := []func() error{
-		env.addMode,
+	requiredFieldSetters := []func() error{
 		env.addCanFail,
-		env.addInstallerTech,
-		env.addInstallPath,
-		env.addContainers,
-		env.addK8NodeName,
-		env.addK8PodName,
-		env.addK8PodUID,
-		env.addK8BasePodName,
-		env.addK8Namespace,
-		env.addOneAgentInjected,
-		env.addDataIngestInjected,
 	}
-	for _, setField := range fieldSetters {
+	if env.OneAgentInjected {
+		oneAgentFieldSetters := []func() error{
+			env.addMode,
+			env.addInstallerTech,
+			env.addInstallPath,
+			env.addContainers,
+			env.addK8NodeName,
+			env.addK8PodName,
+			env.addK8PodUID,
+			env.addK8BasePodName,
+			env.addK8Namespace,
+		}
+		requiredFieldSetters = append(requiredFieldSetters, oneAgentFieldSetters...)
+	}
+
+	if env.DataIngestInjected {
+		dataIngestFieldSetters := []func() error{
+			env.addWorkloadKind,
+			env.addWorkloadName,
+			env.addK8ClusterID,
+		}
+		requiredFieldSetters = append(requiredFieldSetters, dataIngestFieldSetters...)
+	}
+
+	for _, setField := range requiredFieldSetters {
 		if err := setField(); err != nil {
 			errs = append(errs, err)
 			log.Info(err.Error())
@@ -79,10 +93,10 @@ func (env *environment) setRequiredFields() error {
 }
 
 func (env *environment) setOptionalFields() {
-	env.addWorkloadKind()
-	env.addWorkloadName()
 	env.addInstallerUrl()
 	env.addInstallerFlavor()
+	env.addOneAgentInjected()
+	env.addDataIngestInjected()
 }
 
 func (env *environment) addMode() error {
@@ -144,7 +158,7 @@ func (env *environment) addContainers() error {
 		nameEnv := fmt.Sprintf(ContainerNameEnvTemplate, i)
 		imageEnv := fmt.Sprintf(ContainerImageEnvTemplate, i)
 
-		containeName, err := checkEnvVar(nameEnv)
+		containerName, err := checkEnvVar(nameEnv)
 		if err != nil {
 			return err
 		}
@@ -153,7 +167,7 @@ func (env *environment) addContainers() error {
 			return err
 		}
 		containers = append(containers, containerInfo{
-			Name:  containeName,
+			Name:  containerName,
 			Image: imageName,
 		})
 	}
@@ -188,6 +202,15 @@ func (env *environment) addK8PodUID() error {
 	return nil
 }
 
+func (env *environment) addK8ClusterID() error {
+	clusterID, err := checkEnvVar(K8ClusterIDEnv)
+	if err != nil {
+		return err
+	}
+	env.K8ClusterID = clusterID
+	return nil
+}
+
 func (env *environment) addK8BasePodName() error {
 	basePodName, err := checkEnvVar(K8BasePodNameEnv)
 	if err != nil {
@@ -206,14 +229,22 @@ func (env *environment) addK8Namespace() error {
 	return nil
 }
 
-func (env *environment) addWorkloadKind() {
-	workloadKind, _ := checkEnvVar(WorkloadKindEnv)
+func (env *environment) addWorkloadKind() error {
+	workloadKind, err := checkEnvVar(WorkloadKindEnv)
+	if err != nil {
+		return err
+	}
 	env.WorkloadKind = workloadKind
+	return nil
 }
 
-func (env *environment) addWorkloadName() {
-	workloadName, _ := checkEnvVar(WorkloadNameEnv)
+func (env *environment) addWorkloadName() error {
+	workloadName, err := checkEnvVar(WorkloadNameEnv)
+	if err != nil {
+		return err
+	}
 	env.WorkloadName = workloadName
+	return nil
 }
 
 func (env *environment) addInstallerUrl() {
@@ -221,22 +252,14 @@ func (env *environment) addInstallerUrl() {
 	env.InstallerUrl = url
 }
 
-func (env *environment) addOneAgentInjected() error {
-	oneAgentInjected, err := checkEnvVar(OneAgentInjectedEnv)
-	if err != nil {
-		return err
-	}
+func (env *environment) addOneAgentInjected() {
+	oneAgentInjected, _ := checkEnvVar(OneAgentInjectedEnv)
 	env.OneAgentInjected = oneAgentInjected == "true"
-	return nil
 }
 
-func (env *environment) addDataIngestInjected() error {
-	dataIngestInjected, err := checkEnvVar(DataIngestInjectedEnv)
-	if err != nil {
-		return err
-	}
+func (env *environment) addDataIngestInjected() {
+	dataIngestInjected, _ := checkEnvVar(DataIngestInjectedEnv)
 	env.DataIngestInjected = dataIngestInjected == "true"
-	return nil
 }
 
 func checkEnvVar(envvar string) (string, error) {

@@ -34,6 +34,7 @@ const (
 	K8PodUIDEnv      = "K8S_PODUID"
 	K8BasePodNameEnv = "K8S_BASEPODNAME"
 	K8NamespaceEnv   = "K8S_NAMESPACE"
+	K8ClusterIDEnv  =  "K8S_CLUSTER_ID"
 
 	WorkloadKindEnv = "DT_WORKLOAD_KIND"
 	WorkloadNameEnv = "DT_WORKLOAD_NAME"
