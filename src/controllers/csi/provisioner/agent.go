@@ -133,22 +133,29 @@ func (updater *agentUpdater) updateAgent(installedVersion string, latestProcessM
 		"target directory", updater.targetDir,
 	)
 
-	updated, err := updater.installer.InstallAgent(updater.targetDir)
+	err := updater.installAgent()
 	if err != nil {
-		updater.recorder.sendFailedInstallAgentVersionEvent(updater.targetVersion, updater.tenantUUID)
 		return "", err
 	}
-
-	if updated {
-		updater.recorder.sendInstalledAgentVersionEvent(updater.targetVersion, updater.tenantUUID)
-		updatedVersion = updater.targetVersion
-	}
+	updatedVersion = updater.targetVersion
 
 	log.Info("updating ruxitagentproc.conf on latest installed version")
 	if err := updater.installer.UpdateProcessModuleConfig(updater.targetDir, latestProcessModuleConfigCache.ProcessModuleConfig); err != nil {
 		return "", err
 	}
 	return updatedVersion, nil
+}
+
+func (updater *agentUpdater) installAgent() error {
+	isNewlyInstalled, err := updater.installer.InstallAgent(updater.targetDir)
+	if err != nil {
+		updater.recorder.sendFailedInstallAgentVersionEvent(updater.targetVersion, updater.tenantUUID)
+		return err
+	}
+	if isNewlyInstalled {
+		updater.recorder.sendInstalledAgentVersionEvent(updater.targetVersion, updater.tenantUUID)
+	}
+	return nil
 }
 
 func (updater *agentUpdater) cleanCertsIfPresent() {

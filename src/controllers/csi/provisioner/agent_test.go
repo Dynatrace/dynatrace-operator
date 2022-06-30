@@ -116,7 +116,7 @@ func TestUpdateAgent(t *testing.T) {
 			&processModuleCache)
 
 		require.NoError(t, err)
-		assert.Equal(t, "", currentVersion)
+		assert.Equal(t, testVersion, currentVersion)
 	})
 	t.Run(`failed install`, func(t *testing.T) {
 		dk := dynatracev1beta1.DynaKube{
@@ -320,11 +320,7 @@ func testUpdateOneagent(t *testing.T, alreadyInstalled bool) {
 		&processModuleCache)
 
 	require.NoError(t, err)
-	if !alreadyInstalled {
-		assert.Equal(t, testVersion, currentVersion)
-	} else {
-		assert.Empty(t, currentVersion)
-	}
+	assert.Equal(t, testVersion, currentVersion)
 }
 
 func createTestAgentUrlUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube) *agentUpdater {
