@@ -98,8 +98,8 @@ func extractSymlink(fs afero.Fs, targetDir, target string, header *tar.Header) e
 
 func extractFile(fs afero.Fs, target string, header *tar.Header, tarReader *tar.Reader) error {
 	mode := header.Mode
-	if isRuxitConfFile(header.Name) {
-		mode = common.RuxitConfFileMode
+	if isAgentConfFile(header.Name) {
+		mode = common.ReadWriteAllFileMode
 	}
 	destinationFile, err := fs.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(mode))
 	defer (func() { _ = destinationFile.Close() })()

@@ -54,6 +54,9 @@ func extractFileFromZip(fs afero.Fs, targetDir string, file *zip.File) error {
 	}
 
 	mode := file.Mode()
+	if isAgentConfFile(file.Name) {
+		mode = common.ReadWriteAllFileMode
+	}
 
 	if file.FileInfo().IsDir() {
 		return fs.MkdirAll(path, mode)
@@ -61,10 +64,6 @@ func extractFileFromZip(fs afero.Fs, targetDir string, file *zip.File) error {
 
 	if err := fs.MkdirAll(filepath.Dir(path), mode); err != nil {
 		return errors.WithStack(err)
-	}
-
-	if isRuxitConfFile(file.Name) {
-		mode = common.RuxitConfFileMode
 	}
 
 	dstFile, err := fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
