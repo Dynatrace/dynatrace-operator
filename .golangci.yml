@@ -1,6 +1,12 @@
 linters-settings:
   misspell:
     locale: US
+  staticcheck:
+    checks:
+      - all
+      # SA1019 Using a deprecated function, variable, constant or field
+      # Disabled, because we still support deprecated feature flags, which would cause the linter to complain
+      - "-SA1019"
 
 linters:
   disable-all: true

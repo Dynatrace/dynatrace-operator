@@ -65,9 +65,11 @@ spec:
             requests:
               cpu: {{ default "50m" ((.Values.operator).requests).cpu }}
               memory: {{ default "64Mi" ((.Values.operator).requests).memory }}
+              ephemeral-storage: "10Mi"
             limits:
               cpu: {{ default "100m" ((.Values.operator).limits).cpu }}
               memory: {{ default "128Mi" ((.Values.operator).limits).memory }}
+              ephemeral-storage: "10Mi"
           volumeMounts:
             - name: tmp-cert-dir
               mountPath: /tmp/dynatrace-operator
