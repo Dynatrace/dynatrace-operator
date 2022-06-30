@@ -94,9 +94,7 @@ var (
 
 func (dk *DynaKube) getDisableFlagWithDeprecatedAnnotation(annotation string, deprecatedAnnotation string) bool {
 	return dk.getFeatureFlagRaw(annotation) == "false" ||
-		dk.getFeatureFlagRaw(deprecatedAnnotation) == "true" &&
-			(dk.getFeatureFlagRaw(annotation) == "false" ||
-				dk.getFeatureFlagRaw(annotation) == "")
+		dk.getFeatureFlagRaw(deprecatedAnnotation) == "true" && dk.getFeatureFlagRaw(annotation) == ""
 }
 
 // FeatureDisableActiveGateUpdates is a feature flag to disable ActiveGate updates.
@@ -236,8 +234,7 @@ func (dk *DynaKube) FeatureActiveGateIgnoreProxy() bool {
 // FeatureActiveGateAuthToken is a feature flag to enable authToken usage in the activeGate
 func (dk *DynaKube) FeatureActiveGateAuthToken() bool {
 	return dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == "true" ||
-		dk.getFeatureFlagRaw(AnnotationFeatureEnableActiveGateAuthToken) == "true" &&
-			(dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == "true" || dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == "")
+		dk.getFeatureFlagRaw(AnnotationFeatureEnableActiveGateAuthToken) == "true" && dk.getFeatureFlagRaw(AnnotationFeatureActiveGateAuthToken) == ""
 }
 
 // FeatureAgentInitialConnectRetry is a feature flag to configure startup delay of standalone agents
