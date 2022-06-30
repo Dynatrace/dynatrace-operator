@@ -96,7 +96,8 @@ func (webhook *podMutatorWebhook) isInjected(mutationRequest *dtwebhook.Mutation
 }
 
 func (webhook *podMutatorWebhook) handlePodMutation(mutationRequest *dtwebhook.MutationRequest) error {
-	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, mutationRequest.Pod, mutationRequest.DynaKube)
+	mutationRequest.InstallContainer = createInstallInitContainerBase(webhook.webhookImage, webhook.clusterID, mutationRequest.Pod, mutationRequest.DynaKube)
+	isMutated := false
 	for _, mutator := range webhook.mutators {
 		if !mutator.Enabled(mutationRequest.BaseRequest) {
 			continue
@@ -104,6 +105,11 @@ func (webhook *podMutatorWebhook) handlePodMutation(mutationRequest *dtwebhook.M
 		if err := mutator.Mutate(mutationRequest); err != nil {
 			return err
 		}
+		isMutated = true
+	}
+	if !isMutated {
+		log.Info("no mutation is enabled")
+		return nil
 	}
 	addToInitContainers(mutationRequest.Pod, mutationRequest.InstallContainer)
 	webhook.recorder.sendPodInjectEvent()
