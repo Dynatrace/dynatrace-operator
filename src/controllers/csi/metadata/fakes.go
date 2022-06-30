@@ -24,13 +24,13 @@ func checkIfTablesExist(db *SqliteAccess) bool {
 	if err != nil {
 		return false
 	}
-	var tentatsTable string
+	var tenantsTable string
 	row = db.conn.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", dynakubesTableName)
-	err = row.Scan(&tentatsTable)
+	err = row.Scan(&tenantsTable)
 	if err != nil {
 		return false
 	}
-	if tentatsTable != dynakubesTableName || volumesTable != volumesTableName {
+	if tenantsTable != dynakubesTableName || volumesTable != volumesTableName {
 		return false
 	}
 	return true
@@ -64,3 +64,6 @@ func (f *FakeFailDB) GetPodNames() (map[string]string, error)    { return nil, s
 func (f *FakeFailDB) GetUsedVersions(tenantUUID string) (map[string]bool, error) {
 	return nil, sql.ErrTxDone
 }
+func (f *FakeFailDB) GetAllUsedVersions() (map[string]bool, error) { return nil, sql.ErrTxDone }
+
+func (f *FakeFailDB) GetUsedImageDigests() (map[string]bool, error) { return nil, sql.ErrTxDone }

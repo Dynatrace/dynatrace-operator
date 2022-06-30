@@ -41,20 +41,29 @@ func (installer ImageInstaller) ImageDigest() string {
 	return installer.props.ImageDigest
 }
 
-func (installer *ImageInstaller) InstallAgent(targetDir string) error {
+func (installer *ImageInstaller) InstallAgent(targetDir string) (bool, error) {
 	log.Info("installing agent from image")
+
 	err := installer.fs.MkdirAll(targetDir, common.MkDirFileMode)
 	if err != nil {
 		log.Info("failed to create install target dir", "err", err, "targetDir", targetDir)
-		return errors.WithStack(err)
+		return false, errors.WithStack(err)
 	}
+
 	if err := installer.installAgentFromImage(); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
 		log.Info("failed to install agent from image", "err", err)
-		return errors.WithStack(err)
+		return false, errors.WithStack(err)
 	}
+
 	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.props.ImageDigest)
-	return symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, sharedDir)
+	if err := symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, sharedDir); err != nil {
+		_ = installer.fs.RemoveAll(targetDir)
+		_ = installer.fs.RemoveAll(sharedDir)
+		log.Info("failed to create symlink for agent installation", "err", err)
+		return false, errors.WithStack(err)
+	}
+	return true, nil
 }
 
 func (installer ImageInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtypes.ProcessModuleConfig) error {
@@ -84,12 +93,12 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 	}
 
 	imageDigestEncoded := imageDigest.Encoded()
-	imageCacheDir := getCacheDirPath(imageDigestEncoded)
-	if installer.isAlreadyDownloaded(imageDigestEncoded, imageCacheDir) {
+	if installer.isAlreadyDownloaded(imageDigestEncoded) {
 		log.Info("image is already installed", "image", image, "digest", imageDigestEncoded)
 		installer.props.ImageDigest = imageDigestEncoded
 		return nil
 	}
+
 	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(imageDigestEncoded)
 	err = installer.fs.MkdirAll(sharedDir, common.MkDirFileMode)
 	if err != nil {
@@ -97,11 +106,13 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 		return errors.WithStack(err)
 	}
 
+	imageCacheDir := getCacheDirPath(imageDigestEncoded)
 	destinationCtx, destinationRef, err := getDestinationInfo(imageCacheDir)
 	if err != nil {
 		log.Info("failed to get destination information", "image", image, "imageCacheDir", imageCacheDir)
 		return errors.WithStack(err)
 	}
+
 	err = installer.extractAgentBinariesFromImage(
 		imagePullInfo{
 			imageCacheDir:  imageCacheDir,
@@ -120,8 +131,9 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 	return nil
 }
 
-func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string, imageCacheDir string) bool {
-	if _, err := installer.fs.Stat(imageCacheDir); !os.IsNotExist(err) {
+func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string) bool {
+	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.props.ImageDigest)
+	if _, err := installer.fs.Stat(sharedDir); !os.IsNotExist(err) {
 		return false
 	}
 	if installer.props.ImageDigest == imageDigestEncoded {

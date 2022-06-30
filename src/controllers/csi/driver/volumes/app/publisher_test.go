@@ -73,7 +73,7 @@ func TestPublishVolume(t *testing.T) {
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Device)
 		assert.Equal(t, "overlay", mounter.MountPoints[0].Type)
 		assert.Equal(t, []string{
-			"lowerdir=/a-tenant-uuid/config:/codemodules/sha256:123456789",
+			"lowerdir=/a-tenant-uuid/config:/codemodules/" + testImageDigest,
 			"upperdir=/a-tenant-uuid/run/a-volume/var",
 			"workdir=/a-tenant-uuid/run/a-volume/work"},
 			mounter.MountPoints[0].Opts)
@@ -84,7 +84,7 @@ func TestPublishVolume(t *testing.T) {
 		assert.Equal(t, []string{"bind"}, mounter.MountPoints[1].Opts)
 		assert.Equal(t, testTargetPath, mounter.MountPoints[1].Path)
 
-		assertReferencesForPublishedVolume(t, &publisher, mounter)
+		assertReferencesForPublishedVolumeWithCodeModulesImage(t, &publisher, mounter)
 	})
 }
 
@@ -246,6 +246,16 @@ func assertReferencesForPublishedVolume(t *testing.T, publisher *AppVolumePublis
 	assert.Equal(t, volume.VolumeID, testVolumeId)
 	assert.Equal(t, volume.PodName, testPodUID)
 	assert.Equal(t, volume.Version, testAgentVersion)
+	assert.Equal(t, volume.TenantUUID, testTenantUUID)
+}
+
+func assertReferencesForPublishedVolumeWithCodeModulesImage(t *testing.T, publisher *AppVolumePublisher, mounter *mount.FakeMounter) {
+	assert.NotEmpty(t, mounter.MountPoints)
+	volume, err := publisher.loadVolume(testVolumeId)
+	require.NoError(t, err)
+	assert.Equal(t, volume.VolumeID, testVolumeId)
+	assert.Equal(t, volume.PodName, testPodUID)
+	assert.Equal(t, volume.Version, testImageDigest)
 	assert.Equal(t, volume.TenantUUID, testTenantUUID)
 }
 

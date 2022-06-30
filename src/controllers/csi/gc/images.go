@@ -2,78 +2,93 @@ package csigc
 
 import (
 	"os"
-	"path/filepath"
-	"time"
 
-	"github.com/Dynatrace/dynatrace-operator/src/installer/image"
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 )
 
-var maxImageAge = time.Hour * 24 * 14 // 14 days
-
-func (gc *CSIGarbageCollector) runImageGarbageCollection() {
-	imageDirs, _ := getImageCacheDirs(gc.fs)
-	if imageDirs == nil {
-		return
+func (gc *CSIGarbageCollector) runSharedImagesGarbageCollection() error {
+	imageDirs, err := gc.getSharedImageDirs()
+	if err != nil {
+		return err
+	}
+	if len(imageDirs) == 0 {
+		log.Info("no shared image dirs on node")
+		return nil
 	}
 
-	imageCachesToDelete := collectUnusedImageCaches(gc.fs, imageDirs)
+	imagesToDelete, err := gc.collectUnusedImageDirs(imageDirs)
+	if err != nil {
+		return err
+	}
+	if len(imagesToDelete) == 0 {
+		log.Info("no shared image dirs to delete on the node")
+		return nil
+	}
 
-	deleteImageCaches(gc.fs, imageCachesToDelete)
+	return deleteImageDirs(gc.fs, imagesToDelete)
 }
 
-func getImageCacheDirs(fs afero.Fs) ([]os.FileInfo, error) {
-	imageDirs, err := afero.Afero{Fs: fs}.ReadDir(image.CacheDir)
+func (gc *CSIGarbageCollector) getSharedImageDirs() ([]os.FileInfo, error) {
+	imageDirs, err := afero.Afero{Fs: gc.fs}.ReadDir(gc.path.AgentSharedBinaryDirBase())
 	if os.IsNotExist(err) {
-		log.Info("No image cache to clean up")
 		return nil, nil
 	}
 	if err != nil {
-		log.Error(err, "Failed to read image cache directory")
-		return nil, err
+		log.Info("failed to read shared image directory")
+		return nil, errors.WithStack(err)
 	}
-	return imageDirs, err
+	return imageDirs, nil
 }
 
-func collectUnusedImageCaches(fs afero.Fs, imageDirs []os.FileInfo) []string {
+func (gc *CSIGarbageCollector) collectUnusedImageDirs(imageDirs []os.FileInfo) ([]string, error) {
 	var toDelete []string
+	usedImageDigests, err := gc.getUsedImageDigests()
+	if err != nil {
+		log.Info("failed to get the used image digests")
+		return nil, err
+	}
 	for _, imageDir := range imageDirs {
 		if !imageDir.IsDir() {
 			continue
 		}
-		modificationTime, err := getRelevantModificationTime(fs, imageDir.Name())
-		if err != nil {
-			log.Error(err, "failed to get modification time of image cache", "imageDir", imageDir.Name())
-			continue
-		}
-		if time.Since(modificationTime) > maxImageAge {
-			toDelete = append(toDelete, filepath.Join(image.CacheDir, imageDir.Name()))
+		imageDigest := imageDir.Name()
+		if !usedImageDigests[imageDigest] {
+			toDelete = append(toDelete, gc.path.AgentSharedBinaryDirForImage(imageDigest))
 		}
 	}
-	return toDelete
+	return toDelete, nil
 }
 
-// getRelevantModificationTime returns the last modification time of an image in the cache
-// an image is not a single file but a directory of several files.
-// Most of which don't change when the image is tried to be pulled again.
-// The index.json of the image is a file that is modified in reliable way.(after every pull)
-func getRelevantModificationTime(fs afero.Fs, imageDir string) (time.Time, error) {
-	var modificationTime time.Time
-	indexPath := filepath.Join(image.CacheDir, imageDir, "index.json")
-	indexFileInfo, err := fs.Stat(indexPath)
+func (gc *CSIGarbageCollector) getUsedImageDigests() (map[string]bool, error) {
+	usedImageDigests, err := gc.db.GetUsedImageDigests()
 	if err != nil {
-		return modificationTime, err
+		log.Info("failed to get the used image digests")
+		return nil, err
 	}
-	modificationTime = indexFileInfo.ModTime()
-	return modificationTime, err
+
+	// If a shared image was used during mount, the version of a Volume is the imageDigest.
+	// A Volume can still reference versions that are not imageDigests.
+	// However, this shouldn't cause issues as those versions don't matter in this context.
+	usedVersions, err := gc.db.GetAllUsedVersions()
+	if err != nil {
+		log.Info("failed to get all used versions")
+		return nil, err
+	}
+	for version := range usedVersions {
+		usedImageDigests[version] = true
+	}
+	return usedImageDigests, nil
 }
 
-func deleteImageCaches(fs afero.Fs, imageCaches []string) {
-	for _, dir := range imageCaches {
-		log.Info("Deleting image cache", "dir", dir)
+func deleteImageDirs(fs afero.Fs, imageDirs []string) error {
+	for _, dir := range imageDirs {
+		log.Info("deleting shared image dir", "dir", dir)
 		err := fs.RemoveAll(dir)
 		if err != nil {
-			log.Error(err, "Failed to delete image cache", "dir", dir)
+			log.Info("failed to delete image cache", "dir", dir)
+			return errors.WithStack(err)
 		}
 	}
+	return nil
 }

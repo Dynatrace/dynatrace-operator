@@ -108,19 +108,20 @@ func TestUpdateDynakube(t *testing.T) {
 	err := db.InsertDynakube(&testDynakube1)
 	require.NoError(t, err)
 
-	testDynakube1.LatestVersion = "132.546"
-	testDynakube1.ImageDigest = ""
-	err = db.UpdateDynakube(&testDynakube1)
+	copyDynakube := testDynakube1
+	copyDynakube.LatestVersion = "132.546"
+	copyDynakube.ImageDigest = ""
+	err = db.UpdateDynakube(&copyDynakube)
 	require.NoError(t, err)
 
 	var uuid, lv, name string
 	var imageDigest string
-	row := db.conn.QueryRow(fmt.Sprintf("SELECT Name, TenantUUID, LatestVersion, ImageDigest FROM %s WHERE Name = ?;", dynakubesTableName), testDynakube1.Name)
+	row := db.conn.QueryRow(fmt.Sprintf("SELECT Name, TenantUUID, LatestVersion, ImageDigest FROM %s WHERE Name = ?;", dynakubesTableName), copyDynakube.Name)
 	err = row.Scan(&name, &uuid, &lv, &imageDigest)
 	require.NoError(t, err)
-	assert.Equal(t, testDynakube1.TenantUUID, uuid)
-	assert.Equal(t, testDynakube1.LatestVersion, lv)
-	assert.Equal(t, testDynakube1.Name, name)
+	assert.Equal(t, copyDynakube.TenantUUID, uuid)
+	assert.Equal(t, copyDynakube.LatestVersion, lv)
+	assert.Equal(t, copyDynakube.Name, name)
 	assert.Empty(t, imageDigest)
 }
 
@@ -382,6 +383,47 @@ func TestGetUsedVersions(t *testing.T) {
 	assert.Equal(t, len(versions), 2)
 	assert.True(t, versions[testVolume1.Version])
 	assert.True(t, versions[testVolume11.Version])
+}
+
+func TestGetAllUsedVersions(t *testing.T) {
+	db := FakeMemoryDB()
+	testVolume1 := createTestVolume(1)
+	err := db.InsertVolume(&testVolume1)
+	testVolume11 := testVolume1
+	testVolume11.VolumeID = "vol-11"
+	testVolume11.Version = "321"
+	require.NoError(t, err)
+	err = db.InsertVolume(&testVolume11)
+	require.NoError(t, err)
+
+	versions, err := db.GetAllUsedVersions()
+	require.NoError(t, err)
+	assert.Equal(t, len(versions), 2)
+	assert.True(t, versions[testVolume1.Version])
+	assert.True(t, versions[testVolume11.Version])
+}
+
+func TestGetUsedImageDigests(t *testing.T) {
+	db := FakeMemoryDB()
+	testDynakube1 := createTestDynakube(1)
+	err := db.InsertDynakube(&testDynakube1)
+	require.NoError(t, err)
+
+	copyDynakube := testDynakube1
+	copyDynakube.Name = "copy"
+	err = db.InsertDynakube(&copyDynakube)
+	require.NoError(t, err)
+
+	testDynakube2 := createTestDynakube(2)
+	err = db.InsertDynakube(&testDynakube2)
+	require.NoError(t, err)
+
+	digests, err := db.GetUsedImageDigests()
+	require.NoError(t, err)
+	assert.Equal(t, 2, len(digests))
+	assert.True(t, digests[testDynakube1.ImageDigest])
+	assert.True(t, digests[copyDynakube.ImageDigest])
+	assert.True(t, digests[testDynakube2.ImageDigest])
 }
 
 func TestGetPodNames(t *testing.T) {
