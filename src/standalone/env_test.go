@@ -23,7 +23,6 @@ func TestNewEnv(t *testing.T) {
 		assert.True(t, env.CanFail)
 		assert.NotEmpty(t, env.InstallerFlavor)
 		assert.NotEmpty(t, env.InstallerTech)
-		assert.NotEmpty(t, env.InstallerArch)
 		assert.NotEmpty(t, env.InstallPath)
 		assert.Len(t, env.Containers, 5)
 
@@ -45,7 +44,6 @@ func prepTestEnv(t *testing.T) func() {
 	envs := []string{
 		InstallerFlavorEnv,
 		InstallerTechEnv,
-		InstallerArchEnv,
 		K8NodeNameEnv,
 		K8PodNameEnv,
 		K8PodUIDEnv,

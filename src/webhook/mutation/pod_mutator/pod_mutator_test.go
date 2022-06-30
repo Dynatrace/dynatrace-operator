@@ -72,6 +72,9 @@ func TestHandle(t *testing.T) {
 		assert.Nil(t, response.Patches)
 		sadMutator.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Enabled", 1)
 		sadMutator.(*dtwebhook.PodMutatorMock).AssertNumberOfCalls(t, "Mutate", 1)
+
+		// Logging newline so go test can parse the output correctly
+		log.Info("")
 	})
 }
 

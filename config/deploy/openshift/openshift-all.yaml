@@ -4,6 +4,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: dynatrace-webhook
+  namespace: dynatrace
 spec:
   minAvailable: 1
   selector:
@@ -4051,9 +4052,11 @@ spec:
             requests:
               cpu: 50m
               memory: 64Mi
+              ephemeral-storage: "10Mi"
             limits:
               cpu: 100m
               memory: 128Mi
+              ephemeral-storage: "10Mi"
           volumeMounts:
             - name: tmp-cert-dir
               mountPath: /tmp/dynatrace-operator
@@ -4078,6 +4081,8 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
             capabilities:
               drop: ["all"]
       affinity:
@@ -4196,9 +4201,11 @@ spec:
             requests:
               cpu: 300m
               memory: 128Mi
+              ephemeral-storage: "10Mi"
             limits:
               cpu: 300m
               memory: 128Mi
+              ephemeral-storage: "10Mi"
           volumeMounts:
             - name: certs-dir
               mountPath: /tmp/k8s-webhook-server/serving-certs/
@@ -4209,6 +4216,8 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
             capabilities:
               drop: ["all"]
       serviceAccountName: dynatrace-webhook
@@ -4859,7 +4868,7 @@ spec:
         - mountPath: /data
           mountPropagation: Bidirectional
           name: dynatrace-oneagent-data-dir
-        - mountPath: /var/lib/kubelet/plugins/csi.oneagent.dynatrace.com/tmp
+        - mountPath: /tmp
           name: tmp-dir
         # Used to make a gRPC request (GetPluginInfo()) to the driver to get driver name and driver contain
         # - Needs access to the csi socket, needs to read/write to it, needs root permissions to do so.

@@ -97,9 +97,11 @@ tests:
                   requests:
                     cpu: 300m
                     memory: 128Mi
+                    ephemeral-storage: 10Mi
                   limits:
                     cpu: 300m
                     memory: 128Mi
+                    ephemeral-storage: 10Mi
                 volumeMounts:
                   - name: certs-dir
                     mountPath: /tmp/k8s-webhook-server/serving-certs/
@@ -110,6 +112,8 @@ tests:
                   allowPrivilegeEscalation: false
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
                   capabilities:
                     drop: [ "all" ]
             serviceAccountName: dynatrace-webhook
@@ -224,9 +228,11 @@ tests:
                   requests:
                     cpu: 300m
                     memory: 128Mi
+                    ephemeral-storage: 10Mi
                   limits:
                     cpu: 300m
                     memory: 128Mi
+                    ephemeral-storage: 10Mi
                 volumeMounts:
                   - name: certs-dir
                     mountPath: /tmp/k8s-webhook-server/serving-certs/
@@ -237,6 +243,8 @@ tests:
                   allowPrivilegeEscalation: false
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
                   capabilities:
                     drop: ["all"]
             serviceAccountName: dynatrace-webhook
@@ -330,9 +338,11 @@ tests:
                   requests:
                     cpu: 300m
                     memory: 128Mi
+                    ephemeral-storage: 10Mi
                   limits:
                     cpu: 300m
                     memory: 128Mi
+                    ephemeral-storage: 10Mi
                 volumeMounts:
                   - name: certs-dir
                     mountPath: /tmp/k8s-webhook-server/serving-certs/
@@ -343,6 +353,32 @@ tests:
                   allowPrivilegeEscalation: false
                   readOnlyRootFilesystem: true
                   runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
                   capabilities:
                     drop: ["all"]
             serviceAccountName: dynatrace-webhook
+
+  - it: should have only OS node affinity on GKE Autopilot
+    set:
+      platform: google-autopilot
+    asserts:
+      - equal:
+          path: spec.template.spec.affinity
+          value:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/os
+                          operator: In
+                          values:
+                            - linux
+
+  - it: should have imagePullSecrets defined in spec
+    set:
+      customPullSecret: pull-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: pull-secret

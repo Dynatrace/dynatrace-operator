@@ -153,7 +153,7 @@ func NewAccess(path string) (Access, error) {
 	a := SqliteAccess{}
 	err := a.Setup(path)
 	if err != nil {
-		log.Error(err, "failed to connect to the database, err: %s", err.Error())
+		log.Error(err, "failed to connect to the database", "error", err.Error())
 		return nil, err
 	}
 	return &a, nil

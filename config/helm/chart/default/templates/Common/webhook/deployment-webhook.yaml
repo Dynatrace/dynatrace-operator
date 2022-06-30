@@ -56,11 +56,13 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
+                    {{- if ne .Values.platform "google-autopilot"}}
                   - key: kubernetes.io/arch
                     operator: In
                     values:
                       - amd64
                       - arm64
+                   {{- end }}
                   - key: kubernetes.io/os
                     operator: In
                     values:
@@ -98,9 +100,11 @@ spec:
             requests:
               cpu: {{ default "300m" ((.Values.webhook).requests).cpu }}
               memory: {{ default "128Mi" ((.Values.webhook).requests).memory }}
+              ephemeral-storage: "10Mi"
             limits:
               cpu: {{ default "300m" ((.Values.webhook).limits).cpu }}
               memory: {{ default "128Mi" ((.Values.webhook).limits).memory }}
+              ephemeral-storage: "10Mi"
           volumeMounts:
             - name: certs-dir
               mountPath: /tmp/k8s-webhook-server/serving-certs/
@@ -111,15 +115,17 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
             capabilities:
               drop: ["all"]
       serviceAccountName: dynatrace-webhook
       {{- if (.Values.webhook).hostNetwork }}
       hostNetwork: true
       {{- end }}
-      {{- if .Values.operator.customPullSecret }}
+      {{- if .Values.customPullSecret }}
       imagePullSecrets:
-        - name: {{ .Values.operator.customPullSecret }}
+        - name: {{ .Values.customPullSecret }}
       {{- end }}
       {{- if .Values.webhook.nodeSelector }}
       nodeSelector: {{- toYaml .Values.webhook.nodeSelector | nindent 8 }}
