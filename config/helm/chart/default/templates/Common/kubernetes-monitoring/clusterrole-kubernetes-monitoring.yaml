@@ -32,7 +32,7 @@ rules:
       - pods/proxy
       - nodes/proxy
       - services
-      {{- if eq (default false .Values.additionalPermissions.pvcMonitoring) true}}
+      {{- if default false .Values.additionalPermissions.pvcMonitoring}}
       - nodes/metrics
       {{- end }}
     verbs:
