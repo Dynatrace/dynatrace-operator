@@ -45,23 +45,7 @@ func Add(mgr manager.Manager, _ string) error {
 
 // NewController returns a new ReconcileDynaKube
 func NewController(mgr manager.Manager) *DynakubeController {
-	return &DynakubeController{
-		client:            mgr.GetClient(),
-		apiReader:         mgr.GetAPIReader(),
-		scheme:            mgr.GetScheme(),
-		dtcBuildFunc:      BuildDynatraceClient,
-		config:            mgr.GetConfig(),
-		operatorPodName:   os.Getenv("POD_NAME"),
-		operatorNamespace: os.Getenv("POD_NAMESPACE"),
-	}
-}
-
-func (controller *DynakubeController) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&dynatracev1beta1.DynaKube{}).
-		Owns(&appsv1.StatefulSet{}).
-		Owns(&appsv1.DaemonSet{}).
-		Complete(controller)
+	return NewDynaKubeController(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetScheme(), BuildDynatraceClient, mgr.GetConfig())
 }
 
 func NewDynaKubeController(c client.Client, apiReader client.Reader, scheme *runtime.Scheme, dtcBuildFunc DynatraceClientFunc, config *rest.Config) *DynakubeController {
@@ -75,6 +59,14 @@ func NewDynaKubeController(c client.Client, apiReader client.Reader, scheme *run
 		operatorPodName:   os.Getenv("POD_NAME"),
 		operatorNamespace: os.Getenv("POD_NAMESPACE"),
 	}
+}
+
+func (controller *DynakubeController) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&dynatracev1beta1.DynaKube{}).
+		Owns(&appsv1.StatefulSet{}).
+		Owns(&appsv1.DaemonSet{}).
+		Complete(controller)
 }
 
 // DynakubeController reconciles a DynaKube object
