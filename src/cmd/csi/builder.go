@@ -109,7 +109,7 @@ func addFlags(cmd *cobra.Command) {
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		defer unix.Umask(0000)
+		unix.Umask(0000)
 
 		kubeConfig, err := builder.configProvider.GetConfig()
 		if err != nil {
