@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/klauspost/compress/gzip"
 	"github.com/spf13/afero"
 )
