@@ -3,6 +3,7 @@ package dockerconfig
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
@@ -230,6 +231,6 @@ func TestSaveCustomCAs(t *testing.T) {
 		exists, err := fs.Exists(testPath)
 		require.NoError(t, err)
 		assert.True(t, exists)
-		assert.Equal(t, testPath, dockerConfig.TrustedCertsPath)
+		assert.Equal(t, filepath.Dir(testPath), dockerConfig.TrustedCertsPath)
 	})
 }
