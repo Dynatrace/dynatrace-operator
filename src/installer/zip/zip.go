@@ -47,10 +47,8 @@ func extractFileFromZip(fs afero.Fs, targetDir string, file *zip.File) error {
 	}
 
 	mode := file.Mode()
-
-	// Mark all files inside ./agent/conf as group-writable
-	if file.Name != common.AgentConfDirPath && isAgentConfFile(file.Name) {
-		mode |= 020
+	if isAgentConfFile(file.Name) {
+		mode = common.ReadWriteAllFileMode
 	}
 
 	if file.FileInfo().IsDir() {
