@@ -215,6 +215,10 @@ spec:
         # A volume for the driver to write temporary files to
       - name: tmp-dir
         emptyDir: {}
+      {{- if .Values.customPullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.customPullSecret }}
+      {{- end }}
       {{- if .Values.csidriver.nodeSelector }}
       nodeSelector: {{- toYaml .Values.csidriver.nodeSelector | nindent 8 }}
       {{- end }}

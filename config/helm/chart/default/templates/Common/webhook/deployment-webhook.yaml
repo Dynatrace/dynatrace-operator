@@ -100,9 +100,11 @@ spec:
             requests:
               cpu: {{ default "300m" ((.Values.webhook).requests).cpu }}
               memory: {{ default "128Mi" ((.Values.webhook).requests).memory }}
+              ephemeral-storage: "10Mi"
             limits:
               cpu: {{ default "300m" ((.Values.webhook).limits).cpu }}
               memory: {{ default "128Mi" ((.Values.webhook).limits).memory }}
+              ephemeral-storage: "10Mi"
           volumeMounts:
             - name: certs-dir
               mountPath: /tmp/k8s-webhook-server/serving-certs/
@@ -121,9 +123,9 @@ spec:
       {{- if (.Values.webhook).hostNetwork }}
       hostNetwork: true
       {{- end }}
-      {{- if .Values.operator.customPullSecret }}
+      {{- if .Values.customPullSecret }}
       imagePullSecrets:
-        - name: {{ .Values.operator.customPullSecret }}
+        - name: {{ .Values.customPullSecret }}
       {{- end }}
       {{- if .Values.webhook.nodeSelector }}
       nodeSelector: {{- toYaml .Values.webhook.nodeSelector | nindent 8 }}
