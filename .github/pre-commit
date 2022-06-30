@@ -31,7 +31,7 @@ else
     for file in $STAGED_GO_FILES; do
         gofmt -w $file
         goimports -w $file
-        gci -w $file
+        gci write $file
         ## add any potential changes from our formatting to the
         ## commit
         git add $file
