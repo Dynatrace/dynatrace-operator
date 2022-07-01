@@ -27,10 +27,7 @@ func createInstallInitContainerBase(webhookImage string, pod *corev1.Pod, dynaku
 			{Name: standalone.K8NodeNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("spec.nodeName")},
 		},
 		SecurityContext: copyUserContainerSecurityContext(pod),
-		VolumeMounts: []corev1.VolumeMount{
-			{Name: injectionConfigVolumeName, MountPath: standalone.ConfigDirMount},
-		},
-		Resources: *dynakube.InitResources(),
+		Resources:       *dynakube.InitResources(),
 	}
 }
 
