@@ -2,10 +2,10 @@ package metadata
 
 import (
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/mattn/go-sqlite3"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -128,9 +128,20 @@ const (
 
 	// SPECIAL
 	getUsedVersionsStatement = `
-	SELECT Version
+	SELECT DISTINCT Version
 	FROM volumes
 	WHERE TenantUUID = ?;
+	`
+
+	getAllUsedVersionsStatement = `
+	SELECT DISTINCT Version
+	FROM volumes;
+	`
+
+	getUsedImageDigestStatement = `
+	SELECT DISTINCT ImageDigest
+	FROM dynakubes
+	WHERE ImageDigest != "";
 	`
 
 	getPodNamesStatement = `
@@ -150,50 +161,50 @@ type SqliteAccess struct {
 
 // NewAccess creates a new SqliteAccess, connects to the database.
 func NewAccess(path string) (Access, error) {
-	a := SqliteAccess{}
-	err := a.Setup(path)
+	access := SqliteAccess{}
+	err := access.Setup(path)
 	if err != nil {
-		log.Error(err, "failed to connect to the database", "error", err.Error())
+		log.Error(err, "failed to connect to the database")
 		return nil, err
 	}
-	return &a, nil
+	return &access, nil
 }
 
-func (a *SqliteAccess) connect(driver, path string) error {
+func (access *SqliteAccess) connect(driver, path string) error {
 	db, err := sql.Open(driver, path)
 	if err != nil {
-		err := fmt.Errorf("couldn't connect to db %s, err: %s", path, err)
-		a.conn = nil
+		err := errors.WithStack(errors.WithMessagef(err, "couldn't connect to db %s", path))
+		access.conn = nil
 		return err
 	}
-	a.conn = db
+	access.conn = db
 	return nil
 }
 
-func (a *SqliteAccess) createTables() error {
-	if err := a.setupDynakubeTable(); err != nil {
+func (access *SqliteAccess) createTables() error {
+	if err := access.setupDynakubeTable(); err != nil {
 		return err
 	}
 
-	if _, err := a.conn.Exec(volumesCreateStatement); err != nil {
-		return fmt.Errorf("couldn't create the table %s, err: %s", volumesTableName, err)
+	if _, err := access.conn.Exec(volumesCreateStatement); err != nil {
+		return errors.WithStack(errors.WithMessagef(err, "couldn't create the table %s", volumesTableName))
 	}
-	if _, err := a.conn.Exec(osAgentVolumesCreateStatement); err != nil {
-		return fmt.Errorf("couldn't create the table %s, err: %s", osAgentVolumesTableName, err)
+	if _, err := access.conn.Exec(osAgentVolumesCreateStatement); err != nil {
+		return errors.WithStack(errors.WithMessagef(err, "couldn't create the table %s", osAgentVolumesTableName))
 	}
 	return nil
 }
 
 // setupDynakubeTable creates the dynakubes table if it doesn't exist and tries to add additional columns
-func (a *SqliteAccess) setupDynakubeTable() error {
-	if _, err := a.conn.Exec(dynakubesCreateStatement); err != nil {
-		return fmt.Errorf("couldn't create the table %s, err: %s", dynakubesTableName, err)
+func (access *SqliteAccess) setupDynakubeTable() error {
+	if _, err := access.conn.Exec(dynakubesCreateStatement); err != nil {
+		return errors.WithStack(errors.WithMessagef(err, "couldn't create the table %s", dynakubesTableName))
 	}
 
-	if _, err := a.conn.Exec(dynakubesAlterStatementImageDigestColumn); err != nil {
+	if _, err := access.conn.Exec(dynakubesAlterStatementImageDigestColumn); err != nil {
 		sqliteError := err.(sqlite3.Error)
 		if sqliteError.Code != sqlite3.ErrError {
-			return err
+			return errors.WithStack(errors.WithMessage(err, "couldn't add ingest column"))
 		}
 		// generic sql error, column already exists
 		log.Info("column ImageDigest already exists")
@@ -202,157 +213,152 @@ func (a *SqliteAccess) setupDynakubeTable() error {
 }
 
 // Setup connects to the database and creates the necessary tables if they don't exist
-func (a *SqliteAccess) Setup(path string) error {
-	if err := a.connect(sqliteDriverName, path); err != nil {
+func (access *SqliteAccess) Setup(path string) error {
+	if err := access.connect(sqliteDriverName, path); err != nil {
 		return err
 	}
-	if err := a.createTables(); err != nil {
+	if err := access.createTables(); err != nil {
 		return err
 	}
 	return nil
 }
 
 // InsertDynakube inserts a new Dynakube
-func (a *SqliteAccess) InsertDynakube(dynakube *Dynakube) error {
-	err := a.executeStatement(insertDynakubeStatement, dynakube.Name, dynakube.TenantUUID, dynakube.LatestVersion, dynakube.ImageDigest)
+func (access *SqliteAccess) InsertDynakube(dynakube *Dynakube) error {
+	err := access.executeStatement(insertDynakubeStatement, dynakube.Name, dynakube.TenantUUID, dynakube.LatestVersion, dynakube.ImageDigest)
 	if err != nil {
-		err = fmt.Errorf("couldn't insert dynakube entry, tenantUUID '%s', latest version '%s', name '%s', image digest '%s', err: %s",
+		err = errors.WithMessagef(err, "couldn't insert dynakube entry, tenantUUID '%s', latest version '%s', name '%s', image digest '%s'",
 			dynakube.TenantUUID,
 			dynakube.LatestVersion,
 			dynakube.Name,
-			dynakube.ImageDigest,
-			err)
+			dynakube.ImageDigest)
 	}
 	return err
 }
 
 // UpdateDynakube updates an existing Dynakube by matching the name
-func (a *SqliteAccess) UpdateDynakube(dynakube *Dynakube) error {
-	err := a.executeStatement(updateDynakubeStatement, dynakube.LatestVersion, dynakube.TenantUUID, dynakube.ImageDigest, dynakube.Name)
+func (access *SqliteAccess) UpdateDynakube(dynakube *Dynakube) error {
+	err := access.executeStatement(updateDynakubeStatement, dynakube.LatestVersion, dynakube.TenantUUID, dynakube.ImageDigest, dynakube.Name)
 	if err != nil {
-		err = fmt.Errorf("couldn't update dynakube, tenantUUID '%s', latest version '%s', name '%s', image digest '%s', err: %s",
+		err = errors.WithMessagef(err, "couldn't update dynakube, tenantUUID '%s', latest version '%s', name '%s', image digest '%s'",
 			dynakube.TenantUUID,
 			dynakube.LatestVersion,
 			dynakube.Name,
-			dynakube.ImageDigest,
-			err)
+			dynakube.ImageDigest)
 	}
 	return err
 }
 
 // DeleteDynakube deletes an existing Dynakube using its name
-func (a *SqliteAccess) DeleteDynakube(dynakubeName string) error {
-	err := a.executeStatement(deleteDynakubeStatement, dynakubeName)
+func (access *SqliteAccess) DeleteDynakube(dynakubeName string) error {
+	err := access.executeStatement(deleteDynakubeStatement, dynakubeName)
 	if err != nil {
-		err = fmt.Errorf("couldn't delete dynakube, name '%s', err: %s", dynakubeName, err)
+		err = errors.WithMessagef(err, "couldn't delete dynakube, name '%s'", dynakubeName)
 	}
 	return err
 }
 
 // GetDynakube gets Dynakube using its name
-func (a *SqliteAccess) GetDynakube(dynakubeName string) (*Dynakube, error) {
+func (access *SqliteAccess) GetDynakube(dynakubeName string) (*Dynakube, error) {
 	var tenantUUID string
 	var latestVersion string
 	var imageDigest string
-	err := a.querySimpleStatement(getDynakubeStatement, dynakubeName, &tenantUUID, &latestVersion, &imageDigest)
+	err := access.querySimpleStatement(getDynakubeStatement, dynakubeName, &tenantUUID, &latestVersion, &imageDigest)
 	if err != nil {
-		err = fmt.Errorf("couldn't get dynakube, name '%s', err: %s", dynakubeName, err)
+		err = errors.WithMessagef(err, "couldn't get dynakube, name '%s'", dynakubeName)
 	}
 	return NewDynakube(dynakubeName, tenantUUID, latestVersion, imageDigest), err
 }
 
 // InsertVolume inserts a new Volume
-func (a *SqliteAccess) InsertVolume(volume *Volume) error {
-	err := a.executeStatement(insertVolumeStatement, volume.VolumeID, volume.PodName, volume.Version, volume.TenantUUID)
+func (access *SqliteAccess) InsertVolume(volume *Volume) error {
+	err := access.executeStatement(insertVolumeStatement, volume.VolumeID, volume.PodName, volume.Version, volume.TenantUUID)
 	if err != nil {
-		err = fmt.Errorf("couldn't insert volume info, volume id '%s', pod '%s', version '%s', dynakube '%s', err: %s",
+		err = errors.WithMessagef(err, "couldn't insert volume info, volume id '%s', pod '%s', version '%s', dynakube '%s'",
 			volume.VolumeID,
 			volume.PodName,
 			volume.Version,
-			volume.TenantUUID,
-			err)
+			volume.TenantUUID)
 	}
 	return err
 }
 
 // GetVolume gets Volume by its ID
-func (a *SqliteAccess) GetVolume(volumeID string) (*Volume, error) {
+func (access *SqliteAccess) GetVolume(volumeID string) (*Volume, error) {
 	var podName string
 	var version string
 	var tenantUUID string
-	err := a.querySimpleStatement(getVolumeStatement, volumeID, &podName, &version, &tenantUUID)
+	err := access.querySimpleStatement(getVolumeStatement, volumeID, &podName, &version, &tenantUUID)
 	if err != nil {
-		err = fmt.Errorf("couldn't get volume field for volume id '%s', err: %s", volumeID, err)
+		err = errors.WithMessagef(err, "couldn't get volume field for volume id '%s'", volumeID)
 	}
 	return NewVolume(volumeID, podName, version, tenantUUID), err
 }
 
 // DeleteVolume deletes a Volume by its ID
-func (a *SqliteAccess) DeleteVolume(volumeID string) error {
-	err := a.executeStatement(deleteVolumeStatement, volumeID)
+func (access *SqliteAccess) DeleteVolume(volumeID string) error {
+	err := access.executeStatement(deleteVolumeStatement, volumeID)
 	if err != nil {
-		err = fmt.Errorf("couldn't delete volume for volume id '%s', err: %s", volumeID, err)
+		err = errors.WithMessagef(err, "couldn't delete volume for volume id '%s'", volumeID)
 	}
 	return err
 }
 
 // InsertOsAgentVolume inserts a new OsAgentVolume
-func (a *SqliteAccess) InsertOsAgentVolume(volume *OsAgentVolume) error {
-	err := a.executeStatement(insertOsAgentVolumeStatement, volume.TenantUUID, volume.VolumeID, volume.Mounted, volume.LastModified)
+func (access *SqliteAccess) InsertOsAgentVolume(volume *OsAgentVolume) error {
+	err := access.executeStatement(insertOsAgentVolumeStatement, volume.TenantUUID, volume.VolumeID, volume.Mounted, volume.LastModified)
 	if err != nil {
-		err = fmt.Errorf("couldn't insert osAgentVolume info, volume id '%s', tenant UUID '%s', mounted '%t', last modified '%s', err: %s",
+		err = errors.WithMessagef(err, "couldn't insert osAgentVolume info, volume id '%s', tenant UUID '%s', mounted '%t', last modified '%s'",
 			volume.VolumeID,
 			volume.TenantUUID,
 			volume.Mounted,
-			volume.LastModified,
-			err)
+			volume.LastModified)
 	}
 	return err
 }
 
 // UpdateOsAgentVolume updates an existing OsAgentVolume by matching the tenantUUID
-func (a *SqliteAccess) UpdateOsAgentVolume(volume *OsAgentVolume) error {
-	err := a.executeStatement(updateOsAgentVolumeStatement, volume.VolumeID, volume.Mounted, volume.LastModified, volume.TenantUUID)
+func (access *SqliteAccess) UpdateOsAgentVolume(volume *OsAgentVolume) error {
+	err := access.executeStatement(updateOsAgentVolumeStatement, volume.VolumeID, volume.Mounted, volume.LastModified, volume.TenantUUID)
 	if err != nil {
-		err = fmt.Errorf("couldn't update osAgentVolume info, tenantUUID '%s', mounted '%t', last modified '%s', volume id %s, err: %s",
+		err = errors.WithMessagef(err, "couldn't update osAgentVolume info, tenantUUID '%s', mounted '%t', last modified '%s', volume id '%s'",
 			volume.TenantUUID,
 			volume.Mounted,
 			volume.LastModified,
-			volume.VolumeID,
-			err)
+			volume.VolumeID)
 	}
 	return err
 }
 
 // GetOsAgentVolumeViaVolumeID gets an OsAgentVolume by its VolumeID
-func (a *SqliteAccess) GetOsAgentVolumeViaVolumeID(volumeID string) (*OsAgentVolume, error) {
+func (access *SqliteAccess) GetOsAgentVolumeViaVolumeID(volumeID string) (*OsAgentVolume, error) {
 	var tenantUUID string
 	var mounted bool
 	var lastModified time.Time
-	err := a.querySimpleStatement(getOsAgentVolumeViaVolumeIDStatement, volumeID, &tenantUUID, &mounted, &lastModified)
+	err := access.querySimpleStatement(getOsAgentVolumeViaVolumeIDStatement, volumeID, &tenantUUID, &mounted, &lastModified)
 	if err != nil {
-		err = fmt.Errorf("couldn't get osAgentVolume info for volume id '%s', err: %s", volumeID, err)
+		err = errors.WithMessagef(err, "couldn't get osAgentVolume info for volume id '%s'", volumeID)
 	}
 	return NewOsAgentVolume(volumeID, tenantUUID, mounted, &lastModified), err
 }
 
 // GetOsAgentVolumeViaTenantUUID gets an OsAgentVolume by its tenantUUID
-func (a *SqliteAccess) GetOsAgentVolumeViaTenantUUID(tenantUUID string) (*OsAgentVolume, error) {
+func (access *SqliteAccess) GetOsAgentVolumeViaTenantUUID(tenantUUID string) (*OsAgentVolume, error) {
 	var volumeID string
 	var mounted bool
 	var lastModified time.Time
-	err := a.querySimpleStatement(getOsAgentVolumeViaTenantUUIDStatement, tenantUUID, &volumeID, &mounted, &lastModified)
+	err := access.querySimpleStatement(getOsAgentVolumeViaTenantUUIDStatement, tenantUUID, &volumeID, &mounted, &lastModified)
 	if err != nil {
-		err = fmt.Errorf("couldn't get osAgentVolume info for tenant uuid '%s', err: %s", tenantUUID, err)
+		err = errors.WithMessagef(err, "couldn't get osAgentVolume info for tenant uuid '%s'", tenantUUID)
 	}
 	return NewOsAgentVolume(volumeID, tenantUUID, mounted, &lastModified), err
 }
 
 // GetAllVolumes gets all the Volumes from the database
-func (a *SqliteAccess) GetAllVolumes() ([]*Volume, error) {
-	rows, err := a.conn.Query(getAllVolumesStatement)
+func (access *SqliteAccess) GetAllVolumes() ([]*Volume, error) {
+	rows, err := access.conn.Query(getAllVolumesStatement)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get all the volumes, err: %s", err)
+		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get all the volumes"))
 	}
 	volumes := []*Volume{}
 	defer func() { _ = rows.Close() }()
@@ -363,7 +369,7 @@ func (a *SqliteAccess) GetAllVolumes() ([]*Volume, error) {
 		var tenantUUID string
 		err := rows.Scan(&id, &podName, &version, &tenantUUID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan from database for volumes, err: %s", err)
+			return nil, errors.WithStack(errors.WithMessage(err, "couldn't scan volume from database"))
 		}
 		volumes = append(volumes, NewVolume(id, podName, version, tenantUUID))
 	}
@@ -371,10 +377,10 @@ func (a *SqliteAccess) GetAllVolumes() ([]*Volume, error) {
 }
 
 // GetAllDynakubes gets all the Dynakubes from the database
-func (a *SqliteAccess) GetAllDynakubes() ([]*Dynakube, error) {
-	rows, err := a.conn.Query(getAllDynakubesStatement)
+func (access *SqliteAccess) GetAllDynakubes() ([]*Dynakube, error) {
+	rows, err := access.conn.Query(getAllDynakubesStatement)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get all the volumes, err: %s", err)
+		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get all the dynakubes"))
 	}
 	dynakubes := []*Dynakube{}
 	defer func() { _ = rows.Close() }()
@@ -385,7 +391,7 @@ func (a *SqliteAccess) GetAllDynakubes() ([]*Dynakube, error) {
 		var imageDigest string
 		err := rows.Scan(&name, &tenantUUID, &version, &imageDigest)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan from database for volumes, err: %s", err)
+			return nil, errors.WithStack(errors.WithMessage(err, "couldn't scan dynakube from database"))
 		}
 		dynakubes = append(dynakubes, NewDynakube(name, tenantUUID, version, imageDigest))
 	}
@@ -393,10 +399,10 @@ func (a *SqliteAccess) GetAllDynakubes() ([]*Dynakube, error) {
 }
 
 // GetAllOsAgentVolumes gets all the OsAgentVolume from the database
-func (a *SqliteAccess) GetAllOsAgentVolumes() ([]*OsAgentVolume, error) {
-	rows, err := a.conn.Query(getAllOsAgentVolumes)
+func (access *SqliteAccess) GetAllOsAgentVolumes() ([]*OsAgentVolume, error) {
+	rows, err := access.conn.Query(getAllOsAgentVolumes)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get all the volumes, err: %s", err)
+		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get all the osagent volumes"))
 	}
 	osVolumes := []*OsAgentVolume{}
 	defer func() { _ = rows.Close() }()
@@ -407,20 +413,20 @@ func (a *SqliteAccess) GetAllOsAgentVolumes() ([]*OsAgentVolume, error) {
 		var timeStamp time.Time
 		err := rows.Scan(&tenantUUID, &volumeID, &mounted, &timeStamp)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan from database for volumes, err: %s", err)
+			return nil, errors.WithStack(errors.WithMessage(err, "couldn't scan osagent volume from database"))
 		}
 		osVolumes = append(osVolumes, NewOsAgentVolume(volumeID, tenantUUID, mounted, &timeStamp))
 	}
 	return osVolumes, nil
 }
 
-// GetUsedVersions gets all UNIQUE versions present in the `volumes` database in map.
+// GetUsedVersions gets all UNIQUE versions present in the `volumes` for a given tenantUUID database in map.
 // Map is used to make sure we don't return the same version multiple time,
 // it's also easier to check if a version is in it or not. (a Set in style of Golang)
-func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, error) {
-	rows, err := a.conn.Query(getUsedVersionsStatement, tenantUUID)
+func (access *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, error) {
+	rows, err := access.conn.Query(getUsedVersionsStatement, tenantUUID)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get used version info for tenant uuid '%s', err: %s", tenantUUID, err)
+		return nil, errors.WithStack(errors.WithMessagef(err, "couldn't get used version info for tenant uuid '%s'", tenantUUID))
 	}
 	versions := map[string]bool{}
 	defer func() { _ = rows.Close() }()
@@ -428,7 +434,7 @@ func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, erro
 		var version string
 		err := rows.Scan(&version)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan from database for tenant uuid '%s', err: %s", tenantUUID, err)
+			return nil, errors.WithStack(errors.WithMessagef(err, "couldn't scan used version info for tenant uuid '%s'", tenantUUID))
 		}
 		if _, ok := versions[version]; !ok {
 			versions[version] = true
@@ -437,11 +443,57 @@ func (a *SqliteAccess) GetUsedVersions(tenantUUID string) (map[string]bool, erro
 	return versions, nil
 }
 
-// GetPodNames gets all PodNames present in the `volumes` database in map with their corresponding volumeIDs.
-func (a *SqliteAccess) GetPodNames() (map[string]string, error) {
-	rows, err := a.conn.Query(getPodNamesStatement)
+// GetUsedVersions gets all UNIQUE versions present in the `volumes` database in map.
+// Map is used to make sure we don't return the same version multiple time,
+// it's also easier to check if a version is in it or not. (a Set in style of Golang)
+func (access *SqliteAccess) GetAllUsedVersions() (map[string]bool, error) {
+	rows, err := access.conn.Query(getAllUsedVersionsStatement)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get pod names, err: %s", err)
+		return nil, errors.WithStack(errors.WithMessagef(err, "couldn't get all used version info"))
+	}
+	versions := map[string]bool{}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var version string
+		err := rows.Scan(&version)
+		if err != nil {
+			return nil, errors.WithStack(errors.WithMessagef(err, "couldn't scan used version info"))
+		}
+		if _, ok := versions[version]; !ok {
+			versions[version] = true
+		}
+	}
+	return versions, nil
+}
+
+// GetUsedImageDigests gets all UNIQUE image digests present in the `dynakubes` database in a map.
+// Map is used to make sure we don't return the same digest multiple time,
+// it's also easier to check if a digest is in it or not. (a Set in style of Golang)
+func (access *SqliteAccess) GetUsedImageDigests() (map[string]bool, error) {
+	rows, err := access.conn.Query(getUsedImageDigestStatement)
+	if err != nil {
+		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get used image digests from database"))
+	}
+	imageDigests := map[string]bool{}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var digest string
+		err := rows.Scan(&digest)
+		if err != nil {
+			return nil, errors.WithStack(errors.WithMessage(err, "failed to scan from image digests database"))
+		}
+		if _, ok := imageDigests[digest]; !ok {
+			imageDigests[digest] = true
+		}
+	}
+	return imageDigests, nil
+}
+
+// GetPodNames gets all PodNames present in the `volumes` database in map with their corresponding volumeIDs.
+func (access *SqliteAccess) GetPodNames() (map[string]string, error) {
+	rows, err := access.conn.Query(getPodNamesStatement)
+	if err != nil {
+		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get all pod names"))
 	}
 	podNames := map[string]string{}
 	defer func() { _ = rows.Close() }()
@@ -450,7 +502,7 @@ func (a *SqliteAccess) GetPodNames() (map[string]string, error) {
 		var volumeID string
 		err := rows.Scan(&volumeID, &podName)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan from database for pod names, err: %s", err)
+			return nil, errors.WithStack(errors.WithMessage(err, "couldn't scan pod name from database"))
 		}
 		podNames[podName] = volumeID
 	}
@@ -458,10 +510,10 @@ func (a *SqliteAccess) GetPodNames() (map[string]string, error) {
 }
 
 // GetTenantsToDynakubes gets all Dynakubes and maps their name to the corresponding TenantUUID.
-func (a *SqliteAccess) GetTenantsToDynakubes() (map[string]string, error) {
-	rows, err := a.conn.Query(getTenantsToDynakubesStatement)
+func (access *SqliteAccess) GetTenantsToDynakubes() (map[string]string, error) {
+	rows, err := access.conn.Query(getTenantsToDynakubesStatement)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get dynakubes, err: %s", err)
+		return nil, errors.WithStack(errors.WithMessage(err, "couldn't get all tenants to dynakube metadata"))
 	}
 	dynakubes := map[string]string{}
 	defer func() { _ = rows.Close() }()
@@ -470,7 +522,7 @@ func (a *SqliteAccess) GetTenantsToDynakubes() (map[string]string, error) {
 		var dynakube string
 		err := rows.Scan(&uuid, &dynakube)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan from database for dynakube, err: %s", err)
+			return nil, errors.WithStack(errors.WithMessage(err, "couldn't scan tenant to dynakube metadata from database"))
 		}
 		dynakubes[dynakube] = uuid
 	}
@@ -479,20 +531,20 @@ func (a *SqliteAccess) GetTenantsToDynakubes() (map[string]string, error) {
 
 // Executes the provided SQL statement on the database.
 // The `vars` are passed to the SQL statement (in-order), to fill in the SQL wildcards.
-func (a *SqliteAccess) executeStatement(statement string, vars ...interface{}) error {
-	_, err := a.conn.Exec(statement, vars...)
-	return err
+func (access *SqliteAccess) executeStatement(statement string, vars ...interface{}) error {
+	_, err := access.conn.Exec(statement, vars...)
+	return errors.WithStack(err)
 }
 
 // Executes the provided SQL SELECT statement on the database.
 // The SQL statement should always return a single row.
 // The `id` is passed to the SQL query to fill in an SQL wildcard
 // The `vars` are filled with the values of the return of the SELECT statement, so the `vars` need to be pointers.
-func (a *SqliteAccess) querySimpleStatement(statement, id string, vars ...interface{}) error {
-	row := a.conn.QueryRow(statement, id)
+func (access *SqliteAccess) querySimpleStatement(statement, id string, vars ...interface{}) error {
+	row := access.conn.QueryRow(statement, id)
 	err := row.Scan(vars...)
 	if err != nil && err != sql.ErrNoRows {
-		return err
+		return errors.WithStack(err)
 	}
 	return nil
 }

@@ -13,7 +13,6 @@ import (
 	t_utils "github.com/Dynatrace/dynatrace-operator/src/testing"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,7 +58,7 @@ func TestUpdateAgent(t *testing.T) {
 		targetDir := updater.targetDir
 		updater.installer.(*installer.InstallerMock).
 			On("InstallAgent", targetDir).
-			Return(nil)
+			Return(true, nil)
 		updater.installer.(*installer.InstallerMock).
 			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
 			Return(nil)
@@ -81,10 +80,10 @@ func TestUpdateAgent(t *testing.T) {
 		)
 	})
 	t.Run(`update`, func(t *testing.T) {
-		updateOneagent(t, false)
+		testUpdateOneagent(t, false)
 	})
 	t.Run(`update to already installed version`, func(t *testing.T) {
-		updateOneagent(t, true)
+		testUpdateOneagent(t, true)
 	})
 	t.Run(`only process module config update`, func(t *testing.T) {
 		dk := dynatracev1beta1.DynaKube{
@@ -105,6 +104,9 @@ func TestUpdateAgent(t *testing.T) {
 		processModuleCache := createTestProcessModuleConfigCache("other")
 		targetDir := updater.targetDir
 		updater.installer.(*installer.InstallerMock).
+			On("InstallAgent", targetDir).
+			Return(false, nil)
+		updater.installer.(*installer.InstallerMock).
 			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
 			Return(nil)
 		_ = updater.fs.MkdirAll(targetDir, 0755)
@@ -114,7 +116,7 @@ func TestUpdateAgent(t *testing.T) {
 			&processModuleCache)
 
 		require.NoError(t, err)
-		assert.Equal(t, "", currentVersion)
+		assert.Equal(t, testVersion, currentVersion)
 	})
 	t.Run(`failed install`, func(t *testing.T) {
 		dk := dynatracev1beta1.DynaKube{
@@ -142,7 +144,7 @@ func TestUpdateAgent(t *testing.T) {
 			Return()
 		updater.installer.(*installer.InstallerMock).
 			On("InstallAgent", targetDir).
-			Return(fmt.Errorf("BOOM"))
+			Return(false, fmt.Errorf("BOOM"))
 
 		currentVersion, err := updater.updateAgent(
 			testVersion,
@@ -201,7 +203,7 @@ func TestUpdateAgent(t *testing.T) {
 		targetDir := updater.targetDir
 		updater.installer.(*installer.InstallerMock).
 			On("InstallAgent", targetDir).
-			Return(nil)
+			Return(true, nil)
 		updater.installer.(*installer.InstallerMock).
 			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
 			Return(nil)
@@ -266,7 +268,7 @@ func TestUpdateAgent(t *testing.T) {
 
 		updater.installer.(*installer.InstallerMock).
 			On("InstallAgent", targetDir).
-			Return(nil)
+			Return(true, nil)
 		updater.installer.(*installer.InstallerMock).
 			On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
 			Return(nil)
@@ -281,7 +283,7 @@ func TestUpdateAgent(t *testing.T) {
 	})
 }
 
-func updateOneagent(t *testing.T, alreadyInstalled bool) {
+func testUpdateOneagent(t *testing.T, alreadyInstalled bool) {
 	dk := dynatracev1beta1.DynaKube{
 		Spec: dynatracev1beta1.DynaKubeSpec{
 			APIURL: "https://" + testTenantUUID + ".dynatrace.com",
@@ -300,16 +302,12 @@ func updateOneagent(t *testing.T, alreadyInstalled bool) {
 	previousHash := "1"
 	processModuleCache := createTestProcessModuleConfigCache(previousHash)
 	targetDir := updater.targetDir
-	installerCalled := false
 	updater.installer.(*installer.InstallerMock).
 		On("SetVersion", testVersion).
 		Return()
 	updater.installer.(*installer.InstallerMock).
 		On("InstallAgent", targetDir).
-		Run(func(args mock.Arguments) {
-			installerCalled = true
-		}).
-		Return(nil)
+		Return(!alreadyInstalled, nil)
 	updater.installer.(*installer.InstallerMock).
 		On("UpdateProcessModuleConfig", targetDir, &testProcessModuleConfig).
 		Return(nil)
@@ -322,13 +320,7 @@ func updateOneagent(t *testing.T, alreadyInstalled bool) {
 		&processModuleCache)
 
 	require.NoError(t, err)
-	if installerCalled {
-		assert.Equal(t, testVersion, currentVersion)
-	} else {
-		assert.Empty(t, currentVersion)
-	}
-
-	assert.Equal(t, !alreadyInstalled, installerCalled)
+	assert.Equal(t, testVersion, currentVersion)
 }
 
 func createTestAgentUrlUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube) *agentUpdater {

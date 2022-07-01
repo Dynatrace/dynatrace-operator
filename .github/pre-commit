@@ -31,7 +31,7 @@ else
     for file in $STAGED_GO_FILES; do
         gofmt -w $file
         goimports -w $file
-        gci -w $file
+        gci write $file
         ## add any potential changes from our formatting to the
         ## commit
         git add $file
@@ -44,14 +44,14 @@ if [[ $res -ne 0 ]]; then
     echo "Linting failed"
     exit 2
 fi
-​
+
 # Unit tests
-​
+
 #exec < /dev/tty
 #read -p "Run unit tests[y/n]? " -n 1 -r
 #exec <&-
 REPLY=y
-​
+
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Run unit tests..."
     go test ./...

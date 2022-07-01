@@ -193,7 +193,11 @@ func (publisher *AppVolumePublisher) umountOneAgent(targetPath string, overlayFS
 }
 
 func (publisher *AppVolumePublisher) storeVolume(bindCfg *csivolumes.BindConfig, volumeCfg *csivolumes.VolumeConfig) error {
-	volume := metadata.NewVolume(volumeCfg.VolumeID, volumeCfg.PodName, bindCfg.Version, bindCfg.TenantUUID)
+	version := bindCfg.Version
+	if bindCfg.ImageDigest != "" {
+		version = bindCfg.ImageDigest
+	}
+	volume := metadata.NewVolume(volumeCfg.VolumeID, volumeCfg.PodName, version, bindCfg.TenantUUID)
 	log.Info("inserting volume info", "ID", volume.VolumeID, "PodUID", volume.PodName, "Version", volume.Version, "TenantUUID", volume.TenantUUID)
 	return publisher.db.InsertVolume(volume)
 }

@@ -189,6 +189,8 @@ func (provisioner *OneAgentProvisioner) updateAgentInstallation(ctx context.Cont
 		imageInstaller, isImageInstaller := agentUpdater.installer.(*image.ImageInstaller)
 		if isImageInstaller {
 			dynakubeMetadata.ImageDigest = imageInstaller.ImageDigest()
+		} else {
+			dynakubeMetadata.ImageDigest = ""
 		}
 	}
 	return latestProcessModuleConfigCache, false, nil

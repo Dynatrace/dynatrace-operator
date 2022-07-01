@@ -16,7 +16,7 @@ func (installer UrlInstaller) downloadOneAgentFromUrl(tmpFile afero.File) error 
 		}
 	} else {
 		if err := installer.downloadOneAgentWithVersion(tmpFile); err != nil {
-			return errors.WithStack(err)
+			return err
 		}
 	}
 	return nil
