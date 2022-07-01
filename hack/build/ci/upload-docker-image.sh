@@ -1,15 +1,20 @@
 #!/bin/bash
 
-if [ -z "$3" ]
+set -x
+
+if [ -z "$2" ]
 then
-  echo "Usage: $0 <platform> <source_image> <target_image>"
+  echo "Usage: $0 <platform> <targetImageTag>"
   exit 1
 fi
 
-platform=$1
-source_image=$2
-target_image=$3
+readonly platform=${1}
+readonly targetImageTag=${2}
+readonly imageTarPath="/tmp/operator-${platform}.tar"
 
-docker load --input "/tmp/operator-${platform}.tar"
-docker tag "${source_image}" "${target_image}"
-docker push "${target_image}"
+docker load -i "${imageTarPath}"
+srcImageTag=$(docker load -i "${imageTarPath}" | cut -d' ' -f3)
+
+docker load --input "${imageTarPath}"
+docker tag "${srcImageTag}" "${targetImageTag}"
+docker push "${targetImageTag}"

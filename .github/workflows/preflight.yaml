@@ -1,0 +1,35 @@
+name: preflight
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      registry:
+        required: true
+        type: string
+      repository:
+        required: true
+        type: string
+
+env:
+  PREFLIGHT_VERSION: "1.3.0"
+  PROJECT_ID: "ospid-37afb7f1-4eea-4feb-9125-9d57526bf5ab"
+  IMAGE_TAG: ${{ inputs.registry }}/${{ inputs.repository }}:${{ inputs.version }}-${{ inputs.platform }}
+
+jobs:
+  preflight:
+    name: Run preflight on image
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Run preflight on image
+#      env:
+#        APITOKEN: ${{ secrets.rhcc-token }}
+      run: |
+        hack/build/ci/preflight.sh "${{ env.PREFLIGHT_VERSION }}" "${{ env.IMAGE_TAG }}"
