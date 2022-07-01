@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Dynatrace/dynatrace-operator/src/installer/common"
 	"github.com/klauspost/compress/gzip"
 	"github.com/spf13/afero"
 )
@@ -97,7 +98,7 @@ func extractSymlink(fs afero.Fs, targetDir, target string, header *tar.Header) e
 func extractFile(fs afero.Fs, target string, header *tar.Header, tarReader *tar.Reader) error {
 	mode := header.Mode
 	if isAgentConfFile(header.Name) {
-		mode |= 020
+		mode = common.ReadWriteAllFileMode
 	}
 	destinationFile, err := fs.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(mode))
 	defer (func() { _ = destinationFile.Close() })()
