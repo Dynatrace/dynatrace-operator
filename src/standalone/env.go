@@ -28,6 +28,7 @@ type environment struct {
 	K8NodeName    string `json:"k8NodeName"`
 	K8PodName     string `json:"k8PodName"`
 	K8PodUID      string `json:"k8BasePodUID"`
+	K8ClusterID   string `json:"k8ClusterID"`
 	K8BasePodName string `json:"k8BasePodName"`
 	K8Namespace   string `json:"k8Namespace"`
 
@@ -74,6 +75,7 @@ func (env *environment) setRequiredFields() error {
 		dataIngestFieldSetters := []func() error{
 			env.addWorkloadKind,
 			env.addWorkloadName,
+			env.addK8ClusterID,
 		}
 		requiredFieldSetters = append(requiredFieldSetters, dataIngestFieldSetters...)
 	}
@@ -197,6 +199,15 @@ func (env *environment) addK8PodUID() error {
 		return err
 	}
 	env.K8PodUID = podUID
+	return nil
+}
+
+func (env *environment) addK8ClusterID() error {
+	clusterID, err := checkEnvVar(K8ClusterIDEnv)
+	if err != nil {
+		return err
+	}
+	env.K8ClusterID = clusterID
 	return nil
 }
 

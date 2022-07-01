@@ -51,6 +51,7 @@ func prepTestEnv(t *testing.T) func() {
 		K8NamespaceEnv,
 		WorkloadKindEnv,
 		WorkloadNameEnv,
+		K8ClusterIDEnv,
 		InstallPathEnv,
 	}
 	for i := 1; i <= 5; i++ {
