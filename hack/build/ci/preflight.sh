@@ -22,11 +22,6 @@ check_image() {
   grep "Preflight result: PASSED" "${PREFLIGHT_LOG}" || exit 1
 }
 
-submit_result() {
-  echo "submit"
-#echo ./preflight check container "${IMAGE_TAG}" --submit --pyxis-api-token="${APITOKEN}" --certification-project-id="${PROJECT_ID}" --docker-config=./docker-config.json
-}
 
 download_preflight
 check_image
-submit_result

@@ -29,7 +29,5 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Run preflight on image
-#      env:
-#        APITOKEN: ${{ secrets.rhcc-token }}
       run: |
         hack/build/ci/preflight.sh "${{ env.PREFLIGHT_VERSION }}" "${{ env.IMAGE_TAG }}"
