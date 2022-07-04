@@ -47,4 +47,4 @@ jobs:
           path: /tmp
       - name: Upload image to Registry
         run: |
-          hack/build/ci/upload-docker-image.sh "${{ inputs.platform }}" "${SOURCE_IMAGE_TAG}" "${TARGET_IMAGE_TAG}"
+          hack/build/ci/upload-docker-image.sh "${{ inputs.platform }}" "${TARGET_IMAGE_TAG}"

@@ -24,7 +24,7 @@ jobs:
 
   # Workflow needs to build docker images again as separate workflows don't have access to others artifacts
   # https://github.com/actions/download-artifact/issues/3
-  build-amd:
+  build-amd64:
     name: Build amd image
     uses: ./.github/workflows/build-dockerimage.yaml
     needs: [prepare]
@@ -46,10 +46,34 @@ jobs:
       labels: ${{ needs.prepare.outputs.labels }}
       image-tag: ${{ needs.prepare.outputs.version }}
 
+  push-quay:
+    name: Push to quay
+    needs: [prepare, build-amd64]
+    uses: ./.github/workflows/upload-dockerimage.yaml
+    with:
+      platform: amd64
+      labels: ${{ needs.prepare.outputs.labels }}
+      version: ${{ needs.prepare.outputs.version }}
+      registry: quay.io
+      repository: dynatrace/dynatrace-operator
+    secrets:
+      docker_repo_username: ${{ secrets.QUAY_USERNAME }}
+      docker_repo_password: ${{ secrets.QUAY_PASSWORD }}
+
+  preflight:
+    name: Validate image with RedHat's preflight tool
+    needs: [prepare, push-quay]
+    uses: ./.github/workflows/preflight.yaml
+    with:
+      platform: amd64
+      version: ${{ needs.prepare.outputs.version }}
+      registry: quay.io
+      repository: dynatrace/dynatrace-operator
+
   push-dockerhub-amd:
     name: Push amd image to Dockerhub
     uses: ./.github/workflows/upload-dockerimage.yaml
-    needs: [prepare, build-amd]
+    needs: [prepare, build-amd64, preflight]
     with:
       platform: amd64
       labels: ${{ needs.prepare.outputs.labels }}
@@ -63,7 +87,7 @@ jobs:
   push-dockerhub-arm:
     name: Push arm image to Dockerhub
     uses: ./.github/workflows/upload-dockerimage.yaml
-    needs: [prepare, build-arm]
+    needs: [prepare, build-arm, preflight]
     with:
      platform: arm64
      labels: ${{ needs.prepare.outputs.labels }}
@@ -77,7 +101,7 @@ jobs:
 #  push-gcr-amd:
 #    name: Push amd image to GCR
 #    uses: ./.github/workflows/upload-dockerimage.yaml
-#    needs: [prepare, build-amd]
+#    needs: [prepare, build-amd64, preflight]
 #    with:
 #      platform: amd64
 #      labels: ${{ needs.prepare.outputs.labels }}
@@ -91,7 +115,7 @@ jobs:
 #  push-gcr-arm:
 #    name: Push arm image to GCR
 #    uses: ./.github/workflows/upload-dockerimage.yaml
-#    needs: [prepare, build-arm]
+#    needs: [prepare, build-arm, preflight]
 #    with:
 #      platform: arm64
 #      labels: ${{ needs.prepare.outputs.labels }}
@@ -105,7 +129,7 @@ jobs:
 #  push-rhcc-amd:
 #    name: Push amd image to RHCC
 #    uses: ./.github/workflows/upload-dockerimage.yaml
-#    needs: [prepare, build-amd]
+#    needs: [prepare, build-amd64, preflight]
 #    with:
 #      platform: amd64
 #      labels: ${{ needs.prepare.outputs.labels }}
