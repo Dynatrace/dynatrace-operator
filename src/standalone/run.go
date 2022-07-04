@@ -37,7 +37,7 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 			return nil, err
 		}
 
-		client, err := newDTClientBuilder(config).createClient()
+		client, err = newDTClientBuilder(config).createClient()
 		if err != nil {
 			return nil, err
 		}
