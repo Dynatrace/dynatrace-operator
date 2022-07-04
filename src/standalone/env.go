@@ -57,27 +57,11 @@ func (env *environment) setRequiredFields() error {
 		env.addCanFail,
 	}
 	if env.OneAgentInjected {
-		oneAgentFieldSetters := []func() error{
-			env.addMode,
-			env.addInstallerTech,
-			env.addInstallPath,
-			env.addContainers,
-			env.addK8NodeName,
-			env.addK8PodName,
-			env.addK8PodUID,
-			env.addK8BasePodName,
-			env.addK8Namespace,
-		}
-		requiredFieldSetters = append(requiredFieldSetters, oneAgentFieldSetters...)
+		requiredFieldSetters = append(requiredFieldSetters, env.getOneAgentFieldSetters()...)
 	}
 
 	if env.DataIngestInjected {
-		dataIngestFieldSetters := []func() error{
-			env.addWorkloadKind,
-			env.addWorkloadName,
-			env.addK8ClusterID,
-		}
-		requiredFieldSetters = append(requiredFieldSetters, dataIngestFieldSetters...)
+		requiredFieldSetters = append(requiredFieldSetters, env.getDataIngestFieldSetters()...)
 	}
 
 	for _, setField := range requiredFieldSetters {
@@ -90,6 +74,28 @@ func (env *environment) setRequiredFields() error {
 		return errors.Errorf("%d envvars missing", len(errs))
 	}
 	return nil
+}
+
+func (env *environment) getOneAgentFieldSetters() []func() error {
+	return []func() error{
+		env.addMode,
+		env.addInstallerTech,
+		env.addInstallPath,
+		env.addContainers,
+		env.addK8NodeName,
+		env.addK8PodName,
+		env.addK8PodUID,
+		env.addK8BasePodName,
+		env.addK8Namespace,
+	}
+}
+
+func (env *environment) getDataIngestFieldSetters() []func() error {
+	return []func() error{
+		env.addWorkloadKind,
+		env.addWorkloadName,
+		env.addK8ClusterID,
+	}
 }
 
 func (env *environment) setOptionalFields() {
