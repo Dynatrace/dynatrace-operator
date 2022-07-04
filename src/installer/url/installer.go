@@ -12,13 +12,14 @@ import (
 )
 
 type Properties struct {
-	Os           string
-	Arch         string
-	Type         string
-	Flavor       string
-	Version      string
-	Technologies []string
-	Url          string // if this is set all settings before it will be ignored
+	Os              string
+	Arch            string
+	Type            string
+	Flavor          string
+	TargetVersion   string
+	PreviousVersion string
+	Technologies    []string
+	Url             string // if this is set all settings before it will be ignored
 }
 
 func (props *Properties) fillEmptyWithDefaults() {
@@ -91,7 +92,7 @@ func (installer UrlInstaller) installAgentFromUrl(targetDir string) error {
 }
 
 func (installer UrlInstaller) isAlreadyDownloaded(targetDir string) bool {
-	if standaloneBinDir == targetDir {
+	if standaloneBinDir == targetDir || installer.props.PreviousVersion == "" {
 		return false
 	}
 	_, err := installer.fs.Stat(targetDir)
