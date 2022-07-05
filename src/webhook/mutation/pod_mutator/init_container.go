@@ -11,7 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func createInstallInitContainerBase(webhookImage string, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *corev1.Container {
+func createInstallInitContainerBase(webhookImage, clusterID string, pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) *corev1.Container {
 	return &corev1.Container{
 		Name:            dtwebhook.InstallContainerName,
 		Image:           webhookImage,
@@ -23,14 +23,12 @@ func createInstallInitContainerBase(webhookImage string, pod *corev1.Pod, dynaku
 			{Name: standalone.K8PodNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.name")},
 			{Name: standalone.K8PodUIDEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.uid")},
 			{Name: standalone.K8BasePodNameEnv, Value: getBasePodName(pod)},
+			{Name: standalone.K8ClusterIDEnv, Value: clusterID},
 			{Name: standalone.K8NamespaceEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("metadata.namespace")},
 			{Name: standalone.K8NodeNameEnv, ValueFrom: kubeobjects.NewEnvVarSourceForField("spec.nodeName")},
 		},
 		SecurityContext: copyUserContainerSecurityContext(pod),
-		VolumeMounts: []corev1.VolumeMount{
-			{Name: injectionConfigVolumeName, MountPath: standalone.ConfigDirMount},
-		},
-		Resources: *dynakube.InitResources(),
+		Resources:       *dynakube.InitResources(),
 	}
 }
 

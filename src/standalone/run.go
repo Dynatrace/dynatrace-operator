@@ -23,31 +23,39 @@ type Runner struct {
 
 func NewRunner(fs afero.Fs) (*Runner, error) {
 	log.Info("creating standalone runner")
-	config, err := newSecretConfigViaFs(fs)
-	if err != nil {
-		return nil, err
-	}
 	env, err := newEnv()
 	if err != nil {
 		return nil, err
 	}
-	client, err := newDTClientBuilder(config).createClient()
-	if err != nil {
-		return nil, err
+
+	var config *SecretConfig
+	var client dtclient.Client
+	var oneAgentInstaller *url.UrlInstaller
+	if env.OneAgentInjected {
+		config, err = newSecretConfigViaFs(fs)
+		if err != nil {
+			return nil, err
+		}
+
+		client, err = newDTClientBuilder(config).createClient()
+		if err != nil {
+			return nil, err
+		}
+
+		oneAgentInstaller = url.NewUrlInstaller(
+			fs,
+			client,
+			&url.Properties{
+				Os:            dtclient.OsUnix,
+				Type:          dtclient.InstallerTypePaaS,
+				Flavor:        env.InstallerFlavor,
+				Arch:          arch.Arch,
+				Technologies:  env.InstallerTech,
+				TargetVersion: url.VersionLatest,
+				Url:           env.InstallerUrl,
+			},
+		)
 	}
-	oneAgentInstaller := url.NewUrlInstaller(
-		fs,
-		client,
-		&url.Properties{
-			Os:            dtclient.OsUnix,
-			Type:          dtclient.InstallerTypePaaS,
-			Flavor:        env.InstallerFlavor,
-			Arch:          arch.Arch,
-			Technologies:  env.InstallerTech,
-			TargetVersion: url.VersionLatest,
-			Url:           env.InstallerUrl,
-		},
-	)
 	log.Info("standalone runner created successfully")
 	return &Runner{
 		fs:        fs,
@@ -62,15 +70,17 @@ func (runner *Runner) Run() (resultedError error) {
 	log.Info("standalone agent init started")
 	defer runner.consumeErrorIfNecessary(&resultedError)
 
-	if err := runner.setHostTenant(); err != nil {
-		return err
-	}
-
-	if runner.env.Mode == InstallerMode && runner.env.OneAgentInjected {
-		if err := runner.installOneAgent(); err != nil {
+	if runner.env.OneAgentInjected {
+		if err := runner.setHostTenant(); err != nil {
 			return err
 		}
-		log.Info("OneAgent download finished")
+
+		if runner.env.Mode == InstallerMode {
+			if err := runner.installOneAgent(); err != nil {
+				return err
+			}
+			log.Info("OneAgent download finished")
+		}
 	}
 
 	err := runner.configureInstallation()
