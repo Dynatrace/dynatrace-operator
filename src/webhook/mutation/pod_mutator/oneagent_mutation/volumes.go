@@ -77,6 +77,12 @@ func addInjectionConfigVolume(pod *corev1.Pod) {
 	)
 }
 
+func addInjectionConfigVolumeMount(container *corev1.Container) {
+	container.VolumeMounts = append(container.VolumeMounts,
+		corev1.VolumeMount{Name: injectionConfigVolumeName, MountPath: standalone.ConfigDirMount},
+	)
+}
+
 func addOneAgentVolumes(pod *corev1.Pod, dynakube dynatracev1beta1.DynaKube) {
 	pod.Spec.Volumes = append(pod.Spec.Volumes,
 		corev1.Volume{

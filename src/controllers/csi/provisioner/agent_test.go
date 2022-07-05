@@ -64,7 +64,6 @@ func TestUpdateAgent(t *testing.T) {
 			Return(nil)
 
 		currentVersion, err := updater.updateAgent(
-			testVersion,
 			&processModuleCache)
 
 		require.NoError(t, err)
@@ -112,7 +111,6 @@ func TestUpdateAgent(t *testing.T) {
 		_ = updater.fs.MkdirAll(targetDir, 0755)
 
 		currentVersion, err := updater.updateAgent(
-			testVersion,
 			&processModuleCache)
 
 		require.NoError(t, err)
@@ -147,7 +145,6 @@ func TestUpdateAgent(t *testing.T) {
 			Return(false, fmt.Errorf("BOOM"))
 
 		currentVersion, err := updater.updateAgent(
-			testVersion,
 			&processModuleCache)
 
 		require.Error(t, err)
@@ -209,7 +206,6 @@ func TestUpdateAgent(t *testing.T) {
 			Return(nil)
 
 		currentVersion, err := updater.updateAgent(
-			testVersion,
 			&processModuleConfig)
 		require.NoError(t, err)
 		assert.Equal(t, tag, currentVersion)
@@ -274,7 +270,6 @@ func TestUpdateAgent(t *testing.T) {
 			Return(nil)
 
 		currentVersion, err := updater.updateAgent(
-			testVersion,
 			&processModuleConfig)
 		require.NoError(t, err)
 		assert.Equal(t, tag, currentVersion)
@@ -316,7 +311,6 @@ func testUpdateOneagent(t *testing.T, alreadyInstalled bool) {
 	}
 
 	currentVersion, err := updater.updateAgent(
-		"other",
 		&processModuleCache)
 
 	require.NoError(t, err)
@@ -329,7 +323,7 @@ func createTestAgentUrlUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube) *age
 	fs := afero.NewMemMapFs()
 	rec := record.NewFakeRecorder(10)
 
-	updater, err := newAgentUrlUpdater(context.TODO(), fs, &mockedClient, path, rec, dk)
+	updater, err := newAgentUrlUpdater(context.TODO(), fs, &mockedClient, testVersion, path, rec, dk)
 	require.NoError(t, err)
 	updater.installer = &installer.InstallerMock{}
 

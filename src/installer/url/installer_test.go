@@ -118,10 +118,10 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			fs:  fs,
 			dtc: dtc,
 			props: &Properties{
-				Os:      dtclient.OsUnix,
-				Type:    dtclient.InstallerTypePaaS,
-				Flavor:  arch.FlavorMultidistro,
-				Version: testVersion,
+				Os:            dtclient.OsUnix,
+				Type:          dtclient.InstallerTypePaaS,
+				Flavor:        arch.FlavorMultidistro,
+				TargetVersion: testVersion,
 			},
 		}
 
@@ -154,10 +154,10 @@ func TestInstallAgentFromUrl(t *testing.T) {
 			fs:  fs,
 			dtc: dtc,
 			props: &Properties{
-				Os:      dtclient.OsUnix,
-				Type:    dtclient.InstallerTypePaaS,
-				Flavor:  arch.FlavorMultidistro,
-				Version: VersionLatest,
+				Os:            dtclient.OsUnix,
+				Type:          dtclient.InstallerTypePaaS,
+				Flavor:        arch.FlavorMultidistro,
+				TargetVersion: VersionLatest,
 			},
 		}
 
@@ -201,5 +201,39 @@ func TestInstallAgentFromUrl(t *testing.T) {
 		assert.NotNil(t, info)
 		assert.False(t, info.IsDir())
 		assert.Equal(t, int64(25), info.Size())
+	})
+}
+
+func TestIsAlreadyDownloaded(t *testing.T) {
+	t.Run(`true if exits and not standalone and previous set`, func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		targetDir := "test/test"
+		fs.MkdirAll(targetDir, 0666)
+		installer := &UrlInstaller{
+			fs: fs,
+			props: &Properties{
+				PreviousVersion: "test",
+			},
+		}
+		assert.True(t, installer.isAlreadyDownloaded(targetDir))
+	})
+	t.Run(`false if standalone`, func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		targetDir := standaloneBinDir
+		installer := &UrlInstaller{
+			fs:    fs,
+			props: &Properties{},
+		}
+		assert.False(t, installer.isAlreadyDownloaded(targetDir))
+	})
+	t.Run(`false if previous not set`, func(t *testing.T) {
+		fs := afero.NewMemMapFs()
+		targetDir := "test/test"
+		fs.MkdirAll(targetDir, 0666)
+		installer := &UrlInstaller{
+			fs:    fs,
+			props: &Properties{},
+		}
+		assert.False(t, installer.isAlreadyDownloaded(targetDir))
 	})
 }

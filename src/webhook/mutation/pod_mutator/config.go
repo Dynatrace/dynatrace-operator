@@ -8,8 +8,6 @@ const (
 	injectEvent          = "Inject"
 	updatePodEvent       = "UpdatePod"
 	missingDynakubeEvent = "MissingDynakube"
-
-	injectionConfigVolumeName = "injection-config"
 )
 
 var (
