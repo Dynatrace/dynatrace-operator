@@ -21,7 +21,7 @@ createDockerImageLabels() {
 }
 
 setBuildRelatedVariables() {
-  echo ::set-output name=go_build_args::"${go_build_args}"
+  echo ::set-output name=go_linker_args::"${go_linker_args}"
   echo ::set-output name=docker_image_labels::"${docker_image_labels}"
   echo ::set-output name=docker_image_tag::"${docker_image_tag}"
 }
@@ -29,6 +29,6 @@ setBuildRelatedVariables() {
 # prepare variables
 docker_image_tag=$(createDockerImageTag)
 docker_image_labels=$(createDockerImageLabels)
-go_build_args=$(hack/build/create_go_build_args.sh "${docker_image_tag}" "${GITHUB_SHA}")
+go_linker_args=$(hack/build/create_go_build_args.sh "${docker_image_tag}" "${GITHUB_SHA}")
 setBuildRelatedVariables
 
