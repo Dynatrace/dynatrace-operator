@@ -47,12 +47,13 @@ func extractFileFromZip(fs afero.Fs, targetDir string, file *zip.File) error {
 	}
 
 	mode := file.Mode()
-	if isAgentConfFile(file.Name) {
-		mode = common.ReadWriteAllFileMode
-	}
 
 	if file.FileInfo().IsDir() {
 		return fs.MkdirAll(path, mode)
+	}
+
+	if isAgentConfFile(file.Name) {
+		mode = common.ReadWriteAllFileMode
 	}
 
 	if err := fs.MkdirAll(filepath.Dir(path), mode); err != nil {
