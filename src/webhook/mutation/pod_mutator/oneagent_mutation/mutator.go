@@ -47,6 +47,7 @@ func (mutator *OneAgentPodMutator) Mutate(request *dtwebhook.MutationRequest) er
 	mutator.addVolumes(request.Pod, request.DynaKube)
 	mutator.configureInitContainer(request, installerInfo)
 	mutator.mutateUserContainers(request)
+	addInjectionConfigVolumeMount(request.InstallContainer)
 	setInjectedAnnotation(request.Pod)
 	return nil
 }

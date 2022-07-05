@@ -9,7 +9,7 @@ on:
       goversion:
         required: true
         type: string
-      goargs:
+      golinkerargs:
         required: true
         type: string
       labels:
@@ -50,7 +50,7 @@ jobs:
         with:
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
-            GO_BUILD_ARGS=${{ inputs.goargs }}
+            GO_LINKER_ARGS=${{ inputs.golinkerargs }}
           context: .
           file: ./Dockerfile
           platforms: linux/${{ inputs.platform }}

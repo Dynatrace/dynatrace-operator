@@ -10,7 +10,7 @@ func (installer UrlInstaller) downloadOneAgentFromUrl(tmpFile afero.File) error 
 		if err := installer.downloadOneAgentViaInstallerUrl(tmpFile); err != nil {
 			return errors.WithStack(err)
 		}
-	} else if installer.props.Version == VersionLatest {
+	} else if installer.props.TargetVersion == VersionLatest {
 		if err := installer.downloadLatestOneAgent(tmpFile); err != nil {
 			return errors.WithStack(err)
 		}
@@ -35,13 +35,13 @@ func (installer UrlInstaller) downloadLatestOneAgent(tmpFile afero.File) error {
 }
 
 func (installer UrlInstaller) downloadOneAgentWithVersion(tmpFile afero.File) error {
-	log.Info("downloading specific OneAgent package", "version", installer.props.Version)
+	log.Info("downloading specific OneAgent package", "version", installer.props.TargetVersion)
 	err := installer.dtc.GetAgent(
 		installer.props.Os,
 		installer.props.Type,
 		installer.props.Flavor,
 		installer.props.Arch,
-		installer.props.Version,
+		installer.props.TargetVersion,
 		installer.props.Technologies,
 		tmpFile,
 	)
@@ -57,7 +57,7 @@ func (installer UrlInstaller) downloadOneAgentWithVersion(tmpFile afero.File) er
 			log.Info("failed to get available versions", "err", getVersionsError)
 			return errors.WithStack(getVersionsError)
 		}
-		log.Info("failed to download specific OneAgent package", "version", installer.props.Version, "available versions", availableVersions)
+		log.Info("failed to download specific OneAgent package", "version", installer.props.TargetVersion, "available versions", availableVersions)
 		return errors.WithStack(err)
 	}
 	return nil
