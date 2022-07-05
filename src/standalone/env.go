@@ -42,11 +42,12 @@ type environment struct {
 func newEnv() (*environment, error) {
 	log.Info("checking envvars")
 	env := &environment{}
-	env.setOptionalFields()
+	env.setMutationTypeFields()
 	err := env.setRequiredFields()
 	if err != nil {
 		return nil, err
 	}
+	env.setOptionalFields()
 	log.Info("envvars checked", "env", env)
 	return env, nil
 }
@@ -101,6 +102,9 @@ func (env *environment) getDataIngestFieldSetters() []func() error {
 func (env *environment) setOptionalFields() {
 	env.addInstallerUrl()
 	env.addInstallerFlavor()
+}
+
+func (env *environment) setMutationTypeFields() {
 	env.addOneAgentInjected()
 	env.addDataIngestInjected()
 }
