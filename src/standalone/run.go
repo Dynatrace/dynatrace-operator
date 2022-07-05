@@ -46,13 +46,13 @@ func NewRunner(fs afero.Fs) (*Runner, error) {
 			fs,
 			client,
 			&url.Properties{
-				Os:           dtclient.OsUnix,
-				Type:         dtclient.InstallerTypePaaS,
-				Flavor:       env.InstallerFlavor,
-				Arch:         arch.Arch,
-				Technologies: env.InstallerTech,
-				TargetVersion:      url.VersionLatest,
-				Url:          env.InstallerUrl,
+				Os:            dtclient.OsUnix,
+				Type:          dtclient.InstallerTypePaaS,
+				Flavor:        env.InstallerFlavor,
+				Arch:          arch.Arch,
+				Technologies:  env.InstallerTech,
+				TargetVersion: url.VersionLatest,
+				Url:           env.InstallerUrl,
 			},
 		)
 	}

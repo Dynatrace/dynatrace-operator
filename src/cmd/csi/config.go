@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	log              = logger.NewDTLogger().WithName("csi-launcher")
+	_ = logger.NewDTLogger().WithName("csi-launcher")
 )
