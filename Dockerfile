@@ -11,7 +11,7 @@ WORKDIR /app
 # move previously cached go modules to gopath
 RUN if [ -d ./mod ]; then mkdir -p ${GOPATH}/pkg && [ -d mod ] && mv ./mod ${GOPATH}/pkg; fi;
 
-RUN CGO_ENABLED=1 go build "${GO_BUILD_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/operator/
+RUN CGO_ENABLED=1 go build -ldflags="${GO_BUILD_ARGS}" -o ./build/_output/bin/dynatrace-operator ./src/cmd/operator/
 
 FROM registry.access.redhat.com/ubi8-minimal:8.5 as dependency-src
 
@@ -23,8 +23,8 @@ FROM registry.access.redhat.com/ubi8-micro:8.5
 COPY --from=operator-build /etc/ssl/cert.pem /etc/ssl/cert.pem
 COPY --from=operator-build /app/build/_output/bin /usr/local/bin
 
-COPY --from=operator-build /lib/libc.musl-x86_64.so.* /lib/
-COPY --from=operator-build /lib/ld-musl-x86_64.so.* /lib/
+COPY --from=operator-build /lib/libc.musl-*.so.* /lib/
+COPY --from=operator-build /lib/ld-musl-*.so.* /lib/
 
 COPY --from=operator-build /lib/libdevmapper.so.* /lib/
 
