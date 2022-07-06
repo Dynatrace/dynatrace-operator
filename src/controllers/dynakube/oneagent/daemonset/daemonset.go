@@ -255,9 +255,9 @@ func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
 
 func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
 	if dsInfo.instance.IsOneAgentPrivileged() {
-		runAsPrivileged := true
 		securityContext := &corev1.SecurityContext{
-			Privileged: &runAsPrivileged,
+			Privileged:   address.Of(true),
+			RunAsNonRoot: address.Of(true),
 		}
 		return securityContext
 	}
