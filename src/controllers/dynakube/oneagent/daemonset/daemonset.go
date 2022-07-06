@@ -259,6 +259,7 @@ func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
 			Privileged:   address.Of(true),
 			RunAsNonRoot: address.Of(true),
 			RunAsUser:    address.Of(int64(1000)),
+			RunAsGroup:   address.Of(int64(1000)),
 		}
 		return securityContext
 	}
