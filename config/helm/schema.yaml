@@ -15,75 +15,31 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 0.7.0
+  publishedVersion: 0.7.1
   publishedVersionMetadata:
-    releaseNote: >-
-      ## What's Changed
+    releaseNote: '<!-- Release notes generated using configuration in .github/release.yml
+      at v0.7.1 -->
+
+
+      ## What''s Changed
+
       ### Bugfixes
-      * Fixes using wrong tag for immutable image when version is set by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/694
-      * Add RW volume for AG tls certificate by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/721
-      * Add an validator to verify correctness of ProxyUrl string/secret by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/706
-      * Update agent config during init only in case of installer mode by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/718
-      * Adapt error handling of invalid revision.json by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/734
-      * Add feature flag for ignoring proxy within oneAgent and activeGate by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/737
-      * Improve logs for `ruxitagentproc.conf` cache deletion by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/756
-      * Replace the latest oneagent version endpoint to use the versions endpoint by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/762
-      * Fixes unintentional introduction of DEPLOYED_VIA_OLM environment variable by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/784
-      * Add tolerations for k8s 1.24 to samples by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/792
-      * Fix error masking in standalone runner by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/794
-      * Use apiReader in nodes controller where possible by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/808
-      * Fix data-ingests's `endpoint.properties` secret handling by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/809
-      * Set `bash` shell as preferred for make by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/812
-      * Readds separate proxy key to the init secret by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/839
-      * Adapt makefile to generate correct names for csi manifests by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/848
+
+      * Set priority to null for SCCs by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/900
+
+      * Makes standalone init env requirements injection specific by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/920
 
       ### Core changes
-      * Add malformed response to log metadata in dtclient by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/685
-      * Add image field for hostAgents to cloudNativeFullStack by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/689
-      * Remove possibility to install operator with install.sh by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/731
-      * Check `fork` flag on `pull_request` event by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/743
-      * Remove ExportData token permission if host-requests are disabled by @ernstvonoelsen in https://github.com/Dynatrace/dynatrace-operator/pull/670
-      * Bump go version to ^1.18 by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/742
-      * Added e2e ActiveGate tests by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/740
-      * Updates csi garbage-collector logic to work with images by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/748
-      * Remove unnecessary ports in manifests by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/766
-      * Moves scripts into hack folder by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/771
-      * Refactors address_of to use Go 1.18 generics by @toszr in https://github.com/Dynatrace/dynatrace-operator/pull/654
-      * Add feature flag for setting `DT_INITIAL_CONNECT_RETRY_MS` env-var to webhook injected containers by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/790
-      * Add basic support for activeGate auth token by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/786
-      * Implements `automatic-kubernetes-api-monitoring-cluster-name` feature flag by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/797
-      * Update `controller-gen` to `v0.9.0` by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/801
-      * Add reusable `build-dockerimage` and `push-dockerimage` workflows by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/788
-      * Update `registrar` to `v2.5.1` and `livenessprobe` to `v2.7.0` by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/798
-      * Changes reinvocation policy to be enabled by default by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/802
-      * Move complicated makefile logic into separate scripts by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/804
-      * Add auth token rotation for the activeGate by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/805
-      * Move github actions bash scripts into separate files by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/814
-      * Updates the questions.yml for rancher by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/810
-      * Adds default tolerations for the csi driver by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/836
-      * Add image publish release workflow by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/855
 
-      ### Helm changes
-      * Remove dynakube CR generation from helm chart by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/745
-      * Add CRD to helm chart by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/793
-      * Switched highAvailability mode to true as new default by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/811
-      * Updates schema for Google Cloud Marketplace by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/813
-      * Add tolerations and nodeSelectors by @gkrenn in https://github.com/Dynatrace/dynatrace-operator/pull/821
+      * Split bundle step for different platforms by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/858
 
-      ### Component changes
-      * Add codeModulesImage field to Dynakube where CSI Driver is used by @waodim in https://github.com/Dynatrace/dynatrace-operator/pull/684
-      * Add connectionInfo to ProcessModuleConfig by @mjgrzybek in https://github.com/Dynatrace/dynatrace-operator/pull/728
-      * Implements copying codeModules from image. by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/729
-      * Store initial connect retry value in curl config file by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/806
+      * Updates the Google Markertplace scripts by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/875
 
-      ### Documentation changes
-      * Update supported platforms by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/780
-      * Remove unsupported cluster version by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/781
-      * Fixes path to troubleshoot script in usage section by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/795
-      * Restructure sample folders and add dockerfile for codeModules image by @luhi-DT in https://github.com/Dynatrace/dynatrace-operator/pull/820
-      * Update helm instructions by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/822
+      * Use ARM libraries in ARM docker image by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/926
 
-      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.0.1...v0.7.0
+
+
+      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.7.0...v0.7.1'
     releaseTypes:
     - Feature
     recommended: true
@@ -95,7 +51,7 @@ x-google-marketplace:
         image:
           type: FULL
   deployerServiceAccount:
-    description: 'Service account used to configure the Dynatrace Operator'
+    description: Service account used to configure the Dynatrace Operator
     roles:
     - type: ClusterRole
       rulesType: CUSTOM
@@ -189,16 +145,19 @@ properties:
   customPullSecret:
     type: string
     title: Custom pull secret
-    description: If the Operator image is in a private registry, the name of the appropriate pull secret can be set here
-    default: ""
-
+    description: If the Operator image is in a private registry, the name of the appropriate
+      pull secret can be set here
+    default: ''
   operator.apparmor:
     type: boolean
     title: Enables AppArmor for Operator
-    description: |
-      AppArmor is a security system for Linux.
+    description: 'AppArmor is a security system for Linux.
+
       If a cluster supports AppArmor the Operator uses it if it is enabled here.
+
       If it is not supported by a cluster it must not be enabled.
+
+      '
     default: false
   operator.requests.cpu:
     type: string
@@ -218,109 +177,136 @@ properties:
   operator.limits.memory:
     type: string
     title: Operator Memory limit
-    description: The amount of memory allocation to which the cluster may limit the Operator.
+    description: The amount of memory allocation to which the cluster may limit the
+      Operator.
     default: 128Mi
-
   webhook.hostNetwork:
     type: boolean
     title: Webhook uses Host network
-    description: |
-      Allows the webhook to connect with and use the same network as the node.
+    description: 'Allows the webhook to connect with and use the same network as the
+      node.
+
       May alleviate issues with container network interfaces (CNI).
+
+      '
     default: false
   webhook.apparmor:
     type: boolean
     title: Enables AppArmor for Webhook
-    description: |
-      AppArmor is a security system for Linux.
+    description: 'AppArmor is a security system for Linux.
+
       If a cluster supports AppArmor the Webhook uses it if it is enabled here.
+
       If it is not supported by a cluster it must not be enabled.
+
+      '
     default: false
   webhook.requests.cpu:
     type: string
     title: Webhook CPU request
-    description: |
-      The amount of CPU allocation the Webhook requests from the cluster.
+    description: 'The amount of CPU allocation the Webhook requests from the cluster.
+
       It is recommended for the CPU requests to be the same as the CPU limits.
+
+      '
     default: 300m
   webhook.requests.memory:
     type: string
     title: Webhook Memory request
-    description: |
-      The amount of memory allocation the Webhook requests from the cluster.
+    description: 'The amount of memory allocation the Webhook requests from the cluster.
+
       It is recommended for the memory requests to be the same as the memory limits.
+
+      '
     default: 128Mi
   webhook.limits.cpu:
     type: string
     title: Webhook CPU limit
-    description: |
-      The amount of CPU allocation to which the cluster may limit the Webhook.
+    description: 'The amount of CPU allocation to which the cluster may limit the
+      Webhook.
+
       It is recommended for the CPU limits to be the same as the CPU requests.
+
+      '
     default: 300m
   webhook.limits.memory:
     type: string
     title: Webhook Memory limit
-    description: |
-      The amount of memory allocation to which the cluster may limit the Webhook.
+    description: 'The amount of memory allocation to which the cluster may limit the
+      Webhook.
+
       It is recommended for the memory limits to be the same as the memory requests.
+
+      '
     default: 128Mi
   webhook.highAvailability:
     type: boolean
     title: Enables Webhook's high availability mode
     description: Increases replicas and adds topology constraints for the Webhook.
     default: false
-
   csidriver.enabled:
     type: boolean
     title: Enables CSI driver
-    description: The CloudNativeFullStack as well as AppOnly mode need the CSI driver to function properly.
+    description: The CloudNativeFullStack as well as AppOnly mode need the CSI driver
+      to function properly.
     default: false
   csidriver.requests.cpu:
     type: string
     title: CSI driver CPU request
-    description: |
-      The amount of CPU allocation the CSI driver requests from the cluster.
+    description: 'The amount of CPU allocation the CSI driver requests from the cluster.
+
       It is recommended for the CPU requests to be the same as the CPU limits.
+
+      '
     default: 300m
   csidriver.requests.memory:
     type: string
     title: CSI driver Memory request
-    description: |
-      The amount of memory allocation the CSI driver requests from the cluster.
+    description: 'The amount of memory allocation the CSI driver requests from the
+      cluster.
+
       It is recommended for the memory requests to be the same as the memory limits.
+
+      '
     default: 100Mi
   csidriver.limits.cpu:
     type: string
     title: CSI driver CPU limit
-    description: |
-      The amount of CPU allocation to which the cluster may limit the CSI driver.
+    description: 'The amount of CPU allocation to which the cluster may limit the
+      CSI driver.
+
       It is recommended for the CPU limits to be the same as the CPU requests.
+
+      '
     default: 300m
   csidriver.limits.memory:
     type: string
     title: CSI driver Memory limit
-    description: |
-      The amount of memory allocation to which the cluster may limit the CSI driver.
-      It is recommended for the memory limits to be the same as the memory requests.
-    default: 100Mi
+    description: 'The amount of memory allocation to which the cluster may limit the
+      CSI driver.
 
+      It is recommended for the memory limits to be the same as the memory requests.
+
+      '
+    default: 100Mi
   installCRD:
     type: boolean
     title: Install DynaKube CRD
-    description: |
-      Tells the Helm chart of the deployer to install the custom resource definition (CRD) of the DynaKube API.
+    description: 'Tells the Helm chart of the deployer to install the custom resource
+      definition (CRD) of the DynaKube API.
+
+      '
     default: true
     enum:
-      - true
-
+    - true
   platform:
     type: string
     title: Platform
-    description: Platform to deploy on. This should always be set to "google" for GKE clusters
+    description: Platform to deploy on. This should always be set to "google" for
+      GKE clusters
     default: google
     enum:
-      - "google"
-
+    - google
 required:
 - name
 - namespace
