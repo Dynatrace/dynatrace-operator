@@ -13,6 +13,11 @@ readonly targetImageTag=${2}
 readonly imageTarPath="/tmp/operator-${platform}.tar"
 
 docker load -i "${imageTarPath}"
+
+# $docker load -i /tmp/alipine.tar
+# Loaded image: alpine:latest
+#
+# we're interested in "alpine:latest", that's field=3
 srcImageTag=$(docker load -i "${imageTarPath}" | cut -d' ' -f3)
 
 docker load --input "${imageTarPath}"
