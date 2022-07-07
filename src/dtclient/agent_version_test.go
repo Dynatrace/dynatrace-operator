@@ -123,17 +123,17 @@ func TestGetEntityIDForIP(t *testing.T) {
 
 func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client) {
 	{
-		_, err := dynatraceClient.GetLatestAgentVersion("", InstallerTypeDefault)
+		_, err := dynatraceClient.GetLatestAgentVersion("", InstallerTypeDefault, arch.Flavor, arch.Arch)
 
 		assert.Error(t, err, "empty OS")
 	}
 	{
-		_, err := dynatraceClient.GetLatestAgentVersion(OsUnix, "")
+		_, err := dynatraceClient.GetLatestAgentVersion(OsUnix, "", arch.Flavor, arch.Arch)
 
 		assert.Error(t, err, "empty installer type")
 	}
 	{
-		latestAgentVersion, err := dynatraceClient.GetLatestAgentVersion(OsUnix, InstallerTypePaaS)
+		latestAgentVersion, err := dynatraceClient.GetLatestAgentVersion(OsUnix, InstallerTypePaaS, arch.Flavor, arch.Arch)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "1.242.0.20220429-180918", latestAgentVersion, "latest agent version equals expected version")
@@ -309,6 +309,17 @@ func (ipHandler *ipHandler) ServeHTTP(writer http.ResponseWriter, request *http.
 }
 
 func handleLatestAgentVersion(request *http.Request, writer http.ResponseWriter) {
+	switch request.Method {
+	case "GET":
+		writer.WriteHeader(http.StatusOK)
+		out, _ := json.Marshal(map[string]string{"latestAgentVersion": "1.242.0.20220429-180918"})
+		_, _ = writer.Write(out)
+	default:
+		writeError(writer, http.StatusMethodNotAllowed)
+	}
+}
+
+func handleAvailableAgentVersions(request *http.Request, writer http.ResponseWriter) {
 	switch request.Method {
 	case "GET":
 		writer.WriteHeader(http.StatusOK)

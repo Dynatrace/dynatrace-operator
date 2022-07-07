@@ -29,7 +29,7 @@ type Client interface {
 	//  - IO error or unexpected response
 	//  - error response from the server (e.g. authentication failure)
 	//  - the agent version is not set or empty
-	GetLatestAgentVersion(os, installerType string) (string, error)
+	GetLatestAgentVersion(os, installerType, flavor, arch string) (string, error)
 
 	// GetLatestAgent returns a reader with the contents of the download. Must be closed by caller.
 	GetLatestAgent(os, installerType, flavor, arch string, technologies []string, writer io.Writer) error

@@ -3,6 +3,7 @@ package dynakube
 import (
 	"context"
 	"fmt"
+	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
@@ -543,8 +544,8 @@ func createDTMockClient(paasTokenScopes, apiTokenScopes dtclient.TokenScopes) *d
 	mockClient.On("GetTokenScopes", testPaasToken).Return(paasTokenScopes, nil)
 	mockClient.On("GetTokenScopes", testAPIToken).Return(apiTokenScopes, nil)
 	mockClient.On("GetConnectionInfo").Return(dtclient.ConnectionInfo{TenantUUID: "abc123456"}, nil)
-	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
-	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersion, nil)
+	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault, arch.Flavor, arch.Arch).Return(testVersion, nil)
+	mockClient.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.Flavor, arch.Arch).Return(testVersion, nil)
 	mockClient.On("GetMonitoredEntitiesForKubeSystemUUID", mock.AnythingOfType("string")).
 		Return([]dtclient.MonitoredEntity{}, nil)
 	mockClient.On("GetSettingsForMonitoredEntities", []dtclient.MonitoredEntity{}).
