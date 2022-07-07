@@ -239,3 +239,49 @@ tests:
       - equal:
           path: spec.template.spec.imagePullSecrets[0].name
           value: pull-secret
+
+  - it: should take custom labels
+    set:
+      csidriver.enabled: true
+      csidriver.labels:
+        testKey: testValue
+    asserts:
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/name: RELEASE-NAME
+            app.kubernetes.io/managed-by: Tiller
+            app.kubernetes.io/version: "0.0.0-snapshot"
+            helm.sh/chart: dynatrace-operator-0.0.0-snapshot
+            app.kubernetes.io/component: csi-driver
+            testKey: testValue
+
+  - it: should take custom annotations
+    set:
+      csidriver.enabled: true
+      csidriver.annotations:
+        testKey: testValue
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            kubectl.kubernetes.io/default-logs-container: driver
+            testKey: testValue
+
+  - it: should take custom labels in spec.template.metadata.labels path
+    set:
+      csidriver.enabled: true
+      csidriver.labels:
+        testKey: testValue
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/name: RELEASE-NAME
+            app.kubernetes.io/managed-by: Tiller
+            app.kubernetes.io/version: "0.0.0-snapshot"
+            helm.sh/chart: dynatrace-operator-0.0.0-snapshot
+            app.kubernetes.io/component: csi-driver
+            internal.oneagent.dynatrace.com/app: csi-driver
+            internal.oneagent.dynatrace.com/component: csi-driver
+            testKey: testValue

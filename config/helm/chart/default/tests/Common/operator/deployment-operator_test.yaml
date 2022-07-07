@@ -305,3 +305,44 @@ tests:
                           operator: In
                           values:
                             - linux
+
+  - it: should take custom labels
+    set:
+      operator.labels:
+        testKey: testValue
+    asserts:
+      - equal:
+          path: metadata.labels
+          value:
+            app.kubernetes.io/name: RELEASE-NAME
+            app.kubernetes.io/managed-by: Tiller
+            app.kubernetes.io/version: "0.0.0-snapshot"
+            helm.sh/chart: dynatrace-operator-0.0.0-snapshot
+            app.kubernetes.io/component: operator
+            testKey: testValue
+
+  - it: should take custom annotations
+    set:
+      operator.annotations:
+        testKey: testValue
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            testKey: testValue
+
+  - it: should take custom labels in spec.template.metadata.labels path
+    set:
+      operator.labels:
+        testKey: testValue
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            app.kubernetes.io/name: RELEASE-NAME
+            app.kubernetes.io/managed-by: Tiller
+            app.kubernetes.io/version: "0.0.0-snapshot"
+            helm.sh/chart: dynatrace-operator-0.0.0-snapshot
+            app.kubernetes.io/component: operator
+            name: RELEASE-NAME
+            testKey: testValue
