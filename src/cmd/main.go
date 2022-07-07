@@ -33,10 +33,6 @@ var (
 	log = logger.NewDTLogger().WithName("main")
 )
 
-const (
-	envPodNamespace = "POD_NAMESPACE"
-)
-
 func newRootCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  "dynatrace-operator",
@@ -46,34 +42,24 @@ func newRootCommand() *cobra.Command {
 	return cmd
 }
 
-func addWebhookCommand(cmd *cobra.Command) {
-	webhookCommandBuilder := webhook.NewWebhookCommandBuilder().
-		SetNamespace(os.Getenv(envPodNamespace)).
-		SetIsDeployedViaOlm(kubesystem.DeployedViaOLM()).
+func createWebhookCommandBuilder(deployedViaOLM bool) webhook.CommandBuilder {
+	return webhook.NewWebhookCommandBuilder().
+		SetNamespace(os.Getenv(kubesystem.EnvPodNamespace)).
+		SetIsDeployedViaOlm(deployedViaOLM).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
-
-	cmd.AddCommand(webhookCommandBuilder.Build())
 }
 
-func addOperatorCommand(cmd *cobra.Command) {
-	operatorCommandBuilder := operator.NewOperatorCommandBuilder().
-		SetNamespace(os.Getenv(envPodNamespace)).
-		SetIsDeployedViaOlm(kubesystem.DeployedViaOLM()).
+func createOperatorCommandBuilder(deployedViaOLM bool) operator.CommandBuilder {
+	return operator.NewOperatorCommandBuilder().
+		SetNamespace(os.Getenv(kubesystem.EnvPodNamespace)).
+		SetIsDeployedViaOlm(deployedViaOLM).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
-
-	cmd.AddCommand(operatorCommandBuilder.Build())
 }
 
-func addCsiCommand(cmd *cobra.Command) {
-	csiCommandBuilder := csi.NewCsiCommandBuilder().
-		SetNamespace(os.Getenv(envPodNamespace)).
+func createCsiCommandBuilder() csi.CommandBuilder {
+	return csi.NewCsiCommandBuilder().
+		SetNamespace(os.Getenv(kubesystem.EnvPodNamespace)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
-
-	cmd.AddCommand(csiCommandBuilder.Build())
-}
-
-func addStandaloneCommand(cmd *cobra.Command) {
-	cmd.AddCommand(standalone.NewStandaloneCommand())
 }
 
 func rootCommand(_ *cobra.Command, _ []string) error {
@@ -84,12 +70,20 @@ func main() {
 	ctrl.SetLogger(log)
 	cmd := newRootCommand()
 
-	addWebhookCommand(cmd)
-	addOperatorCommand(cmd)
-	addCsiCommand(cmd)
-	addStandaloneCommand(cmd)
+	deployedViaOLM, err := kubesystem.DeployedViaOLM()
+	if err != nil {
+		log.Info(err.Error())
+		os.Exit(1)
+	}
 
-	err := cmd.Execute()
+	cmd.AddCommand(
+		createWebhookCommandBuilder(deployedViaOLM).Build(),
+		createOperatorCommandBuilder(deployedViaOLM).Build(),
+		createCsiCommandBuilder().Build(),
+		standalone.NewStandaloneCommand(),
+	)
+
+	err = cmd.Execute()
 	if err != nil {
 		log.Info(err.Error())
 		os.Exit(1)

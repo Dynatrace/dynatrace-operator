@@ -37,6 +37,7 @@ type podMutatorWebhook struct {
 	webhookNamespace string
 	clusterID        string
 	apmExists        bool
+	deployedViaOLM   bool
 
 	mutators []dtwebhook.PodMutator
 }
