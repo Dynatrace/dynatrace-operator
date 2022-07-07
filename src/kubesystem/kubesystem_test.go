@@ -1,6 +1,7 @@
 package kubesystem
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,4 +30,36 @@ func TestGetUID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, uid)
 	assert.Equal(t, testUID, uid)
+}
+
+func TestDeployedViaOLM(t *testing.T) {
+	testPodName := "test-pod"
+	testNamespaceName := "test-namespace"
+
+	fakeClient := fake.NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(
+			&v1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: Namespace,
+				},
+			},
+			&v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testPodName,
+					Namespace: testNamespaceName,
+					Annotations: map[string]string{
+						"olm.operatorNamespace": "operators",
+					},
+				},
+			},
+		).Build()
+
+	_ = os.Setenv(EnvPodName, testPodName)
+	_ = os.Setenv(EnvPodNamespace, testNamespaceName)
+
+	deployed, err := DeployedViaOLM(fakeClient)
+
+	assert.NoError(t, err)
+	assert.True(t, deployed)
 }

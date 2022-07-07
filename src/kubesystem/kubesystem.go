@@ -6,9 +6,7 @@ import (
 
 	cmdConfig "github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -29,23 +27,26 @@ func GetUID(clt client.Reader) (types.UID, error) {
 	return kubeSystemNamespace.UID, nil
 }
 
-func DeployedViaOLM() (bool, error) {
-	kubeCfg, err := cmdConfig.NewKubeConfigProvider().GetConfig()
-	if err != nil {
-		return false, err
-	}
-	clientset, err := kubernetes.NewForConfig(kubeCfg)
-	if err != nil {
-		return false, err
-	}
-
+func DeployedViaOLM(clt client.Reader) (bool, error) {
 	podName := os.Getenv(EnvPodName)
 	podNamespace := os.Getenv(EnvPodNamespace)
 
-	pod, err := clientset.CoreV1().Pods(podNamespace).Get(context.TODO(), podName, metav1.GetOptions{})
+	pod := &corev1.Pod{}
+	err := clt.Get(context.TODO(), types.NamespacedName{Name: podName, Namespace: podNamespace}, pod)
+	if err != nil {
+		return false, err
+	}
 	if _, ok := pod.Annotations[olmSpecificAnnotation]; ok {
 		return true, nil
 	} else {
 		return false, nil
 	}
+}
+
+func CreateDefaultClient() (client.Client, error) {
+	kubeCfg, err := cmdConfig.NewKubeConfigProvider().GetConfig()
+	if err != nil {
+		return nil, err
+	}
+	return client.New(kubeCfg, client.Options{})
 }

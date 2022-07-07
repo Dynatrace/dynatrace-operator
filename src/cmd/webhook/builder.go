@@ -108,7 +108,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = pod_mutator.AddPodMutationWebhookToManager(webhookManager, builder.namespace)
+		err = pod_mutator.AddPodMutationWebhookToManager(webhookManager, builder.namespace, builder.isDeployedViaOlm)
 		if err != nil {
 			return err
 		}

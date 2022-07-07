@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhookPodName string) error {
+func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhookPodName string, deployedViaOLM bool) error {
 	// Don't use mgr.GetClient() on this function, or other cache-dependent functions from the manager. The cache may
 	// not be ready at this point, and queries for Kubernetes objects may fail. mgr.GetAPIReader() doesn't depend on the
 	// cache and is safe to use.
@@ -45,11 +45,6 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 	}
 
 	clusterID, err := getClusterID(apiReader)
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	deployedViaOLM, err := kubesystem.DeployedViaOLM()
 	if err != nil {
 		return errors.WithStack(err)
 	}

@@ -70,7 +70,12 @@ func main() {
 	ctrl.SetLogger(log)
 	cmd := newRootCommand()
 
-	deployedViaOLM, err := kubesystem.DeployedViaOLM()
+	clt, err := kubesystem.CreateDefaultClient()
+	if err != nil {
+		log.Error(err, "unable to create kube client")
+		os.Exit(1)
+	}
+	deployedViaOLM, err := kubesystem.DeployedViaOLM(clt)
 	if err != nil {
 		log.Info(err.Error())
 		os.Exit(1)
