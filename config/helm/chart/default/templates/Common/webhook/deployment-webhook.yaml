@@ -18,14 +18,11 @@ kind: Deployment
 metadata:
   name: dynatrace-webhook
   namespace: {{ .Release.Namespace }}
+  labels:
+      {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
   {{- if .Values.webhook.labels }}
-  labels:
-      {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
       {{- toYaml .Values.webhook.labels | nindent 4 }}
-  {{- else}}
-  labels:
-      {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
-  {{- end}}
+  {{- end }}
 spec:
   replicas: {{ (default false (.Values.webhook).highAvailability) | ternary 2 1 }}
   revisionHistoryLimit: 1

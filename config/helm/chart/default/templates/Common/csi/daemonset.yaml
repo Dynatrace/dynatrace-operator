@@ -16,13 +16,10 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
+  labels:
+      {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
   {{- if .Values.csidriver.labels }}
-  labels:
-      {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
       {{- toYaml .Values.csidriver.labels | nindent 4 }}
-  {{- else}}
-  labels:
-      {{- include "dynatrace-operator.csiLabels" . | nindent 4 }}
   {{- end}}
   name: dynatrace-oneagent-csi-driver
   namespace: {{ .Release.Namespace }}

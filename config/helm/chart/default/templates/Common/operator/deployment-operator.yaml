@@ -18,14 +18,11 @@ kind: Deployment
 metadata:
   name: {{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
+  labels:
+      {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
   {{- if .Values.operator.labels }}
-  labels:
-      {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
       {{- toYaml .Values.operator.labels | nindent 4 }}
-  {{- else}}
-  labels:
-      {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
-  {{- end}}
+  {{- end }}
 spec:
   replicas: 1
   revisionHistoryLimit: 1
@@ -49,7 +46,6 @@ spec:
         {{- if .Values.operator.labels }}
         {{- toYaml .Values.operator.labels | nindent 8 }}
         {{- end }}
-      {{- else}}
     spec:
       containers:
         - name: {{ .Release.Name }}
