@@ -18,8 +18,14 @@ kind: Deployment
 metadata:
   name: dynatrace-webhook
   namespace: {{ .Release.Namespace }}
+  {{- if .Values.webhook.labels }}
   labels:
-    {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
+      {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
+      {{- toYaml .Values.webhook.labels | nindent 4 }}
+  {{- else}}
+  labels:
+      {{- include "dynatrace-operator.webhookLabels" . | nindent 4 }}
+  {{- end}}
 spec:
   replicas: {{ (default false (.Values.webhook).highAvailability) | ternary 2 1 }}
   revisionHistoryLimit: 1
@@ -30,14 +36,30 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      {{- if .Values.webhook.annotations}}
       annotations:
         kubectl.kubernetes.io/default-container: webhook
         {{- if (.Values.webhook).apparmor}}
         container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
         {{- end }}
+        {{- toYaml .Values.webhook.annotations | nindent 8 }}
+      {{- else }}
+      annotations:
+        kubectl.kubernetes.io/default-container: webhook
+        {{- if (.Values.webhook).apparmor}}
+        container.apparmor.security.beta.kubernetes.io/webhook: runtime/default
+        {{- end }}
+      {{- end }}
+      {{- if .Values.webhook.labels }}
       labels:
         {{- include "dynatrace-operator.webhookLabels" . | nindent 8 }}
         {{- include "dynatrace-operator.webhookSelectorLabels" . | nindent 8 }}
+        {{- toYaml .Values.webhook.labels | nindent 8 }}
+      {{- else}}
+      labels:
+        {{- include "dynatrace-operator.webhookLabels" . | nindent 8 }}
+        {{- include "dynatrace-operator.webhookSelectorLabels" . | nindent 8 }}
+      {{- end}}
     spec:
       {{- if (.Values.webhook).highAvailability }}
       topologySpreadConstraints:
