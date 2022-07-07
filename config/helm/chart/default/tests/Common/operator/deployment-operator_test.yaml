@@ -311,15 +311,11 @@ tests:
       operator.labels:
         testKey: testValue
     asserts:
+      - isNotEmpty:
+          path: metadata.labels.testKey
       - equal:
-          path: metadata.labels
-          value:
-            app.kubernetes.io/name: RELEASE-NAME
-            app.kubernetes.io/managed-by: Tiller
-            app.kubernetes.io/version: "0.0.0-snapshot"
-            helm.sh/chart: dynatrace-operator-0.0.0-snapshot
-            app.kubernetes.io/component: operator
-            testKey: testValue
+          path: metadata.labels.testKey
+          value: testValue
 
   - it: should take custom annotations
     set:
@@ -336,13 +332,8 @@ tests:
       operator.labels:
         testKey: testValue
     asserts:
+      - isNotEmpty:
+          path: spec.template.metadata.labels.testKey
       - equal:
-          path: spec.template.metadata.labels
-          value:
-            app.kubernetes.io/name: RELEASE-NAME
-            app.kubernetes.io/managed-by: Tiller
-            app.kubernetes.io/version: "0.0.0-snapshot"
-            helm.sh/chart: dynatrace-operator-0.0.0-snapshot
-            app.kubernetes.io/component: operator
-            name: RELEASE-NAME
-            testKey: testValue
+          path: spec.template.metadata.labels.testKey
+          value: testValue
