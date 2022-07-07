@@ -324,8 +324,6 @@ tests:
                     valueFrom:
                       fieldRef:
                         fieldPath: metadata.name
-                  - name: DEPLOYED_VIA_OLM
-                    value: "true"
                 readinessProbe:
                   httpGet:
                     path: /livez
