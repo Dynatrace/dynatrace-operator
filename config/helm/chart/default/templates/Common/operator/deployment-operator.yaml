@@ -36,28 +36,20 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      annotations:
+      {{- if (.Values.operator).apparmor}}
+        container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
+      {{- end }}
       {{- if .Values.operator.annotations }}
-      annotations:
-      {{- if (.Values.operator).apparmor}}
-        container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
-      {{- end }}
         {{- toYaml .Values.operator.annotations | nindent 8 }}
-      {{- else }}
-      annotations:
-      {{- if (.Values.operator).apparmor}}
-        container.apparmor.security.beta.kubernetes.io/{{ .Release.Name }}: runtime/default
       {{- end }}
-      {{- end }}
-      {{- if .Values.operator.labels }}
       labels:
         {{- include "dynatrace-operator.operatorLabels" . | nindent 8 }}
         {{- include "dynatrace-operator.operatorSelectorLabels" . | nindent 8 }}
+        {{- if .Values.operator.labels }}
         {{- toYaml .Values.operator.labels | nindent 8 }}
+        {{- end }}
       {{- else}}
-      labels:
-        {{- include "dynatrace-operator.operatorLabels" . | nindent 8 }}
-        {{- include "dynatrace-operator.operatorSelectorLabels" . | nindent 8 }}
-      {{- end}}
     spec:
       containers:
         - name: {{ .Release.Name }}
