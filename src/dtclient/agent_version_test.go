@@ -123,17 +123,17 @@ func TestGetEntityIDForIP(t *testing.T) {
 
 func testAgentVersionGetLatestAgentVersion(t *testing.T, dynatraceClient Client) {
 	{
-		_, err := dynatraceClient.GetLatestAgentVersion("", InstallerTypeDefault, arch.Flavor, arch.Arch)
+		_, err := dynatraceClient.GetLatestAgentVersion("", InstallerTypeDefault)
 
 		assert.Error(t, err, "empty OS")
 	}
 	{
-		_, err := dynatraceClient.GetLatestAgentVersion(OsUnix, "", arch.Flavor, arch.Arch)
+		_, err := dynatraceClient.GetLatestAgentVersion(OsUnix, "")
 
 		assert.Error(t, err, "empty installer type")
 	}
 	{
-		latestAgentVersion, err := dynatraceClient.GetLatestAgentVersion(OsUnix, InstallerTypePaaS, arch.Flavor, arch.Arch)
+		latestAgentVersion, err := dynatraceClient.GetLatestAgentVersion(OsUnix, InstallerTypePaaS)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "1.242.0.20220429-180918", latestAgentVersion, "latest agent version equals expected version")

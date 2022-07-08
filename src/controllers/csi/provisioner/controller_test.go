@@ -316,8 +316,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 		}, nil)
 		mockClient.On("GetLatestAgentVersion",
 			mock.AnythingOfType("string"),
-			mock.AnythingOfType("string"),
-			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return(agentVersion, nil)
 		provisioner := &OneAgentProvisioner{
 			apiReader: fake.NewClient(
@@ -366,8 +364,6 @@ func TestOneAgentProvisioner_Reconcile(t *testing.T) {
 			TenantUUID: tenantUUID,
 		}, nil)
 		mockClient.On("GetLatestAgentVersion",
-			mock.AnythingOfType("string"),
-			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string"),
 			mock.AnythingOfType("string")).Return(agentVersion, nil)
 		mockClient.

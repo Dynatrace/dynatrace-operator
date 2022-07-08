@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/dynakube"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
@@ -139,8 +138,8 @@ func mockDynatraceClientFunc(communicationHosts *[]string) dynakube.DynatraceCli
 		}
 
 		dtc := new(dtclient.MockDynatraceClient)
-		dtc.On("GetLatestAgentVersion", "unix", "default", arch.Flavor, arch.Arch).Return("17", nil)
-		dtc.On("GetLatestAgentVersion", "unix", "paas", arch.Flavor, arch.Arch).Return("18", nil)
+		dtc.On("GetLatestAgentVersion", "unix", "default").Return("17", nil)
+		dtc.On("GetLatestAgentVersion", "unix", "paas").Return("18", nil)
 		dtc.On("GetConnectionInfo").Return(connInfo, nil)
 		dtc.On("GetCommunicationHostForClient").Return(dtclient.CommunicationHost{
 			Protocol: "https",

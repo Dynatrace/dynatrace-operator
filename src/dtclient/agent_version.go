@@ -3,6 +3,7 @@ package dtclient
 import (
 	"io"
 
+	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/pkg/errors"
 )
 
@@ -37,7 +38,7 @@ func (dtc *dynatraceClient) GetLatestAgent(os, installerType, flavor, arch strin
 }
 
 // GetLatestAgentVersion gets the latest agent version for the given OS and installer type configured on the Tenant.
-func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType, flavor, arch string) (string, error) {
+func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {
 	response := struct {
 		LatestAgentVersion string `json:"latestAgentVersion"`
 	}{}
@@ -46,7 +47,16 @@ func (dtc *dynatraceClient) GetLatestAgentVersion(os, installerType, flavor, arc
 		return "", errors.New("os or installerType is empty")
 	}
 
-	url := dtc.getLatestAgentVersionUrl(os, installerType, flavor, arch)
+	var flavor string
+	// Default installer type has no "multidistro" flavor
+	// so the default flavor is always needed in that case
+	if installerType == InstallerTypeDefault {
+		flavor = arch.FlavorDefault
+	} else {
+		flavor = arch.Flavor
+	}
+
+	url := dtc.getLatestAgentVersionUrl(os, installerType, flavor, arch.Arch)
 	err := dtc.makeRequestAndUnmarshal(url, dynatracePaaSToken, &response)
 	return response.LatestAgentVersion, errors.WithStack(err)
 }

@@ -2,7 +2,6 @@ package status
 
 import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/pkg/errors"
@@ -33,12 +32,14 @@ func SetDynakubeStatus(instance *dynatracev1beta1.DynaKube, opts Options) error 
 		return errors.WithStack(err)
 	}
 
-	latestAgentVersionUnixDefault, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypeDefault, arch.Flavor, arch.Arch)
+	latestAgentVersionUnixDefault, err := dtc.GetLatestAgentVersion(
+		dtclient.OsUnix, dtclient.InstallerTypeDefault)
 	if err != nil {
 		return errors.WithStack(err)
 	}
 
-	latestAgentVersionUnixPaas, err := dtc.GetLatestAgentVersion(dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.Flavor, arch.Arch)
+	latestAgentVersionUnixPaas, err := dtc.GetLatestAgentVersion(
+		dtclient.OsUnix, dtclient.InstallerTypePaaS)
 	if err != nil {
 		return errors.WithStack(err)
 	}

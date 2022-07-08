@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
@@ -75,8 +74,8 @@ func TestSetDynakubeStatus(t *testing.T) {
 			TenantUUID: testUUID,
 		}, nil)
 
-		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault, arch.Flavor, arch.Arch).Return(testVersion, nil)
-		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.Flavor, arch.Arch).Return(testVersionPaas, nil)
+		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
+		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return(testVersionPaas, nil)
 		dtc.On("GetAgentTenantInfo").Return(&dtclient.AgentTenantInfo{}, nil)
 
 		err := SetDynakubeStatus(instance, options)
@@ -198,7 +197,7 @@ func TestSetDynakubeStatus(t *testing.T) {
 			TenantUUID: testUUID,
 		}, nil)
 
-		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault, arch.Flavor, arch.Arch).Return("", fmt.Errorf(testError))
+		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return("", fmt.Errorf(testError))
 
 		err := SetDynakubeStatus(instance, options)
 		assert.EqualError(t, err, testError)
@@ -239,8 +238,8 @@ func TestSetDynakubeStatus(t *testing.T) {
 			TenantUUID: testUUID,
 		}, nil)
 
-		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault, arch.Flavor, arch.Arch).Return(testVersion, nil)
-		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS, arch.Flavor, arch.Arch).Return("", fmt.Errorf(testError))
+		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypeDefault).Return(testVersion, nil)
+		dtc.On("GetLatestAgentVersion", dtclient.OsUnix, dtclient.InstallerTypePaaS).Return("", fmt.Errorf(testError))
 
 		err := SetDynakubeStatus(instance, options)
 		assert.EqualError(t, err, testError)

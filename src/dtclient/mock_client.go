@@ -21,8 +21,8 @@ func (o *MockDynatraceClient) GetActiveGateTenantInfo() (*ActiveGateTenantInfo, 
 	return args.Get(0).(*ActiveGateTenantInfo), args.Error(1)
 }
 
-func (o *MockDynatraceClient) GetLatestAgentVersion(os, installerType, flavor, arch string) (string, error) {
-	args := o.Called(os, installerType, flavor, arch)
+func (o *MockDynatraceClient) GetLatestAgentVersion(os, installerType string) (string, error) {
+	args := o.Called(os, installerType)
 	return args.String(0), args.Error(1)
 }
 
