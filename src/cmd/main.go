@@ -75,17 +75,9 @@ func main() {
 	ctrl.SetLogger(log)
 	cmd := newRootCommand()
 
-	podName := os.Getenv(envPodName)
-	podNamespace := os.Getenv(envPodNamespace)
-
-	clt, err := kubesystem.CreateDefaultClient()
+	deployedViaOLM, err := isDeployedViaOLM()
 	if err != nil {
-		log.Error(err, "unable to create kube client")
-		os.Exit(1)
-	}
-	deployedViaOLM, err := kubesystem.IsDeployedViaOLM(clt, podName, podNamespace)
-	if err != nil {
-		log.Info(err.Error())
+		log.Error(err, "unable to check if deployed via OLM")
 		os.Exit(1)
 	}
 
@@ -101,4 +93,15 @@ func main() {
 		log.Info(err.Error())
 		os.Exit(1)
 	}
+}
+
+func isDeployedViaOLM() (bool, error) {
+	podName := os.Getenv(envPodName)
+	podNamespace := os.Getenv(envPodNamespace)
+
+	clt, err := kubesystem.CreateDefaultClient()
+	if err != nil {
+		return false, err
+	}
+	return kubesystem.IsDeployedViaOLM(clt, podName, podNamespace)
 }
