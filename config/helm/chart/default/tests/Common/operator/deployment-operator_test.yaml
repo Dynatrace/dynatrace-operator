@@ -305,3 +305,35 @@ tests:
                           operator: In
                           values:
                             - linux
+
+  - it: should take custom labels
+    set:
+      operator.labels:
+        testKey: testValue
+    asserts:
+      - isNotEmpty:
+          path: metadata.labels.testKey
+      - equal:
+          path: metadata.labels.testKey
+          value: testValue
+
+  - it: should take custom annotations
+    set:
+      operator.annotations:
+        testKey: testValue
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            testKey: testValue
+
+  - it: should take custom labels in spec.template.metadata.labels path
+    set:
+      operator.labels:
+        testKey: testValue
+    asserts:
+      - isNotEmpty:
+          path: spec.template.metadata.labels.testKey
+      - equal:
+          path: spec.template.metadata.labels.testKey
+          value: testValue
