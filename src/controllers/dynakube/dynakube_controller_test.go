@@ -3,11 +3,11 @@ package dynakube
 import (
 	"context"
 	"fmt"
-	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"testing"
 
 	"github.com/Dynatrace/dynatrace-operator/src/agproxysecret"
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/arch"
 	"github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/capability"
 	rcap "github.com/Dynatrace/dynatrace-operator/src/controllers/activegate/reconciler/capability"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
