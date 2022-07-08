@@ -22,7 +22,6 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/operator"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/standalone"
 	"github.com/Dynatrace/dynatrace-operator/src/cmd/webhook"
-	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
 	"github.com/Dynatrace/dynatrace-operator/src/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -47,17 +46,17 @@ func newRootCommand() *cobra.Command {
 	return cmd
 }
 
-func createWebhookCommandBuilder(deployedViaOLM bool) webhook.CommandBuilder {
+func createWebhookCommandBuilder() webhook.CommandBuilder {
 	return webhook.NewWebhookCommandBuilder().
 		SetNamespace(os.Getenv(envPodNamespace)).
-		SetIsDeployedViaOlm(deployedViaOLM).
+		SetPodName(os.Getenv(envPodName)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
-func createOperatorCommandBuilder(deployedViaOLM bool) operator.CommandBuilder {
+func createOperatorCommandBuilder() operator.CommandBuilder {
 	return operator.NewOperatorCommandBuilder().
 		SetNamespace(os.Getenv(envPodNamespace)).
-		SetIsDeployedViaOlm(deployedViaOLM).
+		SetPodName(os.Getenv(envPodName)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
@@ -75,33 +74,16 @@ func main() {
 	ctrl.SetLogger(log)
 	cmd := newRootCommand()
 
-	deployedViaOLM, err := isDeployedViaOLM()
-	if err != nil {
-		log.Error(err, "unable to check if deployed via OLM")
-		os.Exit(1)
-	}
-
 	cmd.AddCommand(
-		createWebhookCommandBuilder(deployedViaOLM).Build(),
-		createOperatorCommandBuilder(deployedViaOLM).Build(),
+		createWebhookCommandBuilder().Build(),
+		createOperatorCommandBuilder().Build(),
 		createCsiCommandBuilder().Build(),
 		standalone.NewStandaloneCommand(),
 	)
 
-	err = cmd.Execute()
+	err := cmd.Execute()
 	if err != nil {
 		log.Info(err.Error())
 		os.Exit(1)
 	}
-}
-
-func isDeployedViaOLM() (bool, error) {
-	podName := os.Getenv(envPodName)
-	podNamespace := os.Getenv(envPodNamespace)
-
-	clt, err := kubesystem.CreateDefaultClient()
-	if err != nil {
-		return false, err
-	}
-	return kubesystem.IsDeployedViaOLM(clt, podName, podNamespace)
 }

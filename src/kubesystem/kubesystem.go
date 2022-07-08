@@ -23,7 +23,7 @@ func GetUID(clt client.Reader) (types.UID, error) {
 	return kubeSystemNamespace.UID, nil
 }
 
-func IsDeployedViaOLM(clt client.Reader, podName string, podNamespace string) (bool, error) {
+func IsDeployedViaOlm(clt client.Reader, podName string, podNamespace string) (bool, error) {
 	pod := &corev1.Pod{}
 	err := clt.Get(context.TODO(), types.NamespacedName{Name: podName, Namespace: podNamespace}, pod)
 	if err != nil {

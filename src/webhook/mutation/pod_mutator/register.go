@@ -49,7 +49,7 @@ func registerInjectEndpoint(mgr manager.Manager, webhookNamespace string, webhoo
 		return errors.WithStack(err)
 	}
 
-	deployedViaOLM, err := kubesystem.IsDeployedViaOLM(apiReader, webhookPodName, webhookNamespace)
+	deployedViaOLM, err := kubesystem.IsDeployedViaOlm(apiReader, webhookPodName, webhookNamespace)
 	if err != nil {
 		return errors.WithStack(err)
 	}

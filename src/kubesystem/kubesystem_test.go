@@ -54,7 +54,7 @@ func TestDeployedViaOLM(t *testing.T) {
 			},
 		).Build()
 
-	deployed, err := IsDeployedViaOLM(fakeClient, testPodName, testNamespaceName)
+	deployed, err := IsDeployedViaOlm(fakeClient, testPodName, testNamespaceName)
 
 	assert.NoError(t, err)
 	assert.True(t, deployed)
