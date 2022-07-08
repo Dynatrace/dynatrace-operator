@@ -59,6 +59,13 @@ func (webhook *podMutatorWebhook) Handle(ctx context.Context, request admission.
 	if err != nil {
 		return silentErrorResponse(mutationRequest.Pod, err)
 	}
+	// in case of olm deployment, all pods are sent to us
+	// but not all of them need to be mutated,
+	// therefore their namespace might not have a dynakube assigned
+	// in which case we don't need to do anything
+	if mutationRequest == nil {
+		return emptyPatch
+	}
 	podName := mutationRequest.Pod.GenerateName // at this point, the pod name is not yet set
 
 	webhook.setupEventRecorder(mutationRequest)

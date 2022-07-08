@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	dtwebhook "github.com/Dynatrace/dynatrace-operator/src/webhook"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,8 +24,10 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 		return nil, err
 	}
 	dynakubeName, err := getDynakubeName(*namespace, webhook.deployedViaOLM)
-	if err != nil {
+	if err != nil && !webhook.deployedViaOLM {
 		return nil, err
+	} else if err != nil {
+		return nil, nil
 	}
 	dynakube, err := webhook.getDynakube(ctx, dynakubeName)
 	if err != nil {
@@ -57,11 +60,7 @@ func getNamespaceFromRequest(ctx context.Context, apiReader client.Reader, req a
 func getDynakubeName(namespace corev1.Namespace, deployedViaOLM bool) (string, error) {
 	dynakubeName, ok := namespace.Labels[mapper.InstanceLabel]
 	if !ok {
-		var err error
-		if !deployedViaOLM {
-			err = fmt.Errorf("no DynaKube instance set for namespace: %s", namespace.Name)
-		}
-		return dynakubeName, err
+		return "", errors.New(fmt.Sprintf("no DynaKube instance set for namespace: %s", namespace.Name))
 	}
 	return dynakubeName, nil
 }
