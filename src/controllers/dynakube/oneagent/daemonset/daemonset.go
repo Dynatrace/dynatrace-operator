@@ -254,10 +254,11 @@ func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
 }
 
 func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
-	securityContext := &corev1.SecurityContext{
-		RunAsNonRoot: address.Of(true),
-		RunAsUser:    address.Of(int64(1000)),
-		RunAsGroup:   address.Of(int64(1000)),
+	var securityContext corev1.SecurityContext
+	if dsInfo.instance.NeedsReadOnlyOneAgents() || dsInfo.instance.IsOneAgentPrivileged() {
+		securityContext.RunAsNonRoot = address.Of(true)
+		securityContext.RunAsUser = address.Of(int64(1000))
+		securityContext.RunAsGroup = address.Of(int64(1000))
 	}
 
 	if dsInfo.instance.IsOneAgentPrivileged() {
@@ -287,5 +288,5 @@ func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
 		}
 	}
 
-	return securityContext
+	return &securityContext
 }
