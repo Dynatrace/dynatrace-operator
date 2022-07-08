@@ -33,6 +33,11 @@ var (
 	log = logger.NewDTLogger().WithName("main")
 )
 
+const (
+	envPodNamespace = "POD_NAMESPACE"
+	envPodName      = "POD_NAME"
+)
+
 func newRootCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:  "dynatrace-operator",
@@ -44,21 +49,21 @@ func newRootCommand() *cobra.Command {
 
 func createWebhookCommandBuilder(deployedViaOLM bool) webhook.CommandBuilder {
 	return webhook.NewWebhookCommandBuilder().
-		SetNamespace(os.Getenv(kubesystem.EnvPodNamespace)).
+		SetNamespace(os.Getenv(envPodNamespace)).
 		SetIsDeployedViaOlm(deployedViaOLM).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func createOperatorCommandBuilder(deployedViaOLM bool) operator.CommandBuilder {
 	return operator.NewOperatorCommandBuilder().
-		SetNamespace(os.Getenv(kubesystem.EnvPodNamespace)).
+		SetNamespace(os.Getenv(envPodNamespace)).
 		SetIsDeployedViaOlm(deployedViaOLM).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
 func createCsiCommandBuilder() csi.CommandBuilder {
 	return csi.NewCsiCommandBuilder().
-		SetNamespace(os.Getenv(kubesystem.EnvPodNamespace)).
+		SetNamespace(os.Getenv(envPodNamespace)).
 		SetConfigProvider(cmdConfig.NewKubeConfigProvider())
 }
 
@@ -70,12 +75,15 @@ func main() {
 	ctrl.SetLogger(log)
 	cmd := newRootCommand()
 
+	podName := os.Getenv(envPodName)
+	podNamespace := os.Getenv(envPodNamespace)
+
 	clt, err := kubesystem.CreateDefaultClient()
 	if err != nil {
 		log.Error(err, "unable to create kube client")
 		os.Exit(1)
 	}
-	deployedViaOLM, err := kubesystem.DeployedViaOLM(clt)
+	deployedViaOLM, err := kubesystem.IsDeployedViaOLM(clt, podName, podNamespace)
 	if err != nil {
 		log.Info(err.Error())
 		os.Exit(1)

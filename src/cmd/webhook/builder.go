@@ -86,7 +86,6 @@ func addFlags(cmd *cobra.Command) {
 
 func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		// TODO: make the code below testable and test it, but in another ticket because otherwise adding the other commands will take a week
 		kubeConfig, err := builder.configProvider.GetConfig()
 		if err != nil {
 			return err
@@ -108,7 +107,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		err = pod_mutator.AddPodMutationWebhookToManager(webhookManager, builder.namespace, builder.isDeployedViaOlm)
+		err = pod_mutator.AddPodMutationWebhookToManager(webhookManager, builder.namespace)
 		if err != nil {
 			return err
 		}

@@ -14,13 +14,13 @@ import (
 )
 
 // AddPodMutationWebhookToManager adds the Webhook server to the Manager
-func AddPodMutationWebhookToManager(mgr manager.Manager, ns string, deployedViaOLM bool) error {
+func AddPodMutationWebhookToManager(mgr manager.Manager, ns string) error {
 	podName := os.Getenv("POD_NAME")
 	if podName == "" {
 		log.Info("no Pod name set for webhook container")
 	}
 
-	if err := registerInjectEndpoint(mgr, ns, podName, deployedViaOLM); err != nil {
+	if err := registerInjectEndpoint(mgr, ns, podName); err != nil {
 		return err
 	}
 	registerLivezEndpoint(mgr)

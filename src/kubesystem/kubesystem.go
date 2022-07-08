@@ -2,19 +2,15 @@ package kubesystem
 
 import (
 	"context"
-	"os"
 
-	cmdConfig "github.com/Dynatrace/dynatrace-operator/src/cmd/config"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-const Namespace = "kube-system"
-
 const (
-	EnvPodNamespace       = "POD_NAMESPACE"
-	EnvPodName            = "POD_NAME"
+	Namespace             = "kube-system"
 	olmSpecificAnnotation = "olm.operatorNamespace"
 )
 
@@ -27,10 +23,7 @@ func GetUID(clt client.Reader) (types.UID, error) {
 	return kubeSystemNamespace.UID, nil
 }
 
-func DeployedViaOLM(clt client.Reader) (bool, error) {
-	podName := os.Getenv(EnvPodName)
-	podNamespace := os.Getenv(EnvPodNamespace)
-
+func IsDeployedViaOLM(clt client.Reader, podName string, podNamespace string) (bool, error) {
 	pod := &corev1.Pod{}
 	err := clt.Get(context.TODO(), types.NamespacedName{Name: podName, Namespace: podNamespace}, pod)
 	if err != nil {
@@ -44,7 +37,7 @@ func DeployedViaOLM(clt client.Reader) (bool, error) {
 }
 
 func CreateDefaultClient() (client.Client, error) {
-	kubeCfg, err := cmdConfig.NewKubeConfigProvider().GetConfig()
+	kubeCfg, err := config.GetConfig()
 	if err != nil {
 		return nil, err
 	}

@@ -1,7 +1,6 @@
 package kubesystem
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -55,10 +54,7 @@ func TestDeployedViaOLM(t *testing.T) {
 			},
 		).Build()
 
-	_ = os.Setenv(EnvPodName, testPodName)
-	_ = os.Setenv(EnvPodNamespace, testNamespaceName)
-
-	deployed, err := DeployedViaOLM(fakeClient)
+	deployed, err := IsDeployedViaOLM(fakeClient, testPodName, testNamespaceName)
 
 	assert.NoError(t, err)
 	assert.True(t, deployed)
