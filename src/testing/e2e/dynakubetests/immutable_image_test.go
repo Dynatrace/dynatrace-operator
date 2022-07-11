@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
-	"github.com/Dynatrace/dynatrace-operator/src/e2e"
+	"github.com/Dynatrace/dynatrace-operator/src/testing/e2e"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
