@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
-	"github.com/Dynatrace/dynatrace-operator/src/e2e"
+	"github.com/Dynatrace/dynatrace-operator/src/testing/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -55,7 +55,7 @@ func createMinimumViableOneAgent(apiURL string) dynatracev1beta1.DynaKube {
 			APIURL: apiURL,
 			Tokens: e2e.TokenSecretName,
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
 					Image: testImage,
 				},
 			},
