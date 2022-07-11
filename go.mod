@@ -7,7 +7,7 @@ require (
 	github.com/containers/image/v5 v5.19.0
 	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-logr/logr v1.2.2
-	github.com/klauspost/compress v1.15.6
+	github.com/klauspost/compress v1.15.7
 	github.com/mattn/go-sqlite3 v1.14.10
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.3-0.20211202193544-a5463b7f9c84
