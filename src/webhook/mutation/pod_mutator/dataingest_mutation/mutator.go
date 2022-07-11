@@ -27,8 +27,10 @@ func NewDataIngestPodMutator(webhookNamespace string, client client.Client, apiR
 }
 
 func (mutator *DataIngestPodMutator) Enabled(request *dtwebhook.BaseRequest) bool {
-	enabledOnPod := kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDataIngestInject, true)
+	enabledOnPod := kubeobjects.GetFieldBool(request.Pod.Annotations, dtwebhook.AnnotationDataIngestInject,
+		request.DynaKube.FeatureEnableAutomaticInjection())
 	enabledOnDynakube := !request.DynaKube.FeatureDisableMetadataEnrichment()
+
 	return enabledOnPod && enabledOnDynakube
 }
 
