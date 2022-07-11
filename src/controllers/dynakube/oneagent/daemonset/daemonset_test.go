@@ -4,10 +4,12 @@ import (
 	"testing"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
+	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -140,7 +142,7 @@ func TestResources(t *testing.T) {
 	})
 }
 
-func TestInfraMon_SecurityContext(t *testing.T) {
+func TestHostMonitoring_SecurityContext(t *testing.T) {
 	t.Run(`User and group id set when read only mode is enabled`, func(t *testing.T) {
 		instance := dynatracev1beta1.DynaKube{
 			Spec: dynatracev1beta1.DynaKubeSpec{
@@ -156,9 +158,71 @@ func TestInfraMon_SecurityContext(t *testing.T) {
 
 		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
 
-		securityContextConstraints := ds.Spec.Template.Spec.Containers[0].SecurityContext
+		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
 
-		assert.NotNil(t, securityContextConstraints)
-		assert.Nil(t, securityContextConstraints.RunAsNonRoot)
+		assert.NotNil(t, securityContext)
+		assert.Equal(t, address.Of(int64(1000)), securityContext.RunAsUser)
+		assert.Equal(t, address.Of(int64(1000)), securityContext.RunAsGroup)
+		assert.Equal(t, address.Of(true), securityContext.RunAsNonRoot)
+		assert.NotEmpty(t, securityContext.Capabilities)
+	})
+
+	t.Run(`No User and group id set when read only mode is disabled`, func(t *testing.T) {
+		instance := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeatureDisableReadOnlyOneAgent: "true",
+				},
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+				},
+			},
+		}
+		dsInfo := NewHostMonitoring(&instance, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
+
+		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
+
+		assert.NotNil(t, securityContext)
+		assert.Nil(t, securityContext.RunAsUser)
+		assert.Nil(t, securityContext.RunAsGroup)
+		assert.Nil(t, securityContext.RunAsNonRoot)
+		assert.NotEmpty(t, securityContext.Capabilities)
+	})
+
+	t.Run(`privileged security context when feature flag is enabled`, func(t *testing.T) {
+		instance := dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					dynatracev1beta1.AnnotationFeatureRunOneAgentContainerPrivileged: "true",
+				},
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				APIURL: testURL,
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					HostMonitoring: &dynatracev1beta1.HostInjectSpec{},
+				},
+			},
+		}
+		dsInfo := NewHostMonitoring(&instance, testClusterID)
+		ds, err := dsInfo.BuildDaemonSet()
+		require.NoError(t, err)
+
+		assert.GreaterOrEqual(t, 1, len(ds.Spec.Template.Spec.Containers))
+
+		securityContext := ds.Spec.Template.Spec.Containers[0].SecurityContext
+
+		assert.NotNil(t, securityContext)
+		assert.Equal(t, address.Of(int64(1000)), securityContext.RunAsUser)
+		assert.Equal(t, address.Of(int64(1000)), securityContext.RunAsGroup)
+		assert.Equal(t, address.Of(true), securityContext.RunAsNonRoot)
+		assert.Equal(t, address.Of(true), securityContext.Privileged)
+		assert.Empty(t, securityContext.Capabilities)
 	})
 }
