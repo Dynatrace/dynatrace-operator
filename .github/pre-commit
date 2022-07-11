@@ -38,7 +38,7 @@ else
     done
 fi
 
-golangci-lint run --build-tags e2e,integration,containers_image_storage_stub
+golangci-lint run --build-tags integration,containers_image_storage_stub
 res=$?
 if [[ $res -ne 0 ]]; then
     echo "Linting failed"
