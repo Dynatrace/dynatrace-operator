@@ -25,6 +25,7 @@ allowHostNetwork: true
 allowHostPID: true
 allowHostPorts: true
 allowPrivilegedContainer: true
+allowPrivilegeEscalation: true
 allowedCapabilities:
   - "*"
 allowedFlexVolumes: null

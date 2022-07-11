@@ -149,7 +149,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
-  creationTimestamp: null
   name: dynakubes.dynatrace.com
 spec:
   conversion:
@@ -4079,6 +4078,8 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
             capabilities:
               drop: ["all"]
       affinity:
@@ -4218,6 +4219,8 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
+            runAsUser: 1001
+            runAsGroup: 1001
             capabilities:
               drop: ["all"]
       serviceAccountName: dynatrace-webhook
@@ -4350,8 +4353,8 @@ apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
   annotations:
-    kubernetes.io/description: "dynatrace-dynakube-oneagent-unprivileged allows access to all privileged and host features and the ability to run as any user, any group, any fsGroup, and with any SELinux context. This is a copy of privileged scc."
-  name: dynatrace-dynakube-oneagent-unprivileged
+    kubernetes.io/description: "dynatrace-dynakube-oneagent-privileged allows access to all privileged and host features and the ability to run as any user, any group, any fsGroup, and with any SELinux context."
+  name: dynatrace-dynakube-oneagent-privileged
   labels:
     app.kubernetes.io/name: dynatrace-operator
     app.kubernetes.io/version: "0.7.1"
@@ -4388,7 +4391,6 @@ requiredDropCapabilities:
   - ALL
 runAsUser:
   type: RunAsAny
-
 seLinuxContext:
   type: RunAsAny
 seccompProfiles:
@@ -4455,7 +4457,7 @@ readOnlyRootFilesystem: false
 requiredDropCapabilities:
   - ALL
 runAsUser:
-  type: RunAsAny
+  type: MustRunAsNonRoot
 seLinuxContext:
   type: RunAsAny
 seccompProfiles:
@@ -4490,6 +4492,7 @@ metadata:
     app.kubernetes.io/version: "0.7.1"
     app.kubernetes.io/component: operator
 allowPrivilegedContainer: false
+allowPrivilegeEscalation: false
 fsGroup:
   type: RunAsAny
 priority: null
@@ -4540,6 +4543,7 @@ metadata:
     app.kubernetes.io/version: "0.7.1"
     app.kubernetes.io/component: operator
 allowPrivilegedContainer: false
+allowPrivilegeEscalation: false
 fsGroup:
   type: RunAsAny
 priority: null
@@ -5115,6 +5119,7 @@ allowHostNetwork: true
 allowHostPID: true
 allowHostPorts: true
 allowPrivilegedContainer: true
+allowPrivilegeEscalation: true
 allowedCapabilities:
   - "*"
 allowedFlexVolumes: null
