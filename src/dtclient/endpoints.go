@@ -14,6 +14,11 @@ func (dtc *dynatraceClient) getLatestAgentUrl(os, installerType, flavor, arch st
 	return appendTechnologies(url, technologies)
 }
 
+func (dtc *dynatraceClient) getLatestAgentVersionUrl(os, installerType, flavor, arch string) string {
+	return fmt.Sprintf("%s/v1/deployment/installer/agent/%s/%s/latest/metainfo?bitness=64&flavor=%s&arch=%s",
+		dtc.url, os, installerType, flavor, arch)
+}
+
 func (dtc *dynatraceClient) getAgentVersionsUrl(os, installerType, flavor, arch string) string {
 	return fmt.Sprintf("%s/v1/deployment/installer/agent/versions/%s/%s?flavor=%s&arch=%s",
 		dtc.url, os, installerType, flavor, arch)
