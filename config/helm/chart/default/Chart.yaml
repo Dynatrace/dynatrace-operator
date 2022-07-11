@@ -20,6 +20,7 @@ home: https://www.dynatrace.com/
 type: application
 version: 0.0.0-snapshot
 appVersion: 0.0.0-snapshot
+kubeVersion: '>=1.21'
 maintainers:
 - name: 0sewa0
   email: marcell.sevcsik@dynatrace.com
