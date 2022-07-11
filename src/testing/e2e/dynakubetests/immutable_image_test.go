@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1alpha1"
+	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/testing/e2e"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -27,11 +27,9 @@ func TestImmutableImage(t *testing.T) {
 				Name:      testName,
 			},
 			Spec: dynatracev1beta1.DynaKubeSpec{
-				APIURL: apiURL,
-				Tokens: e2e.TokenSecretName,
-				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
-				},
+				APIURL:   apiURL,
+				Tokens:   e2e.TokenSecretName,
+				OneAgent: dynatracev1beta1.OneAgentSpec{},
 			},
 		}
 
@@ -59,7 +57,7 @@ func TestImmutableImage(t *testing.T) {
 				Tokens:           e2e.TokenSecretName,
 				CustomPullSecret: testName,
 				OneAgent: dynatracev1beta1.OneAgentSpec{
-					ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
+					ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
 						Image: testImage,
 					},
 				},

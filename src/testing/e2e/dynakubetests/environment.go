@@ -55,7 +55,7 @@ func createMinimumViableOneAgent(apiURL string) dynatracev1beta1.DynaKube {
 			APIURL: apiURL,
 			Tokens: e2e.TokenSecretName,
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{
 					Image: testImage,
 				},
 			},
