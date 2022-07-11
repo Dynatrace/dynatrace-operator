@@ -4151,9 +4151,17 @@ spec:
         - maxSkew: 1
           topologyKey: "topology.kubernetes.io/zone"
           whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: webhook
+              app.kubernetes.io/name: dynatrace-operator
         - maxSkew: 1
           topologyKey: "kubernetes.io/hostname"
           whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: webhook
+              app.kubernetes.io/name: dynatrace-operator
       volumes:
       - emptyDir: {}
         name: certs-dir
