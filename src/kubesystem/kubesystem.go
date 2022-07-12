@@ -3,6 +3,7 @@ package kubesystem
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,13 +28,10 @@ func IsDeployedViaOlm(clt client.Reader, podName string, podNamespace string) (b
 	pod := &corev1.Pod{}
 	err := clt.Get(context.TODO(), types.NamespacedName{Name: podName, Namespace: podNamespace}, pod)
 	if err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
-	if _, ok := pod.Annotations[olmSpecificAnnotation]; ok {
-		return true, nil
-	} else {
-		return false, nil
-	}
+	_, isDeployedViaOlm := pod.Annotations[olmSpecificAnnotation]
+	return isDeployedViaOlm, nil
 }
 
 func CreateDefaultClient() (client.Client, error) {
@@ -41,5 +39,6 @@ func CreateDefaultClient() (client.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return client.New(kubeCfg, client.Options{})
+	kubeClient, err := client.New(kubeCfg, client.Options{})
+	return kubeClient, errors.WithStack(err)
 }

@@ -2,7 +2,6 @@ package pod_mutator
 
 import (
 	"context"
-	"fmt"
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/mapper"
@@ -27,6 +26,10 @@ func (webhook *podMutatorWebhook) createMutationRequestBase(ctx context.Context,
 	if err != nil && !webhook.deployedViaOLM {
 		return nil, err
 	} else if err != nil {
+		// in case of olm deployment, all pods are sent to us
+		// but not all of them need to be mutated,
+		// therefore their namespace might not have a dynakube assigned
+		// in which case we don't need to do anything
 		return nil, nil
 	}
 	dynakube, err := webhook.getDynakube(ctx, dynakubeName)
@@ -60,7 +63,7 @@ func getNamespaceFromRequest(ctx context.Context, apiReader client.Reader, req a
 func getDynakubeName(namespace corev1.Namespace, deployedViaOLM bool) (string, error) {
 	dynakubeName, ok := namespace.Labels[mapper.InstanceLabel]
 	if !ok {
-		return "", errors.New(fmt.Sprintf("no DynaKube instance set for namespace: %s", namespace.Name))
+		return "", errors.Errorf("no DynaKube instance set for namespace: %s", namespace.Name)
 	}
 	return dynakubeName, nil
 }
