@@ -16,18 +16,43 @@
 apiVersion: security.openshift.io/v1
 kind: SecurityContextConstraints
 metadata:
-  name: dynatrace-webhook
+  annotations:
+    kubernetes.io/description: "dynatrace-dynakube-oneagent-privileged allows access to all privileged and host features and the ability to run as any user, any group, any fsGroup, and with any SELinux context."
+  name: dynatrace-dynakube-oneagent-privileged
   labels:
-    {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
-allowPrivilegedContainer: false
+    {{- include "dynatrace-operator.oneagentLabels" . | nindent 4 }}
+allowHostDirVolumePlugin: true
+allowHostIPC: false
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: true
+allowPrivilegedContainer: true
+allowedCapabilities:
+  - CHOWN
+  - DAC_OVERRIDE
+  - DAC_READ_SEARCH
+  - FOWNER
+  - FSETID
+  - KILL
+  - NET_ADMIN
+  - NET_RAW
+  - SETFCAP
+  - SETGID
+  - SETUID
+  - SYS_ADMIN
+  - SYS_CHROOT
+  - SYS_PTRACE
+  - SYS_RESOURCE
+allowedFlexVolumes: null
+defaultAddCapabilities: []
 fsGroup:
   type: RunAsAny
 priority: 1
-readOnlyRootFilesystem: true
+readOnlyRootFilesystem: false
 requiredDropCapabilities:
   - ALL
 runAsUser:
-  type: MustRunAsNonRoot
+  type: RunAsAny
 seLinuxContext:
   type: RunAsAny
 seccompProfiles:
@@ -35,15 +60,7 @@ seccompProfiles:
 supplementalGroups:
   type: RunAsAny
 users:
-  - system:serviceaccount:{{ .Release.Namespace }}:dynatrace-webhook
+  - system:serviceaccount:{{ .Release.Namespace }}:dynatrace-dynakube-oneagent-unprivileged
 volumes:
   - "*"
-
-allowHostDirVolumePlugin: false
-allowHostIPC: false
-allowHostNetwork: true
-allowHostPID: false
-allowHostPorts: false
-allowedFlexVolumes: null
-defaultAddCapabilities: []
 {{ end }}
