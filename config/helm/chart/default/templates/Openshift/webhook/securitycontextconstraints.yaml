@@ -23,7 +23,7 @@ allowPrivilegedContainer: false
 allowPrivilegeEscalation: false
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 1
 readOnlyRootFilesystem: true
 requiredDropCapabilities:
   - ALL
