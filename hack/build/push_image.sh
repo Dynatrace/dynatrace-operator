@@ -29,7 +29,11 @@ if [[ "${LOCALBUILD}" ]]; then
 else
   # directory required by docker copy command
   mkdir -p third_party_licenses
-  docker build . -f ./Dockerfile -t "${base_image}" --build-arg "GO_LINKER_ARGS=$go_linker_args" --label "quay.expires-after=14d" --no-cache
+  docker build . -f ./Dockerfile -t "${base_image}" \
+    --build-arg "GO_LINKER_ARGS=${go_linker_args}" \
+    --build-arg "CGO_CFLAGS=${cgo_cflags}" \
+    --label "quay.expires-after=14d" \
+    --no-cache
   rm -rf third_party_licenses
 fi
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cgo_flags=(
+cgo_cflags=(
   "-O2"
   "-Wno-return-local-addr"
 )

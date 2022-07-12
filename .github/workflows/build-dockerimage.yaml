@@ -12,6 +12,9 @@ on:
       golinkerargs:
         required: true
         type: string
+      cgo_cflags:
+        required: true
+        type: string
       labels:
         required: true
         type: string
@@ -51,6 +54,7 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
             GO_LINKER_ARGS=${{ inputs.golinkerargs }}
+            CGO_CFLAGS=${{ inputs.cgo_cflags }}
           context: .
           file: ./Dockerfile
           platforms: linux/${{ inputs.platform }}
