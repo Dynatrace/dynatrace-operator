@@ -112,9 +112,9 @@ func (controller *DynakubeController) Reconcile(ctx context.Context, request rec
 	if updated {
 		dkState.Update(true, "Istio: objects updated")
 		dkState.RequeueAfter = shortUpdateInterval
-	} else {
-		controller.reconcileDynaKube(ctx, dkState, &dkMapper)
 	}
+
+	controller.reconcileDynaKube(ctx, dkState, &dkMapper)
 
 	if dkState.Err != nil {
 		if !dkState.ValidTokens {
@@ -188,6 +188,7 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 		log.Error(err, "failed to check tokens")
 		return
 	}
+
 	dkState.ValidTokens = true
 	if !dtcReconciler.ValidTokens {
 		dkState.ValidTokens = false
