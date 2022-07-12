@@ -4308,7 +4308,7 @@ metadata:
 allowPrivilegedContainer: false
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 1
 readOnlyRootFilesystem: false
 
 requiredDropCapabilities:
@@ -4385,7 +4385,7 @@ allowedFlexVolumes: null
 defaultAddCapabilities: []
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 1
 readOnlyRootFilesystem: false
 requiredDropCapabilities:
   - ALL
@@ -4452,7 +4452,7 @@ allowedFlexVolumes: null
 defaultAddCapabilities: []
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 1
 readOnlyRootFilesystem: false
 requiredDropCapabilities:
   - ALL
@@ -4495,7 +4495,7 @@ allowPrivilegedContainer: false
 allowPrivilegeEscalation: false
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 1
 readOnlyRootFilesystem: true
 requiredDropCapabilities:
   - ALL
@@ -4546,7 +4546,7 @@ allowPrivilegedContainer: false
 allowPrivilegeEscalation: false
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 1
 readOnlyRootFilesystem: true
 requiredDropCapabilities:
   - ALL
@@ -5126,7 +5126,7 @@ allowedFlexVolumes: null
 defaultAddCapabilities: null
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 1
 readOnlyRootFilesystem: false
 requiredDropCapabilities: null
 runAsUser:

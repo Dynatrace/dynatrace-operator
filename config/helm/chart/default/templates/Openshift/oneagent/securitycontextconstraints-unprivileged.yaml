@@ -47,7 +47,7 @@ allowedFlexVolumes: null
 defaultAddCapabilities: []
 fsGroup:
   type: RunAsAny
-priority: null
+priority: 1
 readOnlyRootFilesystem: false
 requiredDropCapabilities:
   - ALL
