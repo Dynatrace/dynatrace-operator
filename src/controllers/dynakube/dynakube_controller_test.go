@@ -796,12 +796,8 @@ func TestGetDynakube(t *testing.T) {
 		ctx := context.TODO()
 		dynakube, err := controller.getDynakubeOrUnmap(ctx, testName, testNamespace)
 
-		assert.NotNil(t, dynakube)
+		assert.Nil(t, dynakube)
 		assert.NoError(t, err)
-
-		assert.Equal(t, testName, dynakube.Name)
-		assert.Equal(t, testNamespace, dynakube.Namespace)
-		assert.Nil(t, dynakube.Spec.OneAgent.CloudNativeFullStack)
 
 		err = fakeClient.Get(ctx, client.ObjectKey{Name: testNamespace}, namespace)
 		require.NoError(t, err)
@@ -816,11 +812,7 @@ func TestGetDynakube(t *testing.T) {
 		ctx := context.TODO()
 		dynakube, err := controller.getDynakubeOrUnmap(ctx, testName, testNamespace)
 
-		assert.NotNil(t, dynakube)
+		assert.Nil(t, dynakube)
 		assert.EqualError(t, err, "fake error")
-
-		assert.Equal(t, testName, dynakube.Name)
-		assert.Equal(t, testNamespace, dynakube.Namespace)
-		assert.Nil(t, dynakube.Spec.OneAgent.CloudNativeFullStack)
 	})
 }

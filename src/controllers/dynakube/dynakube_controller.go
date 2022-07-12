@@ -99,6 +99,9 @@ func (controller *DynakubeController) Reconcile(ctx context.Context, request rec
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+	if instance == nil {
+		return reconcile.Result{}, nil
+	}
 
 	// A new mapper is initialized here as well as in getDynakubeOrUnmap because to solve these dependencies
 	// the whole dynakube controller would have to be bulldozed
@@ -143,9 +146,12 @@ func (controller *DynakubeController) getDynakubeOrUnmap(ctx context.Context, na
 
 	if k8serrors.IsNotFound(err) {
 		err = dkMapper.UnmapFromDynaKube()
+		return nil, err
+	} else if err != nil {
+		return nil, err
 	}
 
-	return &dynakube, err
+	return &dynakube, nil
 }
 
 func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkState *status.DynakubeState, dkMapper *mapper.DynakubeMapper) {
