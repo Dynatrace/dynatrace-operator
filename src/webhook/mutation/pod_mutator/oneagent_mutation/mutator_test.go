@@ -40,6 +40,24 @@ func TestEnabled(t *testing.T) {
 
 		require.True(t, enabled)
 	})
+	t.Run("off by feature flag", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		request := createTestMutationRequest(nil, nil)
+		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureAutomaticInjection: "false"}
+
+		enabled := mutator.Enabled(request.BaseRequest)
+
+		require.False(t, enabled)
+	})
+	t.Run("on with feature flag", func(t *testing.T) {
+		mutator := createTestPodMutator(nil)
+		request := createTestMutationRequest(nil, nil)
+		request.DynaKube.Annotations = map[string]string{dynatracev1beta1.AnnotationFeatureAutomaticInjection: "true"}
+
+		enabled := mutator.Enabled(request.BaseRequest)
+
+		require.True(t, enabled)
+	})
 }
 
 func TestInjected(t *testing.T) {

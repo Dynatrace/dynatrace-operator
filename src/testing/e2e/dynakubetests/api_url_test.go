@@ -12,7 +12,7 @@ import (
 
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
-	"github.com/Dynatrace/dynatrace-operator/src/e2e"
+	"github.com/Dynatrace/dynatrace-operator/src/testing/e2e"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,7 +46,7 @@ func TestApiURL(t *testing.T) {
 			APIURL: apiURL,
 			Tokens: e2e.TokenSecretName,
 			OneAgent: dynatracev1beta1.OneAgentSpec{
-				ClassicFullStack: &dynatracev1beta1.ClassicFullStackSpec{},
+				ClassicFullStack: &dynatracev1beta1.HostInjectSpec{},
 			},
 		},
 	}

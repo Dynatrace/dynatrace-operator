@@ -49,9 +49,17 @@ tests:
               - maxSkew: 1
                 topologyKey: "topology.kubernetes.io/zone"
                 whenUnsatisfiable: ScheduleAnyway
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/component: webhook
+                    app.kubernetes.io/name: dynatrace-operator
               - maxSkew: 1
                 topologyKey: "kubernetes.io/hostname"
                 whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/component: webhook
+                    app.kubernetes.io/name: dynatrace-operator
             volumes:
               - emptyDir: { }
                 name: certs-dir
@@ -380,3 +388,36 @@ tests:
       - equal:
           path: spec.template.spec.imagePullSecrets[0].name
           value: pull-secret
+
+  - it: should take custom labels
+    set:
+      webhook.labels:
+        testKey: testValue
+    asserts:
+      - isNotEmpty:
+          path: metadata.labels.testKey
+      - equal:
+          path: metadata.labels.testKey
+          value: testValue
+
+  - it: should take custom annotations
+    set:
+      webhook.annotations:
+        testKey: testValue
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            kubectl.kubernetes.io/default-container: webhook
+            testKey: testValue
+
+  - it: should take custom labels in spec.template.metadata.labels path
+    set:
+      webhook.labels:
+        testKey: testValue
+    asserts:
+      - isNotEmpty:
+          path: spec.template.metadata.labels.testKey
+      - equal:
+          path: spec.template.metadata.labels.testKey
+          value: testValue

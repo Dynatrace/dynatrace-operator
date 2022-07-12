@@ -46,7 +46,7 @@ func TestMapFromNamespace(t *testing.T) {
 		assert.Equal(t, 2, len(nm.targetNs.Labels))
 	})
 
-	t.Run("Error, 2 dynakube point to same namespace", func(t *testing.T) {
+	t.Run("Error, 2 dynakubes point to same namespace", func(t *testing.T) {
 		dk2 := createTestDynakubeWithAppInject("appMonitoring-2", labels, nil)
 		clt := fake.NewClient(dk, dk2)
 		nm := NewNamespaceMapper(context.TODO(), clt, clt, "dynatrace", namespace)

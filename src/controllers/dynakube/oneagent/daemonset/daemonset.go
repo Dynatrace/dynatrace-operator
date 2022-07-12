@@ -254,16 +254,17 @@ func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
 }
 
 func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
-	if dsInfo.instance.IsOneAgentPrivileged() {
-		runAsPrivileged := true
-		securityContext := &corev1.SecurityContext{
-			Privileged: &runAsPrivileged,
-		}
-		return securityContext
+	var securityContext corev1.SecurityContext
+	if dsInfo.instance.NeedsReadOnlyOneAgents() {
+		securityContext.RunAsNonRoot = address.Of(true)
+		securityContext.RunAsUser = address.Of(int64(1000))
+		securityContext.RunAsGroup = address.Of(int64(1000))
 	}
 
-	securityContext := &corev1.SecurityContext{
-		Capabilities: &corev1.Capabilities{
+	if dsInfo.instance.IsOneAgentPrivileged() {
+		securityContext.Privileged = address.Of(true)
+	} else {
+		securityContext.Capabilities = &corev1.Capabilities{
 			Drop: []corev1.Capability{
 				"ALL",
 			},
@@ -284,13 +285,8 @@ func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
 				"SYS_PTRACE",
 				"SYS_RESOURCE",
 			},
-		},
+		}
 	}
-	if dsInfo.instance.NeedsReadOnlyOneAgents() {
-		unprivilegedUser := int64(1000)
-		unprivilegedGroup := int64(1000)
-		securityContext.RunAsUser = &unprivilegedUser
-		securityContext.RunAsGroup = &unprivilegedGroup
-	}
-	return securityContext
+
+	return &securityContext
 }
