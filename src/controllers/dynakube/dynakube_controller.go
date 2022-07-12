@@ -107,7 +107,14 @@ func (controller *DynakubeController) Reconcile(ctx context.Context, request rec
 	// the whole dynakube controller would have to be bulldozed
 	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, instance)
 	dkState := status.NewDynakubeState(instance)
-	controller.reconcileDynaKube(ctx, dkState, &dkMapper)
+
+	updated := controller.reconcileIstio(instance)
+	if updated {
+		dkState.Update(true, "Istio: objects updated")
+		dkState.RequeueAfter = shortUpdateInterval
+	} else {
+		controller.reconcileDynaKube(ctx, dkState, &dkMapper)
+	}
 
 	if dkState.Err != nil {
 		if !dkState.ValidTokens {
@@ -154,6 +161,21 @@ func (controller *DynakubeController) getDynakubeOrUnmap(ctx context.Context, na
 	return &dynakube, nil
 }
 
+func (controller *DynakubeController) reconcileIstio(dynakube *dynatracev1beta1.DynaKube) bool {
+	var err error
+	updated := false
+
+	if dynakube.Spec.EnableIstio {
+		updated, err = istio.NewIstioReconciler(controller.config, controller.scheme).ReconcileIstio(dynakube)
+		if err != nil {
+			// If there are errors log them, but move on.
+			log.Info("Istio: failed to reconcile objects", "error", err)
+		}
+	}
+
+	return updated
+}
+
 func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkState *status.DynakubeState, dkMapper *mapper.DynakubeMapper) {
 	dtcReconciler := DynatraceClientReconciler{
 		Client:              controller.client,
@@ -180,17 +202,6 @@ func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkS
 	if dkState.Error(err) {
 		log.Error(err, "could not set Dynakube status")
 		return
-	}
-
-	if dkState.Instance.Spec.EnableIstio {
-		if upd, err = istio.NewIstioReconciler(controller.config, controller.scheme).ReconcileIstio(dkState.Instance); err != nil {
-			// If there are errors log them, but move on.
-			log.Info("Istio: failed to reconcile objects", "error", err)
-		} else if upd {
-			dkState.Update(true, "Istio: objects updated")
-			dkState.RequeueAfter = shortUpdateInterval
-			return
-		}
 	}
 
 	err = dtpullsecret.

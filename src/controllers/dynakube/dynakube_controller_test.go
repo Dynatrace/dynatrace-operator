@@ -816,3 +816,17 @@ func TestGetDynakube(t *testing.T) {
 		assert.EqualError(t, err, "fake error")
 	})
 }
+
+func TestReconcileIstio(t *testing.T) {
+	fakeClient := fake.NewClient()
+	dynakube := &dynatracev1beta1.DynaKube{}
+	controller := &DynakubeController{
+		client:    fakeClient,
+		apiReader: fakeClient,
+	}
+	updated := controller.reconcileIstio(dynakube)
+
+	assert.False(t, updated)
+
+	// Testing what happens if the flag is enabled is not testable without some bigger refactoring
+}
