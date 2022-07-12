@@ -20,6 +20,7 @@ metadata:
   labels:
     {{- include "dynatrace-operator.operatorLabels" . | nindent 4 }}
 allowPrivilegedContainer: false
+allowPrivilegeEscalation: false
 fsGroup:
   type: RunAsAny
 priority: null

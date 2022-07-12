@@ -90,7 +90,7 @@ tests:
       - equal:
           path: runAsUser
           value:
-            type: RunAsAny
+            type: MustRunAsNonRoot
       - equal:
           path: seLinuxContext
           value:
