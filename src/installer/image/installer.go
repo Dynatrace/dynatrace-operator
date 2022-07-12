@@ -133,7 +133,7 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 
 func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string) bool {
 	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.props.ImageDigest)
-	if _, err := installer.fs.Stat(sharedDir); !os.IsNotExist(err) {
+	if _, err := installer.fs.Stat(sharedDir); os.IsNotExist(err) {
 		return false
 	}
 	if installer.props.ImageDigest == imageDigestEncoded {
