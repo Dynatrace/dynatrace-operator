@@ -37,7 +37,7 @@ func IsDeployedViaOlm(clt client.Reader, podName string, podNamespace string) (b
 func CreateDefaultClient() (client.Client, error) {
 	kubeCfg, err := config.GetConfig()
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	kubeClient, err := client.New(kubeCfg, client.Options{})
 	return kubeClient, errors.WithStack(err)

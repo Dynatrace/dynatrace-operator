@@ -97,7 +97,7 @@ func (builder CommandBuilder) buildRun() func(*cobra.Command, []string) error {
 			return err
 		}
 
-		isDeployedViaOLM, err := kubesystem.IsDeployedViaOlm(webhookManager.GetClient(), builder.podName, builder.namespace)
+		isDeployedViaOLM, err := kubesystem.IsDeployedViaOlm(webhookManager.GetAPIReader(), builder.podName, builder.namespace)
 		if err != nil {
 			return err
 		}
