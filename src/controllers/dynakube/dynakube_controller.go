@@ -95,22 +95,14 @@ func (controller *DynakubeController) Reconcile(ctx context.Context, request rec
 	log.Info("reconciling DynaKube", "namespace", request.Namespace, "name", request.Name)
 
 	// Fetch the DynaKube instance
-	instance := &dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: request.NamespacedName.Name}}
-	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, instance)
-	err := controller.client.Get(ctx, request.NamespacedName, instance)
+	instance, err := controller.getDynakubeOrUnmap(ctx, request.Name, request.Namespace)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			if err := dkMapper.UnmapFromDynaKube(); err != nil {
-				return reconcile.Result{}, err
-			}
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
-			return reconcile.Result{}, nil
-		}
-		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
+
+	// A new mapper is initialized here as well as in getDynakubeOrUnmap because to solve these dependencies
+	// the whole dynakube controller would have to be bulldozed
+	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, instance)
 	dkState := status.NewDynakubeState(instance)
 	controller.reconcileDynaKube(ctx, dkState, &dkMapper)
 
@@ -142,6 +134,18 @@ func (controller *DynakubeController) Reconcile(ctx context.Context, request rec
 	}
 
 	return reconcile.Result{RequeueAfter: dkState.RequeueAfter}, nil
+}
+
+func (controller *DynakubeController) getDynakubeOrUnmap(ctx context.Context, name string, namespace string) (*dynatracev1beta1.DynaKube, error) {
+	dynakube := dynatracev1beta1.DynaKube{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}}
+	dkMapper := mapper.NewDynakubeMapper(ctx, controller.client, controller.apiReader, controller.operatorNamespace, &dynakube)
+	err := errors.WithStack(controller.client.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &dynakube))
+
+	if k8serrors.IsNotFound(err) {
+		err = dkMapper.UnmapFromDynaKube()
+	}
+
+	return &dynakube, err
 }
 
 func (controller *DynakubeController) reconcileDynaKube(ctx context.Context, dkState *status.DynakubeState, dkMapper *mapper.DynakubeMapper) {
