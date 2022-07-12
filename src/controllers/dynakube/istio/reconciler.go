@@ -7,6 +7,7 @@ import (
 	dynatracev1beta1 "github.com/Dynatrace/dynatrace-operator/src/api/v1beta1"
 	"github.com/Dynatrace/dynatrace-operator/src/dtclient"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
+	"github.com/pkg/errors"
 	istioclientset "istio.io/client-go/pkg/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -58,8 +59,7 @@ func (reconciler *IstioReconciler) initializeIstioClient(config *rest.Config) (i
 
 // ReconcileIstio - runs the istio's reconcile workflow,
 // creating/deleting VS & SE for external communications
-func (reconciler *IstioReconciler) ReconcileIstio(instance *dynatracev1beta1.DynaKube) (updated bool, err error) {
-
+func (reconciler *IstioReconciler) ReconcileIstio(instance *dynatracev1beta1.DynaKube) (bool, error) {
 	enabled, err := CheckIstioEnabled(reconciler.config)
 	if err != nil {
 		return false, fmt.Errorf("istio: failed to verify Istio availability: %w", err)
@@ -70,17 +70,23 @@ func (reconciler *IstioReconciler) ReconcileIstio(instance *dynatracev1beta1.Dyn
 		return false, nil
 	}
 
-	apiHost := instance.CommunicationHostForClient()
-	if upd, err := reconciler.reconcileIstioConfigurations(instance, []dtclient.CommunicationHost{apiHost}, "api-url"); err != nil {
-		return false, fmt.Errorf("istio: error reconciling config for Dynatrace API URL: %w", err)
+	apiHost, err := dtclient.ParseEndpoint(instance.Spec.APIURL)
+	if err != nil {
+		return false, err
+	}
+
+	upd, err := reconciler.reconcileIstioConfigurations(instance, []dtclient.CommunicationHost{apiHost}, "api-url")
+	if err != nil {
+		return false, errors.WithMessage(err, "istio: error reconciling config for Dynatrace API URL")
 	} else if upd {
 		return true, nil
 	}
 
 	// Fetch endpoints via Dynatrace client
 	ci := instance.ConnectionInfo()
-	if upd, err := reconciler.reconcileIstioConfigurations(instance, ci.CommunicationHosts, "communication-endpoint"); err != nil {
-		return false, fmt.Errorf("istio: error reconciling config for Dynatrace communication endpoints: %w", err)
+	upd, err = reconciler.reconcileIstioConfigurations(instance, ci.CommunicationHosts, "communication-endpoint")
+	if err != nil {
+		return false, errors.WithMessage(err, "istio: error reconciling config for Dynatrace communication endpoints:")
 	} else if upd {
 		return true, nil
 	}

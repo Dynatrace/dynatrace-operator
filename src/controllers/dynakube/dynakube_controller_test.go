@@ -13,9 +13,11 @@ import (
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects"
 	"github.com/Dynatrace/dynatrace-operator/src/kubeobjects/address"
 	"github.com/Dynatrace/dynatrace-operator/src/kubesystem"
+	"github.com/Dynatrace/dynatrace-operator/src/mapper"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme"
 	"github.com/Dynatrace/dynatrace-operator/src/scheme/fake"
 	"github.com/Dynatrace/dynatrace-operator/src/version"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -742,4 +744,89 @@ func generateStatefulSetForTesting(name, namespace, feature, kubeSystemUUID stri
 			PodManagementPolicy: "Parallel",
 		},
 	}
+}
+
+type errorClient struct {
+	client.Client
+}
+
+func (clt errorClient) Get(_ context.Context, _ client.ObjectKey, _ client.Object) error {
+	return errors.New("fake error")
+}
+
+func TestGetDynakube(t *testing.T) {
+	t.Run("get dynakube", func(t *testing.T) {
+		fakeClient := fake.NewClient(&dynatracev1beta1.DynaKube{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      testName,
+				Namespace: testNamespace,
+			},
+			Spec: dynatracev1beta1.DynaKubeSpec{
+				OneAgent: dynatracev1beta1.OneAgentSpec{
+					CloudNativeFullStack: &dynatracev1beta1.CloudNativeFullStackSpec{},
+				},
+			},
+		})
+		controller := &DynakubeController{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		ctx := context.TODO()
+		dynakube, err := controller.getDynakubeOrUnmap(ctx, testName, testNamespace)
+
+		assert.NotNil(t, dynakube)
+		assert.NoError(t, err)
+
+		assert.Equal(t, testName, dynakube.Name)
+		assert.Equal(t, testNamespace, dynakube.Namespace)
+		assert.NotNil(t, dynakube.Spec.OneAgent.CloudNativeFullStack)
+	})
+	t.Run("unmap if not not found", func(t *testing.T) {
+		namespace := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:   testNamespace,
+				Labels: map[string]string{mapper.InstanceLabel: testName},
+			},
+		}
+		fakeClient := fake.NewClient(namespace)
+		controller := &DynakubeController{
+			client:    fakeClient,
+			apiReader: fakeClient,
+		}
+		ctx := context.TODO()
+		dynakube, err := controller.getDynakubeOrUnmap(ctx, testName, testNamespace)
+
+		assert.Nil(t, dynakube)
+		assert.NoError(t, err)
+
+		err = fakeClient.Get(ctx, client.ObjectKey{Name: testNamespace}, namespace)
+		require.NoError(t, err)
+		assert.NotContains(t, namespace.Labels, mapper.InstanceLabel)
+	})
+	t.Run("return unknown error", func(t *testing.T) {
+		controller := &DynakubeController{
+			client:    errorClient{},
+			apiReader: errorClient{},
+		}
+
+		ctx := context.TODO()
+		dynakube, err := controller.getDynakubeOrUnmap(ctx, testName, testNamespace)
+
+		assert.Nil(t, dynakube)
+		assert.EqualError(t, err, "fake error")
+	})
+}
+
+func TestReconcileIstio(t *testing.T) {
+	fakeClient := fake.NewClient()
+	dynakube := &dynatracev1beta1.DynaKube{}
+	controller := &DynakubeController{
+		client:    fakeClient,
+		apiReader: fakeClient,
+	}
+	updated := controller.reconcileIstio(dynakube)
+
+	assert.False(t, updated)
+
+	// Testing what happens if the flag is enabled is not testable without some bigger refactoring
 }
