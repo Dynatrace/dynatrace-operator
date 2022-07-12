@@ -21,6 +21,8 @@ import (
 
 const (
 	testName                 = "test-name"
+	testImageTag             = "tag"
+	testImage                = "test-image:" + testImageTag
 	testNamespace            = "test-namespace"
 	testKey                  = "test-key"
 	testValue                = "test-value"
@@ -42,46 +44,91 @@ func TestNewStatefulSetBuilder(t *testing.T) {
 }
 
 func TestStatefulSetBuilder_Build(t *testing.T) {
-	instance := buildTestInstance()
-	capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
-	sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", "", testComponentFeature, "", "", nil, nil, nil))
+	t.Run(`build without image`, func(t *testing.T) {
+		instance := buildTestInstance()
+		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
+		sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", "", testComponentFeature, "", "", nil, nil, nil))
 
-	expectedLabels := map[string]string{
-		kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
-		kubeobjects.AppCreatedByLabel: instance.Name,
-		kubeobjects.AppComponentLabel: testComponentFeature,
-		kubeobjects.AppVersionLabel:   testComponentVersion,
-		kubeobjects.AppManagedByLabel: version.AppName,
-	}
-	expectedMatchLabels := map[string]string{
-		kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
-		kubeobjects.AppCreatedByLabel: instance.Name,
-		kubeobjects.AppManagedByLabel: version.AppName,
-	}
+		expectedLabels := map[string]string{
+			kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
+			kubeobjects.AppCreatedByLabel: instance.Name,
+			kubeobjects.AppComponentLabel: testComponentFeature,
+			kubeobjects.AppVersionLabel:   testComponentVersion,
+			kubeobjects.AppManagedByLabel: version.AppName,
+		}
+		expectedMatchLabels := map[string]string{
+			kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
+			kubeobjects.AppCreatedByLabel: instance.Name,
+			kubeobjects.AppManagedByLabel: version.AppName,
+		}
 
-	assert.NoError(t, err)
-	assert.NotNil(t, sts)
-	assert.Equal(t, instance.Name+routingStatefulSetSuffix, sts.Name)
-	assert.Equal(t, instance.Namespace, sts.Namespace)
-	assert.Equal(t, expectedLabels, sts.Labels)
-	assert.Equal(t, instance.Spec.ActiveGate.Replicas, sts.Spec.Replicas)
-	assert.Equal(t, appsv1.ParallelPodManagement, sts.Spec.PodManagementPolicy)
-	assert.Equal(t, metav1.LabelSelector{
-		MatchLabels: expectedMatchLabels,
-	}, *sts.Spec.Selector)
-	assert.NotEqual(t, corev1.PodTemplateSpec{}, sts.Spec.Template)
-	assert.Equal(t, expectedLabels, sts.Spec.Template.Labels)
-	assert.Equal(t, sts.Labels, sts.Spec.Template.Labels)
-	assert.NotEqual(t, corev1.PodSpec{}, sts.Spec.Template.Spec)
-	assert.Contains(t, sts.Annotations, kubeobjects.AnnotationHash)
+		assert.NoError(t, err)
+		assert.NotNil(t, sts)
+		assert.Equal(t, instance.Name+routingStatefulSetSuffix, sts.Name)
+		assert.Equal(t, instance.Namespace, sts.Namespace)
+		assert.Equal(t, expectedLabels, sts.Labels)
+		assert.Equal(t, instance.Spec.ActiveGate.Replicas, sts.Spec.Replicas)
+		assert.Equal(t, appsv1.ParallelPodManagement, sts.Spec.PodManagementPolicy)
+		assert.Equal(t, metav1.LabelSelector{
+			MatchLabels: expectedMatchLabels,
+		}, *sts.Spec.Selector)
+		assert.NotEqual(t, corev1.PodTemplateSpec{}, sts.Spec.Template)
+		assert.Equal(t, expectedLabels, sts.Spec.Template.Labels)
+		assert.Equal(t, sts.Labels, sts.Spec.Template.Labels)
+		assert.NotEqual(t, corev1.PodSpec{}, sts.Spec.Template.Spec)
+		assert.Contains(t, sts.Annotations, kubeobjects.AnnotationHash)
 
-	storedHash := sts.Annotations[kubeobjects.AnnotationHash]
-	sts.Annotations = map[string]string{}
-	hash, err := kubeobjects.GenerateHash(sts)
-	assert.NoError(t, err)
-	assert.Equal(t, storedHash, hash)
+		storedHash := sts.Annotations[kubeobjects.AnnotationHash]
+		sts.Annotations = map[string]string{}
+		hash, err := kubeobjects.GenerateHash(sts)
+		assert.NoError(t, err)
+		assert.Equal(t, storedHash, hash)
+	})
+
+	t.Run(`build while image set`, func(t *testing.T) {
+		instance := buildTestInstanceWithImage()
+		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
+		sts, err := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", "", testComponentFeature, "", "", nil, nil, nil))
+
+		expectedLabels := map[string]string{
+			kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
+			kubeobjects.AppCreatedByLabel: instance.Name,
+			kubeobjects.AppComponentLabel: testComponentFeature,
+			kubeobjects.AppManagedByLabel: version.AppName,
+			kubeobjects.AppVersionLabel:   kubeobjects.CustomImageLabelValue,
+		}
+		expectedMatchLabels := map[string]string{
+			kubeobjects.AppNameLabel:      kubeobjects.ActiveGateComponentLabel,
+			kubeobjects.AppCreatedByLabel: instance.Name,
+			kubeobjects.AppManagedByLabel: version.AppName,
+		}
+
+		assert.NoError(t, err)
+		assert.NotNil(t, sts)
+		assert.Equal(t, instance.Name+routingStatefulSetSuffix, sts.Name)
+		assert.Equal(t, instance.Namespace, sts.Namespace)
+		assert.Equal(t, expectedLabels, sts.Labels)
+		assert.Equal(t, instance.Spec.ActiveGate.Replicas, sts.Spec.Replicas)
+		assert.Equal(t, appsv1.ParallelPodManagement, sts.Spec.PodManagementPolicy)
+		assert.Equal(t, metav1.LabelSelector{
+			MatchLabels: expectedMatchLabels,
+		}, *sts.Spec.Selector)
+		assert.NotEqual(t, corev1.PodTemplateSpec{}, sts.Spec.Template)
+		assert.Equal(t, expectedLabels, sts.Spec.Template.Labels)
+		assert.Equal(t, sts.Labels, sts.Spec.Template.Labels)
+		assert.NotEqual(t, corev1.PodSpec{}, sts.Spec.Template.Spec)
+		assert.Contains(t, sts.Annotations, kubeobjects.AnnotationHash)
+
+		storedHash := sts.Annotations[kubeobjects.AnnotationHash]
+		sts.Annotations = map[string]string{}
+		hash, err := kubeobjects.GenerateHash(sts)
+		assert.NoError(t, err)
+		assert.Equal(t, storedHash, hash)
+	})
 
 	t.Run(`template has annotations`, func(t *testing.T) {
+		instance := buildTestInstance()
+		capabilityProperties := &instance.Spec.ActiveGate.CapabilityProperties
 		sts, _ := CreateStatefulSet(NewStatefulSetProperties(instance, capabilityProperties, "", testValue, "", "", "", nil, nil, nil))
 		assert.Equal(t, map[string]string{
 			annotationActiveGateConfigurationHash: testValue,
@@ -725,6 +772,12 @@ func buildTestInstance() *dynatracev1beta1.DynaKube {
 			},
 		},
 	}
+}
+
+func buildTestInstanceWithImage() *dynatracev1beta1.DynaKube {
+	dynakube := buildTestInstance()
+	dynakube.Spec.ActiveGate.Image = testImage
+	return dynakube
 }
 
 func buildActiveGateMountPoints(statsd bool, readOnly bool, tlsSecret bool) []string {
