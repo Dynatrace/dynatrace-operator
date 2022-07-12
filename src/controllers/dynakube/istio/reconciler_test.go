@@ -80,7 +80,11 @@ func TestController_ReconcileIstio(t *testing.T) {
 	require.NoError(t, err)
 
 	virtualService := buildVirtualService(testVirtualServiceName, DefaultTestNamespace, "localhost", serverUrl.Scheme, uint32(port))
-	instance := &dynatracev1beta1.DynaKube{}
+	instance := &dynatracev1beta1.DynaKube{
+		Spec: dynatracev1beta1.DynaKubeSpec{
+			APIURL: serverUrl.String(),
+		},
+	}
 	reconciler := IstioReconciler{
 		istioClient: fakeistio.NewSimpleClientset(virtualService),
 		scheme:      scheme.Scheme,

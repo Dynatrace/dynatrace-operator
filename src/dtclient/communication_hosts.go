@@ -22,7 +22,7 @@ type CommunicationHost struct {
 }
 
 func (dtc *dynatraceClient) GetCommunicationHostForClient() (CommunicationHost, error) {
-	return dtc.parseEndpoint(dtc.url)
+	return ParseEndpoint(dtc.url)
 }
 
 func (dtc *dynatraceClient) GetConnectionInfo() (ConnectionInfo, error) {
@@ -64,7 +64,7 @@ func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conn
 	formattedCommunicationEndpoints := resp.FormattedCommunicationEndpoints
 
 	for _, s := range resp.CommunicationEndpoints {
-		e, err := dtc.parseEndpoint(s)
+		e, err := ParseEndpoint(s)
 		if err != nil {
 			log.Info("failed to parse communication endpoint", "url", s)
 			continue
@@ -86,7 +86,7 @@ func (dtc *dynatraceClient) readResponseForConnectionInfo(response []byte) (Conn
 	return ci, nil
 }
 
-func (dtc *dynatraceClient) parseEndpoint(s string) (CommunicationHost, error) {
+func ParseEndpoint(s string) (CommunicationHost, error) {
 	u, err := url.ParseRequestURI(s)
 	if err != nil {
 		return CommunicationHost{}, errors.New("failed to parse URL")
