@@ -255,7 +255,7 @@ func (dsInfo *builderInfo) imagePullSecrets() []corev1.LocalObjectReference {
 
 func (dsInfo *builderInfo) securityContext() *corev1.SecurityContext {
 	var securityContext corev1.SecurityContext
-	if dsInfo.instance.NeedsReadOnlyOneAgents() || dsInfo.instance.IsOneAgentPrivileged() {
+	if dsInfo.instance.NeedsReadOnlyOneAgents() {
 		securityContext.RunAsNonRoot = address.Of(true)
 		securityContext.RunAsUser = address.Of(int64(1000))
 		securityContext.RunAsGroup = address.Of(int64(1000))
