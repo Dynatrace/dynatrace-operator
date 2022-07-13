@@ -153,6 +153,12 @@ const (
 	SELECT tenantUUID, Name
 	FROM dynakubes;
 	`
+
+	getDynakubesUsingImageDigestStatement = `
+	SELECT Name
+	FROM dynakubes
+	WHERE ImageDigest == ?;
+	`
 )
 
 type SqliteAccess struct {
@@ -487,6 +493,25 @@ func (access *SqliteAccess) GetUsedImageDigests() (map[string]bool, error) {
 		}
 	}
 	return imageDigests, nil
+}
+
+// GetDynakubeNamesForImageDigest gets all dynakube names that use the specified image digest.
+func (access *SqliteAccess) GetDynakubeNamesForImageDigest(imageDigest string) ([]string, error) {
+	rows, err := access.conn.Query(getDynakubesUsingImageDigestStatement, imageDigest)
+	if err != nil {
+		return nil, errors.WithStack(errors.WithMessagef(err, "couldn't get dynakube names for image digest '%s'", imageDigest))
+	}
+	dynakubes := []string{}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var dynakubeName string
+		err := rows.Scan(&dynakubeName)
+		if err != nil {
+			return nil, errors.WithStack(errors.WithMessagef(err, "couldn't scan dynakube name for image digest '%s'", imageDigest))
+		}
+		dynakubes = append(dynakubes, dynakubeName)
+	}
+	return dynakubes, nil
 }
 
 // GetPodNames gets all PodNames present in the `volumes` database in map with their corresponding volumeIDs.

@@ -334,8 +334,9 @@ func createTestAgentImageUpdater(t *testing.T, dk *dynatracev1beta1.DynaKube, ob
 	path := metadata.PathResolver{RootDir: "test"}
 	fs := afero.NewMemMapFs()
 	rec := record.NewFakeRecorder(10)
+	db := metadata.FakeMemoryDB()
 
-	updater, err := newAgentImageUpdater(context.TODO(), fs, fake.NewClient(obj...), path, rec, dk, testDigest)
+	updater, err := newAgentImageUpdater(context.TODO(), fs, fake.NewClient(obj...), path, db, rec, dk)
 	require.NoError(t, err)
 	updater.installer = &installer.InstallerMock{}
 
