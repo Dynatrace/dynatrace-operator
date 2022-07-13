@@ -3,21 +3,21 @@ changelog:
     labels:
       - cherrypick
   categories:
-    - title: Bugfixes
+    - title: Bugfixes 🪲
       labels:
         - bug
-    - title: Core changes
+    - title: Core changes 🎉
       labels:
         - core
         - ci
         - security
-    - title: Helm changes
+    - title: Helm changes ⛑️
       labels:
         - helm
-    - title: Component changes
+    - title: Component changes 🛠️
       labels:
         - oneagent
         - activegate
-    - title: Documentation changes
+    - title: Documentation changes 📚
       labels:
         - documentation
