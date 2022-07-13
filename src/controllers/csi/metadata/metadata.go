@@ -76,7 +76,7 @@ type Access interface {
 	GetUsedVersions(tenantUUID string) (map[string]bool, error)
 	GetAllUsedVersions() (map[string]bool, error)
 	GetUsedImageDigests() (map[string]bool, error)
-	GetDynakubeNamesForImageDigest(imageDigest string) ([]string, error)
+	IsImageDigestUsed(imageDigest string) (bool, error)
 }
 
 type AccessOverview struct {

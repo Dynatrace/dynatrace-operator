@@ -154,10 +154,10 @@ const (
 	FROM dynakubes;
 	`
 
-	getDynakubesUsingImageDigestStatement = `
-	SELECT Name
+	countImageDigestStatement = `
+	SELECT COUNT(*)
 	FROM dynakubes
-	WHERE ImageDigest == ?;
+	WHERE ImageDigest = ?;
 	`
 )
 
@@ -495,23 +495,14 @@ func (access *SqliteAccess) GetUsedImageDigests() (map[string]bool, error) {
 	return imageDigests, nil
 }
 
-// GetDynakubeNamesForImageDigest gets all dynakube names that use the specified image digest.
-func (access *SqliteAccess) GetDynakubeNamesForImageDigest(imageDigest string) ([]string, error) {
-	rows, err := access.conn.Query(getDynakubesUsingImageDigestStatement, imageDigest)
+// IsImageDigestUsed checks if the specified image digest is present in the database.
+func (access *SqliteAccess) IsImageDigestUsed(imageDigest string) (bool, error) {
+	var count int
+	err := access.querySimpleStatement(countImageDigestStatement, imageDigest, &count)
 	if err != nil {
-		return nil, errors.WithStack(errors.WithMessagef(err, "couldn't get dynakube names for image digest '%s'", imageDigest))
+		return false, errors.WithMessagef(err, "couldn't count usage of image digest: %s", imageDigest)
 	}
-	dynakubes := []string{}
-	defer func() { _ = rows.Close() }()
-	for rows.Next() {
-		var dynakubeName string
-		err := rows.Scan(&dynakubeName)
-		if err != nil {
-			return nil, errors.WithStack(errors.WithMessagef(err, "couldn't scan dynakube name for image digest '%s'", imageDigest))
-		}
-		dynakubes = append(dynakubes, dynakubeName)
-	}
-	return dynakubes, nil
+	return count > 0, nil
 }
 
 // GetPodNames gets all PodNames present in the `volumes` database in map with their corresponding volumeIDs.

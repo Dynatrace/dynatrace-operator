@@ -57,7 +57,7 @@ func (installer *ImageInstaller) InstallAgent(targetDir string) (bool, error) {
 		return false, errors.WithStack(err)
 	}
 
-	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.props.imageDigest)
+	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.ImageDigest())
 	if err := symlink.CreateSymlinkForCurrentVersionIfNotExists(installer.fs, sharedDir); err != nil {
 		_ = installer.fs.RemoveAll(targetDir)
 		_ = installer.fs.RemoveAll(sharedDir)
@@ -68,7 +68,7 @@ func (installer *ImageInstaller) InstallAgent(targetDir string) (bool, error) {
 }
 
 func (installer ImageInstaller) UpdateProcessModuleConfig(targetDir string, processModuleConfig *dtypes.ProcessModuleConfig) error {
-	sourceDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.props.imageDigest)
+	sourceDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.ImageDigest())
 	return processmoduleconfig.CreateAgentConfigDir(installer.fs, targetDir, sourceDir, processModuleConfig)
 }
 
@@ -96,7 +96,7 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 	imageDigestEncoded := imageDigest.Encoded()
 	isDownloaded, err := installer.isAlreadyDownloaded(imageDigestEncoded)
 	if err != nil {
-		log.Info("failed to determine state of download", "digest", imageDigestEncoded)
+		log.Info("error checking if the image exists locally", "digest", imageDigestEncoded)
 		return errors.WithStack(err)
 	}
 	if isDownloaded {
@@ -138,7 +138,7 @@ func (installer *ImageInstaller) installAgentFromImage() error {
 }
 
 func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string) (bool, error) {
-	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(installer.props.imageDigest)
+	sharedDir := installer.props.PathResolver.AgentSharedBinaryDirForImage(imageDigestEncoded)
 
 	if _, err := installer.fs.Stat(sharedDir); os.IsNotExist(err) {
 		return false, nil
@@ -146,15 +146,11 @@ func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string) (
 		return false, errors.WithStack(err)
 	}
 
-	dynakubeNames, err := installer.props.Metadata.GetDynakubeNamesForImageDigest(imageDigestEncoded)
+	isDigestUsed, err := installer.props.Metadata.IsImageDigestUsed(imageDigestEncoded)
 	if err != nil {
 		return false, err
 	}
-
-	if len(dynakubeNames) > 0 {
-		return true, nil
-	}
-	return false, nil
+	return isDigestUsed, nil
 }
 
 func getImageDigest(systemContext *types.SystemContext, imageReference *types.ImageReference) (digest.Digest, error) {
