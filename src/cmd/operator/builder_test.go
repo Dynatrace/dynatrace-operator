@@ -9,11 +9,17 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const (
 	testNamespace = "test-namespace"
+	testPod       = "test-pod-name"
 )
 
 func TestCommandBuilder(t *testing.T) {
@@ -80,7 +86,6 @@ func TestOperatorCommand(t *testing.T) {
 
 		builder := NewOperatorCommandBuilder().
 			SetNamespace(testNamespace).
-			SetIsDeployedViaOlm(false).
 			setOperatorManagerProvider(mockMgrProvider).
 			setBootstrapManagerProvider(mockMgrProvider).
 			SetConfigProvider(mockCfgProvider)
@@ -94,7 +99,6 @@ func TestOperatorCommand(t *testing.T) {
 		mockCfgProvider := &config.MockProvider{}
 		mockCfgProvider.On("GetConfig").Return(&rest.Config{}, errors.New("config provider error"))
 		builder := NewOperatorCommandBuilder().
-			SetIsDeployedViaOlm(false).
 			SetConfigProvider(mockCfgProvider)
 		operatorCommand := builder.Build()
 
@@ -113,11 +117,12 @@ func TestOperatorCommand(t *testing.T) {
 
 		builder := NewOperatorCommandBuilder().
 			SetNamespace(testNamespace).
-			SetIsDeployedViaOlm(false).
+			SetPodName(testPod).
 			setOperatorManagerProvider(mockMgrProvider).
 			setBootstrapManagerProvider(mockMgrProvider).
 			SetConfigProvider(mockCfgProvider).
-			setSignalHandler(context.TODO())
+			setSignalHandler(context.TODO()).
+			setClient(createFakeClient(false))
 		operatorCommand := builder.Build()
 
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
@@ -135,9 +140,10 @@ func TestOperatorCommand(t *testing.T) {
 
 		builder := NewOperatorCommandBuilder().
 			SetNamespace(testNamespace).
-			SetIsDeployedViaOlm(false).
+			SetPodName(testPod).
 			setBootstrapManagerProvider(mockMgrProvider).
-			SetConfigProvider(mockCfgProvider)
+			SetConfigProvider(mockCfgProvider).
+			setClient(createFakeClient(false))
 		operatorCommand := builder.Build()
 
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
@@ -158,11 +164,12 @@ func TestOperatorCommand(t *testing.T) {
 
 		builder := NewOperatorCommandBuilder().
 			SetNamespace(testNamespace).
-			SetIsDeployedViaOlm(false).
+			SetPodName(testPod).
 			setOperatorManagerProvider(mockMgrProvider).
 			setBootstrapManagerProvider(mockMgrProvider).
 			SetConfigProvider(mockCfgProvider).
-			setSignalHandler(context.TODO())
+			setSignalHandler(context.TODO()).
+			setClient(createFakeClient(false))
 		operatorCommand := builder.Build()
 
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
@@ -192,11 +199,12 @@ func TestOperatorCommand(t *testing.T) {
 
 		builder := NewOperatorCommandBuilder().
 			SetNamespace(testNamespace).
-			SetIsDeployedViaOlm(true).
+			SetPodName(testPod).
 			setOperatorManagerProvider(mockOperatorMgrProvider).
 			setBootstrapManagerProvider(mockBootstrapMgrProvider).
 			SetConfigProvider(mockCfgProvider).
-			setSignalHandler(context.TODO())
+			setSignalHandler(context.TODO()).
+			setClient(createFakeClient(true))
 		operatorCommand := builder.Build()
 
 		err := operatorCommand.RunE(operatorCommand, make([]string, 0))
@@ -205,4 +213,30 @@ func TestOperatorCommand(t *testing.T) {
 		bootstrapMockMgr.AssertNotCalled(t, "Start", mock.Anything)
 		operatorMockMgr.AssertCalled(t, "Start", mock.Anything)
 	})
+}
+
+func createFakeClient(isDeployedViaOlm bool) client.WithWatch {
+	var annotations map[string]string = map[string]string{}
+	if isDeployedViaOlm {
+		annotations = map[string]string{
+			"olm.operatorNamespace": "operators",
+		}
+	}
+
+	return fake.NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(
+			&v1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: testNamespace,
+				},
+			},
+			&v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        testPod,
+					Namespace:   testNamespace,
+					Annotations: annotations,
+				},
+			},
+		).Build()
 }

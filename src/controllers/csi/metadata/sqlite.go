@@ -153,6 +153,12 @@ const (
 	SELECT tenantUUID, Name
 	FROM dynakubes;
 	`
+
+	countImageDigestStatement = `
+	SELECT COUNT(*)
+	FROM dynakubes
+	WHERE ImageDigest = ?;
+	`
 )
 
 type SqliteAccess struct {
@@ -487,6 +493,16 @@ func (access *SqliteAccess) GetUsedImageDigests() (map[string]bool, error) {
 		}
 	}
 	return imageDigests, nil
+}
+
+// IsImageDigestUsed checks if the specified image digest is present in the database.
+func (access *SqliteAccess) IsImageDigestUsed(imageDigest string) (bool, error) {
+	var count int
+	err := access.querySimpleStatement(countImageDigestStatement, imageDigest, &count)
+	if err != nil {
+		return false, errors.WithMessagef(err, "couldn't count usage of image digest: %s", imageDigest)
+	}
+	return count > 0, nil
 }
 
 // GetPodNames gets all PodNames present in the `volumes` database in map with their corresponding volumeIDs.

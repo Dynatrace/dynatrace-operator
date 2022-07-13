@@ -63,10 +63,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            {{- if eq (default false .Values.olm) true}}
-            - name: DEPLOYED_VIA_OLM
-              value: "true"
-            {{- end }}
           ports:
             - containerPort: 10080
               name: server-port

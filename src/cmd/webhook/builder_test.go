@@ -38,12 +38,4 @@ func TestWebhookCommandBuilder(t *testing.T) {
 
 		assert.Equal(t, "namespace", builder.namespace)
 	})
-	t.Run("set deployed via olm flag", func(t *testing.T) {
-		builder := NewWebhookCommandBuilder().SetIsDeployedViaOlm(true)
-
-		assert.True(t, builder.isDeployedViaOlm)
-
-		builder = builder.SetIsDeployedViaOlm(false)
-		assert.False(t, builder.isDeployedViaOlm)
-	})
 }
