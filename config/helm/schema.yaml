@@ -15,31 +15,37 @@
 x-google-marketplace:
   schemaVersion: v2
   applicationApiVersion: v1beta1
-  publishedVersion: 0.7.1
+  publishedVersion: 0.7.2
   publishedVersionMetadata:
     releaseNote: '<!-- Release notes generated using configuration in .github/release.yml
-      at v0.7.1 -->
+      at v0.7.2 -->
 
 
       ## What''s Changed
 
       ### Bugfixes
 
-      * Set priority to null for SCCs by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/900
+      * Add `labelSelector` to webhook''s `topologySpreadConstraints` by @mjgrzybek
+      in https://github.com/Dynatrace/dynatrace-operator/pull/938
 
-      * Makes standalone init env requirements injection specific by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/920
+      * Use latest version endpoint for agent download by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/937
 
-      ### Core changes
+      * Fixes oneagent privileged flag by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/953
 
-      * Split bundle step for different platforms by @chrismuellner in https://github.com/Dynatrace/dynatrace-operator/pull/858
+      * Update SCCs to match Security Context by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/950
 
-      * Updates the Google Markertplace scripts by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/875
+      * Fixes Istio reconciliation depending on a token check that depends on Istio
+      reconciliations by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/956
 
-      * Use ARM libraries in ARM docker image by @aorcholski in https://github.com/Dynatrace/dynatrace-operator/pull/926
+      * Sets priority to 1 for the SCCs by @0sewa0 in https://github.com/Dynatrace/dynatrace-operator/pull/959
+
+      ### Helm changes
+
+      * Fixes kubeversion property in Chart.yaml by @meik99 in https://github.com/Dynatrace/dynatrace-operator/pull/962
 
 
 
-      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.7.0...v0.7.1'
+      **Full Changelog**: https://github.com/Dynatrace/dynatrace-operator/compare/v0.7.1...v0.7.2'
     releaseTypes:
     - Feature
     recommended: true
