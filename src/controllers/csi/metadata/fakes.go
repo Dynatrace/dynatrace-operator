@@ -68,4 +68,6 @@ func (f *FakeFailDB) GetAllUsedVersions() (map[string]bool, error) { return nil,
 
 func (f *FakeFailDB) GetUsedImageDigests() (map[string]bool, error) { return nil, sql.ErrTxDone }
 
-func (f *FakeFailDB) GetDynakubeNamesForImageDigest(imageDigest string) ([]string, error)  { return nil, sql.ErrTxDone }
+func (f *FakeFailDB) GetDynakubeNamesForImageDigest(imageDigest string) ([]string, error) {
+	return nil, sql.ErrTxDone
+}

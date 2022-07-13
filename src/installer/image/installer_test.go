@@ -29,7 +29,7 @@ func TestIsAlreadyDownloaded(t *testing.T) {
 			fs: testFileSystemWithSharedDirPresent(pathResolver, imageDigest),
 			props: &Properties{
 				PathResolver: pathResolver,
-				Metadata: metadata.FakeMemoryDB(),
+				Metadata:     metadata.FakeMemoryDB(),
 			},
 		}
 		isDownloaded, err := installer.isAlreadyDownloaded(imageDigest)
@@ -41,7 +41,7 @@ func TestIsAlreadyDownloaded(t *testing.T) {
 			fs: testFileSystemWithSharedDirPresent(pathResolver, imageDigest),
 			props: &Properties{
 				PathResolver: pathResolver,
-				Metadata: testMetadataWithImageDigestPresent(imageDigest),
+				Metadata:     testMetadataWithImageDigestPresent(imageDigest),
 			},
 		}
 		isDownloaded, err := installer.isAlreadyDownloaded(imageDigest)
@@ -53,7 +53,7 @@ func TestIsAlreadyDownloaded(t *testing.T) {
 			fs: testFileSystemWithSharedDirPresent(pathResolver, imageDigest),
 			props: &Properties{
 				PathResolver: pathResolver,
-				Metadata: &metadata.FakeFailDB{},
+				Metadata:     &metadata.FakeFailDB{},
 			},
 		}
 		isDownloaded, err := installer.isAlreadyDownloaded(imageDigest)
@@ -71,10 +71,10 @@ func testFileSystemWithSharedDirPresent(pathResolver metadata.PathResolver, imag
 func testMetadataWithImageDigestPresent(imageDigest string) metadata.Access {
 	db := metadata.FakeMemoryDB()
 	db.InsertDynakube(&metadata.Dynakube{
-		Name: "test",
-		TenantUUID: "test",
+		Name:          "test",
+		TenantUUID:    "test",
 		LatestVersion: "test",
-		ImageDigest: imageDigest,
+		ImageDigest:   imageDigest,
 	})
 	return db
 }

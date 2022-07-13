@@ -22,7 +22,6 @@ import (
 
 const (
 	testVersion = "test"
-	testDigest  = "123iamDigest456"
 )
 
 func TestNewAgentUpdater(t *testing.T) {
