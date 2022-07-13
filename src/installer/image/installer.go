@@ -143,7 +143,7 @@ func (installer ImageInstaller) isAlreadyDownloaded(imageDigestEncoded string) (
 	if _, err := installer.fs.Stat(sharedDir); os.IsNotExist(err) {
 		return false, nil
 	} else if err != nil {
-		return false, err
+		return false, errors.WithStack(err)
 	}
 
 	dynakubeNames, err := installer.props.Metadata.GetDynakubeNamesForImageDigest(imageDigestEncoded)
