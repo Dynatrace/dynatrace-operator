@@ -67,7 +67,7 @@ func NewController(mgr manager.Manager) *NodesController {
 		apiReader:    mgr.GetAPIReader(),
 		scheme:       mgr.GetScheme(),
 		dtClientFunc: dynakube.BuildDynatraceClient,
-		runLocal:     os.Getenv("RUN_LOCAL") == "true",
+		runLocal:     kubeobjects.IsRunLocally(),
 		podNamespace: os.Getenv("POD_NAMESPACE"),
 	}
 }
