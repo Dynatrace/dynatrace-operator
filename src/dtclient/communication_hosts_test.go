@@ -74,10 +74,7 @@ func TestParseEndpoints(t *testing.T) {
 	var err error
 	var ch CommunicationHost
 
-	// Successful parsing
-	dc := &dynatraceClient{}
-
-	ch, err = dc.parseEndpoint("https://example.live.dynatrace.com/communication")
+	ch, err = ParseEndpoint("https://example.live.dynatrace.com/communication")
 	assert.NoError(t, err)
 	assert.Equal(t, CommunicationHost{
 		Protocol: "https",
@@ -85,7 +82,7 @@ func TestParseEndpoints(t *testing.T) {
 		Port:     443,
 	}, ch)
 
-	ch, err = dc.parseEndpoint("https://managedhost.com:9999/here/communication")
+	ch, err = ParseEndpoint("https://managedhost.com:9999/here/communication")
 	assert.NoError(t, err)
 	assert.Equal(t, CommunicationHost{
 		Protocol: "https",
@@ -93,7 +90,7 @@ func TestParseEndpoints(t *testing.T) {
 		Port:     9999,
 	}, ch)
 
-	ch, err = dc.parseEndpoint("https://example.live.dynatrace.com/communication")
+	ch, err = ParseEndpoint("https://example.live.dynatrace.com/communication")
 	assert.NoError(t, err)
 	assert.Equal(t, CommunicationHost{
 		Protocol: "https",
@@ -101,7 +98,7 @@ func TestParseEndpoints(t *testing.T) {
 		Port:     443,
 	}, ch)
 
-	ch, err = dc.parseEndpoint("https://10.0.0.1:8000/communication")
+	ch, err = ParseEndpoint("https://10.0.0.1:8000/communication")
 	assert.NoError(t, err)
 	assert.Equal(t, CommunicationHost{
 		Protocol: "https",
@@ -109,7 +106,7 @@ func TestParseEndpoints(t *testing.T) {
 		Port:     8000,
 	}, ch)
 
-	ch, err = dc.parseEndpoint("http://insecurehost/communication")
+	ch, err = ParseEndpoint("http://insecurehost/communication")
 	assert.NoError(t, err)
 	assert.Equal(t, CommunicationHost{
 		Protocol: "http",
@@ -119,19 +116,19 @@ func TestParseEndpoints(t *testing.T) {
 
 	// Failures
 
-	_, err = dc.parseEndpoint("https://managedhost.com:notaport/here/communication")
+	_, err = ParseEndpoint("https://managedhost.com:notaport/here/communication")
 	assert.Error(t, err)
 
-	_, err = dc.parseEndpoint("example.live.dynatrace.com:80/communication")
+	_, err = ParseEndpoint("example.live.dynatrace.com:80/communication")
 	assert.Error(t, err)
 
-	_, err = dc.parseEndpoint("ftp://randomhost.com:80/communication")
+	_, err = ParseEndpoint("ftp://randomhost.com:80/communication")
 	assert.Error(t, err)
 
-	_, err = dc.parseEndpoint("unix:///some/local/file")
+	_, err = ParseEndpoint("unix:///some/local/file")
 	assert.Error(t, err)
 
-	_, err = dc.parseEndpoint("shouldnotbeparsed")
+	_, err = ParseEndpoint("shouldnotbeparsed")
 	assert.Error(t, err)
 }
 
